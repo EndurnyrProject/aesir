@@ -7,12 +7,12 @@ defmodule Aesir.AccountServer do
 
   require Logger
 
-  alias Aesir.AccountServer.AccountManager
   alias Aesir.AccountServer.Packets.AcAcceptLogin
   alias Aesir.AccountServer.Packets.AcRefuseLogin
   alias Aesir.AccountServer.Packets.CaLogin
   alias Aesir.AccountServer.Packets.CtAuth
   alias Aesir.AccountServer.Packets.TcResult
+  alias Aesir.Auth
 
   @impl Aesir.Network.Connection
   def handle_packet(0x0ACF, %CtAuth{} = _auth_packet, session_data) do
@@ -23,7 +23,7 @@ defmodule Aesir.AccountServer do
   def handle_packet(0x0064, %CaLogin{} = login_packet, session_data) do
     Logger.info("Login attempt for user: #{login_packet.username}")
 
-    case AccountManager.authenticate(login_packet.username, login_packet.password) do
+    case Auth.authenticate_user(login_packet.username, login_packet.password) do
       {:ok, account} ->
         handle_successful_login(account, session_data)
 
@@ -45,7 +45,7 @@ defmodule Aesir.AccountServer do
     updated_session =
       Map.merge(session_data, %{
         account_id: account.id,
-        username: account.username,
+        username: account.userid,
         auth_code: auth_code,
         login_id1: login_id1,
         login_id2: login_id2,
@@ -64,7 +64,12 @@ defmodule Aesir.AccountServer do
       |> Base.encode16(case: :lower)
       |> String.slice(0, 16)
 
-    last_login = DateTime.to_string(DateTime.utc_now())
+    last_login =
+      if account.lastlogin do
+        NaiveDateTime.to_string(account.lastlogin)
+      else
+        NaiveDateTime.to_string(NaiveDateTime.utc_now())
+      end
 
     response = %AcAcceptLogin{
       login_id1: login_id1,
@@ -86,14 +91,15 @@ defmodule Aesir.AccountServer do
       ]
     }
 
-    Logger.info("Login successful for account: #{account.username} (ID: #{account.id})")
+    Logger.info("Login successful for account: #{account.userid} (ID: #{account.id})")
     {:ok, updated_session, [response]}
   end
 
   defp handle_failed_login(reason, session_data) do
     reason_code =
       case reason do
-        :invalid_password -> 1
+        # Invalid password or username
+        :invalid_credentials -> 1
         :banned -> 6
         :account_not_found -> 0
         _ -> 3
@@ -104,6 +110,7 @@ defmodule Aesir.AccountServer do
       block_date: ""
     }
 
+    Logger.info("Login failed: #{reason}")
     {:ok, session_data, [response]}
   end
 end

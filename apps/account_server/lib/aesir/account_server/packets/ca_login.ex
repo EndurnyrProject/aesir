@@ -43,5 +43,4 @@ defmodule Aesir.AccountServer.Packets.CaLogin do
   end
 
   def parse(_), do: {:error, :invalid_packet}
-
 end

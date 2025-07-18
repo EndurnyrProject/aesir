@@ -12,7 +12,6 @@ defmodule Aesir.AccountServer.Application do
     ref = make_ref()
 
     children = [
-      Aesir.AccountServer.AccountManager,
       {Aesir.Network.Listener,
        connection_module: Aesir.AccountServer,
        packet_registry: Aesir.AccountServer.PacketRegistry,

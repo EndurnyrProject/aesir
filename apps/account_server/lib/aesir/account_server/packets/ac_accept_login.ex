@@ -77,8 +77,7 @@ defmodule Aesir.AccountServer.Packets.AcAcceptLogin do
     <<port::16-little>> = <<server.port::16-big>>
 
     <<serialize_ip(server.ip)::32-little, port::16-little, name::binary-size(20),
-      server.users::16-little, server.type::16-little, new_flag::16-little,
-      unknown::binary>>
+      server.users::16-little, server.type::16-little, new_flag::16-little, unknown::binary>>
   end
 
   defp serialize_ip({ip1, ip2, ip3, ip4}) do
