@@ -1,6 +1,5 @@
 [
-  import_deps: [:mimic, :ecto, :ecto_sql],
-  plugins: [Recode.FormatterPlugin],
+  import_deps: [:ecto, :ecto_sql],
   inputs: ["mix.exs", "config/*.exs"],
   subdirectories: ["apps/*"]
 ]

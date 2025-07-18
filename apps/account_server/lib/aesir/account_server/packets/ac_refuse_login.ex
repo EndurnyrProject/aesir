@@ -26,7 +26,7 @@ defmodule Aesir.AccountServer.Packets.AcRefuseLogin do
   - 100: Login info remains
   - 101: Investigate password
   """
-  use Aesir.Network.Packet
+  use Aesir.Commons.Network.Packet
 
   @packet_id 0x006A
   @packet_size 23

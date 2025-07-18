@@ -11,6 +11,7 @@ defmodule Commons.MixProject do
       lockfile: "../../mix.lock",
       elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
+      aliases: aliases(),
       start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
@@ -19,7 +20,7 @@ defmodule Commons.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      mod: {Commons.Application, []}
+      mod: {Aesir.Commons.Application, []}
     ]
   end
 
@@ -30,15 +31,25 @@ defmodule Commons.MixProject do
       {:ex_check, "~> 0.16", only: [:dev, :test], runtime: false},
       {:ecto, "~> 3.13"},
       {:ecto_sql, "~> 3.13"},
-      {:postgrex, "~> 0.19"},
+      {:postgrex, ">= 0.0.0"},
       {:ex_doc, "~> 0.28", only: :dev, runtime: false},
       {:gen_state_machine, "~> 3.0"},
       {:hammox, "~> 0.7", only: :test},
+      {:libcluster, "~> 3.4"},
+      {:memento, "~> 0.5"},
       {:mimic, "~> 1.12", only: :test},
       {:nimble_options, "~> 1.1"},
+      {:phoenix_pubsub, "~> 2.1"},
       {:ranch, "~> 2.2"},
-      {:recode, "~> 0.6", only: :dev, runtime: false},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false}
+    ]
+  end
+
+  defp aliases() do
+    [
+      "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
+      "ecto.reset": ["ecto.drop", "ecto.setup"],
+      test: ["ecto.create --quiet", "ecto.migrate", "test"]
     ]
   end
 

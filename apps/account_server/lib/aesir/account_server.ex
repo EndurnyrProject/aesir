@@ -3,7 +3,7 @@ defmodule Aesir.AccountServer do
   Connection handler for the Account Server.
   Processes login packets and manages authentication flow.
   """
-  use Aesir.Network.Connection
+  use Aesir.Commons.Network.Connection
 
   require Logger
 
@@ -12,14 +12,16 @@ defmodule Aesir.AccountServer do
   alias Aesir.AccountServer.Packets.CaLogin
   alias Aesir.AccountServer.Packets.CtAuth
   alias Aesir.AccountServer.Packets.TcResult
-  alias Aesir.Auth
+  alias Aesir.Commons.Auth
+  alias Aesir.Commons.InterServer.PubSub
+  alias Aesir.Commons.SessionManager
 
-  @impl Aesir.Network.Connection
+  @impl Aesir.Commons.Network.Connection
   def handle_packet(0x0ACF, %CtAuth{} = _auth_packet, session_data) do
     {:ok, session_data, [%TcResult{}]}
   end
 
-  @impl Aesir.Network.Connection
+  @impl Aesir.Commons.Network.Connection
   def handle_packet(0x0064, %CaLogin{} = login_packet, session_data) do
     Logger.info("Login attempt for user: #{login_packet.username}")
 
@@ -52,53 +54,71 @@ defmodule Aesir.AccountServer do
         authenticated: true
       })
 
-    sex_atom =
-      case account.sex do
-        "M" -> :male
-        "F" -> :female
-        _ -> :server
-      end
-
-    token =
-      :crypto.strong_rand_bytes(16)
-      |> Base.encode16(case: :lower)
-      |> String.slice(0, 16)
-
-    last_login =
-      if account.lastlogin do
-        NaiveDateTime.to_string(account.lastlogin)
-      else
-        NaiveDateTime.to_string(NaiveDateTime.utc_now())
-      end
-
-    response = %AcAcceptLogin{
+    session_data_for_cluster = %{
       login_id1: login_id1,
-      aid: account.id,
       login_id2: login_id2,
-      last_ip: {127, 0, 0, 1},
-      last_login: last_login,
-      sex: sex_atom,
-      token: token,
-      char_servers: [
-        %AcAcceptLogin.ServerInfo{
-          ip: {127, 0, 0, 1},
-          port: 6121,
-          name: "Aesir",
-          users: 42,
-          type: 0,
-          new?: false
-        }
-      ]
+      auth_code: auth_code,
+      username: account.userid
     }
 
-    Logger.info("Login successful for account: #{account.userid} (ID: #{account.id})")
-    {:ok, updated_session, [response]}
+    case SessionManager.create_session(account.id, session_data_for_cluster) do
+      :ok ->
+        Logger.info("Session created in cluster for account #{account.id}")
+        SessionManager.set_user_online(account.id, :account_server)
+        PubSub.broadcast_player_login(account.id, account.userid)
+
+        sex_atom =
+          case account.sex do
+            "M" -> :male
+            "F" -> :female
+          end
+
+        token =
+          :crypto.strong_rand_bytes(16)
+          |> Base.encode16(case: :lower)
+          |> String.slice(0, 16)
+
+        last_login =
+          if account.lastlogin do
+            NaiveDateTime.to_string(account.lastlogin)
+          else
+            NaiveDateTime.to_string(NaiveDateTime.utc_now())
+          end
+
+        case get_available_char_servers() do
+          {:ok, char_servers} ->
+            response = %AcAcceptLogin{
+              login_id1: login_id1,
+              aid: account.id,
+              login_id2: login_id2,
+              last_ip: {127, 0, 0, 1},
+              last_login: last_login,
+              sex: sex_atom,
+              token: token,
+              char_servers: char_servers
+            }
+
+            Logger.info("Login successful for account: #{account.userid} (ID: #{account.id})")
+
+            {:ok, updated_session, [response]}
+
+          {:error, reason} ->
+            Logger.error("Login failed: no character servers available (#{reason})")
+            handle_failed_login(:no_char_servers, session_data)
+        end
+
+      {:error, reason} ->
+        Logger.error(
+          "Failed to create cluster session for account #{account.id}: #{inspect(reason)}"
+        )
+
+        handle_failed_login(reason, session_data)
+    end
   end
 
   defp handle_failed_login(reason, session_data) do
     reason_code =
       case reason do
-        # Invalid password or username
         :invalid_credentials -> 1
         :banned -> 6
         :account_not_found -> 0
@@ -112,5 +132,32 @@ defmodule Aesir.AccountServer do
 
     Logger.info("Login failed: #{reason}")
     {:ok, session_data, [response]}
+  end
+
+  defp get_available_char_servers do
+    case SessionManager.get_servers(:char_server) do
+      [] ->
+        {:error, :no_char_servers}
+
+      servers ->
+        online_servers =
+          servers
+          |> Enum.filter(fn server -> server.status == :online end)
+          |> Enum.map(fn server ->
+            %AcAcceptLogin.ServerInfo{
+              ip: server.ip,
+              port: server.port,
+              name: server.metadata[:name],
+              users: server.player_count,
+              type: server.metadata[:type] || 0,
+              new?: server.metadata[:new] || false
+            }
+          end)
+
+        case online_servers do
+          [] -> {:error, :no_online_char_servers}
+          servers -> {:ok, servers}
+        end
+    end
   end
 end

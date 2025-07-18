@@ -1,5 +1,5 @@
 defmodule Aesir.AccountServer.Packets.CtAuth do
-  use Aesir.Network.Packet
+  use Aesir.Commons.Network.Packet
 
   @packet_id 0x0ACF
   @packet_size 68

@@ -1,11 +1,11 @@
-defmodule Aesir.Network.Listener do
+defmodule Aesir.Commons.Network.Listener do
   @moduledoc """
   Ranch listener supervisor for managing TCP server sockets.
   """
 
   require Logger
 
-  alias Aesir.Network.ListenerOptions
+  alias Aesir.Commons.Network.ListenerOptions
 
   @type opts :: [
           ref: atom(),

@@ -1,5 +1,5 @@
 defmodule Aesir.AccountServer.Packets.TcResult do
-  use Aesir.Network.Packet
+  use Aesir.Commons.Network.Packet
 
   @packet_id 0x0AE3
   @packet_size 34

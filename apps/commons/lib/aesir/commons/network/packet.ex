@@ -1,4 +1,4 @@
-defmodule Aesir.Network.Packet do
+defmodule Aesir.Commons.Network.Packet do
   @moduledoc """
   Base module for packet definitions and parsing.
 
@@ -89,9 +89,9 @@ defmodule Aesir.Network.Packet do
   """
   defmacro __using__(_opts) do
     quote do
-      import Aesir.Network.Packet
+      import Aesir.Commons.Network.Packet
 
-      @behaviour Aesir.Network.Packet
+      @behaviour Aesir.Commons.Network.Packet
 
       @impl true
       def parse(_), do: {:ok, :noop}

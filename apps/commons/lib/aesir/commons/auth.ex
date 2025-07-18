@@ -1,10 +1,9 @@
-defmodule Aesir.Auth do
+defmodule Aesir.Commons.Auth do
   @moduledoc """
   Authentication context for user login and account management.
   """
 
-  import Ecto.Query, warn: false
-  alias Aesir.Models.Account
+  alias Aesir.Commons.Models.Account
   alias Aesir.Repo
 
   @doc """
@@ -16,7 +15,6 @@ defmodule Aesir.Auth do
   def authenticate_user(userid, password) when is_binary(userid) and is_binary(password) do
     case get_account_by_userid(userid) do
       nil ->
-        # Run bcrypt to prevent timing attacks even when user doesn't exist
         Bcrypt.no_user_verify()
         {:error, :invalid_credentials}
 

@@ -5,12 +5,12 @@
 # Inside the script, you can read and write to any of your
 # repositories directly:
 #
-#     Aesir.Repo.insert!(%Aesir.Models.Account{})
+#     Aesir.Repo.insert!(%Aesir.Commons.Models.Account{})
 #
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
 
-alias Aesir.Auth
+alias Aesir.Commons/Auth
 
 # Create test accounts for development
 test_accounts = [

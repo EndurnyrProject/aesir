@@ -1,4 +1,4 @@
-defmodule Aesir.Network.Connection do
+defmodule Aesir.Commons.Network.Connection do
   @moduledoc """
   Ranch protocol handler for RO client connections.
   Manages socket communication, packet buffering, and session state.
@@ -6,9 +6,9 @@ defmodule Aesir.Network.Connection do
   ## Usage
 
       defmodule MyServer.Connection do
-        use Aesir.Network.Connection
+        use Aesir.Commons.Network.Connection
         
-        @impl Aesir.Network.Connection
+        @impl Aesir.Commons.Network.Connection
         def handle_packet(packet_id, parsed_data, session_data) do
           # Handle the packet and return updated session data
           {:ok, session_data}
@@ -28,24 +28,24 @@ defmodule Aesir.Network.Connection do
 
   defmacro __using__(_opts) do
     quote do
-      @behaviour Aesir.Network.Connection
+      @behaviour Aesir.Commons.Network.Connection
       @behaviour :ranch_protocol
 
       @impl :ranch_protocol
       def start_link(ref, transport, opts) do
         opts = Keyword.put(opts, :impl_module, __MODULE__)
-        Aesir.Network.Connection.start_link(ref, transport, opts)
+        Aesir.Commons.Network.Connection.start_link(ref, transport, opts)
       end
 
-      defdelegate send_packet(conn_pid, packet), to: Aesir.Network.Connection
-      defdelegate get_session_data(conn_pid), to: Aesir.Network.Connection
-      defdelegate set_session_data(conn_pid, session_data), to: Aesir.Network.Connection
+      defdelegate send_packet(conn_pid, packet), to: Aesir.Commons.Network.Connection
+      defdelegate get_session_data(conn_pid), to: Aesir.Commons.Network.Connection
+      defdelegate set_session_data(conn_pid, session_data), to: Aesir.Commons.Network.Connection
 
-      defdelegate init(args), to: Aesir.Network.Connection
-      defdelegate handle_continue(msg, state), to: Aesir.Network.Connection
-      defdelegate handle_info(msg, state), to: Aesir.Network.Connection
-      defdelegate handle_call(msg, from, state), to: Aesir.Network.Connection
-      defdelegate terminate(reason, state), to: Aesir.Network.Connection
+      defdelegate init(args), to: Aesir.Commons.Network.Connection
+      defdelegate handle_continue(msg, state), to: Aesir.Commons.Network.Connection
+      defdelegate handle_info(msg, state), to: Aesir.Commons.Network.Connection
+      defdelegate handle_call(msg, from, state), to: Aesir.Commons.Network.Connection
+      defdelegate terminate(reason, state), to: Aesir.Commons.Network.Connection
 
       defoverridable handle_continue: 2, handle_info: 2, handle_call: 3, terminate: 2
     end

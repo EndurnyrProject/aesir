@@ -3,6 +3,8 @@
 #
 
 repomix-output.xml
+.mcp.json
+.DS_Store
 
 # direnv
 .envrc

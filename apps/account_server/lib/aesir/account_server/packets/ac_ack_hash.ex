@@ -9,7 +9,7 @@ defmodule Aesir.AccountServer.Packets.AcAckHash do
 
   Minimum size: 4 bytes
   """
-  use Aesir.Network.Packet
+  use Aesir.Commons.Network.Packet
 
   @packet_id 0x01DC
 

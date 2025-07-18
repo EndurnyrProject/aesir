@@ -12,7 +12,7 @@ defmodule Aesir.AccountServer.Application do
     ref = make_ref()
 
     children = [
-      {Aesir.Network.Listener,
+      {Aesir.Commons.Network.Listener,
        connection_module: Aesir.AccountServer,
        packet_registry: Aesir.AccountServer.PacketRegistry,
        ref: ref}

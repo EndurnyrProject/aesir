@@ -11,7 +11,7 @@ defmodule Aesir.AccountServer.Packets.CaLogin do
 
   Total size: 55 bytes
   """
-  use Aesir.Network.Packet
+  use Aesir.Commons.Network.Packet
 
   @packet_id 0x0064
   @packet_size 55

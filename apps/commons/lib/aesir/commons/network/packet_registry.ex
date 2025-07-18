@@ -1,4 +1,4 @@
-defmodule Aesir.Network.PacketRegistry do
+defmodule Aesir.Commons.Network.PacketRegistry do
   @moduledoc """
   Registry for packet definitions and metadata.
 

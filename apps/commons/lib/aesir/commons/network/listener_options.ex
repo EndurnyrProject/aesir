@@ -1,4 +1,4 @@
-defmodule Aesir.Network.ListenerOptions do
+defmodule Aesir.Commons.Network.ListenerOptions do
   @schema NimbleOptions.new!(
             ref: [
               type: :reference,

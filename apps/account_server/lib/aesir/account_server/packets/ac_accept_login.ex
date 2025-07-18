@@ -23,7 +23,7 @@ defmodule Aesir.AccountServer.Packets.AcAcceptLogin do
   - new_: 2 bytes
   - unknown: 128 bytes
   """
-  use Aesir.Network.Packet
+  use Aesir.Commons.Network.Packet
 
   @packet_id 0x0AC4
 

@@ -8,7 +8,7 @@ defmodule Aesir.AccountServer.Packets.CaExeHashcheck do
 
   Total size: 18 bytes
   """
-  use Aesir.Network.Packet
+  use Aesir.Commons.Network.Packet
 
   @packet_id 0x0204
   @packet_size 18

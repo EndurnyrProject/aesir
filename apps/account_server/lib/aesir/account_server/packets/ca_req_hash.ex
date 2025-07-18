@@ -7,7 +7,7 @@ defmodule Aesir.AccountServer.Packets.CaReqHash do
 
   Total size: 2 bytes
   """
-  use Aesir.Network.Packet
+  use Aesir.Commons.Network.Packet
 
   @packet_id 0x01DB
   @packet_size 2

@@ -1,5 +1,5 @@
 defmodule Aesir.AccountServer.PacketRegistry do
-  use Aesir.Network.PacketRegistry, [
+  use Aesir.Commons.Network.PacketRegistry, [
     Aesir.AccountServer.Packets.AcAcceptLogin,
     Aesir.AccountServer.Packets.AcAckHash,
     Aesir.AccountServer.Packets.AcRefuseLogin,
