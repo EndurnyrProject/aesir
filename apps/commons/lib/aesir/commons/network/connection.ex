@@ -82,8 +82,6 @@ defmodule Aesir.Commons.Network.Connection do
 
     {:ok, {client_ip, client_port}} = transport.peername(socket)
 
-    dbg(opts)
-
     state = %__MODULE__{
       socket: socket,
       transport: transport,
@@ -325,7 +323,6 @@ defmodule Aesir.Commons.Network.Connection do
   defp flush_write_buffer(%{write_buffer: buffer} = state) when byte_size(buffer) > 0 do
     case state.transport.send(state.socket, buffer) do
       :ok ->
-        dbg(:sent)
         {:ok, %{state | write_buffer: <<>>, wdata_tick: System.system_time(:millisecond)}}
 
       {:error, reason} ->
