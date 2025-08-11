@@ -87,16 +87,17 @@ defmodule Aesir.AccountServer do
 
         case get_available_char_servers() do
           {:ok, char_servers} ->
-            response = %AcAcceptLogin{
-              login_id1: login_id1,
-              aid: account.id,
-              login_id2: login_id2,
-              last_ip: {127, 0, 0, 1},
-              last_login: last_login,
-              sex: sex_atom,
-              token: token,
-              char_servers: char_servers
-            }
+            response =
+              %AcAcceptLogin{
+                login_id1: login_id1,
+                aid: account.id,
+                login_id2: login_id2,
+                last_ip: {127, 0, 0, 1},
+                last_login: last_login,
+                sex: sex_atom,
+                token: token,
+                char_servers: char_servers
+              }
 
             Logger.info("Login successful for account: #{account.userid} (ID: #{account.id})")
 
@@ -143,14 +144,17 @@ defmodule Aesir.AccountServer do
         online_servers =
           servers
           |> Enum.filter(fn server -> server.status == :online end)
-          |> Enum.map(fn server ->
+          |> Enum.group_by(fn server -> server.metadata[:cluster_id] || "default" end)
+          |> Enum.map(fn {_cluster_id, cluster_servers} ->
+            best_server = Enum.min_by(cluster_servers, & &1.player_count)
+
             %AcAcceptLogin.ServerInfo{
-              ip: server.ip,
-              port: server.port,
-              name: server.metadata[:name],
-              users: server.player_count,
-              type: server.metadata[:type] || 0,
-              new?: server.metadata[:new] || false
+              ip: best_server.ip,
+              port: best_server.port,
+              name: best_server.metadata[:name],
+              users: best_server.player_count,
+              type: best_server.metadata[:type] || 0,
+              new?: best_server.metadata[:new] || false
             }
           end)
 

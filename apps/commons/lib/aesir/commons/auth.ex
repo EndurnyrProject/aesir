@@ -94,17 +94,19 @@ defmodule Aesir.Commons.Auth do
   def account_active?(%Account{} = account) do
     now = NaiveDateTime.utc_now()
 
-    # Check if account is banned (state 5 = banned)
-    banned = account.state == 5
+    cond do
+      account.state == 5 ->
+        false
 
-    # Check if account is temporarily banned
-    temp_banned = account.unban_time && NaiveDateTime.compare(now, account.unban_time) == :lt
+      account.unban_time && NaiveDateTime.compare(now, account.unban_time) == :lt ->
+        false
 
-    # Check if account is expired
-    expired =
-      account.expiration_time && NaiveDateTime.compare(now, account.expiration_time) == :gt
+      account.expiration_time && NaiveDateTime.compare(now, account.expiration_time) == :gt ->
+        false
 
-    not (banned or temp_banned or expired)
+      true ->
+        true
+    end
   end
 
   @doc """

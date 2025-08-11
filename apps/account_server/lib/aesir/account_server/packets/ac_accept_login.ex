@@ -74,18 +74,17 @@ defmodule Aesir.AccountServer.Packets.AcAcceptLogin do
     new_flag = if server.new?, do: 1, else: 0
     unknown = :binary.copy(<<0>>, 128)
 
-    <<port::16-little>> = <<server.port::16-big>>
+    ip_bytes = serialize_ip(server.ip)
 
-    <<serialize_ip(server.ip)::32-little, port::16-little, name::binary-size(20),
-      server.users::16-little, server.type::16-little, new_flag::16-little, unknown::binary>>
+    <<ip_bytes::binary, server.port::16-little, name::binary-size(20), server.users::16-little,
+      server.type::16-little, new_flag::16-little, unknown::binary>>
   end
 
   defp serialize_ip({ip1, ip2, ip3, ip4}) do
-    <<ip_int::32-little>> = <<ip1::8, ip2::8, ip3::8, ip4::8>>
-    ip_int
+    <<ip1::8, ip2::8, ip3::8, ip4::8>>
   end
 
-  defp serialize_ip(_), do: 0
+  defp serialize_ip(_), do: <<0::32>>
 
   defp serialize_sex(:female), do: 0
   defp serialize_sex(:male), do: 1

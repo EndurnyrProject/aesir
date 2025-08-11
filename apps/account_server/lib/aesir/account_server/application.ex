@@ -30,6 +30,17 @@ defmodule Aesir.AccountServer.Application do
           "Aesir AccountServer (ref: #{inspect(ref)}) started at #{:inet.ntoa(ip)}:#{port}"
         )
 
+        server_id = "account_server_#{Node.self()}"
+
+        Aesir.Commons.SessionManager.register_server(
+          server_id,
+          :account_server,
+          ip,
+          port,
+          1000,
+          %{}
+        )
+
       {:error, reason} ->
         Logger.error("Failed to start Aesir AccountServer: #{inspect(reason)}")
     end)
