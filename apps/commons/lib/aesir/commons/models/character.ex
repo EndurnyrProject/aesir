@@ -61,7 +61,7 @@ defmodule Aesir.Commons.Models.Character do
     field :unban_time, :naive_datetime
     field :font, :integer, default: 0
     field :uniqueitem_counter, :integer, default: 0
-    field :sex, :string, default: "U"
+    field :sex, :string, default: "M"
     field :hotkey_rowshift, :integer, default: 0
     field :clan_id, :integer, default: 0
     field :last_login, :naive_datetime
@@ -140,11 +140,140 @@ defmodule Aesir.Commons.Models.Character do
     ])
     |> validate_required([:account_id, :char_num, :name, :class])
     |> validate_length(:name, min: 4, max: 23)
-    |> validate_inclusion(:sex, ["M", "F", "U"])
+    |> validate_inclusion(:sex, ["M", "F"])
     |> validate_number(:char_num, greater_than_or_equal_to: 0, less_than: 15)
     |> validate_number(:base_level, greater_than: 0, less_than_or_equal_to: 999)
     |> validate_number(:job_level, greater_than: 0, less_than_or_equal_to: 70)
     |> unique_constraint([:account_id, :char_num])
     |> unique_constraint(:name)
+  end
+
+  @doc """
+  Creates a new character with default values for character creation.
+  """
+  def new(attrs \\ %{}) do
+    defaults = %{
+      base_level: 1,
+      job_level: 1,
+      base_exp: 0,
+      job_exp: 0,
+      zeny: 500,
+      class: 0,
+      status_point: 48,
+      skill_point: 0,
+      hp: 40,
+      max_hp: 40,
+      sp: 11,
+      max_sp: 11,
+      hair: 1,
+      hair_color: 1,
+      clothes_color: 1,
+      weapon: 0,
+      shield: 0,
+      head_top: 0,
+      head_mid: 0,
+      head_bottom: 0,
+      robe: 0,
+      last_map: "new_1-1",
+      last_x: 53,
+      last_y: 111,
+      save_map: "new_1-1",
+      save_x: 53,
+      save_y: 111,
+      option: 0,
+      karma: 0,
+      manner: 0,
+      party_id: 0,
+      guild_id: 0,
+      delete_date: nil,
+      unban_time: nil,
+      rename: 0,
+      moves: 0
+    }
+
+    %__MODULE__{}
+    |> changeset(Map.merge(defaults, attrs))
+  end
+
+  @doc """
+  Validates character creation data.
+  """
+  def validate_creation(attrs) do
+    with {:ok, name} <- validate_name(attrs[:name]),
+         {:ok, stats} <- validate_stats(attrs),
+         {:ok, slot} <- validate_slot(attrs[:slot]) do
+      {:ok, %{name: name, stats: stats, slot: slot}}
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Validates character name.
+  """
+  def validate_name(name) when is_binary(name) do
+    cond do
+      String.length(name) < 4 ->
+        {:error, :name_too_short}
+
+      String.length(name) > 23 ->
+        {:error, :name_too_long}
+
+      not String.match?(name, ~r/^[a-zA-Z0-9_]+$/) ->
+        {:error, :name_invalid_chars}
+
+      String.contains?(String.downcase(name), ["gm", "admin", "test"]) ->
+        {:error, :name_forbidden}
+
+      true ->
+        {:ok, name}
+    end
+  end
+
+  def validate_name(_), do: {:error, :name_required}
+
+  @doc """
+  Validates character stats for creation.
+  Modern clients MUST send all stats as 1 - anything else is packet tampering.
+  """
+  def validate_stats(attrs) do
+    required_stats = [:str, :agi, :vit, :int, :dex, :luk]
+
+    stats =
+      required_stats
+      |> Enum.map(&{&1, (attrs[:stats] && attrs[:stats][&1]) || 1})
+      |> Enum.into(%{})
+
+    # Modern clients (PACKETVER >= 20151001) ALWAYS send all stats as 1
+    # If any stat is not 1, it's packet tampering
+    if Enum.all?(Map.values(stats), &(&1 == 1)) do
+      {:ok, stats}
+    else
+      {:error, :stats_invalid_total}
+    end
+  end
+
+  @doc """
+  Validates character slot number.
+  """
+  def validate_slot(slot) when is_integer(slot) and slot >= 0 and slot <= 14 do
+    {:ok, slot}
+  end
+
+  def validate_slot(_), do: {:error, :invalid_slot}
+
+  @doc """
+  Checks if character is marked for deletion.
+  """
+  def marked_for_deletion?(%__MODULE__{delete_date: nil}), do: false
+  def marked_for_deletion?(%__MODULE__{delete_date: _}), do: true
+
+  @doc """
+  Checks if character is banned.
+  """
+  def banned?(%__MODULE__{unban_time: nil}), do: false
+
+  def banned?(%__MODULE__{unban_time: unban_time}) do
+    NaiveDateTime.compare(unban_time, NaiveDateTime.utc_now()) == :gt
   end
 end

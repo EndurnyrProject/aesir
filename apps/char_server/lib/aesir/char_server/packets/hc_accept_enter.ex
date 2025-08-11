@@ -2,8 +2,6 @@ defmodule Aesir.CharServer.Packets.HcAcceptEnter do
   @moduledoc """
   HC_ACCEPT_ENTER packet (0x006b) - Character list response.
 
-  This is a variable-length packet that contains the character list.
-
   Structure:
   - packet_type: 2 bytes (0x006b)
   - length: 2 bytes (total packet length)
@@ -70,7 +68,6 @@ defmodule Aesir.CharServer.Packets.HcAcceptEnter do
 
   @impl true
   def parse(<<@packet_id::16-little, _length::16-little, _data::binary>>) do
-    # For now, just parse as empty character list
     {:ok, %__MODULE__{characters: []}}
   end
 
@@ -78,51 +75,62 @@ defmodule Aesir.CharServer.Packets.HcAcceptEnter do
 
   @impl true
   def build(%__MODULE__{characters: characters}) do
+    max_chars = 15
+    min_chars = 9
+    premium_chars = 9
+
+    header_extension = <<
+      # Max slots
+      max_chars::8,
+      # Available slots (PremiumStartSlot)
+      min_chars::8,
+      # Premium slots
+      premium_chars::8,
+      # 20 unknown bytes
+      0::size(20 * 8)
+    >>
+
     if Enum.empty?(characters) do
-      # Empty character list - just header
-      <<@packet_id::16-little, 4::16-little>>
+      packet_data = header_extension
+      build_variable_packet(@packet_id, packet_data)
     else
-      # Serialize each character
       char_data =
         characters
         |> Enum.map(&serialize_character/1)
         |> IO.iodata_to_binary()
 
-      # Build packet with header + character data
-      build_variable_packet(@packet_id, char_data)
+      packet_data = <<header_extension::binary, char_data::binary>>
+      build_variable_packet(@packet_id, packet_data)
     end
   end
 
   defp serialize_character(character) do
-    # Pack character name and map name
     name = pack_string(character.name, 24)
-    map_name = pack_string(elem(character.last_point, 0), 16)
 
     <<
-      character.char_id::32-little,
-      character.base_exp::32-little,
+      character.id::32-little,
+      character.base_exp::64-little,
       character.zeny::32-little,
-      character.job_exp::32-little,
+      character.job_exp::64-little,
       character.job_level::32-little,
-
-      # opt1
+      # bodystate (opt1)
       0::32-little,
-
-      # opt2
+      # healthstate (opt2)
       0::32-little,
       character.option::32-little,
       character.karma::32-little,
       character.manner::32-little,
       character.status_point::16-little,
-      character.hp::16-little,
-      character.max_hp::16-little,
-      character.sp::16-little,
-      character.max_sp::16-little,
-
-      # walk_speed (default)
+      character.hp::64-little,
+      character.max_hp::64-little,
+      character.sp::64-little,
+      character.max_sp::64-little,
+      # speed (walk_speed default)
       150::16-little,
       character.class::16-little,
       character.hair::16-little,
+      # body (for PACKETVER >= 20141022)
+      0::16-little,
       character.weapon::16-little,
       character.base_level::16-little,
       character.skill_point::16-little,
@@ -140,15 +148,16 @@ defmodule Aesir.CharServer.Packets.HcAcceptEnter do
       character.dex::8,
       character.luk::8,
       character.char_num::8,
-      character.rename_flag::8,
-      map_name::binary-size(16),
-      character.delete_date::32-little,
-      character.robe::32-little,
-
-      # slot_change
+      character.hair_color::8,
+      character.rename::16-little,
+      pack_string(character.last_map || "prontera", 16)::binary,
+      # DelRevDate (delete date)
       0::32-little,
-      character.rename_flag::32-little,
-      character.body::32-little
+      character.robe::32-little,
+      # chr_slot_changeCnt
+      0::32-little,
+      character.rename::32-little,
+      if(character.sex == "M", do: 1, else: 0)::8
     >>
   end
 end

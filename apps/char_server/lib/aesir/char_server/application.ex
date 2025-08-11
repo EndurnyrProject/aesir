@@ -10,14 +10,13 @@ defmodule Aesir.CharServer.Application do
     ref = make_ref()
 
     children = [
-      # Network listener for char server
       {Aesir.Commons.Network.Listener,
        connection_module: Aesir.CharServer,
        packet_registry: Aesir.CharServer.PacketRegistry,
        transport_opts: %{
          socket_opts: [
            port: 6121,
-           ip: {127, 0, 0, 1}
+           ip: {192, 168, 178, 101}
          ]
        },
        ref: ref}
@@ -35,9 +34,17 @@ defmodule Aesir.CharServer.Application do
           "Aesir CharServer (ref: #{inspect(ref)}) started at #{:inet.ntoa(ip)}:#{port}"
         )
 
-        # Register this char server with the SessionManager
-        server_id = "char_server_#{Node.self()}"
-        metadata = %{name: "Aesir", type: 0, new: false}
+        server_config = Application.get_env(:char_server, :server_config, %{})
+        server_name = Map.get(server_config, :name, "Aesir")
+        cluster_id = Map.get(server_config, :cluster_id, "default")
+        server_id = "char_server_#{cluster_id}_#{Node.self()}"
+
+        metadata = %{
+          name: server_name,
+          type: 0,
+          new: false,
+          cluster_id: cluster_id
+        }
 
         Aesir.Commons.SessionManager.register_server(
           server_id,

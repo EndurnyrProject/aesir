@@ -31,7 +31,7 @@ defmodule Aesir.CharServer.Auth do
   def can_create_character?(account_id, current_character_count) do
     with {:ok, account} <- validate_account_permissions(account_id),
          {:ok, max_characters} <- get_max_character_slots(account),
-         :ok <- validate_character_slots(current_character_count, max_characters) do
+         :ok <- check_slot_availability(current_character_count, max_characters) do
       {:ok,
        %{
          account_id: account_id,
@@ -56,8 +56,6 @@ defmodule Aesir.CharServer.Auth do
         {:error, reason}
     end
   end
-
-  # Private Functions
 
   defp get_account(account_id) do
     case Repo.get(Account, account_id) do
@@ -87,25 +85,11 @@ defmodule Aesir.CharServer.Auth do
   end
 
   defp get_max_character_slots(account) do
-    # Default character slots
     base_slots = 3
-
-    # Check if account has additional character slots
-    # This would typically be stored in account.character_slots or similar
     additional_slots = Map.get(account, :character_slots, 0)
-
-    # Maximum possible slots (RO standard)
     max_slots = 9
 
     {:ok, min(base_slots + additional_slots, max_slots)}
-  end
-
-  defp validate_character_slots(current_count, max_characters) do
-    with :ok <- check_slot_availability(current_count, max_characters) do
-      :ok
-    else
-      {:error, reason} -> {:error, reason}
-    end
   end
 
   defp check_slot_availability(current_count, max_characters) do
