@@ -4,33 +4,31 @@ defmodule Aesir.Commons.SessionManagerTest do
   import ExUnit.CaptureLog
 
   alias Aesir.Commons.InterServer.Schemas.CharacterLocation
+  alias Aesir.Commons.InterServer.Schemas.OnlineUser
+  alias Aesir.Commons.InterServer.Schemas.ServerStatus
+  alias Aesir.Commons.InterServer.Schemas.Session
   alias Aesir.Commons.SessionManager
 
   setup do
-    # Clean up any existing data before each test
     Memento.transaction(fn ->
-      # Delete all records from each table
-      Memento.Query.select(Aesir.Commons.InterServer.Schemas.Session, [])
+      Memento.Query.select(Session, [])
       |> Enum.each(fn session ->
-        Memento.Query.delete(Aesir.Commons.InterServer.Schemas.Session, session.account_id)
+        Memento.Query.delete(Session, session.account_id)
       end)
 
-      Memento.Query.select(Aesir.Commons.InterServer.Schemas.OnlineUser, [])
+      Memento.Query.select(OnlineUser, [])
       |> Enum.each(fn user ->
-        Memento.Query.delete(Aesir.Commons.InterServer.Schemas.OnlineUser, user.account_id)
+        Memento.Query.delete(OnlineUser, user.account_id)
       end)
 
-      Memento.Query.select(Aesir.Commons.InterServer.Schemas.ServerStatus, [])
+      Memento.Query.select(ServerStatus, [])
       |> Enum.each(fn server ->
-        Memento.Query.delete(Aesir.Commons.InterServer.Schemas.ServerStatus, server.server_id)
+        Memento.Query.delete(ServerStatus, server.server_id)
       end)
 
-      Memento.Query.select(Aesir.Commons.InterServer.Schemas.CharacterLocation, [])
+      Memento.Query.select(CharacterLocation, [])
       |> Enum.each(fn location ->
-        Memento.Query.delete(
-          Aesir.Commons.InterServer.Schemas.CharacterLocation,
-          location.char_id
-        )
+        Memento.Query.delete(CharacterLocation, location.char_id)
       end)
     end)
 

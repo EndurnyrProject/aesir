@@ -100,19 +100,11 @@ defmodule Aesir.Commons.SessionManager do
   end
 
   # Server Callbacks
+  #
 
   @impl true
-  def init(_opts) do
-    case initialize_memento() do
-      :ok ->
-        schedule_cleanup()
-
-        {:ok, %{}}
-
-      {:error, reason} ->
-        Logger.error("Failed to initialize Memento: #{inspect(reason)}")
-        {:stop, reason}
-    end
+  def init(init_arg) do
+    {:ok, init_arg}
   end
 
   @impl true
@@ -368,31 +360,6 @@ defmodule Aesir.Commons.SessionManager do
     cleanup_expired_sessions()
     schedule_cleanup()
     {:noreply, state}
-  end
-
-  defp initialize_memento do
-    tables = [Session, OnlineUser, CharacterLocation, ServerStatus]
-
-    results =
-      Enum.map(tables, fn table ->
-        case Memento.Table.create(table) do
-          :ok ->
-            Logger.info("Created Memento table: #{table}")
-            :ok
-
-          {:error, {:already_exists, _}} ->
-            :ok
-
-          error ->
-            Logger.error("Failed to create table #{table}: #{inspect(error)}")
-            error
-        end
-      end)
-
-    case Enum.find(results, fn result -> result != :ok end) do
-      nil -> :ok
-      error -> error
-    end
   end
 
   defp schedule_cleanup do

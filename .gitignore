@@ -5,6 +5,7 @@
 repomix-output.xml
 .mcp.json
 .DS_Store
+.mnesia
 
 # direnv
 .envrc

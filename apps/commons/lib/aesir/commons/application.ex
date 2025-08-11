@@ -11,7 +11,7 @@ defmodule Aesir.Commons.Application do
       Aesir.Repo,
       {Cluster.Supervisor, [topologies, [name: Aesir.ClusterSupervisor]]},
       {Phoenix.PubSub, name: Aesir.PubSub},
-      Aesir.Commons.SessionManager
+      Aesir.Commons.MementoCluster.Supervisor
     ]
 
     opts = [strategy: :one_for_one, name: Commons.Supervisor]

@@ -17,20 +17,35 @@ config :commons, Aesir.Repo,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 
-# Account Server Configuration  
 config :account_server,
   port: 6901
 
-# Character Server Configuration
 config :char_server,
-  port: 6121
+  port: 6121,
+  server_config: %{
+    name: System.get_env("CHAR_SERVER_NAME", "Aesir"),
+    cluster_id: System.get_env("CHAR_SERVER_CLUSTER", "default")
+  }
 
-# Zone Server Configuration
 config :zone_server,
   port: 5121
 
-# Cluster Configuration
 config :libcluster,
-  topologies: []
+  topologies: [
+    aesir: [
+      strategy: Cluster.Strategy.Epmd,
+      config: [
+        hosts: [:"account@127.0.0.1", :"char@127.0.0.1", :"zone@127.0.0.1"]
+      ]
+    ]
+  ]
+
+config :commons, :memento_cluster,
+  nodes: [:"account@127.0.0.1", :"char@127.0.0.1", :"zone@127.0.0.1"],
+  auto_cluster: true,
+  table_load_timeout: 60_000
+
+config :mnesia,
+  dir: ~c".mnesia/#{Mix.env()}/#{node()}"
 
 import_config "#{config_env()}.exs"
