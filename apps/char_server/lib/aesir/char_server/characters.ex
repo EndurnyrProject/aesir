@@ -12,7 +12,6 @@ defmodule Aesir.CharServer.Characters do
   import Ecto.Query
 
   alias Aesir.CharServer.Auth
-  alias Aesir.CharServer.CharacterManager
   alias Aesir.Commons.InterServer.PubSub
   alias Aesir.Commons.Models.Character
   alias Aesir.Repo
@@ -68,7 +67,7 @@ defmodule Aesir.CharServer.Characters do
 
     Ecto.Multi.new()
     |> Ecto.Multi.run(:character_lookup, fn _repo, _changes ->
-      CharacterManager.get_character(char_id)
+      get_character(char_id)
     end)
     |> Ecto.Multi.run(:ownership_check, fn _repo, %{character_lookup: character} ->
       if character.account_id == account_id do
@@ -141,7 +140,7 @@ defmodule Aesir.CharServer.Characters do
   def delete_character(account_id, char_id) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:character_lookup, fn _repo, _changes ->
-      CharacterManager.get_character(char_id)
+      get_character(char_id)
     end)
     |> Ecto.Multi.run(:ownership_check, fn _repo, %{character_lookup: character} ->
       Auth.verify_character_ownership(account_id, character.account_id)
@@ -161,7 +160,7 @@ defmodule Aesir.CharServer.Characters do
   """
   def list_characters(account_id, session_data) do
     with {:ok, _session} <- validate_session_for_account(account_id, session_data),
-         {:ok, characters} <- CharacterManager.get_characters_by_account(account_id) do
+         {:ok, characters} <- get_characters_by_account(account_id) do
       {:ok, characters}
     end
   end
@@ -170,10 +169,79 @@ defmodule Aesir.CharServer.Characters do
   Selects a character and prepares for zone transfer.
   """
   def select_character(account_id, slot) do
-    with {:ok, character} <- CharacterManager.get_character_by_slot(account_id, slot),
+    with {:ok, character} <- get_character_by_slot(account_id, slot),
          :ok <- update_character_location(character),
          :ok <- broadcast_character_selected(account_id, character) do
       {:ok, character}
+    end
+  end
+
+  @doc """
+  Gets all characters for an account.
+  """
+  def get_characters_by_account(account_id) do
+    query = from c in Character, where: c.account_id == ^account_id, order_by: c.char_num
+
+    {:ok, Repo.all(query)}
+  end
+
+  @doc """
+  Gets a specific character by ID.
+  """
+  def get_character(char_id) do
+    case Repo.get(Character, char_id) do
+      nil -> {:error, :character_not_found}
+      character -> {:ok, character}
+    end
+  end
+
+  @doc """
+  Gets a character by account_id and slot.
+  """
+  def get_character_by_slot(account_id, slot) do
+    query = from c in Character, where: c.account_id == ^account_id and c.char_num == ^slot
+
+    case Repo.one(query) do
+      nil -> {:error, :character_not_found}
+      character -> {:ok, character}
+    end
+  end
+
+  @doc """
+  Updates a character.
+  """
+  def update_character(char_id, updates) do
+    with {:ok, character} <- get_character(char_id),
+         {:ok, updated_character} <-
+           character
+           |> Character.changeset(updates)
+           |> Repo.update() do
+      {:ok, updated_character}
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Checks if a character name is available.
+  """
+  def name_available?(name) do
+    query =
+      from c in Character, where: fragment("LOWER(?)", c.name) == ^String.downcase(name)
+
+    case Repo.one(query) do
+      nil -> true
+      _ -> false
+    end
+  end
+
+  @doc """
+  Checks if a character slot is available for an account.
+  """
+  def slot_available?(account_id, slot) do
+    case get_character_by_slot(account_id, slot) do
+      {:ok, _character} -> false
+      {:error, :character_not_found} -> true
     end
   end
 
@@ -186,7 +254,7 @@ defmodule Aesir.CharServer.Characters do
   end
 
   defp check_name_availability(name) do
-    if CharacterManager.name_available?(name) do
+    if name_available?(name) do
       {:ok, :available}
     else
       {:error, :name_taken}
@@ -194,7 +262,7 @@ defmodule Aesir.CharServer.Characters do
   end
 
   defp check_slot_availability(account_id, slot) do
-    if CharacterManager.slot_available?(account_id, slot) do
+    if slot_available?(account_id, slot) do
       {:ok, :available}
     else
       {:error, :slot_taken}
