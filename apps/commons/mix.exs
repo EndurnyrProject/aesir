@@ -19,7 +19,7 @@ defmodule Commons.MixProject do
 
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [:logger, :bunt],
       mod: {Aesir.Commons.Application, []}
     ]
   end
@@ -27,11 +27,11 @@ defmodule Commons.MixProject do
   defp deps do
     [
       {:bcrypt_elixir, "~> 3.0"},
+      {:bunt, "~> 1.0"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:ex_check, "~> 0.16", only: [:dev, :test], runtime: false},
       {:ecto, "~> 3.13"},
       {:ecto_sql, "~> 3.13"},
-      {:postgrex, ">= 0.0.0"},
       {:ex_doc, "~> 0.28", only: :dev, runtime: false},
       {:gen_state_machine, "~> 3.0"},
       {:hammox, "~> 0.7", only: :test},
@@ -40,6 +40,7 @@ defmodule Commons.MixProject do
       {:mimic, "~> 1.12", only: :test},
       {:nimble_options, "~> 1.1"},
       {:phoenix_pubsub, "~> 2.1"},
+      {:postgrex, ">= 0.0.0"},
       {:ranch, "~> 2.2"},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false}
     ]

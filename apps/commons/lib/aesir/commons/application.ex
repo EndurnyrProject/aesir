@@ -5,6 +5,8 @@ defmodule Aesir.Commons.Application do
 
   @impl true
   def start(_type, _args) do
+    display_banner_for_starting_apps()
+
     topologies = Application.get_env(:libcluster, :topologies)
 
     children = [
@@ -16,5 +18,26 @@ defmodule Aesir.Commons.Application do
 
     opts = [strategy: :one_for_one, name: Commons.Supervisor]
     Supervisor.start_link(children, opts)
+  end
+
+  defp display_banner_for_starting_apps do
+    cond do
+      app_loaded?(:account_server) ->
+        Aesir.Commons.Banner.display(:account)
+
+      app_loaded?(:char_server) ->
+        Aesir.Commons.Banner.display(:char)
+
+      app_loaded?(:zone_server) ->
+        Aesir.Commons.Banner.display(:zone)
+
+      true ->
+        :ok
+    end
+  end
+
+  defp app_loaded?(app) do
+    loaded_apps = Application.loaded_applications() |> Enum.map(fn {name, _, _} -> name end)
+    app in loaded_apps
   end
 end
