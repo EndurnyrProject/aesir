@@ -13,10 +13,11 @@ defmodule Aesir.Commons.InterServer.Schemas.Session do
       :state,
       :current_server,
       :current_char_id,
+      :node,
       :created_at,
       :last_activity
     ],
-    index: [:username, :current_server],
+    index: [:username, :current_server, :node],
     type: :set
 
   @type t :: %__MODULE__{
@@ -28,6 +29,7 @@ defmodule Aesir.Commons.InterServer.Schemas.Session do
           state: :authenticating | :char_select | :in_game | :disconnected,
           current_server: :account_server | :char_server | :zone_server,
           current_char_id: non_neg_integer() | nil,
+          node: node(),
           created_at: DateTime.t(),
           last_activity: DateTime.t()
         }
@@ -44,6 +46,7 @@ defmodule Aesir.Commons.InterServer.Schemas.Session do
       state: :authenticating,
       current_server: :account_server,
       current_char_id: nil,
+      node: Node.self(),
       created_at: now,
       last_activity: now
     }

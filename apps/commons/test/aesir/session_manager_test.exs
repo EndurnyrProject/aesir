@@ -8,30 +8,11 @@ defmodule Aesir.Commons.SessionManagerTest do
   alias Aesir.Commons.InterServer.Schemas.ServerStatus
   alias Aesir.Commons.InterServer.Schemas.Session
   alias Aesir.Commons.SessionManager
+  alias Aesir.Commons.MementoTestHelper
 
   setup do
-    Memento.transaction(fn ->
-      Memento.Query.select(Session, [])
-      |> Enum.each(fn session ->
-        Memento.Query.delete(Session, session.account_id)
-      end)
-
-      Memento.Query.select(OnlineUser, [])
-      |> Enum.each(fn user ->
-        Memento.Query.delete(OnlineUser, user.account_id)
-      end)
-
-      Memento.Query.select(ServerStatus, [])
-      |> Enum.each(fn server ->
-        Memento.Query.delete(ServerStatus, server.server_id)
-      end)
-
-      Memento.Query.select(CharacterLocation, [])
-      |> Enum.each(fn location ->
-        Memento.Query.delete(CharacterLocation, location.char_id)
-      end)
-    end)
-
+    # Clear all tables for clean test state
+    MementoTestHelper.reset_test_environment()
     :ok
   end
 
