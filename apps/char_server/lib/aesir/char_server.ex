@@ -9,12 +9,12 @@ defmodule Aesir.CharServer do
 
   alias Aesir.CharServer.Characters
   alias Aesir.CharServer.CharacterSession
+  alias Aesir.Commons.SessionManager
   alias Aesir.CharServer.Packets.AccountIdAck
   alias Aesir.CharServer.Packets.HcAcceptEnter
   alias Aesir.CharServer.Packets.HcAcceptMakechar
   alias Aesir.CharServer.Packets.HcBlockCharacter
   alias Aesir.CharServer.Packets.HcCharacterList
-  alias Aesir.CharServer.Packets.HcCharlistNotify
   alias Aesir.CharServer.Packets.HcDeleteChar
   alias Aesir.CharServer.Packets.HcNotifyZonesvr
   alias Aesir.CharServer.Packets.HcRefuseEnter
@@ -48,10 +48,6 @@ defmodule Aesir.CharServer do
 
       char_list = %HcAcceptEnter{characters: characters}
 
-      charlist_notify = %HcCharlistNotify{
-        char_slots: 9
-      }
-
       blocked_chars = %HcBlockCharacter{
         blocked_chars: []
       }
@@ -62,8 +58,7 @@ defmodule Aesir.CharServer do
         state: 0
       }
 
-      {:ok, updated_session,
-       [account_id_ack, slot_config, char_list, charlist_notify, blocked_chars, pincode]}
+      {:ok, updated_session, [account_id_ack, slot_config, char_list, blocked_chars, pincode]}
     else
       {:error, reason}
       when reason in [
@@ -94,19 +89,22 @@ defmodule Aesir.CharServer do
            CharacterSession.update_session_for_character_selection(
              session_data,
              character
-           ) do
-      # TODO: Use ZoneServerService when available
-      zone_port = Application.get_env(:zone_server, :port, 5121)
-
+           ),
+         {:ok, zone_server} <- get_available_zone_server(character.last_map) do
       response = %HcNotifyZonesvr{
         char_id: character.id,
         map_name: character.last_map,
-        ip: {127, 0, 0, 1},
-        port: zone_port
+        ip: zone_server.ip,
+        port: zone_server.port
       }
 
       {:ok, updated_session, [response]}
     else
+      {:error, :no_zone_servers} ->
+        Logger.error("No zone servers available for character selection")
+        # TODO: Send proper error packet
+        {:ok, session_data}
+
       {:error, reason} ->
         Logger.error("Character selection failed for slot #{parsed_data.slot}: #{reason}")
         {:ok, session_data}
@@ -229,5 +227,30 @@ defmodule Aesir.CharServer do
       end
 
     %HcRefuseMakechar{reason: error_code}
+  end
+
+  defp get_available_zone_server(_map_name) do
+    # Get all zone servers from SessionManager
+    case SessionManager.get_servers(:zone_server) do
+      [] ->
+        {:error, :no_zone_servers}
+
+      servers ->
+        # Find online zone servers
+        online_servers =
+          servers
+          |> Enum.filter(fn server -> server.status == :online end)
+          |> Enum.sort_by(fn server -> server.player_count end)
+
+        case online_servers do
+          [] ->
+            {:error, :no_zone_servers}
+
+          [zone_server | _] ->
+            # For now, return the zone server with the least players
+            # Later we can check if the server has the specific map
+            {:ok, zone_server}
+        end
+    end
   end
 end
