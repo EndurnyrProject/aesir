@@ -77,6 +77,7 @@ defmodule Aesir.ZoneServer do
       {:ok, pid} ->
         send(pid, {:packet, packet_id, parsed_data})
         {:ok, session_data}
+
       :no_session ->
         Logger.warning(
           "Unhandled packet in ZoneServer: 0x#{Integer.to_string(packet_id, 16)} (no player session) - killing connection"

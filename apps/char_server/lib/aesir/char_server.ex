@@ -169,6 +169,7 @@ defmodule Aesir.CharServer do
       {:ok, characters} ->
         response = %HcAckCharinfoPerPage{characters: characters}
         {:ok, session_data, [response]}
+
       {:error, reason} ->
         Logger.error("Failed to refresh character list: #{inspect(reason)}")
         # Send empty character list on error

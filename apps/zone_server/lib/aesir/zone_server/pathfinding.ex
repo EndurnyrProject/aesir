@@ -70,20 +70,37 @@ defmodule Aesir.ZoneServer.Pathfinding do
 
         {open_set, g_scores} =
           get_neighbors(current.x, current.y)
-          |> Enum.reduce({open_set, g_scores}, &process_neighbor(&1, &2, map_data, closed_set, current, goal))
+          |> Enum.reduce(
+            {open_set, g_scores},
+            &process_neighbor(&1, &2, map_data, closed_set, current, goal)
+          )
 
         a_star_loop(map_data, open_set, closed_set, g_scores, goal)
       end
     end
   end
 
-  defp process_neighbor({nx, ny, move_cost}, {open_acc, g_acc}, map_data, closed_set, current, {goal_x, goal_y}) do
+  defp process_neighbor(
+         {nx, ny, move_cost},
+         {open_acc, g_acc},
+         map_data,
+         closed_set,
+         current,
+         {goal_x, goal_y}
+       ) do
     neighbor_pos = {nx, ny}
 
     if should_skip_neighbor?(neighbor_pos, closed_set, map_data, nx, ny) do
       {open_acc, g_acc}
     else
-      update_neighbor_if_better({nx, ny}, move_cost, {open_acc, g_acc}, current, {goal_x, goal_y}, neighbor_pos)
+      update_neighbor_if_better(
+        {nx, ny},
+        move_cost,
+        {open_acc, g_acc},
+        current,
+        {goal_x, goal_y},
+        neighbor_pos
+      )
     end
   end
 
@@ -93,7 +110,14 @@ defmodule Aesir.ZoneServer.Pathfinding do
       not walkable?(map_data, nx, ny)
   end
 
-  defp update_neighbor_if_better({nx, ny}, move_cost, {open_acc, g_acc}, current, {goal_x, goal_y}, neighbor_pos) do
+  defp update_neighbor_if_better(
+         {nx, ny},
+         move_cost,
+         {open_acc, g_acc},
+         current,
+         {goal_x, goal_y},
+         neighbor_pos
+       ) do
     tentative_g = current.g_score + move_cost
     current_g = Map.get(g_acc, neighbor_pos, :infinity)
 

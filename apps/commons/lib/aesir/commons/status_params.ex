@@ -170,4 +170,3 @@ defmodule Aesir.Commons.StatusParams do
     [:base_exp, :next_base_exp, :job_exp, :next_job_exp, :skill_point]
   end
 end
-
