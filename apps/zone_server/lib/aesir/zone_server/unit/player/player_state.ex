@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   @type direction :: 0..7
 
+  alias Aesir.ZoneServer.Unit.Player.Stats
+
   defstruct [
     # Position & Movement
     :x,
@@ -25,7 +27,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     :target_id,
     :is_trading,
     :is_vending,
-    :is_chatting
+    :is_chatting,
+
+    # Character Stats
+    :stats
   ]
 
   @doc """
@@ -54,7 +59,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       target_id: nil,
       is_trading: false,
       is_vending: false,
-      is_chatting: false
+      is_chatting: false,
+
+      # Character Stats
+      stats: Stats.from_character(character)
     }
   end
 

@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Packets.ZcParChange
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @doc """
@@ -67,15 +68,34 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.cast(pid, {:send_status_updates, status_map})
   end
 
+  @doc """
+  Updates a base stat and recalculates derived stats.
+  """
+  def update_base_stat(pid, stat_name, new_value)
+      when stat_name in [:str, :agi, :vit, :int, :dex, :luk] do
+    GenServer.call(pid, {:update_base_stat, stat_name, new_value})
+  end
+
+  @doc """
+  Recalculates all stats and synchronizes with client.
+  """
+  def recalculate_stats(pid) do
+    GenServer.call(pid, :recalculate_stats)
+  end
+
+  @doc """
+  Gets the current Stats struct.
+  """
+  def get_current_stats(pid) do
+    GenServer.call(pid, :get_current_stats)
+  end
+
   @impl true
   def init(args) do
     character = args[:character]
     connection_pid = args[:connection_pid]
-
-    # Create game state from character
     game_state = PlayerState.new(character)
 
-    # Build complete state
     state = %{
       character: character,
       game_state: game_state,
@@ -158,11 +178,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   def handle_info(
         {:packet, 0x007D, _packet_data},
-        %{character: character, connection_pid: connection_pid} = state
+        %{character: character, connection_pid: connection_pid, game_state: game_state} = state
       ) do
     Logger.debug("Player #{character.id} finished loading map (LoadEndAck)")
 
-    # Send initial weight status (sent immediately after inventory in rAthena)
     # TODO
     weight_updates = %{
       StatusParams.weight() => 0,
@@ -177,9 +196,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # Send experience and skill point status (sent later in LoadEndAck sequence)
     # TODO: the next base exp and job exp will come from a different place
     experience_updates = %{
-      StatusParams.base_exp() => character.base_exp,
       StatusParams.next_base_exp() => 100,
-      StatusParams.job_exp() => character.job_exp,
       StatusParams.next_job_exp() => 100,
       StatusParams.skill_point() => character.skill_point
     }
@@ -188,6 +205,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       packet = build_status_packet(param_id, value)
       send(connection_pid, {:send_packet, packet})
     end)
+
+    send_stat_updates(connection_pid, game_state.stats)
 
     # TODO: Send remaining initial game data to client
     # - Inventory list
@@ -382,6 +401,41 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
+  def handle_call({:update_base_stat, stat_name, new_value}, _from, state) do
+    stats = state.game_state.stats
+    updated_base_stats = Map.put(stats.base_stats, stat_name, new_value)
+    updated_stats = %{stats | base_stats: updated_base_stats}
+
+    # Recalculate all derived stats
+    updated_stats = Stats.calculate_stats(updated_stats)
+
+    # Update game state
+    updated_game_state = %{state.game_state | stats: updated_stats}
+    updated_state = %{state | game_state: updated_game_state}
+
+    # Send stat updates to client
+    send_stat_updates(state.connection_pid, updated_stats)
+
+    {:reply, :ok, updated_state}
+  end
+
+  @impl true
+  def handle_call(:recalculate_stats, _from, state) do
+    updated_stats = Stats.calculate_stats(state.game_state.stats)
+    updated_game_state = %{state.game_state | stats: updated_stats}
+    updated_state = %{state | game_state: updated_game_state}
+
+    send_stat_updates(state.connection_pid, updated_stats)
+
+    {:reply, updated_stats, updated_state}
+  end
+
+  @impl true
+  def handle_call(:get_current_stats, _from, state) do
+    {:reply, state.game_state.stats, state}
+  end
+
+  @impl true
   def terminate(_reason, %{
         character: character,
         game_state: game_state,
@@ -456,5 +510,42 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     }
 
     send(connection_pid, {:send_packet, packet})
+  end
+
+  defp send_stat_updates(connection_pid, %Stats{} = stats) do
+    status_updates = %{
+      # Base stats
+      StatusParams.str() => stats.base_stats.str,
+      StatusParams.agi() => stats.base_stats.agi,
+      StatusParams.vit() => stats.base_stats.vit,
+      StatusParams.int() => stats.base_stats.int,
+      StatusParams.dex() => stats.base_stats.dex,
+      StatusParams.luk() => stats.base_stats.luk,
+
+      # Derived stats
+      StatusParams.max_hp() => stats.derived_stats.max_hp,
+      StatusParams.max_sp() => stats.derived_stats.max_sp,
+      StatusParams.hp() => stats.current_state.hp,
+      StatusParams.sp() => stats.current_state.sp,
+      StatusParams.aspd() => stats.derived_stats.aspd,
+
+      # Combat stats
+      StatusParams.hit() => stats.combat_stats.hit,
+      StatusParams.flee1() => stats.combat_stats.flee,
+      StatusParams.critical() => stats.combat_stats.critical,
+      StatusParams.atk1() => stats.combat_stats.atk,
+      StatusParams.def1() => stats.combat_stats.def,
+
+      # Progression
+      StatusParams.base_level() => stats.progression.base_level,
+      StatusParams.job_level() => stats.progression.job_level,
+      StatusParams.base_exp() => stats.progression.base_exp,
+      StatusParams.job_exp() => stats.progression.job_exp
+    }
+
+    Enum.each(status_updates, fn {param_id, value} ->
+      packet = build_status_packet(param_id, value)
+      send(connection_pid, {:send_packet, packet})
+    end)
   end
 end
