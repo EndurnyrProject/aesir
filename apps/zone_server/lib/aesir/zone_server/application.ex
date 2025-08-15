@@ -62,7 +62,7 @@ defmodule Aesir.ZoneServer.Application do
 
   defp initialize_zone do
     with :ok <- SpatialIndex.init(),
-         :ok <- :ets.new(:zone_players, [:set, :public, :named_table]),
+         _ <- :ets.new(:zone_players, [:set, :public, :named_table]),
          {:ok, maps} <- MapCache.init() do
       maps
     end

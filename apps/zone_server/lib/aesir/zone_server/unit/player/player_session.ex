@@ -7,9 +7,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   use GenServer
   require Logger
 
+  alias Aesir.Commons.StatusParams
   alias Aesir.ZoneServer.Events
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Packets.ZcLongparChange
+  alias Aesir.ZoneServer.Packets.ZcParChange
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -47,6 +50,21 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   """
   def disconnect(pid) do
     GenServer.stop(pid, :normal)
+  end
+
+  @doc """
+  Sends a status update to this player.
+  Automatically chooses between ZC_PAR_CHANGE and ZC_LONGPAR_CHANGE based on value size.
+  """
+  def send_status_update(pid, param_id, value) do
+    GenServer.cast(pid, {:send_status_update, param_id, value})
+  end
+
+  @doc """
+  Sends multiple status updates to this player efficiently.
+  """
+  def send_status_updates(pid, status_map) when is_map(status_map) do
+    GenServer.cast(pid, {:send_status_updates, status_map})
   end
 
   @impl true
@@ -138,14 +156,43 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     {:noreply, %{state | game_state: game_state}}
   end
 
-  def handle_info({:packet, 0x007D, _packet_data}, %{character: character} = state) do
+  def handle_info(
+        {:packet, 0x007D, _packet_data},
+        %{character: character, connection_pid: connection_pid} = state
+      ) do
     Logger.debug("Player #{character.id} finished loading map (LoadEndAck)")
 
-    # TODO: Send initial game data to client
+    # Send initial weight status (sent immediately after inventory in rAthena)
+    # TODO
+    weight_updates = %{
+      StatusParams.weight() => 0,
+      StatusParams.max_weight() => 1000
+    }
+
+    Enum.each(weight_updates, fn {param_id, value} ->
+      packet = build_status_packet(param_id, value)
+      send(connection_pid, {:send_packet, packet})
+    end)
+
+    # Send experience and skill point status (sent later in LoadEndAck sequence)
+    # TODO: the next base exp and job exp will come from a different place
+    experience_updates = %{
+      StatusParams.base_exp() => character.base_exp,
+      StatusParams.next_base_exp() => 100,
+      StatusParams.job_exp() => character.job_exp,
+      StatusParams.next_job_exp() => 100,
+      StatusParams.skill_point() => character.skill_point
+    }
+
+    Enum.each(experience_updates, fn {param_id, value} ->
+      packet = build_status_packet(param_id, value)
+      send(connection_pid, {:send_packet, packet})
+    end)
+
+    # TODO: Send remaining initial game data to client
     # - Inventory list
     # - Equipment list
     # - Skill list
-    # - Status updates (weight, etc.)
     # - Spawn character on map for other players
     # - Send other visible entities
 
@@ -253,6 +300,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
+  def handle_info({:player_stopped, char_id, x, y}, %{character: character} = state) do
+    if char_id != character.id do
+      # TODO: Send ZC_NOTIFY_MOVE_STOP packet
+      Logger.debug("Player #{char_id} stopped at (#{x},#{y})")
+    end
+
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_cast(
         {:request_move, dest_x, dest_y},
         %{character: character, game_state: game_state} = state
@@ -297,6 +354,29 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
+  def handle_cast(
+        {:send_status_update, param_id, value},
+        %{connection_pid: connection_pid} = state
+      ) do
+    packet = build_status_packet(param_id, value)
+    send(connection_pid, {:send_packet, packet})
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast(
+        {:send_status_updates, status_map},
+        %{connection_pid: connection_pid} = state
+      ) do
+    Enum.each(status_map, fn {param_id, value} ->
+      packet = build_status_packet(param_id, value)
+      send(connection_pid, {:send_packet, packet})
+    end)
+
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_call(:get_state, _from, state) do
     {:reply, state, state}
   end
@@ -321,6 +401,21 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     end
 
     :ok
+  end
+
+  defp build_status_packet(param_id, value) do
+    experience_params = [
+      StatusParams.base_exp(),
+      StatusParams.job_exp(),
+      StatusParams.next_base_exp(),
+      StatusParams.next_job_exp()
+    ]
+
+    if param_id in experience_params do
+      %ZcLongparChange{var_id: param_id, value: value}
+    else
+      %ZcParChange{var_id: param_id, value: value}
+    end
   end
 
   defp register_player(char_id), do: :ets.insert(:zone_players, {char_id, self()})

@@ -28,7 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSupervisor do
     connection_pid = args[:connection_pid] || args["connection_pid"]
 
     child_spec = {
-      Aesir.ZoneServer.PlayerSession,
+      Aesir.ZoneServer.Unit.Player.PlayerSession,
       [character: character, connection_pid: connection_pid]
     }
 

@@ -17,6 +17,8 @@ defmodule Aesir.ZoneServer.PacketRegistry do
     Aesir.ZoneServer.Packets.ZcNotifyTime2,
     Aesir.ZoneServer.Packets.ZcNotifyMove,
     Aesir.ZoneServer.Packets.ZcNotifyPlayermove,
-    Aesir.ZoneServer.Packets.ZcNotifyMoveStop
+    Aesir.ZoneServer.Packets.ZcNotifyMoveStop,
+    Aesir.ZoneServer.Packets.ZcParChange,
+    Aesir.ZoneServer.Packets.ZcLongparChange
   ]
 end
