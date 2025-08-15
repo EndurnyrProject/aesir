@@ -5,11 +5,16 @@ defmodule Aesir.ZoneServer.Application do
 
   require Logger
 
+  alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Map.MapCache
+
   @impl true
   def start(_type, _args) do
     ref = make_ref()
+    maps = initialize_zone()
 
     children = [
+      Aesir.ZoneServer.Unit.Player.PlayerSupervisor,
       {Aesir.Commons.Network.Listener,
        connection_module: Aesir.ZoneServer,
        packet_registry: Aesir.ZoneServer.PacketRegistry,
@@ -37,7 +42,7 @@ defmodule Aesir.ZoneServer.Application do
         server_id = "zone_server_#{Node.self()}"
 
         metadata = %{
-          maps: ["prontera", "morocc", "geffen", "payon", "alberta"]
+          maps: maps
         }
 
         Aesir.Commons.SessionManager.register_server(
@@ -48,10 +53,17 @@ defmodule Aesir.ZoneServer.Application do
           1000,
           metadata
         )
-        |> dbg()
 
       {:error, reason} ->
         Logger.error("Failed to start Aesir ZoneServer: #{inspect(reason)}")
     end)
+  end
+
+  defp initialize_zone() do
+    with :ok <- SpatialIndex.init(),
+         :ok <- :ets.new(:zone_players, [:set, :public, :named_table]),
+         {:ok, maps} <- MapCache.init() do
+      maps
+    end
   end
 end

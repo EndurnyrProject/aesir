@@ -42,9 +42,14 @@ defmodule Aesir.ZoneServer.Packets.ZcAcceptEnter do
   end
 
   defp encode_position(x, y, dir) do
-    # Pack position and direction into 3 bytes
-    # Format: 10 bits for X, 10 bits for Y, 4 bits for direction
-    value = (x &&& 0x3FF) ||| (y &&& 0x3FF) <<< 10 ||| (dir &&& 0x0F) <<< 20
-    <<value::24-little>>
+    # Use WBUFPOS format - same as used in rAthena
+    # byte0: x >> 2
+    # byte1: (x << 6) | (y >> 4)
+    # byte2: (y << 4) | (dir & 0xF)
+    byte0 = x >>> 2
+    byte1 = ((x <<< 6) ||| ((y >>> 4) &&& 0x3F)) &&& 0xFF
+    byte2 = ((y <<< 4) ||| (dir &&& 0x0F)) &&& 0xFF
+    
+    <<byte0, byte1, byte2>>
   end
 end

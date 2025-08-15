@@ -42,10 +42,11 @@ defmodule Aesir.Commons.Network.Connection do
       defdelegate set_session_data(conn_pid, session_data), to: Aesir.Commons.Network.Connection
 
       defdelegate init(args), to: Aesir.Commons.Network.Connection
-      defdelegate handle_continue(msg, state), to: Aesir.Commons.Network.Connection
-      defdelegate handle_info(msg, state), to: Aesir.Commons.Network.Connection
-      defdelegate handle_call(msg, from, state), to: Aesir.Commons.Network.Connection
       defdelegate terminate(reason, state), to: Aesir.Commons.Network.Connection
+
+      defdelegate handle_info(msg, state), to: Aesir.Commons.Network.Connection
+      defdelegate handle_continue(msg, state), to: Aesir.Commons.Network.Connection
+      defdelegate handle_call(msg, from, state), to: Aesir.Commons.Network.Connection
 
       defoverridable handle_continue: 2, handle_info: 2, handle_call: 3, terminate: 2
     end
@@ -103,6 +104,7 @@ defmodule Aesir.Commons.Network.Connection do
   def send_packet(conn_pid, packet) do
     module = packet.__struct__
     packet_data = module.build(packet)
+    Logger.debug("Sending packet data: #{Base.encode16(packet_data)}")
     GenServer.call(conn_pid, {:send_packet, packet_data})
   end
 
@@ -165,9 +167,14 @@ defmodule Aesir.Commons.Network.Connection do
     {:stop, {:socket_error, reason}, state}
   end
 
-  def handle_info(_, %{socket: socket} = state) do
-    state.transport.close(socket)
-    {:stop, :shutdown, state}
+  def handle_info(msg, %{impl_module: impl_module} = state) do
+    if function_exported?(impl_module, :handle_info, 2) do
+      impl_module.handle_info(msg, state)
+    else
+      Logger.warning("Unhandled message in Connection: #{inspect(msg)}")
+      state.transport.close(state.socket)
+      {:stop, :shutdown, state}
+    end
   end
 
   @impl GenServer
@@ -264,9 +271,9 @@ defmodule Aesir.Commons.Network.Connection do
     end
   end
 
-  defp handle_unknown_packet(packet_id, state) do
-    Logger.warning("No handler for packet #{format_packet_id(packet_id)}")
-    {:ok, state}
+  defp handle_unknown_packet(packet_id, _state) do
+    Logger.warning("No handler for packet #{format_packet_id(packet_id)} - killing connection")
+    {:error, {:unknown_packet, packet_id}}
   end
 
   defp handle_packet_with_module(packet_id, packet_data, module, state) do

@@ -194,4 +194,3 @@ defmodule Aesir.ZoneServer.Pathfinding do
     dx1 * dy2 == dy1 * dx2
   end
 end
-

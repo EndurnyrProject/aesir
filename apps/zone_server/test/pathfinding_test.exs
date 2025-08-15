@@ -160,4 +160,3 @@ defmodule Aesir.ZoneServer.PathfindingTest do
     end
   end
 end
-
