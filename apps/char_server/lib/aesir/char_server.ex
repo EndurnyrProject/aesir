@@ -9,20 +9,20 @@ defmodule Aesir.CharServer do
 
   alias Aesir.CharServer.Characters
   alias Aesir.CharServer.CharacterSession
-  alias Aesir.Commons.SessionManager
   alias Aesir.CharServer.Packets.AccountIdAck
+  alias Aesir.CharServer.Packets.ChReqCharDelete2
   alias Aesir.CharServer.Packets.HcAcceptEnter
   alias Aesir.CharServer.Packets.HcAcceptMakechar
+  alias Aesir.CharServer.Packets.HcAckCharinfoPerPage
   alias Aesir.CharServer.Packets.HcBlockCharacter
   alias Aesir.CharServer.Packets.HcCharacterList
+  alias Aesir.CharServer.Packets.HcCharDelete2Ack
   alias Aesir.CharServer.Packets.HcDeleteChar
   alias Aesir.CharServer.Packets.HcNotifyZonesvr
   alias Aesir.CharServer.Packets.HcRefuseEnter
   alias Aesir.CharServer.Packets.HcRefuseMakechar
   alias Aesir.CharServer.Packets.HcSecondPasswdLogin
-  alias Aesir.CharServer.Packets.HcAckCharinfoPerPage
-  alias Aesir.CharServer.Packets.ChReqCharDelete2
-  alias Aesir.CharServer.Packets.HcCharDelete2Ack
+  alias Aesir.Commons.SessionManager
 
   @impl Aesir.Commons.Network.Connection
   def handle_packet(0x0065, parsed_data, session_data) do
@@ -165,10 +165,10 @@ defmodule Aesir.CharServer do
 
     account_id = session_data[:account_id]
 
-    with {:ok, characters} <- Characters.list_characters(account_id, session_data) do
-      response = %HcAckCharinfoPerPage{characters: characters}
-      {:ok, session_data, [response]}
-    else
+    case Characters.list_characters(account_id, session_data) do
+      {:ok, characters} ->
+        response = %HcAckCharinfoPerPage{characters: characters}
+        {:ok, session_data, [response]}
       {:error, reason} ->
         Logger.error("Failed to refresh character list: #{inspect(reason)}")
         # Send empty character list on error
@@ -201,6 +201,7 @@ defmodule Aesir.CharServer do
     {:ok, session_data}
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp creation_error(error_reason) do
     error_code =
       case error_reason do
@@ -211,7 +212,7 @@ defmodule Aesir.CharServer do
         :name_invalid_chars -> 1
         :name_forbidden -> 1
         :name_required -> 1
-        # Stats-related errors  
+        # Stats-related errors
         :stats_invalid_total -> 2
         :stats_out_of_range -> 2
         # Slot-related errors

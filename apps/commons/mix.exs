@@ -42,6 +42,7 @@ defmodule Commons.MixProject do
       {:phoenix_pubsub, "~> 2.1"},
       {:postgrex, ">= 0.0.0"},
       {:ranch, "~> 2.2"},
+      {:recode, github: "hrzndhrn/recode", branch: "0.8.0-dev", only: [:dev], runtime: false},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false}
     ]
   end

@@ -16,7 +16,6 @@ defmodule Aesir.Commons.MementoCluster.Supervisor do
 
     children = [
       {Aesir.Commons.MementoCluster.Manager, []},
-      # SessionManager starts after Manager, ensuring tables are ready
       {Aesir.Commons.SessionManager, []}
     ]
 

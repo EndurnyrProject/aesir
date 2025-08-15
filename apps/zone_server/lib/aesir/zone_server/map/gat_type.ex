@@ -83,4 +83,3 @@ defmodule Aesir.ZoneServer.Map.GatType do
     gat_type >= 0 and gat_type <= 6
   end
 end
-

@@ -7,8 +7,8 @@ defmodule Aesir.Commons.SessionManagerTest do
   alias Aesir.Commons.InterServer.Schemas.OnlineUser
   alias Aesir.Commons.InterServer.Schemas.ServerStatus
   alias Aesir.Commons.InterServer.Schemas.Session
-  alias Aesir.Commons.SessionManager
   alias Aesir.Commons.MementoTestHelper
+  alias Aesir.Commons.SessionManager
 
   setup do
     # Clear all tables for clean test state

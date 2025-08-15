@@ -1,10 +1,10 @@
 defmodule Aesir.ZoneServer.Map.Coordinator do
   use GenServer
+
   require Logger
 
-  alias Phoenix.PubSub
-
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Phoenix.PubSub
 
   defstruct [
     :map_name,

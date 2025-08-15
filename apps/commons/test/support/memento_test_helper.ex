@@ -4,12 +4,10 @@ defmodule Aesir.Commons.MementoTestHelper do
   Provides utilities to recreate tables with updated schemas.
   """
 
-  alias Aesir.Commons.InterServer.Schemas.{
-    CharacterLocation,
-    OnlineUser,
-    ServerStatus,
-    Session
-  }
+  alias Aesir.Commons.InterServer.Schemas.CharacterLocation
+  alias Aesir.Commons.InterServer.Schemas.OnlineUser
+  alias Aesir.Commons.InterServer.Schemas.ServerStatus
+  alias Aesir.Commons.InterServer.Schemas.Session
 
   require Logger
 
@@ -89,6 +87,7 @@ defmodule Aesir.Commons.MementoTestHelper do
           # Get the key field (first attribute in the table definition)
           attrs = get_table_attributes(table_module)
 
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           if attrs == [] do
             Logger.warning("No attributes found for table #{inspect(table_module)}")
           else
@@ -222,7 +221,7 @@ defmodule Aesir.Commons.MementoTestHelper do
         [:char_id, :account_id, :map_name, :x, :y, :node, :last_update]
 
       _ ->
-        # Try to get from Mnesia if table exists  
+        # Try to get from Mnesia if table exists
         try do
           :mnesia.table_info(table_module, :attributes)
         rescue

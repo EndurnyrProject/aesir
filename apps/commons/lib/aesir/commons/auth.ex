@@ -129,6 +129,7 @@ defmodule Aesir.Commons.Auth do
   @doc """
   Gets account state description for debugging.
   """
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def get_account_state_description(state) do
     case state do
       0 -> "Normal"

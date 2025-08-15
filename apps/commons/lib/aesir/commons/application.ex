@@ -3,6 +3,8 @@ defmodule Aesir.Commons.Application do
 
   use Application
 
+  alias Aesir.Commons.Banner
+
   @impl true
   def start(_type, _args) do
     display_banner_for_starting_apps()
@@ -23,13 +25,13 @@ defmodule Aesir.Commons.Application do
   defp display_banner_for_starting_apps do
     cond do
       app_loaded?(:account_server) ->
-        Aesir.Commons.Banner.display(:account)
+        Banner.display(:account)
 
       app_loaded?(:char_server) ->
-        Aesir.Commons.Banner.display(:char)
+        Banner.display(:char)
 
       app_loaded?(:zone_server) ->
-        Aesir.Commons.Banner.display(:zone)
+        Banner.display(:zone)
 
       true ->
         :ok

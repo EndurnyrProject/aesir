@@ -94,8 +94,8 @@ defmodule Aesir.ZoneServer.Map.MapData do
   @doc """
   Checks if a position is walkable.
   """
-  @spec is_walkable?(t(), integer(), integer()) :: boolean()
-  def is_walkable?(map, x, y) do
+  @spec walkable?(t(), integer(), integer()) :: boolean()
+  def walkable?(map, x, y) do
     case get_cell(map, x, y) do
       nil -> false
       gat_type -> GatType.is_walkable?(gat_type)
@@ -118,6 +118,7 @@ defmodule Aesir.ZoneServer.Map.MapData do
   Based on rAthena's map_getcellp function.
   """
   @spec check_cell(t(), integer(), integer(), atom()) :: boolean() | integer()
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def check_cell(map, x, y, check_type) do
     gat_type = get_cell(map, x, y)
     dynamic = Map.get(map.dynamic_cells, y * map.xs + x, %{})

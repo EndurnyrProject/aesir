@@ -5,6 +5,8 @@ defmodule Aesir.CharServer.Application do
 
   require Logger
 
+  alias Aesir.Commons.SessionManager
+
   @impl true
   def start(_type, _args) do
     ref = make_ref()
@@ -46,7 +48,7 @@ defmodule Aesir.CharServer.Application do
           cluster_id: cluster_id
         }
 
-        Aesir.Commons.SessionManager.register_server(
+        SessionManager.register_server(
           server_id,
           :char_server,
           ip,

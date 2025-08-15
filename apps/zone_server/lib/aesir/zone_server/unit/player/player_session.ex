@@ -9,10 +9,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   alias Aesir.ZoneServer.Events
   alias Aesir.ZoneServer.Geometry
+  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Pathfinding
-  alias Aesir.ZoneServer.Map.MapCache
 
   @doc """
   Starts a player session linked to a connection process.
@@ -143,7 +143,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
     # TODO: Send initial game data to client
     # - Inventory list
-    # - Equipment list  
+    # - Equipment list
     # - Skill list
     # - Status updates (weight, etc.)
     # - Spawn character on map for other players

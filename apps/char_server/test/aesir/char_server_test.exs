@@ -5,12 +5,12 @@ defmodule Aesir.CharServerTest do
   import ExUnit.CaptureLog
 
   alias Aesir.CharServer
-  alias Aesir.CharServer.CharacterSession
   alias Aesir.CharServer.Characters
+  alias Aesir.CharServer.CharacterSession
   alias Aesir.CharServer.Packets.HcAcceptEnter
-  alias Aesir.CharServer.Packets.HcRefuseEnter
   alias Aesir.CharServer.Packets.HcDeleteChar
   alias Aesir.CharServer.Packets.HcNotifyZonesvr
+  alias Aesir.CharServer.Packets.HcRefuseEnter
 
   describe "handle_packet/3 for packet 0x0065 (character list request)" do
     test "successfully handles character list request with valid session" do

@@ -5,8 +5,9 @@ defmodule Aesir.ZoneServer.Application do
 
   require Logger
 
-  alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.Commons.SessionManager
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @impl true
   def start(_type, _args) do
@@ -45,7 +46,7 @@ defmodule Aesir.ZoneServer.Application do
           maps: maps
         }
 
-        Aesir.Commons.SessionManager.register_server(
+        SessionManager.register_server(
           server_id,
           :zone_server,
           ip,
@@ -59,7 +60,7 @@ defmodule Aesir.ZoneServer.Application do
     end)
   end
 
-  defp initialize_zone() do
+  defp initialize_zone do
     with :ok <- SpatialIndex.init(),
          :ok <- :ets.new(:zone_players, [:set, :public, :named_table]),
          {:ok, maps} <- MapCache.init() do

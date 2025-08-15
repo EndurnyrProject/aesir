@@ -14,6 +14,7 @@ defmodule Aesir.CharServer.Characters do
   alias Aesir.CharServer.Auth
   alias Aesir.Commons.InterServer.PubSub
   alias Aesir.Commons.Models.Character
+  alias Aesir.Commons.SessionManager
   alias Aesir.Repo
 
   @doc """
@@ -62,8 +63,9 @@ defmodule Aesir.CharServer.Characters do
   Sets a deletion date instead of immediately deleting the character.
   The character will be deleted after the configured delay (default 24 hours).
   """
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def request_character_deletion(char_id, account_id) do
-    deletion_delay = Application.get_env(:char_server, :deletion_delay, 86400)
+    deletion_delay = Application.get_env(:char_server, :deletion_delay, 86_400)
 
     Ecto.Multi.new()
     |> Ecto.Multi.run(:character_lookup, fn _repo, _changes ->
@@ -159,9 +161,9 @@ defmodule Aesir.CharServer.Characters do
   Retrieves characters for an account with session validation.
   """
   def list_characters(account_id, session_data) do
-    with {:ok, _session} <- validate_session_for_account(account_id, session_data),
-         {:ok, characters} <- get_characters_by_account(account_id) do
-      {:ok, characters}
+    case validate_session_for_account(account_id, session_data) do
+      {:ok, _session} -> get_characters_by_account(account_id)
+      error -> error
     end
   end
 
@@ -295,7 +297,7 @@ defmodule Aesir.CharServer.Characters do
   defp validate_deletion_eligibility(character) do
     # TODO: Add additional validation checks:
     # - Guild membership
-    # - Party membership  
+    # - Party membership
     # - Marriage status
     # - Pending mail/auctions
     # - Email verification if required
@@ -348,7 +350,7 @@ defmodule Aesir.CharServer.Characters do
   end
 
   defp update_character_location(character) do
-    Aesir.Commons.SessionManager.update_character_location(
+    SessionManager.update_character_location(
       character.id,
       character.account_id,
       character.last_map,

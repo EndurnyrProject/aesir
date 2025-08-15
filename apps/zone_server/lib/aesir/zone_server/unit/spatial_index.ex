@@ -58,6 +58,7 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
           [{^old_cell, players}] ->
             updated = MapSet.delete(players, char_id)
 
+            # credo:disable-for-next-line Credo.Check.Refactor.Nesting
             if MapSet.size(updated) == 0 do
               :ets.delete(:spatial_index, old_cell)
             else
@@ -100,6 +101,7 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
           [{^cell, players}] ->
             updated = MapSet.delete(players, char_id)
 
+            # credo:disable-for-next-line Credo.Check.Refactor.Nesting
             if MapSet.size(updated) == 0 do
               :ets.delete(:spatial_index, cell)
             else

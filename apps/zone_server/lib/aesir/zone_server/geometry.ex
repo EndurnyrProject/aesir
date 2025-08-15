@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Geometry do
   - 6: West
   - 7: Northwest
   """
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def calculate_direction(from_x, from_y, to_x, to_y) do
     dx = to_x - from_x
     dy = to_y - from_y
@@ -104,4 +105,3 @@ defmodule Aesir.ZoneServer.Geometry do
     end
   end
 end
-

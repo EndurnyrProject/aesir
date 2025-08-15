@@ -4,8 +4,8 @@ defmodule Aesir.ZoneServer.Events.Player do
   Handles spawn, despawn, and state change notifications.
   """
 
-  alias Phoenix.PubSub
   alias Aesir.ZoneServer.Geometry
+  alias Phoenix.PubSub
 
   @pubsub Aesir.PubSub
 
@@ -84,4 +84,3 @@ defmodule Aesir.ZoneServer.Events.Player do
     }
   end
 end
-

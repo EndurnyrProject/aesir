@@ -12,6 +12,8 @@ defmodule Aesir.CharServer.Packets.HcAckCharinfoPerPage do
   """
   use Aesir.Commons.Network.Packet
 
+  alias Aesir.Commons.Utils
+
   @packet_id 0x099D
   @packet_size -1
   @char_size 106
@@ -162,58 +164,68 @@ defmodule Aesir.CharServer.Packets.HcAckCharinfoPerPage do
 
   defp serialize_character(character) do
     name = pack_string(character.name, 24)
+    char_slot = get_char_slot(character)
+    sex_flag = get_sex_flag(character.sex)
+    map_name = pack_string(Utils.get_field(character.last_map, "prontera"), 16)
 
     <<
       character.id::32-little,
-      character.base_exp || 0::64-little,
-      character.zeny || 0::32-little,
-      character.job_exp || 0::64-little,
-      character.job_level || 1::32-little,
+      Utils.get_field(character.base_exp, 0)::64-little,
+      Utils.get_field(character.zeny, 0)::32-little,
+      Utils.get_field(character.job_exp, 0)::64-little,
+      Utils.get_field(character.job_level, 1)::32-little,
       # bodystate (opt1)
       0::32-little,
       # healthstate (opt2)
       0::32-little,
-      character.option || 0::32-little,
-      character.karma || 0::32-little,
-      character.manner || 0::32-little,
-      character.status_point || 0::16-little,
-      character.hp || 40::64-little,
-      character.max_hp || 40::64-little,
-      character.sp || 11::64-little,
-      character.max_sp || 11::64-little,
+      Utils.get_field(character.option, 0)::32-little,
+      Utils.get_field(character.karma, 0)::32-little,
+      Utils.get_field(character.manner, 0)::32-little,
+      Utils.get_field(character.status_point, 0)::16-little,
+      Utils.get_field(character.hp, 40)::64-little,
+      Utils.get_field(character.max_hp, 40)::64-little,
+      Utils.get_field(character.sp, 11)::64-little,
+      Utils.get_field(character.max_sp, 11)::64-little,
       # speed
       150::16-little,
-      character.class || 0::16-little,
-      character.hair || 1::16-little,
+      Utils.get_field(character.class, 0)::16-little,
+      Utils.get_field(character.hair, 1)::16-little,
       # body field
       0::16-little,
-      character.weapon || 0::16-little,
-      character.base_level || 1::16-little,
-      character.skill_point || 0::16-little,
-      character.head_bottom || 0::16-little,
-      character.shield || 0::16-little,
-      character.head_top || 0::16-little,
-      character.head_mid || 0::16-little,
-      character.hair_color || 0::16-little,
-      character.clothes_color || 0::16-little,
+      Utils.get_field(character.weapon, 0)::16-little,
+      Utils.get_field(character.base_level, 1)::16-little,
+      Utils.get_field(character.skill_point, 0)::16-little,
+      Utils.get_field(character.head_bottom, 0)::16-little,
+      Utils.get_field(character.shield, 0)::16-little,
+      Utils.get_field(character.head_top, 0)::16-little,
+      Utils.get_field(character.head_mid, 0)::16-little,
+      Utils.get_field(character.hair_color, 0)::16-little,
+      Utils.get_field(character.clothes_color, 0)::16-little,
       name::binary-size(24),
-      character.str || 1::8,
-      character.agi || 1::8,
-      character.vit || 1::8,
-      character.int || 1::8,
-      character.dex || 1::8,
-      character.luk || 1::8,
-      character.char_num || character.slot || 0::8,
-      character.hair_color || 0::8,
-      character.rename || 0::16-little,
-      pack_string(character.last_map || "prontera", 16)::binary,
+      Utils.get_field(character.str, 1)::8,
+      Utils.get_field(character.agi, 1)::8,
+      Utils.get_field(character.vit, 1)::8,
+      Utils.get_field(character.int, 1)::8,
+      Utils.get_field(character.dex, 1)::8,
+      Utils.get_field(character.luk, 1)::8,
+      char_slot::8,
+      Utils.get_field(character.hair_color, 0)::8,
+      Utils.get_field(character.rename, 0)::16-little,
+      map_name::binary,
       # DelRevDate
       0::32-little,
-      character.robe || 0::32-little,
+      Utils.get_field(character.robe, 0)::32-little,
       # chr_slot_changeCnt
       0::32-little,
-      character.rename || 0::32-little,
-      if(character.sex == "M", do: 1, else: 0)::8
+      Utils.get_field(character.rename, 0)::32-little,
+      sex_flag::8
     >>
   end
+
+  defp get_char_slot(character) do
+    Utils.get_field(character.char_num, Utils.get_field(character.slot, 0))
+  end
+
+  defp get_sex_flag("M"), do: 1
+  defp get_sex_flag(_), do: 0
 end

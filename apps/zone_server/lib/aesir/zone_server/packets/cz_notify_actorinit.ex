@@ -1,13 +1,13 @@
 defmodule Aesir.ZoneServer.Packets.CzNotifyActorinit do
   @moduledoc """
   CZ_NOTIFY_ACTORINIT packet (0x007D) - Client notifies that map loading is complete.
-  
+
   This packet is sent by the client after it finishes loading the map data.
   The server should respond with character spawn data, inventory, skills, etc.
-  
+
   Structure:
   - packet_type: 2 bytes (0x007D)
-  
+
   Total size: 2 bytes
   """
   use Aesir.Commons.Network.Packet

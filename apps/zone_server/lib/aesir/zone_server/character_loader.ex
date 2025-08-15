@@ -6,8 +6,8 @@ defmodule Aesir.ZoneServer.CharacterLoader do
 
   require Logger
 
-  alias Aesir.Repo
   alias Aesir.Commons.Models.Character
+  alias Aesir.Repo
 
   @doc """
   Loads a character from the database and validates ownership.
@@ -43,4 +43,3 @@ defmodule Aesir.ZoneServer.CharacterLoader do
     end
   end
 end
-

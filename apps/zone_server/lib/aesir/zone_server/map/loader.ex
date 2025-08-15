@@ -5,7 +5,9 @@ defmodule Aesir.ZoneServer.Map.Loader do
 
   require Logger
 
-  alias Aesir.ZoneServer.Map.{MapData, GatLoader, CacheLoader}
+  alias Aesir.ZoneServer.Map.CacheLoader
+  alias Aesir.ZoneServer.Map.GatLoader
+  alias Aesir.ZoneServer.Map.MapData
 
   @doc """
   Loads a map by name, trying cache first, then GAT file.
@@ -48,6 +50,7 @@ defmodule Aesir.ZoneServer.Map.Loader do
             path = Path.join(gat_directory, file)
             map_name = Path.basename(file, ".gat")
 
+            # credo:disable-for-next-line Credo.Check.Refactor.Nesting
             case GatLoader.load_file(path) do
               {:ok, map_data} ->
                 Logger.info("Loaded GAT file: #{map_name}")

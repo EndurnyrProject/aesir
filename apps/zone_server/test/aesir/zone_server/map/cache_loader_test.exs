@@ -1,7 +1,9 @@
 defmodule Aesir.ZoneServer.Map.CacheLoaderTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.Map.{CacheLoader, MapData}
+  alias Aesir.ZoneServer.Map.CacheLoader
+  alias Aesir.ZoneServer.Map.GatType
+  alias Aesir.ZoneServer.Map.MapData
 
   @cache_path Path.join(:code.priv_dir(:zone_server), "maps.mcache")
 
@@ -79,10 +81,10 @@ defmodule Aesir.ZoneServer.Map.CacheLoaderTest do
           gat_type
         end
 
-      walkable_count = Enum.count(cells_sample, &Aesir.ZoneServer.Map.GatType.is_walkable?/1)
+      walkable_count = Enum.count(cells_sample, &GatType.is_walkable?/1)
 
       non_walkable_count =
-        Enum.count(cells_sample, &(not Aesir.ZoneServer.Map.GatType.is_walkable?(&1)))
+        Enum.count(cells_sample, &(not GatType.is_walkable?(&1)))
 
       assert walkable_count > 0, "No walkable cells found"
       assert non_walkable_count > 0, "No non-walkable cells found"

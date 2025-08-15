@@ -9,6 +9,7 @@ defmodule Aesir.DataCase do
       import Aesir.DataCase
 
       alias Aesir.Repo
+      alias Ecto.Adapters.SQL
     end
   end
 
@@ -21,8 +22,9 @@ defmodule Aesir.DataCase do
   Sets up the sandbox based on the test tags.
   """
   def setup_sandbox(tags) do
-    pid = Ecto.Adapters.SQL.Sandbox.start_owner!(Aesir.Repo, shared: not tags[:async])
-    on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
+    alias Ecto.Adapters.SQL
+    pid = SQL.Sandbox.start_owner!(Aesir.Repo, shared: not tags[:async])
+    on_exit(fn -> SQL.Sandbox.stop_owner(pid) end)
   end
 
   @doc """

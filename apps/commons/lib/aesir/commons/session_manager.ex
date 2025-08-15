@@ -150,6 +150,7 @@ defmodule Aesir.Commons.SessionManager do
             {:error, :session_not_found}
 
           session ->
+            # credo:disable-for-next-line Credo.Check.Refactor.Nesting
             if session.login_id1 == login_id1 and session.login_id2 == login_id2 do
               updated_session = Session.update_activity(session)
               Memento.Query.write(updated_session)
@@ -206,6 +207,7 @@ defmodule Aesir.Commons.SessionManager do
         session = Memento.Query.read(Session, account_id)
 
         if session do
+          # credo:disable-for-lines:5 Credo.Check.Refactor.Nesting
           updated_session =
             case server_type do
               :char_server -> Session.transition_to_char_server(session)
@@ -290,6 +292,7 @@ defmodule Aesir.Commons.SessionManager do
   def handle_call({:get_online_count, server_type}, _from, state) do
     count =
       case Memento.transaction(fn ->
+             # credo:disable-for-next-line Credo.Check.Refactor.Nesting
              guards = if server_type, do: [{:==, :server_type, server_type}], else: []
              Memento.Query.select(OnlineUser, guards)
            end) do
@@ -355,6 +358,7 @@ defmodule Aesir.Commons.SessionManager do
   def handle_call({:get_servers, server_type}, _from, state) do
     servers =
       case Memento.transaction(fn ->
+             # credo:disable-for-next-line Credo.Check.Refactor.Nesting
              guards = if server_type, do: [{:==, :server_type, server_type}], else: []
              Memento.Query.select(ServerStatus, guards)
            end) do

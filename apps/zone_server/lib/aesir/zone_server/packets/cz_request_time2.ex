@@ -1,13 +1,13 @@
 defmodule Aesir.ZoneServer.Packets.CzRequestTime2 do
   @moduledoc """
   CZ_REQUEST_TIME2 (0x0360) - Client requests server time.
-  
+
   The client periodically sends this to sync time with the server.
-  
+
   Structure:
   - packet_type: 2 bytes (0x0360)
   - client_time: 4 bytes
-  
+
   Total size: 6 bytes
   """
   use Aesir.Commons.Network.Packet

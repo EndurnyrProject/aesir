@@ -7,6 +7,8 @@ defmodule Aesir.AccountServer.Application do
 
   require Logger
 
+  alias Aesir.Commons.SessionManager
+
   @impl true
   def start(_type, _args) do
     ref = make_ref()
@@ -32,7 +34,7 @@ defmodule Aesir.AccountServer.Application do
 
         server_id = "account_server_#{Node.self()}"
 
-        Aesir.Commons.SessionManager.register_server(
+        SessionManager.register_server(
           server_id,
           :account_server,
           ip,

@@ -1,7 +1,8 @@
 defmodule Aesir.ZoneServer.Map.MapDataTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.Map.{MapData, GatType}
+  alias Aesir.ZoneServer.Map.GatType
+  alias Aesir.ZoneServer.Map.MapData
 
   describe "new/3" do
     test "creates a new map with given dimensions" do
@@ -84,7 +85,7 @@ defmodule Aesir.ZoneServer.Map.MapDataTest do
     end
   end
 
-  describe "is_walkable?/3" do
+  describe "walkable?/3" do
     setup do
       map =
         MapData.new("test_map", 10, 10)
@@ -101,18 +102,18 @@ defmodule Aesir.ZoneServer.Map.MapDataTest do
     end
 
     test "returns true for walkable cells", %{map: map} do
-      assert MapData.is_walkable?(map, 6, 6) == true
-      assert MapData.is_walkable?(map, 8, 8) == true
+      assert MapData.walkable?(map, 6, 6) == true
+      assert MapData.walkable?(map, 8, 8) == true
     end
 
     test "returns false for non-walkable cells", %{map: map} do
-      assert MapData.is_walkable?(map, 5, 5) == false
-      assert MapData.is_walkable?(map, 7, 7) == false
+      assert MapData.walkable?(map, 5, 5) == false
+      assert MapData.walkable?(map, 7, 7) == false
     end
 
     test "returns false for out of bounds", %{map: map} do
-      assert MapData.is_walkable?(map, -1, 0) == false
-      assert MapData.is_walkable?(map, 100, 100) == false
+      assert MapData.walkable?(map, -1, 0) == false
+      assert MapData.walkable?(map, 100, 100) == false
     end
   end
 

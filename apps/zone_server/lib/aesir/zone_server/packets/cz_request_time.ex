@@ -1,14 +1,14 @@
 defmodule Aesir.ZoneServer.Packets.CzRequestTime do
   @moduledoc """
   CZ_REQUEST_TIME packet (0x007E) - Client sends its tick/timestamp.
-  
+
   This packet is sent periodically by the client with its current tick.
   The server should respond with ZC_NOTIFY_TIME.
-  
+
   Structure:
   - packet_type: 2 bytes (0x007E)
   - client_tick: 4 bytes
-  
+
   Total size: 6 bytes
   """
   use Aesir.Commons.Network.Packet

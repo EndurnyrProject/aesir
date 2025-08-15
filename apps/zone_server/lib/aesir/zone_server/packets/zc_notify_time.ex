@@ -1,13 +1,13 @@
 defmodule Aesir.ZoneServer.Packets.ZcNotifyTime do
   @moduledoc """
   ZC_NOTIFY_TIME packet (0x007F) - Server responds with its tick/timestamp.
-  
+
   This packet is sent in response to CZ_REQUEST_TIME (0x0360).
-  
+
   Structure:
   - packet_type: 2 bytes (0x007F)
   - server_tick: 4 bytes
-  
+
   Total size: 6 bytes
   """
   use Aesir.Commons.Network.Packet

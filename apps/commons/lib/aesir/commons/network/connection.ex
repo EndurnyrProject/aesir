@@ -28,25 +28,27 @@ defmodule Aesir.Commons.Network.Connection do
 
   defmacro __using__(_opts) do
     quote do
-      @behaviour Aesir.Commons.Network.Connection
+      alias Aesir.Commons.Network.Connection
+
+      @behaviour Connection
       @behaviour :ranch_protocol
 
       @impl :ranch_protocol
       def start_link(ref, transport, opts) do
         opts = Keyword.put(opts, :impl_module, __MODULE__)
-        Aesir.Commons.Network.Connection.start_link(ref, transport, opts)
+        Connection.start_link(ref, transport, opts)
       end
 
-      defdelegate send_packet(conn_pid, packet), to: Aesir.Commons.Network.Connection
-      defdelegate get_session_data(conn_pid), to: Aesir.Commons.Network.Connection
-      defdelegate set_session_data(conn_pid, session_data), to: Aesir.Commons.Network.Connection
+      defdelegate send_packet(conn_pid, packet), to: Connection
+      defdelegate get_session_data(conn_pid), to: Connection
+      defdelegate set_session_data(conn_pid, session_data), to: Connection
 
-      defdelegate init(args), to: Aesir.Commons.Network.Connection
-      defdelegate terminate(reason, state), to: Aesir.Commons.Network.Connection
+      defdelegate init(args), to: Connection
+      defdelegate terminate(reason, state), to: Connection
 
-      defdelegate handle_info(msg, state), to: Aesir.Commons.Network.Connection
-      defdelegate handle_continue(msg, state), to: Aesir.Commons.Network.Connection
-      defdelegate handle_call(msg, from, state), to: Aesir.Commons.Network.Connection
+      defdelegate handle_info(msg, state), to: Connection
+      defdelegate handle_continue(msg, state), to: Connection
+      defdelegate handle_call(msg, from, state), to: Connection
 
       defoverridable handle_continue: 2, handle_info: 2, handle_call: 3, terminate: 2
     end
@@ -131,8 +133,7 @@ defmodule Aesir.Commons.Network.Connection do
       |> Base.encode16()
       |> String.graphemes()
       |> Enum.chunk_every(2)
-      |> Enum.map(&Enum.join/1)
-      |> Enum.join(" ")
+      |> Enum.map_join(" ", &Enum.join/1)
 
     Logger.info("Received data (#{byte_size(data)} bytes): #{hex_formatted}")
 
@@ -235,6 +236,7 @@ defmodule Aesir.Commons.Network.Connection do
             if byte_size(buffer) >= 4 do
               <<_id::16-little, length::16-little, _::binary>> = buffer
 
+              # credo:disable-for-next-line Credo.Check.Refactor.Nesting
               if byte_size(buffer) >= length do
                 <<full_packet::binary-size(length), rest::binary>> = buffer
                 {:ok, packet_id, full_packet, rest}

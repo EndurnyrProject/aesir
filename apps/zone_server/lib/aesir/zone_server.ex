@@ -9,9 +9,9 @@ defmodule Aesir.ZoneServer do
 
   alias Aesir.Commons.SessionManager
   alias Aesir.ZoneServer.CharacterLoader
-  alias Aesir.ZoneServer.Unit.Player.PlayerSupervisor
   alias Aesir.ZoneServer.Packets.ZcAcceptEnter
   alias Aesir.ZoneServer.Packets.ZcAid
+  alias Aesir.ZoneServer.Unit.Player.PlayerSupervisor
 
   @impl Aesir.Commons.Network.Connection
   def handle_packet(0x0B1C, _parsed_data, session_data) do
@@ -73,10 +73,10 @@ defmodule Aesir.ZoneServer do
   end
 
   def handle_packet(packet_id, parsed_data, session_data) do
-    with {:ok, pid} <- get_player_session_pid(session_data) do
-      send(pid, {:packet, packet_id, parsed_data})
-      {:ok, session_data}
-    else
+    case get_player_session_pid(session_data) do
+      {:ok, pid} ->
+        send(pid, {:packet, packet_id, parsed_data})
+        {:ok, session_data}
       :no_session ->
         Logger.warning(
           "Unhandled packet in ZoneServer: 0x#{Integer.to_string(packet_id, 16)} (no player session) - killing connection"

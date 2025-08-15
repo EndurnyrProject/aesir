@@ -1,8 +1,9 @@
 defmodule Aesir.ZoneServer.CharacterLoaderTest do
   use Aesir.DataCase, async: true
 
+  alias Aesir.Commons.Models.Account
+  alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.CharacterLoader
-  alias Aesir.Commons.Models.{Account, Character}
 
   describe "load_character/2" do
     setup do
@@ -105,4 +106,3 @@ defmodule Aesir.ZoneServer.CharacterLoaderTest do
     end
   end
 end
-

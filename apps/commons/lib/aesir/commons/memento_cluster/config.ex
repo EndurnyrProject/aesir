@@ -4,12 +4,10 @@ defmodule Aesir.Commons.MementoCluster.Config do
   Defines table schemas and cluster settings.
   """
 
-  alias Aesir.Commons.InterServer.Schemas.{
-    ServerStatus,
-    Session,
-    OnlineUser,
-    CharacterLocation
-  }
+  alias Aesir.Commons.InterServer.Schemas.CharacterLocation
+  alias Aesir.Commons.InterServer.Schemas.OnlineUser
+  alias Aesir.Commons.InterServer.Schemas.ServerStatus
+  alias Aesir.Commons.InterServer.Schemas.Session
 
   @doc """
   Returns the list of tables to be managed by the cluster.

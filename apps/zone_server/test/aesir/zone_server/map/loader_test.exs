@@ -1,7 +1,8 @@
 defmodule Aesir.ZoneServer.Map.LoaderTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.Map.{Loader, MapData}
+  alias Aesir.ZoneServer.Map.Loader
+  alias Aesir.ZoneServer.Map.MapData
 
   setup_all do
     {:ok, cache_maps} = Loader.load_all_from_cache()
@@ -36,4 +37,3 @@ defmodule Aesir.ZoneServer.Map.LoaderTest do
     end
   end
 end
-

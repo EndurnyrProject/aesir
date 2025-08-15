@@ -1,8 +1,9 @@
 defmodule Aesir.ZoneServer.PathfindingTest do
   use ExUnit.Case, async: true
 
+  alias Aesir.ZoneServer.Map.GatType
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Pathfinding
-  alias Aesir.ZoneServer.Map.{MapData, GatType}
 
   describe "find_path/3" do
     setup do

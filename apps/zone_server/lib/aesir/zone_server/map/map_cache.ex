@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Map.MapCache do
   require Logger
-  alias Aesir.ZoneServer.Map.{CacheLoader, MapData}
+
+  alias Aesir.ZoneServer.Map.CacheLoader
+  alias Aesir.ZoneServer.Map.MapData
 
   @table_name :map_cache
 
@@ -86,9 +88,9 @@ defmodule Aesir.ZoneServer.Map.MapCache do
   @doc """
   Checks if a position is walkable on a map.
   """
-  def is_walkable?(map_name, x, y) do
+  def walkable?(map_name, x, y) do
     case get(map_name) do
-      {:ok, map_data} -> MapData.is_walkable?(map_data, x, y)
+      {:ok, map_data} -> MapData.walkable?(map_data, x, y)
       {:error, _} -> false
     end
   end

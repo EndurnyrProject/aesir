@@ -1,14 +1,14 @@
 defmodule Aesir.ZoneServer.Packets.CzReqname2 do
   @moduledoc """
   CZ_REQNAME2 packet (0x0368) - Client requesting character name for a given ID.
-  
+
   This is typically sent when the client needs to display a character's name
   (e.g., when hovering over them or when they come into view).
-  
+
   Structure:
   - packet_type: 2 bytes (0x0368)
   - char_id: 4 bytes
-  
+
   Total size: 6 bytes
   """
   use Aesir.Commons.Network.Packet

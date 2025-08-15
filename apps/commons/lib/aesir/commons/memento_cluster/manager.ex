@@ -3,6 +3,7 @@ defmodule Aesir.Commons.MementoCluster.Manager do
   GenServer that manages Memento/Mnesia cluster initialization and health monitoring.
   """
   use GenServer
+
   require Logger
 
   alias Aesir.Commons.MementoCluster.Config
@@ -219,6 +220,7 @@ defmodule Aesir.Commons.MementoCluster.Manager do
     end
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp setup_cluster do
     if Config.auto_cluster?() do
       # First check if we're already connected to nodes (like when using libcluster)
@@ -253,6 +255,7 @@ defmodule Aesir.Commons.MementoCluster.Manager do
           # We have connected nodes - check if any have Mnesia running
           running =
             Enum.filter(candidates, fn candidate ->
+              # credo:disable-for-next-line Credo.Check.Refactor.Nesting
               case :rpc.call(candidate, :mnesia, :system_info, [:is_running], 5_000) do
                 :yes -> true
                 _ -> false
@@ -281,6 +284,7 @@ defmodule Aesir.Commons.MementoCluster.Manager do
     end
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp discover_cluster_nodes do
     configured_nodes = Config.cluster_nodes()
 
@@ -298,6 +302,7 @@ defmodule Aesir.Commons.MementoCluster.Manager do
       if initial_candidates == [] do
         Enum.each(configured_nodes, fn node ->
           if node != node() do
+            # credo:disable-for-next-line Credo.Check.Refactor.Nesting
             case Node.connect(node) do
               true -> Logger.debug("[MementoCluster:#{node()}] Connected to #{node}")
               false -> Logger.debug("[MementoCluster:#{node()}] Failed to connect to #{node}")
@@ -454,6 +459,7 @@ defmodule Aesir.Commons.MementoCluster.Manager do
                 "[MementoCluster:#{node()}] Copying table #{module} from #{target_node}"
               )
 
+              # credo:disable-for-next-line Credo.Check.Refactor.Nesting
               case Memento.Table.create_copy(module, node(), storage_type) do
                 :ok ->
                   :ok

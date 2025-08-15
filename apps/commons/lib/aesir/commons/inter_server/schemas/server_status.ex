@@ -63,7 +63,7 @@ defmodule Aesir.Commons.InterServer.Schemas.ServerStatus do
     %{server_status | player_count: player_count, last_heartbeat: DateTime.utc_now()}
   end
 
-  def is_healthy?(server_status, timeout_seconds \\ 30) do
+  def healthy?(server_status, timeout_seconds \\ 30) do
     DateTime.diff(DateTime.utc_now(), server_status.last_heartbeat) < timeout_seconds
   end
 end

@@ -70,35 +70,44 @@ defmodule Aesir.ZoneServer.Pathfinding do
 
         {open_set, g_scores} =
           get_neighbors(current.x, current.y)
-          |> Enum.reduce({open_set, g_scores}, fn {nx, ny, move_cost}, {open_acc, g_acc} ->
-            neighbor_pos = {nx, ny}
-
-            if MapSet.member?(closed_set, neighbor_pos) or
-                 not valid_position?(map_data, nx, ny) or
-                 not walkable?(map_data, nx, ny) do
-              {open_acc, g_acc}
-            else
-              tentative_g = current.g_score + move_cost
-              current_g = Map.get(g_acc, neighbor_pos, :infinity)
-
-              if tentative_g < current_g do
-                h_score = heuristic(nx, ny, goal_x, goal_y)
-                neighbor = Node.new(nx, ny, tentative_g, h_score, current)
-
-                open_acc = remove_from_open_set(open_acc, neighbor_pos)
-
-                open_acc = :gb_sets.add({neighbor.f_score, neighbor_pos, neighbor}, open_acc)
-                g_acc = Map.put(g_acc, neighbor_pos, tentative_g)
-
-                {open_acc, g_acc}
-              else
-                {open_acc, g_acc}
-              end
-            end
-          end)
+          |> Enum.reduce({open_set, g_scores}, &process_neighbor(&1, &2, map_data, closed_set, current, goal))
 
         a_star_loop(map_data, open_set, closed_set, g_scores, goal)
       end
+    end
+  end
+
+  defp process_neighbor({nx, ny, move_cost}, {open_acc, g_acc}, map_data, closed_set, current, {goal_x, goal_y}) do
+    neighbor_pos = {nx, ny}
+
+    if should_skip_neighbor?(neighbor_pos, closed_set, map_data, nx, ny) do
+      {open_acc, g_acc}
+    else
+      update_neighbor_if_better({nx, ny}, move_cost, {open_acc, g_acc}, current, {goal_x, goal_y}, neighbor_pos)
+    end
+  end
+
+  defp should_skip_neighbor?(neighbor_pos, closed_set, map_data, nx, ny) do
+    MapSet.member?(closed_set, neighbor_pos) or
+      not valid_position?(map_data, nx, ny) or
+      not walkable?(map_data, nx, ny)
+  end
+
+  defp update_neighbor_if_better({nx, ny}, move_cost, {open_acc, g_acc}, current, {goal_x, goal_y}, neighbor_pos) do
+    tentative_g = current.g_score + move_cost
+    current_g = Map.get(g_acc, neighbor_pos, :infinity)
+
+    if tentative_g < current_g do
+      h_score = heuristic(nx, ny, goal_x, goal_y)
+      neighbor = Node.new(nx, ny, tentative_g, h_score, current)
+
+      open_acc = remove_from_open_set(open_acc, neighbor_pos)
+      open_acc = :gb_sets.add({neighbor.f_score, neighbor_pos, neighbor}, open_acc)
+      g_acc = Map.put(g_acc, neighbor_pos, tentative_g)
+
+      {open_acc, g_acc}
+    else
+      {open_acc, g_acc}
     end
   end
 
@@ -153,7 +162,7 @@ defmodule Aesir.ZoneServer.Pathfinding do
   end
 
   defp walkable?(map_data, x, y) do
-    MapData.is_walkable?(map_data, x, y)
+    MapData.walkable?(map_data, x, y)
   end
 
   @doc """

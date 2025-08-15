@@ -1,13 +1,13 @@
 defmodule Aesir.ZoneServer.Packets.ZcNotifyTime2 do
   @moduledoc """
   ZC_NOTIFY_TIME2 (0x02C2) - Server responds with current time.
-  
+
   Sent in response to CZ_REQUEST_TIME2 to sync time.
-  
+
   Structure:
   - packet_type: 2 bytes (0x02C2)
   - time: 4 bytes (server time in milliseconds)
-  
+
   Total size: 6 bytes
   """
   use Aesir.Commons.Network.Packet

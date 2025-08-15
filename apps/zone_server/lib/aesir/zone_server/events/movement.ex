@@ -4,8 +4,8 @@ defmodule Aesir.ZoneServer.Events.Movement do
   Handles player movement notifications across the game world.
   """
 
-  alias Phoenix.PubSub
   alias Aesir.ZoneServer.Geometry
+  alias Phoenix.PubSub
 
   @pubsub Aesir.PubSub
 
@@ -85,4 +85,3 @@ defmodule Aesir.ZoneServer.Events.Movement do
     end
   end
 end
-
