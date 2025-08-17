@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Application do
 
   alias Aesir.Commons.SessionManager
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Mmo.JobData
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @impl true
@@ -62,6 +63,7 @@ defmodule Aesir.ZoneServer.Application do
 
   defp initialize_zone do
     with :ok <- SpatialIndex.init(),
+         :ok <- JobData.init(),
          _ <- :ets.new(:zone_players, [:set, :public, :named_table]),
          {:ok, maps} <- MapCache.init() do
       maps

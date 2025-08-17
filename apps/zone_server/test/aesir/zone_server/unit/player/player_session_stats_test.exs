@@ -5,9 +5,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionStatsTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Events
+  alias Aesir.ZoneServer.Mmo.JobData
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.SpatialIndex
+
+  setup_all do
+    JobData.init()
+    :ok
+  end
 
   setup :verify_on_exit!
   setup :set_mimic_global
@@ -195,8 +201,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionStatsTest do
       # Level 50: base_hp = 35 + 50*5 = 285, with VIT=99: 285 * (1.0 + 99*0.01) = 285 * 1.99 = 567.15 -> 567
       assert final_stats.derived_stats.max_hp > 500
 
-      # Level 50: base_sp = 10 + 50*2 = 110, with INT=99: 110 * (1.0 + 99*0.01) = 110 * 1.99 = 218.9 -> 218
-      assert final_stats.derived_stats.max_sp > 200
+      # Novice has base SP of 11 at all levels, with INT 100+1 (job bonus) = 101
+      # 11 * 2.01 = 22.11 -> 22
+      assert final_stats.derived_stats.max_sp == 22
     end
   end
 
@@ -248,16 +255,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionStatsTest do
       assert stats.progression.job_level == 50
 
       # Verify derived stats were calculated correctly
-      # 410
-      expected_base_hp = 35 + 75 * 5
-      # 410 * 1.4 = 574
-      expected_max_hp = trunc(expected_base_hp * (1.0 + 40 * 0.01))
-      assert stats.derived_stats.max_hp == expected_max_hp
+      # JobData.get_base_hp(0, 75) = 410
+      # Job bonuses at level 50 add +1 to all stats, so VIT 40 -> 41
+      # 410 * 1.41 = 578.1 -> 578
+      assert stats.derived_stats.max_hp == 578
 
-      expected_base_sp = 10 + 75 * 2
-      expected_max_sp = trunc(expected_base_sp * (1.0 + 60 * 0.01))
-
-      assert stats.derived_stats.max_sp == expected_max_sp
+      # SP for novice: base 11, with INT 60+1 (job bonus) = 61
+      # 11 * 1.61 = 17.71 -> 17
+      assert stats.derived_stats.max_sp == 17
     end
   end
 

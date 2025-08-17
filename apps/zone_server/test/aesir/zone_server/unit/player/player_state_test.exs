@@ -2,15 +2,21 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
   use ExUnit.Case, async: true
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.ZoneServer.Mmo.JobData
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+
+  setup_all do
+    JobData.init()
+    :ok
+  end
 
   describe "new/1" do
     test "creates PlayerState from Character with stats initialized" do
       character = %Character{
-        id: 12345,
+        id: 12_345,
         name: "TestPlayer",
-        account_id: 67890,
+        account_id: 67_890,
         last_map: "prontera",
         last_x: 155,
         last_y: 183,
@@ -269,17 +275,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       assert initial_state.stats.progression.job_level == 50
 
       # Check derived stats are calculated correctly
-      # 460
-      expected_base_hp = 35 + 85 * 5
-      # 460 * 1.55 = 713
-      expected_max_hp = trunc(expected_base_hp * (1.0 + 55 * 0.01))
-      assert initial_state.stats.derived_stats.max_hp == expected_max_hp
+      # JobData.get_base_hp(0, 85) = 460
+      # Job bonuses at level 50 add +1 to all stats, so VIT 55 -> 56
+      # 460 * 1.56 = 717.6 -> 717
+      assert initial_state.stats.derived_stats.max_hp == 717
 
-      # 180
-      expected_base_sp = 10 + 85 * 2
-      # 180 * 1.6 = 288
-      expected_max_sp = trunc(expected_base_sp * (1.0 + 60 * 0.01))
-      assert initial_state.stats.derived_stats.max_sp == expected_max_sp
+      # Novice SP is 11 at all levels
+      # Job bonuses at level 50 add +1 to all stats, so INT 60 -> 61
+      # 11 * 1.61 = 17.71 -> 17
+      assert initial_state.stats.derived_stats.max_sp == 17
 
       # Test that position changes don't affect stats
       moved_state = PlayerState.update_position(initial_state, 200, 200)
