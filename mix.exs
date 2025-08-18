@@ -11,8 +11,6 @@ defmodule Aesir.MixProject do
   end
 
   defp deps do
-    [
-      {:mimic, "~> 1.12", only: [:test, :dev]}
-    ]
+    []
   end
 end

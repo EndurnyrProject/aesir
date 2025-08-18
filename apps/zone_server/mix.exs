@@ -25,7 +25,9 @@ defmodule ZoneServer.MixProject do
 
   defp deps do
     [
-      {:commons, in_umbrella: true}
+      {:commons, in_umbrella: true},
+      {:lua, "~> 0.3.0"},
+      {:luerl, "~> 1.5", override: true}
     ]
   end
 end

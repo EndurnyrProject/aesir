@@ -39,6 +39,7 @@ defmodule Commons.MixProject do
       {:memento, "~> 0.5"},
       {:mimic, "~> 1.12", only: :test},
       {:nimble_options, "~> 1.1"},
+      {:nimble_parsec, "~> 1.4"},
       {:phoenix_pubsub, "~> 2.1"},
       {:postgrex, ">= 0.0.0"},
       {:ranch, "~> 2.2"},
