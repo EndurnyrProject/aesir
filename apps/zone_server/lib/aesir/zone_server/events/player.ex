@@ -50,6 +50,17 @@ defmodule Aesir.ZoneServer.Events.Player do
   end
 
   @doc """
+  Broadcasts a status change event for a player.
+  """
+  def broadcast_status_change(player_id, status_type, action) do
+    PubSub.broadcast(
+      @pubsub,
+      "player:#{player_id}:status_change",
+      {:status_change, player_id, status_type, action}
+    )
+  end
+
+  @doc """
   Subscribes to player events for a specific map.
   """
   def subscribe_to_map(map_name) do

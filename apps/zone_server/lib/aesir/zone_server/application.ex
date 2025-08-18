@@ -8,6 +8,8 @@ defmodule Aesir.ZoneServer.Application do
   alias Aesir.Commons.SessionManager
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.JobData
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @impl true
@@ -17,6 +19,7 @@ defmodule Aesir.ZoneServer.Application do
 
     children = [
       Aesir.ZoneServer.Unit.Player.PlayerSupervisor,
+      Aesir.ZoneServer.Mmo.StatusTickManager,
       {Aesir.Commons.Network.Listener,
        connection_module: Aesir.ZoneServer,
        packet_registry: Aesir.ZoneServer.PacketRegistry,
@@ -64,7 +67,10 @@ defmodule Aesir.ZoneServer.Application do
   defp initialize_zone do
     with :ok <- SpatialIndex.init(),
          :ok <- JobData.init(),
+         :ok <- StatusStorage.init(),
+         :ok <- Interpreter.init(),
          _ <- :ets.new(:zone_players, [:set, :public, :named_table]),
+         _ <- :ets.new(:status_instances, [:set, :public, :named_table]),
          {:ok, maps} <- MapCache.init() do
       maps
     end

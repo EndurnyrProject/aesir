@@ -115,6 +115,7 @@ defmodule Aesir.ZoneServer.Scripting.Engine do
               script_table
 
             is_list(script_table) ->
+              # credo:disable-for-next-line Credo.Check.Refactor.Nesting
               Enum.into(script_table, %{}, fn
                 {k, v} when is_binary(k) -> {k, v}
                 {k, v} when is_atom(k) -> {Atom.to_string(k), v}
