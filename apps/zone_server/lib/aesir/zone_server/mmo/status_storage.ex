@@ -163,12 +163,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
 
         :buffs ->
           Enum.filter(statuses, fn status ->
-            Interpreter.is_buff?(status.type)
+            Interpreter.buff?(status.type)
           end)
 
         :debuffs ->
           Enum.filter(statuses, fn status ->
-            Interpreter.is_debuff?(status.type)
+            Interpreter.debuff?(status.type)
           end)
       end
 
