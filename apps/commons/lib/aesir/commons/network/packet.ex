@@ -8,6 +8,7 @@ defmodule Aesir.Commons.Network.Packet do
   - For variable-size packets: 2 bytes for length (little-endian)
   - Remaining bytes: packet data
   """
+  import Bitwise
 
   @type packet_id :: 0x0000..0xFFFF
   @type packet_data :: binary()
@@ -82,6 +83,42 @@ defmodule Aesir.Commons.Network.Packet do
     padding_size = length - string_size
 
     <<:binary.part(string, 0, string_size)::binary, 0::size(padding_size)-unit(8)>>
+  end
+
+  @doc """
+  Encodes source and destination positions into 6 bytes.
+
+  The encoding packs two positions into 6 bytes with 8,8 as cell offsets:
+  - byte0: x0 >> 2
+  - byte1: (x0 << 6) | (y0 >> 4)
+  - byte2: (y0 << 4) | (x1 >> 6)
+  - byte3: (x1 << 2) | (y1 >> 8)
+  - byte4: y1 & 0xFF
+  - byte5: (sx0 << 4) | sy0 (cell offsets, using 8,8 as per rAthena)
+  """
+  def encode_move_data(x0, y0, x1, y1) do
+    byte0 = x0 >>> 2
+    byte1 = (x0 <<< 6 ||| (y0 >>> 4 &&& 0x3F)) &&& 0xFF
+    byte2 = (y0 <<< 4 ||| (x1 >>> 6 &&& 0x0F)) &&& 0xFF
+    byte3 = (x1 <<< 2 ||| (y1 >>> 8 &&& 0x03)) &&& 0xFF
+    byte4 = y1 &&& 0xFF
+    byte5 = 8 <<< 4 ||| 8
+
+    <<byte0, byte1, byte2, byte3, byte4, byte5>>
+  end
+
+  @doc """
+  Encodes position and direction into 3 bytes.
+  Uses WBUFPOS encoding from rAthena.
+  """
+  def encode_pos_dir(x, y, dir) do
+    import Bitwise
+
+    byte0 = x >>> 2 &&& 0xFF
+    byte1 = (x <<< 6 ||| (y >>> 4 &&& 0x3F)) &&& 0xFF
+    byte2 = (y <<< 4 ||| (dir &&& 0x0F)) &&& 0xFF
+
+    <<byte0, byte1, byte2>>
   end
 
   @doc """

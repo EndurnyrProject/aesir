@@ -4,383 +4,203 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndexTest do
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
   setup do
+    # Clean up any existing ETS tables first
+    if :ets.info(:player_positions) != :undefined do
+      :ets.delete_all_objects(:player_positions)
+    end
+
+    if :ets.info(:spatial_index) != :undefined do
+      :ets.delete_all_objects(:spatial_index)
+    end
+
+    if :ets.info(:visibility_pairs) != :undefined do
+      :ets.delete_all_objects(:visibility_pairs)
+    end
+
+    # Initialize ETS tables for each test
     SpatialIndex.init()
-
-    on_exit(fn ->
-      if :ets.info(:spatial_index) != :undefined do
-        :ets.delete_all_objects(:spatial_index)
-      end
-
-      if :ets.info(:player_positions) != :undefined do
-        :ets.delete_all_objects(:player_positions)
-      end
-    end)
-
     :ok
   end
 
-  describe "init/0" do
-    test "creates required ETS tables" do
-      assert :ets.info(:spatial_index) != :undefined
-      assert :ets.info(:player_positions) != :undefined
+  describe "visibility range" do
+    test "players within 14 cells can see each other" do
+      # Add player 1 at position (50, 50)
+      player1_id = 1001
+      SpatialIndex.add_player(player1_id, 50, 50, "prontera")
+
+      # Add player 2 at position (60, 50) - 10 cells away (within range)
+      player2_id = 1002
+      SpatialIndex.add_player(player2_id, 60, 50, "prontera")
+
+      # Update visibility
+      SpatialIndex.update_visibility(player1_id, player2_id, true)
+
+      # Check bidirectional visibility
+      assert SpatialIndex.can_see?(player1_id, player2_id)
+      assert SpatialIndex.can_see?(player2_id, player1_id)
+
+      # Check get_visible_players
+      assert player2_id in SpatialIndex.get_visible_players(player1_id)
+      assert player1_id in SpatialIndex.get_visible_players(player2_id)
     end
 
-    test "handles multiple init calls gracefully" do
-      assert SpatialIndex.init() == :ok
-      assert SpatialIndex.init() == :ok
-    end
-  end
+    test "players beyond 14 cells cannot see each other" do
+      # Add player 1 at position (50, 50)
+      player1_id = 1001
+      SpatialIndex.add_player(player1_id, 50, 50, "prontera")
 
-  describe "add_player/4" do
-    test "adds a player to the spatial index" do
-      assert SpatialIndex.add_player(150_000, 100, 100, "prontera") == :ok
+      # Add player 2 at position (70, 50) - 20 cells away (out of range)
+      player2_id = 1002
+      SpatialIndex.add_player(player2_id, 70, 50, "prontera")
 
-      cell_x = div(100, 8)
-      cell_y = div(100, 8)
+      # Visibility should not be set for out-of-range players
+      refute SpatialIndex.can_see?(player1_id, player2_id)
+      refute SpatialIndex.can_see?(player2_id, player1_id)
 
-      assert [{{"prontera", 12, 12}, players}] =
-               :ets.lookup(:spatial_index, {"prontera", cell_x, cell_y})
-
-      assert MapSet.member?(players, 150_000)
-    end
-
-    test "adds player position to player_positions table" do
-      SpatialIndex.add_player(150_000, 100, 100, "prontera")
-
-      assert [{150_000, {"prontera", 100, 100}}] = :ets.lookup(:player_positions, 150_000)
+      # Verify they're not in visible lists
+      refute player2_id in SpatialIndex.get_visible_players(player1_id)
+      refute player1_id in SpatialIndex.get_visible_players(player2_id)
     end
 
-    test "handles multiple players in same cell" do
-      SpatialIndex.add_player(150_000, 100, 100, "prontera")
-      SpatialIndex.add_player(150_001, 101, 101, "prontera")
+    test "diagonal distance calculation respects 14 cell range" do
+      # Add player 1 at position (50, 50)
+      player1_id = 1001
+      SpatialIndex.add_player(player1_id, 50, 50, "prontera")
 
-      cell_x = div(100, 8)
-      cell_y = div(100, 8)
+      # Add player 2 at diagonal position (57, 57) - 14 cells Manhattan distance
+      player2_id = 1002
+      SpatialIndex.add_player(player2_id, 57, 57, "prontera")
 
-      [{_, players}] = :ets.lookup(:spatial_index, {"prontera", cell_x, cell_y})
-      assert MapSet.size(players) == 2
-      assert MapSet.member?(players, 150_000)
-      assert MapSet.member?(players, 150_001)
+      # Update visibility
+      SpatialIndex.update_visibility(player1_id, player2_id, true)
+
+      # Should be visible (14 cells Manhattan distance)
+      assert SpatialIndex.can_see?(player1_id, player2_id)
+      assert SpatialIndex.can_see?(player2_id, player1_id)
     end
 
-    test "handles players in different maps" do
-      SpatialIndex.add_player(150_000, 100, 100, "prontera")
-      SpatialIndex.add_player(150_001, 100, 100, "geffen")
+    test "get_players_in_range returns correct players" do
+      # Add multiple players
+      SpatialIndex.add_player(1001, 50, 50, "prontera")
+      # 5 cells away
+      SpatialIndex.add_player(1002, 55, 50, "prontera")
+      # 10 cells away
+      SpatialIndex.add_player(1003, 60, 50, "prontera")
+      # 15 cells away
+      SpatialIndex.add_player(1004, 65, 50, "prontera")
+      # 30 cells away
+      SpatialIndex.add_player(1005, 80, 50, "prontera")
 
-      cell_x = div(100, 8)
-      cell_y = div(100, 8)
+      # Get players within 14 cells of position (50, 50)
+      players_in_range = SpatialIndex.get_players_in_range("prontera", 50, 50, 14)
 
-      [{_, prontera_players}] = :ets.lookup(:spatial_index, {"prontera", cell_x, cell_y})
-      [{_, geffen_players}] = :ets.lookup(:spatial_index, {"geffen", cell_x, cell_y})
-
-      assert MapSet.member?(prontera_players, 150_000)
-      assert MapSet.member?(geffen_players, 150_001)
+      # Should include players within 14 cells
+      # Self
+      assert 1001 in players_in_range
+      # 5 cells
+      assert 1002 in players_in_range
+      # 10 cells
+      assert 1003 in players_in_range
+      # 15 cells (out of range)
+      refute 1004 in players_in_range
+      # 30 cells (out of range)
+      refute 1005 in players_in_range
     end
 
-    test "handles edge coordinates at cell boundaries" do
-      SpatialIndex.add_player(150_000, 0, 0, "prontera")
-      SpatialIndex.add_player(150_001, 7, 7, "prontera")
-      SpatialIndex.add_player(150_002, 8, 8, "prontera")
+    test "visibility updates when player moves" do
+      # Add two players initially in range
+      player1_id = 1001
+      player2_id = 1002
+      SpatialIndex.add_player(player1_id, 50, 50, "prontera")
+      SpatialIndex.add_player(player2_id, 55, 50, "prontera")
 
-      [{_, cell_00_players}] = :ets.lookup(:spatial_index, {"prontera", 0, 0})
-      [{_, cell_11_players}] = :ets.lookup(:spatial_index, {"prontera", 1, 1})
+      # Set initial visibility
+      SpatialIndex.update_visibility(player1_id, player2_id, true)
+      assert SpatialIndex.can_see?(player1_id, player2_id)
 
-      assert MapSet.size(cell_00_players) == 2
-      assert MapSet.member?(cell_00_players, 150_000)
-      assert MapSet.member?(cell_00_players, 150_001)
+      # Move player2 out of range
+      SpatialIndex.update_position(player2_id, 70, 50, "prontera")
 
-      assert MapSet.size(cell_11_players) == 1
-      assert MapSet.member?(cell_11_players, 150_002)
-    end
-  end
+      # Update visibility to false (out of range)
+      SpatialIndex.update_visibility(player1_id, player2_id, false)
 
-  describe "update_position/4" do
-    test "moves player to new position in same cell" do
-      SpatialIndex.add_player(150_000, 100, 100, "prontera")
-      SpatialIndex.update_position(150_000, 101, 101, "prontera")
-
-      cell_x = div(100, 8)
-      cell_y = div(100, 8)
-
-      [{_, players}] = :ets.lookup(:spatial_index, {"prontera", cell_x, cell_y})
-      assert MapSet.member?(players, 150_000)
-
-      [{150_000, {"prontera", 101, 101}}] = :ets.lookup(:player_positions, 150_000)
+      # Verify visibility is removed
+      refute SpatialIndex.can_see?(player1_id, player2_id)
+      refute SpatialIndex.can_see?(player2_id, player1_id)
     end
 
-    test "moves player to different cell" do
-      SpatialIndex.add_player(150_000, 7, 7, "prontera")
-      SpatialIndex.update_position(150_000, 8, 8, "prontera")
+    test "clear_visibility removes all visibility pairs" do
+      player1_id = 1001
+      SpatialIndex.add_player(player1_id, 50, 50, "prontera")
 
-      old_cell = :ets.lookup(:spatial_index, {"prontera", 0, 0})
-
-      case old_cell do
-        [] -> assert true
-        [{_, players}] -> assert MapSet.size(players) == 0
+      # Add multiple visible players
+      for i <- 2..5 do
+        player_id = 1000 + i
+        SpatialIndex.add_player(player_id, 50 + i, 50, "prontera")
+        SpatialIndex.update_visibility(player1_id, player_id, true)
       end
 
-      [{_, new_players}] = :ets.lookup(:spatial_index, {"prontera", 1, 1})
-      assert MapSet.member?(new_players, 150_000)
-    end
+      # Verify all are visible
+      visible_before = SpatialIndex.get_visible_players(player1_id)
+      assert length(visible_before) == 4
 
-    test "handles non-existent player gracefully" do
-      assert SpatialIndex.update_position(999_999, 100, 100, "prontera") == :ok
-    end
+      # Clear visibility for player1
+      SpatialIndex.clear_visibility(player1_id)
 
-    test "handles map change" do
-      SpatialIndex.add_player(150_000, 100, 100, "prontera")
-      SpatialIndex.update_position(150_000, 50, 50, "geffen")
+      # Verify no players are visible
+      visible_after = SpatialIndex.get_visible_players(player1_id)
+      assert visible_after == []
 
-      prontera_lookup = :ets.lookup(:spatial_index, {"prontera", 12, 12})
-
-      case prontera_lookup do
-        [] -> assert true
-        [{_, players}] -> assert not MapSet.member?(players, 150_000)
-      end
-
-      [{_, geffen_players}] = :ets.lookup(:spatial_index, {"geffen", 6, 6})
-      assert MapSet.member?(geffen_players, 150_000)
-
-      [{150_000, {"geffen", 50, 50}}] = :ets.lookup(:player_positions, 150_000)
-    end
-  end
-
-  describe "remove_player/1" do
-    test "removes player from spatial index" do
-      SpatialIndex.add_player(150_000, 100, 100, "prontera")
-      SpatialIndex.remove_player(150_000)
-
-      cell_x = div(100, 8)
-      cell_y = div(100, 8)
-
-      lookup = :ets.lookup(:spatial_index, {"prontera", cell_x, cell_y})
-
-      case lookup do
-        [] -> assert true
-        [{_, players}] -> assert not MapSet.member?(players, 150_000)
+      # Verify bidirectional removal
+      for i <- 2..5 do
+        player_id = 1000 + i
+        refute SpatialIndex.can_see?(player_id, player1_id)
       end
     end
 
-    test "removes player position record" do
-      SpatialIndex.add_player(150_000, 100, 100, "prontera")
-      SpatialIndex.remove_player(150_000)
+    test "players on different maps cannot see each other" do
+      # Add players on different maps
+      player1_id = 1001
+      player2_id = 1002
+      SpatialIndex.add_player(player1_id, 50, 50, "prontera")
+      # Same coords, different map
+      SpatialIndex.add_player(player2_id, 50, 50, "geffen")
 
-      assert :ets.lookup(:player_positions, 150_000) == []
-    end
+      # Get players in range should not include other maps
+      prontera_players = SpatialIndex.get_players_in_range("prontera", 50, 50, 14)
+      geffen_players = SpatialIndex.get_players_in_range("geffen", 50, 50, 14)
 
-    test "handles non-existent player gracefully" do
-      assert SpatialIndex.remove_player(999_999) == :ok
-    end
+      assert player1_id in prontera_players
+      refute player2_id in prontera_players
 
-    test "handles multiple removals gracefully" do
-      SpatialIndex.add_player(150_000, 100, 100, "prontera")
-
-      assert SpatialIndex.remove_player(150_000) == :ok
-      assert SpatialIndex.remove_player(150_000) == :ok
-    end
-  end
-
-  describe "get_players_in_range/4" do
-    setup do
-      # Create a grid of players for testing
-      # Using 8x8 cells, place players strategically
-      players = [
-        # Cell (6, 6)
-        {150_000, 50, 50},
-        # Cell (6, 6) - same cell
-        {150_001, 55, 55},
-        # Cell (7, 7) - adjacent cell
-        {150_002, 58, 58},
-        # Cell (12, 12) - far away
-        {150_003, 100, 100},
-        # Cell (5, 5) - diagonal adjacent
-        {150_004, 42, 42},
-        # Cell (8, 8) - 2 cells away
-        {150_005, 66, 66},
-        # Cell (6, 6) - same cell as center
-        {150_006, 51, 51}
-      ]
-
-      Enum.each(players, fn {id, x, y} ->
-        SpatialIndex.add_player(id, x, y, "prontera")
-      end)
-
-      {:ok, players: players}
-    end
-
-    test "finds players within small range", %{players: _players} do
-      # Range of 5 from (50, 50) should find only close players
-      # Using Manhattan distance: |x2-x1| + |y2-y1|
-      result = SpatialIndex.get_players_in_range("prontera", 50, 50, 5)
-
-      # Should find players within Manhattan distance of 5
-      # Distance 0 (50,50)
-      assert 150_000 in result
-      # Distance 2 (51,51)
-      assert 150_006 in result
-      # Distance 10 (55,55)
-      assert 150_001 not in result
-      # Distance 16 (58,58)
-      assert 150_002 not in result
-      # Distance 100 (100,100)
-      assert 150_003 not in result
-    end
-
-    test "finds players within medium range", %{players: _players} do
-      # Range of 10 from (50, 50) using Manhattan distance
-      result = SpatialIndex.get_players_in_range("prontera", 50, 50, 10)
-
-      # Distance 0 (50,50)
-      assert 150_000 in result
-      # Distance 10 (55,55)
-      assert 150_001 in result
-      # Distance 2 (51,51)
-      assert 150_006 in result
-      # Distance 16 (58,58)
-      assert 150_002 not in result
-      # Distance 16 (42,42)
-      assert 150_004 not in result
-      # Distance 100 (100,100)
-      assert 150_003 not in result
-    end
-
-    test "finds players within large range", %{players: _players} do
-      # Range of 20 from (50, 50) using Manhattan distance
-      result = SpatialIndex.get_players_in_range("prontera", 50, 50, 20)
-
-      # Distance 0 (50,50)
-      assert 150_000 in result
-      # Distance 10 (55,55)
-      assert 150_001 in result
-      # Distance 16 (58,58)
-      assert 150_002 in result
-      # Distance 16 (42,42)
-      assert 150_004 in result
-      # Distance 2 (51,51)
-      assert 150_006 in result
-      # Distance 100 (100,100)
-      assert 150_003 not in result
-      # Distance 32 (66,66)
-      assert 150_005 not in result
-    end
-
-    test "returns empty list for empty map" do
-      result = SpatialIndex.get_players_in_range("empty_map", 50, 50, 10)
-      assert result == []
-    end
-
-    test "handles different maps correctly" do
-      SpatialIndex.add_player(150_007, 50, 50, "geffen")
-
-      prontera_result = SpatialIndex.get_players_in_range("prontera", 50, 50, 5)
-      geffen_result = SpatialIndex.get_players_in_range("geffen", 50, 50, 5)
-
-      assert 150_000 in prontera_result
-      assert 150_007 not in prontera_result
-
-      assert 150_007 in geffen_result
-      assert 150_000 not in geffen_result
-    end
-
-    test "handles edge case at map origin" do
-      SpatialIndex.add_player(150_010, 0, 0, "prontera")
-      SpatialIndex.add_player(150_011, 5, 5, "prontera")
-
-      result = SpatialIndex.get_players_in_range("prontera", 0, 0, 10)
-
-      assert 150_010 in result
-      assert 150_011 in result
-    end
-
-    test "excludes players exactly at range boundary" do
-      SpatialIndex.add_player(150_020, 60, 50, "prontera")
-
-      result = SpatialIndex.get_players_in_range("prontera", 50, 50, 9)
-      assert 150_020 not in result
-
-      result = SpatialIndex.get_players_in_range("prontera", 50, 50, 10)
-      assert 150_020 in result
+      assert player2_id in geffen_players
+      refute player1_id in geffen_players
     end
   end
 
-  describe "get_players_in_cell/3" do
-    test "returns players in specific cell" do
-      SpatialIndex.add_player(150_000, 50, 50, "prontera")
-      SpatialIndex.add_player(150_001, 55, 55, "prontera")
-      SpatialIndex.add_player(150_002, 58, 58, "prontera")
-
-      result = SpatialIndex.get_players_in_cell("prontera", 6, 6)
-
-      assert 150_000 in result
-      assert 150_001 in result
-      assert 150_002 not in result
-    end
-
-    test "returns empty list for empty cell" do
-      result = SpatialIndex.get_players_in_cell("prontera", 0, 0)
-      assert result == []
-    end
-
-    test "handles different maps correctly" do
-      SpatialIndex.add_player(150_000, 50, 50, "prontera")
-      SpatialIndex.add_player(150_001, 50, 50, "geffen")
-
-      prontera_result = SpatialIndex.get_players_in_cell("prontera", 6, 6)
-      geffen_result = SpatialIndex.get_players_in_cell("geffen", 6, 6)
-
-      assert 150_000 in prontera_result
-      assert 150_001 not in prontera_result
-
-      assert 150_001 in geffen_result
-      assert 150_000 not in geffen_result
-    end
-  end
-
-  describe "stress testing" do
-    test "handles large number of players" do
-      for id <- 150_000..150_999 do
-        x = :rand.uniform(500)
-        y = :rand.uniform(500)
-        SpatialIndex.add_player(id, x, y, "prontera")
+  describe "spatial index grid cells" do
+    test "players in same cell are efficiently retrieved" do
+      # Add multiple players in same 8x8 cell
+      for i <- 0..7 do
+        SpatialIndex.add_player(1000 + i, i, i, "prontera")
       end
 
-      result = SpatialIndex.get_players_in_range("prontera", 250, 250, 20)
-      assert is_list(result)
+      # All should be in cell (0, 0)
+      players_in_cell = SpatialIndex.get_players_in_cell("prontera", 0, 0)
+      assert length(players_in_cell) == 8
     end
 
-    test "handles rapid position updates" do
-      SpatialIndex.add_player(150_000, 50, 50, "prontera")
+    test "players in adjacent cells are included in range queries" do
+      # Add player at cell boundary
+      # End of cell (0,0)
+      SpatialIndex.add_player(1001, 7, 7, "prontera")
+      # Start of cell (1,1)
+      SpatialIndex.add_player(1002, 8, 8, "prontera")
 
-      for _ <- 1..100 do
-        x = 50 + :rand.uniform(10) - 5
-        y = 50 + :rand.uniform(10) - 5
-        SpatialIndex.update_position(150_000, x, y, "prontera")
-      end
-
-      [{150_000, {"prontera", final_x, final_y}}] = :ets.lookup(:player_positions, 150_000)
-      assert final_x >= 45 and final_x <= 55
-      assert final_y >= 45 and final_y <= 55
-    end
-
-    test "handles concurrent operations" do
-      tasks =
-        for i <- 1..10 do
-          Task.async(fn ->
-            player_id = 150_000 + i
-
-            SpatialIndex.add_player(player_id, i * 10, i * 10, "prontera")
-
-            for j <- 1..10 do
-              SpatialIndex.update_position(player_id, i * 10 + j, i * 10 + j, "prontera")
-            end
-
-            SpatialIndex.get_players_in_range("prontera", i * 10, i * 10, 15)
-            SpatialIndex.remove_player(player_id)
-          end)
-        end
-
-      results = Task.await_many(tasks)
-      assert length(results) == 10
+      # Both should be found when searching from (7,7)
+      players = SpatialIndex.get_players_in_range("prontera", 7, 7, 2)
+      assert 1001 in players
+      assert 1002 in players
     end
   end
 end

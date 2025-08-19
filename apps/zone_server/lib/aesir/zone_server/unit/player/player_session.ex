@@ -8,8 +8,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   require Logger
 
   alias Aesir.Commons.StatusParams
-  alias Aesir.ZoneServer.Events
-  alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Packets.ZcLongparChange
   alias Aesir.ZoneServer.Packets.ZcParChange
@@ -51,6 +49,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   """
   def disconnect(pid) do
     GenServer.stop(pid, :normal)
+  end
+
+  @doc """
+  Forces a player to stop moving (e.g., due to skill, stun, etc.)
+  Sends ZC_NOTIFY_MOVE_STOP to fix client position.
+  """
+  def force_stop_movement(pid) do
+    GenServer.cast(pid, :force_stop_movement)
   end
 
   @doc """
@@ -102,13 +108,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       connection_pid: connection_pid
     }
 
-    # Register in ETS tables
-    register_player(character.id)
+    register_player(character.id, character.account_id)
 
-    # Subscribe to map events
-    Events.Player.subscribe_to_map(game_state.map_name)
-
-    # Start spawn sequence
     send(self(), :spawn_player)
 
     {:ok, state}
@@ -116,21 +117,24 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @impl true
   def handle_info(:spawn_player, %{character: character, game_state: game_state} = state) do
-    # Update position in spatial index
-    SpatialIndex.update_position(character.id, game_state.x, game_state.y, game_state.map_name)
+    # Add player to spatial index at spawn position
+    SpatialIndex.add_player(character.id, game_state.x, game_state.y, game_state.map_name)
 
-    # Subscribe to visible cells
-    new_cells = Geometry.visible_cells(game_state.x, game_state.y, game_state.view_range)
-    Events.Movement.subscribe_to_cells(game_state.map_name, new_cells)
-    game_state = %{game_state | subscribed_cells: new_cells}
+    # Check initial visibility
+    updated_game_state = handle_visibility_update(character, game_state)
 
-    # Notify other players in range about spawn
-    Events.Player.broadcast_spawn(character, game_state)
+    # After initial spawn, transition to standing state
+    # This happens after a short delay to ensure spawn packets are processed
+    Process.send_after(self(), :complete_spawn, 100)
 
-    # Send spawn acknowledgment to client
-    # TODO: Send ZC_ACCEPT_ENTER packet
+    {:noreply, %{state | game_state: updated_game_state}}
+  end
 
-    {:noreply, %{state | game_state: game_state}}
+  @impl true
+  def handle_info(:complete_spawn, %{game_state: game_state} = state) do
+    # Transition from just_spawned to standing
+    updated_game_state = PlayerState.mark_spawn_complete(game_state)
+    {:noreply, %{state | game_state: updated_game_state}}
   end
 
   @impl true
@@ -139,39 +143,67 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   def handle_info(:movement_tick, %{game_state: %{is_walking: true, walk_path: []}} = state) do
+    # Movement completed naturally - transitions to standing
+    # stop_walking already sets movement_state to :standing
     game_state = PlayerState.stop_walking(state.game_state)
     {:noreply, %{state | game_state: game_state}}
   end
 
-  def handle_info(:movement_tick, %{character: character, game_state: game_state} = state)
+  def handle_info(
+        :movement_tick,
+        %{character: character, game_state: game_state} = state
+      )
       when game_state.is_walking do
-    [next | rest] = game_state.walk_path
-    {next_x, next_y} = next
-    old_x = game_state.x
-    old_y = game_state.y
+    # Calculate how far we should have moved since start
+    elapsed = System.system_time(:millisecond) - game_state.walk_start_time
+    cells_per_ms = 1.0 / game_state.walk_speed
+    total_movement_budget = elapsed * cells_per_ms
 
-    # Update position and direction
-    game_state = PlayerState.update_position(game_state, next_x, next_y)
-    game_state = %{game_state | walk_path: rest}
-    dir = Geometry.calculate_direction(old_x, old_y, next_x, next_y)
-    game_state = PlayerState.update_direction(game_state, dir)
+    # Calculate NEW movement since last tick (subtract what we already consumed)
+    new_movement_budget = total_movement_budget - game_state.path_progress
 
-    # Update spatial index
-    SpatialIndex.update_position(character.id, next_x, next_y, game_state.map_name)
+    # Consume path based on NEW movement budget
+    {new_x, new_y, remaining_path, consumed} =
+      consume_movement_path_with_cost(
+        game_state.x,
+        game_state.y,
+        game_state.walk_path,
+        new_movement_budget
+      )
 
-    # Update cell subscriptions if needed
-    game_state = update_cell_subscriptions(game_state)
+    # Update game state with new position and progress
+    game_state =
+      if new_x != game_state.x or new_y != game_state.y do
+        # Update spatial index
+        SpatialIndex.update_position(character.id, new_x, new_y, game_state.map_name)
 
-    # Broadcast movement to others
-    Events.Movement.broadcast_position_update(character.id, game_state, old_x, old_y)
+        # Update game state position and track progress
+        updated_state =
+          game_state
+          |> PlayerState.update_position(new_x, new_y)
+          |> Map.put(:walk_path, remaining_path)
+          |> Map.put(:path_progress, game_state.path_progress + consumed)
 
-    # Schedule next tick or stop if done
-    if rest == [] do
-      game_state = PlayerState.stop_walking(game_state)
-      Events.Movement.broadcast_stop(character.id, game_state)
-    else
-      Process.send_after(self(), :movement_tick, game_state.walk_speed)
-    end
+        # Check for visibility changes
+        handle_visibility_update(character, updated_state)
+      else
+        # Position didn't change this tick, but still update path and progress
+        game_state
+        |> Map.put(:walk_path, remaining_path)
+        |> Map.put(:path_progress, game_state.path_progress + consumed)
+      end
+
+    # Check if movement is complete
+    game_state =
+      if length(remaining_path) == 0 do
+        # Movement completed naturally - just stop walking
+        # The position should already be at the destination
+        PlayerState.stop_walking(game_state)
+      else
+        # Continue movement - schedule next tick
+        Process.send_after(self(), :movement_tick, 100)
+        game_state
+      end
 
     {:noreply, %{state | game_state: game_state}}
   end
@@ -286,32 +318,25 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
-  def handle_info({:player_spawned, spawn_data}, %{character: character} = state) do
-    if spawn_data.char_id != character.id do
-      # TODO: Send ZC_NOTIFY_PLAYERMOVE packet
-      Logger.debug("Player #{spawn_data.char_id} spawned in view")
-    end
-
+  def handle_info(
+        {:player_spawned, _spawn_data},
+        %{character: _character, connection_pid: _connection_pid} = state
+      ) do
     {:noreply, state}
   end
 
   @impl true
   def handle_info(
-        {:player_moved, char_id, from_x, from_y, to_x, to_y},
-        %{character: character} = state
+        {:player_despawned, char_id},
+        %{character: character, connection_pid: connection_pid} = state
       ) do
     if char_id != character.id do
-      # TODO: Send ZC_NOTIFY_PLAYERMOVE packet
-      Logger.debug("Player #{char_id} moved from (#{from_x},#{from_y}) to (#{to_x},#{to_y})")
-    end
+      packet = %Aesir.ZoneServer.Packets.ZcNotifyVanish{
+        gid: char_id,
+        type: Aesir.ZoneServer.Packets.ZcNotifyVanish.out_of_sight()
+      }
 
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_info({:player_despawned, char_id}, %{character: character} = state) do
-    if char_id != character.id do
-      # TODO: Send ZC_NOTIFY_VANISH packet
+      send(connection_pid, {:send_packet, packet})
       Logger.debug("Player #{char_id} vanished from view")
     end
 
@@ -319,42 +344,144 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
-  def handle_info({:player_stopped, char_id, x, y}, %{character: character} = state) do
-    if char_id != character.id do
-      # TODO: Send ZC_NOTIFY_MOVE_STOP packet
-      Logger.debug("Player #{char_id} stopped at (#{x},#{y})")
+  def handle_cast({:player_entered_view, other_char_id}, state) do
+    # Another player entered our view - request their info asynchronously
+    case :ets.lookup(:zone_players, other_char_id) do
+      [{^other_char_id, other_pid, _account_id}] ->
+        # Request player info asynchronously to avoid deadlock
+        GenServer.cast(other_pid, {:request_player_info, self(), state.character.id})
+
+      _ ->
+        :ok
     end
 
     {:noreply, state}
   end
 
   @impl true
+  def handle_cast({:request_player_info, requester_pid, _requester_char_id}, state) do
+    # Someone requested our info - send it back asynchronously
+    info = %{
+      character: state.character,
+      game_state: state.game_state,
+      movement_state: state.game_state.movement_state,
+      is_walking: state.game_state.is_walking,
+      walk_path: state.game_state.walk_path
+    }
+
+    GenServer.cast(requester_pid, {:player_info_response, info, state.character.id})
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast({:player_info_response, player_info, _from_char_id}, state) do
+    # Received player info - now send the spawn packet
+    send_player_spawn_packet(state.connection_pid, player_info)
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast({:player_left_view, _other_char_id, other_account_id}, state) do
+    # Another player left our view - send vanish packet
+    packet = %Aesir.ZoneServer.Packets.ZcNotifyVanish{
+      # GID is account_id for players
+      gid: other_account_id,
+      type: Aesir.ZoneServer.Packets.ZcNotifyVanish.out_of_sight()
+    }
+
+    send(state.connection_pid, {:send_packet, packet})
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_cast(
         {:request_move, dest_x, dest_y},
-        %{character: character, game_state: game_state} = state
+        %{character: character, game_state: game_state, connection_pid: connection_pid} = state
       ) do
-    case calculate_path(game_state.map_name, game_state.x, game_state.y, dest_x, dest_y) do
-      {:ok, path} ->
-        game_state = PlayerState.set_path(game_state, path)
+    with {:ok, map_data} <- MapCache.get(game_state.map_name),
+         {:ok, [_ | _] = path} <-
+           Pathfinding.find_path(
+             map_data,
+             {game_state.x, game_state.y},
+             {dest_x, dest_y}
+           ) do
+      # Simplify path to reduce network traffic
+      simplified_path = Pathfinding.simplify_path(path)
 
-        if game_state.is_walking do
-          send_movement_packet(
-            state.connection_pid,
-            character.account_id,
-            game_state,
-            dest_x,
-            dest_y
-          )
+      # Start movement
+      walk_start_time = System.system_time(:millisecond)
 
-          Process.send_after(self(), :movement_tick, game_state.walk_speed)
-        end
+      # Update game state with new path
+      game_state =
+        game_state
+        |> PlayerState.set_path(simplified_path)
+        |> Map.put(:walk_start_time, walk_start_time)
 
-        {:noreply, %{state | game_state: game_state}}
+      # Send movement confirmation to the client
+      packet = %Aesir.ZoneServer.Packets.ZcNotifyPlayermove{
+        walk_start_time: walk_start_time,
+        src_x: game_state.x,
+        src_y: game_state.y,
+        dst_x: dest_x,
+        dst_y: dest_y
+      }
+
+      send(connection_pid, {:send_packet, packet})
+
+      # Broadcast movement to nearby players
+      broadcast_movement_to_nearby(character, game_state, dest_x, dest_y)
+
+      # Schedule first movement tick (100ms interval per rAthena)
+      Process.send_after(self(), :movement_tick, 100)
+
+      {:noreply, %{state | game_state: game_state}}
+    else
+      {:ok, []} ->
+        # Already at destination
+        Logger.debug("Player #{character.id} already at destination")
+        {:noreply, state}
 
       {:error, reason} ->
-        Logger.debug("Player #{character.id} pathfinding failed: #{reason}")
-        # TODO: Send ZC_NOTIFY_MOVE_STOP or error packet
+        # No path found or map not loaded
+        Logger.debug("Movement failed for player #{character.id}: #{inspect(reason)}")
+
+        packet = %Aesir.ZoneServer.Packets.ZcNotifyMoveStop{
+          account_id: character.account_id,
+          x: game_state.x,
+          y: game_state.y
+        }
+
+        send(connection_pid, {:send_packet, packet})
+
         {:noreply, state}
+    end
+  end
+
+  @impl true
+  def handle_cast(
+        :force_stop_movement,
+        %{character: character, game_state: game_state, connection_pid: connection_pid} = state
+      ) do
+    if game_state.is_walking do
+      # Stop walking and clear path
+      game_state = PlayerState.stop_walking(game_state)
+
+      # Send position fix packet to client and nearby players
+      packet = %Aesir.ZoneServer.Packets.ZcNotifyMoveStop{
+        account_id: character.account_id,
+        x: game_state.x,
+        y: game_state.y
+      }
+
+      # Send to self
+      send(connection_pid, {:send_packet, packet})
+
+      # Broadcast to nearby players
+      broadcast_stop_to_nearby(character, game_state, packet)
+
+      {:noreply, %{state | game_state: game_state}}
+    else
+      {:noreply, state}
     end
   end
 
@@ -405,15 +532,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     stats = state.game_state.stats
     updated_base_stats = Map.put(stats.base_stats, stat_name, new_value)
     updated_stats = %{stats | base_stats: updated_base_stats}
-
-    # Recalculate all derived stats
     updated_stats = Stats.calculate_stats(updated_stats)
-
-    # Update game state
     updated_game_state = %{state.game_state | stats: updated_stats}
     updated_state = %{state | game_state: updated_game_state}
 
-    # Send stat updates to client
     send_stat_updates(state.connection_pid, updated_stats)
 
     {:reply, :ok, updated_state}
@@ -438,16 +560,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def terminate(_reason, %{
         character: character,
-        game_state: game_state,
+        game_state: _game_state,
         connection_pid: connection_pid
       }) do
-    # Clean up ETS entry
     :ets.delete(:zone_players, character.id)
-
-    # Clean up on disconnect
     SpatialIndex.remove_player(character.id)
-    Events.Movement.unsubscribe_from_cells(game_state.map_name, game_state.subscribed_cells)
-    Events.Player.broadcast_despawn(character.id, game_state)
+
+    # Clear all visibility relationships
+    SpatialIndex.clear_visibility(character.id)
 
     # Notify connection process if still alive
     if connection_pid && Process.alive?(connection_pid) do
@@ -472,44 +592,331 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     end
   end
 
-  defp register_player(char_id), do: :ets.insert(:zone_players, {char_id, self()})
+  defp register_player(char_id, account_id),
+    do: :ets.insert(:zone_players, {char_id, self(), account_id})
 
-  defp update_cell_subscriptions(game_state) do
-    new_cells = Geometry.visible_cells(game_state.x, game_state.y, game_state.view_range)
-    old_cells = game_state.subscribed_cells
+  defp sex_to_int("F"), do: 0
+  defp sex_to_int("M"), do: 1
+  defp sex_to_int(_), do: 1
 
-    # Find cells to subscribe/unsubscribe
-    to_subscribe = new_cells -- old_cells
-    to_unsubscribe = old_cells -- new_cells
-
-    # Update subscriptions
-    Events.Movement.unsubscribe_from_cells(game_state.map_name, to_unsubscribe)
-    Events.Movement.subscribe_to_cells(game_state.map_name, to_subscribe)
-
-    %{game_state | subscribed_cells: new_cells}
+  defp consume_movement_path_with_cost(x, y, path, budget) do
+    do_consume_path(x, y, path, budget, 0)
   end
 
-  defp calculate_path(map_name, from_x, from_y, to_x, to_y) do
-    case MapCache.get(map_name) do
-      {:ok, map_data} ->
-        Pathfinding.find_path(map_data, {from_x, from_y}, {to_x, to_y})
+  defp do_consume_path(x, y, [], _budget, consumed), do: {x, y, [], consumed}
+  defp do_consume_path(x, y, path, budget, consumed) when budget <= 0, do: {x, y, path, consumed}
 
-      {:error, :not_found} ->
-        Logger.error("Map #{map_name} not found in cache")
-        {:error, :map_not_found}
+  defp do_consume_path(x, y, [{next_x, next_y} | rest], budget, consumed) do
+    # Calculate movement cost (diagonal vs straight)
+    move_cost =
+      if abs(next_x - x) == 1 and abs(next_y - y) == 1 do
+        # Diagonal movement (√2)
+        1.414
+      else
+        # Straight movement
+        1.0
+      end
+
+    if move_cost <= budget do
+      # Can move to this cell, continue consuming path
+      do_consume_path(next_x, next_y, rest, budget - move_cost, consumed + move_cost)
+    else
+      # Not enough budget to move to next cell
+      {x, y, [{next_x, next_y} | rest], consumed}
     end
   end
 
-  defp send_movement_packet(connection_pid, _account_id, game_state, dest_x, dest_y) do
-    packet = %Aesir.ZoneServer.Packets.ZcNotifyPlayermove{
-      walk_start_time: System.system_time(:millisecond),
+  defp broadcast_stop_to_nearby(character, game_state, packet) do
+    # Get players in view range
+    nearby_players =
+      SpatialIndex.get_players_in_range(
+        game_state.map_name,
+        game_state.x,
+        game_state.y,
+        game_state.view_range
+      )
+
+    # Send stop packet to each nearby player except self
+    Enum.each(nearby_players, fn other_char_id ->
+      if other_char_id != character.id do
+        case :ets.lookup(:zone_players, other_char_id) do
+          [{^other_char_id, pid, _account_id}] ->
+            send_packet(pid, packet)
+
+          _ ->
+            :ok
+        end
+      end
+    end)
+  end
+
+  defp broadcast_movement_to_nearby(character, game_state, dest_x, dest_y) do
+    # Only broadcast to players who can see us (using visibility ETS)
+    visible_players = SpatialIndex.get_visible_players(character.id)
+
+    # Build movement packet for observers
+    packet = %Aesir.ZoneServer.Packets.ZcNotifyMoveentry{
+      aid: character.account_id,
+      gid: character.id,
+      speed: game_state.walk_speed,
+      body_state: 0,
+      health_state: 0,
+      effect_state: 0,
+      job: character.class,
+      head: character.head_top,
+      weapon: character.weapon || 0,
+      shield: character.shield || 0,
+      accessory: character.head_bottom || 0,
+      move_start_time: System.system_time(:millisecond),
+      accessory2: character.head_mid || 0,
+      accessory3: 0,
       src_x: game_state.x,
       src_y: game_state.y,
       dst_x: dest_x,
-      dst_y: dest_y
+      dst_y: dest_y,
+      head_palette: character.hair_color,
+      body_palette: character.clothes_color,
+      head_dir: 0,
+      robe: character.robe || 0,
+      guild_id: 0,
+      guild_emblem_ver: 0,
+      honor: 0,
+      virtue: 0,
+      is_pk_mode_on: 0,
+      sex: sex_to_int(character.sex),
+      x_size: 5,
+      y_size: 5,
+      clevel: character.base_level,
+      font: 0,
+      max_hp: game_state.stats.derived_stats.max_hp,
+      hp: game_state.stats.current_state.hp,
+      is_boss: 0,
+      body: 0,
+      name: character.name
     }
 
+    # Send to each visible player
+    Enum.each(visible_players, fn other_char_id ->
+      if other_char_id != character.id do
+        case :ets.lookup(:zone_players, other_char_id) do
+          [{^other_char_id, pid, _account_id}] ->
+            send_packet(pid, packet)
+
+          _ ->
+            :ok
+        end
+      end
+    end)
+  end
+
+  defp handle_visibility_update(character, game_state) do
+    # Always check visibility on every movement (like rAthena's map_foreachinmovearea)
+    # Get players in view range
+    players_in_range =
+      SpatialIndex.get_players_in_range(
+        game_state.map_name,
+        game_state.x,
+        game_state.y,
+        game_state.view_range
+      )
+
+    new_visible = MapSet.new(players_in_range)
+    old_visible = game_state.visible_players
+
+    # Find who entered and left view
+    now_visible = MapSet.difference(new_visible, old_visible)
+    now_hidden = MapSet.difference(old_visible, new_visible)
+
+    # Send spawn packets for newly visible players
+    Enum.each(now_visible, fn other_id ->
+      if other_id != character.id do
+        # Update visibility ETS
+        SpatialIndex.update_visibility(character.id, other_id, true)
+
+        # Send spawn packet to us about them
+        send_spawn_packet_about(character.id, other_id)
+
+        # Send spawn packet to them about us
+        send_spawn_packet_about(other_id, character.id)
+      end
+    end)
+
+    # Send despawn packets for now hidden players
+    Enum.each(now_hidden, fn other_id ->
+      if other_id != character.id do
+        # Update visibility ETS
+        SpatialIndex.update_visibility(character.id, other_id, false)
+
+        # Send vanish packet to us
+        send_vanish_packet_to(character.id, other_id)
+
+        # Send vanish packet to them
+        send_vanish_packet_to(other_id, character.id)
+      end
+    end)
+
+    # Update game state with new visibility info
+    # Keep last_visibility_cell for potential optimization later
+    current_cell = {div(game_state.x, 8), div(game_state.y, 8)}
+    %{game_state | visible_players: new_visible, last_visibility_cell: current_cell}
+  end
+
+  defp send_spawn_packet_about(to_char_id, about_char_id) do
+    # Get the player session for the target
+    case :ets.lookup(:zone_players, to_char_id) do
+      [{^to_char_id, pid, _account_id}] ->
+        GenServer.cast(pid, {:player_entered_view, about_char_id})
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp send_player_spawn_packet(connection_pid, player_info) do
+    %{character: character, game_state: game_state} = player_info
+
+    # Choose packet type based on movement state
+    packet =
+      case game_state.movement_state do
+        :moving when game_state.is_walking and length(game_state.walk_path) > 0 ->
+          # Player is moving - send ZC_NOTIFY_MOVEENTRY
+          [{dest_x, dest_y} | _] = Enum.reverse(game_state.walk_path)
+
+          %Aesir.ZoneServer.Packets.ZcNotifyMoveentry{
+            aid: character.account_id,
+            gid: character.id,
+            speed: game_state.walk_speed,
+            body_state: 0,
+            health_state: 0,
+            effect_state: 0,
+            job: character.class,
+            head: character.head_top,
+            weapon: character.weapon || 0,
+            shield: character.shield || 0,
+            accessory: character.head_bottom || 0,
+            move_start_time: System.system_time(:millisecond),
+            accessory2: character.head_mid || 0,
+            accessory3: 0,
+            src_x: game_state.x,
+            src_y: game_state.y,
+            dst_x: dest_x,
+            dst_y: dest_y,
+            head_palette: character.hair_color,
+            body_palette: character.clothes_color,
+            head_dir: 0,
+            robe: character.robe || 0,
+            guild_id: 0,
+            guild_emblem_ver: 0,
+            honor: 0,
+            virtue: 0,
+            is_pk_mode_on: 0,
+            sex: sex_to_int(character.sex),
+            x_size: 5,
+            y_size: 5,
+            clevel: character.base_level,
+            font: 0,
+            max_hp: game_state.stats.derived_stats.max_hp,
+            hp: game_state.stats.current_state.hp,
+            is_boss: 0,
+            body: 0,
+            name: character.name
+          }
+
+        :standing ->
+          # Player is standing - send ZC_NOTIFY_STANDENTRY
+          %Aesir.ZoneServer.Packets.ZcNotifyStandentry{
+            aid: character.account_id,
+            gid: character.id,
+            speed: game_state.walk_speed,
+            body_state: 0,
+            health_state: 0,
+            effect_state: 0,
+            job: character.class,
+            head: character.head_top,
+            weapon: character.weapon || 0,
+            shield: character.shield || 0,
+            accessory: character.head_bottom || 0,
+            accessory2: character.head_mid || 0,
+            accessory3: 0,
+            head_palette: character.hair_color,
+            body_palette: character.clothes_color,
+            head_dir: 0,
+            robe: character.robe || 0,
+            guild_id: 0,
+            guild_emblem_ver: 0,
+            honor: 0,
+            virtue: 0,
+            is_pk_mode_on: 0,
+            sex: sex_to_int(character.sex),
+            x: game_state.x,
+            y: game_state.y,
+            dir: game_state.dir || 0,
+            x_size: 5,
+            y_size: 5,
+            # 0 = standing, 2 = sitting
+            state: 0,
+            clevel: character.base_level,
+            font: 0,
+            max_hp: game_state.stats.derived_stats.max_hp,
+            hp: game_state.stats.current_state.hp,
+            is_boss: 0,
+            body: 0,
+            name: character.name
+          }
+
+        _ ->
+          # Default case (including :just_spawned) - send ZC_NOTIFY_NEWENTRY
+          %Aesir.ZoneServer.Packets.ZcNotifyNewentry{
+            aid: character.account_id,
+            gid: character.id,
+            speed: game_state.walk_speed,
+            body_state: 0,
+            health_state: 0,
+            effect_state: 0,
+            job: character.class,
+            head: character.head_top,
+            weapon: character.weapon || 0,
+            shield: character.shield || 0,
+            accessory: character.head_bottom || 0,
+            accessory2: character.head_mid || 0,
+            accessory3: 0,
+            head_palette: character.hair_color,
+            body_palette: character.clothes_color,
+            head_dir: 0,
+            robe: character.robe || 0,
+            guild_id: 0,
+            guild_emblem_ver: 0,
+            honor: 0,
+            virtue: 0,
+            is_pk_mode_on: 0,
+            sex: sex_to_int(character.sex),
+            x: game_state.x,
+            y: game_state.y,
+            dir: game_state.dir || 0,
+            x_size: 5,
+            y_size: 5,
+            clevel: character.base_level,
+            font: 0,
+            max_hp: game_state.stats.derived_stats.max_hp,
+            hp: game_state.stats.current_state.hp,
+            is_boss: 0,
+            body: 0,
+            name: character.name
+          }
+      end
+
     send(connection_pid, {:send_packet, packet})
+  end
+
+  defp send_vanish_packet_to(to_char_id, about_char_id) do
+    # Get the player session for the target and the account_id of the vanishing player
+    with [{^to_char_id, to_pid, _to_account_id}] <- :ets.lookup(:zone_players, to_char_id),
+         [{^about_char_id, _about_pid, about_account_id}] <-
+           :ets.lookup(:zone_players, about_char_id) do
+      GenServer.cast(to_pid, {:player_left_view, about_char_id, about_account_id})
+    else
+      _ -> :ok
+    end
   end
 
   defp send_stat_updates(connection_pid, %Stats{} = stats) do

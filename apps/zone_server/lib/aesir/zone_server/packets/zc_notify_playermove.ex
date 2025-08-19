@@ -13,7 +13,6 @@ defmodule Aesir.ZoneServer.Packets.ZcNotifyPlayermove do
   Total size: 12 bytes
   """
   use Aesir.Commons.Network.Packet
-  import Bitwise
 
   @packet_id 0x0087
   @packet_size 12
@@ -28,31 +27,9 @@ defmodule Aesir.ZoneServer.Packets.ZcNotifyPlayermove do
 
   @impl true
   def build(%__MODULE__{} = packet) do
-    walk_start_time = packet.walk_start_time || System.system_time(:millisecond)
+    walk_start_time = packet.walk_start_time
     walk_data = encode_move_data(packet.src_x, packet.src_y, packet.dst_x, packet.dst_y)
 
     <<@packet_id::16-little, walk_start_time::32-little, walk_data::binary>>
-  end
-
-  @doc """
-  Encodes source and destination positions into 6 bytes.
-
-  The encoding packs two positions into 6 bytes with 8,8 as cell offsets:
-  - byte0: x0 >> 2
-  - byte1: (x0 << 6) | (y0 >> 4)
-  - byte2: (y0 << 4) | (x1 >> 6)
-  - byte3: (x1 << 2) | (y1 >> 8)
-  - byte4: y1 & 0xFF
-  - byte5: (sx0 << 4) | sy0 (cell offsets, using 8,8 as per rAthena)
-  """
-  def encode_move_data(x0, y0, x1, y1) do
-    byte0 = x0 >>> 2
-    byte1 = (x0 <<< 6 ||| (y0 >>> 4 &&& 0x3F)) &&& 0xFF
-    byte2 = (y0 <<< 4 ||| (x1 >>> 6 &&& 0x0F)) &&& 0xFF
-    byte3 = (x1 <<< 2 ||| (y1 >>> 8 &&& 0x03)) &&& 0xFF
-    byte4 = y1 &&& 0xFF
-    byte5 = 8 <<< 4 ||| 8
-
-    <<byte0, byte1, byte2, byte3, byte4, byte5>>
   end
 end

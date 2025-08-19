@@ -1,5 +1,6 @@
 defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   @type direction :: 0..7
+  @type movement_state :: :just_spawned | :standing | :moving
 
   alias Aesir.ZoneServer.Unit.Player.Stats
 
@@ -10,14 +11,24 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     :map_name,
     :dir,
 
+    # Movement state machine
+    # :just_spawned | :standing | :moving
+    :movement_state,
+
     # Movement state
     :walk_path,
     :walk_speed,
+    :walk_start_time,
     :is_walking,
+    # Track how much of the path cost we've consumed
+    :path_progress,
 
     # Visibility
     :view_range,
-    :subscribed_cells,
+    # MapSet of char_ids currently visible
+    :visible_players,
+    # Last grid cell for visibility check
+    :last_visibility_cell,
 
     # State flags
     :is_sitting,
@@ -38,25 +49,29 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   """
   def new(%Aesir.Commons.Models.Character{} = character) do
     %__MODULE__{
-      # Position from last known location
       map_name: character.last_map,
       x: character.last_x,
       y: character.last_y,
       dir: 0,
 
+      # Movement state machine - starts as just_spawned
+      movement_state: :just_spawned,
+
       # Movement defaults
       walk_path: [],
       walk_speed: 150,
       is_walking: false,
+      path_progress: 0,
 
       # Visibility defaults
       view_range: 14,
-      subscribed_cells: [],
+      visible_players: MapSet.new(),
+      last_visibility_cell: nil,
 
       # State defaults
+      target_id: nil,
       is_sitting: false,
       is_dead: false,
-      target_id: nil,
       is_trading: false,
       is_vending: false,
       is_chatting: false,
@@ -75,17 +90,50 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
   @doc """
   Sets a movement path and starts walking.
+  Transitions state to :moving when path is set.
   """
   def set_path(%__MODULE__{} = state, path) when is_list(path) do
-    %{state | walk_path: path, is_walking: length(path) > 0}
+    if length(path) > 0 do
+      %{
+        state
+        | walk_path: path,
+          is_walking: true,
+          walk_start_time: System.system_time(:millisecond),
+          # Reset progress when starting new path
+          path_progress: 0,
+          # Transition to moving state
+          movement_state: :moving
+      }
+    else
+      %{state | walk_path: path, is_walking: false, path_progress: 0, movement_state: :standing}
+    end
   end
 
   @doc """
   Stops walking and clears the path.
+  Transitions state to :standing.
   """
   def stop_walking(%__MODULE__{} = state) do
-    %{state | walk_path: [], is_walking: false}
+    %{
+      state
+      | walk_path: [],
+        is_walking: false,
+        walk_start_time: nil,
+        path_progress: 0,
+        # Transition to standing state
+        movement_state: :standing
+    }
   end
+
+  @doc """
+  Transitions from :just_spawned to :standing.
+  Should be called after initial spawn packets are sent.
+  """
+  def mark_spawn_complete(%__MODULE__{movement_state: :just_spawned} = state) do
+    %{state | movement_state: :standing}
+  end
+
+  def mark_spawn_complete(%__MODULE__{} = state), do: state
 
   @doc """
   Updates direction based on movement.

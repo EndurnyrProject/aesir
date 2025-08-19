@@ -14,12 +14,17 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   def init do
     # Table for player positions: {char_id, {map_name, x, y}}
     if :ets.info(:player_positions) == :undefined do
-      :ets.new(:player_positions, [:set, :public, :named_table])
+      :ets.new(:player_positions, [:set, :public, :named_table, read_concurrency: true])
     end
 
     # Spatial index by grid cell: {{map_name, cell_x, cell_y}, MapSet.t(char_id)}
     if :ets.info(:spatial_index) == :undefined do
-      :ets.new(:spatial_index, [:set, :public, :named_table])
+      :ets.new(:spatial_index, [:set, :public, :named_table, read_concurrency: true])
+    end
+
+    # Visibility pairs: {{observer_id, observed_id}, true}
+    if :ets.info(:visibility_pairs) == :undefined do
+      :ets.new(:visibility_pairs, [:set, :public, :named_table, read_concurrency: true])
     end
 
     :ok
@@ -210,4 +215,57 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   end
 
   defp distance(x1, y1, x2, y2), do: abs(x2 - x1) + abs(y2 - y1)
+
+  @doc """
+  Checks if observer can see target (O(1) lookup).
+  """
+  def can_see?(observer_id, target_id) do
+    case :ets.lookup(:visibility_pairs, {observer_id, target_id}) do
+      [{{^observer_id, ^target_id}, true}] -> true
+      _ -> false
+    end
+  end
+
+  @doc """
+  Updates visibility between two players (bidirectional).
+  """
+  def update_visibility(player1_id, player2_id, visible) do
+    if visible do
+      :ets.insert(:visibility_pairs, {{player1_id, player2_id}, true})
+      :ets.insert(:visibility_pairs, {{player2_id, player1_id}, true})
+    else
+      :ets.delete(:visibility_pairs, {player1_id, player2_id})
+      :ets.delete(:visibility_pairs, {player2_id, player1_id})
+    end
+
+    :ok
+  end
+
+  @doc """
+  Gets all players visible to the given player.
+  """
+  def get_visible_players(observer_id) do
+    :ets.select(:visibility_pairs, [
+      {
+        {{observer_id, :"$1"}, true},
+        [],
+        [:"$1"]
+      }
+    ])
+  end
+
+  @doc """
+  Clears all visibility entries for a player (used on disconnect).
+  """
+  def clear_visibility(player_id) do
+    # Get all players this player can see
+    visible_to_player = get_visible_players(player_id)
+
+    # Remove bidirectional visibility
+    Enum.each(visible_to_player, fn other_id ->
+      update_visibility(player_id, other_id, false)
+    end)
+
+    :ok
+  end
 end

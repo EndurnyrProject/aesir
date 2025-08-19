@@ -27,6 +27,7 @@ defmodule Commons.MixProject do
   defp deps do
     [
       {:bcrypt_elixir, "~> 3.0"},
+      {:benchee, "~> 1.4", only: [:dev, :test]},
       {:bunt, "~> 1.0"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:ex_check, "~> 0.16", only: [:dev, :test], runtime: false},

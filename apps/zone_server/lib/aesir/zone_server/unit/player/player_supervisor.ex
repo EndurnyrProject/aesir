@@ -3,8 +3,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSupervisor do
   DynamicSupervisor for managing player session processes.
   Each player gets their own supervised process for fault isolation.
   """
-
   use DynamicSupervisor
+
   require Logger
 
   def start_link(init_arg) do

@@ -15,9 +15,12 @@ defmodule Aesir.ZoneServer.PacketRegistry do
     Aesir.ZoneServer.Packets.ZcAckReqname,
     Aesir.ZoneServer.Packets.ZcNotifyTime,
     Aesir.ZoneServer.Packets.ZcNotifyTime2,
-    Aesir.ZoneServer.Packets.ZcNotifyMove,
     Aesir.ZoneServer.Packets.ZcNotifyPlayermove,
     Aesir.ZoneServer.Packets.ZcNotifyMoveStop,
+    Aesir.ZoneServer.Packets.ZcNotifyMoveentry,
+    Aesir.ZoneServer.Packets.ZcNotifyNewentry,
+    Aesir.ZoneServer.Packets.ZcNotifyStandentry,
+    Aesir.ZoneServer.Packets.ZcNotifyVanish,
     Aesir.ZoneServer.Packets.ZcParChange,
     Aesir.ZoneServer.Packets.ZcLongparChange
   ]

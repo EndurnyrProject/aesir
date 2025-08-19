@@ -104,4 +104,49 @@ defmodule Aesir.ZoneServer.Geometry do
       |> Enum.uniq()
     end
   end
+
+  @doc """
+  Checks if a direction is diagonal.
+  Diagonal directions are: 1 (NE), 3 (SE), 5 (SW), 7 (NW)
+  """
+  def is_diagonal_direction?(direction) when is_integer(direction) do
+    direction in [1, 3, 5, 7]
+  end
+
+  @doc """
+  Checks if movement from one position to another is diagonal.
+  """
+  def is_diagonal_move?(from_x, from_y, to_x, to_y) do
+    dx = abs(to_x - from_x)
+    dy = abs(to_y - from_y)
+    dx == 1 and dy == 1
+  end
+
+  # Movement timing constants from rAthena
+  @move_cost 10
+  @move_diagonal_cost 14
+
+  @doc """
+  Calculates movement time based on direction, matching rAthena's timing.
+  Diagonal moves take 1.4x longer than straight moves.
+  """
+  def calculate_movement_time(base_speed, from_x, from_y, to_x, to_y) do
+    if is_diagonal_move?(from_x, from_y, to_x, to_y) do
+      # Diagonal moves take longer (MOVE_DIAGONAL_COST / MOVE_COST)
+      round(base_speed * @move_diagonal_cost / @move_cost)
+    else
+      base_speed
+    end
+  end
+
+  @doc """
+  Calculates movement time based on direction value, matching rAthena's timing.
+  """
+  def calculate_movement_time_by_direction(base_speed, direction) do
+    if is_diagonal_direction?(direction) do
+      round(base_speed * @move_diagonal_cost / @move_cost)
+    else
+      base_speed
+    end
+  end
 end
