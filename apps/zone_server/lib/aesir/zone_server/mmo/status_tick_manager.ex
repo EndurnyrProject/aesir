@@ -7,7 +7,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   use GenServer
   require Logger
 
-  alias Aesir.ZoneServer.Events.Player, as: PlayerEvents
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
 
@@ -110,7 +109,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   defp process_expired_batch(batch) do
     Enum.each(batch, fn {{player_id, status_type}, _entry} ->
       Interpreter.remove_status(player_id, status_type)
-      broadcast_status_change(player_id, status_type, :expired)
     end)
   end
 
@@ -130,9 +128,5 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
     Enum.each(batch, fn {{player_id, status_type}, _entry} ->
       Interpreter.process_tick(player_id, status_type)
     end)
-  end
-
-  defp broadcast_status_change(player_id, status_type, action) do
-    PlayerEvents.broadcast_status_change(player_id, status_type, action)
   end
 end
