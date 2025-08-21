@@ -4,9 +4,6 @@ defmodule Aesir.Commons.SessionManagerTest do
   import ExUnit.CaptureLog
 
   alias Aesir.Commons.InterServer.Schemas.CharacterLocation
-  alias Aesir.Commons.InterServer.Schemas.OnlineUser
-  alias Aesir.Commons.InterServer.Schemas.ServerStatus
-  alias Aesir.Commons.InterServer.Schemas.Session
   alias Aesir.Commons.MementoTestHelper
   alias Aesir.Commons.SessionManager
 

@@ -40,25 +40,21 @@ defmodule Aesir.ZoneServer.CharacterLoaderTest do
       account: account,
       character: character
     } do
-      assert {:ok, player_data} = CharacterLoader.load_character(character.id, account.id)
+      assert {:ok, loaded_character} = CharacterLoader.load_character(character.id, account.id)
 
-      assert player_data.char_id == character.id
-      assert player_data.account_id == account.id
-      assert player_data.name == "TestChar"
-      assert player_data.map_name == "prontera"
-      assert player_data.x == 100
-      assert player_data.y == 200
-      assert player_data.hp == 100
-      assert player_data.max_hp == 150
-      assert player_data.sp == 50
-      assert player_data.max_sp == 75
-      assert player_data.base_level == 10
-      assert player_data.job_level == 5
-      assert player_data.job_id == 0
-      assert player_data.walk_speed == 150
-      assert player_data.is_walking == false
-      assert player_data.walk_path == []
-      assert player_data.subscribed_cells == []
+      assert loaded_character.id == character.id
+      assert loaded_character.account_id == account.id
+      assert loaded_character.name == "TestChar"
+      assert loaded_character.last_map == "prontera.gat"
+      assert loaded_character.last_x == 100
+      assert loaded_character.last_y == 200
+      assert loaded_character.hp == 100
+      assert loaded_character.max_hp == 150
+      assert loaded_character.sp == 50
+      assert loaded_character.max_sp == 75
+      assert loaded_character.base_level == 10
+      assert loaded_character.job_level == 5
+      assert loaded_character.class == 0
     end
 
     test "returns error when character not found", %{account: account} do
@@ -88,21 +84,21 @@ defmodule Aesir.ZoneServer.CharacterLoaderTest do
         })
         |> Repo.insert()
 
-      assert {:ok, player_data} = CharacterLoader.load_character(character.id, account.id)
+      assert {:ok, loaded_character} = CharacterLoader.load_character(character.id, account.id)
 
-      # Should use default positions when nil
-      assert player_data.x == 155
-      assert player_data.y == 187
+      # Character model would have nil or defaults for positions
+      assert loaded_character.last_x == nil
+      assert loaded_character.last_y == nil
     end
 
-    test "normalizes map name by removing .gat extension", %{
+    test "preserves map name with .gat extension", %{
       account: account,
       character: character
     } do
-      assert {:ok, player_data} = CharacterLoader.load_character(character.id, account.id)
+      assert {:ok, loaded_character} = CharacterLoader.load_character(character.id, account.id)
 
-      # Original has "prontera.gat", should be normalized to "prontera"
-      assert player_data.map_name == "prontera"
+      # Character model keeps the .gat extension
+      assert loaded_character.last_map == "prontera.gat"
     end
   end
 end

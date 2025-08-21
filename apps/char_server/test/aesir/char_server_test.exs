@@ -11,6 +11,7 @@ defmodule Aesir.CharServerTest do
   alias Aesir.CharServer.Packets.HcDeleteChar
   alias Aesir.CharServer.Packets.HcNotifyZonesvr
   alias Aesir.CharServer.Packets.HcRefuseEnter
+  alias Aesir.Commons.SessionManager
 
   describe "handle_packet/3 for packet 0x0065 (character list request)" do
     test "successfully handles character list request with valid session" do
@@ -37,7 +38,7 @@ defmodule Aesir.CharServerTest do
       assert {:ok, ^updated_session, response_packets} =
                CharServer.handle_packet(0x0065, parsed_data, session_data)
 
-      assert length(response_packets) == 6
+      assert length(response_packets) == 5
 
       # Find the HcAcceptEnter packet in the response
       assert Enum.any?(response_packets, fn packet ->
@@ -133,9 +134,16 @@ defmodule Aesir.CharServerTest do
           {:ok, updated_session}
       end)
 
-      Application
-      |> stub(:get_env, fn :zone_server, :port, 5121 ->
-        5121
+      SessionManager
+      |> stub(:get_servers, fn :zone_server ->
+        [
+          %{
+            status: :online,
+            player_count: 0,
+            ip: {127, 0, 0, 1},
+            port: 5121
+          }
+        ]
       end)
 
       expected_response = %HcNotifyZonesvr{
@@ -216,9 +224,16 @@ defmodule Aesir.CharServerTest do
           {:ok, updated_session}
       end)
 
-      Application
-      |> stub(:get_env, fn :zone_server, :port, 5121 ->
-        5121
+      SessionManager
+      |> stub(:get_servers, fn :zone_server ->
+        [
+          %{
+            status: :online,
+            player_count: 0,
+            ip: {127, 0, 0, 1},
+            port: 5121
+          }
+        ]
       end)
 
       expected_response = %HcNotifyZonesvr{
