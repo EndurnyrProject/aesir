@@ -116,7 +116,7 @@ defmodule Aesir.ZoneServer.Geometry do
   @doc """
   Checks if movement from one position to another is diagonal.
   """
-  def is_diagonal_move?(from_x, from_y, to_x, to_y) do
+  def diagonal_move?(from_x, from_y, to_x, to_y) do
     dx = abs(to_x - from_x)
     dy = abs(to_y - from_y)
     dx == 1 and dy == 1
@@ -131,7 +131,7 @@ defmodule Aesir.ZoneServer.Geometry do
   Diagonal moves take 1.4x longer than straight moves.
   """
   def calculate_movement_time(base_speed, from_x, from_y, to_x, to_y) do
-    if is_diagonal_move?(from_x, from_y, to_x, to_y) do
+    if diagonal_move?(from_x, from_y, to_x, to_y) do
       # Diagonal moves take longer (MOVE_DIAGONAL_COST / MOVE_COST)
       round(base_speed * @move_diagonal_cost / @move_cost)
     else

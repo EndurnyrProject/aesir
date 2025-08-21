@@ -10,6 +10,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.Commons.StatusParams
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Packets.ZcLongparChange
+  alias Aesir.ZoneServer.Packets.ZcNotifyMoveentry
+  alias Aesir.ZoneServer.Packets.ZcNotifyMoveStop
+  alias Aesir.ZoneServer.Packets.ZcNotifyNewentry
+  alias Aesir.ZoneServer.Packets.ZcNotifyPlayermove
+  alias Aesir.ZoneServer.Packets.ZcNotifyStandentry
+  alias Aesir.ZoneServer.Packets.ZcNotifyVanish
   alias Aesir.ZoneServer.Packets.ZcParChange
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -143,8 +149,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   def handle_info(:movement_tick, %{game_state: %{is_walking: true, walk_path: []}} = state) do
-    # Movement completed naturally - transitions to standing
-    # stop_walking already sets movement_state to :standing
     game_state = PlayerState.stop_walking(state.game_state)
     {:noreply, %{state | game_state: game_state}}
   end
@@ -174,33 +178,25 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # Update game state with new position and progress
     game_state =
       if new_x != game_state.x or new_y != game_state.y do
-        # Update spatial index
         SpatialIndex.update_position(character.id, new_x, new_y, game_state.map_name)
 
-        # Update game state position and track progress
         updated_state =
           game_state
           |> PlayerState.update_position(new_x, new_y)
           |> Map.put(:walk_path, remaining_path)
           |> Map.put(:path_progress, game_state.path_progress + consumed)
 
-        # Check for visibility changes
         handle_visibility_update(character, updated_state)
       else
-        # Position didn't change this tick, but still update path and progress
         game_state
         |> Map.put(:walk_path, remaining_path)
         |> Map.put(:path_progress, game_state.path_progress + consumed)
       end
 
-    # Check if movement is complete
     game_state =
-      if length(remaining_path) == 0 do
-        # Movement completed naturally - just stop walking
-        # The position should already be at the destination
+      if remaining_path == [] do
         PlayerState.stop_walking(game_state)
       else
-        # Continue movement - schedule next tick
         Process.send_after(self(), :movement_tick, 100)
         game_state
       end
@@ -331,9 +327,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         %{character: character, connection_pid: connection_pid} = state
       ) do
     if char_id != character.id do
-      packet = %Aesir.ZoneServer.Packets.ZcNotifyVanish{
+      packet = %ZcNotifyVanish{
         gid: char_id,
-        type: Aesir.ZoneServer.Packets.ZcNotifyVanish.out_of_sight()
+        type: ZcNotifyVanish.out_of_sight()
       }
 
       send(connection_pid, {:send_packet, packet})
@@ -345,10 +341,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @impl true
   def handle_cast({:player_entered_view, other_char_id}, state) do
-    # Another player entered our view - request their info asynchronously
     case :ets.lookup(:zone_players, other_char_id) do
       [{^other_char_id, other_pid, _account_id}] ->
-        # Request player info asynchronously to avoid deadlock
         GenServer.cast(other_pid, {:request_player_info, self(), state.character.id})
 
       _ ->
@@ -360,7 +354,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @impl true
   def handle_cast({:request_player_info, requester_pid, _requester_char_id}, state) do
-    # Someone requested our info - send it back asynchronously
     info = %{
       character: state.character,
       game_state: state.game_state,
@@ -370,6 +363,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     }
 
     GenServer.cast(requester_pid, {:player_info_response, info, state.character.id})
+
     {:noreply, state}
   end
 
@@ -382,11 +376,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @impl true
   def handle_cast({:player_left_view, _other_char_id, other_account_id}, state) do
-    # Another player left our view - send vanish packet
-    packet = %Aesir.ZoneServer.Packets.ZcNotifyVanish{
-      # GID is account_id for players
+    packet = %ZcNotifyVanish{
       gid: other_account_id,
-      type: Aesir.ZoneServer.Packets.ZcNotifyVanish.out_of_sight()
+      type: ZcNotifyVanish.out_of_sight()
     }
 
     send(state.connection_pid, {:send_packet, packet})
@@ -418,7 +410,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         |> Map.put(:walk_start_time, walk_start_time)
 
       # Send movement confirmation to the client
-      packet = %Aesir.ZoneServer.Packets.ZcNotifyPlayermove{
+      packet = %ZcNotifyPlayermove{
         walk_start_time: walk_start_time,
         src_x: game_state.x,
         src_y: game_state.y,
@@ -431,7 +423,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       # Broadcast movement to nearby players
       broadcast_movement_to_nearby(character, game_state, dest_x, dest_y)
 
-      # Schedule first movement tick (100ms interval per rAthena)
       Process.send_after(self(), :movement_tick, 100)
 
       {:noreply, %{state | game_state: game_state}}
@@ -445,7 +436,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         # No path found or map not loaded
         Logger.debug("Movement failed for player #{character.id}: #{inspect(reason)}")
 
-        packet = %Aesir.ZoneServer.Packets.ZcNotifyMoveStop{
+        packet = %ZcNotifyMoveStop{
           account_id: character.account_id,
           x: game_state.x,
           y: game_state.y
@@ -463,20 +454,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         %{character: character, game_state: game_state, connection_pid: connection_pid} = state
       ) do
     if game_state.is_walking do
-      # Stop walking and clear path
       game_state = PlayerState.stop_walking(game_state)
 
-      # Send position fix packet to client and nearby players
-      packet = %Aesir.ZoneServer.Packets.ZcNotifyMoveStop{
+      packet = %ZcNotifyMoveStop{
         account_id: character.account_id,
         x: game_state.x,
         y: game_state.y
       }
 
-      # Send to self
       send(connection_pid, {:send_packet, packet})
 
-      # Broadcast to nearby players
       broadcast_stop_to_nearby(character, game_state, packet)
 
       {:noreply, %{state | game_state: game_state}}
@@ -563,18 +550,44 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         game_state: _game_state,
         connection_pid: connection_pid
       }) do
+    # Broadcast vanish packet to all visible players before cleanup
+    broadcast_vanish_on_disconnect(character)
+
+    # Clean up player data
     :ets.delete(:zone_players, character.id)
     SpatialIndex.remove_player(character.id)
-
-    # Clear all visibility relationships
     SpatialIndex.clear_visibility(character.id)
 
-    # Notify connection process if still alive
     if connection_pid && Process.alive?(connection_pid) do
       send(connection_pid, :player_session_terminated)
     end
 
     :ok
+  end
+
+  defp broadcast_vanish_on_disconnect(character) do
+    visible_players = SpatialIndex.get_visible_players(character.id)
+
+    vanish_packet = %ZcNotifyVanish{
+      gid: character.account_id,
+      type: ZcNotifyVanish.logged_out()
+    }
+
+    Enum.each(visible_players, fn other_char_id ->
+      if other_char_id != character.id do
+        send_vanish_to_player(other_char_id, vanish_packet)
+      end
+    end)
+  end
+
+  defp send_vanish_to_player(char_id, packet) do
+    case :ets.lookup(:zone_players, char_id) do
+      [{^char_id, pid, _account_id}] ->
+        send_packet(pid, packet)
+
+      _ ->
+        :ok
+    end
   end
 
   defp build_status_packet(param_id, value) do
@@ -607,7 +620,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   defp do_consume_path(x, y, path, budget, consumed) when budget <= 0, do: {x, y, path, consumed}
 
   defp do_consume_path(x, y, [{next_x, next_y} | rest], budget, consumed) do
-    # Calculate movement cost (diagonal vs straight)
     move_cost =
       if abs(next_x - x) == 1 and abs(next_y - y) == 1 do
         # Diagonal movement (√2)
@@ -618,16 +630,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       end
 
     if move_cost <= budget do
-      # Can move to this cell, continue consuming path
       do_consume_path(next_x, next_y, rest, budget - move_cost, consumed + move_cost)
     else
-      # Not enough budget to move to next cell
       {x, y, [{next_x, next_y} | rest], consumed}
     end
   end
 
   defp broadcast_stop_to_nearby(character, game_state, packet) do
-    # Get players in view range
     nearby_players =
       SpatialIndex.get_players_in_range(
         game_state.map_name,
@@ -636,18 +645,19 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         game_state.view_range
       )
 
-    # Send stop packet to each nearby player except self
-    Enum.each(nearby_players, fn other_char_id ->
-      if other_char_id != character.id do
-        case :ets.lookup(:zone_players, other_char_id) do
-          [{^other_char_id, pid, _account_id}] ->
-            send_packet(pid, packet)
+    nearby_players
+    |> Enum.filter(&(&1 != character.id))
+    |> Enum.each(&send_packet_to_player(&1, packet))
+  end
 
-          _ ->
-            :ok
-        end
-      end
-    end)
+  defp send_packet_to_player(char_id, packet) do
+    case :ets.lookup(:zone_players, char_id) do
+      [{^char_id, pid, _account_id}] ->
+        send_packet(pid, packet)
+
+      _ ->
+        :ok
+    end
   end
 
   defp broadcast_movement_to_nearby(character, game_state, dest_x, dest_y) do
@@ -655,7 +665,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     visible_players = SpatialIndex.get_visible_players(character.id)
 
     # Build movement packet for observers
-    packet = %Aesir.ZoneServer.Packets.ZcNotifyMoveentry{
+    packet = build_movement_packet(character, game_state, dest_x, dest_y)
+
+    visible_players
+    |> Enum.filter(&(&1 != character.id))
+    |> Enum.each(&send_packet_to_player(&1, packet))
+  end
+
+  defp build_movement_packet(character, game_state, dest_x, dest_y) do
+    %ZcNotifyMoveentry{
       aid: character.account_id,
       gid: character.id,
       speed: game_state.walk_speed,
@@ -694,24 +712,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       body: 0,
       name: character.name
     }
-
-    # Send to each visible player
-    Enum.each(visible_players, fn other_char_id ->
-      if other_char_id != character.id do
-        case :ets.lookup(:zone_players, other_char_id) do
-          [{^other_char_id, pid, _account_id}] ->
-            send_packet(pid, packet)
-
-          _ ->
-            :ok
-        end
-      end
-    end)
   end
 
   defp handle_visibility_update(character, game_state) do
-    # Always check visibility on every movement (like rAthena's map_foreachinmovearea)
-    # Get players in view range
     players_in_range =
       SpatialIndex.get_players_in_range(
         game_state.map_name,
@@ -774,138 +777,155 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   defp send_player_spawn_packet(connection_pid, player_info) do
     %{character: character, game_state: game_state} = player_info
-
-    # Choose packet type based on movement state
-    packet =
-      case game_state.movement_state do
-        :moving when game_state.is_walking and length(game_state.walk_path) > 0 ->
-          # Player is moving - send ZC_NOTIFY_MOVEENTRY
-          [{dest_x, dest_y} | _] = Enum.reverse(game_state.walk_path)
-
-          %Aesir.ZoneServer.Packets.ZcNotifyMoveentry{
-            aid: character.account_id,
-            gid: character.id,
-            speed: game_state.walk_speed,
-            body_state: 0,
-            health_state: 0,
-            effect_state: 0,
-            job: character.class,
-            head: character.head_top,
-            weapon: character.weapon || 0,
-            shield: character.shield || 0,
-            accessory: character.head_bottom || 0,
-            move_start_time: System.system_time(:millisecond),
-            accessory2: character.head_mid || 0,
-            accessory3: 0,
-            src_x: game_state.x,
-            src_y: game_state.y,
-            dst_x: dest_x,
-            dst_y: dest_y,
-            head_palette: character.hair_color,
-            body_palette: character.clothes_color,
-            head_dir: 0,
-            robe: character.robe || 0,
-            guild_id: 0,
-            guild_emblem_ver: 0,
-            honor: 0,
-            virtue: 0,
-            is_pk_mode_on: 0,
-            sex: sex_to_int(character.sex),
-            x_size: 5,
-            y_size: 5,
-            clevel: character.base_level,
-            font: 0,
-            max_hp: game_state.stats.derived_stats.max_hp,
-            hp: game_state.stats.current_state.hp,
-            is_boss: 0,
-            body: 0,
-            name: character.name
-          }
-
-        :standing ->
-          # Player is standing - send ZC_NOTIFY_STANDENTRY
-          %Aesir.ZoneServer.Packets.ZcNotifyStandentry{
-            aid: character.account_id,
-            gid: character.id,
-            speed: game_state.walk_speed,
-            body_state: 0,
-            health_state: 0,
-            effect_state: 0,
-            job: character.class,
-            head: character.head_top,
-            weapon: character.weapon || 0,
-            shield: character.shield || 0,
-            accessory: character.head_bottom || 0,
-            accessory2: character.head_mid || 0,
-            accessory3: 0,
-            head_palette: character.hair_color,
-            body_palette: character.clothes_color,
-            head_dir: 0,
-            robe: character.robe || 0,
-            guild_id: 0,
-            guild_emblem_ver: 0,
-            honor: 0,
-            virtue: 0,
-            is_pk_mode_on: 0,
-            sex: sex_to_int(character.sex),
-            x: game_state.x,
-            y: game_state.y,
-            dir: game_state.dir || 0,
-            x_size: 5,
-            y_size: 5,
-            # 0 = standing, 2 = sitting
-            state: 0,
-            clevel: character.base_level,
-            font: 0,
-            max_hp: game_state.stats.derived_stats.max_hp,
-            hp: game_state.stats.current_state.hp,
-            is_boss: 0,
-            body: 0,
-            name: character.name
-          }
-
-        _ ->
-          # Default case (including :just_spawned) - send ZC_NOTIFY_NEWENTRY
-          %Aesir.ZoneServer.Packets.ZcNotifyNewentry{
-            aid: character.account_id,
-            gid: character.id,
-            speed: game_state.walk_speed,
-            body_state: 0,
-            health_state: 0,
-            effect_state: 0,
-            job: character.class,
-            head: character.head_top,
-            weapon: character.weapon || 0,
-            shield: character.shield || 0,
-            accessory: character.head_bottom || 0,
-            accessory2: character.head_mid || 0,
-            accessory3: 0,
-            head_palette: character.hair_color,
-            body_palette: character.clothes_color,
-            head_dir: 0,
-            robe: character.robe || 0,
-            guild_id: 0,
-            guild_emblem_ver: 0,
-            honor: 0,
-            virtue: 0,
-            is_pk_mode_on: 0,
-            sex: sex_to_int(character.sex),
-            x: game_state.x,
-            y: game_state.y,
-            dir: game_state.dir || 0,
-            x_size: 5,
-            y_size: 5,
-            clevel: character.base_level,
-            font: 0,
-            max_hp: game_state.stats.derived_stats.max_hp,
-            hp: game_state.stats.current_state.hp,
-            is_boss: 0,
-            body: 0,
-            name: character.name
-          }
-      end
-
+    packet = build_spawn_packet(character, game_state)
     send(connection_pid, {:send_packet, packet})
+  end
+
+  defp build_spawn_packet(character, game_state) do
+    if moving?(game_state) do
+      build_moveentry_packet(character, game_state)
+    else
+      build_stationary_packet(character, game_state)
+    end
+  end
+
+  defp moving?(game_state) do
+    game_state.movement_state == :moving and
+      game_state.is_walking and
+      length(game_state.walk_path) > 0
+  end
+
+  defp build_moveentry_packet(character, game_state) do
+    [{dest_x, dest_y} | _] = Enum.reverse(game_state.walk_path)
+
+    %ZcNotifyMoveentry{
+      aid: character.account_id,
+      gid: character.id,
+      speed: game_state.walk_speed,
+      body_state: 0,
+      health_state: 0,
+      effect_state: 0,
+      job: character.class,
+      head: character.head_top,
+      weapon: character.weapon || 0,
+      shield: character.shield || 0,
+      accessory: character.head_bottom || 0,
+      move_start_time: System.system_time(:millisecond),
+      accessory2: character.head_mid || 0,
+      accessory3: 0,
+      src_x: game_state.x,
+      src_y: game_state.y,
+      dst_x: dest_x,
+      dst_y: dest_y,
+      head_palette: character.hair_color,
+      body_palette: character.clothes_color,
+      head_dir: 0,
+      robe: character.robe || 0,
+      guild_id: 0,
+      guild_emblem_ver: 0,
+      honor: 0,
+      virtue: 0,
+      is_pk_mode_on: 0,
+      sex: sex_to_int(character.sex),
+      x_size: 5,
+      y_size: 5,
+      clevel: character.base_level,
+      font: 0,
+      max_hp: game_state.stats.derived_stats.max_hp,
+      hp: game_state.stats.current_state.hp,
+      is_boss: 0,
+      body: 0,
+      name: character.name
+    }
+  end
+
+  defp build_stationary_packet(character, game_state) do
+    case game_state.movement_state do
+      :standing -> build_standentry_packet(character, game_state)
+      _ -> build_newentry_packet(character, game_state)
+    end
+  end
+
+  defp build_standentry_packet(character, game_state) do
+    %ZcNotifyStandentry{
+      aid: character.account_id,
+      gid: character.id,
+      speed: game_state.walk_speed,
+      body_state: 0,
+      health_state: 0,
+      effect_state: 0,
+      job: character.class,
+      head: character.head_top,
+      weapon: character.weapon || 0,
+      shield: character.shield || 0,
+      accessory: character.head_bottom || 0,
+      accessory2: character.head_mid || 0,
+      accessory3: 0,
+      head_palette: character.hair_color,
+      body_palette: character.clothes_color,
+      head_dir: 0,
+      robe: character.robe || 0,
+      guild_id: 0,
+      guild_emblem_ver: 0,
+      honor: 0,
+      virtue: 0,
+      is_pk_mode_on: 0,
+      sex: sex_to_int(character.sex),
+      x: game_state.x,
+      y: game_state.y,
+      dir: game_state.dir || 0,
+      x_size: 5,
+      y_size: 5,
+      # 0 = standing, 2 = sitting
+      state: 0,
+      clevel: character.base_level,
+      font: 0,
+      max_hp: game_state.stats.derived_stats.max_hp,
+      hp: game_state.stats.current_state.hp,
+      is_boss: 0,
+      body: 0,
+      name: character.name
+    }
+  end
+
+  defp build_newentry_packet(character, game_state) do
+    %ZcNotifyNewentry{
+      aid: character.account_id,
+      gid: character.id,
+      speed: game_state.walk_speed,
+      body_state: 0,
+      health_state: 0,
+      effect_state: 0,
+      job: character.class,
+      head: character.head_top,
+      weapon: character.weapon || 0,
+      shield: character.shield || 0,
+      accessory: character.head_bottom || 0,
+      accessory2: character.head_mid || 0,
+      accessory3: 0,
+      head_palette: character.hair_color,
+      body_palette: character.clothes_color,
+      head_dir: 0,
+      robe: character.robe || 0,
+      guild_id: 0,
+      guild_emblem_ver: 0,
+      honor: 0,
+      virtue: 0,
+      is_pk_mode_on: 0,
+      sex: sex_to_int(character.sex),
+      x: game_state.x,
+      y: game_state.y,
+      dir: game_state.dir || 0,
+      x_size: 5,
+      y_size: 5,
+      clevel: character.base_level,
+      font: 0,
+      max_hp: game_state.stats.derived_stats.max_hp,
+      hp: game_state.stats.current_state.hp,
+      is_boss: 0,
+      body: 0,
+      name: character.name
+    }
   end
 
   defp send_vanish_packet_to(to_char_id, about_char_id) do

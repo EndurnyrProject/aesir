@@ -10,6 +10,20 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
+  # Test helper GenServer for receiving cast messages
+  defmodule TestPlayerSession do
+    use GenServer
+
+    def init(test_pid) do
+      {:ok, test_pid}
+    end
+
+    def handle_cast({:send_packet, packet}, test_pid) do
+      send(test_pid, {:vanish_packet, packet})
+      {:noreply, test_pid}
+    end
+  end
+
   setup do
     Mimic.copy(SpatialIndex)
     Mimic.copy(Stats)
@@ -380,7 +394,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
   describe "packet handling" do
     test "send_packet forwards packet to connection", %{character: character} do
-      packet = %Aesir.ZoneServer.Packets.ZcNotifyTime{server_tick: 12345}
+      packet = %Aesir.ZoneServer.Packets.ZcNotifyTime{server_tick: 12_345}
 
       state = %{
         character: character,
@@ -456,6 +470,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     test "cleans up ETS entries and notifies connection", %{character: character} do
       :ets.insert(:zone_players, {1, self(), 100})
 
+      expect(SpatialIndex, :get_visible_players, fn 1 -> [] end)
       expect(SpatialIndex, :remove_player, fn 1 -> :ok end)
       expect(SpatialIndex, :clear_visibility, fn 1 -> :ok end)
 
@@ -474,6 +489,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     test "handles dead connection process gracefully", %{character: character} do
       expect(SpatialIndex, :remove_player, fn 1 -> :ok end)
       expect(SpatialIndex, :clear_visibility, fn 1 -> :ok end)
+      expect(SpatialIndex, :get_visible_players, fn 1 -> [] end)
 
       dead_pid = spawn(fn -> :ok end)
       Process.exit(dead_pid, :kill)
@@ -486,6 +502,49 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       }
 
       :ok = PlayerSession.terminate(:normal, state)
+    end
+
+    test "broadcasts vanish packet to visible players on disconnect", %{character: character} do
+      # Create a test GenServer that will act as another player session
+      test_pid = self()
+
+      {:ok, other_pid} =
+        GenServer.start_link(
+          __MODULE__.TestPlayerSession,
+          test_pid,
+          []
+        )
+
+      :ets.insert(:zone_players, {2, other_pid, 200})
+
+      # Set up expectations for SpatialIndex
+      expect(SpatialIndex, :get_visible_players, fn 1 -> [2] end)
+      expect(SpatialIndex, :remove_player, fn 1 -> :ok end)
+      expect(SpatialIndex, :clear_visibility, fn 1 -> :ok end)
+
+      state = %{
+        character: character,
+        game_state: PlayerState.new(character),
+        connection_pid: self()
+      }
+
+      # Call terminate directly to test the broadcast
+      :ok = PlayerSession.terminate(:normal, state)
+
+      # Verify vanish packet was sent to the other player
+      assert_receive {:vanish_packet,
+                      %Aesir.ZoneServer.Packets.ZcNotifyVanish{
+                        # account_id
+                        gid: 100,
+                        # logged_out type
+                        type: 2
+                      }},
+                     500
+
+      assert_receive :player_session_terminated
+
+      # Stop the test GenServer
+      GenServer.stop(other_pid, :normal)
     end
   end
 
@@ -511,7 +570,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     end
 
     test "handles packet send when connection_pid is nil", %{character: character} do
-      packet = %Aesir.ZoneServer.Packets.ZcNotifyTime{server_tick: 12345}
+      packet = %Aesir.ZoneServer.Packets.ZcNotifyTime{server_tick: 12_345}
 
       state = %{
         character: character,

@@ -258,14 +258,10 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   Clears all visibility entries for a player (used on disconnect).
   """
   def clear_visibility(player_id) do
-    # Get all players this player can see
     visible_to_player = get_visible_players(player_id)
 
-    # Remove bidirectional visibility
     Enum.each(visible_to_player, fn other_id ->
       update_visibility(player_id, other_id, false)
     end)
-
-    :ok
   end
 end
