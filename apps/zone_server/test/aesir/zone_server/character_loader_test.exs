@@ -1,5 +1,6 @@
 defmodule Aesir.ZoneServer.CharacterLoaderTest do
   use Aesir.DataCase, async: true
+  import ExUnit.CaptureLog
 
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
@@ -60,15 +61,27 @@ defmodule Aesir.ZoneServer.CharacterLoaderTest do
     test "returns error when character not found", %{account: account} do
       non_existent_id = 999_999
 
-      assert {:error, :character_not_found} =
-               CharacterLoader.load_character(non_existent_id, account.id)
+      log =
+        capture_log(fn ->
+          assert {:error, :character_not_found} =
+                   CharacterLoader.load_character(non_existent_id, account.id)
+        end)
+
+      assert log =~
+               "Failed to load character #{non_existent_id} for account #{account.id}: character_not_found"
     end
 
     test "returns error when character belongs to different account", %{character: character} do
       different_account_id = 999_999
 
-      assert {:error, :character_not_owned} =
-               CharacterLoader.load_character(character.id, different_account_id)
+      log =
+        capture_log(fn ->
+          assert {:error, :character_not_owned} =
+                   CharacterLoader.load_character(character.id, different_account_id)
+        end)
+
+      assert log =~
+               "Failed to load character #{character.id} for account #{different_account_id}: character_not_owned"
     end
 
     test "handles missing position data with defaults", %{account: account} do

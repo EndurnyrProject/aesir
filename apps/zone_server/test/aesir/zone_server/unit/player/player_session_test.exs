@@ -327,7 +327,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
   describe "stats management" do
     test "update_base_stat recalculates and sends updates", %{character: character} do
-      expect(Stats, :calculate_stats, fn stats ->
+      expect(Stats, :calculate_stats, fn stats, player_id ->
+        assert player_id == character.id
         %{stats | base_stats: %{stats.base_stats | str: 20}}
       end)
 
@@ -351,8 +352,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       assert_receive {:send_packet, _packet}
     end
 
-    test "recalculate_stats updates all stats", %{character: character} do
-      expect(Stats, :calculate_stats, fn stats -> stats end)
+    test "sync recalculate_stats via call updates all stats", %{character: character} do
+      expect(Stats, :calculate_stats, fn stats, player_id ->
+        assert player_id == character.id
+        stats
+      end)
 
       game_state = PlayerState.new(character)
 
@@ -369,7 +373,39 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
           state
         )
 
-      assert %Stats{} = stats
+      assert stats == game_state.stats
+    end
+
+    test "async recalculate_stats via cast updates stats", %{character: character} do
+      expect(Stats, :calculate_stats, fn stats, player_id ->
+        assert player_id == character.id
+
+        %{
+          stats
+          | base_stats: %{stats.base_stats | str: 25},
+            derived_stats: %{stats.derived_stats | max_hp: 500}
+        }
+      end)
+
+      game_state = PlayerState.new(character)
+
+      state = %{
+        character: character,
+        game_state: game_state,
+        connection_pid: self()
+      }
+
+      {:noreply, new_state} =
+        PlayerSession.handle_cast(
+          :recalculate_stats,
+          state
+        )
+
+      assert new_state.game_state.stats.base_stats.str == 25
+      assert new_state.game_state.stats.derived_stats.max_hp == 500
+
+      # Verify stats updates are sent to client
+      assert_receive {:send_packet, _packet}
     end
 
     test "get_current_stats returns stats", %{character: character} do

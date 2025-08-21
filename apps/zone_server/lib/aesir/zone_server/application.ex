@@ -10,7 +10,6 @@ defmodule Aesir.ZoneServer.Application do
   alias Aesir.ZoneServer.Mmo.JobData
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @impl true
   def start(_type, _args) do
@@ -18,6 +17,7 @@ defmodule Aesir.ZoneServer.Application do
     maps = initialize_zone()
 
     children = [
+      {Aesir.ZoneServer.EtsTable, name: EtsTables},
       Aesir.ZoneServer.Unit.Player.PlayerSupervisor,
       Aesir.ZoneServer.Mmo.StatusTickManager,
       {Aesir.Commons.Network.Listener,
@@ -65,8 +65,7 @@ defmodule Aesir.ZoneServer.Application do
   end
 
   defp initialize_zone do
-    with :ok <- SpatialIndex.init(),
-         :ok <- JobData.init(),
+    with :ok <- JobData.init(),
          :ok <- StatusStorage.init(),
          :ok <- Interpreter.init(),
          _ <- :ets.new(:zone_players, [:set, :public, :named_table]),

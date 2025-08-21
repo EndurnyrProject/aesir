@@ -3,50 +3,28 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   ETS-based spatial indexing for O(1) player lookups.
   Uses grid cells for efficient range queries.
   """
+  import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
   # 8x8 map cells per grid cell
   @cell_size 8
 
   @doc """
-  Initializes the ETS tables for spatial indexing.
-  Call this from application startup.
-  """
-  def init do
-    # Table for player positions: {char_id, {map_name, x, y}}
-    if :ets.info(:player_positions) == :undefined do
-      :ets.new(:player_positions, [:set, :public, :named_table, read_concurrency: true])
-    end
-
-    # Spatial index by grid cell: {{map_name, cell_x, cell_y}, MapSet.t(char_id)}
-    if :ets.info(:spatial_index) == :undefined do
-      :ets.new(:spatial_index, [:set, :public, :named_table, read_concurrency: true])
-    end
-
-    # Visibility pairs: {{observer_id, observed_id}, true}
-    if :ets.info(:visibility_pairs) == :undefined do
-      :ets.new(:visibility_pairs, [:set, :public, :named_table, read_concurrency: true])
-    end
-
-    :ok
-  end
-
-  @doc """
   Adds a player to the spatial index.
   """
   def add_player(char_id, x, y, map_name) do
-    :ets.insert(:player_positions, {char_id, {map_name, x, y}})
+    :ets.insert(player_positions_table(), {char_id, {map_name, x, y}})
 
     cell_key = cell_key(map_name, x, y)
 
     players =
-      case :ets.lookup(:spatial_index, cell_key) do
+      case :ets.lookup(spatial_index_table(), cell_key) do
         [{^cell_key, existing}] -> existing
         [] -> MapSet.new()
       end
 
     updated = MapSet.put(players, char_id)
 
-    :ets.insert(:spatial_index, {cell_key, updated})
+    :ets.insert(spatial_index_table(), {cell_key, updated})
 
     :ok
   end
@@ -55,19 +33,19 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   Updates a player's position in the index.
   """
   def update_position(char_id, new_x, new_y, new_map) do
-    case :ets.lookup(:player_positions, char_id) do
+    case :ets.lookup(player_positions_table(), char_id) do
       [{^char_id, {old_map, old_x, old_y}}] ->
         old_cell = cell_key(old_map, old_x, old_y)
 
-        case :ets.lookup(:spatial_index, old_cell) do
+        case :ets.lookup(spatial_index_table(), old_cell) do
           [{^old_cell, players}] ->
             updated = MapSet.delete(players, char_id)
 
             # credo:disable-for-next-line Credo.Check.Refactor.Nesting
             if MapSet.size(updated) == 0 do
-              :ets.delete(:spatial_index, old_cell)
+              :ets.delete(spatial_index_table(), old_cell)
             else
-              :ets.insert(:spatial_index, {old_cell, updated})
+              :ets.insert(spatial_index_table(), {old_cell, updated})
             end
 
           _ ->
@@ -77,15 +55,15 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
         new_cell = cell_key(new_map, new_x, new_y)
 
         players =
-          case :ets.lookup(:spatial_index, new_cell) do
+          case :ets.lookup(spatial_index_table(), new_cell) do
             [{^new_cell, existing}] -> existing
             [] -> MapSet.new()
           end
 
         updated = MapSet.put(players, char_id)
 
-        :ets.insert(:spatial_index, {new_cell, updated})
-        :ets.insert(:player_positions, {char_id, {new_map, new_x, new_y}})
+        :ets.insert(spatial_index_table(), {new_cell, updated})
+        :ets.insert(player_positions_table(), {char_id, {new_map, new_x, new_y}})
 
         :ok
 
@@ -98,26 +76,26 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   Removes a player from the spatial index.
   """
   def remove_player(char_id) do
-    case :ets.lookup(:player_positions, char_id) do
+    case :ets.lookup(player_positions_table(), char_id) do
       [{^char_id, {map_name, x, y}}] ->
         cell = cell_key(map_name, x, y)
 
-        case :ets.lookup(:spatial_index, cell) do
+        case :ets.lookup(spatial_index_table(), cell) do
           [{^cell, players}] ->
             updated = MapSet.delete(players, char_id)
 
             # credo:disable-for-next-line Credo.Check.Refactor.Nesting
             if MapSet.size(updated) == 0 do
-              :ets.delete(:spatial_index, cell)
+              :ets.delete(spatial_index_table(), cell)
             else
-              :ets.insert(:spatial_index, {cell, updated})
+              :ets.insert(spatial_index_table(), {cell, updated})
             end
 
           _ ->
             :ok
         end
 
-        :ets.delete(:player_positions, char_id)
+        :ets.delete(player_positions_table(), char_id)
 
         :ok
 
@@ -136,7 +114,7 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
     players =
       cells
       |> Enum.flat_map(fn cell ->
-        case :ets.lookup(:spatial_index, cell) do
+        case :ets.lookup(spatial_index_table(), cell) do
           [{^cell, player_set}] -> MapSet.to_list(player_set)
           [] -> []
         end
@@ -145,7 +123,7 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
 
     players
     |> Enum.filter(fn char_id ->
-      case :ets.lookup(:player_positions, char_id) do
+      case :ets.lookup(player_positions_table(), char_id) do
         [{^char_id, {^map_name, px, py}}] ->
           distance(x, y, px, py) <= range
 
@@ -161,7 +139,7 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   def get_players_in_cell(map_name, cell_x, cell_y) do
     cell = {map_name, cell_x, cell_y}
 
-    case :ets.lookup(:spatial_index, cell) do
+    case :ets.lookup(spatial_index_table(), cell) do
       [{^cell, player_set}] -> MapSet.to_list(player_set)
       [] -> []
     end
@@ -171,7 +149,7 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   Gets a player's current position.
   """
   def get_position(char_id) do
-    case :ets.lookup(:player_positions, char_id) do
+    case :ets.lookup(player_positions_table(), char_id) do
       [{^char_id, {map_name, x, y}}] ->
         {:ok, {x, y, map_name}}
 
@@ -184,7 +162,7 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   Gets all players on a specific map.
   """
   def get_players_on_map(map_name) do
-    :ets.select(:player_positions, [
+    :ets.select(player_positions_table(), [
       {
         {:"$1", {:"$2", :_, :_}},
         [{:==, :"$2", map_name}],
@@ -220,7 +198,7 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   Checks if observer can see target (O(1) lookup).
   """
   def can_see?(observer_id, target_id) do
-    case :ets.lookup(:visibility_pairs, {observer_id, target_id}) do
+    case :ets.lookup(visibility_pairs_table(), {observer_id, target_id}) do
       [{{^observer_id, ^target_id}, true}] -> true
       _ -> false
     end
@@ -231,11 +209,11 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   """
   def update_visibility(player1_id, player2_id, visible) do
     if visible do
-      :ets.insert(:visibility_pairs, {{player1_id, player2_id}, true})
-      :ets.insert(:visibility_pairs, {{player2_id, player1_id}, true})
+      :ets.insert(visibility_pairs_table(), {{player1_id, player2_id}, true})
+      :ets.insert(visibility_pairs_table(), {{player2_id, player1_id}, true})
     else
-      :ets.delete(:visibility_pairs, {player1_id, player2_id})
-      :ets.delete(:visibility_pairs, {player2_id, player1_id})
+      :ets.delete(visibility_pairs_table(), {player1_id, player2_id})
+      :ets.delete(visibility_pairs_table(), {player2_id, player1_id})
     end
 
     :ok
@@ -245,7 +223,7 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   Gets all players visible to the given player.
   """
   def get_visible_players(observer_id) do
-    :ets.select(:visibility_pairs, [
+    :ets.select(visibility_pairs_table(), [
       {
         {{observer_id, :"$1"}, true},
         [],
@@ -264,4 +242,8 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
       update_visibility(player_id, other_id, false)
     end)
   end
+
+  defp player_positions_table, do: table_for(:player_positions)
+  defp spatial_index_table, do: table_for(:spatial_index)
+  defp visibility_pairs_table, do: table_for(:visibility_pairs)
 end

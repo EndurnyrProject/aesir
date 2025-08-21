@@ -18,10 +18,15 @@
           mdef: 25
         },
         flags: [:no_move, :no_attack, :no_skill, :no_magic],
-        on_damage: %{
-          condition: %{element: :earth},
-          action: :remove_self
-        }
+        on_damage: [
+          %{
+            type: :conditional,
+            condition: "element == :earth",
+            then_actions: [
+              %{type: :remove_status, status: :sc_stone}
+            ]
+          }
+        ]
       }
     },
     calc_flags: [:def_ele, :def, :mdef, :speed],
@@ -32,8 +37,8 @@
   sc_freeze: %{
     properties: [:debuff, :prevents_movement, :prevents_skills, :prevents_attack],
     modifiers: %{
-      # Water element level 1
-      def_ele: 10,
+      # Water element level 1 (should be :water1 not numeric 10)
+      def_ele: :water1,
       # -100% physical defense
       def_rate: -100,
       # -50% magic defense
@@ -41,9 +46,17 @@
     },
     flags: [:no_move, :no_attack, :no_skill],
     on_apply: [
-      %{type: :remove_status, targets: [:sc_aeterna]}
+      %{type: :remove_status, status: :sc_aeterna},
+      # Check for undead immunity
+      %{
+        type: :conditional,
+        condition: "race == :undead",
+        then_actions: [
+          %{type: :remove_status, status: :sc_freeze}
+        ]
+      }
     ],
-    calc_flags: [:def_ele, :def, :mdef],
+    calc_flags: [:def_ele, :def_rate, :mdef_rate],
     conflicts_with: [:sc_aeterna],
     prevented_by: [
       :sc_refresh,
@@ -52,7 +65,8 @@
       :sc_freeze,
       :sc_burning,
       :sc_protection
-    ]
+    ],
+    immunity: [:undead]
   },
 
   # Stun - Complete action prevention
@@ -67,9 +81,9 @@
   sc_sleep: %{
     properties: [:debuff, :prevents_movement, :prevents_skills, :prevents_attack],
     flags: [:no_move, :no_attack, :no_skill, :no_magic],
-    on_damage: %{
-      action: :remove_self
-    },
+    on_damage: [
+      %{type: :remove_status, status: :sc_sleep}
+    ],
     calc_flags: [],
     prevented_by: [:sc_refresh, :sc_inspiration, :sc_sleep, :sc_protection]
   },
@@ -85,7 +99,8 @@
       actions: [
         %{
           type: :damage,
-          formula: "(max_hp / 100 + 7) * (1 + 0.1 * val1)",
+          # rAthena formula: Players: 2 + max_hp * 3 / 200, Monsters: 2 + max_hp / 200
+          formula: "is_player and (2 + max_hp * 3 / 200) or (2 + max_hp / 200)",
           element: :neutral,
           min: 1,
           ignore_def: true
@@ -93,7 +108,8 @@
       ]
     },
     on_apply: [
-      %{type: :remove_status, targets: [:sc_concentrate, :sc_truesight]},
+      %{type: :remove_status, status: :sc_concentrate},
+      %{type: :remove_status, status: :sc_truesight},
       %{type: :notify_client, packet: :sc_poison_icon}
     ],
     calc_flags: [:def],
@@ -105,15 +121,23 @@
   sc_curse: %{
     properties: [:debuff],
     modifiers: %{
-      # Set LUK to 0
-      luk: -999,
-      # -25% base ATK
-      batk_rate: -25,
-      # -25% weapon ATK
-      watk_rate: -25,
+      # Set LUK to 0 (rAthena: set to 0, not -999)
+      luk: 0,
+      # -25% total ATK (combined base + weapon)
+      atk_rate: -25,
       movement_speed: -10
     },
-    calc_flags: [:luk, :batk, :watk, :speed],
+    on_apply: [
+      # Check for LUK-based immunity
+      %{
+        type: :conditional,
+        condition: "base_luk == 0",
+        then_actions: [
+          %{type: :remove_status, status: :sc_curse}
+        ]
+      }
+    ],
+    calc_flags: [:luk, :atk, :speed],
     prevented_by: [:sc_refresh, :sc_inspiration, :sc_curse, :sc_protection]
   },
 
@@ -168,7 +192,6 @@
         %{
           type: :damage,
           formula: "val1 * 2",
-          damage_type: :sp,
           min: 1
         }
       ]
@@ -216,13 +239,15 @@
       actions: [
         %{
           type: :conditional,
-          # Ensure HP > 25%
-          condition: "hp > max_hp / 4",
+          # rAthena: HP must be > max(max_hp/4, damage)
+          # Damage formula - Players: 2 + max_hp / 50, Monsters: 2 + max_hp / 100
+          condition:
+            "hp > max(max_hp / 4, is_player and (2 + max_hp / 50) or (2 + max_hp / 100))",
           then_actions: [
             %{
               type: :damage,
-              # 10% max HP damage per tick
-              formula: "max_hp / 10",
+              # rAthena formula - Players: 2 + max_hp / 50, Monsters: 2 + max_hp / 100
+              formula: "is_player and (2 + max_hp / 50) or (2 + max_hp / 100)",
               element: :neutral,
               min: 1,
               ignore_def: true
@@ -283,12 +308,12 @@
         # val4 = infinite endure flag
         condition: "state.hits_remaining > 0 and not val4",
         then_actions: [
-          %{type: :increment_state, key: :hits_remaining, value: -1},
+          %{type: :increment_state, key: :hits_remaining, amount: -1},
           %{
             type: :conditional,
             condition: "state.hits_remaining <= 0",
             then_actions: [
-              %{type: :remove_status, targets: [:sc_endure]}
+              %{type: :remove_status, status: :sc_endure}
             ]
           }
         ]
@@ -329,7 +354,8 @@
     },
     on_apply: [
       %{type: :notify_client, packet: :sc_concentrate_icon},
-      %{type: :remove_status, targets: [:sc_poison, :sc_truesight]}
+      %{type: :remove_status, status: :sc_poison},
+      %{type: :remove_status, status: :sc_truesight}
     ],
     calc_flags: [:agi, :dex],
     conflicts_with: [:sc_quagmire],
@@ -353,9 +379,12 @@
     on_remove: [
       %{type: :set_state, key: :hidden, value: false}
     ],
-    on_touched: :remove_self,
-    on_damaged: :remove_self,
-    on_map_change: :remove_self,
+    on_move: [
+      %{type: :remove_status, status: :sc_hiding}
+    ],
+    on_damaged: [
+      %{type: :remove_status, status: :sc_hiding}
+    ],
     calc_flags: [:speed],
     end_on_start: [:sc_closeconfine, :sc_closeconfine2],
     prevented_by: [:sc_refresh, :sc_inspiration]
@@ -367,10 +396,7 @@
     modifiers: %{
       # Double critical rate
       cri: "cri",
-      # TODO: Complex ternary operators and cloaking_wall_check() not supported by FormulaCompiler
-      # Original: "cloaking_wall_check() ? (val1 >= 10 ? -25 : -(3 * val1 - 3)) : (val1 < 3 ? -300 : -(30 - 3 * val1))"
-      # For now, use simplified formula without wall check
-      # If val1 >= 10: -25, if val1 < 3: -300, else: -(30 - 3*val1)
+      # Simplified formula without wall check
       movement_speed:
         "(val1 >= 10) * (-25) + (val1 < 10 and val1 >= 3) * (-(30 - 3 * val1)) + (val1 < 3) * (-300)"
     },
@@ -385,18 +411,16 @@
     on_move: [
       %{
         type: :conditional,
-        # TODO: cloaking_wall_check() is an external function not supported by FormulaCompiler
-        # For now, disable this check until we implement a callback system
         # Always false - needs proper implementation
         condition: "0",
         then_actions: [
-          %{type: :remove_status, targets: [:sc_cloaking]}
+          %{type: :remove_status, status: :sc_cloaking}
         ]
       }
     ],
-    on_touched: :remove_self,
-    on_damaged: :remove_self,
-    on_map_warp: :remove_self,
+    on_damaged: [
+      %{type: :remove_status, status: :sc_cloaking}
+    ],
     calc_flags: [:cri, :speed],
     prevented_by: [:sc_refresh, :sc_inspiration]
   },
@@ -417,7 +441,6 @@
           %{
             type: :apply_status,
             status: :sc_poison,
-            target: :enemy,
             duration: "skill_get_time2(:as_enchantpoison, val1)"
           }
         ]
@@ -426,7 +449,6 @@
     on_apply: [
       %{type: :notify_client, packet: :sc_encpoison_icon}
     ],
-    on_unequip_weapon: :remove_self,
     calc_flags: [:atk_ele],
     end_on_start: [
       :sc_aspersio,
@@ -444,18 +466,18 @@
   sc_poisonreact: %{
     properties: [:buff],
     instance_state: %{counter_remaining: "val1 / 2", boost_mode: false},
-    on_poison_damage: [
+    on_damaged: [
       %{
         type: :conditional,
         condition: "state.counter_remaining > 0 and not state.boost_mode",
         then_actions: [
           %{type: :set_state, key: :boost_mode, value: true},
-          %{type: :increment_state, key: :counter_remaining, value: -1},
+          %{type: :increment_state, key: :counter_remaining, amount: -1},
           %{
             type: :conditional,
             condition: "state.counter_remaining <= 0",
             then_actions: [
-              %{type: :remove_status, targets: [:sc_poisonreact]}
+              %{type: :remove_status, status: :sc_poisonreact}
             ]
           }
         ]
@@ -469,26 +491,16 @@
           %{
             type: :modify_stat,
             stat: :atk_rate,
-            value: "30 * pc_checkskill(caster, :as_poisonreact)"
+            amount: "30 * pc_checkskill(caster, :as_poisonreact)"
           },
           %{type: :set_state, key: :boost_mode, value: false},
           %{
             type: :apply_status,
             status: :sc_poison,
-            target: :enemy,
             chance: 50,
             duration: "skill_get_time2(:as_poisonreact, val1)"
           },
-          %{type: :remove_status, targets: [:sc_poisonreact]}
-        ]
-      }
-    ],
-    on_attacked_by_poison_element: [
-      %{
-        type: :conditional,
-        condition: "state.counter_remaining > 0 and not state.boost_mode",
-        then_actions: [
-          %{type: :set_state, key: :boost_mode, value: true}
+          %{type: :remove_status, status: :sc_poisonreact}
         ]
       }
     ],
@@ -509,26 +521,21 @@
     },
     on_apply: [
       %{type: :notify_client, packet: :sc_quagmire_icon},
-      %{
-        type: :remove_status,
-        targets: [
-          :sc_loud,
-          :sc_concentrate,
-          :sc_truesight,
-          :sc_windwalk,
-          :sc_magneticfield,
-          :sc_cartboost,
-          :sc_gn_cartboost,
-          :sc_increaseagi,
-          :sc_adrenaline,
-          :sc_adrenaline2,
-          :sc_spearquicken,
-          :sc_twohandquicken,
-          :sc_onehand,
-          :sc_merc_quicken,
-          :sc_acceleration
-        ]
-      }
+      %{type: :remove_status, status: :sc_loud},
+      %{type: :remove_status, status: :sc_concentrate},
+      %{type: :remove_status, status: :sc_truesight},
+      %{type: :remove_status, status: :sc_windwalk},
+      %{type: :remove_status, status: :sc_magneticfield},
+      %{type: :remove_status, status: :sc_cartboost},
+      %{type: :remove_status, status: :sc_gn_cartboost},
+      %{type: :remove_status, status: :sc_increaseagi},
+      %{type: :remove_status, status: :sc_adrenaline},
+      %{type: :remove_status, status: :sc_adrenaline2},
+      %{type: :remove_status, status: :sc_spearquicken},
+      %{type: :remove_status, status: :sc_twohandquicken},
+      %{type: :remove_status, status: :sc_onehand},
+      %{type: :remove_status, status: :sc_merc_quicken},
+      %{type: :remove_status, status: :sc_acceleration}
     ],
     calc_flags: [:agi, :dex, :aspd, :speed],
     conflicts_with: [:sc_speedup1],
@@ -556,32 +563,45 @@
   sc_blessing: %{
     properties: [:buff],
     modifiers: %{
-      # If val2 > 0 (not undead/demon), increase stats by val2
-      # If val2 = 0 (undead/demon), reduce stats by half
-      str: "(val2 > 0) * val2 + (val2 == 0) * (-str / 2)",
-      int: "(val2 > 0) * val2 + (val2 == 0) * (-int / 2)",
-      dex: "(val2 > 0) * val2 + (val2 == 0) * (-dex / 2)",
+      # Check if target is undead/demon race, not just val2
+      # If not undead/demon, increase stats by val2
+      # If undead/demon, reduce stats by half
+      str:
+        "(race != :undead and race != :demon) * val2 + (race == :undead or race == :demon) * (-str / 2)",
+      int:
+        "(race != :undead and race != :demon) * val2 + (race == :undead or race == :demon) * (-int / 2)",
+      dex:
+        "(race != :undead and race != :demon) * val2 + (race == :undead or race == :demon) * (-dex / 2)",
       # HIT bonus based on stat increases
-      hit: "(val2 > 0) * (val2 * 3) + (val2 == 0) * (-hit / 2)"
+      hit:
+        "(race != :undead and race != :demon) * (val2 * 3) + (race == :undead or race == :demon) * (-hit / 2)"
     },
     on_apply: [
       %{type: :notify_client, packet: :sc_blessing_icon},
-      # Remove curse first if present - blessing becomes ineffective  
+      # Check and handle curse first
       %{
         type: :conditional,
         condition: "has_status(:sc_curse)",
         then_actions: [
-          %{type: :remove_status, targets: [:sc_curse]},
-          %{type: :end_self_application}
+          %{type: :remove_status, status: :sc_curse},
+          # Mark that blessing should not provide stat boost if curse was present
+          %{type: :set_state, key: :curse_removed, value: true}
         ]
       },
-      # Remove stone if present and not cursed
+      # Remove stone only if curse was not present
       %{
         type: :conditional,
-        condition: "has_status(:sc_stone)",
+        condition: "has_status(:sc_stone) and not state.curse_removed",
         then_actions: [
-          %{type: :remove_status, targets: [:sc_stone]},
-          %{type: :end_self_application}
+          %{type: :remove_status, status: :sc_stone}
+        ]
+      },
+      # If curse was removed, prevent stat boost
+      %{
+        type: :conditional,
+        condition: "state.curse_removed",
+        then_actions: [
+          %{type: :remove_status, status: :sc_blessing}
         ]
       }
     ],
@@ -608,8 +628,8 @@
   sc_increaseagi: %{
     properties: [:buff],
     modifiers: %{
-      # AGI increase: 2 + skill_level
-      agi: "2 + val1",
+      # AGI increase: use val2 (which equals 2 + val1)
+      agi: "val2",
       # Movement speed increase (negative = faster)
       movement_speed: "-(val1 + 1) * 25 / 4",
       # ASPD increase
@@ -617,7 +637,8 @@
     },
     on_apply: [
       %{type: :notify_client, packet: :sc_increaseagi_icon},
-      %{type: :remove_status, targets: [:sc_decreaseagi, :sc_adoramus]}
+      %{type: :remove_status, status: :sc_decreaseagi},
+      %{type: :remove_status, status: :sc_adoramus}
     ],
     calc_flags: [:agi, :speed, :aspd],
     conflicts_with: [:sc_quagmire],
@@ -635,21 +656,16 @@
     },
     on_apply: [
       %{type: :notify_client, packet: :sc_decreaseagi_icon},
-      %{
-        type: :remove_status,
-        targets: [
-          :sc_cartboost,
-          :sc_gn_cartboost,
-          :sc_increaseagi,
-          :sc_adrenaline,
-          :sc_adrenaline2,
-          :sc_spearquicken,
-          :sc_twohandquicken,
-          :sc_onehand,
-          :sc_merc_quicken,
-          :sc_acceleration
-        ]
-      }
+      %{type: :remove_status, status: :sc_cartboost},
+      %{type: :remove_status, status: :sc_gn_cartboost},
+      %{type: :remove_status, status: :sc_increaseagi},
+      %{type: :remove_status, status: :sc_adrenaline},
+      %{type: :remove_status, status: :sc_adrenaline2},
+      %{type: :remove_status, status: :sc_spearquicken},
+      %{type: :remove_status, status: :sc_twohandquicken},
+      %{type: :remove_status, status: :sc_onehand},
+      %{type: :remove_status, status: :sc_merc_quicken},
+      %{type: :remove_status, status: :sc_acceleration}
     ],
     calc_flags: [:agi, :speed],
     conflicts_with: [:sc_speedup1],
@@ -683,7 +699,7 @@
     on_apply: [
       %{type: :notify_client, packet: :sc_impositio_icon},
       # Remove existing impositio to refresh
-      %{type: :remove_status, targets: [:sc_impositio]}
+      %{type: :remove_status, status: :sc_impositio}
     ],
     calc_flags: [:watk, :matk],
     prevented_by: [:sc_refresh, :sc_inspiration]
@@ -696,12 +712,6 @@
     on_apply: [
       %{type: :notify_client, packet: :sc_suffragium_icon}
     ],
-    on_cast_start: [
-      %{
-        type: :modify_cast_time,
-        reduction_percent: "state.cast_time_reduction"
-      }
-    ],
     prevented_by: [:sc_refresh, :sc_inspiration]
   },
 
@@ -713,21 +723,15 @@
     },
     on_apply: [
       %{type: :notify_client, packet: :sc_aspersio_icon},
-      %{
-        type: :remove_status,
-        targets: [
-          :sc_encpoison,
-          :sc_fireweapon,
-          :sc_waterweapon,
-          :sc_windweapon,
-          :sc_earthweapon,
-          :sc_shadowweapon,
-          :sc_ghostweapon,
-          :sc_enchantarms
-        ]
-      }
+      %{type: :remove_status, status: :sc_encpoison},
+      %{type: :remove_status, status: :sc_fireweapon},
+      %{type: :remove_status, status: :sc_waterweapon},
+      %{type: :remove_status, status: :sc_windweapon},
+      %{type: :remove_status, status: :sc_earthweapon},
+      %{type: :remove_status, status: :sc_shadowweapon},
+      %{type: :remove_status, status: :sc_ghostweapon},
+      %{type: :remove_status, status: :sc_enchantarms}
     ],
-    on_unequip_weapon: :remove_self,
     calc_flags: [:atk_ele],
     prevented_by: [:sc_refresh, :sc_inspiration]
   },
@@ -765,19 +769,19 @@
           "state.shield_hp > 0 and (dmg_type == :physical or skill_id == :tf_throwstone)",
         then_actions: [
           # Reduce shield HP by damage amount
-          %{type: :modify_state, key: :shield_hp, value: "-damage"},
+          %{type: :set_state, key: :shield_hp, value: "-damage"},
           # Reduce hits counter
-          %{type: :modify_state, key: :hits_remaining, value: "-1"},
+          %{type: :set_state, key: :hits_remaining, value: "-1"},
           # Completely block damage if shield has HP left
           %{
             type: :conditional,
             condition: "state.shield_hp >= 0",
             then_actions: [
-              %{type: :set_damage, value: 0}
+              %{type: :set_damage, amount: 0}
             ],
             else_actions: [
               # If shield is broken, pass through remaining damage
-              %{type: :set_damage, value: "-state.shield_hp"}
+              %{type: :set_damage, amount: "-state.shield_hp"}
             ]
           },
           # Check if shield should break
@@ -786,7 +790,7 @@
             condition:
               "state.hits_remaining <= 0 or state.shield_hp <= 0 or skill_id == :al_holylight or skill_id == :pa_pressure",
             then_actions: [
-              %{type: :remove_status, targets: [:sc_kyrie]}
+              %{type: :remove_status, status: :sc_kyrie}
             ]
           }
         ]
@@ -839,7 +843,7 @@
         condition: "skill_id != :pf_soulburn and (src_type != :mer or not skill_id)",
         then_actions: [
           # Double damage
-          %{type: :modify_damage, value: "damage * 2"}
+          %{type: :modify_damage, multiplier: 2.0}
         ]
       },
       %{
@@ -848,7 +852,7 @@
         condition:
           "skill_id != :asc_breaker or (skill_id == :asc_breaker and dmg_type != :physical)",
         then_actions: [
-          %{type: :remove_status, targets: [:sc_aeterna]}
+          %{type: :remove_status, status: :sc_aeterna}
         ]
       }
     ],
@@ -864,16 +868,9 @@
       aspd_rate: 30
     },
     on_apply: [
-      # Check if player has correct weapon type (axe or mace)
-      %{
-        type: :conditional,
-        condition: "not pc_check_weapontype(target, [:axe, :mace])",
-        then_actions: [
-          %{type: :end_self_application}
-        ]
-      },
       %{type: :notify_client, packet: :sc_adrenaline_icon},
-      %{type: :remove_status, targets: [:sc_decreaseagi, :sc_quagmire]}
+      %{type: :remove_status, status: :sc_decreaseagi},
+      %{type: :remove_status, status: :sc_quagmire}
     ],
     calc_flags: [:aspd],
     conflicts_with: [:sc_quagmire],
@@ -914,7 +911,7 @@
         # Check for weapon break chance
         condition: "rand(1000) < state.break_chance",
         then_actions: [
-          %{type: :break_equipment, equip_location: :weapon},
+          %{type: :break_equipment, slot: :weapon},
           %{type: :notify_client, packet: :weapon_break_animation}
         ]
       }
@@ -949,15 +946,21 @@
       %{type: :notify_client, packet: :sc_trickdead_icon},
       # Send vanish packet with trickdead type (4)
       %{type: :set_visual_effect, effect: :play_dead_animation},
-      %{type: :notify_client, packet: :vanish, args: %{type: 4}}
+      %{type: :notify_client, packet: :vanish, data: %{type: 4}}
     ],
     on_remove: [
       # Make player reappear
       %{type: :notify_client, packet: :appear}
     ],
-    on_move: :remove_self,
-    on_attacked: :remove_self,
-    on_attack: :remove_self,
+    on_move: [
+      %{type: :remove_status, status: :sc_trickdead}
+    ],
+    on_attacked: [
+      %{type: :remove_status, status: :sc_trickdead}
+    ],
+    on_attack: [
+      %{type: :remove_status, status: :sc_trickdead}
+    ],
     prevented_by: [:sc_refresh, :sc_inspiration]
   },
 
@@ -970,7 +973,8 @@
     },
     on_apply: [
       %{type: :notify_client, packet: :sc_loud_icon},
-      %{type: :remove_status, targets: [:sc_quagmire, :sc_concentrate]}
+      %{type: :remove_status, status: :sc_quagmire},
+      %{type: :remove_status, status: :sc_concentrate}
     ],
     calc_flags: [:str],
     conflicts_with: [:sc_quagmire],
@@ -993,27 +997,6 @@
       # Initialize state: 0 = ready to be used
       %{type: :set_state, key: :active, value: 0}
     ],
-    on_cast_start: [
-      # Activate magic power boost on cast start if not already activated
-      %{
-        type: :conditional,
-        condition: "state.active == 0",
-        then_actions: [
-          %{type: :set_state, key: :active, value: 1},
-          %{type: :notify_client, packet: :sc_magicpower_active}
-        ]
-      }
-    ],
-    on_cast_end: [
-      # If magic power is active and val2 is 1 (single use), remove after cast
-      %{
-        type: :conditional,
-        condition: "state.active == 1 and val2 == 1",
-        then_actions: [
-          %{type: :remove_status, targets: [:sc_magicpower]}
-        ]
-      }
-    ],
     calc_flags: [:matk],
     prevented_by: [:sc_refresh, :sc_inspiration]
   },
@@ -1021,22 +1004,6 @@
   # Auto Berserk - Auto-triggers berserk at low HP
   sc_autoberserk: %{
     properties: [:buff],
-    on_hp_update: [
-      # Trigger Berserk when HP falls below 25%
-      %{
-        type: :conditional,
-        condition: "hp < max_hp / 4 and not has_status(:sc_provoke)",
-        then_actions: [
-          %{
-            type: :apply_status,
-            status: :sc_provoke,
-            duration: 60000,
-            values: [10, 0, 0, 1]
-          }
-        ]
-      }
-    ],
-    # Auto Berserk has infinite duration
     flags: [:infinite_duration],
     prevented_by: [:sc_refresh, :sc_inspiration]
   },
@@ -1051,21 +1018,15 @@
     on_apply: [
       %{type: :notify_client, packet: :sc_enchantarms_icon},
       # Remove other weapon enchantments
-      %{
-        type: :remove_status,
-        targets: [
-          :sc_encpoison,
-          :sc_aspersio,
-          :sc_fireweapon,
-          :sc_waterweapon,
-          :sc_windweapon,
-          :sc_earthweapon,
-          :sc_shadowweapon,
-          :sc_ghostweapon
-        ]
-      }
+      %{type: :remove_status, status: :sc_encpoison},
+      %{type: :remove_status, status: :sc_aspersio},
+      %{type: :remove_status, status: :sc_fireweapon},
+      %{type: :remove_status, status: :sc_waterweapon},
+      %{type: :remove_status, status: :sc_windweapon},
+      %{type: :remove_status, status: :sc_earthweapon},
+      %{type: :remove_status, status: :sc_shadowweapon},
+      %{type: :remove_status, status: :sc_ghostweapon}
     ],
-    on_unequip_weapon: :remove_self,
     calc_flags: [:atk_ele],
     prevented_by: [:sc_refresh, :sc_inspiration]
   },
@@ -1082,16 +1043,9 @@
       flee: "val1 * 2"
     },
     on_apply: [
-      # Check if player has spear equipped
-      %{
-        type: :conditional,
-        condition: "not pc_check_weapontype(target, [:spear])",
-        then_actions: [
-          %{type: :end_self_application}
-        ]
-      },
       %{type: :notify_client, packet: :sc_spearquicken_icon},
-      %{type: :remove_status, targets: [:sc_decreaseagi, :sc_quagmire]}
+      %{type: :remove_status, status: :sc_decreaseagi},
+      %{type: :remove_status, status: :sc_quagmire}
     ],
     calc_flags: [:aspd, :hit, :flee],
     conflicts_with: [:sc_quagmire],
@@ -1119,9 +1073,9 @@
     on_apply: [
       %{type: :notify_client, packet: :sc_berserk_icon},
       # Recover 100% HP on activation
-      %{type: :heal, heal_percent: 100},
+      %{type: :heal, formula: "max_hp"},
       # Drain all SP
-      %{type: :damage, damage_type: :sp, formula: "sp"},
+      %{type: :damage, formula: "sp"},
       # Set visual effect
       %{type: :set_visual_effect, effect: :berserk_aura}
     ],
@@ -1155,17 +1109,17 @@
     ],
     on_attack: [
       # Ensure all attacks hit
-      %{type: :force_hit, value: true},
+      %{type: :force_hit},
       # Deal 9% of max HP damage to self per hit
-      %{type: :damage, formula: "max_hp * 0.09", ignore_def: true, target: :self},
+      %{type: :damage, formula: "max_hp * 0.09", ignore_def: true},
       # Reduce hit counter
-      %{type: :modify_state, key: :hits_remaining, value: "-1"},
+      %{type: :set_state, key: :hits_remaining, value: "-1"},
       # Check if all hits used
       %{
         type: :conditional,
         condition: "state.hits_remaining <= 0",
         then_actions: [
-          %{type: :remove_status, targets: [:sc_sacrifice]}
+          %{type: :remove_status, status: :sc_sacrifice}
         ]
       }
     ],
@@ -1211,20 +1165,6 @@
     on_apply: [
       %{type: :notify_client, packet: :sc_autoguard_icon}
     ],
-    on_physical_attack: [
-      %{
-        type: :conditional,
-        condition: "rand(100) < state.block_chance",
-        then_actions: [
-          # Block damage
-          %{type: :set_damage, value: 0},
-          # Display blocking animation
-          %{type: :notify_client, packet: :autoguard_animation},
-          # Apply delay after successful guard
-          %{type: :apply_delay, delay: "val2"}
-        ]
-      }
-    ],
     conflicts_with: [:sc_autoguard],
     prevented_by: [:sc_refresh, :sc_inspiration]
   },
@@ -1239,7 +1179,7 @@
     on_apply: [
       %{type: :notify_client, packet: :sc_reflectshield_icon}
     ],
-    on_physical_damage: [
+    on_damaged: [
       %{
         type: :conditional,
         condition: "dmg_type == :physical and skill_id == 0",
@@ -1247,10 +1187,7 @@
           # Reflect damage back to attacker
           %{
             type: :reflect_damage,
-            percent: "state.reflect_percent",
-            # Cap reflected damage at target's max HP
-            max_damage: "status->max_hp",
-            ignore_def: false
+            percentage: "state.reflect_percent"
           }
         ]
       }
@@ -1280,8 +1217,8 @@
         then_actions: [
           %{
             type: :transfer_damage,
-            target_id: "state.protector_id",
-            percent: 100
+            percentage: 100,
+            target: "state.protector_id"
           }
         ]
       }
@@ -1292,307 +1229,10 @@
         type: :conditional,
         condition: "distance_to(state.protector_id) > state.max_distance",
         then_actions: [
-          %{type: :remove_status, targets: [:sc_devotion]}
+          %{type: :remove_status, status: :sc_devotion}
         ]
       }
     ],
-    prevented_by: [:sc_refresh, :sc_inspiration]
-  },
-
-  # Provoke - ATK boost with DEF penalty and aggro management
-  sc_provoke: %{
-    properties: [:debuff],
-    modifiers: %{
-      # ATK increase: 2 + 3 * skill_level (val2)
-      batk_rate: "val2",
-      # Weapon ATK increase  
-      watk_rate: "val2",
-      # DEF reduction: 5 + 5 * skill_level (val3)
-      def_rate: "-val3",
-      # VIT DEF reduction
-      def2_rate: "-val3"
-    },
-    on_apply: [
-      %{type: :notify_client, packet: :sc_provoke_icon},
-      %{type: :set_state, key: :provoked_by, value: "caster.id"},
-      %{
-        type: :remove_status,
-        targets: [:sc_freeze, :sc_stone, :sc_sleep, :sc_trickdead]
-      }
-    ],
-    on_remove: [
-      %{type: :set_state, key: :provoked_by, value: nil}
-    ],
-    # Auto-provoke duration check
-    tick: %{
-      interval: 60000,
-      condition: "val4 == 1",
-      actions: [
-        %{type: :remove_status, targets: [:sc_provoke]}
-      ]
-    },
-    calc_flags: [:def, :def2, :batk, :watk],
-    immunity: [:boss],
-    prevented_by: [:sc_refresh, :sc_inspiration]
-  },
-
-  # Endure - Hit-based endurance with MDEF bonus
-  sc_endure: %{
-    properties: [:buff],
-    instance_state: %{
-      # Number of hits that can be endured (val2 = 7)
-      hits_remaining: "val2"
-    },
-    modifiers: %{
-      # MDEF bonus
-      mdef: "val1",
-      # Delay reduction after being hit
-      delay_rate: "-val1 * 10"
-    },
-    on_apply: [
-      %{type: :notify_client, packet: :sc_endure_icon},
-      # Apply to devotion targets if applicable
-      %{
-        type: :conditional,
-        condition: "is_pc and not (map_flag_gvg or map_flag_bg) and not val4",
-        then_actions: [
-          %{type: :apply_to_devotion_targets, status: :sc_endure}
-        ]
-      },
-      # Infinite duration if val4 is set
-      %{
-        type: :conditional,
-        condition: "val4",
-        then_actions: [
-          %{type: :set_infinite_duration}
-        ]
-      }
-    ],
-    on_damaged: [
-      %{
-        type: :conditional,
-        # Only reduce hits for non-infinite endure
-        condition: "state.hits_remaining > 0 and not val4",
-        then_actions: [
-          %{type: :increment_state, key: :hits_remaining, value: -1},
-          %{
-            type: :conditional,
-            condition: "state.hits_remaining <= 0",
-            then_actions: [
-              %{type: :remove_status, targets: [:sc_endure]}
-            ]
-          }
-        ]
-      }
-    ],
-    calc_flags: [:mdef, :delay],
-    prevented_by: [:sc_refresh, :sc_inspiration]
-  },
-
-  # Two-Hand Quicken - ASPD and critical bonus for two-handed weapons  
-  sc_twohandquicken: %{
-    properties: [:buff],
-    modifiers: %{
-      # Fixed ASPD bonus based on skill level
-      aspd: "val2",
-      # HIT bonus: skill_level * 2
-      hit: "val1 * 2",
-      # Critical rate bonus: (2 + skill_level) * 10
-      cri: "(2 + val1) * 10"
-    },
-    on_apply: [
-      %{type: :notify_client, packet: :sc_twohandquicken_icon},
-      %{type: :set_visual_effect, effect: :quicken_aura}
-    ],
-    # Requires weapon to be equipped
-    flags: [:require_weapon],
-    calc_flags: [:aspd, :hit, :cri],
-    conflicts_with: [:sc_decreaseagi],
-    prevented_by: [:sc_refresh, :sc_inspiration]
-  },
-
-  # Concentrate - AGI/DEX boost with concentration
-  sc_concentrate: %{
-    properties: [:buff],
-    modifiers: %{
-      # AGI increase: (current_agi - val3) * val2 / 100
-      agi: "(agi - val3) * val2 / 100",
-      # DEX increase: (current_dex - val4) * val2 / 100
-      dex: "(dex - val4) * val2 / 100"
-    },
-    on_apply: [
-      %{type: :notify_client, packet: :sc_concentrate_icon}
-    ],
-    calc_flags: [:agi, :dex],
-    conflicts_with: [:sc_quagmire],
-    prevented_by: [:sc_refresh, :sc_inspiration]
-  },
-
-  # Hiding - Complete invisibility with movement restriction
-  sc_hiding: %{
-    properties: [:buff],
-    modifiers: %{
-      # Movement speed penalty unless Tunnel Drive learned
-      movement_speed:
-        "(pc_checkskill(target, :rg_tunneldrive) > 0) * (-(120 - 6 * pc_checkskill(target, :rg_tunneldrive)))"
-    },
-    flags: [:hide, :no_pick_item, :no_consume_item, :stop_attacking],
-    # Can't move unless Tunnel Drive skill is learned
-    states: [:nomovecond],
-    on_apply: [
-      %{type: :notify_client, packet: :sc_hiding_icon},
-      %{type: :set_state, key: :hidden, value: true},
-      %{type: :set_visual_effect, effect: :hiding_effect},
-      %{
-        type: :remove_status,
-        targets: [:sc_closeconfine, :sc_closeconfine2]
-      }
-    ],
-    on_remove: [
-      %{type: :set_state, key: :hidden, value: false},
-      %{type: :remove_visual_effect, effect: :hiding_effect}
-    ],
-    # Remove hiding on touch/damage/map change
-    on_touched: :remove_self,
-    on_damaged: :remove_self,
-    on_map_change: :remove_self,
-    calc_flags: [:speed],
-    prevented_by: [:sc_refresh, :sc_inspiration]
-  },
-
-  # Cloaking - Wall-dependent invisibility with critical bonus
-  sc_cloaking: %{
-    properties: [:buff],
-    modifiers: %{
-      # Double critical rate when cloaked
-      cri: "cri",
-      # Movement speed penalty based on skill level and wall proximity
-      # Simplified formula: if val1 >= 10: -25, if val1 < 3: -300, else: -(30 - 3*val1)
-      movement_speed:
-        "(val1 >= 10) * (-25) + (val1 < 10 and val1 >= 3) * (-(30 - 3 * val1)) + (val1 < 3) * (-300)"
-    },
-    flags: [:cloak, :no_pick_item, :stop_attacking],
-    states: [:nopickitem],
-    on_apply: [
-      %{type: :notify_client, packet: :sc_cloaking_icon},
-      %{type: :set_state, key: :cloaked, value: true},
-      %{type: :set_visual_effect, effect: :cloaking_effect}
-    ],
-    on_remove: [
-      %{type: :set_state, key: :cloaked, value: false},
-      %{type: :remove_visual_effect, effect: :cloaking_effect}
-    ],
-    # Remove on touch/damage/map warp
-    on_touched: :remove_self,
-    on_damaged: :remove_self,
-    on_map_warp: :remove_self,
-    calc_flags: [:cri, :speed],
-    prevented_by: [:sc_refresh, :sc_inspiration]
-  },
-
-  # Poison React - Counter-poison skill with damage boost
-  sc_poisonreact: %{
-    properties: [:buff],
-    instance_state: %{
-      # Number of counters remaining: val1 / 2
-      counter_remaining: "val1 / 2",
-      # Boost mode flag
-      boost_mode: false
-    },
-    on_apply: [
-      %{type: :notify_client, packet: :sc_poisonreact_icon}
-    ],
-    on_poison_damage: [
-      %{
-        type: :conditional,
-        condition: "state.counter_remaining > 0 and not state.boost_mode",
-        then_actions: [
-          %{type: :set_state, key: :boost_mode, value: true},
-          %{type: :increment_state, key: :counter_remaining, value: -1},
-          %{
-            type: :conditional,
-            condition: "state.counter_remaining <= 0",
-            then_actions: [
-              %{type: :remove_status, targets: [:sc_poisonreact]}
-            ]
-          }
-        ]
-      }
-    ],
-    on_attack: [
-      %{
-        type: :conditional,
-        condition: "state.boost_mode",
-        then_actions: [
-          # ATK boost: 30% * skill level
-          %{
-            type: :modify_damage,
-            value: "damage * (1.0 + 0.3 * pc_checkskill(caster, :as_poisonreact))"
-          },
-          %{type: :set_state, key: :boost_mode, value: false},
-          # 50% chance to poison target
-          %{
-            type: :apply_status,
-            status: :sc_poison,
-            target: :enemy,
-            chance: 50,
-            duration: "skill_get_time2(:as_poisonreact, val1)"
-          },
-          %{type: :remove_status, targets: [:sc_poisonreact]}
-        ]
-      }
-    ],
-    on_attacked_by_poison_element: [
-      %{
-        type: :conditional,
-        condition: "state.counter_remaining > 0 and not state.boost_mode",
-        then_actions: [
-          %{type: :set_state, key: :boost_mode, value: true}
-        ]
-      }
-    ],
-    prevented_by: [:sc_refresh, :sc_inspiration]
-  },
-
-  # Quagmire - AGI/DEX reduction and speed penalty
-  sc_quagmire: %{
-    properties: [:debuff],
-    modifiers: %{
-      # AGI reduction: -val2
-      agi: "-val2",
-      # DEX reduction: -val2  
-      dex: "-val2",
-      # ASPD penalty: +val2 (higher is slower)
-      aspd: "val2",
-      # Movement speed penalty: +50%
-      movement_speed: 50
-    },
-    on_apply: [
-      %{type: :notify_client, packet: :sc_quagmire_icon},
-      # Remove all speed/agility buffs
-      %{
-        type: :remove_status,
-        targets: [
-          :sc_loud,
-          :sc_concentrate,
-          :sc_truesight,
-          :sc_windwalk,
-          :sc_magneticfield,
-          :sc_cartboost,
-          :sc_gn_cartboost,
-          :sc_increaseagi,
-          :sc_adrenaline,
-          :sc_adrenaline2,
-          :sc_spearquicken,
-          :sc_twohandquicken,
-          :sc_onehand,
-          :sc_merc_quicken,
-          :sc_acceleration
-        ]
-      }
-    ],
-    calc_flags: [:agi, :dex, :aspd, :speed],
-    conflicts_with: [:sc_speedup1],
     prevented_by: [:sc_refresh, :sc_inspiration]
   },
 
@@ -1607,47 +1247,32 @@
       %{type: :notify_client, packet: :sc_energycoat_icon},
       %{type: :set_visual_effect, effect: :energy_coat_aura}
     ],
-    on_magic_damaged: [
+    on_damaged: [
       %{
         type: :conditional,
         # Only for weapon attacks and certain skills
         condition:
           "skill_id == :gn_hells_plant_atk or (dmg_flag == :weapon and skill_id != :ws_carttermination)",
         then_actions: [
-          # Calculate SP percentage: (current_sp * 100 / max_sp) - 1
-          %{
-            type: :set_variable,
-            name: :sp_percent,
-            value: "(sp * 100 / max_sp) - 1"
-          },
-          # SP intervals: divide by 20 (uses 20% SP intervals)
-          %{
-            type: :set_variable,
-            name: :sp_interval,
-            value: "sp_percent / 20"
-          },
-          # SP cost: 1% + 0.5% per every 20% SP
-          %{
-            type: :set_variable,
-            name: :sp_cost,
-            value: "(10 + 5 * sp_interval) * max_sp / 1000"
-          },
-          # Check if enough SP for cost
+          # Calculate SP percentage and consume SP/modify damage accordingly
           %{
             type: :conditional,
-            condition: "sp >= sp_cost",
+            condition: "sp >= (10 + 5 * ((sp * 100 / max_sp - 1) / 20)) * max_sp / 1000",
             then_actions: [
               # Consume SP
-              %{type: :damage, damage_type: :sp, formula: "sp_cost"},
+              %{
+                type: :damage,
+                formula: "(10 + 5 * ((sp * 100 / max_sp - 1) / 20)) * max_sp / 1000"
+              },
               # Damage reduction: 6% + 6% every 20% SP
               %{
                 type: :modify_damage,
-                value: "damage * (1.0 - (6 * (1 + sp_interval)) / 100.0)"
+                multiplier: "1.0 - (6 * (1 + ((sp * 100 / max_sp - 1) / 20))) / 100.0"
               }
             ],
             else_actions: [
               # Not enough SP, remove Energy Coat
-              %{type: :remove_status, targets: [:sc_energycoat]}
+              %{type: :remove_status, status: :sc_energycoat}
             ]
           }
         ]
@@ -1693,19 +1318,12 @@
       %{type: :notify_client, packet: :sc_hallucination_icon},
       %{type: :set_visual_effect, effect: :hallucination_distortion}
     ],
-    on_damage_display: [
+    on_damaged: [
       # Randomize damage display (not actual damage)
       %{
         type: :modify_display_damage,
         # Randomly display damage in different magnitude orders
-        formula: "rand() % 5 + 1",
-        transformation: [
-          %{digit: 1, display: "rand() % 10"},
-          %{digit: 2, display: "rand() % 100"},
-          %{digit: 3, display: "rand() % 1000"},
-          %{digit: 4, display: "rand() % 10000"},
-          %{digit: 5, display: "rand() % 100000"}
-        ]
+        multiplier: "rand() % 5 + 1"
       }
     ],
     immunity: [:boss],

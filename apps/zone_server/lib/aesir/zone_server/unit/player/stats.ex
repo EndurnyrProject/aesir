@@ -59,7 +59,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   @doc """
   Creates a Stats struct from a Character model.
   """
-  @spec from_character(Character.t()) :: t()
+  @spec from_character(map()) :: t()
   def from_character(%Character{} = character) do
     base_stats = %{
       str: character.str,
@@ -102,13 +102,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   @doc """
   Calculates all stats from base values and modifiers.
   This is the main calculation pipeline following rAthena patterns.
+
+  ## Parameters
+  - stats: The Stats struct to calculate
+  - player_id: Optional player ID for status effect retrieval
   """
-  @spec calculate_stats(t()) :: t()
-  def calculate_stats(%__MODULE__{} = stats) do
+  @spec calculate_stats(t(), integer() | nil) :: t()
+  def calculate_stats(%__MODULE__{} = stats, player_id \\ nil) do
     stats
     |> apply_job_bonuses()
     |> apply_equipment_modifiers()
-    |> apply_status_effects()
+    |> apply_status_effects(player_id)
     |> calculate_derived_stats()
     |> calculate_combat_stats()
   end
@@ -137,13 +141,37 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   @doc """
   Applies temporary status effect modifiers.
-  Currently returns stats unchanged - status effects will be implemented with status system.
+  Fetches active status effects for the player and applies their stat modifiers.
+
+  ## Parameters
+  - stats: The Stats struct to update
+  - player_id: The player ID to get status effects for
+
+  ## Returns
+  Updated Stats struct with status effect modifiers applied
   """
+  @spec apply_status_effects(t(), integer() | nil) :: t()
+  def apply_status_effects(%__MODULE__{} = stats, player_id) when is_integer(player_id) do
+    alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+
+    # Get all status effect modifiers for this player
+    status_modifiers = Interpreter.get_all_modifiers(player_id)
+
+    # Update the status_effects in modifiers
+    %{stats | modifiers: %{stats.modifiers | status_effects: status_modifiers}}
+  end
+
+  # When player_id is nil or invalid
+  @spec apply_status_effects(t(), any()) :: t()
+  def apply_status_effects(%__MODULE__{} = stats, _player_id) do
+    # Without a valid player_id, we can't get status effects, so return unchanged
+    stats
+  end
+
+  # Backwards compatibility for the original function signature
   @spec apply_status_effects(t()) :: t()
   def apply_status_effects(%__MODULE__{} = stats) do
-    # TODO: Implement status effect system
-    # status_bonuses = get_status_effect_bonuses(status_effects)
-    # %{stats | modifiers: %{stats.modifiers | status_effects: status_bonuses}}
+    # Without a player_id, we can't get status effects, so return unchanged
     stats
   end
 
@@ -201,20 +229,79 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   @doc """
   Calculates combat-related stats (hit, flee, critical, atk, def).
-  Placeholder implementation - will be expanded with combat system.
+  Includes status effect modifiers from the modifiers map.
   """
   @spec calculate_combat_stats(t()) :: t()
   def calculate_combat_stats(%__MODULE__{} = stats) do
-    # TODO: Implement proper combat stat calculations
+    # Base calculations (placeholder for now)
+    base_hit = calculate_base_hit(stats)
+    base_flee = calculate_base_flee(stats)
+    base_critical = calculate_base_critical(stats)
+    base_atk = calculate_base_atk(stats)
+    base_def = calculate_base_def(stats)
+
+    # Apply status effect modifiers
+    hit = base_hit + get_status_modifier(stats, :hit)
+    flee = base_flee + get_status_modifier(stats, :flee)
+    critical = base_critical + get_status_modifier(stats, :critical)
+    atk = base_atk + get_status_modifier(stats, :atk)
+    def = base_def + get_status_modifier(stats, :def)
+
     combat_stats = %{
-      hit: 0,
-      flee: 0,
-      critical: 0,
-      atk: 0,
-      def: 0
+      hit: hit,
+      flee: flee,
+      critical: critical,
+      atk: atk,
+      def: def
     }
 
     %{stats | combat_stats: combat_stats}
+  end
+
+  # Calculate base hit (based on DEX primarily)
+  defp calculate_base_hit(%__MODULE__{} = stats) do
+    effective_dex = get_effective_stat(stats, :dex)
+    effective_luk = get_effective_stat(stats, :luk)
+
+    # Basic formula: hit = DEX + LUK/3 + base level / 4
+    base_level = stats.progression.base_level
+    trunc(effective_dex + effective_luk / 3 + base_level / 4)
+  end
+
+  # Calculate base flee (based on AGI primarily)
+  defp calculate_base_flee(%__MODULE__{} = stats) do
+    effective_agi = get_effective_stat(stats, :agi)
+    effective_luk = get_effective_stat(stats, :luk)
+
+    # Basic formula: flee = AGI + LUK/5 + base level / 4
+    base_level = stats.progression.base_level
+    trunc(effective_agi + effective_luk / 5 + base_level / 4)
+  end
+
+  # Calculate base critical (based on LUK primarily)
+  defp calculate_base_critical(%__MODULE__{} = stats) do
+    effective_luk = get_effective_stat(stats, :luk)
+
+    # Basic formula: critical = LUK / 3
+    trunc(effective_luk / 3)
+  end
+
+  # Calculate base attack (placeholder)
+  defp calculate_base_atk(%__MODULE__{} = stats) do
+    effective_str = get_effective_stat(stats, :str)
+
+    # Basic formula: atk = STR + base level / 4
+    base_level = stats.progression.base_level
+    trunc(effective_str + base_level / 4)
+  end
+
+  # Calculate base defense (placeholder)
+  defp calculate_base_def(%__MODULE__{} = stats) do
+    effective_vit = get_effective_stat(stats, :vit)
+
+    # Basic formula: def = VIT/2 + base level / 6
+    base_level = stats.progression.base_level
+    trunc(effective_vit / 2 + base_level / 6)
   end
 
   @doc """
@@ -230,6 +317,38 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     status_bonus = get_in(stats.modifiers, [:status_effects, stat_name]) || 0
 
     base_value + job_bonus + equipment_bonus + status_bonus
+  end
+
+  @doc """
+  Gets all status effect modifiers for a specific stat or property.
+  This is useful for applying specific types of modifiers from status effects.
+
+  ## Parameters
+  - stats: The Stats struct
+  - modifier_key: The modifier to look up (e.g., :hit, :flee, :aspd_rate)
+
+  ## Returns
+  The combined value of all modifiers for the given key, or 0 if none exist
+  """
+  @spec get_status_modifier(t(), atom()) :: number()
+  def get_status_modifier(%__MODULE__{} = stats, modifier_key) do
+    Map.get(stats.modifiers.status_effects, modifier_key, 0)
+  end
+
+  @doc """
+  Checks if the player has a specific status flag set by status effects.
+  This is used for boolean properties like 'endure' or 'hiding'.
+
+  ## Parameters
+  - stats: The Stats struct
+  - flag: The flag to check for (e.g., :endure, :hiding)
+
+  ## Returns
+  Boolean indicating whether the flag is set
+  """
+  @spec has_status_flag?(t(), atom()) :: boolean()
+  def has_status_flag?(%__MODULE__{} = stats, flag) do
+    Map.get(stats.modifiers.status_effects, flag, false)
   end
 
   @doc """

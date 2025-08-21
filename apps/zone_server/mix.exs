@@ -10,6 +10,7 @@ defmodule ZoneServer.MixProject do
       deps_path: "../../deps",
       lockfile: "../../mix.lock",
       elixir: "~> 1.18",
+      elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
@@ -27,7 +28,11 @@ defmodule ZoneServer.MixProject do
     [
       {:commons, in_umbrella: true},
       {:lua, "~> 0.3.0"},
-      {:luerl, "~> 1.5", override: true}
+      {:luerl, "~> 1.5", override: true},
+      {:peri, "~> 0.6.1"}
     ]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 end

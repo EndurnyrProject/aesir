@@ -292,19 +292,45 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   end
 
   describe "combat stats calculation" do
-    test "initializes combat stats to zero (placeholder)" do
+    test "calculates combat stats based on base stats" do
       stats = %Stats{
+        base_stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
+        progression: %{base_level: 0},
         equipment: %{weapon: 0, shield: 0},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
       result = Stats.calculate_combat_stats(stats)
 
+      # With zero stats and level, all values should be zero
       assert result.combat_stats.hit == 0
       assert result.combat_stats.flee == 0
       assert result.combat_stats.critical == 0
       assert result.combat_stats.atk == 0
       assert result.combat_stats.def == 0
+    end
+
+    test "applies status effect modifiers to combat stats" do
+      # Create stats with status effect modifiers
+      stats = %Stats{
+        base_stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
+        progression: %{base_level: 0},
+        equipment: %{weapon: 0, shield: 0},
+        modifiers: %{
+          equipment: %{},
+          status_effects: %{hit: 10, flee: 10, critical: 10, atk: 10, def: 10},
+          job_bonuses: %{}
+        }
+      }
+
+      result = Stats.calculate_combat_stats(stats)
+
+      # Base values are 0, but status effects add 10 to each
+      assert result.combat_stats.hit == 10
+      assert result.combat_stats.flee == 10
+      assert result.combat_stats.critical == 10
+      assert result.combat_stats.atk == 10
+      assert result.combat_stats.def == 10
     end
   end
 end

@@ -1,5 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.FormulaCompilerTest do
   use ExUnit.Case, async: true
+  import ExUnit.CaptureLog
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.FormulaCompiler
 
@@ -341,13 +342,25 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.FormulaCompilerTest do
 
   describe "error handling" do
     test "invalid formula returns function that returns 0" do
-      func = FormulaCompiler.compile("invalid @#$ formula")
-      assert func.(%{}) == 0
+      log =
+        capture_log(fn ->
+          func = FormulaCompiler.compile("invalid @#$ formula")
+          assert func.(%{}) == 0
+        end)
+
+      assert log =~ "Failed to parse formula: invalid @#$ formula" or
+               log =~ "Exception when compiling formula: invalid @#$ formula"
     end
 
     test "partially valid formula with trailing garbage" do
-      func = FormulaCompiler.compile("10 + 5 @#$")
-      assert func.(%{}) == 0
+      log =
+        capture_log(fn ->
+          func = FormulaCompiler.compile("10 + 5 @#$")
+          assert func.(%{}) == 0
+        end)
+
+      assert log =~ "Failed to parse formula: 10 + 5 @#$" or
+               log =~ "Exception when compiling formula: 10 + 5 @#$"
     end
   end
 
@@ -489,22 +502,115 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.FormulaCompilerTest do
       assert func.(context) == 11
     end
 
-    test "undefined custom function raises compile error" do
-      assert_raise CompileError, ~r/Undefined function: unknown_func/, fn ->
-        FormulaCompiler.compile("unknown_func(10)")
-      end
+    test "undefined custom function returns a function that returns 0" do
+      log =
+        capture_log(fn ->
+          func = FormulaCompiler.compile("unknown_func(10)")
+          assert func.(%{}) == 0
+        end)
+
+      assert log =~ "Exception when compiling formula: unknown_func(10)"
     end
 
-    test "wrong arity for custom function raises compile error" do
-      assert_raise CompileError, ~r/incorrect arity/, fn ->
-        FormulaCompiler.compile("pc_checkskill(target)")
-      end
+    test "wrong arity for custom function returns a function that returns 0" do
+      log =
+        capture_log(fn ->
+          func = FormulaCompiler.compile("pc_checkskill(target)")
+          assert func.(%{}) == 0
+        end)
+
+      assert log =~ "Exception when compiling formula: pc_checkskill(target)"
     end
 
-    test "wrong arity for built-in function raises compile error" do
-      assert_raise CompileError, ~r/wrong number of arguments/, fn ->
-        FormulaCompiler.compile("min(1, 2, 3)")
-      end
+    test "wrong arity for built-in function returns a function that returns 0" do
+      log =
+        capture_log(fn ->
+          func = FormulaCompiler.compile("min(1, 2, 3)")
+          assert func.(%{}) == 0
+        end)
+
+      assert log =~ "Exception when compiling formula: min(1, 2, 3)"
+    end
+  end
+
+  describe "atom literals and lists" do
+    test "atom literals" do
+      func = FormulaCompiler.compile(":test_atom")
+      assert func.(%{}) == :test_atom
+    end
+
+    test "atom comparison" do
+      func = FormulaCompiler.compile("skill_id == :physical")
+      assert func.(%{skill_id: :physical}) == 1
+      assert func.(%{skill_id: :magical}) == 0
+    end
+
+    test "empty list" do
+      func = FormulaCompiler.compile("[]")
+      assert func.(%{}) == []
+    end
+
+    test "list of numbers" do
+      func = FormulaCompiler.compile("[1, 2, 3]")
+      assert func.(%{}) == [1, 2, 3]
+    end
+
+    test "list of atoms" do
+      func = FormulaCompiler.compile("[:axe, :mace]")
+      assert func.(%{}) == [:axe, :mace]
+    end
+
+    test "mixed list" do
+      func = FormulaCompiler.compile("[1, :atom, 3]")
+      assert func.(%{}) == [1, :atom, 3]
+    end
+
+    test "list with variables" do
+      func = FormulaCompiler.compile("[level, str, :atom]")
+      assert func.(%{level: 10, str: 20}) == [10, 20, :atom]
+    end
+
+    test "list with expressions" do
+      func = FormulaCompiler.compile("[level * 2, str + 5]")
+      assert func.(%{level: 10, str: 20}) == [20, 25]
+    end
+
+    test "nested lists" do
+      func = FormulaCompiler.compile("[[1, 2], [3, 4]]")
+      assert func.(%{}) == [[1, 2], [3, 4]]
+    end
+
+    test "problematic formulas from status_effects.exs" do
+      # These are the formulas that were causing errors
+      formula1 = "state.shield_hp > 0 and (dmg_type == :physical or skill_id == :tf_throwstone)"
+      func1 = FormulaCompiler.compile(formula1)
+      assert is_function(func1, 1)
+
+      formula2 = "skill_id != :pf_soulburn and (src_type != :mer or not skill_id)"
+      func2 = FormulaCompiler.compile(formula2)
+      assert is_function(func2, 1)
+
+      formula3 =
+        "skill_id != :asc_breaker or (skill_id == :asc_breaker and dmg_type != :physical)"
+
+      func3 = FormulaCompiler.compile(formula3)
+      assert is_function(func3, 1)
+
+      formula4 = "has_status(:sc_curse)"
+      func4 = FormulaCompiler.compile(formula4)
+      assert is_function(func4, 1)
+
+      formula5 = "has_status(:sc_stone)"
+      func5 = FormulaCompiler.compile(formula5)
+      assert is_function(func5, 1)
+
+      formula6 = "not pc_check_weapontype(target, [:axe, :mace])"
+      func6 = FormulaCompiler.compile(formula6)
+      assert is_function(func6, 1)
+
+      formula7 = "not pc_check_weapontype(target, [:spear])"
+      func7 = FormulaCompiler.compile(formula7)
+      assert is_function(func7, 1)
     end
   end
 

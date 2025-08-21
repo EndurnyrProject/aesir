@@ -1,5 +1,6 @@
 defmodule Aesir.ZoneServer.Scripting.EngineTest do
   use ExUnit.Case
+  import ExUnit.CaptureLog
   alias Aesir.ZoneServer.Scripting.Engine
 
   setup do
@@ -211,9 +212,16 @@ defmodule Aesir.ZoneServer.Scripting.EngineTest do
 
       for {name, script} <- dangerous_scripts do
         Engine.load_script(name, script)
-        result = Engine.execute_script(name, :on_use, %{})
-        # Should either error or return no handler due to sandbox
-        assert match?({:error, _}, result) or match?({:ok, :no_handler}, result)
+
+        log =
+          capture_log(fn ->
+            result = Engine.execute_script(name, :on_use, %{})
+            # Should either error or return no handler due to sandbox
+            assert match?({:error, _}, result) or match?({:ok, :no_handler}, result)
+          end)
+
+        # Assert that the log contains expected error messages
+        assert log =~ "Script crashed: %Lua.RuntimeException"
       end
     end
 
@@ -227,7 +235,15 @@ defmodule Aesir.ZoneServer.Scripting.EngineTest do
       """
 
       Engine.load_script("broken", script_code)
-      assert {:error, _} = Engine.execute_script("broken", :on_use, %{})
+
+      log =
+        capture_log(fn ->
+          assert {:error, _} = Engine.execute_script("broken", :on_use, %{})
+        end)
+
+      # Check that the compiler error is logged
+      assert log =~ "Script crashed: %Lua.CompilerException"
+      assert log =~ "syntax error"
     end
 
     test "handles runtime errors gracefully" do
@@ -241,7 +257,18 @@ defmodule Aesir.ZoneServer.Scripting.EngineTest do
       """
 
       Engine.load_script("runtime_error", script_code)
-      assert {:error, _} = Engine.execute_script("runtime_error", :on_use, %{})
+
+      log =
+        capture_log(fn ->
+          assert {:error, _} = Engine.execute_script("runtime_error", :on_use, %{})
+        end)
+
+      # Check that the specific error is logged - just validate the critical parts
+      assert log =~ "Script crashed: %Lua.RuntimeException"
+
+      # The error message already contains escaped quotes, so we need to be careful with the assertion
+      assert log =~ "Lua runtime error: invalid index"
+      assert log =~ "nonexistent_field"
     end
   end
 

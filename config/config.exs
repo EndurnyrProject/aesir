@@ -6,6 +6,7 @@ config :logger, :console,
   metadata: [:user_id]
 
 config :commons,
+  env: config_env(),
   ecto_repos: [Aesir.Repo]
 
 config :commons, Aesir.Repo,
@@ -29,16 +30,6 @@ config :char_server,
 
 config :zone_server,
   port: 5121
-
-config :libcluster,
-  topologies: [
-    aesir: [
-      strategy: Cluster.Strategy.Epmd,
-      config: [
-        hosts: [:"account@127.0.0.1", :"char@127.0.0.1", :"zone@127.0.0.1"]
-      ]
-    ]
-  ]
 
 config :commons, :memento_cluster,
   nodes: [:"account@127.0.0.1", :"char@127.0.0.1", :"zone@127.0.0.1"],

@@ -1,26 +1,11 @@
 defmodule Aesir.ZoneServer.Unit.SpatialIndexTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
+
+  import Aesir.TestEtsSetup
 
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
-  setup do
-    # Clean up any existing ETS tables first
-    if :ets.info(:player_positions) != :undefined do
-      :ets.delete_all_objects(:player_positions)
-    end
-
-    if :ets.info(:spatial_index) != :undefined do
-      :ets.delete_all_objects(:spatial_index)
-    end
-
-    if :ets.info(:visibility_pairs) != :undefined do
-      :ets.delete_all_objects(:visibility_pairs)
-    end
-
-    # Initialize ETS tables for each test
-    SpatialIndex.init()
-    :ok
-  end
+  setup :setup_ets_tables
 
   describe "visibility range" do
     test "players within 14 cells can see each other" do

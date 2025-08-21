@@ -43,6 +43,7 @@ defmodule Commons.MixProject do
       {:nimble_parsec, "~> 1.4"},
       {:phoenix_pubsub, "~> 2.1"},
       {:postgrex, ">= 0.0.0"},
+      {:process_tree, "~> 0.2.1"},
       {:ranch, "~> 2.2"},
       {:recode, github: "hrzndhrn/recode", branch: "0.8.0-dev", only: [:dev], runtime: false},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false}

@@ -3,13 +3,9 @@ import Config
 config :libcluster,
   topologies: [
     aesir: [
-      strategy: Cluster.Strategy.Gossip,
+      strategy: Cluster.Strategy.Epmd,
       config: [
-        port: 45892,
-        if_addr: "0.0.0.0",
-        multicast_addr: "230.1.1.251",
-        multicast_ttl: 1,
-        secret: "some_secret"
+        hosts: [:"account@127.0.0.1", :"char@127.0.0.1", :"zone@127.0.0.1"]
       ]
     ]
   ]

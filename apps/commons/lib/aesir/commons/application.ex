@@ -24,6 +24,9 @@ defmodule Aesir.Commons.Application do
 
   defp display_banner_for_starting_apps do
     cond do
+      env() == :test ->
+        :ok
+
       app_loaded?(:account_server) ->
         Banner.display(:account)
 
@@ -36,6 +39,10 @@ defmodule Aesir.Commons.Application do
       true ->
         :ok
     end
+  end
+
+  def env do
+    Application.get_env(:commons, :env)
   end
 
   defp app_loaded?(app) do

@@ -171,13 +171,10 @@ defmodule MyTest do
   setup :verify_on_exit!
   
   test "some functionality" do
-    # Arrange
     stub(Dependency, :some_function, fn -> {:ok, expected_result} end)
     
-    # Act
     result = Module.Under.Test.function_to_test()
     
-    # Assert
     assert result == expected_result
   end
 end
@@ -204,6 +201,7 @@ end
 - **Typespecs**: Add `@spec` to all public functions.
 - **Module Documentation**: Add `@moduledoc` and `@doc` to all public modules and functions.
 - **Prefer using with instead of nested cases**: Instead of using nested cases, prefer the usage of `with`
+- **Do not add superfluous comments**: Prefer to use module and function docs, only use in-code documentation and comments only if extremelly necessary for the understanding of a specific function piece
 
 ## Development Guidelines
 

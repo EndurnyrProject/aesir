@@ -14,5 +14,10 @@ config :commons, Aesir.Repo,
 config :libcluster,
   topologies: []
 
+config :commons, :memento_cluster,
+  nodes: [],
+  auto_cluster: false,
+  table_load_timeout: 60_000
+
 # Reduce log level for cleaner test output
 config :logger, level: :warning

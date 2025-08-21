@@ -33,23 +33,40 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.FormulaCompiler do
     - Functions: min, max, floor, ceil, abs
   """
   def compile(formula) when is_binary(formula) do
-    case parse(formula) do
-      {:ok, [ast], "", _, _, _} ->
-        quoted = compile_to_quoted(ast)
+    # If the formula is empty, return a function that returns 0
+    if formula == "" do
+      fn _context -> 0 end
+    else
+      try do
+        case parse(formula) do
+          {:ok, [ast], "", _, _, _} ->
+            quoted = compile_to_quoted(ast)
 
-        # Return a function that evaluates the quoted expression
-        fn context ->
-          {result, _} = Code.eval_quoted(quoted, context: context)
-          result
+            # Return a function that evaluates the quoted expression
+            fn context ->
+              {result, _} = Code.eval_quoted(quoted, context: context)
+              result
+            end
+
+          {:ok, _, rest, _, line, column} ->
+            Logger.error(
+              "Failed to parse complete formula: #{formula}, unparsed: #{inspect(rest)}, at line #{line}, column #{column}"
+            )
+
+            fn _context -> 0 end
+
+          {:error, reason, rest, _, line, column} ->
+            Logger.error(
+              "Failed to parse formula: #{formula}, error: #{inspect(reason)}, unparsed: #{inspect(rest)}, at line #{line}, column #{column}"
+            )
+
+            fn _context -> 0 end
         end
-
-      {:ok, _, rest, _, _, _} ->
-        Logger.error("Failed to parse complete formula: #{formula}, unparsed: #{rest}")
-        fn _context -> 0 end
-
-      {:error, reason, _, _, _, _} ->
-        Logger.error("Failed to parse formula: #{formula}, error: #{inspect(reason)}")
-        fn _context -> 0 end
+      rescue
+        e ->
+          Logger.error("Exception when compiling formula: #{formula}, error: #{inspect(e)}")
+          fn _context -> 0 end
+      end
     end
   end
 
@@ -80,17 +97,28 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.FormulaCompiler do
 
   number = choice([float, integer])
 
+  # Helper for valid identifier pattern
+  ident = ascii_string([?a..?z, ?A..?Z, ?0..?9, ?_], min: 1)
+
   # Variables - pre-parse paths to atom lists
   variable =
     ascii_string([?a..?z, ?A..?Z, ?_], min: 1)
     |> repeat(
       choice([
-        ascii_string([?a..?z, ?A..?Z, ?0..?9, ?_], min: 1),
+        ident,
         string(".") |> concat(ascii_string([?a..?z, ?A..?Z, ?_], min: 1))
       ])
     )
     |> reduce(:parse_variable_path)
     |> unwrap_and_tag(:var)
+
+  # Atom literals - e.g. :atom_name
+  atom =
+    string(":")
+    |> concat(ascii_string([?a..?z, ?A..?Z, ?_], min: 1))
+    |> concat(optional(ident))
+    |> reduce(:build_atom)
+    |> unwrap_and_tag(:atom)
 
   # Function names - now accepts any valid identifier
   function_name =
@@ -98,11 +126,32 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.FormulaCompiler do
     |> repeat(ascii_string([?a..?z, ?A..?Z, ?0..?9, ?_], min: 1))
     |> reduce(:join_function_name)
 
+  # List syntax - e.g. [1, 2, 3] or [:atom1, :atom2]
+  defcombinatorp(
+    :list,
+    ignore(string("["))
+    |> concat(optional_ws)
+    |> optional(
+      parsec(:expression)
+      |> repeat(
+        optional_ws
+        |> ignore(string(","))
+        |> concat(optional_ws)
+        |> parsec(:expression)
+      )
+    )
+    |> concat(optional_ws)
+    |> ignore(string("]"))
+    |> reduce(:build_list)
+  )
+
   # Primary expressions (before function calls to avoid circular ref)
   defcombinatorp(
     :primary_no_func,
     choice([
       number,
+      # Add atom support (before variable to avoid precedence issues)
+      atom,
       variable,
       ignore(string("("))
       |> concat(optional_ws)
@@ -136,6 +185,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.FormulaCompiler do
     :primary,
     choice([
       parsec(:function_call),
+      # Add list parser before primary_no_func
+      parsec(:list),
       parsec(:primary_no_func)
     ])
   )
@@ -285,6 +336,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.FormulaCompiler do
     Enum.join(parts)
   end
 
+  defp build_atom([":" | parts]) do
+    atom_name = Enum.join(parts)
+    String.to_atom(atom_name)
+  end
+
+  defp build_list([]), do: {:list, []}
+  defp build_list(elements), do: {:list, elements}
+
   defp build_function_call([func | args]) do
     {:func, func, args}
   end
@@ -348,6 +407,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.FormulaCompiler do
         quote do
           get_in(var!(context), unquote(path)) || 0
         end
+    end
+  end
+
+  defp compile_to_quoted({:atom, atom_value}) when is_atom(atom_value) do
+    quote do: unquote(atom_value)
+  end
+
+  defp compile_to_quoted({:list, elements}) when is_list(elements) do
+    quoted_elements = Enum.map(elements, &compile_to_quoted/1)
+
+    quote do
+      [unquote_splicing(quoted_elements)]
     end
   end
 
@@ -553,11 +624,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.FormulaCompiler do
 
   defp compile_custom_function(name, args) do
     registry = GameFunctions.registry()
+    actual_arity = length(args || [])
 
-    case Map.get(registry, name) do
+    # Try to find the function with explicit arity first (e.g., "has_status/1")
+    arity_specific_name = "#{name}/#{actual_arity}"
+
+    case Map.get(registry, arity_specific_name) || Map.get(registry, name) do
       {module, fun, expected_arity} ->
-        actual_arity = length(args || [])
-
         if actual_arity != expected_arity do
           raise CompileError,
             description:
@@ -572,7 +645,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.FormulaCompiler do
 
       nil ->
         raise CompileError,
-          description: "Undefined function: #{name}/#{length(args || [])}"
+          description: "Undefined function: #{name}/#{actual_arity}"
     end
   end
 end

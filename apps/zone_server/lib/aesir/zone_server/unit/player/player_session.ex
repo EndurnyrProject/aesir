@@ -9,6 +9,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   alias Aesir.Commons.StatusParams
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Packets.ZcLongparChange
   alias Aesir.ZoneServer.Packets.ZcNotifyMoveentry
   alias Aesir.ZoneServer.Packets.ZcNotifyMoveStop
@@ -90,9 +92,25 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @doc """
   Recalculates all stats and synchronizes with client.
+
+  ## Parameters
+  - pid: The process ID of the player session
+  - sync: Whether to wait for the recalculation to complete (defaults to true)
+
+  When sync is true, uses call which waits for the stats to be recalculated.
+  When sync is false, uses cast which doesn't wait (more efficient for background updates).
   """
-  def recalculate_stats(pid) do
+  def recalculate_stats(pid, sync \\ true)
+
+  def recalculate_stats(pid, true) do
+    # Synchronous version using call
     GenServer.call(pid, :recalculate_stats)
+  end
+
+  def recalculate_stats(pid, false) do
+    # Asynchronous version using cast
+    GenServer.cast(pid, :recalculate_stats)
+    :ok
   end
 
   @doc """
@@ -100,6 +118,46 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   """
   def get_current_stats(pid) do
     GenServer.call(pid, :get_current_stats)
+  end
+
+  @doc """
+  Applies a status effect to the player.
+  Delegates to the StatusEffect.Interpreter and triggers stats recalculation.
+  """
+  def apply_status(
+        pid,
+        status_id,
+        val1 \\ 0,
+        val2 \\ 0,
+        val3 \\ 0,
+        val4 \\ 0,
+        tick \\ 0,
+        flag \\ 0,
+        caster_id \\ nil
+      ) do
+    GenServer.call(pid, {:apply_status, status_id, val1, val2, val3, val4, tick, flag, caster_id})
+  end
+
+  @doc """
+  Removes a status effect from the player.
+  Delegates to the StatusEffect.Interpreter and triggers stats recalculation.
+  """
+  def remove_status(pid, status_id) do
+    GenServer.call(pid, {:remove_status, status_id})
+  end
+
+  @doc """
+  Gets all active status effects for the player.
+  """
+  def get_active_statuses(pid) do
+    GenServer.call(pid, :get_active_statuses)
+  end
+
+  @doc """
+  Checks if a player has a specific status effect.
+  """
+  def has_status?(pid, status_id) do
+    GenServer.call(pid, {:has_status, status_id})
   end
 
   @impl true
@@ -510,16 +568,37 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
+  def handle_cast(:recalculate_stats, %{character: character} = state) do
+    # Recalculate stats with player ID for status effects
+    updated_stats = Stats.calculate_stats(state.game_state.stats, character.id)
+
+    # Only update and send changes if stats actually changed
+    if updated_stats != state.game_state.stats do
+      updated_game_state = %{state.game_state | stats: updated_stats}
+      send_stat_updates(state.connection_pid, updated_stats)
+
+      {:noreply, %{state | game_state: updated_game_state}}
+    else
+      # No changes, skip update
+      {:noreply, state}
+    end
+  end
+
+  @impl true
   def handle_call(:get_state, _from, state) do
     {:reply, state, state}
   end
 
   @impl true
-  def handle_call({:update_base_stat, stat_name, new_value}, _from, state) do
+  def handle_call(
+        {:update_base_stat, stat_name, new_value},
+        _from,
+        %{character: character} = state
+      ) do
     stats = state.game_state.stats
     updated_base_stats = Map.put(stats.base_stats, stat_name, new_value)
     updated_stats = %{stats | base_stats: updated_base_stats}
-    updated_stats = Stats.calculate_stats(updated_stats)
+    updated_stats = Stats.calculate_stats(updated_stats, character.id)
     updated_game_state = %{state.game_state | stats: updated_stats}
     updated_state = %{state | game_state: updated_game_state}
 
@@ -529,8 +608,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
-  def handle_call(:recalculate_stats, _from, state) do
-    updated_stats = Stats.calculate_stats(state.game_state.stats)
+  def handle_call(:recalculate_stats, _from, %{character: character} = state) do
+    updated_stats = Stats.calculate_stats(state.game_state.stats, character.id)
     updated_game_state = %{state.game_state | stats: updated_stats}
     updated_state = %{state | game_state: updated_game_state}
 
@@ -542,6 +621,70 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_call(:get_current_stats, _from, state) do
     {:reply, state.game_state.stats, state}
+  end
+
+  @impl true
+  def handle_call(
+        {:apply_status, status_id, val1, val2, val3, val4, tick, flag, caster_id},
+        _from,
+        %{character: character} = state
+      ) do
+    case Interpreter.apply_status(
+           character.id,
+           status_id,
+           val1,
+           val2,
+           val3,
+           val4,
+           tick,
+           flag,
+           caster_id
+         ) do
+      :ok ->
+        # Recalculate stats with status effects
+        updated_stats = Stats.calculate_stats(state.game_state.stats, character.id)
+        updated_game_state = %{state.game_state | stats: updated_stats}
+
+        # Send stat updates to client if they changed
+        if updated_stats != state.game_state.stats do
+          send_stat_updates(state.connection_pid, updated_stats)
+        end
+
+        {:reply, :ok, %{state | game_state: updated_game_state}}
+
+      {:error, reason} ->
+        # Status application failed for some reason (e.g., immunity)
+        {:reply, {:error, reason}, state}
+    end
+  end
+
+  @impl true
+  def handle_call({:remove_status, status_id}, _from, %{character: character} = state) do
+    # Remove the status effect
+    Interpreter.remove_status(character.id, status_id)
+
+    # Recalculate stats without this status effect
+    updated_stats = Stats.calculate_stats(state.game_state.stats, character.id)
+    updated_game_state = %{state.game_state | stats: updated_stats}
+
+    # Send stat updates to client if they changed
+    if updated_stats != state.game_state.stats do
+      send_stat_updates(state.connection_pid, updated_stats)
+    end
+
+    {:reply, :ok, %{state | game_state: updated_game_state}}
+  end
+
+  @impl true
+  def handle_call(:get_active_statuses, _from, %{character: character} = state) do
+    statuses = StatusStorage.get_player_statuses(character.id)
+    {:reply, statuses, state}
+  end
+
+  @impl true
+  def handle_call({:has_status, status_id}, _from, %{character: character} = state) do
+    has_status = StatusStorage.has_status?(character.id, status_id)
+    {:reply, has_status, state}
   end
 
   @impl true
