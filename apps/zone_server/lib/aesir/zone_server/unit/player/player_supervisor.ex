@@ -5,6 +5,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSupervisor do
   """
   use DynamicSupervisor
 
+  import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
+
   require Logger
 
   def start_link(init_arg) do
@@ -50,10 +52,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSupervisor do
   Stops a player session.
   """
   def stop_player(char_id) do
-    case :ets.lookup(:zone_players, char_id) do
+    case :ets.lookup(table_for(:zone_players), char_id) do
       [{^char_id, pid}] ->
         DynamicSupervisor.terminate_child(__MODULE__, pid)
-        :ets.delete(:zone_players, char_id)
+        :ets.delete(table_for(:zone_players), char_id)
         Logger.info("Stopped player session for char_id #{char_id}")
         :ok
 
@@ -66,7 +68,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSupervisor do
   Gets a player session PID by character ID.
   """
   def get_player_pid(char_id) do
-    case :ets.lookup(:zone_players, char_id) do
+    case :ets.lookup(table_for(:zone_players), char_id) do
       [{^char_id, pid}] -> {:ok, pid}
       [] -> {:error, :not_found}
     end

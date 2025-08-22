@@ -1,14 +1,12 @@
 defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   use ExUnit.Case, async: true
 
+  import Aesir.TestEtsSetup
+
   alias Aesir.Commons.Models.Character
-  alias Aesir.ZoneServer.Mmo.JobData
   alias Aesir.ZoneServer.Unit.Player.Stats
 
-  setup_all do
-    JobData.init()
-    :ok
-  end
+  setup :setup_ets_tables
 
   describe "from_character/1" do
     test "creates Stats struct from Character model" do

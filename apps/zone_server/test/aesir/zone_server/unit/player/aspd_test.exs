@@ -1,15 +1,12 @@
 defmodule Aesir.ZoneServer.Unit.Player.AspdTest do
   use ExUnit.Case, async: true
 
+  import Aesir.TestEtsSetup
+
   alias Aesir.Commons.Models.Character
-  alias Aesir.ZoneServer.Mmo.JobData
   alias Aesir.ZoneServer.Unit.Player.Stats
 
-  setup do
-    # Initialize JobData for tests
-    JobData.init()
-    :ok
-  end
+  setup :setup_ets_tables
 
   describe "ASPD calculation" do
     test "calculates ASPD for barehand novice" do

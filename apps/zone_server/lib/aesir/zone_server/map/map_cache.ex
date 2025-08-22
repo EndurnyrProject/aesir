@@ -4,31 +4,26 @@ defmodule Aesir.ZoneServer.Map.MapCache do
   alias Aesir.ZoneServer.Map.CacheLoader
   alias Aesir.ZoneServer.Map.MapData
 
-  @table_name :map_cache
+  import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
   @doc """
   Initializes the map cache and loads all maps.
   """
   def init do
-    # Create ETS table for map storage
-    :ets.new(@table_name, [:set, :public, :named_table, {:read_concurrency, true}])
-
-    # Load maps from cache file
     cache_path = Path.join(:code.priv_dir(:zone_server), "maps.mcache")
 
     case CacheLoader.load_cache(cache_path) do
       {:ok, map_data} ->
-        # Store each map in ETS
         Enum.each(map_data, fn {map_name, data} ->
-          :ets.insert(@table_name, {map_name, data})
+          :ets.insert(table_for(:map_cache), {map_name, data})
         end)
 
         Logger.info("MapCache initialized with #{map_size(map_data)} maps")
-        {:ok, Map.keys(map_data)}
 
-      {:error, reason} = error ->
-        Logger.error("Failed to initialize MapCache: #{reason}")
-        error
+        :ok
+
+      {:error, reason} ->
+        raise "Failed to load map cache from #{cache_path}: #{inspect(reason)}"
     end
   end
 
@@ -45,7 +40,7 @@ defmodule Aesir.ZoneServer.Map.MapCache do
         _ -> clean_name
       end
 
-    case :ets.lookup(@table_name, cache_name) do
+    case :ets.lookup(table_for(:map_cache), cache_name) do
       [{^cache_name, map_data}] -> {:ok, map_data}
       [] -> {:error, :not_found}
     end
@@ -65,14 +60,14 @@ defmodule Aesir.ZoneServer.Map.MapCache do
   Checks if a map exists in the cache.
   """
   def exists?(map_name) do
-    :ets.member(@table_name, map_name)
+    :ets.member(table_for(:map_cache), map_name)
   end
 
   @doc """
   Lists all cached map names.
   """
   def list_maps do
-    :ets.select(@table_name, [{{:"$1", :_}, [], [:"$1"]}])
+    :ets.select(table_for(:map_cache), [{{:"$1", :_}, [], [:"$1"]}])
   end
 
   @doc """

@@ -25,7 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   """
   @spec init() :: :ok
   def init do
-    Registry.init()
+    Registry.load_definitions()
   end
 
   @doc """

@@ -11,37 +11,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   2. Efficient retrieval of statuses due for tick processing
   3. Selective updates to minimize memory churn
   """
+  import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
   alias Aesir.ZoneServer.Mmo.StatusEntry
-
-  @table_name :player_statuses
-
-  @doc """
-  Initializes the ETS table for status storage.
-  Should be called during application startup.
-  """
-  @spec init() :: :ok
-  def init do
-    case :ets.whereis(@table_name) do
-      :undefined ->
-        # Create table with read concurrency optimization
-        # Key: {player_id, status_type}
-        # Value: StatusEntry struct
-        :ets.new(@table_name, [
-          :set,
-          :public,
-          :named_table,
-          {:read_concurrency, true},
-          {:write_concurrency, true}
-        ])
-
-        :ok
-
-      _tid ->
-        # Table already exists
-        :ok
-    end
-  end
 
   @doc """
   Applies a status change to a player.
@@ -122,7 +94,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
       tick_count: 0
     }
 
-    :ets.insert(@table_name, {{player_id, status_type}, entry})
+    :ets.insert(table_for(:player_statuses), {{player_id, status_type}, entry})
     :ok
   end
 
@@ -131,7 +103,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   """
   @spec remove_status(integer(), atom()) :: :ok
   def remove_status(player_id, status_type) do
-    :ets.delete(@table_name, {player_id, status_type})
+    :ets.delete(table_for(:player_statuses), {player_id, status_type})
     :ok
   end
 
@@ -147,7 +119,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   """
   @spec get_status(integer(), atom()) :: StatusEntry.t() | nil
   def get_status(player_id, status_type) do
-    case :ets.lookup(@table_name, {player_id, status_type}) do
+    case :ets.lookup(table_for(:player_statuses), {player_id, status_type}) do
       [{{^player_id, ^status_type}, entry}] -> entry
       [] -> nil
     end
@@ -164,7 +136,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   """
   @spec get_player_statuses(integer()) :: list(StatusEntry.t())
   def get_player_statuses(player_id) do
-    :ets.match_object(@table_name, {{player_id, :_}, :_})
+    :ets.match_object(table_for(:player_statuses), {{player_id, :_}, :_})
     |> Enum.map(fn {_key, entry} -> entry end)
   end
 
@@ -173,7 +145,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   """
   @spec has_status?(integer(), atom()) :: boolean()
   def has_status?(player_id, status_type) do
-    :ets.member(@table_name, {player_id, status_type})
+    :ets.member(table_for(:player_statuses), {player_id, status_type})
   end
 
   @doc """
@@ -182,10 +154,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   @spec clear_player_statuses(integer()) :: :ok
   def clear_player_statuses(player_id) do
     keys =
-      :ets.match(@table_name, {{player_id, :"$1"}, :_})
+      :ets.match(table_for(:player_statuses), {{player_id, :"$1"}, :_})
       |> Enum.map(fn [status_type] -> {player_id, status_type} end)
 
-    Enum.each(keys, &:ets.delete(@table_name, &1))
+    Enum.each(keys, &:ets.delete(table_for(:player_statuses), &1))
     :ok
   end
 
@@ -216,7 +188,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
       end
 
     Enum.each(to_remove, fn entry ->
-      :ets.delete(@table_name, {player_id, entry.type})
+      :ets.delete(table_for(:player_statuses), {player_id, entry.type})
     end)
 
     :ok
@@ -243,7 +215,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
       }
     ]
 
-    :ets.select(@table_name, match_spec)
+    :ets.select(table_for(:player_statuses), match_spec)
   end
 
   @doc """
@@ -257,7 +229,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   """
   @spec get_all_statuses() :: list({{integer(), atom()}, StatusEntry.t()})
   def get_all_statuses do
-    :ets.tab2list(@table_name)
+    :ets.tab2list(table_for(:player_statuses))
   end
 
   @doc """
@@ -283,7 +255,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
       }
     ]
 
-    :ets.select(@table_name, match_spec)
+    :ets.select(table_for(:player_statuses), match_spec)
   end
 
   @doc """
@@ -305,7 +277,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
 
       entry ->
         updated = update_fn.(entry)
-        :ets.insert(@table_name, {{player_id, status_type}, updated})
+        :ets.insert(table_for(:player_statuses), {{player_id, status_type}, updated})
         :ok
     end
   end
@@ -323,7 +295,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
     # Element position 2 is the value part of the ETS tuple
     # We update the next_tick_at field inside the map
     :ets.update_element(
-      @table_name,
+      table_for(:player_statuses),
       key,
       {2, {:map_update, :next_tick_at, next_tick_at}}
     )
@@ -357,7 +329,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   """
   @spec count_all_statuses() :: non_neg_integer()
   def count_all_statuses do
-    :ets.info(@table_name, :size) || 0
+    :ets.info(table_for(:player_statuses), :size) || 0
   end
 
   @doc """
@@ -365,7 +337,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   """
   @spec count_player_statuses(integer()) :: non_neg_integer()
   def count_player_statuses(player_id) do
-    :ets.match(@table_name, {{player_id, :_}, :_})
+    :ets.match(table_for(:player_statuses), {{player_id, :_}, :_})
     |> length()
   end
 
@@ -374,7 +346,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   """
   @spec dump_all() :: list()
   def dump_all do
-    :ets.tab2list(@table_name)
+    :ets.tab2list(table_for(:player_statuses))
     |> Enum.map(fn {{player_id, status_type}, entry} ->
       %{
         player_id: player_id,

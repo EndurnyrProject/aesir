@@ -1,9 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
   use ExUnit.Case, async: false
+
   import Mimic
+  import Aesir.TestEtsSetup
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.Stats
 
   defmodule MockPlayerSession do
@@ -33,29 +36,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
 
   setup :verify_on_exit!
   setup :set_mimic_global
+  setup :setup_ets_tables
 
   setup do
-    Mimic.copy(Aesir.ZoneServer.Unit.Player.PlayerSession)
-
-    # Initialize the systems only if not already initialized
-    case :ets.whereis(:player_statuses) do
-      :undefined -> StatusStorage.init()
-      _ -> :ok
-    end
-
-    case :ets.whereis(:status_effect_definitions) do
-      :undefined -> Interpreter.init()
-      _ -> :ok
-    end
-
-    # Create :zone_players table if it doesn't exist
-    case :ets.whereis(:zone_players) do
-      :undefined ->
-        :ets.new(:zone_players, [:named_table, :public])
-
-      _ ->
-        :ok
-    end
+    Mimic.copy(PlayerSession)
 
     # Use a test player ID
     player_id = :rand.uniform(100_000)
@@ -66,20 +50,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
 
     # Setup Mimic for PlayerSession
     stub(
-      Aesir.ZoneServer.Unit.Player.PlayerSession,
+      PlayerSession,
       :get_current_stats,
       &MockPlayerSession.get_current_stats/1
     )
 
-    stub(Aesir.ZoneServer.Unit.Player.PlayerSession, :get_state, &MockPlayerSession.get_state/1)
-
-    on_exit(fn ->
-      StatusStorage.clear_player_statuses(player_id)
-
-      if :ets.info(:zone_players) != :undefined do
-        :ets.delete(:zone_players, player_id)
-      end
-    end)
+    stub(PlayerSession, :get_state, &MockPlayerSession.get_state/1)
 
     %{player_id: player_id}
   end

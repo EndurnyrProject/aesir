@@ -11,6 +11,11 @@ defmodule Aesir.ZoneServer.EtsTable do
 
   defp init_tables(seed) do
     spatial_index_tables(seed)
+    core_runtime_tables(seed)
+    map_cache_tables(seed)
+    status_tables(seed)
+    job_data_tables(seed)
+    status_effect_tables(seed)
 
     :ok
   end
@@ -33,6 +38,43 @@ defmodule Aesir.ZoneServer.EtsTable do
       table_for(:visibility_pairs, seed),
       [:set, :public, :named_table, read_concurrency: true]
     )
+  end
+
+  defp core_runtime_tables(seed) do
+    :ets.new(table_for(:zone_players, seed), [:set, :public, :named_table])
+    :ets.new(table_for(:status_instances, seed), [:set, :public, :named_table])
+  end
+
+  defp map_cache_tables(seed) do
+    :ets.new(table_for(:map_cache, seed), [:set, :public, :named_table, read_concurrency: true])
+  end
+
+  defp status_tables(seed) do
+    :ets.new(
+      table_for(:player_statuses, seed),
+      [
+        :set,
+        :public,
+        :named_table,
+        {:read_concurrency, true},
+        {:write_concurrency, true}
+      ]
+    )
+  end
+
+  defp job_data_tables(seed) do
+    :ets.new(table_for(:job_data, seed), [:named_table, :public, :set, read_concurrency: true])
+
+    :ets.new(table_for(:job_id_mappings, seed), [
+      :named_table,
+      :public,
+      :set,
+      read_concurrency: true
+    ])
+  end
+
+  defp status_effect_tables(seed) do
+    :ets.new(table_for(:status_effect_definitions, seed), [:set, :public, :named_table])
   end
 
   if Mix.env() == :test do

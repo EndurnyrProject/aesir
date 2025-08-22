@@ -11,27 +11,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Registry do
   The registry is the single source of truth for status effect definitions
   in the system, ensuring consistent behavior across all game systems.
   """
+  import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
   require Logger
+
+  alias Aesir.ZoneServer.Mmo.StatusEffect.FormulaCompiler
   alias Aesir.ZoneServer.Mmo.StatusEffect.Schema
-
-  @compiled_effects :status_effect_definitions
-
-  @doc """
-  Initialize the registry by loading and compiling all status effect definitions.
-  Creates or cleans the ETS table.
-  """
-  @spec init() :: :ok
-  def init do
-    if :ets.whereis(@compiled_effects) == :undefined do
-      :ets.new(@compiled_effects, [:set, :public, :named_table])
-    else
-      :ets.delete_all_objects(@compiled_effects)
-    end
-
-    load_definitions()
-    :ok
-  end
 
   @doc """
   Get a compiled status effect definition by ID.
@@ -44,7 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Registry do
   """
   @spec get_definition(atom()) :: map() | nil
   def get_definition(status_id) do
-    case :ets.lookup(@compiled_effects, status_id) do
+    case :ets.lookup(table_for(:status_effect_definitions), status_id) do
       [{_, definition}] -> definition
       [] -> nil
     end
@@ -70,16 +55,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Registry do
         # Compile and store validated definitions
         Enum.each(validated_definitions, fn {id, definition} ->
           compiled = compile_definition(definition)
-          :ets.insert(@compiled_effects, {id, compiled})
+          :ets.insert(table_for(:status_effect_definitions), {id, compiled})
         end)
 
         Logger.info("Loaded #{map_size(validated_definitions)} status effect definitions")
 
-      {:error, reason} ->
-        Logger.error("Failed to load status definitions: #{inspect(reason)}")
-    end
+        :ok
 
-    :ok
+      {:error, reason} ->
+        raise "Failed to read status effect definitions from #{path}: #{reason}"
+    end
   end
 
   @doc """
@@ -95,8 +80,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Registry do
   # Private functions
 
   defp compile_hooks(definition) do
-    alias Aesir.ZoneServer.Mmo.StatusEffect.FormulaCompiler
-
     Enum.reduce([:on_apply, :on_expire, :on_damage, :on_damaged], definition, fn hook, def ->
       case def[hook] do
         nil ->
@@ -155,8 +138,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Registry do
   defp compile_actions(action), do: [compile_action(action)]
 
   defp compile_action(%{type: :conditional} = action) do
-    alias Aesir.ZoneServer.Mmo.StatusEffect.FormulaCompiler
-
     %{
       type: :conditional,
       condition: FormulaCompiler.compile(action[:if] || action[:condition]),
@@ -166,7 +147,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Registry do
   end
 
   defp compile_action(%{formula: formula} = action) when is_binary(formula) do
-    alias Aesir.ZoneServer.Mmo.StatusEffect.FormulaCompiler
     Map.put(action, :formula_fn, FormulaCompiler.compile(formula))
   end
 

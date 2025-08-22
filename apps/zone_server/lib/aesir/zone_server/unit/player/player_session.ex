@@ -5,6 +5,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   """
 
   use GenServer
+
+  import Aesir.ZoneServer.EtsTable
+
   require Logger
 
   alias Aesir.Commons.StatusParams
@@ -399,7 +402,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @impl true
   def handle_cast({:player_entered_view, other_char_id}, state) do
-    case :ets.lookup(:zone_players, other_char_id) do
+    case :ets.lookup(table_for(table_for(:zone_players)), other_char_id) do
       [{^other_char_id, other_pid, _account_id}] ->
         GenServer.cast(other_pid, {:request_player_info, self(), state.character.id})
 
@@ -697,7 +700,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     broadcast_vanish_on_disconnect(character)
 
     # Clean up player data
-    :ets.delete(:zone_players, character.id)
+    :ets.delete(table_for(:zone_players), character.id)
     SpatialIndex.remove_player(character.id)
     SpatialIndex.clear_visibility(character.id)
 
@@ -724,7 +727,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   defp send_vanish_to_player(char_id, packet) do
-    case :ets.lookup(:zone_players, char_id) do
+    case :ets.lookup(table_for(:zone_players), char_id) do
       [{^char_id, pid, _account_id}] ->
         send_packet(pid, packet)
 
@@ -749,7 +752,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   defp register_player(char_id, account_id),
-    do: :ets.insert(:zone_players, {char_id, self(), account_id})
+    do: :ets.insert(table_for(:zone_players), {char_id, self(), account_id})
 
   defp sex_to_int("F"), do: 0
   defp sex_to_int("M"), do: 1
@@ -794,7 +797,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   defp send_packet_to_player(char_id, packet) do
-    case :ets.lookup(:zone_players, char_id) do
+    case :ets.lookup(table_for(:zone_players), char_id) do
       [{^char_id, pid, _account_id}] ->
         send_packet(pid, packet)
 
@@ -909,7 +912,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   defp send_spawn_packet_about(to_char_id, about_char_id) do
     # Get the player session for the target
-    case :ets.lookup(:zone_players, to_char_id) do
+    case :ets.lookup(table_for(:zone_players), to_char_id) do
       [{^to_char_id, pid, _account_id}] ->
         GenServer.cast(pid, {:player_entered_view, about_char_id})
 
@@ -1073,9 +1076,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   defp send_vanish_packet_to(to_char_id, about_char_id) do
     # Get the player session for the target and the account_id of the vanishing player
-    with [{^to_char_id, to_pid, _to_account_id}] <- :ets.lookup(:zone_players, to_char_id),
+    with [{^to_char_id, to_pid, _to_account_id}] <-
+           :ets.lookup(table_for(:zone_players), to_char_id),
          [{^about_char_id, _about_pid, about_account_id}] <-
-           :ets.lookup(:zone_players, about_char_id) do
+           :ets.lookup(table_for(:zone_players), about_char_id) do
       GenServer.cast(to_pid, {:player_left_view, about_char_id, about_account_id})
     else
       _ -> :ok

@@ -6,20 +6,14 @@ defmodule Aesir.ZoneServer.Application do
   require Logger
 
   alias Aesir.Commons.SessionManager
-  alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Mmo.JobData
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
-  alias Aesir.ZoneServer.Mmo.StatusStorage
 
   @impl true
   def start(_type, _args) do
     ref = make_ref()
-    maps = initialize_zone()
 
     children = [
       {Aesir.ZoneServer.EtsTable, name: EtsTables},
-      Aesir.ZoneServer.Unit.Player.PlayerSupervisor,
-      Aesir.ZoneServer.Mmo.StatusTickManager,
+      Aesir.ZoneServer.MechanicsSupervisor,
       {Aesir.Commons.Network.Listener,
        connection_module: Aesir.ZoneServer,
        packet_registry: Aesir.ZoneServer.PacketRegistry,
@@ -46,9 +40,7 @@ defmodule Aesir.ZoneServer.Application do
 
         server_id = "zone_server_#{Node.self()}"
 
-        metadata = %{
-          maps: maps
-        }
+        metadata = %{}
 
         SessionManager.register_server(
           server_id,
@@ -62,16 +54,5 @@ defmodule Aesir.ZoneServer.Application do
       {:error, reason} ->
         Logger.error("Failed to start Aesir ZoneServer: #{inspect(reason)}")
     end)
-  end
-
-  defp initialize_zone do
-    with :ok <- JobData.init(),
-         :ok <- StatusStorage.init(),
-         :ok <- Interpreter.init(),
-         _ <- :ets.new(:zone_players, [:set, :public, :named_table]),
-         _ <- :ets.new(:status_instances, [:set, :public, :named_table]),
-         {:ok, maps} <- MapCache.init() do
-      maps
-    end
   end
 end

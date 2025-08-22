@@ -3,11 +3,9 @@ defmodule Aesir.ZoneServer.Mmo.JobData do
   Manages job data loaded from the database files.
   Provides functions to query job stats, HP/SP tables, and bonuses.
   """
-
   require Logger
 
-  @table_name :aesir_job_data
-  @job_id_table :aesir_job_id_map
+  import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
   @job_id_mappings %{
     # Basic Jobs
@@ -214,20 +212,8 @@ defmodule Aesir.ZoneServer.Mmo.JobData do
   """
   @spec init() :: :ok
   def init do
-    if :ets.whereis(@table_name) == :undefined do
-      :ets.new(@table_name, [:named_table, :public, :set, read_concurrency: true])
-    end
-
-    if :ets.whereis(@job_id_table) == :undefined do
-      :ets.new(@job_id_table, [:named_table, :public, :set, read_concurrency: true])
-    end
-
     load_job_data()
     load_id_mappings()
-
-    Logger.info("JobData loaded successfully")
-
-    :ok
   end
 
   @doc """
@@ -236,11 +222,13 @@ defmodule Aesir.ZoneServer.Mmo.JobData do
   """
   @spec get_job_atom(integer()) :: atom()
   def get_job_atom(job_id) when is_integer(job_id) do
-    ensure_initialized()
+    case :ets.lookup(table_for(:job_id_mappings), {:id_to_atom, job_id}) do
+      [{_, atom}] ->
+        atom
 
-    case :ets.lookup(@job_id_table, {:id_to_atom, job_id}) do
-      [{_, atom}] -> atom
-      [] -> :novice
+      [] ->
+        raise ArgumentError,
+              "Job ID #{job_id} not found. Ensure job data is loaded."
     end
   end
 
@@ -250,11 +238,13 @@ defmodule Aesir.ZoneServer.Mmo.JobData do
   """
   @spec get_job_id(atom()) :: integer()
   def get_job_id(job_atom) when is_atom(job_atom) do
-    ensure_initialized()
+    case :ets.lookup(table_for(:job_id_mappings), {:atom_to_id, job_atom}) do
+      [{_, id}] ->
+        id
 
-    case :ets.lookup(@job_id_table, {:atom_to_id, job_atom}) do
-      [{_, id}] -> id
-      [] -> 0
+      [] ->
+        raise ArgumentError,
+              "Job atom #{job_atom} not found. Ensure job data is loaded."
     end
   end
 
@@ -263,21 +253,15 @@ defmodule Aesir.ZoneServer.Mmo.JobData do
   """
   @spec get_base_hp(integer(), integer()) :: integer()
   def get_base_hp(job_id, level) when is_integer(job_id) and is_integer(level) do
-    ensure_initialized()
     job_atom = get_job_atom(job_id)
 
-    case :ets.lookup(@table_name, {:base_hp, job_atom}) do
+    case :ets.lookup(table_for(:job_data), {:base_hp, job_atom}) do
       [{_, hp_table}] ->
         find_level_value(hp_table, level, :hp, 40)
 
       [] ->
-        # Try novice if job not found
-        if job_atom != :novice do
-          get_base_hp(0, level)
-        else
-          # Default HP
-          40
-        end
+        raise ArgumentError,
+              "Base HP not found for job #{job_atom} at level #{level}. Ensure job data is loaded."
     end
   end
 
@@ -286,21 +270,15 @@ defmodule Aesir.ZoneServer.Mmo.JobData do
   """
   @spec get_base_sp(integer(), integer()) :: integer()
   def get_base_sp(job_id, level) when is_integer(job_id) and is_integer(level) do
-    ensure_initialized()
     job_atom = get_job_atom(job_id)
 
-    case :ets.lookup(@table_name, {:base_sp, job_atom}) do
+    case :ets.lookup(table_for(:job_data), {:base_sp, job_atom}) do
       [{_, sp_table}] ->
         find_level_value(sp_table, level, :sp, 11)
 
       [] ->
-        # Try novice if job not found
-        if job_atom != :novice do
-          get_base_sp(0, level)
-        else
-          # Default SP
-          11
-        end
+        raise ArgumentError,
+              "Base SP not found for job #{job_atom} at level #{level}. Ensure job data is loaded."
     end
   end
 
@@ -310,15 +288,15 @@ defmodule Aesir.ZoneServer.Mmo.JobData do
   """
   @spec get_job_bonuses(integer(), integer()) :: map()
   def get_job_bonuses(job_id, job_level) when is_integer(job_id) and is_integer(job_level) do
-    ensure_initialized()
     job_atom = get_job_atom(job_id)
 
-    case :ets.lookup(@table_name, {:bonus_stats, job_atom}) do
+    case :ets.lookup(table_for(:job_data), {:bonus_stats, job_atom}) do
       [{_, bonus_list}] ->
         calculate_job_bonuses(bonus_list, job_level)
 
       [] ->
-        %{}
+        raise ArgumentError,
+              "Job bonuses not found for job #{job_atom} at level #{job_level}. Ensure job data is loaded."
     end
   end
 
@@ -344,12 +322,15 @@ defmodule Aesir.ZoneServer.Mmo.JobData do
   """
   @spec get_hp_factor(integer()) :: integer()
   def get_hp_factor(job_id) when is_integer(job_id) do
-    ensure_initialized()
     job_atom = get_job_atom(job_id)
 
-    case :ets.lookup(@table_name, {:hp_factor, job_atom}) do
-      [{_, factor}] -> factor
-      [] -> 0
+    case :ets.lookup(table_for(:job_data), {:hp_factor, job_atom}) do
+      [{_, factor}] ->
+        factor
+
+      [] ->
+        raise ArgumentError,
+              "HP factor not found for job #{job_atom}. Ensure job data is loaded."
     end
   end
 
@@ -358,12 +339,15 @@ defmodule Aesir.ZoneServer.Mmo.JobData do
   """
   @spec get_hp_increase(integer()) :: integer()
   def get_hp_increase(job_id) when is_integer(job_id) do
-    ensure_initialized()
     job_atom = get_job_atom(job_id)
 
-    case :ets.lookup(@table_name, {:hp_increase, job_atom}) do
-      [{_, increase}] -> increase
-      [] -> 0
+    case :ets.lookup(table_for(:job_data), {:hp_increase, job_atom}) do
+      [{_, increase}] ->
+        increase
+
+      [] ->
+        raise ArgumentError,
+              "HP increase not found for job #{job_atom}. Ensure job data is loaded."
     end
   end
 
@@ -372,12 +356,15 @@ defmodule Aesir.ZoneServer.Mmo.JobData do
   """
   @spec get_sp_increase(integer()) :: integer()
   def get_sp_increase(job_id) when is_integer(job_id) do
-    ensure_initialized()
     job_atom = get_job_atom(job_id)
 
-    case :ets.lookup(@table_name, {:sp_increase, job_atom}) do
-      [{_, increase}] -> increase
-      [] -> 0
+    case :ets.lookup(table_for(:job_data), {:sp_increase, job_atom}) do
+      [{_, increase}] ->
+        increase
+
+      [] ->
+        raise ArgumentError,
+              "SP increase not found for job #{job_atom}. Ensure job data is loaded."
     end
   end
 
@@ -386,13 +373,15 @@ defmodule Aesir.ZoneServer.Mmo.JobData do
   """
   @spec get_max_weight(integer()) :: integer()
   def get_max_weight(job_id) when is_integer(job_id) do
-    ensure_initialized()
     job_atom = get_job_atom(job_id)
 
-    case :ets.lookup(@table_name, {:max_weight, job_atom}) do
-      [{_, weight}] -> weight
-      # Default weight
-      [] -> 20_000
+    case :ets.lookup(table_for(:job_data), {:max_weight, job_atom}) do
+      [{_, weight}] ->
+        weight
+
+      [] ->
+        raise ArgumentError,
+              "Max weight not found for job #{job_atom}. Ensure job data is loaded."
     end
   end
 
@@ -401,20 +390,15 @@ defmodule Aesir.ZoneServer.Mmo.JobData do
   """
   @spec get_base_aspd(integer(), atom()) :: integer() | nil
   def get_base_aspd(job_id, weapon_type \\ :barehand) when is_integer(job_id) do
-    ensure_initialized()
     job_atom = get_job_atom(job_id)
 
-    case :ets.lookup(@table_name, {:base_aspd, job_atom, weapon_type}) do
-      [{_, aspd}] -> aspd
-      [] -> nil
-    end
-  end
+    case :ets.lookup(table_for(:job_data), {:base_aspd, job_atom, weapon_type}) do
+      [{_, aspd}] ->
+        aspd
 
-  ## Private Functions
-
-  defp ensure_initialized do
-    if :ets.whereis(@table_name) == :undefined or :ets.whereis(@job_id_table) == :undefined do
-      init()
+      [] ->
+        raise ArgumentError,
+              "Base ASPD not found for job #{job_atom} with weapon type #{weapon_type}. Ensure job data is loaded."
     end
   end
 
@@ -427,10 +411,10 @@ defmodule Aesir.ZoneServer.Mmo.JobData do
         Logger.debug("Loaded #{length(job_data)} job entries")
 
       false ->
-        Logger.error("Job data file not found at #{job_data_path}")
+        raise "Job data file not found at #{job_data_path}"
 
       _ ->
-        Logger.error("Failed to load job data from #{job_data_path}")
+        raise "Invalid job data format in #{job_data_path}"
     end
   end
 
@@ -439,107 +423,74 @@ defmodule Aesir.ZoneServer.Mmo.JobData do
 
     # Store base HP table
     if hp_table = job_entry[:base_hp] do
-      :ets.insert(@table_name, {{:base_hp, job_atom}, hp_table})
+      :ets.insert(table_for(:job_data), {{:base_hp, job_atom}, hp_table})
     end
 
     # Store base SP table
     if sp_table = job_entry[:base_sp] do
-      :ets.insert(@table_name, {{:base_sp, job_atom}, sp_table})
+      :ets.insert(table_for(:job_data), {{:base_sp, job_atom}, sp_table})
     end
 
     # Store bonus stats
     if bonus_stats = job_entry[:bonus_stats] do
-      :ets.insert(@table_name, {{:bonus_stats, job_atom}, bonus_stats})
+      :ets.insert(table_for(:job_data), {{:bonus_stats, job_atom}, bonus_stats})
     end
 
     # Store HP factor
     if hp_factor = job_entry[:hp_factor] do
-      :ets.insert(@table_name, {{:hp_factor, job_atom}, hp_factor})
+      :ets.insert(table_for(:job_data), {{:hp_factor, job_atom}, hp_factor})
     end
 
     # Store HP increase
     if hp_increase = job_entry[:hp_increase] do
-      :ets.insert(@table_name, {{:hp_increase, job_atom}, hp_increase})
+      :ets.insert(table_for(:job_data), {{:hp_increase, job_atom}, hp_increase})
     end
 
     # Store SP increase
     if sp_increase = job_entry[:sp_increase] do
-      :ets.insert(@table_name, {{:sp_increase, job_atom}, sp_increase})
+      :ets.insert(table_for(:job_data), {{:sp_increase, job_atom}, sp_increase})
     end
 
     # Store max weight
     if max_weight = job_entry[:max_weight] do
-      :ets.insert(@table_name, {{:max_weight, job_atom}, max_weight})
+      :ets.insert(table_for(:job_data), {{:max_weight, job_atom}, max_weight})
     end
 
     # Store ASPD data
     if aspd_data = job_entry[:base_aspd] do
       Enum.each(aspd_data, fn {weapon_type, value} ->
-        :ets.insert(@table_name, {{:base_aspd, job_atom, weapon_type}, value})
+        :ets.insert(table_for(:job_data), {{:base_aspd, job_atom, weapon_type}, value})
       end)
     end
   end
 
   defp load_id_mappings do
     # Ensure table exists before inserting
-    if :ets.whereis(@job_id_table) == :undefined do
-      :ets.new(@job_id_table, [:named_table, :public, :set, read_concurrency: true])
+    if :ets.whereis(table_for(:job_id_mappings)) == :undefined do
+      :ets.new(table_for(:job_id_mappings), [:named_table, :public, :set, read_concurrency: true])
     end
 
     # Store ID to atom mappings
     Enum.each(@job_id_mappings, fn {id, atom} ->
-      :ets.insert(@job_id_table, {{:id_to_atom, id}, atom})
+      :ets.insert(table_for(:job_id_mappings), {{:id_to_atom, id}, atom})
     end)
 
     # Store atom to ID mappings (reverse)
     Enum.each(@job_id_mappings, fn {id, atom} ->
-      :ets.insert(@job_id_table, {{:atom_to_id, atom}, id})
+      :ets.insert(table_for(:job_id_mappings), {{:atom_to_id, atom}, id})
     end)
   end
 
   defp find_level_value(table, level, key, default) do
-    # Find exact match first
+    dbg(table)
+
     case Enum.find(table, fn entry -> entry.level == level end) do
       nil ->
-        # Use interpolation for missing levels
-        interpolate_value(table, level, key, default)
+        raise ArgumentError,
+              "No entry found for level #{level} in #{key} table. Ensure job data is loaded."
 
       entry ->
         Map.get(entry, key, default)
-    end
-  end
-
-  defp interpolate_value(table, level, key, default) do
-    sorted_table = Enum.sort_by(table, & &1.level)
-
-    # Find the entries just before and after our level
-    {lower, higher} =
-      Enum.reduce(sorted_table, {nil, nil}, fn entry, {low, high} ->
-        cond do
-          entry.level <= level -> {entry, high}
-          is_nil(high) -> {low, entry}
-          true -> {low, high}
-        end
-      end)
-
-    case {lower, higher} do
-      {nil, nil} ->
-        default
-
-      {nil, high} ->
-        Map.get(high, key, default)
-
-      {low, nil} ->
-        Map.get(low, key, default)
-
-      {low, high} ->
-        low_value = Map.get(low, key, default)
-        high_value = Map.get(high, key, default)
-        level_diff = high.level - low.level
-        value_diff = high_value - low_value
-        level_offset = level - low.level
-
-        low_value + div(value_diff * level_offset, level_diff)
     end
   end
 end

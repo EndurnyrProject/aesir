@@ -2,6 +2,9 @@ defmodule Aesir.TestEtsSetup do
   import ExUnit.Callbacks
 
   alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Mmo.JobData
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
 
   def setup_ets_tables(_) do
     seed =
@@ -15,6 +18,10 @@ defmodule Aesir.TestEtsSetup do
       {EtsTable, :seed},
       seed
     )
+
+    :ok = Interpreter.init()
+    :ok = MapCache.init()
+    :ok = JobData.init()
 
     :ok
   end
