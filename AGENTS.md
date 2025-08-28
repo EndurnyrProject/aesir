@@ -159,6 +159,8 @@ Tests follow standard Elixir patterns with some custom helpers:
    - Provides table recreation and cleanup utilities
    - Ensures isolated test environments
 
+4. **ETS Tests**: Use `Aesir.TestEtsSetup` to setup ETS tables for tests
+
 ### Example Test Pattern
 
 ```elixir
@@ -192,27 +194,33 @@ end
 - **Run a single test file**: `mix test path/to/test_file.exs`
 - **Run a single test**: `mix test path/to/test_file.exs:line_number`
 
+## Tool Preferences
+
+- When searching in the codebase, prefer using `rg` (ripgrep) over `grep` for better performance and features.
+- When Searching for Elixir library documentation, prefer using `hexdoc-mcp` for efficient access to Hex package docs.
+
 ## Code Style
 
 - **Formatting**: Adhere to the `.formatter.exs` file. Use `mix format` before committing.
 - **Linting**: Follow the rules in `.credo.exs`. Run `mix credo --strict` to check for issues.
 - **Naming Conventions**: Use `snake_case` for variables and function names. Use `CamelCase` for module names.
 - **Error Handling**: Use `with` statements for complex logic paths and pattern match on return values. Avoid raising exceptions for control flow.
-- **Typespecs**: Add `@spec` to all public functions.
-- **Module Documentation**: Add `@moduledoc` and `@doc` to all public modules and functions.
+- **Typespecs**: Add `@spec` to all public functions, private functions do not need callbacks
+- **Module Documentation**: Add `@moduledoc` and `@doc` to all public modules and functions and @typedoc to all public types
 - **Prefer using with instead of nested cases**: Instead of using nested cases, prefer the usage of `with`
 - **Do not add superfluous comments**: Prefer to use module and function docs, only use in-code documentation and comments only if extremelly necessary for the understanding of a specific function piece
+- **Prefer TypedStructs over plain Structs**: TypedStructs provide better type safety and documentation, making the code more maintainable and understandable.
 
 ## Development Guidelines
 
 1. **Verify Everything**: Always check function signatures, return values, and schema field names. Never assume a function or field exists; always verify.
-2. **Elixir Libs Documentation**: Use the `hexdoc-mcp` tool to search for Elixir library documentation.
-3. **Ragnarok Mechanics**: Our main source of truth is the rathena.xml file, which is a repomix compressed version of the rAthena source code. Use it to verify mechanics and implementations.
-4. **Packet Handling**: When implementing new packet handlers, follow the existing pattern of defining packet modules and registering them in the appropriate server registry.
-5. **Session Management**: Always validate sessions before processing user requests to ensure security.
-6. **Error Handling**: Use the `{:ok, result}` and `{:error, reason}` pattern for function returns instead of raising exceptions.
-7. **Testing**: Write comprehensive tests for all new functionality, including both happy path and error cases.
-8. **Documentation**: Document all modules and functions, especially packet definitions which should include format and field descriptions.
-9. **Ragnarok Renewal Mechanics**: In the rAthena source code, you will often see mechanics for pre-re and renewal, we will focus on renewal for now.
+2. **Ragnarok Mechanics**: Our main source of truth is the rathena.xml file, which is a repomix compressed version of the rAthena source code. Use it to verify mechanics and implementations.
+3. **Packet Handling**: When implementing new packet handlers, follow the existing pattern of defining packet modules and registering them in the appropriate server registry.
+4. **Session Management**: Always validate sessions before processing user requests to ensure security.
+5. **Error Handling**: Use the `{:ok, result}` and `{:error, reason}` pattern for function returns instead of raising exceptions.
+6. **Testing**: Write comprehensive tests for all new functionality, including both happy path and error cases.
+7. **Documentation**: Document all modules and functions, especially packet definitions which should include format and field descriptions.
+8. **Ragnarok Renewal Mechanics**: In the rAthena source code, you will often see mechanics for pre-re and renewal, we will focus on renewal for now.
+9. **Never assume a function signature or return value**: Always check the function definition and its return values, never assume anything.
 
 

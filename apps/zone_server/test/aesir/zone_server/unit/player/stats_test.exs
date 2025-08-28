@@ -74,15 +74,15 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       # Should calculate HP based on JobData and VIT
       # JobData.get_base_hp(0, 40) = 235
-      # Job bonuses at level 20 add +1 to all stats, so effective VIT=26
-      # With VIT=26: 235 * (1.0 + 26 * 0.01) = 235 * 1.26 = 296.1 -> 296
-      assert updated_stats.derived_stats.max_hp == 296
+      # Novice doesn't have job bonuses at level 20, so effective VIT=25
+      # With VIT=25: 235 * (1.0 + 25 * 0.01) = 235 * 1.25 = 293.75 -> 293
+      assert updated_stats.derived_stats.max_hp == 293
 
       # Should calculate SP based on JobData and INT
-      # JobData.get_base_sp(0, 40) = 11
-      # Job bonuses at level 20 add +1 to all stats, so effective INT=31
-      # With INT=31: 11 * (1.0 + 31 * 0.01) = 11 * 1.31 = 14.41 -> 14
-      assert updated_stats.derived_stats.max_sp == 14
+      # JobData.get_base_sp(0, 40) = 50
+      # Novice doesn't have job bonuses at level 20, so effective INT=30
+      # With INT=30: 50 * (1.0 + 30 * 0.01) = 50 * 1.30 = 65
+      assert updated_stats.derived_stats.max_sp == 65
     end
 
     test "ensures minimum HP/SP values" do
@@ -233,8 +233,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       updated_stats = Stats.calculate_stats(stats)
 
-      # Level 60: JobData.get_base_sp(0, 60) = 11, with INT=80: 11 * (1.0 + 80*0.01) = 11 * 1.8 = 19.8 -> 19
-      assert updated_stats.derived_stats.max_sp == 19
+      # Level 60: JobData.get_base_sp(0, 60) = 70, with INT=80: 70 * (1.0 + 80*0.01) = 70 * 1.8 = 126
+      assert updated_stats.derived_stats.max_sp == 126
     end
 
     test "calculates SP correctly for max novice level" do
@@ -247,9 +247,9 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       updated_stats = Stats.calculate_stats(stats)
 
-      # Novice has very low SP values, JobData.get_base_sp(0, 99) returns 11
-      # With INT=99: 11 * (1.0 + 99*0.01) = 11 * 1.99 = 21.89 -> 21
-      assert updated_stats.derived_stats.max_sp == 21
+      # Novice level 99: JobData.get_base_sp(0, 99) = 109
+      # With INT=99: 109 * (1.0 + 99*0.01) = 109 * 1.99 = 216.91 -> 216
+      assert updated_stats.derived_stats.max_sp == 216
     end
   end
 

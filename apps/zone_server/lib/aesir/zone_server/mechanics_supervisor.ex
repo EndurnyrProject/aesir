@@ -2,15 +2,14 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
   use Supervisor
 
   alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Mmo.JobData
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
 
   def init([]) do
     :ok = MapCache.init()
-    :ok = JobData.init()
     :ok = Interpreter.init()
 
     children = [
+      Aesir.ZoneServer.Mmo.JobManagement.JobDataLoader,
       Aesir.ZoneServer.Unit.Player.PlayerSupervisor,
       Aesir.ZoneServer.Mmo.StatusTickManager
     ]

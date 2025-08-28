@@ -63,12 +63,17 @@ defmodule Aesir.ZoneServer.EtsTable do
   end
 
   defp job_data_tables(seed) do
-    :ets.new(table_for(:job_data, seed), [:named_table, :public, :set, read_concurrency: true])
-
-    :ets.new(table_for(:job_id_mappings, seed), [
+    :ets.new(table_for(:job_data_by_id, seed), [
       :named_table,
-      :public,
       :set,
+      :public,
+      read_concurrency: true
+    ])
+
+    :ets.new(table_for(:job_data_by_name, seed), [
+      :named_table,
+      :set,
+      :public,
       read_concurrency: true
     ])
   end

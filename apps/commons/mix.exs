@@ -46,7 +46,8 @@ defmodule Commons.MixProject do
       {:process_tree, "~> 0.2.1"},
       {:ranch, "~> 2.2"},
       {:recode, github: "hrzndhrn/recode", branch: "0.8.0-dev", only: [:dev], runtime: false},
-      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false}
+      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
+      {:typedstruct, "~> 0.5"}
     ]
   end
 

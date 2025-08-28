@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.WeaponTypes do
   """
 
   @weapon_types %{
-    barehand: 0,
+    fist: 0,
     dagger: 1,
     one_handed_sword: 2,
     two_handed_sword: 3,
@@ -40,7 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.WeaponTypes do
   """
   @spec get_weapon_atom(integer()) :: atom()
   def get_weapon_atom(weapon_id) when is_integer(weapon_id) do
-    Map.get(@weapon_ids_to_atoms, weapon_id, :barehand)
+    Map.get(@weapon_ids_to_atoms, weapon_id, :fist)
   end
 
   @doc """

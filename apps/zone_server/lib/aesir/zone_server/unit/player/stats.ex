@@ -53,7 +53,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
         }
 
   alias Aesir.Commons.Models.Character
-  alias Aesir.ZoneServer.Mmo.JobData
+  alias Aesir.ZoneServer.Mmo.JobManagement
+  alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.WeaponTypes
 
   @doc """
@@ -119,11 +121,33 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   @doc """
   Applies job-specific stat bonuses based on job level and class.
-  Currently returns stats unchanged - job bonuses will be implemented with job system.
   """
   @spec apply_job_bonuses(t()) :: t()
   def apply_job_bonuses(%__MODULE__{} = stats) do
-    job_bonuses = JobData.get_job_bonuses(stats.progression.job_id, stats.progression.job_level)
+    job_bonuses =
+      with {:ok, job_name} <- AvailableJobs.job_id_to_name(stats.progression.job_id),
+           {:ok, bonus_stats} <-
+             JobManagement.get_bonus_stats(
+               job_name,
+               stats.progression.job_level
+             ) do
+        %{
+          str: bonus_stats.str || 0,
+          agi: bonus_stats.agi || 0,
+          vit: bonus_stats.vit || 0,
+          int: bonus_stats.int || 0,
+          dex: bonus_stats.dex || 0,
+          luk: bonus_stats.luk || 0
+        }
+      else
+        {:error, :level_out_of_range} ->
+          # No bonuses for this level (common for level 1)
+          %{}
+
+        err ->
+          raise "Failed to get job bonuses: #{inspect(err)}"
+      end
+
     %{stats | modifiers: %{stats.modifiers | job_bonuses: job_bonuses}}
   end
 
@@ -152,8 +176,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   """
   @spec apply_status_effects(t(), integer() | nil) :: t()
   def apply_status_effects(%__MODULE__{} = stats, player_id) when is_integer(player_id) do
-    alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
-
     # Get all status effect modifiers for this player
     status_modifiers = Interpreter.get_all_modifiers(player_id)
 
@@ -186,45 +208,36 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     effective_vit = get_effective_stat(stats, :vit)
     effective_int = get_effective_stat(stats, :int)
     base_level = stats.progression.base_level
-    job_id = stats.progression.job_id
 
-    base_hp = JobData.get_base_hp(job_id, base_level)
-    base_sp = JobData.get_base_sp(job_id, base_level)
+    with {:ok, job_name} <- AvailableJobs.job_id_to_name(stats.progression.job_id) do
+      # Get all job-related stats
+      job_stats = get_job_stats_for_level(job_name, base_level)
 
-    # Apply VIT/INT modifiers
-    max_hp = trunc(base_hp * (1.0 + effective_vit * 0.01))
-    max_sp = trunc(base_sp * (1.0 + effective_int * 0.01))
+      # Calculate HP/SP with modifiers
+      max_hp =
+        calculate_max_hp(
+          job_stats.base_hp,
+          effective_vit,
+          job_stats.hp_factor,
+          job_stats.hp_increase,
+          stats
+        )
 
-    # Apply job-specific HP factor if any
-    hp_factor = JobData.get_hp_factor(job_id)
+      max_sp = calculate_max_sp(job_stats.base_sp, effective_int, job_stats.sp_increase, stats)
 
-    max_hp =
-      if hp_factor > 0 do
-        trunc(max_hp * (100 + hp_factor) / 100)
-      else
-        max_hp
-      end
+      # Calculate ASPD
+      aspd = calculate_aspd(stats)
 
-    # Apply job-specific increases
-    hp_increase = JobData.get_hp_increase(job_id)
-    sp_increase = JobData.get_sp_increase(job_id)
+      derived_stats = %{
+        max_hp: max_hp,
+        max_sp: max_sp,
+        aspd: aspd
+      }
 
-    max_hp = max_hp + hp_increase + get_hp_bonus_flat(stats)
-    max_sp = max_sp + sp_increase + get_sp_bonus_flat(stats)
-
-    max_hp = max(max_hp, 1)
-    max_sp = max(max_sp, 1)
-
-    # Calculate ASPD
-    aspd = calculate_aspd(stats)
-
-    derived_stats = %{
-      max_hp: max_hp,
-      max_sp: max_sp,
-      aspd: aspd
-    }
-
-    %{stats | derived_stats: derived_stats}
+      %{stats | derived_stats: derived_stats}
+    else
+      err -> raise "Failed to get job name for derived stats: #{inspect(err)}"
+    end
   end
 
   @doc """
@@ -233,14 +246,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   """
   @spec calculate_combat_stats(t()) :: t()
   def calculate_combat_stats(%__MODULE__{} = stats) do
-    # Base calculations (placeholder for now)
     base_hit = calculate_base_hit(stats)
     base_flee = calculate_base_flee(stats)
     base_critical = calculate_base_critical(stats)
     base_atk = calculate_base_atk(stats)
     base_def = calculate_base_def(stats)
 
-    # Apply status effect modifiers
     hit = base_hit + get_status_modifier(stats, :hit)
     flee = base_flee + get_status_modifier(stats, :flee)
     critical = base_critical + get_status_modifier(stats, :critical)
@@ -258,7 +269,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     %{stats | combat_stats: combat_stats}
   end
 
-  # Calculate base hit (based on DEX primarily)
   defp calculate_base_hit(%__MODULE__{} = stats) do
     effective_dex = get_effective_stat(stats, :dex)
     effective_luk = get_effective_stat(stats, :luk)
@@ -268,7 +278,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     trunc(effective_dex + effective_luk / 3 + base_level / 4)
   end
 
-  # Calculate base flee (based on AGI primarily)
   defp calculate_base_flee(%__MODULE__{} = stats) do
     effective_agi = get_effective_stat(stats, :agi)
     effective_luk = get_effective_stat(stats, :luk)
@@ -278,7 +287,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     trunc(effective_agi + effective_luk / 5 + base_level / 4)
   end
 
-  # Calculate base critical (based on LUK primarily)
   defp calculate_base_critical(%__MODULE__{} = stats) do
     effective_luk = get_effective_stat(stats, :luk)
 
@@ -286,7 +294,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     trunc(effective_luk / 3)
   end
 
-  # Calculate base attack (placeholder)
   defp calculate_base_atk(%__MODULE__{} = stats) do
     effective_str = get_effective_stat(stats, :str)
 
@@ -295,7 +302,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     trunc(effective_str + base_level / 4)
   end
 
-  # Calculate base defense (placeholder)
   defp calculate_base_def(%__MODULE__{} = stats) do
     effective_vit = get_effective_stat(stats, :vit)
 
@@ -365,60 +371,117 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   def calculate_aspd(%__MODULE__{} = stats) do
     effective_agi = get_effective_stat(stats, :agi)
     effective_dex = get_effective_stat(stats, :dex)
-    job_id = stats.progression.job_id
     weapon_type = stats.equipment.weapon
     has_shield = stats.equipment.shield > 0
 
-    # Get base ASPD for job/weapon combination
-    base_aspd = JobData.get_base_aspd(job_id, WeaponTypes.get_weapon_atom(weapon_type))
+    with {:ok, job_name} <- AvailableJobs.job_id_to_name(stats.progression.job_id) do
+      base_aspd = get_weapon_aspd(job_name, weapon_type)
 
-    # Default to barehand if no ASPD data for this weapon
-    base_aspd =
-      if is_nil(base_aspd) do
-        JobData.get_base_aspd(job_id, :barehand) || 156
-      else
-        base_aspd
-      end
+      base_aspd =
+        if has_shield do
+          apply_shield_penalty(base_aspd, job_name)
+        else
+          base_aspd
+        end
 
-    # Apply shield penalty if equipped (rAthena adds shield ASPD value)
-    base_aspd =
-      if has_shield do
-        shield_aspd = JobData.get_base_aspd(job_id, :shield) || 0
-        base_aspd - shield_aspd
-      else
-        base_aspd
-      end
+      # Convert base ASPD to amotion (attack motion delay in milliseconds)
+      # Stores base values as amotion/10, so base_aspd of 40 = 400ms amotion
+      base_amotion = base_aspd * 10
 
-    # Calculate stat modifier based on weapon type
-    stat_modifier =
-      if WeaponTypes.is_ranged?(weapon_type) do
-        # Ranged formula: sqrt(DEX² / 7 + AGI² * 0.5)
-        :math.sqrt(effective_dex * effective_dex / 7.0 + effective_agi * effective_agi * 0.5)
-      else
-        # Melee formula: sqrt(DEX² / 5 + AGI²)
-        :math.sqrt(effective_dex * effective_dex / 5.0 + effective_agi * effective_agi)
-      end
+      # amotion = base_amotion - (base_amotion * (4 * agi + dex) / 1000)
+      stat_reduction = div(base_amotion * (4 * effective_agi + effective_dex), 1000)
+      amotion = base_amotion - stat_reduction
 
-    # Apply stat modifier to base ASPD
-    # Formula: base_aspd + sqrt_result * 4 / 10
-    final_aspd = base_aspd + trunc(stat_modifier * 4 / 10)
+      # Convert amotion back to ASPD display value
+      # ASPD = (2000 - amotion) / 10
+      final_aspd = div(2000 - amotion, 10)
 
-    # Apply ASPD rate modifiers (equipment, buffs, etc.)
-    aspd_rate = get_aspd_rate(stats)
+      # Apply ASPD rate modifiers
+      final_aspd = apply_aspd_rate_modifiers(final_aspd, stats)
 
-    final_aspd =
-      if aspd_rate != 100 do
-        trunc(final_aspd * aspd_rate / 100)
-      else
-        final_aspd
-      end
-
-    # Cap ASPD between 0 and 193 (renewal limits)
-    # 193 is the max ASPD for players in renewal
-    min(max(final_aspd, 0), 193)
+      # Cap ASPD between 0 and 193
+      min(max(final_aspd, 0), 193)
+    else
+      err -> raise "Failed to get job name for ASPD calculation: #{inspect(err)}"
+    end
   end
 
-  # Get ASPD rate modifier from equipment and status effects
+  defp get_job_stats_for_level(job_name, base_level) do
+    with {:ok, base_stats} <- JobManagement.get_base_stats_for_level(job_name, base_level),
+         {:ok, job} <- JobManagement.get_job_by_name(job_name) do
+      %{
+        base_hp: base_stats.hp,
+        base_sp: base_stats.sp,
+        hp_factor: job.hp_factor || 0,
+        hp_increase: job.hp_increase || 0,
+        sp_increase: job.sp_increase || 0
+      }
+    else
+      _ ->
+        raise "Failed to get job stats for level #{base_level} of job #{job_name}"
+    end
+  end
+
+  defp calculate_max_hp(base_hp, effective_vit, hp_factor, hp_increase, stats) do
+    # Apply VIT modifier
+    hp_with_vit = trunc(base_hp * (1.0 + effective_vit * 0.01))
+
+    # Apply job-specific HP factor if any
+    hp_with_factor =
+      if hp_factor && hp_factor > 0 do
+        trunc(hp_with_vit * (100 + hp_factor) / 100)
+      else
+        hp_with_vit
+      end
+
+    # Apply increases and bonuses
+    hp_increase_value = hp_increase || 0
+    total_hp = hp_with_factor + hp_increase_value + get_hp_bonus_flat(stats)
+
+    max(total_hp, 1)
+  end
+
+  defp calculate_max_sp(base_sp, effective_int, sp_increase, stats) do
+    # Apply INT modifier
+    sp_with_int = trunc(base_sp * (1.0 + effective_int * 0.01))
+
+    # Apply increases and bonuses
+    sp_increase_value = sp_increase || 0
+    total_sp = sp_with_int + sp_increase_value + get_sp_bonus_flat(stats)
+
+    max(total_sp, 1)
+  end
+
+  defp get_weapon_aspd(job_name, weapon_type) do
+    weapon_atom = WeaponTypes.get_weapon_atom(weapon_type)
+
+    with {:ok, aspd} <- JobManagement.get_base_aspd(job_name, weapon_atom) do
+      aspd
+    else
+      _ ->
+        raise "Failed to get base ASPD for job #{job_name} and weapon type #{inspect(weapon_atom)}"
+    end
+  end
+
+  defp apply_shield_penalty(base_aspd, job_name) do
+    with {:ok, shield_penalty} <- JobManagement.get_base_aspd(job_name, :shield) do
+      base_aspd + shield_penalty
+    else
+      _ -> base_aspd
+    end
+  end
+
+  @spec apply_aspd_rate_modifiers(integer(), t()) :: integer()
+  defp apply_aspd_rate_modifiers(aspd, stats) do
+    aspd_rate = get_aspd_rate(stats)
+
+    if aspd_rate != 100 do
+      trunc(aspd * aspd_rate / 100)
+    else
+      aspd
+    end
+  end
+
   defp get_aspd_rate(%__MODULE__{modifiers: modifiers}) do
     equipment_rate = Map.get(modifiers.equipment, :aspd_rate, 100)
     status_rate = Map.get(modifiers.status_effects, :aspd_rate, 100)
@@ -427,13 +490,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     trunc(equipment_rate * status_rate / 100)
   end
 
-  # HP bonus from equipment/status effects (flat)
   defp get_hp_bonus_flat(%__MODULE__{}) do
     # TODO: Implement equipment and status effect HP bonuses
     0
   end
 
-  # SP bonus from equipment/status effects (flat)
   defp get_sp_bonus_flat(%__MODULE__{}) do
     # TODO: Implement equipment and status effect SP bonuses
     0

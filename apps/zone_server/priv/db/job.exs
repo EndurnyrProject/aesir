@@ -1,7 +1,36 @@
+# Load job data from separate files
 {aspd_data, _} = Code.eval_file("re/job_aspd.exs", __DIR__)
 {basepoints_data, _} = Code.eval_file("re/job_basepoints.exs", __DIR__)
 {exp_data, _} = Code.eval_file("re/job_exp.exs", __DIR__)
 {stats_data, _} = Code.eval_file("re/job_stats.exs", __DIR__)
+
+# Helper function to build quick-lookup indices for O(1) lookups
+build_index = fn data ->
+  Enum.reduce(data, %{}, fn entry, acc ->
+    Enum.reduce(Map.get(entry, :jobs, []), acc, fn job, acc2 ->
+      existing = Map.get(acc2, job, %{})
+      merged = Map.merge(existing, entry)
+      Map.put(acc2, job, merged)
+    end)
+  end)
+end
+
+# Helper functions to conditionally add properties to map if source exists
+maybe_put = fn map, key, entry, source_key ->
+  if entry && Map.has_key?(entry, source_key) do
+    Map.put(map, key, Map.get(entry, source_key))
+  else
+    map
+  end
+end
+
+maybe_put_with_default = fn map, key, entry, source_key, default ->
+  if entry && Map.has_key?(entry, source_key) do
+    Map.put(map, key, Map.get(entry, source_key, default))
+  else
+    map
+  end
+end
 
 # Extract all unique job atoms from all files
 all_jobs =
@@ -14,84 +43,32 @@ all_jobs =
   |> Enum.uniq()
   |> Enum.sort()
 
-# Build merged job data
+aspd_index = build_index.(aspd_data)
+basepoints_index = build_index.(basepoints_data)
+exp_index = build_index.(exp_data)
+stats_index = build_index.(stats_data)
+
 merged_jobs =
   Enum.map(all_jobs, fn job ->
-    # Find ASPD data for this job
-    aspd_entry =
-      Enum.find(aspd_data, fn entry ->
-        job in Map.get(entry, :jobs, [])
-      end)
+    aspd_entry = Map.get(aspd_index, job)
+    basepoints_entry = Map.get(basepoints_index, job)
+    exp_entry = Map.get(exp_index, job)
+    stats_entry = Map.get(stats_index, job)
 
-    # Find basepoints data for this job
-    basepoints_entry =
-      Enum.find(basepoints_data, fn entry ->
-        job in Map.get(entry, :jobs, [])
-      end)
-
-    # Find exp data for this job
-    exp_entry =
-      Enum.find(exp_data, fn entry ->
-        job in Map.get(entry, :jobs, [])
-      end)
-
-    # Find stats data for this job
-    stats_entry =
-      Enum.find(stats_data, fn entry ->
-        job in Map.get(entry, :jobs, [])
-      end)
-
-    # Build the merged entry for this job
-    job_data = %{
-      job: job
-    }
-
-    # Add ASPD data if present
-    job_data =
-      if aspd_entry do
-        Map.put(job_data, :base_aspd, Map.get(aspd_entry, :base_aspd))
-      else
-        job_data
-      end
-
-    # Add basepoints data if present
-    job_data =
-      if basepoints_entry do
-        job_data
-        |> Map.put(:base_hp, Map.get(basepoints_entry, :base_hp, []))
-        |> Map.put(:base_sp, Map.get(basepoints_entry, :base_sp, []))
-      else
-        job_data
-      end
-
-    # Add exp data if present
-    job_data =
-      if exp_entry do
-        job_data
-        |> Map.put(:base_exp, Map.get(exp_entry, :base_exp, []))
-        |> Map.put(:job_exp, Map.get(exp_entry, :job_exp, []))
-      else
-        job_data
-      end
-
-    # Add stats data if present
-    job_data =
-      if stats_entry do
-        job_data
-        |> Map.put(:max_weight, Map.get(stats_entry, :max_weight))
-        |> Map.put(:hp_factor, Map.get(stats_entry, :hp_factor))
-        |> Map.put(:hp_increase, Map.get(stats_entry, :hp_increase))
-        |> Map.put(:sp_increase, Map.get(stats_entry, :sp_increase))
-        |> Map.put(:bonus_stats, Map.get(stats_entry, :bonus_stats, []))
-      else
-        job_data
-      end
-
-    # Remove nil values
-    job_data
+    %{job: job}
+    |> maybe_put.(:base_aspd, aspd_entry, :base_aspd)
+    |> maybe_put_with_default.(:base_hp, basepoints_entry, :base_hp, [])
+    |> maybe_put_with_default.(:base_sp, basepoints_entry, :base_sp, [])
+    |> maybe_put_with_default.(:base_ap, basepoints_entry, :base_ap, [])
+    |> maybe_put_with_default.(:base_exp, exp_entry, :base_exp, [])
+    |> maybe_put_with_default.(:job_exp, exp_entry, :job_exp, [])
+    |> maybe_put.(:max_weight, stats_entry, :max_weight)
+    |> maybe_put.(:hp_factor, stats_entry, :hp_factor)
+    |> maybe_put.(:hp_increase, stats_entry, :hp_increase)
+    |> maybe_put.(:sp_increase, stats_entry, :sp_increase)
+    |> maybe_put_with_default.(:bonus_stats, stats_entry, :bonus_stats, [])
     |> Enum.reject(fn {_k, v} -> is_nil(v) end)
     |> Enum.into(%{})
   end)
 
-# Return the merged job data
 merged_jobs
