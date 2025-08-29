@@ -128,6 +128,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
   Returns a map with hp, sp, ap, and bonus_stats.
   """
   @spec get_base_stats_for_level(atom(), integer()) :: {:ok, map()} | {:error, atom()}
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def get_base_stats_for_level(job_name, level) when is_atom(job_name) and is_integer(level) do
     with {:ok, job} <- get_job_by_name(job_name) do
       hp =

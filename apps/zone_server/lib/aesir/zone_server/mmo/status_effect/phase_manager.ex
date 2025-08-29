@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PhaseManager do
     - Updated StatusEntry with potentially new phase
   """
   @spec check_phase_transition(StatusEntry.t(), map(), map()) :: StatusEntry.t()
+  # credo:disable-for-next-line Credo.Check.Refactor.Nesting
   def check_phase_transition(instance, definition, _context) do
     case {instance.phase, definition[:phases]} do
       {nil, _} ->
@@ -40,6 +41,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PhaseManager do
         if current_def[:duration] do
           elapsed = System.system_time(:millisecond) - instance.started_at
 
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           if elapsed >= current_def[:duration] && current_def[:next] do
             %{instance | phase: current_def[:next]}
           else

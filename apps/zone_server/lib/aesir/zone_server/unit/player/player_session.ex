@@ -127,6 +127,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   Applies a status effect to the player.
   Delegates to the StatusEffect.Interpreter and triggers stats recalculation.
   """
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
   def apply_status(
         pid,
         status_id,

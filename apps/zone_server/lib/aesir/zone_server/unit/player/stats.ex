@@ -209,34 +209,36 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     effective_int = get_effective_stat(stats, :int)
     base_level = stats.progression.base_level
 
-    with {:ok, job_name} <- AvailableJobs.job_id_to_name(stats.progression.job_id) do
-      # Get all job-related stats
-      job_stats = get_job_stats_for_level(job_name, base_level)
+    case AvailableJobs.job_id_to_name(stats.progression.job_id) do
+      {:ok, job_name} ->
+        # Get all job-related stats
+        job_stats = get_job_stats_for_level(job_name, base_level)
 
-      # Calculate HP/SP with modifiers
-      max_hp =
-        calculate_max_hp(
-          job_stats.base_hp,
-          effective_vit,
-          job_stats.hp_factor,
-          job_stats.hp_increase,
-          stats
-        )
+        # Calculate HP/SP with modifiers
+        max_hp =
+          calculate_max_hp(
+            job_stats.base_hp,
+            effective_vit,
+            job_stats.hp_factor,
+            job_stats.hp_increase,
+            stats
+          )
 
-      max_sp = calculate_max_sp(job_stats.base_sp, effective_int, job_stats.sp_increase, stats)
+        max_sp = calculate_max_sp(job_stats.base_sp, effective_int, job_stats.sp_increase, stats)
 
-      # Calculate ASPD
-      aspd = calculate_aspd(stats)
+        # Calculate ASPD
+        aspd = calculate_aspd(stats)
 
-      derived_stats = %{
-        max_hp: max_hp,
-        max_sp: max_sp,
-        aspd: aspd
-      }
+        derived_stats = %{
+          max_hp: max_hp,
+          max_sp: max_sp,
+          aspd: aspd
+        }
 
-      %{stats | derived_stats: derived_stats}
-    else
-      err -> raise "Failed to get job name for derived stats: #{inspect(err)}"
+        %{stats | derived_stats: derived_stats}
+
+      err ->
+        raise "Failed to get job name for derived stats: #{inspect(err)}"
     end
   end
 
@@ -374,35 +376,37 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     weapon_type = stats.equipment.weapon
     has_shield = stats.equipment.shield > 0
 
-    with {:ok, job_name} <- AvailableJobs.job_id_to_name(stats.progression.job_id) do
-      base_aspd = get_weapon_aspd(job_name, weapon_type)
+    case AvailableJobs.job_id_to_name(stats.progression.job_id) do
+      {:ok, job_name} ->
+        base_aspd = get_weapon_aspd(job_name, weapon_type)
 
-      base_aspd =
-        if has_shield do
-          apply_shield_penalty(base_aspd, job_name)
-        else
-          base_aspd
-        end
+        base_aspd =
+          if has_shield do
+            apply_shield_penalty(base_aspd, job_name)
+          else
+            base_aspd
+          end
 
-      # Convert base ASPD to amotion (attack motion delay in milliseconds)
-      # Stores base values as amotion/10, so base_aspd of 40 = 400ms amotion
-      base_amotion = base_aspd * 10
+        # Convert base ASPD to amotion (attack motion delay in milliseconds)
+        # Stores base values as amotion/10, so base_aspd of 40 = 400ms amotion
+        base_amotion = base_aspd * 10
 
-      # amotion = base_amotion - (base_amotion * (4 * agi + dex) / 1000)
-      stat_reduction = div(base_amotion * (4 * effective_agi + effective_dex), 1000)
-      amotion = base_amotion - stat_reduction
+        # amotion = base_amotion - (base_amotion * (4 * agi + dex) / 1000)
+        stat_reduction = div(base_amotion * (4 * effective_agi + effective_dex), 1000)
+        amotion = base_amotion - stat_reduction
 
-      # Convert amotion back to ASPD display value
-      # ASPD = (2000 - amotion) / 10
-      final_aspd = div(2000 - amotion, 10)
+        # Convert amotion back to ASPD display value
+        # ASPD = (2000 - amotion) / 10
+        final_aspd = div(2000 - amotion, 10)
 
-      # Apply ASPD rate modifiers
-      final_aspd = apply_aspd_rate_modifiers(final_aspd, stats)
+        # Apply ASPD rate modifiers
+        final_aspd = apply_aspd_rate_modifiers(final_aspd, stats)
 
-      # Cap ASPD between 0 and 193
-      min(max(final_aspd, 0), 193)
-    else
-      err -> raise "Failed to get job name for ASPD calculation: #{inspect(err)}"
+        # Cap ASPD between 0 and 193
+        min(max(final_aspd, 0), 193)
+
+      err ->
+        raise "Failed to get job name for ASPD calculation: #{inspect(err)}"
     end
   end
 
@@ -455,18 +459,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   defp get_weapon_aspd(job_name, weapon_type) do
     weapon_atom = WeaponTypes.get_weapon_atom(weapon_type)
 
-    with {:ok, aspd} <- JobManagement.get_base_aspd(job_name, weapon_atom) do
-      aspd
-    else
+    case JobManagement.get_base_aspd(job_name, weapon_atom) do
+      {:ok, aspd} ->
+        aspd
+
       _ ->
         raise "Failed to get base ASPD for job #{job_name} and weapon type #{inspect(weapon_atom)}"
     end
   end
 
   defp apply_shield_penalty(base_aspd, job_name) do
-    with {:ok, shield_penalty} <- JobManagement.get_base_aspd(job_name, :shield) do
-      base_aspd + shield_penalty
-    else
+    case JobManagement.get_base_aspd(job_name, :shield) do
+      {:ok, shield_penalty} -> base_aspd + shield_penalty
       _ -> base_aspd
     end
   end

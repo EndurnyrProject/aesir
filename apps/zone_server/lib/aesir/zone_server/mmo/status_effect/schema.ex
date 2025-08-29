@@ -366,9 +366,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Schema do
   def validate_tick_config(nil), do: :ok
 
   def validate_tick_config(config) when is_map(config) do
-    with :ok <- validate_tick_interval(Map.get(config, :interval)),
-         :ok <- validate_action_list(Map.get(config, :actions)) do
-      :ok
+    with :ok <- validate_tick_interval(Map.get(config, :interval)) do
+      validate_action_list(Map.get(config, :actions))
     end
   end
 
@@ -461,7 +460,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Schema do
         Map.put(acc, id, validated)
       rescue
         error ->
-          raise "Validation failed for status effect #{id}: #{Exception.message(error)}"
+          reraise "Validation failed for status effect #{id}: #{Exception.message(error)}",
+                  __STACKTRACE__
       end
     end)
   end
@@ -524,11 +524,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Schema do
   """
   @spec conforms?(map()) :: boolean()
   def conforms?(status_effect) do
-    try do
-      validate(status_effect)
-      true
-    rescue
-      _ -> false
-    end
+    validate(status_effect)
+    true
+  rescue
+    _ -> false
   end
 end

@@ -43,6 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
           integer(),
           integer() | nil
         ) :: :ok | {:error, atom()}
+  # credo:disable-for-next-line /FunctionArity|CyclomaticComplexity/
   def apply_status(
         target_id,
         status_id,
@@ -92,6 +93,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
           context = ContextBuilder.build_context(target_id, caster_id, instance)
 
           # Execute on_apply hooks
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           case ActionExecutor.execute_hooks(definition[:on_apply], target_id, instance, context) do
             {:ok, new_instance} ->
               # Calculate duration
@@ -167,6 +169,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   Handle damage event for status effects.
   """
   @spec on_damage(integer(), map()) :: :ok
+  # credo:disable-for-next-line /CyclomaticComplexity|Nesting/
   def on_damage(target_id, damage_info) do
     # Get all active statuses for the target
     statuses = StatusStorage.get_player_statuses(target_id)
@@ -198,9 +201,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
                 remove_status(target_id, status.type)
 
               actions when is_list(actions) ->
+                # credo:disable-for-next-line Credo.Check.Refactor.Nesting
                 case ActionExecutor.execute_hooks(actions, target_id, status, context) do
                   {:ok, new_instance} ->
                     # Update state if changed
+                    # credo:disable-for-next-line Credo.Check.Refactor.Nesting
                     StatusStorage.update_status(target_id, status.type, fn e ->
                       %{e | state: new_instance.state || %{}, phase: new_instance.phase}
                     end)

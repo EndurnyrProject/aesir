@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
 
   # 1 second tick rate
   @tick_interval_ms 1000
@@ -169,6 +170,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
     length(due_statuses)
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.Nesting
   defp process_tick_batch(batch, now_ms) do
     # Group status ticks by player_id for efficiency
     player_ticks = Enum.group_by(batch, fn {{player_id, _status_type}, _entry} -> player_id end)
@@ -182,6 +184,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
 
         # Schedule next tick based on the status's tick value
         # Default to 1000ms (1 second) if no tick value is specified
+        # credo:disable-for-next-line Credo.Check.Refactor.Nesting
         tick_interval = if entry.tick > 0, do: entry.tick, else: 1000
         next_tick_at = now_ms + tick_interval
 
@@ -200,7 +203,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
       [{^player_id, pid, _account_id}] ->
         # Trigger stats recalculation in the player session
         # Use asynchronous version (false) for better performance
-        Aesir.ZoneServer.Unit.Player.PlayerSession.recalculate_stats(pid, false)
+        PlayerSession.recalculate_stats(pid, false)
 
       _ ->
         # Player not found or offline

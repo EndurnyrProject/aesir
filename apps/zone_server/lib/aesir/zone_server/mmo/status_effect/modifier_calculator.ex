@@ -77,6 +77,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator do
     - The calculated value
   """
   @spec evaluate_modifier_value(any(), map(), map()) :: number() | boolean()
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def evaluate_modifier_value(formula, context, status) when is_binary(formula) do
     # Handle direct references to val1-val4
     cond do

@@ -15,6 +15,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder do
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
   alias Aesir.ZoneServer.Mmo.StatusEntry
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.Stats
 
   @doc """
   Builds a context map for status effect execution.
@@ -91,8 +93,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder do
     case :ets.lookup(table_for(:zone_players), player_id) do
       [{^player_id, pid, _account_id}] ->
         # Get stats from player session
-        case Aesir.ZoneServer.Unit.Player.PlayerSession.get_current_stats(pid) do
-          %Aesir.ZoneServer.Unit.Player.Stats{} = stats ->
+        case PlayerSession.get_current_stats(pid) do
+          %Stats{} = stats ->
             # Extract relevant stats for status effect calculations
             %{
               max_hp: stats.derived_stats.max_hp,

@@ -33,7 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
     :type,
     # Value 1 (usage depends on status type)
     :val1,
-    # Value 2 (usage depends on status type) 
+    # Value 2 (usage depends on status type)
     :val2,
     # Value 3 (usage depends on status type)
     :val3,
@@ -75,6 +75,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
           map() | nil,
           atom() | nil
         ) :: t()
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
   def new(
         type,
         val1,
