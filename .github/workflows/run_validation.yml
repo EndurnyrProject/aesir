@@ -1,0 +1,55 @@
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: "github.event.pull_request.draft != true && !contains(github.event.head_commit.message, 'ci skip')"
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Elixir and Erlang
+      uses: jdx/mise-action@v2
+
+    - name: Install HEX and Rebar
+      run: |
+        mix local.hex --force
+        mix local.rebar --force
+        mix hex.info
+
+    - name: Restore deps and _build cache
+      id: mix-deps
+      uses: actions/cache@v4
+      with:
+        path: |
+          deps
+          _build
+        key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-mix-${{ hashFiles('**/mix.lock') }}
+        restore-keys: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-mix-
+
+    - name: Fetch and Compile Dependencies
+      if: steps.mix-deps.outputs.cache-hit != 'true'
+      run: |
+        mix deps.get
+        mix deps.compile
+
+    - name: Run Checks
+      run: mix check
+
