@@ -127,8 +127,8 @@ defmodule Aesir.ZoneServer.Unit.Player.AspdTest do
         luk: 10,
         base_level: 30,
         job_level: 15,
-        # Novice
-        class: 0,
+        # Archer
+        class: 3,
         # Bow (ranged)
         weapon: 11,
         shield: 0

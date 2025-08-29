@@ -1,8 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
+  use Mimic
 
-  import Mimic
   import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -35,18 +36,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
   end
 
   setup :verify_on_exit!
-  setup :set_mimic_global
+  setup :set_mimic_from_context
   setup :setup_ets_tables
 
   setup do
-    Mimic.copy(PlayerSession)
-
     # Use a test player ID
     player_id = :rand.uniform(100_000)
 
     # Register mock player in zone_players table
     mock_pid = spawn(fn -> :timer.sleep(60_000) end)
-    :ets.insert(:zone_players, {player_id, mock_pid, 1})
+    :ets.insert(table_for(:zone_players), {player_id, mock_pid, 1})
 
     # Setup Mimic for PlayerSession
     stub(

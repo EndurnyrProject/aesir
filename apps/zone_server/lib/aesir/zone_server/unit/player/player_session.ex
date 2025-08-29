@@ -402,7 +402,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @impl true
   def handle_cast({:player_entered_view, other_char_id}, state) do
-    case :ets.lookup(table_for(table_for(:zone_players)), other_char_id) do
+    case :ets.lookup(table_for(:zone_players), other_char_id) do
       [{^other_char_id, other_pid, _account_id}] ->
         GenServer.cast(other_pid, {:request_player_info, self(), state.character.id})
 

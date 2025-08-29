@@ -2,6 +2,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
+
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Pathfinding
@@ -24,21 +27,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     end
   end
 
-  setup do
-    Mimic.copy(SpatialIndex)
-    Mimic.copy(Stats)
-    Mimic.copy(MapCache)
-    Mimic.copy(Pathfinding)
-
-    :ok
-  end
-
   setup :verify_on_exit!
-  setup :set_mimic_global
+  setup :set_mimic_from_context
+  setup :setup_ets_tables
 
   setup do
-    SpatialIndex.init()
-
     character = %Character{
       id: 1,
       account_id: 100,
@@ -85,7 +78,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       assert state.game_state.walk_speed == 150
       assert state.game_state.view_range == 14
 
-      assert [{1, _, 100}] = :ets.lookup(:zone_players, 1)
+      assert [{1, _, 100}] = :ets.lookup(table_for(:zone_players), 1)
     end
 
     test "sends spawn_player message on init", %{character: character} do
@@ -234,7 +227,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   describe "visibility system" do
     test "player_entered_view requests player info", %{character: character} do
       other_pid = spawn(fn -> :timer.sleep(1000) end)
-      :ets.insert(:zone_players, {2, other_pid, 200})
+      :ets.insert(table_for(:zone_players), {2, other_pid, 200})
 
       state = %{
         character: character,
@@ -504,7 +497,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
   describe "terminate/2" do
     test "cleans up ETS entries and notifies connection", %{character: character} do
-      :ets.insert(:zone_players, {1, self(), 100})
+      :ets.insert(table_for(:zone_players), {1, self(), 100})
 
       expect(SpatialIndex, :get_visible_players, fn 1 -> [] end)
       expect(SpatialIndex, :remove_player, fn 1 -> :ok end)
@@ -518,7 +511,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
       :ok = PlayerSession.terminate(:normal, state)
 
-      assert :ets.lookup(:zone_players, 1) == []
+      assert :ets.lookup(table_for(:zone_players), 1) == []
       assert_receive :player_session_terminated
     end
 
@@ -551,7 +544,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
           []
         )
 
-      :ets.insert(:zone_players, {2, other_pid, 200})
+      :ets.insert(table_for(:zone_players), {2, other_pid, 200})
 
       # Set up expectations for SpatialIndex
       expect(SpatialIndex, :get_visible_players, fn 1 -> [2] end)

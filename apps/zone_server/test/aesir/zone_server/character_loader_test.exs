@@ -1,5 +1,6 @@
 defmodule Aesir.ZoneServer.CharacterLoaderTest do
   use Aesir.DataCase, async: true
+
   import ExUnit.CaptureLog
 
   alias Aesir.Commons.Models.Account

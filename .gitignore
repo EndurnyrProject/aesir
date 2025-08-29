@@ -3,6 +3,7 @@
 #
 
 repomix-output.xml
+rathena.xml
 .mcp.json
 .DS_Store
 .mnesia

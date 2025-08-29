@@ -1,5 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
   use ExUnit.Case, async: true
+  use Mimic
 
   import Aesir.TestEtsSetup
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
@@ -8,15 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
 
-  import Mimic
-
-  setup do
-    Mimic.copy(PlayerSession)
-
-    :ok
-  end
-
-  setup :set_mimic_global
+  setup :set_mimic_from_context
   setup :verify_on_exit!
   setup :setup_ets_tables
 
