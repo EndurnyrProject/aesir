@@ -26,6 +26,7 @@ erl_crash.dump
 /config/*.secret.exs
 .elixir_ls/
 .lexical/
+.expert/
 /tmp
 
 ### Elixir Patch ###
