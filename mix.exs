@@ -12,7 +12,8 @@ defmodule Aesir.MixProject do
 
   defp deps do
     [
-      {:credo, "~> 1.7", only: [:dev], runtime: false}
+      {:credo, "~> 1.7", only: [:dev], runtime: false},
+      {:hush, "~> 1.2"}
     ]
   end
 end

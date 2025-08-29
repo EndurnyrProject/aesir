@@ -9,6 +9,8 @@ defmodule Aesir.Commons.Application do
   def start(_type, _args) do
     display_banner_for_starting_apps()
 
+    Hush.resolve!()
+
     topologies = Application.get_env(:libcluster, :topologies)
 
     children = [

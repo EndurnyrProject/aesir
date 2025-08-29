@@ -5,6 +5,8 @@ defmodule Aesir.CharServer.Application do
 
   require Logger
 
+  alias Aesir.CharServer.Config.Network, as: NetworkConfig
+  alias Aesir.CharServer.Config.ServerInfo, as: ServerInfoConfig
   alias Aesir.Commons.SessionManager
 
   @impl true
@@ -17,8 +19,8 @@ defmodule Aesir.CharServer.Application do
        packet_registry: Aesir.CharServer.PacketRegistry,
        transport_opts: %{
          socket_opts: [
-           port: 6121,
-           ip: {192, 168, 178, 101}
+           port: NetworkConfig.port(),
+           ip: NetworkConfig.bind_ip()
          ]
        },
        ref: ref}
@@ -36,13 +38,11 @@ defmodule Aesir.CharServer.Application do
           "Aesir CharServer (ref: #{inspect(ref)}) started at #{:inet.ntoa(ip)}:#{port}"
         )
 
-        server_config = Application.get_env(:char_server, :server_config, %{})
-        server_name = Map.get(server_config, :name, "Aesir")
-        cluster_id = Map.get(server_config, :cluster_id, "default")
+        cluster_id = ServerInfoConfig.cluster_id()
         server_id = "char_server_#{cluster_id}_#{Node.self()}"
 
         metadata = %{
-          name: server_name,
+          name: ServerInfoConfig.name(),
           type: 0,
           new: false,
           cluster_id: cluster_id
@@ -51,7 +51,7 @@ defmodule Aesir.CharServer.Application do
         SessionManager.register_server(
           server_id,
           :char_server,
-          ip,
+          NetworkConfig.broadcast_addr(),
           port,
           1000,
           metadata

@@ -7,6 +7,7 @@ defmodule Aesir.AccountServer.Application do
 
   require Logger
 
+  alias Aesir.AccountServer.Config.Network, as: NetworkConfig
   alias Aesir.Commons.SessionManager
 
   @impl true
@@ -17,6 +18,12 @@ defmodule Aesir.AccountServer.Application do
       {Aesir.Commons.Network.Listener,
        connection_module: Aesir.AccountServer,
        packet_registry: Aesir.AccountServer.PacketRegistry,
+       transport_opts: %{
+         socket_opts: [
+           port: NetworkConfig.port(),
+           ip: NetworkConfig.bind_ip()
+         ]
+       },
        ref: ref}
     ]
 

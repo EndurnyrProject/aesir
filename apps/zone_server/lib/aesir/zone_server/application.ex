@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Application do
   require Logger
 
   alias Aesir.Commons.SessionManager
+  alias Aesir.ZoneServer.Config.Network, as: NetworkConfig
 
   @impl true
   def start(_type, _args) do
@@ -19,8 +20,8 @@ defmodule Aesir.ZoneServer.Application do
        packet_registry: Aesir.ZoneServer.PacketRegistry,
        transport_opts: %{
          socket_opts: [
-           port: 5121,
-           ip: {192, 168, 178, 101}
+           port: NetworkConfig.port(),
+           ip: NetworkConfig.bind_ip()
          ]
        },
        ref: ref}
@@ -45,7 +46,7 @@ defmodule Aesir.ZoneServer.Application do
         SessionManager.register_server(
           server_id,
           :zone_server,
-          ip,
+          NetworkConfig.broadcast_addr(),
           port,
           1000,
           metadata

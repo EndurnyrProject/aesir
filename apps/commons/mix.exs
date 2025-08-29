@@ -36,6 +36,7 @@ defmodule Commons.MixProject do
       {:ex_doc, "~> 0.28", only: :dev, runtime: false},
       {:gen_state_machine, "~> 3.0"},
       {:hammox, "~> 0.7", only: :test},
+      {:hush, "~> 1.2"},
       {:libcluster, "~> 3.4"},
       {:memento, "~> 0.5"},
       {:mimic, "~> 1.12", only: :test},
