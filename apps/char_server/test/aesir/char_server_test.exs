@@ -141,7 +141,10 @@ defmodule Aesir.CharServerTest do
             status: :online,
             player_count: 0,
             ip: {127, 0, 0, 1},
-            port: 5121
+            port: 5121,
+            metadata: %{
+              cluster_id: "default"
+            }
           }
         ]
       end)
@@ -231,7 +234,10 @@ defmodule Aesir.CharServerTest do
             status: :online,
             player_count: 0,
             ip: {127, 0, 0, 1},
-            port: 5121
+            port: 5121,
+            metadata: %{
+              cluster_id: "default"
+            }
           }
         ]
       end)

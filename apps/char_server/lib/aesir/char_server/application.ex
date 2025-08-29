@@ -51,7 +51,7 @@ defmodule Aesir.CharServer.Application do
         SessionManager.register_server(
           server_id,
           :char_server,
-          NetworkConfig.broadcast_addr(),
+          ip,
           port,
           1000,
           metadata

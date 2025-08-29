@@ -9,6 +9,7 @@ defmodule Aesir.CharServer do
 
   alias Aesir.CharServer.Characters
   alias Aesir.CharServer.CharacterSession
+  alias Aesir.CharServer.Config.ServerInfo
   alias Aesir.CharServer.Packets.AccountIdAck
   alias Aesir.CharServer.Packets.ChReqCharDelete2
   alias Aesir.CharServer.Packets.HcAcceptEnter
@@ -232,27 +233,33 @@ defmodule Aesir.CharServer do
   end
 
   defp get_available_zone_server(_map_name) do
-    # Get all zone servers from SessionManager
+    case get_available_servers() do
+      {:ok, servers} -> select_server(servers)
+      err -> err
+    end
+  end
+
+  defp get_available_servers() do
     case SessionManager.get_servers(:zone_server) do
       [] ->
         {:error, :no_zone_servers}
 
       servers ->
-        # Find online zone servers
-        online_servers =
-          servers
-          |> Enum.filter(fn server -> server.status == :online end)
-          |> Enum.sort_by(fn server -> server.player_count end)
-
-        case online_servers do
-          [] ->
-            {:error, :no_zone_servers}
-
-          [zone_server | _] ->
-            # For now, return the zone server with the least players
-            # Later we can check if the server has the specific map
-            {:ok, zone_server}
-        end
+        {:ok, servers}
     end
+  end
+
+  defp select_server(servers) do
+    case servers
+         |> Enum.filter(&compatible_server/1)
+         |> Enum.sort_by(fn server -> server.player_count end) do
+      [] -> {:error, :no_compatible_servers}
+      [best_server | _] -> {:ok, best_server}
+    end
+  end
+
+  defp compatible_server(server) do
+    cluster_id = ServerInfo.cluster_id()
+    server.status == :online && server.metadata[:cluster_id] == cluster_id
   end
 end

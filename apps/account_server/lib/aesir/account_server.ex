@@ -144,7 +144,7 @@ defmodule Aesir.AccountServer do
         online_servers =
           servers
           |> Enum.filter(fn server -> server.status == :online end)
-          |> Enum.group_by(fn server -> server.metadata[:cluster_id] || "default" end)
+          |> Enum.group_by(fn server -> server.metadata[:cluster_id] end)
           |> Enum.map(fn {_cluster_id, cluster_servers} ->
             best_server = Enum.min_by(cluster_servers, & &1.player_count)
 

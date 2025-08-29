@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Application do
 
   alias Aesir.Commons.SessionManager
   alias Aesir.ZoneServer.Config.Network, as: NetworkConfig
+  alias Aesir.ZoneServer.Config.ServerInfo, as: ServerInfoConfig
 
   @impl true
   def start(_type, _args) do
@@ -39,14 +40,17 @@ defmodule Aesir.ZoneServer.Application do
           "Aesir ZoneServer (ref: #{inspect(ref)}) started at #{:inet.ntoa(ip)}:#{port}"
         )
 
-        server_id = "zone_server_#{Node.self()}"
+        cluster_id = ServerInfoConfig.cluster_id()
+        server_id = "zone_server_#{cluster_id}_#{Node.self()}"
 
-        metadata = %{}
+        metadata = %{
+          cluster_id: cluster_id
+        }
 
         SessionManager.register_server(
           server_id,
           :zone_server,
-          NetworkConfig.broadcast_addr(),
+          ip,
           port,
           1000,
           metadata
