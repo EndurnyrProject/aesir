@@ -10,7 +10,6 @@ rathena.xml
 .memory_bank
 
 # direnv
-.envrc
 priv/plts/dialyzer.plt
 priv/plts/dialyzer.plt.hash
 
