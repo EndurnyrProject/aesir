@@ -16,8 +16,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   alias Aesir.ZoneServer.Mmo.StatusEffect.PhaseManager
   alias Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
 
   @doc """
   Initialize the interpreter by loading and compiling all status effect definitions.
@@ -61,64 +63,88 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
         {:error, :unknown_status}
 
       definition ->
-        # Check immunities
-        if PropertyChecker.check_immunity(target_id, definition) do
+        # Get entity info for immunity and resistance checks
+        entity_info = get_entity_info(target_id)
+
+        # Check immunities using entity info
+        if PropertyChecker.check_immunity(entity_info, definition) do
           {:error, :immune}
         else
-          # Create initial state and phase
-          initial_state = definition[:instance_state] || %{}
-          initial_phase = if definition[:phases], do: :wait, else: nil
+          # Calculate base duration before resistance
+          base_duration = PhaseManager.calculate_base_duration(definition)
 
-          # Create temporary instance for context building
-          now_ms = System.monotonic_time(:millisecond)
-
-          instance = %StatusEntry{
-            type: status_id,
-            val1: val1,
-            val2: val2,
-            val3: val3,
-            val4: val4,
-            tick: tick,
-            flag: flag,
-            source_id: caster_id,
-            state: initial_state,
-            phase: initial_phase,
-            started_at: System.system_time(:millisecond),
-            next_tick_at: now_ms + if(tick > 0, do: tick, else: 1000),
-            tick_count: 0,
-            expires_at: nil
-          }
-
-          # Build context
-          context = ContextBuilder.build_context(target_id, caster_id, instance)
-
-          # Execute on_apply hooks
-          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-          case ActionExecutor.execute_hooks(definition[:on_apply], target_id, instance, context) do
-            {:ok, new_instance} ->
-              # Calculate duration
-              duration = PhaseManager.calculate_duration(definition, new_instance, context)
-
-              # Store in StatusStorage with state and phase
-              StatusStorage.apply_status(
-                target_id,
-                status_id,
-                val1,
-                val2,
-                val3,
-                val4,
-                tick,
-                flag,
-                duration,
-                caster_id,
-                new_instance.state || %{},
-                new_instance.phase
+          # Apply resistance calculations if needed
+          {success_rate, adjusted_duration} =
+            if Resistance.should_apply_resistance?(definition) do
+              Resistance.apply_resistance(
+                definition,
+                entity_info[:stats] || %{},
+                100,
+                base_duration
               )
+            else
+              {100, base_duration}
+            end
 
-              :ok
+          # Check if status is resisted
+          if not Resistance.roll_success(success_rate) do
+            {:error, :resisted}
+          else
+            # Create initial state and phase
+            initial_state = definition[:instance_state] || %{}
+            initial_phase = if definition[:phases], do: :wait, else: nil
 
-            {:error, reason} ->
-              {:error, reason}
+            # Create temporary instance for context building
+            now_ms = System.monotonic_time(:millisecond)
+
+            instance = %StatusEntry{
+              type: status_id,
+              val1: val1,
+              val2: val2,
+              val3: val3,
+              val4: val4,
+              tick: tick,
+              flag: flag,
+              source_id: caster_id,
+              state: initial_state,
+              phase: initial_phase,
+              started_at: System.system_time(:millisecond),
+              next_tick_at: now_ms + if(tick > 0, do: tick, else: 1000),
+              tick_count: 0,
+              expires_at: nil
+            }
+
+            # Build context
+            context = ContextBuilder.build_context(target_id, caster_id, instance)
+
+            # Execute on_apply hooks
+            # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+            case ActionExecutor.execute_hooks(definition[:on_apply], target_id, instance, context) do
+              {:ok, new_instance} ->
+                # Use the adjusted duration from resistance calculations
+                duration = adjusted_duration
+
+                # Store in StatusStorage with state and phase
+                StatusStorage.apply_status(
+                  target_id,
+                  status_id,
+                  val1,
+                  val2,
+                  val3,
+                  val4,
+                  tick,
+                  flag,
+                  duration,
+                  caster_id,
+                  new_instance.state || %{},
+                  new_instance.phase
+                )
+
+                :ok
+
+              {:error, reason} ->
+                {:error, reason}
+            end
           end
         end
     end
@@ -314,5 +340,28 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   @spec get_properties(atom()) :: list(atom())
   def get_properties(status_id) do
     PropertyChecker.get_properties(status_id)
+  end
+
+  # Private helper functions
+
+  defp get_entity_info(target_id) do
+    # For now, we assume target_id refers to a player
+    # In the future, this should check if it's a player, monster, or NPC
+    # and call the appropriate entity module
+
+    # Try to get the player session from ETS
+    import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
+
+    case :ets.lookup(table_for(:zone_players), target_id) do
+      [{^target_id, pid, _account_id}] ->
+        # Get the player state from the session
+        state = PlayerSession.get_state(pid)
+        # Get entity info from the player state
+        Aesir.ZoneServer.Unit.Player.PlayerState.get_entity_info(state.game_state)
+
+      [] ->
+        # Target not found - this is a programming error
+        raise "Cannot apply status effect to non-existent entity with ID: #{target_id}"
+    end
   end
 end

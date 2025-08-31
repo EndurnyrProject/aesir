@@ -1,4 +1,11 @@
 defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
+  @moduledoc """
+  Represents the state of a player in the game world.
+  Implements the Entity behaviour for status effect calculations.
+  """
+
+  @behaviour Aesir.ZoneServer.Unit.Entity
+
   @type direction :: 0..7
   @type movement_state :: :just_spawned | :standing | :moving
 
@@ -153,5 +160,47 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   """
   def update_direction(%__MODULE__{} = state, new_dir) when new_dir in 0..7 do
     %{state | dir: new_dir}
+  end
+
+  # Entity behaviour implementations
+
+  @impl Aesir.ZoneServer.Unit.Entity
+  def get_race(%__MODULE__{}), do: :human
+
+  @impl Aesir.ZoneServer.Unit.Entity
+  def get_element(%__MODULE__{}), do: {:neutral, 1}
+
+  @impl Aesir.ZoneServer.Unit.Entity
+  def is_boss?(%__MODULE__{}), do: false
+
+  @impl Aesir.ZoneServer.Unit.Entity
+  def get_size(%__MODULE__{}), do: :medium
+
+  @impl Aesir.ZoneServer.Unit.Entity
+  def get_stats(%__MODULE__{stats: stats}) do
+    # Extract the relevant stats for resistance calculations
+    %{
+      vit: stats.base_stats.vit,
+      int: stats.base_stats.int,
+      dex: stats.base_stats.dex,
+      luk: stats.base_stats.luk,
+      # MDEF might come from derived stats or modifiers
+      mdef: Map.get(stats.combat_stats, :mdef, 0)
+    }
+  end
+
+  @impl Aesir.ZoneServer.Unit.Entity
+  def get_entity_info(%__MODULE__{} = state) do
+    {element, element_level} = get_element(state)
+
+    %{
+      race: get_race(state),
+      element: element,
+      element_level: element_level,
+      boss_flag: is_boss?(state),
+      size: get_size(state),
+      stats: get_stats(state),
+      entity_type: :player
+    }
   end
 end

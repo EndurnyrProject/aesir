@@ -97,4 +97,25 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PhaseManager do
         duration
     end
   end
+
+  @doc """
+  Calculate the base duration of a status effect without context.
+  Used for resistance calculations before the full context is available.
+
+  ## Parameters
+    - definition: The status effect definition
+    
+  ## Returns
+    - Base duration in milliseconds, defaults to 10000ms if not specified
+  """
+  @spec calculate_base_duration(map()) :: integer()
+  def calculate_base_duration(definition) do
+    case definition[:duration] do
+      # Default 10 seconds
+      nil -> 10000
+      duration when is_integer(duration) -> duration
+      # For formulas, use a default since we don't have context yet
+      _formula -> 10000
+    end
+  end
 end

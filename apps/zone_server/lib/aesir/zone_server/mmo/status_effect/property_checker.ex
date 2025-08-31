@@ -120,17 +120,82 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker do
   Check if a target is immune to a status effect.
 
   ## Parameters
-    - target_id: The ID of the target entity
+    - entity_info: The entity information map containing race, element, boss_flag, etc.
     - definition: The status effect definition
     
   ## Returns
     - true if immune, false otherwise
   """
-  @spec check_immunity(integer(), map()) :: boolean()
-  def check_immunity(_target_id, definition) do
-    # TODO: Check target properties against immunity list
-    _ = definition[:immunity]
-    false
+  @spec check_immunity(map(), map()) :: boolean()
+  def check_immunity(entity_info, definition) when is_map(entity_info) do
+    immunity_list = definition[:immunity] || []
+
+    Enum.any?(immunity_list, fn immunity_type ->
+      case immunity_type do
+        :undead ->
+          entity_info[:race] == :undead or entity_info[:element] == :undead
+
+        :boss ->
+          entity_info[:boss_flag] == true
+
+        :plant ->
+          entity_info[:race] == :plant
+
+        :demon ->
+          entity_info[:race] == :demon
+
+        :dragon ->
+          entity_info[:race] == :dragon
+
+        :angel ->
+          entity_info[:race] == :angel
+
+        :formless ->
+          entity_info[:race] == :formless
+
+        :insect ->
+          entity_info[:race] == :insect
+
+        :fish ->
+          entity_info[:race] == :fish
+
+        :beast ->
+          entity_info[:race] == :beast
+
+        # Element-based immunities
+        :fire ->
+          entity_info[:element] == :fire
+
+        :water ->
+          entity_info[:element] == :water
+
+        :earth ->
+          entity_info[:element] == :earth
+
+        :wind ->
+          entity_info[:element] == :wind
+
+        :poison ->
+          entity_info[:element] == :poison
+
+        :holy ->
+          entity_info[:element] == :holy
+
+        :shadow ->
+          entity_info[:element] == :shadow
+
+        :ghost ->
+          entity_info[:element] == :ghost
+
+        # Custom immunities
+        custom when is_atom(custom) ->
+          custom_immunities = entity_info[:custom_immunities] || []
+          custom in custom_immunities
+
+        _ ->
+          false
+      end
+    end)
   end
 
   @doc """

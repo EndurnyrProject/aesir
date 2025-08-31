@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
       target_id = 9999
       status_id = :sc_provoke
 
-      assert_raise RuntimeError, ~r/Player .* not found/, fn ->
+      assert_raise RuntimeError, ~r/Cannot apply status effect to non-existent entity/, fn ->
         Interpreter.apply_status(target_id, status_id, 0)
       end
     end
@@ -94,6 +94,31 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
 
   # Helper to set up player mock with stats
   defp setup_player_mock(player_id) do
+    # Register player in zone_players table
+    mock_pid = self()
+    :ets.insert(table_for(:zone_players), {player_id, mock_pid, 1})
+
+    # Copy and stub necessary modules
+    Mimic.copy(Aesir.ZoneServer.Mmo.StatusEffect.Resistance)
+
+    stub(PlayerSession, :get_state, fn _ ->
+      %{
+        game_state: %Aesir.ZoneServer.Unit.Player.PlayerState{
+          x: 50,
+          y: 50,
+          map_name: "prontera",
+          stats: %Aesir.ZoneServer.Unit.Player.Stats{
+            base_stats: %{str: 10, agi: 10, vit: 10, int: 10, dex: 10, luk: 10},
+            derived_stats: %{max_hp: 1000, max_sp: 100, aspd: 150},
+            combat_stats: %{hit: 0, flee: 0, critical: 0, atk: 0, def: 0, mdef: 5},
+            current_state: %{hp: 800, sp: 80},
+            progression: %{base_level: 50},
+            modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
+          }
+        }
+      }
+    end)
+
     stub(PlayerSession, :get_current_stats, fn _ ->
       %Aesir.ZoneServer.Unit.Player.Stats{
         base_stats: %{str: 10, agi: 10, vit: 10, int: 10, dex: 10, luk: 10},
@@ -105,8 +130,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
       }
     end)
 
-    mock_pid = Process.whereis(PlayerSession) || self()
-
-    :ets.insert(table_for(:zone_players), {player_id, mock_pid, player_id + 1000})
+    # Stub resistance roll to always succeed for predictable tests
+    stub(Aesir.ZoneServer.Mmo.StatusEffect.Resistance, :roll_success, fn _ -> true end)
   end
 end

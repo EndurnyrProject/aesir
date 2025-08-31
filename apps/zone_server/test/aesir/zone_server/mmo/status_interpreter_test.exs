@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -20,18 +21,27 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
       }
     end
 
-    def get_state(_player_id) do
-      {:ok,
-       %{
-         stats: %{
-           base_level: 50,
-           job_level: 30
-         },
-         skills: %{
-           rg_tunneldrive: 5,
-           as_poisonreact: 3
-         }
-       }}
+    def get_state(_pid) do
+      # Return a proper state structure with game_state containing a mock PlayerState
+      %{
+        game_state: %Aesir.ZoneServer.Unit.Player.PlayerState{
+          x: 50,
+          y: 50,
+          map_name: "prontera",
+          stats: %Stats{
+            base_stats: %{str: 10, agi: 10, vit: 10, int: 10, dex: 10, luk: 10},
+            derived_stats: %{max_hp: 1000, max_sp: 500},
+            combat_stats: %{mdef: 5},
+            current_state: %{hp: 1000, sp: 500},
+            progression: %{base_level: 50, job_level: 30}
+          }
+        },
+        character: %{
+          id: 1,
+          base_level: 50,
+          job_level: 30
+        }
+      }
     end
   end
 
@@ -40,6 +50,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
   setup :setup_ets_tables
 
   setup do
+    # Copy modules for mocking
+    Mimic.copy(Aesir.ZoneServer.Mmo.StatusEffect.Resistance)
+
     # Use a test player ID
     player_id = :rand.uniform(100_000)
 
@@ -55,6 +68,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
     )
 
     stub(PlayerSession, :get_state, &MockPlayerSession.get_state/1)
+
+    # Stub resistance roll to always succeed for predictable tests
+    stub(Resistance, :roll_success, fn _success_rate -> true end)
 
     %{player_id: player_id}
   end
