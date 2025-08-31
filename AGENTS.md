@@ -210,6 +210,8 @@ end
 - **Prefer using with instead of nested cases**: Instead of using nested cases, prefer the usage of `with`
 - **Do not add superfluous comments**: Prefer to use module and function docs, only use in-code documentation and comments only if extremelly necessary for the understanding of a specific function piece
 - **Prefer TypedStructs over plain Structs**: TypedStructs provide better type safety and documentation, making the code more maintainable and understandable.
+- Numbers larger than 9999 should be written with underscores: 10_000
+- Always alias modules at the top of the file, instead of using the full module name in the code
 
 ## Development Guidelines
 
