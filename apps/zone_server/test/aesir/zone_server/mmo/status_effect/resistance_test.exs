@@ -283,7 +283,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ResistanceTest do
       definition = %{resistance_type: :magical}
       novice_stats = %{vit: 10, luk: 10, mdef: 5}
 
-      {success_rate, duration} = Resistance.apply_resistance(definition, novice_stats, 100, 10_000)
+      {success_rate, duration} =
+        Resistance.apply_resistance(definition, novice_stats, 100, 10_000)
 
       # 95% chance to be affected
       assert success_rate == 95.0
