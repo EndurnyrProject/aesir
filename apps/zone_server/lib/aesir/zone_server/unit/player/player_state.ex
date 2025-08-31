@@ -41,7 +41,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     :is_chatting,
 
     # Character Stats
-    :stats
+    :stats,
+
+    # Inventory
+    :inventory_items
   ]
 
   @doc """
@@ -77,7 +80,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       is_chatting: false,
 
       # Character Stats
-      stats: Stats.from_character(character)
+      stats: Stats.from_character(character),
+
+      # Inventory (will be loaded separately)
+      inventory_items: []
     }
   end
 
@@ -86,6 +92,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   """
   def update_position(%__MODULE__{} = state, x, y) do
     %{state | x: x, y: y}
+  end
+
+  @doc """
+  Sets the inventory items for the player state.
+  """
+  def set_inventory(%__MODULE__{} = state, inventory_items) do
+    %{state | inventory_items: inventory_items}
   end
 
   @doc """

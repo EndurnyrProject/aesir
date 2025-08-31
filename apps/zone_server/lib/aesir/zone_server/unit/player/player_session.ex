@@ -14,7 +14,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Packets.ZcEquipitemList
   alias Aesir.ZoneServer.Packets.ZcLongparChange
+  alias Aesir.ZoneServer.Packets.ZcNormalItemlist
   alias Aesir.ZoneServer.Packets.ZcNotifyMoveentry
   alias Aesir.ZoneServer.Packets.ZcNotifyMoveStop
   alias Aesir.ZoneServer.Packets.ZcNotifyNewentry
@@ -23,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Packets.ZcNotifyVanish
   alias Aesir.ZoneServer.Packets.ZcParChange
   alias Aesir.ZoneServer.Pathfinding
+  alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -170,17 +173,26 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     connection_pid = args[:connection_pid]
     game_state = PlayerState.new(character)
 
-    state = %{
-      character: character,
-      game_state: game_state,
-      connection_pid: connection_pid
-    }
+    # Load character's inventory
+    case Inventory.load_inventory(character.id) do
+      {:ok, inventory_items} ->
+        updated_game_state = PlayerState.set_inventory(game_state, inventory_items)
 
-    register_player(character.id, character.account_id)
+        state = %{
+          character: character,
+          game_state: updated_game_state,
+          connection_pid: connection_pid
+        }
 
-    send(self(), :spawn_player)
+        register_player(character.id, character.account_id)
+        send(self(), :spawn_player)
 
-    {:ok, state}
+        {:ok, state}
+
+      {:error, reason} ->
+        Logger.error("Failed to load inventory for character #{character.id}: #{inspect(reason)}")
+        {:stop, {:error, :inventory_load_failed}}
+    end
   end
 
   @impl true
@@ -298,9 +310,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
     send_stat_updates(connection_pid, game_state.stats)
 
+    # Send inventory data to client
+    send_inventory_data(connection_pid, game_state.inventory_items)
+
     # TODO: Send remaining initial game data to client
-    # - Inventory list
-    # - Equipment list
     # - Skill list
     # - Spawn character on map for other players
     # - Send other visible entities
@@ -1122,5 +1135,17 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       packet = build_status_packet(param_id, value)
       send(connection_pid, {:send_packet, packet})
     end)
+  end
+
+  defp send_inventory_data(connection_pid, inventory_items) do
+    # Send normal inventory items (non-equipped)
+    normal_itemlist = ZcNormalItemlist.from_inventory_items(inventory_items)
+    send(connection_pid, {:send_packet, normal_itemlist})
+
+    # Send equipped items
+    equipitem_list = ZcEquipitemList.from_inventory_items(inventory_items)
+    send(connection_pid, {:send_packet, equipitem_list})
+
+    Logger.debug("Sent inventory data: #{length(inventory_items)} items")
   end
 end

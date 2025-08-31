@@ -108,12 +108,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   ## Parameters
   - stats: The Stats struct to calculate
   - player_id: Optional player ID for status effect retrieval
+  - equipped_items: Optional list of equipped inventory items
   """
-  @spec calculate_stats(t(), integer() | nil) :: t()
-  def calculate_stats(%__MODULE__{} = stats, player_id \\ nil) do
+  @spec calculate_stats(t(), integer() | nil, [any()] | nil) :: t()
+  def calculate_stats(%__MODULE__{} = stats, player_id \\ nil, equipped_items \\ nil) do
     stats
     |> apply_job_bonuses()
-    |> apply_equipment_modifiers()
+    |> apply_equipment_modifiers(equipped_items)
     |> apply_status_effects(player_id)
     |> calculate_derived_stats()
     |> calculate_combat_stats()
@@ -153,14 +154,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   @doc """
   Applies equipment modifiers to stats.
-  Currently returns stats unchanged - equipment modifiers will be implemented with equipment system.
+  Calculates stat bonuses from equipped items and applies them.
   """
-  @spec apply_equipment_modifiers(t()) :: t()
-  def apply_equipment_modifiers(%__MODULE__{} = stats) do
-    # TODO: Implement equipment modifier system
-    # equipment_bonuses = get_equipment_bonuses(equipment_list)
-    # %{stats | modifiers: %{stats.modifiers | equipment: equipment_bonuses}}
-    stats
+  @spec apply_equipment_modifiers(t(), [any()] | nil) :: t()
+  def apply_equipment_modifiers(%__MODULE__{} = stats, equipped_items \\ nil) do
+    case equipped_items do
+      nil ->
+        stats
+
+      items when is_list(items) ->
+        equipment_bonuses = calculate_equipment_bonuses(items)
+        %{stats | modifiers: %{stats.modifiers | equipment: equipment_bonuses}}
+    end
   end
 
   @doc """
@@ -502,5 +507,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   defp get_sp_bonus_flat(%__MODULE__{}) do
     # TODO: Implement equipment and status effect SP bonuses
     0
+  end
+
+  defp calculate_equipment_bonuses(_equipped_items) do
+    # TODO: Implement equipment bonuses from item database
+    # For now, return empty bonuses
+    %{
+      str: 0,
+      agi: 0,
+      vit: 0,
+      int: 0,
+      dex: 0,
+      luk: 0,
+      atk: 0,
+      matk: 0,
+      def: 0,
+      mdef: 0,
+      hit: 0,
+      flee: 0,
+      critical: 0,
+      hp: 0,
+      sp: 0,
+      aspd_rate: 100
+    }
   end
 end
