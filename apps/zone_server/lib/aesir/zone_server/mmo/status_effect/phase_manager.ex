@@ -106,16 +106,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PhaseManager do
     - definition: The status effect definition
     
   ## Returns
-    - Base duration in milliseconds, defaults to 10000ms if not specified
+    - Base duration in milliseconds, defaults to 10_000ms if not specified
   """
   @spec calculate_base_duration(map()) :: integer()
   def calculate_base_duration(definition) do
     case definition[:duration] do
       # Default 10 seconds
-      nil -> 10000
+      nil -> 10_000
       duration when is_integer(duration) -> duration
       # For formulas, use a default since we don't have context yet
-      _formula -> 10000
+      _formula -> 10_000
     end
   end
 end

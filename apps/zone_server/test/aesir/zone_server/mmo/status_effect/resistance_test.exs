@@ -44,42 +44,42 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ResistanceTest do
       # Formula: duration * (100 - (VIT + LUK/3)) / 100
       stats = %{vit: 60, luk: 30}
       # 60 + 30/3 = 60 + 10 = 70% reduction
-      # 10000 * (100 - 70) / 100 = 3000
-      assert Resistance.calculate_duration(10000, stats) == 3000
+      # 10_000 * (100 - 70) / 100 = 3000
+      assert Resistance.calculate_duration(10_000, stats) == 3000
     end
 
     test "handles fractional LUK values" do
       stats = %{vit: 50, luk: 20}
       # 50 + 20/3 = 50 + 6.666... = 56.666... reduction
-      # 10000 * (100 - 56.666) / 100 = 4333.33...
-      assert_in_delta Resistance.calculate_duration(10000, stats), 4333, 1
+      # 10_000 * (100 - 56.666) / 100 = 4333.33...
+      assert_in_delta Resistance.calculate_duration(10_000, stats), 4333, 1
     end
 
     test "handles missing stats" do
       # Missing both or invalid stats - returns base duration
-      assert Resistance.calculate_duration(10000, %{}) == 10000
+      assert Resistance.calculate_duration(10_000, %{}) == 10_000
 
       # Missing VIT - returns base duration
-      assert Resistance.calculate_duration(10000, %{luk: 30}) == 10000
+      assert Resistance.calculate_duration(10_000, %{luk: 30}) == 10_000
 
       # Missing LUK - returns base duration
-      assert Resistance.calculate_duration(10000, %{vit: 50}) == 10000
+      assert Resistance.calculate_duration(10_000, %{vit: 50}) == 10_000
 
       # Nil values - returns base duration
-      assert Resistance.calculate_duration(10000, %{vit: nil, luk: nil}) == 10000
+      assert Resistance.calculate_duration(10_000, %{vit: nil, luk: nil}) == 10_000
     end
 
     test "caps reduction at 100%" do
       stats = %{vit: 90, luk: 60}
       # 90 + 60/3 = 90 + 20 = 110%, capped at 100%
       # Duration becomes 0
-      assert Resistance.calculate_duration(10000, stats) == 0
+      assert Resistance.calculate_duration(10_000, stats) == 0
     end
 
     test "never returns negative duration" do
       # VIT + LUK/3 = 0, so no reduction
       stats = %{vit: 0, luk: 0}
-      assert Resistance.calculate_duration(10000, stats) == 10000
+      assert Resistance.calculate_duration(10_000, stats) == 10_000
     end
   end
 
@@ -88,7 +88,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ResistanceTest do
       definition = %{resistance_type: :physical}
       stats = %{vit: 40, luk: 30}
       base_success = 100
-      base_duration = 10000
+      base_duration = 10_000
 
       {success_rate, duration} =
         Resistance.apply_resistance(definition, stats, base_success, base_duration)
@@ -97,7 +97,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ResistanceTest do
       assert success_rate == 60.0
 
       # Duration reduction: 40 + 30/3 = 50%
-      # Duration: 10000 * (100 - 50) / 100 = 5000ms
+      # Duration: 10_000 * (100 - 50) / 100 = 5000ms
       assert duration == 5000
     end
 
@@ -105,7 +105,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ResistanceTest do
       definition = %{resistance_type: :magical}
       stats = %{mdef: 25, vit: 30, luk: 60}
       base_success = 80
-      base_duration = 20000
+      base_duration = 20_000
 
       {success_rate, duration} =
         Resistance.apply_resistance(definition, stats, base_success, base_duration)
@@ -114,15 +114,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ResistanceTest do
       assert success_rate == 55.0
 
       # Duration reduction: 30 + 60/3 = 50%
-      # Duration: 20000 * (100 - 50) / 100 = 10000ms
-      assert duration == 10000
+      # Duration: 20_000 * (100 - 50) / 100 = 10_000ms
+      assert duration == 10_000
     end
 
     test "handles complete resistance (0% success rate)" do
       definition = %{resistance_type: :physical}
       stats = %{vit: 100, luk: 30}
       base_success = 90
-      base_duration = 10000
+      base_duration = 10_000
 
       {success_rate, duration} =
         Resistance.apply_resistance(definition, stats, base_success, base_duration)
@@ -132,7 +132,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ResistanceTest do
 
       # Duration would be reduced but doesn't matter if success is 0%
       # Duration reduction: 100 + 30/3 = 110% (capped at 100%)
-      # Duration: 10000 * 0 / 100 = 0ms
+      # Duration: 10_000 * 0 / 100 = 0ms
       assert duration == 0
     end
 
@@ -140,7 +140,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ResistanceTest do
       definition = %{}
       stats = %{vit: 50, luk: 30, mdef: 20}
       base_success = 75
-      base_duration = 15000
+      base_duration = 15_000
 
       {success_rate, duration} =
         Resistance.apply_resistance(definition, stats, base_success, base_duration)
@@ -150,7 +150,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ResistanceTest do
       assert success_rate == 25.0
 
       # Duration reduction: 50 + 30/3 = 60%
-      # Duration: 15000 * (100 - 60) / 100 = 6000ms
+      # Duration: 15_000 * (100 - 60) / 100 = 6000ms
       assert duration == 6000
     end
 
@@ -158,14 +158,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ResistanceTest do
       definition = %{resistance_type: :physical}
       stats = %{}
       base_success = 100
-      base_duration = 10000
+      base_duration = 10_000
 
       {success_rate, duration} =
         Resistance.apply_resistance(definition, stats, base_success, base_duration)
 
       # No stats means no resistance
       assert success_rate == 100
-      assert duration == 10000
+      assert duration == 10_000
     end
 
     test "can reduce duration to 0 with complete resistance" do
@@ -245,7 +245,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ResistanceTest do
       definition = %{resistance_type: :physical}
       tank_stats = %{vit: 90, luk: 20}
 
-      {success_rate, duration} = Resistance.apply_resistance(definition, tank_stats, 100, 30000)
+      {success_rate, duration} = Resistance.apply_resistance(definition, tank_stats, 100, 30_000)
 
       # Only 10% chance to be affected
       assert success_rate == 10.0
@@ -258,12 +258,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ResistanceTest do
       definition = %{resistance_type: :magical}
       mage_stats = %{mdef: 75, vit: 40, luk: 30}
 
-      {success_rate, duration} = Resistance.apply_resistance(definition, mage_stats, 100, 20000)
+      {success_rate, duration} = Resistance.apply_resistance(definition, mage_stats, 100, 20_000)
 
       # 25% chance to be affected
       assert success_rate == 25.0
       # Duration: 40 + 30/3 = 50% reduction
-      assert duration == 10000
+      assert duration == 10_000
     end
 
     test "balanced character has moderate resistance" do
@@ -271,7 +271,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ResistanceTest do
       balanced_stats = %{vit: 50, luk: 50, mdef: 50}
 
       {success_rate, duration} =
-        Resistance.apply_resistance(definition, balanced_stats, 100, 15000)
+        Resistance.apply_resistance(definition, balanced_stats, 100, 15_000)
 
       # 50% chance to be affected
       assert success_rate == 50.0
@@ -283,7 +283,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ResistanceTest do
       definition = %{resistance_type: :magical}
       novice_stats = %{vit: 10, luk: 10, mdef: 5}
 
-      {success_rate, duration} = Resistance.apply_resistance(definition, novice_stats, 100, 10000)
+      {success_rate, duration} = Resistance.apply_resistance(definition, novice_stats, 100, 10_000)
 
       # 95% chance to be affected
       assert success_rate == 95.0

@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   @type direction :: 0..7
   @type movement_state :: :just_spawned | :standing | :moving
 
+  alias Aesir.ZoneServer.Unit.Entity
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   defstruct [
@@ -206,9 +207,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     PlayerStats.to_formula_map(stats)
   end
 
-  @impl Aesir.ZoneServer.Unit.Entity
+  @impl Entity
   def get_entity_info(%__MODULE__{} = state) do
-    Aesir.ZoneServer.Unit.Entity.build_entity_info(__MODULE__, state)
+    Entity.build_entity_info(__MODULE__, state)
     |> Map.put(:entity_type, :player)
   end
 end

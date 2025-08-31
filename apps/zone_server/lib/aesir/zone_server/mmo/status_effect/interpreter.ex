@@ -92,9 +92,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
             end
 
           # Check if status is resisted
-          if not Resistance.roll_success(success_rate) do
-            {:error, :resisted}
-          else
+          if Resistance.roll_success(success_rate) do
             # Create initial state and phase
             initial_state = definition[:instance_state] || %{}
             initial_phase = if definition[:phases], do: :wait, else: nil
@@ -151,6 +149,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
               {:error, reason} ->
                 {:error, reason}
             end
+          else
+            {:error, :resisted}
           end
         end
     end
