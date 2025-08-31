@@ -12,11 +12,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder do
   - Values from the status effect (val1-val4)
   - Additional context data for specific events (damage, healing, etc.)
   """
-  import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
-
   alias Aesir.ZoneServer.Mmo.StatusEntry
-  alias Aesir.ZoneServer.Unit.Player.PlayerSession
-  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
   Builds a context map for status effect execution.
@@ -25,22 +22,25 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder do
   and status effect state and values.
 
   ## Parameters
-    - target_id: The ID of the target entity
+    - unit_type: The type of the unit (:player, :npc, :monster, etc.)
+    - unit_id: The ID of the target entity
     - caster_id: The ID of the caster entity (or nil)
     - instance: The StatusEntry struct representing the status effect instance
     
   ## Returns
     - A map containing all the context needed for formula evaluation
   """
-  @spec build_context(integer(), integer() | nil, StatusEntry.t()) :: map()
-  def build_context(target_id, caster_id, %StatusEntry{} = instance) do
-    # Get the player stats for the target
-    target_stats = get_player_stats(target_id)
+  @spec build_context(atom(), integer(), integer() | nil, StatusEntry.t()) :: map()
+  def build_context(unit_type, unit_id, caster_id, %StatusEntry{} = instance) do
+    # Get the unit stats for the target
+    target_stats = get_unit_stats(unit_type, unit_id)
 
     # Get the caster stats if available
+    # Note: We assume caster is same type as target for now
+    # This could be enhanced to track caster type separately
     caster_stats =
-      if caster_id && caster_id != target_id do
-        get_player_stats(caster_id)
+      if caster_id && caster_id != unit_id do
+        get_unit_stats(unit_type, caster_id)
       else
         # If no caster_id or it's the same as target, use empty map
         %{}
@@ -48,7 +48,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder do
 
     %{
       # Include IDs for custom functions to access
-      target_id: target_id,
+      target_id: unit_id,
       caster_id: caster_id,
       # Stats for formula calculations
       target: target_stats,
@@ -77,47 +77,29 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder do
   end
 
   @doc """
-  Get player stats from player session.
+  Get unit stats from UnitRegistry.
 
   ## Parameters
-    - player_id: The ID of the player
+    - unit_type: The type of the unit
+    - unit_id: The ID of the unit
     
   ## Returns
-    - Map of player stats
+    - Map of unit stats
     
   ## Raises
-    - RuntimeError if player not found or stats can't be retrieved
+    - RuntimeError if unit not found or stats can't be retrieved
   """
-  @spec get_player_stats(integer()) :: map()
-  def get_player_stats(player_id) do
-    case :ets.lookup(table_for(:zone_players), player_id) do
-      [{^player_id, pid, _account_id}] ->
-        # Get stats from player session
-        case PlayerSession.get_current_stats(pid) do
-          %Stats{} = stats ->
-            # Extract relevant stats for status effect calculations
-            %{
-              max_hp: stats.derived_stats.max_hp,
-              max_sp: stats.derived_stats.max_sp,
-              hp: stats.current_state.hp,
-              sp: stats.current_state.sp,
-              level: stats.progression.base_level,
-              str: stats.base_stats.str,
-              agi: stats.base_stats.agi,
-              vit: stats.base_stats.vit,
-              int: stats.base_stats.int,
-              dex: stats.base_stats.dex,
-              luk: stats.base_stats.luk
-            }
+  @spec get_unit_stats(atom(), integer()) :: map()
+  def get_unit_stats(unit_type, unit_id) do
+    case UnitRegistry.get_unit_info(unit_type, unit_id) do
+      {:ok, entity_info} ->
+        # Trust the entity to provide complete stats
+        # The Entity behavior contract requires get_stats to return all needed values
+        entity_info[:stats] || raise "Entity #{unit_type} #{unit_id} returned nil stats"
 
-          _ ->
-            # Stats can't be retrieved - critical error
-            raise "Failed to retrieve stats for player #{player_id}"
-        end
-
-      _ ->
-        # Player not found - critical error
-        raise "Player #{player_id} not found in zone_players table"
+      {:error, :not_found} ->
+        # Unit not found - critical error
+        raise "#{unit_type} #{unit_id} not found in UnitRegistry"
     end
   end
 end

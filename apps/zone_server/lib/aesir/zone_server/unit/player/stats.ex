@@ -2,7 +2,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   @moduledoc """
   Player statistics management for individual character sessions.
 
-  Manages character base stats, derived stats, and modifiers with a three-tier architecture:
+  Extends the base Unit.Stats with player-specific features like equipment,
+  experience tracking, and various modifier systems. Manages character stats
+  with a three-tier architecture:
   - Database Layer: Persistent base stats from Character model
   - Calculation Layer: Runtime stat calculations with modifiers
   - Display Layer: Client synchronization via StatusParams
@@ -11,59 +13,65 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   real-time stat calculations and client synchronization.
   """
 
-  defstruct base_stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
-            progression: %{base_level: 1, job_level: 1, base_exp: 0, job_exp: 0, job_id: 0},
-            current_state: %{hp: 40, sp: 11},
-            derived_stats: %{max_hp: 40, max_sp: 11, aspd: 150},
-            combat_stats: %{hit: 0, flee: 0, critical: 0, atk: 0, def: 0},
-            equipment: %{weapon: 0, shield: 0},
-            modifiers: %{
-              equipment: %{},
-              status_effects: %{},
-              job_bonuses: %{}
-            }
-
-  @type t :: %__MODULE__{
-          base_stats: %{
-            str: integer(),
-            agi: integer(),
-            vit: integer(),
-            int: integer(),
-            dex: integer(),
-            luk: integer()
-          },
-          progression: %{
-            base_level: integer(),
-            job_level: integer(),
-            base_exp: integer(),
-            job_exp: integer(),
-            job_id: integer()
-          },
-          current_state: %{hp: integer(), sp: integer()},
-          derived_stats: %{max_hp: integer(), max_sp: integer(), aspd: integer()},
-          combat_stats: %{
-            hit: integer(),
-            flee: integer(),
-            critical: integer(),
-            atk: integer(),
-            def: integer()
-          },
-          equipment: %{weapon: integer(), shield: integer()},
-          modifiers: %{equipment: map(), status_effects: map(), job_bonuses: map()}
-        }
+  use TypedStruct
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.WeaponTypes
+  alias Aesir.ZoneServer.Unit.Stats
+
+  typedstruct module: PlayerProgression do
+    @typedoc "Player-specific progression data including experience"
+    field :base_level, non_neg_integer()
+    field :job_level, non_neg_integer()
+    field :base_exp, non_neg_integer()
+    field :job_exp, non_neg_integer()
+    field :job_id, non_neg_integer()
+  end
+
+  typedstruct module: Equipment do
+    @typedoc "Equipment identifiers"
+    field :weapon, non_neg_integer()
+    field :shield, non_neg_integer()
+  end
+
+  typedstruct module: Modifiers do
+    @typedoc "Various stat modifiers from different sources"
+    field :equipment, map()
+    field :status_effects, map()
+    field :job_bonuses, map()
+  end
+
+  typedstruct do
+    @typedoc """
+    Player-specific stats structure extending the base unit stats.
+
+    Includes all common unit stats plus player-specific fields:
+    - Equipment tracking
+    - Experience and job progression
+    - Multiple modifier sources
+    """
+
+    # Common stats from Unit.Stats
+    field :base_stats, Stats.BaseStats.t()
+    field :derived_stats, Stats.DerivedStats.t()
+    field :combat_stats, Stats.CombatStats.t()
+    field :current_state, Stats.CurrentState.t()
+
+    # Player-specific fields
+    field :progression, PlayerProgression.t()
+    field :equipment, Equipment.t()
+    field :modifiers, Modifiers.t()
+  end
 
   @doc """
   Creates a Stats struct from a Character model.
   """
   @spec from_character(map()) :: t()
   def from_character(%Character{} = character) do
-    base_stats = %{
+    base_stats = %Stats.BaseStats{
       str: character.str,
       agi: character.agi,
       vit: character.vit,
@@ -72,7 +80,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       luk: character.luk
     }
 
-    progression = %{
+    progression = %PlayerProgression{
       base_level: character.base_level,
       job_level: character.job_level,
       base_exp: character.base_exp,
@@ -80,12 +88,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       job_id: character.class || 0
     }
 
-    current_state = %{
+    current_state = %Stats.CurrentState{
       hp: character.hp,
       sp: character.sp
     }
 
-    equipment = %{
+    equipment = %Equipment{
       weapon: character.weapon || 0,
       shield: character.shield || 0
     }
@@ -95,10 +103,48 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       progression: progression,
       current_state: current_state,
       equipment: equipment,
-      modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
+      modifiers: %Modifiers{
+        equipment: %{},
+        status_effects: %{},
+        job_bonuses: %{}
+      }
     }
 
     calculate_stats(stats)
+  end
+
+  @doc """
+  Converts player stats to formula map format for status effect calculations.
+  """
+  @spec to_formula_map(t()) :: map()
+  def to_formula_map(%__MODULE__{} = stats) do
+    %{
+      # Base stats
+      str: stats.base_stats.str,
+      agi: stats.base_stats.agi,
+      vit: stats.base_stats.vit,
+      int: stats.base_stats.int,
+      dex: stats.base_stats.dex,
+      luk: stats.base_stats.luk,
+      # HP/SP
+      max_hp: stats.derived_stats.max_hp,
+      max_sp: stats.derived_stats.max_sp,
+      hp: stats.current_state.hp,
+      sp: stats.current_state.sp,
+      # Level - use base_level from progression
+      level: stats.progression.base_level,
+      base_level: stats.progression.base_level,
+      job_level: stats.progression.job_level,
+      # Combat stats
+      atk: stats.combat_stats.atk,
+      matk: stats.combat_stats.matk,
+      def: stats.combat_stats.def,
+      mdef: stats.combat_stats.mdef,
+      hit: stats.combat_stats.hit,
+      flee: stats.combat_stats.flee,
+      critical: stats.combat_stats.critical,
+      aspd: stats.derived_stats.aspd
+    }
   end
 
   @doc """
@@ -182,7 +228,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   @spec apply_status_effects(t(), integer() | nil) :: t()
   def apply_status_effects(%__MODULE__{} = stats, player_id) when is_integer(player_id) do
     # Get all status effect modifiers for this player
-    status_modifiers = Interpreter.get_all_modifiers(player_id)
+    status_modifiers = Interpreter.get_all_modifiers(:player, player_id)
 
     # Update the status_effects in modifiers
     %{stats | modifiers: %{stats.modifiers | status_effects: status_modifiers}}
@@ -325,9 +371,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       when stat_name in [:str, :agi, :vit, :int, :dex, :luk] do
     base_value = Map.get(stats.base_stats, stat_name, 0)
 
-    job_bonus = get_in(stats.modifiers, [:job_bonuses, stat_name]) || 0
-    equipment_bonus = get_in(stats.modifiers, [:equipment, stat_name]) || 0
-    status_bonus = get_in(stats.modifiers, [:status_effects, stat_name]) || 0
+    job_bonus = Map.get(stats.modifiers.job_bonuses, stat_name, 0)
+    equipment_bonus = Map.get(stats.modifiers.equipment, stat_name, 0)
+    status_bonus = Map.get(stats.modifiers.status_effects, stat_name, 0)
 
     base_value + job_bonus + equipment_bonus + status_bonus
   end

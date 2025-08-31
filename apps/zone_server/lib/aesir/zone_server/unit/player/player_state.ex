@@ -9,9 +9,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   @type direction :: 0..7
   @type movement_state :: :just_spawned | :standing | :moving
 
-  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   defstruct [
+    # Character identification
+    :character_id,
+    :process_pid,
+
     # Position & Movement
     :x,
     :y,
@@ -59,6 +63,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   """
   def new(%Aesir.Commons.Models.Character{} = character) do
     %__MODULE__{
+      character_id: character.id,
+      # Will be set later if needed
+      process_pid: nil,
       map_name: character.last_map,
       x: character.last_x,
       y: character.last_y,
@@ -87,7 +94,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       is_chatting: false,
 
       # Character Stats
-      stats: Stats.from_character(character),
+      stats: PlayerStats.from_character(character),
 
       # Inventory (will be loaded separately)
       inventory_items: []
@@ -164,6 +171,24 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
   # Entity behaviour implementations
 
+  @doc """
+  Sets the process PID for this player state.
+  """
+  def set_process_pid(%__MODULE__{} = state, pid) when is_pid(pid) do
+    %{state | process_pid: pid}
+  end
+
+  # Entity behaviour implementations
+
+  @impl Aesir.ZoneServer.Unit.Entity
+  def get_unit_id(%__MODULE__{character_id: character_id}), do: character_id
+
+  @impl Aesir.ZoneServer.Unit.Entity
+  def get_unit_type(%__MODULE__{}), do: :player
+
+  @impl Aesir.ZoneServer.Unit.Entity
+  def get_process_pid(%__MODULE__{process_pid: pid}), do: pid
+
   @impl Aesir.ZoneServer.Unit.Entity
   def get_race(%__MODULE__{}), do: :human
 
@@ -178,29 +203,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
   @impl Aesir.ZoneServer.Unit.Entity
   def get_stats(%__MODULE__{stats: stats}) do
-    # Extract the relevant stats for resistance calculations
-    %{
-      vit: stats.base_stats.vit,
-      int: stats.base_stats.int,
-      dex: stats.base_stats.dex,
-      luk: stats.base_stats.luk,
-      # MDEF might come from derived stats or modifiers
-      mdef: Map.get(stats.combat_stats, :mdef, 0)
-    }
+    PlayerStats.to_formula_map(stats)
   end
 
   @impl Aesir.ZoneServer.Unit.Entity
   def get_entity_info(%__MODULE__{} = state) do
-    {element, element_level} = get_element(state)
-
-    %{
-      race: get_race(state),
-      element: element,
-      element_level: element_level,
-      boss_flag: is_boss?(state),
-      size: get_size(state),
-      stats: get_stats(state),
-      entity_type: :player
-    }
+    Aesir.ZoneServer.Unit.Entity.build_entity_info(__MODULE__, state)
+    |> Map.put(:entity_type, :player)
   end
 end

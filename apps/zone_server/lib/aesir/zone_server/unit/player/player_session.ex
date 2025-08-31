@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
   Starts a player session linked to a connection process.
@@ -176,7 +177,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # Load character's inventory
     case Inventory.load_inventory(character.id) do
       {:ok, inventory_items} ->
-        updated_game_state = PlayerState.set_inventory(game_state, inventory_items)
+        updated_game_state =
+          game_state
+          |> PlayerState.set_inventory(inventory_items)
+          |> PlayerState.set_process_pid(self())
 
         state = %{
           character: character,
@@ -184,7 +188,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
           connection_pid: connection_pid
         }
 
+        # Register with both ETS and UnitRegistry
         register_player(character.id, character.account_id)
+        UnitRegistry.register_unit(:player, character.id, PlayerState, updated_game_state, self())
+
         send(self(), :spawn_player)
 
         {:ok, state}
@@ -207,14 +214,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # This happens after a short delay to ensure spawn packets are processed
     Process.send_after(self(), :complete_spawn, 100)
 
-    {:noreply, %{state | game_state: updated_game_state}}
+    {:noreply, update_game_state(state, updated_game_state)}
   end
 
   @impl true
   def handle_info(:complete_spawn, %{game_state: game_state} = state) do
     # Transition from just_spawned to standing
     updated_game_state = PlayerState.mark_spawn_complete(game_state)
-    {:noreply, %{state | game_state: updated_game_state}}
+    {:noreply, update_game_state(state, updated_game_state)}
   end
 
   @impl true
@@ -594,7 +601,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       updated_game_state = %{state.game_state | stats: updated_stats}
       send_stat_updates(state.connection_pid, updated_stats)
 
-      {:noreply, %{state | game_state: updated_game_state}}
+      {:noreply, update_game_state(state, updated_game_state)}
     else
       # No changes, skip update
       {:noreply, state}
@@ -647,6 +654,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         %{character: character} = state
       ) do
     case Interpreter.apply_status(
+           :player,
            character.id,
            status_id,
            val1,
@@ -678,7 +686,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_call({:remove_status, status_id}, _from, %{character: character} = state) do
     # Remove the status effect
-    Interpreter.remove_status(character.id, status_id)
+    Interpreter.remove_status(:player, character.id, status_id)
 
     # Recalculate stats without this status effect
     updated_stats = Stats.calculate_stats(state.game_state.stats, character.id)
@@ -694,13 +702,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @impl true
   def handle_call(:get_active_statuses, _from, %{character: character} = state) do
-    statuses = StatusStorage.get_player_statuses(character.id)
+    statuses = StatusStorage.get_unit_statuses(:player, character.id)
     {:reply, statuses, state}
   end
 
   @impl true
   def handle_call({:has_status, status_id}, _from, %{character: character} = state) do
-    has_status = StatusStorage.has_status?(character.id, status_id)
+    has_status = StatusStorage.has_status?(:player, character.id, status_id)
     {:reply, has_status, state}
   end
 
@@ -717,6 +725,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     :ets.delete(table_for(:zone_players), character.id)
     SpatialIndex.remove_player(character.id)
     SpatialIndex.clear_visibility(character.id)
+    UnitRegistry.unregister_unit(:player, character.id)
 
     if connection_pid && Process.alive?(connection_pid) do
       send(connection_pid, :player_session_terminated)
@@ -763,6 +772,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     else
       %ZcParChange{var_id: param_id, value: value}
     end
+  end
+
+  # Helper to update game_state and sync with UnitRegistry
+  defp update_game_state(state, new_game_state) do
+    # Update UnitRegistry with the new state
+    UnitRegistry.update_unit_state(:player, state.character.id, new_game_state)
+
+    # Return the updated state
+    %{state | game_state: new_game_state}
   end
 
   defp register_player(char_id, account_id),

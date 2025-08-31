@@ -19,7 +19,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Entity
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
   Initialize the interpreter by loading and compiling all status effect definitions.
@@ -34,7 +35,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   Apply a status effect to a target.
   """
   # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  @type unit_type :: Entity.unit_type()
+
   @spec apply_status(
+          unit_type(),
           integer(),
           atom(),
           integer(),
@@ -47,7 +51,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
         ) :: :ok | {:error, atom()}
   # credo:disable-for-next-line /FunctionArity|CyclomaticComplexity/
   def apply_status(
-        target_id,
+        unit_type,
+        unit_id,
         status_id,
         val1 \\ 0,
         val2 \\ 0,
@@ -64,7 +69,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
       definition ->
         # Get entity info for immunity and resistance checks
-        entity_info = get_entity_info(target_id)
+        entity_info = get_entity_info(unit_type, unit_id)
 
         # Check immunities using entity info
         if PropertyChecker.check_immunity(entity_info, definition) do
@@ -115,18 +120,19 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
             }
 
             # Build context
-            context = ContextBuilder.build_context(target_id, caster_id, instance)
+            context = ContextBuilder.build_context(unit_type, unit_id, caster_id, instance)
 
             # Execute on_apply hooks
             # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-            case ActionExecutor.execute_hooks(definition[:on_apply], target_id, instance, context) do
+            case ActionExecutor.execute_hooks(definition[:on_apply], unit_id, instance, context) do
               {:ok, new_instance} ->
                 # Use the adjusted duration from resistance calculations
                 duration = adjusted_duration
 
                 # Store in StatusStorage with state and phase
                 StatusStorage.apply_status(
-                  target_id,
+                  unit_type,
+                  unit_id,
                   status_id,
                   val1,
                   val2,
@@ -153,11 +159,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   @doc """
   Process a tick for a status effect.
   """
-  @spec process_tick(integer(), atom()) :: :ok
-  def process_tick(target_id, status_id) do
+  @spec process_tick(unit_type(), integer(), atom()) :: :ok
+  def process_tick(unit_type, unit_id, status_id) do
     with definition when definition != nil <- Registry.get_definition(status_id),
-         instance when instance != nil <- StatusStorage.get_status(target_id, status_id) do
-      context = ContextBuilder.build_context(target_id, instance.source_id, instance)
+         instance when instance != nil <- StatusStorage.get_status(unit_type, unit_id, status_id) do
+      context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
 
       # Check for phase transitions
       instance = PhaseManager.check_phase_transition(instance, definition, context)
@@ -168,20 +174,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       # Execute tick actions
       case ActionExecutor.execute_hooks(
              current_def[:tick][:actions],
-             target_id,
+             unit_id,
              instance,
              context
            ) do
         {:ok, new_instance} ->
           # Update the status entry with new state and phase
-          StatusStorage.update_status(target_id, status_id, fn e ->
+          StatusStorage.update_status(unit_type, unit_id, status_id, fn e ->
             %{e | state: new_instance.state || %{}, phase: new_instance.phase}
           end)
 
           :ok
 
         :remove ->
-          remove_status(target_id, status_id)
+          remove_status(unit_type, unit_id, status_id)
 
         _ ->
           :ok
@@ -194,18 +200,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   @doc """
   Handle damage event for status effects.
   """
-  @spec on_damage(integer(), map()) :: :ok
+  @spec on_damage(unit_type(), integer(), map()) :: :ok
   # credo:disable-for-next-line /CyclomaticComplexity|Nesting/
-  def on_damage(target_id, damage_info) do
+  def on_damage(unit_type, unit_id, damage_info) do
     # Get all active statuses for the target
-    statuses = StatusStorage.get_player_statuses(target_id)
+    statuses = StatusStorage.get_unit_statuses(unit_type, unit_id)
 
     Enum.each(statuses, fn status ->
       with definition when definition != nil <- Registry.get_definition(status.type) do
         current_def = PhaseManager.get_current_phase_definition(definition, status)
 
         if current_def[:on_damage] do
-          context = ContextBuilder.build_context(target_id, status.source_id, status)
+          context = ContextBuilder.build_context(unit_type, unit_id, status.source_id, status)
           context = ContextBuilder.add_damage_info(context, damage_info)
 
           # on_damage can be a map with action and condition, or just actions
@@ -224,15 +230,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
           if PropertyChecker.check_condition(condition, context) do
             case action do
               :remove_self ->
-                remove_status(target_id, status.type)
+                remove_status(unit_type, unit_id, status.type)
 
               actions when is_list(actions) ->
                 # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-                case ActionExecutor.execute_hooks(actions, target_id, status, context) do
+                case ActionExecutor.execute_hooks(actions, unit_id, status, context) do
                   {:ok, new_instance} ->
                     # Update state if changed
                     # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-                    StatusStorage.update_status(target_id, status.type, fn e ->
+                    StatusStorage.update_status(unit_type, unit_id, status.type, fn e ->
                       %{e | state: new_instance.state || %{}, phase: new_instance.phase}
                     end)
 
@@ -252,17 +258,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   @doc """
   Remove a status effect.
   """
-  @spec remove_status(integer(), atom()) :: :ok
-  def remove_status(target_id, status_id) do
+  @spec remove_status(unit_type(), integer(), atom()) :: :ok
+  def remove_status(unit_type, unit_id, status_id) do
     with definition when definition != nil <- Registry.get_definition(status_id),
-         instance when instance != nil <- StatusStorage.get_status(target_id, status_id) do
-      context = ContextBuilder.build_context(target_id, instance.source_id, instance)
+         instance when instance != nil <- StatusStorage.get_status(unit_type, unit_id, status_id) do
+      context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
 
       # Execute on_expire hooks
-      ActionExecutor.execute_hooks(definition[:on_expire], target_id, instance, context)
+      ActionExecutor.execute_hooks(definition[:on_expire], unit_id, instance, context)
 
       # Clean up - only need to remove from StatusStorage now
-      StatusStorage.remove_status(target_id, status_id)
+      StatusStorage.remove_status(unit_type, unit_id, status_id)
     end
 
     :ok
@@ -271,9 +277,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   @doc """
   Get calculated modifiers for all active statuses.
   """
-  @spec get_all_modifiers(integer()) :: map()
-  def get_all_modifiers(target_id) do
-    ModifierCalculator.get_all_modifiers(target_id)
+  @spec get_all_modifiers(atom(), integer()) :: map()
+  def get_all_modifiers(unit_type, unit_id) do
+    ModifierCalculator.get_all_modifiers(unit_type, unit_id)
   end
 
   @doc """
@@ -344,24 +350,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   # Private helper functions
 
-  defp get_entity_info(target_id) do
-    # For now, we assume target_id refers to a player
-    # In the future, this should check if it's a player, monster, or NPC
-    # and call the appropriate entity module
+  defp get_entity_info(unit_type, unit_id) do
+    case UnitRegistry.get_unit_info(unit_type, unit_id) do
+      {:ok, entity_info} ->
+        entity_info
 
-    # Try to get the player session from ETS
-    import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
-
-    case :ets.lookup(table_for(:zone_players), target_id) do
-      [{^target_id, pid, _account_id}] ->
-        # Get the player state from the session
-        state = PlayerSession.get_state(pid)
-        # Get entity info from the player state
-        Aesir.ZoneServer.Unit.Player.PlayerState.get_entity_info(state.game_state)
-
-      [] ->
-        # Target not found - this is a programming error
-        raise "Cannot apply status effect to non-existent entity with ID: #{target_id}"
+      {:error, :not_found} ->
+        raise "Cannot apply status effect to non-existent #{unit_type} with ID: #{unit_id}"
     end
   end
 end

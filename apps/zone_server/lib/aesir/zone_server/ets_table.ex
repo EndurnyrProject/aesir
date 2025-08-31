@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.EtsTable do
     status_tables(seed)
     job_data_tables(seed)
     status_effect_tables(seed)
+    unit_registry_tables(seed)
 
     :ok
   end
@@ -80,6 +81,20 @@ defmodule Aesir.ZoneServer.EtsTable do
 
   defp status_effect_tables(seed) do
     :ets.new(table_for(:status_effect_definitions, seed), [:set, :public, :named_table])
+  end
+
+  defp unit_registry_tables(seed) do
+    # Unit registry: {{unit_type, unit_id}, {module, state, pid}}
+    :ets.new(
+      table_for(:unit_registry, seed),
+      [
+        :set,
+        :public,
+        :named_table,
+        read_concurrency: true,
+        write_concurrency: true
+      ]
+    )
   end
 
   if Mix.env() == :test do

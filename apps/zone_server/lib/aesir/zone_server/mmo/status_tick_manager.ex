@@ -142,19 +142,24 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   end
 
   defp process_expired_batch(batch) do
-    # Group expired statuses by player_id for efficiency
-    player_expirations =
-      Enum.group_by(batch, fn {{player_id, _status_type}, _entry} -> player_id end)
-
-    # Process each player's expired statuses
-    Enum.each(player_expirations, fn {player_id, statuses} ->
-      # Process each expired status for this player
-      Enum.each(statuses, fn {{^player_id, status_type}, %StatusEntry{} = _entry} ->
-        Interpreter.remove_status(player_id, status_type)
+    # Group expired statuses by unit for efficiency
+    unit_expirations =
+      Enum.group_by(batch, fn {{unit_type, unit_id, _status_type}, _entry} ->
+        {unit_type, unit_id}
       end)
 
-      # Notify the player session to recalculate stats after all expirations are processed
-      notify_player_session(player_id)
+    # Process each unit's expired statuses
+    Enum.each(unit_expirations, fn {{unit_type, unit_id}, statuses} ->
+      # Process each expired status for this unit
+      Enum.each(statuses, fn {{^unit_type, ^unit_id, status_type}, %StatusEntry{} = _entry} ->
+        Interpreter.remove_status(unit_type, unit_id, status_type)
+      end)
+
+      # Notify the unit to recalculate stats after all expirations are processed
+      # For now, only notify player sessions
+      if unit_type == :player do
+        notify_player_session(unit_id)
+      end
     end)
   end
 
@@ -172,15 +177,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
 
   # credo:disable-for-next-line Credo.Check.Refactor.Nesting
   defp process_tick_batch(batch, now_ms) do
-    # Group status ticks by player_id for efficiency
-    player_ticks = Enum.group_by(batch, fn {{player_id, _status_type}, _entry} -> player_id end)
+    # Group status ticks by unit for efficiency
+    unit_ticks =
+      Enum.group_by(batch, fn {{unit_type, unit_id, _status_type}, _entry} ->
+        {unit_type, unit_id}
+      end)
 
-    # Process each player's status ticks
-    Enum.each(player_ticks, fn {player_id, statuses} ->
-      # Process each status tick for this player
-      Enum.each(statuses, fn {{^player_id, status_type}, %StatusEntry{} = entry} ->
+    # Process each unit's status ticks
+    Enum.each(unit_ticks, fn {{unit_type, unit_id}, statuses} ->
+      # Process each status tick for this unit
+      Enum.each(statuses, fn {{^unit_type, ^unit_id, status_type}, %StatusEntry{} = entry} ->
         # Process the tick effect using the Interpreter
-        Interpreter.process_tick(player_id, status_type)
+        Interpreter.process_tick(unit_type, unit_id, status_type)
 
         # Schedule next tick based on the status's tick value
         # Default to 1000ms (1 second) if no tick value is specified
@@ -189,11 +197,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
         next_tick_at = now_ms + tick_interval
 
         # Update the next tick time efficiently
-        StatusStorage.update_next_tick(player_id, status_type, next_tick_at)
+        StatusStorage.update_next_tick(unit_type, unit_id, status_type, next_tick_at)
       end)
 
-      # Notify the player session to recalculate stats after processing all statuses
-      notify_player_session(player_id)
+      # Notify the unit to recalculate stats after processing all statuses
+      # For now, only notify player sessions
+      if unit_type == :player do
+        notify_player_session(unit_id)
+      end
     end)
   end
 

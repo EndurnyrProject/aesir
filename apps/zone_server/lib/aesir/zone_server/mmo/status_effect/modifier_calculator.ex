@@ -20,20 +20,21 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator do
   Get calculated modifiers for all active statuses on a target.
 
   ## Parameters
-    - target_id: The ID of the target entity
+    - unit_type: The type of the unit (:player, :npc, :monster, etc.)
+    - unit_id: The ID of the target entity
     
   ## Returns
     - Map of modifier keys to calculated values
   """
-  @spec get_all_modifiers(integer()) :: map()
-  def get_all_modifiers(target_id) do
-    statuses = StatusStorage.get_player_statuses(target_id)
+  @spec get_all_modifiers(atom(), integer()) :: map()
+  def get_all_modifiers(unit_type, unit_id) do
+    statuses = StatusStorage.get_unit_statuses(unit_type, unit_id)
 
     Enum.reduce(statuses, %{}, fn status, acc ->
       case Registry.get_definition(status.type) do
         definition when definition != nil ->
           current_def = PhaseManager.get_current_phase_definition(definition, status)
-          context = ContextBuilder.build_context(target_id, status.source_id, status)
+          context = ContextBuilder.build_context(unit_type, unit_id, status.source_id, status)
           compiled_modifiers = calculate_modifiers(current_def[:modifiers], context, status)
 
           merge_modifiers(acc, compiled_modifiers)

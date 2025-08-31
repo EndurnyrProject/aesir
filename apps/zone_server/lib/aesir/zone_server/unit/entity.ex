@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Unit.Entity do
           | :ghost
           | :undead
   @type entity_size :: :small | :medium | :large
+  @type unit_type :: :player | :mob | :npc | :pet | :homunculus | :mercenary
 
   @doc """
   Returns the entity's race type.
@@ -56,8 +57,9 @@ defmodule Aesir.ZoneServer.Unit.Entity do
   @callback get_size(state :: any()) :: entity_size()
 
   @doc """
-  Returns the entity's current stats.
-  Should include at minimum: vit, int, dex, luk, mdef
+  Returns the entity's complete stats for all calculations.
+  Should return a map with all stats needed for status effects and formulas.
+  For units using the common Stats structure, use Stats.to_formula_map/1.
   """
   @callback get_stats(state :: any()) :: map()
 
@@ -68,12 +70,30 @@ defmodule Aesir.ZoneServer.Unit.Entity do
   @callback get_entity_info(state :: any()) :: map()
 
   @doc """
+  Returns the unique identifier for this unit instance.
+  This is the ID used to track this specific entity in the game world.
+  """
+  @callback get_unit_id(state :: any()) :: integer()
+
+  @doc """
+  Returns the type of this unit.
+  Common types: :player, :mob, :npc, :pet, :homunculus, :mercenary
+  """
+  @callback get_unit_type(state :: any()) :: atom()
+
+  @doc """
+  Returns the process PID for units that have GenServer processes.
+  Returns nil for units that don't have an associated process.
+  """
+  @callback get_process_pid(state :: any()) :: pid() | nil
+
+  @doc """
   Optional: Returns custom immunities for this specific entity.
   Can be used for special NPCs or quest-related immunities.
   """
   @callback get_custom_immunities(state :: any()) :: [atom()]
 
-  @optional_callbacks [get_custom_immunities: 1]
+  @optional_callbacks [get_custom_immunities: 1, get_process_pid: 1]
 
   @doc """
   Helper function to build standard entity info map from an entity module.
@@ -83,6 +103,8 @@ defmodule Aesir.ZoneServer.Unit.Entity do
     {element, element_level} = entity_module.get_element(entity_state)
 
     base_info = %{
+      unit_id: entity_module.get_unit_id(entity_state),
+      unit_type: entity_module.get_unit_type(entity_state),
       race: entity_module.get_race(entity_state),
       element: element,
       element_level: element_level,
@@ -90,6 +112,14 @@ defmodule Aesir.ZoneServer.Unit.Entity do
       size: entity_module.get_size(entity_state),
       stats: entity_module.get_stats(entity_state)
     }
+
+    # Add process PID if the callback is implemented
+    base_info =
+      if function_exported?(entity_module, :get_process_pid, 1) do
+        Map.put(base_info, :process_pid, entity_module.get_process_pid(entity_state))
+      else
+        base_info
+      end
 
     # Add custom immunities if the callback is implemented
     if function_exported?(entity_module, :get_custom_immunities, 1) do

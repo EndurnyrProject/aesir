@@ -4,9 +4,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker do
 
   This module contains functions to check if a status effect has specific
   properties like being a buff/debuff, preventing movement, etc.
-
-  It centralizes all property-related queries to make the code more maintainable
-  and reduce duplication.
   """
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
@@ -17,7 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker do
   ## Parameters
     - status_id: The ID of the status effect
     - property: The property to check for
-    
+
   ## Returns
     - true if the status has the property, false otherwise
   """
@@ -34,7 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker do
 
   ## Parameters
     - status_id: The ID of the status effect
-    
+
   ## Returns
     - true if the status is a debuff, false otherwise
   """
@@ -48,7 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker do
 
   ## Parameters
     - status_id: The ID of the status effect
-    
+
   ## Returns
     - true if the status is a buff, false otherwise
   """
@@ -62,7 +59,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker do
 
   ## Parameters
     - status_id: The ID of the status effect
-    
+
   ## Returns
     - true if the status prevents movement, false otherwise
   """
@@ -76,7 +73,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker do
 
   ## Parameters
     - status_id: The ID of the status effect
-    
+
   ## Returns
     - true if the status prevents skills, false otherwise
   """
@@ -90,7 +87,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker do
 
   ## Parameters
     - status_id: The ID of the status effect
-    
+
   ## Returns
     - true if the status prevents attacking, false otherwise
   """
@@ -104,7 +101,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker do
 
   ## Parameters
     - status_id: The ID of the status effect
-    
+
   ## Returns
     - List of properties, or empty list if none defined
   """
@@ -116,13 +113,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker do
     end
   end
 
+  @race_immunities ~w(plant demon dragon angel formless insect fish beast)a
+  @element_immunities ~w(fire water earth wind poison holy shadow ghost undead)a
+
   @doc """
   Check if a target is immune to a status effect.
 
   ## Parameters
     - entity_info: The entity information map containing race, element, boss_flag, etc.
     - definition: The status effect definition
-    
+
   ## Returns
     - true if immune, false otherwise
   """
@@ -130,73 +130,29 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker do
   def check_immunity(entity_info, definition) when is_map(entity_info) do
     immunity_list = definition[:immunity] || []
 
-    Enum.any?(immunity_list, fn immunity_type ->
-      case immunity_type do
-        :undead ->
-          entity_info[:race] == :undead or entity_info[:element] == :undead
-
-        :boss ->
-          entity_info[:boss_flag] == true
-
-        :plant ->
-          entity_info[:race] == :plant
-
-        :demon ->
-          entity_info[:race] == :demon
-
-        :dragon ->
-          entity_info[:race] == :dragon
-
-        :angel ->
-          entity_info[:race] == :angel
-
-        :formless ->
-          entity_info[:race] == :formless
-
-        :insect ->
-          entity_info[:race] == :insect
-
-        :fish ->
-          entity_info[:race] == :fish
-
-        :beast ->
-          entity_info[:race] == :beast
-
-        # Element-based immunities
-        :fire ->
-          entity_info[:element] == :fire
-
-        :water ->
-          entity_info[:element] == :water
-
-        :earth ->
-          entity_info[:element] == :earth
-
-        :wind ->
-          entity_info[:element] == :wind
-
-        :poison ->
-          entity_info[:element] == :poison
-
-        :holy ->
-          entity_info[:element] == :holy
-
-        :shadow ->
-          entity_info[:element] == :shadow
-
-        :ghost ->
-          entity_info[:element] == :ghost
-
-        # Custom immunities
-        custom when is_atom(custom) ->
-          custom_immunities = entity_info[:custom_immunities] || []
-          custom in custom_immunities
-
-        _ ->
-          false
-      end
-    end)
+    Enum.any?(immunity_list, &immune_to?(entity_info, &1))
   end
+
+  defp immune_to?(entity_info, :boss), do: entity_info[:boss_flag] == true
+
+  defp immune_to?(entity_info, :undead) do
+    entity_info[:race] == :undead or entity_info[:element] == :undead
+  end
+
+  defp immune_to?(entity_info, immunity_type) when immunity_type in @race_immunities do
+    entity_info[:race] == immunity_type
+  end
+
+  defp immune_to?(entity_info, immunity_type) when immunity_type in @element_immunities do
+    entity_info[:element] == immunity_type
+  end
+
+  defp immune_to?(entity_info, custom) when is_atom(custom) do
+    custom_immunities = entity_info[:custom_immunities] || []
+    custom in custom_immunities
+  end
+
+  defp immune_to?(_entity_info, _immunity_type), do: false
 
   @doc """
   Check if a condition is met in the given context.
@@ -204,7 +160,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker do
   ## Parameters
     - condition: The condition to check (function, map, or nil)
     - context: The execution context
-    
+
   ## Returns
     - true if the condition is met, false otherwise
   """
