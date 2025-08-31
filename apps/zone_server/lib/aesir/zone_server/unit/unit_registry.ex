@@ -159,4 +159,70 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
 
     :ok
   end
+
+  # Player-specific helper functions
+
+  @doc """
+  Registers a player unit in the registry.
+
+  This is a convenience function specifically for player units that stores
+  the account_id in the state for compatibility with existing code.
+  """
+  @spec register_player(unit_id(), integer(), pid()) :: :ok
+  def register_player(char_id, account_id, pid) do
+    # Store account_id in state for compatibility
+    state = %{account_id: account_id}
+    register_unit(:player, char_id, __MODULE__, state, pid)
+  end
+
+  @doc """
+  Gets a player's PID from the registry.
+
+  Returns {:ok, pid} or {:error, :not_found}
+  """
+  @spec get_player_pid(unit_id()) :: {:ok, pid()} | {:error, :not_found}
+  def get_player_pid(char_id) do
+    case get_unit(:player, char_id) do
+      {:ok, {_module, _state, pid}} when is_pid(pid) -> {:ok, pid}
+      {:ok, {_module, _state, nil}} -> {:error, :not_found}
+      {:error, :not_found} -> {:error, :not_found}
+    end
+  end
+
+  @doc """
+  Gets a player's PID and account_id from the registry.
+
+  Returns {:ok, {pid, account_id}} or {:error, :not_found}
+  """
+  @spec get_player_with_account(unit_id()) :: {:ok, {pid(), integer()}} | {:error, :not_found}
+  def get_player_with_account(char_id) do
+    case get_unit(:player, char_id) do
+      {:ok, {_module, %{account_id: account_id}, pid}} when is_pid(pid) ->
+        {:ok, {pid, account_id}}
+
+      {:ok, _} ->
+        {:error, :not_found}
+
+      {:error, :not_found} ->
+        {:error, :not_found}
+    end
+  end
+
+  @doc """
+  Unregisters a player from the registry.
+
+  This is a convenience function for player units.
+  """
+  @spec unregister_player(unit_id()) :: :ok
+  def unregister_player(char_id) do
+    unregister_unit(:player, char_id)
+  end
+
+  @doc """
+  Lists all player units currently in the registry.
+  """
+  @spec list_players() :: [unit_id()]
+  def list_players do
+    list_units_by_type(:player)
+  end
 end

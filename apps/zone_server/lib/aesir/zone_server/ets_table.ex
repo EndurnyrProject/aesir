@@ -42,7 +42,6 @@ defmodule Aesir.ZoneServer.EtsTable do
   end
 
   defp core_runtime_tables(seed) do
-    :ets.new(table_for(:zone_players, seed), [:set, :public, :named_table])
     :ets.new(table_for(:status_instances, seed), [:set, :public, :named_table])
   end
 

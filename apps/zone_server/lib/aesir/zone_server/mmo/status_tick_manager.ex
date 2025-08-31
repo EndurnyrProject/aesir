@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   # 1 second tick rate
   @tick_interval_ms 1000
@@ -210,13 +211,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
 
   # Notifies a player session to recalculate stats after status changes
   defp notify_player_session(player_id) do
-    case :ets.lookup(:zone_players, player_id) do
-      [{^player_id, pid, _account_id}] ->
+    case UnitRegistry.get_player_pid(player_id) do
+      {:ok, pid} ->
         # Trigger stats recalculation in the player session
         # Use asynchronous version (false) for better performance
         PlayerSession.recalculate_stats(pid, false)
 
-      _ ->
+      {:error, :not_found} ->
         # Player not found or offline
         :ok
     end
