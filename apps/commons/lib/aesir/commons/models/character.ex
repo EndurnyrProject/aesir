@@ -5,6 +5,7 @@ defmodule Aesir.Commons.Models.Character do
 
   schema "characters" do
     belongs_to :account, Aesir.Commons.Models.Account
+    has_many :inventory_items, Aesir.Commons.Models.InventoryItem, foreign_key: :char_id
 
     field :char_num, :integer
     field :name, :string
@@ -43,10 +44,10 @@ defmodule Aesir.Commons.Models.Character do
     field :head_mid, :integer, default: 0
     field :head_bottom, :integer, default: 0
     field :robe, :integer, default: 0
-    field :last_map, :string, default: "new_1-1"
+    field :last_map, :string, default: "new_1-1.gat"
     field :last_x, :integer, default: 53
     field :last_y, :integer, default: 111
-    field :save_map, :string, default: "new_1-1"
+    field :save_map, :string, default: "new_1-1.gat"
     field :save_x, :integer, default: 53
     field :save_y, :integer, default: 111
     field :partner_id, :integer, default: 0
