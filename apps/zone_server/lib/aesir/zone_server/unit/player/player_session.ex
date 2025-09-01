@@ -8,24 +8,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   require Logger
 
-  alias Aesir.Commons.StatusParams
-  alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
-  alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Packets.ZcEquipitemList
-  alias Aesir.ZoneServer.Packets.ZcLongparChange
-  alias Aesir.ZoneServer.Packets.ZcNormalItemlist
   alias Aesir.ZoneServer.Packets.ZcNotifyMoveentry
-  alias Aesir.ZoneServer.Packets.ZcNotifyMoveStop
   alias Aesir.ZoneServer.Packets.ZcNotifyNewentry
-  alias Aesir.ZoneServer.Packets.ZcNotifyPlayermove
   alias Aesir.ZoneServer.Packets.ZcNotifyStandentry
   alias Aesir.ZoneServer.Packets.ZcNotifyVanish
-  alias Aesir.ZoneServer.Packets.ZcParChange
-  alias Aesir.ZoneServer.Pathfinding
-  alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
+  alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
+  alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -108,12 +100,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   def recalculate_stats(pid, sync \\ true)
 
   def recalculate_stats(pid, true) do
-    # Synchronous version using call
     GenServer.call(pid, :recalculate_stats)
   end
 
   def recalculate_stats(pid, false) do
-    # Asynchronous version using cast
     GenServer.cast(pid, :recalculate_stats)
     :ok
   end
@@ -172,21 +162,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     connection_pid = args[:connection_pid]
     game_state = PlayerState.new(character)
 
-    # Load character's inventory
-    case Inventory.load_inventory(character.id) do
-      {:ok, inventory_items} ->
-        updated_game_state =
-          game_state
-          |> PlayerState.set_inventory(inventory_items)
-          |> PlayerState.set_process_pid(self())
+    case InventoryManager.load_character_inventory(character, game_state) do
+      {:ok, updated_game_state} ->
+        final_game_state = PlayerState.set_process_pid(updated_game_state, self())
 
         state = %{
           character: character,
-          game_state: updated_game_state,
+          game_state: final_game_state,
           connection_pid: connection_pid
         }
 
-        # Register player in UnitRegistry
         register_player(character.id, character.account_id)
 
         send(self(), :spawn_player)
@@ -194,8 +179,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         {:ok, state}
 
       {:error, reason} ->
-        Logger.error("Failed to load inventory for character #{character.id}: #{inspect(reason)}")
-        {:stop, {:error, :inventory_load_failed}}
+        {:stop, {:error, reason}}
     end
   end
 
@@ -205,7 +189,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     SpatialIndex.add_player(character.id, game_state.x, game_state.y, game_state.map_name)
 
     # Check initial visibility
-    updated_game_state = handle_visibility_update(character, game_state)
+    updated_game_state = MovementHandler.handle_visibility_update(character, game_state)
 
     # After initial spawn, transition to standing state
     # This happens after a short delay to ensure spawn packets are processed
@@ -216,174 +200,17 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @impl true
   def handle_info(:complete_spawn, %{game_state: game_state} = state) do
-    # Transition from just_spawned to standing
     updated_game_state = PlayerState.mark_spawn_complete(game_state)
     {:noreply, update_game_state(state, updated_game_state)}
   end
 
   @impl true
-  def handle_info(:movement_tick, %{game_state: %{is_walking: false}} = state) do
-    {:noreply, state}
+  def handle_info(:movement_tick, state) do
+    MovementHandler.handle_movement_tick(state)
   end
 
-  def handle_info(:movement_tick, %{game_state: %{is_walking: true, walk_path: []}} = state) do
-    game_state = PlayerState.stop_walking(state.game_state)
-    {:noreply, %{state | game_state: game_state}}
-  end
-
-  def handle_info(
-        :movement_tick,
-        %{character: character, game_state: game_state} = state
-      )
-      when game_state.is_walking do
-    # Calculate how far we should have moved since start
-    elapsed = System.system_time(:millisecond) - game_state.walk_start_time
-    cells_per_ms = 1.0 / game_state.walk_speed
-    total_movement_budget = elapsed * cells_per_ms
-
-    # Calculate NEW movement since last tick (subtract what we already consumed)
-    new_movement_budget = total_movement_budget - game_state.path_progress
-
-    # Consume path based on NEW movement budget
-    {new_x, new_y, remaining_path, consumed} =
-      consume_movement_path_with_cost(
-        game_state.x,
-        game_state.y,
-        game_state.walk_path,
-        new_movement_budget
-      )
-
-    # Update game state with new position and progress
-    game_state =
-      if new_x != game_state.x or new_y != game_state.y do
-        SpatialIndex.update_position(character.id, new_x, new_y, game_state.map_name)
-
-        updated_state =
-          game_state
-          |> PlayerState.update_position(new_x, new_y)
-          |> Map.put(:walk_path, remaining_path)
-          |> Map.put(:path_progress, game_state.path_progress + consumed)
-
-        handle_visibility_update(character, updated_state)
-      else
-        game_state
-        |> Map.put(:walk_path, remaining_path)
-        |> Map.put(:path_progress, game_state.path_progress + consumed)
-      end
-
-    game_state =
-      if remaining_path == [] do
-        PlayerState.stop_walking(game_state)
-      else
-        Process.send_after(self(), :movement_tick, 100)
-        game_state
-      end
-
-    {:noreply, %{state | game_state: game_state}}
-  end
-
-  def handle_info(
-        {:packet, 0x007D, _packet_data},
-        %{character: character, connection_pid: connection_pid, game_state: game_state} = state
-      ) do
-    Logger.debug("Player #{character.id} finished loading map (LoadEndAck)")
-
-    # TODO
-    weight_updates = %{
-      StatusParams.weight() => 0,
-      StatusParams.max_weight() => 1000
-    }
-
-    Enum.each(weight_updates, fn {param_id, value} ->
-      packet = build_status_packet(param_id, value)
-      send(connection_pid, {:send_packet, packet})
-    end)
-
-    # Send experience and skill point status (sent later in LoadEndAck sequence)
-    # TODO: the next base exp and job exp will come from a different place
-    experience_updates = %{
-      StatusParams.next_base_exp() => 100,
-      StatusParams.next_job_exp() => 100,
-      StatusParams.skill_point() => character.skill_point
-    }
-
-    Enum.each(experience_updates, fn {param_id, value} ->
-      packet = build_status_packet(param_id, value)
-      send(connection_pid, {:send_packet, packet})
-    end)
-
-    send_stat_updates(connection_pid, game_state.stats)
-
-    # Send inventory data to client
-    send_inventory_data(connection_pid, game_state.inventory_items)
-
-    # TODO: Send remaining initial game data to client
-    # - Skill list
-    # - Spawn character on map for other players
-    # - Send other visible entities
-
-    {:noreply, state}
-  end
-
-  def handle_info(
-        {:packet, 0x007E, _packet_data},
-        %{connection_pid: connection_pid} = state
-      ) do
-    server_tick = System.system_time(:millisecond) |> rem(0x100000000)
-
-    packet = %Aesir.ZoneServer.Packets.ZcNotifyTime{
-      server_tick: server_tick
-    }
-
-    send(connection_pid, {:send_packet, packet})
-
-    {:noreply, state}
-  end
-
-  def handle_info(
-        {:packet, 0x0360, _packet_data},
-        %{connection_pid: connection_pid} = state
-      ) do
-    server_tick = System.system_time(:millisecond) |> rem(0x100000000)
-
-    packet = %Aesir.ZoneServer.Packets.ZcNotifyTime{
-      server_tick: server_tick
-    }
-
-    send(connection_pid, {:send_packet, packet})
-
-    {:noreply, state}
-  end
-
-  def handle_info(
-        {:packet, 0x0368, packet_data},
-        %{character: character, connection_pid: connection_pid} = state
-      ) do
-    Logger.debug("Player #{character.id} requesting name for char_id: #{packet_data.char_id}")
-
-    # For now, if it's the player's own account ID, send their name
-    # TODO: Look up other players' names from ETS or database
-    name =
-      if packet_data.char_id == character.account_id do
-        character.name
-      else
-        # Try to look up other players
-        # For now, just return empty
-        ""
-      end
-
-    packet = %Aesir.ZoneServer.Packets.ZcAckReqname{
-      char_id: packet_data.char_id,
-      name: name
-    }
-
-    send(connection_pid, {:send_packet, packet})
-
-    {:noreply, state}
-  end
-
-  def handle_info({:packet, 0x035F, packet_data}, state) do
-    handle_cast({:request_move, packet_data.dest_x, packet_data.dest_y}, state)
+  def handle_info({:packet, packet_id, packet_data}, state) do
+    PacketHandler.handle_packet(packet_id, packet_data, state)
   end
 
   @impl true
@@ -412,7 +239,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       }
 
       send(connection_pid, {:send_packet, packet})
-      Logger.debug("Player #{char_id} vanished from view")
     end
 
     {:noreply, state}
@@ -448,8 +274,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @impl true
   def handle_cast({:player_info_response, player_info, _from_char_id}, state) do
-    # Received player info - now send the spawn packet
     send_player_spawn_packet(state.connection_pid, player_info)
+
     {:noreply, state}
   end
 
@@ -461,94 +287,18 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     }
 
     send(state.connection_pid, {:send_packet, packet})
+
     {:noreply, state}
   end
 
   @impl true
-  def handle_cast(
-        {:request_move, dest_x, dest_y},
-        %{character: character, game_state: game_state, connection_pid: connection_pid} = state
-      ) do
-    with {:ok, map_data} <- MapCache.get(game_state.map_name),
-         {:ok, [_ | _] = path} <-
-           Pathfinding.find_path(
-             map_data,
-             {game_state.x, game_state.y},
-             {dest_x, dest_y}
-           ) do
-      # Simplify path to reduce network traffic
-      simplified_path = Pathfinding.simplify_path(path)
-
-      # Start movement
-      walk_start_time = System.system_time(:millisecond)
-
-      # Update game state with new path
-      game_state =
-        game_state
-        |> PlayerState.set_path(simplified_path)
-        |> Map.put(:walk_start_time, walk_start_time)
-
-      # Send movement confirmation to the client
-      packet = %ZcNotifyPlayermove{
-        walk_start_time: walk_start_time,
-        src_x: game_state.x,
-        src_y: game_state.y,
-        dst_x: dest_x,
-        dst_y: dest_y
-      }
-
-      send(connection_pid, {:send_packet, packet})
-
-      # Broadcast movement to nearby players
-      broadcast_movement_to_nearby(character, game_state, dest_x, dest_y)
-
-      Process.send_after(self(), :movement_tick, 100)
-
-      {:noreply, %{state | game_state: game_state}}
-    else
-      {:ok, []} ->
-        # Already at destination
-        Logger.debug("Player #{character.id} already at destination")
-        {:noreply, state}
-
-      {:error, reason} ->
-        # No path found or map not loaded
-        Logger.debug("Movement failed for player #{character.id}: #{inspect(reason)}")
-
-        packet = %ZcNotifyMoveStop{
-          account_id: character.account_id,
-          x: game_state.x,
-          y: game_state.y
-        }
-
-        send(connection_pid, {:send_packet, packet})
-
-        {:noreply, state}
-    end
+  def handle_cast({:request_move, dest_x, dest_y}, state) do
+    MovementHandler.handle_request_move(state, dest_x, dest_y)
   end
 
   @impl true
-  def handle_cast(
-        :force_stop_movement,
-        %{character: character, game_state: game_state, connection_pid: connection_pid} = state
-      ) do
-    if game_state.is_walking do
-      game_state = PlayerState.stop_walking(game_state)
-
-      packet = %ZcNotifyMoveStop{
-        account_id: character.account_id,
-        x: game_state.x,
-        y: game_state.y
-      }
-
-      send(connection_pid, {:send_packet, packet})
-
-      broadcast_stop_to_nearby(character, game_state, packet)
-
-      {:noreply, %{state | game_state: game_state}}
-    else
-      {:noreply, state}
-    end
+  def handle_cast(:force_stop_movement, state) do
+    MovementHandler.handle_force_stop_movement(state)
   end
 
   @impl true
@@ -559,50 +309,25 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     if connection_pid do
       send(connection_pid, {:send_packet, packet})
     else
-      Logger.error("No connection PID for player #{character.id}")
+      raise "No connection PID for player #{character.id}"
     end
 
     {:noreply, state}
   end
 
   @impl true
-  def handle_cast(
-        {:send_status_update, param_id, value},
-        %{connection_pid: connection_pid} = state
-      ) do
-    packet = build_status_packet(param_id, value)
-    send(connection_pid, {:send_packet, packet})
-    {:noreply, state}
+  def handle_cast({:send_status_update, param_id, value}, state) do
+    StatsManager.handle_send_status_update(param_id, value, state)
   end
 
   @impl true
-  def handle_cast(
-        {:send_status_updates, status_map},
-        %{connection_pid: connection_pid} = state
-      ) do
-    Enum.each(status_map, fn {param_id, value} ->
-      packet = build_status_packet(param_id, value)
-      send(connection_pid, {:send_packet, packet})
-    end)
-
-    {:noreply, state}
+  def handle_cast({:send_status_updates, status_map}, state) do
+    StatsManager.handle_send_status_updates(status_map, state)
   end
 
   @impl true
-  def handle_cast(:recalculate_stats, %{character: character} = state) do
-    # Recalculate stats with player ID for status effects
-    updated_stats = Stats.calculate_stats(state.game_state.stats, character.id)
-
-    # Only update and send changes if stats actually changed
-    if updated_stats != state.game_state.stats do
-      updated_game_state = %{state.game_state | stats: updated_stats}
-      send_stat_updates(state.connection_pid, updated_stats)
-
-      {:noreply, update_game_state(state, updated_game_state)}
-    else
-      # No changes, skip update
-      {:noreply, state}
-    end
+  def handle_cast(:recalculate_stats, state) do
+    StatsManager.handle_recalculate_stats(state)
   end
 
   @impl true
@@ -611,102 +336,52 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
-  def handle_call(
-        {:update_base_stat, stat_name, new_value},
-        _from,
-        %{character: character} = state
-      ) do
-    stats = state.game_state.stats
-    updated_base_stats = Map.put(stats.base_stats, stat_name, new_value)
-    updated_stats = %{stats | base_stats: updated_base_stats}
-    updated_stats = Stats.calculate_stats(updated_stats, character.id)
-    updated_game_state = %{state.game_state | stats: updated_stats}
-    updated_state = %{state | game_state: updated_game_state}
-
-    send_stat_updates(state.connection_pid, updated_stats)
-
-    {:reply, :ok, updated_state}
+  def handle_call({:update_base_stat, stat_name, new_value}, _from, state) do
+    StatsManager.handle_update_base_stat(stat_name, new_value, state)
   end
 
   @impl true
-  def handle_call(:recalculate_stats, _from, %{character: character} = state) do
-    updated_stats = Stats.calculate_stats(state.game_state.stats, character.id)
-    updated_game_state = %{state.game_state | stats: updated_stats}
-    updated_state = %{state | game_state: updated_game_state}
-
-    send_stat_updates(state.connection_pid, updated_stats)
-
-    {:reply, updated_stats, updated_state}
+  def handle_call(:recalculate_stats, _from, state) do
+    StatsManager.handle_sync_recalculate_stats(state)
   end
 
   @impl true
   def handle_call(:get_current_stats, _from, state) do
-    {:reply, state.game_state.stats, state}
+    StatsManager.handle_get_current_stats(state)
   end
 
   @impl true
   def handle_call(
         {:apply_status, status_id, val1, val2, val3, val4, tick, flag, caster_id},
         _from,
-        %{character: character} = state
+        state
       ) do
-    case Interpreter.apply_status(
-           :player,
-           character.id,
-           status_id,
-           val1,
-           val2,
-           val3,
-           val4,
-           tick,
-           flag,
-           caster_id
-         ) do
-      :ok ->
-        # Recalculate stats with status effects
-        updated_stats = Stats.calculate_stats(state.game_state.stats, character.id)
-        updated_game_state = %{state.game_state | stats: updated_stats}
-
-        # Send stat updates to client if they changed
-        if updated_stats != state.game_state.stats do
-          send_stat_updates(state.connection_pid, updated_stats)
-        end
-
-        {:reply, :ok, %{state | game_state: updated_game_state}}
-
-      {:error, reason} ->
-        # Status application failed for some reason (e.g., immunity)
-        {:reply, {:error, reason}, state}
-    end
+    StatusManager.handle_apply_status(
+      status_id,
+      val1,
+      val2,
+      val3,
+      val4,
+      tick,
+      flag,
+      caster_id,
+      state
+    )
   end
 
   @impl true
-  def handle_call({:remove_status, status_id}, _from, %{character: character} = state) do
-    # Remove the status effect
-    Interpreter.remove_status(:player, character.id, status_id)
-
-    # Recalculate stats without this status effect
-    updated_stats = Stats.calculate_stats(state.game_state.stats, character.id)
-    updated_game_state = %{state.game_state | stats: updated_stats}
-
-    # Send stat updates to client if they changed
-    if updated_stats != state.game_state.stats do
-      send_stat_updates(state.connection_pid, updated_stats)
-    end
-
-    {:reply, :ok, %{state | game_state: updated_game_state}}
+  def handle_call({:remove_status, status_id}, _from, state) do
+    StatusManager.handle_remove_status(status_id, state)
   end
 
   @impl true
-  def handle_call(:get_active_statuses, _from, %{character: character} = state) do
-    statuses = StatusStorage.get_unit_statuses(:player, character.id)
-    {:reply, statuses, state}
+  def handle_call(:get_active_statuses, _from, state) do
+    StatusManager.handle_get_active_statuses(state)
   end
 
   @impl true
-  def handle_call({:has_status, status_id}, _from, %{character: character} = state) do
-    has_status = StatusStorage.has_status?(:player, character.id, status_id)
-    {:reply, has_status, state}
+  def handle_call({:has_status, status_id}, _from, state) do
+    StatusManager.handle_has_status(status_id, state)
   end
 
   @impl true
@@ -722,7 +397,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     UnitRegistry.unregister_player(character.id)
     SpatialIndex.remove_player(character.id)
     SpatialIndex.clear_visibility(character.id)
-    UnitRegistry.unregister_unit(:player, character.id)
 
     if connection_pid && Process.alive?(connection_pid) do
       send(connection_pid, :player_session_terminated)
@@ -756,27 +430,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     end
   end
 
-  defp build_status_packet(param_id, value) do
-    experience_params = [
-      StatusParams.base_exp(),
-      StatusParams.job_exp(),
-      StatusParams.next_base_exp(),
-      StatusParams.next_job_exp()
-    ]
-
-    if param_id in experience_params do
-      %ZcLongparChange{var_id: param_id, value: value}
-    else
-      %ZcParChange{var_id: param_id, value: value}
-    end
-  end
-
-  # Helper to update game_state and sync with UnitRegistry
   defp update_game_state(state, new_game_state) do
-    # Update UnitRegistry with the new state
     UnitRegistry.update_unit_state(:player, state.character.id, new_game_state)
 
-    # Return the updated state
     %{state | game_state: new_game_state}
   end
 
@@ -786,169 +442,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   defp sex_to_int("F"), do: 0
   defp sex_to_int("M"), do: 1
   defp sex_to_int(_), do: 1
-
-  defp consume_movement_path_with_cost(x, y, path, budget) do
-    do_consume_path(x, y, path, budget, 0)
-  end
-
-  defp do_consume_path(x, y, [], _budget, consumed), do: {x, y, [], consumed}
-  defp do_consume_path(x, y, path, budget, consumed) when budget <= 0, do: {x, y, path, consumed}
-
-  defp do_consume_path(x, y, [{next_x, next_y} | rest], budget, consumed) do
-    move_cost =
-      if abs(next_x - x) == 1 and abs(next_y - y) == 1 do
-        # Diagonal movement (√2)
-        1.414
-      else
-        # Straight movement
-        1.0
-      end
-
-    if move_cost <= budget do
-      do_consume_path(next_x, next_y, rest, budget - move_cost, consumed + move_cost)
-    else
-      {x, y, [{next_x, next_y} | rest], consumed}
-    end
-  end
-
-  defp broadcast_stop_to_nearby(character, game_state, packet) do
-    nearby_players =
-      SpatialIndex.get_players_in_range(
-        game_state.map_name,
-        game_state.x,
-        game_state.y,
-        game_state.view_range
-      )
-
-    nearby_players
-    |> Enum.filter(&(&1 != character.id))
-    |> Enum.each(&send_packet_to_player(&1, packet))
-  end
-
-  defp send_packet_to_player(char_id, packet) do
-    case UnitRegistry.get_player_pid(char_id) do
-      {:ok, pid} ->
-        send_packet(pid, packet)
-
-      {:error, :not_found} ->
-        :ok
-    end
-  end
-
-  defp broadcast_movement_to_nearby(character, game_state, dest_x, dest_y) do
-    # Only broadcast to players who can see us (using visibility ETS)
-    visible_players = SpatialIndex.get_visible_players(character.id)
-
-    # Build movement packet for observers
-    packet = build_movement_packet(character, game_state, dest_x, dest_y)
-
-    visible_players
-    |> Enum.filter(&(&1 != character.id))
-    |> Enum.each(&send_packet_to_player(&1, packet))
-  end
-
-  defp build_movement_packet(character, game_state, dest_x, dest_y) do
-    %ZcNotifyMoveentry{
-      aid: character.account_id,
-      gid: character.id,
-      speed: game_state.walk_speed,
-      body_state: 0,
-      health_state: 0,
-      effect_state: 0,
-      job: character.class,
-      head: character.head_top,
-      weapon: character.weapon || 0,
-      shield: character.shield || 0,
-      accessory: character.head_bottom || 0,
-      move_start_time: System.system_time(:millisecond),
-      accessory2: character.head_mid || 0,
-      accessory3: 0,
-      src_x: game_state.x,
-      src_y: game_state.y,
-      dst_x: dest_x,
-      dst_y: dest_y,
-      head_palette: character.hair_color,
-      body_palette: character.clothes_color,
-      head_dir: 0,
-      robe: character.robe || 0,
-      guild_id: 0,
-      guild_emblem_ver: 0,
-      honor: 0,
-      virtue: 0,
-      is_pk_mode_on: 0,
-      sex: sex_to_int(character.sex),
-      x_size: 5,
-      y_size: 5,
-      clevel: character.base_level,
-      font: 0,
-      max_hp: game_state.stats.derived_stats.max_hp,
-      hp: game_state.stats.current_state.hp,
-      is_boss: 0,
-      body: 0,
-      name: character.name
-    }
-  end
-
-  defp handle_visibility_update(character, game_state) do
-    players_in_range =
-      SpatialIndex.get_players_in_range(
-        game_state.map_name,
-        game_state.x,
-        game_state.y,
-        game_state.view_range
-      )
-
-    new_visible = MapSet.new(players_in_range)
-    old_visible = game_state.visible_players
-
-    # Find who entered and left view
-    now_visible = MapSet.difference(new_visible, old_visible)
-    now_hidden = MapSet.difference(old_visible, new_visible)
-
-    # Send spawn packets for newly visible players
-    Enum.each(now_visible, fn other_id ->
-      if other_id != character.id do
-        # Update visibility ETS
-        SpatialIndex.update_visibility(character.id, other_id, true)
-
-        # Send spawn packet to us about them
-        send_spawn_packet_about(character.id, other_id)
-
-        # Send spawn packet to them about us
-        send_spawn_packet_about(other_id, character.id)
-      end
-    end)
-
-    # Send despawn packets for now hidden players
-    Enum.each(now_hidden, fn other_id ->
-      if other_id != character.id do
-        # Update visibility ETS
-        SpatialIndex.update_visibility(character.id, other_id, false)
-
-        # Send vanish packet to us
-        send_vanish_packet_to(character.id, other_id)
-
-        # Send vanish packet to them
-        send_vanish_packet_to(other_id, character.id)
-      end
-    end)
-
-    # Update game state with new visibility info
-    # Keep last_visibility_cell for potential optimization later
-    current_cell = {div(game_state.x, 8), div(game_state.y, 8)}
-    %{game_state | visible_players: new_visible, last_visibility_cell: current_cell}
-  end
-
-  defp send_spawn_packet_about(to_char_id, about_char_id) do
-    # Get the player session for the target
-    case UnitRegistry.get_player_pid(to_char_id) do
-      {:ok, pid} ->
-        GenServer.cast(pid, {:player_entered_view, about_char_id})
-
-      {:error, :not_found} ->
-        :ok
-    end
-  end
 
   defp send_player_spawn_packet(connection_pid, player_info) do
     %{character: character, game_state: game_state} = player_info
@@ -1101,65 +594,5 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       body: 0,
       name: character.name
     }
-  end
-
-  defp send_vanish_packet_to(to_char_id, about_char_id) do
-    # Get the player session for the target and the account_id of the vanishing player
-    with {:ok, to_pid} <- UnitRegistry.get_player_pid(to_char_id),
-         {:ok, {_about_pid, about_account_id}} <-
-           UnitRegistry.get_player_with_account(about_char_id) do
-      GenServer.cast(to_pid, {:player_left_view, about_char_id, about_account_id})
-    else
-      _ -> :ok
-    end
-  end
-
-  defp send_stat_updates(connection_pid, %Stats{} = stats) do
-    status_updates = %{
-      # Base stats
-      StatusParams.str() => stats.base_stats.str,
-      StatusParams.agi() => stats.base_stats.agi,
-      StatusParams.vit() => stats.base_stats.vit,
-      StatusParams.int() => stats.base_stats.int,
-      StatusParams.dex() => stats.base_stats.dex,
-      StatusParams.luk() => stats.base_stats.luk,
-
-      # Derived stats
-      StatusParams.max_hp() => stats.derived_stats.max_hp,
-      StatusParams.max_sp() => stats.derived_stats.max_sp,
-      StatusParams.hp() => stats.current_state.hp,
-      StatusParams.sp() => stats.current_state.sp,
-      StatusParams.aspd() => stats.derived_stats.aspd,
-
-      # Combat stats
-      StatusParams.hit() => stats.combat_stats.hit,
-      StatusParams.flee1() => stats.combat_stats.flee,
-      StatusParams.critical() => stats.combat_stats.critical,
-      StatusParams.atk1() => stats.combat_stats.atk,
-      StatusParams.def1() => stats.combat_stats.def,
-
-      # Progression
-      StatusParams.base_level() => stats.progression.base_level,
-      StatusParams.job_level() => stats.progression.job_level,
-      StatusParams.base_exp() => stats.progression.base_exp,
-      StatusParams.job_exp() => stats.progression.job_exp
-    }
-
-    Enum.each(status_updates, fn {param_id, value} ->
-      packet = build_status_packet(param_id, value)
-      send(connection_pid, {:send_packet, packet})
-    end)
-  end
-
-  defp send_inventory_data(connection_pid, inventory_items) do
-    # Send normal inventory items (non-equipped)
-    normal_itemlist = ZcNormalItemlist.from_inventory_items(inventory_items)
-    send(connection_pid, {:send_packet, normal_itemlist})
-
-    # Send equipped items
-    equipitem_list = ZcEquipitemList.from_inventory_items(inventory_items)
-    send(connection_pid, {:send_packet, equipitem_list})
-
-    Logger.debug("Sent inventory data: #{length(inventory_items)} items")
   end
 end

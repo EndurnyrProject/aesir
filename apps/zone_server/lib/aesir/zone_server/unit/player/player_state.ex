@@ -127,9 +127,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
         | walk_path: path,
           is_walking: true,
           walk_start_time: System.system_time(:millisecond),
-          # Reset progress when starting new path
           path_progress: 0,
-          # Transition to moving state
           movement_state: :moving
       }
     else
@@ -148,7 +146,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
         is_walking: false,
         walk_start_time: nil,
         path_progress: 0,
-        # Transition to standing state
         movement_state: :standing
     }
   end
@@ -170,16 +167,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     %{state | dir: new_dir}
   end
 
-  # Entity behaviour implementations
-
   @doc """
   Sets the process PID for this player state.
   """
   def set_process_pid(%__MODULE__{} = state, pid) when is_pid(pid) do
     %{state | process_pid: pid}
   end
-
-  # Entity behaviour implementations
 
   @impl Aesir.ZoneServer.Unit.Entity
   def get_unit_id(%__MODULE__{character_id: character_id}), do: character_id
