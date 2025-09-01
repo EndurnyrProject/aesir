@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.EtsTable do
     job_data_tables(seed)
     status_effect_tables(seed)
     unit_registry_tables(seed)
+    mob_data_tables(seed)
 
     :ok
   end
@@ -94,6 +95,32 @@ defmodule Aesir.ZoneServer.EtsTable do
         write_concurrency: true
       ]
     )
+  end
+
+  defp mob_data_tables(seed) do
+    # Mob definitions by ID: {mob_id, MobDefinition.t()}
+    :ets.new(table_for(:mob_data, seed), [
+      :named_table,
+      :set,
+      :public,
+      read_concurrency: true
+    ])
+
+    # Mob definitions by aegis name: {aegis_name, MobDefinition.t()}
+    :ets.new(table_for(:mob_data_by_name, seed), [
+      :named_table,
+      :set,
+      :public,
+      read_concurrency: true
+    ])
+
+    # Mob spawn data by map: {map_name, [MobSpawn.t()]}
+    :ets.new(table_for(:mob_spawn_data, seed), [
+      :named_table,
+      :set,
+      :public,
+      read_concurrency: true
+    ])
   end
 
   if Mix.env() == :test do

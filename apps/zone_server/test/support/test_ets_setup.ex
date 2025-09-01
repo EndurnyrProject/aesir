@@ -4,6 +4,7 @@ defmodule Aesir.TestEtsSetup do
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.JobManagement.JobDataLoader
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobDataLoader
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
 
   def setup_ets_tables(_) do
@@ -22,6 +23,7 @@ defmodule Aesir.TestEtsSetup do
     :ok = Interpreter.init()
     :ok = MapCache.init()
     {:ok, _} = JobDataLoader.init([])
+    {:ok, _} = MobDataLoader.init([])
 
     :ok
   end
