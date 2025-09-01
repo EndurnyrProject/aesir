@@ -219,7 +219,8 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
   @spec get_player_name(unit_id()) :: {:ok, String.t()} | {:error, :not_found}
   def get_player_name(char_id) do
     case get_unit(:player, char_id) do
-      {:ok, {_module, %{char_name: char_name}, _pid}} ->
+      # Handle PlayerState struct format
+      {:ok, {_module, %Aesir.ZoneServer.Unit.Player.PlayerState{character_name: char_name}, _pid}} ->
         {:ok, char_name}
 
       {:ok, _} ->

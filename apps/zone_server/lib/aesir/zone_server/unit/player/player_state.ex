@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   defstruct [
     # Character identification
     :character_id,
+    :character_name,
     :process_pid,
 
     # Position & Movement
@@ -65,6 +66,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   def new(%Aesir.Commons.Models.Character{} = character) do
     %__MODULE__{
       character_id: character.id,
+      character_name: character.name,
       # Will be set later if needed
       process_pid: nil,
       map_name: character.last_map,

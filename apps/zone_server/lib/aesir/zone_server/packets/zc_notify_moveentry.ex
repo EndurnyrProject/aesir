@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Packets.ZcNotifyMoveentry do
   """
   use Aesir.Commons.Network.Packet
 
+  alias Aesir.Commons.Utils
+
   @packet_id 0x09FD
 
   defstruct [
@@ -64,7 +66,7 @@ defmodule Aesir.ZoneServer.Packets.ZcNotifyMoveentry do
     move_data = encode_move_data(packet.src_x, packet.src_y, packet.dst_x, packet.dst_y)
 
     # Pack name with null terminator
-    name_binary = pack_string(packet.name || "", 24)
+    name_binary = pack_string(Utils.get_field(packet.name, ""), 24)
 
     # Build the packet data (excluding header and length)
     data = <<
@@ -115,18 +117,18 @@ defmodule Aesir.ZoneServer.Packets.ZcNotifyMoveentry do
       # Movement data (6 bytes)
       move_data::binary,
       # Sizes (2 bytes)
-      packet.x_size::8,
-      packet.y_size::8,
+      Utils.get_field(packet.x_size, 0)::8,
+      Utils.get_field(packet.y_size, 0)::8,
       # Level (2 bytes)
-      packet.clevel::16-little,
+      Utils.get_field(packet.clevel, 1)::16-little,
       # Font (2 bytes)
-      packet.font::16-little,
+      Utils.get_field(packet.font, 0)::16-little,
       # HP info (9 bytes total)
-      packet.max_hp::32-little,
-      packet.hp::32-little,
-      packet.is_boss::8,
+      Utils.get_field(packet.max_hp, 0)::32-little,
+      Utils.get_field(packet.hp, 0)::32-little,
+      Utils.get_field(packet.is_boss, 0)::8,
       # Body style (2 bytes)
-      packet.body::16-little,
+      Utils.get_field(packet.body, 0)::16-little,
       # Name (24 bytes)
       name_binary::binary
     >>
