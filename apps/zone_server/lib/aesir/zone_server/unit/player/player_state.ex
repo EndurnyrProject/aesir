@@ -40,6 +40,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     :view_range,
     # MapSet of char_ids currently visible
     :visible_players,
+    # MapSet of mob_ids currently visible
+    :visible_mobs,
     # Last grid cell for visibility check
     :last_visibility_cell,
 
@@ -86,6 +88,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       # Visibility defaults
       view_range: 14,
       visible_players: MapSet.new(),
+      visible_mobs: MapSet.new(),
       last_visibility_cell: nil,
 
       # State defaults

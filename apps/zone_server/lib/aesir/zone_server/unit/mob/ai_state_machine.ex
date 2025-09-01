@@ -13,6 +13,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   organization and testability.
   """
 
+  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
@@ -89,27 +91,56 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   end
 
   @doc """
-  Calculates movement toward a target position.
-  Returns {new_x, new_y} coordinates for next step.
+  Calculates movement toward a target position using pathfinding.
+  Returns updated MobState with path set if needed.
   """
-  @spec calculate_movement(MobState.t(), integer(), integer()) :: {integer(), integer()}
-  def calculate_movement(%MobState{x: current_x, y: current_y}, target_x, target_y) do
-    # Simple movement - move one step toward target
-    dx =
-      cond do
-        target_x > current_x -> 1
-        target_x < current_x -> -1
-        true -> 0
-      end
+  @spec move_toward(MobState.t(), integer(), integer()) :: MobState.t()
+  def move_toward(%MobState{} = state, target_x, target_y) do
+    current_time = System.system_time(:millisecond)
 
-    dy =
-      cond do
-        target_y > current_y -> 1
-        target_y < current_y -> -1
-        true -> 0
-      end
+    cond do
+      # Don't start new movement if already moving
+      state.movement_state == :moving ->
+        state
 
-    {current_x + dx, current_y + dy}
+      # Don't start new movement if we just finished moving (300ms cooldown)
+      state.last_movement_end_time != nil and current_time - state.last_movement_end_time < 300 ->
+        state
+
+      true ->
+        case MapCache.get(state.map_name) do
+          {:ok, map_data} ->
+            case Pathfinding.find_path(map_data, {state.x, state.y}, {target_x, target_y}) do
+              {:ok, [_ | _] = path} ->
+                # Simplify path to reduce computation
+                simplified_path = Pathfinding.simplify_path(path)
+                updated_state = MobState.set_path(state, simplified_path)
+
+                # Schedule first movement tick if we have a process_pid
+                if updated_state.process_pid do
+                  Process.send_after(
+                    updated_state.process_pid,
+                    :movement_tick,
+                    100
+                  )
+                end
+
+                updated_state
+
+              {:ok, []} ->
+                # Already at destination
+                state
+
+              {:error, _reason} ->
+                # No path found, stop movement
+                MobState.stop_movement(state)
+            end
+
+          {:error, _reason} ->
+            # Map not loaded, can't move
+            MobState.stop_movement(state)
+        end
+    end
   end
 
   @doc """
@@ -145,7 +176,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
   defp process_idle(state) do
     # Check for nearby enemies if aggressive
-    check_aggro(state)
+    result = check_aggro(state)
+
+    if result.ai_state != state.ai_state do
+      result
+    else
+      # No aggro detected, do idle movement behavior
+      do_idle_movement(result)
+    end
   end
 
   defp process_alert(state) do
@@ -218,9 +256,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
             MobState.set_ai_state(state, :combat)
 
           target_in_chase_range?(state, target_id) ->
-            # Continue chasing - move towards target
-            # This would involve pathfinding in a full implementation
-            state
+            # Continue chasing - move towards target using pathfinding
+            case SpatialIndex.get_unit_position(:player, target_id) do
+              {:ok, {target_x, target_y, map_name}} when map_name == state.map_name ->
+                move_toward(state, target_x, target_y)
+
+              _ ->
+                # Target not found or on different map
+                state
+                |> MobState.set_target(nil)
+                |> MobState.set_ai_state(:idle)
+            end
 
           should_return_to_spawn?(state) ->
             # Too far from spawn, return
@@ -244,10 +290,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
       |> MobState.clear_aggro()
       |> MobState.set_target(nil)
       |> MobState.set_ai_state(:idle)
+      |> MobState.stop_movement()
     else
-      # Continue returning to spawn
-      # This would involve movement in a full implementation
-      state
+      # Continue returning to spawn using pathfinding
+      spawn_area = state.spawn_ref.spawn_area
+      spawn_x = spawn_area.x
+      spawn_y = spawn_area.y
+
+      move_toward(state, spawn_x, spawn_y)
     end
   end
 
@@ -297,6 +347,41 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
       _ ->
         false
+    end
+  end
+
+  defp do_idle_movement(state) do
+    current_time = System.system_time(:second)
+
+    # Check if we can attempt idle movement
+    can_move = state.movement_state == :standing
+    random_chance = :rand.uniform(100) <= 20
+
+    enough_time_passed =
+      state.last_idle_movement_time == nil or
+        current_time - state.last_idle_movement_time >= 3
+
+    if can_move and random_chance and enough_time_passed do
+      # Get spawn area for movement bounds
+      spawn_area = state.spawn_ref.spawn_area
+      spawn_x = spawn_area.x
+      spawn_y = spawn_area.y
+      # Maximum distance from spawn to wander
+      max_wander_distance = 5
+
+      # Generate random destination within spawn area
+      random_x = spawn_x + :rand.uniform(max_wander_distance * 2 + 1) - max_wander_distance - 1
+      random_y = spawn_y + :rand.uniform(max_wander_distance * 2 + 1) - max_wander_distance - 1
+
+      # Clamp to reasonable bounds (assuming maps are at least 50x50)
+      target_x = max(10, min(random_x, 300))
+      target_y = max(10, min(random_y, 300))
+
+      # Update last idle movement attempt time and move
+      updated_state = %{state | last_idle_movement_time: current_time}
+      move_toward(updated_state, target_x, target_y)
+    else
+      state
     end
   end
 end

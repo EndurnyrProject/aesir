@@ -103,8 +103,6 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
     schedule_cleanup()
 
-    Logger.info("MapCoordinator started for #{map_name} (spawns: #{length(spawn_data)})")
-
     {:ok, state}
   end
 
@@ -315,8 +313,15 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     # Get mob data
     case MobDataLoader.get_mob(spawn_config.mob_id) do
       {:ok, mob_data} ->
-        # Create mob state
-        mob_state = MobState.new(instance_id, mob_data, spawn_config, state.map_name, x, y)
+        # Create mob state with .gat suffix for client compatibility
+        map_name_with_gat = 
+          if String.ends_with?(state.map_name, ".gat") do
+            state.map_name
+          else
+            state.map_name <> ".gat"
+          end
+        
+        mob_state = MobState.new(instance_id, mob_data, spawn_config, map_name_with_gat, x, y)
 
         # Spawn mob session under supervisor
         case MobSupervisor.spawn_mob(state.map_name, mob_state) do

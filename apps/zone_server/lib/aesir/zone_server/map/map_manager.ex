@@ -155,11 +155,10 @@ defmodule Aesir.ZoneServer.Map.MapManager do
   defp start_coordinator_for_map(map_name) do
     case PartitionedSupervisor.start_map_coordinator(map_name) do
       {:ok, pid} ->
-        Logger.debug("Started coordinator for map: #{map_name}")
         {:ok, pid}
 
       {:error, {:already_started, pid}} ->
-        Logger.debug("Coordinator already exists for map: #{map_name}")
+        Logger.warning("Coordinator already exists for map: #{map_name}")
         {:ok, pid}
 
       {:error, reason} ->

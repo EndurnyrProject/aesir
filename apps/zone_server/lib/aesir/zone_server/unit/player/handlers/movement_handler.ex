@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Packets.ZcNotifyMoveStop
   alias Aesir.ZoneServer.Packets.ZcNotifyPlayermove
   alias Aesir.ZoneServer.Pathfinding
+  alias Aesir.ZoneServer.Unit.MovementEngine
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -39,15 +40,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       when game_state.is_walking do
     # Calculate how far we should have moved since start
     elapsed = System.system_time(:millisecond) - game_state.walk_start_time
-    cells_per_ms = 1.0 / game_state.walk_speed
-    total_movement_budget = elapsed * cells_per_ms
+
+    total_movement_budget =
+      MovementEngine.calculate_movement_budget(elapsed, game_state.walk_speed)
 
     # Calculate NEW movement since last tick (subtract what we already consumed)
     new_movement_budget = total_movement_budget - game_state.path_progress
 
     # Consume path based on NEW movement budget
     {new_x, new_y, remaining_path, consumed} =
-      consume_movement_path_with_cost(
+      MovementEngine.consume_path_with_budget(
         game_state.x,
         game_state.y,
         game_state.walk_path,
@@ -187,30 +189,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     end
   end
 
-  defp consume_movement_path_with_cost(x, y, path, budget) do
-    do_consume_path(x, y, path, budget, 0)
-  end
-
-  defp do_consume_path(x, y, [], _budget, consumed), do: {x, y, [], consumed}
-  defp do_consume_path(x, y, path, budget, consumed) when budget <= 0, do: {x, y, path, consumed}
-
-  defp do_consume_path(x, y, [{next_x, next_y} | rest], budget, consumed) do
-    move_cost =
-      if abs(next_x - x) == 1 and abs(next_y - y) == 1 do
-        # Diagonal movement (√2)
-        1.414
-      else
-        # Straight movement
-        1.0
-      end
-
-    if move_cost <= budget do
-      do_consume_path(next_x, next_y, rest, budget - move_cost, consumed + move_cost)
-    else
-      {x, y, [{next_x, next_y} | rest], consumed}
-    end
-  end
-
   defp broadcast_stop_to_nearby(character, game_state, packet) do
     nearby_players =
       SpatialIndex.get_players_in_range(
@@ -328,10 +306,44 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       end
     end)
 
+    # Handle mob visibility - use consistent map naming
+    # Both players and mobs should use the same map name format
+    mobs_in_range =
+      SpatialIndex.get_units_in_range(
+        :mob,
+        game_state.map_name,
+        game_state.x,
+        game_state.y,
+        game_state.view_range
+      )
+
+    new_visible_mobs = MapSet.new(mobs_in_range)
+    old_visible_mobs = game_state.visible_mobs
+
+    # Find which mobs entered and left view
+    now_visible_mobs = MapSet.difference(new_visible_mobs, old_visible_mobs)
+    now_hidden_mobs = MapSet.difference(old_visible_mobs, new_visible_mobs)
+
+    # Send spawn packets for newly visible mobs
+    Enum.each(now_visible_mobs, fn mob_id ->
+      send_mob_spawn_packet_to(character.id, mob_id)
+    end)
+
+    # Send despawn packets for now hidden mobs
+    Enum.each(now_hidden_mobs, fn mob_id ->
+      send_mob_vanish_packet_to(character.id, mob_id)
+    end)
+
     # Update game state with new visibility info
     # Keep last_visibility_cell for potential optimization later
     current_cell = {div(game_state.x, 8), div(game_state.y, 8)}
-    %{game_state | visible_players: new_visible, last_visibility_cell: current_cell}
+
+    %{
+      game_state
+      | visible_players: new_visible,
+        visible_mobs: new_visible_mobs,
+        last_visibility_cell: current_cell
+    }
   end
 
   defp send_spawn_packet_about(to_char_id, about_char_id) do
@@ -353,6 +365,74 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       GenServer.cast(to_pid, {:player_left_view, about_char_id, about_account_id})
     else
       _ -> :ok
+    end
+  end
+
+  defp send_mob_spawn_packet_to(to_char_id, mob_id) do
+    # Get the player session and mob data
+    with {:ok, to_pid} <- UnitRegistry.get_player_pid(to_char_id),
+         {:ok, {_module, mob_state, _pid}} <- UnitRegistry.get_unit(:mob, mob_id) do
+      # Create mob spawn packet
+      mob_packet = %Aesir.ZoneServer.Packets.ZcNotifyNewentry{
+        object_type: Aesir.ZoneServer.Constants.ObjectType.mob(),
+        aid: mob_state.instance_id,
+        gid: mob_state.instance_id,
+        speed: mob_state.walk_speed,
+        body_state: 0,
+        health_state: if(mob_state.is_dead, do: 1, else: 0),
+        effect_state: 0,
+        # Mob sprite ID
+        job: mob_state.mob_id,
+        head: 0,
+        weapon: 0,
+        shield: 0,
+        accessory: 0,
+        accessory2: 0,
+        accessory3: 0,
+        head_palette: 0,
+        body_palette: 0,
+        head_dir: 0,
+        robe: 0,
+        guild_id: 0,
+        guild_emblem_ver: 0,
+        honor: 0,
+        virtue: 0,
+        is_pk_mode_on: 0,
+        sex: 0,
+        x: mob_state.x,
+        y: mob_state.y,
+        dir: mob_state.dir,
+        x_size: 0,
+        y_size: 0,
+        clevel: mob_state.mob_data.level,
+        font: 0,
+        max_hp: mob_state.max_hp,
+        hp: mob_state.hp,
+        is_boss: if(Aesir.ZoneServer.Unit.Mob.MobState.is_boss?(mob_state), do: 1, else: 0),
+        body: 0,
+        name: mob_state.mob_data.name
+      }
+
+      GenServer.cast(to_pid, {:send_packet, mob_packet})
+    else
+      _ -> :ok
+    end
+  end
+
+  defp send_mob_vanish_packet_to(to_char_id, mob_id) do
+    # Get the player session
+    case UnitRegistry.get_player_pid(to_char_id) do
+      {:ok, to_pid} ->
+        vanish_packet = %Aesir.ZoneServer.Packets.ZcNotifyVanish{
+          gid: mob_id,
+          # 0 = died, 1 = logged out, 2 = teleported
+          type: 0
+        }
+
+        GenServer.cast(to_pid, {:send_packet, vanish_packet})
+
+      {:error, :not_found} ->
+        :ok
     end
   end
 

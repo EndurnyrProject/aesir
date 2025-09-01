@@ -7,12 +7,23 @@ defmodule Aesir.ZoneServer.Packets.ZcNotifyNewentry do
 
   For latest PACKETVER (>= 20150513), packet ID is 0x09FE.
   This is a variable-length packet with appearance data.
+
+  Object types:
+  - 0x0: Player/PC
+  - 0x1: NPC  
+  - 0x5: Mob/Monster
+  - 0x6: Homunculus
+  - 0x7: Mercenary
+  - 0x8: Elemental
   """
   use Aesir.Commons.Network.Packet
+
+  alias Aesir.ZoneServer.Constants.ObjectType
 
   @packet_id 0x09FE
 
   defstruct [
+    :object_type,
     :aid,
     :gid,
     :speed,
@@ -65,9 +76,11 @@ defmodule Aesir.ZoneServer.Packets.ZcNotifyNewentry do
     name_binary = pack_string(packet.name || "", 24)
 
     # Build the packet data (excluding header and length)
+    object_type = packet.object_type || ObjectType.pc()
+
     data = <<
-      # objecttype (1 byte) - 0 for player
-      0::8,
+      # objecttype (1 byte)
+      object_type::8,
       # AID and GID (8 bytes total)
       packet.aid::32-little,
       packet.gid::32-little,

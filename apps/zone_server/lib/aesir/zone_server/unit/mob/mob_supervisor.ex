@@ -35,14 +35,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
     case DynamicSupervisor.start_child(via_tuple(map_name), child_spec) do
       {:ok, pid} ->
         Logger.debug(
-          "Spawned mob #{mob_state.mob_data.sprite_name} (ID: #{mob_state.instance_id}) on #{map_name}"
+          "Spawned mob #{mob_state.mob_data.name} (ID: #{mob_state.instance_id}) on #{map_name}"
         )
 
         {:ok, pid}
 
       {:error, reason} = error ->
         Logger.error(
-          "Failed to spawn mob #{mob_state.mob_data.sprite_name} (ID: #{mob_state.instance_id}): #{inspect(reason)}"
+          "Failed to spawn mob #{mob_state.mob_data.name} (ID: #{mob_state.instance_id}): #{inspect(reason)}"
         )
 
         error
@@ -107,9 +107,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
   # GenServer Callbacks
 
   @impl DynamicSupervisor
-  def init(map_name) do
-    Logger.info("Started mob supervisor for map: #{map_name}")
-
+  def init(_map_name) do
     DynamicSupervisor.init(
       strategy: :one_for_one,
       max_restarts: 5,

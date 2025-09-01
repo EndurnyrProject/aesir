@@ -5,11 +5,7 @@ defmodule Aesir.ZoneServer.Pathfinding do
   """
 
   alias Aesir.ZoneServer.Map.MapData
-
-  # √2 for diagonal movement
-  @diagonal_cost 1.414
-  # Cost for straight movement
-  @straight_cost 1.0
+  alias Aesir.ZoneServer.Unit.MovementEngine
 
   defmodule Node do
     @moduledoc false
@@ -142,24 +138,27 @@ defmodule Aesir.ZoneServer.Pathfinding do
   end
 
   defp get_neighbors(x, y) do
+    straight_cost = MovementEngine.straight_cost()
+    diagonal_cost = MovementEngine.diagonal_cost()
+
     [
       # North
-      {x, y - 1, @straight_cost},
+      {x, y - 1, straight_cost},
       # East
-      {x + 1, y, @straight_cost},
+      {x + 1, y, straight_cost},
       # South
-      {x, y + 1, @straight_cost},
+      {x, y + 1, straight_cost},
       # West
-      {x - 1, y, @straight_cost},
+      {x - 1, y, straight_cost},
       # Diagonal moves (cost √2)
       # Northeast
-      {x + 1, y - 1, @diagonal_cost},
+      {x + 1, y - 1, diagonal_cost},
       # Southeast
-      {x + 1, y + 1, @diagonal_cost},
+      {x + 1, y + 1, diagonal_cost},
       # Southwest
-      {x - 1, y + 1, @diagonal_cost},
+      {x - 1, y + 1, diagonal_cost},
       # Northwest
-      {x - 1, y - 1, @diagonal_cost}
+      {x - 1, y - 1, diagonal_cost}
     ]
   end
 

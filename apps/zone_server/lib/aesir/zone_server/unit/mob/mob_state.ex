@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     field :walk_path, list(), default: []
     field :walk_speed, integer(), default: 200
     field :walk_start_time, integer(), default: nil
+    field :path_progress, float(), default: 0.0
     field :target_position, {integer(), integer()}, default: nil
 
     # AI state machine
@@ -43,6 +44,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     field :last_ai_tick, integer(), default: nil
     field :aggro_list, map(), default: %{}
     field :last_action_time, integer(), default: nil
+    field :last_movement_end_time, integer(), default: nil
+    field :last_idle_movement_time, integer(), default: nil
 
     # Combat state
     field :hp, integer(), enforce: true
@@ -86,7 +89,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       spawned_at: current_time,
       last_ai_tick: current_time,
       status_effects: %{},
-      walk_speed: calculate_walk_speed(mob_data),
+      walk_speed: mob_data.walk_speed,
       view_range: calculate_view_range(mob_data),
       respawn_delay: spawn_ref.respawn_time
     }
@@ -217,10 +220,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
         state
         | walk_path: path,
           movement_state: :moving,
-          walk_start_time: System.system_time(:millisecond)
+          walk_start_time: System.system_time(:millisecond),
+          path_progress: 0.0
       }
     else
-      %{state | walk_path: path, movement_state: :standing, walk_start_time: nil}
+      %{
+        state
+        | walk_path: path,
+          movement_state: :standing,
+          walk_start_time: nil,
+          path_progress: 0.0
+      }
     end
   end
 
@@ -234,7 +244,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       | walk_path: [],
         movement_state: :standing,
         walk_start_time: nil,
-        target_position: nil
+        path_progress: 0.0,
+        target_position: nil,
+        last_movement_end_time: System.system_time(:millisecond)
     }
   end
 
@@ -416,13 +428,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     # Convert attack delay to ASPD format
     # Lower attack_delay means faster attack speed
     max(100, 200 - div(mob_data.attack_delay, 10))
-  end
-
-  defp calculate_walk_speed(mob_data) do
-    # Base walk speed, can be modified by mob stats
-    base_speed = 200
-    agi_modifier = div(mob_data.stats.agi, 5)
-    max(100, base_speed - agi_modifier)
   end
 
   defp calculate_view_range(mob_data) do

@@ -189,7 +189,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # Add player to spatial index at spawn position
     SpatialIndex.add_player(character.id, game_state.x, game_state.y, game_state.map_name)
 
-    # Check initial visibility
+    # Check initial visibility for players and mobs
     updated_game_state = MovementHandler.handle_visibility_update(character, game_state)
 
     # After initial spawn, transition to standing state
