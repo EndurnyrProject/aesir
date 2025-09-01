@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Application do
 
     children = [
       {Aesir.ZoneServer.EtsTable, name: EtsTables},
+      {Registry, keys: :unique, name: Aesir.ZoneServer.MapRegistry},
       Aesir.ZoneServer.MechanicsSupervisor,
       {Aesir.Commons.Network.Listener,
        connection_module: Aesir.ZoneServer,

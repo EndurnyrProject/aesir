@@ -11,6 +11,8 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
     children = [
       Aesir.ZoneServer.Mmo.JobManagement.JobDataLoader,
       Aesir.ZoneServer.Mmo.MobManagement.MobDataLoader,
+      Aesir.ZoneServer.Map.PartitionedSupervisor,
+      Aesir.ZoneServer.Map.MapManager,
       Aesir.ZoneServer.Unit.Player.PlayerSupervisor,
       Aesir.ZoneServer.Mmo.StatusTickManager
     ]
