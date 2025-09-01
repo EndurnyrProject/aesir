@@ -39,10 +39,10 @@
     modifiers: %{
       # Water element level 1 (should be :water1 not numeric 10)
       def_ele: :water1,
-      # -100% physical defense
-      def_rate: -100,
-      # -50% magic defense
-      mdef_rate: -50
+      # -50% physical defense (rAthena: def /= 2)
+      def_rate: -50,
+      # +25% magic defense (rAthena: mdef += 25 * mdef / 100)
+      mdef_rate: 25
     },
     flags: [:no_move, :no_attack, :no_skill],
     on_apply: [
@@ -128,10 +128,10 @@
       movement_speed: -10
     },
     on_apply: [
-      # Check for LUK-based immunity
+      # Check for LUK-based immunity (rAthena: immune if LUK is already 0)
       %{
         type: :conditional,
-        condition: "base_luk == 0",
+        condition: "luk == 0",
         then_actions: [
           %{type: :remove_status, status: :sc_curse}
         ]
@@ -269,10 +269,8 @@
   sc_provoke: %{
     properties: [:debuff],
     modifiers: %{
-      # ATK increase percentage
-      batk_rate: "val2",
-      # Weapon ATK increase
-      watk_rate: "val2",
+      # ATK increase percentage (rAthena: unified ATK modifier)
+      atk_rate: "val2",
       # DEF reduction percentage  
       def_rate: "-val3",
       # VIT DEF reduction
@@ -287,7 +285,7 @@
     on_remove: [
       %{type: :set_state, key: :provoked_by, value: nil}
     ],
-    calc_flags: [:batk, :watk, :def, :def2, :hit],
+    calc_flags: [:atk, :def, :def2, :hit],
     end_on_start: [:sc_freeze, :sc_stone, :sc_sleep, :sc_trickdead],
     prevented_by: [:sc_refresh, :sc_inspiration]
   },
@@ -563,18 +561,14 @@
   sc_blessing: %{
     properties: [:buff],
     modifiers: %{
-      # Check if target is undead/demon race, not just val2
-      # If not undead/demon, increase stats by val2
-      # If undead/demon, reduce stats by half
-      str:
-        "(race != :undead and race != :demon) * val2 + (race == :undead or race == :demon) * (-str / 2)",
-      int:
-        "(race != :undead and race != :demon) * val2 + (race == :undead or race == :demon) * (-int / 2)",
-      dex:
-        "(race != :undead and race != :demon) * val2 + (race == :undead or race == :demon) * (-dex / 2)",
-      # HIT bonus based on stat increases
-      hit:
-        "(race != :undead and race != :demon) * (val2 * 3) + (race == :undead or race == :demon) * (-hit / 2)"
+      # rAthena logic: val2 is set to 0 for undead/demon, causing stat reduction
+      # For undead/demon: str -= str/2 (when val2=0)
+      # For others: str += val2 (normal blessing bonus)
+      str: "val2 + (val2 == 0) * (-str / 2)",
+      int: "val2 + (val2 == 0) * (-int / 2)",
+      dex: "val2 + (val2 == 0) * (-dex / 2)",
+      # HIT bonus follows same pattern
+      hit: "val2 * 3 + (val2 == 0) * (-hit / 2)"
     },
     on_apply: [
       %{type: :notify_client, packet: :sc_blessing_icon},
