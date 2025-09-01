@@ -1,7 +1,8 @@
-defmodule Aesir.ZoneServer.Unit.Mob do
+defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   @moduledoc """
-  Mob entity that implements the Entity behaviour.
-  Represents a spawned monster instance on a map.
+  Represents the state of a mob entity in the game world.
+  Implements the Entity behaviour for status effect calculations.
+  Similar to PlayerState but for monsters with AI and combat capabilities.
   """
 
   use TypedStruct
@@ -12,27 +13,64 @@ defmodule Aesir.ZoneServer.Unit.Mob do
 
   @behaviour Entity
 
+  @type ai_state :: :idle | :alert | :combat | :chase | :return
+  @type movement_state :: :standing | :moving | :returning
+
   typedstruct do
+    # Core identification
     field :instance_id, integer(), enforce: true
     field :mob_id, integer(), enforce: true
     field :mob_data, MobDefinition.t(), enforce: true
     field :spawn_ref, MobSpawn.t(), enforce: true
-    field :map_name, String.t(), enforce: true
+    field :process_pid, pid(), default: nil
+
+    # Position & Movement
     field :x, integer(), enforce: true
     field :y, integer(), enforce: true
+    field :map_name, String.t(), enforce: true
+    field :dir, integer(), default: 0
+
+    # Movement state machine
+    field :movement_state, movement_state(), default: :standing
+    field :walk_path, list(), default: []
+    field :walk_speed, integer(), default: 200
+    field :walk_start_time, integer(), default: nil
+    field :target_position, {integer(), integer()}, default: nil
+
+    # AI state machine
+    field :ai_state, ai_state(), default: :idle
+    field :target_id, integer(), default: nil
+    field :last_ai_tick, integer(), default: nil
+    field :aggro_list, map(), default: %{}
+    field :last_action_time, integer(), default: nil
+
+    # Combat state
     field :hp, integer(), enforce: true
     field :max_hp, integer(), enforce: true
     field :sp, integer(), enforce: true
     field :max_sp, integer(), enforce: true
+    field :is_dead, boolean(), default: false
+
+    # Spatial awareness
+    field :view_range, integer(), default: 12
+    field :visible_entities, MapSet.t(), default: %MapSet{}
+
+    # Lifecycle
     field :spawned_at, integer(), enforce: true
+    field :last_damage_time, integer(), default: nil
+    field :respawn_delay, integer(), default: 0
+
+    # Status effects
     field :status_effects, map(), default: %{}
   end
 
   @doc """
-  Creates a new mob instance.
+  Creates a new mob state instance.
   """
   @spec new(integer(), MobDefinition.t(), MobSpawn.t(), String.t(), integer(), integer()) :: t()
   def new(instance_id, mob_data, spawn_ref, map_name, x, y) do
+    current_time = System.system_time(:second)
+
     %__MODULE__{
       instance_id: instance_id,
       mob_id: mob_data.id,
@@ -45,8 +83,12 @@ defmodule Aesir.ZoneServer.Unit.Mob do
       max_hp: mob_data.hp,
       sp: mob_data.sp,
       max_sp: mob_data.sp,
-      spawned_at: System.system_time(:second),
-      status_effects: %{}
+      spawned_at: current_time,
+      last_ai_tick: current_time,
+      status_effects: %{},
+      walk_speed: calculate_walk_speed(mob_data),
+      view_range: calculate_view_range(mob_data),
+      respawn_delay: spawn_ref.respawn_time
     }
   end
 
@@ -107,7 +149,11 @@ defmodule Aesir.ZoneServer.Unit.Mob do
   @impl Entity
   def get_entity_info(%__MODULE__{} = mob) do
     Entity.build_entity_info(__MODULE__, mob)
+    |> Map.put(:entity_type, :mob)
   end
+
+  @impl Entity
+  def get_process_pid(%__MODULE__{process_pid: pid}), do: pid
 
   @impl Entity
   def get_unit_id(%__MODULE__{instance_id: instance_id}) do
@@ -143,6 +189,125 @@ defmodule Aesir.ZoneServer.Unit.Mob do
     immunities
   end
 
+  # State Management Functions
+
+  @doc """
+  Sets the process PID for this mob state.
+  """
+  @spec set_process_pid(t(), pid()) :: t()
+  def set_process_pid(%__MODULE__{} = state, pid) when is_pid(pid) do
+    %{state | process_pid: pid}
+  end
+
+  @doc """
+  Updates position and handles movement state transitions.
+  """
+  @spec update_position(t(), integer(), integer()) :: t()
+  def update_position(%__MODULE__{} = state, new_x, new_y) do
+    %{state | x: new_x, y: new_y}
+  end
+
+  @doc """
+  Sets a movement path and starts moving.
+  """
+  @spec set_path(t(), [{integer(), integer()}]) :: t()
+  def set_path(%__MODULE__{} = state, path) when is_list(path) do
+    if length(path) > 0 do
+      %{
+        state
+        | walk_path: path,
+          movement_state: :moving,
+          walk_start_time: System.system_time(:millisecond)
+      }
+    else
+      %{state | walk_path: path, movement_state: :standing, walk_start_time: nil}
+    end
+  end
+
+  @doc """
+  Stops movement and clears the path.
+  """
+  @spec stop_movement(t()) :: t()
+  def stop_movement(%__MODULE__{} = state) do
+    %{
+      state
+      | walk_path: [],
+        movement_state: :standing,
+        walk_start_time: nil,
+        target_position: nil
+    }
+  end
+
+  @doc """
+  Sets the AI state.
+  """
+  @spec set_ai_state(t(), ai_state()) :: t()
+  def set_ai_state(%__MODULE__{} = state, new_ai_state) do
+    %{state | ai_state: new_ai_state, last_ai_tick: System.system_time(:second)}
+  end
+
+  @doc """
+  Sets the combat target.
+  """
+  @spec set_target(t(), integer() | nil) :: t()
+  def set_target(%__MODULE__{} = state, target_id) do
+    %{state | target_id: target_id}
+  end
+
+  @doc """
+  Adds or updates aggro for a target.
+  """
+  @spec add_aggro(t(), integer(), integer()) :: t()
+  def add_aggro(%__MODULE__{aggro_list: aggro_list} = state, target_id, damage) do
+    current_aggro = Map.get(aggro_list, target_id, 0)
+    updated_aggro = Map.put(aggro_list, target_id, current_aggro + damage)
+    %{state | aggro_list: updated_aggro}
+  end
+
+  @doc """
+  Gets the highest aggro target.
+  """
+  @spec get_highest_aggro_target(t()) :: integer() | nil
+  def get_highest_aggro_target(%__MODULE__{aggro_list: aggro_list}) do
+    case Enum.max_by(aggro_list, fn {_id, aggro} -> aggro end, fn -> nil end) do
+      {target_id, _aggro} -> target_id
+      nil -> nil
+    end
+  end
+
+  @doc """
+  Clears all aggro.
+  """
+  @spec clear_aggro(t()) :: t()
+  def clear_aggro(%__MODULE__{} = state) do
+    %{state | aggro_list: %{}}
+  end
+
+  @doc """
+  Marks the mob as dead.
+  """
+  @spec set_dead(t()) :: t()
+  def set_dead(%__MODULE__{} = state) do
+    %{
+      state
+      | is_dead: true,
+        hp: 0,
+        ai_state: :idle,
+        target_id: nil,
+        aggro_list: %{},
+        movement_state: :standing,
+        walk_path: []
+    }
+  end
+
+  @doc """
+  Updates direction based on movement or target.
+  """
+  @spec update_direction(t(), integer()) :: t()
+  def update_direction(%__MODULE__{} = state, new_dir) when new_dir in 0..7 do
+    %{state | dir: new_dir}
+  end
+
   # Public API Functions
 
   @doc """
@@ -156,14 +321,6 @@ defmodule Aesir.ZoneServer.Unit.Mob do
   """
   @spec get_map(t()) :: String.t()
   def get_map(%__MODULE__{map_name: map_name}), do: map_name
-
-  @doc """
-  Updates the mob's position.
-  """
-  @spec update_position(t(), integer(), integer()) :: t()
-  def update_position(%__MODULE__{} = mob, new_x, new_y) do
-    %{mob | x: new_x, y: new_y}
-  end
 
   @doc """
   Applies damage to the mob.
@@ -259,5 +416,21 @@ defmodule Aesir.ZoneServer.Unit.Mob do
     # Convert attack delay to ASPD format
     # Lower attack_delay means faster attack speed
     max(100, 200 - div(mob_data.attack_delay, 10))
+  end
+
+  defp calculate_walk_speed(mob_data) do
+    # Base walk speed, can be modified by mob stats
+    base_speed = 200
+    agi_modifier = div(mob_data.stats.agi, 5)
+    max(100, base_speed - agi_modifier)
+  end
+
+  defp calculate_view_range(mob_data) do
+    # Base view range, bosses have larger range
+    if :boss in (mob_data.modes || []) do
+      20
+    else
+      12
+    end
   end
 end

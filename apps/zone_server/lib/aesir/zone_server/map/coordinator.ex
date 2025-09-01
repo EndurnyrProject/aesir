@@ -5,7 +5,8 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDataLoader
-  alias Aesir.ZoneServer.Unit.Mob
+  alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
@@ -20,7 +21,8 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     :items,
     :weather,
     :pvp_enabled,
-    :pk_enabled
+    :pk_enabled,
+    :mob_supervisor_pid
   ]
 
   @doc """
@@ -77,6 +79,9 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
         {:error, _} -> []
       end
 
+    # Start mob supervisor for this map
+    {:ok, mob_supervisor_pid} = MobSupervisor.start_link(map_name)
+
     state = %__MODULE__{
       map_name: map_name,
       map_data: map_data,
@@ -87,7 +92,8 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
       items: %{},
       weather: :clear,
       pvp_enabled: Keyword.get(opts, :pvp_enabled, false),
-      pk_enabled: Keyword.get(opts, :pk_enabled, false)
+      pk_enabled: Keyword.get(opts, :pk_enabled, false),
+      mob_supervisor_pid: mob_supervisor_pid
     }
 
     # Schedule initial mob spawns if any
@@ -211,24 +217,30 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
   @impl true
   def handle_call(:get_mob_info, _from, state) do
-    mob_ids = UnitRegistry.list_units_by_type(:mob)
+    mob_processes = MobSupervisor.get_mob_processes(state.map_name)
 
     mob_info =
-      mob_ids
-      |> Enum.map(fn instance_id ->
-        case UnitRegistry.get_unit(:mob, instance_id) do
-          {:ok, {_module, mob, _pid}} ->
-            %{
-              instance_id: mob.instance_id,
-              mob_id: mob.mob_id,
-              name: mob.mob_data.name,
-              position: {mob.x, mob.y},
-              hp: mob.hp,
-              max_hp: mob.max_hp
-            }
+      mob_processes
+      |> Enum.map(fn pid ->
+        try do
+          case GenServer.call(pid, :get_state, 1000) do
+            %MobState{} = mob ->
+              %{
+                instance_id: mob.instance_id,
+                mob_id: mob.mob_id,
+                name: mob.mob_data.name,
+                position: {mob.x, mob.y},
+                hp: mob.hp,
+                max_hp: mob.max_hp,
+                ai_state: mob.ai_state,
+                is_dead: mob.is_dead
+              }
 
-          _ ->
-            nil
+            _ ->
+              nil
+          end
+        catch
+          :exit, _ -> nil
         end
       end)
       |> Enum.reject(&is_nil/1)
@@ -303,24 +315,29 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     # Get mob data
     case MobDataLoader.get_mob(spawn_config.mob_id) do
       {:ok, mob_data} ->
-        # Create mob entity
-        mob = Mob.new(instance_id, mob_data, spawn_config, state.map_name, x, y)
+        # Create mob state
+        mob_state = MobState.new(instance_id, mob_data, spawn_config, state.map_name, x, y)
 
-        # Register with UnitRegistry
-        UnitRegistry.register_unit(:mob, instance_id, Mob, mob, nil)
+        # Spawn mob session under supervisor
+        case MobSupervisor.spawn_mob(state.map_name, mob_state) do
+          {:ok, mob_pid} ->
+            # Register with UnitRegistry
+            UnitRegistry.register_unit(:mob, instance_id, MobState, mob_state, mob_pid)
 
-        # Add to spatial index
-        SpatialIndex.add_unit(:mob, instance_id, x, y, state.map_name)
+            Logger.debug(
+              "Spawned mob #{mob_data.name} (#{instance_id}) at #{x},#{y} on #{state.map_name}"
+            )
 
-        Logger.debug(
-          "Spawned mob #{mob_data.name} (#{instance_id}) at #{x},#{y} on #{state.map_name}"
-        )
+            # Update state - only increment next_mob_id
+            %{state | next_mob_id: state.next_mob_id + 1}
 
-        # Update state - only increment next_mob_id
-        %{state | next_mob_id: state.next_mob_id + 1}
+          {:error, reason} ->
+            Logger.error("Failed to start mob session #{spawn_config.mob_id}: #{inspect(reason)}")
+            state
+        end
 
       {:error, reason} ->
-        Logger.error("Failed to spawn mob #{spawn_config.mob_id}: #{inspect(reason)}")
+        Logger.error("Failed to load mob data #{spawn_config.mob_id}: #{inspect(reason)}")
         state
     end
   end
@@ -376,5 +393,17 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
       "map:#{map_name}:cell:#{cell_x}:#{cell_y}",
       {:item_removed, item_id}
     )
+  end
+
+  @impl true
+  def terminate(reason, state) do
+    Logger.info("Map coordinator for #{state.map_name} terminating: #{inspect(reason)}")
+
+    # Terminate all mobs on this map
+    if state.mob_supervisor_pid do
+      MobSupervisor.terminate_all_mobs(state.map_name)
+    end
+
+    :ok
   end
 end
