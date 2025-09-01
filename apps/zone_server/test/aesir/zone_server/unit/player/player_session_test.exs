@@ -604,7 +604,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       assert new_state.game_state.movement_state == :standing
     end
 
-    test "handles packet send when connection_pid is nil", %{character: character} do
+    test "raises when trying to send packet with nil connection_pid", %{character: character} do
       packet = %Aesir.ZoneServer.Packets.ZcNotifyTime{server_tick: 12_345}
 
       state = %{
@@ -613,13 +613,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         connection_pid: nil
       }
 
-      {:noreply, _new_state} =
+      assert_raise RuntimeError, "No connection PID for player #{character.id}", fn ->
         PlayerSession.handle_cast(
           {:send_packet, packet},
           state
         )
-
-      refute_receive {:send_packet, _}
+      end
     end
 
     test "handles visibility update with self in range", %{character: character} do

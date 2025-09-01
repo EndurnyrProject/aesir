@@ -21,7 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
 
       setup_player_mock(target_id)
 
-      assert :ok = Interpreter.apply_status(:player, target_id, status_id, [val1: val1, val2: val2])
+      assert :ok = Interpreter.apply_status(:player, target_id, status_id, val1: val1, val2: val2)
       assert StatusStorage.has_status?(:player, target_id, status_id)
     end
 
@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
       status_id = :sc_provoke
 
       assert_raise RuntimeError, ~r/Cannot apply status effect to non-existent/, fn ->
-        Interpreter.apply_status(:player, target_id, status_id, [val1: 0])
+        Interpreter.apply_status(:player, target_id, status_id, val1: 0)
       end
     end
   end
@@ -45,7 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
       setup_player_mock(target_id)
 
       # First apply the status
-      :ok = Interpreter.apply_status(:player, target_id, status_id, [val1: val1])
+      :ok = Interpreter.apply_status(:player, target_id, status_id, val1: val1)
       assert StatusStorage.has_status?(:player, target_id, status_id)
 
       # Then remove it
@@ -62,7 +62,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
       setup_player_mock(target_id)
 
       # First apply some status
-      :ok = Interpreter.apply_status(:player, target_id, :sc_provoke, [val1: 10])
+      :ok = Interpreter.apply_status(:player, target_id, :sc_provoke, val1: 10)
 
       # Trigger damage event
       damage_info = %{damage: 100, element: :neutral, dmg_type: :physical}
@@ -81,7 +81,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
       setup_player_mock(target_id)
 
       # Status with modifiers
-      :ok = Interpreter.apply_status(:player, target_id, :sc_provoke, [val1: 10, val2: 20])
+      :ok = Interpreter.apply_status(:player, target_id, :sc_provoke, val1: 10, val2: 20)
 
       modifiers = Interpreter.get_all_modifiers(:player, target_id)
 

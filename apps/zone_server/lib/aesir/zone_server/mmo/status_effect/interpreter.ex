@@ -48,100 +48,159 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   @spec apply_status(unit_type(), integer(), atom(), StatusEntry.status_params()) ::
           :ok | {:error, atom()}
   def apply_status(unit_type, unit_id, status_id, status_params \\ []) do
-    # Extract parameters from keyword list with defaults
-    {val1, val2, val3, val4, tick, flag, caster_id, _duration, state, phase} =
-      StatusEntry.extract_params(status_params)
-
     case Registry.get_definition(status_id) do
       nil ->
         Logger.warning("Unknown status effect: #{status_id}")
         {:error, :unknown_status}
 
       definition ->
-        # Get entity info for immunity and resistance checks
-        entity_info = get_entity_info(unit_type, unit_id)
-
-        # Check immunities using entity info
-        if PropertyChecker.check_immunity(entity_info, definition) do
-          {:error, :immune}
-        else
-          # Calculate base duration before resistance
-          base_duration = PhaseManager.calculate_base_duration(definition)
-
-          # Apply resistance calculations if needed
-          {success_rate, adjusted_duration} =
-            if Resistance.should_apply_resistance?(definition) do
-              Resistance.apply_resistance(
-                definition,
-                entity_info[:stats] || %{},
-                100,
-                base_duration
-              )
-            else
-              {100, base_duration}
-            end
-
-          # Check if status is resisted
-          if Resistance.roll_success(success_rate) do
-            # Create initial state and phase
-            initial_state = Map.merge(definition[:instance_state] || %{}, state)
-            initial_phase = phase || (if definition[:phases], do: :wait, else: nil)
-
-            # Create temporary instance for context building
-            now_ms = System.monotonic_time(:millisecond)
-
-            instance = %StatusEntry{
-              type: status_id,
-              val1: val1,
-              val2: val2,
-              val3: val3,
-              val4: val4,
-              tick: tick,
-              flag: flag,
-              source_id: caster_id,
-              state: initial_state,
-              phase: initial_phase,
-              started_at: System.system_time(:millisecond),
-              next_tick_at: now_ms + if(tick > 0, do: tick, else: 1000),
-              tick_count: 0,
-              expires_at: nil
-            }
-
-            # Build context
-            context = ContextBuilder.build_context(unit_type, unit_id, caster_id, instance)
-
-            # Execute on_apply hooks
-            # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-            case ActionExecutor.execute_hooks(definition[:on_apply], unit_id, instance, context) do
-              {:ok, new_instance} ->
-
-                # Store in StatusStorage with state and phase
-                updated_params = [
-                  val1: val1,
-                  val2: val2,
-                  val3: val3,
-                  val4: val4,
-                  tick: tick,
-                  flag: flag,
-                  duration: adjusted_duration,
-                  caster_id: caster_id,
-                  state: new_instance.state || %{},
-                  phase: new_instance.phase
-                ]
-
-                StatusStorage.apply_status(unit_type, unit_id, status_id, updated_params
-                )
-
-                :ok
-
-              {:error, reason} ->
-                {:error, reason}
-            end
-          else
-            {:error, :resisted}
-          end
-        end
+        do_apply_status(unit_type, unit_id, status_id, status_params, definition)
     end
+  end
+
+  defp do_apply_status(unit_type, unit_id, status_id, status_params, definition) do
+    entity_info = get_entity_info(unit_type, unit_id)
+
+    if PropertyChecker.check_immunity(entity_info, definition) do
+      {:error, :immune}
+    else
+      apply_with_resistance(unit_type, unit_id, status_id, status_params, definition, entity_info)
+    end
+  end
+
+  defp apply_with_resistance(
+         unit_type,
+         unit_id,
+         status_id,
+         status_params,
+         definition,
+         entity_info
+       ) do
+    base_duration = PhaseManager.calculate_base_duration(definition)
+
+    {success_rate, adjusted_duration} =
+      if Resistance.should_apply_resistance?(definition) do
+        Resistance.apply_resistance(
+          definition,
+          entity_info[:stats] || %{},
+          100,
+          base_duration
+        )
+      else
+        {100, base_duration}
+      end
+
+    if Resistance.roll_success(success_rate) do
+      create_and_apply_instance(
+        unit_type,
+        unit_id,
+        status_id,
+        status_params,
+        definition,
+        adjusted_duration
+      )
+    else
+      {:error, :resisted}
+    end
+  end
+
+  defp create_and_apply_instance(
+         unit_type,
+         unit_id,
+         status_id,
+         status_params,
+         definition,
+         adjusted_duration
+       ) do
+    {val1, val2, val3, val4, tick, flag, caster_id, _duration, state, phase} =
+      StatusEntry.extract_params(status_params)
+
+    initial_state = Map.merge(definition[:instance_state] || %{}, state)
+    initial_phase = phase || if definition[:phases], do: :wait, else: nil
+
+    instance_data = %{
+      status_id: status_id,
+      val1: val1,
+      val2: val2,
+      val3: val3,
+      val4: val4,
+      tick: tick,
+      flag: flag,
+      caster_id: caster_id,
+      initial_state: initial_state,
+      initial_phase: initial_phase
+    }
+
+    instance = build_status_instance(instance_data)
+
+    context = ContextBuilder.build_context(unit_type, unit_id, caster_id, instance)
+
+    case ActionExecutor.execute_hooks(definition[:on_apply], unit_id, instance, context) do
+      {:ok, new_instance} ->
+        storage_data = %{
+          unit_type: unit_type,
+          unit_id: unit_id,
+          status_id: status_id,
+          val1: val1,
+          val2: val2,
+          val3: val3,
+          val4: val4,
+          tick: tick,
+          flag: flag,
+          adjusted_duration: adjusted_duration,
+          caster_id: caster_id,
+          new_instance: new_instance
+        }
+
+        store_status_instance(storage_data)
+        :ok
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp build_status_instance(instance_data) do
+    now_ms = System.monotonic_time(:millisecond)
+
+    %StatusEntry{
+      type: instance_data.status_id,
+      val1: instance_data.val1,
+      val2: instance_data.val2,
+      val3: instance_data.val3,
+      val4: instance_data.val4,
+      tick: instance_data.tick,
+      flag: instance_data.flag,
+      source_id: instance_data.caster_id,
+      state: instance_data.initial_state,
+      phase: instance_data.initial_phase,
+      started_at: System.system_time(:millisecond),
+      next_tick_at: now_ms + if(instance_data.tick > 0, do: instance_data.tick, else: 1000),
+      tick_count: 0,
+      expires_at: nil
+    }
+  end
+
+  defp store_status_instance(storage_data) do
+    updated_params = [
+      val1: storage_data.val1,
+      val2: storage_data.val2,
+      val3: storage_data.val3,
+      val4: storage_data.val4,
+      tick: storage_data.tick,
+      flag: storage_data.flag,
+      duration: storage_data.adjusted_duration,
+      caster_id: storage_data.caster_id,
+      state: storage_data.new_instance.state || %{},
+      phase: storage_data.new_instance.phase
+    ]
+
+    StatusStorage.apply_status(
+      storage_data.unit_type,
+      storage_data.unit_id,
+      storage_data.status_id,
+      updated_params
+    )
   end
 
   @doc """
