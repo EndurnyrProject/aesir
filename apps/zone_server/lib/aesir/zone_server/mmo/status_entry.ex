@@ -11,6 +11,32 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
   - phase: Current phase of multi-phase status effects
   """
 
+  @typedoc """
+  Parameters for applying a status effect.
+
+  - `val1-val4`: Context-dependent values with different meanings per status type
+  - `tick`: How often the status effect should be processed (in milliseconds, defaults to 0)
+  - `flag`: Special flags for status behavior (defaults to 0)
+  - `caster_id`: ID of the entity that applied the status (defaults to nil)
+  - `duration`: How long the status lasts in milliseconds (defaults to nil for permanent)
+  - `source_id`: Alias for caster_id for backward compatibility (defaults to nil)
+  - `state`: Custom state data for complex statuses (defaults to empty map)
+  - `phase`: Current phase for multi-phase status effects (defaults to nil)
+  """
+  @type status_params :: [
+          val1: integer(),
+          val2: integer(),
+          val3: integer(),
+          val4: integer(),
+          tick: integer(),
+          flag: integer(),
+          caster_id: integer() | nil,
+          duration: integer() | nil,
+          source_id: integer() | nil,
+          state: map(),
+          phase: atom() | nil
+        ]
+
   @type t :: %__MODULE__{
           type: atom(),
           val1: integer(),
@@ -154,4 +180,55 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
   """
   @spec tick_due?(t(), integer()) :: boolean()
   def tick_due?(%__MODULE__{next_tick_at: next_tick_at}, now_ms), do: next_tick_at <= now_ms
+
+  @doc """
+  Extracts status parameters from a keyword list with defaults.
+
+  This is a helper function for the refactored apply_status functions
+  to convert keyword lists to individual parameter values.
+  """
+  @spec extract_params(status_params()) :: {
+          val1 :: integer(),
+          val2 :: integer(),
+          val3 :: integer(),
+          val4 :: integer(),
+          tick :: integer(),
+          flag :: integer(),
+          caster_id :: integer() | nil,
+          duration :: integer() | nil,
+          state :: map(),
+          phase :: atom() | nil
+        }
+  def extract_params(status_params \\ []) do
+    defaults = [
+      val1: 0,
+      val2: 0,
+      val3: 0,
+      val4: 0,
+      tick: 0,
+      flag: 0,
+      caster_id: nil,
+      duration: nil,
+      state: %{},
+      phase: nil
+    ]
+
+    params = Keyword.merge(defaults, status_params)
+
+    # Handle source_id as alias for caster_id for backward compatibility
+    caster_id = params[:caster_id] || params[:source_id]
+
+    {
+      params[:val1],
+      params[:val2],
+      params[:val3],
+      params[:val4],
+      params[:tick],
+      params[:flag],
+      caster_id,
+      params[:duration],
+      params[:state],
+      params[:phase]
+    }
+  end
 end

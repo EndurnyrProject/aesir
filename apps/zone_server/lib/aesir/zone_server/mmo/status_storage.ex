@@ -30,48 +30,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   - unit_type: Type of unit (:player, :mob, :npc, etc.)
   - unit_id: The ID of the unit receiving the status
   - status_type: The type of status effect to apply (atom)
-  - val1-val4: Status-specific values
-  - tick: Tick interval in ms
-  - flag: Status flags
-  - duration: Duration in ms (nil for permanent)
-  - source_id: Entity that applied the status
-  - state: Custom state data
-  - phase: Current phase
+  - status_params: Keyword list containing status parameters
 
   ## Returns
   :ok
   """
-  @spec apply_status(
-          unit_type(),
-          integer(),
-          atom(),
-          integer(),
-          integer(),
-          integer(),
-          integer(),
-          integer(),
-          integer(),
-          integer() | nil,
-          integer() | nil,
-          map() | nil,
-          atom() | nil
-        ) :: :ok
-  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
-  def apply_status(
-        unit_type,
-        unit_id,
-        status_type,
-        val1,
-        val2,
-        val3,
-        val4,
-        tick,
-        flag,
-        duration \\ nil,
-        source_id \\ nil,
-        state \\ %{},
-        phase \\ nil
-      ) do
+  @spec apply_status(unit_type(), integer(), atom(), StatusEntry.status_params()) :: :ok
+  def apply_status(unit_type, unit_id, status_type, status_params \\ []) do
+    # Extract parameters from keyword list with defaults
+    {val1, val2, val3, val4, tick, flag, caster_id, duration, state, phase} =
+      StatusEntry.extract_params(status_params)
+
     # Create status instance as a struct
     now_ms = System.monotonic_time(:millisecond)
     tick_interval = if tick > 0, do: tick, else: 1000
@@ -93,7 +62,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
       val4: val4,
       tick: tick,
       flag: flag,
-      source_id: source_id || unit_id,
+      source_id: caster_id || unit_id,
       state: state || %{},
       phase: phase,
       started_at: System.system_time(:millisecond),

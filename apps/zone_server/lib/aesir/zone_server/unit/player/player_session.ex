@@ -118,20 +118,17 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @doc """
   Applies a status effect to the player.
   Delegates to the StatusEffect.Interpreter and triggers stats recalculation.
+
+  ## Parameters
+  - pid: Player session process ID
+  - status_id: The status effect ID
+  - status_params: Keyword list containing status parameters
+
+  ## Returns
+  :ok | {:error, atom()}
   """
-  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
-  def apply_status(
-        pid,
-        status_id,
-        val1 \\ 0,
-        val2 \\ 0,
-        val3 \\ 0,
-        val4 \\ 0,
-        tick \\ 0,
-        flag \\ 0,
-        caster_id \\ nil
-      ) do
-    GenServer.call(pid, {:apply_status, status_id, val1, val2, val3, val4, tick, flag, caster_id})
+  def apply_status(pid, status_id, status_params \\ []) do
+    GenServer.call(pid, {:apply_status, status_id, status_params})
   end
 
   @doc """
@@ -351,22 +348,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
-  def handle_call(
-        {:apply_status, status_id, val1, val2, val3, val4, tick, flag, caster_id},
-        _from,
-        state
-      ) do
-    StatusManager.handle_apply_status(
-      status_id,
-      val1,
-      val2,
-      val3,
-      val4,
-      tick,
-      flag,
-      caster_id,
-      state
-    )
+  def handle_call({:apply_status, status_id, status_params}, _from, state) do
+    StatusManager.handle_apply_status(status_id, status_params, state)
   end
 
   @impl true

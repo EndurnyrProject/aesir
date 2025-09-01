@@ -16,39 +16,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
 
   ## Parameters
     - status_id: The status effect ID
-    - val1-val4: Status effect parameters
-    - tick: Tick duration
-    - flag: Status flags
-    - caster_id: ID of the entity that applied the status
+    - status_params: Keyword list containing status parameters
     - state: The player session state
     
   ## Returns
     - {:reply, :ok, updated_state} - Success with stat recalculation
     - {:reply, {:error, reason}, state} - Failure (e.g., immunity)
   """
-  def handle_apply_status(
-        status_id,
-        val1,
-        val2,
-        val3,
-        val4,
-        tick,
-        flag,
-        caster_id,
-        %{character: character} = state
-      ) do
-    case Interpreter.apply_status(
-           :player,
-           character.id,
-           status_id,
-           val1,
-           val2,
-           val3,
-           val4,
-           tick,
-           flag,
-           caster_id
-         ) do
+  def handle_apply_status(status_id, status_params, %{character: character} = state) do
+    case Interpreter.apply_status(:player, character.id, status_id, status_params) do
       :ok ->
         # Recalculate stats with status effects
         updated_stats = Stats.calculate_stats(state.game_state.stats, character.id)

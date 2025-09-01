@@ -33,35 +33,25 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   @doc """
   Apply a status effect to a target.
+
+  ## Parameters
+  - unit_type: Type of unit (:player, :mob, :npc, etc.)
+  - unit_id: The ID of the unit receiving the status
+  - status_id: The type of status effect to apply (atom)
+  - status_params: Keyword list containing status parameters
+
+  ## Returns
+  :ok | {:error, atom()}
   """
-  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
   @type unit_type :: Entity.unit_type()
 
-  @spec apply_status(
-          unit_type(),
-          integer(),
-          atom(),
-          integer(),
-          integer(),
-          integer(),
-          integer(),
-          integer(),
-          integer(),
-          integer() | nil
-        ) :: :ok | {:error, atom()}
-  # credo:disable-for-next-line /FunctionArity|CyclomaticComplexity/
-  def apply_status(
-        unit_type,
-        unit_id,
-        status_id,
-        val1 \\ 0,
-        val2 \\ 0,
-        val3 \\ 0,
-        val4 \\ 0,
-        tick \\ 0,
-        flag \\ 0,
-        caster_id \\ nil
-      ) do
+  @spec apply_status(unit_type(), integer(), atom(), StatusEntry.status_params()) ::
+          :ok | {:error, atom()}
+  def apply_status(unit_type, unit_id, status_id, status_params \\ []) do
+    # Extract parameters from keyword list with defaults
+    {val1, val2, val3, val4, tick, flag, caster_id, _duration, state, phase} =
+      StatusEntry.extract_params(status_params)
+
     case Registry.get_definition(status_id) do
       nil ->
         Logger.warning("Unknown status effect: #{status_id}")
@@ -94,8 +84,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
           # Check if status is resisted
           if Resistance.roll_success(success_rate) do
             # Create initial state and phase
-            initial_state = definition[:instance_state] || %{}
-            initial_phase = if definition[:phases], do: :wait, else: nil
+            initial_state = Map.merge(definition[:instance_state] || %{}, state)
+            initial_phase = phase || (if definition[:phases], do: :wait, else: nil)
 
             # Create temporary instance for context building
             now_ms = System.monotonic_time(:millisecond)
@@ -124,24 +114,22 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
             # credo:disable-for-next-line Credo.Check.Refactor.Nesting
             case ActionExecutor.execute_hooks(definition[:on_apply], unit_id, instance, context) do
               {:ok, new_instance} ->
-                # Use the adjusted duration from resistance calculations
-                duration = adjusted_duration
 
                 # Store in StatusStorage with state and phase
-                StatusStorage.apply_status(
-                  unit_type,
-                  unit_id,
-                  status_id,
-                  val1,
-                  val2,
-                  val3,
-                  val4,
-                  tick,
-                  flag,
-                  duration,
-                  caster_id,
-                  new_instance.state || %{},
-                  new_instance.phase
+                updated_params = [
+                  val1: val1,
+                  val2: val2,
+                  val3: val3,
+                  val4: val4,
+                  tick: tick,
+                  flag: flag,
+                  duration: adjusted_duration,
+                  caster_id: caster_id,
+                  state: new_instance.state || %{},
+                  phase: new_instance.phase
+                ]
+
+                StatusStorage.apply_status(unit_type, unit_id, status_id, updated_params
                 )
 
                 :ok

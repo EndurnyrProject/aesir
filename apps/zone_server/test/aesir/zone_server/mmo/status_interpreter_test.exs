@@ -58,7 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
 
   describe "apply_status/9" do
     test "applies stone status with initial wait phase", %{player_id: player_id} do
-      assert :ok = Interpreter.apply_status(:player, player_id, :sc_stone, 1, 0, 0, 0, 10_000, 0)
+      assert :ok = Interpreter.apply_status(:player, player_id, :sc_stone, [val1: 1, tick: 10_000])
 
       # Check status was stored
       assert StatusStorage.has_status?(:player, player_id, :sc_stone)
@@ -69,7 +69,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
     end
 
     test "applies freeze status with defense penalties", %{player_id: player_id} do
-      assert :ok = Interpreter.apply_status(:player, player_id, :sc_freeze, 1, 0, 0, 0, 5000, 0)
+      assert :ok = Interpreter.apply_status(:player, player_id, :sc_freeze, [val1: 1, tick: 5000])
 
       # Get modifiers
       modifiers = Interpreter.get_all_modifiers(:player, player_id)
@@ -84,7 +84,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
     end
 
     test "applies poison status with DoT configuration", %{player_id: player_id} do
-      assert :ok = Interpreter.apply_status(:player, player_id, :sc_poison, 5, 0, 0, 0, 60_000, 0)
+      assert :ok = Interpreter.apply_status(:player, player_id, :sc_poison, [val1: 5, tick: 60_000])
 
       status = StatusStorage.get_status(:player, player_id, :sc_poison)
       assert status != nil
@@ -95,7 +95,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
     end
 
     test "applies curse status with stat penalties", %{player_id: player_id} do
-      assert :ok = Interpreter.apply_status(:player, player_id, :sc_curse, 1, 0, 0, 0, 30_000, 0)
+      assert :ok = Interpreter.apply_status(:player, player_id, :sc_curse, [val1: 1, tick: 30_000])
 
       modifiers = Interpreter.get_all_modifiers(:player, player_id)
 
@@ -108,7 +108,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
     end
 
     test "applies stun status with action prevention flags", %{player_id: player_id} do
-      assert :ok = Interpreter.apply_status(:player, player_id, :sc_stun, 1, 0, 0, 0, 3000, 0)
+      assert :ok = Interpreter.apply_status(:player, player_id, :sc_stun, [val1: 1, tick: 3000])
 
       # Stun has no modifiers, just flags
       modifiers = Interpreter.get_all_modifiers(:player, player_id)
@@ -119,7 +119,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
     end
 
     test "applies blind status with accuracy penalties", %{player_id: player_id} do
-      assert :ok = Interpreter.apply_status(:player, player_id, :sc_blind, 1, 0, 0, 0, 30_000, 0)
+      assert :ok = Interpreter.apply_status(:player, player_id, :sc_blind, [val1: 1, tick: 30_000])
 
       modifiers = Interpreter.get_all_modifiers(:player, player_id)
       assert modifiers[:hit] == -25
@@ -129,7 +129,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
     test "applies provoke with dynamic values", %{player_id: player_id} do
       # val2 = ATK%, val3 = DEF%
       assert :ok =
-               Interpreter.apply_status(:player, player_id, :sc_provoke, 1, 30, 50, 0, 10_000, 0)
+               Interpreter.apply_status(:player, player_id, :sc_provoke, [val1: 1, val2: 30, val3: 50, tick: 10_000])
 
       modifiers = Interpreter.get_all_modifiers(:player, player_id)
 
@@ -145,7 +145,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
 
     @tag :skip
     test "applies endure with MDEF bonus", %{player_id: player_id} do
-      assert :ok = Interpreter.apply_status(:player, player_id, :sc_endure, 5, 0, 0, 0, 30_000, 0)
+      assert :ok = Interpreter.apply_status(:player, player_id, :sc_endure, [val1: 5, tick: 30_000])
 
       modifiers = Interpreter.get_all_modifiers(:player, player_id)
       # MDEF bonus based on val1
@@ -159,7 +159,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
 
     test "applies bleeding with regeneration block", %{player_id: player_id} do
       assert :ok =
-               Interpreter.apply_status(:player, player_id, :sc_bleeding, 5, 0, 0, 0, 120_000, 0)
+               Interpreter.apply_status(:player, player_id, :sc_bleeding, [val1: 5, tick: 120_000])
 
       modifiers = Interpreter.get_all_modifiers(:player, player_id)
       assert modifiers[:hp_regen] == -100
@@ -168,8 +168,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
 
     test "multiple statuses stack modifiers correctly", %{player_id: player_id} do
       # Apply multiple statuses
-      assert :ok = Interpreter.apply_status(:player, player_id, :sc_curse, 1, 0, 0, 0, 30_000, 0)
-      assert :ok = Interpreter.apply_status(:player, player_id, :sc_blind, 1, 0, 0, 0, 30_000, 0)
+      assert :ok = Interpreter.apply_status(:player, player_id, :sc_curse, [val1: 1, tick: 30_000])
+      assert :ok = Interpreter.apply_status(:player, player_id, :sc_blind, [val1: 1, tick: 30_000])
 
       # Get combined modifiers
       modifiers = Interpreter.get_all_modifiers(:player, player_id)
@@ -187,7 +187,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
   describe "remove_status/2" do
     test "removes status and clears modifiers", %{player_id: player_id} do
       # Apply status
-      assert :ok = Interpreter.apply_status(:player, player_id, :sc_curse, 1, 0, 0, 0, 30_000, 0)
+      assert :ok = Interpreter.apply_status(:player, player_id, :sc_curse, [val1: 1, tick: 30_000])
       assert StatusStorage.has_status?(:player, player_id, :sc_curse)
 
       # Remove status
@@ -202,7 +202,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
 
   describe "process_tick/2" do
     test "processes tick for poison status", %{player_id: player_id} do
-      assert :ok = Interpreter.apply_status(:player, player_id, :sc_poison, 5, 0, 0, 0, 60_000, 0)
+      assert :ok = Interpreter.apply_status(:player, player_id, :sc_poison, [val1: 5, tick: 60_000])
 
       # Process a tick
       assert :ok = Interpreter.process_tick(:player, player_id, :sc_poison)
@@ -212,7 +212,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
     end
 
     test "handles phase transition for stone status", %{player_id: player_id} do
-      assert :ok = Interpreter.apply_status(:player, player_id, :sc_stone, 1, 0, 0, 0, 10_000, 0)
+      assert :ok = Interpreter.apply_status(:player, player_id, :sc_stone, [val1: 1, tick: 10_000])
 
       # Initial phase should be wait
       status = StatusStorage.get_status(:player, player_id, :sc_stone)
@@ -234,7 +234,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
 
   describe "on_damage/2" do
     test "removes sleep status on damage", %{player_id: player_id} do
-      assert :ok = Interpreter.apply_status(:player, player_id, :sc_sleep, 1, 0, 0, 0, 30_000, 0)
+      assert :ok = Interpreter.apply_status(:player, player_id, :sc_sleep, [val1: 1, tick: 30_000])
       assert StatusStorage.has_status?(:player, player_id, :sc_sleep)
 
       # Trigger damage event
@@ -286,12 +286,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
                  :player,
                  player_id,
                  :sc_arcane_charge,
-                 1,
-                 0,
-                 0,
-                 0,
-                 60_000,
-                 0
+                 [val1: 1, tick: 60_000]
                )
 
       # Check initial state
@@ -310,12 +305,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
                  :player,
                  player_id,
                  :sc_poisonreact,
-                 10,
-                 0,
-                 0,
-                 0,
-                 120_000,
-                 0
+                 [val1: 10, tick: 120_000]
                )
 
       status = StatusStorage.get_status(:player, player_id, :sc_poisonreact)
@@ -325,7 +315,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
 
     test "deadly poison has conditional tick", %{player_id: player_id} do
       assert :ok =
-               Interpreter.apply_status(:player, player_id, :sc_dpoison, 1, 0, 0, 0, 60_000, 0)
+               Interpreter.apply_status(:player, player_id, :sc_dpoison, [val1: 1, tick: 60_000])
 
       modifiers = Interpreter.get_all_modifiers(:player, player_id)
       assert modifiers[:hp_regen] == -100
