@@ -512,7 +512,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       state = %{
         character: character,
         game_state: PlayerState.new(character),
-        connection_pid: self()
+        connection_pid: self(),
+        connection_monitor_ref: make_ref()
       }
 
       :ok = PlayerSession.terminate(:normal, state)
@@ -533,7 +534,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       state = %{
         character: character,
         game_state: PlayerState.new(character),
-        connection_pid: dead_pid
+        connection_pid: dead_pid,
+        connection_monitor_ref: make_ref()
       }
 
       :ok = PlayerSession.terminate(:normal, state)
@@ -560,7 +562,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       state = %{
         character: character,
         game_state: PlayerState.new(character),
-        connection_pid: self()
+        connection_pid: self(),
+        connection_monitor_ref: make_ref()
       }
 
       # Call terminate directly to test the broadcast
@@ -580,6 +583,32 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
       # Stop the test GenServer
       GenServer.stop(other_pid, :normal)
+    end
+
+    test "handles connection process death via :DOWN message", %{character: character} do
+      # Start a process that will die
+      connection_pid = spawn(fn -> :timer.sleep(100) end)
+
+      # Initialize player session
+      {:ok, state} =
+        PlayerSession.init(%{
+          character: character,
+          connection_pid: connection_pid
+        })
+
+      # Verify the monitor reference was created
+      assert is_reference(state.connection_monitor_ref)
+      assert state.connection_pid == connection_pid
+
+      # Kill the connection process
+      Process.exit(connection_pid, :kill)
+
+      # Simulate receiving the :DOWN message
+      {:stop, :normal, _new_state} =
+        PlayerSession.handle_info(
+          {:DOWN, state.connection_monitor_ref, :process, connection_pid, :killed},
+          state
+        )
     end
   end
 

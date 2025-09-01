@@ -163,10 +163,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       {:ok, updated_game_state} ->
         final_game_state = PlayerState.set_process_pid(updated_game_state, self())
 
+        # Monitor the connection process to detect crashes
+        connection_monitor_ref = Process.monitor(connection_pid)
+
         state = %{
           character: character,
           game_state: final_game_state,
-          connection_pid: connection_pid
+          connection_pid: connection_pid,
+          connection_monitor_ref: connection_monitor_ref
         }
 
         register_player(character.id, character.account_id, character.name)
@@ -213,6 +217,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_info(:connection_closed, %{character: character} = state) do
     Logger.info("Player #{character.id} connection closed")
+    {:stop, :normal, state}
+  end
+
+  @impl true
+  def handle_info({:DOWN, _ref, :process, _pid, _reason}, %{character: character} = state) do
+    Logger.info("Player #{character.id} connection process died")
     {:stop, :normal, state}
   end
 
@@ -371,9 +381,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   def terminate(_reason, %{
         character: character,
         game_state: _game_state,
-        connection_pid: connection_pid
+        connection_pid: connection_pid,
+        connection_monitor_ref: connection_monitor_ref
       }) do
-    # Broadcast vanish packet to all visible players before cleanup
+    Process.demonitor(connection_monitor_ref, [:flush])
     broadcast_vanish_on_disconnect(character)
 
     # Clean up player data
