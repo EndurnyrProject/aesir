@@ -7,7 +7,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   """
 
   use GenServer
-  require Logger
 
   alias Aesir.ZoneServer.Constants.ObjectType
   alias Aesir.ZoneServer.Map.Coordinator
@@ -106,10 +105,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     # Schedule first AI tick
     schedule_ai_tick()
 
-    Logger.debug(
-      "Started mob session for #{updated_state.mob_data.name} (ID: #{updated_state.instance_id})"
-    )
-
     {:ok, updated_state}
   end
 
@@ -147,7 +142,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   @impl GenServer
   def handle_cast({:move_to, x, y}, state) do
-    # Don't start new movement if already moving
     if state.movement_state == :moving do
       {:noreply, state}
     else
@@ -158,14 +152,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
                {state.x, state.y},
                {x, y}
              ) do
-        # Simplify path to reduce computation
-        simplified_path = Pathfinding.simplify_path(path)
+        updated_state = MobState.set_path(state, path)
 
-        # Set the movement path
-        updated_state = MobState.set_path(state, simplified_path)
-
-        # Schedule first movement tick
-        Process.send_after(self(), :movement_tick, 100)
+        # Schedule first movement tick immediately to start movement
+        Process.send_after(self(), :movement_tick, 0)
 
         {:noreply, updated_state}
       else
@@ -173,12 +163,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
           # Already at destination
           {:noreply, state}
 
-        {:error, reason} ->
+        {:error, _reason} ->
           # No path found or map not loaded
-          Logger.warning(
-            "Movement failed for mob #{state.mob_data.name} (ID: #{state.instance_id}): #{inspect(reason)}"
-          )
-
           {:noreply, state}
       end
     end
@@ -224,11 +210,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   @impl GenServer
   def terminate(_reason, state) do
-    # Clean up spatial index registration
     SpatialIndex.remove_unit(:mob, state.instance_id)
-
-    Logger.debug("Stopped mob session for #{state.mob_data.name} (ID: #{state.instance_id})")
-
     :ok
   end
 
@@ -241,8 +223,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   defp handle_death(state) do
-    Logger.info("Mob #{state.mob_data.name} (ID: #{state.instance_id}) died")
-
     # Mark as dead
     updated_state = MobState.set_dead(state)
 
@@ -271,51 +251,46 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   defp process_movement_tick(%{movement_state: :moving} = state) do
-    # Calculate movement budget like player system
-    elapsed = System.system_time(:millisecond) - state.walk_start_time
-    total_movement_budget = MovementEngine.calculate_movement_budget(elapsed, state.walk_speed)
-    new_movement_budget = total_movement_budget - state.path_progress
+    case state.walk_path do
+      [] ->
+        # No more path, stop moving
+        MobState.stop_movement(state)
 
-    # Consume path based on movement budget
-    {new_x, new_y, remaining_path, consumed} =
-      MovementEngine.consume_path_with_budget(
-        state.x,
-        state.y,
-        state.walk_path,
-        new_movement_budget
-      )
+      [{next_x, next_y} | remaining_path] ->
+        # Calculate movement cost for this step
+        move_cost = MovementEngine.get_movement_cost({state.x, state.y}, {next_x, next_y})
 
-    # Update position and state if moved
-    updated_state =
-      if new_x != state.x or new_y != state.y do
+        # Calculate timer interval based on movement cost
+        # Diagonal movement takes 1.414x longer
+        interval = round(state.walk_speed * move_cost)
+
         # Update spatial index
         :ok =
-          SpatialIndex.update_unit_position(:mob, state.instance_id, new_x, new_y, state.map_name)
+          SpatialIndex.update_unit_position(
+            :mob,
+            state.instance_id,
+            next_x,
+            next_y,
+            state.map_name
+          )
 
-        # Update mob state
+        # Update mob state FIRST
         updated_state =
           state
-          |> MobState.update_position(new_x, new_y)
+          |> MobState.update_position(next_x, next_y)
           |> Map.put(:walk_path, remaining_path)
-          |> Map.put(:path_progress, state.path_progress + consumed)
 
-        # Notify nearby players of movement
-        notify_movement(updated_state, {state.x, state.y}, {new_x, new_y})
-        updated_state
-      else
-        # No position change, just update path and progress
-        state
-        |> Map.put(:walk_path, remaining_path)
-        |> Map.put(:path_progress, state.path_progress + consumed)
-      end
+        # Send movement packet with updated state
+        notify_movement(updated_state, {state.x, state.y}, {next_x, next_y})
 
-    # Continue movement if more path remaining
-    if remaining_path != [] do
-      Process.send_after(self(), :movement_tick, 100)
-      updated_state
-    else
-      # Path completed, stop movement
-      MobState.stop_movement(updated_state)
+        # Schedule next movement tick with appropriate interval
+        if remaining_path != [] do
+          Process.send_after(self(), :movement_tick, interval)
+          updated_state
+        else
+          # Path completed, stop movement
+          MobState.stop_movement(updated_state)
+        end
     end
   end
 

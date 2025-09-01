@@ -34,8 +34,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     field :movement_state, movement_state(), default: :standing
     field :walk_path, list(), default: []
     field :walk_speed, integer(), default: 200
-    field :walk_start_time, integer(), default: nil
-    field :path_progress, float(), default: 0.0
     field :target_position, {integer(), integer()}, default: nil
 
     # AI state machine
@@ -95,8 +93,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     }
   end
 
-  # Entity Behaviour Implementation
-
   @impl Entity
   def get_race(%__MODULE__{mob_data: mob_data}) do
     mob_data.race
@@ -113,7 +109,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
 
   @impl Entity
   def is_boss?(%__MODULE__{mob_data: mob_data}) do
-    # Check if mob has boss mode flag
     :boss in (mob_data.modes || [])
   end
 
@@ -219,17 +214,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       %{
         state
         | walk_path: path,
-          movement_state: :moving,
-          walk_start_time: System.system_time(:millisecond),
-          path_progress: 0.0
+          movement_state: :moving
       }
     else
       %{
         state
         | walk_path: path,
-          movement_state: :standing,
-          walk_start_time: nil,
-          path_progress: 0.0
+          movement_state: :standing
       }
     end
   end
@@ -243,8 +234,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       state
       | walk_path: [],
         movement_state: :standing,
-        walk_start_time: nil,
-        path_progress: 0.0,
         target_position: nil,
         last_movement_end_time: System.system_time(:millisecond)
     }

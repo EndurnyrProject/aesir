@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Pathfinding
+  alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
@@ -91,8 +92,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   end
 
   @doc """
-  Calculates movement toward a target position using pathfinding.
-  Returns updated MobState with path set if needed.
+  Initiates movement toward a target position.
   """
   @spec move_toward(MobState.t(), integer(), integer()) :: MobState.t()
   def move_toward(%MobState{} = state, target_x, target_y) do
@@ -108,38 +108,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
         state
 
       true ->
-        case MapCache.get(state.map_name) do
-          {:ok, map_data} ->
-            case Pathfinding.find_path(map_data, {state.x, state.y}, {target_x, target_y}) do
-              {:ok, [_ | _] = path} ->
-                # Simplify path to reduce computation
-                simplified_path = Pathfinding.simplify_path(path)
-                updated_state = MobState.set_path(state, simplified_path)
-
-                # Schedule first movement tick if we have a process_pid
-                if updated_state.process_pid do
-                  Process.send_after(
-                    updated_state.process_pid,
-                    :movement_tick,
-                    100
-                  )
-                end
-
-                updated_state
-
-              {:ok, []} ->
-                # Already at destination
-                state
-
-              {:error, _reason} ->
-                # No path found, stop movement
-                MobState.stop_movement(state)
-            end
-
-          {:error, _reason} ->
-            # Map not loaded, can't move
-            MobState.stop_movement(state)
+        if state.process_pid do
+          MobSession.move_to(state.process_pid, target_x, target_y)
         end
+
+        state
     end
   end
 
@@ -172,16 +145,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
     abs(state.x - spawn_x) <= 2 and abs(state.y - spawn_y) <= 2
   end
 
-  # Private Functions
-
   defp process_idle(state) do
-    # Check for nearby enemies if aggressive
     result = check_aggro(state)
 
     if result.ai_state != state.ai_state do
       result
     else
-      # No aggro detected, do idle movement behavior
       do_idle_movement(result)
     end
   end
@@ -355,7 +324,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
     # Check if we can attempt idle movement
     can_move = state.movement_state == :standing
-    random_chance = :rand.uniform(100) <= 20
+    random_value = :rand.uniform(100)
+    random_chance = random_value <= 20
 
     enough_time_passed =
       state.last_idle_movement_time == nil or

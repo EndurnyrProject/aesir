@@ -314,13 +314,13 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     case MobDataLoader.get_mob(spawn_config.mob_id) do
       {:ok, mob_data} ->
         # Create mob state with .gat suffix for client compatibility
-        map_name_with_gat = 
+        map_name_with_gat =
           if String.ends_with?(state.map_name, ".gat") do
             state.map_name
           else
             state.map_name <> ".gat"
           end
-        
+
         mob_state = MobState.new(instance_id, mob_data, spawn_config, map_name_with_gat, x, y)
 
         # Spawn mob session under supervisor

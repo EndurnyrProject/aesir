@@ -18,17 +18,19 @@ defmodule Aesir.ZoneServer.Unit.MovementEngine do
   @doc """
   Calculates movement budget based on elapsed time and walk speed.
 
+  Walk Speed is milliseconds per cell (RO convention)
+  So cells covered = elapsed_ms / walk_speed
+
   ## Parameters
     - elapsed_ms: Time elapsed since movement started (milliseconds)
-    - walk_speed: Entity's walk speed (higher = faster)
+    - walk_speed: Entity's walk speed in ms per cell (higher = slower, following RO convention)
     
   ## Returns
     - Movement budget (float) representing how much distance can be covered
   """
   @spec calculate_movement_budget(integer(), integer()) :: movement_budget()
   def calculate_movement_budget(elapsed_ms, walk_speed) do
-    cells_per_ms = 1.0 / walk_speed
-    elapsed_ms * cells_per_ms
+    elapsed_ms / walk_speed
   end
 
   @doc """
@@ -86,8 +88,6 @@ defmodule Aesir.ZoneServer.Unit.MovementEngine do
   """
   @spec diagonal_cost() :: float()
   def diagonal_cost, do: @diagonal_cost
-
-  # Private implementation
 
   defp do_consume_path(x, y, [], _budget, consumed) do
     {x, y, [], consumed}
