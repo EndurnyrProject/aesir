@@ -7,12 +7,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   require Logger
 
   alias Aesir.Commons.StatusParams
-  alias Aesir.ZoneServer.Packets.ZcAckReqname
+  alias Aesir.ZoneServer.Packets.ZcAckReqnameall
   alias Aesir.ZoneServer.Packets.ZcEquipitemList
   alias Aesir.ZoneServer.Packets.ZcLongparChange
   alias Aesir.ZoneServer.Packets.ZcNormalItemlist
   alias Aesir.ZoneServer.Packets.ZcNotifyTime
   alias Aesir.ZoneServer.Packets.ZcParChange
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
   Processes an incoming packet for a player session.
@@ -95,28 +96,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     {:noreply, state}
   end
 
-  # CZ_REQNAME_BYGID - Client requesting character name by GID
   def handle_packet(
         0x0368,
         packet_data,
         %{character: character, connection_pid: connection_pid} = state
       ) do
-    Logger.debug("Player #{character.id} requesting name for char_id: #{packet_data.char_id}")
-
-    # For now, if it's the player's own account ID, send their name
-    # TODO: Look up other players' names from ETS or database
     name =
       if packet_data.char_id == character.account_id do
         character.name
       else
-        # Try to look up other players
-        # For now, just return empty
-        ""
+        case find_player_name_by_account_id(packet_data.char_id) do
+          {:ok, player_name} -> player_name
+          {:error, :not_found} -> ""
+        end
       end
 
-    packet = %ZcAckReqname{
-      char_id: packet_data.char_id,
-      name: name
+    packet = %ZcAckReqnameall{
+      gid: packet_data.char_id,
+      name: name,
+      party_name: "",
+      guild_name: "",
+      position_name: ""
     }
 
     send(connection_pid, {:send_packet, packet})
@@ -125,7 +125,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
 
   # CZ_REQUEST_MOVE - Player movement request
   def handle_packet(0x035F, packet_data, state) do
-    # Delegate to movement handling via cast
     GenServer.cast(self(), {:request_move, packet_data.dest_x, packet_data.dest_y})
     {:noreply, state}
   end
@@ -196,5 +195,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     # Send equipped items
     equipitem_list = ZcEquipitemList.from_inventory_items(inventory_items)
     send(connection_pid, {:send_packet, equipitem_list})
+  end
+
+  defp find_player_name_by_account_id(account_id) do
+    # Use efficient reverse lookup to find character ID from account ID
+    case UnitRegistry.get_char_id_by_account(account_id) do
+      {:ok, char_id} ->
+        # Found the character, get the name
+        UnitRegistry.get_player_name(char_id)
+
+      {:error, :not_found} ->
+        {:error, :not_found}
+    end
   end
 end

@@ -166,13 +166,16 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
   Registers a player unit in the registry.
 
   This is a convenience function specifically for player units that stores
-  the account_id in the state for compatibility with existing code.
+  the account_id and character name in the state for easy lookup.
   """
-  @spec register_player(unit_id(), integer(), pid()) :: :ok
-  def register_player(char_id, account_id, pid) do
-    # Store account_id in state for compatibility
-    state = %{account_id: account_id}
+  @spec register_player(unit_id(), integer(), String.t(), pid()) :: :ok
+  def register_player(char_id, account_id, char_name, pid) do
+    # Store account_id and char_name in state for name lookups
+    state = %{account_id: account_id, char_name: char_name}
     register_unit(:player, char_id, __MODULE__, state, pid)
+
+    # Also create a reverse lookup index for account_id -> char_id
+    :ets.insert(table_for(:unit_registry), {{:account_index, account_id}, char_id})
   end
 
   @doc """
@@ -209,13 +212,73 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
   end
 
   @doc """
+  Gets a player's character name from the registry.
+
+  Returns {:ok, char_name} or {:error, :not_found}
+  """
+  @spec get_player_name(unit_id()) :: {:ok, String.t()} | {:error, :not_found}
+  def get_player_name(char_id) do
+    case get_unit(:player, char_id) do
+      {:ok, {_module, %{char_name: char_name}, _pid}} ->
+        {:ok, char_name}
+
+      {:ok, _} ->
+        {:error, :not_found}
+
+      {:error, :not_found} ->
+        {:error, :not_found}
+    end
+  end
+
+  @doc """
+  Gets a player's account_id from the registry.
+
+  Returns {:ok, account_id} or {:error, :not_found}
+  """
+  @spec get_player_account_id(unit_id()) :: {:ok, integer()} | {:error, :not_found}
+  def get_player_account_id(char_id) do
+    case get_unit(:player, char_id) do
+      {:ok, {_module, %{account_id: account_id}, _pid}} ->
+        {:ok, account_id}
+
+      {:ok, _} ->
+        {:error, :not_found}
+
+      {:error, :not_found} ->
+        {:error, :not_found}
+    end
+  end
+
+  @doc """
   Unregisters a player from the registry.
 
   This is a convenience function for player units.
   """
   @spec unregister_player(unit_id()) :: :ok
   def unregister_player(char_id) do
+    # Get account_id before removing to clean up the reverse index
+    case get_player_account_id(char_id) do
+      {:ok, account_id} ->
+        :ets.delete(table_for(:unit_registry), {:account_index, account_id})
+
+      {:error, :not_found} ->
+        :ok
+    end
+
     unregister_unit(:player, char_id)
+  end
+
+  @doc """
+  Gets a character ID from account ID using the reverse lookup index.
+
+  Returns {:ok, char_id} or {:error, :not_found}
+  """
+  @spec get_char_id_by_account(integer()) :: {:ok, unit_id()} | {:error, :not_found}
+  def get_char_id_by_account(account_id) do
+    case :ets.lookup(table_for(:unit_registry), {:account_index, account_id}) do
+      [{{:account_index, ^account_id}, char_id}] -> {:ok, char_id}
+      [] -> {:error, :not_found}
+    end
   end
 
   @doc """

@@ -169,7 +169,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
           connection_pid: connection_pid
         }
 
-        register_player(character.id, character.account_id)
+        register_player(character.id, character.account_id, character.name)
 
         send(self(), :spawn_player)
 
@@ -419,8 +419,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     %{state | game_state: new_game_state}
   end
 
-  defp register_player(char_id, account_id),
-    do: UnitRegistry.register_player(char_id, account_id, self())
+  defp register_player(char_id, account_id, char_name),
+    do: UnitRegistry.register_player(char_id, account_id, char_name, self())
 
   defp sex_to_int("F"), do: 0
   defp sex_to_int("M"), do: 1

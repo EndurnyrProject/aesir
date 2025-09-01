@@ -233,7 +233,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   describe "visibility system" do
     test "player_entered_view requests player info", %{character: character} do
       other_pid = spawn(fn -> :timer.sleep(1000) end)
-      UnitRegistry.register_player(2, 200, other_pid)
+      UnitRegistry.register_player(2, 200, "TestPlayer", other_pid)
 
       state = %{
         character: character,
@@ -503,7 +503,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
   describe "terminate/2" do
     test "cleans up ETS entries and notifies connection", %{character: character} do
-      UnitRegistry.register_player(1, 100, self())
+      UnitRegistry.register_player(1, 100, "TestPlayer", self())
 
       expect(SpatialIndex, :get_visible_players, fn 1 -> [] end)
       expect(SpatialIndex, :remove_player, fn 1 -> :ok end)
@@ -550,7 +550,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
           []
         )
 
-      UnitRegistry.register_player(2, 200, other_pid)
+      UnitRegistry.register_player(2, 200, "TestPlayer", other_pid)
 
       # Set up expectations for SpatialIndex
       expect(SpatialIndex, :get_visible_players, fn 1 -> [2] end)
