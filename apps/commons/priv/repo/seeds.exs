@@ -10,7 +10,7 @@
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
 
-alias Aesir.Commons/Auth
+alias Aesir.Commons.Auth
 
 # Create test accounts for development
 test_accounts = [
@@ -55,7 +55,7 @@ Enum.each(test_accounts, fn attrs ->
         {:error, changeset} ->
           IO.puts("✗ Failed to create account #{attrs.userid}: #{inspect(changeset.errors)}")
       end
-    
+
     _account ->
       IO.puts("- Account #{attrs.userid} already exists")
   end
