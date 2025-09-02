@@ -9,6 +9,8 @@ rathena.xml
 .mnesia
 .memory_bank
 
+apps/zone_server/priv/db/rathena
+
 # direnv
 priv/plts/dialyzer.plt
 priv/plts/dialyzer.plt.hash
