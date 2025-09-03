@@ -10,7 +10,6 @@ defmodule Mix.Tasks.Aesir do
 
   ## Available Tasks
 
-  - `mix aesir.all` - Starts all servers (Account, Character, and Zone)
   - `mix aesir.account` - Starts only the Account Server
   - `mix aesir.char` - Starts only the Character Server
   - `mix aesir.zone` - Starts only the Zone Server
@@ -28,7 +27,6 @@ defmodule Mix.Tasks.Aesir do
 
     Available server tasks:
 
-      mix aesir.all      # Start all servers
       mix aesir.account  # Start only the Account Server (port 6901)
       mix aesir.char     # Start only the Character Server
       mix aesir.zone     # Start only the Zone Server (port 5121)

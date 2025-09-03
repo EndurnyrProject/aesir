@@ -41,23 +41,15 @@ The project is organized into several applications within an umbrella structure,
 
 ### Running the Servers
 
-To start all applications in the umbrella project, you can use:
-
-```bash
-mix aesir.all
-```
-
-Alternatively, you can start individual servers if needed:
-
 ```bash
 # To start the Account Server
-mix aesir.account
+RELEASE_COOKIE=imthecookie iex --name account@127.0.0.1 -S mix aesir.account
 
 # To start the Char Server
-mix aesir.char
+RELEASE_COOKIE=imthecookie iex --name char@127.0.0.1 -S mix aesir.char
 
 # To start the Zone Server
-mix aesir.zone
+RELEASE_COOKIE=imthecookie iex --name zone@127.0.0.1 -S mix aesir.zone
 ```
 
 ## Testing
@@ -76,5 +68,5 @@ mix test apps/account_server
 
 ## Acknowledgents
 
-[rAthena](https://github.com/rathena/rathena) - C/C++ Implementation of the Ragnarok Server
+[rAthena](https://github.com/rathena/rathena) - C/C++ Implementation of the Ragnarok Server  
 [Openkore](https://github.com/OpenKore/openkore) - custom client and intelligent automated assistant for Ragnarok Online.
