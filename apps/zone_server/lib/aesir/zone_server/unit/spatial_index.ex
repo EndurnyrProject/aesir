@@ -53,6 +53,7 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
             if MapSet.size(updated_units_of_type) == 0 do
               updated = Map.delete(units, unit_type)
 
+              # credo:disable-for-next-line Credo.Check.Refactor.Nesting
               if map_size(updated) == 0 do
                 :ets.delete(spatial_index_table(), old_cell)
               else
@@ -108,6 +109,7 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
             if MapSet.size(updated_units_of_type) == 0 do
               updated = Map.delete(units, unit_type)
 
+              # credo:disable-for-next-line Credo.Check.Refactor.Nesting
               if map_size(updated) == 0 do
                 :ets.delete(spatial_index_table(), cell)
               else
@@ -182,6 +184,7 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
             Enum.flat_map(units_map, fn {unit_type, unit_set} ->
               unit_set
               |> MapSet.to_list()
+              # credo:disable-for-next-line Credo.Check.Refactor.Nesting
               |> Enum.map(fn unit_id -> {unit_type, unit_id} end)
             end)
 

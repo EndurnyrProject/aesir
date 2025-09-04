@@ -224,6 +224,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
           target_in_chase_range?(state, target_id) ->
             # Continue chasing - move towards target using pathfinding
+            # credo:disable-for-next-line Credo.Check.Refactor.Nesting
             case SpatialIndex.get_unit_position(:player, target_id) do
               {:ok, {target_x, target_y, map_name}} when map_name == state.map_name ->
                 move_toward(state, target_x, target_y)

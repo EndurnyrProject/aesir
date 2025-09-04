@@ -182,7 +182,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   @impl GenServer
   def handle_info(:ai_tick, state) do
-    unless state.is_dead do
+    if state.is_dead do
+      # Dead mobs don't process AI
+      {:noreply, state}
+    else
       # Process AI logic
       updated_state = process_ai(state)
 
@@ -190,21 +193,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
       schedule_ai_tick()
 
       {:noreply, updated_state}
-    else
-      # Dead mobs don't process AI
-      {:noreply, state}
     end
   end
 
   @impl GenServer
   def handle_info(:movement_tick, state) do
-    unless state.is_dead do
+    if state.is_dead do
+      # Dead mobs don't move
+      {:noreply, state}
+    else
       # Process movement if mob is moving
       updated_state = process_movement_tick(state)
       {:noreply, updated_state}
-    else
-      # Dead mobs don't move
-      {:noreply, state}
     end
   end
 

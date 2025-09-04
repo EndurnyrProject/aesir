@@ -39,8 +39,8 @@ defmodule Aesir.ZoneServer.Mmo.MobManagementTest do
   end
 
   describe "spawn data loading" do
-    test "loads spawn data for prt_fild08" do
-      assert {:ok, spawns} = MobManagement.get_spawns_for_map("prt_fild08")
+    test "loads spawn data for prt_fild01" do
+      assert {:ok, spawns} = MobManagement.get_spawns_for_map("prt_fild01")
       assert length(spawns) > 0
 
       # Check for Poring spawn
@@ -55,7 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagementTest do
     test "loads all spawn data" do
       all_spawns = MobManagement.get_all_spawns()
       assert map_size(all_spawns) > 0
-      assert Map.has_key?(all_spawns, "prt_fild08")
+      assert Map.has_key?(all_spawns, "prt_fild01")
     end
   end
 

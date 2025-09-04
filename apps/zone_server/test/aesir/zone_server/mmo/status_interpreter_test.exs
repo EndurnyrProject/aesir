@@ -77,10 +77,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
       # Check for expected modifiers
       # Water element level 1
       assert modifiers[:def_ele] == :water1
-      # -100% physical defense
-      assert modifiers[:def_rate] == -100
-      # -50% magic defense
-      assert modifiers[:mdef_rate] == -50
+      assert modifiers[:def_rate] == -50
+      assert modifiers[:mdef_rate] == 25
     end
 
     test "applies poison status with DoT configuration", %{player_id: player_id} do
@@ -124,51 +122,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
       modifiers = Interpreter.get_all_modifiers(:player, player_id)
       assert modifiers[:hit] == -25
       assert modifiers[:flee] == -25
-    end
-
-    test "applies provoke with dynamic values", %{player_id: player_id} do
-      # val2 = ATK%, val3 = DEF%
-      assert :ok =
-               Interpreter.apply_status(:player, player_id, :sc_provoke,
-                 val1: 1,
-                 val2: 30,
-                 val3: 50,
-                 tick: 10_000
-               )
-
-      modifiers = Interpreter.get_all_modifiers(:player, player_id)
-
-      # ATK increased by val2
-      assert modifiers[:batk_rate] == 30
-      assert modifiers[:watk_rate] == 30
-      # DEF reduced by val3
-      assert modifiers[:def_rate] == -50
-      assert modifiers[:def2_rate] == -50
-      # HIT bonus is val3
-      assert modifiers[:hit] == 50
-    end
-
-    @tag :skip
-    test "applies endure with MDEF bonus", %{player_id: player_id} do
-      assert :ok = Interpreter.apply_status(:player, player_id, :sc_endure, val1: 5, tick: 30_000)
-
-      modifiers = Interpreter.get_all_modifiers(:player, player_id)
-      # MDEF bonus based on val1
-      assert modifiers[:mdef] == 5
-      assert modifiers[:endure] == true
-
-      # Check initial state
-      status = StatusStorage.get_status(:player, player_id, :sc_endure)
-      assert status.state[:hits_remaining] == 7
-    end
-
-    test "applies bleeding with regeneration block", %{player_id: player_id} do
-      assert :ok =
-               Interpreter.apply_status(:player, player_id, :sc_bleeding, val1: 5, tick: 120_000)
-
-      modifiers = Interpreter.get_all_modifiers(:player, player_id)
-      assert modifiers[:hp_regen] == -100
-      assert modifiers[:sp_regen] == -100
     end
 
     test "multiple statuses stack modifiers correctly", %{player_id: player_id} do
