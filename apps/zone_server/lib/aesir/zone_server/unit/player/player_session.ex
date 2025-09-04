@@ -270,7 +270,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       character: state.character,
       game_state: state.game_state,
       movement_state: state.game_state.movement_state,
-      is_walking: state.game_state.is_walking,
       walk_path: state.game_state.walk_path
     }
 
@@ -453,7 +452,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   defp moving?(game_state) do
     game_state.movement_state == :moving and
-      game_state.is_walking and
       length(game_state.walk_path) > 0
   end
 

@@ -7,7 +7,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   @behaviour Aesir.ZoneServer.Unit.Entity
 
   @type direction :: 0..7
-  @type movement_state :: :just_spawned | :standing | :moving
+  @type movement_state :: :standing | :moving
 
   alias Aesir.ZoneServer.Unit.Entity
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
@@ -25,16 +25,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     :dir,
 
     # Movement state machine
-    # :just_spawned | :standing | :moving
+    # :standing | :moving
     :movement_state,
 
     # Movement state
     :walk_path,
     :walk_speed,
-    :walk_start_time,
-    :is_walking,
-    # Track how much of the path cost we've consumed
-    :path_progress,
 
     # Visibility
     :view_range,
@@ -76,14 +72,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       y: character.last_y,
       dir: 0,
 
-      # Movement state machine - starts as just_spawned
-      movement_state: :just_spawned,
+      # Movement state machine - starts as standing
+      movement_state: :standing,
 
       # Movement defaults
       walk_path: [],
       walk_speed: 150,
-      is_walking: false,
-      path_progress: 0,
 
       # Visibility defaults
       view_range: 14,
@@ -130,13 +124,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       %{
         state
         | walk_path: path,
-          is_walking: true,
-          walk_start_time: System.system_time(:millisecond),
-          path_progress: 0,
           movement_state: :moving
       }
     else
-      %{state | walk_path: path, is_walking: false, path_progress: 0, movement_state: :standing}
+      %{state | walk_path: path, movement_state: :standing}
     end
   end
 
@@ -148,21 +139,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     %{
       state
       | walk_path: [],
-        is_walking: false,
-        walk_start_time: nil,
-        path_progress: 0,
         movement_state: :standing
     }
   end
 
   @doc """
-  Transitions from :just_spawned to :standing.
-  Should be called after initial spawn packets are sent.
+  Mark spawn as complete. No-op now that we start in :standing state.
   """
-  def mark_spawn_complete(%__MODULE__{movement_state: :just_spawned} = state) do
-    %{state | movement_state: :standing}
-  end
-
   def mark_spawn_complete(%__MODULE__{} = state), do: state
 
   @doc """

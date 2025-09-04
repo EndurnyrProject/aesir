@@ -6,11 +6,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
   require Logger
 
+  alias Aesir.ZoneServer.Constants.ObjectType
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Packets.ZcNotifyMoveentry
   alias Aesir.ZoneServer.Packets.ZcNotifyMoveStop
+  alias Aesir.ZoneServer.Packets.ZcNotifyNewentry
   alias Aesir.ZoneServer.Packets.ZcNotifyPlayermove
+  alias Aesir.ZoneServer.Packets.ZcNotifyVanish
   alias Aesir.ZoneServer.Pathfinding
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.MovementEngine
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -27,62 +31,54 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   """
   def handle_movement_tick(state)
 
-  def handle_movement_tick(%{game_state: %{is_walking: false}} = state) do
+  def handle_movement_tick(%{game_state: %{movement_state: :standing}} = state) do
     {:noreply, state}
   end
 
-  def handle_movement_tick(%{game_state: %{is_walking: true, walk_path: []}} = state) do
+  def handle_movement_tick(%{game_state: %{movement_state: :moving, walk_path: []}} = state) do
     game_state = PlayerState.stop_walking(state.game_state)
     {:noreply, %{state | game_state: game_state}}
   end
 
   def handle_movement_tick(%{character: character, game_state: game_state} = state)
-      when game_state.is_walking do
-    # Calculate how far we should have moved since start
-    elapsed = System.system_time(:millisecond) - game_state.walk_start_time
+      when game_state.movement_state == :moving do
+    case game_state.walk_path do
+      [] ->
+        # No more path, stop moving
+        game_state = PlayerState.stop_walking(game_state)
+        {:noreply, %{state | game_state: game_state}}
 
-    total_movement_budget =
-      MovementEngine.calculate_movement_budget(elapsed, game_state.walk_speed)
+      [{next_x, next_y} | remaining_path] ->
+        # Calculate movement cost for this step
+        move_cost =
+          MovementEngine.get_movement_cost({game_state.x, game_state.y}, {next_x, next_y})
 
-    # Calculate NEW movement since last tick (subtract what we already consumed)
-    new_movement_budget = total_movement_budget - game_state.path_progress
+        # Calculate timer interval based on movement cost
+        # Diagonal movement takes 1.414x longer
+        interval = round(game_state.walk_speed * move_cost)
 
-    # Consume path based on NEW movement budget
-    {new_x, new_y, remaining_path, consumed} =
-      MovementEngine.consume_path_with_budget(
-        game_state.x,
-        game_state.y,
-        game_state.walk_path,
-        new_movement_budget
-      )
+        # Update spatial index
+        SpatialIndex.update_position(character.id, next_x, next_y, game_state.map_name)
 
-    # Update game state with new position and progress
-    game_state =
-      if new_x != game_state.x or new_y != game_state.y do
-        SpatialIndex.update_position(character.id, new_x, new_y, game_state.map_name)
-
-        updated_state =
+        # Update game state with new position
+        updated_game_state =
           game_state
-          |> PlayerState.update_position(new_x, new_y)
+          |> PlayerState.update_position(next_x, next_y)
           |> Map.put(:walk_path, remaining_path)
-          |> Map.put(:path_progress, game_state.path_progress + consumed)
 
-        handle_visibility_update(character, updated_state)
-      else
-        game_state
-        |> Map.put(:walk_path, remaining_path)
-        |> Map.put(:path_progress, game_state.path_progress + consumed)
-      end
+        # Handle visibility updates
+        updated_game_state = handle_visibility_update(character, updated_game_state)
 
-    game_state =
-      if remaining_path == [] do
-        PlayerState.stop_walking(game_state)
-      else
-        Process.send_after(self(), :movement_tick, 100)
-        game_state
-      end
-
-    {:noreply, %{state | game_state: game_state}}
+        # Schedule next movement tick with appropriate interval
+        if remaining_path != [] do
+          Process.send_after(self(), :movement_tick, interval)
+          {:noreply, %{state | game_state: updated_game_state}}
+        else
+          # Path completed, stop movement
+          game_state = PlayerState.stop_walking(updated_game_state)
+          {:noreply, %{state | game_state: game_state}}
+        end
+    end
   end
 
   @doc """
@@ -111,16 +107,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       # Simplify path to reduce network traffic
       simplified_path = Pathfinding.simplify_path(path)
 
-      # Start movement
-      walk_start_time = System.system_time(:millisecond)
-
       # Update game state with new path
-      game_state =
-        game_state
-        |> PlayerState.set_path(simplified_path)
-        |> Map.put(:walk_start_time, walk_start_time)
+      game_state = PlayerState.set_path(game_state, simplified_path)
 
       # Send movement confirmation to the client
+      walk_start_time = System.system_time(:millisecond)
+
       packet = %ZcNotifyPlayermove{
         walk_start_time: walk_start_time,
         src_x: game_state.x,
@@ -134,7 +126,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       # Broadcast movement to nearby players
       broadcast_movement_to_nearby(character, game_state, dest_x, dest_y)
 
-      Process.send_after(self(), :movement_tick, 100)
+      # Schedule first movement tick immediately to start movement
+      Process.send_after(self(), :movement_tick, 0)
 
       {:noreply, %{state | game_state: game_state}}
     else
@@ -170,7 +163,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   def handle_force_stop_movement(
         %{character: character, game_state: game_state, connection_pid: connection_pid} = state
       ) do
-    if game_state.is_walking do
+    if game_state.movement_state == :moving do
       game_state = PlayerState.stop_walking(game_state)
 
       packet = %ZcNotifyMoveStop{
@@ -373,8 +366,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     with {:ok, to_pid} <- UnitRegistry.get_player_pid(to_char_id),
          {:ok, {_module, mob_state, _pid}} <- UnitRegistry.get_unit(:mob, mob_id) do
       # Create mob spawn packet
-      mob_packet = %Aesir.ZoneServer.Packets.ZcNotifyNewentry{
-        object_type: Aesir.ZoneServer.Constants.ObjectType.mob(),
+      mob_packet = %ZcNotifyNewentry{
+        object_type: ObjectType.mob(),
         aid: mob_state.instance_id,
         gid: mob_state.instance_id,
         speed: mob_state.walk_speed,
@@ -408,7 +401,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         font: 0,
         max_hp: mob_state.max_hp,
         hp: mob_state.hp,
-        is_boss: if(Aesir.ZoneServer.Unit.Mob.MobState.is_boss?(mob_state), do: 1, else: 0),
+        is_boss: if(MobState.is_boss?(mob_state), do: 1, else: 0),
         body: 0,
         name: mob_state.mob_data.name
       }
@@ -423,7 +416,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     # Get the player session
     case UnitRegistry.get_player_pid(to_char_id) do
       {:ok, to_pid} ->
-        vanish_packet = %Aesir.ZoneServer.Packets.ZcNotifyVanish{
+        vanish_packet = %ZcNotifyVanish{
           gid: mob_id,
           # 0 = died, 1 = logged out, 2 = teleported
           type: 0

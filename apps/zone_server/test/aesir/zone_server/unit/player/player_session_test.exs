@@ -79,7 +79,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       assert state.game_state.x == 50
       assert state.game_state.y == 50
       assert state.game_state.map_name == "prontera"
-      assert state.game_state.movement_state == :just_spawned
+      assert state.game_state.movement_state == :standing
       assert state.game_state.walk_speed == 150
       assert state.game_state.view_range == 14
 
@@ -172,7 +172,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
           state
         )
 
-      assert new_state.game_state.is_walking == true
+      assert new_state.game_state.movement_state == :moving
       assert length(new_state.game_state.walk_path) > 0
       assert new_state.game_state.movement_state == :moving
 
@@ -185,11 +185,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
       game_state = %{
         PlayerState.new(character)
-        | is_walking: true,
-          walk_path: [{51, 50}, {52, 50}, {53, 50}],
-          walk_start_time: System.system_time(:millisecond) - 200,
+        | walk_path: [{51, 50}, {52, 50}, {53, 50}],
           walk_speed: 150,
-          path_progress: 0,
           movement_state: :moving
       }
 
@@ -209,8 +206,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     test "force_stop_movement stops walking and sends packet", %{character: character} do
       game_state = %{
         PlayerState.new(character)
-        | is_walking: true,
-          walk_path: [{51, 50}, {52, 50}],
+        | walk_path: [{51, 50}, {52, 50}],
           movement_state: :moving
       }
 
@@ -222,7 +218,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
       {:noreply, new_state} = PlayerSession.handle_cast(:force_stop_movement, state)
 
-      assert new_state.game_state.is_walking == false
+      assert new_state.game_state.movement_state == :standing
       assert new_state.game_state.walk_path == []
       assert new_state.game_state.movement_state == :standing
 
@@ -299,7 +295,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         character: other_character,
         game_state: other_game_state,
         movement_state: :standing,
-        is_walking: false,
         walk_path: []
       }
 
@@ -616,8 +611,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     test "handles movement when path is empty", %{character: character} do
       game_state = %{
         PlayerState.new(character)
-        | is_walking: true,
-          walk_path: [],
+        | walk_path: [],
           movement_state: :moving
       }
 
@@ -629,7 +623,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
       {:noreply, new_state} = PlayerSession.handle_info(:movement_tick, state)
 
-      assert new_state.game_state.is_walking == false
+      assert new_state.game_state.movement_state == :standing
       assert new_state.game_state.movement_state == :standing
     end
 

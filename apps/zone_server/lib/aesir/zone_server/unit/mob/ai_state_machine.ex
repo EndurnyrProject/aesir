@@ -13,8 +13,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   organization and testability.
   """
 
-  alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
