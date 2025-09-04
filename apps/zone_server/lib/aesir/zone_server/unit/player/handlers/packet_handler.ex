@@ -129,6 +129,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     {:noreply, state}
   end
 
+  # CZ_REQUEST_ACT - Player action request (attack, sit, stand, etc.)
+  def handle_packet(0x0437, packet_data, state) do
+    case packet_data.action do
+      action when action in [0, 7] ->
+        # Attack actions (0 = single attack, 7 = continuous attack)
+        GenServer.cast(self(), {:request_attack, packet_data.target_id, action})
+
+      2 ->
+        # Sit down
+        Logger.debug("Player sitting down")
+
+      3 ->
+        # Stand up
+        Logger.debug("Player standing up")
+
+      _ ->
+        Logger.warning("Unknown action type in CZ_REQUEST_ACT: #{packet_data.action}")
+    end
+
+    {:noreply, state}
+  end
+
   # Fallback for unknown packets
   def handle_packet(packet_id, _packet_data, state) do
     Logger.warning("Unhandled packet in PacketHandler: 0x#{Integer.to_string(packet_id, 16)}")

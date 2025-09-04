@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   require Logger
 
+  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Packets.ZcNotifyMoveentry
   alias Aesir.ZoneServer.Packets.ZcNotifyNewentry
   alias Aesir.ZoneServer.Packets.ZcNotifyStandentry
@@ -300,6 +301,23 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:request_move, dest_x, dest_y}, state) do
     MovementHandler.handle_request_move(state, dest_x, dest_y)
+  end
+
+  def handle_cast({:request_attack, target_id, action}, state) do
+    Logger.debug(
+      "Player #{state.character.id} requesting attack on target #{target_id} with action #{action}"
+    )
+
+    case Combat.execute_attack(self(), target_id) do
+      :ok ->
+        Logger.debug("Attack successful")
+        {:noreply, state}
+
+      {:error, reason} ->
+        Logger.warning("Attack failed: #{reason}")
+        # TODO: Send error packet to client
+        {:noreply, state}
+    end
   end
 
   @impl true
