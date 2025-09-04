@@ -11,9 +11,9 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
 
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
-  alias Aesir.ZoneServer.Unit.Entity
+  alias Aesir.ZoneServer.Unit
 
-  @type unit_type :: Entity.unit_type()
+  @type unit_type :: Unit.unit_type()
   @type unit_id :: integer()
   @type unit_key :: {unit_type(), unit_id()}
   @type unit_data :: {module(), any(), pid() | nil}

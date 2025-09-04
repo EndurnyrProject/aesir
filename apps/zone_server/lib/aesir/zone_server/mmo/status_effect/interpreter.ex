@@ -19,7 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Unit.Entity
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
@@ -43,7 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   ## Returns
   :ok | {:error, atom()}
   """
-  @type unit_type :: Entity.unit_type()
+  @type unit_type :: Unit.unit_type()
 
   @spec apply_status(unit_type(), integer(), atom(), StatusEntry.status_params()) ::
           :ok | {:error, atom()}

@@ -80,10 +80,29 @@ defmodule Aesir.ZoneServer.Geometry do
   end
 
   @doc """
-  Checks if a point is within range of another point.
+  Calculates Chebyshev distance between two points.
+  This is the correct distance for tile-based games like Ragnarok Online,
+  where diagonal movement is allowed and counts as 1 cell distance.
+
+  Also known as "chess king distance" or "maximum metric".
+  """
+  def chebyshev_distance(x1, y1, x2, y2) do
+    max(abs(x2 - x1), abs(y2 - y1))
+  end
+
+  @doc """
+  Checks if a point is within range of another point using Euclidean distance.
   """
   def in_range?(x1, y1, x2, y2, range) do
     distance(x1, y1, x2, y2) <= range
+  end
+
+  @doc """
+  Checks if a point is within tile-based range using Chebyshev distance.
+  This is the correct range check for Ragnarok Online tile-based movement.
+  """
+  def in_tile_range?(x1, y1, x2, y2, range) do
+    chebyshev_distance(x1, y1, x2, y2) <= range
   end
 
   @doc """

@@ -7,11 +7,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
 
   use TypedStruct
 
+  alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
-  alias Aesir.ZoneServer.Unit.Entity
+  alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Mob.CombatCalculations, as: MobCombatCalc
 
-  @behaviour Entity
+  @behaviour Aesir.ZoneServer.Unit
 
   @type ai_state :: :idle | :alert | :combat | :chase | :return
   @type movement_state :: :standing | :moving | :returning
@@ -44,6 +46,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     field :last_action_time, integer(), default: nil
     field :last_movement_end_time, integer(), default: nil
     field :last_idle_movement_time, integer(), default: nil
+    field :last_attack_time, integer(), default: nil
 
     # Combat state
     field :hp, integer(), enforce: true
@@ -93,12 +96,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     }
   end
 
-  @impl Entity
+  @impl Aesir.ZoneServer.Unit
   def get_race(%__MODULE__{mob_data: mob_data}) do
     mob_data.race
   end
 
-  @impl Entity
+  @impl Aesir.ZoneServer.Unit
   def get_element(%__MODULE__{mob_data: mob_data}) do
     # Element is stored as a combined value in mob_data
     # We need to extract element type and level
@@ -107,17 +110,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     {element_type, element_level}
   end
 
-  @impl Entity
+  @impl Aesir.ZoneServer.Unit
   def is_boss?(%__MODULE__{mob_data: mob_data}) do
     :boss in (mob_data.modes || [])
   end
 
-  @impl Entity
+  @impl Aesir.ZoneServer.Unit
   def get_size(%__MODULE__{mob_data: mob_data}) do
     mob_data.size
   end
 
-  @impl Entity
+  @impl Aesir.ZoneServer.Unit
   def get_stats(%__MODULE__{mob_data: mob_data} = mob) do
     # Return stats in the format expected by status effect formulas
     %{
@@ -144,26 +147,26 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     }
   end
 
-  @impl Entity
+  @impl Aesir.ZoneServer.Unit
   def get_entity_info(%__MODULE__{} = mob) do
-    Entity.build_entity_info(__MODULE__, mob)
+    Unit.build_entity_info(__MODULE__, mob)
     |> Map.put(:entity_type, :mob)
   end
 
-  @impl Entity
+  @impl Aesir.ZoneServer.Unit
   def get_process_pid(%__MODULE__{process_pid: pid}), do: pid
 
-  @impl Entity
+  @impl Aesir.ZoneServer.Unit
   def get_unit_id(%__MODULE__{instance_id: instance_id}) do
     instance_id
   end
 
-  @impl Entity
+  @impl Aesir.ZoneServer.Unit
   def get_unit_type(_mob) do
     :mob
   end
 
-  @impl Entity
+  @impl Aesir.ZoneServer.Unit
   def get_custom_immunities(%__MODULE__{mob_data: mob_data}) do
     # Check mob modes for special immunities
     immunities = []
@@ -185,6 +188,47 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       end
 
     immunities
+  end
+
+  @impl Aesir.ZoneServer.Unit
+  def to_combatant(%__MODULE__{} = mob_state) do
+    mob_data = mob_state.mob_data
+
+    Combatant.new!(%{
+      unit_id: mob_state.instance_id,
+      unit_type: :mob,
+      gid: mob_state.instance_id,
+      base_stats: %{
+        str: mob_data.stats.str,
+        agi: mob_data.stats.agi,
+        vit: mob_data.stats.vit,
+        int: mob_data.stats.int,
+        dex: mob_data.stats.dex,
+        luk: mob_data.stats.luk
+      },
+      combat_stats: %{
+        hit: MobCombatCalc.calculate_hit(mob_data),
+        flee: MobCombatCalc.calculate_flee(mob_data),
+        perfect_dodge: MobCombatCalc.calculate_perfect_dodge(mob_data),
+        def: MobCombatCalc.calculate_defense(mob_data),
+        atk: MobCombatCalc.calculate_base_attack(mob_data)
+      },
+      progression: %{
+        base_level: mob_data.level,
+        job_level: 1
+      },
+      element: mob_data.element,
+      race: mob_data.race,
+      size: mob_data.size,
+      weapon: %{
+        type: :fist,
+        element: elem(mob_data.element, 0),
+        size: mob_data.size
+      },
+      attack_range: mob_data.attack_range,
+      position: {mob_state.x, mob_state.y},
+      map_name: mob_state.map_name
+    })
   end
 
   # State Management Functions
@@ -369,6 +413,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   @spec get_chase_range(t()) :: integer()
   def get_chase_range(%__MODULE__{mob_data: mob_data}) do
     mob_data.chase_range
+  end
+
+  @doc """
+  Gets the mob's attack delay in milliseconds.
+  """
+  @spec get_attack_delay(t()) :: integer()
+  def get_attack_delay(%__MODULE__{mob_data: mob_data}) do
+    mob_data.attack_delay
   end
 
   # Private Helper Functions

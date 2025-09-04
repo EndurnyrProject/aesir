@@ -7,16 +7,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Actions.Damage do
 
   require Logger
 
+  alias Aesir.ZoneServer.Mmo.Combat
+
   @impl true
   def execute(target_id, params, state, context) do
     damage = calculate_damage(params, context)
     element = params[:element] || :neutral
 
-    # TODO: Actually deal damage through combat system
-    Logger.debug("Dealing #{damage} #{element} damage to target #{target_id}")
+    # Deal damage through combat system
+    Logger.debug("Status effect dealing #{damage} #{element} damage to target #{target_id}")
 
-    # For now, just log
-    # Combat.deal_damage(target_id, damage, element)
+    case Combat.deal_damage(target_id, damage, element, :status_effect) do
+      :ok ->
+        Logger.debug("Status effect damage applied successfully")
+
+      {:error, reason} ->
+        Logger.warning("Failed to apply status effect damage: #{reason}")
+    end
 
     {:ok, state}
   end

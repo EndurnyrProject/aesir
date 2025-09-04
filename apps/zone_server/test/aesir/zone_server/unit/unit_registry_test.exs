@@ -8,7 +8,7 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistryTest do
 
   # Mock module for testing
   defmodule MockEntity do
-    @behaviour Aesir.ZoneServer.Unit.Entity
+    @behaviour Aesir.ZoneServer.Unit
 
     @impl true
     def get_entity_info(state) do

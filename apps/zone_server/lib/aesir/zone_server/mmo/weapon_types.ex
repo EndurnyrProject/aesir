@@ -102,4 +102,35 @@ defmodule Aesir.ZoneServer.Mmo.WeaponTypes do
   """
   @spec max_weapon_type() :: integer()
   def max_weapon_type, do: 24
+
+  @doc """
+  Get the attack range for a weapon type.
+
+  - Melee weapons: 1 cell
+  - Spears/Polearms: 2 cells
+  - Ranged weapons: 9+ cells
+  """
+  @spec get_attack_range(integer() | atom()) :: integer()
+  def get_attack_range(weapon) when is_integer(weapon) do
+    cond do
+      # Spears have extended melee range
+      # one_handed_spear, two_handed_spear
+      weapon in [4, 5] -> 2
+      # Ranged weapons have long range
+      is_ranged?(weapon) -> 9
+      # All other melee weapons
+      true -> 1
+    end
+  end
+
+  def get_attack_range(weapon) when is_atom(weapon) do
+    cond do
+      # Spears have extended melee range
+      weapon in [:one_handed_spear, :two_handed_spear] -> 2
+      # Ranged weapons have long range
+      is_ranged?(weapon) -> 9
+      # All other melee weapons
+      true -> 1
+    end
+  end
 end

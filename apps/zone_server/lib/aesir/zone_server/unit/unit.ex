@@ -1,10 +1,10 @@
-defmodule Aesir.ZoneServer.Unit.Entity do
+defmodule Aesir.ZoneServer.Unit do
   @moduledoc """
-  Behaviour for game entities (players, monsters, NPCs) that defines
-  common properties and functions for status effect resistance and immunity.
+  Behaviour for game units (players, monsters, NPCs) that defines
+  common properties and functions for status effects, combat, and other game mechanics.
 
-  This behaviour ensures all entities provide the necessary information
-  for status effect calculations and other game mechanics.
+  This behaviour ensures all units provide the necessary information
+  for status effect calculations, combat operations, and other game mechanics.
   """
 
   @type entity_race ::
@@ -93,7 +93,18 @@ defmodule Aesir.ZoneServer.Unit.Entity do
   """
   @callback get_custom_immunities(state :: any()) :: [atom()]
 
-  @optional_callbacks [get_custom_immunities: 1, get_process_pid: 1]
+  @doc """
+  Converts a unit state to a standardized Combatant struct for combat operations.
+
+  This callback extracts all necessary combat information from the unit's
+  state and packages it into the unified Combatant format.
+
+  ## Returns
+    - Combatant struct with all combat-relevant data
+  """
+  @callback to_combatant(state :: any()) :: Aesir.ZoneServer.Mmo.Combat.Combatant.t()
+
+  @optional_callbacks [get_custom_immunities: 1, get_process_pid: 1, to_combatant: 1]
 
   @doc """
   Helper function to build standard entity info map from an entity module.

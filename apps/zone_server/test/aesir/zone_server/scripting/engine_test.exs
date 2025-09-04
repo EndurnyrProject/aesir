@@ -116,13 +116,13 @@ defmodule Aesir.ZoneServer.Scripting.EngineTest do
           local char_id = getcharid(0)
           local job = getbasejob()
           local level = getbaselevel()
-          
+
           if level >= 50 then
             heal(1000, 500)
           else
             heal(500, 250)
           end
-          
+
           return true
         end
       }
@@ -162,27 +162,27 @@ defmodule Aesir.ZoneServer.Scripting.EngineTest do
       return {
         on_equip = function()
           local refine = getrefine()
-          
+
           -- Base bonuses
           bonus("bStr", 5)
           bonus("bDex", 3)
-          
+
           -- Refine bonuses
           if refine >= 7 then
             bonus("bAtkRate", 5)
           end
-          
+
           if refine >= 9 then
             bonus("bAspd", 1)
             bonus2("bAddRace", "RC_DemiHuman", 10)
           end
-          
+
           -- Autobonus on attack
           autobonus("bonus('bStr', 10)", 100, 5000)
-          
+
           return true
         end,
-        
+
         on_unequip = function()
           -- Cleanup is automatic
           return true
@@ -295,9 +295,9 @@ defmodule Aesir.ZoneServer.Scripting.EngineTest do
           local job = getbasejob()
           local base_level = getbaselevel()
           local job_level = getjoblevel()
-          
+
           -- These should match the player state we pass in
-          return char_id == 150000 and 
+          return char_id == 150000 and
                  account_id == 2000001 and
                  job == 4001 and
                  base_level == 99 and

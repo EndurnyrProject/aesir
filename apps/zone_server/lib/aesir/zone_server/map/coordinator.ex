@@ -305,7 +305,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   end
 
   defp spawn_single_mob(spawn_config, state) do
-    instance_id = generate_mob_instance_id(state.map_name, state.next_mob_id)
+    instance_id = generate_mob_instance_id()
 
     # Calculate spawn position
     {x, y} = calculate_spawn_position(spawn_config.spawn_area, state.map_data)
@@ -330,7 +330,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
             UnitRegistry.register_unit(:mob, instance_id, MobState, mob_state, mob_pid)
 
             Logger.debug(
-              "Spawned mob #{mob_data.name} (#{instance_id}) at #{x},#{y} on #{state.map_name}"
+              "Spawned mob #{mob_data.name} (#{instance_id}) at #{x},#{y} on #{state.map_name} with pid #{inspect(mob_pid)}"
             )
 
             # Update state - only increment next_mob_id
@@ -369,9 +369,29 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     {max(0, x), max(0, y)}
   end
 
-  defp generate_mob_instance_id(map_name, local_id) do
-    map_hash = :erlang.phash2(map_name, 65_536)
-    map_hash * 1_000_000 + local_id
+  defp generate_mob_instance_id do
+    # Generate a random ID in the safe range and check if it's already in use globally
+    # Range: 2 to 1,999,999 (following rAthena's MIN_FLOORITEM to MAX_FLOORITEM)
+    min_id = 2
+    max_id = 1_999_999
+
+    find_unused_mob_id(min_id, max_id)
+  end
+
+  defp find_unused_mob_id(min_id, max_id) do
+    # Generate random ID in range
+    candidate_id = :rand.uniform(max_id - min_id) + min_id
+
+    # Check if this ID is already registered as a mob globally
+    case UnitRegistry.get_unit(:mob, candidate_id) do
+      {:error, :not_found} ->
+        # ID is free globally, use it
+        candidate_id
+
+      {:ok, _} ->
+        # ID is taken, try again
+        find_unused_mob_id(min_id, max_id)
+    end
   end
 
   defp schedule_cleanup, do: Process.send_after(self(), :cleanup_items, 60_000)

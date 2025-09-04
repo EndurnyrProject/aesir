@@ -3,5 +3,8 @@ Mimic.copy(Aesir.ZoneServer.Unit.Player.Stats)
 Mimic.copy(Aesir.ZoneServer.Map.MapCache)
 Mimic.copy(Aesir.ZoneServer.Pathfinding)
 Mimic.copy(Aesir.ZoneServer.Unit.Player.PlayerSession)
+Mimic.copy(Aesir.ZoneServer.Unit.UnitRegistry)
+Mimic.copy(Aesir.ZoneServer.Unit.Mob.MobSession)
+Mimic.copy(Aesir.Commons.Network.Connection)
 
 ExUnit.start()

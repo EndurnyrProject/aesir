@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.PacketRegistry do
     # Client to Server packets
     Aesir.ZoneServer.Packets.CzEnter2,
     Aesir.ZoneServer.Packets.CzNotifyActorinit,
+    Aesir.ZoneServer.Packets.CzRequestAct,
     Aesir.ZoneServer.Packets.CzRequestMove2,
     Aesir.ZoneServer.Packets.CzRequestTime,
     Aesir.ZoneServer.Packets.CzRequestTime2,
@@ -21,6 +22,7 @@ defmodule Aesir.ZoneServer.PacketRegistry do
     Aesir.ZoneServer.Packets.ZcNotifyNewentry,
     Aesir.ZoneServer.Packets.ZcNotifyStandentry,
     Aesir.ZoneServer.Packets.ZcNotifyVanish,
+    Aesir.ZoneServer.Packets.ZcHpInfo,
     Aesir.ZoneServer.Packets.ZcParChange,
     Aesir.ZoneServer.Packets.ZcLongparChange
   ]

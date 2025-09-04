@@ -16,9 +16,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
   alias Aesir.ZoneServer.Mmo.StatusEntry
-  alias Aesir.ZoneServer.Unit.Entity
+  alias Aesir.ZoneServer.Unit
 
-  @type unit_type :: Entity.unit_type()
+  @type unit_type :: Unit.unit_type()
 
   @doc """
   Applies a status change to a unit.

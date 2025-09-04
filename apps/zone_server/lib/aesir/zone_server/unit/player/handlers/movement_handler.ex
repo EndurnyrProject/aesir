@@ -37,7 +37,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
   def handle_movement_tick(%{game_state: %{movement_state: :moving, walk_path: []}} = state) do
     game_state = PlayerState.stop_walking(state.game_state)
-    {:noreply, %{state | game_state: game_state}}
+    updated_state = %{state | game_state: game_state}
+
+    # Send message to self for movement completion handling
+    # This allows PlayerSession to orchestrate based on state
+    send(self(), :movement_completed)
+
+    {:noreply, updated_state}
   end
 
   def handle_movement_tick(%{character: character, game_state: game_state} = state)
@@ -76,6 +82,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         else
           # Path completed, stop movement
           game_state = PlayerState.stop_walking(updated_game_state)
+          # Send completion message for PlayerSession to handle
+          send(self(), :movement_completed)
           {:noreply, %{state | game_state: game_state}}
         end
     end
@@ -95,7 +103,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   def handle_request_move(
         %{character: character, game_state: game_state, connection_pid: connection_pid} = state,
         dest_x,
-        dest_y
+        dest_y,
+        opts \\ []
       ) do
     with {:ok, map_data} <- MapCache.get(game_state.map_name),
          {:ok, [_ | _] = path} <-
@@ -106,6 +115,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
            ) do
       # Simplify path to reduce network traffic
       simplified_path = Pathfinding.simplify_path(path)
+
+      # Check if we're in combat_moving state and this is a player-initiated move
+      # Only clear combat intent if this is NOT a combat-initiated movement
+      is_combat_initiated = Keyword.get(opts, :combat_initiated, false)
+
+      game_state =
+        if game_state.action_state == :combat_moving and not is_combat_initiated do
+          # Clear combat intent only when player manually moves (not combat-initiated)
+          Logger.debug("Player manually moving while in combat, clearing combat intent")
+
+          game_state
+          |> PlayerState.clear_combat_intent()
+          |> PlayerState.transition_to(:moving)
+          |> case do
+            {:ok, transitioned} -> transitioned
+            _ -> game_state
+          end
+        else
+          game_state
+        end
 
       # Update game state with new path
       game_state = PlayerState.set_path(game_state, simplified_path)
