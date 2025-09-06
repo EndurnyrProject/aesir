@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Packets.ZcNotifyNewentry
   alias Aesir.ZoneServer.Packets.ZcNotifyStandentry
   alias Aesir.ZoneServer.Packets.ZcNotifyVanish
+  alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
@@ -210,6 +211,37 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     MovementHandler.handle_movement_tick(state)
   end
 
+  def handle_info(:movement_completed, %{game_state: game_state} = state) do
+    Logger.debug(
+      "Movement completed - action_state: #{game_state.action_state}, movement_intent: #{game_state.movement_intent}, combat_target: #{game_state.combat_target_id}"
+    )
+
+    # Orchestrate based on action state and movement intent
+    case {game_state.action_state, game_state.movement_intent} do
+      {:combat_moving, :combat} when game_state.combat_target_id != nil ->
+        # Combat movement completed, attempt attack
+        Logger.debug("Combat movement completed, calling handle_reached_attack_position")
+        CombatActionHandler.handle_reached_attack_position(state)
+
+      {:moving, _} ->
+        # Normal movement completed, transition to idle
+        Logger.debug("Normal movement completed, transitioning to idle")
+
+        case PlayerState.transition_to(game_state, :idle) do
+          {:ok, transitioned_state} ->
+            {:noreply, %{state | game_state: transitioned_state}}
+
+          _ ->
+            {:noreply, state}
+        end
+
+      other ->
+        # Already in appropriate state or unexpected state
+        Logger.debug("Movement completed but in unexpected state: #{inspect(other)}")
+        {:noreply, state}
+    end
+  end
+
   def handle_info({:packet, packet_id, packet_data}, state) do
     PacketHandler.handle_packet(packet_id, packet_data, state)
   end
@@ -302,6 +334,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     MovementHandler.handle_request_move(state, dest_x, dest_y)
   end
 
+  def handle_cast({:request_attack, target_id, action}, state) do
+    # Delegate to CombatActionHandler for state machine based combat
+    CombatActionHandler.handle_attack_request(state, target_id, action)
+  end
+
   @impl true
   def handle_cast(:force_stop_movement, state) do
     MovementHandler.handle_force_stop_movement(state)
@@ -334,6 +371,19 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast(:recalculate_stats, state) do
     StatsManager.handle_recalculate_stats(state)
+  end
+
+  @impl true
+  def handle_cast({:clear_combat_target, mob_instance_id}, state) do
+    # Only clear combat if this player was targeting this specific mob
+    if state.game_state.combat_target_id == mob_instance_id do
+      Logger.debug("Clearing combat target #{mob_instance_id} for player #{state.character.id}")
+      updated_game_state = PlayerState.clear_combat_intent(state.game_state)
+      {:ok, idle_state} = PlayerState.transition_to(updated_game_state, :idle)
+      {:noreply, %{state | game_state: idle_state}}
+    else
+      {:noreply, state}
+    end
   end
 
   @impl true

@@ -13,6 +13,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   organization and testability.
   """
 
+  require Logger
+
+  alias Aesir.ZoneServer.Geometry
+  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -188,8 +192,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
         cond do
           target_in_attack_range?(state, target_id) ->
             # Can attack - perform attack logic here
-            # For now, just stay in combat state
-            state
+            execute_mob_attack(state, target_id)
 
           target_in_chase_range?(state, target_id) ->
             # Target moved out of attack range but still chaseable
@@ -310,7 +313,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   defp target_in_range?(state, target_id, range) do
     case SpatialIndex.get_unit_position(:player, target_id) do
       {:ok, {target_x, target_y, map_name}} when map_name == state.map_name ->
-        distance = abs(state.x - target_x) + abs(state.y - target_y)
+        distance = Geometry.chebyshev_distance(state.x, state.y, target_x, target_y)
         distance <= range
 
       _ ->
@@ -350,6 +353,33 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
       updated_state = %{state | last_idle_movement_time: current_time}
       move_toward(updated_state, target_x, target_y)
     else
+      state
+    end
+  end
+
+  defp execute_mob_attack(state, target_id) do
+    # Check if enough time has passed since last attack
+    current_time = System.system_time(:millisecond)
+    attack_delay = MobState.get_attack_delay(state)
+
+    can_attack =
+      state.last_attack_time == nil or
+        current_time - state.last_attack_time >= attack_delay
+
+    if can_attack do
+      # Execute attack using the Combat system
+      case Combat.execute_mob_attack(state, target_id) do
+        :ok ->
+          # Update last attack time
+          %{state | last_attack_time: current_time}
+
+        {:error, reason} ->
+          # Attack failed, don't update attack time
+          Logger.debug("Mob #{state.id} attack failed: #{inspect(reason)}")
+          state
+      end
+    else
+      # Still in attack cooldown, stay in combat without attacking
       state
     end
   end

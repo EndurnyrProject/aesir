@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -17,15 +18,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
     # Copy modules for mocking
     Mimic.copy(Aesir.ZoneServer.Mmo.StatusEffect.Resistance)
     Mimic.copy(UnitRegistry)
+    Mimic.copy(Combat)
 
     # Use a test player ID
     player_id = :rand.uniform(100_000)
 
     # Mock UnitRegistry to return entity info
-    stub(UnitRegistry, :get_unit_info, fn _unit_type, _unit_id ->
+    stub(UnitRegistry, :get_unit_info, fn _unit_type, unit_id ->
       {:ok,
        %{
-         unit_id: player_id,
+         unit_id: unit_id,
          unit_type: :player,
          race: :human,
          element: :neutral,
@@ -52,6 +54,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
 
     # Stub resistance roll to always succeed for predictable tests
     stub(Resistance, :roll_success, fn _success_rate -> true end)
+
+    # Stub combat damage dealing to avoid registry warnings
+    stub(Combat, :deal_damage, fn _target_id, _damage, _element, _source_type -> :ok end)
 
     %{player_id: player_id}
   end

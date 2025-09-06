@@ -19,20 +19,20 @@ defmodule Aesir.ZoneServer.Scripting.EventsTest do
         on_equip = function()
           bonus("bStr", 5)
           bonus("bDex", 3)
-          
+
           local refine = getrefine()
           if refine >= 7 then
             bonus("bAllStats", 1)
           end
-          
+
           if refine >= 9 then
             bonus("bMaxHPrate", 5)
             bonus("bMaxSPrate", 5)
           end
-          
+
           return true
         end,
-        
+
         on_unequip = function()
           return true
         end
@@ -46,7 +46,7 @@ defmodule Aesir.ZoneServer.Scripting.EventsTest do
           autobonus("bonus('bCritical', 100)", 200, 5000)
           return true
         end,
-        
+
         on_attack = function()
           local chance = rand(1, 100)
           if chance <= 10 then

@@ -23,7 +23,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   alias Aesir.ZoneServer.Unit.Stats
 
   typedstruct module: PlayerProgression do
-    @typedoc "Player-specific progression data including experience"
     field :base_level, non_neg_integer()
     field :job_level, non_neg_integer()
     field :base_exp, non_neg_integer()
@@ -32,13 +31,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   end
 
   typedstruct module: Equipment do
-    @typedoc "Equipment identifiers"
     field :weapon, non_neg_integer()
     field :shield, non_neg_integer()
   end
 
   typedstruct module: Modifiers do
-    @typedoc "Various stat modifiers from different sources"
     field :equipment, map()
     field :status_effects, map()
     field :job_bonuses, map()
@@ -295,49 +292,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   @doc """
   Calculates combat-related stats (hit, flee, critical, atk, def).
-  Includes status effect modifiers from the modifiers map.
+  Uses the new CombatCalculations behavior for consistent calculations.
   """
   @spec calculate_combat_stats(t()) :: t()
   def calculate_combat_stats(%__MODULE__{} = stats) do
-    base_hit = calculate_base_hit(stats)
-    base_flee = calculate_base_flee(stats)
+    # Use the new PlayerCombatCalculations module for hit/flee/perfect_dodge
+    alias Aesir.ZoneServer.Unit.Player.CombatCalculations, as: PlayerCombatCalc
+
+    # Legacy calculations for stats not yet moved to behavior
     base_critical = calculate_base_critical(stats)
     base_atk = calculate_base_atk(stats)
     base_def = calculate_base_def(stats)
 
-    hit = base_hit + get_status_modifier(stats, :hit)
-    flee = base_flee + get_status_modifier(stats, :flee)
-    critical = base_critical + get_status_modifier(stats, :critical)
-    atk = base_atk + get_status_modifier(stats, :atk)
-    def = base_def + get_status_modifier(stats, :def)
-
     combat_stats = %{
-      hit: hit,
-      flee: flee,
-      critical: critical,
-      atk: atk,
-      def: def
+      hit: PlayerCombatCalc.calculate_hit(stats),
+      flee: PlayerCombatCalc.calculate_flee(stats),
+      critical: base_critical + get_status_modifier(stats, :critical),
+      perfect_dodge: PlayerCombatCalc.calculate_perfect_dodge(stats),
+      atk: base_atk + get_status_modifier(stats, :atk),
+      def: base_def + get_status_modifier(stats, :def)
     }
 
     %{stats | combat_stats: combat_stats}
-  end
-
-  defp calculate_base_hit(%__MODULE__{} = stats) do
-    effective_dex = get_effective_stat(stats, :dex)
-    effective_luk = get_effective_stat(stats, :luk)
-
-    # Basic formula: hit = DEX + LUK/3 + base level / 4
-    base_level = stats.progression.base_level
-    trunc(effective_dex + effective_luk / 3 + base_level / 4)
-  end
-
-  defp calculate_base_flee(%__MODULE__{} = stats) do
-    effective_agi = get_effective_stat(stats, :agi)
-    effective_luk = get_effective_stat(stats, :luk)
-
-    # Basic formula: flee = AGI + LUK/5 + base level / 4
-    base_level = stats.progression.base_level
-    trunc(effective_agi + effective_luk / 5 + base_level / 4)
   end
 
   defp calculate_base_critical(%__MODULE__{} = stats) do

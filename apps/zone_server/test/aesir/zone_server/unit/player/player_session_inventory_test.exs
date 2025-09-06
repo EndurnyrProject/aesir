@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
   use Aesir.DataCase, async: true
   use Mimic
+  import ExUnit.CaptureLog
 
   import Aesir.TestEtsSetup
 
@@ -131,11 +132,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
 
       connection_pid = self()
 
-      result =
-        PlayerSession.init(%{
-          character: character,
-          connection_pid: connection_pid
-        })
+      {result, _log} =
+        with_log(fn ->
+          PlayerSession.init(%{
+            character: character,
+            connection_pid: connection_pid
+          })
+        end)
 
       assert {:stop, {:error, :inventory_load_failed}} = result
     end

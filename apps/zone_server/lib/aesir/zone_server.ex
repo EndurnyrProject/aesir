@@ -89,6 +89,7 @@ defmodule Aesir.ZoneServer do
 
   def handle_info({:send_packet, packet}, state) do
     Logger.debug("ZoneServer.handle_info: Sending packet #{inspect(packet.__struct__)}")
+    Logger.debug("Packet data: #{inspect(packet)}")
 
     # Build the packet data and add to write buffer
     module = packet.__struct__

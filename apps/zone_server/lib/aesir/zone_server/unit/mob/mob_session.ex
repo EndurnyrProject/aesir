@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.ZoneServer.Constants.ObjectType
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Packets.ZcHpInfo
   alias Aesir.ZoneServer.Packets.ZcNotifyMoveentry
   alias Aesir.ZoneServer.Packets.ZcNotifyNewentry
   alias Aesir.ZoneServer.Packets.ZcNotifyVanish
@@ -125,6 +126,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
       |> maybe_add_aggro(attacker_id, damage)
       |> AIStateMachine.handle_damage_reaction(attacker_id)
 
+    # Send HP update packet to nearby players
+    notify_hp_update(updated_mob)
+
     case status do
       :alive ->
         {:noreply, updated_mob}
@@ -137,6 +141,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   @impl GenServer
   def handle_cast({:heal, amount}, state) do
     updated_state = MobState.heal(state, amount)
+
+    # Send HP update packet to nearby players
+    notify_hp_update(updated_state)
+
     {:noreply, updated_state}
   end
 
@@ -211,6 +219,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   @impl GenServer
   def terminate(_reason, state) do
     SpatialIndex.remove_unit(:mob, state.instance_id)
+    notify_players_of_mob_disappearance(state.instance_id)
     :ok
   end
 
@@ -264,21 +273,24 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
         # Diagonal movement takes 1.414x longer
         interval = round(state.walk_speed * move_cost)
 
-        # Update spatial index
-        :ok =
-          SpatialIndex.update_unit_position(
-            :mob,
-            state.instance_id,
-            next_x,
-            next_y,
-            state.map_name
-          )
-
-        # Update mob state FIRST
+        # Update mob state FIRST to maintain consistency
         updated_state =
           state
           |> MobState.update_position(next_x, next_y)
           |> Map.put(:walk_path, remaining_path)
+
+        # Update external systems with the consistent state
+        :ok =
+          SpatialIndex.update_unit_position(
+            :mob,
+            updated_state.instance_id,
+            updated_state.x,
+            updated_state.y,
+            updated_state.map_name
+          )
+
+        # Update UnitRegistry with the new state to keep it in sync
+        UnitRegistry.update_unit_state(:mob, updated_state.instance_id, updated_state)
 
         # Send movement packet with updated state
         notify_movement(updated_state, {state.x, state.y}, {next_x, next_y})
@@ -302,6 +314,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   # Mob Visibility Helper Functions
 
+  defp notify_hp_update(%MobState{} = mob_state) do
+    packet = ZcHpInfo.new(mob_state.instance_id, mob_state.hp, mob_state.max_hp)
+    broadcast_to_nearby_players(mob_state, packet)
+    {:ok, packet}
+  end
+
   defp notify_spawn(%MobState{} = mob_state) do
     packet = create_spawn_packet(mob_state)
     broadcast_to_nearby_players(mob_state, packet)
@@ -317,8 +335,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   defp notify_despawn(%MobState{} = mob_state) do
     packet = %ZcNotifyVanish{
       gid: mob_state.instance_id,
-      # 0 = died, 1 = logged out, 2 = teleported
-      type: 0
+      # Use died type for death animation
+      type: ZcNotifyVanish.died()
     }
 
     broadcast_to_nearby_players(mob_state, packet)
@@ -435,5 +453,19 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
       {:error, :not_found} ->
         :ok
     end
+  end
+
+  defp notify_players_of_mob_disappearance(mob_instance_id) do
+    # Get all players in the zone
+    UnitRegistry.list_players()
+    |> Enum.each(fn player_id ->
+      case UnitRegistry.get_player_pid(player_id) do
+        {:ok, pid} ->
+          GenServer.cast(pid, {:clear_combat_target, mob_instance_id})
+
+        {:error, :not_found} ->
+          :ok
+      end
+    end)
   end
 end

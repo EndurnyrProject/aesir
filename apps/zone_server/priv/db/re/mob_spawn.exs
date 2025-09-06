@@ -7,11 +7,10 @@
     %{
       # Poring
       mob_id: 1002,
-      amount: 50,
+      amount: 1,
       respawn_time: 10_000,
       # Near fountain
       spawn_area: %{x: 110, y: 203, xs: 5, ys: 5}
     }
   ]
 }
-

@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   require Logger
 
   alias Aesir.Commons.StatusParams
+  alias Aesir.Commons.Utils.ServerTick
   alias Aesir.ZoneServer.Packets.ZcAckReqnameall
   alias Aesir.ZoneServer.Packets.ZcEquipitemList
   alias Aesir.ZoneServer.Packets.ZcLongparChange
@@ -74,7 +75,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
 
   # CZ_REQUEST_TIME - Client requesting server time
   def handle_packet(0x007E, _packet_data, %{connection_pid: connection_pid} = state) do
-    server_tick = System.system_time(:millisecond) |> rem(0x100000000)
+    server_tick = ServerTick.now()
 
     packet = %ZcNotifyTime{
       server_tick: server_tick
@@ -86,7 +87,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
 
   # CZ_REQUEST_TIME2 - Alternative client time request
   def handle_packet(0x0360, _packet_data, %{connection_pid: connection_pid} = state) do
-    server_tick = System.system_time(:millisecond) |> rem(0x100000000)
+    server_tick = ServerTick.now()
 
     packet = %ZcNotifyTime{
       server_tick: server_tick
@@ -126,6 +127,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   # CZ_REQUEST_MOVE - Player movement request
   def handle_packet(0x035F, packet_data, state) do
     GenServer.cast(self(), {:request_move, packet_data.dest_x, packet_data.dest_y})
+    {:noreply, state}
+  end
+
+  # CZ_REQUEST_ACT - Player action request (attack, sit, stand, etc.)
+  def handle_packet(0x0437, packet_data, state) do
+    case packet_data.action do
+      action when action in [0, 7] ->
+        # Attack actions (0 = single attack, 7 = continuous attack)
+        GenServer.cast(self(), {:request_attack, packet_data.target_id, action})
+
+      2 ->
+        # Sit down
+        Logger.debug("Player sitting down")
+
+      3 ->
+        # Stand up
+        Logger.debug("Player standing up")
+
+      _ ->
+        Logger.warning("Unknown action type in CZ_REQUEST_ACT: #{packet_data.action}")
+    end
+
     {:noreply, state}
   end
 

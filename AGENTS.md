@@ -224,5 +224,4 @@ end
 7. **Documentation**: Document all modules and functions, especially packet definitions which should include format and field descriptions.
 8. **Ragnarok Renewal Mechanics**: In the rAthena source code, you will often see mechanics for pre-re and renewal, we will focus on renewal for now.
 9. **Never assume a function signature or return value**: Always check the function definition and its return values, never assume anything.
-
-
+- big numbers shold ALWAYS be separated by _, eg: 10000 -> 10_000
