@@ -204,5 +204,4 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
         150
     end
   end
-
 end

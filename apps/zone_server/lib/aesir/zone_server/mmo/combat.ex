@@ -182,7 +182,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
           )
 
           # TODO: Apply damage to player when PvP/mob damage system is implemented
-          Logger.info("Mob #{mob_state.instance_id} would deal #{damage} damage to player #{target_id}")
+          Logger.info(
+            "Mob #{mob_state.instance_id} would deal #{damage} damage to player #{target_id}"
+          )
 
           # Broadcast attack packet to nearby players
           attack_packet =

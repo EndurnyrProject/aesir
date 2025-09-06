@@ -271,76 +271,81 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
     test "validates exact range 1 attack distances using Chebyshev distance" do
       # Test a few key positions to verify Chebyshev distance calculation
       # All adjacent positions should be distance 1, including diagonals
-      
+
       # Test case 1: Adjacent cardinal direction (East) - should be in range
       player1 = start_player_session(position: {150, 150})
       mob1 = start_mob_session(position: {151, 150})
       flush_packets()
-      
+
       stats1 = get_player_stats(player1.pid)
       player_state1 = get_player_state(player1.pid)
       result1 = Combat.execute_attack(stats1, player_state1, mob1.unit_id)
-      
+
       assert result1 == :ok, "Attack failed for adjacent East position (should be distance 1)"
       packet1 = assert_packet_sent(ZcNotifyAct, 200)
       assert packet1.src_id == player1.character.account_id
       assert packet1.target_id == mob1.unit_id
-      
+
       # Test case 2: Adjacent diagonal (Southeast) - should be in range
       player2 = start_player_session(position: {150, 150})
       mob2 = start_mob_session(position: {151, 151})
       flush_packets()
-      
+
       stats2 = get_player_stats(player2.pid)
       player_state2 = get_player_state(player2.pid)
       result2 = Combat.execute_attack(stats2, player_state2, mob2.unit_id)
-      
-      assert result2 == :ok, "Attack failed for diagonal Southeast position (should be distance 1 with Chebyshev)"
+
+      assert result2 == :ok,
+             "Attack failed for diagonal Southeast position (should be distance 1 with Chebyshev)"
+
       packet2 = assert_packet_sent(ZcNotifyAct, 200)
       assert packet2.src_id == player2.character.account_id
       assert packet2.target_id == mob2.unit_id
-      
+
       # Test case 3: Distance 2 position - should be out of range
       player3 = start_player_session(position: {150, 150})
       mob3 = start_mob_session(position: {152, 150})
       flush_packets()
-      
+
       stats3 = get_player_stats(player3.pid)
       player_state3 = get_player_state(player3.pid)
       result3 = Combat.execute_attack(stats3, player_state3, mob3.unit_id)
-      
+
       assert result3 == {:error, :target_out_of_range},
-        "Attack succeeded but should have failed for distance 2 position"
+             "Attack succeeded but should have failed for distance 2 position"
+
       refute_packet_sent(ZcNotifyAct, 100)
     end
 
     test "validates mob attack range using same Chebyshev distance" do
       # Test that mobs use the same range calculation as players
       player = start_player_session(position: {150, 150})
-      
+
       # Test mob at range 1 (should be in attack range)
       mob_in_range = start_mob_session(position: {151, 150})
-      
+
       # Test mob at range 2 (should be out of attack range) 
       mob_out_range = start_mob_session(position: {152, 150})
-      
+
       # Clear spawn packets
       flush_packets()
-      
+
       # Mob in range should be able to attack
       mob_state = get_mob_state(mob_in_range.pid)
       result1 = Combat.execute_mob_attack(mob_state, player.character.id)
       assert result1 == :ok, "Mob attack failed at range 1"
-      
+
       # Should receive attack packet
       packet = assert_packet_sent(ZcNotifyAct, 200)
       assert packet.src_id == mob_in_range.unit_id
-      
+
       # Mob out of range should fail to attack
-      mob_state2 = get_mob_state(mob_out_range.pid) 
+      mob_state2 = get_mob_state(mob_out_range.pid)
       result2 = Combat.execute_mob_attack(mob_state2, player.character.id)
-      assert result2 == {:error, :target_out_of_range}, "Mob attack succeeded but should have failed at range 2"
-      
+
+      assert result2 == {:error, :target_out_of_range},
+             "Mob attack succeeded but should have failed at range 2"
+
       # Should not receive another attack packet
       refute_packet_sent(ZcNotifyAct, 100)
     end
@@ -441,7 +446,8 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
             create_test_character(
               id: 1001,
               name: "Killer",
-              str: 100, # High strength to ensure we kill the mob
+              # High strength to ensure we kill the mob
+              str: 100,
               dex: 100,
               base_level: 50
             ),
@@ -455,15 +461,17 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
           mob_id: 1002,
           unit_id: 2001,
           map_name: "prontera",
-          position: {150, 150}, # Same position as player
-          hp: 1,    # Very low HP to ensure death
+          # Same position as player
+          position: {150, 150},
+          # Very low HP to ensure death
+          hp: 1,
           max_hp: 1
         )
 
       # Attack the mob to kill it
       stats = get_player_stats(player.pid)
       player_state = get_player_state(player.pid)
-      
+
       # Execute attack which should kill the mob
       result = Combat.execute_attack(stats, player_state, mob.unit_id)
       assert result == :ok
@@ -473,16 +481,18 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
 
       # Verify vanish packet was sent with correct death type
       vanish_packets = collect_packets_of_type(ZcNotifyVanish, 300)
-      
+
       assert length(vanish_packets) > 0, "No ZcNotifyVanish packets were sent"
-      
-      death_packet = Enum.find(vanish_packets, fn packet ->
-        packet.gid == mob.unit_id
-      end)
-      
+
+      death_packet =
+        Enum.find(vanish_packets, fn packet ->
+          packet.gid == mob.unit_id
+        end)
+
       assert death_packet != nil, "No vanish packet found for the mob"
-      assert death_packet.type == ZcNotifyVanish.died(), 
-        "Expected death vanish type (#{ZcNotifyVanish.died()}), got #{death_packet.type}"
+
+      assert death_packet.type == ZcNotifyVanish.died(),
+             "Expected death vanish type (#{ZcNotifyVanish.died()}), got #{death_packet.type}"
     end
   end
 end
