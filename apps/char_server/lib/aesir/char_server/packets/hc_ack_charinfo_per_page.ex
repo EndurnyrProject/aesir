@@ -223,7 +223,7 @@ defmodule Aesir.CharServer.Packets.HcAckCharinfoPerPage do
   end
 
   defp get_char_slot(character) do
-    Utils.get_field(character.char_num, Utils.get_field(character.slot, 0))
+    Utils.get_field(character.char_num, 0)
   end
 
   defp get_sex_flag("M"), do: 1
