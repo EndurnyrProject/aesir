@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   require Logger
 
   alias Aesir.ZoneServer.Constants.ObjectType
+  alias Aesir.ZoneServer.Constants.ObjectType
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Packets.ZcNotifyMoveentry
   alias Aesir.ZoneServer.Packets.ZcNotifyMoveStop
@@ -238,8 +239,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   defp broadcast_movement_to_nearby(character, game_state, dest_x, dest_y) do
     # Only broadcast to players who can see us (using visibility ETS)
     visible_players = SpatialIndex.get_visible_players(character.id)
-
-    # Build movement packet for observers
     packet = build_movement_packet(character, game_state, dest_x, dest_y)
 
     visible_players
@@ -249,6 +248,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
   defp build_movement_packet(character, game_state, dest_x, dest_y) do
     %ZcNotifyMoveentry{
+      object_type: ObjectType.pc(),
       aid: character.account_id,
       gid: character.id,
       speed: game_state.walk_speed,
@@ -256,12 +256,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       health_state: 0,
       effect_state: 0,
       job: character.class,
-      head: character.head_top,
+      head: character.hair,
       weapon: character.weapon || 0,
       shield: character.shield || 0,
-      accessory: character.head_bottom || 0,
+      accessory: 0,
       move_start_time: System.system_time(:millisecond),
-      accessory2: character.head_mid || 0,
+      accessory2: 0,
       accessory3: 0,
       src_x: game_state.x,
       src_y: game_state.y,

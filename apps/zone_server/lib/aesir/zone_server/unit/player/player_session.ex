@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   require Logger
 
+  alias Aesir.ZoneServer.Constants.ObjectType
   alias Aesir.ZoneServer.Packets.ZcNotifyMoveentry
   alias Aesir.ZoneServer.Packets.ZcNotifyNewentry
   alias Aesir.ZoneServer.Packets.ZcNotifyStandentry
@@ -509,6 +510,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     [{dest_x, dest_y} | _] = Enum.reverse(game_state.walk_path)
 
     %ZcNotifyMoveentry{
+      object_type: ObjectType.pc(),
       aid: character.account_id,
       gid: character.id,
       speed: game_state.walk_speed,
@@ -516,7 +518,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       health_state: 0,
       effect_state: 0,
       job: character.class,
-      head: character.head_top,
+      head: character.hair,
       weapon: character.weapon || 0,
       shield: character.shield || 0,
       accessory: character.head_bottom || 0,
@@ -558,6 +560,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   defp build_standentry_packet(character, game_state) do
     %ZcNotifyStandentry{
+      object_type: ObjectType.pc(),
       aid: character.account_id,
       gid: character.id,
       speed: game_state.walk_speed,
@@ -565,7 +568,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       health_state: 0,
       effect_state: 0,
       job: character.class,
-      head: character.head_top,
+      head: character.hair,
       weapon: character.weapon || 0,
       shield: character.shield || 0,
       accessory: character.head_bottom || 0,
@@ -600,6 +603,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   defp build_newentry_packet(character, game_state) do
     %ZcNotifyNewentry{
+      object_type: ObjectType.pc(),
       aid: character.account_id,
       gid: character.id,
       speed: game_state.walk_speed,
@@ -607,7 +611,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       health_state: 0,
       effect_state: 0,
       job: character.class,
-      head: character.head_top,
+      head: character.hair,
       weapon: character.weapon || 0,
       shield: character.shield || 0,
       accessory: character.head_bottom || 0,
