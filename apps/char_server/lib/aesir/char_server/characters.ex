@@ -15,6 +15,7 @@ defmodule Aesir.CharServer.Characters do
   alias Aesir.Commons.InterServer.PubSub
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.SessionManager
+  alias Aesir.Commons.Utils
   alias Aesir.Repo
 
   @doc """
@@ -286,7 +287,8 @@ defmodule Aesir.CharServer.Characters do
       luk: validated_data.stats.luk,
       hair: char_data[:hair] || 1,
       hair_color: char_data[:hair_color] || 1,
-      clothes_color: char_data[:clothes_color] || 1
+      clothes_color: char_data[:clothes_color] || 1,
+      sex: Utils.int_to_sex(char_data[:sex])
     }
 
     %Character{}

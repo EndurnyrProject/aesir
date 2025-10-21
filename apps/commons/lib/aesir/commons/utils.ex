@@ -18,4 +18,10 @@ defmodule Aesir.Commons.Utils do
   @spec get_field(any(), any()) :: any()
   def get_field(nil, default), do: default
   def get_field(value, _default), do: value
+
+  def int_to_sex(0), do: "F"
+  def int_to_sex(1), do: "M"
+
+  def sex_to_int("F"), do: 0
+  def sex_to_int("M"), do: 1
 end
