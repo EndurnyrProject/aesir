@@ -46,7 +46,7 @@ defmodule Commons.MixProject do
       {:postgrex, ">= 0.0.0"},
       {:process_tree, "~> 0.2.1"},
       {:ranch, "~> 2.2"},
-      {:recode, github: "hrzndhrn/recode", branch: "0.8.0-dev", only: [:dev], runtime: false},
+      {:recode, "~> 0.8.0", only: [:dev], runtime: false},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
       {:typedstruct, github: "ygorcastor/typedstruct", branch: "main"}
     ]
