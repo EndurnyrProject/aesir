@@ -18,8 +18,6 @@ defmodule Aesir.ZoneServer.Packets.ZcNotifyStandentry do
   """
   use Aesir.Commons.Network.Packet
 
-  alias Aesir.ZoneServer.Constants.ObjectType
-
   @packet_id 0x09FF
 
   defstruct [

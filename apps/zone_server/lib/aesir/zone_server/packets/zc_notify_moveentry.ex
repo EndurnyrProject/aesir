@@ -19,7 +19,6 @@ defmodule Aesir.ZoneServer.Packets.ZcNotifyMoveentry do
   use Aesir.Commons.Network.Packet
 
   alias Aesir.Commons.Utils
-  alias Aesir.ZoneServer.Constants.ObjectType
 
   @packet_id 0x09FD
 

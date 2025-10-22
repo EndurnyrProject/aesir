@@ -141,7 +141,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       game_state = PlayerState.set_path(game_state, simplified_path)
 
       # Send movement confirmation to the client
-      walk_start_time = System.system_time(:millisecond)
+      walk_start_time = System.monotonic_time(:millisecond)
 
       packet = %ZcNotifyPlayermove{
         walk_start_time: walk_start_time,
@@ -260,7 +260,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       weapon: character.weapon || 0,
       shield: character.shield || 0,
       accessory: 0,
-      move_start_time: System.system_time(:millisecond),
+      move_start_time: System.monotonic_time(:millisecond),
       accessory2: 0,
       accessory3: 0,
       src_x: game_state.x,

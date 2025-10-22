@@ -400,7 +400,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
       weapon: 0,
       shield: 0,
       accessory: 0,
-      move_start_time: System.system_time(:millisecond),
+      move_start_time: System.monotonic_time(:millisecond),
       accessory2: 0,
       accessory3: 0,
       head_palette: 0,

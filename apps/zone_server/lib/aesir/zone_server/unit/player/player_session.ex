@@ -522,7 +522,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       weapon: character.weapon || 0,
       shield: character.shield || 0,
       accessory: character.head_bottom || 0,
-      move_start_time: System.system_time(:millisecond),
+      move_start_time: System.monotonic_time(:millisecond),
       accessory2: character.head_mid || 0,
       accessory3: 0,
       src_x: game_state.x,
