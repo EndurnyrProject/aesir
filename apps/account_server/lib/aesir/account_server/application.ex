@@ -8,6 +8,7 @@ defmodule Aesir.AccountServer.Application do
   require Logger
 
   alias Aesir.AccountServer.Config.Network, as: NetworkConfig
+  alias Aesir.Commons.InterServer.PubSub
   alias Aesir.Commons.SessionManager
 
   @impl true
@@ -49,6 +50,8 @@ defmodule Aesir.AccountServer.Application do
           1000,
           %{}
         )
+
+        PubSub.subscribe_to_player_events()
 
       {:error, reason} ->
         Logger.error("Failed to start Aesir AccountServer: #{inspect(reason)}")

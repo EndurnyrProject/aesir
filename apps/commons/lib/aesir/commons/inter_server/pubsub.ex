@@ -46,6 +46,24 @@ defmodule Aesir.Commons.InterServer.PubSub do
     Phoenix.PubSub.broadcast(@pubsub_name, @players_topic, {:player_event, event})
   end
 
+  @doc """
+  Broadcast kick connection event to force disconnect an existing connection.
+  Used to prevent duplicate logins by terminating the first connection when
+  a second login attempt is detected.
+  """
+  @spec broadcast_kick_connection(account_id :: non_neg_integer(), reason :: atom()) :: :ok
+  def broadcast_kick_connection(account_id, reason) do
+    event = %{
+      event: "kick_connection",
+      account_id: account_id,
+      reason: reason,
+      node: Node.self(),
+      timestamp: DateTime.utc_now()
+    }
+
+    Phoenix.PubSub.broadcast(@pubsub_name, @players_topic, {:player_event, event})
+  end
+
   # Character Events (Char -> Account)
 
   @doc """

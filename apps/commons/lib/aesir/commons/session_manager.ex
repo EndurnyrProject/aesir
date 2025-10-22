@@ -69,6 +69,17 @@ defmodule Aesir.Commons.SessionManager do
   end
 
   @doc """
+  Get online user information for an account.
+  Returns `{:ok, online_user}` if the user is currently online,
+  or `{:error, :not_found}` if the user is not online.
+  """
+  @spec get_online_user(non_neg_integer()) ::
+          {:ok, OnlineUser.t()} | {:error, :not_found | any()}
+  def get_online_user(account_id) do
+    GenServer.call(@server_name, {:get_online_user, account_id})
+  end
+
+  @doc """
   Get online users count by server type.
   """
   def get_online_count(server_type \\ nil) do
@@ -279,6 +290,22 @@ defmodule Aesir.Commons.SessionManager do
          end) do
       {:ok, session} when session != nil ->
         {:reply, {:ok, session}, state}
+
+      {:ok, nil} ->
+        {:reply, {:error, :not_found}, state}
+
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
+    end
+  end
+
+  @impl true
+  def handle_call({:get_online_user, account_id}, _from, state) do
+    case Memento.transaction(fn ->
+           Memento.Query.read(OnlineUser, account_id)
+         end) do
+      {:ok, online_user} when online_user != nil ->
+        {:reply, {:ok, online_user}, state}
 
       {:ok, nil} ->
         {:reply, {:error, :not_found}, state}

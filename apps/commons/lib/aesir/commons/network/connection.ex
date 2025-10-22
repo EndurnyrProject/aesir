@@ -168,6 +168,18 @@ defmodule Aesir.Commons.Network.Connection do
     {:stop, {:socket_error, reason}, state}
   end
 
+  def handle_info({:player_event, %{event: "kick_connection", account_id: aid} = event}, state) do
+    case Map.get(state.session_data, :account_id) do
+      ^aid ->
+        Logger.info("Connection kicked for account #{aid}, reason: #{inspect(event[:reason])}")
+
+        {:stop, :kicked, state}
+
+      _ ->
+        {:noreply, state}
+    end
+  end
+
   def handle_info(msg, %{impl_module: impl_module} = state) do
     if function_exported?(impl_module, :handle_info, 2) do
       impl_module.handle_info(msg, state)

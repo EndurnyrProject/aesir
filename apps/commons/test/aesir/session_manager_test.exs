@@ -188,6 +188,53 @@ defmodule Aesir.Commons.SessionManagerTest do
     end
   end
 
+  describe "get_online_user/1" do
+    test "successfully retrieves online user information" do
+      account_id = 111
+      username = "online_test_user"
+
+      session_data = %{
+        login_id1: 1,
+        login_id2: 2,
+        auth_code: 1234,
+        username: username
+      }
+
+      assert :ok = SessionManager.create_session(account_id, session_data)
+      assert :ok = SessionManager.set_user_online(account_id, :char_server)
+
+      {:ok, online_user} = SessionManager.get_online_user(account_id)
+      assert online_user.account_id == account_id
+      assert online_user.username == username
+      assert online_user.server_type == :char_server
+      assert online_user.server_node == Node.self()
+    end
+
+    test "returns :not_found if user is not online" do
+      account_id = 112
+      assert {:error, :not_found} = SessionManager.get_online_user(account_id)
+    end
+
+    test "returns :not_found after session ends" do
+      account_id = 113
+      username = "temporary_user"
+
+      session_data = %{
+        login_id1: 1,
+        login_id2: 2,
+        auth_code: 1234,
+        username: username
+      }
+
+      assert :ok = SessionManager.create_session(account_id, session_data)
+      assert :ok = SessionManager.set_user_online(account_id, :account_server)
+      assert {:ok, _online_user} = SessionManager.get_online_user(account_id)
+
+      assert :ok = SessionManager.end_session(account_id)
+      assert {:error, :not_found} = SessionManager.get_online_user(account_id)
+    end
+  end
+
   describe "update_character_location/4" do
     test "successfully updates character location" do
       char_id = 1

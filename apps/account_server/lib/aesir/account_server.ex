@@ -40,6 +40,28 @@ defmodule Aesir.AccountServer do
   end
 
   defp handle_successful_login(account, session_data) do
+    case SessionManager.get_online_user(account.id) do
+      {:ok, _online_user} ->
+        Logger.warning(
+          "Duplicate login for account #{account.id} (#{account.userid}). Kicking old session and proceeding with new login."
+        )
+
+        PubSub.broadcast_kick_connection(account.id, :duplicate_login)
+        proceed_with_login(account, session_data)
+
+      {:error, :not_found} ->
+        proceed_with_login(account, session_data)
+
+      {:error, reason} ->
+        Logger.error(
+          "Failed to check online status for account #{account.id}: #{inspect(reason)}"
+        )
+
+        handle_failed_login(:server_error, session_data)
+    end
+  end
+
+  defp proceed_with_login(account, session_data) do
     auth_code = :rand.uniform(999_999_999)
     login_id1 = :rand.uniform(999_999_999)
     login_id2 = :rand.uniform(999_999_999)
