@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   require Logger
 
+  alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Constants.ObjectType
   alias Aesir.ZoneServer.Packets.ZcNotifyMoveentry
   alias Aesir.ZoneServer.Packets.ZcNotifyNewentry
@@ -212,9 +213,18 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     MovementHandler.handle_movement_tick(state)
   end
 
-  def handle_info(:movement_completed, %{game_state: game_state} = state) do
+  def handle_info(:movement_completed, %{character: character, game_state: game_state} = state) do
     Logger.debug(
       "Movement completed - action_state: #{game_state.action_state}, movement_intent: #{game_state.movement_intent}, combat_target: #{game_state.combat_target_id}"
+    )
+
+    # Save position to database asynchronously
+    CharacterPersistence.update_position(
+      character.id,
+      game_state.x,
+      game_state.y,
+      game_state.map_name,
+      async: true
     )
 
     # Orchestrate based on action state and movement intent
@@ -430,11 +440,20 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def terminate(_reason, %{
         character: character,
-        game_state: _game_state,
+        game_state: game_state,
         connection_pid: connection_pid,
         connection_monitor_ref: connection_monitor_ref
       }) do
     Process.demonitor(connection_monitor_ref, [:flush])
+
+    # Save final position to database (synchronous to ensure it's persisted)
+    CharacterPersistence.update_position(
+      character.id,
+      game_state.x,
+      game_state.y,
+      game_state.map_name
+    )
+
     broadcast_vanish_on_disconnect(character)
 
     # Clean up player data
