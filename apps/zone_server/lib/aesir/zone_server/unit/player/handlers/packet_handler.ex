@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
 
   alias Aesir.Commons.StatusParams
   alias Aesir.Commons.Utils.ServerTick
+  alias Aesir.ZoneServer.Packets.ZcAckReqname
   alias Aesir.ZoneServer.Packets.ZcAckReqnameall
   alias Aesir.ZoneServer.Packets.ZcEquipitemList
   alias Aesir.ZoneServer.Packets.ZcLongparChange
@@ -97,30 +98,69 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     {:noreply, state}
   end
 
+  # CZ_REQNAME2 - Client requesting entity name
   def handle_packet(
         0x0368,
         packet_data,
-        %{character: character, connection_pid: connection_pid} = state
+        %{
+          character: character,
+          game_state: game_state,
+          connection_pid: connection_pid
+        } = state
       ) do
-    name =
-      if packet_data.char_id == character.account_id do
-        character.name
-      else
-        case find_player_name_by_account_id(packet_data.char_id) do
-          {:ok, player_name} -> player_name
-          {:error, :not_found} -> ""
+    entity_id = packet_data.entity_id
+
+    cond do
+      entity_id == character.account_id ->
+        packet = %ZcAckReqnameall{
+          gid: character.account_id,
+          name: character.name,
+          party_name: "",
+          guild_name: "",
+          position_name: ""
+        }
+
+        send(connection_pid, {:send_packet, packet})
+
+      MapSet.member?(game_state.visible_players, entity_id) ->
+        case UnitRegistry.get_player_name(entity_id) do
+          {:ok, player_name} ->
+            packet = %ZcAckReqnameall{
+              gid: entity_id,
+              name: player_name,
+              party_name: "",
+              guild_name: "",
+              position_name: ""
+            }
+
+            send(connection_pid, {:send_packet, packet})
+
+          {:error, :not_found} ->
+            Logger.warning(
+              "Player #{entity_id} in visible set but not found in registry (lagged client)"
+            )
         end
-      end
 
-    packet = %ZcAckReqnameall{
-      gid: packet_data.char_id,
-      name: name,
-      party_name: "",
-      guild_name: "",
-      position_name: ""
-    }
+      MapSet.member?(game_state.visible_mobs, entity_id) ->
+        case UnitRegistry.get_unit(:mob, entity_id) do
+          {:ok, {_module, mob_state, _pid}} ->
+            packet = %ZcAckReqname{
+              char_id: entity_id,
+              name: mob_state.mob_data.name
+            }
 
-    send(connection_pid, {:send_packet, packet})
+            send(connection_pid, {:send_packet, packet})
+
+          {:error, :not_found} ->
+            Logger.warning(
+              "Mob #{entity_id} in visible set but not found in registry (lagged client)"
+            )
+        end
+
+      true ->
+        Logger.debug("Ignoring name request for entity #{entity_id} (not in view range)")
+    end
+
     {:noreply, state}
   end
 
@@ -218,17 +258,5 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     # Send equipped items
     equipitem_list = ZcEquipitemList.from_inventory_items(inventory_items)
     send(connection_pid, {:send_packet, equipitem_list})
-  end
-
-  defp find_player_name_by_account_id(account_id) do
-    # Use efficient reverse lookup to find character ID from account ID
-    case UnitRegistry.get_char_id_by_account(account_id) do
-      {:ok, char_id} ->
-        # Found the character, get the name
-        UnitRegistry.get_player_name(char_id)
-
-      {:error, :not_found} ->
-        {:error, :not_found}
-    end
   end
 end

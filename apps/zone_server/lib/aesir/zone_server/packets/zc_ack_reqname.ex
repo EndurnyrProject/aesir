@@ -1,13 +1,17 @@
 defmodule Aesir.ZoneServer.Packets.ZcAckReqname do
   @moduledoc """
-  ZC_ACK_REQNAME packet (0x0095) - Server response with character name.
+  ZC_ACK_REQNAME packet (0x0095) - Server response with entity name.
 
-  Sent in response to CZ_REQNAME2 (0x0368) to provide the character's name.
+  Sent in response to CZ_REQNAME2 (0x0368) to provide an entity's name.
+  Used for non-player entities (mobs, NPCs, pets, etc.).
+
+  For player entities, use ZC_ACK_REQNAMEALL (0x0195) instead, which includes
+  party and guild information.
 
   Structure:
   - packet_type: 2 bytes (0x0095)
-  - char_id: 4 bytes (character/account ID)
-  - name: 24 bytes (character name, null-padded)
+  - char_id: 4 bytes (entity ID - mob_id, npc_id, etc.)
+  - name: 24 bytes (entity name, null-padded)
 
   Total size: 30 bytes
   """
