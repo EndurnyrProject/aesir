@@ -8,6 +8,7 @@ rathena.xml
 .DS_Store
 .mnesia
 .memory_bank
+.claude_consciousness.m8
 
 apps/zone_server/priv/db/rathena
 

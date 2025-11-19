@@ -8,14 +8,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
 
   alias Aesir.Commons.StatusParams
   alias Aesir.Commons.Utils.ServerTick
+  alias Aesir.ZoneServer.Packets.CzRequestChat
   alias Aesir.ZoneServer.Packets.ZcAckReqname
   alias Aesir.ZoneServer.Packets.ZcAckReqnameall
   alias Aesir.ZoneServer.Packets.ZcEquipitemList
   alias Aesir.ZoneServer.Packets.ZcLongparChange
   alias Aesir.ZoneServer.Packets.ZcNormalItemlist
+  alias Aesir.ZoneServer.Packets.ZcNotifyChat
   alias Aesir.ZoneServer.Packets.ZcNotifyTime
   alias Aesir.ZoneServer.Packets.ZcParChange
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  # Chat constants
+  @chat_max_size 255
+
+  # Packet IDs
+  @cz_notify_actorinit 0x007D
+  @cz_request_time 0x007E
+  @cz_request_time2 0x0360
+  @cz_reqname2 0x0368
+  @cz_request_move 0x035F
+  @cz_request_act 0x0437
+  @cz_request_chat 0x008C
 
   @doc """
   Processes an incoming packet for a player session.
@@ -33,7 +48,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
 
   # CZ_NOTIFY_ACTORINIT - Player finished loading map
   def handle_packet(
-        0x007D,
+        @cz_notify_actorinit,
         _packet_data,
         %{character: character, connection_pid: connection_pid, game_state: game_state} = state
       ) do
@@ -75,7 +90,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   end
 
   # CZ_REQUEST_TIME - Client requesting server time
-  def handle_packet(0x007E, _packet_data, %{connection_pid: connection_pid} = state) do
+  def handle_packet(@cz_request_time, _packet_data, %{connection_pid: connection_pid} = state) do
     server_tick = ServerTick.now()
 
     packet = %ZcNotifyTime{
@@ -87,7 +102,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   end
 
   # CZ_REQUEST_TIME2 - Alternative client time request
-  def handle_packet(0x0360, _packet_data, %{connection_pid: connection_pid} = state) do
+  def handle_packet(@cz_request_time2, _packet_data, %{connection_pid: connection_pid} = state) do
     server_tick = ServerTick.now()
 
     packet = %ZcNotifyTime{
@@ -100,7 +115,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
 
   # CZ_REQNAME2 - Client requesting entity name
   def handle_packet(
-        0x0368,
+        @cz_reqname2,
         packet_data,
         %{
           character: character,
@@ -165,13 +180,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   end
 
   # CZ_REQUEST_MOVE - Player movement request
-  def handle_packet(0x035F, packet_data, state) do
+  def handle_packet(@cz_request_move, packet_data, state) do
     GenServer.cast(self(), {:request_move, packet_data.dest_x, packet_data.dest_y})
     {:noreply, state}
   end
 
   # CZ_REQUEST_ACT - Player action request (attack, sit, stand, etc.)
-  def handle_packet(0x0437, packet_data, state) do
+  def handle_packet(@cz_request_act, packet_data, state) do
     case packet_data.action do
       action when action in [0, 7] ->
         # Attack actions (0 = single attack, 7 = continuous attack)
@@ -190,6 +205,48 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     end
 
     {:noreply, state}
+  end
+
+  # CZ_REQUEST_CHAT - Player sending an area chat message
+  def handle_packet(
+        @cz_request_chat,
+        %CzRequestChat{message: raw_message},
+        %{character: character, game_state: game_state, connection_pid: connection_pid} = state
+      ) do
+    # 1. Message Validation
+    # Max chat size from rAthena is 256 bytes (including null terminator)
+    if byte_size(raw_message) > @chat_max_size do
+      Logger.warning("Player #{character.id} sent a message exceeding maximum length.")
+      # Optionally send an error message to the client
+      {:noreply, state}
+    else
+      # rAthena expects "CharName : Message"
+      # We need to extract the actual message and validate the prefix
+      name_prefix = character.name <> " : "
+
+      if String.starts_with?(raw_message, name_prefix) do
+        chat_message = raw_message
+
+        # 2. Construct ZcNotifyChat packet
+        packet = %ZcNotifyChat{
+          gid: character.id,
+          message: chat_message
+        }
+
+        # 3. Broadcasting
+        # To self
+        send(connection_pid, {:send_packet, packet})
+
+        # To visible players (excluding self)
+        Broadcast.to_visible_players(game_state, packet, exclude_id: character.id)
+      else
+        Logger.warning(
+          "Player #{character.id} sent a malformed chat message (expected '#{name_prefix}'). Message: '#{raw_message}'"
+        )
+      end
+
+      {:noreply, state}
+    end
   end
 
   # Fallback for unknown packets

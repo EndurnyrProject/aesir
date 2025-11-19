@@ -10,9 +10,11 @@ defmodule Aesir.ZoneServer.PacketRegistry do
     Aesir.ZoneServer.Packets.CzReqname2,
     Aesir.ZoneServer.Packets.CzSeCashshopList,
     Aesir.ZoneServer.Packets.CzPingLive,
+    Aesir.ZoneServer.Packets.CzRequestChat,
     # Server to Client packets
     Aesir.ZoneServer.Packets.ZcAcceptEnter,
     Aesir.ZoneServer.Packets.ZcAid,
+    Aesir.ZoneServer.Packets.ZcNotifyChat,
     Aesir.ZoneServer.Packets.ZcAckReqname,
     Aesir.ZoneServer.Packets.ZcNotifyTime,
     Aesir.ZoneServer.Packets.ZcNotifyTime2,
