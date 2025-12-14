@@ -1,5 +1,7 @@
 # Aesir - Ragnarok Online Server Emulator
 
+![Discord](https://img.shields.io/discord/1443876193563705407) [Invite](https://discord.gg/mcae5Gh6Wg)
+
 Aesir is an Elixir-based implementation of a Ragnarok Online server.
 
 ## Project Structure
