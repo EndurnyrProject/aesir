@@ -1,0 +1,18 @@
+defmodule Aesir.ZoneServer.Mmo.StatusEffects.Impositio do
+  @moduledoc """
+  Impositio Manus (SC_IMPOSITIO).
+
+  Increases weapon and magic attack by val2 (5 per skill level). Reapplying
+  refreshes the effect.
+  """
+  use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+    id: :sc_impositio,
+    properties: [:buff],
+    calc_flags: [:watk, :matk],
+    prevented_by: [:sc_refresh, :sc_inspiration]
+
+  @impl true
+  def modifiers(instance, _context) do
+    %{watk: instance.val2, matk: instance.val2}
+  end
+end

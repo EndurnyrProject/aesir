@@ -274,7 +274,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
                )
 
       status = StatusStorage.get_status(:player, player_id, :sc_poisonreact)
-      assert status.state[:counter_remaining] == "val1 / 2"
+      assert status.state[:counter_remaining] == 5
       assert status.state[:boost_mode] == false
     end
 

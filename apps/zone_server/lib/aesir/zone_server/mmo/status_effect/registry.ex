@@ -1,31 +1,22 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Registry do
   @moduledoc """
-  Manages loading and accessing status effect definitions.
+  Stores compiled status effect definitions in ETS for fast runtime access.
 
-  This module handles:
-  - Loading definitions from configuration files
-  - Compiling definitions into efficient runtime structures
-  - Providing access to compiled definitions
-  - Initializing and managing the ETS table for definitions
-
-  The registry is the single source of truth for status effect definitions
-  in the system, ensuring consistent behavior across all game systems.
+  Definitions come from the modules listed in `Aesir.ZoneServer.Mmo.StatusEffects`.
+  Each definition is the module's validated metadata map with the implementing
+  module under the `:module` key, so metadata consumers (properties, immunity,
+  resistance) operate on plain maps while behavior dispatches to the module.
   """
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
   require Logger
 
-  alias Aesir.ZoneServer.Mmo.StatusEffect.FormulaCompiler
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Schema
+  alias Aesir.ZoneServer.Mmo.StatusEffects
 
   @doc """
-  Get a compiled status effect definition by ID.
+  Gets a status effect definition by ID.
 
-  ## Parameters
-    - status_id: The atom identifying the status effect
-    
-  ## Returns
-    - The compiled definition map or nil if not found
+  Returns the metadata map (including the `:module` key) or nil if not found.
   """
   @spec get_definition(atom()) :: map() | nil
   def get_definition(status_id) do
@@ -36,119 +27,28 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Registry do
   end
 
   @doc """
-  Loads status effect definitions from the priv directory.
-  Validates strictly (raises on errors), compiles and stores them in the ETS table.
+  Loads all status effect definitions into the ETS table.
   """
   @spec load_definitions() :: :ok
   def load_definitions do
-    path = Path.join(:code.priv_dir(:zone_server), "db/re/status_effects.exs")
+    modules = StatusEffects.all()
 
-    case File.read(path) do
-      {:ok, content} ->
-        {definitions, _} = Code.eval_string(content)
+    Enum.each(modules, &register_module/1)
 
-        # Always validate strictly - will raise on any validation errors
-        validated_definitions = Schema.validate_all(definitions)
+    Logger.info("Loaded #{length(modules)} status effect definitions")
 
-        Logger.info("All #{map_size(validated_definitions)} status effects passed validation")
-
-        # Compile and store validated definitions
-        Enum.each(validated_definitions, fn {id, definition} ->
-          compiled = compile_definition(definition)
-          :ets.insert(table_for(:status_effect_definitions), {id, compiled})
-        end)
-
-        Logger.info("Loaded #{map_size(validated_definitions)} status effect definitions")
-
-        :ok
-
-      {:error, reason} ->
-        raise "Failed to read status effect definitions from #{path}: #{reason}"
-    end
+    :ok
   end
 
   @doc """
-  Compiles a status effect definition into its runtime representation.
+  Registers a single module-based status effect definition.
+
+  The module must implement `Aesir.ZoneServer.Mmo.StatusEffect.Definition`.
   """
-  @spec compile_definition(map()) :: map()
-  def compile_definition(definition) do
-    definition
-    |> compile_hooks()
-    |> compile_phases()
+  @spec register_module(module()) :: :ok
+  def register_module(module) do
+    definition = Map.put(module.metadata(), :module, module)
+    :ets.insert(table_for(:status_effect_definitions), {module.id(), definition})
+    :ok
   end
-
-  # Private functions
-
-  defp compile_hooks(definition) do
-    Enum.reduce([:on_apply, :on_expire, :on_damage, :on_damaged], definition, fn hook, def ->
-      case def[hook] do
-        nil ->
-          def
-
-        # Special handling for on_damage which can have action/condition structure
-        %{action: _} = _damage_config when hook == :on_damage ->
-          # Don't compile on_damage with action/condition structure
-          def
-
-        actions ->
-          Map.put(def, hook, compile_actions(actions))
-      end
-    end)
-    |> compile_tick_hooks()
-  end
-
-  defp compile_tick_hooks(definition) do
-    case definition[:tick] do
-      nil ->
-        definition
-
-      tick_def ->
-        Map.put(definition, :tick, %{
-          interval: tick_def[:interval] || 1000,
-          actions: compile_actions(tick_def[:actions] || [])
-        })
-    end
-  end
-
-  defp compile_phases(definition) do
-    case definition[:phases] do
-      nil ->
-        definition
-
-      phases ->
-        compiled_phases =
-          Enum.map(phases, fn {phase_id, phase_def} ->
-            compiled_phase =
-              phase_def
-              |> Map.put(:modifiers, phase_def[:modifiers] || %{})
-              |> compile_hooks()
-
-            {phase_id, compiled_phase}
-          end)
-          |> Map.new()
-
-        Map.put(definition, :phases, compiled_phases)
-    end
-  end
-
-  defp compile_actions(actions) when is_list(actions) do
-    Enum.map(actions, &compile_action/1)
-  end
-
-  defp compile_actions(action), do: [compile_action(action)]
-
-  defp compile_action(%{type: :conditional} = action) do
-    %{
-      type: :conditional,
-      condition: FormulaCompiler.compile(action[:if] || action[:condition]),
-      then_actions: compile_actions(action[:then] || []),
-      else_actions: compile_actions(action[:else] || [])
-    }
-  end
-
-  defp compile_action(%{formula: formula} = action) when is_binary(formula) do
-    Map.put(action, :formula_fn, FormulaCompiler.compile(formula))
-  end
-
-  defp compile_action(action), do: action
 end

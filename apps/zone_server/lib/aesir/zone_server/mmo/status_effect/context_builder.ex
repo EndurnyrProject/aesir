@@ -62,21 +62,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder do
   end
 
   @doc """
-  Enhances an existing context with damage information.
-
-  ## Parameters
-    - context: The existing context map
-    - damage_info: Map containing damage information (damage, element, type)
-    
-  ## Returns
-    - The enhanced context with damage information
-  """
-  @spec add_damage_info(map(), map()) :: map()
-  def add_damage_info(context, damage_info) do
-    Map.put(context, :damage_info, damage_info)
-  end
-
-  @doc """
   Get unit stats from UnitRegistry.
 
   ## Parameters
