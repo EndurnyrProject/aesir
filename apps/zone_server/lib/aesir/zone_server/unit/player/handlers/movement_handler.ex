@@ -50,11 +50,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   def handle_movement_tick(%{character: character, game_state: game_state} = state)
       when game_state.movement_state == :moving do
     case game_state.walk_path do
-      [] ->
-        # No more path, stop moving
-        game_state = PlayerState.stop_walking(game_state)
-        {:noreply, %{state | game_state: game_state}}
-
       [{next_x, next_y} | remaining_path] ->
         # Calculate movement cost for this step
         move_cost =

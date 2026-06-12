@@ -261,10 +261,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   defp process_movement_tick(%{movement_state: :moving} = state) do
     case state.walk_path do
-      [] ->
-        # No more path, stop moving
-        MobState.stop_movement(state)
-
       [{next_x, next_y} | remaining_path] ->
         # Calculate movement cost for this step
         move_cost = MovementEngine.get_movement_cost({state.x, state.y}, {next_x, next_y})

@@ -189,14 +189,18 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
       # Attack the mob
       stats = get_player_stats(player.pid)
       player_state = get_player_state(player.pid)
-      Combat.execute_attack(stats, player_state, mob.unit_id)
 
-      # Wait for damage to be applied
-      Process.sleep(100)
+      # A single attack can miss (hit rate is 80 + hit - flee, never guaranteed),
+      # so keep attacking until the mob dies. A landed hit one-shots a 10 HP mob.
+      mob_state =
+        Enum.reduce_while(1..30, get_mob_state(mob.pid), fn _, _acc ->
+          Combat.execute_attack(stats, player_state, mob.unit_id)
+          Process.sleep(20)
+          state = get_mob_state(mob.pid)
+          if state.hp <= 0, do: {:halt, state}, else: {:cont, state}
+        end)
 
-      # Mob should be dead or have very low HP
-      mob_state = get_mob_state(mob.pid)
-      assert mob_state.hp <= 0 || mob_state.hp < 10
+      assert mob_state.hp <= 0
     end
   end
 

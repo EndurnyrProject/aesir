@@ -84,7 +84,7 @@ defmodule Aesir.ZoneServer.Map.MapData do
   def set_cell(%__MODULE__{xs: xs, ys: ys, cells: cells} = map, x, y, gat_type)
       when x >= 0 and x < xs and y >= 0 and y < ys do
     index = y * xs + x
-    <<prefix::binary-size(index), _::8, suffix::binary>> = cells
+    <<prefix::binary-size(^index), _::8, suffix::binary>> = cells
     new_cells = <<prefix::binary, gat_type::8, suffix::binary>>
     %{map | cells: new_cells}
   end

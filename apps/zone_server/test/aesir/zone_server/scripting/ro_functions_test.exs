@@ -1,7 +1,6 @@
 defmodule Aesir.ZoneServer.Scripting.ROFunctionsTest do
   use ExUnit.Case, async: true
   alias Aesir.ZoneServer.Scripting.ROFunctions
-  require Lua
 
   setup do
     lua_state =

@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Inventory
@@ -497,6 +498,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   end
 
   describe "terminate/2" do
+    setup do
+      # terminate/2 persists the final position synchronously. These tests run
+      # without a DB sandbox, so stub the persistence layer to avoid hitting it.
+      Mimic.copy(CharacterPersistence)
+
+      stub(CharacterPersistence, :update_position, fn _id, _x, _y, _map -> {:ok, %Character{}} end)
+
+      :ok
+    end
+
     test "cleans up ETS entries and notifies connection", %{character: character} do
       UnitRegistry.register_player(1, 100, "TestPlayer", self())
 
@@ -630,11 +641,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     test "raises when trying to send packet with nil connection_pid", %{character: character} do
       packet = %Aesir.ZoneServer.Packets.ZcNotifyTime{server_tick: 12_345}
 
-      state = %{
-        character: character,
-        game_state: PlayerState.new(character),
-        connection_pid: nil
-      }
+      state = build_state(character, nil)
 
       assert_raise RuntimeError, "No connection PID for player #{character.id}", fn ->
         PlayerSession.handle_cast(
@@ -667,5 +674,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       assert MapSet.member?(new_state.game_state.visible_players, 2)
       assert MapSet.member?(new_state.game_state.visible_players, 3)
     end
+  end
+
+  defp build_state(character, connection_pid) do
+    %{
+      character: character,
+      game_state: PlayerState.new(character),
+      connection_pid: connection_pid
+    }
   end
 end

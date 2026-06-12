@@ -375,7 +375,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
         {:error, reason} ->
           # Attack failed, don't update attack time
-          Logger.debug("Mob #{state.id} attack failed: #{inspect(reason)}")
+          Logger.debug("Mob #{state.instance_id} attack failed: #{inspect(reason)}")
           state
       end
     else

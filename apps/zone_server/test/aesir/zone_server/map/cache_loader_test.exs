@@ -65,7 +65,7 @@ defmodule Aesir.ZoneServer.Map.CacheLoaderTest do
       assert byte_size(pprontera.cells) == total_cells
 
       for i <- 0..min(100, total_cells - 1) do
-        <<_::binary-size(i), gat_type::8, _::binary>> = pprontera.cells
+        <<_::binary-size(^i), gat_type::8, _::binary>> = pprontera.cells
         assert gat_type in 0..6
       end
     end
@@ -77,7 +77,7 @@ defmodule Aesir.ZoneServer.Map.CacheLoaderTest do
 
       cells_sample =
         for i <- 0..(sample_size - 1) do
-          <<_::binary-size(i), gat_type::8, _::binary>> = pprontera.cells
+          <<_::binary-size(^i), gat_type::8, _::binary>> = pprontera.cells
           gat_type
         end
 

@@ -3,8 +3,6 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement do
   Public API for mob-related operations.
   Provides business logic for mob data access and mob-related calculations.
   """
-  require Logger
-
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDataLoader
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn

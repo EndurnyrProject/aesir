@@ -3,8 +3,6 @@ defmodule Aesir.Commons.InterServer.PubSub do
   Phoenix PubSub integration for inter-server communication between account and char servers.
   """
 
-  require Logger
-
   @pubsub_name Aesir.PubSub
 
   # Topic definitions for account <-> char communication

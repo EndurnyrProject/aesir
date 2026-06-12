@@ -23,7 +23,7 @@ defmodule Aesir.ZoneServer.Map.MapDataTest do
 
       # All cells should be walkable
       for i <- 0..24 do
-        <<_::binary-size(i), gat_type::8, _::binary>> = map.cells
+        <<_::binary-size(^i), gat_type::8, _::binary>> = map.cells
         assert gat_type == GatType.walkable()
       end
     end

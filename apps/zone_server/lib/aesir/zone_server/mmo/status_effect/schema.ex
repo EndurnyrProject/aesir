@@ -8,7 +8,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Schema do
   """
 
   import Peri
-  require Logger
 
   # Type alias for action lists
   @type action_list :: {:either, {{:list, :map}, :map, :atom}}

@@ -222,8 +222,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     max(1, weapon_attack)
   end
 
-  defp calculate_weapon_attack(_attacker), do: 0
-
   defp calculate_mastery_bonus(_attacker) do
     # TODO: Implement weapon mastery based on skills
     0

@@ -4,8 +4,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
   Extracted from PlayerSession to improve modularity and maintainability.
   """
 
-  require Logger
-
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.UnitRegistry

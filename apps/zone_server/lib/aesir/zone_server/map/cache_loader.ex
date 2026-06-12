@@ -126,7 +126,7 @@ defmodule Aesir.ZoneServer.Map.CacheLoader do
       {:error, "Invalid map dimensions or data length"}
     else
       case rest do
-        <<compressed_data::binary-size(len), remaining::binary>> ->
+        <<compressed_data::binary-size(^len), remaining::binary>> ->
           {:ok, {map_name, xs, ys, compressed_data}, remaining}
 
         _ ->

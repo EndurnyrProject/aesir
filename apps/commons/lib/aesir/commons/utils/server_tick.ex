@@ -35,7 +35,7 @@ defmodule Aesir.Commons.Utils.ServerTick do
   ## Examples
 
       iex> tick = ServerTick.now()
-      iex> is_integer(tick) and tick >= 0 and tick <= 0xFFFFFFFF
+      iex> tick >= 0 and tick <= 0xFFFFFFFF
       true
 
   """
@@ -60,7 +60,7 @@ defmodule Aesir.Commons.Utils.ServerTick do
 
       iex> full_time = System.system_time(:millisecond)
       iex> tick = ServerTick.from_timestamp(full_time)
-      iex> is_integer(tick) and tick >= 0 and tick <= 0xFFFFFFFF
+      iex> tick >= 0 and tick <= 0xFFFFFFFF
       true
 
   """

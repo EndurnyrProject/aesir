@@ -1,8 +1,6 @@
 defmodule Aesir.ZoneServer.EtsTable do
   use Agent
 
-  require Logger
-
   def start_link(opts) do
     {seed, opts} = Keyword.pop(opts, :seed)
 

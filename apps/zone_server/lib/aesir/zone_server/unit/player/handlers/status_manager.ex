@@ -4,8 +4,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
   Extracted from PlayerSession to improve modularity and maintainability.
   """
 
-  require Logger
-
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler

@@ -250,7 +250,7 @@ defmodule Aesir.Commons.Network.Connection do
 
               # credo:disable-for-next-line Credo.Check.Refactor.Nesting
               if byte_size(buffer) >= length do
-                <<full_packet::binary-size(length), rest::binary>> = buffer
+                <<full_packet::binary-size(^length), rest::binary>> = buffer
                 {:ok, packet_id, full_packet, rest}
               else
                 {:need_more, length}
@@ -260,7 +260,7 @@ defmodule Aesir.Commons.Network.Connection do
             end
 
           byte_size(buffer) >= size ->
-            <<full_packet::binary-size(size), rest::binary>> = buffer
+            <<full_packet::binary-size(^size), rest::binary>> = buffer
             {:ok, packet_id, full_packet, rest}
 
           true ->

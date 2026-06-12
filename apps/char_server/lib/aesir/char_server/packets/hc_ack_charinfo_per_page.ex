@@ -31,7 +31,7 @@ defmodule Aesir.CharServer.Packets.HcAckCharinfoPerPage do
     data_size = length - 4
 
     if byte_size(data) >= data_size do
-      <<char_data::binary-size(data_size), _rest::binary>> = data
+      <<char_data::binary-size(^data_size), _rest::binary>> = data
       characters = parse_characters(char_data, [])
       {:ok, %__MODULE__{characters: characters}}
     else

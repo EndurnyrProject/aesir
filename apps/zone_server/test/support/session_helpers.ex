@@ -407,7 +407,7 @@ defmodule Aesir.ZoneServer.SessionHelpers do
 
         connection_process_loop(test_pid)
 
-      msg ->
+      _msg ->
         # Ignore unexpected messages
         connection_process_loop(test_pid)
     end

@@ -228,8 +228,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.SchemaTest do
 
   describe "edge cases" do
     test "handles empty effect definition" do
+      empty_effect = Map.take(%{}, [])
+
       assert_raise RuntimeError, fn ->
-        Schema.validate(%{})
+        Schema.validate(empty_effect)
       end
     end
 
