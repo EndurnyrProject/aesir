@@ -1,26 +1,15 @@
 defmodule Aesir.ZoneServer.Mmo.JobManagement.Job do
+  @moduledoc """
+  Struct describing a single job's static data.
+
+  Dense per-level tables (`base_hp`, `base_sp`, `base_ap`, `base_exp`,
+  `job_exp`, `bonus_stats`) are plain maps keyed by level, so a level lookup is
+  a single `Map.fetch/2`. The data is built by the generated job modules under
+  `Aesir.ZoneServer.Mmo.JobManagement.Jobs` and lives in the BEAM constant pool.
+  """
   use TypedStruct
 
-  typedstruct enforce: true, module: Experience do
-    field :level, non_neg_integer()
-    field :exp, non_neg_integer()
-  end
-
-  typedstruct module: BaseHp do
-    field :level, non_neg_integer()
-    field :hp, non_neg_integer()
-  end
-
-  typedstruct module: BaseSp do
-    field :level, non_neg_integer()
-    field :sp, non_neg_integer()
-  end
-
-  typedstruct module: BaseAp do
-    field :level, non_neg_integer()
-    field :ap, non_neg_integer()
-  end
-
+  # Per-level bonus stats granted at a job level.
   typedstruct module: BonusStats do
     field :level, non_neg_integer()
     field :str, non_neg_integer(), default: 0
@@ -37,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.Job do
     field :crt, non_neg_integer(), default: 0
   end
 
+  # Job-wide stat caps. Currently unused (kept nil), retained for shape.
   typedstruct module: MaxStats do
     field :hp, non_neg_integer()
     field :sp, non_neg_integer()
@@ -55,6 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.Job do
     field :crt, non_neg_integer()
   end
 
+  # Base attack speed per weapon type. A nil field means the job cannot use that weapon.
   typedstruct module: BaseAspd do
     field :fist, non_neg_integer()
     field :dagger, non_neg_integer()
@@ -83,30 +74,32 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.Job do
     field :shield, non_neg_integer()
   end
 
+  @typedoc "Dense table keyed by level."
+  @type level_table :: %{non_neg_integer() => non_neg_integer()}
+
   typedstruct do
     field :id, non_neg_integer()
     field :name, atom()
 
-    field :base_ap, list(BaseAp.t())
-    field :base_hp, list(BaseHp.t())
-    field :base_sp, list(BaseSp.t())
+    field :base_hp, level_table(), default: %{}
+    field :base_sp, level_table(), default: %{}
+    field :base_ap, level_table(), default: %{}
+    field :base_exp, level_table(), default: %{}
+    field :job_exp, level_table(), default: %{}
+    field :bonus_stats, %{non_neg_integer() => BonusStats.t()}, default: %{}
+
     field :base_aspd, BaseAspd.t()
 
-    field :hp_factor, non_neg_integer()
-    field :hp_increase, non_neg_integer()
-    field :sp_factor, non_neg_integer()
-    field :sp_increase, non_neg_integer()
-    field :ap_factor, non_neg_integer()
-    field :ap_increase, non_neg_integer()
+    field :hp_factor, non_neg_integer(), default: 0
+    field :hp_increase, non_neg_integer(), default: 0
+    field :sp_factor, non_neg_integer(), default: 0
+    field :sp_increase, non_neg_integer(), default: 0
+    field :ap_factor, non_neg_integer(), default: 0
+    field :ap_increase, non_neg_integer(), default: 0
 
-    field :bonus_stats, list(BonusStats.t())
-
-    field :base_exp, list(Experience.t())
-    field :job_exp, list(Experience.t())
-
-    field :max_weight, non_neg_integer()
-    field :max_base_level, non_neg_integer()
-    field :max_job_level, non_neg_integer()
+    field :max_weight, non_neg_integer(), default: 0
+    field :max_base_level, non_neg_integer(), default: 99
+    field :max_job_level, non_neg_integer(), default: 99
     field :max_stats, MaxStats.t()
   end
 end

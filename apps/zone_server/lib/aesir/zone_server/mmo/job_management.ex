@@ -3,10 +3,9 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
   Public API for job-related operations.
   Provides business logic for stat calculations and job information access.
   """
-  require Logger
 
   alias Aesir.ZoneServer.Mmo.JobManagement.Job
-  alias Aesir.ZoneServer.Mmo.JobManagement.JobDataLoader
+  alias Aesir.ZoneServer.Mmo.JobManagement.Jobs
 
   @doc """
   Get a job by its ID.
@@ -14,7 +13,10 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
   """
   @spec get_job_by_id(integer()) :: {:ok, Job.t()} | {:error, atom()}
   def get_job_by_id(job_id) when is_integer(job_id) do
-    JobDataLoader.get_job(job_id)
+    case Jobs.by_id(job_id) do
+      {:ok, job} -> {:ok, job}
+      :error -> {:error, :job_not_found}
+    end
   end
 
   @doc """
@@ -23,7 +25,10 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
   """
   @spec get_job_by_name(atom()) :: {:ok, Job.t()} | {:error, atom()}
   def get_job_by_name(job_name) when is_atom(job_name) do
-    JobDataLoader.get_job(job_name)
+    case Jobs.by_name(job_name) do
+      {:ok, job} -> {:ok, job}
+      :error -> {:error, :job_not_found}
+    end
   end
 
   @doc """
@@ -32,7 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
   """
   @spec get_all_jobs() :: [Job.t()]
   def get_all_jobs do
-    JobDataLoader.get_all_jobs()
+    Jobs.all()
   end
 
   @doc """
@@ -41,10 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
   """
   @spec get_base_hp(atom(), integer()) :: {:ok, non_neg_integer()} | {:error, atom()}
   def get_base_hp(job_name, level) when is_atom(job_name) and is_integer(level) do
-    with {:ok, job} <- get_job_by_name(job_name),
-         {:ok, hp_struct} <- find_stat_for_level(job.base_hp, level) do
-      {:ok, hp_struct.hp}
-    end
+    with {:ok, job} <- get_job_by_name(job_name), do: fetch_level(job.base_hp, level)
   end
 
   @doc """
@@ -53,10 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
   """
   @spec get_base_sp(atom(), integer()) :: {:ok, non_neg_integer()} | {:error, atom()}
   def get_base_sp(job_name, level) when is_atom(job_name) and is_integer(level) do
-    with {:ok, job} <- get_job_by_name(job_name),
-         {:ok, sp_struct} <- find_stat_for_level(job.base_sp, level) do
-      {:ok, sp_struct.sp}
-    end
+    with {:ok, job} <- get_job_by_name(job_name), do: fetch_level(job.base_sp, level)
   end
 
   @doc """
@@ -65,10 +64,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
   """
   @spec get_base_ap(atom(), integer()) :: {:ok, non_neg_integer()} | {:error, atom()}
   def get_base_ap(job_name, level) when is_atom(job_name) and is_integer(level) do
-    with {:ok, job} <- get_job_by_name(job_name),
-         {:ok, ap_struct} <- find_stat_for_level(job.base_ap, level) do
-      {:ok, ap_struct.ap}
-    end
+    with {:ok, job} <- get_job_by_name(job_name), do: fetch_level(job.base_ap, level)
   end
 
   @doc """
@@ -77,10 +73,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
   """
   @spec get_job_exp(atom(), integer()) :: {:ok, non_neg_integer()} | {:error, atom()}
   def get_job_exp(job_name, level) when is_atom(job_name) and is_integer(level) do
-    with {:ok, job} <- get_job_by_name(job_name),
-         {:ok, exp_struct} <- find_stat_for_level(job.job_exp, level) do
-      {:ok, exp_struct.exp}
-    end
+    with {:ok, job} <- get_job_by_name(job_name), do: fetch_level(job.job_exp, level)
   end
 
   @doc """
@@ -89,10 +82,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
   """
   @spec get_base_exp(atom(), integer()) :: {:ok, non_neg_integer()} | {:error, atom()}
   def get_base_exp(job_name, level) when is_atom(job_name) and is_integer(level) do
-    with {:ok, job} <- get_job_by_name(job_name),
-         {:ok, exp_struct} <- find_stat_for_level(job.base_exp, level) do
-      {:ok, exp_struct.exp}
-    end
+    with {:ok, job} <- get_job_by_name(job_name), do: fetch_level(job.base_exp, level)
   end
 
   @doc """
@@ -101,9 +91,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
   """
   @spec get_bonus_stats(atom(), integer()) :: {:ok, Job.BonusStats.t()} | {:error, atom()}
   def get_bonus_stats(job_name, level) when is_atom(job_name) and is_integer(level) do
-    with {:ok, job} <- get_job_by_name(job_name) do
-      find_stat_for_level(job.bonus_stats, level)
-    end
+    with {:ok, job} <- get_job_by_name(job_name), do: fetch_level(job.bonus_stats, level)
   end
 
   @doc """
@@ -132,25 +120,25 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
   def get_base_stats_for_level(job_name, level) when is_atom(job_name) and is_integer(level) do
     with {:ok, job} <- get_job_by_name(job_name) do
       hp =
-        case find_stat_for_level(job.base_hp, level) do
-          {:ok, hp_struct} -> hp_struct.hp
+        case fetch_level(job.base_hp, level) do
+          {:ok, v} -> v
           _ -> 0
         end
 
       sp =
-        case find_stat_for_level(job.base_sp, level) do
-          {:ok, sp_struct} -> sp_struct.sp
+        case fetch_level(job.base_sp, level) do
+          {:ok, v} -> v
           _ -> 0
         end
 
       ap =
-        case find_stat_for_level(job.base_ap, level) do
-          {:ok, ap_struct} -> ap_struct.ap
+        case fetch_level(job.base_ap, level) do
+          {:ok, v} -> v
           _ -> 0
         end
 
       bonus_stats =
-        case find_stat_for_level(job.bonus_stats, level) do
+        case fetch_level(job.bonus_stats, level) do
           {:ok, stats} -> stats
           _ -> nil
         end
@@ -195,8 +183,8 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
          true <- target_level > 0 || {:error, :invalid_level} do
       total =
         job.base_exp
-        |> Enum.filter(fn %{level: l} -> l < target_level end)
-        |> Enum.reduce(0, fn %{exp: exp}, acc -> acc + exp end)
+        |> Enum.filter(fn {level, _exp} -> level < target_level end)
+        |> Enum.reduce(0, fn {_level, exp}, acc -> acc + exp end)
 
       {:ok, total}
     end
@@ -212,36 +200,19 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
          true <- target_level > 0 || {:error, :invalid_level} do
       total =
         job.job_exp
-        |> Enum.filter(fn %{level: l} -> l < target_level end)
-        |> Enum.reduce(0, fn %{exp: exp}, acc -> acc + exp end)
+        |> Enum.filter(fn {level, _exp} -> level < target_level end)
+        |> Enum.reduce(0, fn {_level, exp}, acc -> acc + exp end)
 
       {:ok, total}
     end
   end
 
-  defp find_stat_for_level([], _level), do: {:error, :no_stats_defined}
-  defp find_stat_for_level(nil, _level), do: {:error, :no_stats_defined}
+  defp fetch_level(table, _level) when map_size(table) == 0, do: {:error, :no_stats_defined}
 
-  defp find_stat_for_level(stats, level) when is_list(stats) and is_integer(level) do
-    case Enum.filter(stats, fn
-           %{level: entry_level} -> entry_level <= level
-           _ -> false
-         end) do
-      [] ->
-        # If no entry found, check if we have any stats at all
-        case stats do
-          [] -> {:error, :no_stats_defined}
-          _ -> {:error, :level_out_of_range}
-        end
-
-      filtered ->
-        # Get the highest level entry that's <= target level
-        result =
-          filtered
-          |> Enum.sort_by(& &1.level, :desc)
-          |> List.first()
-
-        {:ok, result}
+  defp fetch_level(table, level) do
+    case Map.fetch(table, level) do
+      {:ok, value} -> {:ok, value}
+      :error -> {:error, :level_out_of_range}
     end
   end
 end

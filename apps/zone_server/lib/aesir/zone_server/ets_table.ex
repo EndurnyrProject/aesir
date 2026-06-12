@@ -14,7 +14,6 @@ defmodule Aesir.ZoneServer.EtsTable do
     core_runtime_tables(seed)
     map_cache_tables(seed)
     status_tables(seed)
-    job_data_tables(seed)
     status_effect_tables(seed)
     unit_registry_tables(seed)
     mob_data_tables(seed)
@@ -61,22 +60,6 @@ defmodule Aesir.ZoneServer.EtsTable do
         {:write_concurrency, true}
       ]
     )
-  end
-
-  defp job_data_tables(seed) do
-    :ets.new(table_for(:job_data_by_id, seed), [
-      :named_table,
-      :set,
-      :public,
-      read_concurrency: true
-    ])
-
-    :ets.new(table_for(:job_data_by_name, seed), [
-      :named_table,
-      :set,
-      :public,
-      read_concurrency: true
-    ])
   end
 
   defp status_effect_tables(seed) do
