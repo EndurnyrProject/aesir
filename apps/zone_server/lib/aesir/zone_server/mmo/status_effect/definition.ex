@@ -44,6 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     - `:duration` - base duration in milliseconds
   """
 
+  alias Aesir.ZoneServer.Mmo.DefinitionValidation
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Unit
 
@@ -167,53 +168,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   """
   @spec validate_metadata!(keyword(), module()) :: map()
   def validate_metadata!(opts, module) do
-    metadata = Map.new(opts)
-
-    check_unknown_keys!(metadata, module)
-
-    case Peri.validate(@metadata_schema, metadata) do
-      {:ok, validated} ->
-        @list_defaults
-        |> Map.merge(@scalar_defaults)
-        |> Map.merge(validated)
-
-      {:error, errors} ->
-        raise ArgumentError,
-              "invalid status effect metadata in #{inspect(module)}: #{format_errors(errors)}"
-    end
+    DefinitionValidation.validate!(
+      @metadata_schema,
+      opts,
+      module,
+      Map.merge(@list_defaults, @scalar_defaults)
+    )
   end
-
-  defp check_unknown_keys!(metadata, module) do
-    unknown = Map.keys(metadata) -- Map.keys(@metadata_schema)
-
-    unless unknown == [] do
-      raise ArgumentError,
-            "unknown status effect metadata keys in #{inspect(module)}: #{inspect(unknown)}"
-    end
-  end
-
-  defp format_errors(errors) when is_list(errors) do
-    Enum.map_join(errors, "; ", &format_error/1)
-  end
-
-  defp format_errors(error), do: format_error(error)
-
-  defp format_error(%Peri.Error{path: path, message: message, errors: nested})
-       when is_list(nested) do
-    prefix = if path in [nil, []], do: "", else: "#{Enum.join(path, ".")}: "
-    nested_msg = format_errors(nested)
-
-    case message do
-      nil -> "#{prefix}#{nested_msg}"
-      _ -> "#{prefix}#{message} (#{nested_msg})"
-    end
-  end
-
-  defp format_error(%Peri.Error{path: path, message: message}) do
-    prefix = if path in [nil, []], do: "", else: "#{Enum.join(path, ".")}: "
-    "#{prefix}#{message}"
-  end
-
-  defp format_error({field, message}), do: "#{field}: #{message}"
-  defp format_error(other), do: inspect(other)
 end

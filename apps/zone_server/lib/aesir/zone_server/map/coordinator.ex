@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   require Logger
 
   alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobDataLoader
+  alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -74,7 +74,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
     # Load spawn configurations
     spawn_data =
-      case MobDataLoader.get_spawns_for_map(map_name) do
+      case MobManagement.get_spawns_for_map(map_name) do
         {:ok, spawns} -> spawns
         {:error, _} -> []
       end
@@ -96,8 +96,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
       mob_supervisor_pid: mob_supervisor_pid
     }
 
-    # Schedule initial mob spawns if any
-    if length(spawn_data) > 0 do
+    if spawn_data != [] do
       Process.send_after(self(), :initial_spawn, 100)
     end
 
@@ -307,42 +306,34 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   defp spawn_single_mob(spawn_config, state) do
     instance_id = generate_mob_instance_id()
 
-    # Calculate spawn position
     {x, y} = calculate_spawn_position(spawn_config.spawn_area, state.map_data)
 
-    # Get mob data
-    case MobDataLoader.get_mob(spawn_config.mob_id) do
-      {:ok, mob_data} ->
-        # Create mob state with .gat suffix for client compatibility
-        map_name_with_gat =
-          if String.ends_with?(state.map_name, ".gat") do
-            state.map_name
-          else
-            state.map_name <> ".gat"
-          end
+    mob_data = spawn_config.mob.mob()
 
-        mob_state = MobState.new(instance_id, mob_data, spawn_config, map_name_with_gat, x, y)
+    map_name_with_gat =
+      if String.ends_with?(state.map_name, ".gat") do
+        state.map_name
+      else
+        state.map_name <> ".gat"
+      end
 
-        # Spawn mob session under supervisor
-        case MobSupervisor.spawn_mob(state.map_name, mob_state) do
-          {:ok, mob_pid} ->
-            # Register with UnitRegistry
-            UnitRegistry.register_unit(:mob, instance_id, MobState, mob_state, mob_pid)
+    mob_state = MobState.new(instance_id, mob_data, spawn_config, map_name_with_gat, x, y)
 
-            Logger.debug(
-              "Spawned mob #{mob_data.name} (#{instance_id}) at #{x},#{y} on #{state.map_name} with pid #{inspect(mob_pid)}"
-            )
+    case MobSupervisor.spawn_mob(state.map_name, mob_state) do
+      {:ok, mob_pid} ->
+        UnitRegistry.register_unit(:mob, instance_id, MobState, mob_state, mob_pid)
 
-            # Update state - only increment next_mob_id
-            %{state | next_mob_id: state.next_mob_id + 1}
+        Logger.debug(
+          "Spawned mob #{mob_data.name} (#{instance_id}) at #{x},#{y} on #{state.map_name} with pid #{inspect(mob_pid)}"
+        )
 
-          {:error, reason} ->
-            Logger.error("Failed to start mob session #{spawn_config.mob_id}: #{inspect(reason)}")
-            state
-        end
+        %{state | next_mob_id: state.next_mob_id + 1}
 
       {:error, reason} ->
-        Logger.error("Failed to load mob data #{spawn_config.mob_id}: #{inspect(reason)}")
+        Logger.error(
+          "Failed to start mob session #{inspect(spawn_config.mob)}: #{inspect(reason)}"
+        )
+
         state
     end
   end

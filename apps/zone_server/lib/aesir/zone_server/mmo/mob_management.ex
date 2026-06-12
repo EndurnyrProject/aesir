@@ -3,26 +3,27 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement do
   Public API for mob-related operations.
   Provides business logic for mob data access and mob-related calculations.
   """
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobDataLoader
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
+  alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
+  alias Aesir.ZoneServer.Mmo.MobManagement.Spawns
 
   @doc """
   Get a mob by its ID.
   Returns {:ok, mob} or {:error, reason}
   """
-  @spec get_mob_by_id(integer()) :: {:ok, MobDefinition.t()} | {:error, atom()}
+  @spec get_mob_by_id(integer()) :: {:ok, MobDefinition.t()} | {:error, :mob_not_found}
   def get_mob_by_id(mob_id) when is_integer(mob_id) do
-    MobDataLoader.get_mob(mob_id)
+    with :error <- Mobs.by_id(mob_id), do: {:error, :mob_not_found}
   end
 
   @doc """
   Get a mob by its aegis name.
   Returns {:ok, mob} or {:error, reason}
   """
-  @spec get_mob_by_name(atom()) :: {:ok, MobDefinition.t()} | {:error, atom()}
+  @spec get_mob_by_name(atom()) :: {:ok, MobDefinition.t()} | {:error, :mob_not_found}
   def get_mob_by_name(aegis_name) when is_atom(aegis_name) do
-    MobDataLoader.get_mob(aegis_name)
+    with :error <- Mobs.by_name(aegis_name), do: {:error, :mob_not_found}
   end
 
   @doc """
@@ -31,16 +32,16 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement do
   """
   @spec get_all_mobs() :: [MobDefinition.t()]
   def get_all_mobs do
-    MobDataLoader.get_all_mobs()
+    Mobs.all()
   end
 
   @doc """
   Get spawn data for a specific map.
   Returns {:ok, spawns} or {:error, reason}
   """
-  @spec get_spawns_for_map(String.t()) :: {:ok, [MobSpawn.t()]} | {:error, atom()}
+  @spec get_spawns_for_map(String.t()) :: {:ok, [MobSpawn.t()]} | {:error, :no_spawns}
   def get_spawns_for_map(map_name) when is_binary(map_name) do
-    MobDataLoader.get_spawns_for_map(map_name)
+    with :error <- Spawns.for_map(map_name), do: {:error, :no_spawns}
   end
 
   @doc """
@@ -49,7 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement do
   """
   @spec get_all_spawns() :: %{String.t() => [MobSpawn.t()]}
   def get_all_spawns do
-    MobDataLoader.get_all_spawns()
+    Spawns.all()
   end
 
   @doc """

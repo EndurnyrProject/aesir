@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.SessionHelpers do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
+  alias Aesir.ZoneServer.Mmo.MobManagement.Mobs.Poring
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -141,9 +142,9 @@ defmodule Aesir.ZoneServer.SessionHelpers do
     }
 
     mob_spawn = %MobSpawn{
-      mob_id: mob_id,
+      mob: Poring,
       amount: 1,
-      respawn_time: 5000,
+      respawn_time: 5_000,
       spawn_area: %MobSpawn.SpawnArea{
         x: x,
         y: y,

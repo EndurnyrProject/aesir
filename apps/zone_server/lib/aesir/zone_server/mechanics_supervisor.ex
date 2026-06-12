@@ -9,7 +9,6 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
     :ok = Interpreter.init()
 
     children = [
-      Aesir.ZoneServer.Mmo.MobManagement.MobDataLoader,
       Aesir.ZoneServer.Map.PartitionedSupervisor,
       Aesir.ZoneServer.Map.MapManager,
       Aesir.ZoneServer.Unit.Player.PlayerSupervisor,

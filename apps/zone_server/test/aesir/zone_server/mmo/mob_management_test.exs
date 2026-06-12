@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagementTest do
 
   alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
+  alias Aesir.ZoneServer.Mmo.MobManagement.Mobs.Poring
 
   setup :setup_ets_tables
 
@@ -44,7 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagementTest do
       assert length(spawns) > 0
 
       # Check for Poring spawn
-      poring_spawns = Enum.filter(spawns, &(&1.mob_id == 1002))
+      poring_spawns = Enum.filter(spawns, &(&1.mob == Poring))
       assert length(poring_spawns) > 0
     end
 
