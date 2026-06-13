@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Registry do
   @moduledoc """
   Stores compiled status effect definitions in ETS for fast runtime access.
 
-  Definitions come from the modules listed in `Aesir.ZoneServer.Mmo.StatusEffects`.
+  Definitions come from the modules listed in `Aesir.ZoneServer.Mmo.StatusEffect.Effects`.
   Each definition is the module's validated metadata map with the implementing
   module under the `:module` key, so metadata consumers (properties, immunity,
   resistance) operate on plain maps while behavior dispatches to the module.
@@ -11,7 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Registry do
 
   require Logger
 
-  alias Aesir.ZoneServer.Mmo.StatusEffects
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects
 
   @doc """
   Gets a status effect definition by ID.
@@ -31,7 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Registry do
   """
   @spec load_definitions() :: :ok
   def load_definitions do
-    modules = StatusEffects.all()
+    modules = Effects.all()
 
     Enum.each(modules, &register_module/1)
 

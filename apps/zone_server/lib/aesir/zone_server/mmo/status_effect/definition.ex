@@ -8,7 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
 
   ## Example
 
-      defmodule Aesir.ZoneServer.Mmo.StatusEffects.Poison do
+      defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Poison do
         use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
           id: :sc_poison,
           properties: [:debuff, :damage_over_time],

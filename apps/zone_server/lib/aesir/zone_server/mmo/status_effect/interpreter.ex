@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   Status effects are plain Elixir modules implementing
   `Aesir.ZoneServer.Mmo.StatusEffect.Definition`, registered in
-  `Aesir.ZoneServer.Mmo.StatusEffects`. This module drives their lifecycle:
+  `Aesir.ZoneServer.Mmo.StatusEffect.Effects`. This module drives their lifecycle:
 
   1. `apply_status/4` checks immunity, prevention, conflicts and resistance
      from the status metadata, then runs the module's `on_apply` callback and
