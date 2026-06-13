@@ -1,39 +1,34 @@
 defmodule Aesir.Commons.InterServer.Schemas.Session do
   @moduledoc """
-  Memento schema for managing player sessions across the cluster.
-  Stores authentication data and current server state.
+  Player session value carried across the cluster during the login handoff
+  (account -> char -> zone). Stored as a Horde.Registry value; not persisted.
   """
-  use Memento.Table,
-    attributes: [
-      :account_id,
-      :login_id1,
-      :login_id2,
-      :auth_code,
-      :username,
-      :state,
-      :current_server,
-      :current_char_id,
-      :node,
-      :created_at,
-      :last_activity
-    ],
-    index: [:username, :current_server, :node],
-    type: :set
+  use TypedStruct
 
-  @type t :: %__MODULE__{
-          account_id: non_neg_integer(),
-          login_id1: non_neg_integer(),
-          login_id2: non_neg_integer(),
-          auth_code: non_neg_integer(),
-          username: String.t(),
-          state: :authenticating | :char_select | :in_game | :disconnected,
-          current_server: :account_server | :char_server | :zone_server,
-          current_char_id: non_neg_integer() | nil,
-          node: node(),
-          created_at: DateTime.t(),
-          last_activity: DateTime.t()
-        }
+  @type state :: :authenticating | :char_select | :in_game | :disconnected
+  @type server :: :account_server | :char_server | :zone_server
 
+  typedstruct do
+    field :account_id, non_neg_integer(), enforce: true
+    field :login_id1, non_neg_integer()
+    field :login_id2, non_neg_integer()
+    field :auth_code, non_neg_integer()
+    field :username, String.t()
+    field :state, state()
+    field :current_server, server()
+    field :current_char_id, non_neg_integer() | nil
+    field :node, node()
+    field :created_at, DateTime.t()
+    field :last_activity, DateTime.t()
+  end
+
+  @spec new(
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer(),
+          String.t()
+        ) :: t()
   def new(account_id, login_id1, login_id2, auth_code, username) do
     now = DateTime.utc_now()
 
@@ -52,24 +47,23 @@ defmodule Aesir.Commons.InterServer.Schemas.Session do
     }
   end
 
-  def update_activity(session) do
-    %{session | last_activity: DateTime.utc_now()}
-  end
+  @spec update_activity(t()) :: t()
+  def update_activity(session), do: %{session | last_activity: DateTime.utc_now()}
 
-  def transition_to_char_server(session) do
-    update_activity(%{session | state: :char_select, current_server: :char_server})
-  end
+  @spec transition_to_char_server(t()) :: t()
+  def transition_to_char_server(session),
+    do: update_activity(%{session | state: :char_select, current_server: :char_server})
 
-  def transition_to_game(session, char_id) do
-    update_activity(%{
-      session
-      | state: :in_game,
-        current_server: :zone_server,
-        current_char_id: char_id
-    })
-  end
+  @spec transition_to_game(t(), non_neg_integer()) :: t()
+  def transition_to_game(session, char_id),
+    do:
+      update_activity(%{
+        session
+        | state: :in_game,
+          current_server: :zone_server,
+          current_char_id: char_id
+      })
 
-  def disconnect(session) do
-    update_activity(%{session | state: :disconnected})
-  end
+  @spec disconnect(t()) :: t()
+  def disconnect(session), do: update_activity(%{session | state: :disconnected})
 end

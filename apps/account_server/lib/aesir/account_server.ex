@@ -51,13 +51,6 @@ defmodule Aesir.AccountServer do
 
       {:error, :not_found} ->
         proceed_with_login(account, session_data)
-
-      {:error, reason} ->
-        Logger.error(
-          "Failed to check online status for account #{account.id}: #{inspect(reason)}"
-        )
-
-        handle_failed_login(:server_error, session_data)
     end
   end
 

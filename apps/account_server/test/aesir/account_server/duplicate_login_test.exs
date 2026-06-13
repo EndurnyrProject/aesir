@@ -7,8 +7,8 @@ defmodule Aesir.AccountServer.DuplicateLoginTest do
   alias Aesir.AccountServer
   alias Aesir.AccountServer.Packets.CaLogin
   alias Aesir.Commons.Auth
+  alias Aesir.Commons.ClusterTestHelper
   alias Aesir.Commons.InterServer.PubSub
-  alias Aesir.Commons.MementoTestHelper
   alias Aesir.Commons.SessionManager
 
   setup :set_mimic_global
@@ -17,7 +17,7 @@ defmodule Aesir.AccountServer.DuplicateLoginTest do
   setup do
     Mimic.copy(Auth)
     Mimic.copy(SessionManager)
-    MementoTestHelper.reset_test_environment()
+    ClusterTestHelper.clear_all()
     PubSub.subscribe_to_player_events()
 
     :ok

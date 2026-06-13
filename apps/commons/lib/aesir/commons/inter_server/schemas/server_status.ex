@@ -1,37 +1,28 @@
 defmodule Aesir.Commons.InterServer.Schemas.ServerStatus do
   @moduledoc """
-  Memento schema for tracking server status across the cluster.
-  Used for server discovery and health monitoring.
+  Service-discovery value for a running server. Stored as a Horde.Registry value
+  keyed by `{:server, server_id}`; owned by a per-node registration process so it
+  disappears automatically when the node goes down.
   """
-  use Memento.Table,
-    attributes: [
-      :server_id,
-      :server_type,
-      :server_node,
-      :status,
-      :player_count,
-      :max_players,
-      :ip,
-      :port,
-      :last_heartbeat,
-      :metadata
-    ],
-    index: [:server_type, :server_node, :status],
-    type: :set
+  use TypedStruct
 
-  @type t :: %__MODULE__{
-          server_id: String.t(),
-          server_type: :account_server | :char_server | :zone_server,
-          server_node: node(),
-          status: :online | :offline | :maintenance,
-          player_count: non_neg_integer(),
-          max_players: non_neg_integer(),
-          ip: :inet.ip_address(),
-          port: non_neg_integer(),
-          last_heartbeat: DateTime.t(),
-          metadata: map()
-        }
+  @type server :: :account_server | :char_server | :zone_server
 
+  typedstruct do
+    field :server_id, String.t(), enforce: true
+    field :server_type, server()
+    field :server_node, node()
+    field :status, :online | :offline | :maintenance
+    field :player_count, non_neg_integer()
+    field :max_players, non_neg_integer()
+    field :ip, :inet.ip_address()
+    field :port, non_neg_integer()
+    field :last_heartbeat, DateTime.t()
+    field :metadata, map()
+  end
+
+  @spec new(String.t(), server(), :inet.ip_address(), non_neg_integer(), non_neg_integer(), map()) ::
+          t()
   def new(server_id, server_type, ip, port, max_players \\ 1000, metadata \\ %{}) do
     %__MODULE__{
       server_id: server_id,
@@ -47,23 +38,7 @@ defmodule Aesir.Commons.InterServer.Schemas.ServerStatus do
     }
   end
 
-  def update_heartbeat(server_status, player_count \\ nil) do
-    %{
-      server_status
-      | last_heartbeat: DateTime.utc_now(),
-        player_count: player_count || server_status.player_count
-    }
-  end
-
-  def update_status(server_status, status) do
-    %{server_status | status: status, last_heartbeat: DateTime.utc_now()}
-  end
-
-  def update_player_count(server_status, player_count) do
-    %{server_status | player_count: player_count, last_heartbeat: DateTime.utc_now()}
-  end
-
-  def healthy?(server_status, timeout_seconds \\ 30) do
-    DateTime.diff(DateTime.utc_now(), server_status.last_heartbeat) < timeout_seconds
-  end
+  @spec put_player_count(t(), non_neg_integer()) :: t()
+  def put_player_count(status, count),
+    do: %{status | player_count: count, last_heartbeat: DateTime.utc_now()}
 end
