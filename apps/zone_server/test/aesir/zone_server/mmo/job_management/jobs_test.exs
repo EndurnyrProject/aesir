@@ -5,16 +5,11 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobsTest do
   alias Aesir.ZoneServer.Mmo.JobManagement.Job
   alias Aesir.ZoneServer.Mmo.JobManagement.Jobs
 
-  # Jobs present in the base-point/stat data but absent from the exp curves in
-  # the source data. They legitimately have no exp tables.
-  @jobs_without_exp [:sky_emperor2]
-
   @dense_value_tables [:base_hp, :base_sp, :base_ap, :base_exp, :job_exp]
 
   describe "registry" do
-    test "exposes every job module" do
-      assert length(Jobs.modules()) == length(Jobs.all())
-      assert length(Jobs.modules()) > 0
+    test "loads the full renewal job set" do
+      assert length(Jobs.all()) == 172
     end
 
     test "all job ids are unique" do
@@ -46,8 +41,8 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobsTest do
   end
 
   describe "data invariants" do
-    test "every job has a base exp and a job exp table (except documented exceptions)" do
-      for %Job{name: name} = job <- Jobs.all(), name not in @jobs_without_exp do
+    test "every job has a base exp and a job exp table" do
+      for %Job{name: name} = job <- Jobs.all() do
         assert map_size(job.base_exp) > 0, "#{name} is missing base_exp"
         assert map_size(job.job_exp) > 0, "#{name} is missing job_exp"
       end

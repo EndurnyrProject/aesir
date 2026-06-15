@@ -1,0 +1,112 @@
+defmodule Aesir.ZoneServer.Mmo.JobManagement.LoaderTest do
+  use ExUnit.Case, async: true
+
+  alias Aesir.ZoneServer.Mmo.JobManagement.Job
+  alias Aesir.ZoneServer.Mmo.JobManagement.Loader
+
+  @jobs_yaml """
+  - id: 0
+    name: novice
+    max_weight: 20000
+    max_base_level: 3
+    max_job_level: 2
+    base_hp: [40, 45, 50]
+    base_sp: [10, 11, 12]
+    base_exp: [548, 894]
+    job_exp: [10]
+    bonus_stats:
+      - level: 2
+        luk: 1
+    base_aspd:
+      fist: 40
+      dagger: 55
+  - id: 1
+    name: swordman
+    max_weight: 28000
+    max_base_level: 2
+    max_job_level: 2
+    base_hp: [60, 70]
+    base_sp: [10, 11]
+    base_exp: [600]
+    job_exp: [9]
+    base_aspd:
+      fist: 40
+      one_handed_sword: 47
+  """
+
+  defp write_yaml(dir, contents) do
+    path = Path.join(dir, "jobs.yml")
+    File.write!(path, contents)
+    path
+  end
+
+  describe "load/1" do
+    @tag :tmp_dir
+    test "parses our-schema YAML into an index by id and name", %{tmp_dir: dir} do
+      write_yaml(dir, @jobs_yaml)
+
+      assert %{
+               all: all,
+               by_id: %{
+                 0 => %Job{
+                   name: :novice,
+                   base_hp: %{1 => 40, 2 => 45, 3 => 50},
+                   base_sp: %{1 => 10, 2 => 11, 3 => 12},
+                   base_exp: %{1 => 548, 2 => 894},
+                   job_exp: %{1 => 10},
+                   max_job_level: 2
+                 }
+               },
+               by_name: %{swordman: %Job{id: 1, base_hp: %{1 => 60, 2 => 70}}}
+             } = Loader.load(dir)
+
+      assert length(all) == 2
+    end
+
+    @tag :tmp_dir
+    test "rehydrates bonus_stats into a level-keyed map of structs", %{tmp_dir: dir} do
+      write_yaml(dir, @jobs_yaml)
+
+      assert %{
+               by_id: %{0 => %Job{bonus_stats: %{2 => %Job.BonusStats{level: 2, luk: 1, str: 0}}}}
+             } =
+               Loader.load(dir)
+    end
+
+    @tag :tmp_dir
+    test "rehydrates base_aspd into a struct with unused weapons left nil", %{tmp_dir: dir} do
+      write_yaml(dir, @jobs_yaml)
+
+      assert %{by_id: %{0 => %Job{base_aspd: %Job.BaseAspd{fist: 40, dagger: 55, katar: nil}}}} =
+               Loader.load(dir)
+    end
+
+    @tag :tmp_dir
+    test "writes a reusable .etf cache", %{tmp_dir: dir} do
+      write_yaml(dir, @jobs_yaml)
+      Loader.load(dir)
+
+      assert File.exists?(Path.join([dir, ".cache", "jobs.etf"]))
+    end
+
+    @tag :tmp_dir
+    test "rebuilds when a source is newer than the cache", %{tmp_dir: dir} do
+      yaml = write_yaml(dir, @jobs_yaml)
+      Loader.load(dir)
+
+      cache = Path.join([dir, ".cache", "jobs.etf"])
+      File.write!(yaml, String.replace(@jobs_yaml, "max_weight: 20000", "max_weight: 99999"))
+      File.touch!(cache, 1_000_000)
+      File.touch!(yaml, 2_000_000)
+
+      assert %{by_id: %{0 => %Job{max_weight: 99999}}} = Loader.load(dir)
+    end
+
+    @tag :tmp_dir
+    test "raises a helpful error when there are no data files", %{tmp_dir: dir} do
+      assert_raise RuntimeError, ~r/no data files in .*#{Path.basename(dir)}/, fn ->
+        Loader.load(dir)
+      end
+    end
+  end
+end
