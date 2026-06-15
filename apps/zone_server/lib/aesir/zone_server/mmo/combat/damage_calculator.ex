@@ -120,17 +120,23 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   end
 
   def calculate_base_attack(%{unit_type: :mob} = attacker) do
-    # Mob base attack: use predefined attack value with variance
-    base_atk = attacker.combat_stats.atk
+    # Renewal mob melee (rAthena status_base_atk_min/max + battle_calc_base_damage):
+    # the weapon hit rolls uniformly across the 80%-120% band of the mob's ATK,
+    # then the mob's base ATK (STR + base level) is added flat.
+    atk = attacker.combat_stats.atk
+    atk_min = div(atk * 80, 100)
+    atk_max = div(atk * 120, 100)
 
-    # Add variance (±25% like in original mob combat)
-    # -25 to +25
-    variance = :rand.uniform(51) - 26
-    weapon_atk = round(base_atk * variance / 100)
+    weapon_atk =
+      if atk_max > atk_min do
+        atk_min + :rand.uniform(atk_max - atk_min) - 1
+      else
+        atk_min
+      end
 
-    total_atk = base_atk + weapon_atk
+    batk = attacker.base_stats.str + attacker.progression.base_level
 
-    {:ok, total_atk}
+    {:ok, weapon_atk + batk}
   end
 
   def calculate_base_attack(_attacker) do

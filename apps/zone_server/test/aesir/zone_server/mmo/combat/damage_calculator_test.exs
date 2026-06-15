@@ -173,18 +173,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert base_atk >= expected_stat_portion
     end
 
-    test "calculates mob base attack with variance" do
-      mob = CombatTestHelper.create_mob_combatant(atk: 100)
+    test "calculates mob base attack with renewal variance band plus batk" do
+      # atk 100 -> weapon roll in the 80%-120% band [80, 119]; batk = str(10) + level(5).
+      mob = CombatTestHelper.create_mob_combatant(atk: 100, str: 10, base_level: 5)
 
       # Run multiple times to test variance
       results =
-        for _ <- 1..10 do
+        for _ <- 1..50 do
           {:ok, atk} = DamageCalculator.calculate_base_attack(mob)
           atk
         end
 
-      # All results should be around 100 ± 25% variance
-      assert Enum.all?(results, fn atk -> atk >= 75 and atk <= 125 end)
+      # Weapon roll [80, 119] + batk 15 => [95, 134]
+      assert Enum.all?(results, fn atk -> atk >= 95 and atk <= 134 end)
 
       # Should have some variance (not all the same)
       unique_results = Enum.uniq(results)
