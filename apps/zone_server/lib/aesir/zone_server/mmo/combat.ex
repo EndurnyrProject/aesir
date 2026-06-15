@@ -68,34 +68,49 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
           broadcast_to_nearby_players(target_combatant, dodge_packet)
 
         {:hit, damage_result} ->
-          damage = damage_result.damage
-          is_critical = damage_result.is_critical
-
-          Logger.debug(
-            "Combat: Player #{attacker_combatant.unit_id} attacking #{target_type} #{target_id} for #{damage} damage#{if is_critical, do: " (CRITICAL)", else: ""}"
+          handle_player_attack_hit(
+            damage_result,
+            attacker_combatant,
+            target_combatant,
+            target_pid,
+            target_type,
+            target_id
           )
-
-          # Apply damage using EXISTING MobSession.apply_damage/3
-          case target_type do
-            :mob ->
-              MobSession.apply_damage(target_pid, damage, attacker_combatant.unit_id)
-              :ok
-
-            :player ->
-              # TODO: Implement PvP damage application in future
-              Logger.warning("PvP combat not yet implemented")
-              {:error, :pvp_not_implemented}
-          end
-
-          # Broadcast attack packet to nearby players
-          attack_packet =
-            PacketFactory.build_attack_packet(attacker_combatant, target_combatant, damage_result)
-
-          broadcast_to_nearby_players(target_combatant, attack_packet)
       end
 
       :ok
     end
+  end
+
+  defp handle_player_attack_hit(
+         damage_result,
+         attacker_combatant,
+         target_combatant,
+         target_pid,
+         target_type,
+         target_id
+       ) do
+    damage = damage_result.damage
+    is_critical = damage_result.is_critical
+
+    Logger.debug(
+      "Combat: Player #{attacker_combatant.unit_id} attacking #{target_type} #{target_id} for #{damage} damage#{if is_critical, do: " (CRITICAL)", else: ""}"
+    )
+
+    case target_type do
+      :mob ->
+        MobSession.apply_damage(target_pid, damage, attacker_combatant.unit_id)
+        :ok
+
+      :player ->
+        Logger.warning("PvP combat not yet implemented")
+        {:error, :pvp_not_implemented}
+    end
+
+    attack_packet =
+      PacketFactory.build_attack_packet(attacker_combatant, target_combatant, damage_result)
+
+    broadcast_to_nearby_players(target_combatant, attack_packet)
   end
 
   @doc """
@@ -174,27 +189,40 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
           broadcast_to_nearby_players(target_combatant, dodge_packet)
 
         {:hit, damage_result} ->
-          damage = damage_result.damage
-          is_critical = damage_result.is_critical
-
-          Logger.debug(
-            "Combat: Mob #{attacker_combatant.unit_id} attacking player #{target_id} for #{damage} damage#{if is_critical, do: " (CRITICAL)", else: ""}"
+          handle_mob_attack_hit(
+            damage_result,
+            attacker_combatant,
+            target_combatant,
+            mob_state,
+            target_id
           )
-
-          # TODO: Apply damage to player when PvP/mob damage system is implemented
-          Logger.info(
-            "Mob #{mob_state.instance_id} would deal #{damage} damage to player #{target_id}"
-          )
-
-          # Broadcast attack packet to nearby players
-          attack_packet =
-            PacketFactory.build_attack_packet(attacker_combatant, target_combatant, damage_result)
-
-          broadcast_to_nearby_players(target_combatant, attack_packet)
       end
 
       :ok
     end
+  end
+
+  defp handle_mob_attack_hit(
+         damage_result,
+         attacker_combatant,
+         target_combatant,
+         mob_state,
+         target_id
+       ) do
+    damage = damage_result.damage
+    is_critical = damage_result.is_critical
+
+    Logger.debug(
+      "Combat: Mob #{attacker_combatant.unit_id} attacking player #{target_id} for #{damage} damage#{if is_critical, do: " (CRITICAL)", else: ""}"
+    )
+
+    # TODO: Apply damage to player when PvP/mob damage system is implemented
+    Logger.info("Mob #{mob_state.instance_id} would deal #{damage} damage to player #{target_id}")
+
+    attack_packet =
+      PacketFactory.build_attack_packet(attacker_combatant, target_combatant, damage_result)
+
+    broadcast_to_nearby_players(target_combatant, attack_packet)
   end
 
   # New function that returns actual unit states instead of maps

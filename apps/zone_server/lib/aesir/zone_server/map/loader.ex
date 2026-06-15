@@ -62,7 +62,7 @@ defmodule Aesir.ZoneServer.Map.Loader do
             end
           end)
 
-        if length(maps) > 0 do
+        if maps != [] do
           write_cache_file(output_cache_path, maps)
         else
           {:error, "No valid GAT files found"}

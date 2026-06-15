@@ -254,7 +254,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   """
   @spec set_path(t(), [{integer(), integer()}]) :: t()
   def set_path(%__MODULE__{} = state, path) when is_list(path) do
-    if length(path) > 0 do
+    if path != [] do
       %{
         state
         | walk_path: path,

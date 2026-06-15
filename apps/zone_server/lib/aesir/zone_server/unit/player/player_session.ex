@@ -522,7 +522,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   defp moving?(game_state) do
     game_state.movement_state == :moving and
-      length(game_state.walk_path) > 0
+      game_state.walk_path != []
   end
 
   defp build_moveentry_packet(character, game_state) do

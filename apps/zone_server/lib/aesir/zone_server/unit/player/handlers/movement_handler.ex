@@ -116,21 +116,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       # Only clear combat intent if this is NOT a combat-initiated movement
       is_combat_initiated = Keyword.get(opts, :combat_initiated, false)
 
-      game_state =
-        if game_state.action_state == :combat_moving and not is_combat_initiated do
-          # Clear combat intent only when player manually moves (not combat-initiated)
-          Logger.debug("Player manually moving while in combat, clearing combat intent")
-
-          game_state
-          |> PlayerState.clear_combat_intent()
-          |> PlayerState.transition_to(:moving)
-          |> case do
-            {:ok, transitioned} -> transitioned
-            _ -> game_state
-          end
-        else
-          game_state
-        end
+      game_state = maybe_clear_combat_intent(game_state, is_combat_initiated)
 
       # Update game state with new path
       game_state = PlayerState.set_path(game_state, simplified_path)
@@ -175,6 +161,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         {:noreply, state}
     end
   end
+
+  defp maybe_clear_combat_intent(%{action_state: :combat_moving} = game_state, false) do
+    Logger.debug("Player manually moving while in combat, clearing combat intent")
+
+    game_state
+    |> PlayerState.clear_combat_intent()
+    |> PlayerState.transition_to(:moving)
+    |> case do
+      {:ok, transitioned} -> transitioned
+      _ -> game_state
+    end
+  end
+
+  defp maybe_clear_combat_intent(game_state, _is_combat_initiated), do: game_state
 
   @doc """
   Forces a player to stop moving immediately.

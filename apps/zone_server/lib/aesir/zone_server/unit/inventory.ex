@@ -63,28 +63,34 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
     with {:ok, item} <- get_item(char_id, item_id),
          :ok <- validate_removal(item, amount) do
       if item.amount <= amount do
-        # Remove entire item
-        case Repo.delete(item) do
-          {:ok, deleted_item} ->
-            {:ok, deleted_item}
-
-          {:error, changeset} ->
-            Logger.error("Failed to delete item #{item_id}: #{inspect(changeset.errors)}")
-            {:error, :item_delete_failed}
-        end
+        delete_item(item, item_id)
       else
-        # Reduce amount
-        changeset = InventoryItem.changeset(item, %{amount: item.amount - amount})
-
-        case Repo.update(changeset) do
-          {:ok, updated_item} ->
-            {:ok, updated_item}
-
-          {:error, changeset} ->
-            Logger.error("Failed to update item #{item_id}: #{inspect(changeset.errors)}")
-            {:error, :item_update_failed}
-        end
+        reduce_item_amount(item, item_id, amount)
       end
+    end
+  end
+
+  defp delete_item(item, item_id) do
+    case Repo.delete(item) do
+      {:ok, deleted_item} ->
+        {:ok, deleted_item}
+
+      {:error, changeset} ->
+        Logger.error("Failed to delete item #{item_id}: #{inspect(changeset.errors)}")
+        {:error, :item_delete_failed}
+    end
+  end
+
+  defp reduce_item_amount(item, item_id, amount) do
+    changeset = InventoryItem.changeset(item, %{amount: item.amount - amount})
+
+    case Repo.update(changeset) do
+      {:ok, updated_item} ->
+        {:ok, updated_item}
+
+      {:error, changeset} ->
+        Logger.error("Failed to update item #{item_id}: #{inspect(changeset.errors)}")
+        {:error, :item_update_failed}
     end
   end
 

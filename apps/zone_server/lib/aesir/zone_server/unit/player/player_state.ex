@@ -177,7 +177,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   Transitions state to :moving when path is set.
   """
   def set_path(%__MODULE__{} = state, path) when is_list(path) do
-    if length(path) > 0 do
+    if path != [] do
       %{
         state
         | walk_path: path,

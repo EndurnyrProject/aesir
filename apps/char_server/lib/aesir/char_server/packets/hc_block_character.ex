@@ -32,7 +32,7 @@ defmodule Aesir.CharServer.Packets.HcBlockCharacter do
 
   @impl true
   def build(%__MODULE__{blocked_chars: blocked_chars})
-      when is_list(blocked_chars) and length(blocked_chars) > 0 do
+      when is_list(blocked_chars) and blocked_chars != [] do
     entries =
       blocked_chars
       |> Enum.map(&serialize_blocked_char/1)
