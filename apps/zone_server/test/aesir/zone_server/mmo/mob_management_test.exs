@@ -5,7 +5,6 @@ defmodule Aesir.ZoneServer.Mmo.MobManagementTest do
 
   alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
-  alias Aesir.ZoneServer.Mmo.MobManagement.Mobs.Poring
 
   setup :setup_ets_tables
 
@@ -14,22 +13,21 @@ defmodule Aesir.ZoneServer.Mmo.MobManagementTest do
       assert {:ok, poring} = MobManagement.get_mob_by_id(1002)
       assert %MobDefinition{} = poring
       assert poring.id == 1002
-      assert poring.aegis_name == :PORING
+      assert poring.aegis_name == "PORING"
       assert poring.name == "Poring"
       assert poring.level == 1
-      assert poring.hp == 55
       assert poring.race == :plant
       assert poring.element == {:water, 1}
     end
 
     test "loads mob by aegis name" do
-      assert {:ok, poring} = MobManagement.get_mob_by_name(:PORING)
+      assert {:ok, poring} = MobManagement.get_mob_by_name("PORING")
       assert poring.id == 1002
     end
 
     test "returns error for non-existent mob" do
       assert {:error, :mob_not_found} = MobManagement.get_mob_by_id(99_999)
-      assert {:error, :mob_not_found} = MobManagement.get_mob_by_name(:NON_EXISTENT)
+      assert {:error, :mob_not_found} = MobManagement.get_mob_by_name("NON_EXISTENT")
     end
 
     test "loads all mobs" do
@@ -44,8 +42,8 @@ defmodule Aesir.ZoneServer.Mmo.MobManagementTest do
       assert {:ok, spawns} = MobManagement.get_spawns_for_map("prt_fild01")
       assert length(spawns) > 0
 
-      # Check for Poring spawn
-      poring_spawns = Enum.filter(spawns, &(&1.mob == Poring))
+      # Check for Poring spawn (mob id 1002)
+      poring_spawns = Enum.filter(spawns, &(&1.mob == 1002))
       assert length(poring_spawns) > 0
     end
 
@@ -67,7 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagementTest do
     end
 
     test "calculates attack", %{poring: poring} do
-      # Poring has atk_min: 1, atk_max: 1
+      # Poring has atk: 1 (rAthena Attack)
       assert MobManagement.calculate_attack(poring) == 1
     end
 

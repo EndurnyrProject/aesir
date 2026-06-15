@@ -21,8 +21,8 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement do
   Get a mob by its aegis name.
   Returns {:ok, mob} or {:error, reason}
   """
-  @spec get_mob_by_name(atom()) :: {:ok, MobDefinition.t()} | {:error, :mob_not_found}
-  def get_mob_by_name(aegis_name) when is_atom(aegis_name) do
+  @spec get_mob_by_name(String.t()) :: {:ok, MobDefinition.t()} | {:error, :mob_not_found}
+  def get_mob_by_name(aegis_name) when is_binary(aegis_name) do
     with :error <- Mobs.by_name(aegis_name), do: {:error, :mob_not_found}
   end
 
@@ -54,18 +54,12 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement do
   end
 
   @doc """
-  Calculate actual attack power for a mob.
-  Returns the calculated attack value based on min/max range.
+  Returns a mob's base physical attack (renewal `atk`).
+
+  Damage variance is applied later in the combat system.
   """
   @spec calculate_attack(MobDefinition.t()) :: integer()
-  def calculate_attack(%MobDefinition{atk_min: min, atk_max: max}) do
-    if min == max do
-      min
-    else
-      # Random value between min and max
-      :rand.uniform(max - min + 1) + min - 1
-    end
-  end
+  def calculate_attack(%MobDefinition{atk: atk}), do: atk
 
   @doc """
   Calculate hit rate for a mob based on its level and dex.

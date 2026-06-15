@@ -87,7 +87,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
 
     @tag :tmp_dir
     test "raises a helpful error when there are no data files", %{tmp_dir: dir} do
-      assert_raise RuntimeError, ~r/aesir\.import\.items/, fn -> Loader.load(dir) end
+      assert_raise RuntimeError, ~r/no data files in .*#{Path.basename(dir)}/, fn ->
+        Loader.load(dir)
+      end
     end
   end
 end

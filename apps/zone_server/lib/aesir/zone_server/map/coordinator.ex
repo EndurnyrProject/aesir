@@ -305,11 +305,23 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   end
 
   defp spawn_single_mob(spawn_config, state) do
+    case MobManagement.get_mob_by_id(spawn_config.mob) do
+      {:ok, mob_data} ->
+        do_spawn_single_mob(spawn_config, mob_data, state)
+
+      {:error, :mob_not_found} ->
+        Logger.warning(
+          "Spawn for #{state.map_name} references unknown mob id #{inspect(spawn_config.mob)}; skipping"
+        )
+
+        state
+    end
+  end
+
+  defp do_spawn_single_mob(spawn_config, mob_data, state) do
     instance_id = generate_mob_instance_id()
 
     {x, y} = calculate_spawn_position(spawn_config.spawn_area, state.map_data)
-
-    mob_data = spawn_config.mob.mob()
 
     map_name_with_gat =
       if String.ends_with?(state.map_name, ".gat") do

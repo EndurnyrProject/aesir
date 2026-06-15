@@ -7,7 +7,6 @@ defmodule Aesir.ZoneServer.SessionHelpers do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
-  alias Aesir.ZoneServer.Mmo.MobManagement.Mobs.Poring
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -113,15 +112,15 @@ defmodule Aesir.ZoneServer.SessionHelpers do
     # We need to create a minimal mob spawn and definition for the state
     mob_definition = %MobDefinition{
       id: mob_id,
-      aegis_name: :TEST_MOB,
+      aegis_name: "TEST_MOB",
       name: "TestMob_#{mob_id}",
       level: opts[:level] || 1,
       hp: opts[:max_hp] || 100,
       sp: 50,
       base_exp: 10,
       job_exp: 5,
-      atk_min: 10,
-      atk_max: 20,
+      atk: 10,
+      matk: 0,
       def: 5,
       mdef: 3,
       stats: %{str: 10, agi: 10, vit: 10, int: 5, dex: 10, luk: 5},
@@ -142,7 +141,7 @@ defmodule Aesir.ZoneServer.SessionHelpers do
     }
 
     mob_spawn = %MobSpawn{
-      mob: Poring,
+      mob: mob_id,
       amount: 1,
       respawn_time: 5_000,
       spawn_area: %MobSpawn.SpawnArea{

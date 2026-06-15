@@ -70,15 +70,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculations do
   Calculates mob base attack stat.
 
   ## Formula
-  base_atk = atk_min (using minimum attack value)
+  base_atk = atk (renewal base physical attack)
 
-  Mobs have predefined attack ranges, we use the minimum for base calculations.
-  Variance is handled elsewhere in the combat system.
+  Damage variance is applied later in the combat system.
   """
   @impl true
   @spec calculate_base_attack(mob_data()) :: integer()
   def calculate_base_attack(%MobDefinition{} = mob_data) do
-    mob_data.atk_min
+    mob_data.atk
   end
 
   @doc """

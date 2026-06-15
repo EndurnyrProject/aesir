@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobDefinition do
           | :demihuman
           | :angel
           | :dragon
+          | :player
 
   @typedoc """
   Element types with level
@@ -34,15 +35,15 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobDefinition do
 
   typedstruct do
     field :id, integer(), enforce: true
-    field :aegis_name, atom(), enforce: true
+    field :aegis_name, String.t(), enforce: true
     field :name, String.t(), enforce: true
     field :level, integer(), enforce: true
     field :hp, integer(), enforce: true
     field :sp, integer(), default: 0
     field :base_exp, integer(), default: 0
     field :job_exp, integer(), default: 0
-    field :atk_min, integer(), enforce: true
-    field :atk_max, integer(), enforce: true
+    field :atk, integer(), default: 0
+    field :matk, integer(), default: 0
     field :def, integer(), default: 0
     field :mdef, integer(), default: 0
     field :stats, map(), enforce: true

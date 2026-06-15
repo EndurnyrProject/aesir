@@ -102,13 +102,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   end
 
   @impl Aesir.ZoneServer.Unit
-  def get_element(%__MODULE__{mob_data: mob_data}) do
-    # Element is stored as a combined value in mob_data
-    # We need to extract element type and level
-    element_type = extract_element_type(mob_data.element)
-    element_level = extract_element_level(mob_data.element)
-    {element_type, element_level}
-  end
+  def get_element(%__MODULE__{mob_data: %{element: element}}), do: element
 
   @impl Aesir.ZoneServer.Unit
   def is_boss?(%__MODULE__{mob_data: mob_data}) do
@@ -136,8 +130,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       max_hp: mob.max_hp,
       sp: mob.sp,
       max_sp: mob.max_sp,
-      atk: mob_data.atk_min,
-      atk2: mob_data.atk_max,
+      atk: mob_data.atk,
+      matk: mob_data.matk,
       def: mob_data.def,
       mdef: mob_data.mdef,
       hit: calculate_hit(mob_data),
@@ -424,31 +418,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   end
 
   # Private Helper Functions
-
-  defp extract_element_type(element_value) do
-    # Element type is stored in the lower byte
-    element_type_id = rem(element_value, 20)
-
-    element_map = %{
-      0 => :neutral,
-      1 => :water,
-      2 => :earth,
-      3 => :fire,
-      4 => :wind,
-      5 => :poison,
-      6 => :holy,
-      7 => :shadow,
-      8 => :ghost,
-      9 => :undead
-    }
-
-    Map.get(element_map, element_type_id, :neutral)
-  end
-
-  defp extract_element_level(element_value) do
-    # Element level is stored in the upper part
-    div(element_value, 20) + 1
-  end
 
   defp calculate_hit(mob_data) do
     # Basic hit calculation based on level and DEX

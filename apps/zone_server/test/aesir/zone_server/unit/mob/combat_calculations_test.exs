@@ -7,7 +7,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculationsTest do
   defp create_test_mob(overrides) do
     default_mob = %MobDefinition{
       id: 1001,
-      aegis_name: :test_mob,
+      aegis_name: "test_mob",
       name: "Test Mob",
       level: 25,
       hp: 1000,
@@ -19,8 +19,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculationsTest do
         dex: 35,
         luk: 15
       },
-      atk_min: 50,
-      atk_max: 60,
+      atk: 50,
+      matk: 60,
       def: 25,
       mdef: 10,
       attack_range: 1,
@@ -284,59 +284,28 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculationsTest do
   end
 
   describe "calculate_base_attack/1" do
-    test "returns atk_min as base attack" do
-      mob =
-        create_test_mob(%{
-          atk_min: 75,
-          atk_max: 85
-        })
+    test "returns the mob's base atk" do
+      mob = create_test_mob(%{atk: 75})
 
-      base_atk = CombatCalculations.calculate_base_attack(mob)
-
-      # Uses minimum attack value
-      assert base_atk == 75
+      assert CombatCalculations.calculate_base_attack(mob) == 75
     end
 
     test "handles weak mob" do
-      weak_mob =
-        create_test_mob(%{
-          atk_min: 10,
-          atk_max: 15
-        })
+      weak_mob = create_test_mob(%{atk: 10})
 
-      base_atk = CombatCalculations.calculate_base_attack(weak_mob)
-
-      assert base_atk == 10
+      assert CombatCalculations.calculate_base_attack(weak_mob) == 10
     end
 
     test "handles boss mob" do
-      boss_mob =
-        create_test_mob(%{
-          atk_min: 500,
-          atk_max: 600
-        })
+      boss_mob = create_test_mob(%{atk: 500})
 
-      base_atk = CombatCalculations.calculate_base_attack(boss_mob)
-
-      assert base_atk == 500
+      assert CombatCalculations.calculate_base_attack(boss_mob) == 500
     end
 
-    test "various mob attack ranges" do
-      scenarios = [
-        # Low level mob
-        {25, 35},
-        # Mid level mob
-        {80, 100},
-        # High level mob
-        {150, 180},
-        # Boss level mob
-        {300, 400}
-      ]
-
-      for {atk_min, atk_max} <- scenarios do
-        mob = create_test_mob(%{atk_min: atk_min, atk_max: atk_max})
-        result = CombatCalculations.calculate_base_attack(mob)
-        assert result == atk_min
+    test "various mob attack values" do
+      for atk <- [25, 80, 150, 300] do
+        mob = create_test_mob(%{atk: atk})
+        assert CombatCalculations.calculate_base_attack(mob) == atk
       end
     end
   end
@@ -409,8 +378,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculationsTest do
         create_test_mob(%{
           level: 45,
           stats: %{str: 50, agi: 40, vit: 60, int: 30, dex: 55, luk: 25},
-          atk_min: 80,
-          atk_max: 95,
+          atk: 80,
+          matk: 95,
           def: 35,
           attack_delay: 1000
         })
@@ -430,7 +399,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculationsTest do
         create_test_mob(%{
           level: 1,
           stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
-          atk_min: 1,
+          atk: 1,
           def: 0,
           attack_delay: 1000
         })
@@ -452,7 +421,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculationsTest do
         create_test_mob(%{
           level: 200,
           stats: %{str: 255, agi: 255, vit: 255, int: 255, dex: 255, luk: 255},
-          atk_min: 9999,
+          atk: 9999,
           def: 999,
           attack_delay: 100
         })

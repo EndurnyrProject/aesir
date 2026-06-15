@@ -18,7 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobSpawn do
   end
 
   typedstruct do
-    field :mob, module(), enforce: true
+    field :mob, integer(), enforce: true
     field :amount, integer(), enforce: true
     field :respawn_time, integer(), enforce: true
     field :spawn_area, SpawnArea.t(), enforce: true
