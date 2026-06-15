@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.PacketRegistry do
     Aesir.ZoneServer.Packets.CzSeCashshopList,
     Aesir.ZoneServer.Packets.CzPingLive,
     Aesir.ZoneServer.Packets.CzRequestChat,
+    Aesir.ZoneServer.Packets.CzRestart,
     # Server to Client packets
     Aesir.ZoneServer.Packets.ZcAcceptEnter,
     Aesir.ZoneServer.Packets.ZcAid,
@@ -26,6 +27,7 @@ defmodule Aesir.ZoneServer.PacketRegistry do
     Aesir.ZoneServer.Packets.ZcNotifyVanish,
     Aesir.ZoneServer.Packets.ZcHpInfo,
     Aesir.ZoneServer.Packets.ZcParChange,
-    Aesir.ZoneServer.Packets.ZcLongparChange
+    Aesir.ZoneServer.Packets.ZcLongparChange,
+    Aesir.ZoneServer.Packets.ZcResurrection
   ]
 end

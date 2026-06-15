@@ -51,25 +51,28 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
       stats = get_player_stats(player.pid)
       player_state = get_player_state(player.pid)
 
-      # Execute the attack
-      result = Combat.execute_attack(stats, player_state, mob.unit_id)
-      assert result == :ok
+      # A single attack can miss (hit rate is 80 + hit - flee, never guaranteed),
+      # so keep attacking until one lands. Misses deal 0 damage and leave the
+      # mob's HP untouched, so exactly one hit has landed when we stop.
+      damage_packet =
+        Enum.reduce_while(1..30, nil, fn _, _acc ->
+          assert Combat.execute_attack(stats, player_state, mob.unit_id) == :ok
+          Process.sleep(20)
 
-      # Collect all packets sent within a reasonable time
-      Process.sleep(100)
-      packets = collect_packets_of_type(ZcNotifyAct, 200)
+          hit =
+            ZcNotifyAct
+            |> collect_packets_of_type(100)
+            |> Enum.find(&(&1.target_id == mob.unit_id and &1.damage > 0))
 
-      # Verify we got at least one damage packet
-      assert length(packets) > 0, "No ZcNotifyAct packets were sent"
-      damage_packet = hd(packets)
+          if hit, do: {:halt, hit}, else: {:cont, nil}
+        end)
 
-      # Verify packet contents
+      assert damage_packet, "Player never landed a hit on the mob"
       assert damage_packet.src_id == player.character.account_id
       assert damage_packet.target_id == mob.unit_id
       assert damage_packet.damage > 0
 
       # Verify mob actually took damage
-      # Give time for damage to be applied
       Process.sleep(50)
       mob_state = get_mob_state(mob.pid)
       assert mob_state.hp < 100

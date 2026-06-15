@@ -132,9 +132,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
           :ok
 
         :player ->
-          # TODO: Implement player damage application
-          Logger.warning("Player damage application not yet implemented")
-          {:error, :player_damage_not_implemented}
+          PlayerSession.apply_damage(target_pid, damage)
+          :ok
       end
     end
   end
@@ -162,7 +161,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     # Convert mob state to combatant
     attacker_combatant = mob_state.__struct__.to_combatant(mob_state)
 
-    with {:ok, _target_pid, target_state, :player} <- get_target_unit_state(target_id),
+    with {:ok, target_pid, target_state, :player} <- get_target_unit_state(target_id),
          target_combatant <- target_state.__struct__.to_combatant(target_state),
          :ok <- validate_mob_attack_with_combatants(attacker_combatant, target_combatant),
          {:ok, combat_result} <-
@@ -193,7 +192,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
             damage_result,
             attacker_combatant,
             target_combatant,
-            mob_state,
+            target_pid,
             target_id
           )
       end
@@ -206,7 +205,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
          damage_result,
          attacker_combatant,
          target_combatant,
-         mob_state,
+         target_pid,
          target_id
        ) do
     damage = damage_result.damage
@@ -216,13 +215,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
       "Combat: Mob #{attacker_combatant.unit_id} attacking player #{target_id} for #{damage} damage#{if is_critical, do: " (CRITICAL)", else: ""}"
     )
 
-    # TODO: Apply damage to player when PvP/mob damage system is implemented
-    Logger.info("Mob #{mob_state.instance_id} would deal #{damage} damage to player #{target_id}")
-
+    # Show the hit animation/damage number first, then apply HP loss so the
+    # SP_HP update (and any death) follows the visible strike.
     attack_packet =
       PacketFactory.build_attack_packet(attacker_combatant, target_combatant, damage_result)
 
     broadcast_to_nearby_players(target_combatant, attack_packet)
+
+    PlayerSession.apply_damage(target_pid, damage, attacker_combatant.unit_id)
   end
 
   # New function that returns actual unit states instead of maps

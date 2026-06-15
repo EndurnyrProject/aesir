@@ -6,8 +6,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.StatusSync
 
   @doc """
   Handles applying a status effect to the player.
@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
 
         # Send stat updates to client if they changed
         if updated_stats != state.game_state.stats do
-          PacketHandler.send_stat_updates(state.connection_pid, updated_stats)
+          StatusSync.send_stat_updates(state.connection_pid, updated_stats)
         end
 
         {:reply, :ok, %{state | game_state: updated_game_state}}
@@ -61,7 +61,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
 
     # Send stat updates to client if they changed
     if updated_stats != state.game_state.stats do
-      PacketHandler.send_stat_updates(state.connection_pid, updated_stats)
+      StatusSync.send_stat_updates(state.connection_pid, updated_stats)
     end
 
     {:reply, :ok, %{state | game_state: updated_game_state}}

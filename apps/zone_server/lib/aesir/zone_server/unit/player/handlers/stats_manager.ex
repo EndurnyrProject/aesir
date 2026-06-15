@@ -4,8 +4,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
   Extracted from PlayerSession to improve modularity and maintainability.
   """
 
-  alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
@@ -20,8 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
     - {:noreply, state} - State unchanged
   """
   def handle_send_status_update(param_id, value, %{connection_pid: connection_pid} = state) do
-    packet = PacketHandler.build_status_packet(param_id, value)
-    send(connection_pid, {:send_packet, packet})
+    StatusSync.send_param(connection_pid, param_id, value)
     {:noreply, state}
   end
 
@@ -36,11 +35,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
     - {:noreply, state} - State unchanged
   """
   def handle_send_status_updates(status_map, %{connection_pid: connection_pid} = state) do
-    Enum.each(status_map, fn {param_id, value} ->
-      packet = PacketHandler.build_status_packet(param_id, value)
-      send(connection_pid, {:send_packet, packet})
-    end)
-
+    StatusSync.send_params(connection_pid, status_map)
     {:noreply, state}
   end
 
@@ -60,7 +55,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
     # Only update and send changes if stats actually changed
     if updated_stats != state.game_state.stats do
       updated_game_state = %{state.game_state | stats: updated_stats}
-      PacketHandler.send_stat_updates(state.connection_pid, updated_stats)
+      StatusSync.send_stat_updates(state.connection_pid, updated_stats)
 
       {:noreply, update_game_state(state, updated_game_state)}
     else
@@ -88,7 +83,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
     updated_game_state = %{state.game_state | stats: updated_stats}
     updated_state = %{state | game_state: updated_game_state}
 
-    PacketHandler.send_stat_updates(state.connection_pid, updated_stats)
+    StatusSync.send_stat_updates(state.connection_pid, updated_stats)
 
     {:reply, :ok, updated_state}
   end
@@ -107,7 +102,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
     updated_game_state = %{state.game_state | stats: updated_stats}
     updated_state = %{state | game_state: updated_game_state}
 
-    PacketHandler.send_stat_updates(state.connection_pid, updated_stats)
+    StatusSync.send_stat_updates(state.connection_pid, updated_stats)
 
     {:reply, updated_stats, updated_state}
   end

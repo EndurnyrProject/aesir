@@ -9,15 +9,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Commons.StatusParams
   alias Aesir.Commons.Utils.ServerTick
   alias Aesir.ZoneServer.Packets.CzRequestChat
+  alias Aesir.ZoneServer.Packets.CzRestart
   alias Aesir.ZoneServer.Packets.ZcAckReqname
   alias Aesir.ZoneServer.Packets.ZcAckReqnameall
   alias Aesir.ZoneServer.Packets.ZcEquipitemList
-  alias Aesir.ZoneServer.Packets.ZcLongparChange
   alias Aesir.ZoneServer.Packets.ZcNormalItemlist
   alias Aesir.ZoneServer.Packets.ZcNotifyChat
   alias Aesir.ZoneServer.Packets.ZcNotifyTime
-  alias Aesir.ZoneServer.Packets.ZcParChange
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
+  alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   # Chat constants
@@ -31,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   @cz_request_move 0x035F
   @cz_request_act 0x0437
   @cz_request_chat 0x008C
+  @cz_restart 0x00B2
 
   @doc """
   Processes an incoming packet for a player session.
@@ -55,30 +57,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     Logger.debug("Player #{character.id} finished loading map (LoadEndAck)")
 
     # Send weight updates to client
-    weight_updates = %{
+    StatusSync.send_params(connection_pid, %{
       StatusParams.weight() => 0,
       StatusParams.max_weight() => 1000
-    }
-
-    Enum.each(weight_updates, fn {param_id, value} ->
-      packet = build_status_packet(param_id, value)
-      send(connection_pid, {:send_packet, packet})
-    end)
+    })
 
     # Send experience and skill point status (sent later in LoadEndAck sequence)
     # TODO: the next base exp and job exp will come from a different place
-    experience_updates = %{
+    StatusSync.send_params(connection_pid, %{
       StatusParams.next_base_exp() => 100,
       StatusParams.next_job_exp() => 100,
       StatusParams.skill_point() => character.skill_point
-    }
+    })
 
-    Enum.each(experience_updates, fn {param_id, value} ->
-      packet = build_status_packet(param_id, value)
-      send(connection_pid, {:send_packet, packet})
-    end)
-
-    send_stat_updates(connection_pid, game_state.stats)
+    StatusSync.send_stat_updates(connection_pid, game_state.stats)
     send_inventory_data(connection_pid, game_state.inventory_items)
 
     # TODO: Send remaining initial game data to client
@@ -207,6 +199,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     {:noreply, state}
   end
 
+  # CZ_RESTART - Death dialog response (respawn / return to char-select)
+  def handle_packet(@cz_restart, %CzRestart{type: type}, state) do
+    HealthHandler.handle_restart(type, state)
+  end
+
   # CZ_REQUEST_CHAT - Player sending an area chat message
   def handle_packet(
         @cz_request_chat,
@@ -253,58 +250,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   def handle_packet(packet_id, _packet_data, state) do
     Logger.warning("Unhandled packet in PacketHandler: 0x#{Integer.to_string(packet_id, 16)}")
     {:noreply, state}
-  end
-
-  def build_status_packet(param_id, value) do
-    experience_params = [
-      StatusParams.base_exp(),
-      StatusParams.job_exp(),
-      StatusParams.next_base_exp(),
-      StatusParams.next_job_exp()
-    ]
-
-    if param_id in experience_params do
-      %ZcLongparChange{var_id: param_id, value: value}
-    else
-      %ZcParChange{var_id: param_id, value: value}
-    end
-  end
-
-  def send_stat_updates(connection_pid, stats) do
-    status_updates = %{
-      # Base stats
-      StatusParams.str() => stats.base_stats.str,
-      StatusParams.agi() => stats.base_stats.agi,
-      StatusParams.vit() => stats.base_stats.vit,
-      StatusParams.int() => stats.base_stats.int,
-      StatusParams.dex() => stats.base_stats.dex,
-      StatusParams.luk() => stats.base_stats.luk,
-
-      # Derived stats
-      StatusParams.max_hp() => stats.derived_stats.max_hp,
-      StatusParams.max_sp() => stats.derived_stats.max_sp,
-      StatusParams.hp() => stats.current_state.hp,
-      StatusParams.sp() => stats.current_state.sp,
-      StatusParams.aspd() => stats.derived_stats.aspd,
-
-      # Combat stats
-      StatusParams.hit() => stats.combat_stats.hit,
-      StatusParams.flee1() => stats.combat_stats.flee,
-      StatusParams.critical() => stats.combat_stats.critical,
-      StatusParams.atk1() => stats.combat_stats.atk,
-      StatusParams.def1() => stats.combat_stats.def,
-
-      # Progression
-      StatusParams.base_level() => stats.progression.base_level,
-      StatusParams.job_level() => stats.progression.job_level,
-      StatusParams.base_exp() => stats.progression.base_exp,
-      StatusParams.job_exp() => stats.progression.job_exp
-    }
-
-    Enum.each(status_updates, fn {param_id, value} ->
-      packet = build_status_packet(param_id, value)
-      send(connection_pid, {:send_packet, packet})
-    end)
   end
 
   defp send_inventory_data(connection_pid, inventory_items) do

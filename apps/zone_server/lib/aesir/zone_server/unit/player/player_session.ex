@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Packets.ZcNotifyStandentry
   alias Aesir.ZoneServer.Packets.ZcNotifyVanish
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
@@ -43,6 +44,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   """
   def send_packet(pid, packet) do
     GenServer.cast(pid, {:send_packet, packet})
+  end
+
+  @doc """
+  Applies combat damage to this player, updating HP and handling death.
+  """
+  def apply_damage(pid, damage, attacker_id \\ nil) do
+    GenServer.cast(pid, {:apply_damage, damage, attacker_id})
   end
 
   @doc """
@@ -348,6 +356,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   def handle_cast({:request_attack, target_id, action}, state) do
     # Delegate to CombatActionHandler for state machine based combat
     CombatActionHandler.handle_attack_request(state, target_id, action)
+  end
+
+  @impl true
+  def handle_cast({:apply_damage, damage, attacker_id}, state) do
+    HealthHandler.apply_damage(damage, attacker_id, state)
   end
 
   @impl true
