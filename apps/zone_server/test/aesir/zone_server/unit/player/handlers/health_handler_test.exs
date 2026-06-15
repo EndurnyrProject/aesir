@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     stub(SpatialIndex, :remove_player, fn _ -> :ok end)
     stub(SpatialIndex, :clear_visibility, fn _ -> :ok end)
     stub(SpatialIndex, :add_player, fn _, _, _, _ -> :ok end)
-    stub(MovementHandler, :handle_visibility_update, fn _character, game_state -> game_state end)
+    stub(MovementHandler, :handle_visibility_update, fn game_state -> game_state end)
 
     :ok
   end
@@ -107,6 +107,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
 
     game_state = %PlayerState{
       character_id: 1,
+      account_id: 100,
       action_state: action_state,
       x: 50,
       y: 50,
@@ -116,7 +117,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     }
 
     %{
-      character: %Character{id: 1, account_id: 100},
       game_state: game_state,
       connection_pid: self()
     }

@@ -47,7 +47,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     {:noreply, updated_state}
   end
 
-  def handle_movement_tick(%{character: character, game_state: game_state} = state)
+  def handle_movement_tick(%{game_state: game_state} = state)
       when game_state.movement_state == :moving do
     case game_state.walk_path do
       [{next_x, next_y} | remaining_path] ->
@@ -60,7 +60,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         interval = round(game_state.walk_speed * move_cost)
 
         # Update spatial index
-        SpatialIndex.update_position(character.id, next_x, next_y, game_state.map_name)
+        SpatialIndex.update_position(game_state.character_id, next_x, next_y, game_state.map_name)
 
         # Update game state with new position
         updated_game_state =
@@ -69,7 +69,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
           |> Map.put(:walk_path, remaining_path)
 
         # Handle visibility updates
-        updated_game_state = handle_visibility_update(character, updated_game_state)
+        updated_game_state = handle_visibility_update(updated_game_state)
 
         # Schedule next movement tick with appropriate interval
         if remaining_path != [] do
@@ -97,7 +97,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     - {:noreply, updated_state} - Updated state with movement path or error handling
   """
   def handle_request_move(
-        %{character: character, game_state: game_state, connection_pid: connection_pid} = state,
+        %{game_state: game_state, connection_pid: connection_pid} = state,
         dest_x,
         dest_y,
         opts \\ []
@@ -135,7 +135,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       send(connection_pid, {:send_packet, packet})
 
       # Broadcast movement to nearby players
-      broadcast_movement_to_nearby(character, game_state, dest_x, dest_y)
+      broadcast_movement_to_nearby(game_state, dest_x, dest_y)
 
       # Schedule first movement tick immediately to start movement
       Process.send_after(self(), :movement_tick, 0)
@@ -148,10 +148,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
       {:error, reason} ->
         # No path found or map not loaded
-        Logger.error("Movement failed for player #{character.id}: #{inspect(reason)}")
+        Logger.error("Movement failed for player #{game_state.character_id}: #{inspect(reason)}")
 
         packet = %ZcNotifyMoveStop{
-          account_id: character.account_id,
+          account_id: game_state.account_id,
           x: game_state.x,
           y: game_state.y
         }
@@ -186,20 +186,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     - {:noreply, updated_state} - Updated state with stopped movement
   """
   def handle_force_stop_movement(
-        %{character: character, game_state: game_state, connection_pid: connection_pid} = state
+        %{game_state: game_state, connection_pid: connection_pid} = state
       ) do
     if game_state.movement_state == :moving do
       game_state = PlayerState.stop_walking(game_state)
 
       packet = %ZcNotifyMoveStop{
-        account_id: character.account_id,
+        account_id: game_state.account_id,
         x: game_state.x,
         y: game_state.y
       }
 
       send(connection_pid, {:send_packet, packet})
 
-      broadcast_stop_to_nearby(character, game_state, packet)
+      broadcast_stop_to_nearby(game_state, packet)
 
       {:noreply, %{state | game_state: game_state}}
     else
@@ -207,7 +207,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     end
   end
 
-  defp broadcast_stop_to_nearby(character, game_state, packet) do
+  defp broadcast_stop_to_nearby(game_state, packet) do
     nearby_players =
       SpatialIndex.get_players_in_range(
         game_state.map_name,
@@ -217,7 +217,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       )
 
     nearby_players
-    |> Enum.filter(&(&1 != character.id))
+    |> Enum.filter(&(&1 != game_state.character_id))
     |> Enum.each(&send_packet_to_player(&1, packet))
   end
 
@@ -231,29 +231,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     end
   end
 
-  defp broadcast_movement_to_nearby(character, game_state, dest_x, dest_y) do
+  defp broadcast_movement_to_nearby(game_state, dest_x, dest_y) do
     # Only broadcast to players who can see us (using visibility ETS)
-    visible_players = SpatialIndex.get_visible_players(character.id)
-    packet = build_movement_packet(character, game_state, dest_x, dest_y)
+    visible_players = SpatialIndex.get_visible_players(game_state.character_id)
+    packet = build_movement_packet(game_state, dest_x, dest_y)
 
     visible_players
-    |> Enum.filter(&(&1 != character.id))
+    |> Enum.filter(&(&1 != game_state.character_id))
     |> Enum.each(&send_packet_to_player(&1, packet))
   end
 
-  defp build_movement_packet(character, game_state, dest_x, dest_y) do
+  defp build_movement_packet(game_state, dest_x, dest_y) do
     %ZcNotifyMoveentry{
       object_type: ObjectType.pc(),
-      aid: character.account_id,
-      gid: character.id,
+      aid: game_state.account_id,
+      gid: game_state.character_id,
       speed: game_state.walk_speed,
       body_state: 0,
       health_state: 0,
       effect_state: 0,
-      job: character.class,
-      head: character.hair,
-      weapon: character.weapon || 0,
-      shield: character.shield || 0,
+      job: game_state.stats.progression.job_id,
+      head: game_state.hair,
+      weapon: game_state.stats.equipment.weapon,
+      shield: game_state.stats.equipment.shield,
       accessory: 0,
       move_start_time: System.monotonic_time(:millisecond),
       accessory2: 0,
@@ -262,16 +262,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       src_y: game_state.y,
       dst_x: dest_x,
       dst_y: dest_y,
-      head_palette: character.hair_color,
-      body_palette: character.clothes_color,
+      head_palette: game_state.hair_color,
+      body_palette: game_state.clothes_color,
       head_dir: 0,
-      robe: character.robe || 0,
+      robe: game_state.robe,
       guild_id: 0,
       guild_emblem_ver: 0,
       honor: 0,
       virtue: 0,
       is_pk_mode_on: 0,
-      sex: sex_to_int(character.sex)
+      sex: sex_to_int(game_state.sex)
     }
   end
 
@@ -279,7 +279,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   Updates visibility for nearby players when a player's position changes.
   This function is public so it can be used by PlayerSession for non-movement visibility updates.
   """
-  def handle_visibility_update(character, game_state) do
+  def handle_visibility_update(game_state) do
     players_in_range =
       SpatialIndex.get_players_in_range(
         game_state.map_name,
@@ -297,29 +297,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
     # Send spawn packets for newly visible players
     Enum.each(now_visible, fn other_id ->
-      if other_id != character.id do
+      if other_id != game_state.character_id do
         # Update visibility ETS
-        SpatialIndex.update_visibility(character.id, other_id, true)
+        SpatialIndex.update_visibility(game_state.character_id, other_id, true)
 
         # Send spawn packet to us about them
-        send_spawn_packet_about(character.id, other_id)
+        send_spawn_packet_about(game_state.character_id, other_id)
 
         # Send spawn packet to them about us
-        send_spawn_packet_about(other_id, character.id)
+        send_spawn_packet_about(other_id, game_state.character_id)
       end
     end)
 
     # Send despawn packets for now hidden players
     Enum.each(now_hidden, fn other_id ->
-      if other_id != character.id do
+      if other_id != game_state.character_id do
         # Update visibility ETS
-        SpatialIndex.update_visibility(character.id, other_id, false)
+        SpatialIndex.update_visibility(game_state.character_id, other_id, false)
 
         # Send vanish packet to us
-        send_vanish_packet_to(character.id, other_id)
+        send_vanish_packet_to(game_state.character_id, other_id)
 
         # Send vanish packet to them
-        send_vanish_packet_to(other_id, character.id)
+        send_vanish_packet_to(other_id, game_state.character_id)
       end
     end)
 
@@ -343,12 +343,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
     # Send spawn packets for newly visible mobs
     Enum.each(now_visible_mobs, fn mob_id ->
-      send_mob_spawn_packet_to(character.id, mob_id)
+      send_mob_spawn_packet_to(game_state.character_id, mob_id)
     end)
 
     # Send despawn packets for now hidden mobs
     Enum.each(now_hidden_mobs, fn mob_id ->
-      send_mob_vanish_packet_to(character.id, mob_id)
+      send_mob_vanish_packet_to(game_state.character_id, mob_id)
     end)
 
     # Update game state with new visibility info

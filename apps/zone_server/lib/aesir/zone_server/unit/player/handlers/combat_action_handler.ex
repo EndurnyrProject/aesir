@@ -32,7 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   @spec handle_attack_request(map(), integer(), integer()) :: {:noreply, map()}
   def handle_attack_request(state, target_id, action_type) do
     Logger.info(
-      "=== ATTACK REQUEST === Player #{state.character.id} requesting attack on target #{target_id} with action #{action_type}"
+      "=== ATTACK REQUEST === Player #{state.game_state.character_id} requesting attack on target #{target_id} with action #{action_type}"
     )
 
     Logger.debug(
@@ -67,7 +67,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
       end
     else
       # Attack is too soon, rate limited
-      Logger.debug("Attack rate limited for player #{state.character.id}")
+      Logger.debug("Attack rate limited for player #{state.game_state.character_id}")
       # TODO: Send error packet to client about attack cooldown
       {:noreply, state}
     end

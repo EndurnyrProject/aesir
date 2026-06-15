@@ -21,11 +21,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
     - {:reply, :ok, updated_state} - Success with stat recalculation
     - {:reply, {:error, reason}, state} - Failure (e.g., immunity)
   """
-  def handle_apply_status(status_id, status_params, %{character: character} = state) do
-    case Interpreter.apply_status(:player, character.id, status_id, status_params) do
+  def handle_apply_status(status_id, status_params, %{game_state: game_state} = state) do
+    case Interpreter.apply_status(:player, game_state.character_id, status_id, status_params) do
       :ok ->
         # Recalculate stats with status effects
-        updated_stats = Stats.calculate_stats(state.game_state.stats, character.id)
+        updated_stats = Stats.calculate_stats(game_state.stats, game_state.character_id)
         updated_game_state = %{state.game_state | stats: updated_stats}
 
         # Send stat updates to client if they changed
@@ -51,12 +51,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
   ## Returns
     - {:reply, :ok, updated_state} - Success with stat recalculation
   """
-  def handle_remove_status(status_id, %{character: character} = state) do
+  def handle_remove_status(status_id, %{game_state: game_state} = state) do
     # Remove the status effect
-    Interpreter.remove_status(:player, character.id, status_id)
+    Interpreter.remove_status(:player, game_state.character_id, status_id)
 
     # Recalculate stats without this status effect
-    updated_stats = Stats.calculate_stats(state.game_state.stats, character.id)
+    updated_stats = Stats.calculate_stats(game_state.stats, game_state.character_id)
     updated_game_state = %{state.game_state | stats: updated_stats}
 
     # Send stat updates to client if they changed
@@ -76,8 +76,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
   ## Returns
     - {:reply, statuses, state} - Returns list of active statuses
   """
-  def handle_get_active_statuses(%{character: character} = state) do
-    statuses = StatusStorage.get_unit_statuses(:player, character.id)
+  def handle_get_active_statuses(%{game_state: game_state} = state) do
+    statuses = StatusStorage.get_unit_statuses(:player, game_state.character_id)
     {:reply, statuses, state}
   end
 
@@ -91,8 +91,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
   ## Returns
     - {:reply, has_status, state} - Returns boolean indicating presence
   """
-  def handle_has_status(status_id, %{character: character} = state) do
-    has_status = StatusStorage.has_status?(:player, character.id, status_id)
+  def handle_has_status(status_id, %{game_state: game_state} = state) do
+    has_status = StatusStorage.has_status?(:player, game_state.character_id, status_id)
     {:reply, has_status, state}
   end
 end

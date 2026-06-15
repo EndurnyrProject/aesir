@@ -20,36 +20,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
   Applies gained base/job experience to the session, leveling up as needed.
   """
   @spec handle_gain_exp(non_neg_integer(), non_neg_integer(), map()) :: {:noreply, map()}
-  def handle_gain_exp(base_amount, job_amount, %{character: character} = state) do
+  def handle_gain_exp(base_amount, job_amount, %{game_state: game_state} = state) do
+    char_id = game_state.character_id
+
     {progression, base_gained, job_gained} =
-      Leveling.apply_exp(state.game_state.stats.progression, base_amount, job_amount)
+      Leveling.apply_exp(game_state.stats.progression, base_amount, job_amount)
+
+    progression = %{progression | skill_point: progression.skill_point + job_gained}
 
     stats =
-      %{state.game_state.stats | progression: progression}
-      |> Stats.calculate_stats(character.id)
+      %{game_state.stats | progression: progression}
+      |> Stats.calculate_stats(char_id)
       |> maybe_full_heal(base_gained)
 
-    skill_point = character.skill_point + job_gained
+    game_state = %{game_state | stats: stats}
+    new_state = %{state | game_state: game_state}
 
-    character = %{
-      character
-      | base_level: progression.base_level,
-        job_level: progression.job_level,
-        base_exp: progression.base_exp,
-        job_exp: progression.job_exp,
-        hp: stats.current_state.hp,
-        sp: stats.current_state.sp,
-        max_hp: stats.derived_stats.max_hp,
-        max_sp: stats.derived_stats.max_sp,
-        skill_point: skill_point
-    }
-
-    game_state = %{state.game_state | stats: stats}
-    new_state = %{state | game_state: game_state, character: character}
-
-    sync_client(new_state, progression, skill_point)
-    persist(character)
-    UnitRegistry.update_unit_state(:player, character.id, game_state)
+    sync_client(new_state, progression)
+    persist(char_id, stats)
+    UnitRegistry.update_unit_state(:player, char_id, game_state)
 
     {:noreply, new_state}
   end
@@ -66,31 +55,31 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
     %{stats | current_state: current}
   end
 
-  defp sync_client(state, progression, skill_point) do
+  defp sync_client(state, progression) do
     StatusSync.send_stat_updates(state.connection_pid, state.game_state.stats)
 
     StatusSync.send_params(state.connection_pid, %{
       StatusParams.next_base_exp() => Leveling.next_base_exp(progression),
       StatusParams.next_job_exp() => Leveling.next_job_exp(progression),
-      StatusParams.skill_point() => skill_point
+      StatusParams.skill_point() => progression.skill_point
     })
   end
 
   # no status-point award yet (needs the statpoint table + stat
   # allocation packet). Leveling already scales HP/SP/ATK/DEF directly.
-  defp persist(character) do
+  defp persist(char_id, stats) do
     CharacterPersistence.update_character(
-      character.id,
+      char_id,
       %{
-        base_level: character.base_level,
-        job_level: character.job_level,
-        base_exp: character.base_exp,
-        job_exp: character.job_exp,
-        hp: character.hp,
-        sp: character.sp,
-        max_hp: character.max_hp,
-        max_sp: character.max_sp,
-        skill_point: character.skill_point
+        base_level: stats.progression.base_level,
+        job_level: stats.progression.job_level,
+        base_exp: stats.progression.base_exp,
+        job_exp: stats.progression.job_exp,
+        hp: stats.current_state.hp,
+        sp: stats.current_state.sp,
+        max_hp: stats.derived_stats.max_hp,
+        max_sp: stats.derived_stats.max_sp,
+        skill_point: stats.progression.skill_point
       },
       async: true
     )

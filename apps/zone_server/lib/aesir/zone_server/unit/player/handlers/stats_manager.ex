@@ -48,9 +48,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
   ## Returns
     - {:noreply, updated_state} - Updated state with recalculated stats
   """
-  def handle_recalculate_stats(%{character: character} = state) do
+  def handle_recalculate_stats(%{game_state: game_state} = state) do
     # Recalculate stats with player ID for status effects
-    updated_stats = Stats.calculate_stats(state.game_state.stats, character.id)
+    updated_stats = Stats.calculate_stats(game_state.stats, game_state.character_id)
 
     # Only update and send changes if stats actually changed
     if updated_stats != state.game_state.stats do
@@ -75,11 +75,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
   ## Returns
     - {:reply, :ok, updated_state} - Success with updated state
   """
-  def handle_update_base_stat(stat_name, new_value, %{character: character} = state) do
-    stats = state.game_state.stats
+  def handle_update_base_stat(stat_name, new_value, %{game_state: game_state} = state) do
+    stats = game_state.stats
     updated_base_stats = Map.put(stats.base_stats, stat_name, new_value)
     updated_stats = %{stats | base_stats: updated_base_stats}
-    updated_stats = Stats.calculate_stats(updated_stats, character.id)
+    updated_stats = Stats.calculate_stats(updated_stats, game_state.character_id)
     updated_game_state = %{state.game_state | stats: updated_stats}
     updated_state = %{state | game_state: updated_game_state}
 
@@ -97,8 +97,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
   ## Returns
     - {:reply, updated_stats, updated_state} - Returns recalculated stats
   """
-  def handle_sync_recalculate_stats(%{character: character} = state) do
-    updated_stats = Stats.calculate_stats(state.game_state.stats, character.id)
+  def handle_sync_recalculate_stats(%{game_state: game_state} = state) do
+    updated_stats = Stats.calculate_stats(game_state.stats, game_state.character_id)
     updated_game_state = %{state.game_state | stats: updated_stats}
     updated_state = %{state | game_state: updated_game_state}
 
@@ -121,7 +121,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
   end
 
   def update_game_state(state, new_game_state) do
-    UnitRegistry.update_unit_state(:player, state.character.id, new_game_state)
+    UnitRegistry.update_unit_state(:player, new_game_state.character_id, new_game_state)
 
     %{state | game_state: new_game_state}
   end

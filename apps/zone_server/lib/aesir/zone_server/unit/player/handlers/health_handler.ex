@@ -52,7 +52,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     state = StatsManager.update_game_state(state, game_state)
 
     StatusSync.send_param(state.connection_pid, StatusParams.hp(), new_hp)
-    CharacterPersistence.update_stats(state.character.id, %{hp: new_hp}, async: true)
+    CharacterPersistence.update_stats(state.game_state.character_id, %{hp: new_hp}, async: true)
 
     if new_hp == 0 do
       handle_death(attacker_id, state)
@@ -78,22 +78,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   def handle_restart(1, state), do: {:stop, :normal, state}
   def handle_restart(_type, state), do: {:noreply, state}
 
-  defp handle_death(attacker_id, %{character: character, game_state: game_state} = state) do
-    Logger.info("Player #{character.id} died (killed by #{inspect(attacker_id)})")
+  defp handle_death(attacker_id, %{game_state: game_state} = state) do
+    Logger.info("Player #{game_state.character_id} died (killed by #{inspect(attacker_id)})")
 
     {:ok, dead_state} = PlayerState.transition_to(game_state, :dead)
     state = StatsManager.update_game_state(state, dead_state)
 
-    vanish = %ZcNotifyVanish{gid: character.account_id, type: ZcNotifyVanish.died()}
+    vanish = %ZcNotifyVanish{gid: game_state.account_id, type: ZcNotifyVanish.died()}
     Broadcast.to_visible_players(dead_state, vanish)
 
-    SpatialIndex.remove_player(character.id)
-    SpatialIndex.clear_visibility(character.id)
+    SpatialIndex.remove_player(game_state.character_id)
+    SpatialIndex.clear_visibility(game_state.character_id)
 
     {:noreply, state}
   end
 
-  defp respawn(%{character: character, game_state: game_state} = state) do
+  defp respawn(%{game_state: game_state} = state) do
     stats = game_state.stats
     max_hp = stats.derived_stats.max_hp
     max_sp = stats.derived_stats.max_sp
@@ -107,8 +107,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     idle_state = %{idle_state | stats: revived_stats}
     state = StatsManager.update_game_state(state, idle_state)
 
-    SpatialIndex.add_player(character.id, idle_state.x, idle_state.y, idle_state.map_name)
-    visible_state = MovementHandler.handle_visibility_update(character, idle_state)
+    SpatialIndex.add_player(
+      idle_state.character_id,
+      idle_state.x,
+      idle_state.y,
+      idle_state.map_name
+    )
+
+    visible_state = MovementHandler.handle_visibility_update(idle_state)
     state = StatsManager.update_game_state(state, visible_state)
 
     StatusSync.send_params(state.connection_pid, [
@@ -118,11 +124,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
       {StatusParams.sp(), max_sp}
     ])
 
-    resurrection = %ZcResurrection{gid: character.account_id, type: 0}
+    resurrection = %ZcResurrection{gid: game_state.account_id, type: 0}
     send_self(state, resurrection)
     Broadcast.to_visible_players(visible_state, resurrection)
 
-    CharacterPersistence.update_stats(character.id, %{hp: max_hp, sp: max_sp}, async: true)
+    CharacterPersistence.update_stats(game_state.character_id, %{hp: max_hp, sp: max_sp},
+      async: true
+    )
 
     {:noreply, state}
   end

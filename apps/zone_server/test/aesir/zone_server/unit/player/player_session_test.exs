@@ -75,7 +75,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
           connection_pid: connection_pid
         })
 
-      assert state.character == character
+      assert state.game_state.character_id == character.id
+      assert state.game_state.character_name == character.name
       assert state.connection_pid == connection_pid
       assert state.game_state.x == 50
       assert state.game_state.y == 50
@@ -268,7 +269,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       game_state = PlayerState.new(character)
 
       state = %{
-        character: character,
         game_state: game_state,
         connection_pid: self()
       }
@@ -280,8 +280,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         )
 
       assert_receive {:"$gen_cast", {:player_info_response, info, 1}}
-      assert info.character == character
-      assert info.game_state == game_state
+      assert info == game_state
     end
 
     test "player_info_response sends spawn packet", %{character: character} do
@@ -292,22 +291,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         | movement_state: :standing
       }
 
-      player_info = %{
-        character: other_character,
-        game_state: other_game_state,
-        movement_state: :standing,
-        walk_path: []
-      }
-
       state = %{
-        character: character,
         game_state: PlayerState.new(character),
         connection_pid: self()
       }
 
       {:noreply, _new_state} =
         PlayerSession.handle_cast(
-          {:player_info_response, player_info, 2},
+          {:player_info_response, other_game_state, 2},
           state
         )
 

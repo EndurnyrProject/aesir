@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     field :base_exp, non_neg_integer()
     field :job_exp, non_neg_integer()
     field :job_id, non_neg_integer()
+    field :skill_point, non_neg_integer()
   end
 
   typedstruct module: Equipment do
@@ -82,7 +83,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       job_level: character.job_level,
       base_exp: character.base_exp,
       job_exp: character.job_exp,
-      job_id: character.class || 0
+      job_id: character.class || 0,
+      skill_point: character.skill_point
     }
 
     current_state = %Stats.CurrentState{

@@ -53,9 +53,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   def handle_packet(
         @cz_notify_actorinit,
         _packet_data,
-        %{character: character, connection_pid: connection_pid, game_state: game_state} = state
+        %{connection_pid: connection_pid, game_state: game_state} = state
       ) do
-    Logger.debug("Player #{character.id} finished loading map (LoadEndAck)")
+    Logger.debug("Player #{game_state.character_id} finished loading map (LoadEndAck)")
 
     # Send weight updates to client
     StatusSync.send_params(connection_pid, %{
@@ -67,7 +67,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     StatusSync.send_params(connection_pid, %{
       StatusParams.next_base_exp() => Leveling.next_base_exp(game_state.stats.progression),
       StatusParams.next_job_exp() => Leveling.next_job_exp(game_state.stats.progression),
-      StatusParams.skill_point() => character.skill_point
+      StatusParams.skill_point() => game_state.stats.progression.skill_point
     })
 
     StatusSync.send_stat_updates(connection_pid, game_state.stats)
@@ -110,7 +110,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
         @cz_reqname2,
         packet_data,
         %{
-          character: character,
           game_state: game_state,
           connection_pid: connection_pid
         } = state
@@ -118,10 +117,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     entity_id = packet_data.entity_id
 
     cond do
-      entity_id == character.account_id ->
+      entity_id == game_state.account_id ->
         packet = %ZcAckReqnameall{
-          gid: character.account_id,
-          name: character.name,
+          gid: game_state.account_id,
+          name: game_state.character_name,
           party_name: "",
           guild_name: "",
           position_name: ""
@@ -208,25 +207,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   def handle_packet(
         @cz_request_chat,
         %CzRequestChat{message: raw_message},
-        %{character: character, game_state: game_state, connection_pid: connection_pid} = state
+        %{game_state: game_state, connection_pid: connection_pid} = state
       ) do
     # 1. Message Validation
     # Max chat size from rAthena is 256 bytes (including null terminator)
     if byte_size(raw_message) > @chat_max_size do
-      Logger.warning("Player #{character.id} sent a message exceeding maximum length.")
+      Logger.warning("Player #{game_state.character_id} sent a message exceeding maximum length.")
       # Optionally send an error message to the client
       {:noreply, state}
     else
       # rAthena expects "CharName : Message"
       # We need to extract the actual message and validate the prefix
-      name_prefix = character.name <> " : "
+      name_prefix = game_state.character_name <> " : "
 
       if String.starts_with?(raw_message, name_prefix) do
         chat_message = raw_message
 
         # 2. Construct ZcNotifyChat packet
         packet = %ZcNotifyChat{
-          gid: character.id,
+          gid: game_state.character_id,
           message: chat_message
         }
 
@@ -235,10 +234,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
         send(connection_pid, {:send_packet, packet})
 
         # To visible players (excluding self)
-        Broadcast.to_visible_players(game_state, packet, exclude_id: character.id)
+        Broadcast.to_visible_players(game_state, packet, exclude_id: game_state.character_id)
       else
         Logger.warning(
-          "Player #{character.id} sent a malformed chat message (expected '#{name_prefix}'). Message: '#{raw_message}'"
+          "Player #{game_state.character_id} sent a malformed chat message (expected '#{name_prefix}'). Message: '#{raw_message}'"
         )
       end
 

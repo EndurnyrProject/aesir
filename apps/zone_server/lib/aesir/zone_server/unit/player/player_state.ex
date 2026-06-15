@@ -23,6 +23,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           character_name: String.t(),
           account_id: integer(),
           process_pid: pid() | nil,
+          sex: String.t(),
+          hair: integer(),
+          hair_color: integer(),
+          clothes_color: integer(),
+          head_mid: integer(),
+          head_bottom: integer(),
+          robe: integer(),
           x: integer(),
           y: integer(),
           map_name: String.t(),
@@ -59,6 +66,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     :character_name,
     :account_id,
     :process_pid,
+
+    # Appearance (load-once, cosmetic; sourced from the Character at spawn)
+    :sex,
+    :hair,
+    :hair_color,
+    :clothes_color,
+    :head_mid,
+    :head_bottom,
+    :robe,
 
     # Position & Movement
     :x,
@@ -120,6 +136,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       account_id: character.account_id,
       # Will be set later if needed
       process_pid: nil,
+      sex: character.sex,
+      hair: character.hair,
+      hair_color: character.hair_color,
+      clothes_color: character.clothes_color,
+      head_mid: character.head_mid,
+      head_bottom: character.head_bottom,
+      robe: character.robe,
       map_name: character.last_map,
       x: character.last_x,
       y: character.last_y,
