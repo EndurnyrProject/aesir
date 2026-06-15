@@ -217,6 +217,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   @impl GenServer
+  def handle_info(:terminate, state) do
+    {:stop, :normal, state}
+  end
+
+  @impl GenServer
   def terminate(_reason, state) do
     SpatialIndex.remove_unit(:mob, state.instance_id)
     notify_players_of_mob_disappearance(state.instance_id)

@@ -109,7 +109,8 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   Notifies the coordinator that a mob has died.
   """
   def mob_died(map_name, instance_id) do
-    GenServer.cast(via_tuple(map_name), {:mob_died, instance_id})
+    clean_name = String.replace_suffix(map_name, ".gat", "")
+    GenServer.cast(via_tuple(clean_name), {:mob_died, instance_id})
   end
 
   @doc """
@@ -182,14 +183,14 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
           Process.send_after(
             self(),
             {:respawn_mob, spawn_config},
-            spawn_config.respawn_time * 1000
+            spawn_config.respawn_time
           )
 
         # Store timer with spawn config for cleanup
         new_timers = Map.put(state.respawn_timers, instance_id, {timer_ref, spawn_config})
 
         Logger.debug(
-          "Mob #{instance_id} died on #{state.map_name}, respawning in #{spawn_config.respawn_time}s"
+          "Mob #{instance_id} died on #{state.map_name}, respawning in #{spawn_config.respawn_time}ms"
         )
 
         {:noreply, %{state | respawn_timers: new_timers}}
