@@ -136,4 +136,7 @@ docs/superpowers
 
 .worktrees
 
+# Generated item-definition cache (rebuilt from priv/db/items/*.yml on boot)
+apps/zone_server/priv/db/items/.cache/
+
 # End of https://www.toptal.com/developers/gitignore/api/elixir,erlang,vim,visualstudiocode,macos
