@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
 
   alias Aesir.Commons.StatusParams
   alias Aesir.Commons.Utils.ServerTick
+  alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Packets.CzRequestChat
   alias Aesir.ZoneServer.Packets.CzRestart
   alias Aesir.ZoneServer.Packets.ZcAckReqname
@@ -63,10 +64,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     })
 
     # Send experience and skill point status (sent later in LoadEndAck sequence)
-    # TODO: the next base exp and job exp will come from a different place
     StatusSync.send_params(connection_pid, %{
-      StatusParams.next_base_exp() => 100,
-      StatusParams.next_job_exp() => 100,
+      StatusParams.next_base_exp() => Leveling.next_base_exp(game_state.stats.progression),
+      StatusParams.next_job_exp() => Leveling.next_job_exp(game_state.stats.progression),
       StatusParams.skill_point() => character.skill_point
     })
 

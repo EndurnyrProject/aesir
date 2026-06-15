@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Packets.ZcNotifyStandentry
   alias Aesir.ZoneServer.Packets.ZcNotifyVanish
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
@@ -24,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
+  alias Phoenix.PubSub
 
   @doc """
   Starts a player session linked to a connection process.
@@ -186,6 +188,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
         register_player(character.id, character.account_id, character.name)
 
+        # Subscribe to this player's event topic. Kill rewards and other
+        # player-directed domain events arrive here, keeping emitters
+        # (mobs, etc.) decoupled from the player session.
+        PubSub.subscribe(Aesir.PubSub, "player:#{character.id}")
+
         send(self(), :spawn_player)
 
         {:ok, state}
@@ -263,6 +270,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   def handle_info({:packet, packet_id, packet_data}, state) do
     PacketHandler.handle_packet(packet_id, packet_data, state)
+  end
+
+  @impl true
+  def handle_info({:mob_killed, %{base_exp: base_exp, job_exp: job_exp}}, state) do
+    ExperienceHandler.handle_gain_exp(base_exp, job_exp, state)
   end
 
   @impl true

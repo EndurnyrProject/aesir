@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.ZoneServer.Unit.MovementEngine
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
+  alias Phoenix.PubSub
 
   # AI tick interval in milliseconds
   @ai_tick_interval 1000
@@ -134,7 +135,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
         {:noreply, updated_mob}
 
       :dead ->
-        handle_death(updated_mob)
+        handle_death(updated_mob, attacker_id)
     end
   end
 
@@ -236,12 +237,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     MobState.add_aggro(state, attacker_id, damage)
   end
 
-  defp handle_death(state) do
+  defp handle_death(state, attacker_id) do
     # Mark as dead
     updated_state = MobState.set_dead(state)
 
     # Notify nearby players of mob death
     notify_despawn(updated_state)
+
+    announce_kill(state, attacker_id)
 
     # Notify coordinator of death for respawn scheduling
     Coordinator.mob_died(state.map_name, state.instance_id)
@@ -250,6 +253,23 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     Process.send_after(self(), :terminate, 1000)
 
     {:noreply, updated_state}
+  end
+
+  # Publishes the kill so consumers (the killer's session for experience today,
+  # drops/quests later) can react. The mob stays ignorant of who listens; an
+  # absent killer simply has no subscriber.
+  #
+  # only the killing blow is credited. Add aggro-proportional and
+  # party-shared rewards once parties exist.
+  defp announce_kill(_state, nil), do: :ok
+
+  defp announce_kill(%MobState{mob_data: mob_data}, attacker_id) do
+    PubSub.broadcast(
+      Aesir.PubSub,
+      "player:#{attacker_id}",
+      {:mob_killed,
+       %{mob_id: mob_data.id, base_exp: mob_data.base_exp, job_exp: mob_data.job_exp}}
+    )
   end
 
   defp process_ai(state) do
