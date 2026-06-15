@@ -229,9 +229,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   end
 
   describe "visibility system" do
-    test "player_entered_view requests player info", %{character: character} do
-      other_pid = spawn(fn -> :timer.sleep(1000) end)
-      UnitRegistry.register_player(2, 200, "TestPlayer", other_pid)
+    test "player_entered_view sends spawn packet built from the registry", %{
+      character: character
+    } do
+      other_character = %{character | id: 2, account_id: 200, name: "OtherPlayer"}
+      other_game_state = %{PlayerState.new(other_character) | movement_state: :standing}
+
+      other_pid = spawn(fn -> Process.sleep(1000) end)
+      UnitRegistry.register_player(2, 200, "OtherPlayer", other_pid)
+      UnitRegistry.update_unit_state(:player, 2, other_game_state)
 
       state = %{
         character: character,
@@ -241,7 +247,26 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
       {:noreply, _new_state} = PlayerSession.handle_cast({:player_entered_view, 2}, state)
 
+      assert_receive {:send_packet,
+                      %Aesir.ZoneServer.Packets.ZcNotifyStandentry{
+                        aid: 200,
+                        gid: 2,
+                        name: "OtherPlayer"
+                      }}
+
       Process.exit(other_pid, :kill)
+    end
+
+    test "player_entered_view is a no-op for an unknown player", %{character: character} do
+      state = %{
+        character: character,
+        game_state: PlayerState.new(character),
+        connection_pid: self()
+      }
+
+      {:noreply, _new_state} = PlayerSession.handle_cast({:player_entered_view, 999}, state)
+
+      refute_receive {:send_packet, _}
     end
 
     test "player_left_view sends vanish packet", %{character: character} do
@@ -261,52 +286,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
                       %Aesir.ZoneServer.Packets.ZcNotifyVanish{
                         gid: 200,
                         type: 0
-                      }}
-    end
-
-    test "request_player_info sends back player information", %{character: character} do
-      requester_pid = self()
-      game_state = PlayerState.new(character)
-
-      state = %{
-        game_state: game_state,
-        connection_pid: self()
-      }
-
-      {:noreply, _new_state} =
-        PlayerSession.handle_cast(
-          {:request_player_info, requester_pid, 2},
-          state
-        )
-
-      assert_receive {:"$gen_cast", {:player_info_response, info, 1}}
-      assert info == game_state
-    end
-
-    test "player_info_response sends spawn packet", %{character: character} do
-      other_character = %{character | id: 2, account_id: 200, name: "OtherPlayer"}
-
-      other_game_state = %{
-        PlayerState.new(other_character)
-        | movement_state: :standing
-      }
-
-      state = %{
-        game_state: PlayerState.new(character),
-        connection_pid: self()
-      }
-
-      {:noreply, _new_state} =
-        PlayerSession.handle_cast(
-          {:player_info_response, other_game_state, 2},
-          state
-        )
-
-      assert_receive {:send_packet,
-                      %Aesir.ZoneServer.Packets.ZcNotifyStandentry{
-                        aid: 200,
-                        gid: 2,
-                        name: "OtherPlayer"
                       }}
     end
   end
@@ -391,6 +370,26 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       assert new_state.game_state.stats.derived_stats.max_hp == 500
 
       # Verify stats updates are sent to client
+      assert_receive {:send_packet, _packet}
+    end
+
+    test "recalculate_stats via pubsub message updates stats", %{character: character} do
+      expect(Stats, :calculate_stats, fn stats, player_id ->
+        assert player_id == character.id
+        %{stats | base_stats: %{stats.base_stats | str: 25}}
+      end)
+
+      game_state = PlayerState.new(character)
+
+      state = %{
+        character: character,
+        game_state: game_state,
+        connection_pid: self()
+      }
+
+      {:noreply, new_state} = PlayerSession.handle_info(:recalculate_stats, state)
+
+      assert new_state.game_state.stats.base_stats.str == 25
       assert_receive {:send_packet, _packet}
     end
 

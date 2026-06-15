@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Packets.ZcNotifyNewentry
   alias Aesir.ZoneServer.Packets.ZcNotifyStandentry
   alias Aesir.ZoneServer.Packets.ZcNotifyVanish
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
@@ -192,6 +193,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         # (mobs, etc.) decoupled from the player session.
         PubSub.subscribe(Aesir.PubSub, "player:#{character.id}")
 
+        # Subscribe to mob despawns on this map so we can drop a combat target
+        # when the mob we were attacking dies.
+        # subscribe at spawn; re-subscribe on warp when warps land.
+        Broadcast.subscribe_mob_despawns(final_game_state.map_name)
+
         send(self(), :spawn_player)
 
         {:ok, state}
@@ -211,8 +217,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       game_state.map_name
     )
 
+    # Publish our full state to the registry before visibility runs so players
+    # we enter view of can read it to build our spawn packet.
+    state = update_game_state(state, game_state)
+
     # Check initial visibility for players and mobs
-    updated_game_state = MovementHandler.handle_visibility_update(game_state)
+    updated_game_state = MovementHandler.handle_visibility_update(state.game_state)
 
     # After initial spawn, transition to standing state
     # This happens after a short delay to ensure spawn packets are processed
@@ -282,6 +292,27 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
+  def handle_info(:recalculate_stats, state) do
+    StatsManager.handle_recalculate_stats(state)
+  end
+
+  @impl true
+  def handle_info({:mob_despawned, mob_instance_id}, state) do
+    # Only clear combat if this player was targeting this specific mob
+    if state.game_state.combat_target_id == mob_instance_id do
+      Logger.debug(
+        "Clearing combat target #{mob_instance_id} for player #{state.game_state.character_id}"
+      )
+
+      updated_game_state = PlayerState.clear_combat_intent(state.game_state)
+      {:ok, idle_state} = PlayerState.transition_to(updated_game_state, :idle)
+      {:noreply, %{state | game_state: idle_state}}
+    else
+      {:noreply, state}
+    end
+  end
+
+  @impl true
   def handle_info(:connection_closed, %{game_state: game_state} = state) do
     Logger.info("Player #{game_state.character_id} connection closed")
     {:stop, :normal, state}
@@ -320,30 +351,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @impl true
   def handle_cast({:player_entered_view, other_char_id}, state) do
-    case UnitRegistry.get_player_pid(other_char_id) do
-      {:ok, other_pid} ->
-        GenServer.cast(other_pid, {:request_player_info, self(), state.game_state.character_id})
+    # Read the other player's state straight from the registry instead of
+    # round-tripping through their process to fetch it.
+    case UnitRegistry.get_unit(:player, other_char_id) do
+      {:ok, {_module, %PlayerState{} = other_game_state, _pid}} ->
+        send_player_spawn_packet(state.connection_pid, other_game_state)
 
-      {:error, :not_found} ->
+      _ ->
         :ok
     end
-
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_cast({:request_player_info, requester_pid, _requester_char_id}, state) do
-    GenServer.cast(
-      requester_pid,
-      {:player_info_response, state.game_state, state.game_state.character_id}
-    )
-
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_cast({:player_info_response, game_state, _from_char_id}, state) do
-    send_player_spawn_packet(state.connection_pid, game_state)
 
     {:noreply, state}
   end
@@ -407,22 +423,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast(:recalculate_stats, state) do
     StatsManager.handle_recalculate_stats(state)
-  end
-
-  @impl true
-  def handle_cast({:clear_combat_target, mob_instance_id}, state) do
-    # Only clear combat if this player was targeting this specific mob
-    if state.game_state.combat_target_id == mob_instance_id do
-      Logger.debug(
-        "Clearing combat target #{mob_instance_id} for player #{state.game_state.character_id}"
-      )
-
-      updated_game_state = PlayerState.clear_combat_intent(state.game_state)
-      {:ok, idle_state} = PlayerState.transition_to(updated_game_state, :idle)
-      {:noreply, %{state | game_state: idle_state}}
-    else
-      {:noreply, state}
-    end
   end
 
   @impl true

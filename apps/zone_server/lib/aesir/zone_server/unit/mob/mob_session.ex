@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.ZoneServer.Packets.ZcNotifyNewentry
   alias Aesir.ZoneServer.Packets.ZcNotifyVanish
   alias Aesir.ZoneServer.Pathfinding
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.MovementEngine
@@ -225,7 +226,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   @impl GenServer
   def terminate(_reason, state) do
     SpatialIndex.remove_unit(:mob, state.instance_id)
-    notify_players_of_mob_disappearance(state.instance_id)
+    Broadcast.publish_mob_despawn(state.map_name, state.instance_id)
     :ok
   end
 
@@ -453,40 +454,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   # Broadcasting Helper Functions
 
   defp broadcast_to_nearby_players(%MobState{} = mob_state, packet) do
-    # Get players in range using the mob's map name
-    # Map names should be normalized at load time to avoid inconsistencies
-    nearby_players =
-      SpatialIndex.get_players_in_range(
-        mob_state.map_name,
-        mob_state.x,
-        mob_state.y,
-        mob_state.view_range
-      )
-
-    Enum.each(nearby_players, &send_packet_to_player(&1, packet))
-  end
-
-  defp send_packet_to_player(char_id, packet) do
-    case UnitRegistry.get_player_pid(char_id) do
-      {:ok, pid} ->
-        GenServer.cast(pid, {:send_packet, packet})
-
-      {:error, :not_found} ->
-        :ok
-    end
-  end
-
-  defp notify_players_of_mob_disappearance(mob_instance_id) do
-    # Get all players in the zone
-    UnitRegistry.list_players()
-    |> Enum.each(fn player_id ->
-      case UnitRegistry.get_player_pid(player_id) do
-        {:ok, pid} ->
-          GenServer.cast(pid, {:clear_combat_target, mob_instance_id})
-
-        {:error, :not_found} ->
-          :ok
-      end
-    end)
+    Broadcast.to_in_range(
+      mob_state.map_name,
+      mob_state.x,
+      mob_state.y,
+      mob_state.view_range,
+      packet
+    )
   end
 end

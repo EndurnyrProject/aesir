@@ -9,10 +9,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  # Combat packets broadcast from the victim's position, per rAthena.
+  @combat_view_range 14
 
   @doc """
   Executes an attack from player to target.
@@ -345,69 +349,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     end
   end
 
-  # Helper functions for unified packet broadcasting
-
-  # New version that works with combatants
-  defp broadcast_to_nearby_players(target_combatant, packet) when is_struct(target_combatant) do
-    # Broadcast from the target's (victim's) position as per rAthena
-    {target_x, target_y} = target_combatant.position
-    view_range = 14
-
-    nearby_players =
-      SpatialIndex.get_players_in_range(
-        target_combatant.map_name,
-        target_x,
-        target_y,
-        view_range
-      )
-
-    Enum.each(nearby_players, fn player_id ->
-      case UnitRegistry.get_player_pid(player_id) do
-        {:ok, pid} ->
-          PlayerSession.send_packet(pid, packet)
-
-        {:error, _} ->
-          Logger.warning("Failed to send combat packet to player #{player_id}")
-      end
-    end)
+  # Broadcasts a combat packet to players near the target. Works for both
+  # combatant structs and map-based target stats (both carry position/map_name).
+  defp broadcast_to_nearby_players(target, packet) do
+    {x, y} = target.position
+    Broadcast.to_in_range(target.map_name, x, y, @combat_view_range, packet)
   end
-
-  # Legacy version that works with map-based target_stats
-  defp broadcast_to_nearby_players(target_stats, packet) do
-    # Broadcast from the target's (victim's) position as per rAthena
-    {target_x, target_y} = target_stats.position
-    view_range = 14
-
-    nearby_players =
-      SpatialIndex.get_players_in_range(
-        target_stats.map_name,
-        target_x,
-        target_y,
-        view_range
-      )
-
-    Enum.each(nearby_players, fn char_id ->
-      send_packet_to_player(char_id, packet)
-    end)
-
-    :ok
-  end
-
-  defp send_packet_to_player(char_id, packet) do
-    case UnitRegistry.get_player_pid(char_id) do
-      {:ok, pid} ->
-        # Send packet through PlayerSession which will forward to connection
-        GenServer.cast(pid, {:send_packet, packet})
-
-      {:error, :not_found} ->
-        # Player likely disconnected during combat - this should not crash the attacker
-        Logger.warning(
-          "Player #{char_id} not found when sending combat packet, likely disconnected"
-        )
-
-        :ok
-    end
-  end
-
-  # Mob attack helper functions
 end

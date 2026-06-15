@@ -16,8 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Unit.Player.PlayerSession
-  alias Aesir.ZoneServer.Unit.UnitRegistry
+  alias Phoenix.PubSub
 
   # 1 second tick rate
   @tick_interval_ms 1000
@@ -209,17 +208,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
     end)
   end
 
-  # Notifies a player session to recalculate stats after status changes
+  # Notifies a player session to recalculate stats after status changes.
+  # Broadcast on the player's topic so this manager stays decoupled from
+  # player session pids; an offline player simply has no subscriber.
   defp notify_player_session(player_id) do
-    case UnitRegistry.get_player_pid(player_id) do
-      {:ok, pid} ->
-        # Trigger stats recalculation in the player session
-        # Use asynchronous version (false) for better performance
-        PlayerSession.recalculate_stats(pid, false)
-
-      {:error, :not_found} ->
-        # Player not found or offline
-        :ok
-    end
+    PubSub.broadcast(Aesir.PubSub, "player:#{player_id}", :recalculate_stats)
   end
 end

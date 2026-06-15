@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Packets.ZcNotifyPlayermove
   alias Aesir.ZoneServer.Packets.ZcNotifyVanish
   alias Aesir.ZoneServer.Pathfinding
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.MovementEngine
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -67,6 +68,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
           game_state
           |> PlayerState.update_position(next_x, next_y)
           |> Map.put(:walk_path, remaining_path)
+
+        # Sync the registry before visibility so players we enter view of read
+        # our current position when building our spawn packet.
+        UnitRegistry.update_unit_state(
+          :player,
+          updated_game_state.character_id,
+          updated_game_state
+        )
 
         # Handle visibility updates
         updated_game_state = handle_visibility_update(updated_game_state)
@@ -208,37 +217,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   end
 
   defp broadcast_stop_to_nearby(game_state, packet) do
-    nearby_players =
-      SpatialIndex.get_players_in_range(
-        game_state.map_name,
-        game_state.x,
-        game_state.y,
-        game_state.view_range
-      )
-
-    nearby_players
-    |> Enum.filter(&(&1 != game_state.character_id))
-    |> Enum.each(&send_packet_to_player(&1, packet))
-  end
-
-  defp send_packet_to_player(char_id, packet) do
-    case UnitRegistry.get_player_pid(char_id) do
-      {:ok, pid} ->
-        GenServer.cast(pid, {:send_packet, packet})
-
-      {:error, :not_found} ->
-        :ok
-    end
+    Broadcast.to_in_range(
+      game_state.map_name,
+      game_state.x,
+      game_state.y,
+      game_state.view_range,
+      packet,
+      exclude_id: game_state.character_id
+    )
   end
 
   defp broadcast_movement_to_nearby(game_state, dest_x, dest_y) do
     # Only broadcast to players who can see us (using visibility ETS)
-    visible_players = SpatialIndex.get_visible_players(game_state.character_id)
     packet = build_movement_packet(game_state, dest_x, dest_y)
 
-    visible_players
-    |> Enum.filter(&(&1 != game_state.character_id))
-    |> Enum.each(&send_packet_to_player(&1, packet))
+    game_state.character_id
+    |> SpatialIndex.get_visible_players()
+    |> Broadcast.to_players(packet, exclude_id: game_state.character_id)
   end
 
   defp build_movement_packet(game_state, dest_x, dest_y) do
