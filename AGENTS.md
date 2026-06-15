@@ -16,7 +16,7 @@ The project follows an Elixir umbrella application structure, organized into fou
    - Packet definitions and parsing
    - Database models and schemas
    - Authentication system
-   - Session management (distributed via Memento)
+   - Session management (distributed via Horde)
    - Inter-server communication (via Phoenix.PubSub)
 
 2. **account_server** - Handles user authentication and login
@@ -37,17 +37,16 @@ The project follows an Elixir umbrella application structure, organized into fou
    - Character movement and positioning
    - Entity management (players, NPCs, monsters)
    - Status effects and combat
-   - Scripting system (using Lua)
+   - Mob management and AI (via gen_state_machine)
 
 ### Key Architectural Components
 
 - **Umbrella Structure**: Each server is a separate OTP application within an umbrella project
 - **Distributed System**: Uses libcluster for node discovery and communication
 - **Database**: Uses Ecto with Postgres for persistent storage
-- **In-Memory Storage**: Uses Memento (Mnesia wrapper) for distributed session data
+- **In-Memory Storage**: Uses Horde (distributed Registry/DynamicSupervisor) for cluster-wide session data
 - **Inter-Server Communication**: Phoenix.PubSub for messaging between servers
 - **Network Layer**: Ranch TCP implementation with custom packet handling
-- **Scripting**: Lua integration for game logic and event scripting
 
 ## Packet System
 
@@ -117,7 +116,7 @@ The session system manages player connections and state across servers:
 
 1. **Session Creation**: Started in the account server during login
 2. **Session Validation**: Used by char/zone servers to verify authentication
-3. **Distributed Storage**: Uses Memento (Mnesia) for cluster-wide access
+3. **Distributed Storage**: Uses Horde (distributed Registry) for cluster-wide access; sessions are carried as Horde.Registry values and are not persisted
 4. **Server Tracking**: Monitors which players are on which servers
 5. **Heartbeat System**: Detects disconnected nodes and cleans up orphaned sessions
 
@@ -155,8 +154,8 @@ Tests follow standard Elixir patterns with some custom helpers:
    - Provides transaction sandboxing for isolation
    - Includes helper functions for error assertions
 
-3. **Memento Tests**: Use `Aesir.Commons.MementoTestHelper` for in-memory table tests
-   - Provides table recreation and cleanup utilities
+3. **Cluster Tests**: Use `Aesir.Commons.ClusterTestHelper` for Horde registry tests
+   - Clears cluster registry entries between tests
    - Ensures isolated test environments
 
 4. **ETS Tests**: Use `Aesir.TestEtsSetup` to setup ETS tables for tests
