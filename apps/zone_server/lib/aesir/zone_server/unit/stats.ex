@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Unit.Stats do
     field :flee, non_neg_integer()
     field :critical, non_neg_integer()
     field :perfect_dodge, non_neg_integer()
+    field :passive_atk, non_neg_integer()
   end
 
   typedstruct module: CurrentState do

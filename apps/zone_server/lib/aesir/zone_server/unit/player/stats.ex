@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Learned
+  alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Stats
@@ -310,14 +311,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     base_critical = calculate_base_critical(stats)
     base_atk = calculate_base_atk(stats)
     base_def = calculate_base_def(stats)
+    passive_atk = Passives.atk_bonus(stats)
 
     combat_stats = %{
       hit: PlayerCombatCalc.calculate_hit(stats),
       flee: PlayerCombatCalc.calculate_flee(stats),
       critical: base_critical + get_status_modifier(stats, :critical),
       perfect_dodge: PlayerCombatCalc.calculate_perfect_dodge(stats),
-      atk: base_atk + get_status_modifier(stats, :atk),
-      def: base_def + get_status_modifier(stats, :def)
+      atk: base_atk + get_status_modifier(stats, :atk) + passive_atk,
+      def: base_def + get_status_modifier(stats, :def),
+      passive_atk: passive_atk
     }
 
     %{stats | combat_stats: combat_stats}

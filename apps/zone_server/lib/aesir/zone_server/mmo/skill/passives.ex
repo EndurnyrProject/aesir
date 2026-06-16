@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   alias Aesir.ZoneServer.Mmo.Skill.Passives.Registry
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @typedoc "Aggregated regen contribution from all learned passives."
   @type regen :: %{
@@ -28,11 +29,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   @doc """
   Sums the ATK bonus contributed by every learned passive for the player.
   """
-  @spec atk_bonus(PlayerState.t()) :: integer()
-  def atk_bonus(%PlayerState{} = player) do
-    ctx = build_ctx(player)
+  @spec atk_bonus(PlayerState.t() | PlayerStats.t()) :: integer()
+  def atk_bonus(%PlayerState{stats: stats}), do: atk_bonus(stats)
 
-    player
+  def atk_bonus(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
     |> learned_passives()
     |> Enum.reduce(0, fn {module, level}, acc ->
       acc + module.atk_bonus(level, ctx)
@@ -45,11 +48,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   Numeric keys are summed; `allow_while_moving` is OR-ed. Always returns all
   three keys.
   """
-  @spec regen(PlayerState.t()) :: regen()
-  def regen(%PlayerState{} = player) do
-    ctx = build_ctx(player)
+  @spec regen(PlayerState.t() | PlayerStats.t()) :: regen()
+  def regen(%PlayerState{stats: stats}), do: regen(stats)
 
-    player
+  def regen(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
     |> learned_passives()
     |> Enum.reduce(%{hp_regen: 0, sp_regen: 0, allow_while_moving: false}, fn {module, level},
                                                                               acc ->
@@ -68,11 +73,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   Collects the non-`:none` riders contributed by learned passives for the given
   target skill and level.
   """
-  @spec rider_for(atom(), pos_integer(), PlayerState.t()) :: [rider()]
-  def rider_for(target_skill, target_skill_level, %PlayerState{} = player) do
-    ctx = build_ctx(player)
+  @spec rider_for(atom(), pos_integer(), PlayerState.t() | PlayerStats.t()) :: [rider()]
+  def rider_for(target_skill, target_skill_level, %PlayerState{stats: stats}) do
+    rider_for(target_skill, target_skill_level, stats)
+  end
 
-    player
+  def rider_for(target_skill, target_skill_level, %PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
     |> learned_passives()
     |> Enum.flat_map(fn {module, level} ->
       case module.skill_rider(target_skill, target_skill_level, level, ctx) do
@@ -82,8 +91,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
     end)
   end
 
-  @spec learned_passives(PlayerState.t()) :: [{module(), pos_integer()}]
-  defp learned_passives(%PlayerState{stats: stats}) do
+  @spec learned_passives(PlayerStats.t()) :: [{module(), pos_integer()}]
+  defp learned_passives(%PlayerStats{} = stats) do
     stats.progression.learned_skills
     |> Enum.flat_map(fn {skill_id, level} ->
       with {:ok, definition} <- Catalog.by_id(skill_id),
@@ -96,8 +105,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
     end)
   end
 
-  @spec build_ctx(PlayerState.t()) :: Passive.ctx()
-  defp build_ctx(%PlayerState{stats: stats}) do
+  @spec build_ctx(PlayerStats.t()) :: Passive.ctx()
+  defp build_ctx(%PlayerStats{} = stats) do
     %{
       weapon_type: WeaponTypes.get_weapon_atom(stats.equipment.weapon),
       base_level: stats.progression.base_level,
