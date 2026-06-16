@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
@@ -28,6 +29,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
+
+  # rAthena NATURAL_HEAL_INTERVAL
+  @natural_heal_interval 500
 
   @doc """
   Starts a player session linked to a connection process.
@@ -229,6 +233,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # This happens after a short delay to ensure spawn packets are processed
     Process.send_after(self(), :complete_spawn, 100)
 
+    # Start the recurring natural-heal regen tick.
+    Process.send_after(self(), :natural_heal_tick, @natural_heal_interval)
+
     {:noreply, update_game_state(state, updated_game_state)}
   end
 
@@ -241,6 +248,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_info(:movement_tick, state) do
     MovementHandler.handle_movement_tick(state)
+  end
+
+  @impl true
+  def handle_info(:natural_heal_tick, state) do
+    Process.send_after(self(), :natural_heal_tick, @natural_heal_interval)
+    NaturalHealHandler.handle_tick(state, @natural_heal_interval)
   end
 
   def handle_info(:movement_completed, %{game_state: game_state} = state) do
