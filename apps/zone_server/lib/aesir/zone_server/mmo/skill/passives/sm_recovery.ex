@@ -9,6 +9,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives.SmRecovery do
 
   @impl true
   def regen_contribution(level, %{max_hp: max_hp}) do
-    %{hp_regen: level * 5 + div(level * max_hp, 500)}
+    %{skill_hp_regen: level * 5 + div(level * max_hp, 500)}
   end
 end

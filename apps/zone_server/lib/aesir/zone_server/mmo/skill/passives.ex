@@ -18,8 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
 
   @typedoc "Aggregated regen contribution from all learned passives."
   @type regen :: %{
-          hp_regen: integer(),
-          sp_regen: integer(),
+          skill_hp_regen: integer(),
+          skill_sp_regen: integer(),
           allow_while_moving: boolean()
         }
 
@@ -56,13 +56,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
 
     stats
     |> learned_passives()
-    |> Enum.reduce(%{hp_regen: 0, sp_regen: 0, allow_while_moving: false}, fn {module, level},
-                                                                              acc ->
+    |> Enum.reduce(%{skill_hp_regen: 0, skill_sp_regen: 0, allow_while_moving: false}, fn {module,
+                                                                                          level},
+                                                                                         acc ->
       contribution = module.regen_contribution(level, ctx)
 
       %{
-        hp_regen: acc.hp_regen + Map.get(contribution, :hp_regen, 0),
-        sp_regen: acc.sp_regen + Map.get(contribution, :sp_regen, 0),
+        skill_hp_regen: acc.skill_hp_regen + Map.get(contribution, :skill_hp_regen, 0),
+        skill_sp_regen: acc.skill_sp_regen + Map.get(contribution, :skill_sp_regen, 0),
         allow_while_moving:
           acc.allow_while_moving or Map.get(contribution, :allow_while_moving, false)
       }

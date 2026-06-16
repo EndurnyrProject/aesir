@@ -30,8 +30,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
   @doc "Returns a map of regen contributions from this passive at the given level."
   @callback regen_contribution(level :: pos_integer(), ctx()) ::
               %{
-                optional(:hp_regen) => integer(),
-                optional(:sp_regen) => integer(),
+                optional(:skill_hp_regen) => integer(),
+                optional(:skill_sp_regen) => integer(),
                 optional(:allow_while_moving) => boolean()
               }
 

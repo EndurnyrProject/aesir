@@ -9,14 +9,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives.SmRecoveryTest do
     assert SmRecovery.skill_name() == :sm_recovery
   end
 
-  test "regen_contribution returns non-zero hp_regen scaled by level and max_hp" do
-    %{hp_regen: hp} = SmRecovery.regen_contribution(5, @ctx)
+  test "regen_contribution returns non-zero skill_hp_regen scaled by level and max_hp" do
+    %{skill_hp_regen: hp} = SmRecovery.regen_contribution(5, @ctx)
     assert hp == 5 * 5 + div(5 * 1000, 500)
   end
 
   test "regen_contribution scales with level" do
-    %{hp_regen: low} = SmRecovery.regen_contribution(1, @ctx)
-    %{hp_regen: high} = SmRecovery.regen_contribution(10, @ctx)
+    %{skill_hp_regen: low} = SmRecovery.regen_contribution(1, @ctx)
+    %{skill_hp_regen: high} = SmRecovery.regen_contribution(10, @ctx)
     assert high > low
   end
 end

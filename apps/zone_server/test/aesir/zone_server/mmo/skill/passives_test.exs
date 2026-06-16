@@ -38,20 +38,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
   end
 
   describe "regen/1" do
-    test "merges flat HP regen and the moving flag" do
+    test "merges flat skill HP regen and the moving flag" do
       player = build_player(%{4 => 5, 144 => 1}, :one_handed_sword)
 
       regen = Passives.regen(player)
 
-      assert regen.hp_regen == 35
+      assert regen.skill_hp_regen == 35
       assert regen.allow_while_moving == true
-      assert regen.sp_regen == 0
+      assert regen.skill_sp_regen == 0
     end
 
     test "returns all keys defaulted when no regen passives are learned" do
       player = build_player(%{2 => 5}, :one_handed_sword)
 
-      assert Passives.regen(player) == %{hp_regen: 0, sp_regen: 0, allow_while_moving: false}
+      assert Passives.regen(player) ==
+               %{skill_hp_regen: 0, skill_sp_regen: 0, allow_while_moving: false}
     end
   end
 
@@ -74,7 +75,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
       player = build_player(%{5 => 10}, :one_handed_sword)
 
       assert Passives.atk_bonus(player) == 0
-      assert Passives.regen(player) == %{hp_regen: 0, sp_regen: 0, allow_while_moving: false}
+
+      assert Passives.regen(player) ==
+               %{skill_hp_regen: 0, skill_sp_regen: 0, allow_while_moving: false}
     end
 
     test "an unknown id is silently skipped" do
