@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.PacketRegistry do
     Aesir.ZoneServer.Packets.CzRequestChat,
     Aesir.ZoneServer.Packets.CzRestart,
     Aesir.ZoneServer.Packets.CzStatusChange,
+    Aesir.ZoneServer.Packets.CzUseSkill,
     # Server to Client packets
     Aesir.ZoneServer.Packets.ZcAcceptEnter,
     Aesir.ZoneServer.Packets.ZcAid,
@@ -30,6 +31,8 @@ defmodule Aesir.ZoneServer.PacketRegistry do
     Aesir.ZoneServer.Packets.ZcParChange,
     Aesir.ZoneServer.Packets.ZcLongparChange,
     Aesir.ZoneServer.Packets.ZcResurrection,
-    Aesir.ZoneServer.Packets.ZcStatusChange
+    Aesir.ZoneServer.Packets.ZcStatusChange,
+    Aesir.ZoneServer.Packets.ZcUseSkill,
+    Aesir.ZoneServer.Packets.ZcSkillinfoList
   ]
 end

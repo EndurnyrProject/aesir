@@ -1,0 +1,8 @@
+- id: 29
+  name: al_incagi
+  display_name: "Increase AGI"
+  max_level: 10
+  target_type: target_ally
+  range: 9
+  sp_cost: [18, 21, 24, 27, 30, 33, 36, 39, 42, 45]
+  duration: [60000, 90000, 120000, 150000, 180000, 210000, 240000, 270000, 300000, 330000]

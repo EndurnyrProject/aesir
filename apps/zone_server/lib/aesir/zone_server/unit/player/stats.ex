@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
+  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Stats
@@ -30,6 +31,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     field :job_id, non_neg_integer()
     field :skill_point, non_neg_integer()
     field :status_point, non_neg_integer()
+    field :learned_skills, %{integer() => non_neg_integer()}, default: %{}
   end
 
   typedstruct module: Equipment do
@@ -86,7 +88,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       job_exp: character.job_exp,
       job_id: character.class || 0,
       skill_point: character.skill_point,
-      status_point: character.status_point
+      status_point: character.status_point,
+      learned_skills: Learned.from_character(character.learned_skills)
     }
 
     current_state = %Stats.CurrentState{

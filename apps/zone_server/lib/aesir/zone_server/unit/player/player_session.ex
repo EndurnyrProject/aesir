@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -379,6 +380,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:request_move, dest_x, dest_y}, state) do
     MovementHandler.handle_request_move(state, dest_x, dest_y)
+  end
+
+  @impl true
+  def handle_cast({:use_skill, skill_id, level, target_id}, state) do
+    SkillHandler.handle_use_skill(state, skill_id, level, target_id)
   end
 
   def handle_cast({:request_attack, target_id, action}, state) do

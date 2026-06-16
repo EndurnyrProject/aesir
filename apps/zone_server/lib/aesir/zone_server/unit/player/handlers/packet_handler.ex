@@ -13,12 +13,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Packets.CzRequestChat
   alias Aesir.ZoneServer.Packets.CzRestart
   alias Aesir.ZoneServer.Packets.CzStatusChange
+  alias Aesir.ZoneServer.Packets.CzUseSkill
   alias Aesir.ZoneServer.Packets.ZcAckReqname
   alias Aesir.ZoneServer.Packets.ZcAckReqnameall
   alias Aesir.ZoneServer.Packets.ZcEquipitemList
   alias Aesir.ZoneServer.Packets.ZcNormalItemlist
   alias Aesir.ZoneServer.Packets.ZcNotifyChat
   alias Aesir.ZoneServer.Packets.ZcNotifyTime
+  alias Aesir.ZoneServer.Packets.ZcSkillinfoList
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler
@@ -35,6 +37,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   @cz_reqname2 0x0368
   @cz_request_move 0x035F
   @cz_request_act 0x0437
+  @cz_use_skill 0x0113
   @cz_request_chat 0x008C
   @cz_restart 0x00B2
   @cz_status_change 0x00BB
@@ -89,8 +92,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     StatusSync.send_stat_updates(connection_pid, game_state.stats)
     send_inventory_data(connection_pid, game_state.inventory_items)
 
-    # TODO: Send remaining initial game data to client
-    # - Skill list
+    skill_list = ZcSkillinfoList.from_learned(game_state.stats.progression.learned_skills)
+    send(connection_pid, {:send_packet, skill_list})
 
     send(self(), :spawn_player)
 
@@ -211,6 +214,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
         Logger.warning("Unknown action type in CZ_REQUEST_ACT: #{packet_data.action}")
     end
 
+    {:noreply, state}
+  end
+
+  # CZ_USE_SKILL - Player casts a targeted skill
+  def handle_packet(
+        @cz_use_skill,
+        %CzUseSkill{skill_id: skill_id, level: level, target_id: target_id},
+        state
+      ) do
+    GenServer.cast(self(), {:use_skill, skill_id, level, target_id})
     {:noreply, state}
   end
 

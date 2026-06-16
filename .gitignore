@@ -140,6 +140,7 @@ docs/superpowers
 apps/zone_server/priv/db/items/.cache/
 apps/zone_server/priv/db/jobs/.cache/
 apps/zone_server/priv/db/mobs/.cache/
+apps/zone_server/priv/db/skills/.cache/
 apps/zone_server/priv/db/spawns/.cache/
 apps/zone_server/priv/db/statpoint/.cache/
 
