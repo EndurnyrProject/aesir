@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.PacketRegistry do
     Aesir.ZoneServer.Packets.ZcStatusChange,
     Aesir.ZoneServer.Packets.ZcUseSkill,
     Aesir.ZoneServer.Packets.ZcNotifySkill,
-    Aesir.ZoneServer.Packets.ZcSkillinfoList
+    Aesir.ZoneServer.Packets.ZcSkillinfoList,
+    Aesir.ZoneServer.Packets.ZcSkillPostdelay
   ]
 end

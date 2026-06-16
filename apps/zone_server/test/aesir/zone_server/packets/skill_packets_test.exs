@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Packets.SkillPacketsTest do
 
   alias Aesir.ZoneServer.Packets.CzUseSkill
   alias Aesir.ZoneServer.Packets.ZcSkillinfoList
+  alias Aesir.ZoneServer.Packets.ZcSkillPostdelay
   alias Aesir.ZoneServer.Packets.ZcUseSkill
 
   test "CzUseSkill parses level, skill_id and target_id" do
@@ -21,6 +22,13 @@ defmodule Aesir.ZoneServer.Packets.SkillPacketsTest do
 
     assert <<0x011A::16-little, 29::16-little, 5::16-little, 1000::32-little, 1000::32-little,
              1::8>> = built
+  end
+
+  test "ZcSkillPostdelay builds an 8-byte packet with correct layout" do
+    packet = %ZcSkillPostdelay{skill_id: 110, tick: 2_000}
+    built = ZcSkillPostdelay.build(packet)
+    assert byte_size(built) == 8
+    assert <<0x043D::16-little, 110::16-little, 2_000::32-little>> = built
   end
 
   test "ZcSkillinfoList builds one 37-byte block per learned skill (+4 header)" do
