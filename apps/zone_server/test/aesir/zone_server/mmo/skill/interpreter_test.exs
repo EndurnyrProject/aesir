@@ -79,6 +79,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     assert {:error, :on_cooldown} = Interpreter.cast(updated, 29, 1, :self)
   end
 
+  test "casting a passive skill returns :passive_skill" do
+    stub(Catalog, :by_id, fn 2 ->
+      {:ok,
+       %Definition{
+         id: 2,
+         name: :sm_sword,
+         display_name: "Sword Mastery",
+         max_level: 10,
+         target_type: :passive
+       }}
+    end)
+
+    assert {:error, :passive_skill} =
+             Interpreter.cast(game_state(100, %{2 => 5}), 2, 5, :self)
+  end
+
   test "zero-duration cooldown casts repeatedly and writes no entry" do
     stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _params -> :ok end)
     stub(Catalog, :by_id, fn 29 -> {:ok, definition_with_cooldown([])} end)

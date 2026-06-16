@@ -6,3 +6,33 @@
   damage_type: damage
   range: 2
   sp_cost: [8, 8, 8, 8, 8, 15, 15, 15, 15, 15]
+
+- id: 2
+  name: sm_sword
+  display_name: "Sword Mastery"
+  max_level: 10
+  target_type: passive
+
+- id: 3
+  name: sm_twohand
+  display_name: "Two-Handed Sword Mastery"
+  max_level: 10
+  target_type: passive
+
+- id: 4
+  name: sm_recovery
+  display_name: "Increase HP Recovery"
+  max_level: 10
+  target_type: passive
+
+- id: 144
+  name: sm_movingrecovery
+  display_name: "HP Recovery While Moving"
+  max_level: 1
+  target_type: passive
+
+- id: 145
+  name: sm_fatalblow
+  display_name: "Fatal Blow"
+  max_level: 1
+  target_type: passive
