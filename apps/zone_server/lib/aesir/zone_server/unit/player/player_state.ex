@@ -50,6 +50,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           last_target_position: {integer(), integer()} | nil,
           last_attack_timestamp: integer(),
           continuous_attack_timer: reference() | nil,
+          skill_cooldowns: %{integer() => integer()},
           stats: PlayerStats.t(),
           inventory_items: list()
         }
@@ -123,7 +124,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     :stats,
 
     # Inventory
-    :inventory_items
+    :inventory_items,
+    skill_cooldowns: %{}
   ]
 
   @doc """
