@@ -9,22 +9,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.Skill.Behaviors
   alias Aesir.ZoneServer.Mmo.Skill.Behaviour
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @spec cast(PlayerState.t(), integer(), pos_integer(), Behaviour.target()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
+    now = System.monotonic_time(:millisecond)
+
     with {:ok, definition} <- fetch_definition(skill_id),
          :ok <- check_max_level(definition, level),
          {:ok, module} <- fetch_behavior(definition),
          :ok <- check_learned(game_state, skill_id, level),
          :ok <- check_target(game_state, target, definition),
+         :ok <- check_cooldown(game_state, skill_id, now),
          :ok <- module.validate(game_state, target, level, definition),
          cost = Enum.at(definition.sp_cost, level - 1),
          :ok <- check_sp(game_state, cost),
          {:ok, game_state} <- module.cast(game_state, target, level, definition) do
-      {:ok, deduct_sp(game_state, cost)}
+      {:ok, game_state |> deduct_sp(cost) |> put_cooldown(skill_id, definition, level, now)}
     end
   end
 
@@ -68,6 +72,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp check_target(%{character_id: caster_id}, {:unit, caster_id}, _definition), do: :ok
   defp check_target(_game_state, _target, _definition), do: {:error, :invalid_target}
 
+  defp check_cooldown(game_state, skill_id, now) do
+    if Cooldown.ready?(game_state.skill_cooldowns, skill_id, now) do
+      :ok
+    else
+      {:error, :on_cooldown}
+    end
+  end
+
   defp check_sp(game_state, cost) do
     if game_state.stats.current_state.sp >= cost, do: :ok, else: {:error, :insufficient_sp}
   end
@@ -78,5 +90,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     stats = game_state.stats
     current = %{stats.current_state | sp: stats.current_state.sp - cost}
     %{game_state | stats: %{stats | current_state: current}}
+  end
+
+  defp put_cooldown(game_state, skill_id, definition, level, now) do
+    case Cooldown.duration(definition, level) do
+      0 ->
+        game_state
+
+      duration ->
+        cooldowns = Cooldown.put(game_state.skill_cooldowns, skill_id, now + duration)
+        %{game_state | skill_cooldowns: cooldowns}
+    end
   end
 end

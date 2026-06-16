@@ -11,5 +11,6 @@ Mimic.copy(Aesir.ZoneServer.Mmo.Combat)
 Mimic.copy(Aesir.ZoneServer.CharacterPersistence)
 Mimic.copy(Aesir.ZoneServer.Unit.Player.StatusSync)
 Mimic.copy(Aesir.ZoneServer.Unit.Broadcast)
+Mimic.copy(Aesir.ZoneServer.Mmo.Skill.Catalog)
 
 ExUnit.start()

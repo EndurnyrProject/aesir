@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         map_name: "prontera",
         x: 150,
         y: 150,
+        skill_cooldowns: %{},
         stats: %{
           current_state: %{sp: sp, hp: 100},
           derived_stats: %{max_sp: 200, max_hp: 100},
