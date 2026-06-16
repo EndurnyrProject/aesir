@@ -19,7 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_max_level(definition, level),
          {:ok, module} <- fetch_behavior(definition),
          :ok <- check_learned(game_state, skill_id, level),
-         :ok <- check_target(game_state, target),
+         :ok <- check_target(game_state, target, definition),
          :ok <- module.validate(game_state, target, level, definition),
          cost = Enum.at(definition.sp_cost, level - 1),
          :ok <- check_sp(game_state, cost),
@@ -57,10 +57,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  # ponytail: slice 1 is self-cast only; ally/range/ground targeting comes next.
-  defp check_target(_game_state, :self), do: :ok
-  defp check_target(%{character_id: caster_id}, {:unit, caster_id}), do: :ok
-  defp check_target(_game_state, _target), do: {:error, :invalid_target}
+  # Enemy skills target another unit; support skills are self-cast only for now.
+  # TODO: ally/range/ground targeting still comes next.
+  defp check_target(%{character_id: caster_id}, {:unit, caster_id}, %{target_type: :target_enemy}),
+       do: {:error, :invalid_target}
+
+  defp check_target(_game_state, {:unit, _id}, %{target_type: :target_enemy}), do: :ok
+
+  defp check_target(_game_state, :self, _definition), do: :ok
+  defp check_target(%{character_id: caster_id}, {:unit, caster_id}, _definition), do: :ok
+  defp check_target(_game_state, _target, _definition), do: {:error, :invalid_target}
 
   defp check_sp(game_state, cost) do
     if game_state.stats.current_state.sp >= cost, do: :ok, else: {:error, :insufficient_sp}

@@ -1,0 +1,8 @@
+- id: 5
+  name: sm_bash
+  display_name: "Bash"
+  max_level: 10
+  target_type: target_enemy
+  damage_type: damage
+  range: 2
+  sp_cost: [8, 8, 8, 8, 8, 15, 15, 15, 15, 15]

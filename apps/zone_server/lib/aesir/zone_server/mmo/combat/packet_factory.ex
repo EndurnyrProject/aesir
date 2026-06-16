@@ -30,6 +30,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
   alias Aesir.Commons.Utils.ServerTick
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Packets.ZcNotifyAct
+  alias Aesir.ZoneServer.Packets.ZcNotifySkill
+
+  # e_damage_type: single-hit skill display (rAthena DMG_SINGLE).
+  @dmg_single 6
 
   @typedoc """
   Result of damage calculation containing final damage and critical hit status.
@@ -71,6 +75,47 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
       src_speed: aspd * 10,
       dmg_speed: 500
     )
+  end
+
+  @doc """
+  Builds a skill-damage packet (ZC_NOTIFY_SKILL) for an offensive skill hit.
+
+  ## Parameters
+    - attacker: Combatant struct for the caster
+    - defender: Combatant struct for the target
+    - skill_id: skill database id
+    - skill_level: cast level
+    - damage_result: result from skill damage calculation
+
+  ## Returns
+    - ZcNotifySkill packet ready for broadcasting
+  """
+  @spec build_skill_damage_packet(
+          Combatant.t(),
+          Combatant.t(),
+          integer(),
+          integer(),
+          damage_result()
+        ) :: struct()
+  def build_skill_damage_packet(attacker, defender, skill_id, skill_level, damage_result) do
+    aspd = get_aspd_from_combatant(attacker)
+
+    Logger.debug(
+      "Skill packet: skill #{skill_id} lv#{skill_level} from #{attacker.gid} to #{defender.gid} for #{damage_result.damage} damage"
+    )
+
+    %ZcNotifySkill{
+      skill_id: skill_id,
+      skill_level: skill_level,
+      src_id: attacker.gid,
+      target_id: defender.gid,
+      server_tick: ServerTick.now(),
+      src_delay: aspd * 10,
+      dst_delay: 500,
+      damage: damage_result.damage,
+      div: 1,
+      type: @dmg_single
+    }
   end
 
   @doc """

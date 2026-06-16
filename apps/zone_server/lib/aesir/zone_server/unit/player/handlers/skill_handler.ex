@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   require Logger
 
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Packets.ZcUseSkill
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -58,21 +59,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   defp resolve_target(_game_state, target_id), do: {:unit, target_id}
 
+  # Damage skills broadcast their own ZC_NOTIFY_SKILL from the combat layer, so
+  # the no-damage support visual is sent only for no-damage skills.
   defp broadcast_skill_use(game_state, skill_id, level, target_id) do
-    packet = %ZcUseSkill{
-      skill_id: skill_id,
-      level: level,
-      dst_id: target_id,
-      src_id: game_state.character_id,
-      result: 1
-    }
+    case Catalog.by_id(skill_id) do
+      {:ok, %{damage_type: :damage}} ->
+        :ok
 
-    Broadcast.to_in_range(
-      game_state.map_name,
-      game_state.x,
-      game_state.y,
-      @skill_view_range,
-      packet
-    )
+      _ ->
+        packet = %ZcUseSkill{
+          skill_id: skill_id,
+          level: level,
+          dst_id: target_id,
+          src_id: game_state.character_id,
+          result: 1
+        }
+
+        Broadcast.to_in_range(
+          game_state.map_name,
+          game_state.x,
+          game_state.y,
+          @skill_view_range,
+          packet
+        )
+    end
   end
 end

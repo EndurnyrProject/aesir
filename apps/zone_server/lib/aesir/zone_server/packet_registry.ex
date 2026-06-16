@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.PacketRegistry do
     Aesir.ZoneServer.Packets.ZcResurrection,
     Aesir.ZoneServer.Packets.ZcStatusChange,
     Aesir.ZoneServer.Packets.ZcUseSkill,
+    Aesir.ZoneServer.Packets.ZcNotifySkill,
     Aesir.ZoneServer.Packets.ZcSkillinfoList
   ]
 end

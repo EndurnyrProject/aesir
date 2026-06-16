@@ -8,7 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Behaviors do
   alias Aesir.ZoneServer.Mmo.Skill.Behaviors
 
   @modules [
-    Behaviors.AlIncagi
+    Behaviors.AlIncagi,
+    Behaviors.SmBash
   ]
 
   @by_name (for module <- @modules, into: %{} do

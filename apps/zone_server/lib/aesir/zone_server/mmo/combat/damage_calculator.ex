@@ -82,16 +82,37 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       end
   """
   @spec calculate_damage(combatant(), combatant()) :: {:ok, damage_result()} | {:error, atom()}
-  def calculate_damage(attacker, defender) do
+  def calculate_damage(attacker, defender), do: calculate_damage(attacker, defender, [])
+
+  @doc """
+  Calculates damage with skill modifiers.
+
+  Options:
+    - `:skill_ratio` - percent of base attack the skill deals (default `100`).
+      A Bash at level 10 passes `400` for 400% weapon damage.
+    - `:skip_crit` - when `true`, never rolls a critical (skills don't crit
+      unless flagged). Default `false`.
+
+  The skill ratio is applied to base attack before the size/race/element/status
+  modifier pipeline. todo: faithful-enough Renewal ordering; card-vs-ratio
+  edge cases are not modeled.
+  """
+  @spec calculate_damage(combatant(), combatant(), keyword()) ::
+          {:ok, damage_result()} | {:error, atom()}
+  def calculate_damage(attacker, defender, opts) do
+    skill_ratio = Keyword.get(opts, :skill_ratio, 100)
+    skip_crit = Keyword.get(opts, :skip_crit, false)
+
     with {:ok, base_atk} <- calculate_base_attack(attacker),
-         {:ok, total_atk} <- apply_modifier_pipeline(base_atk, attacker, defender),
-         {:ok, final_damage} <- apply_defense_formula(total_atk, defender),
-         {:ok, critical_result} <- apply_critical_hit(final_damage, attacker) do
-      {:ok, critical_result}
-    else
-      error -> error
+         skilled_atk = div(base_atk * skill_ratio, 100),
+         {:ok, total_atk} <- apply_modifier_pipeline(skilled_atk, attacker, defender),
+         {:ok, final_damage} <- apply_defense_formula(total_atk, defender) do
+      finalize_damage(final_damage, attacker, skip_crit)
     end
   end
+
+  defp finalize_damage(damage, _attacker, true), do: {:ok, %{damage: damage, is_critical: false}}
+  defp finalize_damage(damage, attacker, false), do: apply_critical_hit(damage, attacker)
 
   @doc """
   Calculates base attack value based on unit type and stats.

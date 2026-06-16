@@ -412,4 +412,46 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       # Ranged weapons might have different damage characteristics
     end
   end
+
+  describe "calculate_damage/3 with skill modifiers" do
+    setup do
+      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
+      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(RaceModifiers, :get_modifier, fn _, _ -> 1.0 end)
+      stub(RaceModifiers, :player_race, fn -> :human end)
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+      :ok
+    end
+
+    test "skill_ratio scales damage above the 100% baseline" do
+      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
+        %{damage: damage, is_critical: false}
+      end)
+
+      {attacker, defender} = CombatTestHelper.create_combat_scenario()
+
+      assert {:ok, %{damage: baseline}} =
+               DamageCalculator.calculate_damage(attacker, defender, skill_ratio: 100)
+
+      assert {:ok, %{damage: bashed}} =
+               DamageCalculator.calculate_damage(attacker, defender, skill_ratio: 400)
+
+      assert bashed > baseline
+    end
+
+    test "skip_crit returns a non-critical result without rolling a crit" do
+      stub(CriticalHits, :calculate_critical_hit, fn _, _ ->
+        flunk("critical roll must be skipped when skip_crit is set")
+      end)
+
+      {attacker, defender} = CombatTestHelper.create_combat_scenario()
+
+      assert {:ok, %{is_critical: false}} =
+               DamageCalculator.calculate_damage(attacker, defender,
+                 skill_ratio: 130,
+                 skip_crit: true
+               )
+    end
+  end
 end

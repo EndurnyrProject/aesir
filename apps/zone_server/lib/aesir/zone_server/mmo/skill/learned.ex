@@ -22,7 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Learned do
   @spec learned_level(t(), integer()) :: non_neg_integer()
   def learned_level(map, skill_id), do: Map.get(map, skill_id, 0)
 
-  # ponytail: temporary seed so casting can be tested before the learn/upgrade
+  # TODO: temporary seed so casting can be tested before the learn/upgrade
   # flow exists; remove when CZ_UPGRADE_SKILLLEVEL lands.
   @spec seed_defaults() :: t()
   defp seed_defaults, do: %{29 => 1}

@@ -53,5 +53,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Loader do
   @spec convert(atom(), term()) :: term()
   defp convert(:name, v), do: String.to_atom(v)
   defp convert(:target_type, v), do: String.to_atom(v)
+  defp convert(:damage_type, v), do: String.to_atom(v)
   defp convert(_key, v), do: v
 end

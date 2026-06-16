@@ -143,6 +143,53 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   end
 
   @doc """
+  Executes a single-target offensive skill from a caster against a target.
+
+  Reuses the melee range check and the unified damage calculator (passing the
+  skill's ratio), broadcasts a ZC_NOTIFY_SKILL packet, then applies damage.
+
+  ## Options
+    - `:skill_id` / `:skill_level` - identify the skill for the damage packet
+    - `:skill_ratio` - percent of base attack the skill deals
+    - `:skip_crit` - skip the critical roll (most skills don't crit)
+
+  ## Returns
+    - :ok if the skill connected
+    - {:error, reason} if the target was invalid, out of range, or PvP
+  """
+  @spec execute_skill_attack(struct(), integer(), keyword()) :: :ok | {:error, atom()}
+  def execute_skill_attack(caster_state, target_id, opts) do
+    attacker = caster_state.__struct__.to_combatant(caster_state)
+    skill_id = Keyword.fetch!(opts, :skill_id)
+    skill_level = Keyword.fetch!(opts, :skill_level)
+    calc_opts = Keyword.take(opts, [:skill_ratio, :skip_crit])
+
+    # TODO: skills always connect here; skill miss/flee isn't modeled yet.
+    with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
+         target <- target_state.__struct__.to_combatant(target_state),
+         :ok <- validate_attack_with_combatants(attacker, target),
+         :ok <- ensure_offensive_target(target_type),
+         {:ok, damage_result} <- DamageCalculator.calculate_damage(attacker, target, calc_opts) do
+      packet =
+        PacketFactory.build_skill_damage_packet(
+          attacker,
+          target,
+          skill_id,
+          skill_level,
+          damage_result
+        )
+
+      broadcast_to_nearby_players(target, packet)
+
+      MobSession.apply_damage(target_pid, damage_result.damage, attacker.unit_id)
+      :ok
+    end
+  end
+
+  defp ensure_offensive_target(:mob), do: :ok
+  defp ensure_offensive_target(:player), do: {:error, :pvp_not_implemented}
+
+  @doc """
   Executes an attack from mob to player.
 
   Flow:
