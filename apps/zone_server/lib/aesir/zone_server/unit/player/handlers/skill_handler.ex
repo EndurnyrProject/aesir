@@ -8,7 +8,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
+  alias Aesir.ZoneServer.Packets.ZcSkillPostdelay
   alias Aesir.ZoneServer.Packets.ZcUseSkill
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -43,6 +45,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
         broadcast_skill_use(new_game_state, skill_id, level, target_id)
 
+        maybe_send_postdelay(connection_pid, skill_id, level)
+
         {:noreply, %{state | game_state: new_game_state}}
 
       {:error, reason} ->
@@ -58,6 +62,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     do: :self
 
   defp resolve_target(_game_state, target_id), do: {:unit, target_id}
+
+  # Self-only cooldown feedback: the client shows the cooldown sweep on the
+  # skill icon. No packet when the skill has no cooldown for this level.
+  defp maybe_send_postdelay(connection_pid, skill_id, level) do
+    with {:ok, definition} <- Catalog.by_id(skill_id),
+         duration when duration > 0 <- Cooldown.duration(definition, level) do
+      send(connection_pid, {:send_packet, %ZcSkillPostdelay{skill_id: skill_id, tick: duration}})
+    else
+      _ -> :ok
+    end
+  end
 
   # Damage skills broadcast their own ZC_NOTIFY_SKILL from the combat layer, so
   # the no-damage support visual is sent only for no-damage skills.

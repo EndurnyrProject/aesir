@@ -3,7 +3,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   import Mimic
 
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Packets.ZcSkillPostdelay
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
@@ -48,5 +51,44 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
     s = state(1)
     assert {:noreply, ^s} = SkillHandler.handle_use_skill(s, 29, 1, 1000)
+  end
+
+  test "sends ZC_SKILL_POSTDELAY to the caster when the skill has a cooldown" do
+    stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)
+    stub(PlayerStats, :calculate_stats, fn stats, 1000 -> stats end)
+    stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+    stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
+    stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+    stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+    stub(Catalog, :by_id, fn 29 -> {:ok, definition(cooldown: [5_000])} end)
+
+    assert {:noreply, _} = SkillHandler.handle_use_skill(state(30), 29, 1, 1000)
+    assert_received {:send_packet, %ZcSkillPostdelay{skill_id: 29, tick: 5_000}}
+  end
+
+  test "sends no ZC_SKILL_POSTDELAY when the skill has no cooldown" do
+    stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)
+    stub(PlayerStats, :calculate_stats, fn stats, 1000 -> stats end)
+    stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+    stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
+    stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+    stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+    stub(Catalog, :by_id, fn 29 -> {:ok, definition(cooldown: [])} end)
+
+    assert {:noreply, _} = SkillHandler.handle_use_skill(state(30), 29, 1, 1000)
+    refute_received {:send_packet, %ZcSkillPostdelay{}}
+  end
+
+  defp definition(fields) do
+    struct!(
+      %Definition{
+        id: 29,
+        name: :al_incagi,
+        display_name: "Increase AGI",
+        max_level: 10,
+        sp_cost: [18]
+      },
+      fields
+    )
   end
 end
