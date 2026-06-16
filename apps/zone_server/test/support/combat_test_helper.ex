@@ -59,7 +59,8 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
         def: base_def,
         hit: hit,
         flee: flee,
-        perfect_dodge: perfect_dodge
+        perfect_dodge: perfect_dodge,
+        passive_atk: opts[:passive_atk] || 0
       },
       progression: %{
         base_level: opts[:base_level],

@@ -395,6 +395,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
   @impl Aesir.ZoneServer.Unit
   def to_combatant(%__MODULE__{} = state) do
+    weapon_type = WeaponTypes.get_weapon_atom(state.stats.equipment.weapon)
+
     Combatant.new!(%{
       unit_id: state.character_id,
       unit_type: :player,
@@ -406,11 +408,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       race: :demi_human,
       size: :medium,
       weapon: %{
-        type: :one_handed_sword,
+        type: weapon_type,
         element: :neutral,
-        size: SizeModifiers.weapon_size(:sword)
+        size: SizeModifiers.weapon_size(weapon_type)
       },
-      attack_range: WeaponTypes.get_attack_range(:one_handed_sword),
+      attack_range: WeaponTypes.get_attack_range(weapon_type),
       position: {state.x, state.y},
       map_name: state.map_name
     })

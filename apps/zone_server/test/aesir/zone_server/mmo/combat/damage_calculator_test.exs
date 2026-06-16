@@ -454,4 +454,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
                )
     end
   end
+
+  describe "calculate_base_attack/1 mastery bonus" do
+    test "adds combat_stats.passive_atk for a player attacker" do
+      :rand.seed(:exsss, {1, 2, 3})
+      no_bonus = CombatTestHelper.create_player_combatant(passive_atk: 0)
+      {:ok, base} = DamageCalculator.calculate_base_attack(no_bonus)
+
+      :rand.seed(:exsss, {1, 2, 3})
+      with_bonus = CombatTestHelper.create_player_combatant(passive_atk: 20)
+      {:ok, boosted} = DamageCalculator.calculate_base_attack(with_bonus)
+
+      assert boosted == base + 20
+    end
+
+    test "mob attacker is unaffected by passive_atk mastery" do
+      mob = CombatTestHelper.create_mob_combatant(atk: 0)
+      expected = mob.base_stats.str + mob.progression.base_level
+      assert {:ok, ^expected} = DamageCalculator.calculate_base_attack(mob)
+    end
+  end
 end

@@ -249,9 +249,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     max(1, weapon_attack)
   end
 
-  defp calculate_mastery_bonus(_attacker) do
-    # TODO: Implement weapon mastery based on skills
-    0
+  defp calculate_mastery_bonus(attacker) do
+    case attacker.unit_type do
+      :player -> attacker.combat_stats.passive_atk
+      _ -> 0
+    end
   end
 
   defp calculate_soft_defense(%{unit_type: :player} = defender) do
