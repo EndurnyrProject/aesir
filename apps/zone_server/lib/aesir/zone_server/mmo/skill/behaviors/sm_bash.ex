@@ -3,11 +3,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Behaviors.SmBash do
   Bash (SM_BASH). Single-target physical strike on an enemy.
 
   rAthena: base 100% + 30% per level weapon damage, weapon element, no crit.
-  The stun rider (with SM_FATALBLOW, level > 5) is not modeled yet.
+  On a confirmed hit it applies any skill riders contributed by learned passives
+  (notably SM_FATALBLOW's stun above level 5) to the target.
   """
   use Aesir.ZoneServer.Mmo.Skill.Behaviour, skill: :sm_bash
 
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Skill.Passives
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @impl true
   def cast(caster, {:unit, target_id}, level, definition) do
@@ -19,8 +23,38 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Behaviors.SmBash do
     ]
 
     case Combat.execute_skill_attack(caster, target_id, opts) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
+      :ok ->
+        apply_riders(caster, target_id, level)
+        {:ok, caster}
+
+      {:error, _reason} = error ->
+        error
     end
+  end
+
+  @spec apply_riders(struct(), integer(), pos_integer()) :: :ok
+  defp apply_riders(caster, target_id, level) do
+    :sm_bash
+    |> Passives.rider_for(level, caster)
+    |> Enum.each(fn {:apply_status, status_id, opts} ->
+      maybe_apply_rider(target_id, status_id, opts)
+    end)
+  end
+
+  @spec maybe_apply_rider(integer(), atom(), keyword()) :: :ok
+  defp maybe_apply_rider(target_id, status_id, opts) do
+    chance = Keyword.fetch!(opts, :chance)
+
+    if :rand.uniform(10_000) <= chance do
+      unit_type = target_unit_type(target_id)
+      StatusInterpreter.apply_status(unit_type, target_id, status_id, duration: opts[:duration])
+    end
+
+    :ok
+  end
+
+  @spec target_unit_type(integer()) :: :mob | :player
+  defp target_unit_type(target_id) do
+    if UnitRegistry.unit_exists?(:mob, target_id), do: :mob, else: :player
   end
 end
