@@ -51,6 +51,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           last_attack_timestamp: integer(),
           continuous_attack_timer: reference() | nil,
           skill_cooldowns: %{integer() => integer()},
+          regen_accumulators: %{atom() => non_neg_integer()},
           stats: PlayerStats.t(),
           inventory_items: list()
         }
@@ -125,7 +126,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
     # Inventory
     :inventory_items,
-    skill_cooldowns: %{}
+    skill_cooldowns: %{},
+    regen_accumulators: %{hp_acc: 0, sp_acc: 0, skill_hp_acc: 0, skill_sp_acc: 0}
   ]
 
   @doc """

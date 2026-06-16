@@ -38,6 +38,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       assert state.action_state == :idle
     end
 
+    test "regen accumulators default to zero", %{state: state} do
+      assert state.regen_accumulators == %{hp_acc: 0, sp_acc: 0, skill_hp_acc: 0, skill_sp_acc: 0}
+    end
+
     test "can transition from idle to moving", %{state: state} do
       assert {:ok, new_state} = PlayerState.transition_to(state, :moving)
       assert new_state.action_state == :moving
