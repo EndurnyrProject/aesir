@@ -50,6 +50,31 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert stats.derived_stats.aspd > 0
     end
 
+    test "from_character carries status_point into progression" do
+      character = %Character{
+        base_level: 1,
+        job_level: 1,
+        base_exp: 0,
+        job_exp: 0,
+        class: 0,
+        str: 1,
+        agi: 1,
+        vit: 1,
+        int: 1,
+        dex: 1,
+        luk: 1,
+        hp: 40,
+        sp: 11,
+        status_point: 25,
+        skill_point: 0,
+        weapon: 0,
+        shield: 0
+      }
+
+      stats = Stats.from_character(character)
+      assert stats.progression.status_point == 25
+    end
+
     test "initializes empty modifiers" do
       character = %Character{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1, class: 0}
       stats = Stats.from_character(character)

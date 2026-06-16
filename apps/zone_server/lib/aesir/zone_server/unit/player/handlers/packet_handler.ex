@@ -9,8 +9,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Commons.StatusParams
   alias Aesir.Commons.Utils.ServerTick
   alias Aesir.ZoneServer.Mmo.Leveling
+  alias Aesir.ZoneServer.Mmo.StatPoint
   alias Aesir.ZoneServer.Packets.CzRequestChat
   alias Aesir.ZoneServer.Packets.CzRestart
+  alias Aesir.ZoneServer.Packets.CzStatusChange
   alias Aesir.ZoneServer.Packets.ZcAckReqname
   alias Aesir.ZoneServer.Packets.ZcAckReqnameall
   alias Aesir.ZoneServer.Packets.ZcEquipitemList
@@ -19,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Packets.ZcNotifyTime
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   @cz_request_act 0x0437
   @cz_request_chat 0x008C
   @cz_restart 0x00B2
+  @cz_status_change 0x00BB
 
   @doc """
   Processes an incoming packet for a player session.
@@ -68,6 +72,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
       StatusParams.next_base_exp() => Leveling.next_base_exp(game_state.stats.progression),
       StatusParams.next_job_exp() => Leveling.next_job_exp(game_state.stats.progression),
       StatusParams.skill_point() => game_state.stats.progression.skill_point
+    })
+
+    base_stats = game_state.stats.base_stats
+
+    StatusSync.send_params(connection_pid, %{
+      StatusParams.status_point() => game_state.stats.progression.status_point,
+      StatusParams.ustr() => StatPoint.cost_to_raise(base_stats.str),
+      StatusParams.uagi() => StatPoint.cost_to_raise(base_stats.agi),
+      StatusParams.uvit() => StatPoint.cost_to_raise(base_stats.vit),
+      StatusParams.uint() => StatPoint.cost_to_raise(base_stats.int),
+      StatusParams.udex() => StatPoint.cost_to_raise(base_stats.dex),
+      StatusParams.uluk() => StatPoint.cost_to_raise(base_stats.luk)
     })
 
     StatusSync.send_stat_updates(connection_pid, game_state.stats)
@@ -243,6 +259,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
 
       {:noreply, state}
     end
+  end
+
+  # CZ_STATUS_CHANGE - Player spends status points to raise a stat
+  def handle_packet(
+        @cz_status_change,
+        %CzStatusChange{status_id: status_id, amount: amount},
+        state
+      ) do
+    StatAllocationHandler.handle_status_up(status_id, amount, state)
   end
 
   # Fallback for unknown packets

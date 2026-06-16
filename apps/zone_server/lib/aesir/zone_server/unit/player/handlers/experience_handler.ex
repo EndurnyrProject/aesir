@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
   alias Aesir.Commons.StatusParams
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.Leveling
+  alias Aesir.ZoneServer.Mmo.StatPoint
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -22,11 +23,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
   @spec handle_gain_exp(non_neg_integer(), non_neg_integer(), map()) :: {:noreply, map()}
   def handle_gain_exp(base_amount, job_amount, %{game_state: game_state} = state) do
     char_id = game_state.character_id
+    old_base_level = game_state.stats.progression.base_level
 
     {progression, base_gained, job_gained} =
       Leveling.apply_exp(game_state.stats.progression, base_amount, job_amount)
 
-    progression = %{progression | skill_point: progression.skill_point + job_gained}
+    status_gained = StatPoint.gain(old_base_level, progression.base_level)
+
+    progression = %{
+      progression
+      | skill_point: progression.skill_point + job_gained,
+        status_point: progression.status_point + status_gained
+    }
 
     stats =
       %{game_state.stats | progression: progression}
@@ -61,12 +69,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
     StatusSync.send_params(state.connection_pid, %{
       StatusParams.next_base_exp() => Leveling.next_base_exp(progression),
       StatusParams.next_job_exp() => Leveling.next_job_exp(progression),
-      StatusParams.skill_point() => progression.skill_point
+      StatusParams.skill_point() => progression.skill_point,
+      StatusParams.status_point() => progression.status_point
     })
   end
 
-  # no status-point award yet (needs the statpoint table + stat
-  # allocation packet). Leveling already scales HP/SP/ATK/DEF directly.
   defp persist(char_id, stats) do
     CharacterPersistence.update_character(
       char_id,
@@ -79,7 +86,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
         sp: stats.current_state.sp,
         max_hp: stats.derived_stats.max_hp,
         max_sp: stats.derived_stats.max_sp,
-        skill_point: stats.progression.skill_point
+        skill_point: stats.progression.skill_point,
+        status_point: stats.progression.status_point
       },
       async: true
     )
