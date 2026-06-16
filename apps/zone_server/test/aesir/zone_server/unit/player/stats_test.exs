@@ -90,7 +90,14 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     test "recalculates all derived stats from base values" do
       stats = %Stats{
         base_stats: %{str: 20, agi: 15, vit: 25, int: 30, dex: 10, luk: 5},
-        progression: %{base_level: 40, job_level: 20, base_exp: 500, job_exp: 200, job_id: 0, learned_skills: %{}},
+        progression: %{
+          base_level: 40,
+          job_level: 20,
+          base_exp: 500,
+          job_exp: 200,
+          job_id: 0,
+          learned_skills: %{}
+        },
         current_state: %{hp: 600, sp: 250},
         equipment: %{weapon: 0, shield: 0},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
@@ -114,7 +121,14 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     test "ensures minimum HP/SP values" do
       stats = %Stats{
         base_stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
-        progression: %{base_level: 1, job_level: 1, base_exp: 0, job_exp: 0, job_id: 0, learned_skills: %{}},
+        progression: %{
+          base_level: 1,
+          job_level: 1,
+          base_exp: 0,
+          job_exp: 0,
+          job_id: 0,
+          learned_skills: %{}
+        },
         current_state: %{hp: 1, sp: 1},
         equipment: %{weapon: 0, shield: 0},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
@@ -194,7 +208,14 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     test "calculates HP correctly for level 1 character" do
       stats = %Stats{
         base_stats: %{vit: 1, str: 1, agi: 1, int: 1, dex: 1, luk: 1},
-        progression: %{base_level: 1, job_level: 1, base_exp: 0, job_exp: 0, job_id: 0, learned_skills: %{}},
+        progression: %{
+          base_level: 1,
+          job_level: 1,
+          base_exp: 0,
+          job_exp: 0,
+          job_id: 0,
+          learned_skills: %{}
+        },
         equipment: %{weapon: 0, shield: 0},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
@@ -208,7 +229,14 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     test "calculates HP correctly for higher level character" do
       stats = %Stats{
         base_stats: %{vit: 50, str: 1, agi: 1, int: 1, dex: 1, luk: 1},
-        progression: %{base_level: 75, job_level: 1, base_exp: 0, job_exp: 0, job_id: 0, learned_skills: %{}},
+        progression: %{
+          base_level: 75,
+          job_level: 1,
+          base_exp: 0,
+          job_exp: 0,
+          job_id: 0,
+          learned_skills: %{}
+        },
         equipment: %{weapon: 0, shield: 0},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
@@ -222,7 +250,14 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     test "calculates HP correctly for max novice level" do
       stats = %Stats{
         base_stats: %{vit: 99, str: 1, agi: 1, int: 1, dex: 1, luk: 1},
-        progression: %{base_level: 99, job_level: 1, base_exp: 0, job_exp: 0, job_id: 0, learned_skills: %{}},
+        progression: %{
+          base_level: 99,
+          job_level: 1,
+          base_exp: 0,
+          job_exp: 0,
+          job_id: 0,
+          learned_skills: %{}
+        },
         equipment: %{weapon: 0, shield: 0},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
@@ -238,7 +273,14 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     test "calculates SP correctly for level 1 character" do
       stats = %Stats{
         base_stats: %{int: 1, str: 1, agi: 1, vit: 1, dex: 1, luk: 1},
-        progression: %{base_level: 1, job_level: 1, base_exp: 0, job_exp: 0, job_id: 0, learned_skills: %{}},
+        progression: %{
+          base_level: 1,
+          job_level: 1,
+          base_exp: 0,
+          job_exp: 0,
+          job_id: 0,
+          learned_skills: %{}
+        },
         equipment: %{weapon: 0, shield: 0},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
@@ -252,7 +294,14 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     test "calculates SP correctly for higher level character" do
       stats = %Stats{
         base_stats: %{int: 80, str: 1, agi: 1, vit: 1, dex: 1, luk: 1},
-        progression: %{base_level: 60, job_level: 1, base_exp: 0, job_exp: 0, job_id: 0, learned_skills: %{}},
+        progression: %{
+          base_level: 60,
+          job_level: 1,
+          base_exp: 0,
+          job_exp: 0,
+          job_id: 0,
+          learned_skills: %{}
+        },
         equipment: %{weapon: 0, shield: 0},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
@@ -266,7 +315,14 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     test "calculates SP correctly for max novice level" do
       stats = %Stats{
         base_stats: %{int: 99, str: 1, agi: 1, vit: 1, dex: 1, luk: 1},
-        progression: %{base_level: 99, job_level: 1, base_exp: 0, job_exp: 0, job_id: 0, learned_skills: %{}},
+        progression: %{
+          base_level: 99,
+          job_level: 1,
+          base_exp: 0,
+          job_exp: 0,
+          job_id: 0,
+          learned_skills: %{}
+        },
         equipment: %{weapon: 0, shield: 0},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
@@ -283,7 +339,14 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     test "job bonuses remain unchanged (placeholder)" do
       stats = %Stats{
         base_stats: %{str: 10, agi: 10, vit: 10, int: 10, dex: 10, luk: 10},
-        progression: %{base_level: 1, job_level: 1, base_exp: 0, job_exp: 0, job_id: 0, learned_skills: %{}},
+        progression: %{
+          base_level: 1,
+          job_level: 1,
+          base_exp: 0,
+          job_exp: 0,
+          job_id: 0,
+          learned_skills: %{}
+        },
         equipment: %{weapon: 0, shield: 0},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
