@@ -6,9 +6,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   require Logger
 
   alias Aesir.ZoneServer.Geometry
+  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
+  alias Aesir.ZoneServer.Packets.ZcBlownback
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -249,6 +252,68 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
 
   defp ensure_offensive_target(:mob), do: :ok
   defp ensure_offensive_target(:player), do: {:error, :pvp_not_implemented}
+
+  @doc """
+  Knocks a unit back away from `{from_x, from_y}`, collision-aware.
+
+  Walks the unit outward one cell at a time (8-dir, away from the source through
+  its current cell) up to `distance` cells, stopping at the last walkable cell
+  before a wall (rAthena `unit_blown`). Updates the unit state, the spatial index
+  and the registry, then broadcasts `ZC_BLOWNBACK` to nearby players so they slide
+  the unit to its landing cell.
+
+  Returns `{:ok, {dst_x, dst_y}}` with the final cell (unchanged if it could not
+  move), or `{:error, reason}` if the unit or its map could not be resolved.
+  """
+  @spec knockback(atom(), integer(), integer(), integer(), non_neg_integer()) ::
+          {:ok, {integer(), integer()}} | {:error, atom()}
+  def knockback(unit_type, unit_id, from_x, from_y, distance) do
+    with {:ok, {x, y, map_name}} <- SpatialIndex.get_unit_position(unit_type, unit_id),
+         {:ok, map} <- MapCache.get(map_name) do
+      {dx, dy} = {sign(x - from_x), sign(y - from_y)}
+      {dst_x, dst_y} = blow_path(map, x, y, dx, dy, distance)
+
+      if {dst_x, dst_y} != {x, y} do
+        move_unit(unit_type, unit_id, dst_x, dst_y, map_name)
+        broadcast_blownback(unit_id, dst_x, dst_y, map_name)
+      end
+
+      {:ok, {dst_x, dst_y}}
+    end
+  end
+
+  defp sign(n) when n > 0, do: 1
+  defp sign(n) when n < 0, do: -1
+  defp sign(_), do: 0
+
+  # No direction (unit on top of source): nowhere to blow.
+  defp blow_path(_map, x, y, 0, 0, _distance), do: {x, y}
+
+  # Step outward, keeping the last walkable cell reached.
+  defp blow_path(map, x, y, dx, dy, distance) do
+    Enum.reduce_while(1..distance//1, {x, y}, fn _step, {cx, cy} ->
+      {nx, ny} = {cx + dx, cy + dy}
+
+      if MapData.walkable?(map, nx, ny) do
+        {:cont, {nx, ny}}
+      else
+        {:halt, {cx, cy}}
+      end
+    end)
+  end
+
+  defp move_unit(unit_type, unit_id, x, y, map_name) do
+    with {:ok, {module, state, _pid}} <- UnitRegistry.get_unit(unit_type, unit_id) do
+      UnitRegistry.update_unit_state(unit_type, unit_id, module.update_position(state, x, y))
+    end
+
+    SpatialIndex.update_unit_position(unit_type, unit_id, x, y, map_name)
+  end
+
+  defp broadcast_blownback(unit_id, dst_x, dst_y, map_name) do
+    packet = %ZcBlownback{unit_id: unit_id, dst_x: dst_x, dst_y: dst_y}
+    Broadcast.to_in_range(map_name, dst_x, dst_y, @combat_view_range, packet)
+  end
 
   @doc """
   Executes an attack from mob to player.
