@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Packets.ZcSkillPostdelay
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -77,6 +78,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
     assert {:noreply, _} = SkillHandler.handle_use_skill(state(30), 29, 1, 1000)
     refute_received {:send_packet, %ZcSkillPostdelay{}}
+  end
+
+  test "ground cast recalculates stats, persists, syncs and broadcasts no ZcUseSkill" do
+    expect(Interpreter, :cast, fn gs, 89, 1, {:ground, 12, 12} ->
+      {:ok, %{gs | stats: %{gs.stats | current_state: %{gs.stats.current_state | sp: 12}}}}
+    end)
+
+    stub(PlayerStats, :calculate_stats, fn stats, 1000 -> stats end)
+    stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+    stub(Catalog, :by_id, fn 89 -> {:ok, definition(id: 89, cooldown: [])} end)
+    reject(&Broadcast.to_in_range/5)
+    expect(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+    expect(CharacterPersistence, :update_character, fn 1000, %{sp: 12}, _opts -> {:ok, %{}} end)
+
+    assert {:noreply, new_state} = SkillHandler.handle_use_skill_ground(state(30), 89, 1, 12, 12)
+    assert new_state.game_state.stats.current_state.sp == 12
+  end
+
+  test "failed ground cast leaves state unchanged and does not persist" do
+    stub(Interpreter, :cast, fn _gs, _id, _lvl, _target -> {:error, :out_of_range} end)
+    reject(&CharacterPersistence.update_character/3)
+
+    s = state(30)
+    assert {:noreply, ^s} = SkillHandler.handle_use_skill_ground(s, 89, 1, 12, 12)
   end
 
   defp definition(fields) do

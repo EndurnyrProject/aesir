@@ -400,6 +400,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     SkillHandler.handle_use_skill(state, skill_id, level, target_id)
   end
 
+  @impl true
+  def handle_cast({:use_skill_ground, skill_id, level, x, y}, state) do
+    SkillHandler.handle_use_skill_ground(state, skill_id, level, x, y)
+  end
+
   def handle_cast({:request_attack, target_id, action}, state) do
     # Delegate to CombatActionHandler for state machine based combat
     CombatActionHandler.handle_attack_request(state, target_id, action)

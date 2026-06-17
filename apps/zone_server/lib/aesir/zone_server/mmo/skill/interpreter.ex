@@ -7,6 +7,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   succeeds, so a failed cast never charges SP.
   """
   alias Aesir.ZoneServer.Geometry
+  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Skill.Behaviors
   alias Aesir.ZoneServer.Mmo.Skill.Behaviour
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -69,11 +71,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   end
 
   # Enemy skills target another unit; support skills are self-cast only for now.
-  # TODO: ally/range/ground targeting still comes next.
+  # TODO: ally targeting still comes next.
   defp check_target(%{character_id: caster_id}, {:unit, caster_id}, %{target_type: :target_enemy}),
        do: {:error, :invalid_target}
 
   defp check_target(_game_state, {:unit, _id}, %{target_type: :target_enemy}), do: :ok
+
+  defp check_target(_game_state, {:ground, _x, _y}, %{target_type: :ground}), do: :ok
 
   defp check_target(_game_state, :self, _definition), do: :ok
   defp check_target(%{character_id: caster_id}, {:unit, caster_id}, _definition), do: :ok
@@ -90,6 +94,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
       {:error, _} ->
         {:error, :target_not_found}
+    end
+  end
+
+  defp check_range(game_state, {:ground, x, y}, definition) do
+    with :ok <- check_ground_range(game_state, x, y, definition) do
+      check_ground_walkable(game_state.map_name, x, y)
+    end
+  end
+
+  defp check_ground_range(game_state, x, y, definition) do
+    if Geometry.chebyshev_distance(game_state.x, game_state.y, x, y) <= definition.range,
+      do: :ok,
+      else: {:error, :out_of_range}
+  end
+
+  defp check_ground_walkable(map_name, x, y) do
+    with {:ok, map} <- MapCache.get(map_name),
+         true <- MapData.walkable?(map, x, y) do
+      :ok
+    else
+      _ -> {:error, :invalid_target}
     end
   end
 

@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Packets.CzRestart
   alias Aesir.ZoneServer.Packets.CzStatusChange
   alias Aesir.ZoneServer.Packets.CzUseSkill
+  alias Aesir.ZoneServer.Packets.CzUseSkillToground
   alias Aesir.ZoneServer.Packets.ZcAckReqname
   alias Aesir.ZoneServer.Packets.ZcAckReqnameall
   alias Aesir.ZoneServer.Packets.ZcEquipitemList
@@ -38,6 +39,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   @cz_request_move 0x035F
   @cz_request_act 0x0437
   @cz_use_skill 0x0113
+  @cz_use_skill_toground 0x0AF4
   @cz_request_chat 0x008C
   @cz_restart 0x00B2
   @cz_status_change 0x00BB
@@ -224,6 +226,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
         state
       ) do
     GenServer.cast(self(), {:use_skill, skill_id, level, target_id})
+    {:noreply, state}
+  end
+
+  # CZ_USE_SKILL_TOGROUND - Player casts a ground-targeted skill
+  def handle_packet(
+        @cz_use_skill_toground,
+        %CzUseSkillToground{skill_id: skill_id, level: level, x: x, y: y},
+        state
+      ) do
+    GenServer.cast(self(), {:use_skill_ground, skill_id, level, x, y})
     {:noreply, state}
   end
 

@@ -2,6 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   use ExUnit.Case, async: true
   import Mimic
 
+  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Mmo.Skill.Behaviors.SmProvoke
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
@@ -15,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       character_id: 1000,
       x: 10,
       y: 10,
+      map_name: "prontera",
       skill_cooldowns: %{},
       stats: %{
         current_state: %{sp: sp, hp: 100},
@@ -144,5 +148,51 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
     gs = game_state(100, %{29 => 1})
     assert {:ok, _} = Interpreter.cast(gs, 29, 1, :self)
+  end
+
+  defp ground_definition(range) do
+    %Definition{
+      id: 6,
+      name: :sm_provoke,
+      display_name: "Ground Test",
+      max_level: 10,
+      target_type: :ground,
+      damage_type: :no_damage,
+      range: range,
+      sp_cost: List.duplicate(9, 10)
+    }
+  end
+
+  test "ground cast succeeds for a target_type: :ground definition" do
+    stub(Catalog, :by_id, fn 6 -> {:ok, ground_definition(9)} end)
+    stub(MapCache, :get, fn "prontera" -> {:ok, %MapData{}} end)
+    stub(MapData, :walkable?, fn _map, 12, 12 -> true end)
+    stub(SmProvoke, :cast, fn caster, {:ground, 12, 12}, 1, _definition -> {:ok, caster} end)
+
+    gs = game_state(100, %{6 => 1})
+    assert {:ok, _} = Interpreter.cast(gs, 6, 1, {:ground, 12, 12})
+  end
+
+  test "ground cast on a non-ground definition returns :invalid_target" do
+    stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(9)} end)
+
+    gs = game_state(100, %{6 => 1})
+    assert {:error, :invalid_target} = Interpreter.cast(gs, 6, 1, {:ground, 12, 12})
+  end
+
+  test "ground cast beyond definition.range returns :out_of_range" do
+    stub(Catalog, :by_id, fn 6 -> {:ok, ground_definition(5)} end)
+
+    gs = game_state(100, %{6 => 1})
+    assert {:error, :out_of_range} = Interpreter.cast(gs, 6, 1, {:ground, 50, 50})
+  end
+
+  test "ground cast onto a non-walkable cell returns :invalid_target" do
+    stub(Catalog, :by_id, fn 6 -> {:ok, ground_definition(9)} end)
+    stub(MapCache, :get, fn "prontera" -> {:ok, %MapData{}} end)
+    stub(MapData, :walkable?, fn _map, 12, 12 -> false end)
+
+    gs = game_state(100, %{6 => 1})
+    assert {:error, :invalid_target} = Interpreter.cast(gs, 6, 1, {:ground, 12, 12})
   end
 end
