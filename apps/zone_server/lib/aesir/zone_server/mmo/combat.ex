@@ -168,8 +168,69 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- validate_attack_with_combatants(attacker, target),
-         :ok <- ensure_offensive_target(target_type),
-         {:ok, damage_result} <- DamageCalculator.calculate_damage(attacker, target, calc_opts) do
+         :ok <- ensure_offensive_target(target_type) do
+      apply_skill_damage(attacker, target_pid, target, skill_id, skill_level, calc_opts)
+    end
+  end
+
+  @doc """
+  Executes a self/ground-centered splash skill against every offensive target in
+  `radius` cells of `{x, y}`.
+
+  Resolves units via the spatial index, filters to valid offensive targets
+  (mobs only for now, excluding the caster), then runs each through the shared
+  single-target damage path **without** the per-target attack-range gate — the
+  radius already bounds the hit set. Returns the list of hit target ids, consumed
+  by knockback (#6).
+
+  The spatial index filters by Manhattan distance (a diamond), but skill splash
+  AoE is a Chebyshev square. We query a Manhattan radius of `2 * radius` so the
+  full square is covered (a corner cell at `{radius, radius}` has Manhattan
+  `2 * radius`), then post-filter to the Chebyshev square. Dead mobs (hp <= 0)
+  are excluded so they receive no phantom damage or broadcast.
+
+  ## Options
+    - `:skill_id` / `:skill_level` - identify the skill for the damage packet
+    - `:skill_ratio` - percent of base attack the skill deals
+    - `:skip_crit` - skip the critical roll
+  """
+  @spec execute_splash_attack(struct(), {integer(), integer()}, non_neg_integer(), keyword()) ::
+          [integer()]
+  def execute_splash_attack(caster_state, {x, y}, radius, opts) do
+    attacker = caster_state.__struct__.to_combatant(caster_state)
+    skill_id = Keyword.fetch!(opts, :skill_id)
+    skill_level = Keyword.fetch!(opts, :skill_level)
+    calc_opts = Keyword.take(opts, [:skill_ratio, :skip_crit])
+
+    attacker.map_name
+    |> SpatialIndex.get_all_units_in_range(x, y, radius * 2)
+    |> Enum.filter(&splash_target?/1)
+    |> Enum.flat_map(fn {_unit_type, target_id} ->
+      with {:ok, target_pid, target_state, _type} <- get_target_unit_state(target_id),
+           true <- splash_hit?(target_state, x, y, radius),
+           target <- target_state.__struct__.to_combatant(target_state),
+           :ok <-
+             apply_skill_damage(attacker, target_pid, target, skill_id, skill_level, calc_opts) do
+        [target_id]
+      else
+        _ -> []
+      end
+    end)
+  end
+
+  # Mobs only for now; the caster (a player) is excluded by type, and PvP splash
+  # is deferred with PvP single-target.
+  defp splash_target?({:mob, _id}), do: true
+  defp splash_target?({:player, _id}), do: false
+
+  # Keeps the square (Chebyshev) AoE shape and drops dead mobs awaiting despawn.
+  defp splash_hit?(%{hp: hp}, _x, _y, _radius) when hp <= 0, do: false
+
+  defp splash_hit?(%{x: tx, y: ty}, x, y, radius),
+    do: Geometry.chebyshev_distance(x, y, tx, ty) <= radius
+
+  defp apply_skill_damage(attacker, target_pid, target, skill_id, skill_level, calc_opts) do
+    with {:ok, damage_result} <- DamageCalculator.calculate_damage(attacker, target, calc_opts) do
       packet =
         PacketFactory.build_skill_damage_packet(
           attacker,
