@@ -6,12 +6,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   Validate-then-cast-then-charge: SP is only consumed after the behavior
   succeeds, so a failed cast never charges SP.
   """
+  alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.Skill.Behaviors
   alias Aesir.ZoneServer.Mmo.Skill.Behaviour
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @spec cast(PlayerState.t(), integer(), pos_integer(), Behaviour.target()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
@@ -21,9 +23,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     with {:ok, definition} <- fetch_definition(skill_id),
          :ok <- check_max_level(definition, level),
          :ok <- check_castable(definition),
-         {:ok, module} <- fetch_behavior(definition),
          :ok <- check_learned(game_state, skill_id, level),
          :ok <- check_target(game_state, target, definition),
+         :ok <- check_range(game_state, target, definition),
+         {:ok, module} <- fetch_behavior(definition),
          :ok <- check_cooldown(game_state, skill_id, now),
          :ok <- module.validate(game_state, target, level, definition),
          cost = Enum.at(definition.sp_cost, level - 1),
@@ -75,6 +78,32 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp check_target(_game_state, :self, _definition), do: :ok
   defp check_target(%{character_id: caster_id}, {:unit, caster_id}, _definition), do: :ok
   defp check_target(_game_state, _target, _definition), do: {:error, :invalid_target}
+
+  defp check_range(_game_state, :self, _definition), do: :ok
+
+  defp check_range(game_state, {:unit, target_id}, definition) do
+    case resolve_unit_position(target_id) do
+      {:ok, {tx, ty, _map}} ->
+        if Geometry.chebyshev_distance(game_state.x, game_state.y, tx, ty) <= definition.range,
+          do: :ok,
+          else: {:error, :out_of_range}
+
+      {:error, _} ->
+        {:error, :target_not_found}
+    end
+  end
+
+  defp check_range(game_state, {:ground, tx, ty}, definition) do
+    distance = Geometry.chebyshev_distance(game_state.x, game_state.y, tx, ty)
+    if distance <= definition.range, do: :ok, else: {:error, :out_of_range}
+  end
+
+  defp resolve_unit_position(unit_id) do
+    case SpatialIndex.get_unit_position(:player, unit_id) do
+      {:ok, _} = result -> result
+      {:error, :not_found} -> SpatialIndex.get_unit_position(:mob, unit_id)
+    end
+  end
 
   defp check_cooldown(game_state, skill_id, now) do
     if Cooldown.ready?(game_state.skill_cooldowns, skill_id, now) do

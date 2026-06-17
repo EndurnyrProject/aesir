@@ -6,18 +6,34 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.SpatialIndex
 
   setup :verify_on_exit!
 
   defp game_state(sp, learned) do
     %{
       character_id: 1000,
+      x: 10,
+      y: 10,
       skill_cooldowns: %{},
       stats: %{
         current_state: %{sp: sp, hp: 100},
         derived_stats: %{max_sp: 200, max_hp: 100},
         progression: %{learned_skills: learned}
       }
+    }
+  end
+
+  defp enemy_definition(range) do
+    %Definition{
+      id: 6,
+      name: :sm_provoke,
+      display_name: "Provoke",
+      max_level: 10,
+      target_type: :target_enemy,
+      damage_type: :no_damage,
+      range: range,
+      sp_cost: List.duplicate(9, 10)
     }
   end
 
@@ -104,5 +120,29 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     assert {:ok, updated} = Interpreter.cast(gs, 29, 1, :self)
     assert updated.skill_cooldowns == %{}
     assert {:ok, _} = Interpreter.cast(updated, 29, 1, :self)
+  end
+
+  test "targeted skill cast beyond definition.range returns :out_of_range" do
+    stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(5)} end)
+    stub(SpatialIndex, :get_unit_position, fn :player, 9999 -> {:ok, {20, 20, "prontera"}} end)
+
+    gs = game_state(100, %{6 => 1})
+    assert {:error, :out_of_range} = Interpreter.cast(gs, 6, 1, {:unit, 9999})
+  end
+
+  test "targeted skill cast within definition.range proceeds to behavior" do
+    stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(5)} end)
+    stub(SpatialIndex, :get_unit_position, fn :player, 9999 -> {:ok, {14, 10, "prontera"}} end)
+    stub(StatusInterpreter, :apply_status, fn _type, _id, _status, _params -> :ok end)
+
+    gs = game_state(100, %{6 => 1})
+    assert {:error, :no_behavior} = Interpreter.cast(gs, 6, 1, {:unit, 9999})
+  end
+
+  test ":self skills bypass the range check" do
+    stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _params -> :ok end)
+
+    gs = game_state(100, %{29 => 1})
+    assert {:ok, _} = Interpreter.cast(gs, 29, 1, :self)
   end
 end
