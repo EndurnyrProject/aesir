@@ -111,6 +111,27 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   @doc """
+  Toggles a status effect on a unit.
+
+  If the status is currently active, removes it and returns `{:ok, :removed}`.
+  If the status is not active, applies it and returns `{:ok, :applied}`.
+  On application failure, propagates `{:error, reason}` unchanged.
+  """
+  @spec toggle_status(unit_type(), integer(), atom(), StatusEntry.status_params()) ::
+          {:ok, :applied | :removed} | {:error, atom()}
+  def toggle_status(unit_type, unit_id, status_id, params \\ []) do
+    if StatusStorage.has_status?(unit_type, unit_id, status_id) do
+      remove_status(unit_type, unit_id, status_id)
+      {:ok, :removed}
+    else
+      case apply_status(unit_type, unit_id, status_id, params) do
+        :ok -> {:ok, :applied}
+        {:error, reason} -> {:error, reason}
+      end
+    end
+  end
+
+  @doc """
   Returns the aggregated stat modifiers from all active statuses on a unit.
   """
   @spec get_all_modifiers(unit_type(), integer()) :: map()

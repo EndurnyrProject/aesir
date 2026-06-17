@@ -73,6 +73,29 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     end
   end
 
+  describe "toggle_status/4" do
+    test "first call applies the status, second call removes it" do
+      target_id = 1
+      status_id = :sc_provoke
+
+      setup_player_mock(target_id)
+
+      assert {:ok, :applied} = Interpreter.toggle_status(:player, target_id, status_id, val1: 10)
+      assert StatusStorage.has_status?(:player, target_id, status_id)
+
+      assert {:ok, :removed} = Interpreter.toggle_status(:player, target_id, status_id, val1: 10)
+      refute StatusStorage.has_status?(:player, target_id, status_id)
+    end
+
+    test "propagates error when apply_status fails" do
+      target_id = 1
+      status_id = :sc_nonexistent_status
+
+      assert {:error, :unknown_status} =
+               Interpreter.toggle_status(:player, target_id, status_id, val1: 10)
+    end
+  end
+
   describe "get_all_modifiers/1" do
     test "returns modifiers for all active statuses" do
       target_id = 1
