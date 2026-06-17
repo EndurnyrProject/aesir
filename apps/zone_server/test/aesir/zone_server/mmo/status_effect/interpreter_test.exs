@@ -5,8 +5,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  defmodule FollowUpStatus do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_followup,
+      properties: [:buff]
+
+    @impl true
+    def on_damage(_target, instance, _damage_info, _context) do
+      {:ok, instance, [{:sc_provoke, [val1: 10]}]}
+    end
+  end
 
   setup :set_mimic_from_context
   setup :verify_on_exit!
@@ -70,6 +82,21 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
 
       # We can't easily assert effects here without mocking,
       # but we can at least verify it doesn't crash
+    end
+
+    test "drains follow-up applications requested by an on_damage callback" do
+      target_id = 1
+
+      setup_player_mock(target_id)
+      Registry.register_module(FollowUpStatus)
+
+      :ok = Interpreter.apply_status(:player, target_id, :sc_test_followup)
+      refute StatusStorage.has_status?(:player, target_id, :sc_provoke)
+
+      damage_info = %{damage: 100, element: :neutral, hp_after: 50, max_hp: 1000}
+      Interpreter.on_damage(:player, target_id, damage_info)
+
+      assert StatusStorage.has_status?(:player, target_id, :sc_provoke)
     end
   end
 

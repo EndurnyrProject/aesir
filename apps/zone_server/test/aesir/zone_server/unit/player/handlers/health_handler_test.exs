@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Packets.ZcParChange
   alias Aesir.ZoneServer.Packets.ZcResurrection
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
@@ -23,7 +24,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   setup do
     Mimic.copy(CharacterPersistence)
     Mimic.copy(MovementHandler)
+    Mimic.copy(StatusInterpreter)
 
+    stub(StatusInterpreter, :on_damage, fn _, _, _ -> :ok end)
     stub(UnitRegistry, :update_unit_state, fn _, _, _ -> :ok end)
     stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
     stub(SpatialIndex, :remove_player, fn _ -> :ok end)
@@ -49,6 +52,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       assert game_state.stats.current_state.hp == 70
       assert game_state.action_state == :idle
       assert_received {:send_packet, %ZcParChange{var_id: @sp_hp, value: 70}}
+    end
+
+    test "invokes status on_damage with post-damage HP populated" do
+      test_pid = self()
+
+      stub(StatusInterpreter, :on_damage, fn :player, char_id, damage_info ->
+        send(test_pid, {:on_damage_called, char_id, damage_info})
+        :ok
+      end)
+
+      HealthHandler.apply_damage(30, 2001, build_state(100, :idle))
+
+      assert_received {:on_damage_called, 1, damage_info}
+      assert damage_info.damage == 30
+      assert damage_info.hp_after == 70
+      assert damage_info.max_hp == 100
     end
 
     test "kills the player and marks them dead when HP reaches 0" do

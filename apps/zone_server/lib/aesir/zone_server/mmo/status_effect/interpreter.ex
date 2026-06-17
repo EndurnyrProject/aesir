@@ -87,14 +87,22 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   @doc """
   Notifies all active statuses on a unit that it took damage.
 
-  `damage_info` is a map with at least `:damage` and `:element`.
+  `damage_info` is a map with at least `:damage` and `:element`; the player
+  damage path also populates `:hp_after` and `:max_hp`. An `on_damage` callback
+  may request follow-up status applications; they are drained after every active
+  status has been notified.
   """
   @spec on_damage(unit_type(), integer(), map()) :: :ok
   def on_damage(unit_type, unit_id, damage_info) do
-    unit_type
-    |> StatusStorage.get_unit_statuses(unit_id)
-    |> Enum.each(fn instance ->
-      dispatch_damage(unit_type, unit_id, instance, damage_info)
+    follow_ups =
+      unit_type
+      |> StatusStorage.get_unit_statuses(unit_id)
+      |> Enum.flat_map(fn instance ->
+        dispatch_damage(unit_type, unit_id, instance, damage_info)
+      end)
+
+    Enum.each(follow_ups, fn {status_id, params} ->
+      apply_status(unit_type, unit_id, status_id, params)
     end)
   end
 
@@ -292,7 +300,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   defp dispatch_damage(unit_type, unit_id, instance, damage_info) do
     case Registry.get_definition(instance.type) do
       nil ->
-        :ok
+        []
 
       definition ->
         context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
@@ -300,13 +308,19 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
         case definition.module.on_damage({unit_type, unit_id}, instance, damage_info, context) do
           {:ok, new_instance} ->
             store_instance_changes(unit_type, unit_id, instance.type, new_instance)
+            []
+
+          {:ok, new_instance, follow_ups} ->
+            store_instance_changes(unit_type, unit_id, instance.type, new_instance)
+            follow_ups
 
           :remove ->
             remove_status(unit_type, unit_id, instance.type)
+            []
 
           {:error, reason} ->
             Logger.warning("Status #{instance.type} on_damage failed: #{inspect(reason)}")
-            :ok
+            []
         end
     end
   end

@@ -54,8 +54,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   @typedoc "Execution context with target/caster stats, built by ContextBuilder."
   @type context :: map()
 
-  @typedoc "Result of a lifecycle callback."
-  @type hook_result :: {:ok, StatusEntry.t()} | :remove | {:error, term()}
+  @typedoc """
+  Result of a lifecycle callback.
+
+  The 3-element form lets `on_damage` request follow-up status applications
+  (`[{status_id, params}]`) that the interpreter drains after the damage settles.
+  """
+  @type hook_result ::
+          {:ok, StatusEntry.t()}
+          | {:ok, StatusEntry.t(), [{atom(), keyword()}]}
+          | :remove
+          | {:error, term()}
 
   @doc "Returns the status identifier atom."
   @callback id() :: atom()

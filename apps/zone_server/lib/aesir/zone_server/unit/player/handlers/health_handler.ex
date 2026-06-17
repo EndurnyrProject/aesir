@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
   alias Aesir.Commons.StatusParams
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Packets.ZcNotifyVanish
   alias Aesir.ZoneServer.Packets.ZcResurrection
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -46,13 +47,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   def apply_damage(damage, attacker_id, state) when is_integer(damage) and damage > 0 do
     stats = state.game_state.stats
     new_hp = damaged_hp(stats.current_state.hp, damage)
+    max_hp = stats.derived_stats.max_hp
+    char_id = state.game_state.character_id
 
     updated_stats = %{stats | current_state: %{stats.current_state | hp: new_hp}}
     game_state = %{state.game_state | stats: updated_stats}
     state = StatsManager.update_game_state(state, game_state)
 
     StatusSync.send_param(state.connection_pid, StatusParams.hp(), new_hp)
-    CharacterPersistence.update_stats(state.game_state.character_id, %{hp: new_hp}, async: true)
+    CharacterPersistence.update_stats(char_id, %{hp: new_hp}, async: true)
+
+    StatusInterpreter.on_damage(:player, char_id, %{
+      damage: damage,
+      element: :neutral,
+      hp_after: new_hp,
+      max_hp: max_hp
+    })
 
     if new_hp == 0 do
       handle_death(attacker_id, state)
