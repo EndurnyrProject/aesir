@@ -7,6 +7,44 @@
   range: 2
   sp_cost: [8, 8, 8, 8, 8, 15, 15, 15, 15, 15]
 
+- id: 6
+  name: sm_provoke
+  display_name: "Provoke"
+  max_level: 10
+  target_type: target_enemy
+  damage_type: no_damage
+  range: 9
+  sp_cost: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+  duration: [30000, 30000, 30000, 30000, 30000, 30000, 30000, 30000, 30000, 30000]
+
+- id: 7
+  name: sm_magnum
+  display_name: "Magnum Break"
+  max_level: 10
+  target_type: self
+  damage_type: damage
+  sp_cost: [30, 30, 30, 30, 30, 30, 30, 30, 30, 30]
+  cooldown: [2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000]
+  duration: [10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000]
+
+- id: 8
+  name: sm_endure
+  display_name: "Endure"
+  max_level: 10
+  target_type: self
+  damage_type: no_damage
+  sp_cost: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+  cooldown: [10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000]
+  duration: [10000, 13000, 16000, 19000, 22000, 25000, 28000, 31000, 34000, 37000]
+
+- id: 146
+  name: sm_autoberserk
+  display_name: "Auto Berserk"
+  max_level: 1
+  target_type: self
+  damage_type: no_damage
+  sp_cost: [1]
+
 - id: 2
   name: sm_sword
   display_name: "Sword Mastery"
