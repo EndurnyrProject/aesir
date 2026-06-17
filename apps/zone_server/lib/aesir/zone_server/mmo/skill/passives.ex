@@ -57,8 +57,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
     stats
     |> learned_passives()
     |> Enum.reduce(%{skill_hp_regen: 0, skill_sp_regen: 0, allow_while_moving: false}, fn {module,
-                                                                                          level},
-                                                                                         acc ->
+                                                                                           level},
+                                                                                          acc ->
       contribution = module.regen_contribution(level, ctx)
 
       %{

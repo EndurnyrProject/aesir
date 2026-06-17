@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects do
     Effects.Angelus,
     Effects.ArcaneCharge,
     Effects.Aspersio,
+    Effects.Autoberserk,
     Effects.Benedictio,
     Effects.Bleeding,
     Effects.Blessing,
