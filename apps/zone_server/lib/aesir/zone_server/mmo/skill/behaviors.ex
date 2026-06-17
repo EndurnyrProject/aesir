@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Behaviors do
     Behaviors.SmAutoberserk,
     Behaviors.SmBash,
     Behaviors.SmEndure,
+    Behaviors.SmMagnum,
     Behaviors.SmProvoke
   ]
 
