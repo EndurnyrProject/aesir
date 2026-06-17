@@ -104,5 +104,24 @@ defmodule Aesir.ZoneServer.Mmo.SkillUnit.TickManagerTest do
       assert_received {:expired, 1}
       assert nil == Storage.get(1)
     end
+
+    test "runs on_expire at most once for a group both due and expired in the same tick" do
+      now = 10_000
+
+      :ok =
+        Storage.insert(
+          group(1,
+            next_tick_at: now - 10,
+            expires_at: now - 10,
+            state: %{expire_now: true}
+          )
+        )
+
+      TickManager.process_tick(now)
+
+      assert_received {:expired, 1}
+      refute_received {:expired, 1}
+      assert nil == Storage.get(1)
+    end
   end
 end

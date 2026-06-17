@@ -44,11 +44,18 @@ defmodule Aesir.ZoneServer.Mmo.SkillUnit.TickManager do
 
   Extracted from the timer so the tick logic is driven directly in tests with a
   controlled `now` instead of relying on the 100ms cadence.
+
+  The due and expired snapshots are taken up front, so a group that is both due
+  and expired in the same tick is reaped at most once: the expire phase skips
+  any group already deleted during the due phase.
   """
   @spec process_tick(integer()) :: :ok
   def process_tick(now) do
-    now |> Storage.get_due_groups() |> Enum.each(&run_interval(&1, now))
-    now |> Storage.get_expired_groups() |> Enum.each(&expire/1)
+    due = Storage.get_due_groups(now)
+    expired = Storage.get_expired_groups(now)
+
+    Enum.each(due, &run_interval(&1, now))
+    Enum.each(expired, &expire/1)
     :ok
   end
 
@@ -65,7 +72,14 @@ defmodule Aesir.ZoneServer.Mmo.SkillUnit.TickManager do
     end
   end
 
-  defp expire(%Group{skill_name: skill_name, group_id: group_id} = group) do
+  defp expire(%Group{group_id: group_id} = group) do
+    case Storage.get(group_id) do
+      nil -> :ok
+      _group -> reap(group)
+    end
+  end
+
+  defp reap(%Group{skill_name: skill_name, group_id: group_id} = group) do
     with {:ok, module} <- Behaviors.module_for(skill_name) do
       module.on_expire(group)
     end

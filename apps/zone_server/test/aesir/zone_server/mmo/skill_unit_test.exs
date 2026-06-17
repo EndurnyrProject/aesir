@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillUnitTest do
   import Aesir.TestEtsSetup
   import Mimic
 
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.SkillUnit
   alias Aesir.ZoneServer.Mmo.SkillUnit.Behaviors
   alias Aesir.ZoneServer.Mmo.SkillUnit.Group
@@ -18,11 +19,14 @@ defmodule Aesir.ZoneServer.Mmo.SkillUnitTest do
   @interval 450
   @duration 5_000
 
+  # A real catalog skill so place/4 can resolve its skill_id.
+  @skill_name :sm_bash
+
   defmodule FakeUnit do
     use Aesir.ZoneServer.Mmo.SkillUnit.Behaviour
 
     @impl true
-    def skill_name, do: :fake_unit
+    def skill_name, do: :sm_bash
 
     @impl true
     def on_place(%Group{center: {x, y}}) do
@@ -36,7 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillUnitTest do
   setup do
     Mimic.copy(Behaviors)
     Mimic.copy(Broadcast)
-    stub(Behaviors, :module_for, fn :fake_unit -> {:ok, FakeUnit} end)
+    stub(Behaviors, :module_for, fn @skill_name -> {:ok, FakeUnit} end)
     :ok
   end
 
@@ -54,9 +58,9 @@ defmodule Aesir.ZoneServer.Mmo.SkillUnitTest do
       stub(Broadcast, :to_in_range, fn _, _, _, _, _ -> :ok end)
 
       before = System.monotonic_time(:millisecond)
-      {:ok, %Group{} = group} = SkillUnit.place(caster(), :fake_unit, 7, {100, 120})
+      {:ok, %Group{} = group} = SkillUnit.place(caster(), @skill_name, 7, {100, 120})
 
-      assert group.skill_name == :fake_unit
+      assert group.skill_name == @skill_name
       assert group.level == 7
       assert group.caster_id == 2_000
       assert group.caster_type == :player
@@ -81,7 +85,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillUnitTest do
         :ok
       end)
 
-      {:ok, group} = SkillUnit.place(caster(), :fake_unit, 7, {100, 120})
+      {:ok, group} = SkillUnit.place(caster(), @skill_name, 7, {100, 120})
 
       assert_received {:broadcast, "prontera", 100, 120, %ZcNotifyGroundskill{} = packet}
       assert packet.skill_id == group.skill_id
@@ -91,6 +95,25 @@ defmodule Aesir.ZoneServer.Mmo.SkillUnitTest do
       assert packet.y == 120
 
       refute_received {:broadcast, _, _, _, _}
+    end
+
+    test "resolves the skill_id from the catalog and renders a valid ground-cast packet" do
+      test_pid = self()
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+        send(test_pid, {:broadcast, packet})
+        :ok
+      end)
+
+      {:ok, definition} = Catalog.by_name(@skill_name)
+      {:ok, group} = SkillUnit.place(caster(), @skill_name, 7, {100, 120})
+
+      assert is_integer(definition.id)
+      assert group.skill_id == definition.id
+
+      assert_received {:broadcast, %ZcNotifyGroundskill{} = packet}
+      assert packet.skill_id == definition.id
+      assert is_binary(ZcNotifyGroundskill.build(packet))
     end
 
     test "returns an error for an unregistered skill" do

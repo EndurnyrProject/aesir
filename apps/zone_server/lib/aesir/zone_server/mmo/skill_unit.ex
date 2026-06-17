@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillUnit do
   animation to nearby players.
   """
 
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.SkillUnit.Behaviors
   alias Aesir.ZoneServer.Mmo.SkillUnit.Group
   alias Aesir.ZoneServer.Mmo.SkillUnit.Storage
@@ -27,13 +28,15 @@ defmodule Aesir.ZoneServer.Mmo.SkillUnit do
   one `ZcNotifyGroundskill` (the cast animation) to players in range.
 
   Returns `{:error, :no_skill_unit_behaviour}` when the skill has no registered
-  ground-unit behaviour.
+  ground-unit behaviour, or `{:error, :unknown_skill}` when the skill name is not
+  in the catalog.
   """
   @spec place(PlayerState.t(), atom(), non_neg_integer(), {integer(), integer()}) ::
-          {:ok, Group.t()} | {:error, :no_skill_unit_behaviour}
+          {:ok, Group.t()} | {:error, :no_skill_unit_behaviour | :unknown_skill}
   def place(%PlayerState{} = caster_state, skill_name, level, {x, y}) do
-    with {:ok, module} <- module_for(skill_name) do
-      group = build_group(caster_state, skill_name, level, {x, y})
+    with {:ok, module} <- module_for(skill_name),
+         {:ok, definition} <- skill_definition(skill_name) do
+      group = build_group(caster_state, definition.id, skill_name, level, {x, y})
       {:ok, placement} = module.on_place(group)
 
       now = System.monotonic_time(:millisecond)
@@ -61,9 +64,17 @@ defmodule Aesir.ZoneServer.Mmo.SkillUnit do
     end
   end
 
-  defp build_group(%PlayerState{} = caster_state, skill_name, level, {x, y}) do
+  defp skill_definition(skill_name) do
+    case Catalog.by_name(skill_name) do
+      {:ok, definition} -> {:ok, definition}
+      :error -> {:error, :unknown_skill}
+    end
+  end
+
+  defp build_group(%PlayerState{} = caster_state, skill_id, skill_name, level, {x, y}) do
     %Group{
       group_id: System.unique_integer([:monotonic, :positive]),
+      skill_id: skill_id,
       skill_name: skill_name,
       level: level,
       caster_id: caster_state.character_id,
