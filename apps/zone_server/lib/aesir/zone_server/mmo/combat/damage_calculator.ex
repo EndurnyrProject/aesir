@@ -346,7 +346,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   defp get_unit_type_and_id(combatant) do
     case combatant.unit_type do
       :player -> {:player, combatant.unit_id}
-      :mob -> {:monster, combatant.unit_id}
+      :mob -> {:mob, combatant.unit_id}
       _ -> {:unknown, combatant.unit_id}
     end
   end

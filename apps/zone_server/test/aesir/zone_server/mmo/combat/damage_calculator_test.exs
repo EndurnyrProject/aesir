@@ -455,6 +455,40 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
   end
 
+  describe "mob status modifier lookup key" do
+    setup do
+      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
+      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(RaceModifiers, :get_modifier, fn _, _ -> 1.0 end)
+      stub(RaceModifiers, :player_race, fn -> :human end)
+
+      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
+        %{damage: damage, is_critical: false}
+      end)
+
+      :ok
+    end
+
+    test "sc_provoke on mob lowers effective DEF in damage calculation" do
+      mob = CombatTestHelper.create_mob_combatant(unit_id: 5003, def: 50)
+      player = CombatTestHelper.create_player_combatant()
+
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :mob, 5003 -> %{def_bonus: -25}
+        _, _ -> %{}
+      end)
+
+      assert {:ok, result_with_provoke} = DamageCalculator.calculate_damage(player, mob)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+
+      assert {:ok, result_without_provoke} = DamageCalculator.calculate_damage(player, mob)
+
+      assert result_with_provoke.damage > result_without_provoke.damage
+    end
+  end
+
   describe "calculate_base_attack/1 mastery bonus" do
     test "adds combat_stats.passive_atk for a player attacker" do
       :rand.seed(:exsss, {1, 2, 3})
