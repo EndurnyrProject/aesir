@@ -1,11 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
   @moduledoc """
-  Behaviour for passive skill implementations.
+  Capability behaviour for passive skills.
 
-  Each passive skill module declares its name with `use Skill.Passive, skill: :name`
-  and overrides only the channels it participates in. The three channel callbacks
-  (`atk_bonus/2`, `regen_contribution/2`, `skill_rider/4`) are optional and default
-  to no-ops via the `__using__/1` macro.
+  A skill opts into this capability by declaring `@behaviour Skill.Passive` and
+  implementing only the channels it participates in. All three callbacks are
+  optional; `Skill.Passives` aggregates every learned passive and folds the
+  channels each one implements (the rest are treated as no-ops).
   """
 
   @typedoc """
@@ -21,8 +21,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
           vit: non_neg_integer(),
           int: non_neg_integer()
         }
-
-  @callback skill_name() :: atom()
 
   @doc "Returns a flat ATK bonus contributed by this passive at the given level."
   @callback atk_bonus(level :: pos_integer(), ctx()) :: integer()
@@ -47,26 +45,4 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
             ) :: :none | {:apply_status, atom(), keyword()}
 
   @optional_callbacks atk_bonus: 2, regen_contribution: 2, skill_rider: 4
-
-  defmacro __using__(opts) do
-    skill = Keyword.fetch!(opts, :skill)
-
-    quote do
-      @behaviour Aesir.ZoneServer.Mmo.Skill.Passive
-
-      @impl true
-      def skill_name, do: unquote(skill)
-
-      @impl true
-      def atk_bonus(_level, _ctx), do: 0
-
-      @impl true
-      def regen_contribution(_level, _ctx), do: %{}
-
-      @impl true
-      def skill_rider(_target_skill, _target_skill_level, _passive_level, _ctx), do: :none
-
-      defoverridable atk_bonus: 2, regen_contribution: 2, skill_rider: 4
-    end
-  end
 end

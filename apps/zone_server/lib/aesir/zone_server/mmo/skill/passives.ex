@@ -2,16 +2,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   @moduledoc """
   Aggregation surface for passive skills.
 
-  Walks a player's learned skills, keeps only the ones whose definition is a
-  `:passive` and resolves to a registered passive module, builds the shared
-  `Passive.ctx`, and folds each effect channel (ATK, regen, skill riders).
+  Walks a player's learned skills, keeps the ones that resolve to a passive-capable
+  module via `Skill.Catalog`, builds the shared `Passive.ctx`, and folds each
+  effect channel (ATK, regen, skill riders). `use Skill` injects no-op defaults
+  for the channels a passive does not implement, so the callbacks can be invoked
+  directly here; an unimplemented channel contributes its neutral element
+  (0 / `%{}` / `:none`).
 
   Consumers (the stat pipeline, the natural-heal tick, SmBash) call this module
   instead of iterating `learned_skills` directly.
   """
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Passive
-  alias Aesir.ZoneServer.Mmo.Skill.Passives.Registry
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
@@ -97,8 +99,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
     stats.progression.learned_skills
     |> Enum.flat_map(fn {skill_id, level} ->
       with {:ok, definition} <- Catalog.by_id(skill_id),
-           :passive <- definition.target_type,
-           {:ok, module} <- Registry.module_for(definition.name) do
+           {:ok, module} <- Catalog.passive_module_for(definition.name) do
         [{module, level}]
       else
         _ -> []

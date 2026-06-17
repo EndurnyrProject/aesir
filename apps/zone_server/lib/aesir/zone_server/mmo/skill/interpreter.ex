@@ -9,15 +9,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
-  alias Aesir.ZoneServer.Mmo.Skill.Behaviors
-  alias Aesir.ZoneServer.Mmo.Skill.Behaviour
+  alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Learned
+  alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
-  @spec cast(PlayerState.t(), integer(), pos_integer(), Behaviour.target()) ::
+  @spec cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
     now = System.monotonic_time(:millisecond)
@@ -28,7 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_learned(game_state, skill_id, level),
          :ok <- check_target(game_state, target, definition),
          :ok <- check_range(game_state, target, definition),
-         {:ok, module} <- fetch_behavior(definition),
+         {:ok, module} <- fetch_active_module(definition),
          :ok <- check_cooldown(game_state, skill_id, now),
          :ok <- module.validate(game_state, target, level, definition),
          cost = Enum.at(definition.sp_cost, level - 1),
@@ -53,8 +53,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp check_castable(%{target_type: :passive}), do: {:error, :passive_skill}
   defp check_castable(_definition), do: :ok
 
-  defp fetch_behavior(definition) do
-    case Behaviors.module_for(definition.name) do
+  defp fetch_active_module(definition) do
+    case Catalog.active_module_for(definition.name) do
       {:ok, module} -> {:ok, module}
       :error -> {:error, :no_behavior}
     end
@@ -86,9 +86,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp check_range(_game_state, :self, _definition), do: :ok
 
   defp check_range(game_state, {:unit, target_id}, definition) do
+    range = effective_range(definition, game_state)
+
     case resolve_unit_position(target_id) do
       {:ok, {tx, ty, _map}} ->
-        if Geometry.chebyshev_distance(game_state.x, game_state.y, tx, ty) <= definition.range,
+        if Geometry.chebyshev_distance(game_state.x, game_state.y, tx, ty) <= range,
           do: :ok,
           else: {:error, :out_of_range}
 
@@ -104,10 +106,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   end
 
   defp check_ground_range(game_state, x, y, definition) do
-    if Geometry.chebyshev_distance(game_state.x, game_state.y, x, y) <= definition.range,
+    range = effective_range(definition, game_state)
+
+    if Geometry.chebyshev_distance(game_state.x, game_state.y, x, y) <= range,
       do: :ok,
       else: {:error, :out_of_range}
   end
+
+  # rAthena encodes melee skills as `range: -1` ("use the weapon's range").
+  # Resolve it to the caster's equipped-weapon attack range at cast time.
+  defp effective_range(%{range: range}, _game_state) when range >= 0, do: range
+
+  defp effective_range(_definition, %{stats: %{equipment: %{weapon: weapon}}}),
+    do: WeaponTypes.get_attack_range(weapon)
 
   defp check_ground_walkable(map_name, x, y) do
     with {:ok, map} <- MapCache.get(map_name),

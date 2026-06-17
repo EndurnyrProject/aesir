@@ -146,7 +146,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   Applies a precomputed skill-unit hit to a target and broadcasts its visual.
 
   Used by ground skill-units (e.g. Storm Gust), whose per-tick damage is produced
-  by `SkillUnit.Damage.magic_stub/4` rather than the physical `DamageCalculator`.
+  by `Skill.Unit.Damage.magic_stub/4` rather than the physical `DamageCalculator`.
   Applies `damage` to the target and broadcasts a `ZC_NOTIFY_SKILL` from the
   target's cell so nearby players see the hit number.
 

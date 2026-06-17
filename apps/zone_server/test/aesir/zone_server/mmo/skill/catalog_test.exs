@@ -3,6 +3,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.Skills.SmBash
+  alias Aesir.ZoneServer.Mmo.Skills.SmFatalblow
+  alias Aesir.ZoneServer.Mmo.Skills.SmSword
+  alias Aesir.ZoneServer.Mmo.Skills.WzStormgust
 
   test "by_id/1 loads AL_INCAGI with correct structure" do
     assert {:ok, %Definition{} = def} = Catalog.by_id(29)
@@ -56,5 +60,39 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
     assert defn.target_type == :self
     assert defn.damage_type == :no_damage
     assert defn.max_level == 1
+  end
+
+  describe "capability indexes" do
+    test "active_module_for/1 resolves an active skill" do
+      assert {:ok, SmBash} = Catalog.active_module_for(:sm_bash)
+    end
+
+    test "ground_module_for/1 resolves a ground skill" do
+      assert {:ok, WzStormgust} = Catalog.ground_module_for(:wz_stormgust)
+    end
+
+    test "a ground skill is also active, since its cast is auto-derived" do
+      assert {:ok, WzStormgust} = Catalog.active_module_for(:wz_stormgust)
+    end
+
+    test "passive_module_for/1 resolves a passive skill" do
+      assert {:ok, SmSword} = Catalog.passive_module_for(:sm_sword)
+    end
+
+    test "an active skill is absent from the passive index" do
+      assert :error = Catalog.passive_module_for(:sm_bash)
+    end
+
+    test "a passive skill is absent from the active index" do
+      assert :error = Catalog.active_module_for(:sm_sword)
+    end
+
+    test "passive_modules/0 lists every passive-capable module and excludes active-only skills" do
+      modules = Catalog.passive_modules()
+
+      assert SmSword in modules
+      assert SmFatalblow in modules
+      refute SmBash in modules
+    end
   end
 end

@@ -4,10 +4,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
-  alias Aesir.ZoneServer.Mmo.Skill.Behaviors.SmProvoke
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
+  alias Aesir.ZoneServer.Mmo.Skills.SmProvoke
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
