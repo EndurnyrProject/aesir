@@ -17,7 +17,7 @@ The project is organized into several applications within an umbrella structure,
 
 ### Prerequisites
 
-- Elixir (version 1.18 or higher)
+- Elixir (version 1.20 or higher)
 - Erlang/OTP
 
 ### Installation

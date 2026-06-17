@@ -1,0 +1,16 @@
+{
+  "release-type": "elixir",
+  "bump-minor-pre-major": true,
+  "packages": {
+    ".": {
+      "package-name": "aesir",
+      "changelogpath": "CHANGELOG.md",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "README.md"
+        }
+      ]
+    }
+  }
+}
