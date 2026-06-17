@@ -3,11 +3,12 @@ defmodule Aesir.ZoneServer.Mmo.SkillUnit.Behaviors do
   Registry of ground skill-unit behaviour implementations.
 
   New ground skills are added by creating a module under
-  `Aesir.ZoneServer.Mmo.SkillUnit.Behaviors` and listing it here. Storm Gust is
-  registered in a later task; the list is empty for now.
+  `Aesir.ZoneServer.Mmo.SkillUnit.Behaviors` and listing it here.
   """
 
-  @modules []
+  alias Aesir.ZoneServer.Mmo.SkillUnit.Behaviors.WzStormgust
+
+  @modules [WzStormgust]
 
   @by_name (for module <- @modules, into: %{} do
               {module.skill_name(), module}

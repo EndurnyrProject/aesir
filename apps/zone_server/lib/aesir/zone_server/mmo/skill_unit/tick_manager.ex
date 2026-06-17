@@ -61,7 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillUnit.TickManager do
 
   defp run_interval(%Group{skill_name: skill_name} = group, now) do
     with {:ok, module} <- Behaviors.module_for(skill_name) do
-      case module.on_interval(group, now) do
+      case dispatch_interval(module, group, now) do
         {:ok, updated} ->
           Storage.update(%{updated | next_tick_at: now + updated.interval})
 
@@ -71,6 +71,13 @@ defmodule Aesir.ZoneServer.Mmo.SkillUnit.TickManager do
       end
     end
   end
+
+  # Keeps the result typed as the behaviour's full union ({:ok, _} | {:expire, _}).
+  # Calling `module.on_interval` directly narrows to the single registered module's
+  # body and flags the framework's still-unused :expire branch as unreachable.
+  @spec dispatch_interval(module(), Group.t(), integer()) ::
+          {:ok, Group.t()} | {:expire, Group.t()}
+  defp dispatch_interval(module, group, now), do: module.on_interval(group, now)
 
   defp expire(%Group{group_id: group_id} = group) do
     case Storage.get(group_id) do

@@ -17,5 +17,7 @@ Mimic.copy(Aesir.ZoneServer.Unit.Broadcast)
 Mimic.copy(Aesir.ZoneServer.Mmo.Skill.Catalog)
 Mimic.copy(Aesir.ZoneServer.Mmo.Skill.Interpreter)
 Mimic.copy(Aesir.ZoneServer.Mmo.Skill.Behaviors.SmProvoke)
+Mimic.copy(Aesir.ZoneServer.Mmo.SkillUnit.Damage)
+Mimic.copy(Aesir.ZoneServer.Mmo.SkillUnit)
 
 ExUnit.start()

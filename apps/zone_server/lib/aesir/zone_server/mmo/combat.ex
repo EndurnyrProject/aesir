@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
   alias Aesir.ZoneServer.Packets.ZcBlownback
+  alias Aesir.ZoneServer.Packets.ZcNotifySkill
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -20,6 +21,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
 
   # Combat packets broadcast from the victim's position, per rAthena.
   @combat_view_range 14
+
+  # ZC_NOTIFY_SKILL `type` for a splash/area skill hit (e_damage_type DMG_SPLASH).
+  @dmg_splash 5
 
   @doc """
   Executes an attack from player to target.
@@ -142,6 +146,41 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
           PlayerSession.apply_damage(target_pid, damage)
           :ok
       end
+    end
+  end
+
+  @doc """
+  Applies a precomputed skill-unit hit to a target and broadcasts its visual.
+
+  Used by ground skill-units (e.g. Storm Gust), whose per-tick damage is produced
+  by `SkillUnit.Damage.magic_stub/4` rather than the physical `DamageCalculator`.
+  Applies `damage` to the target and broadcasts a `ZC_NOTIFY_SKILL` from the
+  target's cell so nearby players see the hit number.
+
+  ## Parameters
+    - `caster_id` - the casting unit's GID (skill packet `src_id`)
+    - `unit_type` / `target_id` - the target being hit
+    - `damage` - the precomputed damage value
+    - `skill_id` / `skill_level` - identify the skill for the damage packet
+  """
+  @spec apply_skill_unit_damage(integer(), atom(), integer(), integer(), integer(), integer()) ::
+          :ok | {:error, atom()}
+  def apply_skill_unit_damage(caster_id, _unit_type, target_id, damage, skill_id, skill_level) do
+    with {:ok, {tx, ty, map_name}} <- SpatialIndex.get_unit_position(:mob, target_id) do
+      packet = %ZcNotifySkill{
+        skill_id: skill_id,
+        skill_level: skill_level,
+        src_id: caster_id,
+        target_id: target_id,
+        src_delay: 0,
+        dst_delay: 0,
+        damage: damage,
+        div: 1,
+        type: @dmg_splash
+      }
+
+      Broadcast.to_in_range(map_name, tx, ty, @combat_view_range, packet)
+      deal_damage(target_id, damage, :water, :skill_unit)
     end
   end
 

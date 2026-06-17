@@ -13,7 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Behaviors do
     Behaviors.SmBash,
     Behaviors.SmEndure,
     Behaviors.SmMagnum,
-    Behaviors.SmProvoke
+    Behaviors.SmProvoke,
+    Behaviors.SmStormgust
   ]
 
   @by_name (for module <- @modules, into: %{} do
