@@ -175,12 +175,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   """
   @spec apply_modifier_pipeline(integer(), combatant(), combatant()) :: {:ok, integer()}
   def apply_modifier_pipeline(base_damage, attacker, defender) do
+    {unit_type, unit_id} = get_unit_type_and_id(attacker)
+    attacker_modifiers = ModifierCalculator.get_all_modifiers(unit_type, unit_id)
+
     total_atk =
       base_damage
       |> apply_size_modifier(attacker, defender)
       |> apply_race_modifier(attacker, defender)
-      |> apply_element_modifier(attacker, defender)
-      |> apply_status_effect_damage_modifiers(attacker)
+      |> apply_element_modifier(attacker, defender, attacker_modifiers)
+      |> apply_status_effect_damage_modifiers(attacker_modifiers)
 
     {:ok, total_atk}
   end
@@ -268,8 +271,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   # Modifier application functions (unified from original Combat module)
 
-  defp apply_element_modifier(damage, attacker, defender) do
-    attack_element = Map.get(attacker.weapon, :element, :neutral)
+  defp apply_element_modifier(damage, attacker, defender, attacker_modifiers) do
+    attack_element = resolve_attack_element(attacker, attacker_modifiers)
 
     case Map.get(defender, :element, {:neutral, 1}) do
       {defender_element, defender_level} ->
@@ -279,6 +282,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       _ ->
         damage
     end
+  end
+
+  defp resolve_attack_element(attacker, attacker_modifiers) do
+    Map.get_lazy(attacker_modifiers, :attack_element, fn ->
+      Map.get(attacker.weapon, :element, :neutral)
+    end)
   end
 
   defp apply_size_modifier(damage, attacker, defender) do
@@ -303,13 +312,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     damage * modifier
   end
 
-  defp apply_status_effect_damage_modifiers(damage, attacker) do
-    # Get unit type and ID for status effect lookup
-    {unit_type, unit_id} = get_unit_type_and_id(attacker)
-
-    # Get all status effect modifiers
-    modifiers = ModifierCalculator.get_all_modifiers(unit_type, unit_id)
-
+  defp apply_status_effect_damage_modifiers(damage, modifiers) do
     # Apply damage-related modifiers
     damage_modifier = Map.get(modifiers, :damage_bonus, 0) + Map.get(modifiers, :atk_bonus, 0)
     damage_multiplier = 1.0 + Map.get(modifiers, :damage_multiplier, 0.0)
