@@ -93,11 +93,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  defp check_range(game_state, {:ground, tx, ty}, definition) do
-    distance = Geometry.chebyshev_distance(game_state.x, game_state.y, tx, ty)
-    if distance <= definition.range, do: :ok, else: {:error, :out_of_range}
-  end
-
   defp resolve_unit_position(unit_id) do
     case SpatialIndex.get_unit_position(:player, unit_id) do
       {:ok, _} = result -> result
