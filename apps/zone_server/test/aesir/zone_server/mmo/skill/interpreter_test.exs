@@ -136,7 +136,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     stub(StatusInterpreter, :apply_status, fn _type, _id, _status, _params -> :ok end)
 
     gs = game_state(100, %{6 => 1})
-    assert {:error, :no_behavior} = Interpreter.cast(gs, 6, 1, {:unit, 9999})
+    assert {:ok, _} = Interpreter.cast(gs, 6, 1, {:unit, 9999})
   end
 
   test ":self skills bypass the range check" do
