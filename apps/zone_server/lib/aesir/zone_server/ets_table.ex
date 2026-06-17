@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.EtsTable do
     status_tables(seed)
     status_effect_tables(seed)
     unit_registry_tables(seed)
+    skill_unit_tables(seed)
 
     :ok
   end
@@ -73,6 +74,19 @@ defmodule Aesir.ZoneServer.EtsTable do
         :named_table,
         read_concurrency: true,
         write_concurrency: true
+      ]
+    )
+  end
+
+  defp skill_unit_tables(seed) do
+    :ets.new(
+      table_for(:skill_units, seed),
+      [
+        :set,
+        :public,
+        :named_table,
+        {:read_concurrency, true},
+        {:write_concurrency, true}
       ]
     )
   end
