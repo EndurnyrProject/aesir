@@ -110,7 +110,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
 
     case target_type do
       :mob ->
-        MobSession.apply_damage(target_pid, damage, attacker_combatant.unit_id)
+        apply_unit_damage(:mob, target_pid, damage, attacker_combatant.unit_id)
         :ok
 
       :player ->
@@ -137,15 +137,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
         "Combat: Dealing #{damage} #{element} damage to #{target_type} #{target_id} from #{source_type}"
       )
 
-      case target_type do
-        :mob ->
-          MobSession.apply_damage(target_pid, damage)
-          :ok
-
-        :player ->
-          PlayerSession.apply_damage(target_pid, damage)
-          :ok
-      end
+      apply_unit_damage(target_type, target_pid, damage)
+      :ok
     end
   end
 
@@ -211,7 +204,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- validate_attack_with_combatants(attacker, target),
          :ok <- ensure_offensive_target(target_type) do
-      apply_skill_damage(attacker, target_pid, target, skill_id, skill_level, calc_opts)
+      apply_skill_damage(
+        attacker,
+        target_type,
+        target_pid,
+        target,
+        skill_id,
+        skill_level,
+        calc_opts
+      )
     end
   end
 
@@ -247,10 +248,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     attacker.map_name
     |> splash_targets(center, radius, attacker.unit_id)
     |> Enum.flat_map(fn {_unit_type, target_id} ->
-      with {:ok, target_pid, target_state, _type} <- get_target_unit_state(target_id),
+      with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
            target <- target_state.__struct__.to_combatant(target_state),
            :ok <-
-             apply_skill_damage(attacker, target_pid, target, skill_id, skill_level, calc_opts) do
+             apply_skill_damage(
+               attacker,
+               target_type,
+               target_pid,
+               target,
+               skill_id,
+               skill_level,
+               calc_opts
+             ) do
         [target_id]
       else
         _ -> []
@@ -298,7 +307,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   defp splash_hit?(%{x: tx, y: ty}, x, y, radius),
     do: Geometry.chebyshev_distance(x, y, tx, ty) <= radius
 
-  defp apply_skill_damage(attacker, target_pid, target, skill_id, skill_level, calc_opts) do
+  defp apply_skill_damage(
+         attacker,
+         target_type,
+         target_pid,
+         target,
+         skill_id,
+         skill_level,
+         calc_opts
+       ) do
     with {:ok, damage_result} <- DamageCalculator.calculate_damage(attacker, target, calc_opts) do
       packet =
         PacketFactory.build_skill_damage_packet(
@@ -311,13 +328,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
 
       broadcast_to_nearby_players(target, packet)
 
-      MobSession.apply_damage(target_pid, damage_result.damage, attacker.unit_id)
+      apply_unit_damage(target_type, target_pid, damage_result.damage, attacker.unit_id)
       :ok
     end
   end
 
   defp ensure_offensive_target(:mob), do: :ok
   defp ensure_offensive_target(:player), do: {:error, :pvp_not_implemented}
+
+  # Routes damage to the owning session by unit type, keeping the damage paths
+  # free of concrete session-module knowledge.
+  defp apply_unit_damage(target_type, target_pid, damage, attacker_id \\ nil) do
+    unit_session(target_type).apply_damage(target_pid, damage, attacker_id)
+  end
+
+  defp unit_session(:mob), do: MobSession
+  defp unit_session(:player), do: PlayerSession
 
   @doc """
   Knocks a unit back away from `{from_x, from_y}`, collision-aware.
