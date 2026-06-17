@@ -42,6 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     - `:initial_phase` - starting phase for multi-phase statuses
     - `:tick_interval` - default tick interval in milliseconds
     - `:duration` - base duration in milliseconds
+    - `:permanent` - when true, the status never auto-expires (ignores duration)
   """
 
   alias Aesir.ZoneServer.Mmo.DefinitionValidation
@@ -115,7 +116,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     bypass_resistance: false,
     initial_phase: nil,
     tick_interval: nil,
-    duration: nil
+    duration: nil,
+    permanent: false
   }
 
   @metadata_schema %{
@@ -132,7 +134,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     bypass_resistance: :boolean,
     initial_phase: :atom,
     tick_interval: {:integer, {:gt, 0}},
-    duration: {:integer, {:gt, 0}}
+    duration: {:integer, {:gt, 0}},
+    permanent: :boolean
   }
 
   defmacro __using__(opts) do

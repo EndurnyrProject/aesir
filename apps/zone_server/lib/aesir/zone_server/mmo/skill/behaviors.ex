@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Behaviors do
 
   @modules [
     Behaviors.AlIncagi,
+    Behaviors.SmAutoberserk,
     Behaviors.SmBash,
     Behaviors.SmEndure,
     Behaviors.SmProvoke

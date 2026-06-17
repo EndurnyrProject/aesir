@@ -8,7 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoberserk do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_autoberserk,
-    properties: [:buff]
+    properties: [:buff],
+    permanent: true
 
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
 

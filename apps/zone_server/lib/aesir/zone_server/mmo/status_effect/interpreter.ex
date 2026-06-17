@@ -217,6 +217,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     Enum.any?(status_ids, &StatusStorage.has_status?(unit_type, unit_id, &1))
   end
 
+  defp roll_resistance(%{permanent: true}, _entity_info), do: {:ok, nil}
+
   defp roll_resistance(definition, entity_info) do
     base_duration = definition.duration || 10_000
 

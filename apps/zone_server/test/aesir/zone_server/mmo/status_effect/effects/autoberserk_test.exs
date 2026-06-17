@@ -57,6 +57,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AutoberserkTest do
     end
   end
 
+  describe "permanent: true" do
+    test "apply_status stores entry with nil expires_at" do
+      unit_id = 10
+
+      :ok = Interpreter.apply_status(:player, unit_id, :sc_autoberserk)
+
+      assert %{expires_at: nil} = StatusStorage.get_status(:player, unit_id, :sc_autoberserk)
+    end
+  end
+
   describe "on_damage/4 — follow-up SC_PROVOKE when below 25% HP" do
     test "requests sc_provoke follow-up when hp_after drops below 25% of max_hp" do
       unit_id = 1

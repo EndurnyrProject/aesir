@@ -9,6 +9,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  defmodule PermanentStatus do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_permanent,
+      properties: [:buff],
+      permanent: true
+  end
+
   defmodule FollowUpStatus do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_followup,
@@ -35,6 +42,26 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
 
       assert :ok = Interpreter.apply_status(:player, target_id, status_id, val1: val1, val2: val2)
       assert StatusStorage.has_status?(:player, target_id, status_id)
+    end
+
+    test "permanent status is stored with nil expires_at" do
+      target_id = 2
+
+      setup_player_mock(target_id)
+      Registry.register_module(PermanentStatus)
+
+      assert :ok = Interpreter.apply_status(:player, target_id, :sc_test_permanent)
+      assert %{expires_at: nil} = StatusStorage.get_status(:player, target_id, :sc_test_permanent)
+    end
+
+    test "non-permanent status without duration gets a default expiry" do
+      target_id = 3
+
+      setup_player_mock(target_id)
+
+      assert :ok = Interpreter.apply_status(:player, target_id, :sc_provoke, val1: 10)
+      assert %{expires_at: expires_at} = StatusStorage.get_status(:player, target_id, :sc_provoke)
+      assert is_integer(expires_at)
     end
 
     test "raises error when player not found" do
