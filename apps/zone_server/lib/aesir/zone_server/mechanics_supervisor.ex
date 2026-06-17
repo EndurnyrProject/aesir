@@ -12,7 +12,8 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
       Aesir.ZoneServer.Map.PartitionedSupervisor,
       Aesir.ZoneServer.Map.MapManager,
       Aesir.ZoneServer.Unit.Player.PlayerSupervisor,
-      Aesir.ZoneServer.Mmo.StatusTickManager
+      Aesir.ZoneServer.Mmo.StatusTickManager,
+      Aesir.ZoneServer.Mmo.SkillUnit.TickManager
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
