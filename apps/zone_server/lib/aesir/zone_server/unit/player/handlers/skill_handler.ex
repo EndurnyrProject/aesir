@@ -21,7 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   @spec handle_use_skill(map(), integer(), pos_integer(), integer()) :: {:noreply, map()}
   def handle_use_skill(
-        %{game_state: game_state, connection_pid: connection_pid} = state,
+        %{game_state: game_state} = state,
         skill_id,
         level,
         target_id

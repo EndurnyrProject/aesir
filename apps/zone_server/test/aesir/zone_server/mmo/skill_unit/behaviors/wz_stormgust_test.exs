@@ -8,7 +8,6 @@ defmodule Aesir.ZoneServer.Mmo.SkillUnit.Behaviors.WzStormgustTest do
   alias Aesir.ZoneServer.Mmo.SkillUnit.Damage
   alias Aesir.ZoneServer.Mmo.SkillUnit.Group
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Unit.SpatialIndex
 
   setup :verify_on_exit!
 
@@ -56,13 +55,8 @@ defmodule Aesir.ZoneServer.Mmo.SkillUnit.Behaviors.WzStormgustTest do
     test "hits each in-footprint mob once with stub damage and knocks it back" do
       test_pid = self()
 
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
-        [{:mob, 2001}, {:mob, 2002}, {:player, @caster_id}]
-      end)
-
-      stub(SpatialIndex, :get_unit_position, fn
-        :mob, 2001 -> {:ok, {151, 150, @map_name}}
-        :mob, 2002 -> {:ok, {149, 150, @map_name}}
+      stub(Combat, :splash_targets, fn @map_name, @center, 2, @caster_id ->
+        [{:mob, 2001}, {:mob, 2002}]
       end)
 
       stub(Damage, :magic_stub, fn _caster, _target, 10, :water -> 123 end)
@@ -86,12 +80,21 @@ defmodule Aesir.ZoneServer.Mmo.SkillUnit.Behaviors.WzStormgustTest do
       refute_received {:hit, :player, @caster_id}
     end
 
+    test "does not hit a dead mob (hp <= 0) inside the footprint" do
+      stub(Combat, :splash_targets, fn @map_name, @center, 2, @caster_id -> [] end)
+
+      reject(&Combat.apply_skill_unit_damage/6)
+      reject(&Combat.knockback/5)
+      reject(&StatusInterpreter.apply_status/4)
+
+      assert {:ok, %Group{state: %{hit_counts: %{}}}} = WzStormgust.on_interval(group(), 0)
+    end
+
     test "does not freeze before the 3rd accumulated hit" do
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+      stub(Combat, :splash_targets, fn @map_name, @center, 2, @caster_id ->
         [{:mob, 2001}]
       end)
 
-      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {151, 150, @map_name}} end)
       stub(Damage, :magic_stub, fn _c, _t, _l, _e -> 10 end)
       stub(Combat, :apply_skill_unit_damage, fn _cid, _ut, _tid, _dmg, _sid, _lvl -> :ok end)
       stub(Combat, :knockback, fn _ut, _tid, _x, _y, _d -> {:ok, {0, 0}} end)
@@ -102,11 +105,10 @@ defmodule Aesir.ZoneServer.Mmo.SkillUnit.Behaviors.WzStormgustTest do
     end
 
     test "freezes on the 3rd accumulated hit and does not reset the counter" do
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+      stub(Combat, :splash_targets, fn @map_name, @center, 2, @caster_id ->
         [{:mob, 2001}]
       end)
 
-      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {151, 150, @map_name}} end)
       stub(Damage, :magic_stub, fn _c, _t, _l, _e -> 10 end)
       stub(Combat, :apply_skill_unit_damage, fn _cid, _ut, _tid, _dmg, _sid, _lvl -> :ok end)
       stub(Combat, :knockback, fn _ut, _tid, _x, _y, _d -> {:ok, {0, 0}} end)
@@ -120,11 +122,10 @@ defmodule Aesir.ZoneServer.Mmo.SkillUnit.Behaviors.WzStormgustTest do
     end
 
     test "does not re-freeze after the counter passes 3" do
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+      stub(Combat, :splash_targets, fn @map_name, @center, 2, @caster_id ->
         [{:mob, 2001}]
       end)
 
-      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {151, 150, @map_name}} end)
       stub(Damage, :magic_stub, fn _c, _t, _l, _e -> 10 end)
       stub(Combat, :apply_skill_unit_damage, fn _cid, _ut, _tid, _dmg, _sid, _lvl -> :ok end)
       stub(Combat, :knockback, fn _ut, _tid, _x, _y, _d -> {:ok, {0, 0}} end)

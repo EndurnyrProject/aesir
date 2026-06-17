@@ -20,10 +20,10 @@ defmodule Aesir.ZoneServer.Mmo.SkillUnit.Behaviors.WzStormgust do
   alias Aesir.ZoneServer.Mmo.SkillUnit.Group
   alias Aesir.ZoneServer.Mmo.SkillUnit.Layout
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @radius 2
   @interval 450
+  # rAthena WZ_STORMGUST Duration1
   @duration 4_500
   @knockback 2
   @freeze_threshold 3
@@ -44,10 +44,10 @@ defmodule Aesir.ZoneServer.Mmo.SkillUnit.Behaviors.WzStormgust do
   end
 
   @impl true
-  def on_interval(%Group{center: {cx, cy}} = group, _now) do
+  def on_interval(%Group{center: {cx, cy} = center, map_name: map_name} = group, _now) do
     updated_counts =
-      group
-      |> footprint_targets()
+      map_name
+      |> Combat.splash_targets(center, @radius, group.caster_id)
       |> Enum.reduce(group.state.hit_counts, fn {unit_type, target_id}, counts ->
         hit(group, unit_type, target_id, cx, cy)
         bump_and_maybe_freeze(counts, unit_type, target_id)
@@ -55,25 +55,6 @@ defmodule Aesir.ZoneServer.Mmo.SkillUnit.Behaviors.WzStormgust do
 
     {:ok, %{group | state: %{group.state | hit_counts: updated_counts}}}
   end
-
-  @spec footprint_targets(Group.t()) :: [{atom(), integer()}]
-  defp footprint_targets(%Group{center: {cx, cy}, map_name: map_name}) do
-    map_name
-    |> SpatialIndex.get_all_units_in_range(cx, cy, @radius * 2)
-    |> Enum.filter(&offensive_target?(&1, map_name, cx, cy))
-  end
-
-  # Mobs only for now; the caster (a player) and allies are excluded by type.
-  defp offensive_target?({:mob, target_id}, map_name, cx, cy) do
-    case SpatialIndex.get_unit_position(:mob, target_id) do
-      {:ok, {tx, ty, ^map_name}} -> in_square?(cx, cy, tx, ty)
-      _ -> false
-    end
-  end
-
-  defp offensive_target?({:player, _id}, _map_name, _cx, _cy), do: false
-
-  defp in_square?(cx, cy, tx, ty), do: abs(tx - cx) <= @radius and abs(ty - cy) <= @radius
 
   @spec hit(Group.t(), atom(), integer(), integer(), integer()) :: :ok
   defp hit(%Group{} = group, unit_type, target_id, cx, cy) do

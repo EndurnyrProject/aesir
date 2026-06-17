@@ -165,8 +165,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   """
   @spec apply_skill_unit_damage(integer(), atom(), integer(), integer(), integer(), integer()) ::
           :ok | {:error, atom()}
-  def apply_skill_unit_damage(caster_id, _unit_type, target_id, damage, skill_id, skill_level) do
-    with {:ok, {tx, ty, map_name}} <- SpatialIndex.get_unit_position(:mob, target_id) do
+  def apply_skill_unit_damage(caster_id, unit_type, target_id, damage, skill_id, skill_level) do
+    with {:ok, {tx, ty, map_name}} <- SpatialIndex.get_unit_position(unit_type, target_id) do
       packet = %ZcNotifySkill{
         skill_id: skill_id,
         skill_level: skill_level,
@@ -238,18 +238,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   """
   @spec execute_splash_attack(struct(), {integer(), integer()}, non_neg_integer(), keyword()) ::
           [integer()]
-  def execute_splash_attack(caster_state, {x, y}, radius, opts) do
+  def execute_splash_attack(caster_state, center, radius, opts) do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     skill_id = Keyword.fetch!(opts, :skill_id)
     skill_level = Keyword.fetch!(opts, :skill_level)
     calc_opts = Keyword.take(opts, [:skill_ratio, :skip_crit])
 
     attacker.map_name
-    |> SpatialIndex.get_all_units_in_range(x, y, radius * 2)
-    |> Enum.filter(&splash_target?/1)
+    |> splash_targets(center, radius, attacker.unit_id)
     |> Enum.flat_map(fn {_unit_type, target_id} ->
       with {:ok, target_pid, target_state, _type} <- get_target_unit_state(target_id),
-           true <- splash_hit?(target_state, x, y, radius),
            target <- target_state.__struct__.to_combatant(target_state),
            :ok <-
              apply_skill_damage(attacker, target_pid, target, skill_id, skill_level, calc_opts) do
@@ -258,6 +256,35 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
         _ -> []
       end
     end)
+  end
+
+  @doc """
+  Selects the valid offensive targets for a center+radius splash/footprint.
+
+  Returns the `{unit_type, unit_id}` units that are in the Chebyshev square of
+  `radius` cells around `{cx, cy}`, are offensive (mobs only for now, excluding
+  the caster and allies), and are alive (`hp > 0`). Shared by `execute_splash_attack`
+  and ground skill-unit behaviours (e.g. Storm Gust) so the target filter — including
+  the dead-mob guard — lives in one place.
+
+  The spatial index filters by Manhattan distance (a diamond); we query a Manhattan
+  radius of `2 * radius` so the full Chebyshev square is covered, then post-filter.
+  """
+  @spec splash_targets(String.t(), {integer(), integer()}, non_neg_integer(), integer()) ::
+          [{atom(), integer()}]
+  def splash_targets(map_name, {cx, cy}, radius, _caster_id) do
+    map_name
+    |> SpatialIndex.get_all_units_in_range(cx, cy, radius * 2)
+    |> Enum.filter(fn {_unit_type, target_id} = unit ->
+      splash_target?(unit) and offensive_target_in_square?(target_id, cx, cy, radius)
+    end)
+  end
+
+  defp offensive_target_in_square?(target_id, cx, cy, radius) do
+    case get_target_unit_state(target_id) do
+      {:ok, _pid, target_state, _type} -> splash_hit?(target_state, cx, cy, radius)
+      _ -> false
+    end
   end
 
   # Mobs only for now; the caster (a player) is excluded by type, and PvP splash
