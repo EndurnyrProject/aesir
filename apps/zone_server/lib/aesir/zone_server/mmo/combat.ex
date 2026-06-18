@@ -207,6 +207,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     - `:skill_id` / `:skill_level` - identify the skill for the damage packet
     - `:skill_ratio` - percent of base attack the skill deals
     - `:skip_crit` - skip the critical roll (most skills don't crit)
+    - `:bonus_atk` - flat ATK added after the skill ratio, before defense
+    - `:fixed_damage` - deal exactly this value, bypassing weapon/defense/flee
 
   ## Returns
     - :ok if the skill connected
@@ -217,7 +219,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     skill_id = Keyword.fetch!(opts, :skill_id)
     skill_level = Keyword.fetch!(opts, :skill_level)
-    calc_opts = Keyword.take(opts, [:skill_ratio, :skip_crit])
+    calc_opts = Keyword.take(opts, [:skill_ratio, :skip_crit, :bonus_atk, :fixed_damage])
 
     # TODO: skills always connect here; skill miss/flee isn't modeled yet.
     with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),

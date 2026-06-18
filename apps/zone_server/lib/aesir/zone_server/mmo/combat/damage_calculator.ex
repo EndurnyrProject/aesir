@@ -92,6 +92,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       A Bash at level 10 passes `400` for 400% weapon damage.
     - `:skip_crit` - when `true`, never rolls a critical (skills don't crit
       unless flagged). Default `false`.
+    - `:bonus_atk` - flat ATK added after the skill-ratio step and before the
+      modifier/defense pipeline (e.g. Envenom's `+15×level` mastery). Default `0`.
+    - `:fixed_damage` - when set to an integer, short-circuits the entire
+      pipeline and returns that flat value, bypassing base attack, skill ratio,
+      modifiers, defense, criticals, and any flee/hit consideration (e.g. Stone
+      Fling's fixed `50`). Default `nil`.
 
   The skill ratio is applied to base attack before the size/race/element/status
   modifier pipeline. todo: faithful-enough Renewal ordering; card-vs-ratio
@@ -100,11 +106,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   @spec calculate_damage(combatant(), combatant(), keyword()) ::
           {:ok, damage_result()} | {:error, atom()}
   def calculate_damage(attacker, defender, opts) do
+    case Keyword.get(opts, :fixed_damage) do
+      nil -> calculate_pipeline_damage(attacker, defender, opts)
+      fixed_damage -> {:ok, %{damage: fixed_damage, is_critical: false}}
+    end
+  end
+
+  defp calculate_pipeline_damage(attacker, defender, opts) do
     skill_ratio = Keyword.get(opts, :skill_ratio, 100)
     skip_crit = Keyword.get(opts, :skip_crit, false)
+    bonus_atk = Keyword.get(opts, :bonus_atk, 0)
 
     with {:ok, base_atk} <- calculate_base_attack(attacker),
-         skilled_atk = div(base_atk * skill_ratio, 100),
+         skilled_atk = div(base_atk * skill_ratio, 100) + bonus_atk,
          {:ok, total_atk} <- apply_modifier_pipeline(skilled_atk, attacker, defender),
          {:ok, final_damage} <- apply_defense_formula(total_atk, defender) do
       finalize_damage(final_damage, attacker, skip_crit)

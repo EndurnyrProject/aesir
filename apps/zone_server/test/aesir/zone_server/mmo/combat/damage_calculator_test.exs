@@ -504,6 +504,46 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
                  skip_crit: true
                )
     end
+
+    test "bonus_atk adds a flat amount of pre-defense damage" do
+      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
+        %{damage: damage, is_critical: false}
+      end)
+
+      # def 0 defender: defense formula is a no-op, so a flat bonus_atk flows
+      # straight through to the final damage.
+      {attacker, defender} = CombatTestHelper.create_combat_scenario([], def: 0)
+
+      assert {:ok, %{damage: baseline}} =
+               DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
+
+      assert {:ok, %{damage: boosted}} =
+               DamageCalculator.calculate_damage(attacker, defender,
+                 bonus_atk: 25,
+                 skip_crit: true
+               )
+
+      assert boosted == baseline + 25
+    end
+
+    test "fixed_damage returns exactly that value regardless of stats" do
+      stub(CriticalHits, :calculate_critical_hit, fn _, _ ->
+        flunk("fixed_damage must bypass the critical roll")
+      end)
+
+      attacker = CombatTestHelper.create_player_combatant()
+
+      for def_value <- [0, 50, 500] do
+        defender = CombatTestHelper.create_mob_combatant(def: def_value)
+
+        assert {:ok, %{damage: 50, is_critical: false}} =
+                 DamageCalculator.calculate_damage(attacker, defender,
+                   fixed_damage: 50,
+                   skill_ratio: 400,
+                   skip_crit: false
+                 )
+      end
+    end
   end
 
   describe "mob status modifier lookup key" do
