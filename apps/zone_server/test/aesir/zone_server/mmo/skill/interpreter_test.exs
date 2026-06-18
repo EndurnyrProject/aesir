@@ -63,7 +63,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
              Interpreter.cast(game_state(1, %{29 => 1}), 29, 1, :self)
   end
 
-  test "targeting another unit returns :invalid_target" do
+  test "targeting another unit on a self-only skill returns :invalid_target" do
+    stub(Catalog, :by_id, fn 29 ->
+      {:ok,
+       %Definition{
+         id: 29,
+         name: :al_incagi,
+         display_name: "Self Test",
+         max_level: 10,
+         target_type: :self,
+         range: 9,
+         sp_cost: List.duplicate(9, 10)
+       }}
+    end)
+
     assert {:error, :invalid_target} =
              Interpreter.cast(game_state(100, %{29 => 1}), 29, 1, {:unit, 2000})
   end
@@ -148,6 +161,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
     gs = game_state(100, %{29 => 1})
     assert {:ok, _} = Interpreter.cast(gs, 29, 1, :self)
+  end
+
+  defp ally_definition(range) do
+    %Definition{
+      id: 6,
+      name: :sm_provoke,
+      display_name: "Ally Test",
+      max_level: 10,
+      target_type: :target_ally,
+      damage_type: :no_damage,
+      range: range,
+      sp_cost: List.duplicate(9, 10)
+    }
+  end
+
+  test "ally skill cast on another unit proceeds to behavior" do
+    stub(Catalog, :by_id, fn 6 -> {:ok, ally_definition(9)} end)
+    stub(SpatialIndex, :get_unit_position, fn :player, 9999 -> {:ok, {14, 10, "prontera"}} end)
+    stub(StatusInterpreter, :apply_status, fn _type, _id, _status, _params -> :ok end)
+
+    gs = game_state(100, %{6 => 1})
+    assert {:ok, _} = Interpreter.cast(gs, 6, 1, {:unit, 9999})
   end
 
   defp ground_definition(range) do

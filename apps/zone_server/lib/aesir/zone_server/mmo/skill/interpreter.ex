@@ -70,12 +70,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  # Enemy skills target another unit; support skills are self-cast only for now.
-  # TODO: ally targeting still comes next.
+  # Enemy skills reject self-target; ally skills accept any friendly unit (self included).
   defp check_target(%{character_id: caster_id}, {:unit, caster_id}, %{target_type: :target_enemy}),
        do: {:error, :invalid_target}
 
   defp check_target(_game_state, {:unit, _id}, %{target_type: :target_enemy}), do: :ok
+
+  defp check_target(_game_state, {:unit, _id}, %{target_type: :target_ally}), do: :ok
 
   defp check_target(_game_state, {:ground, _x, _y}, %{target_type: :ground}), do: :ok
 
