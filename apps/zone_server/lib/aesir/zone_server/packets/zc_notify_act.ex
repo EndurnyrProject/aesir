@@ -187,6 +187,40 @@ defmodule Aesir.ZoneServer.Packets.ZcNotifyAct do
   end
 
   @doc """
+  Creates a ZC_NOTIFY_ACT packet for a multi-hit attack (e.g. Double Attack).
+
+  `damage` is the combined damage across all `hits`; the client divides it by
+  `div` to display each individual hit, matching rAthena's `DAMAGE_DIV_FIX`.
+
+  ## Parameters
+  - src_id: Attacker's ID
+  - target_id: Target's ID
+  - damage: Combined damage across all hits
+  - hits: Number of hits (the packet `div`)
+  - opts: Optional parameters (src_speed, dmg_speed, server_tick, damage2)
+
+  ## Returns
+  ZcNotifyAct struct configured for a multi-hit attack
+  """
+  @spec multi_hit_attack(integer(), integer(), integer(), pos_integer(), keyword()) :: t()
+  def multi_hit_attack(src_id, target_id, damage, hits, opts \\ [])
+      when is_integer(src_id) and is_integer(target_id) and is_integer(damage) and
+             is_integer(hits) do
+    %__MODULE__{
+      src_id: src_id,
+      target_id: target_id,
+      server_tick: Keyword.get(opts, :server_tick),
+      src_speed: Keyword.get(opts, :src_speed, 1000),
+      dmg_speed: Keyword.get(opts, :dmg_speed, 500),
+      damage: damage,
+      is_sp_damage: Keyword.get(opts, :is_sp_damage, 0),
+      div: hits,
+      type: @attack_type_multi_hit,
+      damage2: Keyword.get(opts, :damage2, 0)
+    }
+  end
+
+  @doc """
   Creates a ZC_NOTIFY_ACT packet for a missed attack.
 
   ## Parameters  

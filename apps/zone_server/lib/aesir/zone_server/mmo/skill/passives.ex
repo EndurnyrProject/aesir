@@ -61,6 +61,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   end
 
   @doc """
+  Folds the on-normal-attack procs of every learned passive into one map.
+
+  Currently only `:multi_hit` is aggregated, keeping the maximum across passives.
+  Returns `%{}` when nothing procs.
+  """
+  @spec attack_procs(PlayerState.t() | PlayerStats.t()) :: %{
+          optional(:multi_hit) => pos_integer()
+        }
+  def attack_procs(%PlayerState{stats: stats}), do: attack_procs(stats)
+
+  def attack_procs(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
+    |> learned_passives()
+    |> Enum.reduce(%{}, fn {module, level}, acc ->
+      merge_attack_proc(acc, module.attack_proc(level, ctx))
+    end)
+  end
+
+  @doc """
   Merges the regen contributions of every learned passive.
 
   Numeric keys are summed; `allow_while_moving` is OR-ed. Always returns all
@@ -108,6 +129,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
         rider -> [rider]
       end
     end)
+  end
+
+  @spec merge_attack_proc(map(), map()) :: map()
+  defp merge_attack_proc(acc, proc) do
+    Map.merge(acc, proc, fn :multi_hit, a, b -> max(a, b) end)
   end
 
   @spec learned_passives(PlayerStats.t()) :: [{module(), pos_integer()}]

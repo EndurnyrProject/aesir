@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
+  alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Packets.ZcBlownback
   alias Aesir.ZoneServer.Packets.ZcNotifySkill
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -85,11 +86,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
             target_combatant,
             target_pid,
             target_type,
-            target_id
+            target_id,
+            attack_hits(player_state)
           )
       end
 
       :ok
+    end
+  end
+
+  # The number of basic-attack hits to deliver, driven by passive procs (e.g.
+  # Double Attack's `%{multi_hit: 2}`). Defaults to a single hit.
+  defp attack_hits(player_state) do
+    case Passives.attack_procs(player_state) do
+      %{multi_hit: n} when n > 1 -> n
+      _ -> 1
     end
   end
 
@@ -99,18 +110,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
          target_combatant,
          target_pid,
          target_type,
-         target_id
+         target_id,
+         hits
        ) do
     damage = damage_result.damage
     is_critical = damage_result.is_critical
 
     Logger.debug(
-      "Combat: Player #{attacker_combatant.unit_id} attacking #{target_type} #{target_id} for #{damage} damage#{if is_critical, do: " (CRITICAL)", else: ""}"
+      "Combat: Player #{attacker_combatant.unit_id} attacking #{target_type} #{target_id} for #{damage} damage#{if hits > 1, do: " x#{hits}", else: ""}#{if is_critical, do: " (CRITICAL)", else: ""}"
     )
 
     case target_type do
       :mob ->
-        apply_unit_damage(:mob, target_pid, damage, attacker_combatant.unit_id)
+        Enum.each(1..hits//1, fn _ ->
+          apply_unit_damage(:mob, target_pid, damage, attacker_combatant.unit_id)
+        end)
+
         :ok
 
       :player ->
@@ -119,7 +134,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     end
 
     attack_packet =
-      PacketFactory.build_attack_packet(attacker_combatant, target_combatant, damage_result)
+      PacketFactory.build_attack_packet(
+        attacker_combatant,
+        target_combatant,
+        damage_result,
+        hits
+      )
 
     broadcast_to_nearby_players(target_combatant, attack_packet)
   end

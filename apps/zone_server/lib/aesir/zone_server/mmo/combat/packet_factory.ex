@@ -57,8 +57,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
   ## Returns
     - ZcNotifyAct packet ready for broadcasting
   """
-  @spec build_attack_packet(Combatant.t(), Combatant.t(), damage_result()) :: struct()
-  def build_attack_packet(attacker, defender, damage_result) do
+  @spec build_attack_packet(Combatant.t(), Combatant.t(), damage_result(), pos_integer()) ::
+          struct()
+  def build_attack_packet(attacker, defender, damage_result, hits \\ 1)
+
+  def build_attack_packet(attacker, defender, damage_result, 1) do
     attacker_id = attacker.gid
     defender_id = defender.gid
     aspd = get_aspd_from_combatant(attacker)
@@ -71,6 +74,30 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
       attacker_id,
       defender_id,
       damage_result,
+      server_tick: ServerTick.now(),
+      src_speed: aspd * 10,
+      dmg_speed: 500
+    )
+  end
+
+  # Multi-hit attack (e.g. Double Attack): `damage_result.damage` is the per-hit
+  # value; the packet carries the combined total and `div = hits`, so the client
+  # divides it back into the individual hit numbers (rAthena DAMAGE_DIV_FIX).
+  def build_attack_packet(attacker, defender, damage_result, hits) when hits > 1 do
+    attacker_id = attacker.gid
+    defender_id = defender.gid
+    aspd = get_aspd_from_combatant(attacker)
+    total_damage = damage_result.damage * hits
+
+    Logger.debug(
+      "Combat packet: #{hits}-hit attack from #{attacker_id} to #{defender_id} for #{total_damage} damage"
+    )
+
+    ZcNotifyAct.multi_hit_attack(
+      attacker_id,
+      defender_id,
+      total_damage,
+      hits,
       server_tick: ServerTick.now(),
       src_speed: aspd * 10,
       dmg_speed: 500

@@ -28,6 +28,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
   @doc "Returns a flat FLEE bonus contributed by this passive at the given level."
   @callback flee_bonus(level :: pos_integer(), ctx()) :: integer()
 
+  @doc """
+  Returns the procs this passive triggers on a normal attack at the given level.
+
+  Aggregated by `Skill.Passives.attack_procs/1` and queried in the normal-attack
+  path. A `:multi_hit` value of `n` delivers the basic attack as `n` hits.
+  """
+  @callback attack_proc(level :: pos_integer(), ctx()) :: %{optional(:multi_hit) => pos_integer()}
+
   @doc "Returns a map of regen contributions from this passive at the given level."
   @callback regen_contribution(level :: pos_integer(), ctx()) ::
               %{
@@ -47,5 +55,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
               ctx()
             ) :: :none | {:apply_status, atom(), keyword()}
 
-  @optional_callbacks atk_bonus: 2, flee_bonus: 2, regen_contribution: 2, skill_rider: 4
+  @optional_callbacks atk_bonus: 2,
+                      flee_bonus: 2,
+                      attack_proc: 2,
+                      regen_contribution: 2,
+                      skill_rider: 4
 end

@@ -29,6 +29,40 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
     def flee_bonus(level, _ctx), do: 4 * level
   end
 
+  defmodule MultiHitPassive do
+    @moduledoc false
+    use Aesir.ZoneServer.Mmo.Skill,
+      id: 9_900_002,
+      name: :test_multi_hit_passive,
+      display_name: "Test Multi Hit Passive",
+      max_level: 10,
+      target_type: :passive
+
+    alias Aesir.ZoneServer.Mmo.Skill.Passive
+
+    @behaviour Passive
+
+    @impl Passive
+    def attack_proc(_level, _ctx), do: %{multi_hit: 2}
+  end
+
+  defmodule HigherMultiHitPassive do
+    @moduledoc false
+    use Aesir.ZoneServer.Mmo.Skill,
+      id: 9_900_003,
+      name: :test_higher_multi_hit_passive,
+      display_name: "Test Higher Multi Hit Passive",
+      max_level: 10,
+      target_type: :passive
+
+    alias Aesir.ZoneServer.Mmo.Skill.Passive
+
+    @behaviour Passive
+
+    @impl Passive
+    def attack_proc(_level, _ctx), do: %{multi_hit: 3}
+  end
+
   defp build_player(learned_skills, weapon_atom) do
     stats = %Stats{
       base_stats: %BaseStats{str: 1, agi: 1, vit: 10, int: 10, dex: 1, luk: 1},
@@ -69,6 +103,38 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
       player = build_player(%{9_900_001 => 5}, :one_handed_sword)
 
       assert Passives.flee_bonus(player) == 20
+    end
+  end
+
+  describe "attack_procs/1" do
+    test "returns an empty map when no passive procs on attack" do
+      player = build_player(%{2 => 5}, :one_handed_sword)
+      assert Passives.attack_procs(player) == %{}
+    end
+
+    test "merges :multi_hit from a learned proc passive" do
+      stub(Catalog, :by_id, fn 9_900_002 -> {:ok, MultiHitPassive.definition()} end)
+      stub(Catalog, :passive_module_for, fn :test_multi_hit_passive -> {:ok, MultiHitPassive} end)
+
+      player = build_player(%{9_900_002 => 5}, :one_handed_sword)
+
+      assert Passives.attack_procs(player) == %{multi_hit: 2}
+    end
+
+    test "keeps the max :multi_hit across learned proc passives" do
+      stub(Catalog, :by_id, fn
+        9_900_002 -> {:ok, MultiHitPassive.definition()}
+        9_900_003 -> {:ok, HigherMultiHitPassive.definition()}
+      end)
+
+      stub(Catalog, :passive_module_for, fn
+        :test_multi_hit_passive -> {:ok, MultiHitPassive}
+        :test_higher_multi_hit_passive -> {:ok, HigherMultiHitPassive}
+      end)
+
+      player = build_player(%{9_900_002 => 5, 9_900_003 => 5}, :one_handed_sword)
+
+      assert Passives.attack_procs(player) == %{multi_hit: 3}
     end
   end
 
