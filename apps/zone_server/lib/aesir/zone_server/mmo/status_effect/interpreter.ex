@@ -53,11 +53,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
       definition ->
         entity_info = get_entity_info(unit_type, unit_id)
+        duration_override = Keyword.get(status_params, :duration)
 
         with :ok <- check_immunity(entity_info, definition),
              :ok <- check_prevented(unit_type, unit_id, definition),
              :ok <- check_conflicts(unit_type, unit_id, definition),
-             {:ok, duration} <- roll_resistance(definition, entity_info) do
+             {:ok, duration} <- roll_resistance(definition, entity_info, duration_override) do
           end_replaced_statuses(unit_type, unit_id, definition)
           create_and_store(unit_type, unit_id, status_id, status_params, definition, duration)
         end
@@ -217,10 +218,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     Enum.any?(status_ids, &StatusStorage.has_status?(unit_type, unit_id, &1))
   end
 
-  defp roll_resistance(%{permanent: true}, _entity_info), do: {:ok, nil}
+  defp roll_resistance(%{permanent: true}, _entity_info, _duration_override), do: {:ok, nil}
 
-  defp roll_resistance(definition, entity_info) do
-    base_duration = definition.duration || 10_000
+  defp roll_resistance(definition, entity_info, duration_override) do
+    base_duration = duration_override || definition.duration || 10_000
 
     {success_rate, adjusted_duration} =
       if Resistance.should_apply_resistance?(definition) do

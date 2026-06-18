@@ -74,6 +74,55 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     end
   end
 
+  describe "apply_status/4 explicit duration" do
+    test "honors an explicit :duration param as the stored expiry" do
+      target_id = 10
+
+      setup_player_mock(target_id)
+
+      override = 30_000
+      before_ms = System.monotonic_time(:millisecond)
+      assert :ok = Interpreter.apply_status(:player, target_id, :sc_hiding, duration: override)
+      after_ms = System.monotonic_time(:millisecond)
+
+      assert %{expires_at: expires_at} =
+               StatusStorage.get_status(:player, target_id, :sc_hiding)
+
+      assert expires_at >= before_ms + override
+      assert expires_at <= after_ms + override
+    end
+
+    test "falls back to the definition default when :duration is omitted" do
+      target_id = 11
+
+      setup_player_mock(target_id)
+
+      default = 10_000
+      before_ms = System.monotonic_time(:millisecond)
+      assert :ok = Interpreter.apply_status(:player, target_id, :sc_hiding)
+      after_ms = System.monotonic_time(:millisecond)
+
+      assert %{expires_at: expires_at} =
+               StatusStorage.get_status(:player, target_id, :sc_hiding)
+
+      assert expires_at >= before_ms + default
+      assert expires_at <= after_ms + default
+    end
+
+    test "permanent status ignores a passed :duration" do
+      target_id = 12
+
+      setup_player_mock(target_id)
+      Registry.register_module(PermanentStatus)
+
+      assert :ok =
+               Interpreter.apply_status(:player, target_id, :sc_test_permanent, duration: 30_000)
+
+      assert %{expires_at: nil} =
+               StatusStorage.get_status(:player, target_id, :sc_test_permanent)
+    end
+  end
+
   describe "remove_status/2" do
     test "removes a status from a target" do
       target_id = 1
