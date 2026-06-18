@@ -78,6 +78,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   @doc """
+  Marks the mob as having been stolen from.
+  """
+  @spec mark_stolen(pid()) :: :ok
+  def mark_stolen(pid) do
+    GenServer.cast(pid, {:mark_stolen})
+  end
+
+  @doc """
   Stops the mob session.
   """
   @spec stop(pid()) :: :ok
@@ -187,6 +195,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
       |> MobState.set_target(target_id)
       |> MobState.set_ai_state(if target_id, do: :combat, else: :idle)
 
+    {:noreply, updated_state}
+  end
+
+  @impl GenServer
+  def handle_cast({:mark_stolen}, state) do
+    updated_state = MobState.mark_stolen(state)
     {:noreply, updated_state}
   end
 

@@ -444,6 +444,18 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
     end
   end
 
+  describe "mob stolen_from flag" do
+    test "MobSession.mark_stolen/1 updates the stolen_from flag" do
+      mob = start_mob_session(position: {151, 150})
+
+      assert get_mob_state(mob.pid).stolen_from == false
+
+      assert :ok = MobSession.mark_stolen(mob.pid)
+
+      assert get_mob_state(mob.pid).stolen_from == true
+    end
+  end
+
   describe "mob death animation" do
     test "mob death sends correct vanish packet with death animation type" do
       # Setup player with high strength to kill mob easily

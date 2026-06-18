@@ -66,6 +66,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
 
     # Status effects
     field :status_effects, map(), default: %{}
+
+    # Skill interaction flags
+    field :stolen_from, boolean(), default: false
   end
 
   @doc """
@@ -291,6 +294,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   @spec set_target(t(), integer() | nil) :: t()
   def set_target(%__MODULE__{} = state, target_id) do
     %{state | target_id: target_id}
+  end
+
+  @doc """
+  Marks the mob as having been stolen from.
+  """
+  @spec mark_stolen(t()) :: t()
+  def mark_stolen(%__MODULE__{} = state) do
+    %{state | stolen_from: true}
   end
 
   @doc """
