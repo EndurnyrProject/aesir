@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
   use ExUnit.Case, async: true
+  use Mimic
 
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -9,6 +11,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.Stats.BaseStats
   alias Aesir.ZoneServer.Unit.Stats.DerivedStats
+
+  defmodule FleePassive do
+    @moduledoc false
+    use Aesir.ZoneServer.Mmo.Skill,
+      id: 9_900_001,
+      name: :test_flee_passive,
+      display_name: "Test Flee Passive",
+      max_level: 10,
+      target_type: :passive
+
+    alias Aesir.ZoneServer.Mmo.Skill.Passive
+
+    @behaviour Passive
+
+    @impl Passive
+    def flee_bonus(level, _ctx), do: 4 * level
+  end
 
   defp build_player(learned_skills, weapon_atom) do
     stats = %Stats{
@@ -34,6 +53,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
     test "SM_SWORD level 5 with a bow grants 0 ATK" do
       player = build_player(%{2 => 5}, :bow)
       assert Passives.atk_bonus(player) == 0
+    end
+  end
+
+  describe "flee_bonus/1" do
+    test "returns 0 when no flee passive is learned" do
+      player = build_player(%{2 => 5}, :one_handed_sword)
+      assert Passives.flee_bonus(player) == 0
+    end
+
+    test "sums the flee bonus contributed by a learned flee passive" do
+      stub(Catalog, :by_id, fn 9_900_001 -> {:ok, FleePassive.definition()} end)
+      stub(Catalog, :passive_module_for, fn :test_flee_passive -> {:ok, FleePassive} end)
+
+      player = build_player(%{9_900_001 => 5}, :one_handed_sword)
+
+      assert Passives.flee_bonus(player) == 20
     end
   end
 

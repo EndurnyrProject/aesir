@@ -132,6 +132,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill do
   defp passive_defaults(mod, true) do
     [
       default(mod, {:atk_bonus, 2}, Passive, quote(do: def(atk_bonus(_level, _ctx), do: 0))),
+      default(mod, {:flee_bonus, 2}, Passive, quote(do: def(flee_bonus(_level, _ctx), do: 0))),
       default(
         mod,
         {:regen_contribution, 2},

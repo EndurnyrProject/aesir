@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculations do
 
   @behaviour Aesir.ZoneServer.Unit.CombatCalculations
 
+  alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Unit.Player.Stats
 
   @typedoc "Player stats structure used for calculations"
@@ -55,8 +56,8 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculations do
     # Base flee calculation
     base_flee = trunc(effective_agi + effective_luk / 5 + base_level / 4)
 
-    # Add modifiers from status effects and equipment
-    base_flee + Stats.get_status_modifier(stats, :flee)
+    # Add modifiers from status effects, equipment, and passive skills
+    base_flee + Stats.get_status_modifier(stats, :flee) + Passives.flee_bonus(stats)
   end
 
   @doc """

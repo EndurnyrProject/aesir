@@ -45,6 +45,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   end
 
   @doc """
+  Sums the FLEE bonus contributed by every learned passive for the player.
+  """
+  @spec flee_bonus(PlayerState.t() | PlayerStats.t()) :: integer()
+  def flee_bonus(%PlayerState{stats: stats}), do: flee_bonus(stats)
+
+  def flee_bonus(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
+    |> learned_passives()
+    |> Enum.reduce(0, fn {module, level}, acc ->
+      acc + module.flee_bonus(level, ctx)
+    end)
+  end
+
+  @doc """
   Merges the regen contributions of every learned passive.
 
   Numeric keys are summed; `allow_while_moving` is OR-ed. Always returns all

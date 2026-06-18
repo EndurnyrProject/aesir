@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Unit.Player.CombatCalculations
   alias Aesir.ZoneServer.Unit.Player.Stats
 
@@ -47,6 +48,8 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
       # Default ASPD value
       150
     end)
+
+    stub(Passives, :flee_bonus, fn _stats -> 0 end)
 
     test_stats
   end
@@ -179,6 +182,21 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
 
       # 99 + 70/5 + 85/4 = 99 + 14 + 21 = 134
       assert flee == 134
+    end
+
+    test "includes the passive flee bonus term" do
+      stats =
+        create_test_stats(%{
+          base_stats: %{agi: 90, luk: 50},
+          progression: %{base_level: 60}
+        })
+
+      stub(Passives, :flee_bonus, fn _stats -> 20 end)
+
+      flee = CombatCalculations.calculate_flee(stats)
+
+      # Base 115 + 20 passive bonus = 135
+      assert flee == 135
     end
   end
 

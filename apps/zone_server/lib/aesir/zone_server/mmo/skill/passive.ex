@@ -25,6 +25,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
   @doc "Returns a flat ATK bonus contributed by this passive at the given level."
   @callback atk_bonus(level :: pos_integer(), ctx()) :: integer()
 
+  @doc "Returns a flat FLEE bonus contributed by this passive at the given level."
+  @callback flee_bonus(level :: pos_integer(), ctx()) :: integer()
+
   @doc "Returns a map of regen contributions from this passive at the given level."
   @callback regen_contribution(level :: pos_integer(), ctx()) ::
               %{
@@ -44,5 +47,5 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
               ctx()
             ) :: :none | {:apply_status, atom(), keyword()}
 
-  @optional_callbacks atk_bonus: 2, regen_contribution: 2, skill_rider: 4
+  @optional_callbacks atk_bonus: 2, flee_bonus: 2, regen_contribution: 2, skill_rider: 4
 end
