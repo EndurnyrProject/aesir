@@ -243,6 +243,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       assert combatant.weapon.type == :fist
       assert combatant.attack_range == 1
     end
+
+    test "carries matk, mdef and soft_mdef from the player's combat stats", %{state: state} do
+      combatant = PlayerState.to_combatant(state)
+
+      assert combatant.combat_stats.matk == state.stats.combat_stats.matk
+      assert combatant.combat_stats.mdef == state.stats.combat_stats.mdef
+      assert combatant.combat_stats.soft_mdef == state.stats.combat_stats.soft_mdef
+    end
   end
 
   describe "indexed inventory" do

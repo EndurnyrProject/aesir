@@ -355,6 +355,34 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculationsTest do
     end
   end
 
+  describe "calculate_magic_attack/1" do
+    test "returns the mob's matk value directly" do
+      mob = create_test_mob(%{matk: 95})
+
+      assert CombatCalculations.calculate_magic_attack(mob) == 95
+    end
+  end
+
+  describe "calculate_magic_defense/1" do
+    test "returns the mob's mdef value directly (hard MDEF)" do
+      mob = create_test_mob(%{mdef: 22})
+
+      assert CombatCalculations.calculate_magic_defense(mob) == 22
+    end
+  end
+
+  describe "calculate_soft_mdef/1" do
+    test "uses renewal non-PC formula: div(int + level, 4)" do
+      mob =
+        create_test_mob(%{
+          level: 50,
+          stats: %{str: 1, agi: 1, vit: 1, int: 30, dex: 1, luk: 1}
+        })
+
+      assert CombatCalculations.calculate_soft_mdef(mob) == div(30 + 50, 4)
+    end
+  end
+
   describe "integration with behavior" do
     test "implements all required CombatCalculations callbacks" do
       functions = CombatCalculations.__info__(:functions)

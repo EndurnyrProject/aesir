@@ -91,4 +91,37 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculations do
   def calculate_defense(%MobDefinition{} = mob_data) do
     mob_data.def
   end
+
+  @doc """
+  Calculates mob magic attack stat.
+
+  ## Formula
+  matk = matk (direct from mob definition)
+  """
+  @spec calculate_magic_attack(mob_data()) :: integer()
+  def calculate_magic_attack(%MobDefinition{} = mob_data) do
+    mob_data.matk
+  end
+
+  @doc """
+  Calculates mob magic defense stat (hard MDEF).
+
+  ## Formula
+  mdef = mdef (direct from mob definition)
+  """
+  @spec calculate_magic_defense(mob_data()) :: integer()
+  def calculate_magic_defense(%MobDefinition{} = mob_data) do
+    mob_data.mdef
+  end
+
+  @doc """
+  Calculates mob soft MDEF using the renewal non-PC formula.
+
+  ## Formula
+  soft_mdef = (int + level) / 4
+  """
+  @spec calculate_soft_mdef(mob_data()) :: integer()
+  def calculate_soft_mdef(%MobDefinition{} = mob_data) do
+    div(mob_data.stats.int + mob_data.level, 4)
+  end
 end

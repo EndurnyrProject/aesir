@@ -33,7 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
 
   Fields are organized into logical groups:
   - Identity: unit_id, unit_type
-  - Stats: base_stats, combat_stats, progression
+  - Stats: base_stats, combat_stats (physical atk/def plus magic matk/mdef/soft_mdef), progression
   - Combat modifiers: element, race, size, weapon
   - Positioning: position, map_name
   """
@@ -55,14 +55,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
           },
           enforce: true
 
-    # Combat-derived stats
+    # Combat-derived stats (physical: atk/def, magic: matk/mdef/soft_mdef)
     field :combat_stats,
           %{
             atk: integer(),
             def: integer(),
             hit: integer(),
             flee: integer(),
-            perfect_dodge: integer()
+            perfect_dodge: integer(),
+            matk: integer(),
+            mdef: integer(),
+            soft_mdef: integer()
           },
           enforce: true
 

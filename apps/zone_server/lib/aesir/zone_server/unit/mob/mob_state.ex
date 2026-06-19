@@ -208,7 +208,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
         flee: MobCombatCalc.calculate_flee(mob_data),
         perfect_dodge: MobCombatCalc.calculate_perfect_dodge(mob_data),
         def: MobCombatCalc.calculate_defense(mob_data),
-        atk: MobCombatCalc.calculate_base_attack(mob_data)
+        atk: MobCombatCalc.calculate_base_attack(mob_data),
+        matk: MobCombatCalc.calculate_magic_attack(mob_data),
+        mdef: MobCombatCalc.calculate_magic_defense(mob_data),
+        soft_mdef: MobCombatCalc.calculate_soft_mdef(mob_data)
       },
       progression: %{
         base_level: mob_data.level,

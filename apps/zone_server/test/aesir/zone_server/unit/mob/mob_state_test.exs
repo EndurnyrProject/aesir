@@ -55,4 +55,33 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
       assert updated.stolen_from == true
     end
   end
+
+  describe "to_combatant/1 magic stats" do
+    test "carries matk, mdef and soft_mdef in combat_stats" do
+      state = build_mob_state()
+
+      combatant = MobState.to_combatant(state)
+
+      assert combatant.combat_stats.matk == 60
+      assert combatant.combat_stats.mdef == 10
+      assert combatant.combat_stats.soft_mdef == div(20 + 25, 4)
+    end
+
+    test "soft_mdef uses renewal non-PC formula div(int + level, 4)" do
+      base = build_mob_state()
+      %MobDefinition{} = base_mob_data = base.mob_data
+
+      mob_data = %MobDefinition{
+        base_mob_data
+        | level: 50,
+          stats: %{base_mob_data.stats | int: 30}
+      }
+
+      state = %MobState{base | mob_data: mob_data}
+
+      combatant = MobState.to_combatant(state)
+
+      assert combatant.combat_stats.soft_mdef == 20
+    end
+  end
 end
