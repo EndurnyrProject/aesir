@@ -22,6 +22,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   @typedoc "Whether casting deals damage (rAthena `DamageFlags.NoDamage`)."
   @type damage_type :: :damage | :no_damage
 
+  @typedoc "Which damage calculator a skill dispatches to (rAthena skill type)."
+  @type damage_kind :: :weapon | :magic | :misc
+
   @typedoc "Attack element atom (rAthena `Element`)."
   @type element :: atom()
 
@@ -42,8 +45,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     field :sp_cost, [non_neg_integer()], default: []
     field :duration, [non_neg_integer()], default: []
     field :cast_time, [non_neg_integer()], default: []
+    field :fixed_cast_time, [non_neg_integer()], default: []
     field :after_cast_delay, [non_neg_integer()], default: []
     field :cooldown, [non_neg_integer()], default: []
+    field :damage_kind, damage_kind(), default: :weapon
   end
 
   @metadata_schema %{
@@ -63,8 +68,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     sp_cost: {:list, :integer},
     duration: {:list, :integer},
     cast_time: {:list, :integer},
+    fixed_cast_time: {:list, :integer},
     after_cast_delay: {:list, :integer},
-    cooldown: {:list, :integer}
+    cooldown: {:list, :integer},
+    damage_kind: {:enum, [:weapon, :magic, :misc]}
   }
 
   @defaults %{
@@ -80,8 +87,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     sp_cost: [],
     duration: [],
     cast_time: [],
+    fixed_cast_time: [],
     after_cast_delay: [],
-    cooldown: []
+    cooldown: [],
+    damage_kind: :weapon
   }
 
   @doc """
