@@ -15,6 +15,8 @@ defmodule Aesir.ZoneServer.PacketRegistry do
     Aesir.ZoneServer.Packets.CzStatusChange,
     Aesir.ZoneServer.Packets.CzUseSkill,
     Aesir.ZoneServer.Packets.CzUseSkillToground,
+    Aesir.ZoneServer.Packets.CzReqWearEquip,
+    Aesir.ZoneServer.Packets.CzReqTakeoffEquip,
     # Server to Client packets
     Aesir.ZoneServer.Packets.ZcAcceptEnter,
     Aesir.ZoneServer.Packets.ZcAid,
