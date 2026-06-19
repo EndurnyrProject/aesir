@@ -7,6 +7,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
 
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
+  alias Aesir.ZoneServer.Packets.ZcInventoryEnd
+  alias Aesir.ZoneServer.Packets.ZcInventoryItemlistEquip
+  alias Aesir.ZoneServer.Packets.ZcInventoryItemlistNormal
+  alias Aesir.ZoneServer.Packets.ZcInventoryStart
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -158,7 +162,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
   end
 
   describe "inventory packets" do
-    test "sends inventory packets during LoadEndAck sequence", %{character: character} do
+    test "frames the inventory with start/normal/equip/end during LoadEndAck", %{
+      character: character
+    } do
       # Add some inventory items
       seed_item(character.id, 501, 5)
       seed_equipped(character.id, 1201, 2)
@@ -177,9 +183,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
           state
         )
 
-      # Verify inventory packets were sent (may receive other packets first)
-      _normal_itemlist_packet = receive_packet_of_type(Aesir.ZoneServer.Packets.ZcNormalItemlist)
-      _equipitem_list_packet = receive_packet_of_type(Aesir.ZoneServer.Packets.ZcEquipitemList)
+      # Verify the modern framing packets were sent (may receive other packets first)
+      _start = receive_packet_of_type(ZcInventoryStart)
+      _normal = receive_packet_of_type(ZcInventoryItemlistNormal)
+      _equip = receive_packet_of_type(ZcInventoryItemlistEquip)
+      _end = receive_packet_of_type(ZcInventoryEnd)
     end
 
     test "normal itemlist contains only non-equipped items", %{character: character} do
@@ -206,7 +214,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
         )
 
       # Capture and verify normal itemlist packet (may receive other packets first)
-      normal_itemlist = receive_packet_of_type(Aesir.ZoneServer.Packets.ZcNormalItemlist)
+      normal_itemlist = receive_packet_of_type(ZcInventoryItemlistNormal)
 
       # Should only contain non-equipped items (potion and arrows)
       assert length(normal_itemlist.items) == 2
@@ -244,7 +252,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
         )
 
       # Capture and verify equipitem list packet (may receive other packets first)
-      equipitem_list = receive_packet_of_type(Aesir.ZoneServer.Packets.ZcEquipitemList)
+      equipitem_list = receive_packet_of_type(ZcInventoryItemlistEquip)
 
       # Should only contain equipped items
       assert length(equipitem_list.items) == 2
@@ -257,7 +265,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       # Potion (not equipped)
       refute 501 in nameids
 
-      # Verify equipment positions
+      # Verify equipment positions reflect the worn bitmask
       weapon_item = Enum.find(equipitem_list.items, &(&1.nameid == 1201))
       armor_item = Enum.find(equipitem_list.items, &(&1.nameid == 2301))
 
@@ -267,7 +275,28 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       assert armor_item.location == 16
     end
 
-    test "sends empty packets when no inventory items", %{character: character} do
+    test "uses a unified, non-colliding client index space across both lists", %{
+      character: character
+    } do
+      # Ordered by DB id: index 0 -> potion (normal), index 1 -> weapon (equip)
+      seed_item(character.id, 501, 5)
+      seed_equipped(character.id, 1201, 2)
+
+      {:ok, state} =
+        PlayerSession.init(%{character: character, connection_pid: self()})
+
+      {:noreply, _new_state} =
+        PlayerSession.handle_info({:packet, 0x007D, %{}}, state)
+
+      normal_itemlist = receive_packet_of_type(ZcInventoryItemlistNormal)
+      equipitem_list = receive_packet_of_type(ZcInventoryItemlistEquip)
+
+      # +2 client offset, unified index space, no collision
+      assert [%{index: 2, nameid: 501}] = normal_itemlist.items
+      assert [%{index: 3, nameid: 1201}] = equipitem_list.items
+    end
+
+    test "sends empty lists framed by start/end when no inventory items", %{character: character} do
       # Initialize player session with no items
       {:ok, state} =
         PlayerSession.init(%{
@@ -282,9 +311,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
           state
         )
 
-      # Should still send empty packets
-      assert_receive {:send_packet, %Aesir.ZoneServer.Packets.ZcNormalItemlist{items: []}}
-      assert_receive {:send_packet, %Aesir.ZoneServer.Packets.ZcEquipitemList{items: []}}
+      # Should still send the framing with empty lists
+      assert_receive {:send_packet, %ZcInventoryStart{}}
+      assert_receive {:send_packet, %ZcInventoryItemlistNormal{items: []}}
+      assert_receive {:send_packet, %ZcInventoryItemlistEquip{items: []}}
+      assert_receive {:send_packet, %ZcInventoryEnd{}}
     end
   end
 

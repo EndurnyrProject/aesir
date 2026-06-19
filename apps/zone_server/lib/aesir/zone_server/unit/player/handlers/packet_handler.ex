@@ -17,15 +17,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Packets.CzUseSkillToground
   alias Aesir.ZoneServer.Packets.ZcAckReqname
   alias Aesir.ZoneServer.Packets.ZcAckReqnameall
-  alias Aesir.ZoneServer.Packets.ZcEquipitemList
-  alias Aesir.ZoneServer.Packets.ZcNormalItemlist
+  alias Aesir.ZoneServer.Packets.ZcInventoryEnd
+  alias Aesir.ZoneServer.Packets.ZcInventoryItemlistEquip
+  alias Aesir.ZoneServer.Packets.ZcInventoryItemlistNormal
+  alias Aesir.ZoneServer.Packets.ZcInventoryStart
   alias Aesir.ZoneServer.Packets.ZcNotifyChat
   alias Aesir.ZoneServer.Packets.ZcNotifyTime
   alias Aesir.ZoneServer.Packets.ZcSkillinfoList
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -69,8 +71,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
 
     # Send weight updates to client
     StatusSync.send_params(connection_pid, %{
-      StatusParams.weight() => 0,
-      StatusParams.max_weight() => 1000
+      StatusParams.weight() => Weight.current_weight(game_state.inventory),
+      StatusParams.max_weight() => Weight.max_weight(game_state.stats)
     })
 
     # Send experience and skill point status (sent later in LoadEndAck sequence)
@@ -93,7 +95,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     })
 
     StatusSync.send_stat_updates(connection_pid, game_state.stats)
-    send_inventory_data(connection_pid, PlayerState.to_list(game_state.inventory))
+    send_inventory_data(connection_pid, game_state.inventory)
 
     skill_list = ZcSkillinfoList.from_learned(game_state.stats.progression.learned_skills)
     send(connection_pid, {:send_packet, skill_list})
@@ -302,13 +304,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     {:noreply, state}
   end
 
-  defp send_inventory_data(connection_pid, inventory_items) do
-    # Send normal inventory items (non-equipped)
-    normal_itemlist = ZcNormalItemlist.from_inventory_items(inventory_items)
-    send(connection_pid, {:send_packet, normal_itemlist})
-
-    # Send equipped items
-    equipitem_list = ZcEquipitemList.from_inventory_items(inventory_items)
-    send(connection_pid, {:send_packet, equipitem_list})
+  defp send_inventory_data(connection_pid, inventory) do
+    send(connection_pid, {:send_packet, %ZcInventoryStart{name: "Inventory"}})
+    send(connection_pid, {:send_packet, ZcInventoryItemlistNormal.from_inventory(inventory)})
+    send(connection_pid, {:send_packet, ZcInventoryItemlistEquip.from_inventory(inventory)})
+    send(connection_pid, {:send_packet, %ZcInventoryEnd{}})
   end
 end

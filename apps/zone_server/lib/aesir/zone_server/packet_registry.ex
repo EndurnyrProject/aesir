@@ -37,6 +37,10 @@ defmodule Aesir.ZoneServer.PacketRegistry do
     Aesir.ZoneServer.Packets.ZcNotifySkill,
     Aesir.ZoneServer.Packets.ZcNotifyGroundskill,
     Aesir.ZoneServer.Packets.ZcSkillinfoList,
-    Aesir.ZoneServer.Packets.ZcSkillPostdelay
+    Aesir.ZoneServer.Packets.ZcSkillPostdelay,
+    Aesir.ZoneServer.Packets.ZcInventoryStart,
+    Aesir.ZoneServer.Packets.ZcInventoryItemlistNormal,
+    Aesir.ZoneServer.Packets.ZcInventoryItemlistEquip,
+    Aesir.ZoneServer.Packets.ZcInventoryEnd
   ]
 end
