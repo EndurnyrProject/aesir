@@ -41,6 +41,11 @@ defmodule Aesir.ZoneServer.PacketRegistry do
     Aesir.ZoneServer.Packets.ZcInventoryStart,
     Aesir.ZoneServer.Packets.ZcInventoryItemlistNormal,
     Aesir.ZoneServer.Packets.ZcInventoryItemlistEquip,
-    Aesir.ZoneServer.Packets.ZcInventoryEnd
+    Aesir.ZoneServer.Packets.ZcInventoryEnd,
+    Aesir.ZoneServer.Packets.ZcItemPickupAck,
+    Aesir.ZoneServer.Packets.ZcDeleteItemFromBody,
+    Aesir.ZoneServer.Packets.ZcAckWearEquip,
+    Aesir.ZoneServer.Packets.ZcAckTakeoffEquip,
+    Aesir.ZoneServer.Packets.ZcSpriteChange
   ]
 end
