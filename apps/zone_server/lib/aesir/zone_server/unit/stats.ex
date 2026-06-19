@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Unit.Stats do
     field :matk, non_neg_integer()
     field :def, non_neg_integer()
     field :mdef, non_neg_integer()
+    field :soft_mdef, non_neg_integer()
     field :hit, non_neg_integer()
     field :flee, non_neg_integer()
     field :critical, non_neg_integer()

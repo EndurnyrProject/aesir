@@ -472,6 +472,61 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     end
   end
 
+  describe "renewal MATK and MDEF" do
+    defp caster(base_stats, base_level) do
+      %Stats{
+        base_stats: base_stats,
+        progression: %{base_level: base_level, job_level: 0, learned_skills: %{}},
+        derived_stats: %{max_hp: 1, max_sp: 1},
+        equipment: %Equipment{},
+        modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
+      }
+    end
+
+    test "status MATK follows the renewal formula" do
+      stats =
+        caster(%{str: 0, agi: 0, vit: 0, int: 40, dex: 30, luk: 30}, 80)
+
+      result = Stats.calculate_combat_stats(stats)
+
+      # INT + INT/2 + DEX/5 + LUK/3 + level/4 = 40 + 20 + 6 + 10 + 20 = 96
+      assert result.combat_stats.matk == 96
+    end
+
+    test "soft MDEF follows the renewal formula" do
+      stats =
+        caster(%{str: 0, agi: 0, vit: 20, int: 40, dex: 30, luk: 0}, 80)
+
+      result = Stats.calculate_combat_stats(stats)
+
+      # INT + level/4 + (DEX + VIT)/5 = 40 + 20 + 10 = 70
+      assert result.combat_stats.soft_mdef == 70
+    end
+
+    test "hard MDEF is 0 without gear or status" do
+      stats =
+        caster(%{str: 0, agi: 0, vit: 20, int: 40, dex: 30, luk: 0}, 80)
+
+      result = Stats.calculate_combat_stats(stats)
+
+      assert result.combat_stats.mdef == 0
+    end
+
+    test "hard MDEF sums status and equipment modifiers" do
+      stats = %Stats{
+        base_stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
+        progression: %{base_level: 0, job_level: 0, learned_skills: %{}},
+        derived_stats: %{max_hp: 1, max_sp: 1},
+        equipment: %Equipment{},
+        modifiers: %{equipment: %{mdef: 5}, status_effects: %{mdef: 3}, job_bonuses: %{}}
+      }
+
+      result = Stats.calculate_combat_stats(stats)
+
+      assert result.combat_stats.mdef == 8
+    end
+  end
+
   describe "equipment_from_inventory/1" do
     test "places each equipped item's nameid at its worn location" do
       equipment =

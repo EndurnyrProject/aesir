@@ -427,6 +427,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
           passive_atk,
       matk: base_matk + get_status_modifier(stats, :matk) + get_equipment_modifier(stats, :matk),
       def: base_def + get_status_modifier(stats, :def) + get_equipment_modifier(stats, :def),
+      mdef: get_status_modifier(stats, :mdef) + get_equipment_modifier(stats, :mdef),
+      soft_mdef: calculate_soft_mdef(stats),
       passive_atk: passive_atk
     }
 
@@ -458,9 +460,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   defp calculate_base_matk(%__MODULE__{} = stats) do
     effective_int = get_effective_stat(stats, :int)
-
+    effective_dex = get_effective_stat(stats, :dex)
+    effective_luk = get_effective_stat(stats, :luk)
     base_level = stats.progression.base_level
-    trunc(effective_int + base_level / 4)
+
+    effective_int + div(effective_int, 2) + div(effective_dex, 5) + div(effective_luk, 3) +
+      div(base_level, 4)
+  end
+
+  defp calculate_soft_mdef(%__MODULE__{} = stats) do
+    effective_int = get_effective_stat(stats, :int)
+    effective_dex = get_effective_stat(stats, :dex)
+    effective_vit = get_effective_stat(stats, :vit)
+    base_level = stats.progression.base_level
+
+    effective_int + div(base_level, 4) + div(effective_dex + effective_vit, 5)
   end
 
   @doc """
