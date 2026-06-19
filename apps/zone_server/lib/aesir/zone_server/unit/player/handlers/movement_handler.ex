@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.MovementEngine
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -247,8 +248,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       effect_state: 0,
       job: game_state.stats.progression.job_id,
       head: game_state.hair,
-      weapon: game_state.stats.equipment.weapon,
-      shield: game_state.stats.equipment.shield,
+      weapon: PlayerStats.weapon_view(game_state.stats.equipment),
+      shield: PlayerStats.shield_view(game_state.stats.equipment),
       accessory: 0,
       move_start_time: System.monotonic_time(:millisecond),
       accessory2: 0,

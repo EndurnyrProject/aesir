@@ -14,7 +14,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   """
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Passive
-  alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
@@ -152,7 +151,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   @spec build_ctx(PlayerStats.t()) :: Passive.ctx()
   defp build_ctx(%PlayerStats{} = stats) do
     %{
-      weapon_type: WeaponTypes.get_weapon_atom(stats.equipment.weapon),
+      weapon_type: PlayerStats.weapon_type(stats.equipment),
       base_level: stats.progression.base_level,
       job_level: stats.progression.job_level,
       max_hp: stats.derived_stats.max_hp,

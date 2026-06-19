@@ -4,10 +4,28 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Character
-  alias Aesir.ZoneServer.Mmo.WeaponTypes
+  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
 
   setup :setup_ets_tables
+
+  # Real equip.yml ids.
+  @sword 1101
+  @bow 1701
+  @guard 2101
+  @cotton_shirt 2301
+  @soul_staff 1472
+
+  # EQP position bitmasks.
+  @right_hand 2
+  @left_hand 32
+  @both_hand 34
+  @armor_pos 16
+
+  defp equipped(nameid, equip) do
+    %InventoryItem{nameid: nameid, amount: 1, equip: equip, identify: 1}
+  end
 
   describe "from_character/1" do
     test "creates Stats struct from Character model" do
@@ -99,7 +117,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
           learned_skills: %{}
         },
         current_state: %{hp: 600, sp: 250},
-        equipment: %{weapon: 0, shield: 0},
+        equipment: %Equipment{},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
@@ -130,7 +148,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
           learned_skills: %{}
         },
         current_state: %{hp: 1, sp: 1},
-        equipment: %{weapon: 0, shield: 0},
+        equipment: %Equipment{},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
@@ -146,7 +164,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       stats = %Stats{
         base_stats: %{str: 15, agi: 20, vit: 10, int: 25, dex: 12, luk: 8},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}},
-        equipment: %{weapon: 0, shield: 0}
+        equipment: %Equipment{}
       }
 
       assert Stats.get_effective_stat(stats, :str) == 15
@@ -165,7 +183,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
           status_effects: %{str: 2, vit: -1},
           job_bonuses: %{str: 3, int: 4}
         },
-        equipment: %{weapon: 0, shield: 0}
+        equipment: %Equipment{}
       }
 
       # STR: 10 (base) + 5 (equipment) + 2 (status) + 3 (job) = 20
@@ -192,7 +210,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
           status_effects: %{},
           job_bonuses: %{int: 3}
         },
-        equipment: %{weapon: 0, shield: 0}
+        equipment: %Equipment{}
       }
 
       # 10 + 5
@@ -216,7 +234,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
           job_id: 0,
           learned_skills: %{}
         },
-        equipment: %{weapon: 0, shield: 0},
+        equipment: %Equipment{},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
@@ -237,7 +255,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
           job_id: 0,
           learned_skills: %{}
         },
-        equipment: %{weapon: 0, shield: 0},
+        equipment: %Equipment{},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
@@ -258,7 +276,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
           job_id: 0,
           learned_skills: %{}
         },
-        equipment: %{weapon: 0, shield: 0},
+        equipment: %Equipment{},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
@@ -281,7 +299,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
           job_id: 0,
           learned_skills: %{}
         },
-        equipment: %{weapon: 0, shield: 0},
+        equipment: %Equipment{},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
@@ -302,7 +320,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
           job_id: 0,
           learned_skills: %{}
         },
-        equipment: %{weapon: 0, shield: 0},
+        equipment: %Equipment{},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
@@ -323,7 +341,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
           job_id: 0,
           learned_skills: %{}
         },
-        equipment: %{weapon: 0, shield: 0},
+        equipment: %Equipment{},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
@@ -347,7 +365,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
           job_id: 0,
           learned_skills: %{}
         },
-        equipment: %{weapon: 0, shield: 0},
+        equipment: %Equipment{},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
@@ -358,7 +376,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     test "equipment modifiers remain unchanged (placeholder)" do
       stats = %Stats{
         base_stats: %{str: 10, agi: 10, vit: 10, int: 10, dex: 10, luk: 10},
-        equipment: %{weapon: 0, shield: 0},
+        equipment: %Equipment{},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
@@ -369,7 +387,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     test "status effects remain unchanged (placeholder)" do
       stats = %Stats{
         base_stats: %{str: 10, agi: 10, vit: 10, int: 10, dex: 10, luk: 10},
-        equipment: %{weapon: 0, shield: 0},
+        equipment: %Equipment{},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
@@ -384,7 +402,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         base_stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
         progression: %{base_level: 0, job_level: 0, learned_skills: %{}},
         derived_stats: %{max_hp: 1, max_sp: 1},
-        equipment: %{weapon: 0, shield: 0},
+        equipment: %Equipment{},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
@@ -404,7 +422,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         base_stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
         progression: %{base_level: 0, job_level: 0, learned_skills: %{}},
         derived_stats: %{max_hp: 1, max_sp: 1},
-        equipment: %{weapon: 0, shield: 0},
+        equipment: %Equipment{},
         modifiers: %{
           equipment: %{},
           status_effects: %{hit: 10, flee: 10, critical: 10, atk: 10, def: 10},
@@ -427,7 +445,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         base_stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
         progression: %{base_level: 0, job_level: 0, learned_skills: %{2 => 5}},
         derived_stats: %{max_hp: 1, max_sp: 1},
-        equipment: %{weapon: WeaponTypes.get_weapon_id(:one_handed_sword), shield: 0},
+        equipment: Stats.equipment_from_inventory([equipped(@sword, @right_hand)]),
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
@@ -443,7 +461,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         base_stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
         progression: %{base_level: 0, job_level: 0, learned_skills: %{2 => 5}},
         derived_stats: %{max_hp: 1, max_sp: 1},
-        equipment: %{weapon: WeaponTypes.get_weapon_id(:bow), shield: 0},
+        equipment: Stats.equipment_from_inventory([equipped(@bow, @both_hand)]),
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
@@ -451,6 +469,126 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       assert result.combat_stats.passive_atk == 0
       assert result.combat_stats.atk == 0
+    end
+  end
+
+  describe "equipment_from_inventory/1" do
+    test "places each equipped item's nameid at its worn location" do
+      equipment =
+        Stats.equipment_from_inventory([
+          equipped(@sword, @right_hand),
+          equipped(@guard, @left_hand),
+          equipped(@cotton_shirt, @armor_pos)
+        ])
+
+      assert %Equipment{right_hand: @sword, left_hand: @guard, armor: @cotton_shirt} = equipment
+    end
+
+    test "a two-handed weapon occupies both hand slots" do
+      equipment = Stats.equipment_from_inventory([equipped(@bow, @both_hand)])
+
+      assert %Equipment{right_hand: @bow, left_hand: @bow} = equipment
+    end
+
+    test "an empty inventory yields an empty Equipment" do
+      assert %Equipment{right_hand: nil, left_hand: nil, armor: nil} =
+               Stats.equipment_from_inventory([])
+    end
+
+    test "accepts an index-keyed inventory map" do
+      equipment = Stats.equipment_from_inventory(%{3 => equipped(@sword, @right_hand)})
+
+      assert %Equipment{right_hand: @sword} = equipment
+    end
+  end
+
+  describe "weapon_type/1 and shield?/1" do
+    test "weapon_type resolves the right-hand item's subtype" do
+      equipment = Stats.equipment_from_inventory([equipped(@sword, @right_hand)])
+      assert Stats.weapon_type(equipment) == :one_handed_sword
+    end
+
+    test "weapon_type is :fist when bare-handed" do
+      assert Stats.weapon_type(%Equipment{}) == :fist
+    end
+
+    test "shield? is true for a non-weapon left-hand item" do
+      equipment = Stats.equipment_from_inventory([equipped(@guard, @left_hand)])
+      assert Stats.shield?(equipment) == true
+    end
+
+    test "shield? is false for a two-handed weapon in the left hand" do
+      equipment = Stats.equipment_from_inventory([equipped(@bow, @both_hand)])
+      assert Stats.shield?(equipment) == false
+    end
+
+    test "shield? is false when nothing is in the left hand" do
+      assert Stats.shield?(%Equipment{}) == false
+    end
+  end
+
+  describe "calculate_stats/3 with equipped items" do
+    defp swordman(equipment_struct, modifier_equipment) do
+      %Stats{
+        base_stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
+        progression: %{
+          base_level: 1,
+          job_level: 1,
+          base_exp: 0,
+          job_exp: 0,
+          job_id: 0,
+          learned_skills: %{}
+        },
+        current_state: %{hp: 1, sp: 1},
+        equipment: equipment_struct,
+        modifiers: %{equipment: modifier_equipment, status_effects: %{}, job_bonuses: %{}}
+      }
+    end
+
+    test "equipping the Sword (atk 25) raises combat atk by 25 and sets weapon type" do
+      sword = equipped(@sword, @right_hand)
+
+      bare = Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, [])
+      armed = Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, [sword])
+
+      assert armed.combat_stats.atk == bare.combat_stats.atk + 25
+      assert Stats.weapon_type(armed.equipment) == :one_handed_sword
+    end
+
+    test "removing the weapon reverts the atk bonus and weapon type" do
+      sword = equipped(@sword, @right_hand)
+
+      armed = Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, [sword])
+      reverted = Stats.calculate_stats(armed, nil, [])
+
+      assert reverted.combat_stats.atk == 0
+      assert Stats.weapon_type(reverted.equipment) == :fist
+    end
+
+    test "a known armor's defense adds to combat def" do
+      armor = equipped(@cotton_shirt, @armor_pos)
+
+      bare = Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, [])
+      armored = Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, [armor])
+
+      assert armored.combat_stats.def == bare.combat_stats.def + 10
+    end
+
+    test "nil equipped_items leaves equipment and modifiers untouched" do
+      preset = Stats.equipment_from_inventory([equipped(@sword, @right_hand)])
+      result = Stats.calculate_stats(swordman(preset, %{atk: 99}), nil, nil)
+
+      assert result.equipment == preset
+      assert result.modifiers.equipment == %{atk: 99}
+    end
+
+    test "equipping Soul Staff (magic_attack 200) raises combat matk by 200" do
+      staff = equipped(@soul_staff, @both_hand)
+
+      bare = Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, [])
+      staffed = Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, [staff])
+
+      assert staffed.combat_stats.matk == bare.combat_stats.matk + 200
     end
   end
 end

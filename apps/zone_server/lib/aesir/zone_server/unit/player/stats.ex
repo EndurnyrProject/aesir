@@ -16,12 +16,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   use TypedStruct
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
-  alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Stats
 
   typedstruct module: PlayerProgression do
@@ -36,8 +39,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   end
 
   typedstruct module: Equipment do
-    field :weapon, non_neg_integer()
-    field :shield, non_neg_integer()
+    @typedoc """
+    Worn equipment derived from the equipped inventory items, keyed by equip
+    location. Each populated field holds the equipped item's `nameid`; an empty
+    slot is `nil`. This is rebuilt from the inventory whenever equipment changes.
+    """
+    field :head_top, non_neg_integer()
+    field :head_mid, non_neg_integer()
+    field :head_low, non_neg_integer()
+    field :armor, non_neg_integer()
+    field :right_hand, non_neg_integer()
+    field :left_hand, non_neg_integer()
+    field :garment, non_neg_integer()
+    field :shoes, non_neg_integer()
+    field :right_accessory, non_neg_integer()
+    field :left_accessory, non_neg_integer()
+    field :ammo, non_neg_integer()
   end
 
   typedstruct module: Modifiers do
@@ -98,16 +115,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       sp: character.sp
     }
 
-    equipment = %Equipment{
-      weapon: character.weapon || 0,
-      shield: character.shield || 0
-    }
-
     stats = %__MODULE__{
       base_stats: base_stats,
       progression: progression,
       current_state: current_state,
-      equipment: equipment,
+      equipment: %Equipment{},
       modifiers: %Modifiers{
         equipment: %{},
         status_effects: %{},
@@ -204,18 +216,111 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   end
 
   @doc """
-  Applies equipment modifiers to stats.
-  Calculates stat bonuses from equipped items and applies them.
-  """
-  @spec apply_equipment_modifiers(t(), [any()] | nil) :: t()
-  def apply_equipment_modifiers(%__MODULE__{} = stats, equipped_items \\ nil) do
-    case equipped_items do
-      nil ->
-        stats
+  Applies equipment modifiers to stats from the equipped inventory items.
 
-      items when is_list(items) ->
-        equipment_bonuses = calculate_equipment_bonuses(items)
-        %{stats | modifiers: %{stats.modifiers | equipment: equipment_bonuses}}
+  When `equipped_items` is a list of `InventoryItem`s, this both rebuilds the
+  worn `Equipment` struct (so weapon-type/shield-dependent calculations such as
+  ASPD see the correct gear) and sums the flat `item_db` bonuses into
+  `modifiers.equipment`. When `nil`, the stats are returned unchanged so call
+  sites that do not yet thread the inventory keep their previous behaviour.
+  """
+  @spec apply_equipment_modifiers(t(), [InventoryItem.t()] | nil) :: t()
+  def apply_equipment_modifiers(stats, equipped_items \\ nil)
+
+  def apply_equipment_modifiers(%__MODULE__{} = stats, nil), do: stats
+
+  def apply_equipment_modifiers(%__MODULE__{} = stats, equipped_items)
+      when is_list(equipped_items) do
+    equipment_bonuses = calculate_equipment_bonuses(equipped_items)
+
+    %{
+      stats
+      | equipment: equipment_from_inventory(equipped_items),
+        modifiers: %{stats.modifiers | equipment: equipment_bonuses}
+    }
+  end
+
+  @doc """
+  Builds the worn `Equipment` struct from a list (or indexed map) of equipped
+  inventory items.
+
+  Each item's `equip` bitmask is decoded into location atoms via
+  `EquipLocation.bitmask_to_location_atoms/1` and the item's `nameid` is placed
+  at each resulting location. A two-handed weapon (right + left hand) lands in
+  both hand slots so weapon-type resolution reads it from `right_hand`.
+  """
+  @spec equipment_from_inventory([InventoryItem.t()] | %{optional(any()) => InventoryItem.t()}) ::
+          Equipment.t()
+  def equipment_from_inventory(equipped_items) do
+    equipped_items
+    |> normalize_items()
+    |> Enum.reduce(%Equipment{}, &place_item/2)
+  end
+
+  defp place_item(%InventoryItem{equip: equip, nameid: nameid}, equipment) do
+    equip
+    |> EquipLocation.bitmask_to_location_atoms()
+    |> Enum.reduce(equipment, fn location, acc -> put_location(acc, location, nameid) end)
+  end
+
+  defp put_location(equipment, location, nameid) do
+    if Map.has_key?(equipment, location),
+      do: Map.put(equipment, location, nameid),
+      else: equipment
+  end
+
+  @doc """
+  Returns the equipped weapon type atom (the right-hand item's `subtype`), or
+  `:fist` when no weapon is worn or the item cannot be resolved.
+  """
+  @spec weapon_type(Equipment.t()) :: atom()
+  def weapon_type(%Equipment{right_hand: nil}), do: :fist
+
+  def weapon_type(%Equipment{right_hand: nameid}) do
+    case ItemManagement.get_item_by_id(nameid) do
+      {:ok, %ItemDefinition{subtype: subtype}} when is_atom(subtype) and not is_nil(subtype) ->
+        subtype
+
+      _ ->
+        :fist
+    end
+  end
+
+  @doc """
+  Returns true when a shield is worn: a left-hand item that is not itself a
+  weapon (a two-hander occupies the left hand but is a weapon, not a shield).
+  """
+  @spec shield?(Equipment.t()) :: boolean()
+  def shield?(%Equipment{left_hand: nil}), do: false
+
+  def shield?(%Equipment{left_hand: nameid}) do
+    case ItemManagement.get_item_by_id(nameid) do
+      {:ok, %ItemDefinition{type: type}} -> type != :weapon
+      _ -> false
+    end
+  end
+
+  @doc """
+  Returns the client view (sprite) id of the equipped weapon, or `0` when bare-handed.
+  """
+  @spec weapon_view(Equipment.t()) :: non_neg_integer()
+  def weapon_view(%Equipment{right_hand: nameid}), do: view_of(nameid)
+
+  @doc """
+  Returns the client view (sprite) id of the equipped shield/left-hand item, or `0` when none.
+  """
+  @spec shield_view(Equipment.t()) :: non_neg_integer()
+  def shield_view(%Equipment{left_hand: nameid}), do: view_of(nameid)
+
+  defp normalize_items(items) when is_list(items), do: items
+  defp normalize_items(items) when is_map(items), do: Map.values(items)
+
+  defp view_of(nil), do: 0
+
+  defp view_of(nameid) do
+    case ItemManagement.get_item_by_id(nameid) do
+      {:ok, %ItemDefinition{view: view}} -> view
+      _ -> 0
     end
   end
 
@@ -299,17 +404,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   end
 
   @doc """
-  Calculates combat-related stats (hit, flee, critical, atk, def).
+  Calculates combat-related stats (hit, flee, critical, atk, matk, def).
   Uses the new CombatCalculations behavior for consistent calculations.
   """
   @spec calculate_combat_stats(t()) :: t()
   def calculate_combat_stats(%__MODULE__{} = stats) do
-    # Use the new PlayerCombatCalculations module for hit/flee/perfect_dodge
     alias Aesir.ZoneServer.Unit.Player.CombatCalculations, as: PlayerCombatCalc
 
-    # Legacy calculations for stats not yet moved to behavior
     base_critical = calculate_base_critical(stats)
     base_atk = calculate_base_atk(stats)
+    base_matk = calculate_base_matk(stats)
     base_def = calculate_base_def(stats)
     passive_atk = Passives.atk_bonus(stats)
 
@@ -318,8 +422,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       flee: PlayerCombatCalc.calculate_flee(stats),
       critical: base_critical + get_status_modifier(stats, :critical),
       perfect_dodge: PlayerCombatCalc.calculate_perfect_dodge(stats),
-      atk: base_atk + get_status_modifier(stats, :atk) + passive_atk,
-      def: base_def + get_status_modifier(stats, :def),
+      atk:
+        base_atk + get_status_modifier(stats, :atk) + get_equipment_modifier(stats, :atk) +
+          passive_atk,
+      matk: base_matk + get_status_modifier(stats, :matk) + get_equipment_modifier(stats, :matk),
+      def: base_def + get_status_modifier(stats, :def) + get_equipment_modifier(stats, :def),
       passive_atk: passive_atk
     }
 
@@ -347,6 +454,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     # Basic formula: def = VIT/2 + base level / 6
     base_level = stats.progression.base_level
     trunc(effective_vit / 2 + base_level / 6)
+  end
+
+  defp calculate_base_matk(%__MODULE__{} = stats) do
+    effective_int = get_effective_stat(stats, :int)
+
+    base_level = stats.progression.base_level
+    trunc(effective_int + base_level / 4)
   end
 
   @doc """
@@ -381,6 +495,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   end
 
   @doc """
+  Gets the combined flat equipment modifier for a given key (e.g. `:atk`,
+  `:def`, `:matk`), or 0 if none exist.
+  """
+  @spec get_equipment_modifier(t(), atom()) :: number()
+  def get_equipment_modifier(%__MODULE__{} = stats, modifier_key) do
+    Map.get(stats.modifiers.equipment, modifier_key, 0)
+  end
+
+  @doc """
   Checks if the player has a specific status flag set by status effects.
   This is used for boolean properties like 'endure' or 'hiding'.
 
@@ -410,12 +533,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   def calculate_aspd(%__MODULE__{} = stats) do
     effective_agi = get_effective_stat(stats, :agi)
     effective_dex = get_effective_stat(stats, :dex)
-    weapon_type = stats.equipment.weapon
-    has_shield = stats.equipment.shield > 0
+    weapon_atom = weapon_type(stats.equipment)
+    has_shield = shield?(stats.equipment)
 
     case AvailableJobs.job_id_to_name(stats.progression.job_id) do
       {:ok, job_name} ->
-        base_aspd = get_weapon_aspd(job_name, weapon_type)
+        base_aspd = get_weapon_aspd(job_name, weapon_atom)
 
         base_aspd =
           if has_shield do
@@ -493,9 +616,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     max(total_sp, 1)
   end
 
-  defp get_weapon_aspd(job_name, weapon_type) do
-    weapon_atom = WeaponTypes.get_weapon_atom(weapon_type)
-
+  defp get_weapon_aspd(job_name, weapon_atom) do
     case JobManagement.get_base_aspd(job_name, weapon_atom) do
       {:ok, aspd} ->
         aspd
@@ -541,26 +662,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     0
   end
 
-  defp calculate_equipment_bonuses(_equipped_items) do
-    # TODO: Implement equipment bonuses from item database
-    # For now, return empty bonuses
-    %{
-      str: 0,
-      agi: 0,
-      vit: 0,
-      int: 0,
-      dex: 0,
-      luk: 0,
-      atk: 0,
-      matk: 0,
-      def: 0,
-      mdef: 0,
-      hit: 0,
-      flee: 0,
-      critical: 0,
-      hp: 0,
-      sp: 0,
-      aspd_rate: 100
-    }
+  # Sums the flat item_db bonuses (attack -> atk, defense -> def,
+  # magic_attack -> matk) across the equipped items. Bonus scripts and card
+  # effects are intentionally out of scope here; that is the future
+  # item-script engine's job. `aspd_rate` defaults to 100 (no modifier).
+  defp calculate_equipment_bonuses(equipped_items) do
+    equipped_items
+    |> normalize_items()
+    |> Enum.reduce(%{atk: 0, def: 0, matk: 0, aspd_rate: 100}, fn item, acc ->
+      case ItemManagement.get_item_by_id(item.nameid) do
+        {:ok, %ItemDefinition{} = item_def} ->
+          %{
+            acc
+            | atk: acc.atk + item_def.attack,
+              def: acc.def + item_def.defense,
+              matk: acc.matk + item_def.magic_attack
+          }
+
+        _ ->
+          acc
+      end
+    end)
   end
 end

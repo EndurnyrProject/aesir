@@ -4,9 +4,30 @@ defmodule Aesir.ZoneServer.Unit.Player.AspdTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Unit.Player.Stats
 
   setup :setup_ets_tables
+
+  # Real equip.yml ids: a dagger (melee) and a bow (ranged), plus a shield.
+  @knife 1201
+  @bow 1701
+  @guard 2101
+
+  # EQP position bitmasks.
+  @right_hand 2
+  @left_hand 32
+  @both_hand 34
+
+  defp equipped(nameid, equip) do
+    %InventoryItem{nameid: nameid, amount: 1, equip: equip, identify: 1}
+  end
+
+  defp stats_with(character, equipped_items) do
+    character
+    |> Stats.from_character()
+    |> Stats.calculate_stats(nil, equipped_items)
+  end
 
   describe "ASPD calculation" do
     test "calculates ASPD for barehand novice" do
@@ -20,10 +41,7 @@ defmodule Aesir.ZoneServer.Unit.Player.AspdTest do
         base_level: 1,
         job_level: 1,
         # Novice
-        class: 0,
-        # Barehand
-        weapon: 0,
-        shield: 0
+        class: 0
       }
 
       stats = Stats.from_character(character)
@@ -46,10 +64,7 @@ defmodule Aesir.ZoneServer.Unit.Player.AspdTest do
         base_level: 50,
         job_level: 25,
         # Novice
-        class: 0,
-        # Barehand
-        weapon: 0,
-        shield: 0
+        class: 0
       }
 
       stats = Stats.from_character(character)
@@ -61,7 +76,7 @@ defmodule Aesir.ZoneServer.Unit.Player.AspdTest do
     end
 
     test "applies shield penalty to ASPD" do
-      character_no_shield = %Character{
+      character = %Character{
         str: 10,
         agi: 30,
         vit: 10,
@@ -71,34 +86,16 @@ defmodule Aesir.ZoneServer.Unit.Player.AspdTest do
         base_level: 30,
         job_level: 15,
         # Novice
-        class: 0,
-        # Barehand
-        weapon: 0,
-        shield: 0
+        class: 0
       }
 
-      character_with_shield = %Character{
-        str: 10,
-        agi: 30,
-        vit: 10,
-        int: 10,
-        dex: 20,
-        luk: 10,
-        base_level: 30,
-        job_level: 15,
-        # Novice
-        class: 0,
-        # Barehand
-        weapon: 0,
-        # Has shield
-        shield: 1
-      }
+      stats_no_shield = stats_with(character, [equipped(@knife, @right_hand)])
 
-      stats_no_shield = Stats.from_character(character_no_shield)
-      stats_with_shield = Stats.from_character(character_with_shield)
+      stats_with_shield =
+        stats_with(character, [equipped(@knife, @right_hand), equipped(@guard, @left_hand)])
 
       # Shield should reduce ASPD
-      assert stats_no_shield.derived_stats.aspd >= stats_with_shield.derived_stats.aspd
+      assert stats_no_shield.derived_stats.aspd > stats_with_shield.derived_stats.aspd
     end
 
     test "ranged weapons use different formula" do
@@ -112,10 +109,7 @@ defmodule Aesir.ZoneServer.Unit.Player.AspdTest do
         base_level: 30,
         job_level: 15,
         # Novice
-        class: 0,
-        # Dagger (melee)
-        weapon: 1,
-        shield: 0
+        class: 0
       }
 
       character_ranged = %Character{
@@ -128,17 +122,13 @@ defmodule Aesir.ZoneServer.Unit.Player.AspdTest do
         base_level: 30,
         job_level: 15,
         # Archer
-        class: 3,
-        # Bow (ranged)
-        weapon: 11,
-        shield: 0
+        class: 3
       }
 
-      stats_melee = Stats.from_character(character_melee)
-      stats_ranged = Stats.from_character(character_ranged)
+      stats_melee = stats_with(character_melee, [equipped(@knife, @right_hand)])
+      stats_ranged = stats_with(character_ranged, [equipped(@bow, @both_hand)])
 
-      # Different formulas should produce different results
-      # Ranged emphasizes DEX more than melee
+      # Different weapon types / jobs should produce different ASPD.
       assert stats_melee.derived_stats.aspd != stats_ranged.derived_stats.aspd
     end
 
@@ -153,10 +143,7 @@ defmodule Aesir.ZoneServer.Unit.Player.AspdTest do
         base_level: 99,
         job_level: 50,
         # Novice
-        class: 0,
-        # Barehand
-        weapon: 0,
-        shield: 0
+        class: 0
       }
 
       stats = Stats.from_character(character)
@@ -176,10 +163,7 @@ defmodule Aesir.ZoneServer.Unit.Player.AspdTest do
         base_level: 40,
         job_level: 20,
         # Novice
-        class: 0,
-        # Barehand
-        weapon: 0,
-        shield: 0
+        class: 0
       }
 
       stats = Stats.from_character(character)

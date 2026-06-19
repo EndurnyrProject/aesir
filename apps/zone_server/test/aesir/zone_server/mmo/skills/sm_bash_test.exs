@@ -2,14 +2,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.SmBashTest do
   use ExUnit.Case, async: true
   import Mimic
 
+  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.SmBash
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
-  alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.Stats.BaseStats
   alias Aesir.ZoneServer.Unit.Stats.DerivedStats
@@ -18,6 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.SmBashTest do
   setup :verify_on_exit!
 
   @target_id 2000
+  @sword 1101
+  @right_hand 2
 
   # Chance to stun is (bash_level - 5) * base_level * 10, out of 10_000.
   # base_level 1000 at bash level 6 yields 10_000 => a guaranteed roll.
@@ -31,7 +32,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.SmBashTest do
         job_level: 30,
         learned_skills: learned_skills
       },
-      equipment: %Equipment{weapon: WeaponTypes.get_weapon_id(:one_handed_sword), shield: 0}
+      equipment:
+        Stats.equipment_from_inventory([
+          %InventoryItem{nameid: @sword, amount: 1, equip: @right_hand, identify: 1}
+        ])
     }
 
     %PlayerState{character_id: 1000, stats: stats}

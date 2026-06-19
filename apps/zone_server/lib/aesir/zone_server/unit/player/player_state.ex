@@ -463,7 +463,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
   @impl Aesir.ZoneServer.Unit
   def to_combatant(%__MODULE__{} = state) do
-    weapon_type = WeaponTypes.get_weapon_atom(state.stats.equipment.weapon)
+    weapon_type = PlayerStats.weapon_type(state.stats.equipment)
 
     Combatant.new!(%{
       unit_id: state.character_id,

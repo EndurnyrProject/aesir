@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
       base_stats: %BaseStats{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
       combat_stats: %{atk: 1, def: 1, hit: 1, flee: 1, perfect_dodge: 1},
       progression: %PlayerProgression{base_level: 1, job_level: 1, learned_skills: %{}},
-      equipment: %Equipment{weapon: 0, shield: 0}
+      equipment: %Equipment{}
     }
 
     %PlayerState{

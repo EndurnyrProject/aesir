@@ -2,15 +2,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Passives
-  alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
-  alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.Stats.BaseStats
   alias Aesir.ZoneServer.Unit.Stats.DerivedStats
+
+  # Real equip.yml ids whose subtype matches the weapon atoms under test.
+  @weapon_ids %{one_handed_sword: 1101, bow: 1701}
+  @both_hand 34
+  @right_hand 2
 
   defmodule FleePassive do
     @moduledoc false
@@ -64,6 +68,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
   end
 
   defp build_player(learned_skills, weapon_atom) do
+    equip = if weapon_atom == :bow, do: @both_hand, else: @right_hand
+    nameid = Map.fetch!(@weapon_ids, weapon_atom)
+    weapon = %InventoryItem{nameid: nameid, amount: 1, equip: equip, identify: 1}
+
     stats = %Stats{
       base_stats: %BaseStats{str: 1, agi: 1, vit: 10, int: 10, dex: 1, luk: 1},
       derived_stats: %DerivedStats{max_hp: 1000, max_sp: 100},
@@ -72,7 +80,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
         job_level: 30,
         learned_skills: learned_skills
       },
-      equipment: %Equipment{weapon: WeaponTypes.get_weapon_id(weapon_atom), shield: 0}
+      equipment: Stats.equipment_from_inventory([weapon])
     }
 
     %PlayerState{stats: stats}

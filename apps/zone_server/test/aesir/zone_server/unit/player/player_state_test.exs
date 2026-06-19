@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
 
   describe "state transitions" do
     setup do
@@ -219,22 +220,26 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       {:ok, %{state: PlayerState.new(character)}}
     end
 
-    defp with_weapon(state, weapon_id) do
-      put_in(state.stats.equipment.weapon, weapon_id)
+    defp with_weapon(state, nameid, equip) do
+      worn = %InventoryItem{nameid: nameid, amount: 1, equip: equip, identify: 1}
+      equipment = Stats.equipment_from_inventory([worn])
+      put_in(state.stats.equipment, equipment)
     end
 
     test "resolves a two-handed sword from the equipped weapon", %{state: state} do
-      combatant = PlayerState.to_combatant(with_weapon(state, 3))
+      # Balmung (id 1161), subtype two_handed_sword, worn on both hands (bitmask 34).
+      combatant = PlayerState.to_combatant(with_weapon(state, 1161, 34))
       assert combatant.weapon.type == :two_handed_sword
     end
 
     test "resolves a one-handed sword from the equipped weapon", %{state: state} do
-      combatant = PlayerState.to_combatant(with_weapon(state, 2))
+      # Sword (id 1101), subtype one_handed_sword, worn on the right hand (bitmask 2).
+      combatant = PlayerState.to_combatant(with_weapon(state, 1101, 2))
       assert combatant.weapon.type == :one_handed_sword
     end
 
     test "an unarmed player resolves to :fist", %{state: state} do
-      combatant = PlayerState.to_combatant(with_weapon(state, 0))
+      combatant = PlayerState.to_combatant(state)
       assert combatant.weapon.type == :fist
       assert combatant.attack_range == 1
     end
