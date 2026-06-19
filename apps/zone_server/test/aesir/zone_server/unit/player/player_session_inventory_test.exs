@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -16,7 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
   setup :setup_ets_tables
 
   setup do
-    Mimic.copy(Inventory)
+    Mimic.copy(Persistence)
 
     :ok
   end
@@ -129,7 +130,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
 
     test "fails initialization when inventory load fails", %{character: character} do
       # Mock inventory load to fail
-      expect(Inventory, :load_inventory, fn _char_id ->
+      expect(Persistence, :load_inventory, fn _char_id ->
         {:error, :database_error}
       end)
 

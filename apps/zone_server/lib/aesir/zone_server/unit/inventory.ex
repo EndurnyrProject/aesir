@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
 
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Repo
+  alias Aesir.ZoneServer.Unit.Inventory.Persistence
 
   @max_inventory 100
   @max_stack 30_000
@@ -24,21 +25,12 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
 
   @doc """
   Loads a character's complete inventory from the database.
+
+  Delegates to `Aesir.ZoneServer.Unit.Inventory.Persistence` which owns the Ecto
+  access; kept here for the mutation helpers in this module.
   """
   @spec load_inventory(integer()) :: inventory_result()
-  def load_inventory(char_id) do
-    items =
-      InventoryItem
-      |> where([i], i.char_id == ^char_id)
-      |> order_by([i], i.id)
-      |> Repo.all()
-
-    {:ok, items}
-  rescue
-    error ->
-      Logger.error("Failed to load inventory for char_id #{char_id}: #{inspect(error)}")
-      {:error, :inventory_load_failed}
-  end
+  defdelegate load_inventory(char_id), to: Persistence
 
   @doc """
   Adds an item to the character's inventory.

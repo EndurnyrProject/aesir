@@ -8,7 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Pathfinding
-  alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -34,9 +34,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   setup :setup_ets_tables
 
   setup do
-    Mimic.copy(Inventory)
+    Mimic.copy(Persistence)
 
-    stub(Inventory, :load_inventory, fn _char_id -> {:ok, []} end)
+    stub(Persistence, :load_inventory, fn _char_id -> {:ok, []} end)
 
     character = %Character{
       id: 1,
