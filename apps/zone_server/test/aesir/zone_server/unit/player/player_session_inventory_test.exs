@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   setup :verify_on_exit!
   setup :set_mimic_from_context
@@ -63,7 +64,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
           connection_pid: connection_pid
         })
 
-      assert state.game_state.inventory_items == []
+      assert state.game_state.inventory == %{}
     end
 
     test "loads existing inventory items on init", %{character: character} do
@@ -82,9 +83,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
         })
 
       # Verify inventory was loaded
-      assert length(state.game_state.inventory_items) == 2
+      items = PlayerState.to_list(state.game_state.inventory)
+      assert length(items) == 2
 
-      nameids = Enum.map(state.game_state.inventory_items, & &1.nameid)
+      nameids = Enum.map(items, & &1.nameid)
       assert 501 in nameids
       assert 1201 in nameids
     end
@@ -106,11 +108,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
         })
 
       # Verify both items are loaded
-      assert length(state.game_state.inventory_items) == 2
+      items = PlayerState.to_list(state.game_state.inventory)
+      assert length(items) == 2
 
       # Find equipped and non-equipped items
-      equipped_items = Enum.filter(state.game_state.inventory_items, &(&1.equip > 0))
-      inventory_items = Enum.filter(state.game_state.inventory_items, &(&1.equip == 0))
+      equipped_items = Enum.filter(items, &(&1.equip > 0))
+      inventory_items = Enum.filter(items, &(&1.equip == 0))
 
       assert length(equipped_items) == 1
       assert length(inventory_items) == 1
@@ -299,9 +302,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
         })
 
       # For this test, we'll use the state directly since we can't call get_state on a mock process
-      assert length(state.game_state.inventory_items) == 2
+      items = PlayerState.to_list(state.game_state.inventory)
+      assert length(items) == 2
 
-      nameids = Enum.map(state.game_state.inventory_items, & &1.nameid)
+      nameids = Enum.map(items, & &1.nameid)
       assert 501 in nameids
       assert 1201 in nameids
     end
@@ -325,11 +329,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
         })
 
       # Verify state reflects the modified inventory
-      assert length(state.game_state.inventory_items) == 2
+      items = PlayerState.to_list(state.game_state.inventory)
+      assert length(items) == 2
 
       # Find the items
-      potion_item = Enum.find(state.game_state.inventory_items, &(&1.nameid == 501))
-      weapon_item = Enum.find(state.game_state.inventory_items, &(&1.nameid == 1201))
+      potion_item = Enum.find(items, &(&1.nameid == 501))
+      weapon_item = Enum.find(items, &(&1.nameid == 1201))
 
       # 5 - 2 = 3 remaining
       assert potion_item.amount == 3

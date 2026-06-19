@@ -22,9 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
   def load_character_inventory(character, game_state) do
     case Inventory.load_inventory(character.id) do
       {:ok, inventory_items} ->
-        updated_game_state =
-          game_state
-          |> PlayerState.set_inventory(inventory_items)
+        updated_game_state = %{game_state | inventory: PlayerState.from_list(inventory_items)}
 
         {:ok, updated_game_state}
 

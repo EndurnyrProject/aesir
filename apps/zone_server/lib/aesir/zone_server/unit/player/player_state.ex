@@ -53,9 +53,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           skill_cooldowns: %{integer() => integer()},
           regen_accumulators: %{atom() => non_neg_integer()},
           stats: PlayerStats.t(),
-          inventory_items: list()
+          inventory: %{non_neg_integer() => InventoryItem.t()}
         }
 
+  @client_index_offset 2
+
+  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
   alias Aesir.ZoneServer.Mmo.WeaponTypes
@@ -124,8 +127,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # Character Stats
     :stats,
 
-    # Inventory
-    :inventory_items,
+    # Inventory keyed by stable session index
+    inventory: %{},
     skill_cooldowns: %{},
     regen_accumulators: %{hp_acc: 0, sp_acc: 0, skill_hp_acc: 0, skill_sp_acc: 0}
   ]
@@ -181,7 +184,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       stats: PlayerStats.from_character(character),
 
       # Inventory (will be loaded separately)
-      inventory_items: []
+      inventory: %{}
     }
   end
 
@@ -193,11 +196,74 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   end
 
   @doc """
-  Sets the inventory items for the player state.
+  Builds an indexed inventory map from a list of items, assigning contiguous
+  indices starting at 0 ordered by the DB `id`.
   """
-  def set_inventory(%__MODULE__{} = state, inventory_items) do
-    %{state | inventory_items: inventory_items}
+  @spec from_list([InventoryItem.t()]) :: %{non_neg_integer() => InventoryItem.t()}
+  def from_list(items) when is_list(items) do
+    items
+    |> Enum.sort_by(& &1.id)
+    |> Enum.with_index()
+    |> Map.new(fn {item, index} -> {index, item} end)
   end
+
+  @doc """
+  Returns the inventory items ordered by their session index.
+  """
+  @spec to_list(%{non_neg_integer() => InventoryItem.t()}) :: [InventoryItem.t()]
+  def to_list(inventory) when is_map(inventory) do
+    inventory
+    |> Enum.sort_by(fn {index, _item} -> index end)
+    |> Enum.map(fn {_index, item} -> item end)
+  end
+
+  @doc """
+  Returns the item at the given session index, or nil when absent.
+  """
+  @spec get_by_index(%{non_neg_integer() => InventoryItem.t()}, non_neg_integer()) ::
+          InventoryItem.t() | nil
+  def get_by_index(inventory, index) when is_map(inventory) do
+    Map.get(inventory, index)
+  end
+
+  @doc """
+  Returns the smallest unused non-negative index in the inventory map.
+  """
+  @spec lowest_free_index(%{non_neg_integer() => InventoryItem.t()}) :: non_neg_integer()
+  def lowest_free_index(inventory) when is_map(inventory) do
+    Stream.iterate(0, &(&1 + 1))
+    |> Enum.find(fn index -> not Map.has_key?(inventory, index) end)
+  end
+
+  @doc """
+  Puts an item at the given session index.
+  """
+  @spec put_item(%{non_neg_integer() => InventoryItem.t()}, non_neg_integer(), InventoryItem.t()) ::
+          %{non_neg_integer() => InventoryItem.t()}
+  def put_item(inventory, index, %InventoryItem{} = item) when is_map(inventory) do
+    Map.put(inventory, index, item)
+  end
+
+  @doc """
+  Removes the item at the given session index.
+  """
+  @spec delete_index(%{non_neg_integer() => InventoryItem.t()}, non_neg_integer()) ::
+          %{non_neg_integer() => InventoryItem.t()}
+  def delete_index(inventory, index) when is_map(inventory) do
+    Map.delete(inventory, index)
+  end
+
+  @doc """
+  Converts a server-side session index to the client-side index (+2 offset).
+  """
+  @spec client_index(non_neg_integer()) :: non_neg_integer()
+  def client_index(index) when is_integer(index), do: index + @client_index_offset
+
+  @doc """
+  Converts a client-side index back to the server-side session index (−2 offset).
+  """
+  @spec server_index(non_neg_integer()) :: integer()
+  def server_index(index) when is_integer(index), do: index - @client_index_offset
 
   @doc """
   Sets a movement path and starts walking.

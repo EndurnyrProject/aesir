@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -92,7 +93,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     })
 
     StatusSync.send_stat_updates(connection_pid, game_state.stats)
-    send_inventory_data(connection_pid, game_state.inventory_items)
+    send_inventory_data(connection_pid, PlayerState.to_list(game_state.inventory))
 
     skill_list = ZcSkillinfoList.from_learned(game_state.stats.progression.learned_skills)
     send(connection_pid, {:send_packet, skill_list})

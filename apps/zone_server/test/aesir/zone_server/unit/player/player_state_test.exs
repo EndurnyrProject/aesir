@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
   use ExUnit.Case, async: true
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   describe "state transitions" do
@@ -236,6 +237,58 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       combatant = PlayerState.to_combatant(with_weapon(state, 0))
       assert combatant.weapon.type == :fist
       assert combatant.attack_range == 1
+    end
+  end
+
+  describe "indexed inventory" do
+    test "from_list assigns contiguous indices ordered by id" do
+      items = [
+        %InventoryItem{id: 30, nameid: 501},
+        %InventoryItem{id: 10, nameid: 1201},
+        %InventoryItem{id: 20, nameid: 2301}
+      ]
+
+      inventory = PlayerState.from_list(items)
+
+      assert %{
+               0 => %InventoryItem{id: 10},
+               1 => %InventoryItem{id: 20},
+               2 => %InventoryItem{id: 30}
+             } = inventory
+    end
+
+    test "to_list returns items ordered by index" do
+      inventory = PlayerState.from_list([%InventoryItem{id: 5}, %InventoryItem{id: 3}])
+
+      assert [%InventoryItem{id: 3}, %InventoryItem{id: 5}] = PlayerState.to_list(inventory)
+    end
+
+    test "get_by_index returns the item or nil" do
+      inventory = PlayerState.from_list([%InventoryItem{id: 7, nameid: 909}])
+
+      assert %InventoryItem{nameid: 909} = PlayerState.get_by_index(inventory, 0)
+      assert PlayerState.get_by_index(inventory, 1) == nil
+    end
+
+    test "lowest_free_index returns the smallest unused index" do
+      inventory = %{0 => %InventoryItem{}, 1 => %InventoryItem{}, 3 => %InventoryItem{}}
+
+      assert PlayerState.lowest_free_index(inventory) == 2
+      assert PlayerState.lowest_free_index(%{}) == 0
+    end
+
+    test "put_item and delete_index update the map" do
+      item = %InventoryItem{id: 1, nameid: 501}
+      inventory = PlayerState.put_item(%{}, 0, item)
+
+      assert %{0 => ^item} = inventory
+      assert PlayerState.delete_index(inventory, 0) == %{}
+    end
+
+    test "client_index and server_index are exact inverses with a +2 offset" do
+      assert PlayerState.client_index(0) == 2
+      assert PlayerState.server_index(2) == 0
+      assert PlayerState.server_index(PlayerState.client_index(7)) == 7
     end
   end
 
