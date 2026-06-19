@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
-  alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
+  alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
 
@@ -228,7 +228,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       total_atk * (4000 + effective_hard_def) / (4000 + 10 * effective_hard_def) -
         modified_soft_def
 
-    final_damage = max(1, trunc(base_damage))
+    final_damage = DamageShared.clamp_min_one(base_damage)
 
     Logger.debug(
       "Defense calculation: total_atk=#{trunc(total_atk)}, hard_def=#{modified_hard_def}, soft_def=#{modified_soft_def}, final_damage=#{final_damage}"
@@ -287,15 +287,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   defp apply_element_modifier(damage, attacker, defender, attacker_modifiers) do
     attack_element = resolve_attack_element(attacker, attacker_modifiers)
-
-    case Map.get(defender, :element, {:neutral, 1}) do
-      {defender_element, defender_level} ->
-        modifier = ElementModifiers.get_modifier(attack_element, defender_element, defender_level)
-        damage * modifier
-
-      _ ->
-        damage
-    end
+    DamageShared.apply_element(damage, attack_element, defender)
   end
 
   defp resolve_attack_element(attacker, attacker_modifiers) do
@@ -327,15 +319,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   end
 
   defp apply_status_effect_damage_modifiers(damage, modifiers) do
-    # Apply damage-related modifiers
     damage_modifier = Map.get(modifiers, :damage_bonus, 0) + Map.get(modifiers, :atk_bonus, 0)
-    damage_multiplier = 1.0 + Map.get(modifiers, :damage_multiplier, 0.0)
 
-    Logger.debug(
-      "Status effect damage modifiers: bonus=#{damage_modifier}, multiplier=#{damage_multiplier}"
-    )
+    Logger.debug("Status effect damage modifiers: bonus=#{damage_modifier}")
 
-    (damage + damage_modifier) * damage_multiplier
+    DamageShared.apply_damage_multiplier(damage + damage_modifier, modifiers)
   end
 
   defp apply_status_effect_defense_modifiers(hard_def, soft_def, defender) do
