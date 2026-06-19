@@ -49,13 +49,13 @@ defmodule Aesir.CharServer.Packets.HcCharacterList do
   def parse(_), do: {:error, :invalid_packet}
 
   @impl true
-  def build(%__MODULE__{} = packet) do
-    normal = packet.normal_slots || 9
-    premium = packet.premium_slots || 0
-    billing = packet.billing_slots || 0
-    producible = packet.producible_slots || 9
-    valid = packet.valid_slots || 15
-
+  def build(%__MODULE__{
+        normal_slots: normal,
+        premium_slots: premium,
+        billing_slots: billing,
+        producible_slots: producible,
+        valid_slots: valid
+      }) do
     <<
       @packet_id::16-little,
       29::16-little,

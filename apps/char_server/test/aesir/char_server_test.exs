@@ -9,6 +9,7 @@ defmodule Aesir.CharServerTest do
   alias Aesir.CharServer.CharacterSession
   alias Aesir.CharServer.Packets.HcAcceptEnter
   alias Aesir.CharServer.Packets.HcBlockCharacter
+  alias Aesir.CharServer.Packets.HcCharacterList
   alias Aesir.CharServer.Packets.HcCharlistNotify
   alias Aesir.CharServer.Packets.HcNotifyZonesvr
   alias Aesir.CharServer.Packets.HcRefuseEnter
@@ -54,6 +55,37 @@ defmodule Aesir.CharServerTest do
 
       assert char_list_idx < notify_idx
       assert notify_idx < block_idx
+    end
+
+    test "exposes a consistent slot count across 0x082D and 0x09A0 (5 pages of 3)" do
+      parsed_data = %{aid: 1001, login_id1: 123, login_id2: 456, sex: 0}
+      session_data = %{}
+      updated_session = %{account_id: 1001, authenticated: true, username: "testuser"}
+
+      CharacterSession
+      |> stub(:validate_character_session, fn 1001, 123, 456, 0 ->
+        {:ok, updated_session}
+      end)
+
+      Characters
+      |> stub(:list_characters, fn 1001, ^updated_session ->
+        {:ok, []}
+      end)
+
+      assert {:ok, ^updated_session, response_packets} =
+               CharServer.handle_packet(0x0065, parsed_data, session_data)
+
+      slot_config = Enum.find(response_packets, &match?(%HcCharacterList{}, &1))
+      notify = Enum.find(response_packets, &match?(%HcCharlistNotify{}, &1))
+
+      # Producible (selectable) slots and the notify page-source must agree, so the
+      # client never renders fewer pages than there are usable slots.
+      assert slot_config.producible_slots == slot_config.valid_slots
+      assert notify.char_slots == slot_config.producible_slots
+
+      # 15 slots -> max(15 / 3, 1) = 5 navigable pages.
+      assert <<0x09A0::16-little, total::32-little>> = HcCharlistNotify.build(notify)
+      assert total == 5
     end
 
     test "handles session validation failure" do

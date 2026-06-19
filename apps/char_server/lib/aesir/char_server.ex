@@ -25,6 +25,11 @@ defmodule Aesir.CharServer do
   alias Aesir.CharServer.Packets.HcSecondPasswdLogin
   alias Aesir.Commons.SessionManager
 
+  # Character slots exposed to the client. Aesir has no VIP/billing tiers, so
+  # normal/producible/valid all equal this. The client renders max(@max_chars/3, 1)
+  # pages of 3 slots; matches rAthena MAX_CHARS for the latest packetver.
+  @max_chars 15
+
   @impl Aesir.Commons.Network.Connection
   def handle_packet(0x0065, parsed_data, session_data) do
     Logger.info("Character list requested for account: #{parsed_data.aid}")
@@ -40,16 +45,16 @@ defmodule Aesir.CharServer do
            ),
          {:ok, characters} <- Characters.list_characters(parsed_data.aid, updated_session) do
       slot_config = %HcCharacterList{
-        normal_slots: 9,
+        normal_slots: @max_chars,
         premium_slots: 0,
         billing_slots: 0,
-        producible_slots: 9,
-        valid_slots: 15
+        producible_slots: @max_chars,
+        valid_slots: @max_chars
       }
 
       char_list = %HcAcceptEnter{characters: characters}
 
-      char_list_notify = %HcCharlistNotify{char_slots: 9}
+      char_list_notify = %HcCharlistNotify{char_slots: @max_chars}
 
       blocked_chars = %HcBlockCharacter{
         blocked_chars: []
