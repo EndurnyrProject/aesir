@@ -8,6 +8,8 @@ defmodule Aesir.CharServerTest do
   alias Aesir.CharServer.Characters
   alias Aesir.CharServer.CharacterSession
   alias Aesir.CharServer.Packets.HcAcceptEnter
+  alias Aesir.CharServer.Packets.HcBlockCharacter
+  alias Aesir.CharServer.Packets.HcCharlistNotify
   alias Aesir.CharServer.Packets.HcNotifyZonesvr
   alias Aesir.CharServer.Packets.HcRefuseEnter
   alias Aesir.Commons.SessionManager
@@ -37,12 +39,21 @@ defmodule Aesir.CharServerTest do
       assert {:ok, ^updated_session, response_packets} =
                CharServer.handle_packet(0x0065, parsed_data, session_data)
 
-      assert length(response_packets) == 5
+      assert length(response_packets) == 6
 
       # Find the HcAcceptEnter packet in the response
       assert Enum.any?(response_packets, fn packet ->
                match?(%HcAcceptEnter{characters: ^character_list}, packet)
              end)
+
+      # HC_CHARLIST_NOTIFY (0x09A0) must follow the char list and precede the block list,
+      # matching rAthena's chclif_mmo_char_send order (006B -> 09A0 -> 020D).
+      char_list_idx = Enum.find_index(response_packets, &match?(%HcAcceptEnter{}, &1))
+      notify_idx = Enum.find_index(response_packets, &match?(%HcCharlistNotify{}, &1))
+      block_idx = Enum.find_index(response_packets, &match?(%HcBlockCharacter{}, &1))
+
+      assert char_list_idx < notify_idx
+      assert notify_idx < block_idx
     end
 
     test "handles session validation failure" do

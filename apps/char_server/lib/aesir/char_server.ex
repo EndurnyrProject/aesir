@@ -18,6 +18,7 @@ defmodule Aesir.CharServer do
   alias Aesir.CharServer.Packets.HcBlockCharacter
   alias Aesir.CharServer.Packets.HcCharacterList
   alias Aesir.CharServer.Packets.HcCharDelete2Ack
+  alias Aesir.CharServer.Packets.HcCharlistNotify
   alias Aesir.CharServer.Packets.HcNotifyZonesvr
   alias Aesir.CharServer.Packets.HcRefuseEnter
   alias Aesir.CharServer.Packets.HcRefuseMakechar
@@ -48,6 +49,8 @@ defmodule Aesir.CharServer do
 
       char_list = %HcAcceptEnter{characters: characters}
 
+      char_list_notify = %HcCharlistNotify{char_slots: 9}
+
       blocked_chars = %HcBlockCharacter{
         blocked_chars: []
       }
@@ -58,7 +61,8 @@ defmodule Aesir.CharServer do
         state: 0
       }
 
-      {:ok, updated_session, [account_id_ack, slot_config, char_list, blocked_chars, pincode]}
+      {:ok, updated_session,
+       [account_id_ack, slot_config, char_list, char_list_notify, blocked_chars, pincode]}
     else
       {:error, reason}
       when reason in [

@@ -31,9 +31,8 @@ defmodule Aesir.CharServer.Packets.HcCharlistNotify do
   def parse(_), do: {:error, :invalid_packet}
 
   @impl true
-  def build(%__MODULE__{} = packet) do
-    char_slots = packet.char_slots || 9
-    total_count = if char_slots > 3, do: div(char_slots, 3), else: 1
+  def build(%__MODULE__{char_slots: char_slots}) when is_integer(char_slots) do
+    total_count = max(div(char_slots, 3), 1)
 
     <<
       @packet_id::16-little,
