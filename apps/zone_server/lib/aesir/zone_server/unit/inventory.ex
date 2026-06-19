@@ -1,258 +1,322 @@
 defmodule Aesir.ZoneServer.Unit.Inventory do
   @moduledoc """
-  Inventory management for character items in the zone server.
+  Pure domain core for a character's in-session inventory.
 
-  Handles:
-  - Loading character inventory from database
-  - Item manipulation (add, remove, move)
-  - Equipment management
-  - Inventory synchronization with client
+  Operates purely on the indexed inventory map carried by `PlayerState`
+  (`%{non_neg_integer() => InventoryItem.t()}`) and returns a change descriptor
+  describing what happened. There is no database access, no socket, and no other
+  side effect here; persistence and packet emission are the orchestrator's job.
+
+  Reading static item definitions through `ItemManagement.get_item_by_id/1` and
+  the location/job lookup helpers are deterministic static reads, not side
+  effects, so they stay inside the core.
   """
 
-  import Ecto.Query
-  require Logger
-
   alias Aesir.Commons.Models.InventoryItem
-  alias Aesir.Repo
+  alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+
+  import Bitwise
 
   @max_inventory 100
   @max_stack 30_000
 
-  @type inventory_slot :: non_neg_integer()
-  @type item_result :: {:ok, InventoryItem.t()} | {:error, atom()}
-  @type inventory_result :: {:ok, [InventoryItem.t()]} | {:error, atom()}
+  @equippable_types [
+    :weapon,
+    :armor,
+    :ammo,
+    :pet_armor,
+    :shadow_gear
+  ]
+
+  @typedoc "Inventory keyed by stable session index."
+  @type t :: %{non_neg_integer() => InventoryItem.t()}
+
+  @typedoc "Validation context required to equip an item: job and base level."
+  @type equip_ctx :: %{job_id: integer(), base_level: integer()}
+
+  @typedoc "Descriptor of the change produced by a successful operation."
+  @type change ::
+          {:added, non_neg_integer(), InventoryItem.t()}
+          | {:stacked, non_neg_integer(), pos_integer()}
+          | {:split, [{non_neg_integer(), pos_integer()}]}
+          | {:removed, non_neg_integer()}
+          | {:reduced, non_neg_integer(), pos_integer()}
+          | {:equipped, non_neg_integer(), non_neg_integer(), [non_neg_integer()]}
+          | {:unequipped, non_neg_integer()}
+
+  @typedoc "Successful operation result: the new inventory plus the change."
+  @type op_result :: {:ok, t(), change()} | {:error, atom()}
 
   @doc """
-  Loads a character's complete inventory from the database.
+  Loads a character's complete inventory from persistence.
 
-  Delegates to `Aesir.ZoneServer.Unit.Inventory.Persistence` which owns the Ecto
-  access; kept here for the mutation helpers in this module.
+  Forwards to `Aesir.ZoneServer.Unit.Inventory.Persistence`; kept here so the
+  load path used by the inventory manager has a stable entry point.
   """
-  @spec load_inventory(integer()) :: inventory_result()
+  @spec load_inventory(integer()) :: {:ok, [InventoryItem.t()]} | {:error, term()}
   defdelegate load_inventory(char_id), to: Persistence
 
   @doc """
-  Adds an item to the character's inventory.
-  Automatically handles stacking for stackable items.
+  Adds `amount` of `item_def` to `inventory`.
+
+  Stacks into an existing stackable item (same `nameid`, not equipped, no cards,
+  no random options) up to `#{@max_stack}` and spills the overflow into the
+  lowest free index(es). With no stackable target it creates a new item at the
+  lowest free index. The add is all-or-nothing: if any required slot is missing
+  the inventory is left untouched and `{:error, :inventory_full}` is returned.
+
+  Weight is intentionally NOT enforced here; the orchestrator enforces it.
   """
-  @spec add_item(integer(), integer(), integer(), map()) :: item_result()
-  def add_item(char_id, nameid, amount, opts \\ %{}) do
-    with {:ok, existing_items} <- load_inventory(char_id),
-         :ok <- validate_inventory_space(existing_items, amount),
-         {:ok, item} <- create_or_update_item(char_id, nameid, amount, existing_items, opts) do
-      {:ok, item}
+  @spec add(t(), ItemDefinition.t(), pos_integer(), map()) :: op_result()
+  def add(inventory, %ItemDefinition{} = item_def, amount, opts \\ %{})
+      when is_map(inventory) and is_integer(amount) and amount > 0 do
+    case find_stackable_index(inventory, item_def.id) do
+      nil -> add_to_new_slots(inventory, item_def, amount, opts)
+      index -> stack_onto(inventory, index, item_def, amount, opts)
+    end
+  end
+
+  @doc """
+  Removes `amount` from the item at `index`.
+
+  Reduces the stack or, when the amount reaches zero, drops the slot entirely.
+  """
+  @spec remove(t(), non_neg_integer(), pos_integer()) :: op_result()
+  def remove(inventory, index, amount)
+      when is_map(inventory) and is_integer(amount) and amount > 0 do
+    case Map.get(inventory, index) do
+      nil ->
+        {:error, :not_found}
+
+      %InventoryItem{amount: held} when held < amount ->
+        {:error, :insufficient_amount}
+
+      %InventoryItem{amount: held} when held == amount ->
+        {:ok, PlayerState.delete_index(inventory, index), {:removed, index}}
+
+      %InventoryItem{amount: held} = item ->
+        left = held - amount
+        updated = %{item | amount: left}
+        {:ok, PlayerState.put_item(inventory, index, updated), {:reduced, index, left}}
+    end
+  end
+
+  @doc """
+  Equips the item at `index` into the client-requested `position` bitmask.
+
+  Validates that the item exists, is equipment, the job and level requirements
+  are met, the item is not broken, and that `position` is one of the slots the
+  item's `locations` allow. The worn mask is derived from the item's allowed
+  locations: an accessory that allows both accessory slots is narrowed to a
+  single slot honouring `position` (or, when ambiguous, the first free slot);
+  every other item wears its full allowed mask (a two-hander stays on both
+  hands, a single-slot item on its bit). Any currently equipped item whose
+  bitmask intersects the worn mask is auto-unequipped and reported in
+  `unequipped_indices`.
+  """
+  @spec equip(t(), non_neg_integer(), non_neg_integer(), equip_ctx()) :: op_result()
+  def equip(inventory, index, position, ctx)
+      when is_map(inventory) and is_integer(position) and position >= 0 do
+    with {:ok, item} <- fetch(inventory, index),
+         {:ok, item_def} <- ItemManagement.get_item_by_id(item.nameid),
+         :ok <- validate_equippable(item_def),
+         :ok <- validate_requirements(item_def, ctx),
+         :ok <- validate_not_broken(item),
+         {:ok, worn_mask} <- resolve_worn_mask(inventory, item_def, position) do
+      {inventory, unequipped} = unequip_conflicts(inventory, index, worn_mask)
+      equipped = %{item | equip: worn_mask}
+      new_inventory = PlayerState.put_item(inventory, index, equipped)
+      {:ok, new_inventory, {:equipped, index, worn_mask, unequipped}}
     else
+      {:error, :item_not_found} -> {:error, :cannot_equip}
       {:error, reason} -> {:error, reason}
     end
   end
 
   @doc """
-  Removes an item or reduces its amount from the inventory.
+  Unequips the item at `index`, resetting its `equip` bitmask to 0.
   """
-  @spec remove_item(integer(), integer(), integer()) :: item_result()
-  def remove_item(char_id, item_id, amount) do
-    with {:ok, item} <- get_item(char_id, item_id),
-         :ok <- validate_removal(item, amount) do
-      if item.amount <= amount do
-        delete_item(item, item_id)
-      else
-        reduce_item_amount(item, item_id, amount)
-      end
-    end
-  end
-
-  defp delete_item(item, item_id) do
-    case Repo.delete(item) do
-      {:ok, deleted_item} ->
-        {:ok, deleted_item}
-
-      {:error, changeset} ->
-        Logger.error("Failed to delete item #{item_id}: #{inspect(changeset.errors)}")
-        {:error, :item_delete_failed}
-    end
-  end
-
-  defp reduce_item_amount(item, item_id, amount) do
-    changeset = InventoryItem.changeset(item, %{amount: item.amount - amount})
-
-    case Repo.update(changeset) do
-      {:ok, updated_item} ->
-        {:ok, updated_item}
-
-      {:error, changeset} ->
-        Logger.error("Failed to update item #{item_id}: #{inspect(changeset.errors)}")
-        {:error, :item_update_failed}
+  @spec unequip(t(), non_neg_integer()) :: op_result()
+  def unequip(inventory, index) when is_map(inventory) do
+    case Map.get(inventory, index) do
+      nil -> {:error, :not_found}
+      %InventoryItem{equip: 0} -> {:error, :not_equipped}
+      %InventoryItem{} = item -> do_unequip(inventory, index, item)
     end
   end
 
   @doc """
-  Gets a specific item from character's inventory.
+  Returns the equipped items (those with a non-zero `equip` bitmask), keyed by
+  their session index.
   """
-  @spec get_item(integer(), integer()) :: item_result()
-  def get_item(char_id, item_id) do
-    case Repo.get_by(InventoryItem, id: item_id, char_id: char_id) do
-      nil -> {:error, :item_not_found}
-      item -> {:ok, item}
+  @spec equipped_items(t()) :: t()
+  def equipped_items(inventory) when is_map(inventory) do
+    for {index, %InventoryItem{equip: equip} = item} <- inventory, equip > 0, into: %{} do
+      {index, item}
     end
   end
 
-  @doc """
-  Equips an item to a specific equipment slot.
-  """
-  @spec equip_item(integer(), integer(), integer()) :: item_result()
-  def equip_item(char_id, item_id, equip_position) do
-    with {:ok, item} <- get_item(char_id, item_id),
-         :ok <- validate_equipment(item, equip_position),
-         :ok <- unequip_conflicting_items(char_id, equip_position) do
-      changeset = InventoryItem.changeset(item, %{equip: equip_position})
+  defp do_unequip(inventory, index, item) do
+    updated = %{item | equip: 0}
+    {:ok, PlayerState.put_item(inventory, index, updated), {:unequipped, index}}
+  end
 
-      case Repo.update(changeset) do
-        {:ok, updated_item} ->
-          {:ok, updated_item}
-
-        {:error, changeset} ->
-          Logger.error("Failed to equip item #{item_id}: #{inspect(changeset.errors)}")
-          {:error, :equip_failed}
-      end
+  defp fetch(inventory, index) do
+    case Map.get(inventory, index) do
+      nil -> {:error, :not_found}
+      %InventoryItem{} = item -> {:ok, item}
     end
   end
 
-  @doc """
-  Unequips an item from its current equipment slot.
-  """
-  @spec unequip_item(integer(), integer()) :: item_result()
-  def unequip_item(char_id, item_id) do
-    with {:ok, item} <- get_item(char_id, item_id) do
-      changeset = InventoryItem.changeset(item, %{equip: 0})
-
-      case Repo.update(changeset) do
-        {:ok, updated_item} ->
-          {:ok, updated_item}
-
-        {:error, changeset} ->
-          Logger.error("Failed to unequip item #{item_id}: #{inspect(changeset.errors)}")
-          {:error, :unequip_failed}
-      end
-    end
-  end
-
-  @doc """
-  Gets all equipped items for a character.
-  """
-  @spec get_equipped_items(integer()) :: inventory_result()
-  def get_equipped_items(char_id) do
-    items =
-      InventoryItem
-      |> where([i], i.char_id == ^char_id and i.equip > 0)
-      |> Repo.all()
-
-    {:ok, items}
-  rescue
-    error ->
-      Logger.error("Failed to load equipped items for char_id #{char_id}: #{inspect(error)}")
-      {:error, :equipped_items_load_failed}
-  end
-
-  @doc """
-  Generates a unique ID for a new item.
-  """
-  @spec generate_unique_id(integer()) :: integer()
-  def generate_unique_id(char_id) do
-    # Simple unique ID generation - in production, consider using a proper UUID or sequence
-    :os.system_time(:microsecond) + char_id
-  end
-
-  # Private functions
-
-  defp validate_inventory_space(existing_items, _amount) do
-    if length(existing_items) >= @max_inventory do
-      {:error, :inventory_full}
-    else
-      :ok
-    end
-  end
-
-  defp create_or_update_item(char_id, nameid, amount, existing_items, opts) do
-    # Try to find existing stackable item
-    existing_item = find_stackable_item(existing_items, nameid)
-
-    if existing_item && can_stack?(existing_item, amount) do
-      # Stack with existing item
-      new_amount = existing_item.amount + amount
-      changeset = InventoryItem.changeset(existing_item, %{amount: new_amount})
-
-      case Repo.update(changeset) do
-        {:ok, updated_item} ->
-          {:ok, updated_item}
-
-        {:error, changeset} ->
-          Logger.error("Failed to stack item #{nameid}: #{inspect(changeset.errors)}")
-          {:error, :item_stack_failed}
-      end
-    else
-      # Create new item
-      item_attrs = %{
-        char_id: char_id,
-        nameid: nameid,
-        amount: amount,
-        unique_id: generate_unique_id(char_id),
-        identify: Map.get(opts, :identify, 1),
-        refine: Map.get(opts, :refine, 0),
-        attribute: Map.get(opts, :attribute, 0),
-        card0: Map.get(opts, :card0, 0),
-        card1: Map.get(opts, :card1, 0),
-        card2: Map.get(opts, :card2, 0),
-        card3: Map.get(opts, :card3, 0),
-        random_options: Map.get(opts, :random_options, %{}),
-        bound: Map.get(opts, :bound, 0),
-        favorite: Map.get(opts, :favorite, 0)
-      }
-
-      changeset = InventoryItem.changeset(%InventoryItem{}, item_attrs)
-
-      case Repo.insert(changeset) do
-        {:ok, new_item} ->
-          {:ok, new_item}
-
-        {:error, changeset} ->
-          Logger.error("Failed to create item #{nameid}: #{inspect(changeset.errors)}")
-          {:error, :item_create_failed}
-      end
-    end
-  end
-
-  defp find_stackable_item(items, nameid) do
-    Enum.find(items, fn item ->
-      item.nameid == nameid &&
-        item.equip == 0 &&
-        item.card0 == 0 && item.card1 == 0 && item.card2 == 0 && item.card3 == 0 &&
-        map_size(item.random_options) == 0
+  defp find_stackable_index(inventory, nameid) do
+    Enum.find_value(inventory, fn {index, item} ->
+      if stackable?(item, nameid), do: index
     end)
   end
 
-  defp can_stack?(item, additional_amount) do
-    item.amount + additional_amount <= @max_stack
+  defp stackable?(%InventoryItem{} = item, nameid) do
+    item.nameid == nameid and item.equip == 0 and
+      item.card0 == 0 and item.card1 == 0 and item.card2 == 0 and item.card3 == 0 and
+      map_size(item.random_options) == 0
   end
 
-  defp validate_removal(item, amount) do
-    if item.amount >= amount do
-      :ok
+  defp stack_onto(inventory, index, item_def, amount, opts) do
+    item = Map.fetch!(inventory, index)
+    total = item.amount + amount
+
+    if total <= @max_stack do
+      updated = %{item | amount: total}
+      {:ok, PlayerState.put_item(inventory, index, updated), {:stacked, index, total}}
     else
-      {:error, :insufficient_amount}
+      remainder = total - @max_stack
+      topped = %{item | amount: @max_stack}
+      inventory = PlayerState.put_item(inventory, index, topped)
+
+      case add_to_new_slots(inventory, item_def, remainder, opts) do
+        {:ok, new_inventory, {:added, new_index, %InventoryItem{amount: new_amount}}} ->
+          {:ok, new_inventory, {:split, [{index, @max_stack}, {new_index, new_amount}]}}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
     end
   end
 
-  defp validate_equipment(_item, _equip_position) do
-    # TODO: Add proper equipment validation (job requirements, item type, etc.)
-    :ok
+  defp add_to_new_slots(inventory, item_def, amount, opts) do
+    if map_size(inventory) >= @max_inventory do
+      {:error, :inventory_full}
+    else
+      index = PlayerState.lowest_free_index(inventory)
+      new_item = build_item(item_def, amount, opts)
+      {:ok, PlayerState.put_item(inventory, index, new_item), {:added, index, new_item}}
+    end
   end
 
-  defp unequip_conflicting_items(char_id, equip_position) do
-    # TODO: Implement logic to unequip items that conflict with new equipment
-    # For now, just allow it
-    _ = char_id
-    _ = equip_position
-    :ok
+  defp build_item(%ItemDefinition{} = item_def, amount, opts) do
+    %InventoryItem{
+      nameid: item_def.id,
+      amount: amount,
+      equip: 0,
+      identify: Map.get(opts, :identify, 1),
+      refine: Map.get(opts, :refine, 0),
+      attribute: Map.get(opts, :attribute, 0),
+      card0: Map.get(opts, :card0, 0),
+      card1: Map.get(opts, :card1, 0),
+      card2: Map.get(opts, :card2, 0),
+      card3: Map.get(opts, :card3, 0),
+      random_options: Map.get(opts, :random_options, %{}),
+      bound: Map.get(opts, :bound, 0),
+      favorite: Map.get(opts, :favorite, 0)
+    }
+  end
+
+  @both_accessory 0x88
+  @right_accessory 0x08
+  @left_accessory 0x80
+
+  defp resolve_worn_mask(inventory, %ItemDefinition{locations: locations}, position) do
+    allowed = EquipLocation.location_atoms_to_bitmask(locations)
+
+    if allowed == 0 or position == 0 or (position &&& allowed) == 0 do
+      {:error, :cannot_equip}
+    else
+      {:ok, worn_mask(inventory, allowed, position)}
+    end
+  end
+
+  defp worn_mask(inventory, allowed, position)
+       when (allowed &&& @both_accessory) == @both_accessory do
+    case position &&& @both_accessory do
+      @right_accessory -> @right_accessory
+      @left_accessory -> @left_accessory
+      _ambiguous -> free_accessory_slot(inventory)
+    end
+  end
+
+  defp worn_mask(_inventory, allowed, _position), do: allowed
+
+  defp free_accessory_slot(inventory) do
+    occupied =
+      Enum.reduce(inventory, 0, fn {_index, %InventoryItem{equip: equip}}, acc ->
+        acc ||| equip
+      end)
+
+    cond do
+      (occupied &&& @right_accessory) == 0 -> @right_accessory
+      (occupied &&& @left_accessory) == 0 -> @left_accessory
+      true -> @right_accessory
+    end
+  end
+
+  defp validate_equippable(%ItemDefinition{type: type}) do
+    if type in @equippable_types, do: :ok, else: {:error, :cannot_equip}
+  end
+
+  defp validate_requirements(%ItemDefinition{} = item_def, %{} = ctx) do
+    with :ok <- validate_job(item_def, ctx.job_id) do
+      validate_level(item_def, ctx.base_level)
+    end
+  end
+
+  defp validate_job(%ItemDefinition{jobs: []}, _job_id), do: :ok
+
+  defp validate_job(%ItemDefinition{jobs: jobs}, job_id) do
+    with {:ok, job_name} <- AvailableJobs.job_id_to_name(job_id),
+         true <- job_name in jobs do
+      :ok
+    else
+      _ -> {:error, :requirement_unmet}
+    end
+  end
+
+  defp validate_level(%ItemDefinition{equip_level_min: min, equip_level_max: max}, base_level) do
+    below_min? = min > 0 and base_level < min
+    above_max? = max > 0 and base_level > max
+    if below_min? or above_max?, do: {:error, :requirement_unmet}, else: :ok
+  end
+
+  defp validate_not_broken(%InventoryItem{attribute: 1}), do: {:error, :item_broken}
+  defp validate_not_broken(%InventoryItem{}), do: :ok
+
+  defp unequip_conflicts(inventory, equipping_index, location) do
+    Enum.reduce(inventory, {inventory, []}, fn
+      {^equipping_index, _item}, acc ->
+        acc
+
+      {index, %InventoryItem{equip: equip} = item}, {inv, removed} when equip > 0 ->
+        if (equip &&& location) != 0 do
+          {PlayerState.put_item(inv, index, %{item | equip: 0}), [index | removed]}
+        else
+          {inv, removed}
+        end
+
+      {_index, _item}, acc ->
+        acc
+    end)
   end
 end

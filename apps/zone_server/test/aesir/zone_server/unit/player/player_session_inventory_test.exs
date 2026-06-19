@@ -7,7 +7,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
 
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
-  alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -20,6 +19,19 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
     Mimic.copy(Persistence)
 
     :ok
+  end
+
+  # Seeds an inventory row directly through Persistence (the pure domain core no
+  # longer touches the DB). Returns the inserted item.
+  defp seed_item(char_id, nameid, amount, attrs \\ %{}) do
+    {:ok, item} =
+      Persistence.insert_item(char_id, Map.merge(%{nameid: nameid, amount: amount}, attrs))
+
+    item
+  end
+
+  defp seed_equipped(char_id, nameid, equip) do
+    seed_item(char_id, nameid, 1, %{equip: equip})
   end
 
   setup do
@@ -71,9 +83,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
     test "loads existing inventory items on init", %{character: character} do
       # Add some items to character's inventory
       # 5 Red Potions
-      {:ok, _item1} = Inventory.add_item(character.id, 501, 5)
+      seed_item(character.id, 501, 5)
       # 1 Knife
-      {:ok, _item2} = Inventory.add_item(character.id, 1201, 1)
+      seed_item(character.id, 1201, 1)
 
       connection_pid = self()
 
@@ -94,11 +106,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
 
     test "handles equipped items correctly", %{character: character} do
       # Add items - one for inventory, one for equipment
-      {:ok, _potion} = Inventory.add_item(character.id, 501, 10)
-      {:ok, weapon} = Inventory.add_item(character.id, 1201, 1)
-
-      # Equip the weapon
-      {:ok, _equipped_weapon} = Inventory.equip_item(character.id, weapon.id, 2)
+      seed_item(character.id, 501, 10)
+      seed_equipped(character.id, 1201, 2)
 
       connection_pid = self()
 
@@ -151,9 +160,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
   describe "inventory packets" do
     test "sends inventory packets during LoadEndAck sequence", %{character: character} do
       # Add some inventory items
-      {:ok, _potion} = Inventory.add_item(character.id, 501, 5)
-      {:ok, weapon} = Inventory.add_item(character.id, 1201, 1)
-      {:ok, _equipped_weapon} = Inventory.equip_item(character.id, weapon.id, 2)
+      seed_item(character.id, 501, 5)
+      seed_equipped(character.id, 1201, 2)
 
       # Initialize player session
       {:ok, state} =
@@ -177,14 +185,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
     test "normal itemlist contains only non-equipped items", %{character: character} do
       # Add inventory items(some equipped, some not)
       # Not equipped
-      {:ok, _potion} = Inventory.add_item(character.id, 501, 5)
+      seed_item(character.id, 501, 5)
       # Not equipped
-      {:ok, _arrow} = Inventory.add_item(character.id, 1750, 100)
-      # Will be equipped
-      {:ok, weapon} = Inventory.add_item(character.id, 1201, 1)
-
-      # Equip the weapon
-      {:ok, _} = Inventory.equip_item(character.id, weapon.id, 2)
+      seed_item(character.id, 1750, 100)
+      # Equipped weapon
+      seed_equipped(character.id, 1201, 2)
 
       # Initialize player session
       {:ok, state} =
@@ -218,17 +223,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
     test "equipitem list contains only equipped items", %{character: character} do
       # Add inventory items
       # Not equipped
-      {:ok, _potion} = Inventory.add_item(character.id, 501, 5)
-      # Will be equipped
-      {:ok, weapon} = Inventory.add_item(character.id, 1201, 1)
-      # Will be equipped
-      {:ok, armor} = Inventory.add_item(character.id, 2301, 1)
-
-      # Equip items
-      # Right hand
-      {:ok, _} = Inventory.equip_item(character.id, weapon.id, 2)
-      # Armor
-      {:ok, _} = Inventory.equip_item(character.id, armor.id, 16)
+      seed_item(character.id, 501, 5)
+      # Equipped weapon (right hand)
+      seed_equipped(character.id, 1201, 2)
+      # Equipped armor
+      seed_equipped(character.id, 2301, 16)
 
       # Initialize player session
       {:ok, state} =
@@ -292,8 +291,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
   describe "inventory state management" do
     test "get_state returns current inventory items", %{character: character} do
       # Add some items
-      {:ok, _potion} = Inventory.add_item(character.id, 501, 5)
-      {:ok, _weapon} = Inventory.add_item(character.id, 1201, 1)
+      seed_item(character.id, 501, 5)
+      seed_item(character.id, 1201, 1)
 
       # Initialize player session
       {:ok, state} =
@@ -312,15 +311,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
     end
 
     test "inventory persists through player session lifecycle", %{character: character} do
-      # Add items to inventory
-      {:ok, potion} = Inventory.add_item(character.id, 501, 5)
-      {:ok, weapon} = Inventory.add_item(character.id, 1201, 1)
-
-      # Modify items
-      # Use 2 potions
-      {:ok, _updated_potion} = Inventory.remove_item(character.id, potion.id, 2)
-      # Equip weapon
-      {:ok, _equipped_weapon} = Inventory.equip_item(character.id, weapon.id, 2)
+      # Seed an already-modified inventory: 3 potions left, weapon equipped.
+      seed_item(character.id, 501, 3)
+      seed_equipped(character.id, 1201, 2)
 
       # Initialize new player session (simulating login)
       {:ok, state} =
