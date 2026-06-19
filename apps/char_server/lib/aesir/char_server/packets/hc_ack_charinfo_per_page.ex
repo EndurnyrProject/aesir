@@ -1,12 +1,12 @@
 defmodule Aesir.CharServer.Packets.HcAckCharinfoPerPage do
   @moduledoc """
-  HC_ACK_CHARINFO_PER_PAGE packet (0x099d) - Character list response for refresh.
+  HC_ACK_CHARINFO_PER_PAGE packet (0x0B72) - Character list response for refresh.
 
   This is sent in response to CH_CHARLIST_REQ (0x09A1). It carries the same
   character data as HC_ACCEPT_ENTER but without the header extension.
 
   Structure:
-  - packet_id: 2 bytes (0x099d)
+  - packet_id: 2 bytes (0x0B72)
   - packet_length: 2 bytes
   - character_data: variable (175 bytes per character)
 
@@ -18,7 +18,7 @@ defmodule Aesir.CharServer.Packets.HcAckCharinfoPerPage do
 
   alias Aesir.CharServer.Packets.CharacterInfo
 
-  @packet_id 0x099D
+  @packet_id 0x0B72
   @packet_size -1
 
   defstruct [:characters]

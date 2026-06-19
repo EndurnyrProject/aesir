@@ -3,7 +3,7 @@ defmodule Aesir.CharServer.Packets.ChCharlistReq do
   CH_CHARLIST_REQ packet (0x09A1) - Client requesting character list.
 
   This is sent by the client to request the character list again.
-  The server responds with HC_ACK_CHARINFO_PER_PAGE (0x099d).
+  The server responds with HC_ACK_CHARINFO_PER_PAGE (0x0B72).
 
   Structure (2 bytes):
   - packet_id: 2 bytes (0x09A1)
