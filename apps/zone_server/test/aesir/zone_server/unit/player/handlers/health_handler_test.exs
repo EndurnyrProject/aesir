@@ -5,8 +5,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Packets.ZcNotifyCastCancel
   alias Aesir.ZoneServer.Packets.ZcParChange
   alias Aesir.ZoneServer.Packets.ZcResurrection
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -91,6 +93,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
 
       assert {:noreply, ^state} = HealthHandler.apply_damage(0, 2001, state)
     end
+
+    test "interrupts a survivable cast in the variable phase" do
+      test_pid = self()
+      stub(Broadcast, :to_player, fn 1, packet -> send(test_pid, {:to_player, packet}) end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet, _opts -> :ok end)
+
+      {:noreply, %{game_state: game_state}} =
+        HealthHandler.apply_damage(30, 2001, casting_state(-100))
+
+      assert game_state.action_state == :idle
+      assert_received {:to_player, %ZcNotifyCastCancel{gid: 1}}
+    end
+
+    test "does not interrupt a survivable cast in the fixed phase" do
+      reject(&Broadcast.to_player/2)
+
+      {:noreply, %{game_state: game_state}} =
+        HealthHandler.apply_damage(30, 2001, casting_state(60_000))
+
+      assert game_state.action_state == :casting
+      refute_received {:to_player, %ZcNotifyCastCancel{}}
+    end
   end
 
   describe "handle_restart/2" do
@@ -116,6 +140,31 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
 
       assert {:stop, :normal, ^state} = HealthHandler.handle_restart(1, state)
     end
+  end
+
+  # A live :casting state whose phase is driven by `fixed_offset`: negative =
+  # variable phase, positive = fixed phase.
+  defp casting_state(fixed_offset) do
+    state = build_state(100, :idle)
+    now = System.monotonic_time(:millisecond)
+    token = make_ref()
+    timer_ref = Process.send_after(self(), {:cast_complete, token}, 60_000)
+
+    context = %{
+      skill_id: 14,
+      skill_level: 10,
+      target: :self,
+      element: :water,
+      started_at: now,
+      fixed_until: now + fixed_offset,
+      total_until: now + 60_000,
+      timer_ref: timer_ref,
+      token: token,
+      interruptible: true
+    }
+
+    {:ok, casting} = PlayerState.transition_to(state.game_state, :casting, context)
+    %{state | game_state: casting}
   end
 
   defp build_state(hp, action_state) do

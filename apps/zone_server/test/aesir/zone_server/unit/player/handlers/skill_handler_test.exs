@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Packets.ZcNotifyCastCancel
   alias Aesir.ZoneServer.Packets.ZcSkillPostdelay
   alias Aesir.ZoneServer.Packets.ZcUseSkill2
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -256,6 +257,105 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert new_state.game_state.movement_state == :standing
       assert new_state.game_state.walk_path == []
     end
+  end
+
+  describe "cast interruption" do
+    test "damage in the variable phase cancels the cast with no SP loss" do
+      test_pid = self()
+      stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:to_player, packet}) end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+
+      state = interrupting_state(45, fixed_offset: -100)
+      timer_ref = state.game_state.state_context.timer_ref
+
+      result = SkillHandler.interrupt_cast_on_damage(state)
+
+      assert result.game_state.action_state == :idle
+      assert result.game_state.state_context == %{}
+      assert result.game_state.stats.current_state.sp == 45
+      assert_received {:to_player, %ZcNotifyCastCancel{gid: 1000}}
+      assert Process.cancel_timer(timer_ref) == false
+    end
+
+    test "damage in the fixed phase leaves the cast untouched" do
+      reject(&Broadcast.to_player/2)
+
+      state = interrupting_state(45, fixed_offset: 60_000)
+
+      result = SkillHandler.interrupt_cast_on_damage(state)
+
+      assert result == state
+      assert result.game_state.action_state == :casting
+      refute_received {:to_player, %ZcNotifyCastCancel{}}
+    end
+
+    test "a non-interruptible cast in the variable phase is immune" do
+      reject(&Broadcast.to_player/2)
+
+      state = interrupting_state(45, fixed_offset: -100, interruptible: false)
+
+      assert SkillHandler.interrupt_cast_on_damage(state) == state
+    end
+
+    test "damage on a non-casting player is a no-op" do
+      reject(&Broadcast.to_player/2)
+
+      state = casting_state(45, :idle)
+
+      assert SkillHandler.interrupt_cast_on_damage(state) == state
+    end
+
+    test "movement cancels the cast regardless of phase" do
+      test_pid = self()
+      stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:to_player, packet}) end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+
+      state = interrupting_state(45, fixed_offset: 60_000)
+      timer_ref = state.game_state.state_context.timer_ref
+
+      result = SkillHandler.cancel_cast(state, :move)
+
+      assert result.game_state.action_state == :idle
+      assert_received {:to_player, %ZcNotifyCastCancel{gid: 1000}}
+      assert Process.cancel_timer(timer_ref) == false
+    end
+
+    test "cancelling a non-casting player is a no-op" do
+      reject(&Broadcast.to_player/2)
+
+      state = casting_state(45, :idle)
+
+      assert SkillHandler.cancel_cast(state, :move) == state
+    end
+  end
+
+  # Builds a real :casting state with a live cast-complete timer and a controllable
+  # phase. `fixed_offset` is added to `now`: negative = variable phase (past),
+  # positive = fixed phase (future).
+  defp interrupting_state(sp, opts) do
+    fixed_offset = Keyword.fetch!(opts, :fixed_offset)
+    interruptible = Keyword.get(opts, :interruptible, true)
+
+    state = casting_state(sp)
+    now = System.monotonic_time(:millisecond)
+    token = make_ref()
+    timer_ref = Process.send_after(self(), {:cast_complete, token}, 60_000)
+
+    context = %{
+      skill_id: 29,
+      skill_level: 1,
+      target: :self,
+      element: :neutral,
+      started_at: now,
+      fixed_until: now + fixed_offset,
+      total_until: now + 60_000,
+      timer_ref: timer_ref,
+      token: token,
+      interruptible: interruptible
+    }
+
+    {:ok, casting} = PlayerState.transition_to(state.game_state, :casting, context)
+    %{state | game_state: casting}
   end
 
   defp definition(fields) do

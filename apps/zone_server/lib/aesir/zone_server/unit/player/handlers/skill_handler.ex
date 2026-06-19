@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
+  alias Aesir.ZoneServer.Packets.ZcNotifyCastCancel
   alias Aesir.ZoneServer.Packets.ZcSkillPostdelay
   alias Aesir.ZoneServer.Packets.ZcUseSkill
   alias Aesir.ZoneServer.Packets.ZcUseSkill2
@@ -76,6 +77,61 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   def handle_cast_complete(state, _token), do: {:noreply, state}
+
+  @doc """
+  Phase-aware damage interruption. A cast is immune during the fixed phase
+  (`now < fixed_until`) and cancellable once it reaches the variable phase, as
+  long as it is flagged interruptible. Anything else passes through unchanged.
+  """
+  @spec interrupt_cast_on_damage(map()) :: map()
+  def interrupt_cast_on_damage(
+        %{game_state: %{action_state: :casting, state_context: ctx}} = state
+      ) do
+    now = System.monotonic_time(:millisecond)
+
+    if now >= ctx.fixed_until and ctx.interruptible do
+      cancel_cast(state, :damage)
+    else
+      state
+    end
+  end
+
+  def interrupt_cast_on_damage(state), do: state
+
+  @doc """
+  Forced cancel, phase-agnostic (used by movement). Cancels any in-flight cast
+  and returns the player to idle; a non-casting state is returned unchanged.
+  """
+  @spec cancel_cast(map(), atom()) :: map()
+  def cancel_cast(
+        %{game_state: %{action_state: :casting, state_context: ctx} = game_state} = state,
+        _reason
+      ) do
+    Process.cancel_timer(ctx.timer_ref)
+    broadcast_cast_cancel(game_state)
+
+    case PlayerState.transition_to(game_state, :idle) do
+      {:ok, idle_game_state} -> %{state | game_state: idle_game_state}
+      {:error, _reason} -> %{state | game_state: game_state}
+    end
+  end
+
+  def cancel_cast(state, _reason), do: state
+
+  defp broadcast_cast_cancel(game_state) do
+    packet = %ZcNotifyCastCancel{gid: game_state.character_id}
+
+    Broadcast.to_player(game_state.character_id, packet)
+
+    Broadcast.to_in_range(
+      game_state.map_name,
+      game_state.x,
+      game_state.y,
+      @skill_view_range,
+      packet,
+      exclude_id: game_state.character_id
+    )
+  end
 
   # Branches on the interpreter's two-phase result: instant casts commit now,
   # timed casts schedule a cast-complete timer and show the cast bar.

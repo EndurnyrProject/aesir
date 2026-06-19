@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.MovementEngine
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -106,11 +107,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   ## Returns
     - {:noreply, updated_state} - Updated state with movement path or error handling
   """
+  def handle_request_move(state, dest_x, dest_y, opts \\ [])
+
+  def handle_request_move(%{game_state: %{action_state: :casting}} = state, dest_x, dest_y, opts) do
+    state
+    |> SkillHandler.cancel_cast(:move)
+    |> handle_request_move(dest_x, dest_y, opts)
+  end
+
   def handle_request_move(
         %{game_state: game_state, connection_pid: connection_pid} = state,
         dest_x,
         dest_y,
-        opts \\ []
+        opts
       ) do
     with {:ok, map_data} <- MapCache.get(game_state.map_name),
          {:ok, [_ | _] = path} <-

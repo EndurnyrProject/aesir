@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Packets.ZcResurrection
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StatusSync
@@ -67,7 +68,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     if new_hp == 0 do
       handle_death(attacker_id, state)
     else
-      {:noreply, state}
+      {:noreply, SkillHandler.interrupt_cast_on_damage(state)}
     end
   end
 
