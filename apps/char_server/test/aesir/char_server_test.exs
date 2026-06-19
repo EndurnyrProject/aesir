@@ -8,7 +8,6 @@ defmodule Aesir.CharServerTest do
   alias Aesir.CharServer.Characters
   alias Aesir.CharServer.CharacterSession
   alias Aesir.CharServer.Packets.HcAcceptEnter
-  alias Aesir.CharServer.Packets.HcDeleteChar
   alias Aesir.CharServer.Packets.HcNotifyZonesvr
   alias Aesir.CharServer.Packets.HcRefuseEnter
   alias Aesir.Commons.SessionManager
@@ -254,47 +253,6 @@ defmodule Aesir.CharServerTest do
     end
   end
 
-  describe "handle_packet/3 for packet 0x0068 (character deletion)" do
-    test "successfully handles character deletion" do
-      parsed_data = %{char_id: 5}
-      session_data = %{account_id: 1001}
-
-      Characters
-      |> stub(:delete_character, fn 1001, 5 ->
-        :ok
-      end)
-
-      assert {:ok, ^session_data, [%HcDeleteChar{result: 0}]} =
-               CharServer.handle_packet(0x0068, parsed_data, session_data)
-    end
-
-    test "handles character deletion failure" do
-      parsed_data = %{char_id: 5}
-      session_data = %{account_id: 1001}
-
-      Characters
-      |> stub(:delete_character, fn 1001, 5 ->
-        {:error, :character_not_found}
-      end)
-
-      assert {:ok, ^session_data, [%HcDeleteChar{result: 1}]} =
-               CharServer.handle_packet(0x0068, parsed_data, session_data)
-    end
-
-    test "handles character deletion with permission error" do
-      parsed_data = %{char_id: 5}
-      session_data = %{account_id: 1001}
-
-      Characters
-      |> stub(:delete_character, fn 1001, 5 ->
-        {:error, :not_owned}
-      end)
-
-      assert {:ok, ^session_data, [%HcDeleteChar{result: 1}]} =
-               CharServer.handle_packet(0x0068, parsed_data, session_data)
-    end
-  end
-
   describe "handle_packet/3 for unknown packets" do
     test "handles unknown packet gracefully" do
       parsed_data = %{some_field: "value"}
@@ -348,19 +306,6 @@ defmodule Aesir.CharServerTest do
         end)
 
       assert log =~ "Character selection failed for slot 0: invalid_account"
-    end
-
-    test "handles missing account_id in session_data for character deletion" do
-      parsed_data = %{char_id: 5}
-      session_data = %{}
-
-      Characters
-      |> stub(:delete_character, fn nil, 5 ->
-        {:error, :invalid_account}
-      end)
-
-      assert {:ok, ^session_data, [%HcDeleteChar{result: 1}]} =
-               CharServer.handle_packet(0x0068, parsed_data, session_data)
     end
   end
 

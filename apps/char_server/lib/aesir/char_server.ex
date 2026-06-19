@@ -18,7 +18,6 @@ defmodule Aesir.CharServer do
   alias Aesir.CharServer.Packets.HcBlockCharacter
   alias Aesir.CharServer.Packets.HcCharacterList
   alias Aesir.CharServer.Packets.HcCharDelete2Ack
-  alias Aesir.CharServer.Packets.HcDeleteChar
   alias Aesir.CharServer.Packets.HcNotifyZonesvr
   alias Aesir.CharServer.Packets.HcRefuseEnter
   alias Aesir.CharServer.Packets.HcRefuseMakechar
@@ -141,22 +140,6 @@ defmodule Aesir.CharServer do
 
       {:error, reason} ->
         response = creation_error(reason)
-        {:ok, session_data, [response]}
-    end
-  end
-
-  def handle_packet(0x0068, parsed_data, session_data) do
-    Logger.info("Character deletion requested: #{parsed_data.char_id}")
-
-    account_id = session_data[:account_id]
-
-    case Characters.delete_character(account_id, parsed_data.char_id) do
-      :ok ->
-        response = %HcDeleteChar{result: 0}
-        {:ok, session_data, [response]}
-
-      {:error, _reason} ->
-        response = %HcDeleteChar{result: 1}
         {:ok, session_data, [response]}
     end
   end
