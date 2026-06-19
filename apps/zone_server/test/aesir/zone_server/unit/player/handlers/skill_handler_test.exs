@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         y: 150,
         skill_cooldowns: %{},
         stats: %{
+          base_stats: %{dex: 1, int: 1},
           current_state: %{sp: sp, hp: 100},
           derived_stats: %{max_sp: 200, max_hp: 100},
           progression: %{learned_skills: %{29 => 1}}

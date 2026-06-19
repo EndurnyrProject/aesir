@@ -1,27 +1,119 @@
 defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   @moduledoc """
-  Orchestrates a skill cast: resolve definition + behavior, validate the cast,
-  check SP, dispatch to the behavior, then deduct SP.
+  Orchestrates a skill cast across two phases.
 
-  Validate-then-cast-then-charge: SP is only consumed after the behavior
-  succeeds, so a failed cast never charges SP.
+  `begin_cast/4` runs the full validation chain and computes the renewal cast
+  time; a zero-cast skill resolves immediately, a timed skill returns a
+  `cast_info` for the caller to schedule and leaves the game state untouched
+  (no SP deducted, no cooldown set). `complete_cast/4` re-validates the target,
+  re-checks SP, runs the behavior, then deducts SP and sets the cooldown.
+
+  Validate-then-cast-then-charge: SP is only consumed at castend, so a failed
+  or interrupted cast never charges SP.
+
+  `cast/4` is the synchronous wrapper preserving the legacy single-call
+  semantics: instant casts execute immediately and timed casts run their
+  behavior inline through `complete_cast/4`.
   """
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.CastTime
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
+  @typedoc """
+  Scheduling info for a timed cast, returned by `begin_cast/4` when the skill
+  has a non-zero cast time. `fixed` is the uninterruptible leading window and
+  `total` the full duration, both in milliseconds.
+  """
+  @type cast_info :: %{
+          skill_id: integer(),
+          level: pos_integer(),
+          target: Active.target(),
+          element: Definition.element(),
+          fixed: non_neg_integer(),
+          total: non_neg_integer()
+        }
+
   @spec cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
+    case begin_cast(game_state, skill_id, level, target) do
+      {:instant, game_state} -> {:ok, game_state}
+      {:casting, game_state, _info} -> complete_cast(game_state, skill_id, level, target)
+      {:error, _reason} = error -> error
+    end
+  end
+
+  def cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
+
+  @doc """
+  Validates a cast and resolves its timing.
+
+  Runs the full validation chain (without deducting SP or running the behavior)
+  and computes the cast time from the caster's base DEX/INT. A zero cast time
+  resolves immediately through `complete_cast/4` and returns `{:instant, gs}`;
+  otherwise returns `{:casting, gs, cast_info}` with `gs` unchanged so the
+  caller can schedule the cast.
+
+  NOTE: cast-time reduction uses base DEX/INT only; effective/buffed reduction
+  is a documented later refinement.
+  """
+  @spec begin_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
+          {:instant, PlayerState.t()}
+          | {:casting, PlayerState.t(), cast_info()}
+          | {:error, atom()}
+  def begin_cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
     now = System.monotonic_time(:millisecond)
 
+    with {:ok, definition, _module} <- validate_cast(game_state, skill_id, level, target, now) do
+      base_stats = game_state.stats.base_stats
+      timing = CastTime.compute(definition, level, %{dex: base_stats.dex, int: base_stats.int})
+      schedule(timing, game_state, skill_id, level, target, definition)
+    end
+  end
+
+  def begin_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
+
+  @doc """
+  Runs a previously-validated cast to completion.
+
+  Re-validates the target (it may have moved, died, or logged out during the
+  cast) and re-checks SP, then runs the behavior, deducts SP, and sets the
+  cooldown. A target that is gone or out of range fizzles with `{:error, _}`
+  and no SP is spent.
+
+  NOTE: after-cast delay enforcement is deferred (it is not enforced today
+  either).
+  """
+  @spec complete_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
+          {:ok, PlayerState.t()} | {:error, atom()}
+  def complete_cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
+    now = System.monotonic_time(:millisecond)
+
+    with {:ok, definition} <- fetch_definition(skill_id),
+         {:ok, module} <- fetch_active_module(definition),
+         :ok <- check_target(game_state, target, definition),
+         :ok <- check_range(game_state, target, definition),
+         cost = Enum.at(definition.sp_cost, level - 1),
+         :ok <- check_sp(game_state, cost),
+         {:ok, game_state} <- module.cast(game_state, target, level, definition) do
+      {:ok, game_state |> deduct_sp(cost) |> put_cooldown(skill_id, definition, level, now)}
+    end
+  end
+
+  def complete_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
+
+  @spec validate_cast(PlayerState.t(), integer(), pos_integer(), Active.target(), integer()) ::
+          {:ok, Definition.t(), module()} | {:error, atom()}
+  defp validate_cast(game_state, skill_id, level, target, now) do
     with {:ok, definition} <- fetch_definition(skill_id),
          :ok <- check_max_level(definition, level),
          :ok <- check_castable(definition),
@@ -32,13 +124,41 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_cooldown(game_state, skill_id, now),
          :ok <- module.validate(game_state, target, level, definition),
          cost = Enum.at(definition.sp_cost, level - 1),
-         :ok <- check_sp(game_state, cost),
-         {:ok, game_state} <- module.cast(game_state, target, level, definition) do
-      {:ok, game_state |> deduct_sp(cost) |> put_cooldown(skill_id, definition, level, now)}
+         :ok <- check_sp(game_state, cost) do
+      {:ok, definition, module}
     end
   end
 
-  def cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
+  @spec schedule(
+          CastTime.result(),
+          PlayerState.t(),
+          integer(),
+          pos_integer(),
+          Active.target(),
+          Definition.t()
+        ) ::
+          {:instant, PlayerState.t()}
+          | {:casting, PlayerState.t(), cast_info()}
+          | {:error, atom()}
+  defp schedule(%{total: 0}, game_state, skill_id, level, target, _definition) do
+    case complete_cast(game_state, skill_id, level, target) do
+      {:ok, game_state} -> {:instant, game_state}
+      {:error, _reason} = error -> error
+    end
+  end
+
+  defp schedule(%{fixed: fixed, total: total}, game_state, skill_id, level, target, definition) do
+    info = %{
+      skill_id: skill_id,
+      level: level,
+      target: target,
+      element: definition.element,
+      fixed: fixed,
+      total: total
+    }
+
+    {:casting, game_state, info}
+  end
 
   defp fetch_definition(skill_id) do
     case Catalog.by_id(skill_id) do

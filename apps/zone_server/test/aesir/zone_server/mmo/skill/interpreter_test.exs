@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       map_name: "prontera",
       skill_cooldowns: %{},
       stats: %{
+        base_stats: %{dex: 1, int: 1},
         current_state: %{sp: sp, hp: 100},
         derived_stats: %{max_sp: 200, max_hp: 100},
         progression: %{learned_skills: learned}
@@ -229,5 +230,95 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
     gs = game_state(100, %{6 => 1})
     assert {:error, :invalid_target} = Interpreter.cast(gs, 6, 1, {:ground, 12, 12})
+  end
+
+  # A self-targeted instant skill: target_ally bypasses range, cast_time [0] is
+  # instant. SmProvoke is the catalog-registered behavior for id 6.
+  defp instant_definition do
+    %Definition{
+      id: 6,
+      name: :sm_provoke,
+      display_name: "Instant Test",
+      max_level: 10,
+      target_type: :target_ally,
+      damage_type: :no_damage,
+      element: :neutral,
+      range: 9,
+      sp_cost: List.duplicate(9, 10),
+      cast_time: [0],
+      cooldown: [5_000]
+    }
+  end
+
+  describe "begin_cast/4" do
+    test "instant skill runs the behavior, deducts SP, and sets the cooldown" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, instant_definition()} end)
+      stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+
+      gs = game_state(100, %{6 => 1})
+
+      assert {:instant, updated} = Interpreter.begin_cast(gs, 6, 1, :self)
+      assert updated.stats.current_state.sp == 100 - 9
+      assert Map.has_key?(updated.skill_cooldowns, 6)
+    end
+
+    # al_incagi (id 29) is the real catalog skill with cast_time 800ms and a
+    # non-ground :self target, exercising the timed branch without a Catalog stub.
+    test "timed skill returns :casting without deducting SP or setting a cooldown" do
+      reject(&StatusInterpreter.apply_status/4)
+
+      gs = game_state(100, %{29 => 1})
+
+      assert {:casting, returned, info} = Interpreter.begin_cast(gs, 29, 1, :self)
+      assert returned == gs
+      assert returned.stats.current_state.sp == 100
+      assert returned.skill_cooldowns == %{}
+
+      assert info.skill_id == 29
+      assert info.level == 1
+      assert info.target == :self
+      assert info.element == :neutral
+      assert info.total > 0
+      assert info.fixed >= 0
+      assert info.fixed <= info.total
+    end
+
+    test "insufficient SP returns :insufficient_sp before computing cast time" do
+      reject(&StatusInterpreter.apply_status/4)
+
+      assert {:error, :insufficient_sp} =
+               Interpreter.begin_cast(game_state(1, %{29 => 1}), 29, 1, :self)
+    end
+  end
+
+  describe "complete_cast/4" do
+    test "deducts SP, runs the behavior, and sets the cooldown" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, instant_definition()} end)
+      stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+
+      gs = game_state(100, %{6 => 1})
+
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+      assert updated.stats.current_state.sp == 100 - 9
+      assert Map.has_key?(updated.skill_cooldowns, 6)
+    end
+
+    test "fizzles with :out_of_range and spends no SP when the target moved away" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(5)} end)
+      stub(SpatialIndex, :get_unit_position, fn :player, 9999 -> {:ok, {20, 20, "prontera"}} end)
+
+      gs = game_state(100, %{6 => 1})
+
+      assert {:error, :out_of_range} = Interpreter.complete_cast(gs, 6, 1, {:unit, 9999})
+    end
+
+    test "fizzles with :target_not_found and spends no SP when the target is gone" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(9)} end)
+      stub(SpatialIndex, :get_unit_position, fn _type, 9999 -> {:error, :not_found} end)
+
+      gs = game_state(100, %{6 => 1})
+
+      assert {:error, :target_not_found} = Interpreter.complete_cast(gs, 6, 1, {:unit, 9999})
+    end
   end
 end
