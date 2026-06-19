@@ -1,8 +1,10 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   @moduledoc """
-  Session-side handler for skill casts. Runs the interpreter, then on success
-  updates the registry, persists SP, syncs SP to the client, and broadcasts the
-  skill-use visual to nearby players.
+  Session-side handler for skill casts. Runs the interpreter's two-phase
+  lifecycle: instant casts commit immediately, timed casts enter `:casting`,
+  show a cast bar, and resolve on a `{:cast_complete, token}` timer. On a
+  successful commit it updates the registry, persists SP, syncs SP to the
+  client, and broadcasts the skill-use visual to nearby players.
   """
   require Logger
 
@@ -12,47 +14,80 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Packets.ZcSkillPostdelay
   alias Aesir.ZoneServer.Packets.ZcUseSkill
+  alias Aesir.ZoneServer.Packets.ZcUseSkill2
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @skill_view_range 14
 
+  # rAthena `e_element` numeric ids (db/re/attr_fix.yml order). The cast bar's
+  # `property` field is an integer aura id, so the skill's element atom is mapped
+  # here.
+  @element_ids %{
+    neutral: 0,
+    water: 1,
+    earth: 2,
+    fire: 3,
+    wind: 4,
+    poison: 5,
+    holy: 6,
+    shadow: 7,
+    ghost: 8,
+    undead: 9
+  }
+
   @spec handle_use_skill(map(), integer(), pos_integer(), integer()) :: {:noreply, map()}
-  def handle_use_skill(
-        %{game_state: game_state} = state,
-        skill_id,
-        level,
-        target_id
-      ) do
+  def handle_use_skill(%{game_state: game_state} = state, skill_id, level, target_id) do
     target = resolve_target(game_state, target_id)
-
-    case Interpreter.cast(game_state, skill_id, level, target) do
-      {:ok, new_game_state} ->
-        new_game_state = commit_cast(state, new_game_state, skill_id, level)
-        broadcast_skill_use(new_game_state, skill_id, level, target_id)
-        {:noreply, %{state | game_state: new_game_state}}
-
-      {:error, reason} ->
-        log_cast_failure(skill_id, game_state.character_id, reason)
-        {:noreply, state}
-    end
+    drive_cast(state, skill_id, level, target)
   end
 
   @spec handle_use_skill_ground(map(), integer(), pos_integer(), integer(), integer()) ::
           {:noreply, map()}
-  def handle_use_skill_ground(
-        %{game_state: game_state} = state,
-        skill_id,
-        level,
-        x,
-        y
+  def handle_use_skill_ground(state, skill_id, level, x, y) do
+    drive_cast(state, skill_id, level, {:ground, x, y})
+  end
+
+  @doc """
+  Resolves a fired cast timer. Runs the behavior to completion only when the
+  player is still casting under the same token; stale tokens are dropped.
+  """
+  @spec handle_cast_complete(map(), reference()) :: {:noreply, map()}
+  def handle_cast_complete(
+        %{game_state: %{action_state: :casting, state_context: %{token: token} = ctx}} = state,
+        token
       ) do
-    case Interpreter.cast(game_state, skill_id, level, {:ground, x, y}) do
+    game_state = state.game_state
+
+    case Interpreter.complete_cast(game_state, ctx.skill_id, ctx.skill_level, ctx.target) do
       {:ok, new_game_state} ->
+        new_game_state = commit_cast(state, new_game_state, ctx.skill_id, ctx.skill_level)
+        broadcast_skill_use(new_game_state, ctx.skill_id, ctx.skill_level, ctx.target)
+        {:noreply, %{state | game_state: to_idle(new_game_state)}}
+
+      {:error, reason} ->
+        log_cast_failure(ctx.skill_id, game_state.character_id, reason)
+        {:noreply, %{state | game_state: to_idle(game_state)}}
+    end
+  end
+
+  def handle_cast_complete(state, _token), do: {:noreply, state}
+
+  # Branches on the interpreter's two-phase result: instant casts commit now,
+  # timed casts schedule a cast-complete timer and show the cast bar.
+  defp drive_cast(%{game_state: game_state} = state, skill_id, level, target) do
+    case Interpreter.begin_cast(game_state, skill_id, level, target) do
+      {:instant, new_game_state} ->
         new_game_state = commit_cast(state, new_game_state, skill_id, level)
+        broadcast_skill_use(new_game_state, skill_id, level, target)
         {:noreply, %{state | game_state: new_game_state}}
+
+      {:casting, new_game_state, info} ->
+        start_timed_cast(%{state | game_state: new_game_state}, info)
 
       {:error, reason} ->
         log_cast_failure(skill_id, game_state.character_id, reason)
@@ -60,9 +95,104 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
+  # A timed cast may only begin from idle. A moving player is stopped first via
+  # the existing force-stop path; any other busy state aborts the cast so a
+  # player never starts a second cast while one is in flight.
+  defp start_timed_cast(%{game_state: %{action_state: :idle}} = state, info) do
+    schedule_cast(state, info)
+  end
+
+  defp start_timed_cast(%{game_state: %{action_state: moving}} = state, info)
+       when moving in [:moving, :combat_moving] do
+    {:noreply, stopped_state} = MovementHandler.handle_force_stop_movement(state)
+
+    case PlayerState.transition_to(stopped_state.game_state, :idle) do
+      {:ok, idle_game_state} ->
+        schedule_cast(%{stopped_state | game_state: idle_game_state}, info)
+
+      {:error, _reason} ->
+        {:noreply, stopped_state}
+    end
+  end
+
+  defp start_timed_cast(%{game_state: game_state} = state, info) do
+    Logger.debug(
+      "Skill #{info.skill_id} cast skipped for #{game_state.character_id}: busy in #{game_state.action_state}"
+    )
+
+    {:noreply, state}
+  end
+
+  defp schedule_cast(%{game_state: game_state} = state, info) do
+    now = System.monotonic_time(:millisecond)
+    token = make_ref()
+    timer_ref = Process.send_after(self(), {:cast_complete, token}, info.total)
+
+    context = %{
+      skill_id: info.skill_id,
+      skill_level: info.level,
+      target: info.target,
+      element: info.element,
+      started_at: now,
+      fixed_until: now + info.fixed,
+      total_until: now + info.total,
+      timer_ref: timer_ref,
+      token: token,
+      interruptible: true
+    }
+
+    case PlayerState.transition_to(game_state, :casting, context) do
+      {:ok, casting_state} ->
+        broadcast_cast_bar(casting_state, info)
+        {:noreply, %{state | game_state: casting_state}}
+
+      {:error, reason} ->
+        Process.cancel_timer(timer_ref)
+        log_cast_failure(info.skill_id, game_state.character_id, reason)
+        {:noreply, state}
+    end
+  end
+
+  defp broadcast_cast_bar(game_state, info) do
+    {dst_id, x, y} = cast_bar_target(game_state, info.target)
+
+    packet = %ZcUseSkill2{
+      src_id: game_state.character_id,
+      dst_id: dst_id,
+      x: x,
+      y: y,
+      skill_id: info.skill_id,
+      property: Map.get(@element_ids, info.element, 0),
+      cast_time: info.total,
+      disposable: 0,
+      attack_motion_time: 0
+    }
+
+    Broadcast.to_player(game_state.character_id, packet)
+
+    Broadcast.to_in_range(
+      game_state.map_name,
+      game_state.x,
+      game_state.y,
+      @skill_view_range,
+      packet,
+      exclude_id: game_state.character_id
+    )
+  end
+
+  defp cast_bar_target(%{character_id: caster_id}, :self), do: {caster_id, 0, 0}
+  defp cast_bar_target(_game_state, {:unit, id}), do: {id, 0, 0}
+  defp cast_bar_target(_game_state, {:ground, x, y}), do: {0, x, y}
+
+  defp to_idle(game_state) do
+    case PlayerState.transition_to(game_state, :idle) do
+      {:ok, idle_game_state} -> idle_game_state
+      {:error, _reason} -> game_state
+    end
+  end
+
   # Shared success path: recalc stats, update registry, persist SP, sync to client,
-  # and emit the cooldown sweep. The ground variant skips the ZcUseSkill broadcast -
-  # placement emits its own ZcNotifyGroundskill visual.
+  # and emit the cooldown sweep.
   defp commit_cast(%{connection_pid: connection_pid}, new_game_state, skill_id, level) do
     updated_stats = Stats.calculate_stats(new_game_state.stats, new_game_state.character_id)
     new_game_state = %{new_game_state | stats: updated_stats}
@@ -103,8 +233,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   # Damage skills broadcast their own ZC_NOTIFY_SKILL from the combat layer, so
-  # the no-damage support visual is sent only for no-damage skills.
-  defp broadcast_skill_use(game_state, skill_id, level, target_id) do
+  # the no-damage support visual is sent only for no-damage skills. Ground casts
+  # emit their own ZC_NOTIFY_GROUNDSKILL visual, so they skip this entirely.
+  defp broadcast_skill_use(_game_state, _skill_id, _level, {:ground, _x, _y}), do: :ok
+
+  defp broadcast_skill_use(game_state, skill_id, level, target) do
     case Catalog.by_id(skill_id) do
       {:ok, %{damage_type: :damage}} ->
         :ok
@@ -113,7 +246,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         packet = %ZcUseSkill{
           skill_id: skill_id,
           level: level,
-          dst_id: target_id,
+          dst_id: skill_use_target_id(game_state, target),
           src_id: game_state.character_id,
           result: 1
         }
@@ -127,4 +260,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         )
     end
   end
+
+  defp skill_use_target_id(%{character_id: caster_id}, :self), do: caster_id
+  defp skill_use_target_id(_game_state, {:unit, id}), do: id
 end

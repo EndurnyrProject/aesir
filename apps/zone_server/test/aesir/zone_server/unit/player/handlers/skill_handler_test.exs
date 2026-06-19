@@ -8,15 +8,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Packets.ZcSkillPostdelay
+  alias Aesir.ZoneServer.Packets.ZcUseSkill2
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
 
-  defp state(sp) do
+  # Plain-map game state used for the instant path, where Catalog is stubbed
+  # with a definition that has no cast time.
+  defp instant_state(sp) do
     %{
       connection_pid: self(),
       game_state: %{
@@ -25,6 +29,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         x: 150,
         y: 150,
         skill_cooldowns: %{},
+        action_state: :idle,
+        state_context: %{},
         stats: %{
           base_stats: %{dex: 1, int: 1},
           current_state: %{sp: sp, hp: 100},
@@ -35,74 +41,221 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     }
   end
 
-  test "self-cast applies the effect, recalculates stats, persists, syncs and broadcasts" do
-    stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)
-    stub(PlayerStats, :calculate_stats, fn stats, 1000 -> stats end)
-    stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
-    stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
-    expect(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
-    expect(CharacterPersistence, :update_character, fn 1000, %{sp: 12}, _opts -> {:ok, %{}} end)
+  # Real PlayerState used for the timed-cast path, where transition_to needs a
+  # genuine struct. AL_INCAGI (id 29) is a real 800ms cast self-cast on the ally.
+  defp casting_state(sp, action_state \\ :idle) do
+    base = PlayerState.new(character())
 
-    assert {:noreply, new_state} = SkillHandler.handle_use_skill(state(30), 29, 1, 1000)
-    assert new_state.game_state.stats.current_state.sp == 12
+    stats =
+      base.stats
+      |> put_in([Access.key!(:base_stats), Access.key!(:dex)], 1)
+      |> put_in([Access.key!(:base_stats), Access.key!(:int)], 1)
+      |> put_in([Access.key!(:current_state), Access.key!(:sp)], sp)
+      |> put_in([Access.key!(:progression), Access.key!(:learned_skills)], %{29 => 10})
+
+    game_state = %{base | action_state: action_state, stats: stats}
+
+    %{connection_pid: self(), game_state: game_state}
   end
 
-  test "failed cast leaves state unchanged and does not persist" do
-    reject(&CharacterPersistence.update_character/3)
-    reject(&StatusInterpreter.apply_status/4)
-
-    s = state(1)
-    assert {:noreply, ^s} = SkillHandler.handle_use_skill(s, 29, 1, 1000)
+  defp character do
+    %Aesir.Commons.Models.Character{
+      id: 1000,
+      account_id: 2000,
+      name: "Caster",
+      last_map: "prontera",
+      last_x: 150,
+      last_y: 150,
+      sex: "M",
+      hair: 1,
+      hair_color: 0,
+      clothes_color: 0,
+      head_mid: 0,
+      head_bottom: 0,
+      robe: 0,
+      str: 1,
+      agi: 1,
+      vit: 1,
+      int: 1,
+      dex: 1,
+      luk: 1,
+      base_level: 1,
+      job_level: 1,
+      class: 0
+    }
   end
 
-  test "sends ZC_SKILL_POSTDELAY to the caster when the skill has a cooldown" do
-    stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)
-    stub(PlayerStats, :calculate_stats, fn stats, 1000 -> stats end)
-    stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
-    stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
-    stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
-    stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
-    stub(Catalog, :by_id, fn 29 -> {:ok, definition(cooldown: [5_000])} end)
+  describe "instant cast" do
+    test "applies the effect, recalculates stats, persists, syncs and broadcasts" do
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
+      stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)
+      stub(PlayerStats, :calculate_stats, fn stats, 1000 -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
+      expect(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      expect(CharacterPersistence, :update_character, fn 1000, %{sp: 12}, _opts -> {:ok, %{}} end)
 
-    assert {:noreply, _} = SkillHandler.handle_use_skill(state(30), 29, 1, 1000)
-    assert_received {:send_packet, %ZcSkillPostdelay{skill_id: 29, tick: 5_000}}
+      assert {:noreply, new_state} = SkillHandler.handle_use_skill(instant_state(30), 29, 1, 1000)
+      assert new_state.game_state.stats.current_state.sp == 12
+      refute_received {:send_packet, %ZcUseSkill2{}}
+    end
+
+    test "failed cast leaves state unchanged and does not persist" do
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
+      reject(&CharacterPersistence.update_character/3)
+      reject(&StatusInterpreter.apply_status/4)
+
+      s = instant_state(1)
+      assert {:noreply, ^s} = SkillHandler.handle_use_skill(s, 29, 1, 1000)
+    end
+
+    test "sends ZC_SKILL_POSTDELAY when the skill has a cooldown" do
+      stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)
+      stub(PlayerStats, :calculate_stats, fn stats, 1000 -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [], cooldown: [5_000])} end)
+
+      assert {:noreply, _} = SkillHandler.handle_use_skill(instant_state(30), 29, 1, 1000)
+      assert_received {:send_packet, %ZcSkillPostdelay{skill_id: 29, tick: 5_000}}
+    end
+
+    test "sends no ZC_SKILL_POSTDELAY when the skill has no cooldown" do
+      stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)
+      stub(PlayerStats, :calculate_stats, fn stats, 1000 -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [], cooldown: [])} end)
+
+      assert {:noreply, _} = SkillHandler.handle_use_skill(instant_state(30), 29, 1, 1000)
+      refute_received {:send_packet, %ZcSkillPostdelay{}}
+    end
+
+    test "ground cast recalculates stats, persists and broadcasts no ZcUseSkill" do
+      expect(Interpreter, :begin_cast, fn gs, 89, 1, {:ground, 12, 12} ->
+        {:instant, %{gs | stats: %{gs.stats | current_state: %{gs.stats.current_state | sp: 12}}}}
+      end)
+
+      stub(PlayerStats, :calculate_stats, fn stats, 1000 -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(Catalog, :by_id, fn 89 -> {:ok, definition(id: 89, cooldown: [])} end)
+      reject(&Broadcast.to_in_range/5)
+      reject(&Broadcast.to_in_range/6)
+      expect(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      expect(CharacterPersistence, :update_character, fn 1000, %{sp: 12}, _opts -> {:ok, %{}} end)
+
+      assert {:noreply, new_state} =
+               SkillHandler.handle_use_skill_ground(instant_state(30), 89, 1, 12, 12)
+
+      assert new_state.game_state.stats.current_state.sp == 12
+    end
+
+    test "failed ground cast leaves state unchanged and does not persist" do
+      stub(Interpreter, :begin_cast, fn _gs, _id, _lvl, _target -> {:error, :out_of_range} end)
+      reject(&CharacterPersistence.update_character/3)
+
+      s = instant_state(30)
+      assert {:noreply, ^s} = SkillHandler.handle_use_skill_ground(s, 89, 1, 12, 12)
+    end
   end
 
-  test "sends no ZC_SKILL_POSTDELAY when the skill has no cooldown" do
-    stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)
-    stub(PlayerStats, :calculate_stats, fn stats, 1000 -> stats end)
-    stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
-    stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
-    stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
-    stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
-    stub(Catalog, :by_id, fn 29 -> {:ok, definition(cooldown: [])} end)
+  describe "timed cast" do
+    test "enters :casting, sends a cast bar, schedules a timer and does not deduct SP" do
+      stub(Broadcast, :to_player, fn 1000, %ZcUseSkill2{} -> :ok end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+      reject(&CharacterPersistence.update_character/3)
+      reject(&StatusInterpreter.apply_status/4)
 
-    assert {:noreply, _} = SkillHandler.handle_use_skill(state(30), 29, 1, 1000)
-    refute_received {:send_packet, %ZcSkillPostdelay{}}
-  end
+      assert {:noreply, new_state} = SkillHandler.handle_use_skill(casting_state(45), 29, 1, 1000)
 
-  test "ground cast recalculates stats, persists, syncs and broadcasts no ZcUseSkill" do
-    expect(Interpreter, :cast, fn gs, 89, 1, {:ground, 12, 12} ->
-      {:ok, %{gs | stats: %{gs.stats | current_state: %{gs.stats.current_state | sp: 12}}}}
-    end)
+      gs = new_state.game_state
+      assert gs.action_state == :casting
+      assert gs.state_context.skill_id == 29
+      assert gs.state_context.skill_level == 1
+      assert gs.state_context.target == :self
+      assert gs.state_context.interruptible == true
+      assert is_reference(gs.state_context.timer_ref)
+      assert is_reference(gs.state_context.token)
+      # SP untouched until the cast completes.
+      assert gs.stats.current_state.sp == 45
+    end
 
-    stub(PlayerStats, :calculate_stats, fn stats, 1000 -> stats end)
-    stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
-    stub(Catalog, :by_id, fn 89 -> {:ok, definition(id: 89, cooldown: [])} end)
-    reject(&Broadcast.to_in_range/5)
-    expect(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
-    expect(CharacterPersistence, :update_character, fn 1000, %{sp: 12}, _opts -> {:ok, %{}} end)
+    test "cast bar carries the caster, self target and total cast time" do
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
 
-    assert {:noreply, new_state} = SkillHandler.handle_use_skill_ground(state(30), 89, 1, 12, 12)
-    assert new_state.game_state.stats.current_state.sp == 12
-  end
+      test_pid = self()
+      stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:cast_bar, packet}) end)
 
-  test "failed ground cast leaves state unchanged and does not persist" do
-    stub(Interpreter, :cast, fn _gs, _id, _lvl, _target -> {:error, :out_of_range} end)
-    reject(&CharacterPersistence.update_character/3)
+      assert {:noreply, new_state} = SkillHandler.handle_use_skill(casting_state(45), 29, 1, 1000)
 
-    s = state(30)
-    assert {:noreply, ^s} = SkillHandler.handle_use_skill_ground(s, 89, 1, 12, 12)
+      assert_received {:cast_bar, %ZcUseSkill2{} = packet}
+      assert packet.src_id == 1000
+      assert packet.dst_id == 1000
+      assert packet.x == 0
+      assert packet.y == 0
+      assert packet.skill_id == 29
+      assert packet.property == 0
+
+      assert packet.cast_time ==
+               new_state.game_state.state_context.total_until -
+                 new_state.game_state.state_context.started_at
+    end
+
+    test "completing a matching token runs the behavior, deducts SP and returns to idle" do
+      stub(Broadcast, :to_player, fn 1000, _packet -> :ok end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+      stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)
+      stub(PlayerStats, :calculate_stats, fn stats, 1000 -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+
+      assert {:noreply, casting} = SkillHandler.handle_use_skill(casting_state(45), 29, 1, 1000)
+      token = casting.game_state.state_context.token
+
+      assert {:noreply, completed} = SkillHandler.handle_cast_complete(casting, token)
+
+      gs = completed.game_state
+      assert gs.action_state == :idle
+      assert gs.state_context == %{}
+      assert gs.stats.current_state.sp == 45 - 18
+    end
+
+    test "a stale token is ignored and the cast continues" do
+      stub(Broadcast, :to_player, fn 1000, _packet -> :ok end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+      reject(&CharacterPersistence.update_character/3)
+      reject(&StatusInterpreter.apply_status/4)
+
+      assert {:noreply, casting} = SkillHandler.handle_use_skill(casting_state(45), 29, 1, 1000)
+
+      assert {:noreply, unchanged} = SkillHandler.handle_cast_complete(casting, make_ref())
+      assert unchanged == casting
+      assert unchanged.game_state.action_state == :casting
+      assert unchanged.game_state.stats.current_state.sp == 45
+    end
+
+    test "a moving player is stopped before the cast starts" do
+      stub(Broadcast, :to_player, fn 1000, _packet -> :ok end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+
+      state = casting_state(45, :moving)
+
+      state = %{
+        state
+        | game_state: %{state.game_state | movement_state: :moving, walk_path: [{151, 150}]}
+      }
+
+      assert {:noreply, new_state} = SkillHandler.handle_use_skill(state, 29, 1, 1000)
+
+      assert new_state.game_state.action_state == :casting
+      assert new_state.game_state.movement_state == :standing
+      assert new_state.game_state.walk_path == []
+    end
   end
 
   defp definition(fields) do

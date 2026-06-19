@@ -303,6 +303,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
+  def handle_info({:cast_complete, token}, state) do
+    SkillHandler.handle_cast_complete(state, token)
+  end
+
+  @impl true
   def handle_info({:mob_killed, %{base_exp: base_exp, job_exp: job_exp}}, state) do
     ExperienceHandler.handle_gain_exp(base_exp, job_exp, state)
   end

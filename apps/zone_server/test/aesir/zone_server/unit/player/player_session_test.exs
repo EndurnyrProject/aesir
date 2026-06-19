@@ -413,6 +413,56 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     end
   end
 
+  describe "cast lifecycle" do
+    setup do
+      Mimic.copy(Aesir.ZoneServer.Mmo.StatusEffect.Interpreter)
+      Mimic.copy(Aesir.ZoneServer.Unit.Player.StatusSync)
+      Mimic.copy(CharacterPersistence)
+
+      stub(Aesir.ZoneServer.Unit.Player.StatusSync, :send_stat_updates, fn _conn, _stats ->
+        :ok
+      end)
+
+      stub(CharacterPersistence, :update_character, fn _id, _attrs, _opts -> {:ok, %{}} end)
+
+      :ok
+    end
+
+    test "cast_complete with a matching token runs the behavior and returns to idle", %{
+      character: character
+    } do
+      stub(Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, :apply_status, fn :player,
+                                                                            1,
+                                                                            :sc_increaseagi,
+                                                                            _ ->
+        :ok
+      end)
+
+      stub(Stats, :calculate_stats, fn stats, 1 -> stats end)
+
+      token = make_ref()
+      state = casting_state(character, token, sp: 40)
+
+      {:noreply, new_state} = PlayerSession.handle_info({:cast_complete, token}, state)
+
+      assert new_state.game_state.action_state == :idle
+      assert new_state.game_state.stats.current_state.sp == 40 - 18
+    end
+
+    test "cast_complete with a stale token is ignored", %{character: character} do
+      reject(&Aesir.ZoneServer.Mmo.StatusEffect.Interpreter.apply_status/4)
+
+      token = make_ref()
+      state = casting_state(character, token, sp: 40)
+
+      {:noreply, new_state} = PlayerSession.handle_info({:cast_complete, make_ref()}, state)
+
+      assert new_state == state
+      assert new_state.game_state.action_state == :casting
+      assert new_state.game_state.stats.current_state.sp == 40
+    end
+  end
+
   describe "packet handling" do
     test "send_packet forwards packet to connection", %{character: character} do
       packet = %Aesir.ZoneServer.Packets.ZcNotifyTime{server_tick: 12_345}
@@ -671,6 +721,37 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       character: character,
       game_state: PlayerState.new(character),
       connection_pid: connection_pid
+    }
+  end
+
+  # A player mid-cast of AL_INCAGI (id 29) on self, with the given token in the
+  # cast context so the cast_complete handler can match (or reject) it.
+  defp casting_state(character, token, opts) do
+    sp = Keyword.fetch!(opts, :sp)
+    base = PlayerState.new(character)
+
+    stats =
+      put_in(base.stats, [Access.key!(:current_state), Access.key!(:sp)], sp)
+
+    context = %{
+      skill_id: 29,
+      skill_level: 1,
+      target: :self,
+      element: :neutral,
+      started_at: 0,
+      fixed_until: 0,
+      total_until: 800,
+      timer_ref: make_ref(),
+      token: token,
+      interruptible: true
+    }
+
+    game_state = %{base | action_state: :casting, state_context: context, stats: stats}
+
+    %{
+      character: character,
+      game_state: game_state,
+      connection_pid: self()
     }
   end
 end
