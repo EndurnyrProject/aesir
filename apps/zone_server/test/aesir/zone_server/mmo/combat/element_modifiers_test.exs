@@ -48,4 +48,23 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementModifiersTest do
       assert ElementModifiers.get_modifier(:neutral, :invalid, 1) == 1.0
     end
   end
+
+  describe "id/1" do
+    test "maps each element atom to its rAthena e_element ordinal" do
+      assert ElementModifiers.id(:neutral) == 0
+      assert ElementModifiers.id(:water) == 1
+      assert ElementModifiers.id(:earth) == 2
+      assert ElementModifiers.id(:fire) == 3
+      assert ElementModifiers.id(:wind) == 4
+      assert ElementModifiers.id(:poison) == 5
+      assert ElementModifiers.id(:holy) == 6
+      assert ElementModifiers.id(:shadow) == 7
+      assert ElementModifiers.id(:ghost) == 8
+      assert ElementModifiers.id(:undead) == 9
+    end
+
+    test "unknown element falls back to 0 (neutral)" do
+      assert ElementModifiers.id(:invalid) == 0
+    end
+  end
 end

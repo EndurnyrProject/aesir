@@ -27,6 +27,29 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementModifiers do
           | :undead
   @type element_level :: 1..4
 
+  # rAthena `e_element` ordinals (db/re/attr_fix.yml order); packets such as the
+  # cast bar carry this numeric element id in their `property` field.
+  @element_ids %{
+    neutral: 0,
+    water: 1,
+    earth: 2,
+    fire: 3,
+    wind: 4,
+    poison: 5,
+    holy: 6,
+    shadow: 7,
+    ghost: 8,
+    undead: 9
+  }
+
+  @doc """
+  Returns the rAthena `e_element` numeric id for an element atom.
+
+  Unknown elements fall back to `0` (neutral).
+  """
+  @spec id(element()) :: non_neg_integer()
+  def id(element), do: Map.get(@element_ids, element, 0)
+
   @doc """
   Gets the damage modifier for attack element vs defense element.
 

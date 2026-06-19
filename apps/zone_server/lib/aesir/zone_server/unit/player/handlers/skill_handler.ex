@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   require Logger
 
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
@@ -24,22 +25,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @skill_view_range 14
-
-  # rAthena `e_element` numeric ids (db/re/attr_fix.yml order). The cast bar's
-  # `property` field is an integer aura id, so the skill's element atom is mapped
-  # here.
-  @element_ids %{
-    neutral: 0,
-    water: 1,
-    earth: 2,
-    fire: 3,
-    wind: 4,
-    poison: 5,
-    holy: 6,
-    shadow: 7,
-    ghost: 8,
-    undead: 9
-  }
 
   @spec handle_use_skill(map(), integer(), pos_integer(), integer()) :: {:noreply, map()}
   def handle_use_skill(%{game_state: game_state} = state, skill_id, level, target_id) do
@@ -218,7 +203,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       x: x,
       y: y,
       skill_id: info.skill_id,
-      property: Map.get(@element_ids, info.element, 0),
+      property: ElementModifiers.id(info.element),
       cast_time: info.total,
       disposable: 0,
       attack_motion_time: 0
