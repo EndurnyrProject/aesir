@@ -5,12 +5,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzStormgust do
   The cast itself deals no damage: as a `target_type: :ground` skill, `use Skill`
   auto-derives a `cast/4` that places this skill's ground unit at the target cell.
   The unit's 5x5 water field then ticks every `hit_interval` ms for its lifetime
-  (`Skill.Ground` callbacks below). Each tick hits every offensive target inside
-  the footprint once, deals stubbed magic damage, knocks each target back, and
+  (`Skill.Ground` callbacks below). Each tick resolves the caster's combatant once,
+  hits every offensive target inside the footprint with renewal magic damage
+  (`Combat.MagicDamageCalculator`, MATK/MDEF/water), knocks each target back, and
   accumulates a per-group hit counter; on a target's 3rd accumulated hit it
   applies Freeze. Matching rAthena the counter is never reset, so it carries
-  across overlapping casts. SP and cooldown are deducted by the interpreter from
-  the definition.
+  across overlapping casts. If the caster is gone (logged out/dead) the field
+  still ticks and expires but deals no damage that tick. SP and cooldown are
+  deducted by the interpreter from the definition.
 
   rAthena (`skill_db` id 89): `Layout: 4` (filled 5x5), `Interval: 450`,
   `Knockback: 2`, `Element: Water`, `Status: Freeze`, unit lifetime
@@ -36,7 +38,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzStormgust do
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Ground
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Damage
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -63,33 +64,43 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzStormgust do
   def on_interval(%Group{center: {cx, cy} = center, map_name: map_name} = group, _now) do
     definition = definition()
 
-    updated_counts =
-      map_name
-      |> Combat.splash_targets(center, definition.splash_radius, group.caster_id)
-      |> Enum.reduce(group.state.hit_counts, fn {unit_type, target_id}, counts ->
-        hit(group, definition, unit_type, target_id, cx, cy)
-        bump_and_maybe_freeze(counts, unit_type, target_id)
-      end)
+    case Combat.resolve_combatant(group.caster_id) do
+      {:ok, caster} ->
+        updated_counts =
+          map_name
+          |> Combat.splash_targets(center, definition.splash_radius, group.caster_id)
+          |> Enum.reduce(group.state.hit_counts, fn {unit_type, target_id}, counts ->
+            hit(group, definition, caster, unit_type, target_id, cx, cy)
+            bump_and_maybe_freeze(counts, unit_type, target_id)
+          end)
 
-    {:ok, %{group | state: %{group.state | hit_counts: updated_counts}}}
+        {:ok, %{group | state: %{group.state | hit_counts: updated_counts}}}
+
+      {:error, _reason} ->
+        {:ok, group}
+    end
   end
 
-  @spec hit(Group.t(), struct(), atom(), integer(), integer(), integer()) :: :ok
-  defp hit(%Group{} = group, definition, unit_type, target_id, cx, cy) do
-    damage = Damage.magic_stub(group, target_id, group.level, definition.element)
-
+  @spec hit(Group.t(), struct(), struct(), atom(), integer(), integer(), integer()) :: :ok
+  defp hit(%Group{} = group, definition, caster, unit_type, target_id, cx, cy) do
     Combat.apply_skill_unit_damage(
-      group.caster_id,
+      caster,
       unit_type,
       target_id,
-      damage,
       group.skill_id,
-      group.level
+      group.level,
+      definition.element,
+      skill_ratio(group.level)
     )
 
     Combat.knockback(unit_type, target_id, cx, cy, definition.knockback)
     :ok
   end
+
+  # rAthena renewal `WZ_STORMGUST` ratio (`skills/mage/stormgust.cpp:21`):
+  # base_skillratio (100) - 30 + 50 * skill_lv.
+  @spec skill_ratio(non_neg_integer()) :: non_neg_integer()
+  defp skill_ratio(level), do: 70 + 50 * level
 
   @spec bump_and_maybe_freeze(map(), atom(), integer()) :: map()
   defp bump_and_maybe_freeze(counts, unit_type, target_id) do

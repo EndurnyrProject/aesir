@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
+  alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Packets.ZcBlownback
@@ -163,27 +164,64 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   end
 
   @doc """
-  Applies a precomputed skill-unit hit to a target and broadcasts its visual.
+  Resolves a unit id to its combatant struct.
 
-  Used by ground skill-units (e.g. Storm Gust), whose per-tick damage is produced
-  by `Skill.Unit.Damage.magic_stub/4` rather than the physical `DamageCalculator`.
-  Applies `damage` to the target and broadcasts a `ZC_NOTIFY_SKILL` from the
-  target's cell so nearby players see the hit number.
+  Wraps the internal unit-state lookup so callers outside this module (e.g. ground
+  skill-units resolving their caster once per tick) can build a `Combatant` without
+  knowing how players and mobs are stored. Returns `{:error, reason}` when the unit
+  is gone (logged out, despawned), so the caller can skip cleanly.
+  """
+  @spec resolve_combatant(integer()) :: {:ok, struct()} | {:error, atom()}
+  def resolve_combatant(unit_id) do
+    with {:ok, _pid, state, _type} <- get_target_unit_state(unit_id) do
+      {:ok, state.__struct__.to_combatant(state)}
+    end
+  end
+
+  @doc """
+  Computes and applies a single magic skill-unit hit, broadcasting its visual.
+
+  Used by magic ground skill-units (e.g. Storm Gust). Resolves the target
+  combatant, runs the hit through `MagicDamageCalculator` (real MATK/MDEF/element)
+  with the given `skill_ratio` and `element`, broadcasts a `ZC_NOTIFY_SKILL` from
+  the target's cell so nearby players see the hit number, then applies the damage.
 
   ## Parameters
-    - `caster_id` - the casting unit's GID (skill packet `src_id`)
+    - `caster` - the casting unit's combatant (`src_id`/MATK source)
     - `unit_type` / `target_id` - the target being hit
-    - `damage` - the precomputed damage value
     - `skill_id` / `skill_level` - identify the skill for the damage packet
+    - `element` - the skill's magic element (element resistance + damage context)
+    - `skill_ratio` - percent of base MATK the skill deals this hit
   """
-  @spec apply_skill_unit_damage(integer(), atom(), integer(), integer(), integer(), integer()) ::
-          :ok | {:error, atom()}
-  def apply_skill_unit_damage(caster_id, unit_type, target_id, damage, skill_id, skill_level) do
-    with {:ok, {tx, ty, map_name}} <- SpatialIndex.get_unit_position(unit_type, target_id) do
+  @spec apply_skill_unit_damage(
+          struct(),
+          atom(),
+          integer(),
+          integer(),
+          integer(),
+          atom(),
+          non_neg_integer()
+        ) :: :ok | {:error, atom()}
+  def apply_skill_unit_damage(
+        caster,
+        unit_type,
+        target_id,
+        skill_id,
+        skill_level,
+        element,
+        skill_ratio
+      ) do
+    with {:ok, target} <- resolve_combatant(target_id),
+         {:ok, {tx, ty, map_name}} <- SpatialIndex.get_unit_position(unit_type, target_id),
+         {:ok, %{damage: damage}} <-
+           MagicDamageCalculator.calculate_magic_damage(caster, target,
+             element: element,
+             skill_ratio: skill_ratio
+           ) do
       packet = %ZcNotifySkill{
         skill_id: skill_id,
         skill_level: skill_level,
-        src_id: caster_id,
+        src_id: caster.unit_id,
         target_id: target_id,
         src_delay: 0,
         dst_delay: 0,
@@ -193,7 +231,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
       }
 
       Broadcast.to_in_range(map_name, tx, ty, @combat_view_range, packet)
-      deal_damage(target_id, damage, :water, :skill_unit)
+      deal_damage(target_id, damage, element, :skill_unit)
     end
   end
 

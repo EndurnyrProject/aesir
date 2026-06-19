@@ -4,7 +4,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzStormgustTest do
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Damage
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.WzStormgust
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -15,12 +14,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzStormgustTest do
   @map_name "prontera"
   @center {150, 150}
 
+  # Renewal WZ_STORMGUST ratio: 70 + 50 * level (skills/mage/stormgust.cpp:21).
+  @level 10
+  @expected_ratio 70 + 50 * @level
+
   defp group(state \\ %{hit_counts: %{}}) do
     %Group{
       group_id: 1,
       skill_id: 89,
       skill_name: :wz_stormgust,
-      level: 10,
+      level: @level,
       caster_id: @caster_id,
       caster_type: :player,
       map_name: @map_name,
@@ -29,6 +32,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzStormgustTest do
       interval: 450,
       state: state
     }
+  end
+
+  defp stub_caster do
+    stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
   end
 
   describe "skill data" do
@@ -57,16 +64,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzStormgustTest do
   end
 
   describe "on_interval/2" do
-    test "hits each in-footprint mob once with stub damage and knocks it back" do
+    test "hits each in-footprint mob once via the magic calculator and knocks it back" do
       test_pid = self()
+      stub_caster()
 
       stub(Combat, :splash_targets, fn @map_name, @center, 2, @caster_id ->
         [{:mob, 2001}, {:mob, 2002}]
       end)
 
-      stub(Damage, :magic_stub, fn _caster, _target, 10, :water -> 123 end)
-
-      stub(Combat, :apply_skill_unit_damage, fn @caster_id, unit_type, target_id, 123, 89, 10 ->
+      stub(Combat, :apply_skill_unit_damage, fn caster,
+                                                unit_type,
+                                                target_id,
+                                                89,
+                                                @level,
+                                                :water,
+                                                @expected_ratio ->
+        assert caster.unit_id == @caster_id
         send(test_pid, {:hit, unit_type, target_id})
         :ok
       end)
@@ -85,10 +98,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzStormgustTest do
       refute_received {:hit, :player, @caster_id}
     end
 
+    test "skips the whole tick (no damage) when the caster cannot be resolved" do
+      stub(Combat, :resolve_combatant, fn @caster_id -> {:error, :target_not_found} end)
+
+      reject(&Combat.splash_targets/4)
+      reject(&Combat.apply_skill_unit_damage/7)
+      reject(&Combat.knockback/5)
+      reject(&StatusInterpreter.apply_status/4)
+
+      assert {:ok, %Group{state: %{hit_counts: %{}}}} = WzStormgust.on_interval(group(), 0)
+    end
+
     test "does not hit a dead mob (hp <= 0) inside the footprint" do
+      stub_caster()
       stub(Combat, :splash_targets, fn @map_name, @center, 2, @caster_id -> [] end)
 
-      reject(&Combat.apply_skill_unit_damage/6)
+      reject(&Combat.apply_skill_unit_damage/7)
       reject(&Combat.knockback/5)
       reject(&StatusInterpreter.apply_status/4)
 
@@ -96,12 +121,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzStormgustTest do
     end
 
     test "does not freeze before the 3rd accumulated hit" do
+      stub_caster()
+
       stub(Combat, :splash_targets, fn @map_name, @center, 2, @caster_id ->
         [{:mob, 2001}]
       end)
 
-      stub(Damage, :magic_stub, fn _c, _t, _l, _e -> 10 end)
-      stub(Combat, :apply_skill_unit_damage, fn _cid, _ut, _tid, _dmg, _sid, _lvl -> :ok end)
+      stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, _sid, _lvl, _el, _ratio -> :ok end)
       stub(Combat, :knockback, fn _ut, _tid, _x, _y, _d -> {:ok, {0, 0}} end)
       reject(&StatusInterpreter.apply_status/4)
 
@@ -110,12 +136,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzStormgustTest do
     end
 
     test "freezes on the 3rd accumulated hit and does not reset the counter" do
+      stub_caster()
+
       stub(Combat, :splash_targets, fn @map_name, @center, 2, @caster_id ->
         [{:mob, 2001}]
       end)
 
-      stub(Damage, :magic_stub, fn _c, _t, _l, _e -> 10 end)
-      stub(Combat, :apply_skill_unit_damage, fn _cid, _ut, _tid, _dmg, _sid, _lvl -> :ok end)
+      stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, _sid, _lvl, _el, _ratio -> :ok end)
       stub(Combat, :knockback, fn _ut, _tid, _x, _y, _d -> {:ok, {0, 0}} end)
 
       expect(StatusInterpreter, :apply_status, fn :mob, 2001, :sc_freeze, _params -> :ok end)
@@ -127,12 +154,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzStormgustTest do
     end
 
     test "does not re-freeze after the counter passes 3" do
+      stub_caster()
+
       stub(Combat, :splash_targets, fn @map_name, @center, 2, @caster_id ->
         [{:mob, 2001}]
       end)
 
-      stub(Damage, :magic_stub, fn _c, _t, _l, _e -> 10 end)
-      stub(Combat, :apply_skill_unit_damage, fn _cid, _ut, _tid, _dmg, _sid, _lvl -> :ok end)
+      stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, _sid, _lvl, _el, _ratio -> :ok end)
       stub(Combat, :knockback, fn _ut, _tid, _x, _y, _d -> {:ok, {0, 0}} end)
       reject(&StatusInterpreter.apply_status/4)
 
