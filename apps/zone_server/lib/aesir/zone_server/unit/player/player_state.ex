@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           | :moving
           | :combat_moving
           | :attacking
+          | :casting
           | :sitting
           | :dead
           | :trading
@@ -315,6 +316,21 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   @doc """
   Transitions to a new action state.
   Validates the transition and updates state context as needed.
+
+  When transitioning to `:casting`, `context` carries the cast lifecycle map:
+
+      %{
+        skill_id: integer(),
+        skill_level: integer(),
+        target: term(),
+        element: atom(),
+        started_at: integer(),
+        fixed_until: integer(),
+        total_until: integer(),
+        timer_ref: reference() | nil,
+        token: term(),
+        interruptible: boolean()
+      }
   """
   @spec transition_to(t(), action_state(), map()) :: {:ok, t()} | {:error, :invalid_transition}
   def transition_to(%__MODULE__{action_state: current} = state, new_state, context \\ %{}) do
@@ -384,25 +400,23 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     end
   end
 
-  defp valid_state_transition?(from, to) do
-    case from do
-      :idle -> valid_from_idle?(to)
-      :moving -> valid_from_moving?(to)
-      :combat_moving -> valid_from_combat_moving?(to)
-      :attacking -> valid_from_attacking?(to)
-      :sitting -> valid_from_sitting?(to)
-      :trading -> valid_from_trading?(to)
-      :vending -> valid_from_vending?(to)
-      _ -> false
-    end
-  end
+  defp valid_state_transition?(:idle, to), do: valid_from_idle?(to)
+  defp valid_state_transition?(:moving, to), do: valid_from_moving?(to)
+  defp valid_state_transition?(:combat_moving, to), do: valid_from_combat_moving?(to)
+  defp valid_state_transition?(:attacking, to), do: valid_from_attacking?(to)
+  defp valid_state_transition?(:casting, to), do: valid_from_casting?(to)
+  defp valid_state_transition?(:sitting, to), do: valid_from_sitting?(to)
+  defp valid_state_transition?(:trading, to), do: valid_from_trading?(to)
+  defp valid_state_transition?(:vending, to), do: valid_from_vending?(to)
+  defp valid_state_transition?(_, _), do: false
 
   defp valid_from_idle?(to),
-    do: to in [:moving, :combat_moving, :attacking, :sitting, :trading, :vending]
+    do: to in [:moving, :combat_moving, :attacking, :casting, :sitting, :trading, :vending]
 
   defp valid_from_moving?(to), do: to in [:idle, :combat_moving, :attacking]
   defp valid_from_combat_moving?(to), do: to in [:idle, :attacking, :moving]
   defp valid_from_attacking?(to), do: to in [:idle, :combat_moving]
+  defp valid_from_casting?(to), do: to == :idle
   defp valid_from_sitting?(to), do: to == :idle
   defp valid_from_trading?(to), do: to == :idle
   defp valid_from_vending?(to), do: to == :idle

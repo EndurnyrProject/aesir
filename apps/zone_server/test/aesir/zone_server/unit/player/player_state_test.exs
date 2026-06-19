@@ -191,6 +191,84 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
     end
   end
 
+  describe "casting" do
+    setup do
+      character = %Character{
+        id: 1,
+        name: "TestPlayer",
+        last_map: "prontera",
+        last_x: 100,
+        last_y: 100,
+        base_level: 1,
+        job_level: 1,
+        class: 0,
+        str: 1,
+        agi: 1,
+        vit: 1,
+        int: 1,
+        dex: 1,
+        luk: 1,
+        hp: 100,
+        max_hp: 100,
+        sp: 50,
+        max_sp: 50,
+        status_point: 0,
+        skill_point: 0,
+        account_id: 1
+      }
+
+      state = PlayerState.new(character)
+      {:ok, %{state: state}}
+    end
+
+    test "can transition from idle to casting", %{state: state} do
+      assert {:ok, casting_state} = PlayerState.transition_to(state, :casting)
+      assert casting_state.action_state == :casting
+    end
+
+    test "can transition from casting back to idle", %{state: state} do
+      {:ok, casting_state} = PlayerState.transition_to(state, :casting)
+      assert {:ok, idle_state} = PlayerState.transition_to(casting_state, :idle)
+      assert idle_state.action_state == :idle
+    end
+
+    test "can transition from casting to dead", %{state: state} do
+      {:ok, casting_state} = PlayerState.transition_to(state, :casting)
+      assert {:ok, dead_state} = PlayerState.transition_to(casting_state, :dead)
+      assert dead_state.action_state == :dead
+    end
+
+    test "casting stores the cast state_context", %{state: state} do
+      context = %{
+        skill_id: 83,
+        skill_level: 5,
+        target: {:ground, 150, 150},
+        element: :water,
+        started_at: 0,
+        fixed_until: 200,
+        total_until: 1_000,
+        timer_ref: nil,
+        token: 1,
+        interruptible: true
+      }
+
+      assert {:ok, casting_state} = PlayerState.transition_to(state, :casting, context)
+      assert casting_state.state_context == context
+    end
+
+    test "cannot transition from sitting to casting", %{state: state} do
+      {:ok, sitting_state} = PlayerState.transition_to(state, :sitting)
+      assert {:error, :invalid_transition} = PlayerState.transition_to(sitting_state, :casting)
+      assert PlayerState.can_transition?(:sitting, :casting) == false
+    end
+
+    test "can_transition? permits the casting lifecycle pairs" do
+      assert PlayerState.can_transition?(:idle, :casting) == true
+      assert PlayerState.can_transition?(:casting, :idle) == true
+      assert PlayerState.can_transition?(:casting, :dead) == true
+    end
+  end
+
   describe "to_combatant/1 weapon type resolution" do
     setup do
       character = %Character{
