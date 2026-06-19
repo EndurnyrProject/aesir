@@ -10,7 +10,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Commons.Utils.ServerTick
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.StatPoint
+  alias Aesir.ZoneServer.Packets.CzReqTakeoffEquip
   alias Aesir.ZoneServer.Packets.CzRequestChat
+  alias Aesir.ZoneServer.Packets.CzReqWearEquip
   alias Aesir.ZoneServer.Packets.CzRestart
   alias Aesir.ZoneServer.Packets.CzStatusChange
   alias Aesir.ZoneServer.Packets.CzUseSkill
@@ -46,6 +48,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   @cz_request_chat 0x008C
   @cz_restart 0x00B2
   @cz_status_change 0x00BB
+  @cz_req_wear_equip 0x0998
+  @cz_req_takeoff_equip 0x00AB
 
   @doc """
   Processes an incoming packet for a player session.
@@ -296,6 +300,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
         state
       ) do
     StatAllocationHandler.handle_status_up(status_id, amount, state)
+  end
+
+  # CZ_REQ_WEAR_EQUIP - Player requests to equip an item. `index` is the client
+  # index (server index + 2); the session subtracts the offset.
+  def handle_packet(@cz_req_wear_equip, %CzReqWearEquip{index: index, position: position}, state) do
+    GenServer.cast(self(), {:equip_item, index, position})
+    {:noreply, state}
+  end
+
+  # CZ_REQ_TAKEOFF_EQUIP - Player requests to unequip an item.
+  def handle_packet(@cz_req_takeoff_equip, %CzReqTakeoffEquip{index: index}, state) do
+    GenServer.cast(self(), {:unequip_item, index})
+    {:noreply, state}
   end
 
   # Fallback for unknown packets

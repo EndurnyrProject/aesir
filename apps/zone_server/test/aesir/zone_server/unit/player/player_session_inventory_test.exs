@@ -7,13 +7,18 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
 
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
+  alias Aesir.ZoneServer.Packets.ZcAckTakeoffEquip
+  alias Aesir.ZoneServer.Packets.ZcAckWearEquip
   alias Aesir.ZoneServer.Packets.ZcInventoryEnd
   alias Aesir.ZoneServer.Packets.ZcInventoryItemlistEquip
   alias Aesir.ZoneServer.Packets.ZcInventoryItemlistNormal
   alias Aesir.ZoneServer.Packets.ZcInventoryStart
+  alias Aesir.ZoneServer.Packets.ZcSpriteChange
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
 
   setup :verify_on_exit!
   setup :set_mimic_from_context
@@ -371,6 +376,199 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       # Equipped in right hand
       assert weapon_item.equip == 2
     end
+  end
+
+  describe "equip/unequip orchestration" do
+    setup %{account: account} do
+      {:ok, character} =
+        %Character{}
+        |> Character.changeset(%{
+          account_id: account.id,
+          char_num: 1,
+          name: "Equipper",
+          class: 1,
+          base_level: 99,
+          last_map: "prontera",
+          last_x: 50,
+          last_y: 50,
+          str: 10,
+          agi: 10,
+          vit: 10,
+          int: 10,
+          dex: 10,
+          luk: 10
+        })
+        |> Repo.insert()
+
+      %{equip_char: character}
+    end
+
+    test "equip request equips the item, acks success and broadcasts the sprite", %{
+      equip_char: character
+    } do
+      Mimic.copy(Broadcast)
+      # 1101 = Sword (right_hand, atk 25)
+      seed_item(character.id, 1101, 1)
+      {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
+
+      server_index = index_of(state.game_state.inventory, 1101)
+      bare_atk = state.game_state.stats.combat_stats.atk
+
+      expect(Broadcast, :to_visible_players, fn _gs, %ZcSpriteChange{}, _opts -> :ok end)
+
+      {:noreply, new_state} =
+        PlayerSession.handle_cast(
+          {:equip_item, PlayerState.client_index(server_index), 2},
+          state
+        )
+
+      # Item now equipped in memory and persisted.
+      assert new_state.game_state.inventory[server_index].equip == 2
+      assert reload(character.id)[server_index].equip == 2
+
+      # Stats reflect the +25 atk equipment bonus.
+      assert new_state.game_state.stats.combat_stats.atk == bare_atk + 25
+
+      ack = receive_packet_of_type(ZcAckWearEquip)
+      assert ack.result == ZcAckWearEquip.result_ok()
+      assert ack.wear_location == 2
+    end
+
+    test "equipping a two-hander emits a takeoff ack for the worn shield", %{
+      equip_char: character
+    } do
+      Mimic.copy(Broadcast)
+      stub(Broadcast, :to_visible_players, fn _gs, _packet, _opts -> :ok end)
+
+      # Guard (2101) worn in left hand; Katana (1116) two-handed weapon.
+      _shield = seed_equipped(character.id, 2101, 32)
+      _katana = seed_item(character.id, 1116, 1)
+
+      {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
+
+      katana_index = index_of(state.game_state.inventory, 1116)
+      shield_index = index_of(state.game_state.inventory, 2101)
+
+      {:noreply, new_state} =
+        PlayerSession.handle_cast(
+          {:equip_item, PlayerState.client_index(katana_index), 34},
+          state
+        )
+
+      # Katana equipped to both hands, shield cleared.
+      assert new_state.game_state.inventory[katana_index].equip == 34
+      assert new_state.game_state.inventory[shield_index].equip == 0
+      assert reload(character.id)[shield_index].equip == 0
+
+      wear_ack = receive_packet_of_type(ZcAckWearEquip)
+      assert wear_ack.result == ZcAckWearEquip.result_ok()
+
+      takeoff_ack = receive_packet_of_type(ZcAckTakeoffEquip)
+      assert takeoff_ack.index == PlayerState.client_index(shield_index)
+    end
+
+    test "unequip request clears the item and acks success", %{equip_char: character} do
+      Mimic.copy(Broadcast)
+      stub(Broadcast, :to_visible_players, fn _gs, _packet, _opts -> :ok end)
+
+      _sword = seed_equipped(character.id, 1101, 2)
+      {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
+
+      server_index = index_of(state.game_state.inventory, 1101)
+
+      {:noreply, new_state} =
+        PlayerSession.handle_cast(
+          {:unequip_item, PlayerState.client_index(server_index)},
+          state
+        )
+
+      assert new_state.game_state.inventory[server_index].equip == 0
+      assert reload(character.id)[server_index].equip == 0
+
+      ack = receive_packet_of_type(ZcAckTakeoffEquip)
+      assert ack.result == ZcAckTakeoffEquip.result_success()
+    end
+
+    test "persist failure leaves inventory unchanged and acks failure", %{equip_char: character} do
+      _sword = seed_item(character.id, 1101, 1)
+      {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
+
+      server_index = index_of(state.game_state.inventory, 1101)
+
+      # Simulate a DB failure: the whole transaction rolls back.
+      stub(Persistence, :transaction, fn _fun -> {:error, :persist_failed} end)
+
+      {:noreply, new_state} =
+        PlayerSession.handle_cast(
+          {:equip_item, PlayerState.client_index(server_index), 2},
+          state
+        )
+
+      # State untouched (persist-first), DB still unequipped.
+      assert new_state.game_state.inventory[server_index].equip == 0
+      assert reload(character.id)[server_index].equip == 0
+
+      ack = receive_packet_of_type(ZcAckWearEquip)
+      assert ack.result == ZcAckWearEquip.result_fail()
+    end
+
+    test "stale/invalid index yields a failure ack and no mutation", %{equip_char: character} do
+      {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
+
+      {:noreply, new_state} =
+        PlayerSession.handle_cast({:equip_item, PlayerState.client_index(99), 2}, state)
+
+      assert new_state.game_state.inventory == state.game_state.inventory
+
+      ack = receive_packet_of_type(ZcAckWearEquip)
+      assert ack.result == ZcAckWearEquip.result_fail()
+    end
+  end
+
+  describe "spawn-time equipment derivation" do
+    test "stats and appearance reflect equipped gear at spawn", %{account: account} do
+      {:ok, character} =
+        %Character{}
+        |> Character.changeset(%{
+          account_id: account.id,
+          char_num: 2,
+          name: "Geared",
+          class: 1,
+          base_level: 99,
+          last_map: "prontera",
+          last_x: 50,
+          last_y: 50,
+          str: 10,
+          agi: 10,
+          vit: 10,
+          int: 10,
+          dex: 10,
+          luk: 10
+        })
+        |> Repo.insert()
+
+      # Sword (1101) atk 25, view 0; equipped in right hand at login.
+      seed_equipped(character.id, 1101, 2)
+
+      bare = Stats.calculate_stats(Stats.from_character(character), character.id, [])
+
+      {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
+
+      # Equipment bonus applied at spawn from the worn sword.
+      assert state.game_state.stats.combat_stats.atk == bare.combat_stats.atk + 25
+      assert state.game_state.stats.equipment.right_hand == 1101
+    end
+  end
+
+  defp reload(char_id) do
+    {:ok, items} = Persistence.load_inventory(char_id)
+    PlayerState.from_list(items)
+  end
+
+  defp index_of(inventory, nameid) do
+    Enum.find_value(inventory, fn {index, item} ->
+      if item.nameid == nameid, do: index
+    end)
   end
 
   # Helper function to receive a specific packet type

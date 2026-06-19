@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Packets.ZcNotifyVanish
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
@@ -409,6 +410,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   def handle_cast({:request_attack, target_id, action}, state) do
     # Delegate to CombatActionHandler for state machine based combat
     CombatActionHandler.handle_attack_request(state, target_id, action)
+  end
+
+  @impl true
+  def handle_cast({:equip_item, client_index, position}, state) do
+    EquipmentHandler.handle_equip(PlayerState.server_index(client_index), position, state)
+  end
+
+  @impl true
+  def handle_cast({:unequip_item, client_index}, state) do
+    EquipmentHandler.handle_unequip(PlayerState.server_index(client_index), state)
   end
 
   @impl true

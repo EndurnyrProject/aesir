@@ -1,0 +1,170 @@
+defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps do
+  @moduledoc """
+  Write-through orchestration between the pure inventory core and persistence.
+
+  The pure core (`Aesir.ZoneServer.Unit.Inventory`) computes a new inventory map
+  plus a change descriptor without touching the database. This module commits
+  that change with **persist-first** semantics: it runs every row write inside a
+  single `Persistence.transaction/1` and only returns the advanced inventory map
+  when the commit succeeds. On any DB failure the transaction rolls back and the
+  caller's in-memory state must stay exactly as it was.
+
+  All multi-row changes (stack splits and equip-with-conflict, which unequips
+  the conflicting items) run in one transaction so they roll back atomically.
+
+  Inserted rows obtain their real DB `id` here; that id is reflected back into
+  the returned inventory map so memory and the database never diverge.
+  """
+
+  alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.Inventory.Persistence
+  alias Aesir.ZoneServer.Unit.Inventory.Weight
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
+
+  @type inventory :: Inventory.t()
+
+  @doc """
+  Persists `change` and returns the advanced inventory map.
+
+  `old_inventory` is the pre-change map (needed to locate rows to delete);
+  `new_inventory` is the map the pure core produced. The whole change is wrapped
+  in a single transaction. On success returns `{:ok, persisted_inventory}` where
+  inserted items carry their real DB `id`; on failure returns `{:error, reason}`
+  and nothing has been committed.
+  """
+  @spec apply_change(integer(), inventory(), inventory(), Inventory.change()) ::
+          {:ok, inventory()} | {:error, term()}
+  def apply_change(char_id, old_inventory, new_inventory, change) do
+    Persistence.transaction(fn -> persist(char_id, old_inventory, new_inventory, change) end)
+  end
+
+  @doc """
+  Adds `amount` of `item_def`, enforcing max weight, then persists.
+
+  Rejects with `{:error, :overweight}` before any DB write when the add would
+  push the player past their max weight. Otherwise runs the pure `add`, persists
+  the change, and returns `{:ok, persisted_inventory, change}`.
+  """
+  @spec add(integer(), inventory(), Stats.t(), ItemDefinition.t(), pos_integer(), map()) ::
+          {:ok, inventory(), Inventory.change()} | {:error, term()}
+  def add(char_id, inventory, %Stats{} = stats, %ItemDefinition{} = item_def, amount, opts \\ %{}) do
+    if Weight.would_exceed?(inventory, stats, item_def.weight * amount) do
+      {:error, :overweight}
+    else
+      with {:ok, new_inventory, change} <- Inventory.add(inventory, item_def, amount, opts),
+           {:ok, persisted} <- apply_change(char_id, inventory, new_inventory, change) do
+        {:ok, persisted, change}
+      end
+    end
+  end
+
+  @doc """
+  Removes `amount` from the item at `index`, then persists.
+  """
+  @spec remove(integer(), inventory(), non_neg_integer(), pos_integer()) ::
+          {:ok, inventory(), Inventory.change()} | {:error, term()}
+  def remove(char_id, inventory, index, amount) do
+    with {:ok, new_inventory, change} <- Inventory.remove(inventory, index, amount),
+         {:ok, persisted} <- apply_change(char_id, inventory, new_inventory, change) do
+      {:ok, persisted, change}
+    end
+  end
+
+  @spec persist(integer(), inventory(), inventory(), Inventory.change()) ::
+          {:ok, inventory()} | {:error, term()}
+  defp persist(char_id, _old, new_inventory, {:added, index, item}) do
+    with {:ok, row} <- Persistence.insert_item(char_id, item_attrs(item)) do
+      {:ok, PlayerState.put_item(new_inventory, index, row)}
+    end
+  end
+
+  defp persist(_char_id, old_inventory, new_inventory, {:stacked, index, amount}) do
+    update_at(old_inventory, new_inventory, index, %{amount: amount})
+  end
+
+  defp persist(
+         char_id,
+         old_inventory,
+         new_inventory,
+         {:split, [{topped_index, amount}, {new_index, _}]}
+       ) do
+    inserted = PlayerState.get_by_index(new_inventory, new_index)
+    topped_row = PlayerState.get_by_index(old_inventory, topped_index)
+
+    with {:ok, topped} <- Persistence.update_item(topped_row, %{amount: amount}),
+         {:ok, inserted_row} <- Persistence.insert_item(char_id, item_attrs(inserted)) do
+      {:ok,
+       new_inventory
+       |> PlayerState.put_item(topped_index, topped)
+       |> PlayerState.put_item(new_index, inserted_row)}
+    end
+  end
+
+  defp persist(_char_id, old_inventory, new_inventory, {:removed, index}) do
+    item = PlayerState.get_by_index(old_inventory, index)
+
+    with {:ok, _deleted} <- Persistence.delete_item(item) do
+      {:ok, new_inventory}
+    end
+  end
+
+  defp persist(_char_id, old_inventory, new_inventory, {:reduced, index, left}) do
+    update_at(old_inventory, new_inventory, index, %{amount: left})
+  end
+
+  defp persist(_char_id, old_inventory, new_inventory, {:equipped, index, worn_mask, unequipped}) do
+    with {:ok, inventory} <- update_at(old_inventory, new_inventory, index, %{equip: worn_mask}) do
+      unequip_rows(old_inventory, inventory, unequipped)
+    end
+  end
+
+  defp persist(_char_id, old_inventory, new_inventory, {:unequipped, index}) do
+    update_at(old_inventory, new_inventory, index, %{equip: 0})
+  end
+
+  # Updates the row at `index` using the pre-change row (which carries the real
+  # DB id and old value) as the changeset base so the diff is detected, then
+  # reflects the persisted row back into the new inventory map.
+  @spec update_at(inventory(), inventory(), non_neg_integer(), map()) ::
+          {:ok, inventory()} | {:error, term()}
+  defp update_at(old_inventory, new_inventory, index, attrs) do
+    base = PlayerState.get_by_index(old_inventory, index)
+
+    with {:ok, row} <- Persistence.update_item(base, attrs) do
+      {:ok, PlayerState.put_item(new_inventory, index, row)}
+    end
+  end
+
+  @spec unequip_rows(inventory(), inventory(), [non_neg_integer()]) ::
+          {:ok, inventory()} | {:error, term()}
+  defp unequip_rows(old_inventory, inventory, indices) do
+    Enum.reduce_while(indices, {:ok, inventory}, fn index, {:ok, inv} ->
+      case update_at(old_inventory, inv, index, %{equip: 0}) do
+        {:ok, updated} -> {:cont, {:ok, updated}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  @spec item_attrs(InventoryItem.t()) :: map()
+  defp item_attrs(%InventoryItem{} = item) do
+    %{
+      nameid: item.nameid,
+      amount: item.amount,
+      equip: item.equip,
+      identify: item.identify,
+      refine: item.refine,
+      attribute: item.attribute,
+      card0: item.card0,
+      card1: item.card1,
+      card2: item.card2,
+      card3: item.card3,
+      random_options: item.random_options,
+      bound: item.bound,
+      favorite: item.favorite
+    }
+  end
+end
