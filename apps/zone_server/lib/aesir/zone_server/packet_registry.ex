@@ -36,6 +36,8 @@ defmodule Aesir.ZoneServer.PacketRegistry do
     Aesir.ZoneServer.Packets.ZcResurrection,
     Aesir.ZoneServer.Packets.ZcStatusChange,
     Aesir.ZoneServer.Packets.ZcUseSkill,
+    Aesir.ZoneServer.Packets.ZcUseSkill2,
+    Aesir.ZoneServer.Packets.ZcNotifyCastCancel,
     Aesir.ZoneServer.Packets.ZcNotifySkill,
     Aesir.ZoneServer.Packets.ZcNotifyGroundskill,
     Aesir.ZoneServer.Packets.ZcSkillinfoList,
