@@ -190,6 +190,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
       refute StatusStorage.has_status?(:player, target_id, status_id)
     end
 
+    @tag :capture_log
     test "propagates error when apply_status fails" do
       target_id = 1
       status_id = :sc_nonexistent_status

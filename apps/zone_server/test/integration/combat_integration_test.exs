@@ -6,6 +6,8 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
 
   use Aesir.ZoneServer.IntegrationCase
 
+  @moduletag :capture_log
+
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Packets.ZcNotifyAct

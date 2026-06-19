@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Application do
       {Aesir.ZoneServer.EtsTable, name: EtsTables},
       {Registry, keys: :unique, name: Aesir.ZoneServer.MapRegistry},
       {Registry, keys: :unique, name: Aesir.ZoneServer.ProcessRegistry},
+      {Task.Supervisor, name: Aesir.ZoneServer.TaskSupervisor},
       Aesir.ZoneServer.MechanicsSupervisor,
       {Aesir.Commons.Network.Listener,
        connection_module: Aesir.ZoneServer,

@@ -9,6 +9,8 @@ defmodule Aesir.ZoneServer.Integration.ExperienceIntegrationTest do
 
   use Aesir.ZoneServer.IntegrationCase
 
+  @moduletag :capture_log
+
   alias Aesir.Commons.StatusParams
   alias Aesir.ZoneServer.Packets.ZcLongparChange
   alias Aesir.ZoneServer.Unit.Mob.MobSession

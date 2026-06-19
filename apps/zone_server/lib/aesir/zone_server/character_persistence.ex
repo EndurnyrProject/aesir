@@ -31,6 +31,8 @@ defmodule Aesir.ZoneServer.CharacterPersistence do
   alias Aesir.Commons.Models.Character
   alias Aesir.Repo
 
+  @task_supervisor Aesir.ZoneServer.TaskSupervisor
+
   @type update_fields :: %{optional(atom()) => any()}
   @type update_option :: {:async, boolean()}
   @type update_options :: [update_option()]
@@ -63,7 +65,7 @@ defmodule Aesir.ZoneServer.CharacterPersistence do
     async = Keyword.get(opts, :async, false)
 
     if async do
-      Task.start(fn -> do_async_update(character_id, fields) end)
+      run_async(fn -> do_async_update(character_id, fields) end)
       :ok
     else
       do_update_character(character_id, fields)
@@ -146,6 +148,14 @@ defmodule Aesir.ZoneServer.CharacterPersistence do
       |> maybe_put(:job_exp, job_exp)
 
     update_character(character_id, fields, opts)
+  end
+
+  defp run_async(fun) do
+    if Application.get_env(:zone_server, :inline_persistence, false) do
+      fun.()
+    else
+      Task.Supervisor.start_child(@task_supervisor, fun)
+    end
   end
 
   defp do_async_update(character_id, fields) do

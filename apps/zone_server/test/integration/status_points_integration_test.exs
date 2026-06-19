@@ -6,6 +6,8 @@ defmodule Aesir.ZoneServer.Integration.StatusPointsIntegrationTest do
 
   use Aesir.ZoneServer.IntegrationCase
 
+  @moduletag :capture_log
+
   alias Aesir.Commons.StatusParams
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Packets.CzStatusChange

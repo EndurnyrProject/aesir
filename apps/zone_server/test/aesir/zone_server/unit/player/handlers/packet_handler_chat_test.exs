@@ -144,6 +144,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerChatTest do
                       {:send_packet, %ZcNotifyChat{gid: @test_char_id, message: ^full_message}}}
     end
 
+    @tag :capture_log
     test "does not broadcast if message length exceeds maximum" do
       state = setup_player_state()
       # 256 bytes, exceeds 255 for actual content + null
@@ -155,6 +156,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerChatTest do
       refute_receive {:send_packet, _}
     end
 
+    @tag :capture_log
     test "does not broadcast if message does not start with correct prefix" do
       state = setup_player_state()
       malformed_message = "Someone else : Hello!"

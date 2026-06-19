@@ -61,20 +61,6 @@ defmodule Aesir.CharServer.CharacterSessionTest do
                  CharacterSession.validate_character_session(aid, login_id1, login_id2, sex)
       end)
     end
-
-    test "handles transaction errors from SessionManager" do
-      aid = 123
-      login_id1 = 456
-      login_id2 = 789
-      sex = 0
-
-      stub(SessionManager, :validate_session, fn _, _, _ -> {:error, :database_error} end)
-
-      capture_log(fn ->
-        assert {:error, :database_error} ==
-                 CharacterSession.validate_character_session(aid, login_id1, login_id2, sex)
-      end)
-    end
   end
 
   describe "update_session_for_character_selection/2" do

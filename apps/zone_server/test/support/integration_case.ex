@@ -38,6 +38,16 @@ defmodule Aesir.ZoneServer.IntegrationCase do
     :ok = Sandbox.checkout(Aesir.Repo)
     Sandbox.mode(Aesir.Repo, {:shared, self()})
 
+    # Run character persistence inline (synchronously) for integration tests.
+    # The fire-and-forget task otherwise races the sandbox teardown, and its
+    # expected failure logs (in-memory characters absent from the DB) land outside
+    # the test body. Inline writes happen within the body, where @moduletag
+    # :capture_log covers them. The real async path stays covered by the
+    # CharacterPersistence unit tests.
+    prev_inline = Application.get_env(:zone_server, :inline_persistence)
+    Application.put_env(:zone_server, :inline_persistence, true)
+    on_exit(fn -> restore_inline_persistence(prev_inline) end)
+
     # Set up Mimic
     Mimic.copy(Aesir.Commons.Network.Connection)
 
@@ -58,6 +68,12 @@ defmodule Aesir.ZoneServer.IntegrationCase do
     # Return test context
     {:ok, %{test_pid: test_pid}}
   end
+
+  defp restore_inline_persistence(nil),
+    do: Application.delete_env(:zone_server, :inline_persistence)
+
+  defp restore_inline_persistence(value),
+    do: Application.put_env(:zone_server, :inline_persistence, value)
 
   # Import the ETS setup helper
   def setup_ets_tables(_tags) do

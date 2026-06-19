@@ -489,6 +489,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       assert ack.result == ZcAckTakeoffEquip.result_success()
     end
 
+    @tag :capture_log
     test "persist failure leaves inventory unchanged and acks failure", %{equip_char: character} do
       _sword = seed_item(character.id, 1101, 1)
       {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
