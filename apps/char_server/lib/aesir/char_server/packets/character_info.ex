@@ -6,7 +6,9 @@ defmodule Aesir.CharServer.Packets.CharacterInfo do
   (`HC_ACCEPT_ENTER`, `HC_ACCEPT_MAKECHAR`, `HC_ACK_CHARINFO_PER_PAGE`). It
   encodes exactly rAthena's `char_mmo_char_tobuf` for the target packetver
   (`PACKETVER_RE_NUM >= 20211103`), where exp/jobexp and hp/maxhp/sp/maxsp are
-  64-bit.
+  64-bit. The build's packetver is enforced against this layout below; older
+  layouts are not implemented yet, so a lower `:commons` `:packetver` fails the
+  build rather than silently emitting wrong bytes.
 
   Fields are read directly off a fully-persisted `%Character{}`; there is no
   defensive defaulting since all call sites pass Repo-loaded records.
@@ -65,6 +67,14 @@ defmodule Aesir.CharServer.Packets.CharacterInfo do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Network.Packet
+  alias Aesir.Commons.Network.Packetver
+
+  @target_packetver "20211103"
+
+  unless Packetver.at_least?(@target_packetver) do
+    raise "CharacterInfo's 175-byte layout requires :commons :packetver >= " <>
+            "#{@target_packetver}, got #{Packetver.current()}; older layouts are not implemented"
+  end
 
   @byte_size 175
 
