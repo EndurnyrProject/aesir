@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       y: 10,
       map_name: "prontera",
       skill_cooldowns: %{},
+      act_delay_until: 0,
       stats: %{
         base_stats: %{dex: 1, int: 1},
         current_state: %{sp: sp, hp: 100},
@@ -319,6 +320,85 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       gs = game_state(100, %{6 => 1})
 
       assert {:error, :target_not_found} = Interpreter.complete_cast(gs, 6, 1, {:unit, 9999})
+    end
+  end
+
+  defp definition_with_act_delay(act_delay) do
+    %Definition{
+      id: 6,
+      name: :sm_provoke,
+      display_name: "Act Delay Test",
+      max_level: 10,
+      target_type: :target_ally,
+      damage_type: :no_damage,
+      element: :neutral,
+      range: 9,
+      sp_cost: List.duplicate(9, 10),
+      cast_time: [0],
+      after_cast_delay: act_delay
+    }
+  end
+
+  describe "after-cast act delay" do
+    test "complete_cast of a skill with a positive after_cast_delay sets act_delay_until ahead" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, definition_with_act_delay([500])} end)
+      stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+
+      gs = game_state(100, %{6 => 1})
+      now = System.monotonic_time(:millisecond)
+
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+      assert updated.act_delay_until >= now + 500
+    end
+
+    test "complete_cast of a skill with no after_cast_delay leaves act_delay_until at 0" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, definition_with_act_delay([])} end)
+      stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+
+      gs = game_state(100, %{6 => 1})
+
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+      assert updated.act_delay_until == 0
+    end
+
+    test "complete_cast of a skill with a zero after_cast_delay leaves act_delay_until at 0" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, definition_with_act_delay([0])} end)
+      stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+
+      gs = game_state(100, %{6 => 1})
+
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+      assert updated.act_delay_until == 0
+    end
+
+    test "begin_cast is blocked with :act_delayed while act-delayed" do
+      reject(&StatusInterpreter.apply_status/4)
+
+      gs = %{
+        game_state(100, %{29 => 1})
+        | act_delay_until: System.monotonic_time(:millisecond) + 60_000
+      }
+
+      assert {:error, :act_delayed} = Interpreter.begin_cast(gs, 29, 1, :self)
+    end
+
+    test "cast is blocked with :act_delayed while act-delayed" do
+      reject(&StatusInterpreter.apply_status/4)
+
+      gs = %{
+        game_state(100, %{29 => 1})
+        | act_delay_until: System.monotonic_time(:millisecond) + 60_000
+      }
+
+      assert {:error, :act_delayed} = Interpreter.cast(gs, 29, 1, :self)
+    end
+
+    test "begin_cast succeeds when no act delay is pending" do
+      stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _params -> :ok end)
+
+      gs = %{game_state(100, %{29 => 1}) | act_delay_until: 0}
+
+      assert {:casting, _gs, _info} = Interpreter.begin_cast(gs, 29, 1, :self)
     end
   end
 end

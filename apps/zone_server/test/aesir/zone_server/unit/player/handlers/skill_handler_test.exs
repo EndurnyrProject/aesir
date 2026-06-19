@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         x: 150,
         y: 150,
         skill_cooldowns: %{},
+        act_delay_until: 0,
         action_state: :idle,
         state_context: %{},
         stats: %{

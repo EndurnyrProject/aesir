@@ -1,7 +1,54 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
   use ExUnit.Case, async: true
 
+  import ExUnit.CaptureLog
+
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+
+  describe "after-cast act delay gate" do
+    defp attack_ready_state(act_delay_until) do
+      game_state = %PlayerState{
+        character_id: 1000,
+        x: 10,
+        y: 10,
+        action_state: :idle,
+        last_attack_timestamp: 0,
+        act_delay_until: act_delay_until,
+        stats: %{derived_stats: %{aspd: 150}}
+      }
+
+      %{game_state: game_state}
+    end
+
+    test "a melee attack is blocked (no range check) while act-delayed" do
+      future = System.monotonic_time(:millisecond) + 60_000
+      state = attack_ready_state(future)
+
+      log =
+        capture_log(fn ->
+          assert {:noreply, returned} = CombatActionHandler.handle_attack_request(state, 2000, 0)
+          assert returned.game_state.action_state == :idle
+          send(self(), :done)
+        end)
+
+      assert_received :done
+      refute log =~ "range"
+    end
+
+    test "a melee attack proceeds to the range check once the act delay is clear" do
+      state = attack_ready_state(0)
+
+      log =
+        capture_log(fn ->
+          assert {:noreply, _returned} = CombatActionHandler.handle_attack_request(state, 2000, 0)
+          send(self(), :done)
+        end)
+
+      assert_received :done
+      assert log =~ "range"
+    end
+  end
 
   describe "get_optimal_attack_position/3" do
     test "returns current position when already in range" do

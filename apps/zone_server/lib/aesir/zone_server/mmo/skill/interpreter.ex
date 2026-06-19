@@ -6,10 +6,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   time; a zero-cast skill resolves immediately, a timed skill returns a
   `cast_info` for the caller to schedule and leaves the game state untouched
   (no SP deducted, no cooldown set). `complete_cast/4` re-validates the target,
-  re-checks SP, runs the behavior, then deducts SP and sets the cooldown.
+  re-checks SP, runs the behavior, then deducts SP, sets the cooldown, and arms
+  the after-cast act delay.
 
   Validate-then-cast-then-charge: SP is only consumed at castend, so a failed
-  or interrupted cast never charges SP.
+  or interrupted cast never charges SP. Starting any cast is blocked while the
+  act delay is pending (`validate_cast` rejects with `{:error, :act_delayed}`).
 
   `cast/4` is the synchronous wrapper preserving the legacy single-call
   semantics: instant casts execute immediately and timed casts run their
@@ -86,12 +88,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   Runs a previously-validated cast to completion.
 
   Re-validates the target (it may have moved, died, or logged out during the
-  cast) and re-checks SP, then runs the behavior, deducts SP, and sets the
-  cooldown. A target that is gone or out of range fizzles with `{:error, _}`
-  and no SP is spent.
-
-  NOTE: after-cast delay enforcement is deferred (it is not enforced today
-  either).
+  cast) and re-checks SP, then runs the behavior, deducts SP, sets the
+  cooldown, and arms the after-cast act delay. A target that is gone or out of
+  range fizzles with `{:error, _}` and no SP is spent.
   """
   @spec complete_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
@@ -105,7 +104,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          cost = Enum.at(definition.sp_cost, level - 1),
          :ok <- check_sp(game_state, cost),
          {:ok, game_state} <- module.cast(game_state, target, level, definition) do
-      {:ok, game_state |> deduct_sp(cost) |> put_cooldown(skill_id, definition, level, now)}
+      {:ok,
+       game_state
+       |> deduct_sp(cost)
+       |> put_cooldown(skill_id, definition, level, now)
+       |> put_act_delay(definition, level, now)}
     end
   end
 
@@ -122,6 +125,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_range(game_state, target, definition),
          {:ok, module} <- fetch_active_module(definition),
          :ok <- check_cooldown(game_state, skill_id, now),
+         :ok <- check_act_delay(game_state, now),
          :ok <- module.validate(game_state, target, level, definition),
          cost = Enum.at(definition.sp_cost, level - 1),
          :ok <- check_sp(game_state, cost) do
@@ -265,6 +269,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
+  defp check_act_delay(game_state, now) do
+    if PlayerState.act_ready?(game_state, now), do: :ok, else: {:error, :act_delayed}
+  end
+
   defp check_sp(game_state, cost) do
     if game_state.stats.current_state.sp >= cost, do: :ok, else: {:error, :insufficient_sp}
   end
@@ -285,6 +293,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       duration ->
         cooldowns = Cooldown.put(game_state.skill_cooldowns, skill_id, now + duration)
         %{game_state | skill_cooldowns: cooldowns}
+    end
+  end
+
+  # Flat after-cast act delay (rAthena AfterCastActDelay). ASPD/Bragi reduction
+  # is a documented later refinement.
+  defp put_act_delay(game_state, definition, level, now) do
+    case Enum.at(definition.after_cast_delay, level - 1) do
+      nil -> game_state
+      0 -> game_state
+      delay -> %{game_state | act_delay_until: now + delay}
     end
   end
 end

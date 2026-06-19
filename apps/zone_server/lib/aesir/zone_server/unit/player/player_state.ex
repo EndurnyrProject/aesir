@@ -50,6 +50,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           combat_action_type: integer() | nil,
           last_target_position: {integer(), integer()} | nil,
           last_attack_timestamp: integer(),
+          act_delay_until: integer(),
           continuous_attack_timer: reference() | nil,
           skill_cooldowns: %{integer() => integer()},
           regen_accumulators: %{atom() => non_neg_integer()},
@@ -122,7 +123,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     :combat_target_id,
     :combat_action_type,
     :last_target_position,
-    :last_attack_timestamp,
     :continuous_attack_timer,
 
     # Character Stats
@@ -131,6 +131,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # Inventory keyed by stable session index
     inventory: %{},
     skill_cooldowns: %{},
+    last_attack_timestamp: 0,
+    act_delay_until: 0,
     regen_accumulators: %{hp_acc: 0, sp_acc: 0, skill_hp_acc: 0, skill_sp_acc: 0}
   ]
 
@@ -180,6 +182,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       combat_action_type: nil,
       last_target_position: nil,
       last_attack_timestamp: 0,
+      act_delay_until: 0,
 
       # Character Stats
       stats: PlayerStats.from_character(character),
@@ -383,6 +386,17 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   @spec combat_moving?(t()) :: boolean()
   def combat_moving?(%__MODULE__{action_state: :combat_moving}), do: true
   def combat_moving?(_), do: false
+
+  @doc """
+  Checks whether the after-cast act delay has elapsed.
+
+  Mirrors `AttackSpeed.can_attack?/2`: an `act_delay_until` of `0` means no
+  delay is pending (always ready); otherwise the given monotonic `now` must
+  have reached the deadline.
+  """
+  @spec act_ready?(t(), integer()) :: boolean()
+  def act_ready?(%{act_delay_until: 0}, _now), do: true
+  def act_ready?(%{act_delay_until: until}, now), do: now >= until
 
   @doc """
   Checks if a state transition is valid.

@@ -42,13 +42,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
     # Store the action type in game state for later use
     state = %{state | game_state: %{state.game_state | combat_action_type: action_type}}
 
-    # Check attack rate limiting
+    # Check attack rate limiting and after-cast act delay
     attack_delay = AttackSpeed.calculate_delay_from_stats(state.game_state.stats)
     can_attack = AttackSpeed.can_attack?(state.game_state.last_attack_timestamp, attack_delay)
+    act_ready = PlayerState.act_ready?(state.game_state, AttackSpeed.current_timestamp())
 
-    Logger.debug("Attack delay: #{attack_delay}ms, Can attack: #{can_attack}")
+    Logger.debug(
+      "Attack delay: #{attack_delay}ms, Can attack: #{can_attack}, Act ready: #{act_ready}"
+    )
 
-    if can_attack do
+    if can_attack and act_ready do
       # Check if target is in range
       case check_attack_range(state, target_id) do
         {:in_range, distance} ->

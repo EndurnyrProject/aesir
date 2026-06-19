@@ -269,6 +269,25 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
     end
   end
 
+  describe "act_ready?/2" do
+    test "a zero act_delay_until is always ready" do
+      state = %PlayerState{act_delay_until: 0}
+      assert PlayerState.act_ready?(state, 0) == true
+      assert PlayerState.act_ready?(state, 1_000_000) == true
+    end
+
+    test "a future act_delay_until is not ready" do
+      state = %PlayerState{act_delay_until: 5_000}
+      assert PlayerState.act_ready?(state, 4_999) == false
+    end
+
+    test "a past or reached act_delay_until is ready" do
+      state = %PlayerState{act_delay_until: 5_000}
+      assert PlayerState.act_ready?(state, 5_000) == true
+      assert PlayerState.act_ready?(state, 6_000) == true
+    end
+  end
+
   describe "to_combatant/1 weapon type resolution" do
     setup do
       character = %Character{
