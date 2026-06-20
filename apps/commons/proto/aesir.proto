@@ -19,12 +19,24 @@ message Envelope {
   uint32 seq = 1;
 
   oneof body {
-    // 16-31: control
+    // 16-20: account control
     Hello hello = 16;
     HelloAck hello_ack = 17;
     LoginRequest login_request = 18;
     LoginResponse login_response = 19;
     LoginFailed login_failed = 20;
+    // 21-31: char control
+    SessionAuth session_auth = 21;
+    CharList char_list = 22;
+    CharAuthFailed char_auth_failed = 23;
+    SelectChar select_char = 24;
+    ZoneServerInfo zone_server_info = 25;
+    CreateChar create_char = 26;
+    CharCreated char_created = 27;
+    CharCreateFailed char_create_failed = 28;
+    DeleteCharRequest delete_char_request = 29;
+    DeleteCharAck delete_char_ack = 30;
+    CharListRefresh char_list_refresh = 31;
   }
 }
 
@@ -72,3 +84,120 @@ message LoginFailed {
   uint32 reason_code = 1;
   string message = 2;
 }
+
+// Client -> server, authenticate an existing Horde session on char/zone entry.
+// `char_id` is unused by the char server but reserved for zone reuse.
+message SessionAuth {
+  uint32 account_id = 1;
+  uint32 login_id1 = 2;
+  uint32 login_id2 = 3;
+  uint32 sex = 4;
+  uint32 char_id = 5;
+}
+
+// A single character's full state (protobuf analogue of the legacy 175-byte CharacterInfo).
+message Character {
+  uint32 gid = 1;
+  string name = 2;
+  uint32 class = 3;
+  uint32 base_level = 4;
+  uint32 job_level = 5;
+  uint64 base_exp = 6;
+  uint64 job_exp = 7;
+  uint32 zeny = 8;
+  uint64 hp = 9;
+  uint64 max_hp = 10;
+  uint64 sp = 11;
+  uint64 max_sp = 12;
+  uint32 str = 13;
+  uint32 agi = 14;
+  uint32 vit = 15;
+  uint32 int = 16;
+  uint32 dex = 17;
+  uint32 luk = 18;
+  uint32 status_point = 19;
+  uint32 skill_point = 20;
+  uint32 hair = 21;
+  uint32 hair_color = 22;
+  uint32 clothes_color = 23;
+  uint32 weapon = 24;
+  uint32 shield = 25;
+  uint32 head_top = 26;
+  uint32 head_mid = 27;
+  uint32 head_bottom = 28;
+  uint32 robe = 29;
+  uint32 char_num = 30;
+  string last_map = 31;
+  uint32 sex = 32;
+  uint32 option = 33;
+  uint32 karma = 34;
+  uint32 manner = 35;
+  uint32 rename = 36;
+  uint64 delete_date = 37;
+}
+
+// Server -> client, full character list response (replaces the legacy multi-packet char-list).
+message CharList {
+  uint32 account_id = 1;
+  uint32 normal_slots = 2;
+  uint32 premium_slots = 3;
+  uint32 billing_slots = 4;
+  uint32 producible_slots = 5;
+  uint32 valid_slots = 6;
+  repeated Character characters = 7;
+  uint32 page_count = 8;
+  bool pincode_enabled = 9;
+}
+
+// Server -> client, rejected session authentication on the char server.
+message CharAuthFailed {
+  uint32 reason = 1;
+}
+
+// Client -> server, select a character by slot (replaces RO CH_SELECT_CHAR).
+message SelectChar {
+  uint32 slot = 1;
+}
+
+// Server -> client, zone server to connect to after selecting a character.
+message ZoneServerInfo {
+  uint32 char_id = 1;
+  string map_name = 2;
+  string ip = 3;
+  uint32 port = 4;
+}
+
+// Client -> server, create a new character (replaces RO CH_MAKE_CHAR_V2).
+message CreateChar {
+  string name = 1;
+  uint32 slot = 2;
+  uint32 hair_color = 3;
+  uint32 hair_style = 4;
+  uint32 starting_job = 5;
+  uint32 sex = 6;
+}
+
+// Server -> client, newly created character data.
+message CharCreated {
+  Character character = 1;
+}
+
+// Server -> client, character creation failed.
+message CharCreateFailed {
+  uint32 reason_code = 1;
+}
+
+// Client -> server, request character deletion (replaces RO CH_REQ_CHAR_DELETE2).
+message DeleteCharRequest {
+  uint32 char_id = 1;
+}
+
+// Server -> client, acknowledgement of a deletion request.
+message DeleteCharAck {
+  uint32 char_id = 1;
+  uint32 result = 2;
+  uint64 delete_date = 3;
+}
+
+// Client -> server, request a fresh character list (replaces RO CH_CHARLIST_REQ).
+message CharListRefresh {}

@@ -27,8 +27,7 @@ defmodule Aesir.Commons.Network.Packetver do
   layouts are baked in at compile time).
 
   The default, `"20211103"`, is the Renewal (`PACKETVER_RE_NUM`) cutoff that the
-  current packet layouts assume; see `Aesir.CharServer.Packets.CharacterInfo` for
-  the most version-sensitive one.
+  current packet layouts assume.
 
   ## Convention for version-sensitive packets
 

@@ -238,7 +238,14 @@ defmodule Aesir.Commons.Network.QuicConnection do
     case state.transport.open_stream(state.conn) do
       {:ok, sid} ->
         client_id = :rand.uniform(0xFFFF_FFFF)
-        state.transport.send_data(state.conn, sid, QuinnetCodec.encode_client_id(client_id), false)
+
+        state.transport.send_data(
+          state.conn,
+          sid,
+          QuinnetCodec.encode_client_id(client_id),
+          false
+        )
+
         %State{state | client_id: client_id}
 
       {:error, reason} ->

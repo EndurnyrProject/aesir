@@ -7,25 +7,56 @@ defmodule Aesir.CharServerTest do
   alias Aesir.CharServer
   alias Aesir.CharServer.Characters
   alias Aesir.CharServer.CharacterSession
-  alias Aesir.CharServer.Packets.HcAcceptEnter
-  alias Aesir.CharServer.Packets.HcBlockCharacter
-  alias Aesir.CharServer.Packets.HcCharacterList
-  alias Aesir.CharServer.Packets.HcCharlistNotify
-  alias Aesir.CharServer.Packets.HcNotifyZonesvr
-  alias Aesir.CharServer.Packets.HcRefuseEnter
+  alias Aesir.CharServer.Config.ServerInfo
+  alias Aesir.Commons.Models.Character
   alias Aesir.Commons.SessionManager
+  alias Aesir.Net.Character, as: NetCharacter
+  alias Aesir.Net.CharAuthFailed
+  alias Aesir.Net.CharCreated
+  alias Aesir.Net.CharCreateFailed
+  alias Aesir.Net.CharList
+  alias Aesir.Net.CharListRefresh
+  alias Aesir.Net.CreateChar
+  alias Aesir.Net.DeleteCharAck
+  alias Aesir.Net.DeleteCharRequest
+  alias Aesir.Net.Hello
+  alias Aesir.Net.HelloAck
+  alias Aesir.Net.SelectChar
+  alias Aesir.Net.SessionAuth
+  alias Aesir.Net.ZoneServerInfo
 
-  describe "handle_packet/3 for packet 0x0065 (character list request)" do
-    test "successfully handles character list request with valid session" do
-      parsed_data = %{aid: 1001, login_id1: 123, login_id2: 456, sex: 0}
-      session_data = %{}
+  setup :verify_on_exit!
 
+  describe "handshake" do
+    test "accepts a Hello with the supported protocol version" do
+      assert {:ok, %{}, [{:hello_ack, %HelloAck{accepted: true, protocol_version: 1}}]} =
+               CharServer.handle_message(
+                 %Hello{protocol_version: 1, build: "dev"},
+                 :control,
+                 %{}
+               )
+    end
+
+    test "rejects a Hello with an unsupported protocol version" do
+      log =
+        capture_log(fn ->
+          assert {:ok, %{}, [{:hello_ack, %HelloAck{accepted: false}}]} =
+                   CharServer.handle_message(
+                     %Hello{protocol_version: 99, build: "dev"},
+                     :control,
+                     %{}
+                   )
+        end)
+
+      assert log =~ "does not match"
+    end
+  end
+
+  describe "session authentication" do
+    test "returns the mapped character list on a valid session" do
       updated_session = %{account_id: 1001, authenticated: true, username: "testuser"}
 
-      character_list = [
-        %{id: 1, name: "TestChar1", level: 1},
-        %{id: 2, name: "TestChar2", level: 5}
-      ]
+      character = character_fixture(last_map: "prontera.gat")
 
       CharacterSession
       |> stub(:validate_character_session, fn 1001, 123, 456, 0 ->
@@ -34,64 +65,30 @@ defmodule Aesir.CharServerTest do
 
       Characters
       |> stub(:list_characters, fn 1001, ^updated_session ->
-        {:ok, character_list}
+        {:ok, [character]}
       end)
 
-      assert {:ok, ^updated_session, response_packets} =
-               CharServer.handle_packet(0x0065, parsed_data, session_data)
+      assert {:ok, ^updated_session, [{:char_list, char_list}]} =
+               CharServer.handle_message(
+                 %SessionAuth{account_id: 1001, login_id1: 123, login_id2: 456, sex: 0},
+                 :control,
+                 %{}
+               )
 
-      assert length(response_packets) == 6
-
-      # Find the HcAcceptEnter packet in the response
-      assert Enum.any?(response_packets, fn packet ->
-               match?(%HcAcceptEnter{characters: ^character_list}, packet)
-             end)
-
-      # HC_CHARLIST_NOTIFY (0x09A0) must follow the char list and precede the block list,
-      # matching rAthena's chclif_mmo_char_send order (006B -> 09A0 -> 020D).
-      char_list_idx = Enum.find_index(response_packets, &match?(%HcAcceptEnter{}, &1))
-      notify_idx = Enum.find_index(response_packets, &match?(%HcCharlistNotify{}, &1))
-      block_idx = Enum.find_index(response_packets, &match?(%HcBlockCharacter{}, &1))
-
-      assert char_list_idx < notify_idx
-      assert notify_idx < block_idx
+      assert %CharList{
+               account_id: 1001,
+               normal_slots: 15,
+               premium_slots: 0,
+               billing_slots: 0,
+               producible_slots: 15,
+               valid_slots: 15,
+               page_count: 5,
+               pincode_enabled: false,
+               characters: [%NetCharacter{gid: 5, name: "TestChar", sex: 1}]
+             } = char_list
     end
 
-    test "exposes a consistent slot count across 0x082D and 0x09A0 (5 pages of 3)" do
-      parsed_data = %{aid: 1001, login_id1: 123, login_id2: 456, sex: 0}
-      session_data = %{}
-      updated_session = %{account_id: 1001, authenticated: true, username: "testuser"}
-
-      CharacterSession
-      |> stub(:validate_character_session, fn 1001, 123, 456, 0 ->
-        {:ok, updated_session}
-      end)
-
-      Characters
-      |> stub(:list_characters, fn 1001, ^updated_session ->
-        {:ok, []}
-      end)
-
-      assert {:ok, ^updated_session, response_packets} =
-               CharServer.handle_packet(0x0065, parsed_data, session_data)
-
-      slot_config = Enum.find(response_packets, &match?(%HcCharacterList{}, &1))
-      notify = Enum.find(response_packets, &match?(%HcCharlistNotify{}, &1))
-
-      # Producible (selectable) slots and the notify page-source must agree, so the
-      # client never renders fewer pages than there are usable slots.
-      assert slot_config.producible_slots == slot_config.valid_slots
-      assert notify.char_slots == slot_config.producible_slots
-
-      # 15 slots -> max(15 / 3, 1) = 5 navigable pages.
-      assert <<0x09A0::16-little, total::32-little>> = HcCharlistNotify.build(notify)
-      assert total == 5
-    end
-
-    test "handles session validation failure" do
-      parsed_data = %{aid: 1001, login_id1: 123, login_id2: 456, sex: 0}
-      session_data = %{}
-
+    test "returns CharAuthFailed when session validation fails" do
       CharacterSession
       |> stub(:validate_character_session, fn 1001, 123, 456, 0 ->
         {:error, :session_validation_failed}
@@ -99,34 +96,18 @@ defmodule Aesir.CharServerTest do
 
       log =
         capture_log(fn ->
-          assert {:ok, ^session_data, [%HcRefuseEnter{reason: 0}]} =
-                   CharServer.handle_packet(0x0065, parsed_data, session_data)
+          assert {:ok, %{}, [{:char_auth_failed, %CharAuthFailed{reason: 0}}]} =
+                   CharServer.handle_message(
+                     %SessionAuth{account_id: 1001, login_id1: 123, login_id2: 456, sex: 0},
+                     :control,
+                     %{}
+                   )
         end)
 
       assert log =~ "Session validation failed for account 1001: session_validation_failed"
     end
 
-    test "handles session account mismatch" do
-      parsed_data = %{aid: 1001, login_id1: 123, login_id2: 456, sex: 0}
-      session_data = %{}
-
-      CharacterSession
-      |> stub(:validate_character_session, fn 1001, 123, 456, 0 ->
-        {:error, :session_account_mismatch}
-      end)
-
-      log =
-        capture_log(fn ->
-          assert {:ok, ^session_data, [%HcRefuseEnter{reason: 0}]} =
-                   CharServer.handle_packet(0x0065, parsed_data, session_data)
-        end)
-
-      assert log =~ "Session validation failed for account 1001: session_account_mismatch"
-    end
-
-    test "handles character list retrieval failure" do
-      parsed_data = %{aid: 1001, login_id1: 123, login_id2: 456, sex: 0}
-      session_data = %{}
+    test "returns CharAuthFailed when the character list cannot be retrieved" do
       updated_session = %{account_id: 1001, authenticated: true}
 
       CharacterSession
@@ -141,216 +122,365 @@ defmodule Aesir.CharServerTest do
 
       log =
         capture_log(fn ->
-          assert {:ok, ^session_data, [%HcRefuseEnter{reason: 0}]} =
-                   CharServer.handle_packet(0x0065, parsed_data, session_data)
+          assert {:ok, %{}, [{:char_auth_failed, %CharAuthFailed{reason: 0}}]} =
+                   CharServer.handle_message(
+                     %SessionAuth{account_id: 1001, login_id1: 123, login_id2: 456, sex: 0},
+                     :control,
+                     %{}
+                   )
         end)
 
       assert log =~ "Failed to get characters for account 1001"
     end
   end
 
-  describe "handle_packet/3 for packet 0x0066 (character selection)" do
-    test "successfully handles character selection" do
-      parsed_data = %{slot: 0}
-      session_data = %{account_id: 1001}
+  describe "character selection" do
+    test "returns zone server info for a valid character slot" do
+      session_data = %{account_id: 1001, authenticated: true, username: "testuser"}
 
-      character = %{
-        id: 5,
-        name: "SelectedChar",
-        last_map: "prontera.gat"
-      }
+      character = character_fixture(last_map: "prontera", last_x: 150, last_y: 180)
 
-      updated_session = %{
-        account_id: 1001,
-        selected_character: character
+      cluster_id = ServerInfo.cluster_id()
+
+      zone_entry = %{
+        status: :online,
+        player_count: 5,
+        ip: {127, 0, 0, 1},
+        port: 5121,
+        metadata: %{cluster_id: cluster_id}
       }
 
       Characters
-      |> stub(:select_character, fn 1001, 0 ->
-        {:ok, character}
-      end)
-
-      CharacterSession
-      |> stub(:update_session_for_character_selection, fn
-        ^session_data, ^character ->
-          {:ok, updated_session}
-      end)
+      |> stub(:select_character, fn 1001, 0 -> {:ok, character} end)
 
       SessionManager
-      |> stub(:get_servers, fn :zone_server ->
-        [
-          %{
-            status: :online,
-            player_count: 0,
-            ip: {127, 0, 0, 1},
-            port: 5121,
-            metadata: %{
-              cluster_id: "default"
-            }
-          }
-        ]
-      end)
+      |> stub(:get_servers, fn :zone_server -> [zone_entry] end)
 
-      expected_response = %HcNotifyZonesvr{
-        char_id: 5,
-        map_name: "prontera.gat",
-        ip: {127, 0, 0, 1},
-        port: 5121
-      }
+      assert {:ok, updated_session, [{:zone_server_info, zone_info}]} =
+               CharServer.handle_message(%SelectChar{slot: 0}, :control, session_data)
 
-      assert {:ok, ^updated_session, [^expected_response]} =
-               CharServer.handle_packet(0x0066, parsed_data, session_data)
+      assert %ZoneServerInfo{
+               char_id: 5,
+               map_name: "prontera",
+               ip: "127.0.0.1",
+               port: 5121
+             } = zone_info
+
+      assert updated_session[:selected_character_id] == 5
+      assert updated_session[:last_map] == "prontera"
     end
 
-    test "handles character selection failure" do
-      parsed_data = %{slot: 0}
-      session_data = %{account_id: 1001}
+    test "logs error and returns session unchanged when no zone servers are available" do
+      session_data = %{account_id: 1001, authenticated: true, username: "testuser"}
+
+      character = character_fixture(last_map: "prontera", last_x: 150, last_y: 180)
 
       Characters
-      |> stub(:select_character, fn 1001, 0 ->
-        {:error, :character_not_found}
-      end)
-
-      log =
-        capture_log(fn ->
-          assert {:ok, ^session_data} =
-                   CharServer.handle_packet(0x0066, parsed_data, session_data)
-        end)
-
-      assert log =~ "Character selection failed for slot 0: character_not_found"
-    end
-
-    test "handles session update failure during character selection" do
-      parsed_data = %{slot: 0}
-      session_data = %{account_id: 1001}
-
-      character = %{id: 5, name: "TestChar"}
-
-      Characters
-      |> stub(:select_character, fn 1001, 0 ->
-        {:ok, character}
-      end)
-
-      CharacterSession
-      |> stub(:update_session_for_character_selection, fn
-        ^session_data, ^character ->
-          {:error, :session_update_failed}
-      end)
-
-      log =
-        capture_log(fn ->
-          assert {:ok, ^session_data} =
-                   CharServer.handle_packet(0x0066, parsed_data, session_data)
-        end)
-
-      assert log =~ "Character selection failed for slot 0: session_update_failed"
-    end
-
-    test "uses default port when zone server port not configured" do
-      parsed_data = %{slot: 0}
-      session_data = %{account_id: 1001}
-
-      character = %{
-        id: 5,
-        name: "TestChar",
-        last_map: "prontera.gat"
-      }
-
-      updated_session = %{account_id: 1001, selected_character: character}
-
-      Characters
-      |> stub(:select_character, fn 1001, 0 ->
-        {:ok, character}
-      end)
-
-      CharacterSession
-      |> stub(:update_session_for_character_selection, fn
-        ^session_data, ^character ->
-          {:ok, updated_session}
-      end)
+      |> stub(:select_character, fn 1001, 0 -> {:ok, character} end)
 
       SessionManager
-      |> stub(:get_servers, fn :zone_server ->
-        [
-          %{
-            status: :online,
-            player_count: 0,
-            ip: {127, 0, 0, 1},
-            port: 5121,
-            metadata: %{
-              cluster_id: "default"
-            }
-          }
-        ]
-      end)
-
-      expected_response = %HcNotifyZonesvr{
-        char_id: 5,
-        map_name: "prontera.gat",
-        ip: {127, 0, 0, 1},
-        port: 5121
-      }
-
-      assert {:ok, ^updated_session, [^expected_response]} =
-               CharServer.handle_packet(0x0066, parsed_data, session_data)
-    end
-  end
-
-  describe "handle_packet/3 for unknown packets" do
-    test "handles unknown packet gracefully" do
-      parsed_data = %{some_field: "value"}
-      session_data = %{account_id: 1001}
-      unknown_packet_id = 0x9999
+      |> stub(:get_servers, fn :zone_server -> [] end)
 
       log =
         capture_log(fn ->
           assert {:ok, ^session_data} =
-                   CharServer.handle_packet(unknown_packet_id, parsed_data, session_data)
+                   CharServer.handle_message(%SelectChar{slot: 0}, :control, session_data)
         end)
 
-      assert log =~ "Unhandled packet in CharServer: 0x9999"
-    end
-
-    test "handles multiple unknown packets" do
-      session_data = %{account_id: 1001}
-
-      log =
-        capture_log(fn ->
-          assert {:ok, ^session_data} =
-                   CharServer.handle_packet(0x1111, %{}, session_data)
-
-          assert {:ok, ^session_data} =
-                   CharServer.handle_packet(0x2222, %{}, session_data)
-
-          assert {:ok, ^session_data} =
-                   CharServer.handle_packet(0x3333, %{}, session_data)
-        end)
-
-      assert log =~ "Unhandled packet in CharServer: 0x1111"
-      assert log =~ "Unhandled packet in CharServer: 0x2222"
-      assert log =~ "Unhandled packet in CharServer: 0x3333"
+      assert log =~ "no zone servers available"
     end
   end
 
-  describe "edge cases and error handling" do
-    test "handles missing account_id in session_data for character selection" do
-      parsed_data = %{slot: 0}
-      session_data = %{}
+  describe "character creation" do
+    test "returns CharCreated with mapped character on success" do
+      session_data = %{account_id: 1001}
+      character = character_fixture(id: 7, name: "Newbie")
 
       Characters
-      |> stub(:select_character, fn nil, 0 ->
-        {:error, :invalid_account}
+      |> stub(:create_character, fn 1001, _char_data -> {:ok, character} end)
+
+      assert {:ok, ^session_data, [{:char_created, %CharCreated{character: net_char}}]} =
+               CharServer.handle_message(
+                 %CreateChar{
+                   name: "Newbie",
+                   slot: 1,
+                   hair_color: 2,
+                   hair_style: 3,
+                   starting_job: 0,
+                   sex: 0
+                 },
+                 :control,
+                 session_data
+               )
+
+      assert %NetCharacter{gid: 7, name: "Newbie"} = net_char
+    end
+
+    test "passes the correct char_data map to create_character" do
+      session_data = %{account_id: 1001}
+      character = character_fixture(id: 7, name: "Newbie")
+
+      Characters
+      |> stub(:create_character, fn 1001, char_data ->
+        assert char_data == %{
+                 name: "Newbie",
+                 slot: 1,
+                 stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
+                 hair: 3,
+                 hair_color: 2,
+                 starting_job: 0,
+                 sex: 0
+               }
+
+        {:ok, character}
       end)
+
+      assert {:ok, ^session_data, [{:char_created, %CharCreated{}}]} =
+               CharServer.handle_message(
+                 %CreateChar{
+                   name: "Newbie",
+                   slot: 1,
+                   hair_color: 2,
+                   hair_style: 3,
+                   starting_job: 0,
+                   sex: 0
+                 },
+                 :control,
+                 session_data
+               )
+    end
+
+    test "returns CharCreateFailed with reason_code 0 on :name_taken" do
+      session_data = %{account_id: 1001}
+
+      Characters
+      |> stub(:create_character, fn 1001, _char_data -> {:error, :name_taken} end)
+
+      assert {:ok, ^session_data, [{:char_create_failed, %CharCreateFailed{reason_code: 0}}]} =
+               CharServer.handle_message(
+                 %CreateChar{
+                   name: "Taken",
+                   slot: 0,
+                   hair_color: 0,
+                   hair_style: 0,
+                   starting_job: 0,
+                   sex: 0
+                 },
+                 :control,
+                 session_data
+               )
+    end
+
+    test "returns CharCreateFailed with reason_code 3 on :slot_taken" do
+      session_data = %{account_id: 1001}
+
+      Characters
+      |> stub(:create_character, fn 1001, _char_data -> {:error, :slot_taken} end)
+
+      assert {:ok, ^session_data, [{:char_create_failed, %CharCreateFailed{reason_code: 3}}]} =
+               CharServer.handle_message(
+                 %CreateChar{
+                   name: "Any",
+                   slot: 1,
+                   hair_color: 0,
+                   hair_style: 0,
+                   starting_job: 0,
+                   sex: 0
+                 },
+                 :control,
+                 session_data
+               )
+    end
+
+    test "returns CharCreateFailed with reason_code 4 on :account_banned" do
+      session_data = %{account_id: 1001}
+
+      Characters
+      |> stub(:create_character, fn 1001, _char_data -> {:error, :account_banned} end)
+
+      assert {:ok, ^session_data, [{:char_create_failed, %CharCreateFailed{reason_code: 4}}]} =
+               CharServer.handle_message(
+                 %CreateChar{
+                   name: "Any",
+                   slot: 0,
+                   hair_color: 0,
+                   hair_style: 0,
+                   starting_job: 0,
+                   sex: 0
+                 },
+                 :control,
+                 session_data
+               )
+    end
+  end
+
+  describe "character deletion" do
+    test "returns DeleteCharAck with result 0 and non-zero delete_date on success" do
+      session_data = %{account_id: 1001}
+      delete_unix = DateTime.to_unix(~U[2026-07-20 12:00:00Z])
+
+      Characters
+      |> stub(:request_character_deletion, fn 42, 1001 -> {:ok, delete_unix} end)
+
+      assert {:ok, ^session_data, [{:delete_char_ack, ack}]} =
+               CharServer.handle_message(
+                 %DeleteCharRequest{char_id: 42},
+                 :control,
+                 session_data
+               )
+
+      assert %DeleteCharAck{char_id: 42, result: 0, delete_date: ^delete_unix} = ack
+      assert ack.delete_date > 0
+    end
+
+    test "returns DeleteCharAck with result 1 and delete_date 0 on :database_error" do
+      session_data = %{account_id: 1001}
+
+      Characters
+      |> stub(:request_character_deletion, fn 42, 1001 -> {:error, :database_error} end)
+
+      assert {:ok, ^session_data,
+              [{:delete_char_ack, %DeleteCharAck{char_id: 42, result: 1, delete_date: 0}}]} =
+               CharServer.handle_message(
+                 %DeleteCharRequest{char_id: 42},
+                 :control,
+                 session_data
+               )
+    end
+
+    test "returns DeleteCharAck with result 2 and delete_date 0 on :not_found" do
+      session_data = %{account_id: 1001}
+
+      Characters
+      |> stub(:request_character_deletion, fn 42, 1001 -> {:error, :not_found} end)
+
+      assert {:ok, ^session_data,
+              [{:delete_char_ack, %DeleteCharAck{char_id: 42, result: 2, delete_date: 0}}]} =
+               CharServer.handle_message(
+                 %DeleteCharRequest{char_id: 42},
+                 :control,
+                 session_data
+               )
+    end
+
+    test "returns DeleteCharAck with result 3 and delete_date 0 on :already_deleting" do
+      session_data = %{account_id: 1001}
+
+      Characters
+      |> stub(:request_character_deletion, fn 42, 1001 -> {:error, :already_deleting} end)
+
+      assert {:ok, ^session_data,
+              [{:delete_char_ack, %DeleteCharAck{char_id: 42, result: 3, delete_date: 0}}]} =
+               CharServer.handle_message(
+                 %DeleteCharRequest{char_id: 42},
+                 :control,
+                 session_data
+               )
+    end
+
+    test "returns DeleteCharAck with result 4 and delete_date 0 on :cannot_delete" do
+      session_data = %{account_id: 1001}
+
+      Characters
+      |> stub(:request_character_deletion, fn 42, 1001 -> {:error, :cannot_delete} end)
+
+      assert {:ok, ^session_data,
+              [{:delete_char_ack, %DeleteCharAck{char_id: 42, result: 4, delete_date: 0}}]} =
+               CharServer.handle_message(
+                 %DeleteCharRequest{char_id: 42},
+                 :control,
+                 session_data
+               )
+    end
+  end
+
+  describe "character list refresh" do
+    test "returns CharList with characters on success" do
+      session_data = %{account_id: 1001, authenticated: true}
+      character = character_fixture([])
+
+      Characters
+      |> stub(:list_characters, fn 1001, ^session_data -> {:ok, [character]} end)
+
+      assert {:ok, ^session_data, [{:char_list, char_list}]} =
+               CharServer.handle_message(%CharListRefresh{}, :control, session_data)
+
+      assert %CharList{characters: [%NetCharacter{}]} = char_list
+    end
+
+    test "returns CharList with empty characters and logs error on failure" do
+      session_data = %{account_id: 1001, authenticated: true}
+
+      Characters
+      |> stub(:list_characters, fn 1001, ^session_data -> {:error, :database_error} end)
+
+      log =
+        capture_log(fn ->
+          assert {:ok, ^session_data, [{:char_list, char_list}]} =
+                   CharServer.handle_message(%CharListRefresh{}, :control, session_data)
+
+          assert %CharList{characters: []} = char_list
+        end)
+
+      assert log =~ "Failed to refresh character list"
+    end
+  end
+
+  describe "catch-all" do
+    test "logs and ignores an unhandled message" do
+      session_data = %{account_id: 1001}
 
       log =
         capture_log(fn ->
           assert {:ok, ^session_data} =
-                   CharServer.handle_packet(0x0066, parsed_data, session_data)
+                   CharServer.handle_message(%CharList{}, :control, session_data)
         end)
 
-      assert log =~ "Character selection failed for slot 0: invalid_account"
+      assert log =~ "Unhandled"
     end
   end
 
-  # Helper functions
+  defp character_fixture(overrides) do
+    base = %Character{
+      id: 5,
+      name: "TestChar",
+      class: 0,
+      base_level: 1,
+      job_level: 1,
+      base_exp: 0,
+      job_exp: 0,
+      zeny: 0,
+      hp: 40,
+      max_hp: 40,
+      sp: 11,
+      max_sp: 11,
+      str: 1,
+      agi: 1,
+      vit: 1,
+      int: 1,
+      dex: 1,
+      luk: 1,
+      status_point: 0,
+      skill_point: 0,
+      hair: 1,
+      hair_color: 0,
+      clothes_color: 0,
+      weapon: 0,
+      shield: 0,
+      head_top: 0,
+      head_mid: 0,
+      head_bottom: 0,
+      robe: 0,
+      char_num: 0,
+      last_map: "prontera",
+      sex: "M",
+      option: 0,
+      karma: 0,
+      manner: 0,
+      rename: 0,
+      delete_date: nil
+    }
+
+    struct(base, overrides)
+  end
 end

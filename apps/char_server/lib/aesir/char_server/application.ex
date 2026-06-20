@@ -11,19 +11,13 @@ defmodule Aesir.CharServer.Application do
 
   @impl true
   def start(_type, _args) do
-    ref = make_ref()
-
     children = [
-      {Aesir.Commons.Network.Listener,
-       connection_module: Aesir.CharServer,
-       packet_registry: Aesir.CharServer.PacketRegistry,
-       transport_opts: %{
-         socket_opts: [
-           port: NetworkConfig.port(),
-           ip: NetworkConfig.bind_ip()
-         ]
-       },
-       ref: ref}
+      {DynamicSupervisor, name: Aesir.CharServer.QuicConnSup, strategy: :one_for_one},
+      {Aesir.Commons.Network.QuicListener,
+       name: :char_server_quic,
+       port: NetworkConfig.port(),
+       impl_module: Aesir.CharServer,
+       conn_sup: Aesir.CharServer.QuicConnSup}
     ]
 
     opts = [strategy: :one_for_one, name: Aesir.CharServer.Supervisor]
@@ -32,11 +26,10 @@ defmodule Aesir.CharServer.Application do
     |> Supervisor.start_link(opts)
     |> tap(fn
       {:ok, _pid} ->
-        {ip, port} = :ranch.get_addr(ref)
+        ip = NetworkConfig.bind_ip()
+        port = NetworkConfig.port()
 
-        Logger.info(
-          "Aesir CharServer (ref: #{inspect(ref)}) started at #{:inet.ntoa(ip)}:#{port}"
-        )
+        Logger.info("Aesir CharServer (QUIC) started at #{:inet.ntoa(ip)}:#{port}")
 
         cluster_id = ServerInfoConfig.cluster_id()
         server_id = "char_server_#{cluster_id}_#{Node.self()}"
