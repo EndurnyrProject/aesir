@@ -1,41 +1,58 @@
 defmodule Aesir.AccountServer do
   @moduledoc """
-  Connection handler for the Account Server.
-  Processes login packets and manages authentication flow.
+  QUIC connection handler for the Account (login) server.
+
+  Implements the `Aesir.Commons.Network.QuicConnection` behaviour: handles the
+  Control-channel handshake (`Hello`/`HelloAck`) and the protobuf login flow
+  (`LoginRequest` -> `LoginResponse`/`LoginFailed`), reusing the existing auth
+  and distributed-session machinery. This replaces the legacy RO binary packet
+  path that ran over Ranch/TCP.
   """
-  use Aesir.Commons.Network.Connection
+  @behaviour Aesir.Commons.Network.QuicConnection
 
   require Logger
 
-  alias Aesir.AccountServer.Packets.AcAcceptLogin
-  alias Aesir.AccountServer.Packets.AcRefuseLogin
-  alias Aesir.AccountServer.Packets.CaLogin
-  alias Aesir.AccountServer.Packets.CtAuth
-  alias Aesir.AccountServer.Packets.TcResult
   alias Aesir.Commons.Auth
   alias Aesir.Commons.InterServer.PubSub
   alias Aesir.Commons.SessionManager
+  alias Aesir.Net.CharServerInfo
+  alias Aesir.Net.Hello
+  alias Aesir.Net.HelloAck
+  alias Aesir.Net.LoginFailed
+  alias Aesir.Net.LoginRequest
+  alias Aesir.Net.LoginResponse
 
-  @impl Aesir.Commons.Network.Connection
-  def handle_packet(0x0ACF, %CtAuth{} = _auth_packet, session_data) do
-    {:ok, session_data, [%TcResult{}]}
+  @protocol_version 1
+
+  @impl true
+  def handle_message(%Hello{protocol_version: version}, :control, session_data) do
+    if version != @protocol_version do
+      Logger.warning("Client protocol version #{version} does not match #{@protocol_version}")
+    end
+
+    response = %HelloAck{
+      protocol_version: @protocol_version,
+      accepted: version == @protocol_version
+    }
+
+    {:ok, session_data, [{:hello_ack, response}]}
   end
 
-  @impl Aesir.Commons.Network.Connection
-  def handle_packet(0x0064, %CaLogin{} = login_packet, session_data) do
-    Logger.info("Login attempt for user: #{login_packet.username}")
+  def handle_message(
+        %LoginRequest{username: username, password: password},
+        :control,
+        session_data
+      ) do
+    Logger.info("Login attempt for user: #{username}")
 
-    case Auth.authenticate_user(login_packet.username, login_packet.password) do
-      {:ok, account} ->
-        handle_successful_login(account, session_data)
-
-      {:error, reason} ->
-        handle_failed_login(reason, session_data)
+    case Auth.authenticate_user(username, password) do
+      {:ok, account} -> handle_successful_login(account, session_data)
+      {:error, reason} -> handle_failed_login(reason, session_data)
     end
   end
 
-  def handle_packet(packet_id, _parsed_data, session_data) do
-    Logger.warning("Unhandled packet in LoginConnection: 0x#{Integer.to_string(packet_id, 16)}")
+  def handle_message(message, channel, session_data) do
+    Logger.warning("Unhandled #{inspect(message.__struct__)} on #{channel} channel")
     {:ok, session_data}
   end
 
@@ -43,7 +60,7 @@ defmodule Aesir.AccountServer do
     case SessionManager.get_online_user(account.id) do
       {:ok, _online_user} ->
         Logger.warning(
-          "Duplicate login for account #{account.id} (#{account.userid}). Kicking old session and proceeding with new login."
+          "Duplicate login for account #{account.id} (#{account.userid}). Kicking old session and proceeding."
         )
 
         PubSub.broadcast_kick_connection(account.id, :duplicate_login)
@@ -69,59 +86,33 @@ defmodule Aesir.AccountServer do
         authenticated: true
       })
 
-    session_data_for_cluster = %{
+    session_for_cluster = %{
       login_id1: login_id1,
       login_id2: login_id2,
       auth_code: auth_code,
       username: account.userid
     }
 
-    case SessionManager.create_session(account.id, session_data_for_cluster) do
-      :ok ->
-        Logger.info("Session created in cluster for account #{account.id}")
-        SessionManager.set_user_online(account.id, :account_server)
-        PubSub.broadcast_player_login(account.id, account.userid)
+    with :ok <- SessionManager.create_session(account.id, session_for_cluster),
+         {:ok, char_servers} <- available_char_servers() do
+      SessionManager.set_user_online(account.id, :account_server)
+      PubSub.broadcast_player_login(account.id, account.userid)
 
-        sex_atom =
-          case account.sex do
-            "M" -> :male
-            "F" -> :female
-          end
+      response = %LoginResponse{
+        account_id: account.id,
+        login_id1: login_id1,
+        login_id2: login_id2,
+        sex: sex_code(account.sex),
+        auth_token: auth_token(),
+        char_servers: char_servers
+      }
 
-        token =
-          :crypto.strong_rand_bytes(16)
-          |> Base.encode16(case: :lower)
-          |> String.slice(0, 16)
-
-        last_login =
-          if account.lastlogin do
-            NaiveDateTime.to_string(account.lastlogin)
-          else
-            NaiveDateTime.to_string(NaiveDateTime.utc_now())
-          end
-
-        case get_available_char_servers() do
-          {:ok, char_servers} ->
-            response =
-              %AcAcceptLogin{
-                login_id1: login_id1,
-                aid: account.id,
-                login_id2: login_id2,
-                last_ip: {127, 0, 0, 1},
-                last_login: last_login,
-                sex: sex_atom,
-                token: token,
-                char_servers: char_servers
-              }
-
-            Logger.info("Login successful for account: #{account.userid} (ID: #{account.id})")
-
-            {:ok, updated_session, [response]}
-
-          {:error, reason} ->
-            Logger.error("Login failed: no character servers available (#{reason})")
-            handle_failed_login(:no_char_servers, session_data)
-        end
+      Logger.info("Login successful for account: #{account.userid} (ID: #{account.id})")
+      {:ok, updated_session, [{:login_response, response}]}
+    else
+      {:error, :no_char_servers} ->
+        Logger.error("Login failed: no character servers available")
+        handle_failed_login(:no_char_servers, session_data)
 
       {:error, reason} ->
         Logger.error(
@@ -133,50 +124,53 @@ defmodule Aesir.AccountServer do
   end
 
   defp handle_failed_login(reason, session_data) do
-    reason_code =
-      case reason do
-        :invalid_credentials -> 1
-        :banned -> 6
-        :account_not_found -> 0
-        _ -> 3
-      end
-
-    response = %AcRefuseLogin{
-      reason_code: reason_code,
-      block_date: ""
-    }
-
-    Logger.info("Login failed: #{reason}")
-    {:ok, session_data, [response]}
+    Logger.info("Login failed: #{inspect(reason)}")
+    response = %LoginFailed{reason_code: reason_code(reason), message: to_string(reason)}
+    {:ok, session_data, [{:login_failed, response}]}
   end
 
-  defp get_available_char_servers do
+  defp reason_code(:invalid_credentials), do: 1
+  defp reason_code(:banned), do: 6
+  defp reason_code(:account_not_found), do: 0
+  defp reason_code(_), do: 3
+
+  defp sex_code("M"), do: 0
+  defp sex_code("F"), do: 1
+
+  defp auth_token do
+    :crypto.strong_rand_bytes(16)
+    |> Base.encode16(case: :lower)
+    |> String.slice(0, 16)
+  end
+
+  defp available_char_servers do
     case SessionManager.get_servers(:char_server) do
       [] ->
         {:error, :no_char_servers}
 
       servers ->
-        online_servers =
-          servers
-          |> Enum.filter(fn server -> server.status == :online end)
-          |> Enum.group_by(fn server -> server.metadata[:cluster_id] end)
-          |> Enum.map(fn {_cluster_id, cluster_servers} ->
-            best_server = Enum.min_by(cluster_servers, & &1.player_count)
+        servers
+        |> Enum.filter(&(&1.status == :online))
+        |> Enum.group_by(& &1.metadata[:cluster_id])
+        |> Enum.map(fn {_cluster_id, cluster_servers} ->
+          best_server = Enum.min_by(cluster_servers, & &1.player_count)
 
-            %AcAcceptLogin.ServerInfo{
-              ip: best_server.ip,
-              port: best_server.port,
-              name: best_server.metadata[:name],
-              users: best_server.player_count,
-              type: best_server.metadata[:type] || 0,
-              new?: best_server.metadata[:new] || false
-            }
-          end)
-
-        case online_servers do
-          [] -> {:error, :no_online_char_servers}
-          servers -> {:ok, servers}
+          %CharServerInfo{
+            name: best_server.metadata[:name],
+            ip: ip_to_string(best_server.ip),
+            port: best_server.port,
+            user_count: best_server.player_count,
+            server_type: Map.get(best_server.metadata, :type, 0),
+            is_new: Map.get(best_server.metadata, :new, false)
+          }
+        end)
+        |> case do
+          [] -> {:error, :no_char_servers}
+          char_servers -> {:ok, char_servers}
         end
     end
   end
+
+  defp ip_to_string(ip) when is_tuple(ip), do: ip |> :inet.ntoa() |> List.to_string()
+  defp ip_to_string(ip) when is_binary(ip), do: ip
 end

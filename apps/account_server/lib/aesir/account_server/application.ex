@@ -13,19 +13,13 @@ defmodule Aesir.AccountServer.Application do
 
   @impl true
   def start(_type, _args) do
-    ref = make_ref()
-
     children = [
-      {Aesir.Commons.Network.Listener,
-       connection_module: Aesir.AccountServer,
-       packet_registry: Aesir.AccountServer.PacketRegistry,
-       transport_opts: %{
-         socket_opts: [
-           port: NetworkConfig.port(),
-           ip: NetworkConfig.bind_ip()
-         ]
-       },
-       ref: ref}
+      {DynamicSupervisor, name: Aesir.AccountServer.QuicConnSup, strategy: :one_for_one},
+      {Aesir.Commons.Network.QuicListener,
+       name: :account_server_quic,
+       port: NetworkConfig.port(),
+       impl_module: Aesir.AccountServer,
+       conn_sup: Aesir.AccountServer.QuicConnSup}
     ]
 
     opts = [strategy: :one_for_one, name: Aesir.AccountServer.Supervisor]
@@ -34,11 +28,10 @@ defmodule Aesir.AccountServer.Application do
     |> Supervisor.start_link(opts)
     |> tap(fn
       {:ok, _pid} ->
-        {ip, port} = :ranch.get_addr(ref)
+        ip = NetworkConfig.bind_ip()
+        port = NetworkConfig.port()
 
-        Logger.info(
-          "Aesir AccountServer (ref: #{inspect(ref)}) started at #{:inet.ntoa(ip)}:#{port}"
-        )
+        Logger.info("Aesir AccountServer (QUIC) started at #{:inet.ntoa(ip)}:#{port}")
 
         server_id = "account_server_#{Node.self()}"
 

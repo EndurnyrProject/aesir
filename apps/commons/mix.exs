@@ -46,6 +46,8 @@ defmodule Commons.MixProject do
       {:phoenix_pubsub, "~> 2.1"},
       {:postgrex, ">= 0.0.0"},
       {:process_tree, "~> 0.2.1"},
+      {:protox, "~> 2.0"},
+      {:quic, "~> 1.6"},
       {:ranch, "~> 2.2"},
       {:recode, "~> 0.8.0", only: [:dev], runtime: false},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},

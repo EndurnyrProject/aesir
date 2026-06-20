@@ -5,11 +5,12 @@ defmodule Aesir.AccountServer.DuplicateLoginTest do
   import ExUnit.CaptureLog
 
   alias Aesir.AccountServer
-  alias Aesir.AccountServer.Packets.CaLogin
   alias Aesir.Commons.Auth
   alias Aesir.Commons.ClusterTestHelper
   alias Aesir.Commons.InterServer.PubSub
   alias Aesir.Commons.SessionManager
+  alias Aesir.Net.LoginRequest
+  alias Aesir.Net.LoginResponse
 
   setup :set_mimic_global
   setup :verify_on_exit!
@@ -68,19 +69,19 @@ defmodule Aesir.AccountServer.DuplicateLoginTest do
         ]
       end)
 
-      login_packet = %CaLogin{
+      login = %LoginRequest{
         username: username,
         password: "password123",
-        client_type: 0
+        client_version: 0
       }
 
       capture_log(fn ->
         {:ok, session_data, responses} =
-          AccountServer.handle_packet(0x0064, login_packet, %{})
+          AccountServer.handle_message(login, :control, %{})
 
         assert session_data.account_id == account_id
         assert session_data.authenticated == true
-        assert length(responses) == 1
+        assert [{:login_response, %LoginResponse{account_id: ^account_id}}] = responses
 
         assert_received {:player_event, %{event: "kick_connection", account_id: ^account_id}}
 
@@ -125,19 +126,19 @@ defmodule Aesir.AccountServer.DuplicateLoginTest do
         ]
       end)
 
-      login_packet = %CaLogin{
+      login = %LoginRequest{
         username: username,
         password: "password123",
-        client_type: 0
+        client_version: 0
       }
 
       capture_log(fn ->
         {:ok, session_data, responses} =
-          AccountServer.handle_packet(0x0064, login_packet, %{})
+          AccountServer.handle_message(login, :control, %{})
 
         assert session_data.account_id == account_id
         assert session_data.authenticated == true
-        assert length(responses) == 1
+        assert [{:login_response, %LoginResponse{account_id: ^account_id}}] = responses
 
         {:ok, online_user} = SessionManager.get_online_user(account_id)
         assert online_user.account_id == account_id
@@ -196,19 +197,19 @@ defmodule Aesir.AccountServer.DuplicateLoginTest do
         ]
       end)
 
-      login_packet = %CaLogin{
+      login = %LoginRequest{
         username: username,
         password: "password123",
-        client_type: 0
+        client_version: 0
       }
 
       capture_log(fn ->
         {:ok, session_data, responses} =
-          AccountServer.handle_packet(0x0064, login_packet, %{})
+          AccountServer.handle_message(login, :control, %{})
 
         assert session_data.account_id == account_id
         assert session_data.authenticated == true
-        assert length(responses) == 1
+        assert [{:login_response, %LoginResponse{account_id: ^account_id}}] = responses
 
         {:ok, online_user} = SessionManager.get_online_user(account_id)
         assert online_user.account_id == account_id
