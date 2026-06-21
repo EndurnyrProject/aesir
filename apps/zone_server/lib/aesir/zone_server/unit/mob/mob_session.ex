@@ -406,7 +406,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     }
   end
 
-  defp create_movement_packet(%MobState{} = mob_state, _src_x, _src_y, dst_x, dst_y) do
+  defp create_movement_packet(%MobState{} = mob_state, src_x, src_y, dst_x, dst_y) do
     %UnitSpawn{
       object_type: ObjectType.mob(),
       aid: mob_state.instance_id,
@@ -417,8 +417,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
       effect_state: 0,
       job: mob_state.mob_id,
       sex: 0,
-      x: mob_state.x,
-      y: mob_state.y,
+      x: src_x,
+      y: src_y,
       dir: mob_state.dir,
       clevel: mob_state.mob_data.level,
       max_hp: mob_state.max_hp,
