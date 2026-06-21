@@ -54,6 +54,8 @@ RELEASE_COOKIE=imthecookie iex --name char@127.0.0.1 -S mix aesir.char
 RELEASE_COOKIE=imthecookie iex --name zone@127.0.0.1 -S mix aesir.zone
 ```
 
+or use the `start_servers.sh` script.
+
 ## Testing
 
 Each application within the umbrella has its own test suite. To run tests for the entire project:
@@ -67,6 +69,20 @@ To run tests for a specific application (e.g., `account_server`):
 ```bash
 mix test apps/account_server
 ```
+
+## FAQ
+
+**Q: Can I run my server with it?**
+
+A: No, too early.
+
+**Q: Is it compatible with rAthena DB?**
+
+A: No, and will not be.
+
+**Q: Which client version is supported?**
+
+A: I'm working on my own client, so it's not compatible with the official Ragnarok client.
 
 ## Acknowledgents
 
