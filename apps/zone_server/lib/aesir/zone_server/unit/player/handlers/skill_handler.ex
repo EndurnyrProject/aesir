@@ -8,15 +8,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   """
   require Logger
 
+  alias Aesir.Net.CastCancel
+  alias Aesir.Net.SkillCasting
+  alias Aesir.Net.SkillCooldown
+  alias Aesir.Net.SkillEffect
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
-  alias Aesir.ZoneServer.Packets.ZcNotifyCastCancel
-  alias Aesir.ZoneServer.Packets.ZcSkillPostdelay
-  alias Aesir.ZoneServer.Packets.ZcUseSkill
-  alias Aesir.ZoneServer.Packets.ZcUseSkill2
+  alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -104,7 +105,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   def cancel_cast(state, _reason), do: state
 
   defp broadcast_cast_cancel(game_state) do
-    packet = %ZcNotifyCastCancel{gid: game_state.character_id}
+    packet = %CastCancel{gid: game_state.character_id}
 
     Broadcast.to_player(game_state.character_id, packet)
 
@@ -197,16 +198,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp broadcast_cast_bar(game_state, info) do
     {dst_id, x, y} = cast_bar_target(game_state, info.target)
 
-    packet = %ZcUseSkill2{
+    packet = %SkillCasting{
       src_id: game_state.character_id,
-      dst_id: dst_id,
+      target_id: dst_id,
       x: x,
       y: y,
       skill_id: info.skill_id,
       property: ElementModifiers.id(info.element),
-      cast_time: info.total,
-      disposable: 0,
-      attack_motion_time: 0
+      cast_time: info.total
     }
 
     Broadcast.to_player(game_state.character_id, packet)
@@ -267,7 +266,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp maybe_send_postdelay(connection_pid, skill_id, level) do
     with {:ok, definition} <- Catalog.by_id(skill_id),
          duration when duration > 0 <- Cooldown.duration(definition, level) do
-      send(connection_pid, {:send_packet, %ZcSkillPostdelay{skill_id: skill_id, tick: duration}})
+      MessageRouter.send_to(connection_pid, %SkillCooldown{skill_id: skill_id, tick: duration})
     else
       _ -> :ok
     end
@@ -284,10 +283,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         :ok
 
       _ ->
-        packet = %ZcUseSkill{
+        packet = %SkillEffect{
           skill_id: skill_id,
           level: level,
-          dst_id: skill_use_target_id(game_state, target),
+          target_id: skill_use_target_id(game_state, target),
           src_id: game_state.character_id,
           result: 1
         }

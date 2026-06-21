@@ -3,8 +3,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerChatTest do
   import Mimic
 
   alias Aesir.Commons.Models.Character
-  alias Aesir.ZoneServer.Packets.CzRequestChat
-  alias Aesir.ZoneServer.Packets.ZcNotifyChat
+  alias Aesir.Net.ChatMessage
+  alias Aesir.Net.ChatRequest
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -117,7 +117,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerChatTest do
     }
   end
 
-  describe "handle_packet/3 for CZ_REQUEST_CHAT (0x008c)" do
+  describe "handle_message/2 for ChatRequest" do
     test "broadcasts message to self and visible players for a valid message" do
       other_player_char_id = 2
       # Start a real mock GenServer for the other player's session, passing the test PID
@@ -127,21 +127,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerChatTest do
       state = setup_player_state(visible_players)
       message_content = "Hello, world!"
       full_message = "#{@test_char_name} : #{message_content}"
-      packet_data = %CzRequestChat{message: full_message}
+      packet_data = %ChatRequest{message: full_message}
 
       # Mock UnitRegistry to return the real mock PID
       expect(UnitRegistry, :get_player_pid, 1, fn ^other_player_char_id ->
         {:ok, other_player_session_pid}
       end)
 
-      {:noreply, ^state} = PacketHandler.handle_packet(0x008C, packet_data, state)
+      {:noreply, ^state} = PacketHandler.handle_message(packet_data, state)
 
-      # Assert message received by the current player (self() which is state.connection_pid)
-      assert_receive {:send_packet, %ZcNotifyChat{gid: @test_char_id, message: ^full_message}}
+      # Self (connection_pid) receives the proto push on the World channel.
+      assert_receive {:send, :world,
+                      {:chat_message, %ChatMessage{gid: @test_char_id, message: ^full_message}}}
 
-      # Assert message received by the other player's mock session (which forwards to test process)
+      # The other player's session receives the broadcast cast (PlayerSession.send_packet).
       assert_receive {:mock_cast_received,
-                      {:send_packet, %ZcNotifyChat{gid: @test_char_id, message: ^full_message}}}
+                      {:send_packet, %ChatMessage{gid: @test_char_id, message: ^full_message}}}
     end
 
     @tag :capture_log
@@ -150,20 +151,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerChatTest do
       # 256 bytes, exceeds 255 for actual content + null
       long_message = String.duplicate("a", 256)
       full_message = "#{@test_char_name} : #{long_message}"
-      packet_data = %CzRequestChat{message: full_message}
+      packet_data = %ChatRequest{message: full_message}
 
-      {:noreply, ^state} = PacketHandler.handle_packet(0x008C, packet_data, state)
-      refute_receive {:send_packet, _}
+      {:noreply, ^state} = PacketHandler.handle_message(packet_data, state)
+      refute_receive {:send, _channel, _payload}
     end
 
     @tag :capture_log
     test "does not broadcast if message does not start with correct prefix" do
       state = setup_player_state()
       malformed_message = "Someone else : Hello!"
-      packet_data = %CzRequestChat{message: malformed_message}
+      packet_data = %ChatRequest{message: malformed_message}
 
-      {:noreply, ^state} = PacketHandler.handle_packet(0x008C, packet_data, state)
-      refute_receive {:send_packet, _}
+      {:noreply, ^state} = PacketHandler.handle_message(packet_data, state)
+      refute_receive {:send, _channel, _payload}
     end
 
     test "only broadcasts to self if no other players are visible" do
@@ -171,11 +172,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerChatTest do
       state = setup_player_state()
       message_content = "Solo chat!"
       full_message = "#{@test_char_name} : #{message_content}"
-      packet_data = %CzRequestChat{message: full_message}
+      packet_data = %ChatRequest{message: full_message}
 
-      {:noreply, ^state} = PacketHandler.handle_packet(0x008C, packet_data, state)
-      assert_receive {:send_packet, %ZcNotifyChat{gid: @test_char_id, message: ^full_message}}
-      refute_receive {:send_packet, _}
+      {:noreply, ^state} = PacketHandler.handle_message(packet_data, state)
+
+      assert_receive {:send, :world,
+                      {:chat_message, %ChatMessage{gid: @test_char_id, message: ^full_message}}}
+
+      refute_receive {:mock_cast_received, _}
     end
 
     test "handles visible player not found gracefully" do
@@ -185,18 +189,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerChatTest do
       state = setup_player_state(visible_players)
       message_content = "Hello, world!"
       full_message = "#{@test_char_name} : #{message_content}"
-      packet_data = %CzRequestChat{message: full_message}
+      packet_data = %ChatRequest{message: full_message}
 
       # Mock UnitRegistry to return error for other player's PID
       expect(UnitRegistry, :get_player_pid, 1, fn ^other_player_char_id ->
         {:error, :not_found}
       end)
 
-      {:noreply, ^state} = PacketHandler.handle_packet(0x008C, packet_data, state)
+      {:noreply, ^state} = PacketHandler.handle_message(packet_data, state)
 
-      assert_receive {:send_packet, %ZcNotifyChat{gid: @test_char_id, message: ^full_message}}
+      assert_receive {:send, :world,
+                      {:chat_message, %ChatMessage{gid: @test_char_id, message: ^full_message}}}
+
       # Should not send to the other player
-      refute_receive {:send_packet, _}
+      refute_receive {:mock_cast_received, _}
     end
   end
 end

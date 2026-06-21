@@ -5,6 +5,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
 
   require Logger
 
+  alias Aesir.Commons.Utils.ServerTick
+  alias Aesir.Net.Knockback
+  alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
@@ -13,8 +16,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
   alias Aesir.ZoneServer.Mmo.Skill.Passives
-  alias Aesir.ZoneServer.Packets.ZcBlownback
-  alias Aesir.ZoneServer.Packets.ZcNotifySkill
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -218,11 +219,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
              element: element,
              skill_ratio: skill_ratio
            ) do
-      packet = %ZcNotifySkill{
+      packet = %SkillDamage{
         skill_id: skill_id,
-        skill_level: skill_level,
+        level: skill_level,
         src_id: caster.unit_id,
         target_id: target_id,
+        server_tick: ServerTick.now(),
         src_delay: 0,
         dst_delay: 0,
         damage: damage,
@@ -411,7 +413,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   Walks the unit outward one cell at a time (8-dir, away from the source through
   its current cell) up to `distance` cells, stopping at the last walkable cell
   before a wall (rAthena `unit_blown`). Updates the unit state, the spatial index
-  and the registry, then broadcasts `ZC_BLOWNBACK` to nearby players so they slide
+  and the registry, then broadcasts `Knockback` to nearby players so they slide
   the unit to its landing cell.
 
   Returns `{:ok, {dst_x, dst_y}}` with the final cell (unchanged if it could not
@@ -463,7 +465,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   end
 
   defp broadcast_blownback(unit_id, dst_x, dst_y, map_name) do
-    packet = %ZcBlownback{unit_id: unit_id, dst_x: dst_x, dst_y: dst_y}
+    packet = %Knockback{unit_id: unit_id, dst_x: dst_x, dst_y: dst_y}
     Broadcast.to_in_range(map_name, dst_x, dst_y, @combat_view_range, packet)
   end
 

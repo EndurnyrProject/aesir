@@ -1,14 +1,15 @@
 defmodule Aesir.ZoneServer.IntegrationCase do
   @moduledoc """
-  Base case for integration tests that run the full application stack
-  with only the network layer (Connection) mocked.
+  Base case for integration tests that run the full application stack.
 
-  This allows testing real game mechanics end-to-end while maintaining
-  control over network I/O for deterministic tests.
+  Outbound messages are captured via the fake connection process created by
+  `Aesir.ZoneServer.SessionHelpers`, which forwards every `{:send, channel,
+  {tag, struct}}` push to the test process as `{:packet_sent, struct, channel}`.
+  This allows testing real game mechanics end-to-end while keeping network I/O
+  deterministic.
   """
 
   use ExUnit.CaseTemplate
-  import Mimic
 
   alias Aesir.ZoneServer.PacketHelpers
   alias Ecto.Adapters.SQL.Sandbox
@@ -25,7 +26,6 @@ defmodule Aesir.ZoneServer.IntegrationCase do
       import Aesir.ZoneServer.EntityHelpers
       import Aesir.ZoneServer.WorldHelpers
 
-      alias Aesir.Commons.Network.Connection
       alias Aesir.ZoneServer.Unit.Mob.MobSession
       alias Aesir.ZoneServer.Unit.Player.PlayerSession
       alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -48,25 +48,12 @@ defmodule Aesir.ZoneServer.IntegrationCase do
     Application.put_env(:zone_server, :inline_persistence, true)
     on_exit(fn -> restore_inline_persistence(prev_inline) end)
 
-    # Set up Mimic
-    Mimic.copy(Aesir.Commons.Network.Connection)
-
     # Set up ETS tables needed by the zone server
     setup_ets_tables(tags)
 
-    # Capture test process PID for packet routing
-    test_pid = self()
-
-    # Mock Connection to capture packets instead of sending over network
-    stub(Aesir.Commons.Network.Connection, :send_packet, fn _conn_pid, packet ->
-      # Capture both the packet struct and its built binary form
-      packet_binary = packet.__struct__.build(packet)
-      send(test_pid, {:packet_sent, packet, packet_binary})
-      :ok
-    end)
-
-    # Return test context
-    {:ok, %{test_pid: test_pid}}
+    # The fake connection process forwards outbound pushes here as
+    # {:packet_sent, struct, channel}; no network mocking required.
+    {:ok, %{test_pid: self()}}
   end
 
   defp restore_inline_persistence(nil),
@@ -95,7 +82,7 @@ defmodule Aesir.ZoneServer.IntegrationCase do
   ## Examples
 
       assert_packet_sent(ZcNotifyActentry)
-      assert_packet_sent(ZcNotifyMoveentry, 200)
+      assert_packet_sent(Aesir.Net.UnitSpawn, 200)
   """
   def assert_packet_sent(packet_type, timeout \\ 100) do
     packets = PacketHelpers.collect_packets_of_type(packet_type, timeout)
@@ -148,60 +135,6 @@ defmodule Aesir.ZoneServer.IntegrationCase do
       {:packet_sent, _, _} -> flush_packets()
     after
       50 -> :ok
-    end
-  end
-
-  @doc """
-  Captures all packets sent during the execution of the given function.
-  Returns a tuple of {result, packets} where result is the return value
-  of the function and packets is a list of all captured packets.
-
-  ## Examples
-
-      {result, packets} = capture_packets(fn ->
-        Combat.execute_attack(stats, player_state, target_id)
-      end)
-
-      assert length(packets) == 2
-  """
-  def capture_packets(fun) when is_function(fun, 0) do
-    test_pid = self()
-
-    # Temporarily redirect packet capture
-    packets_ref = make_ref()
-    collector_pid = spawn_link(fn -> collect_packets([], packets_ref, test_pid) end)
-
-    # Re-stub to send to collector
-    stub(Aesir.Commons.Network.Connection, :send_packet, fn _conn_pid, packet ->
-      packet_binary = packet.__struct__.build(packet)
-      send(collector_pid, {:packet, packet, packet_binary})
-      :ok
-    end)
-
-    # Execute the function
-    result = fun.()
-
-    # Small delay to ensure all async packets are collected
-    Process.sleep(50)
-
-    # Collect captured packets
-    send(collector_pid, {:get_packets, self()})
-
-    receive do
-      {^packets_ref, packets} -> {result, packets}
-    after
-      1000 -> {result, []}
-    end
-  end
-
-  # Private helper for packet collection
-  defp collect_packets(packets, ref, test_pid) do
-    receive do
-      {:packet, packet, binary} ->
-        collect_packets([{packet, binary} | packets], ref, test_pid)
-
-      {:get_packets, reply_to} ->
-        send(reply_to, {ref, Enum.reverse(packets)})
     end
   end
 end

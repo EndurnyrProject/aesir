@@ -3,10 +3,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
   use Mimic
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.Net.ParamChange
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
-  alias Aesir.ZoneServer.Packets.ZcParChange
   alias Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -53,7 +53,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
 
       assert hp_after > 100
       assert hp_after <= 500
-      assert_received {:send_packet, %ZcParChange{var_id: @sp_hp}}
+      assert_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_hp}}}
     end
 
     test "stops exactly at max HP across repeated ticks" do
@@ -116,7 +116,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
       state = build_state(hp: 0, sp: 0, action: :dead, movement: :standing)
 
       assert {:noreply, ^state} = NaturalHealHandler.handle_tick(state, 500)
-      refute_received {:send_packet, _}
+      refute_received {:send, _channel, _payload}
     end
 
     test "no packet push and no persist on a zero-delta tick (full HP and SP)" do
@@ -125,7 +125,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
       state = build_state(hp: 500, sp: 500, action: :idle, movement: :standing)
 
       assert {:noreply, _} = NaturalHealHandler.handle_tick(state, 500)
-      refute_received {:send_packet, _}
+      refute_received {:send, _channel, _payload}
     end
 
     test "pushes SP_SP and persists only the SP field when only SP regenerates" do
@@ -146,8 +146,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
       sp_after = final.game_state.stats.current_state.sp
 
       assert sp_after > 100
-      assert_received {:send_packet, %ZcParChange{var_id: @sp_sp}}
-      refute_received {:send_packet, %ZcParChange{var_id: @sp_hp}}
+      assert_received {:send, _sp_channel, {_sp_tag, %ParamChange{var_id: @sp_sp}}}
+      refute_received {:send, _hp_channel, {_hp_tag, %ParamChange{var_id: @sp_hp}}}
     end
   end
 

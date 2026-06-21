@@ -3,13 +3,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
   use Mimic
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.Net.CastCancel
+  alias Aesir.Net.MoveRequest
+  alias Aesir.Net.SelfMove
+  alias Aesir.Net.UnitDespawn
+  alias Aesir.Net.UnitSpawn
   alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Packets.ZcNotifyCastCancel
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Mob.MobSession
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :set_mimic_from_context
 
@@ -18,11 +27,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
     Mimic.copy(Pathfinding)
     Mimic.copy(SpatialIndex)
     Mimic.copy(Broadcast)
+    Mimic.copy(UnitRegistry)
 
     stub(MapCache, :get, fn "prontera" -> {:ok, %{width: 200, height: 200}} end)
     stub(Pathfinding, :find_path, fn _map, {50, 50}, {51, 50} -> {:ok, [{50, 50}, {51, 50}]} end)
     stub(SpatialIndex, :get_visible_players, fn _ -> [] end)
     stub(Broadcast, :to_player, fn _, _ -> :ok end)
+    stub(Broadcast, :to_players, fn _, _, _ -> :ok end)
     stub(Broadcast, :to_in_range, fn _, _, _, _, _, _ -> :ok end)
 
     :ok
@@ -36,7 +47,132 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
       {:noreply, new_state} = MovementHandler.handle_request_move(casting_state(), 51, 50)
 
       assert new_state.game_state.movement_state == :moving
-      assert_received {:to_player, %ZcNotifyCastCancel{gid: 1}}
+      assert_received {:to_player, %CastCancel{gid: 1}}
+    end
+
+    test "sends the mover a SelfMove on the gameplay channel" do
+      {:noreply, new_state} = MovementHandler.handle_request_move(idle_state(), 51, 50)
+
+      assert new_state.game_state.movement_state == :moving
+
+      assert_received {:send, :gameplay,
+                       {:self_move, %SelfMove{src_x: 50, src_y: 50, dst_x: 51, dst_y: 50}}}
+    end
+
+    test "broadcasts a moving UnitSpawn to nearby players" do
+      test_pid = self()
+      stub(SpatialIndex, :get_visible_players, fn 1 -> [2] end)
+
+      stub(Broadcast, :to_players, fn ids, packet, _opts ->
+        send(test_pid, {:broadcast, ids, packet})
+      end)
+
+      {:noreply, _new_state} = MovementHandler.handle_request_move(idle_state(), 51, 50)
+
+      assert_received {:broadcast, [2],
+                       %UnitSpawn{gid: 1, moving: true, dst_x: 51, dst_y: 50, x: 50, y: 50}}
+    end
+  end
+
+  describe "handle_message/2 inbound dispatch" do
+    test "a MoveRequest drives handle_request_move with the same destination" do
+      {:noreply, new_state} =
+        PacketHandler.handle_message(%MoveRequest{dest_x: 51, dest_y: 50}, idle_state())
+
+      assert new_state.game_state.movement_state == :moving
+      assert List.last(new_state.game_state.walk_path) == {51, 50}
+
+      assert_received {:send, :gameplay,
+                       {:self_move, %SelfMove{src_x: 50, src_y: 50, dst_x: 51, dst_y: 50}}}
+    end
+  end
+
+  describe "handle_visibility_update/1 mob lifecycle" do
+    test "a newly-visible mob yields a UnitSpawn; a now-hidden mob yields a UnitDespawn" do
+      test_pid = self()
+      game_state = %{idle_state().game_state | visible_mobs: MapSet.new([99])}
+
+      stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [] end)
+      stub(SpatialIndex, :get_units_in_range, fn :mob, _, _, _, _ -> [42] end)
+      stub(SpatialIndex, :update_visibility, fn _, _, _ -> :ok end)
+
+      mob_state = %MobState{
+        instance_id: 42,
+        mob_id: 1002,
+        mob_data: mob_definition(),
+        spawn_ref: nil,
+        map_name: "prontera",
+        x: 51,
+        y: 50,
+        dir: 0,
+        hp: 50,
+        max_hp: 60,
+        sp: 0,
+        max_sp: 0,
+        spawned_at: System.system_time(:second),
+        walk_speed: 200,
+        is_dead: false
+      }
+
+      # Both the mob spawn and the mob despawn target the same observing player
+      # session. Forward every cast to the test process so we can assert both.
+      observer_pid =
+        spawn(fn -> forward_casts(test_pid) end)
+
+      stub(UnitRegistry, :get_player_pid, fn 1 -> {:ok, observer_pid} end)
+
+      stub(UnitRegistry, :get_unit, fn :mob, 42 ->
+        {:ok, {MobSession, mob_state, observer_pid}}
+      end)
+
+      _ = MovementHandler.handle_visibility_update(game_state)
+
+      assert_receive {:cast, %UnitSpawn{gid: 42, moving: false, name: "Poring"}}, 500
+      assert_receive {:cast, %UnitDespawn{gid: 99, reason: 0}}, 500
+    end
+  end
+
+  defp idle_state do
+    %{game_state: PlayerState.new(character()), connection_pid: self()}
+  end
+
+  defp mob_definition do
+    %MobDefinition{
+      id: 1002,
+      aegis_name: "PORING",
+      name: "Poring",
+      level: 3,
+      hp: 60,
+      sp: 0,
+      atk: 7,
+      matk: 0,
+      def: 0,
+      mdef: 5,
+      stats: %{str: 1, agi: 1, vit: 1, int: 0, dex: 6, luk: 30},
+      attack_range: 1,
+      skill_range: 10,
+      chase_range: 12,
+      element: {:water, 1},
+      race: :plant,
+      size: :medium,
+      walk_speed: 200,
+      attack_delay: 1_000,
+      attack_motion: 672,
+      client_attack_motion: 500,
+      damage_motion: 480,
+      ai_type: 0,
+      modes: [],
+      drops: []
+    }
+  end
+
+  defp forward_casts(test_pid) do
+    receive do
+      {:"$gen_cast", {:send_packet, packet}} ->
+        send(test_pid, {:cast, packet})
+        forward_casts(test_pid)
+    after
+      1_000 -> :ok
     end
   end
 

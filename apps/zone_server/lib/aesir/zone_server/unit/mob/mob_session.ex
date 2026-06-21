@@ -8,13 +8,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   use GenServer
 
+  alias Aesir.Net.UnitDespawn
+  alias Aesir.Net.UnitHp
+  alias Aesir.Net.UnitSpawn
+  alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Constants.ObjectType
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Packets.ZcHpInfo
-  alias Aesir.ZoneServer.Packets.ZcNotifyMoveentry
-  alias Aesir.ZoneServer.Packets.ZcNotifyNewentry
-  alias Aesir.ZoneServer.Packets.ZcNotifyVanish
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
@@ -351,7 +351,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   # Mob Visibility Helper Functions
 
   defp notify_hp_update(%MobState{} = mob_state) do
-    packet = ZcHpInfo.new(mob_state.instance_id, mob_state.hp, mob_state.max_hp)
+    packet = %UnitHp{
+      id: mob_state.instance_id,
+      hp: max(0, mob_state.hp),
+      max_hp: max(1, mob_state.max_hp)
+    }
+
     broadcast_to_nearby_players(mob_state, packet)
     {:ok, packet}
   end
@@ -369,10 +374,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   defp notify_despawn(%MobState{} = mob_state) do
-    packet = %ZcNotifyVanish{
+    packet = %UnitDespawn{
       gid: mob_state.instance_id,
-      # Use died type for death animation
-      type: ZcNotifyVanish.died()
+      reason: DespawnReason.died()
     }
 
     broadcast_to_nearby_players(mob_state, packet)
@@ -380,7 +384,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   defp create_spawn_packet(%MobState{} = mob_state) do
-    %ZcNotifyNewentry{
+    %UnitSpawn{
       object_type: ObjectType.mob(),
       aid: mob_state.instance_id,
       gid: mob_state.instance_id,
@@ -388,41 +392,22 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
       body_state: 0,
       health_state: if(mob_state.is_dead, do: 1, else: 0),
       effect_state: 0,
-      # Mob sprite ID
       job: mob_state.mob_id,
-      head: 0,
-      weapon: 0,
-      shield: 0,
-      accessory: 0,
-      accessory2: 0,
-      accessory3: 0,
-      head_palette: 0,
-      body_palette: 0,
-      head_dir: 0,
-      robe: 0,
-      guild_id: 0,
-      guild_emblem_ver: 0,
-      honor: 0,
-      virtue: 0,
-      is_pk_mode_on: 0,
       sex: 0,
       x: mob_state.x,
       y: mob_state.y,
       dir: mob_state.dir,
-      x_size: 0,
-      y_size: 0,
       clevel: mob_state.mob_data.level,
-      font: 0,
       max_hp: mob_state.max_hp,
       hp: mob_state.hp,
-      is_boss: if(MobState.is_boss?(mob_state), do: 1, else: 0),
-      body: 0,
-      name: mob_state.mob_data.name
+      is_boss: MobState.is_boss?(mob_state),
+      name: mob_state.mob_data.name,
+      moving: false
     }
   end
 
-  defp create_movement_packet(%MobState{} = mob_state, src_x, src_y, dst_x, dst_y) do
-    %ZcNotifyMoveentry{
+  defp create_movement_packet(%MobState{} = mob_state, _src_x, _src_y, dst_x, dst_y) do
+    %UnitSpawn{
       object_type: ObjectType.mob(),
       aid: mob_state.instance_id,
       gid: mob_state.instance_id,
@@ -430,38 +415,20 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
       body_state: 0,
       health_state: if(mob_state.is_dead, do: 1, else: 0),
       effect_state: 0,
-      # Mob sprite ID
       job: mob_state.mob_id,
-      head: 0,
-      weapon: 0,
-      shield: 0,
-      accessory: 0,
-      move_start_time: System.monotonic_time(:millisecond),
-      accessory2: 0,
-      accessory3: 0,
-      head_palette: 0,
-      body_palette: 0,
-      head_dir: 0,
-      robe: 0,
-      guild_id: 0,
-      guild_emblem_ver: 0,
-      honor: 0,
-      virtue: 0,
-      is_pk_mode_on: 0,
       sex: 0,
-      src_x: src_x,
-      src_y: src_y,
-      dst_x: dst_x,
-      dst_y: dst_y,
-      x_size: 0,
-      y_size: 0,
+      x: mob_state.x,
+      y: mob_state.y,
+      dir: mob_state.dir,
       clevel: mob_state.mob_data.level,
-      font: 0,
       max_hp: mob_state.max_hp,
       hp: mob_state.hp,
-      is_boss: if(MobState.is_boss?(mob_state), do: 1, else: 0),
-      body: 0,
-      name: mob_state.mob_data.name
+      is_boss: MobState.is_boss?(mob_state),
+      name: mob_state.mob_data.name,
+      moving: true,
+      dst_x: dst_x,
+      dst_y: dst_y,
+      move_start_time: System.monotonic_time(:millisecond)
     }
   end
 

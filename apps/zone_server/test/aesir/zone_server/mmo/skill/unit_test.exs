@@ -4,12 +4,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
   import Aesir.TestEtsSetup
   import Mimic
 
+  alias Aesir.Net.GroundSkill
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
-  alias Aesir.ZoneServer.Packets.ZcNotifyGroundskill
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -75,7 +75,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
       assert %Group{} = Storage.get(group.group_id)
     end
 
-    test "broadcasts exactly one ZcNotifyGroundskill at the target cell" do
+    test "broadcasts exactly one GroundSkill at the target cell" do
       test_pid = self()
 
       stub(Broadcast, :to_in_range, fn map_name, x, y, _range, packet ->
@@ -85,7 +85,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
 
       {:ok, group} = Unit.place(caster(), @skill_name, 7, {100, 120})
 
-      assert_received {:broadcast, "prontera", 100, 120, %ZcNotifyGroundskill{} = packet}
+      assert_received {:broadcast, "prontera", 100, 120, %GroundSkill{} = packet}
       assert packet.skill_id == group.skill_id
       assert packet.src_id == 2_000
       assert packet.level == 7
@@ -109,9 +109,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
       assert is_integer(definition.id)
       assert group.skill_id == definition.id
 
-      assert_received {:broadcast, %ZcNotifyGroundskill{} = packet}
+      assert_received {:broadcast, %GroundSkill{} = packet}
       assert packet.skill_id == definition.id
-      assert is_binary(ZcNotifyGroundskill.build(packet))
     end
 
     test "returns an error for an unregistered skill" do

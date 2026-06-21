@@ -3,11 +3,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   use Mimic
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.Net.CastCancel
+  alias Aesir.Net.ParamChange
+  alias Aesir.Net.Resurrect
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Packets.ZcNotifyCastCancel
-  alias Aesir.ZoneServer.Packets.ZcParChange
-  alias Aesir.ZoneServer.Packets.ZcResurrection
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
@@ -53,7 +53,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
 
       assert game_state.stats.current_state.hp == 70
       assert game_state.action_state == :idle
-      assert_received {:send_packet, %ZcParChange{var_id: @sp_hp, value: 70}}
+      assert_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_hp, value: 70}}}
     end
 
     test "invokes status on_damage with post-damage HP populated" do
@@ -78,7 +78,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
 
       assert game_state.stats.current_state.hp == 0
       assert game_state.action_state == :dead
-      assert_received {:send_packet, %ZcParChange{var_id: @sp_hp, value: 0}}
+      assert_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_hp, value: 0}}}
     end
 
     test "ignores damage on an already dead player" do
@@ -103,7 +103,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
         HealthHandler.apply_damage(30, 2001, casting_state(-100))
 
       assert game_state.action_state == :idle
-      assert_received {:to_player, %ZcNotifyCastCancel{gid: 1}}
+      assert_received {:to_player, %CastCancel{gid: 1}}
     end
 
     test "does not interrupt a survivable cast in the fixed phase" do
@@ -113,7 +113,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
         HealthHandler.apply_damage(30, 2001, casting_state(60_000))
 
       assert game_state.action_state == :casting
-      refute_received {:to_player, %ZcNotifyCastCancel{}}
+      refute_received {:to_player, %CastCancel{}}
     end
   end
 
@@ -125,8 +125,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       assert game_state.action_state == :idle
       assert game_state.stats.current_state.hp == 100
       assert game_state.stats.current_state.sp == 50
-      assert_received {:send_packet, %ZcParChange{var_id: @sp_hp, value: 100}}
-      assert_received {:send_packet, %ZcResurrection{gid: 100}}
+      assert_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_hp, value: 100}}}
+      assert_received {:send, _res_channel, {_res_tag, %Resurrect{gid: 1}}}
     end
 
     test "does nothing when respawn is requested by a living player" do

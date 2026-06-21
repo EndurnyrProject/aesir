@@ -7,15 +7,18 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
 
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
-  alias Aesir.ZoneServer.Packets.ZcAckTakeoffEquip
-  alias Aesir.ZoneServer.Packets.ZcAckWearEquip
-  alias Aesir.ZoneServer.Packets.ZcInventoryEnd
-  alias Aesir.ZoneServer.Packets.ZcInventoryItemlistEquip
-  alias Aesir.ZoneServer.Packets.ZcInventoryItemlistNormal
-  alias Aesir.ZoneServer.Packets.ZcInventoryStart
-  alias Aesir.ZoneServer.Packets.ZcSpriteChange
+  alias Aesir.Net.EquipItem
+  alias Aesir.Net.EquipResult
+  alias Aesir.Net.InventoryList
+  alias Aesir.Net.ItemAdded
+  alias Aesir.Net.ItemRemoved
+  alias Aesir.Net.MapLoaded
+  alias Aesir.Net.SpriteChange
+  alias Aesir.Net.UnequipItem
+  alias Aesir.Net.UnequipResult
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
+  alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -166,118 +169,51 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
     end
   end
 
-  describe "inventory packets" do
-    test "frames the inventory with start/normal/equip/end during LoadEndAck", %{
+  describe "inventory dump" do
+    test "sends exactly one InventoryList on the bulk channel during LoadEndAck", %{
       character: character
     } do
-      # Add some inventory items
       seed_item(character.id, 501, 5)
       seed_equipped(character.id, 1201, 2)
 
-      # Initialize player session
       {:ok, state} =
-        PlayerSession.init(%{
-          character: character,
-          connection_pid: self()
-        })
+        PlayerSession.init(%{character: character, connection_pid: self()})
 
-      # Simulate LoadEndAck packet (0x007D)
       {:noreply, _new_state} =
-        PlayerSession.handle_info(
-          {:packet, 0x007D, %{}},
-          state
-        )
+        PlayerSession.handle_info({:message, %MapLoaded{}}, state)
 
-      # Verify the modern framing packets were sent (may receive other packets first)
-      _start = receive_packet_of_type(ZcInventoryStart)
-      _normal = receive_packet_of_type(ZcInventoryItemlistNormal)
-      _equip = receive_packet_of_type(ZcInventoryItemlistEquip)
-      _end = receive_packet_of_type(ZcInventoryEnd)
+      assert {:send, :bulk, {:inventory_list, %InventoryList{}}} = next_inventory_list()
     end
 
-    test "normal itemlist contains only non-equipped items", %{character: character} do
-      # Add inventory items(some equipped, some not)
-      # Not equipped
+    test "splits items into normal (non-equipped) and equip (worn)", %{character: character} do
       seed_item(character.id, 501, 5)
-      # Not equipped
       seed_item(character.id, 1750, 100)
-      # Equipped weapon
       seed_equipped(character.id, 1201, 2)
-
-      # Initialize player session
-      {:ok, state} =
-        PlayerSession.init(%{
-          character: character,
-          connection_pid: self()
-        })
-
-      # Simulate LoadEndAck
-      {:noreply, _new_state} =
-        PlayerSession.handle_info(
-          {:packet, 0x007D, %{}},
-          state
-        )
-
-      # Capture and verify normal itemlist packet (may receive other packets first)
-      normal_itemlist = receive_packet_of_type(ZcInventoryItemlistNormal)
-
-      # Should only contain non-equipped items (potion and arrows)
-      assert length(normal_itemlist.items) == 2
-
-      nameids = Enum.map(normal_itemlist.items, & &1.nameid)
-      # Potion
-      assert 501 in nameids
-      # Arrows
-      assert 1750 in nameids
-      # Weapon (equipped)
-      refute 1201 in nameids
-    end
-
-    test "equipitem list contains only equipped items", %{character: character} do
-      # Add inventory items
-      # Not equipped
-      seed_item(character.id, 501, 5)
-      # Equipped weapon (right hand)
-      seed_equipped(character.id, 1201, 2)
-      # Equipped armor
       seed_equipped(character.id, 2301, 16)
 
-      # Initialize player session
       {:ok, state} =
-        PlayerSession.init(%{
-          character: character,
-          connection_pid: self()
-        })
+        PlayerSession.init(%{character: character, connection_pid: self()})
 
-      # Simulate LoadEndAck
       {:noreply, _new_state} =
-        PlayerSession.handle_info(
-          {:packet, 0x007D, %{}},
-          state
-        )
+        PlayerSession.handle_info({:message, %MapLoaded{}}, state)
 
-      # Capture and verify equipitem list packet (may receive other packets first)
-      equipitem_list = receive_packet_of_type(ZcInventoryItemlistEquip)
+      %InventoryList{normal: normal, equip: equip} = receive_inventory_list()
 
-      # Should only contain equipped items
-      assert length(equipitem_list.items) == 2
+      normal_ids = Enum.map(normal, & &1.nameid)
+      equip_ids = Enum.map(equip, & &1.nameid)
 
-      nameids = Enum.map(equipitem_list.items, & &1.nameid)
-      # Weapon
-      assert 1201 in nameids
-      # Armor
-      assert 2301 in nameids
-      # Potion (not equipped)
-      refute 501 in nameids
+      assert 501 in normal_ids
+      assert 1750 in normal_ids
+      refute 1201 in normal_ids
 
-      # Verify equipment positions reflect the worn bitmask
-      weapon_item = Enum.find(equipitem_list.items, &(&1.nameid == 1201))
-      armor_item = Enum.find(equipitem_list.items, &(&1.nameid == 2301))
+      assert 1201 in equip_ids
+      assert 2301 in equip_ids
+      refute 501 in equip_ids
 
-      # Right hand
-      assert weapon_item.location == 2
-      # Armor slot
-      assert armor_item.location == 16
+      weapon = Enum.find(equip, &(&1.nameid == 1201))
+      armor = Enum.find(equip, &(&1.nameid == 2301))
+      assert weapon.location == 2
+      assert armor.location == 16
     end
 
     test "uses a unified, non-colliding client index space across both lists", %{
@@ -291,36 +227,68 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
         PlayerSession.init(%{character: character, connection_pid: self()})
 
       {:noreply, _new_state} =
-        PlayerSession.handle_info({:packet, 0x007D, %{}}, state)
+        PlayerSession.handle_info({:message, %MapLoaded{}}, state)
 
-      normal_itemlist = receive_packet_of_type(ZcInventoryItemlistNormal)
-      equipitem_list = receive_packet_of_type(ZcInventoryItemlistEquip)
+      %InventoryList{normal: normal, equip: equip} = receive_inventory_list()
 
       # +2 client offset, unified index space, no collision
-      assert [%{index: 2, nameid: 501}] = normal_itemlist.items
-      assert [%{index: 3, nameid: 1201}] = equipitem_list.items
+      assert [%{index: 2, nameid: 501}] = normal
+      assert [%{index: 3, nameid: 1201}] = equip
     end
 
-    test "sends empty lists framed by start/end when no inventory items", %{character: character} do
-      # Initialize player session with no items
+    test "carries per-item fields faithfully", %{character: character} do
+      seed_item(character.id, 501, 5, %{identify: 1, card0: 4001, favorite: 1})
+
       {:ok, state} =
-        PlayerSession.init(%{
-          character: character,
-          connection_pid: self()
-        })
+        PlayerSession.init(%{character: character, connection_pid: self()})
 
-      # Simulate LoadEndAck
       {:noreply, _new_state} =
-        PlayerSession.handle_info(
-          {:packet, 0x007D, %{}},
-          state
-        )
+        PlayerSession.handle_info({:message, %MapLoaded{}}, state)
 
-      # Should still send the framing with empty lists
-      assert_receive {:send_packet, %ZcInventoryStart{}}
-      assert_receive {:send_packet, %ZcInventoryItemlistNormal{items: []}}
-      assert_receive {:send_packet, %ZcInventoryItemlistEquip{items: []}}
-      assert_receive {:send_packet, %ZcInventoryEnd{}}
+      %InventoryList{normal: [item]} = receive_inventory_list()
+
+      assert item.nameid == 501
+      assert item.amount == 5
+      assert item.identified == true
+      assert item.favorite == true
+      assert [4001, 0, 0, 0] = item.cards
+    end
+
+    test "sends an empty InventoryList when there are no items", %{character: character} do
+      {:ok, state} =
+        PlayerSession.init(%{character: character, connection_pid: self()})
+
+      {:noreply, _new_state} =
+        PlayerSession.handle_info({:message, %MapLoaded{}}, state)
+
+      assert %InventoryList{normal: [], equip: []} = receive_inventory_list()
+    end
+  end
+
+  describe "item gain/loss messages" do
+    test "item_added maps a gained item, applying the +2 client offset", %{character: character} do
+      item = seed_item(character.id, 501, 5, %{identify: 1, refine: 0, card0: 4001, favorite: 1})
+
+      assert %ItemAdded{} = added = PacketHandler.item_added(item, 0)
+
+      assert added.index == PlayerState.client_index(0)
+      assert added.amount == 5
+      assert added.nameid == 501
+      assert added.identified == true
+      assert added.refine == 0
+      assert [4001, 0, 0, 0] = added.cards
+      assert added.result == 0
+    end
+
+    test "item_removed names the index, amount and reason", %{character: _character} do
+      assert %ItemRemoved{index: index, amount: 3, reason: 1} =
+               PacketHandler.item_removed(0, 3, 1)
+
+      assert index == PlayerState.client_index(0)
+    end
+
+    test "item_removed defaults to the normal reason code", %{character: _character} do
+      assert %ItemRemoved{reason: 0} = PacketHandler.item_removed(0, 1)
     end
   end
 
@@ -378,6 +346,26 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
     end
   end
 
+  describe "equip/unequip inbound dispatch" do
+    test "an EquipItem casts equip_item with the same index/position" do
+      state = %{game_state: %PlayerState{character_id: 1000}}
+
+      assert {:noreply, ^state} =
+               PacketHandler.handle_message(%EquipItem{index: 7, position: 2}, state)
+
+      assert_received {:"$gen_cast", {:equip_item, 7, 2}}
+    end
+
+    test "an UnequipItem casts unequip_item with the same index" do
+      state = %{game_state: %PlayerState{character_id: 1000}}
+
+      assert {:noreply, ^state} =
+               PacketHandler.handle_message(%UnequipItem{index: 7}, state)
+
+      assert_received {:"$gen_cast", {:unequip_item, 7}}
+    end
+  end
+
   describe "equip/unequip orchestration" do
     setup %{account: account} do
       {:ok, character} =
@@ -414,7 +402,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       server_index = index_of(state.game_state.inventory, 1101)
       bare_atk = state.game_state.stats.combat_stats.atk
 
-      expect(Broadcast, :to_visible_players, fn _gs, %ZcSpriteChange{}, _opts -> :ok end)
+      expect(Broadcast, :to_visible_players, fn _gs, %SpriteChange{}, _opts -> :ok end)
 
       {:noreply, new_state} =
         PlayerSession.handle_cast(
@@ -429,8 +417,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       # Stats reflect the +25 atk equipment bonus.
       assert new_state.game_state.stats.combat_stats.atk == bare_atk + 25
 
-      ack = receive_packet_of_type(ZcAckWearEquip)
-      assert ack.result == ZcAckWearEquip.result_ok()
+      ack = receive_message_of_type(EquipResult)
+      assert ack.result == 0
       assert ack.wear_location == 2
     end
 
@@ -460,10 +448,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       assert new_state.game_state.inventory[shield_index].equip == 0
       assert reload(character.id)[shield_index].equip == 0
 
-      wear_ack = receive_packet_of_type(ZcAckWearEquip)
-      assert wear_ack.result == ZcAckWearEquip.result_ok()
+      wear_ack = receive_message_of_type(EquipResult)
+      assert wear_ack.result == 0
 
-      takeoff_ack = receive_packet_of_type(ZcAckTakeoffEquip)
+      takeoff_ack = receive_message_of_type(UnequipResult)
       assert takeoff_ack.index == PlayerState.client_index(shield_index)
     end
 
@@ -485,8 +473,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       assert new_state.game_state.inventory[server_index].equip == 0
       assert reload(character.id)[server_index].equip == 0
 
-      ack = receive_packet_of_type(ZcAckTakeoffEquip)
-      assert ack.result == ZcAckTakeoffEquip.result_success()
+      ack = receive_message_of_type(UnequipResult)
+      assert ack.result == 0
     end
 
     @tag :capture_log
@@ -509,8 +497,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       assert new_state.game_state.inventory[server_index].equip == 0
       assert reload(character.id)[server_index].equip == 0
 
-      ack = receive_packet_of_type(ZcAckWearEquip)
-      assert ack.result == ZcAckWearEquip.result_fail()
+      ack = receive_message_of_type(EquipResult)
+      assert ack.result == 2
     end
 
     test "stale/invalid index yields a failure ack and no mutation", %{equip_char: character} do
@@ -521,8 +509,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
 
       assert new_state.game_state.inventory == state.game_state.inventory
 
-      ack = receive_packet_of_type(ZcAckWearEquip)
-      assert ack.result == ZcAckWearEquip.result_fail()
+      ack = receive_message_of_type(EquipResult)
+      assert ack.result == 2
     end
   end
 
@@ -572,18 +560,32 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
     end)
   end
 
-  # Helper function to receive a specific packet type
-  defp receive_packet_of_type(expected_type, timeout \\ 1000) do
+  # Returns the first {:send, channel, {tag, %InventoryList{}}} message verbatim
+  # so a test can assert the channel/tag alongside the struct.
+  defp next_inventory_list(timeout \\ 1000) do
     receive do
-      {:send_packet, packet} ->
-        if packet.__struct__ == expected_type do
-          packet
+      {:send, _channel, {_tag, %InventoryList{}}} = message -> message
+      _other -> next_inventory_list(timeout)
+    after
+      timeout -> flunk("Expected an InventoryList send within #{timeout}ms")
+    end
+  end
+
+  defp receive_inventory_list, do: receive_message_of_type(InventoryList)
+
+  # Helper for the QUIC + protobuf outbound path: messages arrive as
+  # {:send, channel, {tag, struct}} on the connection pid.
+  defp receive_message_of_type(expected_type, timeout \\ 1000) do
+    receive do
+      {:send, _channel, {_tag, message}} ->
+        if message.__struct__ == expected_type do
+          message
         else
-          receive_packet_of_type(expected_type, timeout)
+          receive_message_of_type(expected_type, timeout)
         end
     after
       timeout ->
-        flunk("Expected packet of type #{expected_type} not received within #{timeout}ms")
+        flunk("Expected message of type #{expected_type} not received within #{timeout}ms")
     end
   end
 end

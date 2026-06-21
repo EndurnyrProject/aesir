@@ -37,6 +37,48 @@ message Envelope {
     DeleteCharRequest delete_char_request = 29;
     DeleteCharAck delete_char_ack = 30;
     CharListRefresh char_list_refresh = 31;
+    // 32+: zone
+    MapLoaded map_loaded = 32;
+    TimeSync time_sync = 33;
+    TimeSyncAck time_sync_ack = 34;
+    EnterAck enter_ack = 35;
+    MoveRequest move_request = 36;
+    SelfMove self_move = 37;
+    MoveStop move_stop = 38;
+    UnitSpawn unit_spawn = 39;
+    UnitDespawn unit_despawn = 40;
+    NameRequest name_request = 41;
+    NameResponse name_response = 42;
+    ChatRequest chat_request = 43;
+    ChatMessage chat_message = 44;
+    Snapshot snapshot = 45;
+    // 46-71: zone combat / skill / item / stat
+    ActionRequest action_request = 46;
+    DamageDealt damage_dealt = 47;
+    Knockback knockback = 48;
+    SkillCast skill_cast = 49;
+    GroundSkillCast ground_skill_cast = 50;
+    SkillList skill_list = 51;
+    SkillDamage skill_damage = 52;
+    SkillEffect skill_effect = 53;
+    SkillCasting skill_casting = 54;
+    CastCancel cast_cancel = 55;
+    SkillCooldown skill_cooldown = 56;
+    GroundSkill ground_skill = 57;
+    EquipItem equip_item = 58;
+    UnequipItem unequip_item = 59;
+    EquipResult equip_result = 60;
+    UnequipResult unequip_result = 61;
+    InventoryList inventory_list = 62;
+    ItemAdded item_added = 63;
+    ItemRemoved item_removed = 64;
+    StatUp stat_up = 65;
+    StatUpResult stat_up_result = 66;
+    ParamChange param_change = 67;
+    UnitHp unit_hp = 68;
+    SpriteChange sprite_change = 69;
+    Resurrect resurrect = 70;
+    Respawn respawn = 71;
   }
 }
 
@@ -201,3 +243,366 @@ message DeleteCharAck {
 
 // Client -> server, request a fresh character list (replaces RO CH_CHARLIST_REQ).
 message CharListRefresh {}
+
+// Client -> server, the map finished loading; spawn me (replaces RO CZ_NOTIFY_ACTORINIT 0x007D).
+message MapLoaded {}
+
+// Client -> server, client clock for time sync (replaces RO CZ_REQUEST_TIME/TIME2).
+message TimeSync {
+  uint32 client_tick = 1;
+}
+
+// Server -> client, authoritative clock reply (replaces RO ZC_NOTIFY_TIME/TIME2).
+message TimeSyncAck {
+  uint32 server_tick = 1;
+}
+
+// Server -> client, accept zone entry (replaces RO ZC_ACCEPT_ENTER 0x02EB + ZC_AID 0x0283).
+message EnterAck {
+  uint32 account_id = 1;
+  uint32 x = 2;
+  uint32 y = 3;
+  uint32 dir = 4;
+  uint64 start_time = 5;
+  uint32 font = 6;
+}
+
+// Client -> server, request to move to a destination cell (replaces RO CZ_REQUEST_MOVE2 0x035F).
+message MoveRequest {
+  uint32 dest_x = 1;
+  uint32 dest_y = 2;
+}
+
+// Server -> client, own-character authoritative movement (replaces RO ZC_NOTIFY_PLAYERMOVE 0x0087).
+message SelfMove {
+  uint32 src_x = 1;
+  uint32 src_y = 2;
+  uint32 dst_x = 3;
+  uint32 dst_y = 4;
+  uint64 start_time = 5;
+}
+
+// Server -> client, an entity stopped moving (replaces RO ZC_NOTIFY_MOVE_STOP 0x0088).
+message MoveStop {
+  uint32 gid = 1;
+  uint32 x = 2;
+  uint32 y = 3;
+}
+
+// Server -> client, an entity entered view (collapses RO ZC_NOTIFY_NEWENTRY 0x09FE,
+// ZC_NOTIFY_STANDENTRY 0x09FF and ZC_NOTIFY_MOVEENTRY 0x09FD). The `moving`, `dst_*` and
+// `move_start_time` fields carry the moveentry case.
+message UnitSpawn {
+  uint32 gid = 1;
+  uint32 aid = 2;
+  uint32 object_type = 3;
+  uint32 job = 4;
+  uint32 x = 5;
+  uint32 y = 6;
+  uint32 dir = 7;
+  uint32 speed = 8;
+  uint32 hp = 9;
+  uint32 max_hp = 10;
+  uint32 clevel = 11;
+  uint32 body_state = 12;
+  uint32 health_state = 13;
+  uint32 effect_state = 14;
+  uint32 head = 15;
+  uint32 weapon = 16;
+  uint32 shield = 17;
+  uint32 accessory = 18;
+  uint32 accessory2 = 19;
+  uint32 accessory3 = 20;
+  uint32 head_palette = 21;
+  uint32 body_palette = 22;
+  uint32 head_dir = 23;
+  uint32 robe = 24;
+  uint32 guild_id = 25;
+  uint32 sex = 26;
+  bool is_boss = 27;
+  string name = 28;
+  bool moving = 29;
+  uint32 dst_x = 30;
+  uint32 dst_y = 31;
+  uint64 move_start_time = 32;
+}
+
+// Server -> client, an entity left view (replaces RO ZC_NOTIFY_VANISH 0x0080).
+message UnitDespawn {
+  uint32 gid = 1;
+  uint32 reason = 2;
+}
+
+// Client -> server, request an entity's name (replaces RO CZ_REQNAME2 0x0368).
+message NameRequest {
+  uint32 entity_id = 1;
+}
+
+// Server -> client, an entity's name (replaces RO ZC_ACK_REQNAME 0x0095 + ZC_ACK_REQNAMEALL 0x0195).
+message NameResponse {
+  uint32 gid = 1;
+  string name = 2;
+  string party_name = 3;
+  string guild_name = 4;
+  string position_name = 5;
+}
+
+// Client -> server, public chat message (replaces RO CZ_REQUEST_CHAT 0x008C).
+message ChatRequest {
+  string message = 1;
+}
+
+// Server -> client, an entity's chat message (replaces RO ZC_NOTIFY_CHAT 0x008D).
+message ChatMessage {
+  uint32 gid = 1;
+  string message = 2;
+}
+
+// One entity's position/state within a Snapshot.
+message SnapshotEntity {
+  uint32 id = 1;
+  uint32 x = 2;
+  uint32 y = 3;
+  uint32 dir = 4;
+  uint32 move_state = 5;
+  uint32 hp_pct = 6;
+}
+
+// Server -> client, full-state AoI snapshot (rides ChannelId 4 / Unreliable; design Part 5).
+message Snapshot {
+  uint64 server_tick = 1;
+  repeated SnapshotEntity entities = 2;
+}
+
+// Client -> server, request a basic action against a target (replaces RO CZ_REQUEST_ACT 0x0437).
+message ActionRequest {
+  uint32 target_id = 1;
+  uint32 action = 2;
+}
+
+// Server -> client, basic-attack damage result (replaces RO ZC_NOTIFY_ACT 0x08C8).
+// `damage`/`damage2` are signed so negative (heal-as-damage) values survive.
+message DamageDealt {
+  uint32 src_id = 1;
+  uint32 target_id = 2;
+  uint64 server_tick = 3;
+  uint32 src_speed = 4;
+  uint32 dmg_speed = 5;
+  sint32 damage = 6;
+  uint32 div = 7;
+  uint32 type = 8;
+  sint32 damage2 = 9;
+  bool is_sp_damage = 10;
+}
+
+// Server -> client, an entity was knocked back (replaces RO ZC_BLOWNBACK 0x01B1).
+message Knockback {
+  uint32 unit_id = 1;
+  uint32 dst_x = 2;
+  uint32 dst_y = 3;
+}
+
+// Client -> server, cast a skill at a target (replaces RO CZ_USE_SKILL 0x0113).
+message SkillCast {
+  uint32 skill_id = 1;
+  uint32 level = 2;
+  uint32 target_id = 3;
+}
+
+// Client -> server, cast a ground-targeted skill (replaces RO CZ_USE_SKILL_TOGROUND 0x0AF4).
+message GroundSkillCast {
+  uint32 skill_id = 1;
+  uint32 level = 2;
+  uint32 x = 3;
+  uint32 y = 4;
+}
+
+// One learned skill within a SkillList.
+message SkillInfo {
+  uint32 skill_id = 1;
+  uint32 type = 2;
+  uint32 level = 3;
+  uint32 sp = 4;
+  uint32 range = 5;
+  string name = 6;
+  bool upgradable = 7;
+}
+
+// Server -> client, the full learned-skill list (replaces RO ZC_SKILLINFO_LIST 0x010F).
+message SkillList {
+  repeated SkillInfo skills = 1;
+}
+
+// Server -> client, skill damage result (replaces RO ZC_NOTIFY_SKILL 0x01DE).
+message SkillDamage {
+  uint32 skill_id = 1;
+  uint32 level = 2;
+  uint32 src_id = 3;
+  uint32 target_id = 4;
+  uint64 server_tick = 5;
+  sint32 damage = 6;
+  uint32 div = 7;
+  uint32 type = 8;
+  uint32 src_delay = 9;
+  uint32 dst_delay = 10;
+}
+
+// Server -> client, no-damage skill effect (replaces RO ZC_USE_SKILL 0x011A).
+message SkillEffect {
+  uint32 skill_id = 1;
+  uint32 level = 2;
+  uint32 src_id = 3;
+  uint32 target_id = 4;
+  uint32 result = 5;
+}
+
+// Server -> client, a skill cast bar started (replaces RO ZC_USE_SKILL2 0x0B1A).
+message SkillCasting {
+  uint32 src_id = 1;
+  uint32 target_id = 2;
+  uint32 x = 3;
+  uint32 y = 4;
+  uint32 skill_id = 5;
+  uint32 property = 6;
+  uint32 cast_time = 7;
+}
+
+// Server -> client, a skill cast was cancelled (replaces RO ZC_NOTIFY_CAST_CANCEL 0x01B9).
+message CastCancel {
+  uint32 gid = 1;
+}
+
+// Server -> client, a skill went on cooldown (replaces RO ZC_SKILL_POSTDELAY 0x043D).
+message SkillCooldown {
+  uint32 skill_id = 1;
+  uint32 tick = 2;
+}
+
+// Server -> client, a ground-targeted skill landed (replaces RO ZC_NOTIFY_GROUNDSKILL 0x0117).
+message GroundSkill {
+  uint32 skill_id = 1;
+  uint32 src_id = 2;
+  uint32 level = 3;
+  uint32 x = 4;
+  uint32 y = 5;
+  uint64 server_tick = 6;
+}
+
+// Client -> server, equip an inventory item (replaces RO CZ_REQ_WEAR_EQUIP 0x0998).
+message EquipItem {
+  uint32 index = 1;
+  uint32 position = 2;
+}
+
+// Client -> server, take off an equipped item (replaces RO CZ_REQ_TAKEOFF_EQUIP 0x00AB).
+message UnequipItem {
+  uint32 index = 1;
+}
+
+// Server -> client, result of an equip request (replaces RO ZC_ACK_WEAR_EQUIP 0x0999).
+message EquipResult {
+  uint32 index = 1;
+  uint32 wear_location = 2;
+  uint32 view_id = 3;
+  uint32 result = 4;
+}
+
+// Server -> client, result of an unequip request (replaces RO ZC_ACK_TAKEOFF_EQUIP 0x099A).
+message UnequipResult {
+  uint32 index = 1;
+  uint32 wear_location = 2;
+  uint32 result = 3;
+}
+
+// One inventory slot within an InventoryList.
+message InventoryItem {
+  uint32 index = 1;
+  uint32 nameid = 2;
+  uint32 type = 3;
+  uint32 amount = 4;
+  uint32 location = 5;
+  bool identified = 6;
+  uint32 attribute = 7;
+  uint32 refine = 8;
+  repeated uint32 cards = 9;
+  uint64 expire_time = 10;
+  uint32 bind_on_equip = 11;
+  bool favorite = 12;
+  uint32 look = 13;
+}
+
+// Server -> client, the full inventory dump (collapses RO ZC_INVENTORY_START/
+// ITEMLIST_NORMAL/ITEMLIST_EQUIP/END 0x0B08-0x0B0B).
+message InventoryList {
+  repeated InventoryItem normal = 1;
+  repeated InventoryItem equip = 2;
+}
+
+// Server -> client, an item was added to the inventory (replaces RO ZC_ITEM_PICKUP_ACK 0x0A37).
+message ItemAdded {
+  uint32 index = 1;
+  uint32 amount = 2;
+  uint32 nameid = 3;
+  bool identified = 4;
+  uint32 attribute = 5;
+  uint32 refine = 6;
+  repeated uint32 cards = 7;
+  uint32 location = 8;
+  uint32 type = 9;
+  uint32 result = 10;
+  uint64 expire_time = 11;
+  uint32 look = 12;
+}
+
+// Server -> client, an item was removed from the inventory (replaces RO ZC_DELETE_ITEM_FROM_BODY 0x07FA).
+message ItemRemoved {
+  uint32 index = 1;
+  uint32 amount = 2;
+  uint32 reason = 3;
+}
+
+// Client -> server, allocate a status point to a stat (replaces RO CZ_STATUS_CHANGE 0x00BB).
+message StatUp {
+  uint32 stat_id = 1;
+  uint32 amount = 2;
+}
+
+// Server -> client, result of a stat allocation (replaces RO ZC_STATUS_CHANGE 0x00BC).
+message StatUpResult {
+  uint32 stat_id = 1;
+  bool ok = 2;
+  uint32 value = 3;
+}
+
+// Server -> client, a parameter changed (collapses RO ZC_PAR_CHANGE 0x00B0 +
+// ZC_LONGPAR_CHANGE 0x00B1; uint64 covers both 32- and 64-bit params).
+message ParamChange {
+  uint32 var_id = 1;
+  uint64 value = 2;
+}
+
+// Server -> client, an entity's HP changed (replaces RO ZC_HP_INFO 0x0977).
+message UnitHp {
+  uint32 id = 1;
+  uint32 hp = 2;
+  uint32 max_hp = 3;
+}
+
+// Server -> client, an entity's sprite changed (replaces RO ZC_SPRITE_CHANGE 0x01D7).
+message SpriteChange {
+  uint32 gid = 1;
+  uint32 type = 2;
+  uint32 val = 3;
+  uint32 val2 = 4;
+}
+
+// Server -> client, an entity was resurrected (replaces RO ZC_RESURRECTION 0x0148).
+message Resurrect {
+  uint32 gid = 1;
+  uint32 type = 2;
+}
+
+// Client -> server, respawn or return to char select after death (replaces RO CZ_RESTART 0x00B2).
+message Respawn {
+  uint32 type = 1;
+}

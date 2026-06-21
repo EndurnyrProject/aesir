@@ -2,10 +2,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
   use ExUnit.Case, async: true
   import Mimic
 
+  alias Aesir.Net.Knockback
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
-  alias Aesir.ZoneServer.Packets.ZcBlownback
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -61,7 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
       :ok
     end)
 
-    stub(Broadcast, :to_in_range, fn @map_name, _x, _y, _range, %ZcBlownback{} = pkt ->
+    stub(Broadcast, :to_in_range, fn @map_name, _x, _y, _range, %Knockback{} = pkt ->
       send(test_pid, {:broadcast, pkt})
       :ok
     end)
@@ -71,7 +71,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
 
     assert_received {:updated_state, 153, 150}
     assert_received {:index_updated, 153, 150}
-    assert_received {:broadcast, %ZcBlownback{unit_id: @mob_id, dst_x: 153, dst_y: 150}}
+    assert_received {:broadcast, %Knockback{unit_id: @mob_id, dst_x: 153, dst_y: 150}}
   end
 
   test "knockback with no walkable cell leaves the unit in place" do

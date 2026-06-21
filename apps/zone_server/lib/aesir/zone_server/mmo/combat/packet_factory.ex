@@ -28,12 +28,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
   require Logger
 
   alias Aesir.Commons.Utils.ServerTick
+  alias Aesir.Net.DamageDealt
+  alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
-  alias Aesir.ZoneServer.Packets.ZcNotifyAct
-  alias Aesir.ZoneServer.Packets.ZcNotifySkill
 
   # e_damage_type: single-hit skill display (rAthena DMG_SINGLE).
   @dmg_single 6
+
+  # ZC_NOTIFY_ACT attack types (rAthena clif e_damage_type for basic attacks).
+  @attack_type_normal 0
+  @attack_type_multi_hit 4
+  @attack_type_critical 8
+  @attack_type_lucky_dodge 10
 
   @typedoc """
   Result of damage calculation containing final damage and critical hit status.
@@ -62,30 +68,36 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
   def build_attack_packet(attacker, defender, damage_result, hits \\ 1)
 
   def build_attack_packet(attacker, defender, damage_result, 1) do
-    attacker_id = attacker.gid
-    defender_id = defender.gid
+    attacker_id = attacker.unit_id
+    defender_id = defender.unit_id
     aspd = get_aspd_from_combatant(attacker)
 
     Logger.debug(
       "Combat packet: #{if damage_result.is_critical, do: "CRITICAL ", else: ""}attack from #{attacker_id} to #{defender_id} for #{damage_result.damage} damage"
     )
 
-    ZcNotifyAct.from_combat_result(
-      attacker_id,
-      defender_id,
-      damage_result,
+    type = if damage_result.is_critical, do: @attack_type_critical, else: @attack_type_normal
+
+    %DamageDealt{
+      src_id: attacker_id,
+      target_id: defender_id,
       server_tick: ServerTick.now(),
       src_speed: aspd * 10,
-      dmg_speed: 500
-    )
+      dmg_speed: 500,
+      damage: damage_result.damage,
+      div: 1,
+      type: type,
+      damage2: 0,
+      is_sp_damage: false
+    }
   end
 
   # Multi-hit attack (e.g. Double Attack): `damage_result.damage` is the per-hit
   # value; the packet carries the combined total and `div = hits`, so the client
   # divides it back into the individual hit numbers (rAthena DAMAGE_DIV_FIX).
   def build_attack_packet(attacker, defender, damage_result, hits) when hits > 1 do
-    attacker_id = attacker.gid
-    defender_id = defender.gid
+    attacker_id = attacker.unit_id
+    defender_id = defender.unit_id
     aspd = get_aspd_from_combatant(attacker)
     total_damage = damage_result.damage * hits
 
@@ -93,15 +105,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
       "Combat packet: #{hits}-hit attack from #{attacker_id} to #{defender_id} for #{total_damage} damage"
     )
 
-    ZcNotifyAct.multi_hit_attack(
-      attacker_id,
-      defender_id,
-      total_damage,
-      hits,
+    %DamageDealt{
+      src_id: attacker_id,
+      target_id: defender_id,
       server_tick: ServerTick.now(),
       src_speed: aspd * 10,
-      dmg_speed: 500
-    )
+      dmg_speed: 500,
+      damage: total_damage,
+      div: hits,
+      type: @attack_type_multi_hit,
+      damage2: 0,
+      is_sp_damage: false
+    }
   end
 
   @doc """
@@ -115,7 +130,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
     - damage_result: result from skill damage calculation
 
   ## Returns
-    - ZcNotifySkill packet ready for broadcasting
+    - SkillDamage packet ready for broadcasting
   """
   @spec build_skill_damage_packet(
           Combatant.t(),
@@ -123,19 +138,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
           integer(),
           integer(),
           damage_result()
-        ) :: struct()
+        ) :: SkillDamage.t()
   def build_skill_damage_packet(attacker, defender, skill_id, skill_level, damage_result) do
     aspd = get_aspd_from_combatant(attacker)
 
     Logger.debug(
-      "Skill packet: skill #{skill_id} lv#{skill_level} from #{attacker.gid} to #{defender.gid} for #{damage_result.damage} damage"
+      "Skill packet: skill #{skill_id} lv#{skill_level} from #{attacker.unit_id} to #{defender.unit_id} for #{damage_result.damage} damage"
     )
 
-    %ZcNotifySkill{
+    %SkillDamage{
       skill_id: skill_id,
-      skill_level: skill_level,
-      src_id: attacker.gid,
-      target_id: defender.gid,
+      level: skill_level,
+      src_id: attacker.unit_id,
+      target_id: defender.unit_id,
       server_tick: ServerTick.now(),
       src_delay: aspd * 10,
       dst_delay: 500,
@@ -159,19 +174,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
   """
   @spec build_miss_packet(Combatant.t(), Combatant.t()) :: struct()
   def build_miss_packet(attacker, defender) do
-    attacker_id = attacker.gid
-    defender_id = defender.gid
+    attacker_id = attacker.unit_id
+    defender_id = defender.unit_id
     aspd = get_aspd_from_combatant(attacker)
 
     Logger.debug("Combat packet: Miss from #{attacker_id} to #{defender_id}")
 
-    ZcNotifyAct.miss_attack(
-      attacker_id,
-      defender_id,
-      server_tick: ServerTick.now(),
-      src_speed: aspd * 10,
-      dmg_speed: 0
-    )
+    build_miss(attacker_id, defender_id, aspd)
   end
 
   @doc """
@@ -188,20 +197,30 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
   """
   @spec build_perfect_dodge_packet(Combatant.t(), Combatant.t()) :: struct()
   def build_perfect_dodge_packet(attacker, defender) do
-    attacker_id = attacker.gid
-    defender_id = defender.gid
+    attacker_id = attacker.unit_id
+    defender_id = defender.unit_id
     aspd = get_aspd_from_combatant(attacker)
 
     Logger.debug("Combat packet: Perfect dodge from #{attacker_id} to #{defender_id}")
 
-    # Perfect dodge uses the same packet structure as miss
-    ZcNotifyAct.miss_attack(
-      attacker_id,
-      defender_id,
+    # Perfect dodge uses the same packet structure as miss.
+    build_miss(attacker_id, defender_id, aspd)
+  end
+
+  @spec build_miss(integer(), integer(), integer()) :: DamageDealt.t()
+  defp build_miss(src_id, target_id, aspd) do
+    %DamageDealt{
+      src_id: src_id,
+      target_id: target_id,
       server_tick: ServerTick.now(),
       src_speed: aspd * 10,
-      dmg_speed: 0
-    )
+      dmg_speed: 0,
+      damage: 0,
+      div: 1,
+      type: @attack_type_lucky_dodge,
+      damage2: 0,
+      is_sp_damage: false
+    }
   end
 
   @doc """

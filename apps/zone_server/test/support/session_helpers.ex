@@ -393,18 +393,10 @@ defmodule Aesir.ZoneServer.SessionHelpers do
       :stop ->
         :ok
 
-      {:send_packet, packet} ->
-        # When PlayerSession sends a packet to connection,
-        # forward it to the test process using the mocked Connection
-        # The packet should already be a struct from PlayerSession
-        if is_struct(packet) do
-          # Send to test process via the mocked Connection.send_packet
-          send(test_pid, {:packet_sent, packet, packet.__struct__.build(packet)})
-        else
-          # Ignore unexpected non-struct packet
-          :ok
-        end
-
+      {:send, channel, {_tag, proto}} ->
+        # Proto structs ride the QuicConnection push path; capture the struct
+        # directly (they have no build/1).
+        send(test_pid, {:packet_sent, proto, channel})
         connection_process_loop(test_pid)
 
       _msg ->

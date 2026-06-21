@@ -2,23 +2,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   @moduledoc """
   Handles player HP changes from combat: damage application, death, and respawn.
 
-  When a player takes damage their own HP bar is updated via `ZC_PAR_CHANGE`
-  (SP_HP), matching rAthena's `clif_updatestatus(sd, SP_HP)`. `ZC_HP_INFO` is
+  When a player takes damage their own HP bar is updated via a `ParamChange`
+  (SP_HP), matching rAthena's `clif_updatestatus(sd, SP_HP)`. `UnitHp` is
   reserved for monster HP bars and is not used here.
 
   On death the player is marked `:dead`, vanishes for nearby players
-  (`ZC_NOTIFY_VANISH` with the died type) and is pulled out of the spatial index
+  (`UnitDespawn` with the died reason) and is pulled out of the spatial index
   so mobs drop aggro. Respawn revives the player in place and stands the sprite
-  back up via `ZC_RESURRECTION`.
+  back up via a `Resurrect`.
   """
 
   require Logger
 
   alias Aesir.Commons.StatusParams
+  alias Aesir.Net.Resurrect
+  alias Aesir.Net.UnitDespawn
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Packets.ZcNotifyVanish
-  alias Aesir.ZoneServer.Packets.ZcResurrection
+  alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
@@ -95,7 +97,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     {:ok, dead_state} = PlayerState.transition_to(game_state, :dead)
     state = StatsManager.update_game_state(state, dead_state)
 
-    vanish = %ZcNotifyVanish{gid: game_state.account_id, type: ZcNotifyVanish.died()}
+    vanish = %UnitDespawn{gid: game_state.character_id, reason: DespawnReason.died()}
     Broadcast.to_visible_players(dead_state, vanish)
 
     SpatialIndex.remove_player(game_state.character_id)
@@ -135,8 +137,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
       {StatusParams.sp(), max_sp}
     ])
 
-    resurrection = %ZcResurrection{gid: game_state.account_id, type: 0}
-    send_self(state, resurrection)
+    resurrection = %Resurrect{gid: game_state.character_id, type: 0}
+    MessageRouter.send_to(state.connection_pid, resurrection)
     Broadcast.to_visible_players(visible_state, resurrection)
 
     CharacterPersistence.update_stats(game_state.character_id, %{hp: max_hp, sp: max_sp},
@@ -144,9 +146,5 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     )
 
     {:noreply, state}
-  end
-
-  defp send_self(%{connection_pid: connection_pid}, packet) do
-    send(connection_pid, {:send_packet, packet})
   end
 end

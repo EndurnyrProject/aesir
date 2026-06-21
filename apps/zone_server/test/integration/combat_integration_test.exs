@@ -9,9 +9,10 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
   @moduletag :capture_log
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.Net.DamageDealt
+  alias Aesir.Net.UnitDespawn
+  alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Mmo.Combat
-  alias Aesir.ZoneServer.Packets.ZcNotifyAct
-  alias Aesir.ZoneServer.Packets.ZcNotifyVanish
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -62,7 +63,7 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
           Process.sleep(20)
 
           hit =
-            ZcNotifyAct
+            DamageDealt
             |> collect_packets_of_type(100)
             |> Enum.find(&(&1.target_id == mob.unit_id and &1.damage > 0))
 
@@ -70,7 +71,7 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
         end)
 
       assert damage_packet, "Player never landed a hit on the mob"
-      assert damage_packet.src_id == player.character.account_id
+      assert damage_packet.src_id == player.character.id
       assert damage_packet.target_id == mob.unit_id
       assert damage_packet.damage > 0
 
@@ -123,7 +124,7 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
       Combat.execute_attack(stats, player_state, mob.unit_id)
 
       # Should receive a miss packet
-      packet = assert_packet_sent(ZcNotifyAct, 200)
+      packet = assert_packet_sent(DamageDealt, 200)
       # Miss shows as 0 damage
       assert packet.damage == 0
       # Attack type
@@ -162,7 +163,7 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
       Combat.execute_attack(stats2, state2, mob.unit_id)
 
       # Verify both attacks sent packets
-      packets = collect_packets_of_type(ZcNotifyAct, 200)
+      packets = collect_packets_of_type(DamageDealt, 200)
       assert length(packets) >= 2
 
       # TODO: Fix aggro checking - mob aggro system may work differently
@@ -232,9 +233,9 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
       assert :ok = Combat.execute_mob_attack(mob_state, player.character.id)
 
       # Verify attack packet was sent
-      packet = assert_packet_sent(ZcNotifyAct, 200)
+      packet = assert_packet_sent(DamageDealt, 200)
       assert packet.src_id == mob.unit_id
-      assert packet.target_id == player.character.account_id
+      assert packet.target_id == player.character.id
     end
   end
 
@@ -258,7 +259,7 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
       assert result == {:error, :target_out_of_range}
 
       # No damage packet should be sent
-      refute_packet_sent(ZcNotifyAct, 100)
+      refute_packet_sent(DamageDealt, 100)
     end
 
     test "attack succeeds when target is in melee range" do
@@ -274,7 +275,7 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
       assert :ok = Combat.execute_attack(stats, player_state, mob.unit_id)
 
       # Damage packet should be sent
-      assert_packet_sent(ZcNotifyAct, 200)
+      assert_packet_sent(DamageDealt, 200)
     end
 
     test "validates exact range 1 attack distances using Chebyshev distance" do
@@ -291,8 +292,8 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
       result1 = Combat.execute_attack(stats1, player_state1, mob1.unit_id)
 
       assert result1 == :ok, "Attack failed for adjacent East position (should be distance 1)"
-      packet1 = assert_packet_sent(ZcNotifyAct, 200)
-      assert packet1.src_id == player1.character.account_id
+      packet1 = assert_packet_sent(DamageDealt, 200)
+      assert packet1.src_id == player1.character.id
       assert packet1.target_id == mob1.unit_id
 
       # Test case 2: Adjacent diagonal (Southeast) - should be in range
@@ -307,8 +308,8 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
       assert result2 == :ok,
              "Attack failed for diagonal Southeast position (should be distance 1 with Chebyshev)"
 
-      packet2 = assert_packet_sent(ZcNotifyAct, 200)
-      assert packet2.src_id == player2.character.account_id
+      packet2 = assert_packet_sent(DamageDealt, 200)
+      assert packet2.src_id == player2.character.id
       assert packet2.target_id == mob2.unit_id
 
       # Test case 3: Distance 2 position - should be out of range
@@ -323,7 +324,7 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
       assert result3 == {:error, :target_out_of_range},
              "Attack succeeded but should have failed for distance 2 position"
 
-      refute_packet_sent(ZcNotifyAct, 100)
+      refute_packet_sent(DamageDealt, 100)
     end
 
     test "validates mob attack range using same Chebyshev distance" do
@@ -345,7 +346,7 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
       assert result1 == :ok, "Mob attack failed at range 1"
 
       # Should receive attack packet
-      packet = assert_packet_sent(ZcNotifyAct, 200)
+      packet = assert_packet_sent(DamageDealt, 200)
       assert packet.src_id == mob_in_range.unit_id
 
       # Mob out of range should fail to attack
@@ -356,7 +357,7 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
              "Mob attack succeeded but should have failed at range 2"
 
       # Should not receive another attack packet
-      refute_packet_sent(ZcNotifyAct, 100)
+      refute_packet_sent(DamageDealt, 100)
     end
   end
 
@@ -440,7 +441,7 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
       Process.sleep(100)
 
       # We can also verify some basic combat packet was sent
-      packets = collect_packets_of_type(ZcNotifyAct, 200)
+      packets = collect_packets_of_type(DamageDealt, 200)
 
       assert is_list(packets)
     end
@@ -500,20 +501,17 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
       # Wait for death processing
       Process.sleep(200)
 
-      # Verify vanish packet was sent with correct death type
-      vanish_packets = collect_packets_of_type(ZcNotifyVanish, 300)
+      # Verify despawn packet was sent with the death reason
+      despawn_packets = collect_packets_of_type(UnitDespawn, 300)
 
-      assert length(vanish_packets) > 0, "No ZcNotifyVanish packets were sent"
+      assert length(despawn_packets) > 0, "No UnitDespawn packets were sent"
 
-      death_packet =
-        Enum.find(vanish_packets, fn packet ->
-          packet.gid == mob.unit_id
-        end)
+      death_packet = Enum.find(despawn_packets, &(&1.gid == mob.unit_id))
 
-      assert death_packet != nil, "No vanish packet found for the mob"
+      assert death_packet != nil, "No despawn packet found for the mob"
 
-      assert death_packet.type == ZcNotifyVanish.died(),
-             "Expected death vanish type (#{ZcNotifyVanish.died()}), got #{death_packet.type}"
+      assert death_packet.reason == DespawnReason.died(),
+             "Expected death despawn reason (#{DespawnReason.died()}), got #{death_packet.reason}"
     end
   end
 end

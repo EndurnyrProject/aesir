@@ -178,7 +178,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       assert length(new_state.game_state.walk_path) > 0
       assert new_state.game_state.movement_state == :moving
 
-      assert_receive {:send_packet, _packet}
+      assert_receive {:send, :gameplay, {:self_move, %Aesir.Net.SelfMove{}}}
     end
 
     test "movement_tick updates position along path", %{character: character} do
@@ -224,7 +224,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       assert new_state.game_state.walk_path == []
       assert new_state.game_state.movement_state == :standing
 
-      assert_receive {:send_packet, %Aesir.ZoneServer.Packets.ZcNotifyMoveStop{}}
+      assert_receive {:send, :gameplay, {:move_stop, %Aesir.Net.MoveStop{}}}
     end
   end
 
@@ -247,12 +247,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
       {:noreply, _new_state} = PlayerSession.handle_cast({:player_entered_view, 2}, state)
 
-      assert_receive {:send_packet,
-                      %Aesir.ZoneServer.Packets.ZcNotifyStandentry{
-                        aid: 200,
-                        gid: 2,
-                        name: "OtherPlayer"
-                      }}
+      assert_receive {:send, :world,
+                      {:unit_spawn,
+                       %Aesir.Net.UnitSpawn{
+                         aid: 200,
+                         gid: 2,
+                         name: "OtherPlayer",
+                         moving: false
+                       }}}
 
       Process.exit(other_pid, :kill)
     end
@@ -266,7 +268,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
       {:noreply, _new_state} = PlayerSession.handle_cast({:player_entered_view, 999}, state)
 
-      refute_receive {:send_packet, _}
+      refute_receive {:send, _channel, _msg}
     end
 
     test "player_left_view sends vanish packet", %{character: character} do
@@ -282,11 +284,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
           state
         )
 
-      assert_receive {:send_packet,
-                      %Aesir.ZoneServer.Packets.ZcNotifyVanish{
-                        gid: 200,
-                        type: 0
-                      }}
+      assert_receive {:send, :world,
+                      {:unit_despawn,
+                       %Aesir.Net.UnitDespawn{
+                         gid: 2,
+                         reason: 0
+                       }}}
     end
   end
 
@@ -314,7 +317,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
       assert new_state.game_state.stats.base_stats.str == 20
 
-      assert_receive {:send_packet, _packet}
+      assert_receive {:send, _channel, {_tag, %Aesir.Net.ParamChange{}}}
     end
 
     test "sync recalculate_stats via call updates all stats", %{character: character} do
@@ -370,7 +373,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       assert new_state.game_state.stats.derived_stats.max_hp == 500
 
       # Verify stats updates are sent to client
-      assert_receive {:send_packet, _packet}
+      assert_receive {:send, _channel, {_tag, %Aesir.Net.ParamChange{}}}
     end
 
     test "recalculate_stats via pubsub message updates stats", %{character: character} do
@@ -390,7 +393,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       {:noreply, new_state} = PlayerSession.handle_info(:recalculate_stats, state)
 
       assert new_state.game_state.stats.base_stats.str == 25
-      assert_receive {:send_packet, _packet}
+      assert_receive {:send, _channel, {_tag, %Aesir.Net.ParamChange{}}}
     end
 
     test "get_current_stats returns stats", %{character: character} do
@@ -465,7 +468,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
   describe "packet handling" do
     test "send_packet forwards packet to connection", %{character: character} do
-      packet = %Aesir.ZoneServer.Packets.ZcNotifyTime{server_tick: 12_345}
+      packet = %Aesir.Net.UnitDespawn{gid: character.id, reason: 0}
 
       state = %{
         character: character,
@@ -479,7 +482,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
           state
         )
 
-      assert_receive {:send_packet, ^packet}
+      assert_receive {:send, :world, {:unit_despawn, ^packet}}
     end
 
     test "send_status_update sends correct packet type", %{character: character} do
@@ -489,7 +492,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         connection_pid: self()
       }
 
-      # Test regular param (uses ZcParChange)
+      # Regular param emits a ParamChange.
       {:noreply, _} =
         PlayerSession.handle_cast(
           # STR param
@@ -497,16 +500,17 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
           state
         )
 
-      assert_receive {:send_packet, %Aesir.ZoneServer.Packets.ZcParChange{}}
+      assert_receive {:send, _channel, {_tag, %Aesir.Net.ParamChange{}}}
 
-      # Test experience param (uses ZcLongparChange)
+      # The formerly-long (ZC_LONGPAR_CHANGE) experience param collapses into the
+      # same ParamChange; uint64 carries the wide value without truncation.
       {:noreply, _} =
         PlayerSession.handle_cast(
           {:send_status_update, 1, 999_999},
           state
         )
 
-      assert_receive {:send_packet, %Aesir.ZoneServer.Packets.ZcLongparChange{}}
+      assert_receive {:send, _exp_channel, {_exp_tag, %Aesir.Net.ParamChange{value: 999_999}}}
     end
 
     test "send_status_updates sends multiple updates", %{character: character} do
@@ -531,9 +535,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
           state
         )
 
-      assert_receive {:send_packet, %Aesir.ZoneServer.Packets.ZcParChange{}}
-      assert_receive {:send_packet, %Aesir.ZoneServer.Packets.ZcParChange{}}
-      assert_receive {:send_packet, %Aesir.ZoneServer.Packets.ZcParChange{}}
+      assert_receive {:send, _ch1, {_t1, %Aesir.Net.ParamChange{}}}
+      assert_receive {:send, _ch2, {_t2, %Aesir.Net.ParamChange{}}}
+      assert_receive {:send, _ch3, {_t3, %Aesir.Net.ParamChange{}}}
     end
   end
 
@@ -548,7 +552,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       :ok
     end
 
-    test "cleans up ETS entries and notifies connection", %{character: character} do
+    test "cleans up ETS entries", %{character: character} do
       UnitRegistry.register_player(1, 100, "TestPlayer", self())
 
       expect(SpatialIndex, :get_visible_players, fn 1 -> [] end)
@@ -565,7 +569,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       :ok = PlayerSession.terminate(:normal, state)
 
       assert {:error, :not_found} = UnitRegistry.get_player_pid(1)
-      assert_receive :player_session_terminated
     end
 
     test "handles dead connection process gracefully", %{character: character} do
@@ -617,15 +620,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
       # Verify vanish packet was sent to the other player
       assert_receive {:vanish_packet,
-                      %Aesir.ZoneServer.Packets.ZcNotifyVanish{
-                        # account_id
-                        gid: 100,
-                        # logged_out type
-                        type: 2
+                      %Aesir.Net.UnitDespawn{
+                        # character_id
+                        gid: 1,
+                        # logged_out reason
+                        reason: 2
                       }},
                      500
-
-      assert_receive :player_session_terminated
 
       # Stop the test GenServer
       GenServer.stop(other_pid, :normal)
@@ -679,7 +680,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     end
 
     test "raises when trying to send packet with nil connection_pid", %{character: character} do
-      packet = %Aesir.ZoneServer.Packets.ZcNotifyTime{server_tick: 12_345}
+      packet = %Aesir.Net.UnitDespawn{gid: character.id, reason: 0}
 
       state = build_state(character, nil)
 

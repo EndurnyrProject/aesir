@@ -2,15 +2,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   use ExUnit.Case, async: true
   import Mimic
 
+  alias Aesir.Net.CastCancel
+  alias Aesir.Net.GroundSkillCast
+  alias Aesir.Net.MapLoaded
+  alias Aesir.Net.SkillCast
+  alias Aesir.Net.SkillCasting
+  alias Aesir.Net.SkillCooldown
+  alias Aesir.Net.SkillEffect
+  alias Aesir.Net.SkillInfo
+  alias Aesir.Net.SkillList
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Packets.ZcNotifyCastCancel
-  alias Aesir.ZoneServer.Packets.ZcSkillPostdelay
-  alias Aesir.ZoneServer.Packets.ZcUseSkill2
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
@@ -18,6 +25,58 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
+
+  describe "handle_message/2 inbound skill dispatch" do
+    test "a SkillCast casts use_skill with the same skill/level/target" do
+      state = %{game_state: %PlayerState{character_id: 1000}}
+
+      assert {:noreply, ^state} =
+               PacketHandler.handle_message(
+                 %SkillCast{skill_id: 29, level: 1, target_id: 2000},
+                 state
+               )
+
+      assert_received {:"$gen_cast", {:use_skill, 29, 1, 2000}}
+    end
+
+    test "a GroundSkillCast casts use_skill_ground with the same skill/level/cell" do
+      state = %{game_state: %PlayerState{character_id: 1000}}
+
+      assert {:noreply, ^state} =
+               PacketHandler.handle_message(
+                 %GroundSkillCast{skill_id: 89, level: 1, x: 12, y: 12},
+                 state
+               )
+
+      assert_received {:"$gen_cast", {:use_skill_ground, 89, 1, 12, 12}}
+    end
+  end
+
+  describe "learned-skill list on map load" do
+    test "serializes the learned skills as a SkillList of SkillInfo" do
+      stub(StatusSync, :send_params, fn _conn, _params -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(target_type: :target_ally, range: 9)} end)
+
+      assert {:noreply, _} = PacketHandler.handle_message(%MapLoaded{}, map_loaded_state())
+
+      assert_received {:send, :bulk,
+                       {:skill_list,
+                        %SkillList{
+                          skills: [
+                            %SkillInfo{
+                              skill_id: 29,
+                              type: 16,
+                              level: 1,
+                              sp: 18,
+                              range: 9,
+                              name: "AL_INCAGI",
+                              upgradable: false
+                            }
+                          ]
+                        }}}
+    end
+  end
 
   # Plain-map game state used for the instant path, where Catalog is stubbed
   # with a definition that has no cast time.
@@ -60,6 +119,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     %{connection_pid: self(), game_state: game_state}
   end
 
+  # Real PlayerState carrying one learned skill, used to drive the on-enter
+  # learned-skill-list send through handle_map_loaded.
+  defp map_loaded_state do
+    base = PlayerState.new(character())
+
+    stats =
+      put_in(base.stats, [Access.key!(:progression), Access.key!(:learned_skills)], %{29 => 1})
+
+    %{connection_pid: self(), game_state: %{base | stats: stats}}
+  end
+
   defp character do
     %Aesir.Commons.Models.Character{
       id: 1000,
@@ -99,7 +169,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       assert {:noreply, new_state} = SkillHandler.handle_use_skill(instant_state(30), 29, 1, 1000)
       assert new_state.game_state.stats.current_state.sp == 12
-      refute_received {:send_packet, %ZcUseSkill2{}}
+      refute_received {:send_packet, %SkillCasting{}}
+    end
+
+    test "a no-damage support skill broadcasts a SkillEffect" do
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
+      stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)
+      stub(PlayerStats, :calculate_stats, fn stats, 1000 -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+
+      test_pid = self()
+
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, packet ->
+        send(test_pid, {:broadcast, packet})
+        :ok
+      end)
+
+      assert {:noreply, _} = SkillHandler.handle_use_skill(instant_state(30), 29, 1, 1000)
+
+      assert_received {:broadcast,
+                       %SkillEffect{skill_id: 29, level: 1, src_id: 1000, target_id: 1000}}
     end
 
     test "failed cast leaves state unchanged and does not persist" do
@@ -121,7 +212,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [], cooldown: [5_000])} end)
 
       assert {:noreply, _} = SkillHandler.handle_use_skill(instant_state(30), 29, 1, 1000)
-      assert_received {:send_packet, %ZcSkillPostdelay{skill_id: 29, tick: 5_000}}
+
+      assert_received {:send, :gameplay,
+                       {:skill_cooldown, %SkillCooldown{skill_id: 29, tick: 5_000}}}
     end
 
     test "sends no ZC_SKILL_POSTDELAY when the skill has no cooldown" do
@@ -134,10 +227,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [], cooldown: [])} end)
 
       assert {:noreply, _} = SkillHandler.handle_use_skill(instant_state(30), 29, 1, 1000)
-      refute_received {:send_packet, %ZcSkillPostdelay{}}
+      refute_received {:send, :gameplay, {:skill_cooldown, %SkillCooldown{}}}
     end
 
-    test "ground cast recalculates stats, persists and broadcasts no ZcUseSkill" do
+    test "ground cast recalculates stats, persists and broadcasts no SkillEffect" do
       expect(Interpreter, :begin_cast, fn gs, 89, 1, {:ground, 12, 12} ->
         {:instant, %{gs | stats: %{gs.stats | current_state: %{gs.stats.current_state | sp: 12}}}}
       end)
@@ -167,7 +260,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
   describe "timed cast" do
     test "enters :casting, sends a cast bar, schedules a timer and does not deduct SP" do
-      stub(Broadcast, :to_player, fn 1000, %ZcUseSkill2{} -> :ok end)
+      stub(Broadcast, :to_player, fn 1000, %SkillCasting{} -> :ok end)
       stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
       reject(&CharacterPersistence.update_character/3)
       reject(&StatusInterpreter.apply_status/4)
@@ -194,9 +287,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       assert {:noreply, new_state} = SkillHandler.handle_use_skill(casting_state(45), 29, 1, 1000)
 
-      assert_received {:cast_bar, %ZcUseSkill2{} = packet}
+      assert_received {:cast_bar, %SkillCasting{} = packet}
       assert packet.src_id == 1000
-      assert packet.dst_id == 1000
+      assert packet.target_id == 1000
       assert packet.x == 0
       assert packet.y == 0
       assert packet.skill_id == 29
@@ -274,7 +367,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert result.game_state.action_state == :idle
       assert result.game_state.state_context == %{}
       assert result.game_state.stats.current_state.sp == 45
-      assert_received {:to_player, %ZcNotifyCastCancel{gid: 1000}}
+      assert_received {:to_player, %CastCancel{gid: 1000}}
       assert Process.cancel_timer(timer_ref) == false
     end
 
@@ -287,7 +380,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       assert result == state
       assert result.game_state.action_state == :casting
-      refute_received {:to_player, %ZcNotifyCastCancel{}}
+      refute_received {:to_player, %CastCancel{}}
     end
 
     test "a non-interruptible cast in the variable phase is immune" do
@@ -317,7 +410,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       result = SkillHandler.cancel_cast(state, :move)
 
       assert result.game_state.action_state == :idle
-      assert_received {:to_player, %ZcNotifyCastCancel{gid: 1000}}
+      assert_received {:to_player, %CastCancel{gid: 1000}}
       assert Process.cancel_timer(timer_ref) == false
     end
 

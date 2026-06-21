@@ -8,27 +8,21 @@ defmodule Aesir.ZoneServer.PacketHelpers do
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
 
   @doc """
-  Simulates an incoming packet from a client by sending it directly
-  to a PlayerSession process.
+  Simulates an incoming decoded protobuf message from a client by sending it
+  directly to a PlayerSession process, mirroring the QUIC dispatch path.
 
   ## Parameters
   - player_pid: The PlayerSession process ID
-  - packet_id: The packet ID (e.g., 0x007D)
-  - packet_data: The parsed packet data
+  - message: The decoded protobuf struct (e.g. `%MapLoaded{}`)
 
   ## Examples
 
-      simulate_incoming_packet(player_pid, 0x007D, %{})
+      simulate_incoming_message(player_pid, %MapLoaded{})
 
-      simulate_incoming_packet(player_pid, 0x0089, %{
-        dest_x: 100,
-        dest_y: 100
-      })
+      simulate_incoming_message(player_pid, %MoveRequest{dest_x: 100, dest_y: 100})
   """
-  def simulate_incoming_packet(player_pid, packet_id, packet_data) when is_pid(player_pid) do
-    # Send the packet directly to the PlayerSession process
-    # This mimics what would happen when a packet arrives from the network
-    send(player_pid, {:packet, packet_id, packet_data})
+  def simulate_incoming_message(player_pid, message) when is_pid(player_pid) do
+    send(player_pid, {:message, message})
   end
 
   @doc """
@@ -40,23 +34,6 @@ defmodule Aesir.ZoneServer.PacketHelpers do
   """
   def simulate_move_request(player_pid, dest_x, dest_y) do
     PlayerSession.request_move(player_pid, dest_x, dest_y)
-  end
-
-  @doc """
-  Simulates a player attack action.
-
-  ## Examples
-
-      simulate_attack_action(player_pid, target_id, action)
-  """
-  def simulate_attack_action(player_pid, target_id, action \\ 0) do
-    # CZ_REQUEST_ACT packet (0x0089) with action type 0 (attack)
-    packet_data = %{
-      target_gid: target_id,
-      action: action
-    }
-
-    simulate_incoming_packet(player_pid, 0x0089, packet_data)
   end
 
   @doc """
@@ -103,9 +80,9 @@ defmodule Aesir.ZoneServer.PacketHelpers do
   ## Examples
 
       assert_packet_sequence([
-        ZcNotifyMoveentry,
+        Aesir.Net.UnitSpawn,
         ZcNotifyActentry,
-        ZcStatusChange
+        Aesir.Net.StatUpResult
       ])
   """
   def assert_packet_sequence(expected_types, timeout \\ 100) do
@@ -116,26 +93,6 @@ defmodule Aesir.ZoneServer.PacketHelpers do
         timeout ->
           raise "Expected packet type #{inspect(expected_type)} not received within #{timeout}ms"
       end
-    end)
-  end
-
-  @doc """
-  Simulates multiple incoming packets in sequence.
-  Useful for testing multi-step interactions.
-
-  ## Examples
-
-      simulate_packet_sequence(player_pid, [
-        {0x007D, %{}},  # LoadEndAck
-        {0x0089, %{dest_x: 100, dest_y: 100}},  # Move request
-        {0x0089, %{target_gid: mob_id, action: 0}}  # Attack request
-      ])
-  """
-  def simulate_packet_sequence(player_pid, packet_list) when is_list(packet_list) do
-    Enum.each(packet_list, fn {packet_id, packet_data} ->
-      simulate_incoming_packet(player_pid, packet_id, packet_data)
-      # Small delay to ensure proper ordering
-      Process.sleep(10)
     end)
   end
 

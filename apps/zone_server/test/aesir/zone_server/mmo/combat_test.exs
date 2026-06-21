@@ -3,11 +3,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
   use Mimic
   import ExUnit.CaptureLog
 
+  alias Aesir.Net.DamageDealt
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Skill.Passives
-  alias Aesir.ZoneServer.Packets.ZcNotifyAct
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -26,7 +26,6 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
     Combatant.new!(%{
       unit_id: unit_id,
       unit_type: type,
-      gid: Keyword.get(opts, :gid, unit_id),
       base_stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
       combat_stats: %{
         atk: 0,
@@ -48,7 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
   describe "execute_attack/3 multi-hit procs" do
     setup do
-      attacker = combatant(1001, :player, gid: 5001)
+      attacker = combatant(1001, :player)
       target = combatant(2001, :mob)
 
       player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
@@ -101,7 +100,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         assert Combat.execute_attack(stats, player_state, 2001) == :ok
       end)
 
-      assert_received {:packet, %ZcNotifyAct{} = packet}
+      assert_received {:packet, %DamageDealt{} = packet}
       assert packet.div == 2
       assert packet.damage == 100
       assert packet.type == 4
@@ -130,7 +129,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       assert_received {:damage_applied, 50}
       refute_received {:damage_applied, _}
 
-      assert_received {:packet, %ZcNotifyAct{} = packet}
+      assert_received {:packet, %DamageDealt{} = packet}
       assert packet.div == 1
       assert packet.damage == 50
     end

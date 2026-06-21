@@ -8,12 +8,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   require Logger
 
+  alias Aesir.Net.UnitDespawn
+  alias Aesir.Net.UnitSpawn
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Constants.ObjectType
-  alias Aesir.ZoneServer.Packets.ZcNotifyMoveentry
-  alias Aesir.ZoneServer.Packets.ZcNotifyNewentry
-  alias Aesir.ZoneServer.Packets.ZcNotifyStandentry
-  alias Aesir.ZoneServer.Packets.ZcNotifyVanish
+  alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Snapshot
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -34,6 +35,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   # rAthena NATURAL_HEAL_INTERVAL
   @natural_heal_interval 500
+
+  # Default per-player AoI snapshot interval (~15 Hz); overridable at runtime via
+  # `:snapshot_interval_ms` app env (design Part 5).
+  @snapshot_interval 66
 
   @doc """
   Starts a player session linked to a connection process.
@@ -238,6 +243,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # Start the recurring natural-heal regen tick.
     Process.send_after(self(), :natural_heal_tick, @natural_heal_interval)
 
+    # Start the recurring AoI snapshot tick.
+    Process.send_after(self(), :snapshot_tick, snapshot_interval())
+
     {:noreply, update_game_state(state, updated_game_state)}
   end
 
@@ -256,6 +264,17 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   def handle_info(:natural_heal_tick, state) do
     Process.send_after(self(), :natural_heal_tick, @natural_heal_interval)
     NaturalHealHandler.handle_tick(state, @natural_heal_interval)
+  end
+
+  @impl true
+  def handle_info(:snapshot_tick, %{game_state: game_state} = state) do
+    Process.send_after(self(), :snapshot_tick, snapshot_interval())
+
+    game_state
+    |> Snapshot.build_chunks()
+    |> Enum.each(&send_packet(self(), &1))
+
+    {:noreply, state}
   end
 
   def handle_info(:movement_completed, %{game_state: game_state} = state) do
@@ -298,8 +317,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     end
   end
 
-  def handle_info({:packet, packet_id, packet_data}, state) do
-    PacketHandler.handle_packet(packet_id, packet_data, state)
+  def handle_info({:message, message}, state) do
+    PacketHandler.handle_message(message, state)
   end
 
   @impl true
@@ -359,12 +378,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         %{game_state: game_state, connection_pid: connection_pid} = state
       ) do
     if char_id != game_state.character_id do
-      packet = %ZcNotifyVanish{
+      packet = %UnitDespawn{
         gid: char_id,
-        type: ZcNotifyVanish.out_of_sight()
+        reason: DespawnReason.out_of_sight()
       }
 
-      send(connection_pid, {:send_packet, packet})
+      MessageRouter.send_to(connection_pid, packet)
     end
 
     {:noreply, state}
@@ -386,13 +405,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
-  def handle_cast({:player_left_view, _other_char_id, other_account_id}, state) do
-    packet = %ZcNotifyVanish{
-      gid: other_account_id,
-      type: ZcNotifyVanish.out_of_sight()
+  def handle_cast({:player_left_view, other_char_id, _other_account_id}, state) do
+    packet = %UnitDespawn{
+      gid: other_char_id,
+      reason: DespawnReason.out_of_sight()
     }
 
-    send(state.connection_pid, {:send_packet, packet})
+    MessageRouter.send_to(state.connection_pid, packet)
 
     {:noreply, state}
   end
@@ -443,7 +462,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         %{game_state: game_state, connection_pid: connection_pid} = state
       ) do
     if connection_pid do
-      send(connection_pid, {:send_packet, packet})
+      MessageRouter.send_to(connection_pid, packet)
     else
       raise "No connection PID for player #{game_state.character_id}"
     end
@@ -509,7 +528,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def terminate(_reason, %{
         game_state: game_state,
-        connection_pid: connection_pid,
         connection_monitor_ref: connection_monitor_ref
       }) do
     Process.demonitor(connection_monitor_ref, [:flush])
@@ -529,19 +547,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     SpatialIndex.remove_player(game_state.character_id)
     SpatialIndex.clear_visibility(game_state.character_id)
 
-    if connection_pid && Process.alive?(connection_pid) do
-      send(connection_pid, :player_session_terminated)
-    end
-
     :ok
   end
 
   defp broadcast_vanish_on_disconnect(game_state) do
     visible_players = SpatialIndex.get_visible_players(game_state.character_id)
 
-    vanish_packet = %ZcNotifyVanish{
-      gid: game_state.account_id,
-      type: ZcNotifyVanish.logged_out()
+    vanish_packet = %UnitDespawn{
+      gid: game_state.character_id,
+      reason: DespawnReason.logged_out()
     }
 
     Enum.each(visible_players, fn other_char_id ->
@@ -570,20 +584,23 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   defp register_player(char_id, account_id, char_name),
     do: UnitRegistry.register_player(char_id, account_id, char_name, self())
 
+  defp snapshot_interval,
+    do: Application.get_env(:zone_server, :snapshot_interval_ms, @snapshot_interval)
+
   defp sex_to_int("F"), do: 0
   defp sex_to_int("M"), do: 1
   defp sex_to_int(_), do: 1
 
   defp send_player_spawn_packet(connection_pid, game_state) do
     packet = build_spawn_packet(game_state)
-    send(connection_pid, {:send_packet, packet})
+    MessageRouter.send_to(connection_pid, packet)
   end
 
   defp build_spawn_packet(game_state) do
     if moving?(game_state) do
-      build_moveentry_packet(game_state)
+      build_moving_spawn_packet(game_state)
     else
-      build_stationary_packet(game_state)
+      build_standing_spawn_packet(game_state)
     end
   end
 
@@ -592,60 +609,24 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       game_state.walk_path != []
   end
 
-  defp build_moveentry_packet(game_state) do
+  defp build_moving_spawn_packet(game_state) do
     [{dest_x, dest_y} | _] = Enum.reverse(game_state.walk_path)
 
-    %ZcNotifyMoveentry{
-      object_type: ObjectType.pc(),
-      aid: game_state.account_id,
-      gid: game_state.character_id,
-      speed: game_state.walk_speed,
-      body_state: 0,
-      health_state: 0,
-      effect_state: 0,
-      job: game_state.stats.progression.job_id,
-      head: game_state.hair,
-      weapon: PlayerStats.weapon_view(game_state.stats.equipment),
-      shield: PlayerStats.shield_view(game_state.stats.equipment),
-      accessory: game_state.head_bottom,
-      move_start_time: System.monotonic_time(:millisecond),
-      accessory2: game_state.head_mid,
-      accessory3: 0,
-      src_x: game_state.x,
-      src_y: game_state.y,
-      dst_x: dest_x,
-      dst_y: dest_y,
-      head_palette: game_state.hair_color,
-      body_palette: game_state.clothes_color,
-      head_dir: 0,
-      robe: game_state.robe,
-      guild_id: 0,
-      guild_emblem_ver: 0,
-      honor: 0,
-      virtue: 0,
-      is_pk_mode_on: 0,
-      sex: sex_to_int(game_state.sex),
-      x_size: 5,
-      y_size: 5,
-      clevel: game_state.stats.progression.base_level,
-      font: 0,
-      max_hp: game_state.stats.derived_stats.max_hp,
-      hp: game_state.stats.current_state.hp,
-      is_boss: 0,
-      body: 0,
-      name: game_state.character_name
+    %UnitSpawn{
+      build_unit_spawn(game_state)
+      | moving: true,
+        dst_x: dest_x,
+        dst_y: dest_y,
+        move_start_time: System.monotonic_time(:millisecond)
     }
   end
 
-  defp build_stationary_packet(game_state) do
-    case game_state.movement_state do
-      :standing -> build_standentry_packet(game_state)
-      _ -> build_newentry_packet(game_state)
-    end
+  defp build_standing_spawn_packet(game_state) do
+    build_unit_spawn(game_state)
   end
 
-  defp build_standentry_packet(game_state) do
-    %ZcNotifyStandentry{
+  defp build_unit_spawn(game_state) do
+    %UnitSpawn{
       object_type: ObjectType.pc(),
       aid: game_state.account_id,
       gid: game_state.character_id,
@@ -665,66 +646,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       head_dir: 0,
       robe: game_state.robe,
       guild_id: 0,
-      guild_emblem_ver: 0,
-      honor: 0,
-      virtue: 0,
-      is_pk_mode_on: 0,
       sex: sex_to_int(game_state.sex),
       x: game_state.x,
       y: game_state.y,
       dir: game_state.dir || 0,
-      x_size: 5,
-      y_size: 5,
-      # 0 = standing, 2 = sitting
-      state: 0,
       clevel: game_state.stats.progression.base_level,
-      font: 0,
       max_hp: game_state.stats.derived_stats.max_hp,
       hp: game_state.stats.current_state.hp,
-      is_boss: 0,
-      body: 0,
-      name: game_state.character_name
-    }
-  end
-
-  defp build_newentry_packet(game_state) do
-    %ZcNotifyNewentry{
-      object_type: ObjectType.pc(),
-      aid: game_state.account_id,
-      gid: game_state.character_id,
-      speed: game_state.walk_speed,
-      body_state: 0,
-      health_state: 0,
-      effect_state: 0,
-      job: game_state.stats.progression.job_id,
-      head: game_state.hair,
-      weapon: PlayerStats.weapon_view(game_state.stats.equipment),
-      shield: PlayerStats.shield_view(game_state.stats.equipment),
-      accessory: game_state.head_bottom,
-      accessory2: game_state.head_mid,
-      accessory3: 0,
-      head_palette: game_state.hair_color,
-      body_palette: game_state.clothes_color,
-      head_dir: 0,
-      robe: game_state.robe,
-      guild_id: 0,
-      guild_emblem_ver: 0,
-      honor: 0,
-      virtue: 0,
-      is_pk_mode_on: 0,
-      sex: sex_to_int(game_state.sex),
-      x: game_state.x,
-      y: game_state.y,
-      dir: game_state.dir || 0,
-      x_size: 5,
-      y_size: 5,
-      clevel: game_state.stats.progression.base_level,
-      font: 0,
-      max_hp: game_state.stats.derived_stats.max_hp,
-      hp: game_state.stats.current_state.hp,
-      is_boss: 0,
-      body: 0,
-      name: game_state.character_name
+      is_boss: false,
+      name: game_state.character_name,
+      moving: false
     }
   end
 end

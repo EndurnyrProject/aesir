@@ -12,6 +12,10 @@ defmodule Aesir.Commons.Network.QuicConnection do
   `connection_handler` transfers ownership to it, after which it receives the
   `{quic, Conn, Event}` messages documented by `erlang_quic`.
 
+  A separate process can also push an outbound message asynchronously by sending
+  the owner `{:send, channel, {oneof_tag, struct}}`; the owner wraps it in an
+  `Envelope` and frames it on `channel` exactly like a synchronous response.
+
   The QUIC transport module is injectable (`:transport` option, default `:quic`)
   so the owner logic can be unit-tested without a live connection.
   """
@@ -19,6 +23,7 @@ defmodule Aesir.Commons.Network.QuicConnection do
 
   require Logger
 
+  alias Aesir.Commons.InterServer.PubSub
   alias Aesir.Commons.Network.QuinnetCodec
   alias Aesir.Net.Envelope
 
@@ -51,6 +56,7 @@ defmodule Aesir.Commons.Network.QuicConnection do
       field :out_streams, %{atom() => integer()}, default: %{}
       field :out_seq, non_neg_integer(), default: 0
       field :client_id, non_neg_integer() | nil, default: nil
+      field :account_id, non_neg_integer() | nil, default: nil
     end
   end
 
@@ -124,6 +130,18 @@ defmodule Aesir.Commons.Network.QuicConnection do
     {:stop, :normal, state}
   end
 
+  def handle_info({:send, channel, {_tag, _message} = response}, %State{} = state) do
+    {:noreply, send_response(state, channel, response)}
+  end
+
+  def handle_info(
+        {:player_event, %{event: "kick_connection", account_id: aid} = event},
+        %State{account_id: aid} = state
+      ) do
+    Logger.info("QuicConnection kicked for account #{aid}, reason: #{inspect(event[:reason])}")
+    {:stop, :kicked, state}
+  end
+
   def handle_info(_msg, state), do: {:noreply, state}
 
   @impl GenServer
@@ -174,16 +192,29 @@ defmodule Aesir.Commons.Network.QuicConnection do
   defp apply_handler(%State{} = state, channel, message) do
     case state.impl_module.handle_message(message, channel, state.session_data) do
       {:ok, session_data} ->
-        {:ok, %State{state | session_data: session_data}}
+        {:ok, maybe_subscribe_player_events(%State{state | session_data: session_data})}
 
       {:ok, session_data, responses} ->
-        state = %State{state | session_data: session_data}
+        state = maybe_subscribe_player_events(%State{state | session_data: session_data})
         {:ok, Enum.reduce(responses, state, &send_response(&2, channel, &1))}
 
       {:error, reason} ->
         {:error, {:handler, reason}}
     end
   end
+
+  @spec maybe_subscribe_player_events(State.t()) :: State.t()
+  defp maybe_subscribe_player_events(%State{account_id: account_id} = state)
+       when is_integer(account_id),
+       do: state
+
+  defp maybe_subscribe_player_events(%State{session_data: %{account_id: account_id}} = state)
+       when is_integer(account_id) do
+    PubSub.subscribe_to_player_events()
+    %State{state | account_id: account_id}
+  end
+
+  defp maybe_subscribe_player_events(%State{} = state), do: state
 
   @spec send_response(State.t(), QuinnetCodec.channel(), response()) :: State.t()
   defp send_response(%State{} = state, channel, {tag, message}) do

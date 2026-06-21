@@ -9,9 +9,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler do
   """
 
   alias Aesir.Commons.StatusParams
+  alias Aesir.Net.StatUpResult
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.StatPoint
-  alias Aesir.ZoneServer.Packets.ZcStatusChange
+  alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -77,19 +78,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler do
   end
 
   defp reject(status_id, value, %{connection_pid: connection_pid} = state) do
-    send(
-      connection_pid,
-      {:send_packet, %ZcStatusChange{sp: status_id, ok: 0, value: min(value, 255)}}
-    )
+    MessageRouter.send_to(connection_pid, %StatUpResult{
+      stat_id: status_id,
+      ok: false,
+      value: min(value, 255)
+    })
 
     {:noreply, state}
   end
 
   defp sync(connection_pid, status_id, u_param, new_value, stats) do
-    send(
-      connection_pid,
-      {:send_packet, %ZcStatusChange{sp: status_id, ok: 1, value: min(new_value, 255)}}
-    )
+    MessageRouter.send_to(connection_pid, %StatUpResult{
+      stat_id: status_id,
+      ok: true,
+      value: min(new_value, 255)
+    })
 
     StatusSync.send_params(connection_pid, %{
       StatusParams.status_point() => stats.progression.status_point,

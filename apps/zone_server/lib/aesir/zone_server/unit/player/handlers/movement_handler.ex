@@ -6,14 +6,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
   require Logger
 
-  alias Aesir.ZoneServer.Constants.ObjectType
+  alias Aesir.Net.MoveStop
+  alias Aesir.Net.SelfMove
+  alias Aesir.Net.UnitDespawn
+  alias Aesir.Net.UnitSpawn
+  alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Constants.ObjectType
   alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Packets.ZcNotifyMoveentry
-  alias Aesir.ZoneServer.Packets.ZcNotifyMoveStop
-  alias Aesir.ZoneServer.Packets.ZcNotifyNewentry
-  alias Aesir.ZoneServer.Packets.ZcNotifyPlayermove
-  alias Aesir.ZoneServer.Packets.ZcNotifyVanish
+  alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -143,15 +143,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       # Send movement confirmation to the client
       walk_start_time = System.monotonic_time(:millisecond)
 
-      packet = %ZcNotifyPlayermove{
-        walk_start_time: walk_start_time,
+      packet = %SelfMove{
+        start_time: walk_start_time,
         src_x: game_state.x,
         src_y: game_state.y,
         dst_x: dest_x,
         dst_y: dest_y
       }
 
-      send(connection_pid, {:send_packet, packet})
+      MessageRouter.send_to(connection_pid, packet)
 
       # Broadcast movement to nearby players
       broadcast_movement_to_nearby(game_state, dest_x, dest_y)
@@ -169,13 +169,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         # No path found or map not loaded
         Logger.error("Movement failed for player #{game_state.character_id}: #{inspect(reason)}")
 
-        packet = %ZcNotifyMoveStop{
-          account_id: game_state.account_id,
+        packet = %MoveStop{
+          gid: game_state.character_id,
           x: game_state.x,
           y: game_state.y
         }
 
-        send(connection_pid, {:send_packet, packet})
+        MessageRouter.send_to(connection_pid, packet)
 
         {:noreply, state}
     end
@@ -210,13 +210,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     if game_state.movement_state == :moving do
       game_state = PlayerState.stop_walking(game_state)
 
-      packet = %ZcNotifyMoveStop{
-        account_id: game_state.account_id,
+      packet = %MoveStop{
+        gid: game_state.character_id,
         x: game_state.x,
         y: game_state.y
       }
 
-      send(connection_pid, {:send_packet, packet})
+      MessageRouter.send_to(connection_pid, packet)
 
       broadcast_stop_to_nearby(game_state, packet)
 
@@ -247,7 +247,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   end
 
   defp build_movement_packet(game_state, dest_x, dest_y) do
-    %ZcNotifyMoveentry{
+    %UnitSpawn{
       object_type: ObjectType.pc(),
       aid: game_state.account_id,
       gid: game_state.character_id,
@@ -260,23 +260,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       weapon: PlayerStats.weapon_view(game_state.stats.equipment),
       shield: PlayerStats.shield_view(game_state.stats.equipment),
       accessory: 0,
-      move_start_time: System.monotonic_time(:millisecond),
       accessory2: 0,
       accessory3: 0,
-      src_x: game_state.x,
-      src_y: game_state.y,
-      dst_x: dest_x,
-      dst_y: dest_y,
       head_palette: game_state.hair_color,
       body_palette: game_state.clothes_color,
       head_dir: 0,
       robe: game_state.robe,
       guild_id: 0,
-      guild_emblem_ver: 0,
-      honor: 0,
-      virtue: 0,
-      is_pk_mode_on: 0,
-      sex: sex_to_int(game_state.sex)
+      sex: sex_to_int(game_state.sex),
+      x: game_state.x,
+      y: game_state.y,
+      dir: game_state.dir || 0,
+      clevel: game_state.stats.progression.base_level,
+      max_hp: game_state.stats.derived_stats.max_hp,
+      hp: game_state.stats.current_state.hp,
+      is_boss: false,
+      name: game_state.character_name,
+      moving: true,
+      dst_x: dest_x,
+      dst_y: dest_y,
+      move_start_time: System.monotonic_time(:millisecond)
     }
   end
 
@@ -395,7 +398,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     with {:ok, to_pid} <- UnitRegistry.get_player_pid(to_char_id),
          {:ok, {_module, mob_state, _pid}} <- UnitRegistry.get_unit(:mob, mob_id) do
       # Create mob spawn packet
-      mob_packet = %ZcNotifyNewentry{
+      mob_packet = %UnitSpawn{
         object_type: ObjectType.mob(),
         aid: mob_state.instance_id,
         gid: mob_state.instance_id,
@@ -416,23 +419,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         head_dir: 0,
         robe: 0,
         guild_id: 0,
-        guild_emblem_ver: 0,
-        honor: 0,
-        virtue: 0,
-        is_pk_mode_on: 0,
         sex: 0,
         x: mob_state.x,
         y: mob_state.y,
         dir: mob_state.dir,
-        x_size: 0,
-        y_size: 0,
         clevel: mob_state.mob_data.level,
-        font: 0,
         max_hp: mob_state.max_hp,
         hp: mob_state.hp,
-        is_boss: if(MobState.is_boss?(mob_state), do: 1, else: 0),
-        body: 0,
-        name: mob_state.mob_data.name
+        is_boss: MobState.is_boss?(mob_state),
+        name: mob_state.mob_data.name,
+        moving: false
       }
 
       GenServer.cast(to_pid, {:send_packet, mob_packet})
@@ -445,10 +441,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     # Get the player session
     case UnitRegistry.get_player_pid(to_char_id) do
       {:ok, to_pid} ->
-        vanish_packet = %ZcNotifyVanish{
+        vanish_packet = %UnitDespawn{
           gid: mob_id,
-          # 0 = died, 1 = logged out, 2 = teleported
-          type: 0
+          reason: DespawnReason.out_of_sight()
         }
 
         GenServer.cast(to_pid, {:send_packet, vanish_packet})

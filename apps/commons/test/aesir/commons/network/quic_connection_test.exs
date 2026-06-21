@@ -3,6 +3,7 @@ defmodule Aesir.Commons.Network.QuicConnectionTest do
 
   alias Aesir.Commons.Network.QuicConnection
   alias Aesir.Commons.Network.QuinnetCodec
+  alias Aesir.Net.CharAuthFailed
   alias Aesir.Net.Envelope
   alias Aesir.Net.Hello
   alias Aesir.Net.HelloAck
@@ -118,5 +119,28 @@ defmodule Aesir.Commons.Network.QuicConnectionTest do
     send(pid, {:quic, parent, {:closed, :peer_closed}})
 
     assert_receive {:DOWN, ^ref, :process, ^pid, :normal}
+  end
+
+  test "an external {:send, channel, msg} frames a reliable Envelope on that channel" do
+    {pid, _parent} = start_owner()
+
+    send(pid, {:send, :world, {:char_auth_failed, %CharAuthFailed{reason: 7}}})
+
+    assert_receive {:sent, _sid, out_frame}
+    assert {:ok, 2, payload, ""} = QuinnetCodec.decode_reliable(out_frame)
+
+    assert {:ok, %Envelope{body: {:char_auth_failed, %CharAuthFailed{reason: 7}}}} =
+             Envelope.decode(payload)
+  end
+
+  test "an external {:send, :snapshots, msg} sends a datagram on the snapshots channel" do
+    {pid, _parent} = start_owner()
+
+    send(pid, {:send, :snapshots, {:hello_ack, %HelloAck{protocol_version: 5, accepted: true}}})
+
+    assert_receive {:datagram_sent, <<4::8, payload::binary>>}
+
+    assert {:ok, %Envelope{body: {:hello_ack, %HelloAck{protocol_version: 5}}}} =
+             Envelope.decode(payload)
   end
 end

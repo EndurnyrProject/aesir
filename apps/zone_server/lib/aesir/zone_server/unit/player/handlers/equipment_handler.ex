@@ -14,16 +14,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   require Logger
 
   alias Aesir.Commons.StatusParams
+  alias Aesir.Net.EquipResult
+  alias Aesir.Net.SpriteChange
+  alias Aesir.Net.UnequipResult
   alias Aesir.ZoneServer.Mmo.ItemManagement
-  alias Aesir.ZoneServer.Packets.ZcAckTakeoffEquip
-  alias Aesir.ZoneServer.Packets.ZcAckWearEquip
-  alias Aesir.ZoneServer.Packets.ZcSpriteChange
+  alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
+
+  @equip_result_ok 0
+  @equip_result_fail_level 1
+  @equip_result_fail 2
+
+  @unequip_result_success 0
+  @unequip_result_failure 1
+
+  @look_weapon 2
 
   @doc """
   Handles an equip request for the item at `server_index` into `position`.
@@ -40,7 +51,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
         commit_equip(server_index, new_inventory, change, state)
 
       {:error, reason} ->
-        send_packet(state, ZcAckWearEquip.failure(server_index, equip_failure(reason)))
+        send_packet(state, equip_failure_result(server_index, equip_failure(reason)))
         {:noreply, state}
     end
   end
@@ -55,7 +66,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
         commit_unequip(server_index, new_inventory, change, state)
 
       {:error, _reason} ->
-        send_packet(state, ZcAckTakeoffEquip.failure(server_index))
+        send_packet(state, unequip_failure_result(server_index))
         {:noreply, state}
     end
   end
@@ -78,8 +89,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
         updated_game_state = advance(game_state, persisted)
 
         view_id = equipped_view(persisted, mask)
-        send_packet(state, ZcAckWearEquip.success(server_index, mask, view_id))
-        Enum.each(unequipped, &send_packet(state, ZcAckTakeoffEquip.success(&1, 0)))
+        send_packet(state, equip_success_result(server_index, mask, view_id))
+        Enum.each(unequipped, &send_packet(state, unequip_success_result(&1, 0)))
 
         sync_after_change(updated_game_state, state)
         broadcast_appearance(updated_game_state)
@@ -88,7 +99,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
 
       {:error, reason} ->
         Logger.warning("Equip persist failed for #{game_state.character_id}: #{inspect(reason)}")
-        send_packet(state, ZcAckWearEquip.failure(server_index, :fail))
+        send_packet(state, equip_failure_result(server_index, :fail))
         {:noreply, state}
     end
   end
@@ -106,7 +117,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
       {:ok, persisted} ->
         updated_game_state = advance(game_state, persisted)
 
-        send_packet(state, ZcAckTakeoffEquip.success(server_index, mask))
+        send_packet(state, unequip_success_result(server_index, mask))
         sync_after_change(updated_game_state, state)
         broadcast_appearance(updated_game_state)
 
@@ -117,7 +128,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
           "Unequip persist failed for #{game_state.character_id}: #{inspect(reason)}"
         )
 
-        send_packet(state, ZcAckTakeoffEquip.failure(server_index))
+        send_packet(state, unequip_failure_result(server_index))
         {:noreply, state}
     end
   end
@@ -140,12 +151,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   end
 
   defp broadcast_appearance(game_state) do
-    packet =
-      ZcSpriteChange.weapon(
-        game_state.account_id,
-        Stats.weapon_view(game_state.stats.equipment),
-        Stats.shield_view(game_state.stats.equipment)
-      )
+    packet = %SpriteChange{
+      gid: game_state.character_id,
+      type: @look_weapon,
+      val: Stats.weapon_view(game_state.stats.equipment),
+      val2: Stats.shield_view(game_state.stats.equipment)
+    }
 
     Broadcast.to_visible_players(game_state, packet, exclude_id: game_state.character_id)
   end
@@ -177,7 +188,42 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   defp equip_failure(:requirement_unmet), do: :level
   defp equip_failure(_reason), do: :fail
 
+  # Equip result: server index carries the +2 client offset, mirroring legacy
+  # ZcAckWearEquip. Result codes are preserved (0 ok / 1 fail-level / 2 fail).
+  defp equip_success_result(server_index, wear_location, view_id) do
+    %EquipResult{
+      index: PlayerState.client_index(server_index),
+      wear_location: wear_location,
+      view_id: view_id,
+      result: @equip_result_ok
+    }
+  end
+
+  defp equip_failure_result(server_index, :level) do
+    %EquipResult{index: PlayerState.client_index(server_index), result: @equip_result_fail_level}
+  end
+
+  defp equip_failure_result(server_index, :fail) do
+    %EquipResult{index: PlayerState.client_index(server_index), result: @equip_result_fail}
+  end
+
+  # Unequip result: rAthena inverts the flag (0 = success, 1 = failure), preserved here.
+  defp unequip_success_result(server_index, wear_location) do
+    %UnequipResult{
+      index: PlayerState.client_index(server_index),
+      wear_location: wear_location,
+      result: @unequip_result_success
+    }
+  end
+
+  defp unequip_failure_result(server_index) do
+    %UnequipResult{
+      index: PlayerState.client_index(server_index),
+      result: @unequip_result_failure
+    }
+  end
+
   defp send_packet(%{connection_pid: connection_pid}, packet) do
-    send(connection_pid, {:send_packet, packet})
+    MessageRouter.send_to(connection_pid, packet)
   end
 end

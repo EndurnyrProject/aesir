@@ -12,7 +12,7 @@ defmodule Aesir.ZoneServer.Integration.ExperienceIntegrationTest do
   @moduletag :capture_log
 
   alias Aesir.Commons.StatusParams
-  alias Aesir.ZoneServer.Packets.ZcLongparChange
+  alias Aesir.Net.ParamChange
   alias Aesir.ZoneServer.Unit.Mob.MobSession
 
   describe "killing a mob" do
@@ -38,7 +38,7 @@ defmodule Aesir.ZoneServer.Integration.ExperienceIntegrationTest do
       MobSession.apply_damage(mob.pid, 9_999, player.character.id)
 
       base_exp_id = StatusParams.base_exp()
-      assert_receive {:packet_sent, %ZcLongparChange{var_id: ^base_exp_id, value: 10}, _}, 1_000
+      assert_receive {:packet_sent, %ParamChange{var_id: ^base_exp_id, value: 10}, _}, 1_000
 
       progression = get_player_state(player.pid).stats.progression
       assert progression.base_exp == 10

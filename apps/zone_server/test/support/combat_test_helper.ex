@@ -45,7 +45,6 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
     %Combatant{
       unit_id: opts[:unit_id],
       unit_type: :player,
-      gid: opts[:gid] || opts[:unit_id],
       base_stats: %{
         str: opts[:str],
         agi: opts[:agi],
@@ -113,7 +112,6 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
     %Combatant{
       unit_id: opts[:unit_id],
       unit_type: :mob,
-      gid: opts[:gid] || opts[:unit_id],
       base_stats: %{
         str: opts[:str],
         agi: opts[:agi],

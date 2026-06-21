@@ -11,24 +11,18 @@ defmodule Aesir.ZoneServer.Application do
 
   @impl true
   def start(_type, _args) do
-    ref = make_ref()
-
     children = [
       {Aesir.ZoneServer.EtsTable, name: EtsTables},
       {Registry, keys: :unique, name: Aesir.ZoneServer.MapRegistry},
       {Registry, keys: :unique, name: Aesir.ZoneServer.ProcessRegistry},
       {Task.Supervisor, name: Aesir.ZoneServer.TaskSupervisor},
       Aesir.ZoneServer.MechanicsSupervisor,
-      {Aesir.Commons.Network.Listener,
-       connection_module: Aesir.ZoneServer,
-       packet_registry: Aesir.ZoneServer.PacketRegistry,
-       transport_opts: %{
-         socket_opts: [
-           port: NetworkConfig.port(),
-           ip: NetworkConfig.bind_ip()
-         ]
-       },
-       ref: ref}
+      {DynamicSupervisor, name: Aesir.ZoneServer.QuicConnSup, strategy: :one_for_one},
+      {Aesir.Commons.Network.QuicListener,
+       name: :zone_server_quic,
+       port: NetworkConfig.port(),
+       impl_module: Aesir.ZoneServer,
+       conn_sup: Aesir.ZoneServer.QuicConnSup}
     ]
 
     opts = [strategy: :one_for_one, name: Aesir.ZoneServer.Supervisor]
@@ -37,11 +31,10 @@ defmodule Aesir.ZoneServer.Application do
     |> Supervisor.start_link(opts)
     |> tap(fn
       {:ok, _pid} ->
-        {ip, port} = :ranch.get_addr(ref)
+        ip = NetworkConfig.bind_ip()
+        port = NetworkConfig.port()
 
-        Logger.info(
-          "Aesir ZoneServer (ref: #{inspect(ref)}) started at #{:inet.ntoa(ip)}:#{port}"
-        )
+        Logger.info("Aesir ZoneServer (QUIC) started at #{:inet.ntoa(ip)}:#{port}")
 
         cluster_id = ServerInfoConfig.cluster_id()
         server_id = "zone_server_#{cluster_id}_#{Node.self()}"

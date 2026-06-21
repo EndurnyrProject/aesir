@@ -8,6 +8,7 @@ defmodule Aesir.AccountServer.DuplicateLoginTest do
   alias Aesir.Commons.Auth
   alias Aesir.Commons.ClusterTestHelper
   alias Aesir.Commons.InterServer.PubSub
+  alias Aesir.Commons.Network.QuicConnection
   alias Aesir.Commons.SessionManager
   alias Aesir.Net.LoginRequest
   alias Aesir.Net.LoginResponse
@@ -222,10 +223,10 @@ defmodule Aesir.AccountServer.DuplicateLoginTest do
     test "connection receives kick event and should terminate" do
       account_id = 203
 
-      state = %{
-        session_data: %{account_id: account_id},
-        socket: nil,
-        transport: nil
+      state = %QuicConnection.State{
+        conn: self(),
+        impl_module: AccountServer,
+        account_id: account_id
       }
 
       event = %{
@@ -236,20 +237,20 @@ defmodule Aesir.AccountServer.DuplicateLoginTest do
         timestamp: DateTime.utc_now()
       }
 
-      result =
-        Aesir.Commons.Network.Connection.handle_info({:player_event, event}, state)
-
-      assert {:stop, :kicked, ^state} = result
+      capture_log(fn ->
+        assert {:stop, :kicked, ^state} =
+                 QuicConnection.handle_info({:player_event, event}, state)
+      end)
     end
 
     test "connection ignores kick event for different account" do
       account_id = 204
       other_account_id = 999
 
-      state = %{
-        session_data: %{account_id: account_id},
-        socket: nil,
-        transport: nil
+      state = %QuicConnection.State{
+        conn: self(),
+        impl_module: AccountServer,
+        account_id: account_id
       }
 
       event = %{
@@ -260,19 +261,17 @@ defmodule Aesir.AccountServer.DuplicateLoginTest do
         timestamp: DateTime.utc_now()
       }
 
-      result =
-        Aesir.Commons.Network.Connection.handle_info({:player_event, event}, state)
-
-      assert {:noreply, ^state} = result
+      assert {:noreply, ^state} =
+               QuicConnection.handle_info({:player_event, event}, state)
     end
 
-    test "connection ignores kick event when no account_id in session" do
+    test "connection ignores kick event when no account_id is known" do
       other_account_id = 205
 
-      state = %{
-        session_data: %{},
-        socket: nil,
-        transport: nil
+      state = %QuicConnection.State{
+        conn: self(),
+        impl_module: AccountServer,
+        account_id: nil
       }
 
       event = %{
@@ -283,10 +282,8 @@ defmodule Aesir.AccountServer.DuplicateLoginTest do
         timestamp: DateTime.utc_now()
       }
 
-      result =
-        Aesir.Commons.Network.Connection.handle_info({:player_event, event}, state)
-
-      assert {:noreply, ^state} = result
+      assert {:noreply, ^state} =
+               QuicConnection.handle_info({:player_event, event}, state)
     end
   end
 end

@@ -10,10 +10,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
   players.
   """
 
+  alias Aesir.Commons.Utils.ServerTick
+  alias Aesir.Net.GroundSkill
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
-  alias Aesir.ZoneServer.Packets.ZcNotifyGroundskill
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -25,7 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
 
   Resolves the skill's behaviour module, runs `on_place/1`, inserts the group with
   `next_tick_at = now + interval` and `expires_at = now + duration`, and broadcasts
-  one `ZcNotifyGroundskill` (the cast animation) to players in range.
+  one `GroundSkill` (the cast animation) to players in range.
 
   Returns `{:error, :no_skill_unit_behaviour}` when the skill has no registered
   ground-unit behaviour, or `{:error, :unknown_skill}` when the skill name is not
@@ -85,12 +86,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
   end
 
   defp broadcast_groundskill(%Group{center: {x, y}} = group) do
-    packet = %ZcNotifyGroundskill{
+    packet = %GroundSkill{
       skill_id: group.skill_id,
       src_id: group.caster_id,
       level: group.level,
       x: x,
-      y: y
+      y: y,
+      server_tick: ServerTick.now()
     }
 
     Broadcast.to_in_range(group.map_name, x, y, @view_range, packet)

@@ -1,6 +1,6 @@
 defmodule Aesir.Commons.Network.QuicListener do
   @moduledoc """
-  QUIC listener child spec, the QUIC analogue of `Aesir.Commons.Network.Listener`.
+  QUIC listener child spec for accepting client connections.
 
   `child_spec/1` builds an `erlang_quic` server child spec (via `:quic.server_spec/3`)
   whose `connection_handler` starts a `Aesir.Commons.Network.QuicConnection` owner

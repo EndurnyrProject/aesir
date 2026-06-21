@@ -1,36 +1,26 @@
 defmodule Aesir.ZoneServer.Unit.Player.StatusSync do
   @moduledoc """
-  Builds and sends character status-parameter packets (SP_*) to a player's
+  Builds and sends character status-parameter (SP_*) updates to a player's
   client.
 
-  Picks `ZC_PAR_CHANGE` or `ZC_LONGPAR_CHANGE` based on the parameter, so the
-  rest of the player domain can sync stats without reaching into packet
-  routing.
+  Emits a single `Aesir.Net.ParamChange` per parameter, collapsing the legacy
+  `ZC_PAR_CHANGE`/`ZC_LONGPAR_CHANGE` split: the proto `value` is a `uint64`, so
+  it carries both the 32-bit and the wide (base/job exp, zeny) parameters without
+  truncation. The rest of the player domain syncs stats without reaching into
+  packet routing.
   """
 
   alias Aesir.Commons.StatusParams
-  alias Aesir.ZoneServer.Packets.ZcLongparChange
-  alias Aesir.ZoneServer.Packets.ZcParChange
+  alias Aesir.Net.ParamChange
+  alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Player.Stats
 
-  # Params whose values can exceed a 16-bit field and need the wide packet.
-  @long_params [
-    StatusParams.base_exp(),
-    StatusParams.job_exp(),
-    StatusParams.next_base_exp(),
-    StatusParams.next_job_exp()
-  ]
-
   @doc """
-  Builds the status packet for a single parameter/value pair.
+  Builds the `ParamChange` message for a single parameter/value pair.
   """
-  @spec build(integer(), integer()) :: ZcParChange.t() | ZcLongparChange.t()
-  def build(param_id, value) when param_id in @long_params do
-    %ZcLongparChange{var_id: param_id, value: value}
-  end
-
+  @spec build(integer(), integer()) :: ParamChange.t()
   def build(param_id, value) do
-    %ZcParChange{var_id: param_id, value: value}
+    %ParamChange{var_id: param_id, value: value}
   end
 
   @doc """
@@ -38,8 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusSync do
   """
   @spec send_param(pid(), integer(), integer()) :: :ok
   def send_param(connection_pid, param_id, value) do
-    send(connection_pid, {:send_packet, build(param_id, value)})
-    :ok
+    MessageRouter.send_to(connection_pid, build(param_id, value))
   end
 
   @doc """

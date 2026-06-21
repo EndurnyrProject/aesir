@@ -35,7 +35,6 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     %Combatant{
       unit_id: @caster_id,
       unit_type: :player,
-      gid: @caster_id,
       base_stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
       combat_stats: %{
         atk: 1,

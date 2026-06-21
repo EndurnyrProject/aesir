@@ -3,8 +3,41 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
 
   import ExUnit.CaptureLog
 
+  alias Aesir.Net.ActionRequest
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+
+  describe "handle_message/2 inbound ActionRequest dispatch" do
+    test "an attack ActionRequest casts request_attack with the same target/action" do
+      state = %{game_state: %PlayerState{character_id: 1000}}
+
+      assert {:noreply, ^state} =
+               PacketHandler.handle_message(%ActionRequest{target_id: 2000, action: 0}, state)
+
+      assert_received {:"$gen_cast", {:request_attack, 2000, 0}}
+    end
+
+    test "a continuous-attack ActionRequest casts request_attack with action 7" do
+      state = %{game_state: %PlayerState{character_id: 1000}}
+
+      assert {:noreply, ^state} =
+               PacketHandler.handle_message(%ActionRequest{target_id: 2000, action: 7}, state)
+
+      assert_received {:"$gen_cast", {:request_attack, 2000, 7}}
+    end
+
+    test "a sit ActionRequest does not cast request_attack" do
+      state = %{game_state: %PlayerState{character_id: 1000}}
+
+      capture_log(fn ->
+        assert {:noreply, ^state} =
+                 PacketHandler.handle_message(%ActionRequest{target_id: 0, action: 2}, state)
+      end)
+
+      refute_received {:"$gen_cast", {:request_attack, _, _}}
+    end
+  end
 
   describe "after-cast act delay gate" do
     defp attack_ready_state(act_delay_until) do
