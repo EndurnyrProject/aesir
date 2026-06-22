@@ -182,6 +182,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerChatTest do
       refute_receive {:mock_cast_received, _}
     end
 
+    test "routes an @-prefixed message to the GM dispatcher without broadcasting" do
+      other_player_char_id = 2
+      visible_players = MapSet.new([other_player_char_id])
+
+      state = setup_player_state(visible_players)
+      full_message = "#{@test_char_name} : @nope 1 2"
+      packet_data = %ChatRequest{message: full_message}
+
+      {:noreply, ^state} = PacketHandler.handle_message(packet_data, state)
+
+      # The dispatcher replies privately (unknown command), addressed to the GM.
+      assert_receive {:send, :world,
+                      {:chat_message,
+                       %ChatMessage{gid: @test_char_id, message: "Unknown command"}}}
+
+      # The raw command is never echoed/broadcast to visible players.
+      refute_receive {:send, :world, {:chat_message, %ChatMessage{message: ^full_message}}}
+    end
+
     test "handles visible player not found gracefully" do
       other_player_char_id = 2
       visible_players = MapSet.new([other_player_char_id])

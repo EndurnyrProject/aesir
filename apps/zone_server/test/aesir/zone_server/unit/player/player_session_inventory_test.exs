@@ -16,8 +16,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
   alias Aesir.Net.SpriteChange
   alias Aesir.Net.UnequipItem
   alias Aesir.Net.UnequipResult
+  alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
+  alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -343,6 +345,56 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       assert weapon_item.amount == 1
       # Equipped in right hand
       assert weapon_item.equip == 2
+    end
+  end
+
+  describe "give_item delivery" do
+    test "adds the item, persists it, updates game_state and notifies the client", %{
+      character: character
+    } do
+      {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
+      {:ok, item_def} = ItemManagement.get_item_by_id(501)
+
+      {:noreply, new_state} =
+        PlayerSession.handle_cast({:give_item, item_def, 5}, state)
+
+      items = PlayerState.to_list(new_state.game_state.inventory)
+      assert [%{nameid: 501, amount: 5}] = items
+      assert [%{nameid: 501, amount: 5}] = PlayerState.to_list(reload(character.id))
+
+      added = receive_message_of_type(ItemAdded)
+      assert added.nameid == 501
+      assert added.amount == 5
+    end
+
+    test "stacks onto an existing stack and notifies the affected slot", %{character: character} do
+      seed_item(character.id, 501, 3)
+      {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
+      {:ok, item_def} = ItemManagement.get_item_by_id(501)
+
+      {:noreply, new_state} =
+        PlayerSession.handle_cast({:give_item, item_def, 2}, state)
+
+      assert [%{nameid: 501, amount: 5}] = PlayerState.to_list(new_state.game_state.inventory)
+
+      added = receive_message_of_type(ItemAdded)
+      assert added.nameid == 501
+      assert added.amount == 5
+    end
+
+    @tag :capture_log
+    test "leaves inventory unchanged and sends nothing when overweight", %{character: character} do
+      {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
+      {:ok, item_def} = ItemManagement.get_item_by_id(501)
+
+      huge = div(Weight.max_weight(state.game_state.stats), item_def.weight) + 100
+
+      {:noreply, new_state} =
+        PlayerSession.handle_cast({:give_item, item_def, huge}, state)
+
+      assert new_state.game_state.inventory == state.game_state.inventory
+      assert PlayerState.to_list(reload(character.id)) == []
+      refute_received {:send, _channel, {:item_added, _}}
     end
   end
 

@@ -5,7 +5,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
 
   require Logger
 
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
+  alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
 
@@ -38,4 +42,44 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
         {:error, :inventory_load_failed}
     end
   end
+
+  @doc """
+  Gives `amount` of `item_def` to this session's character.
+
+  Runs the persist-first add through `InventoryOps`, advances
+  `game_state.inventory`, and notifies the client with an `ItemAdded` for each
+  affected slot. On `{:error, :overweight}` (or any DB error) the state is left
+  untouched and nothing is sent.
+  """
+  @spec handle_give_item(ItemDefinition.t(), pos_integer(), map()) :: {:noreply, map()}
+  def handle_give_item(%ItemDefinition{} = item_def, amount, %{game_state: game_state} = state) do
+    case InventoryOps.add(
+           game_state.character_id,
+           game_state.inventory,
+           game_state.stats,
+           item_def,
+           amount
+         ) do
+      {:ok, persisted, change} ->
+        Enum.each(affected_indices(change), fn index ->
+          item = PlayerState.get_by_index(persisted, index)
+          MessageRouter.send_to(state.connection_pid, PacketHandler.item_added(item, index))
+        end)
+
+        {:noreply, %{state | game_state: %{game_state | inventory: persisted}}}
+
+      {:error, reason} ->
+        Logger.warning(
+          "give_item failed for #{game_state.character_id} (#{item_def.id} x#{amount}): #{inspect(reason)}"
+        )
+
+        {:noreply, state}
+    end
+  end
+
+  defp affected_indices({:added, index, _item}), do: [index]
+  defp affected_indices({:stacked, index, _total}), do: [index]
+
+  defp affected_indices({:split, [{topped_index, _}, {new_index, _}]}),
+    do: [topped_index, new_index]
 end

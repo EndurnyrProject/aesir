@@ -23,6 +23,7 @@ defmodule Aesir.Commons.Models.Account do
     field :old_group, :integer, default: 0
     field :web_auth_token, :string
     field :web_auth_token_enabled, :integer, default: 0
+    field :gm_level, :integer, default: 0
 
     has_many :characters, Aesir.Commons.Models.Character
 
@@ -51,7 +52,8 @@ defmodule Aesir.Commons.Models.Account do
       :vip_time,
       :old_group,
       :web_auth_token,
-      :web_auth_token_enabled
+      :web_auth_token_enabled,
+      :gm_level
     ])
     |> validate_required([:userid, :user_pass, :email])
     |> validate_format(:email, ~r/@/)

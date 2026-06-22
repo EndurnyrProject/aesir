@@ -446,6 +446,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
+  def handle_cast({:give_item, item_def, amount}, state) do
+    InventoryManager.handle_give_item(item_def, amount, state)
+  end
+
+  @impl true
   def handle_cast({:apply_damage, damage, attacker_id}, state) do
     HealthHandler.apply_damage(damage, attacker_id, state)
   end

@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.SkillList
   alias Aesir.Net.StatUp
   alias Aesir.Net.UnequipItem
+  alias Aesir.ZoneServer.Gm.Dispatcher
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ClientItemType
   alias Aesir.ZoneServer.Mmo.Leveling
@@ -137,6 +138,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
           "Player #{game_state.character_id} sent a message exceeding maximum length."
         )
 
+      command = gm_command(raw_message, name_prefix) ->
+        Dispatcher.dispatch(command, %{game_state: game_state, connection_pid: connection_pid})
+
       String.starts_with?(raw_message, name_prefix) ->
         packet = %ChatMessage{gid: game_state.character_id, message: raw_message}
         MessageRouter.send_to(connection_pid, packet)
@@ -201,6 +205,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   def handle_message(message, state) do
     Logger.warning("Unhandled message in PacketHandler: #{inspect(message.__struct__)}")
     {:noreply, state}
+  end
+
+  # Returns the `@`-prefixed command string when `raw_message` carries the valid
+  # name prefix and the remainder begins with `@`; otherwise nil. Keeps the chat
+  # `cond` flat instead of nesting a check inside the broadcast branch.
+  defp gm_command(raw_message, name_prefix) do
+    case String.replace_prefix(raw_message, name_prefix, "") do
+      ^raw_message -> nil
+      "@" <> _ = command -> command
+      _ -> nil
+    end
   end
 
   defp handle_map_loaded(%{connection_pid: connection_pid, game_state: game_state} = state) do
