@@ -27,12 +27,44 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
   alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.SkillTree.Entry
+  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
 
   @pt_key __MODULE__
 
   @type tree :: %{non_neg_integer() => Entry.t()}
   @type index :: %{non_neg_integer() => tree()}
+
+  @typedoc """
+  A single tree entry annotated for the client view (see `available_for/1`).
+
+  A plain map (no struct) so the network layer can consume it directly:
+
+    * `:skill_id`       - numeric skill id
+    * `:level`          - current learned level (`0` = available, not learned)
+    * `:max_level`      - job-specific cap for this skill
+    * `:requires`       - prerequisite `[{req_skill_id, req_level}]`
+    * `:base_level`     - minimum base level to learn
+    * `:job_level`      - minimum job level to learn
+    * `:upgradable`     - `true` when `can_learn/2` for this skill returns `:ok`
+  """
+  @type view_entry :: %{
+          skill_id: non_neg_integer(),
+          level: non_neg_integer(),
+          max_level: pos_integer(),
+          requires: [{non_neg_integer(), pos_integer()}],
+          base_level: non_neg_integer(),
+          job_level: non_neg_integer(),
+          upgradable: boolean()
+        }
+
+  @type reason ::
+          :not_in_tree
+          | :no_skill_points
+          | :max_level
+          | :missing_prerequisite
+          | :level_too_low
 
   @doc """
   Returns the resolved tree for `job_id` as `%{skill_id => Entry}`, or `%{}` when
@@ -46,6 +78,97 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
   """
   @spec entry(non_neg_integer(), non_neg_integer()) :: {:ok, Entry.t()} | :error
   def entry(job_id, skill_id), do: job_id |> tree_for() |> Map.fetch(skill_id)
+
+  @doc """
+  Authoritative gate for learning/raising a skill by one level.
+
+  Reads the player's job tree from `tree_for/1` and checks, in this order:
+
+    1. the skill is in the job's tree (else `{:error, :not_in_tree}`);
+    2. the player has a skill point to spend (else `{:error, :no_skill_points}`);
+    3. the current level is below the entry's `max_level` (else `{:error, :max_level}`);
+    4. every prerequisite `{req_id, req_lv}` is satisfied (else
+       `{:error, :missing_prerequisite}`);
+    5. the player meets the base/job level minimums (else `{:error, :level_too_low}`).
+  """
+  @spec can_learn(PlayerProgression.t(), non_neg_integer()) :: :ok | {:error, reason()}
+  def can_learn(%PlayerProgression{job_id: job_id} = progression, skill_id) do
+    case entry(job_id, skill_id) do
+      {:ok, entry} -> can_learn_entry(progression, entry)
+      :error -> {:error, :not_in_tree}
+    end
+  end
+
+  @doc """
+  Same gate as `can_learn/2` but against an already-resolved `Entry`, skipping
+  the tree lookup. The skill is assumed to be in the player's tree.
+  """
+  @spec can_learn_entry(PlayerProgression.t(), Entry.t()) :: :ok | {:error, reason()}
+  def can_learn_entry(%PlayerProgression{} = progression, %Entry{} = entry) do
+    cond do
+      progression.skill_point <= 0 ->
+        {:error, :no_skill_points}
+
+      Learned.learned_level(progression.learned_skills, entry.skill_id) >= entry.max_level ->
+        {:error, :max_level}
+
+      not requirements_met?(progression.learned_skills, entry.requires) ->
+        {:error, :missing_prerequisite}
+
+      progression.base_level < entry.base_level or progression.job_level < entry.job_level ->
+        {:error, :level_too_low}
+
+      true ->
+        :ok
+    end
+  end
+
+  @doc """
+  Spends one skill point to learn or raise `skill_id` by one level.
+
+  Runs `can_learn/2`; on `:ok` returns the progression with the skill's level
+  bumped `+1` and `skill_point` decremented; otherwise returns the
+  `{:error, reason}` and leaves the progression untouched.
+  """
+  @spec learn(PlayerProgression.t(), non_neg_integer()) ::
+          {:ok, PlayerProgression.t()} | {:error, reason()}
+  def learn(%PlayerProgression{} = progression, skill_id) do
+    with :ok <- can_learn(progression, skill_id) do
+      level = Learned.learned_level(progression.learned_skills, skill_id)
+      learned = Map.put(progression.learned_skills, skill_id, level + 1)
+      {:ok, %{progression | learned_skills: learned, skill_point: progression.skill_point - 1}}
+    end
+  end
+
+  @doc """
+  The player's full job tree as a list of `view_entry` maps, each annotated with
+  the current level and an `upgradable` flag (`true` iff `can_learn/2` for that
+  skill returns `:ok`). Drives the client skill list.
+  """
+  @spec available_for(PlayerProgression.t()) :: [view_entry()]
+  def available_for(%PlayerProgression{job_id: job_id} = progression) do
+    job_id
+    |> tree_for()
+    |> Map.values()
+    |> Enum.map(fn entry ->
+      %{
+        skill_id: entry.skill_id,
+        level: Learned.learned_level(progression.learned_skills, entry.skill_id),
+        max_level: entry.max_level,
+        requires: entry.requires,
+        base_level: entry.base_level,
+        job_level: entry.job_level,
+        upgradable: can_learn_entry(progression, entry) == :ok
+      }
+    end)
+  end
+
+  @spec requirements_met?(Learned.t(), [{non_neg_integer(), pos_integer()}]) :: boolean()
+  defp requirements_met?(learned, requires) do
+    Enum.all?(requires, fn {req_id, req_lv} ->
+      Learned.learned_level(learned, req_id) >= req_lv
+    end)
+  end
 
   @doc """
   Rebuilds the cached index after editing the data files in a running session.

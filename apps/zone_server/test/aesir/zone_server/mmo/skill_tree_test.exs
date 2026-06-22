@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Mmo.SkillTree.Entry
+  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
 
   {:ok, swordman_id} = AvailableJobs.job_name_to_id(:swordman)
   @swordman_id swordman_id
@@ -14,6 +15,22 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
   defp catalog_id(name) do
     {:ok, definition} = Catalog.by_name(name)
     definition.id
+  end
+
+  defp swordman_progression(attrs) do
+    Map.merge(
+      %PlayerProgression{
+        base_level: 99,
+        job_level: 50,
+        base_exp: 0,
+        job_exp: 0,
+        job_id: @swordman_id,
+        skill_point: 1,
+        status_point: 0,
+        learned_skills: %{}
+      },
+      Map.new(attrs)
+    )
   end
 
   describe "tree_for/1 (real data)" do
@@ -138,6 +155,110 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
       names = flattened |> Map.fetch!("child") |> Enum.map(& &1["name"]) |> Enum.sort()
 
       assert names == ["C_SKILL", "G_SKILL", "P_SKILL"]
+    end
+  end
+
+  describe "can_learn/2" do
+    test "returns :ok for a learnable tree skill with a point and met levels" do
+      progression = swordman_progression(skill_point: 1)
+      assert :ok = SkillTree.can_learn(progression, catalog_id(:sm_sword))
+    end
+
+    test "returns :not_in_tree for a skill absent from the job tree" do
+      progression = swordman_progression([])
+      assert {:error, :not_in_tree} = SkillTree.can_learn(progression, 999_999)
+    end
+
+    test "returns :no_skill_points when no points remain" do
+      progression = swordman_progression(skill_point: 0)
+      assert {:error, :no_skill_points} = SkillTree.can_learn(progression, catalog_id(:sm_sword))
+    end
+
+    test "returns :max_level when the skill is already at its cap" do
+      sword_id = catalog_id(:sm_sword)
+      progression = swordman_progression(learned_skills: %{sword_id => 10})
+      assert {:error, :max_level} = SkillTree.can_learn(progression, sword_id)
+    end
+
+    test "returns :missing_prerequisite when a required skill is not high enough" do
+      progression = swordman_progression(learned_skills: %{})
+
+      assert {:error, :missing_prerequisite} =
+               SkillTree.can_learn(progression, catalog_id(:sm_twohand))
+    end
+
+    test "returns :level_too_low when base/job minimums are not met" do
+      entry = %Entry{
+        skill_id: catalog_id(:sm_sword),
+        max_level: 10,
+        base_level: 50,
+        job_level: 10
+      }
+
+      progression = swordman_progression(base_level: 10, job_level: 1)
+
+      assert {:error, :level_too_low} = SkillTree.can_learn_entry(progression, entry)
+    end
+
+    test "a satisfied prerequisite unlocks the dependent skill" do
+      sword_id = catalog_id(:sm_sword)
+      progression = swordman_progression(learned_skills: %{sword_id => 1})
+      assert :ok = SkillTree.can_learn(progression, catalog_id(:sm_twohand))
+    end
+  end
+
+  describe "learn/2" do
+    test "valid request bumps the level by one and spends a point" do
+      sword_id = catalog_id(:sm_sword)
+      progression = swordman_progression(skill_point: 3, learned_skills: %{sword_id => 2})
+
+      {:ok, updated} = SkillTree.learn(progression, sword_id)
+
+      assert updated.learned_skills[sword_id] == 3
+      assert updated.skill_point == 2
+    end
+
+    test "learning an unlearned skill sets it to level 1" do
+      bash_id = catalog_id(:sm_bash)
+      progression = swordman_progression(skill_point: 1)
+
+      {:ok, updated} = SkillTree.learn(progression, bash_id)
+
+      assert updated.learned_skills[bash_id] == 1
+      assert updated.skill_point == 0
+    end
+
+    test "invalid request returns the error and leaves progression unchanged" do
+      progression = swordman_progression(skill_point: 0)
+
+      assert {:error, :no_skill_points} = SkillTree.learn(progression, catalog_id(:sm_sword))
+    end
+  end
+
+  describe "available_for/1" do
+    test "annotates a learnable level-0 skill as upgradable" do
+      progression = swordman_progression(skill_point: 1)
+      view = SkillTree.available_for(progression)
+
+      entry = Enum.find(view, &(&1.skill_id == catalog_id(:sm_sword)))
+      assert entry.level == 0
+      assert entry.upgradable == true
+    end
+
+    test "annotates a level-0 skill with an unmet prerequisite as not upgradable" do
+      progression = swordman_progression(skill_point: 1, learned_skills: %{})
+      view = SkillTree.available_for(progression)
+
+      entry = Enum.find(view, &(&1.skill_id == catalog_id(:sm_twohand)))
+      assert entry.level == 0
+      assert entry.upgradable == false
+      assert entry.requires == [{catalog_id(:sm_sword), 1}]
+    end
+
+    test "covers every entry in the job tree" do
+      progression = swordman_progression([])
+      view = SkillTree.available_for(progression)
+      assert length(view) == map_size(SkillTree.tree_for(@swordman_id))
     end
   end
 
