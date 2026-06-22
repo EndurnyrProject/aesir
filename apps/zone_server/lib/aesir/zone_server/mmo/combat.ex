@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
+  alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -456,12 +457,32 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     end)
   end
 
+  # Routes the landing-cell update through the owning session so it is the single
+  # writer: the session updates its live `game_state` (position + stop walking)
+  # and re-syncs the spatial index/registry/dirty set via `Movement.set_position`,
+  # which prevents a knocked-back moving unit's own next tick from overwriting the
+  # blow. Falls back to a direct write when the owning process can't be resolved.
   defp move_unit(unit_type, unit_id, x, y, map_name) do
+    case owning_pid(unit_type, unit_id) do
+      {:ok, pid} -> GenServer.cast(pid, {:knocked_back, x, y})
+      :error -> move_unit_direct(unit_type, unit_id, x, y, map_name)
+    end
+  end
+
+  defp owning_pid(unit_type, unit_id) do
+    case UnitRegistry.get_unit(unit_type, unit_id) do
+      {:ok, {_module, _state, pid}} when is_pid(pid) -> {:ok, pid}
+      _ -> :error
+    end
+  end
+
+  defp move_unit_direct(unit_type, unit_id, x, y, map_name) do
     with {:ok, {module, state, _pid}} <- UnitRegistry.get_unit(unit_type, unit_id) do
       UnitRegistry.update_unit_state(unit_type, unit_id, module.update_position(state, x, y))
     end
 
     SpatialIndex.update_unit_position(unit_type, unit_id, x, y, map_name)
+    Movement.mark_dirty(map_name, unit_type, unit_id, 0)
   end
 
   defp broadcast_blownback(unit_id, dst_x, dst_y, map_name) do

@@ -36,6 +36,28 @@ defmodule Aesir.ZoneServer.Unit.MovementEngine do
   end
 
   @doc """
+  Computes the timer delay, in milliseconds, before the unit reaches the next cell.
+
+  The delay scales the unit's `walk_speed` by the per-cell movement cost, so
+  diagonal steps take `diagonal_cost/0` times longer than straight ones. It is
+  read from the unit's live `walk_speed` on every step, which lets a mid-path
+  speed change (Agi Up, Quagmire, mount, etc.) retime the remaining cells
+  without rebuilding the path.
+
+  ## Parameters
+    - walk_speed: The unit's live walk speed (ms per straight cell)
+    - from: Current position {x, y}
+    - to: Next cell {x, y}
+
+  ## Returns
+    - Delay in milliseconds until the next movement tick
+  """
+  @spec step_delay(non_neg_integer(), position(), position()) :: non_neg_integer()
+  def step_delay(walk_speed, from, to) do
+    round(walk_speed * get_movement_cost(from, to))
+  end
+
+  @doc """
   Gets the straight movement cost constant.
   """
   @spec straight_cost() :: float()

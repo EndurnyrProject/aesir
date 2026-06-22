@@ -3,13 +3,30 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
   require Logger
 
+  alias Aesir.Commons.Utils.ServerTick
+  alias Aesir.Net.Snapshot, as: NetSnapshot
+  alias Aesir.Net.SnapshotEntity
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
+  alias Aesir.ZoneServer.Unit.Movement
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.SnapshotBuilder
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
+
+  # Default per-map delta-snapshot flush cadence (~10 Hz); overridable at runtime
+  # via the `:broadcast_interval_ms` app env (design Part 1, Part 3).
+  @broadcast_interval 100
+  # Stop redundancy (design Part 1): a unit drained as STANDING is re-broadcast for
+  # this many flushes so a lost "it stopped" can't strand it one cell off.
+  @stop_echoes 3
+
+  @standing 0
+  @moving 1
 
   defstruct [
     :map_name,
@@ -22,7 +39,8 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     :weather,
     :pvp_enabled,
     :pk_enabled,
-    :mob_supervisor_pid
+    :mob_supervisor_pid,
+    recently_stopped: %{}
   ]
 
   @doc """
@@ -93,7 +111,8 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
       weather: :clear,
       pvp_enabled: Keyword.get(opts, :pvp_enabled, false),
       pk_enabled: Keyword.get(opts, :pk_enabled, false),
-      mob_supervisor_pid: mob_supervisor_pid
+      mob_supervisor_pid: mob_supervisor_pid,
+      recently_stopped: %{}
     }
 
     if spawn_data != [] do
@@ -101,6 +120,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     end
 
     schedule_cleanup()
+    schedule_broadcast()
 
     {:ok, state}
   end
@@ -261,6 +281,20 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   end
 
   @impl true
+  def handle_info(:broadcast_tick, state) do
+    schedule_broadcast()
+
+    {deliveries, recently_stopped} =
+      flush_snapshots(state.map_name, state.recently_stopped, ServerTick.now())
+
+    Enum.each(deliveries, fn {pid, chunks} ->
+      Enum.each(chunks, &PlayerSession.send_packet(pid, &1))
+    end)
+
+    {:noreply, %{state | recently_stopped: recently_stopped}}
+  end
+
+  @impl true
   def handle_info(:cleanup_items, state) do
     # Remove items older than 3 minutes
     now = System.system_time(:second)
@@ -284,6 +318,105 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     schedule_cleanup()
 
     {:noreply, %{state | items: new_items}}
+  end
+
+  @doc """
+  Computes the per-observer delta-snapshot deliveries for one flush.
+
+  Drains the map's dirty set, folds it into `recently_stopped` (stop redundancy),
+  builds a `%Aesir.Net.SnapshotEntity{}` per dirty/echoed unit, and for each
+  observing player on the map returns the dirty entities within that player's
+  `view_range` (Manhattan, the metric `SpatialIndex` uses) excluding the player's
+  own entity, packed into datagram-sized `%Aesir.Net.Snapshot{}` chunks sharing
+  the given `server_tick`.
+
+  Returns `{deliveries, new_recently_stopped}` where `deliveries` is
+  `[{player_pid, [chunk]}]`. Performs no sends, so the caller decides delivery;
+  this keeps the timer-driven flush testable in isolation.
+  """
+  @spec flush_snapshots(
+          String.t(),
+          %{{atom(), integer()} => non_neg_integer()},
+          non_neg_integer()
+        ) ::
+          {[{pid(), [NetSnapshot.t()]}], %{{atom(), integer()} => non_neg_integer()}}
+  def flush_snapshots(map_name, recently_stopped, server_tick) do
+    drained = Movement.drain_dirty(map_name)
+    recently_stopped = update_recently_stopped(recently_stopped, drained)
+
+    broadcast_keys =
+      drained
+      |> Enum.map(fn {unit_type, unit_id, _move_state} -> {unit_type, unit_id} end)
+      |> Enum.concat(Map.keys(recently_stopped))
+      |> Enum.uniq()
+
+    keyed_entities =
+      Enum.flat_map(broadcast_keys, fn key ->
+        case SnapshotBuilder.entities_for([key]) do
+          [entity] -> [{key, entity}]
+          [] -> []
+        end
+      end)
+
+    deliveries =
+      map_name
+      |> SpatialIndex.get_players_on_map()
+      |> Enum.flat_map(&observer_delivery(&1, keyed_entities, server_tick))
+
+    {deliveries, recently_stopped}
+  end
+
+  @spec update_recently_stopped(
+          %{{atom(), integer()} => non_neg_integer()},
+          [{atom(), integer(), 0 | 1}]
+        ) :: %{{atom(), integer()} => non_neg_integer()}
+  defp update_recently_stopped(recently_stopped, drained) do
+    decremented =
+      recently_stopped
+      |> Enum.flat_map(fn {key, remaining} ->
+        if remaining - 1 > 0, do: [{key, remaining - 1}], else: []
+      end)
+      |> Map.new()
+
+    Enum.reduce(drained, decremented, fn
+      {unit_type, unit_id, @standing}, acc ->
+        Map.put(acc, {unit_type, unit_id}, @stop_echoes)
+
+      {unit_type, unit_id, @moving}, acc ->
+        Map.delete(acc, {unit_type, unit_id})
+    end)
+  end
+
+  @spec observer_delivery(
+          integer(),
+          [{{atom(), integer()}, SnapshotEntity.t()}],
+          non_neg_integer()
+        ) :: [{pid(), [NetSnapshot.t()]}]
+  defp observer_delivery(char_id, keyed_entities, server_tick) do
+    with {:ok, pid} <- UnitRegistry.get_player_pid(char_id),
+         {:ok, {_module, %PlayerState{} = state, _pid}} <- UnitRegistry.get_unit(:player, char_id),
+         visible when visible != [] <-
+           visible_entities(keyed_entities, char_id, state.x, state.y, state.view_range) do
+      [{pid, SnapshotBuilder.chunks_for(visible, {state.x, state.y}, server_tick)}]
+    else
+      _ -> []
+    end
+  end
+
+  @spec visible_entities(
+          [{{atom(), integer()}, SnapshotEntity.t()}],
+          integer(),
+          integer(),
+          integer(),
+          integer()
+        ) :: [SnapshotEntity.t()]
+  defp visible_entities(keyed_entities, char_id, px, py, view_range) do
+    keyed_entities
+    |> Enum.reject(fn {key, _entity} -> key == {:player, char_id} end)
+    |> Enum.filter(fn {_key, entity} ->
+      abs(entity.x - px) + abs(entity.y - py) <= view_range
+    end)
+    |> Enum.map(fn {_key, entity} -> entity end)
   end
 
   defp via_tuple(map_name) do
@@ -399,6 +532,13 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   end
 
   defp schedule_cleanup, do: Process.send_after(self(), :cleanup_items, 60_000)
+
+  defp schedule_broadcast, do: Process.send_after(self(), :broadcast_tick, broadcast_interval())
+
+  @doc "The per-map delta-snapshot flush interval in milliseconds."
+  @spec broadcast_interval() :: pos_integer()
+  def broadcast_interval,
+    do: Application.get_env(:zone_server, :broadcast_interval_ms, @broadcast_interval)
 
   defp generate_item_id, do: :crypto.strong_rand_bytes(8) |> Base.encode16()
 

@@ -182,7 +182,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     end
 
     test "movement_tick updates position along path", %{character: character} do
-      expect(SpatialIndex, :update_position, fn 1, 51, 50, "prontera" -> :ok end)
+      expect(SpatialIndex, :update_unit_position, fn :player, 1, 51, 50, "prontera" -> :ok end)
       expect(SpatialIndex, :get_players_in_range, fn "prontera", 51, 50, 14 -> [] end)
 
       game_state = %{

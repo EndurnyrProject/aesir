@@ -59,7 +59,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
                        {:self_move, %SelfMove{src_x: 50, src_y: 50, dst_x: 51, dst_y: 50}}}
     end
 
-    test "broadcasts a moving UnitSpawn to nearby players" do
+    test "does not broadcast a movement UnitSpawn to nearby players" do
+      # Movement now reaches observers via per-map delta snapshots
+      # (see Map.CoordinatorFlushTest), not a reliable UnitSpawn{moving: true}.
       test_pid = self()
       stub(SpatialIndex, :get_visible_players, fn 1 -> [2] end)
 
@@ -69,8 +71,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
 
       {:noreply, _new_state} = MovementHandler.handle_request_move(idle_state(), 51, 50)
 
-      assert_received {:broadcast, [2],
-                       %UnitSpawn{gid: 1, moving: true, dst_x: 51, dst_y: 50, x: 50, y: 50}}
+      refute_received {:broadcast, _ids, %UnitSpawn{}}
     end
   end
 

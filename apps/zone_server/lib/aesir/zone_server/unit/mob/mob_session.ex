@@ -15,13 +15,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.ZoneServer.Constants.ObjectType
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.MovementEngine
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
 
   # AI tick interval in milliseconds
@@ -205,6 +206,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   @impl GenServer
+  def handle_cast({:knocked_back, x, y}, state) do
+    updated_state =
+      state
+      |> MobState.update_position(x, y)
+      |> MobState.stop_movement()
+
+    Movement.set_position(:mob, updated_state.instance_id, updated_state, updated_state.map_name)
+
+    {:noreply, updated_state}
+  end
+
+  @impl GenServer
   def handle_info(:ai_tick, state) do
     if state.is_dead do
       # Dead mobs don't process AI
@@ -301,44 +314,71 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   defp process_movement_tick(%{movement_state: :moving} = state) do
     case state.walk_path do
-      [{next_x, next_y} | remaining_path] ->
-        # Calculate movement cost for this step
-        move_cost = MovementEngine.get_movement_cost({state.x, state.y}, {next_x, next_y})
-
-        # Calculate timer interval based on movement cost
-        # Diagonal movement takes 1.414x longer
-        interval = round(state.walk_speed * move_cost)
-
-        # Update mob state FIRST to maintain consistency
-        updated_state =
-          state
-          |> MobState.update_position(next_x, next_y)
-          |> Map.put(:walk_path, remaining_path)
-
-        # Update external systems with the consistent state
-        :ok =
-          SpatialIndex.update_unit_position(
-            :mob,
-            updated_state.instance_id,
-            updated_state.x,
-            updated_state.y,
-            updated_state.map_name
-          )
-
-        # Update UnitRegistry with the new state to keep it in sync
-        UnitRegistry.update_unit_state(:mob, updated_state.instance_id, updated_state)
-
-        # Send movement packet with updated state
-        notify_movement(updated_state, {state.x, state.y}, {next_x, next_y})
-
-        # Schedule next movement tick with appropriate interval
-        if remaining_path != [] do
-          Process.send_after(self(), :movement_tick, interval)
-          updated_state
+      [{next_x, next_y} | _] = walk_path ->
+        if next_cell_walkable?(state.map_name, next_x, next_y) do
+          step_mob(state, {next_x, next_y}, tl(walk_path))
         else
-          # Path completed, stop movement
-          MobState.stop_movement(updated_state)
+          handle_blocked_mob(state, List.last(walk_path))
         end
+    end
+  end
+
+  defp step_mob(state, {next_x, next_y}, remaining_path) do
+    # Timer interval from the live walk_speed and the per-cell movement cost.
+    interval =
+      MovementEngine.step_delay(state.walk_speed, {state.x, state.y}, {next_x, next_y})
+
+    # Update mob state FIRST to maintain consistency
+    updated_state =
+      state
+      |> MobState.update_position(next_x, next_y)
+      |> Map.put(:walk_path, remaining_path)
+
+    # Route through the single choke point so the spatial index + registry
+    # are synced and the unit is marked dirty for the per-map broadcaster.
+    Movement.set_position(
+      :mob,
+      updated_state.instance_id,
+      updated_state,
+      updated_state.map_name
+    )
+
+    # Schedule next movement tick with appropriate interval
+    if remaining_path != [] do
+      Process.send_after(self(), :movement_tick, interval)
+      updated_state
+    else
+      # Path completed, stop movement
+      MobState.stop_movement(updated_state)
+    end
+  end
+
+  defp handle_blocked_mob(state, destination) do
+    with {:ok, map_data} <- MapCache.get(state.map_name),
+         {:ok, [_ | _] = path} <-
+           Pathfinding.find_path(map_data, {state.x, state.y}, destination) do
+      updated_state = MobState.set_path(state, path)
+      Process.send_after(self(), :movement_tick, 0)
+      updated_state
+    else
+      _ ->
+        stopped_state = MobState.stop_movement(state)
+
+        Movement.set_position(
+          :mob,
+          stopped_state.instance_id,
+          stopped_state,
+          stopped_state.map_name
+        )
+
+        stopped_state
+    end
+  end
+
+  defp next_cell_walkable?(map_name, x, y) do
+    case MapCache.get(map_name) do
+      {:ok, map_data} -> MapData.walkable?(map_data, x, y)
+      {:error, _} -> false
     end
   end
 
@@ -363,12 +403,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   defp notify_spawn(%MobState{} = mob_state) do
     packet = create_spawn_packet(mob_state)
-    broadcast_to_nearby_players(mob_state, packet)
-    {:ok, packet}
-  end
-
-  defp notify_movement(%MobState{} = mob_state, {src_x, src_y}, {dst_x, dst_y}) do
-    packet = create_movement_packet(mob_state, src_x, src_y, dst_x, dst_y)
     broadcast_to_nearby_players(mob_state, packet)
     {:ok, packet}
   end
@@ -403,32 +437,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
       is_boss: MobState.is_boss?(mob_state),
       name: mob_state.mob_data.name,
       moving: false
-    }
-  end
-
-  defp create_movement_packet(%MobState{} = mob_state, src_x, src_y, dst_x, dst_y) do
-    %UnitSpawn{
-      object_type: ObjectType.mob(),
-      aid: mob_state.instance_id,
-      gid: mob_state.instance_id,
-      speed: mob_state.walk_speed,
-      body_state: 0,
-      health_state: if(mob_state.is_dead, do: 1, else: 0),
-      effect_state: 0,
-      job: mob_state.mob_id,
-      sex: 0,
-      x: src_x,
-      y: src_y,
-      dir: mob_state.dir,
-      clevel: mob_state.mob_data.level,
-      max_hp: mob_state.max_hp,
-      hp: mob_state.hp,
-      is_boss: MobState.is_boss?(mob_state),
-      name: mob_state.mob_data.name,
-      moving: true,
-      dst_x: dst_x,
-      dst_y: dst_y,
-      move_start_time: System.monotonic_time(:millisecond)
     }
   end
 

@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.EtsTable do
 
   defp init_tables(seed) do
     spatial_index_tables(seed)
+    movement_tables(seed)
     core_runtime_tables(seed)
     map_cache_tables(seed)
     status_tables(seed)
@@ -36,6 +37,14 @@ defmodule Aesir.ZoneServer.EtsTable do
     :ets.new(
       table_for(:visibility_pairs, seed),
       [:set, :public, :named_table, read_concurrency: true]
+    )
+  end
+
+  defp movement_tables(seed) do
+    # Per-map movement dirty set: {{map_name, unit_type, unit_id}, move_state}
+    :ets.new(
+      table_for(:movement_dirty, seed),
+      [:set, :public, :named_table, write_concurrency: true]
     )
   end
 

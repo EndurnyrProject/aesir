@@ -34,7 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     }
   end
 
-  test "knockback walks the unit outward and stops at the last walkable cell before a wall" do
+  test "knockback walks the unit outward and casts the landing cell to the owning session" do
     test_pid = self()
 
     # Unit sits east of the source, so it is blown further east (+x).
@@ -47,18 +47,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     # A wall at x == 154: cells 152 and 153 are walkable, 154 is not.
     stub(MapData, :walkable?, fn :map, x, _y -> x < 154 end)
 
+    # The owning session is the single writer: knockback routes the landing cell
+    # to it via a {:knocked_back, x, y} cast (received by this test process).
     stub(UnitRegistry, :get_unit, fn :mob, @mob_id ->
-      {:ok, {MobState, mob_state(151, 150), self()}}
-    end)
-
-    stub(UnitRegistry, :update_unit_state, fn :mob, @mob_id, %MobState{} = s ->
-      send(test_pid, {:updated_state, s.x, s.y})
-      :ok
-    end)
-
-    stub(SpatialIndex, :update_unit_position, fn :mob, @mob_id, x, y, @map_name ->
-      send(test_pid, {:index_updated, x, y})
-      :ok
+      {:ok, {MobState, mob_state(151, 150), test_pid}}
     end)
 
     stub(Broadcast, :to_in_range, fn @map_name, _x, _y, _range, %Knockback{} = pkt ->
@@ -69,8 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     {from_x, from_y} = @from
     assert {:ok, {153, 150}} = Combat.knockback(:mob, @mob_id, from_x, from_y, 5)
 
-    assert_received {:updated_state, 153, 150}
-    assert_received {:index_updated, 153, 150}
+    assert_received {:"$gen_cast", {:knocked_back, 153, 150}}
     assert_received {:broadcast, %Knockback{unit_id: @mob_id, dst_x: 153, dst_y: 150}}
   end
 

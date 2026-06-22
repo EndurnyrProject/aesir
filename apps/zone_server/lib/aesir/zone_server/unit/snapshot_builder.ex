@@ -1,42 +1,38 @@
-defmodule Aesir.ZoneServer.Unit.Player.Snapshot do
+defmodule Aesir.ZoneServer.Unit.SnapshotBuilder do
   @moduledoc """
-  Builds full-state area-of-interest snapshots for a single player (design Part 5).
+  Reusable construction of delta `%Aesir.Net.Snapshot{}` datagram chunks from an
+  arbitrary entity list (design Part 1, Part 3).
 
-  A snapshot is the unreliable, per-tick view of where every entity in the
-  player's `view_range` currently is. It carries only motion (`x`/`y`/`dir`/
-  `move_state`) plus `hp_pct` for smooth nearby health bars; entity *existence*
-  rides the reliable World channel, so a lost or late snapshot is simply
-  superseded by the next one.
+  Two concerns live here so the per-map delta broadcaster
+  (`Aesir.ZoneServer.Map.Coordinator`) can use them:
 
-  `build/1` is pure: it reads the spatial index and unit registry (ETS) and
-  returns a `%Aesir.Net.Snapshot{}`. It performs no sends, so the caller decides
-  how the message is delivered (`PlayerSession` routes it to the `:snapshots`
-  datagram channel). The querying player is included so the client has its own
-  authoritative position to reconcile its prediction against.
+    * `entities_for/1` turns a list of `{unit_type, unit_id}` into
+      `%Aesir.Net.SnapshotEntity{}` records by reading the unit registry, skipping
+      units that are no longer registered.
+    * `chunks_for/3` orders those entities nearest-first and greedily packs them
+      into datagram-sized `%Aesir.Net.Snapshot{}` chunks.
 
   ## Datagram size-splitting
 
-  A QUIC datagram cannot be IP-fragmented (design Part 5), so a snapshot must
-  never exceed the path's safe datagram size. `build_chunks/1` orders the AoI
-  entities nearest-first (the same Manhattan metric the AoI filter uses) and
-  greedily packs them into multiple self-contained `%Snapshot{}` chunks, each
-  within `@datagram_budget`, all sharing one `server_tick`. Datagrams arrive
-  independently, so every chunk is valid on its own.
+  A QUIC datagram cannot be IP-fragmented, so a snapshot must never exceed the
+  path's safe datagram size. `chunks_for/3` orders the entities nearest-first (the
+  same Manhattan metric the AoI filter uses) and greedily packs them into multiple
+  self-contained `%Snapshot{}` chunks, each within `datagram_budget/0`, all sharing
+  one `server_tick`. Datagrams arrive independently, so every chunk is valid on its
+  own.
 
-  Far entities that do not fit within `@max_chunks` chunks are decimated (dropped)
-  and the count is logged — no silent caps. The crowded-town entity cap is a
-  tuning knob (`@max_chunks`), not a protocol change.
+  Far entities that do not fit within `max_chunks/0` chunks are decimated (dropped)
+  and the count is logged — no silent caps. The crowded-town entity cap is a tuning
+  knob (`max_chunks/0`), not a protocol change.
   """
 
   require Logger
 
-  alias Aesir.Commons.Utils.ServerTick
   alias Aesir.Net.Envelope
   alias Aesir.Net.Snapshot, as: NetSnapshot
   alias Aesir.Net.SnapshotEntity
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @standing 0
@@ -63,44 +59,32 @@ defmodule Aesir.ZoneServer.Unit.Player.Snapshot do
   def max_chunks, do: @max_chunks
 
   @doc """
-  Builds the full-state snapshot for the player whose `game_state` is given.
+  Maps a list of `{unit_type, unit_id}` to `%Aesir.Net.SnapshotEntity{}` records.
 
-  Queries `SpatialIndex.get_all_units_in_range/4` for every `{unit_type,
-  unit_id}` in the player's `view_range`, reads each unit's registered state and
-  maps it to a `%Aesir.Net.SnapshotEntity{}`. All entities share one
-  `server_tick`. May exceed the datagram budget — use `build_chunks/1` for the
-  size-split form sent over the wire.
+  Reads each unit's registered state from `UnitRegistry.get_unit/2` and maps it to
+  a `%SnapshotEntity{id, x, y, dir, move_state, hp_pct}`. Units that are no longer
+  registered (`{:error, :not_found}`) are skipped.
   """
-  @spec build(PlayerState.t()) :: NetSnapshot.t()
-  def build(%PlayerState{} = game_state) do
-    entities =
-      game_state.map_name
-      |> SpatialIndex.get_all_units_in_range(game_state.x, game_state.y, game_state.view_range)
-      |> Enum.flat_map(&entity_for_unit/1)
-
-    %NetSnapshot{server_tick: ServerTick.now(), entities: entities}
+  @spec entities_for([{atom(), integer()}]) :: [SnapshotEntity.t()]
+  def entities_for(units) do
+    Enum.flat_map(units, &entity_for_unit/1)
   end
 
   @doc """
-  Builds the AoI snapshot split into datagram-sized chunks.
+  Packs entities into datagram-sized `%Aesir.Net.Snapshot{}` chunks.
 
-  Entities are ordered nearest-first (Manhattan distance from the player, the
-  metric the AoI filter uses) and greedily packed into `%Snapshot{}` chunks whose
-  encoded datagram stays within `datagram_budget/0`. Every chunk carries the same
-  `server_tick`, so each is self-contained. Entities that overflow `max_chunks/0`
-  chunks are dropped and the count is logged.
+  Entities are ordered nearest-first (Manhattan distance from `{center_x,
+  center_y}`, the metric the AoI filter uses) and greedily packed into
+  `%Snapshot{}` chunks whose encoded datagram stays within `datagram_budget/0`.
+  Every chunk carries the same `server_tick`, so each is self-contained. Entities
+  that overflow `max_chunks/0` chunks are dropped and the count is logged.
   """
-  @spec build_chunks(PlayerState.t()) :: [NetSnapshot.t()]
-  def build_chunks(%PlayerState{} = game_state) do
-    server_tick = ServerTick.now()
+  @spec chunks_for([SnapshotEntity.t()], {integer(), integer()}, non_neg_integer()) ::
+          [NetSnapshot.t()]
+  def chunks_for(entities, {center_x, center_y}, server_tick) do
+    sorted = Enum.sort_by(entities, &manhattan(&1, center_x, center_y))
 
-    entities =
-      game_state.map_name
-      |> SpatialIndex.get_all_units_in_range(game_state.x, game_state.y, game_state.view_range)
-      |> Enum.flat_map(&entity_for_unit/1)
-      |> Enum.sort_by(&manhattan(&1, game_state.x, game_state.y))
-
-    {chunks, dropped} = pack(entities, server_tick)
+    {chunks, dropped} = pack(sorted, server_tick)
     log_decimation(dropped)
 
     chunks

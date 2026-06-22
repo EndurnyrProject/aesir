@@ -13,14 +13,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Constants.ObjectType
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.MovementEngine
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -53,46 +54,79 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   def handle_movement_tick(%{game_state: game_state} = state)
       when game_state.movement_state == :moving do
     case game_state.walk_path do
-      [{next_x, next_y} | remaining_path] ->
-        # Calculate movement cost for this step
-        move_cost =
-          MovementEngine.get_movement_cost({game_state.x, game_state.y}, {next_x, next_y})
-
-        # Calculate timer interval based on movement cost
-        # Diagonal movement takes 1.414x longer
-        interval = round(game_state.walk_speed * move_cost)
-
-        # Update spatial index
-        SpatialIndex.update_position(game_state.character_id, next_x, next_y, game_state.map_name)
-
-        # Update game state with new position
-        updated_game_state =
-          game_state
-          |> PlayerState.update_position(next_x, next_y)
-          |> Map.put(:walk_path, remaining_path)
-
-        # Sync the registry before visibility so players we enter view of read
-        # our current position when building our spawn packet.
-        UnitRegistry.update_unit_state(
-          :player,
-          updated_game_state.character_id,
-          updated_game_state
-        )
-
-        # Handle visibility updates
-        updated_game_state = handle_visibility_update(updated_game_state)
-
-        # Schedule next movement tick with appropriate interval
-        if remaining_path != [] do
-          Process.send_after(self(), :movement_tick, interval)
-          {:noreply, %{state | game_state: updated_game_state}}
+      [{next_x, next_y} | _] = walk_path ->
+        if next_cell_walkable?(game_state.map_name, next_x, next_y) do
+          step_player(state, game_state, {next_x, next_y}, tl(walk_path))
         else
-          # Path completed, stop movement
-          game_state = PlayerState.stop_walking(updated_game_state)
-          # Send completion message for PlayerSession to handle
-          send(self(), :movement_completed)
-          {:noreply, %{state | game_state: game_state}}
+          handle_blocked_player(state, game_state, List.last(walk_path))
         end
+    end
+  end
+
+  defp step_player(state, game_state, {next_x, next_y}, remaining_path) do
+    # Timer interval from the live walk_speed and the per-cell movement cost.
+    interval =
+      MovementEngine.step_delay(
+        game_state.walk_speed,
+        {game_state.x, game_state.y},
+        {next_x, next_y}
+      )
+
+    # Update game state with new position
+    updated_game_state =
+      game_state
+      |> PlayerState.update_position(next_x, next_y)
+      |> Map.put(:walk_path, remaining_path)
+
+    # Route through the single choke point so the spatial index + registry
+    # are synced and the unit is marked dirty for the per-map broadcaster.
+    Movement.set_position(
+      :player,
+      updated_game_state.character_id,
+      updated_game_state,
+      updated_game_state.map_name
+    )
+
+    # Handle visibility updates
+    updated_game_state = handle_visibility_update(updated_game_state)
+
+    # Schedule next movement tick with appropriate interval
+    if remaining_path != [] do
+      Process.send_after(self(), :movement_tick, interval)
+      {:noreply, %{state | game_state: updated_game_state}}
+    else
+      # Path completed, stop movement
+      game_state = PlayerState.stop_walking(updated_game_state)
+      # Send completion message for PlayerSession to handle
+      send(self(), :movement_completed)
+      {:noreply, %{state | game_state: game_state}}
+    end
+  end
+
+  defp handle_blocked_player(state, game_state, destination) do
+    with {:ok, map_data} <- MapCache.get(game_state.map_name),
+         {:ok, [_ | _] = path} <-
+           Pathfinding.find_path(map_data, {game_state.x, game_state.y}, destination) do
+      game_state = PlayerState.set_path(game_state, Pathfinding.simplify_path(path))
+      Process.send_after(self(), :movement_tick, 0)
+      {:noreply, %{state | game_state: game_state}}
+    else
+      _ ->
+        game_state = PlayerState.stop_walking(game_state)
+
+        Movement.set_position(:player, game_state.character_id, game_state, game_state.map_name)
+
+        packet = %MoveStop{gid: game_state.character_id, x: game_state.x, y: game_state.y}
+        MessageRouter.send_to(state.connection_pid, packet)
+
+        {:noreply, %{state | game_state: game_state}}
+    end
+  end
+
+  defp next_cell_walkable?(map_name, x, y) do
+    case MapCache.get(map_name) do
+      {:ok, map_data} -> MapData.walkable?(map_data, x, y)
+      {:error, _} -> false
     end
   end
 
@@ -152,9 +186,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       }
 
       MessageRouter.send_to(connection_pid, packet)
-
-      # Broadcast movement to nearby players
-      broadcast_movement_to_nearby(game_state, dest_x, dest_y)
 
       # Schedule first movement tick immediately to start movement
       Process.send_after(self(), :movement_tick, 0)
@@ -235,52 +266,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       packet,
       exclude_id: game_state.character_id
     )
-  end
-
-  defp broadcast_movement_to_nearby(game_state, dest_x, dest_y) do
-    # Only broadcast to players who can see us (using visibility ETS)
-    packet = build_movement_packet(game_state, dest_x, dest_y)
-
-    game_state.character_id
-    |> SpatialIndex.get_visible_players()
-    |> Broadcast.to_players(packet, exclude_id: game_state.character_id)
-  end
-
-  defp build_movement_packet(game_state, dest_x, dest_y) do
-    %UnitSpawn{
-      object_type: ObjectType.pc(),
-      aid: game_state.account_id,
-      gid: game_state.character_id,
-      speed: game_state.walk_speed,
-      body_state: 0,
-      health_state: 0,
-      effect_state: 0,
-      job: game_state.stats.progression.job_id,
-      head: game_state.hair,
-      weapon: PlayerStats.weapon_view(game_state.stats.equipment),
-      shield: PlayerStats.shield_view(game_state.stats.equipment),
-      accessory: 0,
-      accessory2: 0,
-      accessory3: 0,
-      head_palette: game_state.hair_color,
-      body_palette: game_state.clothes_color,
-      head_dir: 0,
-      robe: game_state.robe,
-      guild_id: 0,
-      sex: sex_to_int(game_state.sex),
-      x: game_state.x,
-      y: game_state.y,
-      dir: game_state.dir || 0,
-      clevel: game_state.stats.progression.base_level,
-      max_hp: game_state.stats.derived_stats.max_hp,
-      hp: game_state.stats.current_state.hp,
-      is_boss: false,
-      name: game_state.character_name,
-      moving: true,
-      dst_x: dest_x,
-      dst_y: dest_y,
-      move_start_time: System.monotonic_time(:millisecond)
-    }
   end
 
   @doc """
@@ -452,8 +437,4 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         :ok
     end
   end
-
-  defp sex_to_int("M"), do: 1
-  defp sex_to_int("F"), do: 0
-  defp sex_to_int(_), do: 1
 end

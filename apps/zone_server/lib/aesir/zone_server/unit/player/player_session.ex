@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Constants.ObjectType
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
@@ -27,7 +28,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Snapshot
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -35,10 +35,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   # rAthena NATURAL_HEAL_INTERVAL
   @natural_heal_interval 500
-
-  # Default per-player AoI snapshot interval (~15 Hz); overridable at runtime via
-  # `:snapshot_interval_ms` app env (design Part 5).
-  @snapshot_interval 66
 
   @doc """
   Starts a player session linked to a connection process.
@@ -243,9 +239,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # Start the recurring natural-heal regen tick.
     Process.send_after(self(), :natural_heal_tick, @natural_heal_interval)
 
-    # Start the recurring AoI snapshot tick.
-    Process.send_after(self(), :snapshot_tick, snapshot_interval())
-
     {:noreply, update_game_state(state, updated_game_state)}
   end
 
@@ -264,17 +257,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   def handle_info(:natural_heal_tick, state) do
     Process.send_after(self(), :natural_heal_tick, @natural_heal_interval)
     NaturalHealHandler.handle_tick(state, @natural_heal_interval)
-  end
-
-  @impl true
-  def handle_info(:snapshot_tick, %{game_state: game_state} = state) do
-    Process.send_after(self(), :snapshot_tick, snapshot_interval())
-
-    game_state
-    |> Snapshot.build_chunks()
-    |> Enum.each(&send_packet(self(), &1))
-
-    {:noreply, state}
   end
 
   def handle_info(:movement_completed, %{game_state: game_state} = state) do
@@ -414,6 +396,23 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     MessageRouter.send_to(state.connection_pid, packet)
 
     {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast({:knocked_back, x, y}, %{game_state: game_state} = state) do
+    updated_game_state =
+      game_state
+      |> PlayerState.update_position(x, y)
+      |> PlayerState.stop_walking()
+
+    Movement.set_position(
+      :player,
+      updated_game_state.character_id,
+      updated_game_state,
+      updated_game_state.map_name
+    )
+
+    {:noreply, %{state | game_state: updated_game_state}}
   end
 
   @impl true
@@ -584,45 +583,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   defp register_player(char_id, account_id, char_name),
     do: UnitRegistry.register_player(char_id, account_id, char_name, self())
 
-  defp snapshot_interval,
-    do: Application.get_env(:zone_server, :snapshot_interval_ms, @snapshot_interval)
-
   defp sex_to_int("F"), do: 0
   defp sex_to_int("M"), do: 1
   defp sex_to_int(_), do: 1
 
   defp send_player_spawn_packet(connection_pid, game_state) do
-    packet = build_spawn_packet(game_state)
+    packet = build_unit_spawn(game_state)
     MessageRouter.send_to(connection_pid, packet)
-  end
-
-  defp build_spawn_packet(game_state) do
-    if moving?(game_state) do
-      build_moving_spawn_packet(game_state)
-    else
-      build_standing_spawn_packet(game_state)
-    end
-  end
-
-  defp moving?(game_state) do
-    game_state.movement_state == :moving and
-      game_state.walk_path != []
-  end
-
-  defp build_moving_spawn_packet(game_state) do
-    [{dest_x, dest_y} | _] = Enum.reverse(game_state.walk_path)
-
-    %UnitSpawn{
-      build_unit_spawn(game_state)
-      | moving: true,
-        dst_x: dest_x,
-        dst_y: dest_y,
-        move_start_time: System.monotonic_time(:millisecond)
-    }
-  end
-
-  defp build_standing_spawn_packet(game_state) do
-    build_unit_spawn(game_state)
   end
 
   defp build_unit_spawn(game_state) do
