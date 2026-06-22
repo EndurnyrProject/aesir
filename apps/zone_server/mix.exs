@@ -12,6 +12,7 @@ defmodule ZoneServer.MixProject do
       elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
+      aliases: aliases(),
       deps: deps()
     ]
   end
@@ -30,6 +31,13 @@ defmodule ZoneServer.MixProject do
       {:peri, "~> 0.6.1"},
       {:yaml_elixir, "~> 2.11"},
       {:ymlr, "~> 5.0", only: [:dev, :test]}
+    ]
+  end
+
+  defp aliases do
+    [
+      tidewave:
+        "run --no-halt -e 'Agent.start(fn -> Bandit.start_link(plug: Tidewave, port: 13000) end)'"
     ]
   end
 

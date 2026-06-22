@@ -226,7 +226,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
       pk_enabled: state.pk_enabled,
       item_count: map_size(state.items),
       npc_count: map_size(state.npcs),
-      player_count: SpatialIndex.count_players_on_map(state.map_name),
+      player_count: SpatialIndex.count_players_on_map(map_with_gat(state.map_name)),
       mob_count: UnitRegistry.count_units_by_type(:mob)
     }
 
@@ -285,7 +285,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     schedule_broadcast()
 
     {deliveries, recently_stopped} =
-      flush_snapshots(state.map_name, state.recently_stopped, ServerTick.now())
+      flush_snapshots(map_with_gat(state.map_name), state.recently_stopped, ServerTick.now())
 
     Enum.each(deliveries, fn {pid, chunks} ->
       Enum.each(chunks, &PlayerSession.send_packet(pid, &1))
@@ -423,6 +423,13 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     {:via, Registry, {Aesir.ZoneServer.MapRegistry, map_name}}
   end
 
+  # Units (mobs, players) live in the spatial index and dirty set under the
+  # `.gat`-suffixed map name, while the coordinator is keyed by the clean name.
+  # Bridge to the unit-layer convention for spatial/dirty lookups.
+  defp map_with_gat(map_name) do
+    if String.ends_with?(map_name, ".gat"), do: map_name, else: map_name <> ".gat"
+  end
+
   # Mob Spawning Functions
 
   defp spawn_all_mobs(state) do
@@ -456,14 +463,8 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
     {x, y} = calculate_spawn_position(spawn_config.spawn_area, state.map_data)
 
-    map_name_with_gat =
-      if String.ends_with?(state.map_name, ".gat") do
-        state.map_name
-      else
-        state.map_name <> ".gat"
-      end
-
-    mob_state = MobState.new(instance_id, mob_data, spawn_config, map_name_with_gat, x, y)
+    mob_state =
+      MobState.new(instance_id, mob_data, spawn_config, map_with_gat(state.map_name), x, y)
 
     case MobSupervisor.spawn_mob(state.map_name, mob_state) do
       {:ok, mob_pid} ->

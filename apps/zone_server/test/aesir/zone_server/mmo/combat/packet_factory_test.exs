@@ -39,7 +39,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactoryTest do
       defender: defender
     } do
       packet =
-        PacketFactory.build_attack_packet(attacker, defender, %{damage: 50, is_critical: false}, 2)
+        PacketFactory.build_attack_packet(
+          attacker,
+          defender,
+          %{damage: 50, is_critical: false},
+          2
+        )
 
       assert %DamageDealt{src_speed: 500, div: 2} = packet
     end
@@ -72,8 +77,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactoryTest do
 
   describe "attack speed is no longer inverted" do
     test "a higher-ASPD attacker emits a smaller src_speed than a lower-ASPD one" do
-      fast = CombatTestHelper.create_player_combatant(attack_delay_ms: AttackSpeed.calculate_delay(193))
-      slow = CombatTestHelper.create_player_combatant(attack_delay_ms: AttackSpeed.calculate_delay(150))
+      fast =
+        CombatTestHelper.create_player_combatant(
+          attack_delay_ms: AttackSpeed.calculate_delay(193)
+        )
+
+      slow =
+        CombatTestHelper.create_player_combatant(
+          attack_delay_ms: AttackSpeed.calculate_delay(150)
+        )
+
       defender = CombatTestHelper.create_mob_combatant()
 
       result = %{damage: 100, is_critical: false}

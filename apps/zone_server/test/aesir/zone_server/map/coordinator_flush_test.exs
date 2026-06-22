@@ -181,9 +181,13 @@ defmodule Aesir.ZoneServer.Map.CoordinatorFlushTest do
 
   describe "handle_info(:broadcast_tick, ...)" do
     test "delivers each chunk to the player's pid via PlayerSession.send_packet/2" do
-      register_player(character_id: 1001, x: 50, y: 50)
-      register_mob(instance_id: 5001, x: 52, y: 50, movement_state: :moving)
-      Movement.mark_dirty(@map_name, :mob, 5001, 1)
+      # Units live in the spatial index and dirty set under the `.gat`-suffixed
+      # name, while the coordinator is keyed by the clean name; the flush must
+      # bridge the two or nothing is ever drained.
+      gat_map = @map_name <> ".gat"
+      register_player(character_id: 1001, x: 50, y: 50, map_name: gat_map)
+      register_mob(instance_id: 5001, x: 52, y: 50, movement_state: :moving, map_name: gat_map)
+      Movement.mark_dirty(gat_map, :mob, 5001, 1)
 
       state = %Coordinator{map_name: @map_name, recently_stopped: %{}}
 

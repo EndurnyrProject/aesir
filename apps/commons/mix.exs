@@ -26,6 +26,7 @@ defmodule Commons.MixProject do
 
   defp deps do
     [
+      {:bandit, "~> 1.0", only: :dev},
       {:bcrypt_elixir, "~> 3.0"},
       {:benchee, "~> 1.4", only: [:dev, :test]},
       {:bunt, "~> 1.0"},
@@ -51,6 +52,7 @@ defmodule Commons.MixProject do
       {:ranch, "~> 2.2"},
       {:recode, "~> 0.8.0", only: [:dev], runtime: false},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
+      {:tidewave, "~> 0.4", only: :dev},
       {:typedstruct, github: "ygorcastor/typedstruct", branch: "main"}
     ]
   end
