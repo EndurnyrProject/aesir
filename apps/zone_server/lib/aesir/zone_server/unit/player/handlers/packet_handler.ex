@@ -22,16 +22,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.NameResponse
   alias Aesir.Net.Respawn
   alias Aesir.Net.SkillCast
-  alias Aesir.Net.SkillInfo
-  alias Aesir.Net.SkillList
   alias Aesir.Net.StatUp
   alias Aesir.Net.UnequipItem
   alias Aesir.ZoneServer.Gm.Dispatcher
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ClientItemType
   alias Aesir.ZoneServer.Mmo.Leveling
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatPoint
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -40,6 +36,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SkillListView
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -247,43 +244,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     StatusSync.send_stat_updates(connection_pid, game_state.stats)
     send_inventory_data(connection_pid, game_state.inventory)
 
-    skill_list = build_skill_list(game_state.stats.progression.learned_skills)
+    skill_list = SkillListView.build(game_state.stats.progression)
     MessageRouter.send_to(connection_pid, skill_list)
 
     send(self(), :spawn_player)
 
     {:noreply, state}
   end
-
-  defp build_skill_list(learned_skills) do
-    skills =
-      Enum.flat_map(learned_skills, fn {skill_id, level} ->
-        case Catalog.by_id(skill_id) do
-          {:ok, definition} -> [to_skill_info(definition, level)]
-          :error -> []
-        end
-      end)
-
-    %SkillList{skills: skills}
-  end
-
-  defp to_skill_info(%Definition{} = definition, level) do
-    %SkillInfo{
-      skill_id: definition.id,
-      type: inf_for(definition.target_type),
-      level: level,
-      sp: Enum.at(definition.sp_cost, level - 1, 0),
-      range: definition.range,
-      name: definition.name |> Atom.to_string() |> String.upcase(),
-      upgradable: false
-    }
-  end
-
-  defp inf_for(:passive), do: 0
-  defp inf_for(:target_enemy), do: 1
-  defp inf_for(:ground), do: 2
-  defp inf_for(:self), do: 4
-  defp inf_for(:target_ally), do: 16
 
   @doc """
   Builds an `ItemAdded` for an item that just entered the inventory.

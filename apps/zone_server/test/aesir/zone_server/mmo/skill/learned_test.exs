@@ -3,9 +3,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.LearnedTest do
 
   alias Aesir.ZoneServer.Mmo.Skill.Learned
 
-  test "from_character/1 seeds AL_INCAGI when empty or nil" do
-    assert Learned.from_character(nil) == %{29 => 1}
-    assert Learned.from_character(%{}) == %{29 => 1}
+  test "from_character/1 returns an empty map when empty or nil" do
+    assert Learned.from_character(nil) == %{}
+    assert Learned.from_character(%{}) == %{}
   end
 
   test "from_character/1 converts string keys to integers" do

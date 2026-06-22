@@ -52,29 +52,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     end
   end
 
-  describe "learned-skill list on map load" do
-    test "serializes the learned skills as a SkillList of SkillInfo" do
+  describe "skill tree on map load" do
+    test "sends the full available tree, learned levels reflected" do
       stub(StatusSync, :send_params, fn _conn, _params -> :ok end)
       stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
-      stub(Catalog, :by_id, fn 29 -> {:ok, definition(target_type: :target_ally, range: 9)} end)
 
       assert {:noreply, _} = PacketHandler.handle_message(%MapLoaded{}, map_loaded_state())
 
-      assert_received {:send, :bulk,
-                       {:skill_list,
-                        %SkillList{
-                          skills: [
-                            %SkillInfo{
-                              skill_id: 29,
-                              type: 16,
-                              level: 1,
-                              sp: 18,
-                              range: 9,
-                              name: "AL_INCAGI",
-                              upgradable: false
-                            }
-                          ]
-                        }}}
+      assert_received {:send, :bulk, {:skill_list, %SkillList{skills: skills}}}
+
+      # Swordman tree resolves to its 10 implemented SM_* skills.
+      assert length(skills) == 10
+
+      sword = Enum.find(skills, &(&1.skill_id == 2))
+      assert %SkillInfo{name: "SM_SWORD", level: 3} = sword
     end
   end
 
@@ -119,13 +110,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     %{connection_pid: self(), game_state: game_state}
   end
 
-  # Real PlayerState carrying one learned skill, used to drive the on-enter
-  # learned-skill-list send through handle_map_loaded.
+  # Real Swordman PlayerState carrying one learned SM_SWORD level, used to drive
+  # the on-enter skill-tree send through handle_map_loaded.
   defp map_loaded_state do
-    base = PlayerState.new(character())
+    base = PlayerState.new(%{character() | class: 1})
 
     stats =
-      put_in(base.stats, [Access.key!(:progression), Access.key!(:learned_skills)], %{29 => 1})
+      base.stats
+      |> put_in([Access.key!(:progression), Access.key!(:job_id)], 1)
+      |> put_in([Access.key!(:progression), Access.key!(:learned_skills)], %{2 => 3})
 
     %{connection_pid: self(), game_state: %{base | stats: stats}}
   end
