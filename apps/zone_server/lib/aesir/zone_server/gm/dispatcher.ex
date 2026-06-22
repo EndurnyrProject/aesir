@@ -10,7 +10,10 @@ defmodule Aesir.ZoneServer.Gm.Dispatcher do
   alias Aesir.ZoneServer.Network.MessageRouter
 
   # Registered commands keyed by their lowercase token.
-  @commands %{"item" => Aesir.ZoneServer.Gm.Commands.Item}
+  @commands %{
+    "item" => Aesir.ZoneServer.Gm.Commands.Item,
+    "warp" => Aesir.ZoneServer.Gm.Commands.Warp
+  }
 
   @spec dispatch(String.t(), Aesir.ZoneServer.Gm.Command.ctx()) :: :ok
   def dispatch(rest, ctx, commands \\ @commands) do

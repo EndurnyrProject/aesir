@@ -78,6 +78,17 @@ defmodule Aesir.ZoneServer.Unit.Broadcast do
   end
 
   @doc """
+  Unsubscribes the calling process from a map's mob despawn events.
+
+  Used when a player warps away so the session stops reacting to mob despawns on
+  the map it just left.
+  """
+  @spec unsubscribe_mob_despawns(String.t()) :: :ok
+  def unsubscribe_mob_despawns(map_name) do
+    PubSub.unsubscribe(Aesir.PubSub, mob_despawn_topic(map_name))
+  end
+
+  @doc """
   Publishes a mob despawn so players on that map can react (e.g. clear combat).
   """
   @spec publish_mob_despawn(String.t(), integer()) :: :ok

@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   @spec route(struct()) :: {QuinnetCodec.channel(), atom()}
   def route(%Aesir.Net.HelloAck{}), do: {:control, :hello_ack}
   def route(%Aesir.Net.EnterAck{}), do: {:control, :enter_ack}
+  def route(%Aesir.Net.MapMove{}), do: {:control, :map_move}
   def route(%Aesir.Net.TimeSyncAck{}), do: {:control, :time_sync_ack}
 
   def route(%Aesir.Net.SelfMove{}), do: {:gameplay, :self_move}

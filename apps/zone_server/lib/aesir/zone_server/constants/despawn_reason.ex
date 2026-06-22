@@ -18,4 +18,8 @@ defmodule Aesir.ZoneServer.Constants.DespawnReason do
   @doc "Entity logged out / disconnected."
   @spec logged_out() :: 2
   def logged_out, do: 2
+
+  @doc "Entity teleported / warped to another map."
+  @spec teleport() :: 3
+  def teleport, do: 3
 end

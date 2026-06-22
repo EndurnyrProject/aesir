@@ -8,8 +8,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
   On death the player is marked `:dead`, vanishes for nearby players
   (`UnitDespawn` with the died reason) and is pulled out of the spatial index
-  so mobs drop aggro. Respawn revives the player in place and stands the sprite
-  back up via a `Resurrect`.
+  so mobs drop aggro. Respawn revives the player and warps them to their save
+  point; if that warp fails (e.g. the save map is unknown) it falls back to
+  resurrecting in place and standing the sprite back up via a `Resurrect`.
   """
 
   require Logger
@@ -25,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
+  alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -113,13 +115,42 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
     revived_stats = %{stats | current_state: %{stats.current_state | hp: max_hp, sp: max_sp}}
 
-    # respawn in place. rAthena warps to the save point, but there is
-    # no cross-map player warp yet; clif_resurrection is rAthena's own fallback
-    # when that warp fails. Wire save-point warping once it exists.
     {:ok, idle_state} = PlayerState.transition_to(game_state, :idle)
     idle_state = %{idle_state | stats: revived_stats}
     state = StatsManager.update_game_state(state, idle_state)
 
+    StatusSync.send_params(state.connection_pid, [
+      {StatusParams.max_hp(), max_hp},
+      {StatusParams.hp(), max_hp},
+      {StatusParams.max_sp(), max_sp},
+      {StatusParams.sp(), max_sp}
+    ])
+
+    CharacterPersistence.update_stats(game_state.character_id, %{hp: max_hp, sp: max_sp},
+      async: true
+    )
+
+    warp_to_save_point(state, idle_state)
+  end
+
+  # Warp the revived player to their save point. On failure (unknown save map,
+  # blocked cell) fall back to resurrecting in place — rAthena's own behaviour
+  # when the save-point warp fails (clif_resurrection).
+  defp warp_to_save_point(state, idle_state) do
+    case WarpHandler.warp(state, idle_state.save_map, idle_state.save_x, idle_state.save_y) do
+      {:ok, warped_state} ->
+        {:noreply, warped_state}
+
+      {:error, reason} ->
+        Logger.warning(
+          "Save-point warp failed for player #{idle_state.character_id} (#{inspect(reason)}); resurrecting in place"
+        )
+
+        resurrect_in_place(state, idle_state)
+    end
+  end
+
+  defp resurrect_in_place(state, idle_state) do
     SpatialIndex.add_player(
       idle_state.character_id,
       idle_state.x,
@@ -130,20 +161,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     visible_state = MovementHandler.handle_visibility_update(idle_state)
     state = StatsManager.update_game_state(state, visible_state)
 
-    StatusSync.send_params(state.connection_pid, [
-      {StatusParams.max_hp(), max_hp},
-      {StatusParams.hp(), max_hp},
-      {StatusParams.max_sp(), max_sp},
-      {StatusParams.sp(), max_sp}
-    ])
-
-    resurrection = %Resurrect{gid: game_state.character_id, type: 0}
+    resurrection = %Resurrect{gid: idle_state.character_id, type: 0}
     MessageRouter.send_to(state.connection_pid, resurrection)
     Broadcast.to_visible_players(visible_state, resurrection)
-
-    CharacterPersistence.update_stats(game_state.character_id, %{hp: max_hp, sp: max_sp},
-      async: true
-    )
 
     {:noreply, state}
   end

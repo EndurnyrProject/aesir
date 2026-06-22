@@ -81,6 +81,7 @@ message Envelope {
     Respawn respawn = 71;
     LearnSkill learn_skill = 72;
     LearnSkillResult learn_skill_result = 73;
+    MapMove map_move = 74;
   }
 }
 
@@ -267,6 +268,15 @@ message EnterAck {
   uint32 dir = 4;
   uint64 start_time = 5;
   uint32 font = 6;
+}
+
+// Server -> client, load a different map and reposition there (replaces RO
+// ZC_NPCACK_MAPMOVE 0x0091). The client unloads the current map, loads
+// `map_name`, places the character at (x, y), and re-sends MapLoaded.
+message MapMove {
+  string map_name = 1;
+  uint32 x = 2;
+  uint32 y = 3;
 }
 
 // Client -> server, request to move to a destination cell (replaces RO CZ_REQUEST_MOVE2 0x035F).

@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -118,13 +119,31 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   end
 
   describe "handle_restart/2" do
-    test "respawns a dead player at full HP/SP and stands them up" do
+    test "revives a dead player at full HP/SP and warps them to their save point" do
+      stub(WarpHandler, :warp, fn warp_state, save_map, save_x, save_y ->
+        send(self(), {:warp_called, save_map, save_x, save_y})
+        {:ok, warp_state}
+      end)
+
       {:noreply, %{game_state: game_state}} =
         HealthHandler.handle_restart(0, build_state(0, :dead))
 
       assert game_state.action_state == :idle
       assert game_state.stats.current_state.hp == 100
       assert game_state.stats.current_state.sp == 50
+      assert_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_hp, value: 100}}}
+      assert_received {:warp_called, "save_map", 60, 70}
+      refute_received {:send, _res_channel, {_res_tag, %Resurrect{}}}
+    end
+
+    test "falls back to resurrecting in place when the save-point warp fails" do
+      stub(WarpHandler, :warp, fn _state, _map, _x, _y -> {:error, :map_not_found} end)
+
+      {:noreply, %{game_state: game_state}} =
+        HealthHandler.handle_restart(0, build_state(0, :dead))
+
+      assert game_state.action_state == :idle
+      assert game_state.stats.current_state.hp == 100
       assert_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_hp, value: 100}}}
       assert_received {:send, _res_channel, {_res_tag, %Resurrect{gid: 1}}}
     end
@@ -180,6 +199,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       x: 50,
       y: 50,
       map_name: "prontera",
+      save_map: "save_map",
+      save_x: 60,
+      save_y: 70,
       visible_players: MapSet.new(),
       stats: stats
     }

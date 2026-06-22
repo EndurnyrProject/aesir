@@ -223,6 +223,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     end
   end
 
+  defp handle_map_loaded(%{game_state: %{pending_map_load: :warp} = game_state} = state) do
+    Logger.debug("Player #{game_state.character_id} finished loading warp destination map")
+
+    # The client already holds inventory/skills/stats from the initial load, so
+    # a warp only needs to re-enter the player on the destination map.
+    send(self(), :respawn_after_warp)
+    {:noreply, %{state | game_state: %{game_state | pending_map_load: nil}}}
+  end
+
   defp handle_map_loaded(%{connection_pid: connection_pid, game_state: game_state} = state) do
     Logger.debug("Player #{game_state.character_id} finished loading map (LoadEndAck)")
 

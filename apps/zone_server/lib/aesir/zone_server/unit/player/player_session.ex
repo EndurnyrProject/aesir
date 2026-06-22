@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
+  alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -244,6 +245,24 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
+  def handle_info(:respawn_after_warp, %{game_state: game_state} = state) do
+    # Re-enter the world on the destination map after a warp. Unlike
+    # :spawn_player this does not (re)schedule the natural-heal / spawn timers —
+    # those chains are already running from the initial spawn and must not stack.
+    SpatialIndex.add_player(
+      game_state.character_id,
+      game_state.x,
+      game_state.y,
+      game_state.map_name
+    )
+
+    state = update_game_state(state, game_state)
+    updated_game_state = MovementHandler.handle_visibility_update(state.game_state)
+
+    {:noreply, update_game_state(state, updated_game_state)}
+  end
+
+  @impl true
   def handle_info(:complete_spawn, %{game_state: game_state} = state) do
     updated_game_state = PlayerState.mark_spawn_complete(game_state)
     {:noreply, update_game_state(state, updated_game_state)}
@@ -432,6 +451,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
+  def handle_cast({:warp, map_name, x, y}, state) do
+    case WarpHandler.warp(state, map_name, x, y) do
+      {:ok, new_state} -> {:noreply, new_state}
+      {:error, _reason} -> {:noreply, state}
+    end
+  end
+
+  @impl true
   def handle_cast({:use_skill_ground, skill_id, level, x, y}, state) do
     SkillHandler.handle_use_skill_ground(state, skill_id, level, x, y)
   end
@@ -550,39 +577,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       game_state.map_name
     )
 
-    broadcast_vanish_on_disconnect(game_state)
+    WarpHandler.leave_current_map(game_state, DespawnReason.logged_out())
 
     # Clean up player data
     UnitRegistry.unregister_player(game_state.character_id)
-    SpatialIndex.remove_player(game_state.character_id)
-    SpatialIndex.clear_visibility(game_state.character_id)
 
     :ok
-  end
-
-  defp broadcast_vanish_on_disconnect(game_state) do
-    visible_players = SpatialIndex.get_visible_players(game_state.character_id)
-
-    vanish_packet = %UnitDespawn{
-      gid: game_state.character_id,
-      reason: DespawnReason.logged_out()
-    }
-
-    Enum.each(visible_players, fn other_char_id ->
-      if other_char_id != game_state.character_id do
-        send_vanish_to_player(other_char_id, vanish_packet)
-      end
-    end)
-  end
-
-  defp send_vanish_to_player(char_id, packet) do
-    case UnitRegistry.get_player_pid(char_id) do
-      {:ok, pid} ->
-        send_packet(pid, packet)
-
-      {:error, :not_found} ->
-        :ok
-    end
   end
 
   defp update_game_state(state, new_game_state) do

@@ -20,6 +20,7 @@ Mimic.copy(Aesir.ZoneServer.Mmo.Skill.Passives)
 Mimic.copy(Aesir.ZoneServer.Mmo.Skills.SmProvoke)
 Mimic.copy(Aesir.ZoneServer.Mmo.Skill.Unit)
 Mimic.copy(Aesir.ZoneServer.Mmo.ItemManagement)
+Mimic.copy(Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler)
 Mimic.copy(Aesir.Commons.Utils.ServerTick)
 
 ExUnit.start()

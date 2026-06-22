@@ -34,6 +34,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           x: integer(),
           y: integer(),
           map_name: String.t(),
+          pending_map_load: :warp | nil,
+          save_map: String.t(),
+          save_x: integer(),
+          save_y: integer(),
           dir: direction(),
           action_state: action_state(),
           state_context: map(),
@@ -88,6 +92,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     :x,
     :y,
     :map_name,
+    # Set to :warp while a cross-map warp waits for the client's MapLoaded ack;
+    # nil during normal play. Drives the lighter respawn path on map load.
+    :pending_map_load,
+
+    # Save point — the return-on-death destination (rAthena save_point).
+    :save_map,
+    :save_x,
+    :save_y,
     :dir,
 
     # Action state machine
@@ -157,6 +169,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       map_name: character.last_map,
       x: character.last_x,
       y: character.last_y,
+      save_map: character.save_map,
+      save_x: character.save_x,
+      save_y: character.save_y,
       dir: 0,
 
       # Action state machine - starts as idle
@@ -198,6 +213,29 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   """
   def update_position(%__MODULE__{} = state, x, y) do
     %{state | x: x, y: y}
+  end
+
+  @doc """
+  Relocates the player to a new map and cell as part of a warp.
+
+  Swaps `map_name`/`x`/`y`, drops the now-stale visibility sets (the player is
+  leaving every observer behind) and resets transient movement/combat state so
+  the player lands idle on the destination map.
+  """
+  @spec relocate(t(), String.t(), non_neg_integer(), non_neg_integer()) :: t()
+  def relocate(%__MODULE__{} = state, map_name, x, y) do
+    %{
+      state
+      | map_name: map_name,
+        x: x,
+        y: y,
+        action_state: :idle,
+        visible_players: MapSet.new(),
+        visible_mobs: MapSet.new(),
+        last_visibility_cell: nil
+    }
+    |> stop_walking()
+    |> clear_combat_intent()
   end
 
   @doc """
