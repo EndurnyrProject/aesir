@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
 
@@ -339,6 +340,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       combatant = PlayerState.to_combatant(state)
       assert combatant.weapon.type == :fist
       assert combatant.attack_range == 1
+    end
+
+    test "carries the player's attack delay as attack_delay_ms", %{state: state} do
+      combatant = PlayerState.to_combatant(state)
+
+      assert combatant.attack_delay_ms == AttackSpeed.calculate_delay_from_stats(state.stats)
     end
 
     test "carries matk, mdef and soft_mdef from the player's combat stats", %{state: state} do

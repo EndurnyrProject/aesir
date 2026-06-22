@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       size: :medium,
       weapon: %{type: :fist, element: :neutral, size: :medium},
       attack_range: 5,
+      attack_delay_ms: Keyword.get(opts, :attack_delay_ms, 500),
       position: {150, 150},
       map_name: "prontera"
     })

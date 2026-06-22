@@ -74,6 +74,7 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
         size: opts[:weapon_size]
       },
       attack_range: opts[:attack_range] || 1,
+      attack_delay_ms: opts[:attack_delay_ms] || 500,
       position: opts[:position],
       map_name: opts[:map_name]
     }
@@ -140,6 +141,7 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
         size: :all
       },
       attack_range: opts[:attack_range] || 1,
+      attack_delay_ms: opts[:attack_delay_ms] || 500,
       position: opts[:position],
       map_name: opts[:map_name]
     }

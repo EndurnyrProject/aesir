@@ -84,4 +84,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
       assert combatant.combat_stats.soft_mdef == 20
     end
   end
+
+  describe "to_combatant/1 attack delay" do
+    test "carries the mob's attack_delay as attack_delay_ms" do
+      state = build_mob_state()
+
+      combatant = MobState.to_combatant(state)
+
+      assert combatant.attack_delay_ms == state.mob_data.attack_delay
+    end
+  end
 end

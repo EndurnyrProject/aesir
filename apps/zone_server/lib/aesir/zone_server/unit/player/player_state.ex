@@ -61,6 +61,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   @client_index_offset 2
 
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
   alias Aesir.ZoneServer.Mmo.WeaponTypes
@@ -508,6 +509,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
         size: SizeModifiers.weapon_size(weapon_type)
       },
       attack_range: WeaponTypes.get_attack_range(weapon_type),
+      attack_delay_ms: AttackSpeed.calculate_delay_from_stats(state.stats),
       position: {state.x, state.y},
       map_name: state.map_name
     })

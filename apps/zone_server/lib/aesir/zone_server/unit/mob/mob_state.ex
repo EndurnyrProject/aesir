@@ -225,6 +225,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
         size: mob_data.size
       },
       attack_range: mob_data.attack_range,
+      attack_delay_ms: mob_data.attack_delay,
       position: {mob_state.x, mob_state.y},
       map_name: mob_state.map_name
     })

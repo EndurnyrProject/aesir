@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
   - Identity: unit_id, unit_type
   - Stats: base_stats, combat_stats (physical atk/def plus magic matk/mdef/soft_mdef), progression
   - Combat modifiers: element, race, size, weapon
+  - Timing: attack_range, attack_delay_ms
   - Positioning: position, map_name
   """
   typedstruct do
@@ -96,6 +97,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
 
     # Attack range for combat distance calculations
     field :attack_range, integer(), enforce: true
+
+    # Attack cadence in milliseconds: the delay the combat loop uses to gate
+    # attacks. Sent to the client as ZC_NOTIFY_ACT src_speed so the swing
+    # animation duration matches real attack speed.
+    field :attack_delay_ms, integer(), enforce: true
 
     # Position data (optional for some combat operations)
     field :position, {integer(), integer()}, enforce: false

@@ -51,7 +51,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
       race: :demi_human,
       size: :medium,
       weapon: %{type: :fist, element: :neutral, size: :medium},
-      attack_range: 1
+      attack_range: 1,
+      attack_delay_ms: 500
     }
   end
 
