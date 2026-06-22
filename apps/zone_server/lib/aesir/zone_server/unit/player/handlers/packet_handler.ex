@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.InventoryList
   alias Aesir.Net.ItemAdded
   alias Aesir.Net.ItemRemoved
+  alias Aesir.Net.LearnSkill
   alias Aesir.Net.MapLoaded
   alias Aesir.Net.MoveRequest
   alias Aesir.Net.NameRequest
@@ -91,6 +92,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   # CZ_USE_SKILL_TOGROUND 0x0AF4)
   def handle_message(%GroundSkillCast{skill_id: skill_id, level: level, x: x, y: y}, state) do
     GenServer.cast(self(), {:use_skill_ground, skill_id, level, x, y})
+    {:noreply, state}
+  end
+
+  # LearnSkill - Player spends a skill point to learn/raise a skill (protobuf
+  # analogue of CZ_UPGRADE_SKILLLEVEL 0x0112)
+  def handle_message(%LearnSkill{skill_id: skill_id}, state) do
+    GenServer.cast(self(), {:learn_skill, skill_id})
     {:noreply, state}
   end
 
