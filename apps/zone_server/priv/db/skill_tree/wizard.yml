@@ -1,0 +1,13 @@
+---
+- job: wizard
+  inherit:
+    - novice
+    - mage
+  tree:
+    - name: WZ_STORMGUST
+      max_level: 10
+      requires:
+        - name: MG_FROSTDIVER
+          level: 1
+        - name: WZ_JUPITEL
+          level: 3

@@ -1,0 +1,10 @@
+---
+- job: acolyte
+  inherit:
+    - novice
+  tree:
+    - name: AL_INCAGI
+      max_level: 10
+      requires:
+        - name: AL_HEAL
+          level: 3

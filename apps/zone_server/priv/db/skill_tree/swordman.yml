@@ -1,0 +1,34 @@
+---
+- job: swordman
+  inherit:
+    - novice
+  tree:
+    - name: SM_SWORD
+      max_level: 10
+    - name: SM_TWOHAND
+      max_level: 10
+      requires:
+        - name: SM_SWORD
+          level: 1
+    - name: SM_RECOVERY
+      max_level: 10
+    - name: SM_BASH
+      max_level: 10
+    - name: SM_PROVOKE
+      max_level: 10
+    - name: SM_MAGNUM
+      max_level: 10
+      requires:
+        - name: SM_BASH
+          level: 5
+    - name: SM_ENDURE
+      max_level: 10
+      requires:
+        - name: SM_PROVOKE
+          level: 5
+    - name: SM_MOVINGRECOVERY
+      max_level: 1
+    - name: SM_FATALBLOW
+      max_level: 1
+    - name: SM_AUTOBERSERK
+      max_level: 1
