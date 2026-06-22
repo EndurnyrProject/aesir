@@ -79,6 +79,8 @@ message Envelope {
     SpriteChange sprite_change = 69;
     Resurrect resurrect = 70;
     Respawn respawn = 71;
+    LearnSkill learn_skill = 72;
+    LearnSkillResult learn_skill_result = 73;
   }
 }
 
@@ -417,7 +419,13 @@ message GroundSkillCast {
   uint32 y = 4;
 }
 
-// One learned skill within a SkillList.
+// A prerequisite skill + level needed to learn a SkillInfo entry.
+message SkillRequirement {
+  uint32 skill_id = 1;
+  uint32 level = 2;
+}
+
+// One skill within a SkillList; carries the full available-tree view.
 message SkillInfo {
   uint32 skill_id = 1;
   uint32 type = 2;
@@ -426,6 +434,22 @@ message SkillInfo {
   uint32 range = 5;
   string name = 6;
   bool upgradable = 7;
+  uint32 max_level = 8;
+  repeated SkillRequirement requires = 9;
+  uint32 req_base_level = 10;
+  uint32 req_job_level = 11;
+}
+
+// Client -> server, spend one skill point to learn/raise a skill (replaces RO CZ_UPGRADE_SKILLLEVEL 0x0112).
+message LearnSkill {
+  uint32 skill_id = 1;
+}
+
+// Server -> client, result of a learn attempt; reason 0 = ok, else the SkillTree reject-reason code.
+message LearnSkillResult {
+  uint32 skill_id = 1;
+  bool ok = 2;
+  uint32 reason = 3;
 }
 
 // Server -> client, the full learned-skill list (replaces RO ZC_SKILLINFO_LIST 0x010F).

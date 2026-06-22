@@ -27,6 +27,8 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.ItemAdded
   alias Aesir.Net.ItemRemoved
   alias Aesir.Net.Knockback
+  alias Aesir.Net.LearnSkill
+  alias Aesir.Net.LearnSkillResult
   alias Aesir.Net.LoginRequest
   alias Aesir.Net.LoginResponse
   alias Aesir.Net.MapLoaded
@@ -1022,5 +1024,47 @@ defmodule Aesir.Commons.Network.ProtoTest do
 
     assert {:ok, %Envelope{body: {:respawn, %Respawn{type: 0}}}} =
              Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "learn_skill round-trips through envelope oneof" do
+    env = %Envelope{body: {:learn_skill, %LearnSkill{skill_id: 2}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok, %Envelope{body: {:learn_skill, %LearnSkill{skill_id: 2}}}} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "learn_skill_result round-trips through envelope oneof" do
+    env =
+      %Envelope{body: {:learn_skill_result, %LearnSkillResult{skill_id: 2, ok: true, reason: 0}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body: {:learn_skill_result, %LearnSkillResult{skill_id: 2, ok: true, reason: 0}}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "skill_info exposes the enriched tree fields" do
+    info = %SkillInfo{
+      skill_id: 2,
+      type: 0,
+      level: 1,
+      sp: 8,
+      range: 1,
+      name: "SM_SWORD",
+      upgradable: true,
+      max_level: 10,
+      requires: [%Aesir.Net.SkillRequirement{skill_id: 1, level: 1}],
+      req_base_level: 0,
+      req_job_level: 0
+    }
+
+    assert info.max_level == 10
+    assert info.req_base_level == 0
+    assert info.req_job_level == 0
+    assert [%Aesir.Net.SkillRequirement{skill_id: 1, level: 1}] = info.requires
   end
 end
