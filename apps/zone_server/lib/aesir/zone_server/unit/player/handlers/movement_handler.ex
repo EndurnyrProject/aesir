@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.Net.UnitSpawn
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Constants.ObjectType
+  alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -72,10 +73,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         {next_x, next_y}
       )
 
+    # Facing toward the cell we are stepping into.
+    dir = Geometry.calculate_direction(game_state.x, game_state.y, next_x, next_y)
+
     # Update game state with new position
     updated_game_state =
       game_state
       |> PlayerState.update_position(next_x, next_y)
+      |> PlayerState.update_direction(dir)
       |> Map.put(:walk_path, remaining_path)
 
     # Route through the single choke point so the spatial index + registry
@@ -95,8 +100,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       Process.send_after(self(), :movement_tick, interval)
       {:noreply, %{state | game_state: updated_game_state}}
     else
-      # Path completed, stop movement
+      # Path completed: stop and broadcast the standing transition so the
+      # client's last snapshot sample flips move_state back to idle.
       game_state = PlayerState.stop_walking(updated_game_state)
+
+      Movement.set_position(
+        :player,
+        game_state.character_id,
+        game_state,
+        game_state.map_name
+      )
+
       # Send completion message for PlayerSession to handle
       send(self(), :movement_completed)
       {:noreply, %{state | game_state: game_state}}

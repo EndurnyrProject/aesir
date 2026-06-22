@@ -10,15 +10,16 @@ defmodule Aesir.ZoneServer.Geometry do
   Calculates direction from one point to another.
   Returns a direction value from 0-7 representing 8 compass directions.
 
-  Direction mapping:
-  - 0: North
-  - 1: Northeast  
-  - 2: East
-  - 3: Southeast
-  - 4: South
-  - 5: Southwest
-  - 6: West
-  - 7: Northwest
+  Uses the RO sprite-frame convention expected by the Lifthrasir client
+  (matching its `Direction::from_movement_vector`):
+  - 0: South
+  - 1: Southwest
+  - 2: West
+  - 3: Northwest
+  - 4: North
+  - 5: Northeast
+  - 6: East
+  - 7: Southeast
   """
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def calculate_direction(from_x, from_y, to_x, to_y) do
@@ -27,13 +28,13 @@ defmodule Aesir.ZoneServer.Geometry do
 
     cond do
       dx == 0 and dy < 0 -> 0
-      dx > 0 and dy < 0 -> 1
-      dx > 0 and dy == 0 -> 2
-      dx > 0 and dy > 0 -> 3
+      dx > 0 and dy < 0 -> 7
+      dx > 0 and dy == 0 -> 6
+      dx > 0 and dy > 0 -> 5
       dx == 0 and dy > 0 -> 4
-      dx < 0 and dy > 0 -> 5
-      dx < 0 and dy == 0 -> 6
-      dx < 0 and dy < 0 -> 7
+      dx < 0 and dy > 0 -> 3
+      dx < 0 and dy == 0 -> 2
+      dx < 0 and dy < 0 -> 1
       true -> 0
     end
   end

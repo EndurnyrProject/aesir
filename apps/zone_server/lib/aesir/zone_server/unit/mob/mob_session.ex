@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.Net.UnitSpawn
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Constants.ObjectType
+  alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
@@ -328,10 +329,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     interval =
       MovementEngine.step_delay(state.walk_speed, {state.x, state.y}, {next_x, next_y})
 
+    # Facing toward the cell we are stepping into.
+    dir = Geometry.calculate_direction(state.x, state.y, next_x, next_y)
+
     # Update mob state FIRST to maintain consistency
     updated_state =
       state
       |> MobState.update_position(next_x, next_y)
+      |> MobState.update_direction(dir)
       |> Map.put(:walk_path, remaining_path)
 
     # Route through the single choke point so the spatial index + registry
@@ -348,8 +353,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
       Process.send_after(self(), :movement_tick, interval)
       updated_state
     else
-      # Path completed, stop movement
-      MobState.stop_movement(updated_state)
+      # Path completed: stop and broadcast the standing transition so the
+      # client's last snapshot sample flips move_state back to idle.
+      stopped_state = MobState.stop_movement(updated_state)
+
+      Movement.set_position(
+        :mob,
+        stopped_state.instance_id,
+        stopped_state,
+        stopped_state.map_name
+      )
+
+      stopped_state
     end
   end
 
