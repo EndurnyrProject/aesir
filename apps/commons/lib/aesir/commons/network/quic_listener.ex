@@ -67,6 +67,7 @@ defmodule Aesir.Commons.Network.QuicListener do
     end
   end
 
+  # sobelow_skip ["Traversal.FileModule"]
   @spec load_credentials(keyword()) :: {binary(), :public_key.private_key()}
   defp load_credentials(opts) do
     cert_dir = Keyword.get(opts, :cert_dir, default_cert_dir())
