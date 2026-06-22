@@ -70,7 +70,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
   def build_attack_packet(attacker, defender, damage_result, 1) do
     attacker_id = attacker.unit_id
     defender_id = defender.unit_id
-    aspd = get_aspd_from_combatant(attacker)
 
     Logger.debug(
       "Combat packet: #{if damage_result.is_critical, do: "CRITICAL ", else: ""}attack from #{attacker_id} to #{defender_id} for #{damage_result.damage} damage"
@@ -82,7 +81,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
       src_id: attacker_id,
       target_id: defender_id,
       server_tick: ServerTick.now(),
-      src_speed: aspd * 10,
+      src_speed: attacker.attack_delay_ms,
       dmg_speed: 500,
       damage: damage_result.damage,
       div: 1,
@@ -98,7 +97,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
   def build_attack_packet(attacker, defender, damage_result, hits) when hits > 1 do
     attacker_id = attacker.unit_id
     defender_id = defender.unit_id
-    aspd = get_aspd_from_combatant(attacker)
     total_damage = damage_result.damage * hits
 
     Logger.debug(
@@ -109,7 +107,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
       src_id: attacker_id,
       target_id: defender_id,
       server_tick: ServerTick.now(),
-      src_speed: aspd * 10,
+      src_speed: attacker.attack_delay_ms,
       dmg_speed: 500,
       damage: total_damage,
       div: hits,
@@ -140,8 +138,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
           damage_result()
         ) :: SkillDamage.t()
   def build_skill_damage_packet(attacker, defender, skill_id, skill_level, damage_result) do
-    aspd = get_aspd_from_combatant(attacker)
-
     Logger.debug(
       "Skill packet: skill #{skill_id} lv#{skill_level} from #{attacker.unit_id} to #{defender.unit_id} for #{damage_result.damage} damage"
     )
@@ -152,7 +148,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
       src_id: attacker.unit_id,
       target_id: defender.unit_id,
       server_tick: ServerTick.now(),
-      src_delay: aspd * 10,
+      src_delay: attacker.attack_delay_ms,
       dst_delay: 500,
       damage: damage_result.damage,
       div: 1,
@@ -176,11 +172,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
   def build_miss_packet(attacker, defender) do
     attacker_id = attacker.unit_id
     defender_id = defender.unit_id
-    aspd = get_aspd_from_combatant(attacker)
 
     Logger.debug("Combat packet: Miss from #{attacker_id} to #{defender_id}")
 
-    build_miss(attacker_id, defender_id, aspd)
+    build_miss(attacker_id, defender_id, attacker.attack_delay_ms)
   end
 
   @doc """
@@ -199,21 +194,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
   def build_perfect_dodge_packet(attacker, defender) do
     attacker_id = attacker.unit_id
     defender_id = defender.unit_id
-    aspd = get_aspd_from_combatant(attacker)
 
     Logger.debug("Combat packet: Perfect dodge from #{attacker_id} to #{defender_id}")
 
     # Perfect dodge uses the same packet structure as miss.
-    build_miss(attacker_id, defender_id, aspd)
+    build_miss(attacker_id, defender_id, attacker.attack_delay_ms)
   end
 
   @spec build_miss(integer(), integer(), integer()) :: DamageDealt.t()
-  defp build_miss(src_id, target_id, aspd) do
+  defp build_miss(src_id, target_id, delay_ms) do
     %DamageDealt{
       src_id: src_id,
       target_id: target_id,
       server_tick: ServerTick.now(),
-      src_speed: aspd * 10,
+      src_speed: delay_ms,
       dmg_speed: 0,
       damage: 0,
       div: 1,
@@ -251,48 +245,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
 
       _ ->
         raise ArgumentError, "Unknown combat result type: #{inspect(combat_result)}"
-    end
-  end
-
-  # Private helper functions
-
-  # Extracts ASPD from combatant for packet timing calculations.
-  #
-  # Handles the different ways ASPD might be stored in combatant data
-  # for backward compatibility during the transition period.
-  @spec get_aspd_from_combatant(Combatant.t()) :: integer()
-  defp get_aspd_from_combatant(%Combatant{} = combatant) do
-    # For now, we'll need to calculate ASPD or get it from derived stats
-    # This is a simplified version - in the full implementation,
-    # we'd want to store ASPD in the combatant struct
-
-    # Default ASPD calculation based on AGI (simplified)
-    base_aspd = 200 - combatant.base_stats.agi
-    max(100, base_aspd)
-  end
-
-  @doc """
-  Legacy helper for backward compatibility.
-
-  Extracts ASPD from old-style attacker data during transition period.
-  """
-  @spec get_aspd_from_legacy_attacker(map()) :: integer()
-  def get_aspd_from_legacy_attacker(attacker_data) do
-    cond do
-      Map.has_key?(attacker_data, :derived_stats) ->
-        attacker_data.derived_stats.aspd
-
-      Map.has_key?(attacker_data, :aspd) ->
-        attacker_data.aspd
-
-      Map.has_key?(attacker_data, :base_stats) ->
-        # Fallback calculation
-        base_aspd = 200 - attacker_data.base_stats.agi
-        max(100, base_aspd)
-
-      true ->
-        # Default ASPD
-        150
     end
   end
 end
