@@ -1,11 +1,16 @@
 defmodule Aesir.ZoneServer.Npc.WarpsTest do
   use ExUnit.Case, async: false
+  import Mimic
 
+  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Npc.Warp
   alias Aesir.ZoneServer.Npc.Warps
 
   setup do
     :persistent_term.erase(Warps)
+    stub(MapCache, :get, fn _ -> {:ok, %MapData{}} end)
+    stub(MapData, :walkable?, fn _, _, _ -> true end)
     on_exit(fn -> :persistent_term.erase(Warps) end)
     :ok
   end
