@@ -409,6 +409,60 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
     end
   end
 
+  describe "warp cooldown" do
+    setup do
+      character = %Character{
+        id: 1,
+        name: "TestPlayer",
+        last_map: "prontera",
+        last_x: 100,
+        last_y: 100,
+        base_level: 1,
+        job_level: 1,
+        class: 0,
+        str: 1,
+        agi: 1,
+        vit: 1,
+        int: 1,
+        dex: 1,
+        luk: 1,
+        hp: 100,
+        max_hp: 100,
+        sp: 50,
+        max_sp: 50,
+        status_point: 0,
+        skill_point: 0,
+        account_id: 1
+      }
+
+      {:ok, %{state: PlayerState.new(character)}}
+    end
+
+    test "last_warp_at is nil in a freshly-constructed state", %{state: state} do
+      assert state.last_warp_at == nil
+    end
+
+    test "within_warp_cooldown? returns false when last_warp_at is nil", %{state: state} do
+      assert PlayerState.within_warp_cooldown?(state, 500) == false
+    end
+
+    test "mark_warp sets last_warp_at to a monotonic integer and trips the cooldown", %{
+      state: state
+    } do
+      marked = PlayerState.mark_warp(state)
+
+      assert is_integer(marked.last_warp_at)
+      assert PlayerState.within_warp_cooldown?(marked, 500) == true
+    end
+
+    test "within_warp_cooldown? returns false once the cooldown has elapsed", %{state: state} do
+      past = System.monotonic_time(:millisecond) - 1_000
+      state = %{state | last_warp_at: past}
+
+      assert PlayerState.within_warp_cooldown?(state, 500) == false
+    end
+  end
+
   describe "state entry handlers" do
     setup do
       character = %Character{

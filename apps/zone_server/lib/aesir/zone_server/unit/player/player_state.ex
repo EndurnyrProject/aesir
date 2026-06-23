@@ -55,6 +55,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           last_target_position: {integer(), integer()} | nil,
           last_attack_timestamp: integer(),
           act_delay_until: integer(),
+          last_warp_at: integer() | nil,
           continuous_attack_timer: reference() | nil,
           skill_cooldowns: %{integer() => integer()},
           regen_accumulators: %{atom() => non_neg_integer()},
@@ -67,6 +68,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
         }
 
   @client_index_offset 2
+
+  @warp_cooldown_ms 500
 
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
@@ -154,6 +157,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     skill_cooldowns: %{},
     last_attack_timestamp: 0,
     act_delay_until: 0,
+    last_warp_at: nil,
     regen_accumulators: %{hp_acc: 0, sp_acc: 0, skill_hp_acc: 0, skill_sp_acc: 0}
   ]
 
@@ -444,6 +448,35 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   @spec act_ready?(t(), integer()) :: boolean()
   def act_ready?(%{act_delay_until: 0}, _now), do: true
   def act_ready?(%{act_delay_until: until}, now), do: now >= until
+
+  @doc """
+  Stamps `last_warp_at` with the current monotonic time in milliseconds,
+  arming the per-player warp re-trigger cooldown. The timestamp is ephemeral
+  and is never persisted.
+
+  The default cooldown window is `@warp_cooldown_ms` (500ms); callers pass it
+  to `within_warp_cooldown?/2` so the guard stays co-located with the trigger.
+  """
+  @spec mark_warp(t()) :: t()
+  def mark_warp(%__MODULE__{} = state) do
+    %{state | last_warp_at: System.monotonic_time(:millisecond)}
+  end
+
+  @doc """
+  Returns `true` when a warp fired within the last `cooldown_ms` milliseconds
+  (the same-map-destination re-fire guard), `false` when `last_warp_at` is
+  `nil` (fresh state) or the window has elapsed.
+  """
+  @spec within_warp_cooldown?(t()) :: boolean()
+  def within_warp_cooldown?(%__MODULE__{} = state),
+    do: within_warp_cooldown?(state, @warp_cooldown_ms)
+
+  @spec within_warp_cooldown?(t(), non_neg_integer()) :: boolean()
+  def within_warp_cooldown?(%__MODULE__{last_warp_at: nil}, _cooldown_ms), do: false
+
+  def within_warp_cooldown?(%__MODULE__{last_warp_at: last_warp_at}, cooldown_ms) do
+    System.monotonic_time(:millisecond) - last_warp_at < cooldown_ms
+  end
 
   @doc """
   Checks if a state transition is valid.
