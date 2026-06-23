@@ -1,0 +1,157 @@
+---
+- id: x_fild_out
+  map: xmas
+  name: ''
+  sprite: 45
+  to:
+    map: xmas_fild01
+    x: 80
+    'y': 248
+  x: 149
+  xs: 8
+  'y': 41
+  ys: 1
+- id: xmas_tool1-1
+  map: xmas
+  name: ''
+  sprite: 45
+  to:
+    map: xmas_in
+    x: 43
+    'y': 33
+  x: 120
+  xs: 1
+  'y': 131
+  ys: 1
+- id: xmas_gift1-1
+  map: xmas
+  name: ''
+  sprite: 45
+  to:
+    map: xmas_in
+    x: 155
+    'y': 32
+  x: 174
+  xs: 1
+  'y': 131
+  ys: 1
+- id: xmas_house1-1
+  map: xmas
+  name: ''
+  sprite: 45
+  to:
+    map: xmas_in
+    x: 36
+    'y': 91
+  x: 119
+  xs: 1
+  'y': 162
+  ys: 1
+- id: xmas_house2-1
+  map: xmas
+  name: ''
+  sprite: 45
+  to:
+    map: xmas_in
+    x: 168
+    'y': 164
+  x: 189
+  xs: 1
+  'y': 278
+  ys: 1
+- id: xmas_weapon1-1
+  map: xmas
+  name: ''
+  sprite: 45
+  to:
+    map: xmas_in
+    x: 165
+    'y': 95
+  x: 173
+  xs: 1
+  'y': 160
+  ys: 1
+- id: xmas_weapon2-1
+  map: xmas
+  name: ''
+  sprite: 45
+  to:
+    map: xmas_in
+    x: 177
+    'y': 107
+  x: 181
+  xs: 1
+  'y': 169
+  ys: 1
+- id: xmas_santa1-1
+  map: xmas
+  name: ''
+  sprite: 45
+  to:
+    map: xmas_in
+    x: 94
+    'y': 85
+  x: 142
+  xs: 1
+  'y': 239
+  ys: 1
+- id: xmas_santa2-1
+  map: xmas
+  name: ''
+  sprite: 45
+  to:
+    map: xmas_in
+    x: 104
+    'y': 85
+  x: 149
+  xs: 1
+  'y': 239
+  ys: 1
+- id: xmas_santa3-1
+  map: xmas
+  name: ''
+  sprite: 45
+  to:
+    map: xmas_in
+    x: 94
+    'y': 115
+  x: 142
+  xs: 1
+  'y': 258
+  ys: 1
+- id: xmas_santa4-1
+  map: xmas
+  name: ''
+  sprite: 45
+  to:
+    map: xmas_in
+    x: 104
+    'y': 115
+  x: 149
+  xs: 1
+  'y': 258
+  ys: 1
+- id: xmas_church1-1
+  map: xmas
+  name: ''
+  sprite: 45
+  to:
+    map: xmas_in
+    x: 30
+    'y': 163
+  x: 104
+  xs: 1
+  'y': 289
+  ys: 1
+- id: xmas_dun1-1
+  map: xmas
+  name: ''
+  sprite: 45
+  to:
+    map: xmas_dun01
+    x: 205
+    'y': 16
+  x: 143
+  xs: 1
+  'y': 314
+  ys: 1

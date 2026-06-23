@@ -1,0 +1,13 @@
+---
+- id: arug001
+  map: ve_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: aru_gld
+    x: 195
+    'y': 360
+  x: 191
+  xs: 1
+  'y': 21
+  ys: 1

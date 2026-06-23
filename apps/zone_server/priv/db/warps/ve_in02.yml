@@ -1,0 +1,13 @@
+---
+- id: ve_factory1-2
+  map: ve_in02
+  name: ''
+  sprite: 45
+  to:
+    map: veins
+    x: 269
+    'y': 225
+  x: 13
+  xs: 1
+  'y': 19
+  ys: 1

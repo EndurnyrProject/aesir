@@ -1,0 +1,25 @@
+---
+- id: eib_d01a
+  map: ein_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: einbech
+    x: 138
+    'y': 249
+  x: 22
+  xs: 1
+  'y': 11
+  ys: 1
+- id: ein012
+  map: ein_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: ein_dun02
+    x: 291
+    'y': 292
+  x: 261
+  xs: 1
+  'y': 255
+  ys: 1

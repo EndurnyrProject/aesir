@@ -1,0 +1,13 @@
+---
+- id: gl1-1
+  map: gl_step
+  name: ''
+  sprite: 45
+  to:
+    map: glast_01
+    x: 54
+    'y': 108
+  x: 8
+  xs: 1
+  'y': 7
+  ys: 1

@@ -1,0 +1,13 @@
+---
+- id: sanctuary09
+  map: ra_san05
+  name: ''
+  sprite: 45
+  to:
+    map: ra_temple
+    x: 119
+    'y': 153
+  x: 150
+  xs: 1
+  'y': 7
+  ys: 1

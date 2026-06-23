@@ -1,0 +1,49 @@
+---
+- id: payd04-2
+  map: pay_dun04
+  name: ''
+  sprite: 45
+  to:
+    map: pay_dun03
+    x: 124
+    'y': 62
+  x: 191
+  xs: 1
+  'y': 41
+  ys: 1
+- id: payd04-3
+  map: pay_dun04
+  name: ''
+  sprite: 45
+  to:
+    map: pay_dun03
+    x: 124
+    'y': 62
+  x: 202
+  xs: 1
+  'y': 206
+  ys: 1
+- id: payd04-4
+  map: pay_dun04
+  name: ''
+  sprite: 45
+  to:
+    map: pay_dun03
+    x: 124
+    'y': 62
+  x: 32
+  xs: 2
+  'y': 204
+  ys: 1
+- id: payd04-1
+  map: pay_dun04
+  name: ''
+  sprite: 45
+  to:
+    map: pay_dun03
+    x: 124
+    'y': 62
+  x: 40
+  xs: 2
+  'y': 37
+  ys: 2

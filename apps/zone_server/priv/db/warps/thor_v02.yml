@@ -1,0 +1,25 @@
+---
+- id: thor_v2-2
+  map: thor_v02
+  name: ''
+  sprite: 45
+  to:
+    map: thor_v03
+    x: 35
+    'y': 262
+  x: 192
+  xs: 1
+  'y': 60
+  ys: 1
+- id: thor_v3-1
+  map: thor_v02
+  name: ''
+  sprite: 45
+  to:
+    map: thor_v01
+    x: 196
+    'y': 37
+  x: 73
+  xs: 1
+  'y': 203
+  ys: 1

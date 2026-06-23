@@ -1,0 +1,133 @@
+---
+- id: lou_fild1-1
+  map: louyang
+  name: ''
+  sprite: 45
+  to:
+    map: lou_fild01
+    x: 233
+    'y': 353
+  x: 218
+  xs: 1
+  'y': 19
+  ys: 1
+- id: lou_palace1-1
+  map: louyang
+  name: ''
+  sprite: 45
+  to:
+    map: lou_in01
+    x: 101
+    'y': 122
+  x: 218
+  xs: 1
+  'y': 255
+  ys: 1
+- id: lou_pub1-1
+  map: louyang
+  name: ''
+  sprite: 45
+  to:
+    map: lou_in02
+    x: 58
+    'y': 173
+  x: 280
+  xs: 1
+  'y': 167
+  ys: 1
+- id: lou_weapon1-1
+  map: louyang
+  name: ''
+  sprite: 45
+  to:
+    map: lou_in02
+    x: 126
+    'y': 168
+  x: 145
+  xs: 1
+  'y': 174
+  ys: 1
+- id: lou_tool1-1
+  map: louyang
+  name: ''
+  sprite: 45
+  to:
+    map: lou_in02
+    x: 247
+    'y': 171
+  x: 136
+  xs: 1
+  'y': 97
+  ys: 1
+- id: lou_hospital1-1
+  map: louyang
+  name: ''
+  sprite: 45
+  to:
+    map: lou_in02
+    x: 245
+    'y': 59
+  x: 263
+  xs: 1
+  'y': 93
+  ys: 1
+- id: lou_office1-1
+  map: louyang
+  name: ''
+  sprite: 45
+  to:
+    map: lou_in02
+    x: 189
+    'y': 77
+  x: 309
+  xs: 1
+  'y': 80
+  ys: 1
+- id: lou_house11-1
+  map: louyang
+  name: ''
+  sprite: 45
+  to:
+    map: lou_in02
+    x: 72
+    'y': 31
+  x: 130
+  xs: 1
+  'y': 63
+  ys: 1
+- id: lou_house21-1
+  map: louyang
+  name: ''
+  sprite: 45
+  to:
+    map: lou_in02
+    x: 121
+    'y': 31
+  x: 317
+  xs: 1
+  'y': 176
+  ys: 1
+- id: lou_tower1-1
+  map: louyang
+  name: ''
+  sprite: 45
+  to:
+    map: lou_in01
+    x: 25
+    'y': 19
+  x: 133
+  xs: 1
+  'y': 245
+  ys: 1
+- id: lou_dun1-1
+  map: louyang
+  name: ''
+  sprite: 45
+  to:
+    map: lou_dun01
+    x: 218
+    'y': 195
+  x: 37
+  xs: 1
+  'y': 271
+  ys: 1

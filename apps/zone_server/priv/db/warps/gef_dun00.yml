@@ -1,0 +1,13 @@
+---
+- id: gef024
+  map: gef_dun00
+  name: ''
+  sprite: 45
+  to:
+    map: gef_tower
+    x: 153
+    'y': 31
+  x: 104
+  xs: 3
+  'y': 103
+  ys: 3

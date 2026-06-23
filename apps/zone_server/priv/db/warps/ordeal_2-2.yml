@@ -1,0 +1,97 @@
+---
+- id: ord22-1
+  map: ordeal_2-2
+  name: ''
+  sprite: 45
+  to:
+    map: ordeal_2-2
+    x: 24
+    'y': 154
+  x: 128
+  xs: 1
+  'y': 154
+  ys: 1
+- id: ord22-2
+  map: ordeal_2-2
+  name: ''
+  sprite: 45
+  to:
+    map: ordeal_2-2
+    x: 24
+    'y': 24
+  x: 136
+  xs: 1
+  'y': 136
+  ys: 1
+- id: ord22-3
+  map: ordeal_2-2
+  name: ''
+  sprite: 45
+  to:
+    map: ordeal_2-2
+    x: 24
+    'y': 284
+  x: 136
+  xs: 1
+  'y': 172
+  ys: 1
+- id: ord22-4
+  map: ordeal_2-2
+  name: ''
+  sprite: 45
+  to:
+    map: ordeal_2-2
+    x: 153
+    'y': 23
+  x: 153
+  xs: 1
+  'y': 128
+  ys: 1
+- id: ord22-5
+  map: ordeal_2-2
+  name: ''
+  sprite: 45
+  to:
+    map: ordeal_2-2
+    x: 144
+    'y': 284
+  x: 153
+  xs: 1
+  'y': 180
+  ys: 1
+- id: ord22-6
+  map: ordeal_2-2
+  name: ''
+  sprite: 45
+  to:
+    map: ordeal_2-2
+    x: 284
+    'y': 24
+  x: 172
+  xs: 1
+  'y': 135
+  ys: 1
+- id: ord22-7
+  map: ordeal_2-2
+  name: ''
+  sprite: 45
+  to:
+    map: ordeal_2-2
+    x: 284
+    'y': 284
+  x: 172
+  xs: 1
+  'y': 172
+  ys: 1
+- id: ord22-8
+  map: ordeal_2-2
+  name: ''
+  sprite: 45
+  to:
+    map: ordeal_2-2
+    x: 284
+    'y': 164
+  x: 180
+  xs: 1
+  'y': 154
+  ys: 1

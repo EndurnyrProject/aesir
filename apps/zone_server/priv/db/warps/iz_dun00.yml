@@ -1,0 +1,37 @@
+---
+- id: izd01-1
+  map: iz_dun00
+  name: ''
+  sprite: 45
+  to:
+    map: izlu2dun
+    x: 108
+    'y': 88
+  x: 168
+  xs: 3
+  'y': 173
+  ys: 3
+- id: izd02
+  map: iz_dun00
+  name: ''
+  sprite: 45
+  to:
+    map: iz_dun01
+    x: 253
+    'y': 252
+  x: 352
+  xs: 5
+  'y': 342
+  ys: 2
+- id: izd03
+  map: iz_dun00
+  name: ''
+  sprite: 45
+  to:
+    map: iz_dun01
+    x: 41
+    'y': 37
+  x: 39
+  xs: 5
+  'y': 41
+  ys: 2

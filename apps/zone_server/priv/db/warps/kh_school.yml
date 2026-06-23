@@ -1,0 +1,133 @@
+---
+- id: kh_school_01
+  map: kh_school
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild08
+    x: 155
+    'y': 189
+  x: 76
+  xs: 1
+  'y': 156
+  ys: 1
+- id: kh_school_02a
+  map: kh_school
+  name: ''
+  sprite: 45
+  to:
+    map: kh_school
+    x: 67
+    'y': 14
+  x: 30
+  xs: 1
+  'y': 125
+  ys: 1
+- id: kh_school_02b
+  map: kh_school
+  name: ''
+  sprite: 45
+  to:
+    map: kh_school
+    x: 36
+    'y': 125
+  x: 71
+  xs: 1
+  'y': 14
+  ys: 1
+- id: kh_school_03a
+  map: kh_school
+  name: ''
+  sprite: 45
+  to:
+    map: kh_school
+    x: 148
+    'y': 16
+  x: 35
+  xs: 1
+  'y': 133
+  ys: 1
+- id: kh_school_03b
+  map: kh_school
+  name: ''
+  sprite: 45
+  to:
+    map: kh_school
+    x: 39
+    'y': 136
+  x: 153
+  xs: 1
+  'y': 16
+  ys: 1
+- id: kh_school_04a
+  map: kh_school
+  name: ''
+  sprite: 45
+  to:
+    map: kh_school
+    x: 182
+    'y': 116
+  x: 30
+  xs: 1
+  'y': 155
+  ys: 1
+- id: kh_school_04b
+  map: kh_school
+  name: ''
+  sprite: 45
+  to:
+    map: kh_school
+    x: 35
+    'y': 155
+  x: 186
+  xs: 1
+  'y': 117
+  ys: 1
+- id: kh_school_05a
+  map: kh_school
+  name: ''
+  sprite: 45
+  to:
+    map: kh_school
+    x: 148
+    'y': 56
+  x: 35
+  xs: 1
+  'y': 176
+  ys: 1
+- id: kh_school_05b
+  map: kh_school
+  name: ''
+  sprite: 45
+  to:
+    map: kh_school
+    x: 40
+    'y': 176
+  x: 153
+  xs: 1
+  'y': 56
+  ys: 1
+- id: kh_school_06a
+  map: kh_school
+  name: ''
+  sprite: 45
+  to:
+    map: kh_school
+    x: 67
+    'y': 74
+  x: 30
+  xs: 1
+  'y': 185
+  ys: 1
+- id: kh_school_06b
+  map: kh_school
+  name: ''
+  sprite: 45
+  to:
+    map: kh_school
+    x: 35
+    'y': 184
+  x: 71
+  xs: 1
+  'y': 74
+  ys: 1

@@ -1,0 +1,25 @@
+---
+- id: arug401
+  map: arug_cas04
+  name: ''
+  sprite: 45
+  to:
+    map: aru_gld
+    x: 299
+    'y': 345
+  x: 141
+  xs: 1
+  'y': 40
+  ys: 1
+- id: arug403
+  map: arug_cas04
+  name: ''
+  sprite: 45
+  to:
+    map: arug_cas04
+    x: 141
+    'y': 45
+  x: 321
+  xs: 1
+  'y': 52
+  ys: 1

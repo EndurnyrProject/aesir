@@ -16,23 +16,12 @@ defmodule Aesir.ZoneServer.Npc.WarpsTest do
   end
 
   describe "for_map/1" do
-    test "returns the seed warps for prontera without an explicit reload" do
-      assert {:ok, warps} = Warps.for_map("prontera")
-
-      assert [%Warp{} = warp | _] = warps
-      assert warp.map == "prontera"
-      assert warp.to_map == "izlude"
-      assert warp.to_x == 150
-      assert warp.to_y == 190
-      assert warp.sprite == 45
+    test "loads a map's warps as %Warp{} structs without an explicit reload" do
+      assert {:ok, [%Warp{map: "prontera", sprite: 45} | _]} = Warps.for_map("prontera")
     end
 
-    test "returns the return warp for izlude" do
-      assert {:ok, warps} = Warps.for_map("izlude")
-
-      assert [%Warp{} = warp | _] = warps
-      assert warp.map == "izlude"
-      assert warp.to_map == "prontera"
+    test "loads warps for another populated map" do
+      assert {:ok, [%Warp{map: "geffen", sprite: 45} | _]} = Warps.for_map("geffen")
     end
 
     test "returns :error for a map with no warps" do
@@ -41,12 +30,8 @@ defmodule Aesir.ZoneServer.Npc.WarpsTest do
   end
 
   describe "all/0" do
-    test "returns a map keyed by map name" do
-      all = Warps.all()
-
-      assert is_map(all)
-      assert Map.has_key?(all, "prontera")
-      assert Map.has_key?(all, "izlude")
+    test "returns warps keyed by source map name" do
+      assert %{"prontera" => [%Warp{} | _], "geffen" => [%Warp{} | _]} = Warps.all()
     end
   end
 

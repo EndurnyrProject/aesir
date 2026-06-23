@@ -1,0 +1,25 @@
+---
+- id: nwarp8
+  map: nif_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: nif_fild01
+    x: 343
+    'y': 322
+  x: 21
+  xs: 1
+  'y': 312
+  ys: 1
+- id: nwarp9
+  map: nif_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: niflheim
+    x: 20
+    'y': 153
+  x: 379
+  xs: 1
+  'y': 235
+  ys: 1

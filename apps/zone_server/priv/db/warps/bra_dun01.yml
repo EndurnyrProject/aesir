@@ -1,0 +1,13 @@
+---
+- id: brad1tobrad2
+  map: bra_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: bra_dun02
+    x: 261
+    'y': 263
+  x: 199
+  xs: 1
+  'y': 35
+  ys: 1

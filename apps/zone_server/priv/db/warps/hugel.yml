@@ -1,0 +1,145 @@
+---
+- id: hugel02
+  map: hugel
+  name: ''
+  sprite: 45
+  to:
+    map: hu_fild06
+    x: 200
+    'y': 367
+  x: 95
+  xs: 1
+  'y': 33
+  ys: 1
+- id: hugel03
+  map: hugel
+  name: ''
+  sprite: 45
+  to:
+    map: hu_in01
+    x: 211
+    'y': 177
+  x: 155
+  xs: 1
+  'y': 114
+  ys: 1
+- id: hugel09
+  map: hugel
+  name: ''
+  sprite: 45
+  to:
+    map: hu_in01
+    x: 287
+    'y': 231
+  x: 153
+  xs: 1
+  'y': 153
+  ys: 1
+- id: hugel13
+  map: hugel
+  name: ''
+  sprite: 45
+  to:
+    map: hu_in01
+    x: 246
+    'y': 363
+  x: 92
+  xs: 1
+  'y': 167
+  ys: 1
+- id: hugel21
+  map: hugel
+  name: ''
+  sprite: 45
+  to:
+    map: hu_in01
+    x: 231
+    'y': 303
+  x: 85
+  xs: 1
+  'y': 181
+  ys: 1
+- id: hugel23
+  map: hugel
+  name: ''
+  sprite: 45
+  to:
+    map: hu_in01
+    x: 110
+    'y': 373
+  x: 70
+  xs: 1
+  'y': 157
+  ys: 1
+- id: hugel27
+  map: hugel
+  name: ''
+  sprite: 45
+  to:
+    map: hu_in01
+    x: 30
+    'y': 304
+  x: 91
+  xs: 1
+  'y': 104
+  ys: 1
+- id: hugel31
+  map: hugel
+  name: ''
+  sprite: 45
+  to:
+    map: hu_in01
+    x: 235
+    'y': 107
+  x: 104
+  xs: 1
+  'y': 79
+  ys: 1
+- id: hugel41
+  map: hugel
+  name: ''
+  sprite: 45
+  to:
+    map: hu_in01
+    x: 381
+    'y': 368
+  x: 206
+  xs: 1
+  'y': 228
+  ys: 1
+- id: hugel51
+  map: hugel
+  name: ''
+  sprite: 45
+  to:
+    map: hu_in01
+    x: 350
+    'y': 107
+  x: 129
+  xs: 1
+  'y': 66
+  ys: 1
+- id: hugel55
+  map: hugel
+  name: ''
+  sprite: 45
+  to:
+    map: hu_in01
+    x: 305
+    'y': 379
+  x: 153
+  xs: 1
+  'y': 216
+  ys: 1
+- id: hugel59
+  map: hugel
+  name: ''
+  sprite: 45
+  to:
+    map: hu_in01
+    x: 24
+    'y': 363
+  x: 80
+  xs: 1
+  'y': 230
+  ys: 1

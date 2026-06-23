@@ -1,0 +1,25 @@
+---
+- id: sphx001
+  map: in_sphinx1
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild19
+    x: 100
+    'y': 99
+  x: 288
+  xs: 5
+  'y': 6
+  ys: 1
+- id: sphx01
+  map: in_sphinx1
+  name: ''
+  sprite: 45
+  to:
+    map: in_sphinx2
+    x: 149
+    'y': 81
+  x: 80
+  xs: 2
+  'y': 191
+  ys: 1

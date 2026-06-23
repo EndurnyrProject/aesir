@@ -1,0 +1,13 @@
+---
+- id: payonwarp004
+  map: pay_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: payon
+    x: 122
+    'y': 31
+  x: 333
+  xs: 5
+  'y': 360
+  ys: 3

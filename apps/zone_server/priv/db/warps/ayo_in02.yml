@@ -1,0 +1,13 @@
+---
+- id: ayo_shrine1-2
+  map: ayo_in02
+  name: ''
+  sprite: 45
+  to:
+    map: ayothaya
+    x: 208
+    'y': 280
+  x: 100
+  xs: 1
+  'y': 148
+  ys: 1

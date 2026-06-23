@@ -1,0 +1,109 @@
+---
+- id: payonwarp052
+  map: payon_in02
+  name: ''
+  sprite: 45
+  to:
+    map: payon_in02
+    x: 72
+    'y': 67
+  x: 10
+  xs: 2
+  'y': 25
+  ys: 2
+- id: payonwarp053
+  map: payon_in02
+  name: ''
+  sprite: 45
+  to:
+    map: payon_in02
+    x: 55
+    'y': 67
+  x: 35
+  xs: 2
+  'y': 67
+  ys: 2
+- id: payonwarp054
+  map: payon_in02
+  name: ''
+  sprite: 45
+  to:
+    map: pay_arche
+    x: 92
+    'y': 166
+  x: 50
+  xs: 3
+  'y': 4
+  ys: 1
+- id: payonwarp055
+  map: payon_in02
+  name: ''
+  sprite: 45
+  to:
+    map: payon_in02
+    x: 32
+    'y': 67
+  x: 52
+  xs: 2
+  'y': 67
+  ys: 2
+- id: payonwarp056
+  map: payon_in02
+  name: ''
+  sprite: 45
+  to:
+    map: payon_in02
+    x: 73
+    'y': 33
+  x: 61
+  xs: 2
+  'y': 33
+  ys: 2
+- id: payonwarp057
+  map: payon_in02
+  name: ''
+  sprite: 45
+  to:
+    map: pay_arche
+    x: 141
+    'y': 161
+  x: 64
+  xs: 2
+  'y': 56
+  ys: 2
+- id: payonwarp058
+  map: payon_in02
+  name: ''
+  sprite: 45
+  to:
+    map: payon_in02
+    x: 58
+    'y': 33
+  x: 70
+  xs: 2
+  'y': 33
+  ys: 2
+- id: payonwarp059
+  map: payon_in02
+  name: ''
+  sprite: 45
+  to:
+    map: payon_in02
+    x: 13
+    'y': 25
+  x: 75
+  xs: 2
+  'y': 67
+  ys: 2
+- id: payonwarp060
+  map: payon_in02
+  name: ''
+  sprite: 45
+  to:
+    map: pay_arche
+    x: 74
+    'y': 153
+  x: 82
+  xs: 2
+  'y': 45
+  ys: 2

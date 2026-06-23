@@ -1,0 +1,61 @@
+---
+- id: hugelwarp1052
+  map: que_bingo
+  name: ''
+  sprite: 45
+  to:
+    map: hugel
+    x: 57
+    'y': 207
+  x: 49
+  xs: 1
+  'y': 7
+  ys: 1
+- id: hugelwarp1053
+  map: que_bingo
+  name: ''
+  sprite: 45
+  to:
+    map: que_bingo
+    x: 34
+    'y': 109
+  x: 39
+  xs: 1
+  'y': 34
+  ys: 1
+- id: hugelwarp1054
+  map: que_bingo
+  name: ''
+  sprite: 45
+  to:
+    map: que_bingo
+    x: 38
+    'y': 28
+  x: 34
+  xs: 1
+  'y': 105
+  ys: 1
+- id: hugelwarp1055
+  map: que_bingo
+  name: ''
+  sprite: 45
+  to:
+    map: que_bingo
+    x: 49
+    'y': 71
+  x: 53
+  xs: 1
+  'y': 34
+  ys: 1
+- id: hugelwarp1056
+  map: que_bingo
+  name: ''
+  sprite: 45
+  to:
+    map: que_bingo
+    x: 53
+    'y': 29
+  x: 48
+  xs: 1
+  'y': 66
+  ys: 1

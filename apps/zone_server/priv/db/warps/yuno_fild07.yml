@@ -1,0 +1,37 @@
+---
+- id: jupwrp01
+  map: yuno_fild07
+  name: ''
+  sprite: 45
+  to:
+    map: jupe_cave
+    x: 143
+    'y': 52
+  x: 207
+  xs: 1
+  'y': 175
+  ys: 1
+- id: ein002
+  map: yuno_fild07
+  name: ''
+  sprite: 45
+  to:
+    map: ein_fild06
+    x: 338
+    'y': 170
+  x: 73
+  xs: 1
+  'y': 219
+  ys: 1
+- id: ein003
+  map: yuno_fild07
+  name: ''
+  sprite: 45
+  to:
+    map: ein_fild06
+    x: 354
+    'y': 94
+  x: 56
+  xs: 1
+  'y': 76
+  ys: 1

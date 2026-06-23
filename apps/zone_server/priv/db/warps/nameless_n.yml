@@ -1,0 +1,13 @@
+---
+- id: namelesswarp0401
+  map: nameless_n
+  name: ''
+  sprite: 45
+  to:
+    map: abbey01
+    x: 51
+    'y': 12
+  x: 157
+  xs: 1
+  'y': 184
+  ys: 1

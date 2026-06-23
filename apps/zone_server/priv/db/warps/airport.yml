@@ -1,0 +1,73 @@
+---
+- id: ein_ap02a
+  map: airport
+  name: ''
+  sprite: 45
+  to:
+    map: einbroch
+    x: 62
+    'y': 246
+  x: 142
+  xs: 1
+  'y': 61
+  ys: 1
+- id: ein_ap03
+  map: airport
+  name: ''
+  sprite: 45
+  to:
+    map: airport
+    x: 19
+    'y': 21
+  x: 124
+  xs: 1
+  'y': 13
+  ys: 1
+- id: ein_ap03a
+  map: airport
+  name: ''
+  sprite: 45
+  to:
+    map: airport
+    x: 122
+    'y': 16
+  x: 19
+  xs: 1
+  'y': 18
+  ys: 1
+- id: ein_ap04
+  map: airport
+  name: ''
+  sprite: 45
+  to:
+    map: airport
+    x: 47
+    'y': 21
+  x: 161
+  xs: 1
+  'y': 13
+  ys: 1
+- id: ein_ap04a
+  map: airport
+  name: ''
+  sprite: 45
+  to:
+    map: airport
+    x: 163
+    'y': 16
+  x: 47
+  xs: 1
+  'y': 18
+  ys: 1
+- id: ein_ap05
+  map: airport
+  name: ''
+  sprite: 45
+  to:
+    map: einbroch
+    x: 64
+    'y': 204
+  x: 143
+  xs: 1
+  'y': 14
+  ys: 1

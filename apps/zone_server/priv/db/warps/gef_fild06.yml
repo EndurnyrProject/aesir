@@ -1,0 +1,13 @@
+---
+- id: gef027
+  map: gef_fild06
+  name: ''
+  sprite: 45
+  to:
+    map: glast_01
+    x: 370
+    'y': 304
+  x: 20
+  xs: 3
+  'y': 304
+  ys: 3

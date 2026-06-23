@@ -1,0 +1,13 @@
+---
+- id: mazewarp5333
+  map: prt_maze03
+  name: ''
+  sprite: 45
+  to:
+    map: prt_maze02
+    x: 100
+    'y': 179
+  x: 182
+  xs: 1
+  'y': 85
+  ys: 1

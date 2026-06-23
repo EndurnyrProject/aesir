@@ -1,0 +1,25 @@
+---
+- id: kh_mansion_01b
+  map: kh_mansion
+  name: ''
+  sprite: 45
+  to:
+    map: lighthalzen
+    x: 188
+    'y': 199
+  x: 88
+  xs: 1
+  'y': 50
+  ys: 1
+- id: kh_mansion_02
+  map: kh_mansion
+  name: ''
+  sprite: 45
+  to:
+    map: kh_mansion
+    x: 72
+    'y': 49
+  x: 21
+  xs: 1
+  'y': 11
+  ys: 1

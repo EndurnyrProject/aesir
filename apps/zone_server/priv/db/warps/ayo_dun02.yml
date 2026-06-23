@@ -1,0 +1,25 @@
+---
+- id: ayo_dun2-1
+  map: ayo_dun02
+  name: ''
+  sprite: 45
+  to:
+    map: ayo_dun01
+    x: 24
+    'y': 279
+  x: 24
+  xs: 1
+  'y': 22
+  ys: 1
+- id: ayo_dun2-2
+  map: ayo_dun02
+  name: ''
+  sprite: 45
+  to:
+    map: ayo_dun01
+    x: 24
+    'y': 279
+  x: 276
+  xs: 1
+  'y': 22
+  ys: 1

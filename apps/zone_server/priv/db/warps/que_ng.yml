@@ -1,0 +1,121 @@
+---
+- id: gswarp2
+  map: que_ng
+  name: ''
+  sprite: 45
+  to:
+    map: einbroch
+    x: 130
+    'y': 197
+  x: 130
+  xs: 1
+  'y': 166
+  ys: 1
+- id: gswarp3
+  map: que_ng
+  name: ''
+  sprite: 45
+  to:
+    map: que_ng
+    x: 172
+    'y': 86
+  x: 178
+  xs: 1
+  'y': 162
+  ys: 1
+- id: gswarp4
+  map: que_ng
+  name: ''
+  sprite: 45
+  to:
+    map: que_ng
+    x: 182
+    'y': 161
+  x: 166
+  xs: 1
+  'y': 85
+  ys: 1
+- id: gswarp5
+  map: que_ng
+  name: ''
+  sprite: 45
+  to:
+    map: que_ng
+    x: 177
+    'y': 41
+  x: 165
+  xs: 1
+  'y': 137
+  ys: 1
+- id: gswarp6
+  map: que_ng
+  name: ''
+  sprite: 45
+  to:
+    map: que_ng
+    x: 160
+    'y': 139
+  x: 172
+  xs: 1
+  'y': 42
+  ys: 1
+- id: ninja02
+  map: que_ng
+  name: ''
+  sprite: 45
+  to:
+    map: amatsu
+    x: 147
+    'y': 136
+  x: 20
+  xs: 1
+  'y': 138
+  ys: 1
+- id: ninja03
+  map: que_ng
+  name: ''
+  sprite: 45
+  to:
+    map: que_ng
+    x: 33
+    'y': 64
+  x: 10
+  xs: 1
+  'y': 183
+  ys: 1
+- id: ninja04
+  map: que_ng
+  name: ''
+  sprite: 45
+  to:
+    map: que_ng
+    x: 15
+    'y': 182
+  x: 37
+  xs: 1
+  'y': 64
+  ys: 1
+- id: ninja05
+  map: que_ng
+  name: ''
+  sprite: 45
+  to:
+    map: que_ng
+    x: 67
+    'y': 28
+  x: 30
+  xs: 1
+  'y': 37
+  ys: 1
+- id: ninja06
+  map: que_ng
+  name: ''
+  sprite: 45
+  to:
+    map: que_ng
+    x: 25
+    'y': 37
+  x: 63
+  xs: 1
+  'y': 30
+  ys: 1

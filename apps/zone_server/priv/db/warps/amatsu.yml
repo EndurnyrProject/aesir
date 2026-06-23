@@ -1,0 +1,97 @@
+---
+- id: ama_house1-1
+  map: amatsu
+  name: ''
+  sprite: 45
+  to:
+    map: ama_in01
+    x: 28
+    'y': 176
+  x: 177
+  xs: 1
+  'y': 138
+  ys: 1
+- id: ama_house2-1
+  map: amatsu
+  name: ''
+  sprite: 45
+  to:
+    map: ama_in01
+    x: 79
+    'y': 178
+  x: 248
+  xs: 1
+  'y': 160
+  ys: 1
+- id: ama_deluxe1-1
+  map: amatsu
+  name: ''
+  sprite: 45
+  to:
+    map: ama_in01
+    x: 88
+    'y': 97
+  x: 52
+  xs: 1
+  'y': 148
+  ys: 1
+- id: ama_weapon1-1
+  map: amatsu
+  name: ''
+  sprite: 45
+  to:
+    map: ama_in01
+    x: 89
+    'y': 23
+  x: 132
+  xs: 1
+  'y': 117
+  ys: 1
+- id: ama_tavern1-1
+  map: amatsu
+  name: ''
+  sprite: 45
+  to:
+    map: ama_in01
+    x: 162
+    'y': 25
+  x: 217
+  xs: 1
+  'y': 116
+  ys: 1
+- id: ama_castle1-1
+  map: amatsu
+  name: ''
+  sprite: 45
+  to:
+    map: ama_in02
+    x: 223
+    'y': 45
+  x: 85
+  xs: 1
+  'y': 235
+  ys: 1
+- id: ama_fild1-1
+  map: amatsu
+  name: ''
+  sprite: 45
+  to:
+    map: ama_fild01
+    x: 75
+    'y': 33
+  x: 248
+  xs: 1
+  'y': 292
+  ys: 1
+- id: ninja01
+  map: amatsu
+  name: ''
+  sprite: 45
+  to:
+    map: que_ng
+    x: 20
+    'y': 142
+  x: 149
+  xs: 1
+  'y': 140
+  ys: 1

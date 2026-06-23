@@ -1,0 +1,13 @@
+---
+- id: jawaiiwarp005
+  map: jawaii
+  name: ''
+  sprite: 45
+  to:
+    map: jawaii_in
+    x: 28
+    'y': 94
+  x: 192
+  xs: 1
+  'y': 215
+  ys: 1

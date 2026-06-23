@@ -1,0 +1,25 @@
+---
+- id: gdun02a_aldega
+  map: gld_dun02
+  name: ''
+  sprite: 45
+  to:
+    map: alde_gld
+    x: 229
+    'y': 185
+  x: 20
+  xs: 1
+  'y': 160
+  ys: 1
+- id: gdun02b_aldegb
+  map: gld_dun02
+  name: ''
+  sprite: 45
+  to:
+    map: alde_gld
+    x: 242
+    'y': 121
+  x: 180
+  xs: 1
+  'y': 112
+  ys: 1

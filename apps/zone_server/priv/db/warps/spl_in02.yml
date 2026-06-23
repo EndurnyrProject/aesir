@@ -1,0 +1,37 @@
+---
+- id: splendide1-2
+  map: spl_in02
+  name: ''
+  sprite: 45
+  to:
+    map: splendide
+    x: 238
+    'y': 317
+  x: 222
+  xs: 1
+  'y': 232
+  ys: 1
+- id: splendide8-2
+  map: spl_in02
+  name: ''
+  sprite: 45
+  to:
+    map: splendide
+    x: 284
+    'y': 228
+  x: 135
+  xs: 1
+  'y': 66
+  ys: 1
+- id: splendide9-2
+  map: spl_in02
+  name: ''
+  sprite: 45
+  to:
+    map: splendide
+    x: 297
+    'y': 250
+  x: 139
+  xs: 1
+  'y': 91
+  ys: 1

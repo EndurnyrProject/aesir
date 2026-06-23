@@ -1,0 +1,13 @@
+---
+- id: moc02a_payg02
+  map: moc_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: pay_gld
+    x: 20
+    'y': 276
+  x: 378
+  xs: 1
+  'y': 272
+  ys: 1

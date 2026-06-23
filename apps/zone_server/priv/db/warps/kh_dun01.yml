@@ -1,0 +1,49 @@
+---
+- id: kh_dun_00
+  map: kh_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild08
+    x: 74
+    'y': 174
+  x: 3
+  xs: 1
+  'y': 234
+  ys: 1
+- id: kh_dun_01
+  map: kh_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: kh_dun01
+    x: 13
+    'y': 12
+  x: 232
+  xs: 1
+  'y': 226
+  ys: 1
+- id: kh_dun_02
+  map: kh_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: kh_dun01
+    x: 227
+    'y': 176
+  x: 63
+  xs: 1
+  'y': 7
+  ys: 1
+- id: kh_dun_03
+  map: kh_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: kh_dun01
+    x: 63
+    'y': 12
+  x: 232
+  xs: 1
+  'y': 176
+  ys: 1

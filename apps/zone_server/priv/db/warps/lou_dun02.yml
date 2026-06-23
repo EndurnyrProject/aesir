@@ -1,0 +1,25 @@
+---
+- id: lou_dun2-2
+  map: lou_dun02
+  name: ''
+  sprite: 45
+  to:
+    map: lou_dun01
+    x: 38
+    'y': 203
+  x: 288
+  xs: 1
+  'y': 18
+  ys: 1
+- id: lou_dun3-1
+  map: lou_dun02
+  name: ''
+  sprite: 45
+  to:
+    map: lou_dun03
+    x: 165
+    'y': 38
+  x: 165
+  xs: 1
+  'y': 269
+  ys: 1

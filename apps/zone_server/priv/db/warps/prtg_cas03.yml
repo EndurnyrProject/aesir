@@ -1,0 +1,157 @@
+---
+- id: prtg-3-01_prtg-3-12
+  map: prtg_cas03
+  name: ''
+  sprite: 45
+  to:
+    map: prtg_cas03
+    x: 82
+    'y': 73
+  x: 178
+  xs: 1
+  'y': 85
+  ys: 1
+- id: prtg-3-02_prtg-3-22
+  map: prtg_cas03
+  name: ''
+  sprite: 45
+  to:
+    map: prtg_cas03
+    x: 190
+    'y': 233
+  x: 191
+  xs: 1
+  'y': 55
+  ys: 1
+- id: prtg-3-03_prtg-3
+  map: prtg_cas03
+  name: ''
+  sprite: 45
+  to:
+    map: prt_gld
+    x: 153
+    'y': 137
+  x: 168
+  xs: 1
+  'y': 8
+  ys: 1
+- id: prtg-3-04_prtg-3-14
+  map: prtg_cas03
+  name: ''
+  sprite: 45
+  to:
+    map: prtg_cas03
+    x: 10
+    'y': 78
+  x: 172
+  xs: 1
+  'y': 44
+  ys: 1
+- id: prtg-3-05_prtg-3-13
+  map: prtg_cas03
+  name: ''
+  sprite: 45
+  to:
+    map: prtg_cas03
+    x: 45
+    'y': 47
+  x: 165
+  xs: 1
+  'y': 59
+  ys: 1
+- id: prtg-3-11_prtg-3-23
+  map: prtg_cas03
+  name: ''
+  sprite: 45
+  to:
+    map: prtg_cas03
+    x: 164
+    'y': 177
+  x: 45
+  xs: 1
+  'y': 120
+  ys: 1
+- id: prtg-3-12_prtg-3-01
+  map: prtg_cas03
+  name: ''
+  sprite: 45
+  to:
+    map: prtg_cas03
+    x: 178
+    'y': 81
+  x: 86
+  xs: 1
+  'y': 73
+  ys: 1
+- id: prtg-3-13_prtg-3-05
+  map: prtg_cas03
+  name: ''
+  sprite: 45
+  to:
+    map: prtg_cas03
+    x: 165
+    'y': 54
+  x: 45
+  xs: 1
+  'y': 43
+  ys: 1
+- id: prtg-3-14_prtg-3-04
+  map: prtg_cas03
+  name: ''
+  sprite: 45
+  to:
+    map: prtg_cas03
+    x: 176
+    'y': 44
+  x: 6
+  xs: 1
+  'y': 78
+  ys: 1
+- id: prtg-3-21_prtg-3-31
+  map: prtg_cas03
+  name: ''
+  sprite: 45
+  to:
+    map: prtg_cas03
+    x: 11
+    'y': 200
+  x: 169
+  xs: 1
+  'y': 235
+  ys: 1
+- id: prtg-3-22_prtg-3-02
+  map: prtg_cas03
+  name: ''
+  sprite: 45
+  to:
+    map: prtg_cas03
+    x: 191
+    'y': 59
+  x: 194
+  xs: 1
+  'y': 233
+  ys: 1
+- id: prtg-3-23_prtg-3-11
+  map: prtg_cas03
+  name: ''
+  sprite: 45
+  to:
+    map: prtg_cas03
+    x: 45
+    'y': 117
+  x: 164
+  xs: 1
+  'y': 173
+  ys: 1
+- id: prtg-3-31_prtg-3-21
+  map: prtg_cas03
+  name: ''
+  sprite: 45
+  to:
+    map: prtg_cas03
+    x: 169
+    'y': 231
+  x: 7
+  xs: 1
+  'y': 200
+  ys: 1

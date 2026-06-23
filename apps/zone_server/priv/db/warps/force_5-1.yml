@@ -1,0 +1,97 @@
+---
+- id: force_01_02#aco
+  map: force_5-1
+  name: ''
+  sprite: 45
+  to:
+    map: force_5-1
+    x: 25
+    'y': 69
+  x: 25
+  xs: 1
+  'y': 44
+  ys: 1
+- id: force_02_03#aco
+  map: force_5-1
+  name: ''
+  sprite: 45
+  to:
+    map: force_5-1
+    x: 25
+    'y': 159
+  x: 25
+  xs: 1
+  'y': 134
+  ys: 1
+- id: force_03_04#aco
+  map: force_5-1
+  name: ''
+  sprite: 45
+  to:
+    map: force_5-1
+    x: 69
+    'y': 174
+  x: 44
+  xs: 1
+  'y': 174
+  ys: 1
+- id: force_04_05#aco
+  map: force_5-1
+  name: ''
+  sprite: 45
+  to:
+    map: force_5-1
+    x: 159
+    'y': 174
+  x: 134
+  xs: 1
+  'y': 174
+  ys: 1
+- id: force_05_06#aco
+  map: force_5-1
+  name: ''
+  sprite: 45
+  to:
+    map: force_5-1
+    x: 174
+    'y': 130
+  x: 174
+  xs: 1
+  'y': 155
+  ys: 1
+- id: force_06_07#aco
+  map: force_5-1
+  name: ''
+  sprite: 45
+  to:
+    map: force_5-1
+    x: 174
+    'y': 40
+  x: 174
+  xs: 1
+  'y': 65
+  ys: 1
+- id: force_07_08#aco
+  map: force_5-1
+  name: ''
+  sprite: 45
+  to:
+    map: force_5-1
+    x: 132
+    'y': 26
+  x: 155
+  xs: 1
+  'y': 26
+  ys: 1
+- id: force_08_09#aco
+  map: force_5-1
+  name: ''
+  sprite: 45
+  to:
+    map: force_5-1
+    x: 99
+    'y': 82
+  x: 99
+  xs: 1
+  'y': 54
+  ys: 1

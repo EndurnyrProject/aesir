@@ -1,0 +1,157 @@
+---
+- id: manuk1-1
+  map: manuk
+  name: ''
+  sprite: 45
+  to:
+    map: man_in01
+    x: 277
+    'y': 41
+  x: 311
+  xs: 1
+  'y': 142
+  ys: 1
+- id: manuk2-1
+  map: manuk
+  name: ''
+  sprite: 45
+  to:
+    map: man_in01
+    x: 358
+    'y': 121
+  x: 310
+  xs: 1
+  'y': 201
+  ys: 1
+- id: manuk3-1
+  map: manuk
+  name: ''
+  sprite: 45
+  to:
+    map: man_in01
+    x: 7
+    'y': 61
+  x: 255
+  xs: 1
+  'y': 110
+  ys: 1
+- id: manuk4-1
+  map: manuk
+  name: ''
+  sprite: 45
+  to:
+    map: man_in01
+    x: 130
+    'y': 267
+  x: 257
+  xs: 1
+  'y': 228
+  ys: 1
+- id: manuk5-1
+  map: manuk
+  name: ''
+  sprite: 45
+  to:
+    map: man_in01
+    x: 180
+    'y': 267
+  x: 265
+  xs: 1
+  'y': 237
+  ys: 1
+- id: manuk6-1
+  map: manuk
+  name: ''
+  sprite: 45
+  to:
+    map: man_in01
+    x: 230
+    'y': 267
+  x: 276
+  xs: 1
+  'y': 247
+  ys: 1
+- id: manuk7-1
+  map: manuk
+  name: ''
+  sprite: 45
+  to:
+    map: man_in01
+    x: 280
+    'y': 267
+  x: 288
+  xs: 1
+  'y': 249
+  ys: 1
+- id: manuk8-1
+  map: manuk
+  name: ''
+  sprite: 45
+  to:
+    map: man_in01
+    x: 330
+    'y': 267
+  x: 302
+  xs: 1
+  'y': 243
+  ys: 1
+- id: manuk9-1
+  map: manuk
+  name: ''
+  sprite: 45
+  to:
+    map: man_in01
+    x: 380
+    'y': 267
+  x: 311
+  xs: 1
+  'y': 234
+  ys: 1
+- id: manuk10-1
+  map: manuk
+  name: ''
+  sprite: 45
+  to:
+    map: man_in01
+    x: 24
+    'y': 284
+  x: 253
+  xs: 1
+  'y': 195
+  ys: 1
+- id: manuk11-1
+  map: manuk
+  name: ''
+  sprite: 45
+  to:
+    map: man_in01
+    x: 70
+    'y': 171
+  x: 235
+  xs: 1
+  'y': 124
+  ys: 1
+- id: manuk12-1
+  map: manuk
+  name: ''
+  sprite: 45
+  to:
+    map: man_in01
+    x: 123
+    'y': 224
+  x: 279
+  xs: 1
+  'y': 115
+  ys: 1
+- id: man_fild02-3
+  map: manuk
+  name: ''
+  sprite: 45
+  to:
+    map: man_fild02
+    x: 138
+    'y': 43
+  x: 114
+  xs: 1
+  'y': 357
+  ys: 1

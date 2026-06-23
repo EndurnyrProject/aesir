@@ -1,0 +1,25 @@
+---
+- id: fild07-rogue00
+  map: cmd_fild07
+  name: ''
+  sprite: 45
+  to:
+    map: in_rogue
+    x: 379
+    'y': 46
+  x: 193
+  xs: 1
+  'y': 117
+  ys: 1
+- id: fild07-rogue03
+  map: cmd_fild07
+  name: ''
+  sprite: 45
+  to:
+    map: in_rogue
+    x: 247
+    'y': 126
+  x: 355
+  xs: 1
+  'y': 286
+  ys: 1

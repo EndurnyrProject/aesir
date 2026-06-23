@@ -1,0 +1,49 @@
+---
+- id: um_fild3-1
+  map: um_fild03
+  name: ''
+  sprite: 45
+  to:
+    map: um_fild02
+    x: 370
+    'y': 329
+  x: 19
+  xs: 1
+  'y': 334
+  ys: 1
+- id: um_fild3-2
+  map: um_fild03
+  name: ''
+  sprite: 45
+  to:
+    map: um_fild02
+    x: 370
+    'y': 148
+  x: 32
+  xs: 1
+  'y': 145
+  ys: 1
+- id: um_fild3-3
+  map: um_fild03
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild01
+    x: 74
+    'y': 363
+  x: 114
+  xs: 1
+  'y': 50
+  ys: 1
+- id: um_fild3-4
+  map: um_fild03
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild01
+    x: 176
+    'y': 367
+  x: 243
+  xs: 1
+  'y': 26
+  ys: 1

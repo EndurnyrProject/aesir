@@ -1,0 +1,13 @@
+---
+- id: jhun01
+  map: in_hunter
+  name: ''
+  sprite: 45
+  to:
+    map: pay_fild10
+    x: 143
+    'y': 250
+  x: 100
+  xs: 0
+  'y': 15
+  ys: 0

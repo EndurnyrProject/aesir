@@ -1,0 +1,13 @@
+---
+- id: payd03-1
+  map: pay_dun03
+  name: ''
+  sprite: 45
+  to:
+    map: pay_dun02
+    x: 137
+    'y': 126
+  x: 155
+  xs: 2
+  'y': 161
+  ys: 1

@@ -1,0 +1,13 @@
+---
+- id: gl13-1
+  map: gl_dun02
+  name: ''
+  sprite: 45
+  to:
+    map: gl_dun01
+    x: 225
+    'y': 22
+  x: 224
+  xs: 1
+  'y': 277
+  ys: 1

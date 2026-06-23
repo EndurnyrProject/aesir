@@ -1,0 +1,25 @@
+---
+- id: gdun04_g13a
+  map: gld_dun04
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild13
+    x: 42
+    'y': 331
+  x: 37
+  xs: 1
+  'y': 230
+  ys: 1
+- id: gdun04_g13b
+  map: gld_dun04
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild13
+    x: 373
+    'y': 62
+  x: 110
+  xs: 1
+  'y': 20
+  ys: 1

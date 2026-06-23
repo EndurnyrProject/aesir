@@ -1,0 +1,13 @@
+---
+- id: izd01
+  map: izlu2dun
+  name: ''
+  sprite: 45
+  to:
+    map: iz_dun00
+    x: 168
+    'y': 168
+  x: 108
+  xs: 3
+  'y': 83
+  ys: 2

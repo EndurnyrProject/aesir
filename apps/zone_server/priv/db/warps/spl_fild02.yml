@@ -1,0 +1,73 @@
+---
+- id: spl_fild02-2
+  map: spl_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: mid_camp
+    x: 16
+    'y': 143
+  x: 382
+  xs: 1
+  'y': 143
+  ys: 1
+- id: spl_fild02-4
+  map: spl_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: mid_camp
+    x: 12
+    'y': 215
+  x: 383
+  xs: 1
+  'y': 216
+  ys: 1
+- id: spl_fild02-5
+  map: spl_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: spl_fild03
+    x: 306
+    'y': 376
+  x: 310
+  xs: 1
+  'y': 10
+  ys: 1
+- id: spl_fild03-2
+  map: spl_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: spl_fild03
+    x: 99
+    'y': 370
+  x: 103
+  xs: 1
+  'y': 30
+  ys: 1
+- id: spl_fild02-7
+  map: spl_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: splendide
+    x: 386
+    'y': 251
+  x: 6
+  xs: 1
+  'y': 241
+  ys: 1
+- id: spl_fild02-9
+  map: spl_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: spl_fild01
+    x: 289
+    'y': 30
+  x: 293
+  xs: 1
+  'y': 379
+  ys: 1

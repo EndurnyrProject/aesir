@@ -1,0 +1,25 @@
+---
+- id: um_dun1-2
+  map: um_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: umbala
+    x: 109
+    'y': 284
+  x: 42
+  xs: 1
+  'y': 27
+  ys: 1
+- id: um_dun2-1
+  map: um_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: um_dun02
+    x: 52
+    'y': 22
+  x: 149
+  xs: 1
+  'y': 198
+  ys: 1

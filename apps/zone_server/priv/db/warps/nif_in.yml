@@ -1,0 +1,145 @@
+---
+- id: nwarp12
+  map: nif_in
+  name: ''
+  sprite: 45
+  to:
+    map: niflheim
+    x: 218
+    'y': 170
+  x: 11
+  xs: 1
+  'y': 88
+  ys: 1
+- id: nwarp14
+  map: nif_in
+  name: ''
+  sprite: 45
+  to:
+    map: niflheim
+    x: 218
+    'y': 197
+  x: 134
+  xs: 1
+  'y': 12
+  ys: 1
+- id: nwarp20a
+  map: nif_in
+  name: ''
+  sprite: 45
+  to:
+    map: niflheim
+    x: 187
+    'y': 241
+  x: 78
+  xs: 1
+  'y': 74
+  ys: 1
+- id: nwarp22a
+  map: nif_in
+  name: ''
+  sprite: 45
+  to:
+    map: niflheim
+    x: 189
+    'y': 207
+  x: 23
+  xs: 1
+  'y': 12
+  ys: 1
+- id: nwarp23
+  map: nif_in
+  name: ''
+  sprite: 45
+  to:
+    map: nif_in
+    x: 88
+    'y': 31
+  x: 34
+  xs: 1
+  'y': 34
+  ys: 1
+- id: nwarp24
+  map: nif_in
+  name: ''
+  sprite: 45
+  to:
+    map: nif_in
+    x: 34
+    'y': 31
+  x: 88
+  xs: 1
+  'y': 29
+  ys: 1
+- id: nwarp16
+  map: nif_in
+  name: ''
+  sprite: 45
+  to:
+    map: niflheim
+    x: 254
+    'y': 192
+  x: 18
+  xs: 1
+  'y': 154
+  ys: 1
+- id: nwarp17
+  map: nif_in
+  name: ''
+  sprite: 45
+  to:
+    map: nif_in
+    x: 141
+    'y': 174
+  x: 65
+  xs: 1
+  'y': 168
+  ys: 1
+- id: nwarp18
+  map: nif_in
+  name: ''
+  sprite: 45
+  to:
+    map: nif_in
+    x: 65
+    'y': 165
+  x: 140
+  xs: 1
+  'y': 171
+  ys: 1
+- id: nwarp20
+  map: nif_in
+  name: ''
+  sprite: 45
+  to:
+    map: nif_in
+    x: 189
+    'y': 105
+  x: 169
+  xs: 1
+  'y': 82
+  ys: 1
+- id: nwarp21
+  map: nif_in
+  name: ''
+  sprite: 45
+  to:
+    map: nif_in
+    x: 167
+    'y': 82
+  x: 186
+  xs: 1
+  'y': 105
+  ys: 1
+- id: nwarp22
+  map: nif_in
+  name: ''
+  sprite: 45
+  to:
+    map: niflheim
+    x: 167
+    'y': 161
+  x: 154
+  xs: 1
+  'y': 78
+  ys: 1

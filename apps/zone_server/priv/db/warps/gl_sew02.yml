@@ -1,0 +1,61 @@
+---
+- id: gl11
+  map: gl_sew02
+  name: ''
+  sprite: 45
+  to:
+    map: gl_prison1
+    x: 61
+    'y': 183
+  x: 16
+  xs: 1
+  'y': 26
+  ys: 1
+- id: gl23
+  map: gl_sew02
+  name: ''
+  sprite: 45
+  to:
+    map: gl_step
+    x: 117
+    'y': 124
+  x: 290
+  xs: 1
+  'y': 156
+  ys: 1
+- id: gl24
+  map: gl_sew02
+  name: ''
+  sprite: 45
+  to:
+    map: gl_knt01
+    x: 231
+    'y': 192
+  x: 296
+  xs: 1
+  'y': 18
+  ys: 1
+- id: gl20
+  map: gl_sew02
+  name: ''
+  sprite: 45
+  to:
+    map: gl_sew03
+    x: 171
+    'y': 283
+  x: 299
+  xs: 1
+  'y': 294
+  ys: 1
+- id: gl22-1
+  map: gl_sew02
+  name: ''
+  sprite: 45
+  to:
+    map: gl_chyard
+    x: 15
+    'y': 149
+  x: 30
+  xs: 1
+  'y': 273
+  ys: 1

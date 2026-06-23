@@ -1,0 +1,13 @@
+---
+- id: monk15
+  map: prt_monk
+  name: ''
+  sprite: 45
+  to:
+    map: monk_test
+    x: 329
+    'y': 50
+  x: 192
+  xs: 1
+  'y': 172
+  ys: 1

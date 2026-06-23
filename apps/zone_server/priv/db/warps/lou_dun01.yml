@@ -1,0 +1,25 @@
+---
+- id: lou_dun1-2
+  map: lou_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: louyang
+    x: 40
+    'y': 273
+  x: 221
+  xs: 1
+  'y': 195
+  ys: 1
+- id: lou_dun2-1
+  map: lou_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: lou_dun02
+    x: 285
+    'y': 18
+  x: 40
+  xs: 1
+  'y': 201
+  ys: 1

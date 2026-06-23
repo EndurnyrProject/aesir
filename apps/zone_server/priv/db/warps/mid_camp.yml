@@ -1,0 +1,61 @@
+---
+- id: mid_weapon1-1
+  map: mid_camp
+  name: ''
+  sprite: 45
+  to:
+    map: mid_campin
+    x: 229
+    'y': 123
+  x: 205
+  xs: 1
+  'y': 211
+  ys: 1
+- id: mid_weapon2-1
+  map: mid_camp
+  name: ''
+  sprite: 45
+  to:
+    map: mid_campin
+    x: 220
+    'y': 109
+  x: 196
+  xs: 1
+  'y': 204
+  ys: 1
+- id: mid_meeting1-1
+  map: mid_camp
+  name: ''
+  sprite: 45
+  to:
+    map: mid_campin
+    x: 89
+    'y': 102
+  x: 214
+  xs: 1
+  'y': 249
+  ys: 1
+- id: mid_house1-1
+  map: mid_camp
+  name: ''
+  sprite: 45
+  to:
+    map: mid_campin
+    x: 284
+    'y': 124
+  x: 266
+  xs: 1
+  'y': 260
+  ys: 1
+- id: mid_house2-1
+  map: mid_camp
+  name: ''
+  sprite: 45
+  to:
+    map: mid_campin
+    x: 376
+    'y': 133
+  x: 163
+  xs: 1
+  'y': 231
+  ys: 1

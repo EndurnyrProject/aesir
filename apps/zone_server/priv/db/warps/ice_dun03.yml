@@ -1,0 +1,13 @@
+---
+- id: ice005
+  map: ice_dun03
+  name: ''
+  sprite: 45
+  to:
+    map: ice_dun02
+    x: 150
+    'y': 280
+  x: 149
+  xs: 1
+  'y': 19
+  ys: 1

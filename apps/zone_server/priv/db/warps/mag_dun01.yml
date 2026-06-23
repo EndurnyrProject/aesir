@@ -1,0 +1,25 @@
+---
+- id: mag01-yunfild
+  map: mag_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild03
+    x: 34
+    'y': 139
+  x: 126
+  xs: 1
+  'y': 66
+  ys: 1
+- id: mag01-02
+  map: mag_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: mag_dun02
+    x: 47
+    'y': 30
+  x: 242
+  xs: 1
+  'y': 241
+  ys: 1

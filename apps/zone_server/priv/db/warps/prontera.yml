@@ -1,25 +1,13 @@
 ---
-- id: prontera_izlude_gate
+- id: prt003
   map: prontera
-  x: 150
-  y: 20
-  xs: 1
-  ys: 1
+  name: ''
   sprite: 45
-  name: "Izlude"
   to:
-    map: izlude
-    x: 150
-    y: 190
-- id: prontera_geffen_gate
-  map: prontera
-  x: 150
-  y: 30
-  xs: 1
-  ys: 1
-  sprite: 45
-  name: "Geffen"
-  to:
-    map: geffen
-    x: 130
-    y: 100
+    map: prt_fild06
+    x: 27
+    'y': 193
+  x: 289
+  xs: 2
+  'y': 203
+  ys: 3

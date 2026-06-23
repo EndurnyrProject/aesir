@@ -1,0 +1,37 @@
+---
+- id: mazewarp5105
+  map: prt_maze01
+  name: ''
+  sprite: 45
+  to:
+    map: prt_maze02
+    x: 93
+    'y': 20
+  x: 85
+  xs: 1
+  'y': 174
+  ys: 1
+- id: mazewarp5137
+  map: prt_maze01
+  name: ''
+  sprite: 45
+  to:
+    map: mjolnir_12
+    x: 44
+    'y': 21
+  x: 14
+  xs: 1
+  'y': 45
+  ys: 1
+- id: mazewarp5147
+  map: prt_maze01
+  name: ''
+  sprite: 45
+  to:
+    map: prt_fild01
+    x: 136
+    'y': 368
+  x: 177
+  xs: 1
+  'y': 74
+  ys: 1

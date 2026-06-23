@@ -1,0 +1,49 @@
+---
+- id: lhz_dun1-1
+  map: lhz_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: lhz_in01
+    x: 19
+    'y': 129
+  x: 149
+  xs: 1
+  'y': 291
+  ys: 1
+- id: lhz_dun2-1
+  map: lhz_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: lhz_dun02
+    x: 282
+    'y': 153
+  x: 281
+  xs: 1
+  'y': 150
+  ys: 1
+- id: lhz_dun3-1
+  map: lhz_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: lhz_dun02
+    x: 153
+    'y': 19
+  x: 149
+  xs: 1
+  'y': 9
+  ys: 1
+- id: lhz_dun4-1
+  map: lhz_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: lhz_dun02
+    x: 17
+    'y': 150
+  x: 18
+  xs: 1
+  'y': 145
+  ys: 1

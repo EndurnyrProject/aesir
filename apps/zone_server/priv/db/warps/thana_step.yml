@@ -1,0 +1,73 @@
+---
+- id: WarpThana6b
+  map: thana_step
+  name: ''
+  sprite: 45
+  to:
+    map: tha_t08
+    x: 28
+    'y': 43
+  x: 174
+  xs: 1
+  'y': 288
+  ys: 1
+- id: WarpThana6c
+  map: thana_step
+  name: ''
+  sprite: 45
+  to:
+    map: tha_t07
+    x: 30
+    'y': 166
+  x: 173
+  xs: 1
+  'y': 372
+  ys: 1
+- id: WarpThana8b
+  map: thana_step
+  name: ''
+  sprite: 45
+  to:
+    map: tha_t09
+    x: 20
+    'y': 96
+  x: 32
+  xs: 1
+  'y': 166
+  ys: 1
+- id: WarpThana10a
+  map: thana_step
+  name: ''
+  sprite: 45
+  to:
+    map: tha_t10
+    x: 155
+    'y': 100
+  x: 182
+  xs: 1
+  'y': 166
+  ys: 1
+- id: WarpThana11a
+  map: thana_step
+  name: ''
+  sprite: 45
+  to:
+    map: tha_t11
+    x: 50
+    'y': 17
+  x: 15
+  xs: 1
+  'y': 15
+  ys: 1
+- id: WarpThana12a
+  map: thana_step
+  name: ''
+  sprite: 45
+  to:
+    map: tha_t12
+    x: 115
+    'y': 16
+  x: 181
+  xs: 1
+  'y': 15
+  ys: 1

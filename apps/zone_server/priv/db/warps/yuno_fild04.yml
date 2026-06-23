@@ -1,0 +1,13 @@
+---
+- id: ein001
+  map: yuno_fild04
+  name: ''
+  sprite: 45
+  to:
+    map: ein_fild06
+    x: 252
+    'y': 363
+  x: 251
+  xs: 1
+  'y': 21
+  ys: 1

@@ -1,0 +1,37 @@
+---
+- id: aldd01
+  map: alde_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: alde_dun02
+    x: 43
+    'y': 24
+  x: 292
+  xs: 2
+  'y': 306
+  ys: 1
+- id: ald002a
+  map: alde_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: c_tower2
+    x: 148
+    'y': 283
+  x: 167
+  xs: 2
+  'y': 158
+  ys: 2
+- id: ald003a
+  map: alde_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: c_tower1
+    x: 125
+    'y': 22
+  x: 302
+  xs: 2
+  'y': 25
+  ys: 2

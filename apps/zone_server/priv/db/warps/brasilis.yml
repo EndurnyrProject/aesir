@@ -1,0 +1,37 @@
+---
+- id: brasilis_bra_in01
+  map: brasilis
+  name: ''
+  sprite: 45
+  to:
+    map: bra_in01
+    x: 17
+    'y': 137
+  x: 146
+  xs: 1
+  'y': 162
+  ys: 1
+- id: brasilis_bra_in01#1
+  map: brasilis
+  name: ''
+  sprite: 45
+  to:
+    map: bra_in01
+    x: 38
+    'y': 9
+  x: 274
+  xs: 1
+  'y': 153
+  ys: 1
+- id: brasilis_bra_fild01
+  map: brasilis
+  name: ''
+  sprite: 45
+  to:
+    map: bra_fild01
+    x: 74
+    'y': 34
+  x: 308
+  xs: 1
+  'y': 336
+  ys: 1

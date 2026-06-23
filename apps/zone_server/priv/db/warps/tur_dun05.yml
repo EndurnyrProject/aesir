@@ -1,0 +1,25 @@
+---
+- id: ttl05
+  map: tur_dun05
+  name: ''
+  sprite: 45
+  to:
+    map: tur_dun02
+    x: 148
+    'y': 264
+  x: 89
+  xs: 1
+  'y': 69
+  ys: 1
+- id: ttl06
+  map: tur_dun05
+  name: ''
+  sprite: 45
+  to:
+    map: tur_dun01
+    x: 154
+    'y': 237
+  x: 9
+  xs: 1
+  'y': 45
+  ys: 1

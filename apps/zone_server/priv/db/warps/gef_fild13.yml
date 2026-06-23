@@ -1,0 +1,121 @@
+---
+- id: gef-g1-0_gefg-1-07
+  map: gef_fild13
+  name: ''
+  sprite: 45
+  to:
+    map: gefg_cas01
+    x: 34
+    'y': 140
+  x: 150
+  xs: 1
+  'y': 54
+  ys: 1
+- id: gef-g1-1_gefg-1-04
+  map: gef_fild13
+  name: ''
+  sprite: 45
+  to:
+    map: gefg_cas01
+    x: 95
+    'y': 178
+  x: 210
+  xs: 1
+  'y': 75
+  ys: 1
+- id: gef-g2_gefg-2-07
+  map: gef_fild13
+  name: ''
+  sprite: 45
+  to:
+    map: gefg_cas02
+    x: 70
+    'y': 143
+  x: 308
+  xs: 1
+  'y': 244
+  ys: 1
+- id: gef-g3-0_g-cas3-12
+  map: gef_fild13
+  name: ''
+  sprite: 45
+  to:
+    map: gefg_cas03
+    x: 60
+    'y': 286
+  x: 77
+  xs: 1
+  'y': 284
+  ys: 1
+- id: gef-g3-1_g-cas3-13
+  map: gef_fild13
+  name: ''
+  sprite: 45
+  to:
+    map: gefg_cas03
+    x: 100
+    'y': 280
+  x: 112
+  xs: 1
+  'y': 269
+  ys: 1
+- id: gef-g3-2_g-cas3-14
+  map: gef_fild13
+  name: ''
+  sprite: 45
+  to:
+    map: gefg_cas03
+    x: 125
+    'y': 250
+  x: 139
+  xs: 1
+  'y': 240
+  ys: 1
+- id: gef-g3-3_g-cas3-15
+  map: gef_fild13
+  name: ''
+  sprite: 45
+  to:
+    map: gefg_cas03
+    x: 89
+    'y': 159
+  x: 83
+  xs: 1
+  'y': 185
+  ys: 1
+- id: gef-g4_gefg-4-05
+  map: gef_fild13
+  name: ''
+  sprite: 45
+  to:
+    map: gefg_cas04
+    x: 24
+    'y': 149
+  x: 196
+  xs: 1
+  'y': 281
+  ys: 1
+- id: gef-5-0_gefg-5-04
+  map: gef_fild13
+  name: ''
+  sprite: 45
+  to:
+    map: gefg_cas05
+    x: 11
+    'y': 134
+  x: 256
+  xs: 1
+  'y': 57
+  ys: 1
+- id: gef-5-1_gefg-5-01
+  map: gef_fild13
+  name: ''
+  sprite: 45
+  to:
+    map: gefg_cas05
+    x: 99
+    'y': 200
+  x: 305
+  xs: 1
+  'y': 83
+  ys: 1

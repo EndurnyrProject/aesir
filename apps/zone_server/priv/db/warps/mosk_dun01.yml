@@ -1,0 +1,13 @@
+---
+- id: moscoviawarp0501
+  map: mosk_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: mosk_fild02
+    x: 190
+    'y': 254
+  x: 189
+  xs: 1
+  'y': 42
+  ys: 1

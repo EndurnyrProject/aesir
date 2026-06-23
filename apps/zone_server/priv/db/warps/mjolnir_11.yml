@@ -1,0 +1,25 @@
+---
+- id: mjol010
+  map: mjolnir_11
+  name: ''
+  sprite: 45
+  to:
+    map: prt_fild02
+    x: 173
+    'y': 379
+  x: 174
+  xs: 4
+  'y': 20
+  ys: 2
+- id: mjol16-1
+  map: mjolnir_11
+  name: ''
+  sprite: 45
+  to:
+    map: mjolnir_10
+    x: 381
+    'y': 220
+  x: 20
+  xs: 2
+  'y': 220
+  ys: 4

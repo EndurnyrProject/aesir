@@ -1,0 +1,25 @@
+---
+- id: um_fild4-1
+  map: um_fild04
+  name: ''
+  sprite: 45
+  to:
+    map: um_fild02
+    x: 190
+    'y': 371
+  x: 182
+  xs: 1
+  'y': 13
+  ys: 1
+- id: um_fild4-2
+  map: um_fild04
+  name: ''
+  sprite: 45
+  to:
+    map: umbala
+    x: 130
+    'y': 82
+  x: 215
+  xs: 1
+  'y': 339
+  ys: 1

@@ -1,0 +1,25 @@
+---
+- id: WarpThana2a
+  map: tha_t03
+  name: ''
+  sprite: 45
+  to:
+    map: tha_t02
+    x: 227
+    'y': 157
+  x: 217
+  xs: 1
+  'y': 165
+  ys: 1
+- id: WarpThana3a
+  map: tha_t03
+  name: ''
+  sprite: 45
+  to:
+    map: tha_t04
+    x: 60
+    'y': 142
+  x: 59
+  xs: 1
+  'y': 140
+  ys: 1

@@ -1,0 +1,13 @@
+---
+- id: gon_dun4-2
+  map: gon_dun03
+  name: ''
+  sprite: 45
+  to:
+    map: gon_dun02
+    x: 251
+    'y': 265
+  x: 68
+  xs: 1
+  'y': 6
+  ys: 1

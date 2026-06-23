@@ -1,0 +1,13 @@
+---
+- id: gate#left2
+  map: jupe_area1
+  name: ''
+  sprite: 45
+  to:
+    map: jupe_gate
+    x: 31
+    'y': 145
+  x: 103
+  xs: 2
+  'y': 222
+  ys: 4

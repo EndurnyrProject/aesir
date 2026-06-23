@@ -1,0 +1,37 @@
+---
+- id: ama_fild1-2
+  map: ama_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: amatsu
+    x: 248
+    'y': 289
+  x: 75
+  xs: 1
+  'y': 30
+  ys: 1
+- id: ama_shrine1-1
+  map: ama_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: ama_in01
+    x: 175
+    'y': 174
+  x: 174
+  xs: 1
+  'y': 331
+  ys: 1
+- id: ama_craftsman1-1
+  map: ama_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: ama_in01
+    x: 174
+    'y': 124
+  x: 330
+  xs: 1
+  'y': 141
+  ys: 1

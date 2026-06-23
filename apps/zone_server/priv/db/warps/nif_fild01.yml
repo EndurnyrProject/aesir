@@ -1,0 +1,13 @@
+---
+- id: nwarp7
+  map: nif_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: nif_fild02
+    x: 23
+    'y': 312
+  x: 345
+  xs: 1
+  'y': 323
+  ys: 1

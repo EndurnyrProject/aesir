@@ -1,0 +1,61 @@
+---
+- id: ein012a
+  map: ein_dun02
+  name: ''
+  sprite: 45
+  to:
+    map: ein_dun01
+    x: 261
+    'y': 258
+  x: 286
+  xs: 1
+  'y': 292
+  ys: 1
+- id: EinCave01A_EinCave01B
+  map: ein_dun02
+  name: ''
+  sprite: 45
+  to:
+    map: ein_dun02
+    x: 208
+    'y': 228
+  x: 216
+  xs: 1
+  'y': 210
+  ys: 1
+- id: EinCave02A_EinCave02B
+  map: ein_dun02
+  name: ''
+  sprite: 45
+  to:
+    map: ein_dun02
+    x: 191
+    'y': 130
+  x: 228
+  xs: 1
+  'y': 109
+  ys: 1
+- id: EinCave01B_EinCave01A
+  map: ein_dun02
+  name: ''
+  sprite: 45
+  to:
+    map: ein_dun02
+    x: 216
+    'y': 207
+  x: 210
+  xs: 1
+  'y': 225
+  ys: 1
+- id: EinCave02B_EinCave02A
+  map: ein_dun02
+  name: ''
+  sprite: 45
+  to:
+    map: ein_dun02
+    x: 233
+    'y': 109
+  x: 195
+  xs: 1
+  'y': 130
+  ys: 1

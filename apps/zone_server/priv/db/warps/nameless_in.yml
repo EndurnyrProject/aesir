@@ -1,0 +1,37 @@
+---
+- id: namelesswarp1004
+  map: nameless_in
+  name: ''
+  sprite: 45
+  to:
+    map: nameless_i
+    x: 249
+    'y': 130
+  x: 23
+  xs: 1
+  'y': 128
+  ys: 1
+- id: namelesswarp1006
+  map: nameless_in
+  name: ''
+  sprite: 45
+  to:
+    map: nameless_i
+    x: 82
+    'y': 256
+  x: 12
+  xs: 1
+  'y': 169
+  ys: 1
+- id: namelesswarp1008
+  map: nameless_in
+  name: ''
+  sprite: 45
+  to:
+    map: nameless_i
+    x: 81
+    'y': 96
+  x: 96
+  xs: 1
+  'y': 177
+  ys: 1

@@ -1,0 +1,25 @@
+---
+- id: mocp01-1
+  map: moc_pryd02
+  name: ''
+  sprite: 45
+  to:
+    map: moc_pryd01
+    x: 10
+    'y': 192
+  x: 10
+  xs: 5
+  'y': 195
+  ys: 2
+- id: mocp03
+  map: moc_pryd02
+  name: ''
+  sprite: 45
+  to:
+    map: moc_pryd03
+    x: 100
+    'y': 92
+  x: 100
+  xs: 3
+  'y': 99
+  ys: 2

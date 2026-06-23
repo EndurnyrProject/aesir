@@ -1,0 +1,13 @@
+---
+- id: jthf
+  map: job_thief1
+  name: ''
+  sprite: 45
+  to:
+    map: moc_ruins
+    x: 145
+    'y': 117
+  x: 180
+  xs: 7
+  'y': 15
+  ys: 1

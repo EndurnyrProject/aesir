@@ -1,0 +1,13 @@
+---
+- id: newwarp6001d
+  map: new_4-1
+  name: ''
+  sprite: 45
+  to:
+    map: new_4-2
+    x: 100
+    'y': 9
+  x: 148
+  xs: 2
+  'y': 112
+  ys: 2

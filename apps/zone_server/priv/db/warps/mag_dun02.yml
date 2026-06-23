@@ -1,0 +1,13 @@
+---
+- id: mag02-01
+  map: mag_dun02
+  name: ''
+  sprite: 45
+  to:
+    map: mag_dun01
+    x: 242
+    'y': 239
+  x: 47
+  xs: 1
+  'y': 28
+  ys: 1

@@ -1,0 +1,157 @@
+---
+- id: ald01
+  map: aldebaran
+  name: ''
+  sprite: 45
+  to:
+    map: aldeba_in
+    x: 211
+    'y': 117
+  x: 118
+  xs: 1
+  'y': 63
+  ys: 1
+- id: ald001
+  map: aldebaran
+  name: ''
+  sprite: 45
+  to:
+    map: mjolnir_12
+    x: 199
+    'y': 375
+  x: 139
+  xs: 3
+  'y': 34
+  ys: 2
+- id: ald02
+  map: aldebaran
+  name: ''
+  sprite: 45
+  to:
+    map: aldeba_in
+    x: 94
+    'y': 41
+  x: 197
+  xs: 1
+  'y': 70
+  ys: 1
+- id: ald04
+  map: aldebaran
+  name: ''
+  sprite: 45
+  to:
+    map: aldeba_in
+    x: 157
+    'y': 190
+  x: 233
+  xs: 1
+  'y': 105
+  ys: 1
+- id: ald05
+  map: aldebaran
+  name: ''
+  sprite: 45
+  to:
+    map: aldeba_in
+    x: 24
+    'y': 227
+  x: 51
+  xs: 1
+  'y': 218
+  ys: 1
+- id: ald06
+  map: aldebaran
+  name: ''
+  sprite: 45
+  to:
+    map: aldeba_in
+    x: 148
+    'y': 227
+  x: 61
+  xs: 1
+  'y': 229
+  ys: 1
+- id: ald07
+  map: aldebaran
+  name: ''
+  sprite: 45
+  to:
+    map: aldeba_in
+    x: 27
+    'y': 37
+  x: 72
+  xs: 1
+  'y': 197
+  ys: 1
+- id: ald08
+  map: aldebaran
+  name: ''
+  sprite: 45
+  to:
+    map: aldeba_in
+    x: 242
+    'y': 237
+  x: 89
+  xs: 1
+  'y': 234
+  ys: 1
+- id: aldeb_sign1-1
+  map: aldebaran
+  name: ''
+  sprite: 45
+  to:
+    map: aldeba_in
+    x: 149
+    'y': 120
+  x: 225
+  xs: 1
+  'y': 54
+  ys: 1
+- id: ald002
+  map: aldebaran
+  name: ''
+  sprite: 45
+  to:
+    map: c_tower1
+    x: 199
+    'y': 159
+  x: 139
+  xs: 1
+  'y': 135
+  ys: 1
+- id: alche#1
+  map: aldebaran
+  name: ''
+  sprite: 45
+  to:
+    map: alde_alche
+    x: 20
+    'y': 175
+  x: 65
+  xs: 1
+  'y': 53
+  ys: 1
+- id: alche#2
+  map: aldebaran
+  name: ''
+  sprite: 45
+  to:
+    map: alde_alche
+    x: 42
+    'y': 175
+  x: 53
+  xs: 1
+  'y': 65
+  ys: 1
+- id: alde-a_aldeg01
+  map: aldebaran
+  name: ''
+  sprite: 45
+  to:
+    map: alde_gld
+    x: 280
+    'y': 160
+  x: 35
+  xs: 1
+  'y': 140
+  ys: 1

@@ -1,0 +1,49 @@
+---
+- id: ein046a
+  map: ein_fild03
+  name: ''
+  sprite: 45
+  to:
+    map: ein_fild04
+    x: 22
+    'y': 251
+  x: 363
+  xs: 1
+  'y': 257
+  ys: 1
+- id: ein047a
+  map: ein_fild03
+  name: ''
+  sprite: 45
+  to:
+    map: ein_fild04
+    x: 16
+    'y': 215
+  x: 361
+  xs: 1
+  'y': 219
+  ys: 1
+- id: ein048a
+  map: ein_fild03
+  name: ''
+  sprite: 45
+  to:
+    map: ein_fild04
+    x: 16
+    'y': 205
+  x: 361
+  xs: 1
+  'y': 204
+  ys: 1
+- id: ein049
+  map: ein_fild03
+  name: ''
+  sprite: 45
+  to:
+    map: lhz_fild02
+    x: 166
+    'y': 365
+  x: 142
+  xs: 1
+  'y': 32
+  ys: 1

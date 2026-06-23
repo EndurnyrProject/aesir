@@ -1,0 +1,133 @@
+---
+- id: yungvn01
+  map: yuno_pre
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_pre
+    x: 37
+    'y': 23
+  x: 52
+  xs: 1
+  'y': 22
+  ys: 1
+- id: yungvn02
+  map: yuno_pre
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_pre
+    x: 102
+    'y': 22
+  x: 87
+  xs: 1
+  'y': 22
+  ys: 1
+- id: yungvn03
+  map: yuno_pre
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_pre
+    x: 56
+    'y': 22
+  x: 41
+  xs: 1
+  'y': 23
+  ys: 1
+- id: yungvn04
+  map: yuno_pre
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_pre
+    x: 18
+    'y': 53
+  x: 18
+  xs: 1
+  'y': 35
+  ys: 1
+- id: yungvn05
+  map: yuno_pre
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_pre
+    x: 83
+    'y': 22
+  x: 98
+  xs: 1
+  'y': 22
+  ys: 1
+- id: yungvn06
+  map: yuno_pre
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_pre
+    x: 18
+    'y': 31
+  x: 18
+  xs: 1
+  'y': 48
+  ys: 1
+- id: yungvn07
+  map: yuno_pre
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_pre
+    x: 18
+    'y': 96
+  x: 18
+  xs: 1
+  'y': 77
+  ys: 1
+- id: yungvn08
+  map: yuno_pre
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_pre
+    x: 84
+    'y': 22
+  x: 113
+  xs: 1
+  'y': 48
+  ys: 1
+- id: yungvn09
+  map: yuno_pre
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_pre
+    x: 95
+    'y': 68
+  x: 81
+  xs: 1
+  'y': 68
+  ys: 1
+- id: yungvn10
+  map: yuno_pre
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_pre
+    x: 18
+    'y': 73
+  x: 18
+  xs: 1
+  'y': 92
+  ys: 1
+- id: yungvn12
+  map: yuno_pre
+  name: ''
+  sprite: 45
+  to:
+    map: yuno
+    x: 157
+    'y': 317
+  x: 69
+  xs: 1
+  'y': 10
+  ys: 1

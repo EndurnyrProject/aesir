@@ -1,0 +1,37 @@
+---
+- id: clt003
+  map: c_tower2
+  name: ''
+  sprite: 45
+  to:
+    map: c_tower3
+    x: 65
+    'y': 147
+  x: 142
+  xs: 1
+  'y': 283
+  ys: 1
+- id: clt004
+  map: c_tower2
+  name: ''
+  sprite: 45
+  to:
+    map: alde_dun03
+    x: 277
+    'y': 178
+  x: 24
+  xs: 1
+  'y': 24
+  ys: 1
+- id: clt005
+  map: c_tower2
+  name: ''
+  sprite: 45
+  to:
+    map: c_tower1
+    x: 235
+    'y': 223
+  x: 273
+  xs: 1
+  'y': 26
+  ys: 1

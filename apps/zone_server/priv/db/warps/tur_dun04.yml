@@ -1,0 +1,13 @@
+---
+- id: ttl03-1
+  map: tur_dun04
+  name: ''
+  sprite: 45
+  to:
+    map: tur_dun03
+    x: 215
+    'y': 75
+  x: 100
+  xs: 1
+  'y': 196
+  ys: 1

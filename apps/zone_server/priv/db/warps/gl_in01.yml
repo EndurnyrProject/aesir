@@ -1,0 +1,49 @@
+---
+- id: gl5-1
+  map: gl_in01
+  name: ''
+  sprite: 45
+  to:
+    map: glast_01
+    x: 219
+    'y': 357
+  x: 106
+  xs: 1
+  'y': 125
+  ys: 1
+- id: gl6-1
+  map: gl_in01
+  name: ''
+  sprite: 45
+  to:
+    map: glast_01
+    x: 234
+    'y': 330
+  x: 118
+  xs: 1
+  'y': 59
+  ys: 1
+- id: gl3-1
+  map: gl_in01
+  name: ''
+  sprite: 45
+  to:
+    map: glast_01
+    x: 165
+    'y': 330
+  x: 81
+  xs: 1
+  'y': 68
+  ys: 1
+- id: gl4-1
+  map: gl_in01
+  name: ''
+  sprite: 45
+  to:
+    map: glast_01
+    x: 181
+    'y': 357
+  x: 83
+  xs: 1
+  'y': 174
+  ys: 1

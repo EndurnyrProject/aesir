@@ -1,0 +1,49 @@
+---
+- id: gefeniawarp005
+  map: gefenia02
+  name: ''
+  sprite: 45
+  to:
+    map: gefenia03
+    x: 266
+    'y': 168
+  x: 17
+  xs: 1
+  'y': 175
+  ys: 1
+- id: gefeniawarp007
+  map: gefenia02
+  name: ''
+  sprite: 45
+  to:
+    map: gefenia03
+    x: 264
+    'y': 236
+  x: 19
+  xs: 1
+  'y': 237
+  ys: 1
+- id: gefeniawarp002
+  map: gefenia02
+  name: ''
+  sprite: 45
+  to:
+    map: gefenia01
+    x: 199
+    'y': 266
+  x: 203
+  xs: 1
+  'y': 31
+  ys: 1
+- id: gefeniawarp004
+  map: gefenia02
+  name: ''
+  sprite: 45
+  to:
+    map: gefenia01
+    x: 223
+    'y': 256
+  x: 240
+  xs: 1
+  'y': 20
+  ys: 1

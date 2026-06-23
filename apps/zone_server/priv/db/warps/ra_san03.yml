@@ -1,0 +1,49 @@
+---
+- id: sanctuary03
+  map: ra_san03
+  name: ''
+  sprite: 45
+  to:
+    map: ra_san01
+    x: 140
+    'y': 19
+  x: 123
+  xs: 1
+  'y': 283
+  ys: 1
+- id: sanctuary05
+  map: ra_san03
+  name: ''
+  sprite: 45
+  to:
+    map: ra_san05
+    x: 282
+    'y': 149
+  x: 279
+  xs: 1
+  'y': 21
+  ys: 1
+- id: sanctuary06
+  map: ra_san03
+  name: ''
+  sprite: 45
+  to:
+    map: ra_san04
+    x: 203
+    'y': 216
+  x: 85
+  xs: 1
+  'y': 15
+  ys: 1
+- id: sanctuary11
+  map: ra_san03
+  name: ''
+  sprite: 45
+  to:
+    map: ra_san02
+    x: 284
+    'y': 149
+  x: 5
+  xs: 1
+  'y': 149
+  ys: 1

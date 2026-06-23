@@ -1,0 +1,37 @@
+---
+- id: xmas_fild1-1
+  map: xmas_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: xmas
+    x: 149
+    'y': 44
+  x: 69
+  xs: 10
+  'y': 252
+  ys: 2
+- id: xmax_fild1-2
+  map: xmas_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: xmas
+    x: 149
+    'y': 44
+  x: 90
+  xs: 10
+  'y': 252
+  ys: 2
+- id: xmas_fild2
+  map: xmas_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: aldebaran
+    x: 140
+    'y': 234
+  x: 84
+  xs: 10
+  'y': 48
+  ys: 2

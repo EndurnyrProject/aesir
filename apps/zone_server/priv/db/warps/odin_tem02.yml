@@ -1,0 +1,49 @@
+---
+- id: odin02
+  map: odin_tem02
+  name: ''
+  sprite: 45
+  to:
+    map: odin_tem01
+    x: 373
+    'y': 182
+  x: 21
+  xs: 1
+  'y': 180
+  ys: 1
+- id: odin04
+  map: odin_tem02
+  name: ''
+  sprite: 45
+  to:
+    map: odin_tem01
+    x: 379
+    'y': 334
+  x: 21
+  xs: 1
+  'y': 334
+  ys: 1
+- id: odin05
+  map: odin_tem02
+  name: ''
+  sprite: 45
+  to:
+    map: odin_tem03
+    x: 120
+    'y': 54
+  x: 153
+  xs: 1
+  'y': 349
+  ys: 1
+- id: odin07
+  map: odin_tem02
+  name: ''
+  sprite: 45
+  to:
+    map: odin_tem03
+    x: 247
+    'y': 40
+  x: 261
+  xs: 1
+  'y': 377
+  ys: 1

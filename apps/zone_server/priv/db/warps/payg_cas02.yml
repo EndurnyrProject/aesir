@@ -1,0 +1,145 @@
+---
+- id: payg-2-01_payg-2-14
+  map: payg_cas02
+  name: ''
+  sprite: 45
+  to:
+    map: payg_cas02
+    x: 28
+    'y': 289
+  x: 232
+  xs: 1
+  'y': 72
+  ys: 1
+- id: payg-2-02_payg-2
+  map: payg_cas02
+  name: ''
+  sprite: 45
+  to:
+    map: pay_gld
+    x: 295
+    'y': 116
+  x: 276
+  xs: 1
+  'y': 61
+  ys: 1
+- id: payg-2-03_payg-2-01
+  map: payg_cas02
+  name: ''
+  sprite: 45
+  to:
+    map: payg_cas02
+    x: 229
+    'y': 72
+  x: 236
+  xs: 1
+  'y': 59
+  ys: 1
+- id: payg-2-04_payg-2-12
+  map: payg_cas02
+  name: ''
+  sprite: 45
+  to:
+    map: payg_cas02
+    x: 80
+    'y': 240
+  x: 222
+  xs: 1
+  'y': 26
+  ys: 1
+- id: payg-2-05_payg-2-11
+  map: payg_cas02
+  name: ''
+  sprite: 45
+  to:
+    map: payg_cas02
+    x: 65
+    'y': 288
+  x: 215
+  xs: 1
+  'y': 31
+  ys: 1
+- id: payg-2-11_payg-2-05
+  map: payg_cas02
+  name: ''
+  sprite: 45
+  to:
+    map: payg_cas02
+    x: 215
+    'y': 35
+  x: 65
+  xs: 1
+  'y': 292
+  ys: 1
+- id: payg-2-12_payg-2-04
+  map: payg_cas02
+  name: ''
+  sprite: 45
+  to:
+    map: payg_cas02
+    x: 224
+    'y': 30
+  x: 84
+  xs: 1
+  'y': 240
+  ys: 1
+- id: payg-2-13_payg-2-21
+  map: payg_cas02
+  name: ''
+  sprite: 45
+  to:
+    map: payg_cas02
+    x: 280
+    'y': 287
+  x: 47
+  xs: 1
+  'y': 223
+  ys: 1
+- id: payg-2-14_payg-2-01
+  map: payg_cas02
+  name: ''
+  sprite: 45
+  to:
+    map: payg_cas02
+    x: 229
+    'y': 72
+  x: 28
+  xs: 1
+  'y': 293
+  ys: 1
+- id: payg-2-21_payg-2-13
+  map: payg_cas02
+  name: ''
+  sprite: 45
+  to:
+    map: payg_cas02
+    x: 47
+    'y': 227
+  x: 280
+  xs: 1
+  'y': 291
+  ys: 1
+- id: payg-2-22_payg-2-31
+  map: payg_cas02
+  name: ''
+  sprite: 45
+  to:
+    map: payg_cas02
+    x: 13
+    'y': 38
+  x: 254
+  xs: 1
+  'y': 241
+  ys: 1
+- id: payg-2-31_payg-2-22
+  map: payg_cas02
+  name: ''
+  sprite: 45
+  to:
+    map: payg_cas02
+    x: 254
+    'y': 245
+  x: 13
+  xs: 1
+  'y': 42
+  ys: 1

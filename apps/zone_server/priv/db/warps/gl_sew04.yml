@@ -1,0 +1,25 @@
+---
+- id: gl25
+  map: gl_sew04
+  name: ''
+  sprite: 45
+  to:
+    map: gl_dun01
+    x: 133
+    'y': 271
+  x: 104
+  xs: 1
+  'y': 78
+  ys: 1
+- id: gl21-1
+  map: gl_sew04
+  name: ''
+  sprite: 45
+  to:
+    map: gl_sew03
+    x: 64
+    'y': 13
+  x: 68
+  xs: 1
+  'y': 280
+  ys: 1
