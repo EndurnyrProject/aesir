@@ -42,6 +42,7 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def route(%Aesir.Net.ItemRemoved{}), do: {:gameplay, :item_removed}
   def route(%Aesir.Net.StatUpResult{}), do: {:gameplay, :stat_up_result}
   def route(%Aesir.Net.LearnSkillResult{}), do: {:gameplay, :learn_skill_result}
+  def route(%Aesir.Net.ItemUseResult{}), do: {:gameplay, :item_use_result}
   def route(%Aesir.Net.ParamChange{}), do: {:gameplay, :param_change}
   def route(%Aesir.Net.Resurrect{}), do: {:gameplay, :resurrect}
 

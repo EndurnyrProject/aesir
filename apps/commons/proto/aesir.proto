@@ -82,6 +82,8 @@ message Envelope {
     LearnSkill learn_skill = 72;
     LearnSkillResult learn_skill_result = 73;
     MapMove map_move = 74;
+    UseItem use_item = 75;
+    ItemUseResult item_use_result = 76;
   }
 }
 
@@ -639,4 +641,16 @@ message Resurrect {
 // Client -> server, respawn or return to char select after death (replaces RO CZ_RESTART 0x00B2).
 message Respawn {
   uint32 type = 1;
+}
+
+// Client -> server, use a consumable item by inventory slot index (replaces RO CZ_USE_ITEM 0x00A7).
+message UseItem {
+  uint32 index = 1;
+}
+
+// Server -> client, result of a use-item attempt; reason 0 = ok, else the rejection code.
+message ItemUseResult {
+  uint32 index = 1;
+  bool ok = 2;
+  uint32 reason = 3;
 }

@@ -26,6 +26,7 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.InventoryList
   alias Aesir.Net.ItemAdded
   alias Aesir.Net.ItemRemoved
+  alias Aesir.Net.ItemUseResult
   alias Aesir.Net.Knockback
   alias Aesir.Net.LearnSkill
   alias Aesir.Net.LearnSkillResult
@@ -61,6 +62,7 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.UnitDespawn
   alias Aesir.Net.UnitHp
   alias Aesir.Net.UnitSpawn
+  alias Aesir.Net.UseItem
   alias Aesir.Net.ZoneServerInfo
 
   test "envelope round-trips a login_request through the oneof body" do
@@ -1044,6 +1046,27 @@ defmodule Aesir.Commons.Network.ProtoTest do
     assert {:ok,
             %Envelope{
               body: {:learn_skill_result, %LearnSkillResult{skill_id: 2, ok: true, reason: 0}}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "use_item round-trips through envelope oneof" do
+    env = %Envelope{body: {:use_item, %UseItem{index: 7}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok, %Envelope{body: {:use_item, %UseItem{index: 7}}}} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "item_use_result round-trips through envelope oneof" do
+    env =
+      %Envelope{body: {:item_use_result, %ItemUseResult{index: 7, ok: true, reason: 0}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body: {:item_use_result, %ItemUseResult{index: 7, ok: true, reason: 0}}
             }} = Envelope.decode(IO.iodata_to_binary(iodata))
   end
 

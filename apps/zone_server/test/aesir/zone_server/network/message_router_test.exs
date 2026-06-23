@@ -22,6 +22,8 @@ defmodule Aesir.ZoneServer.Network.MessageRouterTest do
     {%Aesir.Net.ItemAdded{}, {:gameplay, :item_added}},
     {%Aesir.Net.ItemRemoved{}, {:gameplay, :item_removed}},
     {%Aesir.Net.StatUpResult{}, {:gameplay, :stat_up_result}},
+    {%Aesir.Net.LearnSkillResult{}, {:gameplay, :learn_skill_result}},
+    {%Aesir.Net.ItemUseResult{}, {:gameplay, :item_use_result}},
     {%Aesir.Net.ParamChange{}, {:gameplay, :param_change}},
     {%Aesir.Net.Resurrect{}, {:gameplay, :resurrect}},
     {%Aesir.Net.UnitSpawn{}, {:world, :unit_spawn}},
