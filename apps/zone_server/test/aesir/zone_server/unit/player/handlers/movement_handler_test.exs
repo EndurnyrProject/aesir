@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
   alias Aesir.Net.UnitSpawn
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
+  alias Aesir.ZoneServer.Npc.Warp
+  alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
@@ -28,6 +30,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
     Mimic.copy(SpatialIndex)
     Mimic.copy(Broadcast)
     Mimic.copy(UnitRegistry)
+    Mimic.copy(Warps)
 
     stub(MapCache, :get, fn "prontera" -> {:ok, %{width: 200, height: 200}} end)
     stub(Pathfinding, :find_path, fn _map, {50, 50}, {51, 50} -> {:ok, [{50, 50}, {51, 50}]} end)
@@ -35,6 +38,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
     stub(Broadcast, :to_player, fn _, _ -> :ok end)
     stub(Broadcast, :to_players, fn _, _, _ -> :ok end)
     stub(Broadcast, :to_in_range, fn _, _, _, _, _, _ -> :ok end)
+    stub(Warps, :for_map, fn _ -> :error end)
 
     :ok
   end
@@ -130,6 +134,138 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
 
       assert_receive {:cast, %UnitSpawn{gid: 42, moving: false, name: "Poring"}}, 500
       assert_receive {:cast, %UnitDespawn{gid: 99, reason: 0}}, 500
+    end
+  end
+
+  describe "handle_visibility_update/1 warp lifecycle" do
+    test "a newly-visible warp yields a UnitSpawn with object_type npc, sprite, x/y and name" do
+      test_pid = self()
+      game_state = %{idle_state().game_state | visible_warps: MapSet.new()}
+
+      warp = %Warp{
+        id: "prontera_izlude_gate",
+        map: "prontera",
+        to_map: "izlude",
+        x: 60,
+        y: 50,
+        xs: 1,
+        ys: 1,
+        to_x: 150,
+        to_y: 190,
+        sprite: 45,
+        name: "Izlude"
+      }
+
+      stub(Warps, :for_map, fn "prontera" -> {:ok, [warp]} end)
+      stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [] end)
+      stub(SpatialIndex, :get_units_in_range, fn :mob, _, _, _, _ -> [] end)
+      stub(SpatialIndex, :update_visibility, fn _, _, _ -> :ok end)
+
+      observer_pid = spawn(fn -> forward_casts(test_pid) end)
+      stub(UnitRegistry, :get_player_pid, fn 1 -> {:ok, observer_pid} end)
+
+      updated = MovementHandler.handle_visibility_update(game_state)
+
+      assert_receive {:cast, %UnitSpawn{object_type: 0x1, job: 45, x: 60, y: 50, name: "Izlude"}},
+                     500
+
+      assert MapSet.member?(updated.visible_warps, Warp.Registry.entity_id(warp))
+    end
+
+    test "a now-hidden warp yields a UnitDespawn with reason out_of_sight" do
+      test_pid = self()
+
+      warp = %Warp{
+        id: "prontera_izlude_gate",
+        map: "prontera",
+        to_map: "izlude",
+        x: 60,
+        y: 50,
+        xs: 1,
+        ys: 1,
+        to_x: 150,
+        to_y: 190,
+        sprite: 45,
+        name: "Izlude"
+      }
+
+      game_state = %{
+        idle_state().game_state
+        | visible_warps: MapSet.new([Warp.Registry.entity_id(warp)])
+      }
+
+      # Warp is now out of view range (player at 50,50; warp at 200,200 -> dist 300).
+      far_warp = %{warp | x: 200, y: 200}
+      stub(Warps, :for_map, fn "prontera" -> {:ok, [far_warp]} end)
+      stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [] end)
+      stub(SpatialIndex, :get_units_in_range, fn :mob, _, _, _, _ -> [] end)
+      stub(SpatialIndex, :update_visibility, fn _, _, _ -> :ok end)
+
+      observer_pid = spawn(fn -> forward_casts(test_pid) end)
+      stub(UnitRegistry, :get_player_pid, fn 1 -> {:ok, observer_pid} end)
+
+      updated = MovementHandler.handle_visibility_update(game_state)
+
+      assert_receive {:cast, %UnitDespawn{gid: gid, reason: 0}}, 500
+      assert gid == Warp.Registry.entity_id(warp)
+      assert MapSet.size(updated.visible_warps) == 0
+    end
+
+    test "a warp staying in view across a tick does not get a duplicate spawn packet" do
+      test_pid = self()
+      warp = %Warp{id: "w", map: "prontera", to_map: "izlude", x: 60, y: 50, to_x: 0, to_y: 0}
+
+      game_state = %{
+        idle_state().game_state
+        | visible_warps: MapSet.new([Warp.Registry.entity_id(warp)])
+      }
+
+      stub(Warps, :for_map, fn "prontera" -> {:ok, [warp]} end)
+      stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [] end)
+      stub(SpatialIndex, :get_units_in_range, fn :mob, _, _, _, _ -> [] end)
+      stub(SpatialIndex, :update_visibility, fn _, _, _ -> :ok end)
+
+      observer_pid = spawn(fn -> forward_casts(test_pid) end)
+      stub(UnitRegistry, :get_player_pid, fn 1 -> {:ok, observer_pid} end)
+
+      _updated = MovementHandler.handle_visibility_update(game_state)
+
+      refute_received {:cast, %UnitSpawn{}}
+      refute_received {:cast, %UnitDespawn{}}
+    end
+
+    test "two warps on the same map get distinct, stable gids that never collide" do
+      test_pid = self()
+
+      warp_a = %Warp{id: "a", map: "prontera", to_map: "izlude", x: 60, y: 50, to_x: 0, to_y: 0}
+      warp_b = %Warp{id: "b", map: "prontera", to_map: "geffen", x: 55, y: 45, to_x: 0, to_y: 0}
+
+      game_state = %{idle_state().game_state | visible_warps: MapSet.new()}
+
+      stub(Warps, :for_map, fn "prontera" -> {:ok, [warp_a, warp_b]} end)
+      stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [] end)
+      stub(SpatialIndex, :get_units_in_range, fn :mob, _, _, _, _ -> [] end)
+      stub(SpatialIndex, :update_visibility, fn _, _, _ -> :ok end)
+
+      observer_pid = spawn(fn -> forward_casts(test_pid) end)
+      stub(UnitRegistry, :get_player_pid, fn 1 -> {:ok, observer_pid} end)
+
+      id_a = Warp.Registry.entity_id(warp_a)
+      id_b = Warp.Registry.entity_id(warp_b)
+      assert id_a != id_b
+
+      _updated = MovementHandler.handle_visibility_update(game_state)
+
+      gids =
+        Enum.flat_map(1..2, fn _ ->
+          receive do
+            {:cast, %UnitSpawn{gid: gid}} -> [gid]
+          after
+            500 -> []
+          end
+        end)
+
+      assert Enum.sort(gids) == Enum.sort([id_a, id_b])
     end
   end
 

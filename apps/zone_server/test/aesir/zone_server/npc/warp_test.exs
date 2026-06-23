@@ -72,4 +72,32 @@ defmodule Aesir.ZoneServer.Npc.WarpTest do
       assert Registry.hit?([second, first], 150, 20) == second
     end
   end
+
+  describe "entity_id/1" do
+    @warp_id_base 0x4000_0000
+
+    test "is stable across calls for the same placement" do
+      warp = warp(x: 150, y: 20)
+
+      assert Registry.entity_id(warp) == Registry.entity_id(warp)
+    end
+
+    test "is distinct for two warps on the same map with different cells" do
+      a = warp(id: "a", x: 150, y: 20)
+      b = warp(id: "b", x: 200, y: 40)
+
+      assert Registry.entity_id(a) != Registry.entity_id(b)
+    end
+
+    test "lives in the reserved high gid range, never colliding with mob or player ids" do
+      warp = warp(x: 150, y: 20)
+
+      gid = Registry.entity_id(warp)
+
+      assert gid >= @warp_id_base
+      # Mob instance_ids are allocated in 2..1_999_999; player character_ids are
+      # DB auto-increment PKs starting at 1. The reserved base sits well above both.
+      refute gid in 1..1_999_999
+    end
+  end
 end

@@ -48,6 +48,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           view_range: integer(),
           visible_players: MapSet.t(),
           visible_mobs: MapSet.t(),
+          visible_warps: MapSet.t(),
           last_visibility_cell: {integer(), integer()} | nil,
           target_id: integer() | nil,
           combat_target_id: integer() | nil,
@@ -135,6 +136,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     :visible_players,
     # MapSet of mob_ids currently visible
     :visible_mobs,
+    # MapSet of warp entity_ids currently visible (ephemeral, not persisted)
+    :visible_warps,
     # Last grid cell for visibility check
     :last_visibility_cell,
 
@@ -202,6 +205,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       view_range: 14,
       visible_players: MapSet.new(),
       visible_mobs: MapSet.new(),
+      visible_warps: MapSet.new(),
       last_visibility_cell: nil,
 
       # Combat defaults
@@ -244,6 +248,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
         action_state: :idle,
         visible_players: MapSet.new(),
         visible_mobs: MapSet.new(),
+        visible_warps: MapSet.new(),
         last_visibility_cell: nil
     }
     |> stop_walking()

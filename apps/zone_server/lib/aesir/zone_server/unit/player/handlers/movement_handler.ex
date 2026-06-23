@@ -16,6 +16,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Npc.Warp
+  alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -358,6 +360,37 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       send_mob_vanish_packet_to(game_state.character_id, mob_id)
     end)
 
+    # Handle warp visibility — static NPC warp entities are not spatial-indexed
+    # (few per map; held per-map in `Npc.Warps`). Diff against `visible_warps`
+    # using the same Manhattan-distance convention as the mob path
+    # (`SpatialIndex.get_units_in_range`'s `distance/4`).
+    warps_on_map =
+      case Warps.for_map(game_state.map_name) do
+        {:ok, list} -> list
+        :error -> []
+      end
+
+    warps_in_range =
+      Enum.filter(warps_on_map, fn warp ->
+        manhattan(game_state.x, game_state.y, warp.x, warp.y) <= game_state.view_range
+      end)
+
+    new_visible_warps = MapSet.new(warps_in_range, &Warp.Registry.entity_id/1)
+    old_visible_warps = game_state.visible_warps
+
+    now_visible_warps = MapSet.difference(new_visible_warps, old_visible_warps)
+    now_hidden_warps = MapSet.difference(old_visible_warps, new_visible_warps)
+
+    warps_by_id = Map.new(warps_in_range, &{Warp.Registry.entity_id(&1), &1})
+
+    Enum.each(now_visible_warps, fn warp_id ->
+      send_warp_spawn_packet_to(game_state.character_id, warps_by_id[warp_id])
+    end)
+
+    Enum.each(now_hidden_warps, fn warp_id ->
+      send_warp_vanish_packet_to(game_state.character_id, warp_id)
+    end)
+
     # Update game state with new visibility info
     # Keep last_visibility_cell for potential optimization later
     current_cell = {div(game_state.x, 8), div(game_state.y, 8)}
@@ -366,9 +399,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       game_state
       | visible_players: new_visible,
         visible_mobs: new_visible_mobs,
+        visible_warps: new_visible_warps,
         last_visibility_cell: current_cell
     }
   end
+
+  defp manhattan(x1, y1, x2, y2), do: abs(x2 - x1) + abs(y2 - y1)
 
   defp send_spawn_packet_about(to_char_id, about_char_id) do
     # Get the player session for the target
@@ -442,6 +478,65 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       {:ok, to_pid} ->
         vanish_packet = %UnitDespawn{
           gid: mob_id,
+          reason: DespawnReason.out_of_sight()
+        }
+
+        GenServer.cast(to_pid, {:send_packet, vanish_packet})
+
+      {:error, :not_found} ->
+        :ok
+    end
+  end
+
+  defp send_warp_spawn_packet_to(to_char_id, %Warp{} = warp) do
+    case UnitRegistry.get_player_pid(to_char_id) do
+      {:ok, to_pid} ->
+        warp_entity_id = Warp.Registry.entity_id(warp)
+
+        packet = %UnitSpawn{
+          object_type: ObjectType.npc(),
+          aid: warp_entity_id,
+          gid: warp_entity_id,
+          speed: 0,
+          body_state: 0,
+          health_state: 0,
+          effect_state: 0,
+          job: warp.sprite,
+          head: 0,
+          weapon: 0,
+          shield: 0,
+          accessory: 0,
+          accessory2: 0,
+          accessory3: 0,
+          head_palette: 0,
+          body_palette: 0,
+          head_dir: 0,
+          robe: 0,
+          guild_id: 0,
+          sex: 0,
+          x: warp.x,
+          y: warp.y,
+          dir: 0,
+          clevel: 0,
+          max_hp: 0,
+          hp: 0,
+          is_boss: false,
+          name: warp.name,
+          moving: false
+        }
+
+        GenServer.cast(to_pid, {:send_packet, packet})
+
+      {:error, :not_found} ->
+        :ok
+    end
+  end
+
+  defp send_warp_vanish_packet_to(to_char_id, warp_entity_id) do
+    case UnitRegistry.get_player_pid(to_char_id) do
+      {:ok, to_pid} ->
+        vanish_packet = %UnitDespawn{
+          gid: warp_entity_id,
           reason: DespawnReason.out_of_sight()
         }
 

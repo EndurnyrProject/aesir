@@ -36,6 +36,14 @@ defmodule Aesir.ZoneServer.Npc.Warp.Registry do
 
   alias Aesir.ZoneServer.Npc.Warp
 
+  # Reserved high gid range for static warp entities. Mob `instance_id`s are
+  # allocated in 2..1_999_999 (see `Map.Coordinator.generate_mob_instance_id/0`)
+  # and player `character_id`s are DB auto-increment PKs starting at 1; this
+  # base sits well above both and never collides with either. `:erlang.phash2/1`
+  # is platform-independent (stable across runs and nodes) and yields 0..2^27-1,
+  # keeping warp gids within `uint32` (the `UnitSpawn.gid` width, aesir.proto:310).
+  @warp_entity_id_base 0x4000_0000
+
   @doc """
   Returns `true` when `(x, y)` falls inside `warp`'s `xs`/`ys` trigger area.
   """
@@ -51,5 +59,19 @@ defmodule Aesir.ZoneServer.Npc.Warp.Registry do
   @spec hit?([Warp.t()], integer(), integer()) :: Warp.t() | nil
   def hit?(warps, x, y) when is_list(warps) do
     Enum.find(warps, &cell_in_area?(&1, x, y))
+  end
+
+  @doc """
+  Derives a stable synthetic `gid` for a warp placement.
+
+  Warp entities are static (no process, no `UnitRegistry` entry), so the gid is
+  a deterministic function of the placement: `@warp_entity_id_base` plus a
+  platform-independent `:erlang.phash2` of `{map, x, y}`. The same warp always
+  resolves to the same gid across runs and nodes, and the reserved base keeps
+  it disjoint from player `character_id`s and mob `instance_id`s.
+  """
+  @spec entity_id(Warp.t()) :: non_neg_integer()
+  def entity_id(%Warp{} = warp) do
+    @warp_entity_id_base + :erlang.phash2({warp.map, warp.x, warp.y})
   end
 end
