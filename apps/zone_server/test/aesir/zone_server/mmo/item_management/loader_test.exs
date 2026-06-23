@@ -91,5 +91,51 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
         Loader.load(dir)
       end
     end
+
+    @tag :tmp_dir
+    test "parses on_use string field when present", %{tmp_dir: dir} do
+      write_yaml(dir, """
+      - id: 501
+        aegis_name: Red_Potion
+        name: Red Potion
+        type: healing
+        weight: 70
+        on_use: "heal(ctx, hp: 45..65)"
+      """)
+
+      assert %{by_id: %{501 => %ItemDefinition{on_use: "heal(ctx, hp: 45..65)"}}} =
+               Loader.load(dir)
+    end
+
+    @tag :tmp_dir
+    test "on_use defaults to nil when not present", %{tmp_dir: dir} do
+      write_yaml(dir, """
+      - id: 501
+        aegis_name: Red_Potion
+        name: Red Potion
+        type: healing
+        weight: 70
+      """)
+
+      assert %{by_id: %{501 => %ItemDefinition{on_use: nil}}} = Loader.load(dir)
+    end
+
+    @tag :tmp_dir
+    test "on_use preserves multiline block content", %{tmp_dir: dir} do
+      write_yaml(dir, """
+      - id: 501
+        aegis_name: Red_Potion
+        name: Red Potion
+        type: healing
+        weight: 70
+        on_use: |
+          heal(ctx, hp: 45..65)
+          log(ctx, :used_potion)
+      """)
+
+      assert %{by_id: %{501 => %ItemDefinition{on_use: on_use}}} = Loader.load(dir)
+      assert on_use =~ "heal(ctx, hp: 45..65)\n"
+      assert on_use =~ "log(ctx, :used_potion)\n"
+    end
   end
 end

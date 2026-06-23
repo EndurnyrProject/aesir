@@ -8,6 +8,7 @@
   buy: 10
   id: 501
   name: Red Potion
+  on_use: "heal(ctx, hp: 45..65)"
   type: healing
   weight: 70
 - aegis_name: Orange_Potion
