@@ -1,5 +1,73 @@
 # Changelog
 
+## [0.2.0](https://github.com/EndurnyrProject/aesir/compare/aesir-v0.1.0...aesir-v0.2.0) (2026-06-23)
+
+
+### Features
+
+* **account:** serve login over QUIC + protobuf, retire Ranch listener ([57b5b83](https://github.com/EndurnyrProject/aesir/commit/57b5b8388a43fa0d2e2659a11a275e0b4c4250b7))
+* **char:** add canonical CHARACTER_INFO serializer ([433fffd](https://github.com/EndurnyrProject/aesir/commit/433fffd5768822a8488d1f3f94a8cdc43412b03a))
+* **char:** migrate char server to QUIC + protobuf ([0c48e90](https://github.com/EndurnyrProject/aesir/commit/0c48e905d8b09a54f193a2f764672c3e0d66470a))
+* **char:** modernize HcAckCharinfoPerPage to 0x0B72 ([710793b](https://github.com/EndurnyrProject/aesir/commit/710793be0a492c61edc8772367ca062d97a842f8))
+* **char:** modernize HcNotifyZonesvr to 0x0AC5 with domain field ([d20d996](https://github.com/EndurnyrProject/aesir/commit/d20d9968e1e3efb2d5985c06fd0313ed2dbb48e7))
+* **char:** send HcCharlistNotify (0x09A0) in char-list handshake ([4ecc399](https://github.com/EndurnyrProject/aesir/commit/4ecc399e47ebd293ff966bd10b79054ee712c382))
+* **combat:** add attack_proc passive hook for multi-hit ([aac827c](https://github.com/EndurnyrProject/aesir/commit/aac827c7bc8656bf8417be6e101f2c83481914e8))
+* **combat:** add bonus_atk and fixed_damage skill damage options ([57e2d48](https://github.com/EndurnyrProject/aesir/commit/57e2d480c800052a3e34f0925c209f6f33e805ef))
+* **combat:** carry attack_delay_ms on Combatant ([669ef4d](https://github.com/EndurnyrProject/aesir/commit/669ef4d120c29f30c058df41ce3025f20a64cb65))
+* **gm:** add GM commands system with [@item](https://github.com/item) command ([7398c11](https://github.com/EndurnyrProject/aesir/commit/7398c11bc23bf53ca36bee46f41f2538dc3ac024))
+* **inventory:** add weight calculation module ([ef47d70](https://github.com/EndurnyrProject/aesir/commit/ef47d70c63eadb07d6757c78b2597fff0d528830))
+* **inventory:** wire equip/unequip handlers with write-through sync ([9fe12c5](https://github.com/EndurnyrProject/aesir/commit/9fe12c53f9aa557eed804291a32884dd2e5e3982))
+* **item:** add equip-location bitmask and client item-type tables ([3dc258f](https://github.com/EndurnyrProject/aesir/commit/3dc258f3cb80a11625a33f1ee7a88c9b56fc5117))
+* **mob:** track stolen_from flag on mob state ([3026daa](https://github.com/EndurnyrProject/aesir/commit/3026daab7e714d9d946af84a8990bc09d9b58465))
+* **net:** add central Packetver constant for per-build packet version ([78c3cce](https://github.com/EndurnyrProject/aesir/commit/78c3cced91a6179c12f0025157055369cd22b81f))
+* **packet:** add equip/unequip request packets ([2cdd522](https://github.com/EndurnyrProject/aesir/commit/2cdd5221e0f7716f853e16069898372aa459a4d0))
+* **packet:** add inventory delta, equip-ack, and sprite-change packets ([711c6b8](https://github.com/EndurnyrProject/aesir/commit/711c6b815c0e04c9b82e1129860d27c0c17a5a73))
+* **packet:** migrate initial inventory sync to modern framing ([65849d8](https://github.com/EndurnyrProject/aesir/commit/65849d831f5899f69e6a3779748d62d67cd130e4))
+* **packets:** add CZ_USE_SKILL_TOGROUND and ZC_NOTIFY_GROUNDSKILL ([5276e97](https://github.com/EndurnyrProject/aesir/commit/5276e9735b81fc4b957d6200925db16b780fa021))
+* **proto:** add skill learn messages and enrich SkillInfo ([1a13b6e](https://github.com/EndurnyrProject/aesir/commit/1a13b6ee355de432d63de709da6ce715a0634308))
+* **skill-unit:** add behaviour contract, registry, and layout helper ([bcd270b](https://github.com/EndurnyrProject/aesir/commit/bcd270b0fe220c9f15ad4d2091c1e753879dab1e))
+* **skill-unit:** add central TickManager and place/4 facade ([317eece](https://github.com/EndurnyrProject/aesir/commit/317eece6c994eb634ee7554f8e3a38ab97d56bcf))
+* **skill-unit:** add Group struct and ETS-backed Storage ([b327911](https://github.com/EndurnyrProject/aesir/commit/b327911530fc954066c59183dbed0851aa3f4961))
+* **skill:** add flee_bonus passive channel ([91a8d43](https://github.com/EndurnyrProject/aesir/commit/91a8d4375dd8ce7afc8263230dc15cbd9e02f7b7))
+* **skill:** add Storm Gust as ground skill-unit (stubbed magic damage) ([c98196b](https://github.com/EndurnyrProject/aesir/commit/c98196b1730294315fc7a3d58e0cf00b8731a1b4))
+* **skill:** support ally targeting in cast interpreter ([8637ab4](https://github.com/EndurnyrProject/aesir/commit/8637ab4fca6f968c50da8409931bf4169003503d))
+* **skill:** support ground-targeted casts in the interpreter and handlers ([9bbe86a](https://github.com/EndurnyrProject/aesir/commit/9bbe86a37d1c7a0f9f4d37809e5ae0a944bf8796))
+* **stats:** derive equipment and flat bonuses from inventory items ([a7eb902](https://github.com/EndurnyrProject/aesir/commit/a7eb9027eebbe80fb28d2fbc3e3b6af024d40c7a))
+* **zone:** add cast bar and cast cancel packets ([3f6021a](https://github.com/EndurnyrProject/aesir/commit/3f6021a9789df76c66be1f480e25d5b1012910e7))
+* **zone:** add casting action state ([0ab8e96](https://github.com/EndurnyrProject/aesir/commit/0ab8e962477e63df3c61139c87666453af5c1ee9))
+* **zone:** add damage_kind and fixed_cast_time to skill definition ([0caa4d5](https://github.com/EndurnyrProject/aesir/commit/0caa4d51db6c948219c96f8e9d27d7d4a4092025))
+* **zone:** add skill tree data and loader ([8e6449d](https://github.com/EndurnyrProject/aesir/commit/8e6449d43f011e824926c36b0f9bd5a6a2ae715b))
+* **zone:** add skill tree learn validation logic ([0834deb](https://github.com/EndurnyrProject/aesir/commit/0834debd0632f71cc8c091171c92be66a2c5a81b))
+* **zone:** carry matk/mdef through combatant for players and mobs ([666aa98](https://github.com/EndurnyrProject/aesir/commit/666aa9830cb458b4b4d274ff19d827ea0cc105ae))
+* **zone:** cross-map character warp + save-point respawn ([88224f2](https://github.com/EndurnyrProject/aesir/commit/88224f2ccbca5c70b017da7c5ebb332a44386f48))
+* **zone:** enforce after-cast act delay ([286be7c](https://github.com/EndurnyrProject/aesir/commit/286be7c9950166a1a8c61b5086dc605ac15ad861))
+* **zone:** handle skill learn requests ([b476e5f](https://github.com/EndurnyrProject/aesir/commit/b476e5fcfe660b73271a59351baa6446439534cd))
+* **zone:** mage skill tree and magic combat ([250caa7](https://github.com/EndurnyrProject/aesir/commit/250caa764288e4d63b81662aae58f55b6e8b1d54))
+* **zone:** magic damage calculator (renewal MATK/MDEF/element) ([effaac2](https://github.com/EndurnyrProject/aesir/commit/effaac2f4618e170cfbde546a3cf70257ba20b45))
+* **zone:** movement netcode via per-map delta snapshots ([66df160](https://github.com/EndurnyrProject/aesir/commit/66df160a3498d6e0135a61de76a723182b7dc61c))
+* **zone:** phase-aware cast interruption ([38dd31e](https://github.com/EndurnyrProject/aesir/commit/38dd31e7091476925d4dbfe12e84a01ab0937950))
+* **zone:** port zone server transport to QUIC + protobuf ([809e9cf](https://github.com/EndurnyrProject/aesir/commit/809e9cfb1d7b8515dd25ab98a0e8bb57ac4b1a93))
+* **zone:** renewal cast-time computation (fixed + variable) ([ffb3642](https://github.com/EndurnyrProject/aesir/commit/ffb36420666ac3965b0e2095bb5168da377be041))
+* **zone:** renewal MATK and hard/soft MDEF for player stats ([4769047](https://github.com/EndurnyrProject/aesir/commit/4769047b9af620d144cb508d8b9ecb49592281e9))
+* **zone:** route storm gust through magic damage calculator ([8bd5672](https://github.com/EndurnyrProject/aesir/commit/8bd56727a1eae081e8170d48ccdca01f932dadba))
+* **zone:** send full enriched skill tree to client ([61b5710](https://github.com/EndurnyrProject/aesir/commit/61b571026fc8963e07d6ca06dd12bc285a24c2a6))
+* **zone:** split skill interpreter into begin/complete cast ([1ef463e](https://github.com/EndurnyrProject/aesir/commit/1ef463ec09f0c7ca32699e70d5c306d500c0c258))
+* **zone:** wire cast lifecycle through player session ([c979741](https://github.com/EndurnyrProject/aesir/commit/c9797414708b35085d70cf83d9289b86f810dc36))
+
+
+### Bug Fixes
+
+* **char:** expose 15 char slots consistently across 0x082D and 0x09A0 ([98ed2ca](https://github.com/EndurnyrProject/aesir/commit/98ed2cafbbd6ee32903f237f8559db5e39f6c29c))
+* **combat:** send real attack cadence as src_speed ([3be78ed](https://github.com/EndurnyrProject/aesir/commit/3be78edce199ad25aa96117d441a5d53332ab47d))
+* Fixed char-zone default bind ip ([7d28c19](https://github.com/EndurnyrProject/aesir/commit/7d28c195173585f0ae743ec99102963e7984e195))
+* Fixed mob movement ([e8aa165](https://github.com/EndurnyrProject/aesir/commit/e8aa165ad56ffd65192c64b9fccdea329017295f))
+* Fixed Sobelow warnings ([996ed73](https://github.com/EndurnyrProject/aesir/commit/996ed73639454446cd0bceb055cec3839ffc223b))
+* **movement:** Fixed movement direction ([d42b994](https://github.com/EndurnyrProject/aesir/commit/d42b994c88df6e186c8c4f5967c7794be7845963))
+* **movement:** Fixing movement flush ([977870f](https://github.com/EndurnyrProject/aesir/commit/977870f0c2928d085b9da73fb25eb6bbca72341c))
+* **skill-unit:** resolve skill_id in place/4 and dedupe expire per tick ([9f53bc1](https://github.com/EndurnyrProject/aesir/commit/9f53bc1c72aad645325ab6a8adce2f3913486cbd))
+* **skill-unit:** reuse Combat splash filter for Storm Gust and clean up warnings ([488f9d8](https://github.com/EndurnyrProject/aesir/commit/488f9d80b1f086a1e726ef7912eb661f3836f823))
+* **status:** honor explicit duration param on apply_status ([7ffcb3b](https://github.com/EndurnyrProject/aesir/commit/7ffcb3bfd8ee00069da01a624c0dca13fcef495d))
+
 ## [0.1.0](https://github.com/EndurnyrProject/aesir/compare/aesir-v0.0.1...aesir-v0.1.0) (2026-06-17)
 
 
