@@ -24,4 +24,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.LayoutTest do
       assert Enum.uniq(cells) == cells
     end
   end
+
+  describe "line/3" do
+    test "half 1 along the x axis returns the 3-cell horizontal wall" do
+      assert Layout.line({100, 100}, {1, 0}, 1) == [{99, 100}, {100, 100}, {101, 100}]
+    end
+
+    test "half 1 along the y axis returns the 3-cell vertical wall" do
+      assert Layout.line({100, 100}, {0, 1}, 1) == [{100, 99}, {100, 100}, {100, 101}]
+    end
+  end
 end

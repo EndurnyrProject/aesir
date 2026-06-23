@@ -59,7 +59,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           skill_cooldowns: %{integer() => integer()},
           regen_accumulators: %{atom() => non_neg_integer()},
           stats: PlayerStats.t(),
-          inventory: %{non_neg_integer() => InventoryItem.t()}
+          inventory: %{non_neg_integer() => InventoryItem.t()},
+          pending_inventory_persist: [
+            {%{non_neg_integer() => InventoryItem.t()}, %{non_neg_integer() => InventoryItem.t()},
+             term()}
+          ]
         }
 
   @client_index_offset 2
@@ -143,6 +147,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
     # Inventory keyed by stable session index
     inventory: %{},
+    # Catalyst-consumption deltas staged by a skill cast for the handler to
+    # write through, then cleared. Each entry is `{old_inventory, new_inventory,
+    # change}` as produced by `Inventory.remove/3`.
+    pending_inventory_persist: [],
     skill_cooldowns: %{},
     last_attack_timestamp: 0,
     act_delay_until: 0,

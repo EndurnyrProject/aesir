@@ -28,6 +28,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   @typedoc "Attack element atom (rAthena `Element`)."
   @type element :: atom()
 
+  @typedoc "A catalyst item consumed on cast (rAthena `RequiredItems`)."
+  @type item_cost_entry :: %{id: integer(), amount: pos_integer()}
+
   typedstruct do
     field :id, integer(), enforce: true
     field :name, atom(), enforce: true
@@ -49,6 +52,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     field :after_cast_delay, [non_neg_integer()], default: []
     field :cooldown, [non_neg_integer()], default: []
     field :damage_kind, damage_kind(), default: :weapon
+    field :item_cost, [item_cost_entry()], default: []
   end
 
   @metadata_schema %{
@@ -71,7 +75,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     fixed_cast_time: {:list, :integer},
     after_cast_delay: {:list, :integer},
     cooldown: {:list, :integer},
-    damage_kind: {:enum, [:weapon, :magic, :misc]}
+    damage_kind: {:enum, [:weapon, :magic, :misc]},
+    item_cost: {:list, %{id: {:required, :integer}, amount: {:required, {:integer, {:gt, 0}}}}}
   }
 
   @defaults %{
@@ -90,7 +95,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     fixed_cast_time: [],
     after_cast_delay: [],
     cooldown: [],
-    damage_kind: :weapon
+    damage_kind: :weapon,
+    item_cost: []
   }
 
   @doc """

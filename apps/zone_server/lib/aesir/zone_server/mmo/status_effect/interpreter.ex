@@ -108,6 +108,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   @doc """
+  Folds the target's active statuses over an incoming hit before HP is reduced.
+
+  Each status' `absorb_damage` callback sees the running `damage` (already reduced
+  by statuses folded before it) inside `hit_info` and may lower it or, by returning
+  `:remove`, pass the hit through and expire itself. Updated state is persisted and
+  removals run the expire path. Returns the final integer damage.
+  """
+  @spec absorb_damage(unit_type(), integer(), integer(), map()) :: integer()
+  def absorb_damage(unit_type, unit_id, damage, hit_info) do
+    unit_type
+    |> StatusStorage.get_unit_statuses(unit_id)
+    |> Enum.reduce(damage, fn instance, acc ->
+      dispatch_absorb(unit_type, unit_id, instance, acc, hit_info)
+    end)
+  end
+
+  @doc """
   Removes a status effect, running its on_expire callback first.
   """
   @spec remove_status(unit_type(), integer(), atom()) :: :ok
@@ -324,6 +341,27 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
           {:error, reason} ->
             Logger.warning("Status #{instance.type} on_damage failed: #{inspect(reason)}")
             []
+        end
+    end
+  end
+
+  defp dispatch_absorb(unit_type, unit_id, instance, damage, hit_info) do
+    case Registry.get_definition(instance.type) do
+      nil ->
+        damage
+
+      definition ->
+        context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
+        hit_info = Map.put(hit_info, :damage, damage)
+
+        case definition.module.absorb_damage({unit_type, unit_id}, instance, hit_info, context) do
+          {:ok, new_damage, new_instance} ->
+            store_instance_changes(unit_type, unit_id, instance.type, new_instance)
+            new_damage
+
+          :remove ->
+            remove_status(unit_type, unit_id, instance.type)
+            damage
         end
     end
   end

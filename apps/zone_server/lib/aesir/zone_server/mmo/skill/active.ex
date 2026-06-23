@@ -18,9 +18,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   @typedoc "The resolved cast target handed to `cast/4`."
   @type target :: :self | {:unit, non_neg_integer()} | {:ground, integer(), integer()}
 
-  @doc "Runs the skill's effect for a validated cast. Returns the updated caster state."
+  @doc """
+  Runs the skill's effect for a validated cast. Returns the updated caster state.
+
+  A bare `{:ok, state}` consumes the skill's declared catalysts; `{:ok, state,
+  :no_consume}` completes the cast (SP, cooldown, act delay) but spares the
+  catalysts (rAthena `SKILL_NOCONSUME_REQ`, e.g. Stone Curse lv 6-10 on a failed
+  petrify).
+  """
   @callback cast(PlayerState.t(), target(), pos_integer(), Definition.t()) ::
-              {:ok, PlayerState.t()} | {:error, atom()}
+              {:ok, PlayerState.t()} | {:ok, PlayerState.t(), :no_consume} | {:error, atom()}
 
   @doc "Optional pre-cast validation, run before SP is charged. Defaults to `:ok` when absent."
   @callback validate(PlayerState.t(), target(), pos_integer(), Definition.t()) ::

@@ -12,6 +12,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Helpers do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
   Removes a status effect from the target, running its on_expire callback.
@@ -44,6 +46,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Helpers do
   def deal_damage({_unit_type, unit_id}, amount, element \\ :neutral) do
     Combat.deal_damage(unit_id, trunc(amount), element, :status_effect)
   end
+
+  @doc """
+  Drains SP from a player target, fire-and-forget.
+
+  Resolves the player's session and casts the SP deduction, mirroring
+  `deal_damage/3` for HP. Non-player targets are a no-op (mobs do not track SP
+  for status purposes).
+  """
+  @spec consume_sp(Definition.target(), non_neg_integer()) :: :ok
+  def consume_sp({:player, unit_id}, amount) when amount > 0 do
+    case UnitRegistry.get_unit(:player, unit_id) do
+      {:ok, {_module, _state, pid}} -> PlayerSession.consume_sp(pid, amount)
+      {:error, :not_found} -> :ok
+    end
+  end
+
+  def consume_sp(_target, _amount), do: :ok
 
   @doc """
   Returns true when the target is a player.

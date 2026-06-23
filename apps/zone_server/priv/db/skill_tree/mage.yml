@@ -1,0 +1,55 @@
+---
+- job: mage
+  inherit:
+    - novice
+  tree:
+    - name: MG_SRECOVERY
+      max_level: 10
+    - name: MG_SIGHT
+      max_level: 1
+    - name: MG_NAPALMBEAT
+      max_level: 10
+    - name: MG_SOULSTRIKE
+      max_level: 10
+      requires:
+        - name: MG_NAPALMBEAT
+          level: 4
+    - name: MG_SAFETYWALL
+      max_level: 10
+      requires:
+        - name: MG_NAPALMBEAT
+          level: 7
+        - name: MG_SOULSTRIKE
+          level: 5
+    - name: MG_COLDBOLT
+      max_level: 10
+    - name: MG_FROSTDIVER
+      max_level: 10
+      requires:
+        - name: MG_COLDBOLT
+          level: 5
+    - name: MG_STONECURSE
+      max_level: 10
+    - name: MG_FIREBOLT
+      max_level: 10
+    - name: MG_FIREBALL
+      max_level: 10
+      requires:
+        - name: MG_FIREBOLT
+          level: 4
+    - name: MG_FIREWALL
+      max_level: 10
+      requires:
+        - name: MG_FIREBALL
+          level: 5
+        - name: MG_SIGHT
+          level: 1
+    - name: MG_LIGHTNINGBOLT
+      max_level: 10
+    - name: MG_THUNDERSTORM
+      max_level: 10
+      requires:
+        - name: MG_LIGHTNINGBOLT
+          level: 4
+    - name: MG_ENERGYCOAT
+      max_level: 1

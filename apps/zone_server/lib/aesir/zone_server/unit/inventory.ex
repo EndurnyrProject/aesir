@@ -82,6 +82,27 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   end
 
   @doc """
+  Total quantity of item `nameid` held across all stackable slots.
+
+  Sums the stackable stacks of `nameid` (unequipped, no cards, no random
+  options); equipped or carded copies do not count toward the stackable total.
+  """
+  @spec held_amount(t(), integer()) :: non_neg_integer()
+  def held_amount(inventory, nameid) when is_map(inventory) do
+    Enum.reduce(inventory, 0, fn {_index, item}, acc ->
+      if stackable?(item, nameid), do: acc + item.amount, else: acc
+    end)
+  end
+
+  @doc """
+  Index of a stackable slot holding item `nameid`, or `nil` when none exists.
+  """
+  @spec stackable_index(t(), integer()) :: non_neg_integer() | nil
+  def stackable_index(inventory, nameid) when is_map(inventory) do
+    find_stackable_index(inventory, nameid)
+  end
+
+  @doc """
   Removes `amount` from the item at `index`.
 
   Reduces the stack or, when the amount reaches zero, drops the slot entirely.

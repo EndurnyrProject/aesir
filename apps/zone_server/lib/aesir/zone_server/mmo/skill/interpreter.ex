@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.WeaponTypes
+  alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
@@ -103,7 +104,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_range(game_state, target, definition),
          cost = Enum.at(definition.sp_cost, level - 1),
          :ok <- check_sp(game_state, cost),
-         {:ok, game_state} <- module.cast(game_state, target, level, definition) do
+         :ok <- check_catalysts(game_state, definition),
+         {:ok, game_state} <- run_cast(module, game_state, target, level, definition) do
       {:ok,
        game_state
        |> deduct_sp(cost)
@@ -275,6 +277,58 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   defp check_sp(game_state, cost) do
     if game_state.stats.current_state.sp >= cost, do: :ok, else: {:error, :insufficient_sp}
+  end
+
+  # Verifies the caster holds every declared catalyst (summed across stacks)
+  # before the behavior runs, so a failed catalyst check spends no SP.
+  defp check_catalysts(game_state, %{item_cost: item_cost}) do
+    if Enum.all?(item_cost, fn %{id: id, amount: amount} ->
+         Inventory.held_amount(game_state.inventory, id) >= amount
+       end) do
+      :ok
+    else
+      {:error, :missing_catalyst}
+    end
+  end
+
+  # Runs the behavior and, on a bare `{:ok, state}`, consumes the catalysts.
+  # `{:ok, state, :no_consume}` completes the cast but spares them.
+  defp run_cast(module, game_state, target, level, definition) do
+    case module.cast(game_state, target, level, definition) do
+      {:ok, game_state} -> {:ok, consume_catalysts(game_state, definition)}
+      {:ok, game_state, :no_consume} -> {:ok, game_state}
+      {:error, _reason} = error -> error
+    end
+  end
+
+  # Purely removes each catalyst from `game_state.inventory`, accumulating the
+  # per-step change descriptors onto `:pending_inventory_persist` for the
+  # handler to write through (mirrors how deducted SP is persisted downstream).
+  defp consume_catalysts(game_state, %{item_cost: item_cost}) do
+    Enum.reduce(item_cost, game_state, fn %{id: id, amount: amount}, gs ->
+      remove_item(gs, id, amount)
+    end)
+  end
+
+  defp remove_item(game_state, _id, 0), do: game_state
+
+  defp remove_item(game_state, id, amount) do
+    case Inventory.stackable_index(game_state.inventory, id) do
+      nil ->
+        game_state
+
+      index ->
+        take = min(amount, game_state.inventory[index].amount)
+        {:ok, new_inventory, change} = Inventory.remove(game_state.inventory, index, take)
+
+        game_state
+        |> Map.put(:inventory, new_inventory)
+        |> Map.update!(
+          :pending_inventory_persist,
+          &(&1 ++ [{game_state.inventory, new_inventory, change}])
+        )
+        |> remove_item(id, amount - take)
+    end
   end
 
   # Player SP lives in the nested current_state; mutate it inline (same pattern

@@ -79,6 +79,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   def apply_damage(_damage, _attacker_id, state), do: {:noreply, state}
 
   @doc """
+  Drains SP from the player, clamping at zero, then syncs and persists it.
+
+  Mirrors the natural-heal SP path: updates `current_state.sp`, pushes the new
+  value to the client, and persists asynchronously. Used by SP-costing statuses.
+  """
+  @spec consume_sp(non_neg_integer(), map()) :: {:noreply, map()}
+  def consume_sp(amount, state) when is_integer(amount) and amount > 0 do
+    stats = state.game_state.stats
+    new_sp = max(0, stats.current_state.sp - amount)
+    char_id = state.game_state.character_id
+
+    updated_stats = %{stats | current_state: %{stats.current_state | sp: new_sp}}
+    game_state = %{state.game_state | stats: updated_stats}
+    state = StatsManager.update_game_state(state, game_state)
+
+    StatusSync.send_param(state.connection_pid, StatusParams.sp(), new_sp)
+    CharacterPersistence.update_stats(char_id, %{sp: new_sp}, async: true)
+
+    {:noreply, state}
+  end
+
+  def consume_sp(_amount, state), do: {:noreply, state}
+
+  @doc """
   Handles a CZ_RESTART request.
 
   Type 0 respawns a dead player; type 1 (return to character select) disconnects

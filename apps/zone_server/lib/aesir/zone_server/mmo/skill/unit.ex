@@ -58,6 +58,58 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
     end
   end
 
+  @doc """
+  Fetches a stored ground skill-unit group by `group_id`.
+
+  Returns `:error` when the group is no longer alive (expired or destroyed).
+  """
+  @spec fetch(non_neg_integer()) :: {:ok, Group.t()} | :error
+  def fetch(group_id) do
+    case Storage.get(group_id) do
+      nil -> :error
+      %Group{} = group -> {:ok, group}
+    end
+  end
+
+  @doc """
+  Merges `state` into a stored group's per-skill `state` map.
+
+  A no-op when the group is already gone, so a caller racing a teardown never
+  resurrects it.
+  """
+  @spec update_state(non_neg_integer(), map()) :: :ok
+  def update_state(group_id, state) do
+    case Storage.get(group_id) do
+      nil ->
+        :ok
+
+      %Group{state: existing} = group ->
+        Storage.update(%{group | state: Map.merge(existing, state)})
+    end
+  end
+
+  @doc """
+  Destroys a ground skill-unit group by `group_id` (rAthena `skill_delunitgroup`).
+
+  Runs the skill's `on_expire/1` cleanup hook and deletes the group from storage.
+  A no-op when the group is already gone. Used when a unit dies ahead of its
+  duration, e.g. a Safety Wall whose hit/shield budget is exhausted.
+  """
+  @spec destroy(non_neg_integer()) :: :ok
+  def destroy(group_id) do
+    case Storage.get(group_id) do
+      nil ->
+        :ok
+
+      %Group{skill_name: skill_name} = group ->
+        with {:ok, module} <- module_for(skill_name) do
+          module.on_expire(group)
+        end
+
+        Storage.delete(group_id)
+    end
+  end
+
   defp module_for(skill_name) do
     case Catalog.ground_module_for(skill_name) do
       {:ok, module} -> {:ok, module}

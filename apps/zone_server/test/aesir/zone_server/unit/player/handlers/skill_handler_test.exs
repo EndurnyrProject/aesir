@@ -83,6 +83,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         act_delay_until: 0,
         action_state: :idle,
         state_context: %{},
+        pending_inventory_persist: [],
         stats: %{
           base_stats: %{dex: 1, int: 1},
           current_state: %{sp: sp, hp: 100},

@@ -33,7 +33,7 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
      (standing-idle *or* sitting), disabled while moving unless
      `allow_while_moving`. Sitting does **not** speed it up (the sit ≈2× bonus is
      the separate `ssregen` channel for MO_SPIRITSRECOVERY/TK, out of scope).
-     `skill_sp_regen` is reserved (MG_SRECOVERY, out of scope) and currently 0.
+     `skill_sp_regen` (MG_SRECOVERY) feeds the analogous skill SP channel.
 
   (all integer division). The skill HP regen folds into `hp_delta`; the combined
   HP delta is clamped so HP never exceeds `max_hp`.

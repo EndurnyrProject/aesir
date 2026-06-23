@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
   alias Aesir.ZoneServer.Mmo.Skill.Passives
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Movement
@@ -125,8 +126,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
 
     case target_type do
       :mob ->
+        hit_info = %{dmg_type: :physical, is_short: true, element: :neutral}
+
         Enum.each(1..hits//1, fn _ ->
-          apply_unit_damage(:mob, target_pid, damage, attacker_combatant.unit_id)
+          apply_unit_damage(
+            :mob,
+            target_pid,
+            target_id,
+            damage,
+            hit_info,
+            attacker_combatant.unit_id
+          )
         end)
 
         :ok
@@ -160,7 +170,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
         "Combat: Dealing #{damage} #{element} damage to #{target_type} #{target_id} from #{source_type}"
       )
 
-      apply_unit_damage(target_type, target_pid, damage)
+      hit_info = %{dmg_type: :magic, is_short: false, element: element}
+      apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, nil)
       :ok
     end
   end
@@ -235,6 +246,157 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
 
       Broadcast.to_in_range(map_name, tx, ty, @combat_view_range, packet)
       deal_damage(target_id, damage, element, :skill_unit)
+    end
+  end
+
+  @doc """
+  Executes a direct single-target magic skill from a caster against a target.
+
+  Mirrors `execute_skill_attack/3` but runs the magic pipeline: it resolves and
+  range-checks the target, runs `MagicDamageCalculator.calculate_magic_damage/3`
+  once per hit (`:hit_count` hits, each at `:skill_ratio` of MATK in `:element`),
+  broadcasts a single `ZC_NOTIFY_SKILL` packet with `div = hits` carrying the
+  summed damage, then applies that summed damage through the shared unit-damage
+  path. Used by direct nukes (bolts, Soul Strike, Frost Diver).
+
+  ## Options
+    - `:skill_id` / `:skill_level` - identify the skill for the damage packet
+    - `:skill_ratio` - percent of base MATK each hit deals (default `100`)
+    - `:element` - the skill's magic element (default `:neutral`)
+    - `:hit_count` - number of magic hits to deliver (default `1`)
+
+  ## Returns
+    - :ok if the skill connected
+    - {:error, reason} if the target was invalid, out of range, or PvP
+  """
+  @spec execute_magic_attack(struct(), integer(), keyword()) :: :ok | {:error, atom()}
+  def execute_magic_attack(caster_state, target_id, opts) do
+    attacker = caster_state.__struct__.to_combatant(caster_state)
+    skill_id = Keyword.fetch!(opts, :skill_id)
+    skill_level = Keyword.fetch!(opts, :skill_level)
+    skill_ratio = Keyword.get(opts, :skill_ratio, 100)
+    element = Keyword.get(opts, :element, :neutral)
+    hits = Keyword.get(opts, :hit_count, 1)
+
+    with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
+         target <- target_state.__struct__.to_combatant(target_state),
+         :ok <- validate_attack_with_combatants(attacker, target),
+         :ok <- ensure_offensive_target(target_type) do
+      total = sum_magic_hits(attacker, target, element, skill_ratio, hits)
+      {tx, ty} = target.position
+
+      packet = %SkillDamage{
+        skill_id: skill_id,
+        level: skill_level,
+        src_id: attacker.unit_id,
+        target_id: target_id,
+        server_tick: ServerTick.now(),
+        src_delay: 0,
+        dst_delay: 0,
+        damage: total,
+        div: hits,
+        type: @dmg_splash
+      }
+
+      Broadcast.to_in_range(target.map_name, tx, ty, @combat_view_range, packet)
+      hit_info = %{dmg_type: :magic, is_short: false, element: element}
+      apply_unit_damage(target_type, target_pid, target_id, total, hit_info, attacker.unit_id)
+      :ok
+    end
+  end
+
+  defp sum_magic_hits(attacker, target, element, skill_ratio, hits) do
+    Enum.reduce(1..hits//1, 0, fn _hit, acc ->
+      {:ok, %{damage: damage}} =
+        MagicDamageCalculator.calculate_magic_damage(attacker, target,
+          element: element,
+          skill_ratio: skill_ratio
+        )
+
+      acc + damage
+    end)
+  end
+
+  @doc """
+  Executes a center+radius magic splash against every offensive target in range.
+
+  Reuses `splash_targets/4` to find the hit set, runs each target through
+  `MagicDamageCalculator` (one magic hit at `:skill_ratio` in `:element`),
+  broadcasts a `ZC_NOTIFY_SKILL` packet per target and applies the damage.
+  With `:split` the total damage is divided evenly across the number of targets
+  hit (Napalm Beat); without it each target takes the full per-target damage.
+  Returns the list of hit target ids.
+
+  ## Options
+    - `:skill_id` / `:skill_level` - identify the skill for the damage packet
+    - `:skill_ratio` - percent of base MATK each target takes (default `100`)
+    - `:element` - the skill's magic element (default `:neutral`)
+    - `:split` - divide total damage by the number of targets hit (default `false`)
+  """
+  @spec execute_magic_splash(struct(), {integer(), integer()}, non_neg_integer(), keyword()) ::
+          [integer()]
+  def execute_magic_splash(caster_state, center, radius, opts) do
+    attacker = caster_state.__struct__.to_combatant(caster_state)
+    skill_id = Keyword.fetch!(opts, :skill_id)
+    skill_level = Keyword.fetch!(opts, :skill_level)
+    skill_ratio = Keyword.get(opts, :skill_ratio, 100)
+    element = Keyword.get(opts, :element, :neutral)
+    split = Keyword.get(opts, :split, false)
+
+    targets = splash_targets(attacker.map_name, center, radius, attacker.unit_id)
+    divisor = if split, do: max(length(targets), 1), else: 1
+
+    Enum.flat_map(targets, fn {_unit_type, target_id} ->
+      apply_magic_splash_hit(
+        attacker,
+        target_id,
+        skill_id,
+        skill_level,
+        element,
+        skill_ratio,
+        divisor
+      )
+    end)
+  end
+
+  defp apply_magic_splash_hit(
+         attacker,
+         target_id,
+         skill_id,
+         skill_level,
+         element,
+         skill_ratio,
+         divisor
+       ) do
+    with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
+         target <- target_state.__struct__.to_combatant(target_state),
+         {:ok, %{damage: damage}} <-
+           MagicDamageCalculator.calculate_magic_damage(attacker, target,
+             element: element,
+             skill_ratio: skill_ratio
+           ) do
+      damage = div(damage, divisor)
+      {tx, ty} = target.position
+
+      packet = %SkillDamage{
+        skill_id: skill_id,
+        level: skill_level,
+        src_id: attacker.unit_id,
+        target_id: target_id,
+        server_tick: ServerTick.now(),
+        src_delay: 0,
+        dst_delay: 0,
+        damage: damage,
+        div: 1,
+        type: @dmg_splash
+      }
+
+      Broadcast.to_in_range(target.map_name, tx, ty, @combat_view_range, packet)
+      hit_info = %{dmg_type: :magic, is_short: false, element: element}
+      apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, attacker.unit_id)
+      [target_id]
+    else
+      _ -> []
     end
   end
 
@@ -391,7 +553,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
 
       broadcast_to_nearby_players(target, packet)
 
-      apply_unit_damage(target_type, target_pid, damage_result.damage, attacker.unit_id)
+      hit_info = %{
+        dmg_type: :physical,
+        is_short: attacker.attack_range <= 3,
+        element: :neutral
+      }
+
+      apply_unit_damage(
+        target_type,
+        target_pid,
+        target.unit_id,
+        damage_result.damage,
+        hit_info,
+        attacker.unit_id
+      )
+
       :ok
     end
   end
@@ -400,10 +576,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   defp ensure_offensive_target(:player), do: {:error, :pvp_not_implemented}
 
   # Routes damage to the owning session by unit type, keeping the damage paths
-  # free of concrete session-module knowledge.
-  defp apply_unit_damage(target_type, target_pid, damage, attacker_id \\ nil) do
-    unit_session(target_type).apply_damage(target_pid, damage, attacker_id)
+  # free of concrete session-module knowledge. Player targets with positive damage
+  # first run the hit through the pre-damage status absorption hook (Kyrie, Safety
+  # Wall, Energy Coat) so statuses can reduce or block it before HP is reduced.
+  defp apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, attacker_id) do
+    final_damage = absorb_player_damage(target_type, target_id, damage, hit_info)
+    unit_session(target_type).apply_damage(target_pid, final_damage, attacker_id)
   end
+
+  defp absorb_player_damage(:player, target_id, damage, hit_info) when damage > 0 do
+    StatusInterpreter.absorb_damage(:player, target_id, damage, hit_info)
+  end
+
+  defp absorb_player_damage(_target_type, _target_id, damage, _hit_info), do: damage
 
   defp unit_session(:mob), do: MobSession
   defp unit_session(:player), do: PlayerSession

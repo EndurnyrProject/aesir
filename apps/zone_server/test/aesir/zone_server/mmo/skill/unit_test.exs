@@ -34,6 +34,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
 
     @impl Ground
     def on_interval(group, _now), do: {:ok, group}
+
+    @impl Ground
+    def on_expire(_group), do: :ok
   end
 
   setup do
@@ -118,6 +121,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
 
       assert {:error, :no_skill_unit_behaviour} =
                Unit.place(caster(), :unknown, 1, {10, 10})
+    end
+  end
+
+  describe "destroy/1" do
+    test "runs on_expire and deletes the group" do
+      stub(Broadcast, :to_in_range, fn _, _, _, _, _ -> :ok end)
+
+      {:ok, group} = Unit.place(caster(), @skill_name, 7, {100, 120})
+      assert %Group{} = Storage.get(group.group_id)
+
+      assert :ok = Unit.destroy(group.group_id)
+      assert nil == Storage.get(group.group_id)
+    end
+
+    test "is a no-op for an unknown group_id" do
+      assert :ok = Unit.destroy(999_999)
     end
   end
 end

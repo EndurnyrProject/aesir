@@ -67,6 +67,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @doc """
+  Drains SP from this player (fire-and-forget), clamping at zero.
+
+  Used by SP-costing status effects such as Energy Coat.
+  """
+  @spec consume_sp(pid(), non_neg_integer()) :: :ok
+  def consume_sp(pid, amount) do
+    GenServer.cast(pid, {:consume_sp, amount})
+  end
+
+  @doc """
   Gets the current player state.
   """
   def get_state(pid) do
@@ -486,6 +496,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:apply_damage, damage, attacker_id}, state) do
     HealthHandler.apply_damage(damage, attacker_id, state)
+  end
+
+  @impl true
+  def handle_cast({:consume_sp, amount}, state) do
+    HealthHandler.consume_sp(amount, state)
   end
 
   @impl true

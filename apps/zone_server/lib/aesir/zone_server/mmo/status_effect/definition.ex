@@ -88,6 +88,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   @doc "Invoked when the unit holding this status takes damage."
   @callback on_damage(target(), StatusEntry.t(), map(), context()) :: hook_result()
 
+  @doc """
+  Pre-damage hook that may reduce or block an incoming hit before HP is applied.
+
+  Receives the running `damage` (already reduced by statuses folded before it) in
+  `hit_info` and returns the (possibly lowered) damage plus an updated instance, or
+  `:remove` to both pass the hit through unchanged and expire the status.
+  """
+  @callback absorb_damage(target(), StatusEntry.t(), map(), context()) ::
+              {:ok, integer(), StatusEntry.t()} | :remove
+
   @known_properties [
     :buff,
     :debuff,
@@ -168,7 +178,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       @impl true
       def on_damage(_target, instance, _damage_info, _context), do: {:ok, instance}
 
-      defoverridable modifiers: 2, on_apply: 3, on_expire: 3, on_tick: 3, on_damage: 4
+      @impl true
+      def absorb_damage(_target, instance, %{damage: damage}, _context),
+        do: {:ok, damage, instance}
+
+      defoverridable modifiers: 2,
+                     on_apply: 3,
+                     on_expire: 3,
+                     on_tick: 3,
+                     on_damage: 4,
+                     absorb_damage: 4
     end
   end
 

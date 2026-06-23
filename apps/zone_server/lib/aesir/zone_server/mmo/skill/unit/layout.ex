@@ -20,4 +20,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Layout do
   def square({cx, cy}, radius) do
     for dx <- -radius..radius, dy <- -radius..radius, do: {cx + dx, cy + dy}
   end
+
+  @doc """
+  Returns a straight line of `2 * half + 1` cells centered on `{cx, cy}`, stepping
+  by the unit direction `{ux, uy}` (Fire Wall's wall of cells).
+
+  `half` 1 with direction `{1, 0}` yields the three cells `{cx-1, cy}`, `{cx, cy}`,
+  `{cx+1, cy}`.
+  """
+  @spec line(cell(), {integer(), integer()}, non_neg_integer()) :: [cell()]
+  def line({cx, cy}, {ux, uy}, half) do
+    for d <- -half..half, do: {cx + d * ux, cy + d * uy}
+  end
 end

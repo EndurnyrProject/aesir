@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -231,9 +232,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
-  # Shared success path: recalc stats, update registry, persist SP, sync to client,
-  # and emit the cooldown sweep.
+  # Shared success path: persist catalyst consumption, recalc stats, update
+  # registry, persist SP, sync to client, and emit the cooldown sweep.
   defp commit_cast(%{connection_pid: connection_pid}, new_game_state, skill_id, level) do
+    new_game_state = persist_catalysts(new_game_state)
+
     updated_stats = Stats.calculate_stats(new_game_state.stats, new_game_state.character_id)
     new_game_state = %{new_game_state | stats: updated_stats}
 
@@ -250,6 +253,31 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     maybe_send_postdelay(connection_pid, skill_id, level)
 
     new_game_state
+  end
+
+  # Writes through each catalyst-consumption delta the interpreter staged, then
+  # clears the staging field. Each delta is persisted against the snapshot it was
+  # computed from; the persisted rows (with real DB ids) are reflected back onto
+  # the interpreter's already-final inventory for the indices that survive.
+  defp persist_catalysts(%{pending_inventory_persist: []} = game_state), do: game_state
+
+  defp persist_catalysts(%{pending_inventory_persist: deltas} = game_state) do
+    char_id = game_state.character_id
+    final = game_state.inventory
+
+    inventory =
+      Enum.reduce(deltas, final, fn {old_inv, new_inv, change}, acc ->
+        case InventoryOps.apply_change(char_id, old_inv, new_inv, change) do
+          {:ok, persisted} ->
+            Map.merge(acc, Map.take(persisted, Map.keys(acc)))
+
+          {:error, reason} ->
+            Logger.warning("Catalyst persist failed for #{char_id}: #{inspect(reason)}")
+            acc
+        end
+      end)
+
+    %{game_state | inventory: inventory, pending_inventory_persist: []}
   end
 
   defp log_cast_failure(skill_id, character_id, reason) do
