@@ -71,6 +71,11 @@ defmodule Aesir.ZoneServer.IntegrationCase do
     # Also create any map-specific spatial index tables as needed
     :ets.new(:spatial_index_prontera, [:bag, :public, :named_table])
 
+    # Pre-warm an empty warp index so `Warps.for_map/1` returns `:error`
+    # without triggering the lazy loader (whose validator would raise
+    # against the un-stubbed MapCache). Mirrors TestEtsSetup.
+    :persistent_term.put(Aesir.ZoneServer.Npc.Warps, %{by_map: %{}})
+
     :ok
   end
 

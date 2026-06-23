@@ -11,3 +11,15 @@
     map: izlude
     x: 150
     y: 190
+- id: prontera_geffen_gate
+  map: prontera
+  x: 150
+  y: 30
+  xs: 1
+  ys: 1
+  sprite: 45
+  name: "Geffen"
+  to:
+    map: geffen
+    x: 130
+    y: 100
