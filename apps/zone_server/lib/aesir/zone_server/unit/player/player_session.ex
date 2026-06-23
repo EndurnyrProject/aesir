@@ -291,10 +291,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   def handle_info(:movement_completed, %{game_state: game_state} = state) do
-    Logger.debug(
-      "Movement completed - action_state: #{game_state.action_state}, movement_intent: #{game_state.movement_intent}, combat_target: #{game_state.combat_target_id}"
-    )
-
     # Save position to database asynchronously
     CharacterPersistence.update_position(
       game_state.character_id,
@@ -308,13 +304,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     case {game_state.action_state, game_state.movement_intent} do
       {:combat_moving, :combat} when game_state.combat_target_id != nil ->
         # Combat movement completed, attempt attack
-        Logger.debug("Combat movement completed, calling handle_reached_attack_position")
         CombatActionHandler.handle_reached_attack_position(state)
 
       {:moving, _} ->
         # Normal movement completed, transition to idle
-        Logger.debug("Normal movement completed, transitioning to idle")
-
         case PlayerState.transition_to(game_state, :idle) do
           {:ok, transitioned_state} ->
             {:noreply, %{state | game_state: transitioned_state}}

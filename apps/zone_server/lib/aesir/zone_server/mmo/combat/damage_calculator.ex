@@ -321,8 +321,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   defp apply_status_effect_damage_modifiers(damage, modifiers) do
     damage_modifier = Map.get(modifiers, :damage_bonus, 0) + Map.get(modifiers, :atk_bonus, 0)
 
-    Logger.debug("Status effect damage modifiers: bonus=#{damage_modifier}")
-
     DamageShared.apply_damage_multiplier(damage + damage_modifier, modifiers)
   end
 
@@ -337,10 +335,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     soft_def_bonus = Map.get(modifiers, :vit_bonus, 0)
 
     defense_multiplier = 1.0 + Map.get(modifiers, :defense_multiplier, 0.0)
-
-    Logger.debug(
-      "Status effect defense modifiers: hard_def_bonus=#{hard_def_bonus}, soft_def_bonus=#{soft_def_bonus}, multiplier=#{defense_multiplier}"
-    )
 
     modified_hard_def = trunc((hard_def + hard_def_bonus) * defense_multiplier)
     modified_soft_def = trunc((soft_def + soft_def_bonus) * defense_multiplier)

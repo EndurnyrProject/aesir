@@ -10,8 +10,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
   - Hit rate is clamped to 0-100% range
   """
 
-  require Logger
-
   @typedoc """
   Result of a hit calculation.
   """
@@ -67,25 +65,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
   @spec calculate_hit_result(attacker_stats(), target_stats()) :: hit_result()
   def calculate_hit_result(attacker_stats, target_stats) do
     if perfect_dodge_triggered?(target_stats) do
-      Logger.debug(
-        "Combat hit: Perfect dodge triggered for target #{target_stats.unit_id} (perfect_dodge: #{target_stats.perfect_dodge})"
-      )
-
       :perfect_dodge
     else
       hit_rate = calculate_hit_rate(attacker_stats, target_stats)
 
       if hit_successful?(hit_rate) do
-        Logger.debug(
-          "Combat hit: Attack hits - attacker #{attacker_stats.char_id} vs target #{target_stats.unit_id} (hit_rate: #{hit_rate}%)"
-        )
-
         :hit
       else
-        Logger.debug(
-          "Combat hit: Attack misses - attacker #{attacker_stats.char_id} vs target #{target_stats.unit_id} (hit_rate: #{hit_rate}%)"
-        )
-
         :miss
       end
     end

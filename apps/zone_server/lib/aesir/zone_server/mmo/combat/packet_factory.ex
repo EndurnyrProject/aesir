@@ -25,8 +25,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
       broadcast_to_nearby_players(defender_combatant, packet)
   """
 
-  require Logger
-
   alias Aesir.Commons.Utils.ServerTick
   alias Aesir.Net.DamageDealt
   alias Aesir.Net.SkillDamage
@@ -71,10 +69,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
     attacker_id = attacker.unit_id
     defender_id = defender.unit_id
 
-    Logger.debug(
-      "Combat packet: #{if damage_result.is_critical, do: "CRITICAL ", else: ""}attack from #{attacker_id} to #{defender_id} for #{damage_result.damage} damage"
-    )
-
     type = if damage_result.is_critical, do: @attack_type_critical, else: @attack_type_normal
 
     %DamageDealt{
@@ -98,10 +92,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
     attacker_id = attacker.unit_id
     defender_id = defender.unit_id
     total_damage = damage_result.damage * hits
-
-    Logger.debug(
-      "Combat packet: #{hits}-hit attack from #{attacker_id} to #{defender_id} for #{total_damage} damage"
-    )
 
     %DamageDealt{
       src_id: attacker_id,
@@ -138,10 +128,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
           damage_result()
         ) :: SkillDamage.t()
   def build_skill_damage_packet(attacker, defender, skill_id, skill_level, damage_result) do
-    Logger.debug(
-      "Skill packet: skill #{skill_id} lv#{skill_level} from #{attacker.unit_id} to #{defender.unit_id} for #{damage_result.damage} damage"
-    )
-
     %SkillDamage{
       skill_id: skill_id,
       level: skill_level,
@@ -173,8 +159,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
     attacker_id = attacker.unit_id
     defender_id = defender.unit_id
 
-    Logger.debug("Combat packet: Miss from #{attacker_id} to #{defender_id}")
-
     build_miss(attacker_id, defender_id, attacker.attack_delay_ms)
   end
 
@@ -194,8 +178,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
   def build_perfect_dodge_packet(attacker, defender) do
     attacker_id = attacker.unit_id
     defender_id = defender.unit_id
-
-    Logger.debug("Combat packet: Perfect dodge from #{attacker_id} to #{defender_id}")
 
     # Perfect dodge uses the same packet structure as miss.
     build_miss(attacker_id, defender_id, attacker.attack_delay_ms)

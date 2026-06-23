@@ -43,7 +43,7 @@ defmodule Aesir.AccountServer do
         :control,
         session_data
       ) do
-    Logger.info("Login attempt for user: #{username}")
+    Logger.debug("Login attempt for user: #{username}")
 
     case Auth.authenticate_user(username, password) do
       {:ok, account} -> handle_successful_login(account, session_data)

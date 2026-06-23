@@ -31,12 +31,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   """
   @spec handle_attack_request(map(), integer(), integer()) :: {:noreply, map()}
   def handle_attack_request(state, target_id, action_type) do
-    Logger.info(
-      "=== ATTACK REQUEST === Player #{state.game_state.character_id} requesting attack on target #{target_id} with action #{action_type}"
-    )
-
     Logger.debug(
-      "Current position: (#{state.game_state.x}, #{state.game_state.y}), State: #{state.game_state.action_state}"
+      "Attack request: player #{state.game_state.character_id} -> target #{target_id} (action #{action_type})"
     )
 
     # Store the action type in game state for later use
@@ -47,21 +43,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
     can_attack = AttackSpeed.can_attack?(state.game_state.last_attack_timestamp, attack_delay)
     act_ready = PlayerState.act_ready?(state.game_state, AttackSpeed.current_timestamp())
 
-    Logger.debug(
-      "Attack delay: #{attack_delay}ms, Can attack: #{can_attack}, Act ready: #{act_ready}"
-    )
-
     if can_attack and act_ready do
       # Check if target is in range
       case check_attack_range(state, target_id) do
-        {:in_range, distance} ->
+        {:in_range, _distance} ->
           # Target is in range, execute attack immediately
-          Logger.info("Target is in range (distance: #{distance}), executing immediate attack")
           execute_immediate_attack(state, target_id)
 
         {:out_of_range, target_pos} ->
           # Target is out of range, initiate combat movement
-          Logger.info("Target out of range at #{inspect(target_pos)}, initiating combat movement")
           initiate_combat_movement(state, target_id, action_type, target_pos)
 
         {:error, reason} ->
@@ -82,19 +72,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   """
   @spec handle_reached_attack_position(map()) :: {:noreply, map()}
   def handle_reached_attack_position(%{game_state: game_state} = state) do
-    Logger.info(
-      "=== REACHED ATTACK POSITION === combat_target_id: #{inspect(game_state.combat_target_id)}"
-    )
-
-    Logger.debug(
-      "Current state: #{game_state.action_state}, Position: (#{game_state.x}, #{game_state.y})"
-    )
-
     if game_state.combat_target_id do
       # Verify target is still in range and execute attack
       case check_attack_range(state, game_state.combat_target_id) do
-        {:in_range, distance} ->
-          Logger.info("Target confirmed in range at distance #{distance}, executing attack NOW")
+        {:in_range, _distance} ->
           execute_immediate_attack(state, game_state.combat_target_id)
 
         {:out_of_range, target_pos} ->
@@ -196,35 +177,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
     weapon_type = get_weapon_type(state.game_state.stats)
     attack_range = WeaponTypes.get_attack_range(weapon_type)
 
-    Logger.debug("Checking attack range - weapon: #{weapon_type}, range: #{attack_range}")
-
     case get_target_position(target_id) do
       {:ok, {target_x, target_y}} ->
-        player_x = state.game_state.x
-        player_y = state.game_state.y
-
         distance =
           Geometry.chebyshev_distance(
-            player_x,
-            player_y,
+            state.game_state.x,
+            state.game_state.y,
             target_x,
             target_y
           )
 
-        Logger.debug(
-          "Player at (#{player_x}, #{player_y}), Target at (#{target_x}, #{target_y}), Distance: #{distance}"
-        )
-
         if distance <= attack_range do
-          Logger.debug("✓ Target IS in range (#{distance} <= #{attack_range})")
           {:in_range, distance}
         else
-          Logger.debug("✗ Target NOT in range (#{distance} > #{attack_range})")
           {:out_of_range, {target_x, target_y}}
         end
 
       {:error, reason} ->
-        Logger.debug("Failed to get target position: #{inspect(reason)}")
         {:error, reason}
     end
   end
@@ -248,11 +217,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   end
 
   defp execute_immediate_attack(state, target_id) do
-    Logger.debug("execute_immediate_attack called for target #{target_id}")
-
     case PlayerState.transition_to(state.game_state, :attacking) do
       {:ok, transitioned_state} ->
-        Logger.debug("Successfully transitioned to attacking state")
         handle_attack_execution(state, target_id, transitioned_state)
 
       {:error, :invalid_transition} ->
@@ -260,14 +226,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
           "Cannot transition to attacking state from #{state.game_state.action_state} (current state)"
         )
 
-        Logger.debug("Full game state: #{inspect(state.game_state, limit: :infinity)}")
         {:noreply, state}
     end
   end
 
   defp handle_attack_execution(state, target_id, transitioned_state) do
-    Logger.debug("Calling Combat.execute_attack with target_id=#{target_id}")
-
     case Combat.execute_attack(transitioned_state.stats, transitioned_state, target_id) do
       :ok ->
         handle_successful_attack(state, transitioned_state)
@@ -281,32 +244,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   end
 
   defp handle_successful_attack(state, transitioned_state) do
-    Logger.info("Attack executed successfully")
     current_timestamp = AttackSpeed.current_timestamp()
-    Logger.debug("Updating attack timestamp to #{current_timestamp}")
-    Logger.debug("Combat action type: #{inspect(state.game_state.combat_action_type)}")
-
     game_state = determine_post_attack_state(state, transitioned_state, current_timestamp)
     {:noreply, %{state | game_state: game_state}}
   end
 
   defp determine_post_attack_state(state, transitioned_state, current_timestamp) do
     if state.game_state.combat_action_type == 7 do
-      Logger.debug("Continuous attack mode - staying in attacking state for chase mechanics")
       %{transitioned_state | last_attack_timestamp: current_timestamp}
     else
-      Logger.debug("Single attack mode - returning to idle")
       {:ok, idle_state} = PlayerState.transition_to(transitioned_state, :idle)
       %{idle_state | last_attack_timestamp: current_timestamp}
     end
   end
 
   defp handle_target_out_of_range(state, target_id, transitioned_state) do
-    Logger.info("Target moved out of range during attack - initiating chase")
-
     case get_target_position(target_id) do
       {:ok, {new_x, new_y}} ->
-        Logger.debug("Target moved to (#{new_x}, #{new_y}) - chasing")
         updated_state = %{state | game_state: transitioned_state}
 
         initiate_combat_movement(
@@ -335,8 +289,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   end
 
   defp initiate_combat_movement(state, target_id, action_type, {target_x, target_y}) do
-    Logger.info("=== INITIATING COMBAT MOVEMENT ===")
-
     with {:ok, combat_context} <- prepare_combat_context(state, {target_x, target_y}),
          {:ok, map_data} <- MapCache.get(state.game_state.map_name) do
       handle_pathfinding_to_target(state, target_id, action_type, combat_context, map_data)
@@ -352,12 +304,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
     attack_range = WeaponTypes.get_attack_range(weapon_type)
     current_pos = {state.game_state.x, state.game_state.y}
     optimal_pos = get_optimal_attack_position(current_pos, {target_x, target_y}, attack_range)
-
-    Logger.debug("Weapon: #{weapon_type}, Range: #{attack_range}")
-
-    Logger.debug(
-      "Current pos: #{inspect(current_pos)}, Target pos: (#{target_x}, #{target_y}), Optimal pos: #{inspect(optimal_pos)}"
-    )
 
     {:ok,
      %{
@@ -393,9 +339,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
 
     case PlayerState.transition_to(game_state, :combat_moving) do
       {:ok, transitioned_state} ->
-        Logger.debug("Transitioned to combat_moving state")
         updated_state = %{state | game_state: transitioned_state}
-        Logger.debug("Starting movement to optimal position: #{inspect(context.optimal_pos)}")
 
         MovementHandler.handle_request_move(
           updated_state,
@@ -413,11 +357,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   defp handle_already_at_optimal_position(state, target_id, action_type, context, map_data) do
     case check_attack_range(state, target_id) do
       {:in_range, _} ->
-        Logger.debug("At optimal position and in range, executing attack")
         execute_immediate_attack(state, target_id)
 
       {:out_of_range, _target_pos} ->
-        Logger.debug("At calculated position but still out of range, adjusting")
         handle_position_adjustment(state, target_id, action_type, context, map_data)
 
       {:error, reason} ->

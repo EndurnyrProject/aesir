@@ -53,7 +53,7 @@ defmodule Aesir.ZoneServer.Map.Loader do
             # credo:disable-for-next-line Credo.Check.Refactor.Nesting
             case GatLoader.load_file(path) do
               {:ok, map_data} ->
-                Logger.info("Loaded GAT file: #{map_name}")
+                Logger.debug("Loaded GAT file: #{map_name}")
                 [{map_name, map_data} | acc]
 
               {:error, reason} ->

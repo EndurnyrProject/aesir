@@ -34,10 +34,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
 
     case DynamicSupervisor.start_child(via_tuple(map_name), child_spec) do
       {:ok, pid} ->
-        Logger.debug(
-          "Spawned mob #{mob_state.mob_data.name} (ID: #{mob_state.instance_id}) on #{map_name}"
-        )
-
         {:ok, pid}
 
       {:error, reason} = error ->

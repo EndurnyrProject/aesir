@@ -36,7 +36,7 @@ defmodule Aesir.Commons.SessionManager do
     with {:ok, session} <- read_session(account_id),
          true <- session.login_id1 == login_id1 and session.login_id2 == login_id2 do
       touch_session(account_id)
-      Logger.info("Validated session for account #{account_id}")
+      Logger.debug("Validated session for account #{account_id}")
       {:ok, Session.update_activity(session)}
     else
       false -> {:error, :invalid_credentials}
@@ -80,7 +80,7 @@ defmodule Aesir.Commons.SessionManager do
   defp finish_set_user_online(account_id, server_type, value) do
     case put_user_online(account_id, value) do
       :ok ->
-        Logger.info("Set user #{account_id} online on #{server_type}")
+        Logger.debug("Set user #{account_id} online on #{server_type}")
         :ok
 
       other ->

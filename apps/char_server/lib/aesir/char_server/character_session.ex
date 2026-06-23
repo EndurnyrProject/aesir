@@ -31,7 +31,7 @@ defmodule Aesir.CharServer.CharacterSession do
 
         SessionManager.set_user_online(aid, :char_server)
 
-        Logger.info("Character session validated for account: #{aid}")
+        Logger.debug("Character session validated for account: #{aid}")
         {:ok, updated_session_data}
 
       {:error, reason} ->

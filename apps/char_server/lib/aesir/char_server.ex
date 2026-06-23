@@ -61,7 +61,7 @@ defmodule Aesir.CharServer do
         :control,
         session_data
       ) do
-    Logger.info("Character list requested for account: #{account_id}")
+    Logger.debug("Character list requested for account: #{account_id}")
 
     with {:ok, updated_session} <-
            CharacterSession.validate_character_session(account_id, login_id1, login_id2, sex),
@@ -146,7 +146,7 @@ defmodule Aesir.CharServer do
   end
 
   def handle_message(%DeleteCharRequest{char_id: char_id}, :control, session_data) do
-    Logger.info("Character deletion requested for ID: #{char_id}")
+    Logger.debug("Character deletion requested for ID: #{char_id}")
 
     case Characters.request_character_deletion(char_id, session_data.account_id) do
       {:ok, delete_unix} ->

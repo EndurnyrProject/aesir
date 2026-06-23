@@ -161,9 +161,7 @@ defmodule Aesir.ZoneServer.CharacterPersistence do
   defp do_async_update(character_id, fields) do
     case do_update_character(character_id, fields) do
       {:ok, _character} ->
-        Logger.debug(
-          "Character #{character_id} updated successfully: #{inspect(Map.keys(fields))}"
-        )
+        :ok
 
       {:error, reason} ->
         Logger.error(

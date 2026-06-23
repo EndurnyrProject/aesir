@@ -42,8 +42,6 @@ defmodule Aesir.ZoneServer do
         :control,
         session_data
       ) do
-    Logger.debug("Auth data: Account ID: #{account_id}, Char ID: #{char_id}")
-
     with {:ok, session} <- SessionManager.get_session(account_id),
          :ok <- validate_auth_code(session, login_id1),
          updated_session <- build_session_data(session_data, auth),
@@ -58,7 +56,7 @@ defmodule Aesir.ZoneServer do
          {:ok, player_pid} <-
            PlayerSupervisor.start_player(%{character: character, connection_pid: self()}),
          final_session <- Map.put(updated_session, :player_session_pid, player_pid) do
-      Logger.info("Started PlayerSession #{inspect(player_pid)} for char #{char_id}")
+      Logger.debug("Started PlayerSession #{inspect(player_pid)} for char #{char_id}")
 
       enter_ack = %EnterAck{
         account_id: account_id,

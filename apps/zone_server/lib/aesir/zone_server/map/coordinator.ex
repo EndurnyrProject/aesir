@@ -298,7 +298,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
   @impl true
   def handle_info(:initial_spawn, state) do
-    Logger.info("Starting initial mob spawn for #{state.map_name}")
+    Logger.debug("Starting initial mob spawn for #{state.map_name}")
     state = spawn_all_mobs(state)
     {:noreply, state}
   end
