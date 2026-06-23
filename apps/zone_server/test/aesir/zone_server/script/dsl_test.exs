@@ -1,0 +1,242 @@
+defmodule Aesir.ZoneServer.Script.DslTest do
+  use ExUnit.Case, async: true
+  use Mimic
+
+  alias Aesir.Commons.Models.Character
+  alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Net.ParamChange
+  alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Script.Ctx
+  alias Aesir.ZoneServer.Script.Dsl
+  alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
+  alias Aesir.ZoneServer.Unit.Stats.CurrentState
+  alias Aesir.ZoneServer.Unit.Stats.DerivedStats
+
+  @sp_hp 5
+  @sp_sp 7
+
+  setup :set_mimic_from_context
+
+  setup do
+    Mimic.copy(CharacterPersistence)
+    Mimic.copy(StatusInterpreter)
+    Mimic.copy(WarpHandler)
+    Mimic.copy(SkillInterpreter)
+
+    stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
+    stub(StatusInterpreter, :apply_status, fn _, _, _, _ -> :ok end)
+    stub(StatusInterpreter, :remove_status, fn _, _, _ -> :ok end)
+
+    :ok
+  end
+
+  describe "heal/2" do
+    test "raises hp by a rolled amount within the range, clamps at max, syncs and persists" do
+      test_pid = self()
+
+      expect(CharacterPersistence, :update_stats, fn 1, %{hp: hp}, async: true ->
+        send(test_pid, {:persisted, hp})
+        {:ok, %Character{}}
+      end)
+
+      ctx = Dsl.heal(build_ctx(hp: 100), hp: 45..65)
+
+      assert ctx.status == :ok
+      assert ctx.game_state.stats.current_state.hp in 145..165
+      assert_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_hp, value: value}}}
+      assert value in 145..165
+      assert_received {:persisted, persisted}
+      assert persisted in 145..165
+    end
+
+    test "clamps the healed hp at max_hp (no overheal)" do
+      ctx = Dsl.heal(build_ctx(hp: 480), hp: 100)
+
+      assert ctx.game_state.stats.current_state.hp == 500
+    end
+
+    test "heals sp too" do
+      ctx = Dsl.heal(build_ctx(sp: 10), sp: 20)
+
+      assert ctx.game_state.stats.current_state.sp == 30
+      assert_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_sp, value: 30}}}
+    end
+  end
+
+  describe "percent_heal/2" do
+    test "heals a percentage of max_hp" do
+      ctx = Dsl.percent_heal(build_ctx(hp: 100), hp: 50)
+
+      assert ctx.game_state.stats.current_state.hp == 350
+    end
+  end
+
+  describe "sc_start/4" do
+    test "applies the status and returns ctx unchanged" do
+      test_pid = self()
+
+      expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_blessing, params ->
+        send(test_pid, {:applied, params})
+        :ok
+      end)
+
+      ctx = build_ctx()
+      result = Dsl.sc_start(ctx, :sc_blessing, 60_000, 10)
+
+      assert result == ctx
+      assert_received {:applied, params}
+      assert params[:val1] == 10
+      assert params[:duration] == 60_000
+    end
+  end
+
+  describe "cure/2" do
+    test "removes the status and returns ctx unchanged" do
+      test_pid = self()
+
+      expect(StatusInterpreter, :remove_status, fn :player, 1, :sc_poison ->
+        send(test_pid, :removed)
+        :ok
+      end)
+
+      ctx = build_ctx()
+
+      assert Dsl.cure(ctx, :sc_poison) == ctx
+      assert_received :removed
+    end
+  end
+
+  describe "warp/2" do
+    test "relocates the player on success" do
+      relocated = %{build_game_state() | map_name: "prontera", x: 150, y: 100}
+
+      expect(WarpHandler, :warp, fn _session, "prontera", 150, 100 ->
+        {:ok, %{game_state: relocated}}
+      end)
+
+      ctx = Dsl.warp(build_ctx(), {"prontera", 150, 100})
+
+      assert ctx.status == :ok
+      assert Dsl.position(ctx) == {150, 100, "prontera"}
+    end
+
+    test "halts and leaves position unchanged on a blocked cell" do
+      stub(WarpHandler, :warp, fn _session, _map, _x, _y -> {:error, :cell_blocked} end)
+
+      ctx = build_ctx()
+      result = Dsl.warp(ctx, {"prontera", 150, 100})
+
+      assert result.status == {:error, :cell_blocked}
+      assert Dsl.position(result) == Dsl.position(ctx)
+    end
+  end
+
+  describe "itemskill/3" do
+    test "casts a skill by id and folds the returned game_state" do
+      cast_state = %{build_game_state() | action_state: :casting}
+
+      expect(SkillInterpreter, :cast, fn _gs, 14, 5, :self -> {:ok, cast_state} end)
+
+      ctx = Dsl.itemskill(build_ctx(), 14, level: 5)
+
+      assert ctx.status == :ok
+      assert ctx.game_state.action_state == :casting
+    end
+
+    test "halts on a cast error" do
+      stub(SkillInterpreter, :cast, fn _gs, _id, _lvl, _target -> {:error, :not_enough_sp} end)
+
+      ctx = Dsl.itemskill(build_ctx(), 14, [])
+
+      assert ctx.status == {:error, :not_enough_sp}
+    end
+  end
+
+  describe "reads" do
+    test "class/1 returns the job atom" do
+      assert Dsl.class(build_ctx()) == :novice
+    end
+
+    test "hp/1, sp/1, max_hp/1 return current values" do
+      ctx = build_ctx(hp: 123, sp: 45)
+
+      assert Dsl.hp(ctx) == 123
+      assert Dsl.sp(ctx) == 45
+      assert Dsl.max_hp(ctx) == 500
+    end
+
+    test "base_level/1 and job_level/1 read progression" do
+      ctx = build_ctx()
+
+      assert Dsl.base_level(ctx) == 10
+      assert Dsl.job_level(ctx) == 3
+    end
+
+    test "sex/1 returns the player sex" do
+      assert Dsl.sex(build_ctx()) == "M"
+    end
+
+    test "position/1 returns {x, y, map_name}" do
+      assert Dsl.position(build_ctx()) == {50, 50, "prontera"}
+    end
+
+    test "is_equipped/2 is true only for an equipped item id" do
+      ctx = build_ctx(inventory: %{0 => %InventoryItem{nameid: 1201, equip: 2}})
+
+      assert Dsl.is_equipped(ctx, 1201)
+      refute Dsl.is_equipped(ctx, 9999)
+    end
+
+    test "is_equipped/2 is false for a carried-but-not-equipped item" do
+      ctx = build_ctx(inventory: %{0 => %InventoryItem{nameid: 1201, equip: 0}})
+
+      refute Dsl.is_equipped(ctx, 1201)
+    end
+  end
+
+  describe "short-circuit" do
+    test "a mutation on a halted ctx returns it unchanged" do
+      ctx = Ctx.halt(build_ctx(), :already_dead)
+
+      assert Dsl.heal(ctx, hp: 100) == ctx
+      assert Dsl.warp(ctx, {"prontera", 1, 1}) == ctx
+    end
+  end
+
+  defp build_ctx(opts \\ []) do
+    %Ctx{
+      char_id: 1,
+      account_id: 100,
+      connection_pid: self(),
+      game_state: build_game_state(opts),
+      source: {:item, 501}
+    }
+  end
+
+  defp build_game_state(opts \\ []) do
+    stats = %Stats{
+      current_state: %CurrentState{
+        hp: Keyword.get(opts, :hp, 100),
+        sp: Keyword.get(opts, :sp, 10)
+      },
+      derived_stats: %DerivedStats{max_hp: 500, max_sp: 200, aspd: 150},
+      progression: %PlayerProgression{base_level: 10, job_level: 3, job_id: 0}
+    }
+
+    %PlayerState{
+      character_id: 1,
+      account_id: 100,
+      sex: "M",
+      x: 50,
+      y: 50,
+      map_name: "prontera",
+      stats: stats,
+      inventory: Keyword.get(opts, :inventory, %{})
+    }
+  end
+end
