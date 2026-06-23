@@ -17,7 +17,9 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.StatusParams
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.JobManagement
+  alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -126,6 +128,41 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     end
   end
 
+  @doc """
+  Spawns a monster on the player's current map, registered so it is attackable.
+
+  `opts` accepts `:mob_id` or `:mob_name` (one is required; `:mob_name` is the
+  AEGIS name, matching `MobManagement.get_mob_by_name/1`), `:at` as a `{x, y}`
+  tuple (defaults to the player's current position), and `:aggressive` (accepted
+  but deferred in Phase 1, kept for the Dead Branch interface). Halts on an
+  unknown mob or a spawn failure; returns the context unchanged on success.
+  """
+  @spec summon_mob(Ctx.t(), keyword()) :: Ctx.t()
+  def summon_mob(%Ctx{status: {:error, _}} = ctx, _opts), do: ctx
+
+  def summon_mob(%Ctx{} = ctx, opts) do
+    case resolve_mob(opts) do
+      {:ok, mob_data} -> spawn_mob_at(ctx, mob_data.id, opts)
+      {:error, reason} -> Ctx.halt(ctx, reason)
+    end
+  end
+
+  @doc """
+  Spawns a random monster from the catalog, like `summon_mob/2` with a rolled id.
+
+  `opts` accepts `:at` (defaults to the player's position) and `:aggressive`.
+  Halts with `:no_mobs` if the catalog is empty.
+  """
+  @spec summon_random_mob(Ctx.t(), keyword()) :: Ctx.t()
+  def summon_random_mob(%Ctx{status: {:error, _}} = ctx, _opts), do: ctx
+
+  def summon_random_mob(%Ctx{} = ctx, opts) do
+    case MobManagement.get_all_mobs() do
+      [] -> Ctx.halt(ctx, :no_mobs)
+      mobs -> spawn_mob_at(ctx, Enum.random(mobs).id, opts)
+    end
+  end
+
   @doc "The player's base level."
   @spec base_level(Ctx.t()) :: non_neg_integer()
   def base_level(%Ctx{game_state: gs}), do: gs.stats.progression.base_level
@@ -219,4 +256,23 @@ defmodule Aesir.ZoneServer.Script.Dsl do
       :error -> {:error, :unknown_skill}
     end
   end
+
+  defp resolve_mob(opts) do
+    case {Keyword.get(opts, :mob_id), Keyword.get(opts, :mob_name)} do
+      {id, _} when is_integer(id) -> MobManagement.get_mob_by_id(id)
+      {_, name} when is_binary(name) -> MobManagement.get_mob_by_name(name)
+      _ -> {:error, :mob_not_found}
+    end
+  end
+
+  defp spawn_mob_at(%Ctx{game_state: gs} = ctx, mob_id, opts) do
+    {x, y} = Keyword.get(opts, :at, {gs.x, gs.y})
+
+    case Coordinator.summon_mob(gs.map_name, mob_id, x, y, aggressive: aggressive?(opts)) do
+      {:ok, _instance_id} -> ctx
+      {:error, reason} -> Ctx.halt(ctx, reason)
+    end
+  end
+
+  defp aggressive?(opts), do: Keyword.get(opts, :aggressive, false)
 end

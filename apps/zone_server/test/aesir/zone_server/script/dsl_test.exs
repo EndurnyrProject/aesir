@@ -6,6 +6,8 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.ParamChange
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Map.Coordinator
+  alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Script.Ctx
@@ -19,6 +21,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
 
   @sp_hp 5
   @sp_sp 7
+  @poring_id 1002
 
   setup :set_mimic_from_context
 
@@ -27,6 +30,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     Mimic.copy(StatusInterpreter)
     Mimic.copy(WarpHandler)
     Mimic.copy(SkillInterpreter)
+    Mimic.copy(Coordinator)
 
     stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
     stub(StatusInterpreter, :apply_status, fn _, _, _, _ -> :ok end)
@@ -196,6 +200,98 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       ctx = build_ctx(inventory: %{0 => %InventoryItem{nameid: 1201, equip: 0}})
 
       refute Dsl.is_equipped(ctx, 1201)
+    end
+  end
+
+  describe "summon_mob/2" do
+    test "summons the requested mob on the player's map at the given coords" do
+      test_pid = self()
+
+      expect(Coordinator, :summon_mob, fn map, mob_id, x, y, _opts ->
+        send(test_pid, {:summoned, map, mob_id, {x, y}})
+        {:ok, 12_345}
+      end)
+
+      ctx = Dsl.summon_mob(build_ctx(), mob_id: @poring_id, at: {150, 100})
+
+      assert ctx.status == :ok
+      assert_received {:summoned, "prontera", @poring_id, {150, 100}}
+    end
+
+    test "defaults the spawn coords to the player's position" do
+      test_pid = self()
+
+      expect(Coordinator, :summon_mob, fn _map, _mob_id, x, y, _opts ->
+        send(test_pid, {:summoned_at, {x, y}})
+        {:ok, 12_345}
+      end)
+
+      Dsl.summon_mob(build_ctx(), mob_id: @poring_id)
+
+      assert_received {:summoned_at, {50, 50}}
+    end
+
+    test "halts on an unknown mob id without summoning" do
+      stub(Coordinator, :summon_mob, fn _map, _mob_id, _x, _y, _opts ->
+        flunk("summon_mob should not be called for an unknown mob")
+      end)
+
+      ctx = Dsl.summon_mob(build_ctx(), mob_id: 9_999_999, at: {10, 10})
+
+      assert ctx.status == {:error, :mob_not_found}
+    end
+
+    test "halts when the spawn fails" do
+      stub(Coordinator, :summon_mob, fn _map, _mob_id, _x, _y, _opts ->
+        {:error, :max_children}
+      end)
+
+      ctx = Dsl.summon_mob(build_ctx(), mob_id: @poring_id, at: {10, 10})
+
+      assert ctx.status == {:error, :max_children}
+    end
+
+    test "returns a halted ctx unchanged without summoning" do
+      stub(Coordinator, :summon_mob, fn _map, _mob_id, _x, _y, _opts ->
+        flunk("summon_mob should not be called on a halted ctx")
+      end)
+
+      ctx = Ctx.halt(build_ctx(), :already_dead)
+
+      assert Dsl.summon_mob(ctx, mob_id: @poring_id, at: {10, 10}) == ctx
+    end
+  end
+
+  describe "summon_random_mob/2" do
+    test "summons a valid catalog mob at the player's position" do
+      test_pid = self()
+      valid_ids = MobManagement.get_all_mobs() |> MapSet.new(& &1.id)
+
+      expect(Coordinator, :summon_mob, fn map, mob_id, x, y, _opts ->
+        send(test_pid, {:summoned, map, mob_id, {x, y}})
+        {:ok, 12_345}
+      end)
+
+      ctx = build_ctx()
+      {x, y, _map} = Dsl.position(ctx)
+      result = Dsl.summon_random_mob(ctx, at: {x, y})
+
+      assert result.status == :ok
+      assert_received {:summoned, "prontera", mob_id, {50, 50}}
+      assert MapSet.member?(valid_ids, mob_id)
+    end
+
+    test "halts with :no_mobs when the catalog is empty" do
+      Mimic.copy(MobManagement)
+      stub(MobManagement, :get_all_mobs, fn -> [] end)
+
+      stub(Coordinator, :summon_mob, fn _map, _mob_id, _x, _y, _opts ->
+        flunk("summon_mob should not be called when the catalog is empty")
+      end)
+
+      ctx = Dsl.summon_random_mob(build_ctx(), at: {50, 50})
+
+      assert ctx.status == {:error, :no_mobs}
     end
   end
 

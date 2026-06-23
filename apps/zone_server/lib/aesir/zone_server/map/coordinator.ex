@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   alias Aesir.Net.SnapshotEntity
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.MobManagement
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
   alias Aesir.ZoneServer.Unit.Movement
@@ -134,6 +135,23 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   end
 
   @doc """
+  Summons a single mob at `{x, y}` and registers it so it is attackable.
+
+  Runs the same spawn machinery as the map's own spawns (collision-checked
+  instance id, `MobState` build, supervised session, and `UnitRegistry`
+  registration), so the mob can be targeted, damaged and killed. Summoned mobs
+  carry a respawn time of 0 and are not re-spawned on death.
+
+  Returns `{:ok, instance_id}` or `{:error, reason}`.
+  """
+  @spec summon_mob(String.t(), integer(), integer(), integer(), keyword()) ::
+          {:ok, integer()} | {:error, term()}
+  def summon_mob(map_name, mob_id, x, y, opts \\ []) do
+    clean_name = String.replace_suffix(map_name, ".gat", "")
+    GenServer.call(via_tuple(clean_name), {:summon_mob, mob_id, x, y, opts})
+  end
+
+  @doc """
   Gets information about all mobs on the map.
   """
   def get_mob_info(map_name) do
@@ -231,6 +249,18 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     }
 
     {:reply, info, state}
+  end
+
+  @impl true
+  def handle_call({:summon_mob, mob_id, x, y, opts}, _from, state) do
+    case MobManagement.get_mob_by_id(mob_id) do
+      {:ok, mob_data} ->
+        {result, new_state} = place_mob(mob_data, {x, y}, opts, state)
+        {:reply, result, new_state}
+
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
+    end
   end
 
   @impl true
@@ -459,12 +489,18 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   end
 
   defp do_spawn_single_mob(spawn_config, mob_data, state) do
-    instance_id = generate_mob_instance_id()
-
     {x, y} = calculate_spawn_position(spawn_config.spawn_area, state.map_data)
+    {_result, new_state} = place_mob(mob_data, {x, y}, [spawn_ref: spawn_config], state)
+    new_state
+  end
 
-    mob_state =
-      MobState.new(instance_id, mob_data, spawn_config, map_with_gat(state.map_name), x, y)
+  # NOTE: `:aggressive` is accepted but deferred — forcing aggressive AI means
+  # overriding mob_data.modes, which the AI state machine reads in several places;
+  # left for a follow-up so summons don't ship a half-correct mode override.
+  defp place_mob(mob_data, {x, y}, opts, state) do
+    instance_id = generate_mob_instance_id()
+    spawn_ref = Keyword.get_lazy(opts, :spawn_ref, fn -> summon_spawn_ref(mob_data, x, y) end)
+    mob_state = MobState.new(instance_id, mob_data, spawn_ref, map_with_gat(state.map_name), x, y)
 
     case MobSupervisor.spawn_mob(state.map_name, mob_state) do
       {:ok, mob_pid} ->
@@ -474,15 +510,23 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
           "Spawned mob #{mob_data.name} (#{instance_id}) at #{x},#{y} on #{state.map_name} with pid #{inspect(mob_pid)}"
         )
 
-        %{state | next_mob_id: state.next_mob_id + 1}
+        {{:ok, instance_id}, %{state | next_mob_id: state.next_mob_id + 1}}
 
       {:error, reason} ->
-        Logger.error(
-          "Failed to start mob session #{inspect(spawn_config.mob)}: #{inspect(reason)}"
-        )
-
-        state
+        Logger.error("Failed to start mob session #{inspect(mob_data.id)}: #{inspect(reason)}")
+        {{:error, reason}, state}
     end
+  end
+
+  # NOTE: summoned mobs (Dead Branch etc.) have no map spawn config; we fabricate
+  # a minimal MobSpawn with respawn_time 0 so they are not re-spawned on death.
+  defp summon_spawn_ref(mob_data, x, y) do
+    %MobSpawn{
+      mob: mob_data.id,
+      amount: 1,
+      respawn_time: 0,
+      spawn_area: %MobSpawn.SpawnArea{x: x, y: y, xs: 0, ys: 0}
+    }
   end
 
   # Random position within spawn area
