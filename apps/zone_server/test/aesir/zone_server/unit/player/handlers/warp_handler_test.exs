@@ -57,11 +57,71 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
 
     test "non-walkable destination cell returns :cell_blocked and leaves the session untouched" do
       stub(MapCache, :get, fn "geffen" -> {:ok, %MapData{name: "geffen"}} end)
-      stub(MapData, :walkable?, fn _map, 100, 120 -> false end)
+      stub(MapData, :walkable?, fn _, _, _ -> false end)
       reject(&SpatialIndex.remove_player/1)
 
       assert {:error, :cell_blocked} = WarpHandler.warp(state(), "geffen", 100, 120)
       refute_received {:send, :control, {:map_move, _}}
+    end
+  end
+
+  describe "warp/4 destination walkable fallback" do
+    setup do
+      stub(MapCache, :get, fn "geffen" -> {:ok, %MapData{name: "geffen"}} end)
+      stub_teardown()
+      :ok
+    end
+
+    test "blocked destination with a walkable neighbour at radius 1 rewrites to it and succeeds" do
+      stub(MapData, :walkable?, fn
+        _, 100, 120 -> false
+        _, 101, 120 -> true
+        _, _, _ -> false
+      end)
+
+      stub(Broadcast, :to_players, fn _visible, _packet, _opts -> :ok end)
+
+      assert {:ok, %{game_state: gs}} = WarpHandler.warp(state(), "geffen", 100, 120)
+
+      assert gs.x == 101
+      assert gs.y == 120
+
+      assert_received {:send, :control, {:map_move, %MapMove{map_name: "geffen", x: 101, y: 120}}}
+    end
+
+    test "blocked destination with a walkable neighbour at radius 5 (search edge) rewrites and succeeds" do
+      stub(MapData, :walkable?, fn
+        _, 100, 120 -> false
+        _, 105, 125 -> true
+        _, _, _ -> false
+      end)
+
+      stub(Broadcast, :to_players, fn _visible, _packet, _opts -> :ok end)
+
+      assert {:ok, %{game_state: gs}} = WarpHandler.warp(state(), "geffen", 100, 120)
+
+      assert gs.x == 105
+      assert gs.y == 125
+
+      assert_received {:send, :control, {:map_move, %MapMove{map_name: "geffen", x: 105, y: 125}}}
+    end
+
+    test "destination blocked beyond radius 5 returns :cell_blocked and leaves the session untouched" do
+      stub(MapData, :walkable?, fn _, _, _ -> false end)
+      reject(&SpatialIndex.remove_player/1)
+
+      assert {:error, :cell_blocked} = WarpHandler.warp(state(), "geffen", 100, 120)
+      refute_received {:send, :control, {:map_move, _}}
+    end
+
+    test "walkable destination is unchanged — fallback search is not invoked" do
+      expect(MapData, :walkable?, 1, fn _, 100, 120 -> true end)
+      stub(Broadcast, :to_players, fn _visible, _packet, _opts -> :ok end)
+
+      assert {:ok, %{game_state: gs}} = WarpHandler.warp(state(), "geffen", 100, 120)
+
+      assert gs.x == 100
+      assert gs.y == 120
     end
   end
 

@@ -30,8 +30,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
           optional(atom()) => any()
         }
 
+  @fallback_radius 5
+
   @doc """
   Warps the player to `(dest_map, dest_x, dest_y)`.
+
+  If the destination cell is blocked, a spiral search for the nearest walkable
+  cell within `#{@fallback_radius}` (Chebyshev distance) is attempted; the
+  warp rewrites to that cell on hit. Real warp data and save-point respawn
+  occasionally target a slightly-off cell.
 
   Returns `{:ok, new_state}` with the player relocated and a `MapMove` sent, or
   `{:error, :map_not_found | :cell_blocked}` leaving the session untouched.
@@ -42,21 +49,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
     dest_map = normalize_map(dest_map)
 
     with {:ok, map_data} <- fetch_map(dest_map),
-         :ok <- ensure_walkable(map_data, x, y) do
+         {:ok, {fx, fy}} <- ensure_walkable(map_data, x, y) do
       leave_current_map(game_state, DespawnReason.teleport())
       Broadcast.unsubscribe_mob_despawns(game_state.map_name)
       Broadcast.subscribe_mob_despawns(dest_map)
 
       new_game_state =
         game_state
-        |> PlayerState.relocate(dest_map, x, y)
+        |> PlayerState.relocate(dest_map, fx, fy)
         |> Map.put(:pending_map_load, :warp)
 
       UnitRegistry.update_unit_state(:player, new_game_state.character_id, new_game_state)
-      MessageRouter.send_to(connection_pid, %MapMove{map_name: dest_map, x: x, y: y})
+      MessageRouter.send_to(connection_pid, %MapMove{map_name: dest_map, x: fx, y: fy})
 
       Logger.debug(
-        "Player #{game_state.character_id} warping #{game_state.map_name} -> #{dest_map} (#{x}, #{y})"
+        "Player #{game_state.character_id} warping #{game_state.map_name} -> #{dest_map} (#{fx}, #{fy})"
       )
 
       {:ok, %{state | game_state: new_game_state}}
@@ -88,7 +95,33 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   end
 
   defp ensure_walkable(map_data, x, y) do
-    if MapData.walkable?(map_data, x, y), do: :ok, else: {:error, :cell_blocked}
+    if MapData.walkable?(map_data, x, y) do
+      {:ok, {x, y}}
+    else
+      case nearest_walkable(map_data, x, y) do
+        {nx, ny} -> {:ok, {nx, ny}}
+        nil -> {:error, :cell_blocked}
+      end
+    end
+  end
+
+  @spec nearest_walkable(MapData.t(), integer(), integer()) ::
+          {integer(), integer()} | nil
+  defp nearest_walkable(map_data, x, y) do
+    Enum.find_value(1..@fallback_radius, fn radius ->
+      Enum.find(ring_cells(x, y, radius), fn {cx, cy} ->
+        MapData.walkable?(map_data, cx, cy)
+      end)
+    end)
+  end
+
+  @spec ring_cells(integer(), integer(), pos_integer()) :: [{integer(), integer()}]
+  defp ring_cells(x, y, radius) do
+    for dy <- -radius..radius,
+        dx <- -radius..radius,
+        max(abs(dx), abs(dy)) == radius do
+      {x + dx, y + dy}
+    end
   end
 
   # Player map names are canonically stored without the ".gat" suffix (matching
