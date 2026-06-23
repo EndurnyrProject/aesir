@@ -2,11 +2,13 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
   use Supervisor
 
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
 
   def init([]) do
     :ok = MapCache.init()
     :ok = Interpreter.init()
+    :ok = ScriptCompiler.compile_all!()
 
     children = [
       Aesir.ZoneServer.Map.PartitionedSupervisor,
