@@ -484,6 +484,17 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   end
 
   @doc """
+  Clears the warp re-trigger cooldown (`last_warp_at`).
+
+  Called from `handle_map_loaded/1` on every map load so a warp that triggered
+  the load cycle can't suppress the legitimate on-spawn fire on the destination.
+  The cooldown only guards against instant re-fire *within* a map, not across
+  the map-load boundary.
+  """
+  @spec clear_warp_cooldown(t()) :: t()
+  def clear_warp_cooldown(%__MODULE__{} = state), do: %{state | last_warp_at: nil}
+
+  @doc """
   Checks if a state transition is valid.
   """
   @spec can_transition?(action_state(), action_state()) :: boolean()
