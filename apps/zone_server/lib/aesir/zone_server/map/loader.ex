@@ -122,9 +122,9 @@ defmodule Aesir.ZoneServer.Map.Loader do
         acc <> build_map_entry(map_name, map_data)
       end)
 
-    file_size = 6 + byte_size(maps_binary)
+    file_size = 8 + byte_size(maps_binary)
 
-    <<file_size::little-32, map_count::little-16>> <> maps_binary
+    <<file_size::little-32, map_count::little-16, 0::16>> <> maps_binary
   end
 
   defp build_map_entry(map_name, %MapData{xs: width, ys: height, cells: cells}) do
