@@ -97,25 +97,69 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     # Handle visibility updates
     updated_game_state = handle_visibility_update(updated_game_state)
 
-    # Schedule next movement tick with appropriate interval
-    if remaining_path != [] do
-      Process.send_after(self(), :movement_tick, interval)
-      {:noreply, %{state | game_state: updated_game_state}}
-    else
-      # Path completed: stop and broadcast the standing transition so the
-      # client's last snapshot sample flips move_state back to idle.
-      game_state = PlayerState.stop_walking(updated_game_state)
+    case maybe_trigger_warp(updated_game_state, next_x, next_y) do
+      {:warp_fired, marked_state} ->
+        {:noreply, %{state | game_state: marked_state}}
 
-      Movement.set_position(
-        :player,
-        game_state.character_id,
-        game_state,
-        game_state.map_name
-      )
+      :no_warp ->
+        # Schedule next movement tick with appropriate interval
+        if remaining_path != [] do
+          Process.send_after(self(), :movement_tick, interval)
+          {:noreply, %{state | game_state: updated_game_state}}
+        else
+          # Path completed: stop and broadcast the standing transition so the
+          # client's last snapshot sample flips move_state back to idle.
+          game_state = PlayerState.stop_walking(updated_game_state)
 
-      # Send completion message for PlayerSession to handle
-      send(self(), :movement_completed)
-      {:noreply, %{state | game_state: game_state}}
+          Movement.set_position(
+            :player,
+            game_state.character_id,
+            game_state,
+            game_state.map_name
+          )
+
+          # Send completion message for PlayerSession to handle
+          send(self(), :movement_completed)
+          {:noreply, %{state | game_state: game_state}}
+        end
+    end
+  end
+
+  # On-touch warp trigger hook (rAthena `OnTouch`, cell-enter).
+  #
+  # Fires after the player has stepped onto `(x, y)`: if that cell sits inside a
+  # warp's `xs/ys` area, cancel the remaining walk and cast `{:warp, …}` to the
+  # session — reusing the existing map-warp cast (zero new plumbing). The
+  # per-player re-trigger cooldown guards the same-map-destination instant
+  # re-fire loop; within the cooldown this is a no-op and the walk continues.
+  @spec maybe_trigger_warp(PlayerState.t(), integer(), integer()) ::
+          {:warp_fired, PlayerState.t()} | :no_warp
+  defp maybe_trigger_warp(game_state, x, y) do
+    warps_for_map =
+      case Warps.for_map(game_state.map_name) do
+        {:ok, list} -> list
+        :error -> []
+      end
+
+    case Warp.Registry.hit?(warps_for_map, x, y) do
+      %Warp{} = warp ->
+        if PlayerState.within_warp_cooldown?(game_state) do
+          :no_warp
+        else
+          marked =
+            game_state
+            |> PlayerState.mark_warp()
+            |> PlayerState.stop_walking()
+
+          Movement.set_position(:player, marked.character_id, marked, marked.map_name)
+
+          GenServer.cast(self(), {:warp, warp.to_map, warp.to_x, warp.to_y})
+
+          {:warp_fired, marked}
+        end
+
+      nil ->
+        :no_warp
     end
   end
 
