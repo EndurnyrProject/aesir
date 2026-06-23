@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.SkillCast
   alias Aesir.Net.StatUp
   alias Aesir.Net.UnequipItem
+  alias Aesir.Net.UseItem
   alias Aesir.ZoneServer.Gm.Dispatcher
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ClientItemType
@@ -112,6 +113,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   # UnequipItem - Player unequips an item (protobuf analogue of CZ_REQ_TAKEOFF_EQUIP 0x00AB).
   def handle_message(%UnequipItem{index: index}, state) do
     GenServer.cast(self(), {:unequip_item, index})
+    {:noreply, state}
+  end
+
+  # UseItem - Player uses a consumable (protobuf analogue of CZ_USE_ITEM 0x0439).
+  # `index` is the client index (server index + 2); the handler subtracts the offset.
+  def handle_message(%UseItem{index: index}, state) do
+    GenServer.cast(self(), {:use_item, index})
     {:noreply, state}
   end
 

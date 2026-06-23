@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
+  alias Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
@@ -458,6 +459,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:learn_skill, skill_id}, state) do
     SkillLearningHandler.handle_learn_skill(skill_id, state)
+  end
+
+  @impl true
+  def handle_cast({:use_item, index}, state) do
+    ItemHandler.handle_use_item(index, state)
   end
 
   @impl true
