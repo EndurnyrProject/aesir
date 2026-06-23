@@ -1,0 +1,13 @@
+---
+- id: izlude_prontera_gate
+  map: izlude
+  x: 150
+  y: 190
+  xs: 1
+  ys: 1
+  sprite: 45
+  name: "Prontera"
+  to:
+    map: prontera
+    x: 150
+    y: 20
