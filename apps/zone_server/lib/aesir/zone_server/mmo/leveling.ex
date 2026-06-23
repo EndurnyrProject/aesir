@@ -67,21 +67,19 @@ defmodule Aesir.ZoneServer.Mmo.Leveling do
     level = Map.fetch!(progression, level_key)
     exp = Map.fetch!(progression, exp_key)
 
-    cond do
-      level >= max_level ->
-        # Maxed: no bar to fill, drop accumulated overflow.
-        {Map.put(progression, exp_key, 0), gained}
+    if level >= max_level do
+      {Map.put(progression, exp_key, 0), gained}
+    else
+      case threshold_fun.(level) do
+        {:ok, req} when exp >= req ->
+          progression
+          |> Map.put(level_key, level + 1)
+          |> Map.put(exp_key, exp - req)
+          |> do_level_up(level_key, exp_key, threshold_fun, max_level, gained + 1)
 
-      match?({:ok, req} when exp >= req, threshold_fun.(level)) ->
-        {:ok, req} = threshold_fun.(level)
-
-        progression
-        |> Map.put(level_key, level + 1)
-        |> Map.put(exp_key, exp - req)
-        |> do_level_up(level_key, exp_key, threshold_fun, max_level, gained + 1)
-
-      true ->
-        {progression, gained}
+        _ ->
+          {progression, gained}
+      end
     end
   end
 
