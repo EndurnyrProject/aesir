@@ -1,10 +1,5 @@
-# Fetch deps when a worktree is created
+worktree-path = "{{ repo_path }}/.worktrees/{{ branch | sanitize }}"
 pre-start = "mix deps.get"
 
-# Quality gates before committing
 [pre-commit]
-format = "mix format --check-formatted"
-credo = "mix credo --strict"
-
-# Full test suite before merging
-pre-merge = "mix test"
+format = "mix check"
