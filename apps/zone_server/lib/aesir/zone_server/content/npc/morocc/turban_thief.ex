@@ -18,17 +18,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Morocc.TurbanThief do
     merely browsing). We set it solely when the deal closes, so declining keeps
     the quest available — closer to player intent and to how the var name reads.
   * Haggle flavor text is a concise port of the per-tier `L_Menu` lines.
-  * **Re-homed from `morocc (208,90)` to `prontera (150,150)`.** Our map cache
-    (`priv/maps.mcache`) has no `morocc` town map — only `morocc_in` and the
-    `moc_*` fields/dungeons — so the rAthena cell is non-walkable and the
-    boot-time `Aesir.ZoneServer.Npc.Verifier` (which runs at application start)
-    would reject it and crash the zone server. `prontera (150,150)` is a real,
-    walkable cell; sprite, facing (`dir 6`), and name are kept. Move back to the
-    morocc cell once that town map is added to the cache.
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "prontera", x: 150, y: 150, dir: 6, sprite: 58, name: "Turban Thief"}]
+    spawn: [%{map: "morocc", x: 208, y: 90, dir: 6, sprite: 58, name: "Turban Thief"}]
 
   @reward_item_id 7114
   @prices [1_000_000, 750_000, 500_000]

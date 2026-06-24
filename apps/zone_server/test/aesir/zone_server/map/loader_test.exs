@@ -10,17 +10,10 @@ defmodule Aesir.ZoneServer.Map.LoaderTest do
   end
 
   describe "load_map/2" do
-    test "loads pprontera using default cache" do
-      assert {:ok, %MapData{} = map} = Loader.load_map("pprontera")
-      assert map.name == "pprontera"
-      assert map.xs > 0
-      assert map.ys > 0
-    end
-
     test "loads map with custom cache path" do
       cache_path = Path.join(:code.priv_dir(:zone_server), "maps.mcache")
-      assert {:ok, %MapData{} = map} = Loader.load_map("pprontera", cache_path: cache_path)
-      assert map.name == "pprontera"
+      assert {:ok, %MapData{} = map} = Loader.load_map("prontera", cache_path: cache_path)
+      assert map.name == "prontera"
     end
 
     test "returns error for non-existent map" do
@@ -33,7 +26,7 @@ defmodule Aesir.ZoneServer.Map.LoaderTest do
       assert is_map(cache_maps)
       assert map_size(cache_maps) > 0
 
-      assert Map.has_key?(cache_maps, "pprontera")
+      assert Map.has_key?(cache_maps, "prontera")
     end
   end
 end

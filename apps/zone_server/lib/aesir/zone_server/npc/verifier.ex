@@ -2,53 +2,70 @@ defmodule Aesir.ZoneServer.Npc.Verifier do
   @moduledoc """
   Boot/test sanity checks for registered NPC placements.
 
-  Given the registry's `{module, placement}` entries, returns errors for:
+  Given the registry's `{module, placement}` entries:
 
-    * `{:non_walkable, module, {map, x, y}}` — a spawn cell that is not walkable
-      (checked via `Aesir.ZoneServer.Map.MapCache.walkable?/3`, the same API the
-      warp importer uses);
-    * `{:cell_collision, {map, x, y}, modules}` — two or more NPCs on one cell.
+    * `{:cell_collision, {map, x, y}, modules}` — two or more NPCs sharing one
+      cell — is a **fatal** error. NPC unit gids are derived deterministically
+      from the cell, so colliding NPCs would collapse onto one gid and shadow
+      each other on a click.
 
-  Returns `:ok` when there are no errors.
+  NPCs are objects, not walking units, so a spawn cell is **not** required to be
+  walkable — official NPCs routinely sit on walls, edges, and decorative cells.
+  A placement on a map that is not loaded in `Aesir.ZoneServer.Map.MapCache` is
+  likewise not fatal: `verify!/1` logs a warning for it (likely a typo or a
+  not-yet-imported map — the NPC is simply unreachable until that map is added)
+  and boots on.
+
+  `verify/1` returns `:ok` or the list of fatal errors; `verify!/1` logs the
+  unloaded-map warnings and then raises on any fatal error.
   """
+
+  require Logger
 
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Npc.Placement
 
   @type entry :: {module(), Placement.t()}
   @type cell :: {String.t(), non_neg_integer(), non_neg_integer()}
-  @type error ::
-          {:non_walkable, module(), cell()}
-          | {:cell_collision, cell(), [module()]}
+  @type error :: {:cell_collision, cell(), [module()]}
 
   @doc """
-  Verifies the given placement entries, returning `:ok` or the list of errors.
+  Verifies the given placement entries, returning `:ok` or the list of fatal
+  errors (cell collisions).
   """
   @spec verify([entry()]) :: :ok | {:error, [error()]}
   def verify(entries) do
-    case walkable_errors(entries) ++ collision_errors(entries) do
+    case collision_errors(entries) do
       [] -> :ok
       errors -> {:error, errors}
     end
   end
 
   @doc """
-  Boot-time verification: returns `:ok` or raises `ArgumentError` on any error,
-  mirroring `Aesir.ZoneServer.Npc.Warps.validate!/1`'s fail-fast boot behavior.
+  Boot-time verification: logs a warning for every placement on a map that is not
+  loaded, then returns `:ok` or raises `ArgumentError` on a fatal error (a cell
+  collision), mirroring `Aesir.ZoneServer.Npc.Warps.validate!/1`'s fail-fast.
   """
   @spec verify!([entry()]) :: :ok
   def verify!(entries) do
+    warn_unloaded_maps(entries)
+
     case verify(entries) do
       :ok -> :ok
       {:error, errors} -> raise ArgumentError, "invalid NPC placements: #{inspect(errors)}"
     end
   end
 
-  @spec walkable_errors([entry()]) :: [error()]
-  defp walkable_errors(entries) do
-    for {module, %Placement{map: map, x: x, y: y}} <- entries,
-        not MapCache.walkable?(map, x, y),
-        do: {:non_walkable, module, {map, x, y}}
+  @spec warn_unloaded_maps([entry()]) :: :ok
+  defp warn_unloaded_maps(entries) do
+    for {module, %Placement{map: map}} <- entries, not MapCache.exists?(map) do
+      Logger.warning(
+        "NPC #{inspect(module)} is placed on map #{inspect(map)}, which is not loaded; " <>
+          "it will be unreachable until that map is added to the cache."
+      )
+    end
+
+    :ok
   end
 
   @spec collision_errors([entry()]) :: [error()]

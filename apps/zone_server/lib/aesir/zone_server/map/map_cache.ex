@@ -31,14 +31,7 @@ defmodule Aesir.ZoneServer.Map.MapCache do
   Gets map data by name.
   """
   def get(map_name) when is_binary(map_name) do
-    clean_name = String.replace_suffix(map_name, ".gat", "")
-
-    # Quick fix for rAthena cache naming: prontera -> pprontera
-    cache_name =
-      case clean_name do
-        "prontera" -> "pprontera"
-        _ -> clean_name
-      end
+    cache_name = String.replace_suffix(map_name, ".gat", "")
 
     case :ets.lookup(table_for(:map_cache), cache_name) do
       [{^cache_name, map_data}] -> {:ok, map_data}

@@ -3,6 +3,8 @@ defmodule Aesir.ZoneServer.Map.GatLoader do
   GAT (Ground Altitude) file loader for Ragnarok Online maps.
   GAT files contain terrain information for each cell in a map.
   """
+  import Bitwise
+
   require Logger
 
   alias Aesir.ZoneServer.Map.MapData
@@ -84,10 +86,12 @@ defmodule Aesir.ZoneServer.Map.GatLoader do
 
   defp parse_cell_list(data, remaining, acc) do
     case data do
-      # Each cell: 4 height floats (16 bytes) + type (4 bytes) = 20 bytes
+      # Each cell: 4 height floats (16 bytes) + type (4 bytes) = 20 bytes.
+      # GAT v1.3+ packs flags in the high bits of the type; rAthena keeps only
+      # the low byte (`(unsigned char)type`), so mask to match its mapcache.
       <<_h1::little-float-32, _h2::little-float-32, _h3::little-float-32, _h4::little-float-32,
         cell_type::little-32, rest::binary>> ->
-        parse_cell_list(rest, remaining - 1, [cell_type | acc])
+        parse_cell_list(rest, remaining - 1, [band(cell_type, 0xFF) | acc])
 
       _ ->
         # If we can't parse, fill remaining with walls

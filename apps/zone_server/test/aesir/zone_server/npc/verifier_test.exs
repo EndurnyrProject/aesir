@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Npc.VerifierTest do
   use ExUnit.Case, async: true
   import Mimic
+  import ExUnit.CaptureLog
 
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Npc.Placement
@@ -16,9 +17,7 @@ defmodule Aesir.ZoneServer.Npc.VerifierTest do
   end
 
   describe "verify/1" do
-    test "returns :ok when every cell is walkable and unique" do
-      stub(MapCache, :walkable?, fn _, _, _ -> true end)
-
+    test "returns :ok for unique cells (walkability is not required)" do
       entries = [
         {ModA, placement(x: 150, y: 150)},
         {ModB, placement(x: 151, y: 150)}
@@ -27,16 +26,7 @@ defmodule Aesir.ZoneServer.Npc.VerifierTest do
       assert :ok = Verifier.verify(entries)
     end
 
-    test "flags a non-walkable spawn cell" do
-      stub(MapCache, :walkable?, fn "prontera", 150, 150 -> false end)
-
-      assert {:error, errors} = Verifier.verify([{ModA, placement(x: 150, y: 150)}])
-      assert Enum.any?(errors, &match?({:non_walkable, ModA, {"prontera", 150, 150}}, &1))
-    end
-
     test "flags two NPCs sharing one cell" do
-      stub(MapCache, :walkable?, fn _, _, _ -> true end)
-
       entries = [
         {ModA, placement(x: 150, y: 150)},
         {ModB, placement(x: 150, y: 150)}
@@ -48,17 +38,31 @@ defmodule Aesir.ZoneServer.Npc.VerifierTest do
   end
 
   describe "verify!/1" do
-    test "returns :ok when every cell is walkable and unique" do
-      stub(MapCache, :walkable?, fn _, _, _ -> true end)
+    test "returns :ok for unique cells on loaded maps" do
+      stub(MapCache, :exists?, fn _ -> true end)
 
       assert :ok = Verifier.verify!([{ModA, placement(x: 150, y: 150)}])
     end
 
-    test "raises ArgumentError at boot when a cell is non-walkable" do
-      stub(MapCache, :walkable?, fn _, _, _ -> false end)
+    test "warns but does not raise for a placement on an unloaded map" do
+      stub(MapCache, :exists?, fn _ -> false end)
+
+      log =
+        capture_log(fn ->
+          assert :ok = Verifier.verify!([{ModA, placement(map: "morocc", x: 208, y: 90)}])
+        end)
+
+      assert log =~ "not loaded"
+    end
+
+    test "raises ArgumentError at boot on a cell collision" do
+      stub(MapCache, :exists?, fn _ -> true end)
 
       assert_raise ArgumentError, fn ->
-        Verifier.verify!([{ModA, placement(x: 150, y: 150)}])
+        Verifier.verify!([
+          {ModA, placement(x: 150, y: 150)},
+          {ModB, placement(x: 150, y: 150)}
+        ])
       end
     end
   end

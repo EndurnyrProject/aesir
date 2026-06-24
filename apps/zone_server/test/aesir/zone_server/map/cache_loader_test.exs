@@ -35,7 +35,7 @@ defmodule Aesir.ZoneServer.Map.CacheLoaderTest do
     end
 
     test "loads multiple common maps from cache", %{cache_maps: cache_maps} do
-      common_maps = ["pprontera", "1@gl_k", "bat_c03", "izlude_d", "gef_fild08"]
+      common_maps = ["pprontera", "1@gl_k", "bat_c01", "izlude_d", "gef_fild08"]
 
       for map_name <- common_maps do
         map_data = Map.get(cache_maps, map_name)

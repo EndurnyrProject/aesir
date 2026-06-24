@@ -10,12 +10,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Morocc.TurbanThiefTest do
   `ScriptEffectHandlerTest` stubs): `CharacterPersistence` (DB write-through),
   `InventoryOps` (inventory row persistence), and `Items` (item catalog lookup).
 
-  MAP NOTE: the Turban Thief is re-homed from rAthena's `morocc (208,90)` to
-  `prontera (150,150)` because our map cache has no `morocc` town map and the
-  boot-time `Npc.Verifier` (run at zone_server application start, before any
-  per-test stub) would otherwise crash every zone_server test. `prontera
-  (150,150)` is genuinely walkable, so the verifier passes against the *real*
-  map cache here — no walkability stub needed.
+  MAP NOTE: the Turban Thief spawns on the rAthena cell `morocc (208,90)`. Our
+  map cache has no `morocc` town map yet, but the verifier no longer requires a
+  walkable/loaded cell (NPCs are objects) — it only rejects cell collisions — so
+  the placement verifies fine and the boot path merely logs an unloaded-map
+  warning. The interaction scenarios below drive the runtime directly and don't
+  depend on the map being loaded.
   """
 
   use ExUnit.Case, async: false
@@ -101,11 +101,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Morocc.TurbanThiefTest do
       on_exit(fn -> :persistent_term.erase(Registry) end)
       Registry.reload([TurbanThief])
 
-      assert {:ok, {TurbanThief, %Placement{map: "prontera", x: 150, y: 150, dir: 6}}} =
-               Registry.module_at("prontera", 150, 150)
+      assert {:ok, {TurbanThief, %Placement{map: "morocc", x: 208, y: 90, dir: 6}}} =
+               Registry.module_at("morocc", 208, 90)
     end
 
-    test "the verifier passes for the spawn cell against the real map cache" do
+    test "the verifier passes for the spawn cell (walkability not required)" do
       assert :ok = Verifier.verify([{TurbanThief, hd(TurbanThief.spawn())}])
     end
   end
