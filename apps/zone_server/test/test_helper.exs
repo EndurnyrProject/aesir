@@ -25,6 +25,7 @@ Mimic.copy(Aesir.ZoneServer.Mmo.Skill.Unit)
 Mimic.copy(Aesir.ZoneServer.Mmo.ItemManagement)
 Mimic.copy(Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler)
 Mimic.copy(Aesir.ZoneServer.Mmo.StatusEffect.Registry)
+Mimic.copy(Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay)
 Mimic.copy(Aesir.ZoneServer.Unit.SpecialEffect)
 Mimic.copy(Aesir.Commons.Utils.ServerTick)
 

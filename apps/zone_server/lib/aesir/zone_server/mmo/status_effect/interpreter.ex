@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   alias Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
+  alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit
@@ -132,6 +133,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     with_active_status(unit_type, unit_id, status_id, fn module, instance, context ->
       module.on_expire({unit_type, unit_id}, instance, context)
       StatusStorage.remove_status(unit_type, unit_id, status_id)
+      StatusDisplay.on_removed(unit_type, unit_id, status_id, instance)
       :ok
     end)
   end
@@ -302,6 +304,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
           state: new_instance.state || %{},
           phase: new_instance.phase
         )
+
+        stored_instance = StatusStorage.get_status(unit_type, unit_id, status_id)
+        StatusDisplay.on_applied(unit_type, unit_id, status_id, stored_instance)
 
         :ok
 
