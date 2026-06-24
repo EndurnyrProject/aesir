@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.3.0](https://github.com/EndurnyrProject/aesir/compare/aesir-v0.2.0...aesir-v0.3.0) (2026-06-24)
+
+
+### Features
+
+* **map:** Added MapCache generator ([bbd98b4](https://github.com/EndurnyrProject/aesir/commit/bbd98b454faa633939d54173eca296136d9fdab4))
+* **proto:** add status display messages and unit sprite-state fields ([1b57b3d](https://github.com/EndurnyrProject/aesir/commit/1b57b3df03a481a7ffd2e2d5a661604eb773f7d4))
+* **proto:** add UseItem and ItemUseResult messages ([4d58f48](https://github.com/EndurnyrProject/aesir/commit/4d58f486ce51ef8e8f95c7ceb925d7d2f67c15cf))
+* **status:** add display metadata fields to Definition ([1143e40](https://github.com/EndurnyrProject/aesir/commit/1143e40521c30268127d7904b189dbf7738fc120))
+* **status:** add one-shot SpecialEffect primitive ([bce8245](https://github.com/EndurnyrProject/aesir/commit/bce82457d18936be2da4fce9b8f842bcb8442967))
+* **status:** add StatusDisplay orchestrator ([b208c77](https://github.com/EndurnyrProject/aesir/commit/b208c77bf9e364c5bda1c0342d5c8a4b36ac87cc))
+* **status:** backfill status visuals on spawn and visibility ([bd3996d](https://github.com/EndurnyrProject/aesir/commit/bd3996d8b2a66a9e2f5bca58d6fdd9aaba7e046e))
+* **status:** broadcast display on status apply and removal ([5bcba95](https://github.com/EndurnyrProject/aesir/commit/5bcba959220443cc7b70fb6651542a5ffab5b61a))
+* **status:** generate rAthena display-constant modules ([230fe18](https://github.com/EndurnyrProject/aesir/commit/230fe18bbafdbafecc34732daece21b5371a9f6d))
+* **status:** populate display metadata for implemented statuses ([3dd01be](https://github.com/EndurnyrProject/aesir/commit/3dd01be02399813329aa36dcdd14b6c718382e35))
+* **zone:** add on_use script field to item definitions ([42765bb](https://github.com/EndurnyrProject/aesir/commit/42765bb68652b0c94908ec6f86a3832445f02f4f))
+* **zone:** add PlayerState warp cooldown timestamp ([c803833](https://github.com/EndurnyrProject/aesir/commit/c803833f326752d80d51b1e9f291c5de43c3651e))
+* **zone:** add Script.Ctx shared script context ([7e59e14](https://github.com/EndurnyrProject/aesir/commit/7e59e14bd4ca134bfc0a48231329fd905bba1c8a))
+* **zone:** add Script.Dsl item-effect primitives ([76cb7d3](https://github.com/EndurnyrProject/aesir/commit/76cb7d39d921ad34db273bbebe61ae45386812ea))
+* **zone:** add summon_mob/summon_random_mob DSL primitives ([4e04603](https://github.com/EndurnyrProject/aesir/commit/4e04603175d6618817aad933dbdaba94338fddfe))
+* **zone:** add Warp struct and area-hit registry predicate ([a003b88](https://github.com/EndurnyrProject/aesir/commit/a003b884d28d0ea812fcf9b54fa363fc365df257))
+* **zone:** boot-time compiler for item on_use scripts ([91eb971](https://github.com/EndurnyrProject/aesir/commit/91eb9715e07fcacc04acf0bdb64baea3b464a572))
+* **zone:** compile item scripts at zone boot ([a82fc9c](https://github.com/EndurnyrProject/aesir/commit/a82fc9cdb16a7400087c5dc6851f584d533f5ba5))
+* **zone:** fall back to nearest walkable cell on blocked warp destination ([936a947](https://github.com/EndurnyrProject/aesir/commit/936a947cb84b62c29d3c497e35d606a12b07b068))
+* **zone:** fire warps on-spawn and reset cooldown on map load ([7261d0a](https://github.com/EndurnyrProject/aesir/commit/7261d0ad869dea2cc42faba6cb17e1e1fa8f226b))
+* **zone:** fire warps on-touch during player movement ([691bc02](https://github.com/EndurnyrProject/aesir/commit/691bc02a67f1a0ba99efd47309943c2a6e1e70c2))
+* **zone:** handle UseItem and run item on_use effects ([9167976](https://github.com/EndurnyrProject/aesir/commit/91679768c32b1b9788a42c594679ba2e4f8b2802))
+* **zone:** import rAthena warp scripts to YAML ([2b2400d](https://github.com/EndurnyrProject/aesir/commit/2b2400d45aec48c85888d1b173d57367895e834b))
+* **zone:** item on_use content incl. Dead Branch ([ac506f3](https://github.com/EndurnyrProject/aesir/commit/ac506f35e540d59b2d8c7194ae879718b235ac12))
+* **zone:** load NPC warp placements from YAML at boot ([e3b35df](https://github.com/EndurnyrProject/aesir/commit/e3b35dfd033c59da22cdf9a94a2888582c4678ae))
+* **zone:** render NPC warps as visible entities to the client ([fdde288](https://github.com/EndurnyrProject/aesir/commit/fdde2886c166ad710a77f9eb9b22b466846c363c))
+* **zone:** verify warp placements at boot ([613c2f3](https://github.com/EndurnyrProject/aesir/commit/613c2f3b026cbcb8b30b411e59f5e3465ee09d6c))
+
+
+### Bug Fixes
+
+* **status:** stop OR-ing dead bit into mob health_state ([a6b31cb](https://github.com/EndurnyrProject/aesir/commit/a6b31cb8ee79ee922b49a4e45af21ecffff22517))
+
 ## [0.2.0](https://github.com/EndurnyrProject/aesir/compare/aesir-v0.1.0...aesir-v0.2.0) (2026-06-23)
 
 
