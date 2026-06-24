@@ -286,6 +286,73 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     end
   end
 
+  @doc """
+  The player's current zeny. Pure read over the ctx snapshot.
+  """
+  @spec zeny(Ctx.t()) :: non_neg_integer()
+  def zeny(%Ctx{game_state: gs}), do: gs.zeny
+
+  @doc """
+  Debits `amount` zeny through the session seam, pushing the change to the
+  client and persisting it. Halts `:not_enough_zeny` when the player is short
+  (debiting nothing).
+  """
+  @spec pay_zeny(Ctx.t(), non_neg_integer()) :: Ctx.t()
+  def pay_zeny(%Ctx{status: {:error, _}} = ctx, _amount), do: ctx
+  def pay_zeny(%Ctx{} = ctx, amount), do: apply_op(ctx, {:pay_zeny, amount})
+
+  @doc """
+  Gives `qty` of item `item_id` through the session seam (persisting and
+  emitting `ItemAdded`). Halts on a full/overweight inventory.
+  """
+  @spec give_item(Ctx.t(), integer(), pos_integer()) :: Ctx.t()
+  def give_item(%Ctx{status: {:error, _}} = ctx, _item_id, _qty), do: ctx
+  def give_item(%Ctx{} = ctx, item_id, qty), do: apply_op(ctx, {:give_item, item_id, qty})
+
+  @doc """
+  Removes `qty` of item `item_id` through the session seam (persisting and
+  emitting `ItemRemoved`). Halts `:not_enough_items` when the player holds fewer.
+  """
+  @spec delitem(Ctx.t(), integer(), pos_integer()) :: Ctx.t()
+  def delitem(%Ctx{status: {:error, _}} = ctx, _item_id, _qty), do: ctx
+  def delitem(%Ctx{} = ctx, item_id, qty), do: apply_op(ctx, {:delitem, item_id, qty})
+
+  @doc """
+  Total quantity of item `item_id` the player holds. Pure read over the snapshot.
+  """
+  @spec count_item(Ctx.t(), integer()) :: non_neg_integer()
+  def count_item(%Ctx{game_state: gs}, item_id), do: Inventory.held_amount(gs.inventory, item_id)
+
+  @doc """
+  Reads the permanent char variable `key`, defaulting an unset var to `default`
+  (`0` matching rAthena). Keys are atoms in scripts, stored string-keyed in the
+  jsonb-backed `vars` map, so the lookup normalizes the atom to a string.
+  """
+  @spec get_char_var(Ctx.t(), atom(), term()) :: term()
+  def get_char_var(%Ctx{game_state: gs}, key, default \\ 0) do
+    Map.get(gs.vars, to_string(key), default)
+  end
+
+  @doc """
+  Sets the permanent char variable `key` to `value` through the session seam,
+  which mutates `PlayerState.vars` and persists `%{vars: vars}` async. Never
+  fails. The key is stringified at the jsonb boundary.
+  """
+  @spec set_char_var(Ctx.t(), atom(), term()) :: Ctx.t()
+  def set_char_var(%Ctx{status: {:error, _}} = ctx, _key, _value), do: ctx
+  def set_char_var(%Ctx{} = ctx, key, value), do: apply_op(ctx, {:set_char_var, key, value})
+
+  # Routes a state-mutating op through the single-writer session (always a
+  # cross-process GenServer.call from the interaction, never a self-call), then
+  # folds the authoritative game_state back into ctx or halts on error.
+  @spec apply_op(Ctx.t(), tuple()) :: Ctx.t()
+  defp apply_op(%Ctx{session_pid: session_pid} = ctx, op) do
+    case GenServer.call(session_pid, {:script_apply, op}) do
+      {:ok, game_state} -> %{ctx | game_state: game_state}
+      {:error, reason} -> Ctx.halt(ctx, reason)
+    end
+  end
+
   @doc "The player's base level."
   @spec base_level(Ctx.t()) :: non_neg_integer()
   def base_level(%Ctx{game_state: gs}), do: gs.stats.progression.base_level

@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
@@ -590,6 +591,21 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_call({:has_status, status_id}, _from, state) do
     StatusManager.handle_has_status(status_id, state)
+  end
+
+  # The single-writer effect seam: an NPC interaction process applies a state
+  # mutation (pay_zeny / give_item / delitem / set_char_var) against this
+  # authoritative session. Replies with the fresh game_state or an error; on
+  # success the new game_state is also published to the unit registry.
+  @impl true
+  def handle_call({:script_apply, op}, _from, state) do
+    case ScriptEffectHandler.apply_op(op, state) do
+      {{:ok, game_state} = reply, new_state} ->
+        {:reply, reply, update_game_state(new_state, game_state)}
+
+      {{:error, _reason} = reply, new_state} ->
+        {:reply, reply, new_state}
+    end
   end
 
   @impl true

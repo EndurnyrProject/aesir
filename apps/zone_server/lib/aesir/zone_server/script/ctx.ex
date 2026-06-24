@@ -7,8 +7,10 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   pipeline helpers to short-circuit on error.
 
   For NPC interactions it additionally carries the running interaction process
-  (`interaction_pid`), the deterministic NPC unit id the client knows
-  (`npc_gid` — stamped on outgoing `NpcDialog` frames and matched against
+  (`interaction_pid`), the player session process (`session_pid` — the
+  single-writer of `PlayerState` that state-mutating DSL primitives route their
+  `{:script_apply, op}` calls to), the deterministic NPC unit id the client
+  knows (`npc_gid` — stamped on outgoing `NpcDialog` frames and matched against
   incoming `NpcInteract`), `page` (the accumulated `mes/2` lines awaiting a
   flush at the next dialog suspension point), and `session_ref`, the monitor
   the interaction holds on its session so a blocking primitive can exit cleanly
@@ -33,6 +35,7 @@ defmodule Aesir.ZoneServer.Script.Ctx do
     field :source, source(), enforce: true
     field :status, status(), default: :ok
     field :interaction_pid, pid()
+    field :session_pid, pid()
     field :npc_gid, non_neg_integer()
     field :page, [String.t()], default: []
     field :session_ref, reference()

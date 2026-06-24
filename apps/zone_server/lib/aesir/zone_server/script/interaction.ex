@@ -55,7 +55,13 @@ defmodule Aesir.ZoneServer.Script.Interaction do
   @spec run(Ctx.t(), module(), pid()) :: no_return()
   def run(%Ctx{} = base_ctx, module, session_pid) do
     session_ref = Process.monitor(session_pid)
-    ctx = %{base_ctx | interaction_pid: self(), session_ref: session_ref}
+
+    ctx = %{
+      base_ctx
+      | interaction_pid: self(),
+        session_pid: session_pid,
+        session_ref: session_ref
+    }
 
     module.on_talk(ctx)
     |> auto_close()
