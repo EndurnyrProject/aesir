@@ -87,6 +87,9 @@ message Envelope {
     StatusChange status_change = 77;
     UnitStateChange unit_state_change = 78;
     SpecialEffect special_effect = 79;
+    NpcTalk npc_talk = 80;
+    NpcDialog npc_dialog = 81;
+    NpcInteract npc_interact = 82;
   }
 }
 
@@ -684,4 +687,40 @@ message ItemUseResult {
   uint32 index = 1;
   bool ok = 2;
   uint32 reason = 3;
+}
+
+// Client -> server, the player clicked an NPC unit (replaces RO CZ_CONTACTNPC 0x0090).
+// npc_id is the NPC's unit/entity id on the map.
+message NpcTalk {
+  uint32 npc_id = 1;
+}
+
+// Server -> client, one frame per dialog suspension point; the mes text accumulated
+// since the last suspension rides with it. `expect` names the input the client must
+// now collect; `options` is populated for MENU only.
+message NpcDialog {
+  enum Expect {
+    NEXT = 0;
+    MENU = 1;
+    INPUT_INT = 2;
+    INPUT_STR = 3;
+    CLOSE = 4;
+  }
+
+  uint32 npc_id = 1;
+  string text = 2;
+  Expect expect = 3;
+  repeated string options = 4;
+}
+
+// Client -> server, the player's response to the pending NpcDialog.
+message NpcInteract {
+  uint32 npc_id = 1;
+  oneof response {
+    bool continue = 2;
+    uint32 choice = 3;
+    sint64 number = 4;
+    string input = 5;
+    bool cancel = 6;
+  }
 }

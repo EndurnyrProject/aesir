@@ -37,6 +37,9 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.MoveStop
   alias Aesir.Net.NameRequest
   alias Aesir.Net.NameResponse
+  alias Aesir.Net.NpcDialog
+  alias Aesir.Net.NpcInteract
+  alias Aesir.Net.NpcTalk
   alias Aesir.Net.ParamChange
   alias Aesir.Net.Respawn
   alias Aesir.Net.Resurrect
@@ -1197,5 +1200,49 @@ defmodule Aesir.Commons.Network.ProtoTest do
     assert info.req_base_level == 0
     assert info.req_job_level == 0
     assert [%Aesir.Net.SkillRequirement{skill_id: 1, level: 1}] = info.requires
+  end
+
+  test "npc_talk round-trips through envelope oneof" do
+    env = %Envelope{body: {:npc_talk, %NpcTalk{npc_id: 10_001}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok, %Envelope{body: {:npc_talk, %NpcTalk{npc_id: 10_001}}}} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "npc_dialog round-trips every Expect enum value (plus text and options) through envelope oneof" do
+    for expect <- [:NEXT, :MENU, :INPUT_INT, :INPUT_STR, :CLOSE] do
+      dialog = %NpcDialog{
+        npc_id: 10_001,
+        text: "Pick one\nor the other",
+        expect: expect,
+        options: ["Yes", "No"]
+      }
+
+      env = %Envelope{body: {:npc_dialog, dialog}}
+
+      {:ok, iodata, _size} = Envelope.encode(env)
+
+      assert {:ok, %Envelope{body: {:npc_dialog, ^dialog}}} =
+               Envelope.decode(IO.iodata_to_binary(iodata))
+    end
+  end
+
+  test "npc_interact round-trips every response arm through envelope oneof" do
+    for response <- [
+          {:continue, true},
+          {:choice, 3},
+          {:number, -42},
+          {:input, "Loki"},
+          {:cancel, true}
+        ] do
+      env = %Envelope{body: {:npc_interact, %NpcInteract{npc_id: 7, response: response}}}
+
+      {:ok, iodata, _size} = Envelope.encode(env)
+
+      assert {:ok, %Envelope{body: {:npc_interact, %NpcInteract{npc_id: 7, response: ^response}}}} =
+               Envelope.decode(IO.iodata_to_binary(iodata))
+    end
   end
 end
