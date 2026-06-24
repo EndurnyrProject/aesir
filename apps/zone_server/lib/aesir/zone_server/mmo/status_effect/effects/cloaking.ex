@@ -10,7 +10,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Cloaking do
     properties: [:buff],
     calc_flags: [:cri, :speed],
     flags: [:cloak, :no_pick_item, :stop_attacking],
-    prevented_by: [:sc_refresh, :sc_inspiration]
+    prevented_by: [:sc_refresh, :sc_inspiration],
+    icon: :cloaking,
+    option: :cloak
 
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
 

@@ -9,7 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Impositio do
     id: :sc_impositio,
     properties: [:buff],
     calc_flags: [:watk, :matk],
-    prevented_by: [:sc_refresh, :sc_inspiration]
+    prevented_by: [:sc_refresh, :sc_inspiration],
+    icon: :impositio
 
   @impl true
   def modifiers(instance, _context) do

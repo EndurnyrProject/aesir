@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PoisonReact do
     id: :sc_poisonreact,
     properties: [:buff],
     calc_flags: [:atk],
+    icon: :poisonreact,
     prevented_by: [:sc_refresh, :sc_inspiration]
 
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers

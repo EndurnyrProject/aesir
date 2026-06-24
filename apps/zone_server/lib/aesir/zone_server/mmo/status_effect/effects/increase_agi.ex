@@ -10,7 +10,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncreaseAgi do
     calc_flags: [:agi, :speed, :aspd],
     end_on_start: [:sc_decreaseagi, :sc_adoramus],
     conflicts_with: [:sc_quagmire],
-    prevented_by: [:sc_refresh, :sc_inspiration]
+    prevented_by: [:sc_refresh, :sc_inspiration],
+    icon: :inc_agi
 
   @impl true
   def modifiers(instance, _context) do

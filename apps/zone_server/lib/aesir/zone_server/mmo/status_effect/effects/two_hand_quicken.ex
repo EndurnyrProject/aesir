@@ -11,7 +11,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.TwoHandQuicken do
     calc_flags: [:aspd, :hit, :cri],
     flags: [:require_weapon],
     conflicts_with: [:sc_decreaseagi],
-    prevented_by: [:sc_refresh, :sc_inspiration]
+    prevented_by: [:sc_refresh, :sc_inspiration],
+    icon: :twohandquicken,
+    opt3: :quicken
 
   @impl true
   def modifiers(instance, _context) do

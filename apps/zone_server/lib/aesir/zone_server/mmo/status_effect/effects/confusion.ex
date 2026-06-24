@@ -8,5 +8,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Confusion do
     id: :sc_confusion,
     properties: [:debuff],
     flags: [:confused_movement],
-    prevented_by: [:sc_refresh, :sc_inspiration, :sc_protection]
+    prevented_by: [:sc_refresh, :sc_inspiration, :sc_protection],
+    opt2: :confusion
 end

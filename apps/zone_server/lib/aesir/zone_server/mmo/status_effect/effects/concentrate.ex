@@ -11,7 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Concentrate do
     calc_flags: [:agi, :dex],
     end_on_start: [:sc_poison, :sc_truesight],
     conflicts_with: [:sc_quagmire],
-    prevented_by: [:sc_refresh, :sc_inspiration]
+    prevented_by: [:sc_refresh, :sc_inspiration],
+    icon: :concentration
 
   @impl true
   def modifiers(instance, context) do

@@ -12,7 +12,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnergyCoat do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_energycoat,
     properties: [:buff],
-    duration: 300_000
+    duration: 300_000,
+    icon: :energycoat,
+    opt3: :energycoat
 
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers, only: [consume_sp: 2]
 

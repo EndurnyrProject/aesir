@@ -12,7 +12,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Poison do
     immunity: [:boss, :plant],
     cleanse: [:sc_slowpoison, :sc_poisoningweapon],
     end_on_start: [:sc_concentrate, :sc_truesight],
-    tick_interval: 1_000
+    tick_interval: 1_000,
+    opt2: :poison
 
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
 

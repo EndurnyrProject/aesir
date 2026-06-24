@@ -9,7 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SignumCrucis do
     properties: [:debuff],
     calc_flags: [:def],
     conflicts_with: [:sc_signumcrucis],
-    prevented_by: [:sc_refresh, :sc_inspiration]
+    prevented_by: [:sc_refresh, :sc_inspiration],
+    icon: :crucis
 
   @impl true
   def modifiers(instance, _context), do: %{def_rate: -instance.val2}

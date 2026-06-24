@@ -8,7 +8,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Angelus do
     id: :sc_angelus,
     properties: [:buff],
     calc_flags: [:def2, :maxhp],
-    prevented_by: [:sc_refresh, :sc_inspiration]
+    prevented_by: [:sc_refresh, :sc_inspiration],
+    icon: :angelus,
+    opt2: :angelus
 
   @impl true
   def modifiers(instance, _context) do

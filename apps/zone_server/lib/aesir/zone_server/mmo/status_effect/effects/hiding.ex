@@ -11,7 +11,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Hiding do
     calc_flags: [:speed],
     flags: [:hide, :no_pick_item, :no_consume_item, :stop_attacking],
     end_on_start: [:sc_closeconfine, :sc_closeconfine2],
-    prevented_by: [:sc_refresh, :sc_inspiration]
+    prevented_by: [:sc_refresh, :sc_inspiration],
+    icon: :hiding,
+    option: :hide
 
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
 

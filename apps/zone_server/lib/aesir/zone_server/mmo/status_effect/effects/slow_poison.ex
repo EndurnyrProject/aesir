@@ -8,7 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SlowPoison do
     id: :sc_slowpoison,
     properties: [:buff],
     calc_flags: [:regen],
-    prevented_by: [:sc_refresh, :sc_inspiration]
+    prevented_by: [:sc_refresh, :sc_inspiration],
+    icon: :slowpoison
 
   @impl true
   def modifiers(_instance, _context), do: %{hp_regen: 100}

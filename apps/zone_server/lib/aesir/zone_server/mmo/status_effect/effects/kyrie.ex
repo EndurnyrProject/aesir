@@ -10,7 +10,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Kyrie do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_kyrie,
     properties: [:buff],
-    prevented_by: [:sc_refresh, :sc_inspiration]
+    prevented_by: [:sc_refresh, :sc_inspiration],
+    icon: :kyrie
 
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
 

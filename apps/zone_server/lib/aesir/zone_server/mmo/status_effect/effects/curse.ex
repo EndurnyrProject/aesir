@@ -9,7 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Curse do
     id: :sc_curse,
     properties: [:debuff],
     calc_flags: [:luk, :atk, :speed],
-    prevented_by: [:sc_refresh, :sc_inspiration, :sc_curse, :sc_protection]
+    prevented_by: [:sc_refresh, :sc_inspiration, :sc_curse, :sc_protection],
+    opt2: :curse
 
   @impl true
   def modifiers(_instance, _context) do

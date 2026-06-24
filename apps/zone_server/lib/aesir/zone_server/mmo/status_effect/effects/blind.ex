@@ -8,7 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Blind do
     id: :sc_blind,
     properties: [:debuff],
     calc_flags: [:hit, :flee],
-    prevented_by: [:sc_refresh, :sc_inspiration, :sc_protection]
+    prevented_by: [:sc_refresh, :sc_inspiration, :sc_protection],
+    opt2: :blind
 
   @impl true
   def modifiers(_instance, _context), do: %{hit: -25, flee: -25}

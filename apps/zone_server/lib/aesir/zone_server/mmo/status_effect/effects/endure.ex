@@ -9,7 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Endure do
     id: :sc_endure,
     properties: [:buff],
     calc_flags: [:mdef],
-    prevented_by: [:sc_refresh, :sc_inspiration]
+    prevented_by: [:sc_refresh, :sc_inspiration],
+    icon: :endure
 
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
 

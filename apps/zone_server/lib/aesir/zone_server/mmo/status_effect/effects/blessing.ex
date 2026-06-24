@@ -11,7 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Blessing do
     id: :sc_blessing,
     properties: [:buff],
     calc_flags: [:str, :int, :dex, :hit],
-    prevented_by: [:sc_refresh, :sc_inspiration]
+    prevented_by: [:sc_refresh, :sc_inspiration],
+    icon: :blessing
 
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
 

@@ -8,7 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Gloria do
     id: :sc_gloria,
     properties: [:buff],
     calc_flags: [:luk],
-    prevented_by: [:sc_refresh, :sc_inspiration]
+    prevented_by: [:sc_refresh, :sc_inspiration],
+    icon: :gloria
 
   @impl true
   def modifiers(_instance, _context), do: %{luk: 30}

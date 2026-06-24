@@ -8,7 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Benedictio do
     id: :sc_benedictio,
     properties: [:buff],
     calc_flags: [:def_ele],
-    prevented_by: [:sc_refresh, :sc_inspiration]
+    prevented_by: [:sc_refresh, :sc_inspiration],
+    icon: :benedictio
 
   @impl true
   def modifiers(_instance, _context), do: %{def_ele: :holy1}

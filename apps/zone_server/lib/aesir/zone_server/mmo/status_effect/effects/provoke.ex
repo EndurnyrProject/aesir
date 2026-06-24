@@ -11,7 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Provoke do
     properties: [:debuff],
     calc_flags: [:atk, :def, :def2, :hit],
     end_on_start: [:sc_freeze, :sc_stone, :sc_sleep, :sc_trickdead],
-    prevented_by: [:sc_refresh, :sc_inspiration]
+    prevented_by: [:sc_refresh, :sc_inspiration],
+    icon: :provoke
 
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
 

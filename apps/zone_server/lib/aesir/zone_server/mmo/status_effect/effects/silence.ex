@@ -8,5 +8,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Silence do
     id: :sc_silence,
     properties: [:debuff, :prevents_skills],
     flags: [:no_magic],
-    prevented_by: [:sc_refresh, :sc_inspiration, :sc_protection]
+    prevented_by: [:sc_refresh, :sc_inspiration, :sc_protection],
+    opt2: :silence
 end

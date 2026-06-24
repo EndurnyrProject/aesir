@@ -22,7 +22,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DecreaseAgi do
       :sc_acceleration
     ],
     conflicts_with: [:sc_speedup1],
-    prevented_by: [:sc_refresh, :sc_inspiration]
+    prevented_by: [:sc_refresh, :sc_inspiration],
+    icon: :dec_agi
 
   @impl true
   def modifiers(instance, _context) do

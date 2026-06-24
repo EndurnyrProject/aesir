@@ -7,7 +7,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Suffragium do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_suffragium,
     properties: [:buff],
-    prevented_by: [:sc_refresh, :sc_inspiration]
+    prevented_by: [:sc_refresh, :sc_inspiration],
+    icon: :suffragium
 
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
 

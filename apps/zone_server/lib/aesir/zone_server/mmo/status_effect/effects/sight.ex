@@ -9,7 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sight do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_sight,
     properties: [:buff],
-    duration: 10_000
+    duration: 10_000,
+    option: :sight
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
   alias Aesir.ZoneServer.Unit.SpatialIndex

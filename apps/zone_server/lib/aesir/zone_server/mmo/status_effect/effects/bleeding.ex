@@ -10,7 +10,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Bleeding do
     properties: [:debuff, :damage_over_time],
     calc_flags: [:regen],
     prevented_by: [:sc_refresh, :sc_inspiration, :sc_protection],
-    tick_interval: 10_000
+    tick_interval: 10_000,
+    icon: :blooding,
+    opt2: :bleeding
 
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
 

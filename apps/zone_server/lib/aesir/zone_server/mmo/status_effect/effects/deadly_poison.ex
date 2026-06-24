@@ -14,7 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DeadlyPoison do
     immunity: [:boss, :plant],
     cleanse: [:sc_slowpoison, :sc_poisoningweapon],
     prevented_by: [:sc_refresh, :sc_inspiration],
-    tick_interval: 1_000
+    tick_interval: 1_000,
+    opt2: :dpoison
 
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
 

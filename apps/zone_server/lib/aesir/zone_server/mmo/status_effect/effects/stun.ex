@@ -8,5 +8,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Stun do
     id: :sc_stun,
     properties: [:debuff, :prevents_movement, :prevents_skills, :prevents_attack],
     flags: [:no_move, :no_attack, :no_skill, :no_magic],
-    prevented_by: [:sc_refresh, :sc_inspiration, :sc_protection]
+    prevented_by: [:sc_refresh, :sc_inspiration, :sc_protection],
+    opt1: :stun
 end

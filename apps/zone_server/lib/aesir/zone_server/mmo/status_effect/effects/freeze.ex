@@ -19,7 +19,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Freeze do
       :sc_burning,
       :sc_protection
     ],
-    immunity: [:undead]
+    immunity: [:undead],
+    opt1: :freeze
 
   @impl true
   def modifiers(_instance, _context) do
