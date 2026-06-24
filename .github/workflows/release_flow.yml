@@ -13,6 +13,9 @@ name: Release Flow
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - uses: actions/create-github-app-token@v2
         id: app-token
@@ -25,3 +28,36 @@ jobs:
         uses: googleapis/release-please-action@v4
         with:
           token: ${{ steps.app-token.outputs.token }}
+
+  notify-discord:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.releases_created == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get release notes
+        id: release_notes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BODY=$(gh release view "${{ needs.release-please.outputs.tag_name }}" \
+            --repo ${{ github.repository }} \
+            --json body -q .body)
+          echo "body<<EOF" >> "$GITHUB_OUTPUT"
+          echo "${BODY:0:4000}" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Post to Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+        run: |
+          curl -s -X POST "$DISCORD_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "🚀 Aesir ${{ needs.release-please.outputs.tag_name }} released",
+                "description": ${{ toJSON(steps.release_notes.outputs.body) }},
+                "color": 5814783,
+                "url": "https://github.com/${{ github.repository }}/releases/tag/${{ needs.release-please.outputs.tag_name }}",
+                "footer": { "text": "GitHub Actions" }
+              }]
+            }'
