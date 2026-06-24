@@ -23,38 +23,68 @@ defmodule Aesir.ZoneServer.Npc.WarpsVerifierTest do
 
   defp index(warps_by_map), do: %{by_map: warps_by_map}
 
-  describe "validate!/1 hard failures" do
-    test "raises ArgumentError when a warp's map is not in MapCache" do
+  describe "sanitize/1 drops invalid warps without raising" do
+    test "drops and warns when a warp's source map is not in MapCache" do
       stub(MapCache, :get, fn "prontera" -> {:error, :not_found} end)
 
-      assert_raise ArgumentError, ~r/unknown map "prontera"/, fn ->
-        Warps.validate!(index(%{"prontera" => [warp(map: "prontera")]}))
-      end
+      logs =
+        capture_log(fn ->
+          assert %{by_map: by_map} =
+                   Warps.sanitize(index(%{"prontera" => [warp(map: "prontera")]}))
+
+          refute Map.has_key?(by_map, "prontera")
+        end)
+
+      assert logs =~ ~r/unknown source map "prontera"/
+      assert logs =~ "dropping"
     end
 
-    test "raises ArgumentError when a warp's to_map is not in MapCache" do
+    test "drops and warns when a warp's destination map is not in MapCache" do
       stub(MapCache, :get, fn
         "prontera" -> {:ok, %MapData{}}
         "nowhere" -> {:error, :not_found}
       end)
 
-      assert_raise ArgumentError, ~r/unknown map "nowhere"/, fn ->
-        Warps.validate!(index(%{"prontera" => [warp(to_map: "nowhere")]}))
-      end
+      logs =
+        capture_log(fn ->
+          assert %{by_map: by_map} =
+                   Warps.sanitize(index(%{"prontera" => [warp(to_map: "nowhere")]}))
+
+          refute Map.has_key?(by_map, "prontera")
+        end)
+
+      assert logs =~ ~r/unknown destination map "nowhere"/
+      assert logs =~ "dropping"
     end
 
-    test "raises ArgumentError when a warp's own cell is not walkable" do
+    test "drops and warns when a warp's own cell is not walkable" do
       stub(MapCache, :get, fn _ -> {:ok, %MapData{}} end)
       stub(MapData, :walkable?, fn %MapData{}, 5, 5 -> false end)
 
-      assert_raise ArgumentError, ~r/non-walkable cell \(5, 5\)/, fn ->
-        Warps.validate!(index(%{"prontera" => [warp(x: 5, y: 5)]}))
-      end
+      logs =
+        capture_log(fn ->
+          assert %{by_map: by_map} = Warps.sanitize(index(%{"prontera" => [warp(x: 5, y: 5)]}))
+          refute Map.has_key?(by_map, "prontera")
+        end)
+
+      assert logs =~ ~r/non-walkable cell \(5, 5\)/
+      assert logs =~ "dropping"
+    end
+
+    test "keeps the walkable warps on a map and only drops the invalid one" do
+      stub(MapCache, :get, fn _ -> {:ok, %MapData{}} end)
+      stub(MapData, :walkable?, fn %MapData{}, x, _ -> x != 9 end)
+
+      kept = warp(id: "ok", x: 5, y: 5)
+      dropped = warp(id: "bad", x: 9, y: 9)
+
+      assert %{by_map: %{"prontera" => [%Warp{id: "ok"}]}} =
+               Warps.sanitize(index(%{"prontera" => [kept, dropped]}))
     end
   end
 
-  describe "validate!/1 soft failures" do
-    test "warns but does not raise when a warp's destination cell is not walkable" do
+  describe "sanitize/1 keeps valid warps, warning on soft issues" do
+    test "keeps the warp but warns when its destination cell is not walkable" do
       stub(MapCache, :get, fn _ -> {:ok, %MapData{}} end)
 
       stub(MapData, :walkable?, fn
@@ -64,7 +94,8 @@ defmodule Aesir.ZoneServer.Npc.WarpsVerifierTest do
 
       logs =
         capture_log(fn ->
-          assert :ok = Warps.validate!(index(%{"prontera" => [warp(to_x: 9, to_y: 9)]}))
+          assert %{by_map: %{"prontera" => [%Warp{}]}} =
+                   Warps.sanitize(index(%{"prontera" => [warp(to_x: 9, to_y: 9)]}))
         end)
 
       assert logs =~ "destination cell (9, 9)"
@@ -80,7 +111,8 @@ defmodule Aesir.ZoneServer.Npc.WarpsVerifierTest do
 
       logs =
         capture_log(fn ->
-          assert :ok = Warps.validate!(index(%{"prontera" => [a, b]}))
+          assert %{by_map: %{"prontera" => [_ | _]}} =
+                   Warps.sanitize(index(%{"prontera" => [a, b]}))
         end)
 
       assert logs =~ "overlapping trigger areas"
@@ -96,7 +128,8 @@ defmodule Aesir.ZoneServer.Npc.WarpsVerifierTest do
 
       logs =
         capture_log(fn ->
-          assert :ok = Warps.validate!(index(%{"prontera" => [a, b]}))
+          assert %{by_map: %{"prontera" => [_, _]}} =
+                   Warps.sanitize(index(%{"prontera" => [a, b]}))
         end)
 
       refute logs =~ "overlapping trigger areas"

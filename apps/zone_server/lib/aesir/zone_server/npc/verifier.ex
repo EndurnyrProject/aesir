@@ -43,8 +43,8 @@ defmodule Aesir.ZoneServer.Npc.Verifier do
 
   @doc """
   Boot-time verification: logs a warning for every placement on a map that is not
-  loaded, then returns `:ok` or raises `ArgumentError` on a fatal error (a cell
-  collision), mirroring `Aesir.ZoneServer.Npc.Warps.validate!/1`'s fail-fast.
+  loaded (mirroring `Aesir.ZoneServer.Npc.Warps.sanitize/1`'s non-fatal handling),
+  then returns `:ok` or raises `ArgumentError` on a fatal error (a cell collision).
   """
   @spec verify!([entry()]) :: :ok
   def verify!(entries) do

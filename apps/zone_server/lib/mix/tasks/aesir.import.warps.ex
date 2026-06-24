@@ -9,8 +9,9 @@ defmodule Mix.Tasks.Aesir.Import.Warps do
 
   `<rathena_root>` defaults to `../rathena`. Every warp is checked against the
   live `maps.mcache`: a warp whose source or destination map is missing, or
-  whose own cell is non-walkable, is dropped so the boot-time warp verifier
-  (`Aesir.ZoneServer.Npc.Warps.validate!/1`) still passes. The run prints how
+  whose own cell is non-walkable, is dropped at import so the data files stay
+  clean (`Aesir.ZoneServer.Npc.Warps.sanitize/1` drops any that still slip
+  through at runtime, with a warning). The run prints how
   many warps were written and how many were skipped, by reason. Run only when
   syncing rAthena.
   """

@@ -2,9 +2,15 @@ defmodule Aesir.ZoneServer.Npc.Warps do
   @moduledoc """
   Registry of per-map NPC warps, loaded as data from `priv/db/warps/*.yml`.
 
-  The map-name index is built once via `Loader` and cached in `:persistent_term`;
+  The map-name index is built once via `Loader`, sanitized against `MapCache`
+  (see `sanitize/1`) and cached in `:persistent_term`. It is warmed at boot by
+  `Aesir.ZoneServer.MechanicsSupervisor` after `MapCache.init/0`; the first
+  lookup also lazily warms it as a fallback - mirroring `Mmo.MobManagement.Spawns`.
   `reload/0` rebuilds it after the data files change in a long-running session.
-  The first lookup lazily warms the cache - mirroring `Mmo.MobManagement.Spawns`.
+
+  Sanitizing never raises: a warp referencing an unknown map or sitting on a
+  non-walkable cell is dropped with a `Logger.warning`, so a bad data file can
+  never crash a player's spawn path.
   """
 
   require Logger
@@ -52,48 +58,87 @@ defmodule Aesir.ZoneServer.Npc.Warps do
 
   @spec load() :: Loader.index()
   defp load do
-    loaded = Loader.load(data_dir())
-    validate!(loaded)
-    count = loaded.by_map |> Map.values() |> Enum.map(&length/1) |> Enum.sum()
-    Logger.info("Loaded #{count} warps across #{map_size(loaded.by_map)} maps")
-    loaded
+    sanitized = data_dir() |> Loader.load() |> sanitize()
+    count = sanitized.by_map |> Map.values() |> Enum.map(&length/1) |> Enum.sum()
+    Logger.info("Loaded #{count} warps across #{map_size(sanitized.by_map)} maps")
+    sanitized
   end
 
   @doc """
-  Validates every loaded warp against `MapCache`.
+  Sanitizes the loaded index against `MapCache`, returning a cleaned index.
 
-  Hard failures (raise `ArgumentError` at boot): a warp whose `map` or `to_map`
-  is not in `MapCache`, or whose own cell `(x, y)` is not walkable. Soft failures
-  (`Logger.warning`): a blocked destination cell, or two warps on the same map
-  whose `xs/ys` trigger areas intersect.
+  Warp loading is lazy and runs on a player's spawn path, so a bad data file
+  must never crash the caller. Every check is therefore non-fatal:
 
-  Public so the verifier can be unit-tested with crafted warps + a stubbed
+    * a warp whose source `map` or destination `to_map` is not loaded in
+      `MapCache`, or whose own cell `(x, y)` is not walkable, is **dropped**
+      with a `Logger.warning` - it could never fire or would teleport into a
+      missing map;
+    * a surviving warp with a blocked destination cell, or two warps on the
+      same map whose `xs/ys` trigger areas intersect, is **kept** and logged
+      as a warning.
+
+  Public so the sanitizer can be unit-tested with crafted warps + a stubbed
   `MapCache`, mirroring the `Spawns.validate_mob_refs!/1` boot-validation shape.
   """
-  @spec validate!(Loader.index()) :: :ok
-  def validate!(%{by_map: by_map}) do
-    for {_map, warps} <- by_map, warp <- warps do
-      check_warp!(warp)
-    end
+  @spec sanitize(Loader.index()) :: Loader.index()
+  def sanitize(%{by_map: by_map} = index) do
+    cleaned =
+      by_map
+      |> Enum.map(fn {map, warps} -> {map, Enum.filter(warps, &keep_warp?/1)} end)
+      |> Enum.reject(fn {_map, warps} -> warps == [] end)
+      |> Map.new()
 
-    for {map, warps} <- by_map do
+    for {map, warps} <- cleaned do
       warn_overlaps_on_map(map, warps)
     end
 
-    :ok
+    %{index | by_map: cleaned}
   end
 
-  @spec check_warp!(Warp.t()) :: :ok
-  defp check_warp!(%Warp{} = warp) do
-    map_data = fetch_map!(warp.map, warp.id)
-    to_map_data = fetch_map!(warp.to_map, warp.id)
-
-    unless MapData.walkable?(map_data, warp.x, warp.y) do
-      raise ArgumentError,
-            "warp #{inspect(warp.id)} on map #{inspect(warp.map)} sits on a " <>
-              "non-walkable cell (#{warp.x}, #{warp.y})"
+  @spec keep_warp?(Warp.t()) :: boolean()
+  defp keep_warp?(%Warp{} = warp) do
+    with {:ok, map_data} <- fetch_map(warp.map, warp.id, "source"),
+         {:ok, to_map_data} <- fetch_map(warp.to_map, warp.id, "destination"),
+         :ok <- check_own_cell(warp, map_data) do
+      warn_blocked_destination(warp, to_map_data)
+      true
+    else
+      :drop -> false
     end
+  end
 
+  @spec fetch_map(String.t(), String.t(), String.t()) :: {:ok, MapData.t()} | :drop
+  defp fetch_map(map_name, warp_id, role) do
+    case MapCache.get(map_name) do
+      {:ok, map_data} ->
+        {:ok, map_data}
+
+      {:error, :not_found} ->
+        Logger.warning(
+          "warp #{inspect(warp_id)} references unknown #{role} map #{inspect(map_name)}; dropping"
+        )
+
+        :drop
+    end
+  end
+
+  @spec check_own_cell(Warp.t(), MapData.t()) :: :ok | :drop
+  defp check_own_cell(%Warp{} = warp, map_data) do
+    if MapData.walkable?(map_data, warp.x, warp.y) do
+      :ok
+    else
+      Logger.warning(
+        "warp #{inspect(warp.id)} on map #{inspect(warp.map)} sits on a non-walkable " <>
+          "cell (#{warp.x}, #{warp.y}); dropping"
+      )
+
+      :drop
+    end
+  end
+
+  @spec warn_blocked_destination(Warp.t(), MapData.t()) :: :ok
+  defp warn_blocked_destination(%Warp{} = warp, to_map_data) do
     unless MapData.walkable?(to_map_data, warp.to_x, warp.to_y) do
       Logger.warning(
         "warp #{inspect(warp.id)} destination cell (#{warp.to_x}, #{warp.to_y}) on " <>
@@ -102,18 +147,6 @@ defmodule Aesir.ZoneServer.Npc.Warps do
     end
 
     :ok
-  end
-
-  @spec fetch_map!(String.t(), String.t()) :: MapData.t()
-  defp fetch_map!(map_name, warp_id) do
-    case MapCache.get(map_name) do
-      {:ok, map_data} ->
-        map_data
-
-      {:error, :not_found} ->
-        raise ArgumentError,
-              "warp #{inspect(warp_id)} references unknown map #{inspect(map_name)}"
-    end
   end
 
   @spec warn_overlaps_on_map(String.t(), [Warp.t()]) :: :ok

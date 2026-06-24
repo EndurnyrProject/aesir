@@ -23,9 +23,10 @@ defmodule Aesir.TestEtsSetup do
     :ok = MapCache.init()
 
     # Pre-warm an empty warp index so `Warps.for_map/1` returns `:error`
-    # without triggering the lazy loader (whose boot-time validator would
-    # raise against the un-stubbed `MapCache`). Tests that exercise real
-    # warp data erase this and call `Warps.reload/0`.
+    # without triggering the lazy loader (which would otherwise sanitize the
+    # real warp files against the un-stubbed `MapCache`, dropping them all and
+    # logging noise). Tests that exercise real warp data erase this and call
+    # `Warps.reload/0`.
     :persistent_term.put(Warps, %{by_map: %{}})
 
     :ok

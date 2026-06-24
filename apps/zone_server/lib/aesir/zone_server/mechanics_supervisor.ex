@@ -6,12 +6,14 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Verifier, as: NpcVerifier
+  alias Aesir.ZoneServer.Npc.Warps
 
   def init([]) do
     :ok = MapCache.init()
     :ok = Interpreter.init()
     :ok = ScriptCompiler.compile_all!()
     :ok = NpcVerifier.verify!(NpcRegistry.reload().entries)
+    :ok = Warps.reload()
 
     children = [
       Aesir.ZoneServer.Map.PartitionedSupervisor,
