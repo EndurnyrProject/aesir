@@ -485,8 +485,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       } =
         StatusDisplay.spawn_state(:mob, mob_state.instance_id)
 
-      dead_bit = if(mob_state.is_dead, do: 1, else: 0)
-
       # Create mob spawn packet
       mob_packet = %UnitSpawn{
         object_type: ObjectType.mob(),
@@ -494,7 +492,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         gid: mob_state.instance_id,
         speed: mob_state.walk_speed,
         body_state: body_state,
-        health_state: Bitwise.bor(health_state, dead_bit),
+        health_state: health_state,
         effect_state: effect_state,
         virtue: virtue,
         # Mob sprite ID

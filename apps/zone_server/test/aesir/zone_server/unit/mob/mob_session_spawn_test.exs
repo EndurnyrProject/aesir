@@ -43,7 +43,26 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSpawnTest do
                      }}
   end
 
-  defp build_mob_state(instance_id) do
+  test "a dead mob's spawn carries only the opt2 aggregate, never a dead bit in health_state" do
+    test_pid = self()
+
+    stub(SpatialIndex, :add_unit, fn :mob, _id, _x, _y, _map -> :ok end)
+
+    stub(StatusDisplay, :spawn_state, fn :mob, 8 ->
+      %{body_state: 0, health_state: 0, effect_state: 0, virtue: 0}
+    end)
+
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, %UnitSpawn{} = packet ->
+      send(test_pid, {:spawn_broadcast, packet})
+      :ok
+    end)
+
+    {:ok, _state} = MobSession.init(%{state: build_mob_state(8, true)})
+
+    assert_received {:spawn_broadcast, %UnitSpawn{gid: 8, health_state: 0}}
+  end
+
+  defp build_mob_state(instance_id, is_dead \\ false) do
     %MobState{
       instance_id: instance_id,
       mob_id: 1002,
@@ -80,7 +99,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSpawnTest do
       max_sp: 0,
       spawned_at: System.system_time(:second),
       walk_speed: 200,
-      is_dead: false
+      is_dead: is_dead
     }
   end
 end
