@@ -9,7 +9,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.RegistryTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_registry_test,
       properties: [:debuff],
-      immunity: [:boss]
+      immunity: [:boss],
+      icon: :provoke,
+      opt2: :poison
   end
 
   setup :setup_ets_tables
@@ -22,6 +24,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.RegistryTest do
       assert definition[:module] == TestStatus
       assert definition[:properties] == [:debuff]
       assert definition[:immunity] == [:boss]
+      assert definition[:icon] == :provoke
+      assert definition[:opt2] == :poison
     end
 
     test "registered definition works with PropertyChecker" do

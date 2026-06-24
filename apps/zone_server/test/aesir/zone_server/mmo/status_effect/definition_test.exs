@@ -20,7 +20,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
       resistance_type: :physical,
       tick_interval: 1_000,
       initial_phase: :wait,
-      duration: 30_000
+      duration: 30_000,
+      icon: :provoke,
+      opt2: :poison,
+      on_apply_effect: :hit1
 
     @impl true
     def modifiers(_instance, _context), do: %{def2: -25}
@@ -57,6 +60,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
       assert metadata.initial_phase == nil
       assert metadata.tick_interval == nil
       assert metadata.duration == nil
+      assert metadata.icon == nil
+      assert metadata.opt1 == nil
+      assert metadata.opt2 == nil
+      assert metadata.option == nil
+      assert metadata.opt3 == nil
+      assert metadata.on_apply_effect == nil
     end
 
     test "full definition keeps all declared metadata" do
@@ -73,6 +82,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
       assert metadata.tick_interval == 1_000
       assert metadata.initial_phase == :wait
       assert metadata.duration == 30_000
+      assert metadata.icon == :provoke
+      assert metadata.opt2 == :poison
+      assert metadata.on_apply_effect == :hit1
     end
   end
 

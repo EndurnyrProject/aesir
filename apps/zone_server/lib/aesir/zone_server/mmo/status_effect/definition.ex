@@ -43,6 +43,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     - `:tick_interval` - default tick interval in milliseconds
     - `:duration` - base duration in milliseconds
     - `:permanent` - when true, the status never auto-expires (ignores duration)
+    - `:icon` - `:efst` id atom for the buff/debuff icon bar (resolved via `Mmo.Efst`)
+    - `:opt1` - sprite body state, e.g. `:stone | :freeze` (`Mmo.Opt1`, single-valued)
+    - `:opt2` - sprite health state, e.g. `:poison | :curse` (`Mmo.Opt2`, bitmask)
+    - `:option` - sprite effect state, e.g. `:hide | :cloak` (`Mmo.Option`, bitmask)
+    - `:opt3` - sprite virtue state (`Mmo.Opt3`, bitmask)
+    - `:on_apply_effect` - `:ef_*` one-shot effect fired on apply (`Mmo.EffectId`)
   """
 
   alias Aesir.ZoneServer.Mmo.DefinitionValidation
@@ -127,7 +133,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     initial_phase: nil,
     tick_interval: nil,
     duration: nil,
-    permanent: false
+    permanent: false,
+    icon: nil,
+    opt1: nil,
+    opt2: nil,
+    option: nil,
+    opt3: nil,
+    on_apply_effect: nil
   }
 
   @metadata_schema %{
@@ -145,7 +157,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     initial_phase: :atom,
     tick_interval: {:integer, {:gt, 0}},
     duration: {:integer, {:gt, 0}},
-    permanent: :boolean
+    permanent: :boolean,
+    icon: :atom,
+    opt1: :atom,
+    opt2: :atom,
+    option: :atom,
+    opt3: :atom,
+    on_apply_effect: :atom
   }
 
   defmacro __using__(opts) do
