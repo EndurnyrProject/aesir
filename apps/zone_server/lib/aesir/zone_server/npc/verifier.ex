@@ -32,6 +32,18 @@ defmodule Aesir.ZoneServer.Npc.Verifier do
     end
   end
 
+  @doc """
+  Boot-time verification: returns `:ok` or raises `ArgumentError` on any error,
+  mirroring `Aesir.ZoneServer.Npc.Warps.validate!/1`'s fail-fast boot behavior.
+  """
+  @spec verify!([entry()]) :: :ok
+  def verify!(entries) do
+    case verify(entries) do
+      :ok -> :ok
+      {:error, errors} -> raise ArgumentError, "invalid NPC placements: #{inspect(errors)}"
+    end
+  end
+
   @spec walkable_errors([entry()]) :: [error()]
   defp walkable_errors(entries) do
     for {module, %Placement{map: map, x: x, y: y}} <- entries,

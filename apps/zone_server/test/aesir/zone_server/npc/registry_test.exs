@@ -71,4 +71,28 @@ defmodule Aesir.ZoneServer.Npc.RegistryTest do
       assert Enum.any?(errors, &match?({:cell_collision, {"prontera", 199, 201}, _mods}, &1))
     end
   end
+
+  describe "entity_id/1" do
+    test "is deterministic for a placement and sits in the reserved NPC gid range" do
+      {_module, placement} = hd(Registry.entries())
+
+      gid = Registry.entity_id(placement)
+
+      assert gid == Registry.entity_id(placement)
+      assert gid in 0x5000_0000..0x57FF_FFFF
+    end
+  end
+
+  describe "module_for_unit/1" do
+    test "resolves a spawned NPC's unit id back to its module and placement" do
+      {module, placement} = hd(Registry.entries())
+      gid = Registry.entity_id(placement)
+
+      assert {:ok, {^module, ^placement}} = Registry.module_for_unit(gid)
+    end
+
+    test "returns :error for a gid with no registered NPC" do
+      assert :error = Registry.module_for_unit(0x5000_0000 - 1)
+    end
+  end
 end

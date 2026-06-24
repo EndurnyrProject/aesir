@@ -46,4 +46,20 @@ defmodule Aesir.ZoneServer.Npc.VerifierTest do
       assert Enum.any?(errors, &match?({:cell_collision, {"prontera", 150, 150}, _mods}, &1))
     end
   end
+
+  describe "verify!/1" do
+    test "returns :ok when every cell is walkable and unique" do
+      stub(MapCache, :walkable?, fn _, _, _ -> true end)
+
+      assert :ok = Verifier.verify!([{ModA, placement(x: 150, y: 150)}])
+    end
+
+    test "raises ArgumentError at boot when a cell is non-walkable" do
+      stub(MapCache, :walkable?, fn _, _, _ -> false end)
+
+      assert_raise ArgumentError, fn ->
+        Verifier.verify!([{ModA, placement(x: 150, y: 150)}])
+      end
+    end
+  end
 end
