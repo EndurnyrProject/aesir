@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Npc.Warp
   alias Aesir.ZoneServer.Npc.Warps
@@ -476,15 +477,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     # Get the player session and mob data
     with {:ok, to_pid} <- UnitRegistry.get_player_pid(to_char_id),
          {:ok, {_module, mob_state, _pid}} <- UnitRegistry.get_unit(:mob, mob_id) do
+      %{
+        body_state: body_state,
+        health_state: health_state,
+        effect_state: effect_state,
+        virtue: virtue
+      } =
+        StatusDisplay.spawn_state(:mob, mob_state.instance_id)
+
+      dead_bit = if(mob_state.is_dead, do: 1, else: 0)
+
       # Create mob spawn packet
       mob_packet = %UnitSpawn{
         object_type: ObjectType.mob(),
         aid: mob_state.instance_id,
         gid: mob_state.instance_id,
         speed: mob_state.walk_speed,
-        body_state: 0,
-        health_state: if(mob_state.is_dead, do: 1, else: 0),
-        effect_state: 0,
+        body_state: body_state,
+        health_state: Bitwise.bor(health_state, dead_bit),
+        effect_state: effect_state,
+        virtue: virtue,
         # Mob sprite ID
         job: mob_state.mob_id,
         head: 0,
@@ -511,6 +523,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       }
 
       GenServer.cast(to_pid, {:send_packet, mob_packet})
+
+      :mob
+      |> StatusDisplay.active_icons(mob_state.instance_id)
+      |> Enum.each(&Broadcast.to_player(to_char_id, &1))
     else
       _ -> :ok
     end

@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Constants.ObjectType
+  alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Movement
@@ -402,6 +403,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     case UnitRegistry.get_unit(:player, other_char_id) do
       {:ok, {_module, %PlayerState{} = other_game_state, _pid}} ->
         send_player_spawn_packet(state.connection_pid, other_game_state)
+        send_active_icons(:player, other_char_id, state.game_state.character_id)
 
       _ ->
         :ok
@@ -617,15 +619,30 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     MessageRouter.send_to(connection_pid, packet)
   end
 
+  defp send_active_icons(unit_type, subject_id, observer_id) do
+    unit_type
+    |> StatusDisplay.active_icons(subject_id)
+    |> Enum.each(&Broadcast.to_player(observer_id, &1))
+  end
+
   defp build_unit_spawn(game_state) do
+    %{
+      body_state: body_state,
+      health_state: health_state,
+      effect_state: effect_state,
+      virtue: virtue
+    } =
+      StatusDisplay.spawn_state(:player, game_state.character_id)
+
     %UnitSpawn{
       object_type: ObjectType.pc(),
       aid: game_state.account_id,
       gid: game_state.character_id,
       speed: game_state.walk_speed,
-      body_state: 0,
-      health_state: 0,
-      effect_state: 0,
+      body_state: body_state,
+      health_state: health_state,
+      effect_state: effect_state,
+      virtue: virtue,
       job: game_state.stats.progression.job_id,
       head: game_state.hair,
       weapon: PlayerStats.weapon_view(game_state.stats.equipment),

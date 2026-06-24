@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
   alias Aesir.Net.UnitSpawn
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
+  alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Npc.Warp
   alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Pathfinding
@@ -31,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
     Mimic.copy(Broadcast)
     Mimic.copy(UnitRegistry)
     Mimic.copy(Warps)
+    Mimic.copy(StatusDisplay)
 
     stub(MapCache, :get, fn "prontera" -> {:ok, %{width: 200, height: 200}} end)
     stub(Pathfinding, :find_path, fn _map, {50, 50}, {51, 50} -> {:ok, [{50, 50}, {51, 50}]} end)
@@ -39,6 +41,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
     stub(Broadcast, :to_players, fn _, _, _ -> :ok end)
     stub(Broadcast, :to_in_range, fn _, _, _, _, _, _ -> :ok end)
     stub(Warps, :for_map, fn _ -> :error end)
+
+    stub(StatusDisplay, :spawn_state, fn _type, _id ->
+      %{body_state: 0, health_state: 0, effect_state: 0, virtue: 0}
+    end)
+
+    stub(StatusDisplay, :active_icons, fn _type, _id -> [] end)
 
     :ok
   end
@@ -134,6 +142,70 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
 
       assert_receive {:cast, %UnitSpawn{gid: 42, moving: false, name: "Poring"}}, 500
       assert_receive {:cast, %UnitDespawn{gid: 99, reason: 0}}, 500
+    end
+
+    test "a newly-visible mob's spawn carries its sprite-state aggregate" do
+      test_pid = self()
+      game_state = idle_state().game_state
+
+      stub(StatusDisplay, :spawn_state, fn :mob, 42 ->
+        %{body_state: 1, health_state: 4, effect_state: 0, virtue: 0}
+      end)
+
+      stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [] end)
+      stub(SpatialIndex, :get_units_in_range, fn :mob, _, _, _, _ -> [42] end)
+      stub(SpatialIndex, :update_visibility, fn _, _, _ -> :ok end)
+
+      mob_state = mob_state(42)
+
+      observer_pid = spawn(fn -> forward_casts(test_pid) end)
+      stub(UnitRegistry, :get_player_pid, fn 1 -> {:ok, observer_pid} end)
+
+      stub(UnitRegistry, :get_unit, fn :mob, 42 ->
+        {:ok, {MobSession, mob_state, observer_pid}}
+      end)
+
+      _ = MovementHandler.handle_visibility_update(game_state)
+
+      assert_receive {:cast,
+                      %UnitSpawn{
+                        gid: 42,
+                        body_state: 1,
+                        health_state: 4,
+                        effect_state: 0,
+                        virtue: 0
+                      }},
+                     500
+    end
+
+    test "a newly-visible mob follows its spawn with active icons to the observer" do
+      test_pid = self()
+      game_state = idle_state().game_state
+
+      icon = %Aesir.Net.StatusChange{unit_id: 42, efst: 7, on: true}
+      stub(StatusDisplay, :active_icons, fn :mob, 42 -> [icon] end)
+
+      stub(Broadcast, :to_player, fn observer, packet ->
+        send(test_pid, {:icon_to, observer, packet})
+        :ok
+      end)
+
+      stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [] end)
+      stub(SpatialIndex, :get_units_in_range, fn :mob, _, _, _, _ -> [42] end)
+      stub(SpatialIndex, :update_visibility, fn _, _, _ -> :ok end)
+
+      mob_state = mob_state(42)
+
+      observer_pid = spawn(fn -> forward_casts(test_pid) end)
+      stub(UnitRegistry, :get_player_pid, fn 1 -> {:ok, observer_pid} end)
+
+      stub(UnitRegistry, :get_unit, fn :mob, 42 ->
+        {:ok, {MobSession, mob_state, observer_pid}}
+      end)
+
+      _ = MovementHandler.handle_visibility_update(game_state)
+
+      assert_receive {:icon_to, 1, ^icon}, 500
     end
   end
 
@@ -271,6 +343,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
 
   defp idle_state do
     %{game_state: PlayerState.new(character()), connection_pid: self()}
+  end
+
+  defp mob_state(instance_id) do
+    %MobState{
+      instance_id: instance_id,
+      mob_id: 1002,
+      mob_data: mob_definition(),
+      spawn_ref: nil,
+      map_name: "prontera",
+      x: 51,
+      y: 50,
+      dir: 0,
+      hp: 50,
+      max_hp: 60,
+      sp: 0,
+      max_sp: 0,
+      spawned_at: System.system_time(:second),
+      walk_speed: 200,
+      is_dead: false
+    }
   end
 
   defp mob_definition do

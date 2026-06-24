@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
@@ -433,14 +434,25 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   defp create_spawn_packet(%MobState{} = mob_state) do
+    %{
+      body_state: body_state,
+      health_state: health_state,
+      effect_state: effect_state,
+      virtue: virtue
+    } =
+      StatusDisplay.spawn_state(:mob, mob_state.instance_id)
+
+    dead_bit = if(mob_state.is_dead, do: 1, else: 0)
+
     %UnitSpawn{
       object_type: ObjectType.mob(),
       aid: mob_state.instance_id,
       gid: mob_state.instance_id,
       speed: mob_state.walk_speed,
-      body_state: 0,
-      health_state: if(mob_state.is_dead, do: 1, else: 0),
-      effect_state: 0,
+      body_state: body_state,
+      health_state: Bitwise.bor(health_state, dead_bit),
+      effect_state: effect_state,
+      virtue: virtue,
       job: mob_state.mob_id,
       sex: 0,
       x: mob_state.x,

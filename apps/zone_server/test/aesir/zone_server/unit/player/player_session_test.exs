@@ -7,7 +7,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Pathfinding
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -255,6 +257,116 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
                          name: "OtherPlayer",
                          moving: false
                        }}}
+
+      Process.exit(other_pid, :kill)
+    end
+
+    test "player_entered_view carries the unit's sprite-state aggregate in the spawn", %{
+      character: character
+    } do
+      stub(StatusDisplay, :spawn_state, fn :player, 2 ->
+        %{body_state: 3, health_state: 5, effect_state: 9, virtue: 7}
+      end)
+
+      stub(StatusDisplay, :active_icons, fn :player, 2 -> [] end)
+
+      other_character = %{character | id: 2, account_id: 200, name: "OtherPlayer"}
+      other_game_state = %{PlayerState.new(other_character) | movement_state: :standing}
+
+      other_pid = spawn(fn -> Process.sleep(1000) end)
+      UnitRegistry.register_player(2, 200, "OtherPlayer", other_pid)
+      UnitRegistry.update_unit_state(:player, 2, other_game_state)
+
+      state = %{
+        character: character,
+        game_state: PlayerState.new(character),
+        connection_pid: self()
+      }
+
+      {:noreply, _new_state} = PlayerSession.handle_cast({:player_entered_view, 2}, state)
+
+      assert_receive {:send, :world,
+                      {:unit_spawn,
+                       %Aesir.Net.UnitSpawn{
+                         gid: 2,
+                         body_state: 3,
+                         health_state: 5,
+                         effect_state: 9,
+                         virtue: 7
+                       }}}
+
+      Process.exit(other_pid, :kill)
+    end
+
+    test "player_entered_view follows the spawn with the unit's active icons to the observer", %{
+      character: character
+    } do
+      test_pid = self()
+
+      stub(StatusDisplay, :spawn_state, fn :player, 2 ->
+        %{body_state: 0, health_state: 0, effect_state: 0, virtue: 0}
+      end)
+
+      icon = %Aesir.Net.StatusChange{unit_id: 2, efst: 0, on: true}
+      stub(StatusDisplay, :active_icons, fn :player, 2 -> [icon] end)
+
+      stub(Broadcast, :to_player, fn observer, packet ->
+        send(test_pid, {:icon_to, observer, packet})
+        :ok
+      end)
+
+      other_character = %{character | id: 2, account_id: 200, name: "OtherPlayer"}
+      other_game_state = %{PlayerState.new(other_character) | movement_state: :standing}
+
+      other_pid = spawn(fn -> Process.sleep(1000) end)
+      UnitRegistry.register_player(2, 200, "OtherPlayer", other_pid)
+      UnitRegistry.update_unit_state(:player, 2, other_game_state)
+
+      state = %{
+        character: character,
+        game_state: PlayerState.new(character),
+        connection_pid: self()
+      }
+
+      {:noreply, _new_state} = PlayerSession.handle_cast({:player_entered_view, 2}, state)
+
+      assert_received {:icon_to, 1, ^icon}
+
+      Process.exit(other_pid, :kill)
+    end
+
+    test "player_entered_view sends no icon follow-up when the unit has no active icons", %{
+      character: character
+    } do
+      test_pid = self()
+
+      stub(StatusDisplay, :spawn_state, fn :player, 2 ->
+        %{body_state: 0, health_state: 0, effect_state: 0, virtue: 0}
+      end)
+
+      stub(StatusDisplay, :active_icons, fn :player, 2 -> [] end)
+
+      stub(Broadcast, :to_player, fn observer, packet ->
+        send(test_pid, {:icon_to, observer, packet})
+        :ok
+      end)
+
+      other_character = %{character | id: 2, account_id: 200, name: "OtherPlayer"}
+      other_game_state = %{PlayerState.new(other_character) | movement_state: :standing}
+
+      other_pid = spawn(fn -> Process.sleep(1000) end)
+      UnitRegistry.register_player(2, 200, "OtherPlayer", other_pid)
+      UnitRegistry.update_unit_state(:player, 2, other_game_state)
+
+      state = %{
+        character: character,
+        game_state: PlayerState.new(character),
+        connection_pid: self()
+      }
+
+      {:noreply, _new_state} = PlayerSession.handle_cast({:player_entered_view, 2}, state)
+
+      refute_received {:icon_to, _observer, _packet}
 
       Process.exit(other_pid, :kill)
     end
