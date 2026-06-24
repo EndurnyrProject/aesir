@@ -9,6 +9,8 @@ defmodule Aesir.Commons.Application do
   def start(_type, _args) do
     display_banner_for_starting_apps()
 
+    silence_quic_transport_logs()
+
     Hush.resolve!()
 
     topologies = Application.get_env(:libcluster, :topologies)
@@ -22,6 +24,11 @@ defmodule Aesir.Commons.Application do
 
     opts = [strategy: :one_for_one, name: Commons.Supervisor]
     Supervisor.start_link(children, opts)
+  end
+
+  defp silence_quic_transport_logs do
+    level = Application.get_env(:commons, :quic_log_level, :warning)
+    :logger.set_application_level(:quic, level)
   end
 
   defp display_banner_for_starting_apps do

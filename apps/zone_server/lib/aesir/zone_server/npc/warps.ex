@@ -54,6 +54,8 @@ defmodule Aesir.ZoneServer.Npc.Warps do
   defp load do
     loaded = Loader.load(data_dir())
     validate!(loaded)
+    count = loaded.by_map |> Map.values() |> Enum.map(&length/1) |> Enum.sum()
+    Logger.info("Loaded #{count} warps across #{map_size(loaded.by_map)} maps")
     loaded
   end
 
