@@ -28,6 +28,7 @@ defmodule Aesir.Commons.Models.Character do
     field :status_point, :integer, default: 0
     field :skill_point, :integer, default: 0
     field :learned_skills, :map, default: %{}
+    field :vars, :map, default: %{}
     field :option, :integer, default: 0
     field :karma, :integer, default: 0
     field :manner, :integer, default: 0
@@ -99,6 +100,7 @@ defmodule Aesir.Commons.Models.Character do
       :status_point,
       :skill_point,
       :learned_skills,
+      :vars,
       :option,
       :karma,
       :manner,

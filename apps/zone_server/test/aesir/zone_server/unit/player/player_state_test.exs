@@ -7,6 +7,69 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
 
+  describe "new/1 char vars and zeny" do
+    test "loads vars, an empty temp_vars, and zeny from the character" do
+      character = %Character{
+        id: 1,
+        name: "VarHero",
+        last_map: "prontera",
+        last_x: 100,
+        last_y: 100,
+        base_level: 1,
+        job_level: 1,
+        class: 0,
+        str: 1,
+        agi: 1,
+        vit: 1,
+        int: 1,
+        dex: 1,
+        luk: 1,
+        hp: 100,
+        max_hp: 100,
+        sp: 50,
+        max_sp: 50,
+        status_point: 0,
+        skill_point: 0,
+        account_id: 1,
+        zeny: 5_000,
+        vars: %{"sphmask_q" => 1}
+      }
+
+      assert %PlayerState{vars: %{"sphmask_q" => 1}, temp_vars: %{}, zeny: 5_000} =
+               PlayerState.new(character)
+    end
+
+    test "defaults vars to an empty map when the character has nil vars" do
+      character = %Character{
+        id: 2,
+        name: "NilVars",
+        last_map: "prontera",
+        last_x: 100,
+        last_y: 100,
+        base_level: 1,
+        job_level: 1,
+        class: 0,
+        str: 1,
+        agi: 1,
+        vit: 1,
+        int: 1,
+        dex: 1,
+        luk: 1,
+        hp: 100,
+        max_hp: 100,
+        sp: 50,
+        max_sp: 50,
+        status_point: 0,
+        skill_point: 0,
+        account_id: 1,
+        zeny: 0,
+        vars: nil
+      }
+
+      assert %PlayerState{vars: %{}, temp_vars: %{}, zeny: 0} = PlayerState.new(character)
+    end
+  end
+
   describe "state transitions" do
     setup do
       character = %Character{

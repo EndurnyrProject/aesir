@@ -61,6 +61,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           skill_cooldowns: %{integer() => integer()},
           regen_accumulators: %{atom() => non_neg_integer()},
           stats: PlayerStats.t(),
+          vars: %{String.t() => term()},
+          temp_vars: %{String.t() => term()},
+          zeny: integer(),
           inventory: %{non_neg_integer() => InventoryItem.t()},
           pending_inventory_persist: [
             {%{non_neg_integer() => InventoryItem.t()}, %{non_neg_integer() => InventoryItem.t()},
@@ -151,6 +154,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # Character Stats
     :stats,
 
+    # Persistent char variables (jsonb-backed, sourced from Character.vars)
+    # and session-life-only temp char vars (never persisted).
+    :zeny,
+    vars: %{},
+    temp_vars: %{},
+
     # Inventory keyed by stable session index
     inventory: %{},
     # Catalyst-consumption deltas staged by a skill cast for the handler to
@@ -218,6 +227,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
       # Character Stats
       stats: PlayerStats.from_character(character),
+
+      # Char variables + economy
+      vars: character.vars || %{},
+      temp_vars: %{},
+      zeny: character.zeny,
 
       # Inventory (will be loaded separately)
       inventory: %{}
