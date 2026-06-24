@@ -16,6 +16,8 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.StatusParams
+  alias Aesir.Net.NpcDialog
+  alias Aesir.Net.NpcInteract
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.JobManagement
@@ -23,6 +25,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight
@@ -31,6 +34,126 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
   @typedoc "An HP/SP heal amount: a flat integer or a `lo..hi` range to roll within."
   @type amount :: integer() | Range.t()
+
+  # Idle deadline for a blocking dialog suspension. The client freezes the
+  # player during a dialog, so a `receive` that never returns means the player
+  # abandoned the window; the interaction exits and the session clears the lock.
+  # Read from app env at call time so tests can shrink it.
+  @default_dialog_idle_timeout :timer.seconds(60)
+
+  @spec dialog_idle_timeout() :: timeout()
+  defp dialog_idle_timeout do
+    Application.get_env(:zone_server, :dialog_idle_timeout, @default_dialog_idle_timeout)
+  end
+
+  @doc """
+  Appends a line to the context's dialog page buffer and returns the context.
+
+  Pure: composes with `|>` and sends nothing. The buffered lines flush, joined
+  with `"\\n"`, at the next terminal dialog op (`next/1`, `select/2`, `input/2`,
+  `close/1`).
+  """
+  @spec mes(Ctx.t(), String.t()) :: Ctx.t()
+  def mes(%Ctx{page: page} = ctx, text), do: %{ctx | page: page ++ [text]}
+
+  @doc """
+  Flushes the buffered page as a `NEXT` frame, blocks for the client's
+  acknowledgement, clears the buffer, and returns the context.
+  """
+  @spec next(Ctx.t()) :: Ctx.t()
+  def next(%Ctx{} = ctx) do
+    flush(ctx, :NEXT, [])
+    await(ctx, :continue)
+    %{ctx | page: []}
+  end
+
+  @doc """
+  Flushes the buffered page as a `MENU` frame with `options`, blocks for the
+  client's choice, and returns `{ctx, choice}`.
+
+  `choice` is the 1-based index the client selected; a cancel/ESC response
+  yields `0`. The page buffer is cleared.
+  """
+  @spec select(Ctx.t(), [String.t()]) :: {Ctx.t(), non_neg_integer()}
+  def select(%Ctx{} = ctx, options) do
+    flush(ctx, :MENU, options)
+    {%{ctx | page: []}, await(ctx, :choice)}
+  end
+
+  @doc """
+  Flushes the buffered page as an input frame, blocks for the client's value,
+  and returns `{ctx, value}`.
+
+  `kind` is `:int` (an `INPUT_INT` frame returning a number) or `:string` (an
+  `INPUT_STR` frame returning a string). The page buffer is cleared.
+  """
+  @spec input(Ctx.t(), :int | :string) :: {Ctx.t(), integer() | String.t()}
+  def input(%Ctx{} = ctx, :int) do
+    flush(ctx, :INPUT_INT, [])
+    {%{ctx | page: []}, await(ctx, :number)}
+  end
+
+  def input(%Ctx{} = ctx, :string) do
+    flush(ctx, :INPUT_STR, [])
+    {%{ctx | page: []}, await(ctx, :input)}
+  end
+
+  @doc """
+  Flushes any remaining buffered page as a `CLOSE` frame and returns the context.
+
+  Does not block: the script returns and the interaction process exits `:normal`.
+  """
+  @spec close(Ctx.t()) :: Ctx.t()
+  def close(%Ctx{} = ctx) do
+    flush(ctx, :CLOSE, [])
+    %{ctx | page: []}
+  end
+
+  @spec flush(Ctx.t(), NpcDialog.Expect.t(), [String.t()]) :: :ok
+  defp flush(%Ctx{} = ctx, expect, options) do
+    dialog = %NpcDialog{
+      npc_id: ctx.npc_gid,
+      text: Enum.join(ctx.page, "\n"),
+      expect: expect,
+      options: options
+    }
+
+    MessageRouter.send_to(ctx.connection_pid, dialog)
+  end
+
+  # The single shared blocking receive for every suspending dialog primitive.
+  #
+  # Blocks until an NpcInteract for this NPC carrying the expected response arm
+  # arrives, returning the arm's value. A message for a different npc_id, or
+  # carrying an unexpected response arm, is dropped and the wait continues.
+  # Three paths end the wait by exiting the interaction process (which, via the
+  # session's monitor, clears the lock): a `cancel`/ESC for this NPC at any
+  # suspension point (design §Part 2 "cancel/ESC … clear the lock" — promptly,
+  # not only on menus), the session dying — observed through the monitor the
+  # interaction holds in `ctx.session_ref` — and the idle deadline for an
+  # abandoned window. (Sphinx Mask's "No deal" is an explicit menu option, a
+  # `:choice`, not an ESC, so uniform exit-on-cancel does not lose any flow.)
+  @spec await(Ctx.t(), atom()) :: term()
+  defp await(%Ctx{npc_gid: gid, session_ref: session_ref} = ctx, expected) do
+    receive do
+      {:npc_interact, %NpcInteract{npc_id: ^gid, response: {^expected, value}}} ->
+        value
+
+      {:npc_interact, %NpcInteract{npc_id: ^gid, response: {:cancel, _}}} ->
+        exit(:normal)
+
+      {:npc_interact, %NpcInteract{}} ->
+        await(ctx, expected)
+
+      {:DOWN, ^session_ref, :process, _pid, _reason} ->
+        exit(:normal)
+    after
+      # Exit :normal (not a custom reason) so the abandoned-window cleanup
+      # doesn't spam the supervisor's task-terminated error log. The session
+      # clears the lock on the monitor :DOWN regardless of reason.
+      dialog_idle_timeout() -> exit(:normal)
+    end
+  end
 
   @doc """
   Restores HP and/or SP by the given amounts, clamped to the player's maxima.

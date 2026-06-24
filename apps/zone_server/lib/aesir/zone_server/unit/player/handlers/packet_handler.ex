@@ -21,6 +21,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.MoveRequest
   alias Aesir.Net.NameRequest
   alias Aesir.Net.NameResponse
+  alias Aesir.Net.NpcInteract
+  alias Aesir.Net.NpcTalk
   alias Aesir.Net.Respawn
   alias Aesir.Net.SkillCast
   alias Aesir.Net.StatUp
@@ -32,8 +34,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.StatPoint
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Warp
   alias Aesir.ZoneServer.Npc.Warps
+  alias Aesir.ZoneServer.Script.Ctx
+  alias Aesir.ZoneServer.Script.Interaction
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
@@ -214,6 +219,50 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
         Logger.debug("Ignoring name request for entity #{entity_id} (not in view range)")
     end
 
+    {:noreply, state}
+  end
+
+  # NpcTalk - Player clicked an NPC unit (protobuf analogue of CZ_CONTACTNPC
+  # 0x0090). Resolves the clicked unit to its bespoke NPC module and starts a
+  # supervised, monitored interaction process, storing the lock. One dialog at a
+  # time: a click while a lock is held is ignored (matches the client). A click
+  # on a gid that resolves to no NPC module is ignored.
+  def handle_message(%NpcTalk{}, %{interaction_lock: lock} = state) when not is_nil(lock) do
+    {:noreply, state}
+  end
+
+  def handle_message(%NpcTalk{npc_id: gid}, %{game_state: game_state} = state) do
+    case NpcRegistry.module_for_unit(gid) do
+      {:ok, {module, _placement}} ->
+        base_ctx =
+          Ctx.from_session(
+            %{game_state: game_state, connection_pid: state.connection_pid},
+            {:npc, module.npc_id()}
+          )
+
+        base_ctx = %{base_ctx | npc_gid: gid}
+        {:ok, pid} = Interaction.start(self(), module, base_ctx)
+        ref = Process.monitor(pid)
+
+        {:noreply, %{state | interaction_lock: {pid, ref, gid}}}
+
+      :error ->
+        {:noreply, state}
+    end
+  end
+
+  # NpcInteract - Player's response to the pending NpcDialog. Forwarded to the
+  # locked interaction process. Dropped when no dialog is active or the
+  # response carries a different npc_id than the active interaction.
+  def handle_message(
+        %NpcInteract{npc_id: gid} = msg,
+        %{interaction_lock: {pid, _ref, gid}} = state
+      ) do
+    send(pid, {:npc_interact, msg})
+    {:noreply, state}
+  end
+
+  def handle_message(%NpcInteract{}, state) do
     {:noreply, state}
   end
 

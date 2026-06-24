@@ -5,6 +5,14 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   Carries the player identity, live game state, the connection process, a source
   tag identifying what triggered the script, and a `status` accumulator used by
   pipeline helpers to short-circuit on error.
+
+  For NPC interactions it additionally carries the running interaction process
+  (`interaction_pid`), the deterministic NPC unit id the client knows
+  (`npc_gid` — stamped on outgoing `NpcDialog` frames and matched against
+  incoming `NpcInteract`), `page` (the accumulated `mes/2` lines awaiting a
+  flush at the next dialog suspension point), and `session_ref`, the monitor
+  the interaction holds on its session so a blocking primitive can exit cleanly
+  if the session dies.
   """
 
   use TypedStruct
@@ -24,6 +32,10 @@ defmodule Aesir.ZoneServer.Script.Ctx do
     field :game_state, PlayerState.t(), enforce: true
     field :source, source(), enforce: true
     field :status, status(), default: :ok
+    field :interaction_pid, pid()
+    field :npc_gid, non_neg_integer()
+    field :page, [String.t()], default: []
+    field :session_ref, reference()
   end
 
   @doc """

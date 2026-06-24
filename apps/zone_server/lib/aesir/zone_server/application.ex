@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Application do
         {Registry, keys: :unique, name: Aesir.ZoneServer.MapRegistry},
         {Registry, keys: :unique, name: Aesir.ZoneServer.ProcessRegistry},
         {Task.Supervisor, name: Aesir.ZoneServer.TaskSupervisor},
+        {Task.Supervisor, name: Aesir.ZoneServer.Npc.InteractionSupervisor},
         Aesir.ZoneServer.MechanicsSupervisor,
         {DynamicSupervisor, name: Aesir.ZoneServer.QuicConnSup, strategy: :one_for_one},
         {Aesir.Commons.Network.QuicListener,

@@ -205,7 +205,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         state = %{
           game_state: final_game_state,
           connection_pid: connection_pid,
-          connection_monitor_ref: connection_monitor_ref
+          connection_monitor_ref: connection_monitor_ref,
+          interaction_lock: nil
         }
 
         register_player(character.id, character.account_id, character.name)
@@ -363,6 +364,19 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   def handle_info(:connection_closed, %{game_state: game_state} = state) do
     Logger.info("Player #{game_state.character_id} connection closed")
     {:stop, :normal, state}
+  end
+
+  # The active NPC interaction ended (close / idle-timeout / crash). Clearing the
+  # lock frees the player to talk to NPCs again; the session always survives
+  # (this monitor never propagates the interaction's exit). Matched ahead of the
+  # connection :DOWN below so a finished dialog isn't mistaken for a dropped
+  # connection.
+  @impl true
+  def handle_info(
+        {:DOWN, ref, :process, _pid, _reason},
+        %{interaction_lock: {_lock_pid, ref, _gid}} = state
+      ) do
+    {:noreply, %{state | interaction_lock: nil}}
   end
 
   @impl true
