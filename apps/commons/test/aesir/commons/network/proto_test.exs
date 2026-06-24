@@ -52,9 +52,11 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.SkillList
   alias Aesir.Net.Snapshot
   alias Aesir.Net.SnapshotEntity
+  alias Aesir.Net.SpecialEffect
   alias Aesir.Net.SpriteChange
   alias Aesir.Net.StatUp
   alias Aesir.Net.StatUpResult
+  alias Aesir.Net.StatusChange
   alias Aesir.Net.TimeSync
   alias Aesir.Net.TimeSyncAck
   alias Aesir.Net.UnequipItem
@@ -62,6 +64,7 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.UnitDespawn
   alias Aesir.Net.UnitHp
   alias Aesir.Net.UnitSpawn
+  alias Aesir.Net.UnitStateChange
   alias Aesir.Net.UseItem
   alias Aesir.Net.ZoneServerInfo
 
@@ -1067,6 +1070,111 @@ defmodule Aesir.Commons.Network.ProtoTest do
     assert {:ok,
             %Envelope{
               body: {:item_use_result, %ItemUseResult{index: 7, ok: true, reason: 0}}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "status_change round-trips through envelope oneof" do
+    env = %Envelope{
+      body:
+        {:status_change,
+         %StatusChange{
+           unit_id: 10_001,
+           efst: 0,
+           on: true,
+           total_ms: 30_000,
+           remain_ms: 12_500,
+           val1: 5,
+           val2: -3,
+           val3: 0
+         }}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:status_change,
+                 %StatusChange{
+                   unit_id: 10_001,
+                   efst: 0,
+                   on: true,
+                   total_ms: 30_000,
+                   remain_ms: 12_500,
+                   val1: 5,
+                   val2: -3,
+                   val3: 0
+                 }}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "unit_state_change round-trips through envelope oneof" do
+    env = %Envelope{
+      body:
+        {:unit_state_change,
+         %UnitStateChange{
+           unit_id: 10_001,
+           body_state: 1,
+           health_state: 32,
+           effect_state: 2,
+           virtue: 4
+         }}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:unit_state_change,
+                 %UnitStateChange{
+                   unit_id: 10_001,
+                   body_state: 1,
+                   health_state: 32,
+                   effect_state: 2,
+                   virtue: 4
+                 }}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "special_effect round-trips through envelope oneof" do
+    env = %Envelope{body: {:special_effect, %SpecialEffect{source_id: 2_000_000, effect_id: 42}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body: {:special_effect, %SpecialEffect{source_id: 2_000_000, effect_id: 42}}
+            }} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "unit_spawn carries the sprite-state fields through envelope oneof" do
+    env = %Envelope{
+      body:
+        {:unit_spawn,
+         %UnitSpawn{
+           gid: 10_001,
+           body_state: 3,
+           health_state: 16,
+           effect_state: 8,
+           virtue: 4
+         }}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:unit_spawn,
+                 %UnitSpawn{
+                   gid: 10_001,
+                   body_state: 3,
+                   health_state: 16,
+                   effect_state: 8,
+                   virtue: 4
+                 }}
             }} = Envelope.decode(IO.iodata_to_binary(iodata))
   end
 

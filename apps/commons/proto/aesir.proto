@@ -84,6 +84,9 @@ message Envelope {
     MapMove map_move = 74;
     UseItem use_item = 75;
     ItemUseResult item_use_result = 76;
+    StatusChange status_change = 77;
+    UnitStateChange unit_state_change = 78;
+    SpecialEffect special_effect = 79;
   }
 }
 
@@ -339,12 +342,40 @@ message UnitSpawn {
   uint32 dst_x = 30;
   uint32 dst_y = 31;
   uint64 move_start_time = 32;
+  uint32 virtue = 33;
 }
 
 // Server -> client, an entity left view (replaces RO ZC_NOTIFY_VANISH 0x0080).
 message UnitDespawn {
   uint32 gid = 1;
   uint32 reason = 2;
+}
+
+// EFST icon bar — apply (on=true) / remove (on=false).
+message StatusChange {
+  uint32 unit_id   = 1;   // target AID/GID
+  uint32 efst      = 2;   // rAthena EFST id
+  bool   on        = 3;
+  uint32 total_ms  = 4;   // 0 = infinite
+  uint32 remain_ms = 5;   // 0 = infinite
+  int32  val1      = 6;
+  int32  val2      = 7;
+  int32  val3      = 8;
+}
+
+// Sprite ailment state — the unit's aggregate opt fields.
+message UnitStateChange {
+  uint32 unit_id      = 1;
+  uint32 body_state   = 2;   // opt1  (single-valued)
+  uint32 health_state = 3;   // opt2  (bitmask)
+  uint32 effect_state = 4;   // option (bitmask)
+  uint32 virtue       = 5;   // opt3  (bitmask)
+}
+
+// One-shot effect — fire and forget.
+message SpecialEffect {
+  uint32 source_id = 1;
+  uint32 effect_id = 2;      // rAthena EF_* id
 }
 
 // Client -> server, request an entity's name (replaces RO CZ_REQNAME2 0x0368).

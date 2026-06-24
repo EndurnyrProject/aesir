@@ -33,6 +33,9 @@ defmodule Aesir.ZoneServer.Network.MessageRouterTest do
     {%Aesir.Net.UnitHp{}, {:world, :unit_hp}},
     {%Aesir.Net.NameResponse{}, {:world, :name_response}},
     {%Aesir.Net.ChatMessage{}, {:world, :chat_message}},
+    {%Aesir.Net.StatusChange{}, {:world, :status_change}},
+    {%Aesir.Net.UnitStateChange{}, {:world, :unit_state_change}},
+    {%Aesir.Net.SpecialEffect{}, {:world, :special_effect}},
     {%Aesir.Net.SkillList{}, {:bulk, :skill_list}},
     {%Aesir.Net.InventoryList{}, {:bulk, :inventory_list}},
     {%Aesir.Net.Snapshot{}, {:snapshots, :snapshot}}

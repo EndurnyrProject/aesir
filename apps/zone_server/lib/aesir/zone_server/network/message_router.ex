@@ -53,6 +53,9 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def route(%Aesir.Net.UnitHp{}), do: {:world, :unit_hp}
   def route(%Aesir.Net.NameResponse{}), do: {:world, :name_response}
   def route(%Aesir.Net.ChatMessage{}), do: {:world, :chat_message}
+  def route(%Aesir.Net.StatusChange{}), do: {:world, :status_change}
+  def route(%Aesir.Net.UnitStateChange{}), do: {:world, :unit_state_change}
+  def route(%Aesir.Net.SpecialEffect{}), do: {:world, :special_effect}
 
   def route(%Aesir.Net.SkillList{}), do: {:bulk, :skill_list}
   def route(%Aesir.Net.InventoryList{}), do: {:bulk, :inventory_list}
