@@ -24,6 +24,10 @@ defmodule Aesir.AccountServer do
 
   @protocol_version 1
 
+  # Close the connection after this many failed login attempts so a single
+  # connection can't be used to brute-force credentials / credential-stuff.
+  @max_login_failures 5
+
   @impl true
   def handle_message(%Hello{protocol_version: version}, :control, session_data) do
     if version != @protocol_version do
@@ -47,7 +51,7 @@ defmodule Aesir.AccountServer do
 
     case Auth.authenticate_user(username, password) do
       {:ok, account} -> handle_successful_login(account, session_data)
-      {:error, reason} -> handle_failed_login(reason, session_data)
+      {:error, reason} -> handle_auth_failure(reason, session_data)
     end
   end
 
@@ -72,9 +76,9 @@ defmodule Aesir.AccountServer do
   end
 
   defp proceed_with_login(account, session_data) do
-    auth_code = :rand.uniform(999_999_999)
-    login_id1 = :rand.uniform(999_999_999)
-    login_id2 = :rand.uniform(999_999_999)
+    auth_code = secure_token()
+    login_id1 = secure_token()
+    login_id2 = secure_token()
 
     updated_session =
       Map.merge(session_data, %{
@@ -129,6 +133,19 @@ defmodule Aesir.AccountServer do
     {:ok, session_data, [{:login_failed, response}]}
   end
 
+  defp handle_auth_failure(reason, session_data) do
+    failures = Map.get(session_data, :login_failures, 0) + 1
+
+    if failures >= @max_login_failures do
+      Logger.warning("Closing connection after #{failures} failed login attempts")
+      {:error, :too_many_login_failures}
+    else
+      Logger.info("Login failed (attempt #{failures}): #{inspect(reason)}")
+      response = %LoginFailed{reason_code: reason_code(reason), message: to_string(reason)}
+      {:ok, Map.put(session_data, :login_failures, failures), [{:login_failed, response}]}
+    end
+  end
+
   defp reason_code(:invalid_credentials), do: 1
   defp reason_code(:banned), do: 6
   defp reason_code(:account_not_found), do: 0
@@ -141,6 +158,12 @@ defmodule Aesir.AccountServer do
     :crypto.strong_rand_bytes(16)
     |> Base.encode16(case: :lower)
     |> String.slice(0, 16)
+  end
+
+  @spec secure_token() :: non_neg_integer()
+  defp secure_token do
+    <<value::32>> = :crypto.strong_rand_bytes(4)
+    value
   end
 
   defp available_char_servers do

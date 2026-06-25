@@ -146,6 +146,10 @@ message SessionAuth {
   uint32 login_id2 = 3;
   uint32 sex = 4;
   uint32 char_id = 5;
+  // Single-use handoff token issued by the char server in ZoneServerInfo.auth_token.
+  // Required by the zone server to prove the client passed character selection;
+  // unused on the char-server entry path.
+  bytes zone_auth_token = 6;
 }
 
 // A single character's full state (protobuf analogue of the legacy 175-byte CharacterInfo).
@@ -218,6 +222,9 @@ message ZoneServerInfo {
   string map_name = 2;
   string ip = 3;
   uint32 port = 4;
+  // Single-use token the client must echo back in SessionAuth.zone_auth_token
+  // when connecting to this zone server.
+  bytes auth_token = 5;
 }
 
 // Client -> server, create a new character (replaces RO CH_MAKE_CHAR_V2).

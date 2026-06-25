@@ -54,13 +54,24 @@ defmodule Aesir.ZoneServerTest do
         last_y: 180
       }
 
-      stub(SessionManager, :get_session, fn 100 -> {:ok, %{login_id1: 1234}} end)
+      stub(SessionManager, :validate_session, fn 100, 1234, 5678 ->
+        {:ok, %{login_id1: 1234, login_id2: 5678}}
+      end)
+
+      stub(SessionManager, :consume_zone_token, fn 100, 50, _token -> :ok end)
       stub(CharacterLoader, :load_character, fn 50, 100 -> {:ok, character} end)
       stub(SessionManager, :set_user_online, fn 100, :zone_server, 50, "prontera" -> :ok end)
       player_pid = spawn(fn -> Process.sleep(:infinity) end)
       stub(PlayerSupervisor, :start_player, fn _args -> {:ok, player_pid} end)
 
-      auth = %SessionAuth{account_id: 100, login_id1: 1234, login_id2: 5678, sex: 0, char_id: 50}
+      auth = %SessionAuth{
+        account_id: 100,
+        login_id1: 1234,
+        login_id2: 5678,
+        sex: 0,
+        char_id: 50,
+        zone_auth_token: <<9, 9, 9>>
+      }
 
       assert {:ok, session, [{:enter_ack, %EnterAck{account_id: 100, x: 155, y: 180}}]} =
                ZoneServer.handle_message(auth, :control, %{})
@@ -68,15 +79,42 @@ defmodule Aesir.ZoneServerTest do
       assert session.player_session_pid == player_pid
     end
 
-    test "invalid auth code returns an error" do
+    test "invalid credentials return an error" do
       Mimic.copy(SessionManager)
 
-      stub(SessionManager, :get_session, fn 100 -> {:ok, %{login_id1: 9999}} end)
+      stub(SessionManager, :validate_session, fn 100, 1234, 5678 ->
+        {:error, :invalid_credentials}
+      end)
 
       auth = %SessionAuth{account_id: 100, login_id1: 1234, login_id2: 5678, sex: 0, char_id: 50}
 
       capture_log(fn ->
-        assert {:error, :invalid_auth} = ZoneServer.handle_message(auth, :control, %{})
+        assert {:error, :invalid_credentials} = ZoneServer.handle_message(auth, :control, %{})
+      end)
+    end
+
+    test "rejects SessionAuth with an invalid zone token when enforcement is on" do
+      Mimic.copy(SessionManager)
+
+      stub(SessionManager, :validate_session, fn 100, 1234, 5678 ->
+        {:ok, %{login_id1: 1234, login_id2: 5678}}
+      end)
+
+      stub(SessionManager, :consume_zone_token, fn 100, 50, _token ->
+        {:error, :invalid_zone_token}
+      end)
+
+      auth = %SessionAuth{
+        account_id: 100,
+        login_id1: 1234,
+        login_id2: 5678,
+        sex: 0,
+        char_id: 50,
+        zone_auth_token: <<>>
+      }
+
+      capture_log(fn ->
+        assert {:error, :invalid_zone_token} = ZoneServer.handle_message(auth, :control, %{})
       end)
     end
   end

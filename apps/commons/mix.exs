@@ -45,6 +45,7 @@ defmodule Commons.MixProject do
       {:nimble_options, "~> 1.1"},
       {:nimble_parsec, "~> 1.4"},
       {:phoenix_pubsub, "~> 2.1"},
+      {:plug_crypto, "~> 2.1"},
       {:postgrex, ">= 0.0.0"},
       {:process_tree, "~> 0.2.1"},
       {:protox, "~> 2.0"},

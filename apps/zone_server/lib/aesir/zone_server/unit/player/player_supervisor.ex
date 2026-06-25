@@ -29,6 +29,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSupervisor do
     character = args[:character] || args["character"]
     connection_pid = args[:connection_pid] || args["connection_pid"]
 
+    terminate_existing_session(character.id)
+
     child_spec = {
       Aesir.ZoneServer.Unit.Player.PlayerSession,
       [character: character, connection_pid: connection_pid]
@@ -69,6 +71,22 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSupervisor do
   """
   def get_player_pid(char_id) do
     UnitRegistry.get_player_pid(char_id)
+  end
+
+  @spec terminate_existing_session(integer()) :: :ok
+  defp terminate_existing_session(char_id) do
+    case UnitRegistry.get_player_pid(char_id) do
+      {:ok, pid} ->
+        Logger.warning(
+          "Terminating existing player session #{inspect(pid)} for char_id #{char_id} before re-entry"
+        )
+
+        DynamicSupervisor.terminate_child(__MODULE__, pid)
+        :ok
+
+      {:error, :not_found} ->
+        :ok
+    end
   end
 
   @doc """

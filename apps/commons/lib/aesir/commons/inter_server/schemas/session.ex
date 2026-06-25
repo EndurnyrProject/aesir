@@ -17,6 +17,8 @@ defmodule Aesir.Commons.InterServer.Schemas.Session do
     field :state, state()
     field :current_server, server()
     field :current_char_id, non_neg_integer() | nil
+    field :zone_auth_token, binary() | nil
+    field :zone_auth_char_id, non_neg_integer() | nil
     field :node, node()
     field :created_at, DateTime.t()
     field :last_activity, DateTime.t()
@@ -66,4 +68,37 @@ defmodule Aesir.Commons.InterServer.Schemas.Session do
 
   @spec disconnect(t()) :: t()
   def disconnect(session), do: update_activity(%{session | state: :disconnected})
+
+  @doc """
+  Stores a single-use zone-entry token bound to `char_id`, issued when the
+  player selects a character on the char server.
+  """
+  @spec put_zone_token(t(), non_neg_integer(), binary()) :: t()
+  def put_zone_token(session, char_id, token) do
+    update_activity(%{session | zone_auth_token: token, zone_auth_char_id: char_id})
+  end
+
+  @doc """
+  Clears the zone-entry token (call after it has been consumed at zone entry).
+  """
+  @spec clear_zone_token(t()) :: t()
+  def clear_zone_token(session) do
+    %{session | zone_auth_token: nil, zone_auth_char_id: nil}
+  end
+
+  @doc """
+  Returns true when `token`/`char_id` match the stored single-use zone-entry
+  token. A blank/absent stored token never matches.
+  """
+  @spec valid_zone_token?(t(), non_neg_integer(), binary()) :: boolean()
+  def valid_zone_token?(
+        %__MODULE__{zone_auth_token: stored, zone_auth_char_id: stored_char},
+        char_id,
+        token
+      )
+      when is_binary(stored) and byte_size(stored) > 0 and is_binary(token) do
+    stored_char == char_id and Plug.Crypto.secure_compare(stored, token)
+  end
+
+  def valid_zone_token?(_session, _char_id, _token), do: false
 end

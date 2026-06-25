@@ -39,12 +39,17 @@ defmodule Aesir.ZoneServer do
   end
 
   def handle_message(
-        %SessionAuth{account_id: account_id, login_id1: login_id1, char_id: char_id} = auth,
+        %SessionAuth{
+          account_id: account_id,
+          login_id1: login_id1,
+          login_id2: login_id2,
+          char_id: char_id
+        } = auth,
         :control,
         session_data
       ) do
-    with {:ok, session} <- SessionManager.get_session(account_id),
-         :ok <- validate_auth_code(session, login_id1),
+    with {:ok, _session} <- SessionManager.validate_session(account_id, login_id1, login_id2),
+         :ok <- verify_zone_token(account_id, char_id, auth.zone_auth_token),
          updated_session <- build_session_data(session_data, auth),
          {:ok, character} <- CharacterLoader.load_character(char_id, account_id),
          :ok <-
@@ -74,8 +79,12 @@ defmodule Aesir.ZoneServer do
         Logger.warning("Session not found for account #{account_id}")
         error
 
-      {:error, :invalid_auth} = error ->
-        Logger.warning("Auth code mismatch for account #{account_id}")
+      {:error, :invalid_credentials} = error ->
+        Logger.warning("Session credentials mismatch for account #{account_id}")
+        error
+
+      {:error, :invalid_zone_token} = error ->
+        Logger.warning("Invalid zone auth token for account #{account_id} (char #{char_id})")
         error
 
       {:error, :character_load_failed} = error ->
@@ -119,13 +128,25 @@ defmodule Aesir.ZoneServer do
     end
   end
 
-  defp validate_auth_code(session, login_id1) do
-    if session.login_id1 == login_id1 do
-      :ok
-    else
-      {:error, :invalid_auth}
+  defp verify_zone_token(account_id, char_id, token) do
+    case SessionManager.consume_zone_token(account_id, char_id, token) do
+      :ok ->
+        :ok
+
+      {:error, reason} ->
+        if enforce_zone_token?() do
+          {:error, :invalid_zone_token}
+        else
+          Logger.warning(
+            "Zone auth token #{reason} for account #{account_id} (char #{char_id}); allowing because enforcement is disabled"
+          )
+
+          :ok
+        end
     end
   end
+
+  defp enforce_zone_token?, do: Application.get_env(:zone_server, :enforce_zone_auth_token, true)
 
   defp build_session_data(session_data, %SessionAuth{} = auth) do
     Map.merge(session_data, %{

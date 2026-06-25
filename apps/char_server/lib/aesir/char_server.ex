@@ -37,6 +37,10 @@ defmodule Aesir.CharServer do
   @max_chars 15
   @protocol_version 1
 
+  # Close the connection after this many failed SessionAuth attempts so a single
+  # connection can't be used to brute-force/guess session credentials.
+  @max_auth_failures 5
+
   @impl true
   def handle_message(%Hello{protocol_version: version}, :control, session_data) do
     if version != @protocol_version do
@@ -68,15 +72,9 @@ defmodule Aesir.CharServer do
          {:ok, characters} <- Characters.list_characters(account_id, updated_session) do
       {:ok, updated_session, [{:char_list, build_char_list(account_id, characters)}]}
     else
-      {:error, reason}
-      when reason in [
-             :session_validation_failed,
-             :session_account_mismatch,
-             :session_not_authenticated,
-             :invalid_session
-           ] ->
+      {:error, reason} when reason in [:invalid_credentials, :session_not_found] ->
         Logger.warning("Session validation failed for account #{account_id}: #{reason}")
-        {:ok, session_data, [{:char_auth_failed, %CharAuthFailed{reason: 0}}]}
+        auth_failure_response(session_data)
 
       {:error, reason} ->
         Logger.error("Failed to get characters for account #{account_id}: #{inspect(reason)}")
@@ -85,19 +83,26 @@ defmodule Aesir.CharServer do
   end
 
   def handle_message(%SelectChar{slot: slot}, :control, session_data) do
-    with {:ok, character} <- Characters.select_character(session_data[:account_id], slot),
+    with {:ok, account_id} <- authenticated_account(session_data),
+         {:ok, character} <- Characters.select_character(account_id, slot),
          {:ok, updated_session} <-
            CharacterSession.update_session_for_character_selection(session_data, character),
-         {:ok, zone_server} <- get_available_zone_server(character.last_map) do
+         {:ok, zone_server} <- get_available_zone_server(character.last_map),
+         {:ok, zone_token} <- SessionManager.issue_zone_token(account_id, character.id) do
       response = %ZoneServerInfo{
         char_id: character.id,
         map_name: character.last_map,
         ip: ip_to_string(zone_server.ip),
-        port: zone_server.port
+        port: zone_server.port,
+        auth_token: zone_token
       }
 
       {:ok, updated_session, [{:zone_server_info, response}]}
     else
+      :error ->
+        Logger.warning("Rejected unauthenticated SelectChar")
+        {:ok, session_data, [{:char_auth_failed, %CharAuthFailed{reason: 0}}]}
+
       {:error, :no_zone_servers} ->
         Logger.error("Character selection failed: no zone servers available")
         {:ok, session_data}
@@ -134,10 +139,19 @@ defmodule Aesir.CharServer do
       sex: sex
     }
 
-    case Characters.create_character(session_data[:account_id], char_data) do
-      {:ok, character} ->
+    with {:ok, account_id} <- authenticated_account(session_data),
+         {:ok, character} <- Characters.create_character(account_id, char_data) do
+      {:ok, session_data,
+       [{:char_created, %CharCreated{character: CharacterMapper.to_proto(character)}}]}
+    else
+      :error ->
+        Logger.warning("Rejected unauthenticated CreateChar")
+
         {:ok, session_data,
-         [{:char_created, %CharCreated{character: CharacterMapper.to_proto(character)}}]}
+         [
+           {:char_create_failed,
+            %CharCreateFailed{reason_code: creation_error_code(:account_banned)}}
+         ]}
 
       {:error, reason} ->
         {:ok, session_data,
@@ -148,10 +162,14 @@ defmodule Aesir.CharServer do
   def handle_message(%DeleteCharRequest{char_id: char_id}, :control, session_data) do
     Logger.debug("Character deletion requested for ID: #{char_id}")
 
-    case Characters.request_character_deletion(char_id, session_data.account_id) do
-      {:ok, delete_unix} ->
-        ack = %DeleteCharAck{char_id: char_id, result: 0, delete_date: delete_unix}
-        {:ok, session_data, [{:delete_char_ack, ack}]}
+    with {:ok, account_id} <- authenticated_account(session_data),
+         {:ok, delete_unix} <- Characters.request_character_deletion(char_id, account_id) do
+      ack = %DeleteCharAck{char_id: char_id, result: 0, delete_date: delete_unix}
+      {:ok, session_data, [{:delete_char_ack, ack}]}
+    else
+      :error ->
+        Logger.warning("Rejected unauthenticated DeleteCharRequest")
+        {:ok, session_data, [{:char_auth_failed, %CharAuthFailed{reason: 0}}]}
 
       {:error, err} ->
         ack = %DeleteCharAck{char_id: char_id, result: delete_error_code(err), delete_date: 0}
@@ -160,24 +178,46 @@ defmodule Aesir.CharServer do
   end
 
   def handle_message(%CharListRefresh{}, :control, session_data) do
-    account_id = session_data[:account_id]
-
-    case Characters.list_characters(account_id, session_data) do
-      {:ok, characters} ->
-        {:ok, session_data, [{:char_list, build_char_list(account_id, characters)}]}
+    with {:ok, account_id} <- authenticated_account(session_data),
+         {:ok, characters} <- Characters.list_characters(account_id, session_data) do
+      {:ok, session_data, [{:char_list, build_char_list(account_id, characters)}]}
+    else
+      :error ->
+        Logger.warning("Rejected unauthenticated CharListRefresh")
+        {:ok, session_data, [{:char_auth_failed, %CharAuthFailed{reason: 0}}]}
 
       {:error, reason} ->
         Logger.error(
-          "Failed to refresh character list for account #{account_id}: #{inspect(reason)}"
+          "Failed to refresh character list for account #{session_data[:account_id]}: #{inspect(reason)}"
         )
 
-        {:ok, session_data, [{:char_list, build_char_list(account_id, [])}]}
+        {:ok, session_data, [{:char_list, build_char_list(session_data[:account_id], [])}]}
     end
   end
 
   def handle_message(message, channel, session_data) do
     Logger.warning("Unhandled #{inspect(message.__struct__)} on #{channel} channel")
     {:ok, session_data}
+  end
+
+  @spec authenticated_account(map()) :: {:ok, non_neg_integer()} | :error
+  defp authenticated_account(%{account_id: account_id}) when is_integer(account_id),
+    do: {:ok, account_id}
+
+  defp authenticated_account(_session_data), do: :error
+
+  @spec auth_failure_response(map()) ::
+          {:ok, map(), [{:char_auth_failed, CharAuthFailed.t()}]}
+          | {:error, :too_many_auth_failures}
+  defp auth_failure_response(session_data) do
+    failures = Map.get(session_data, :auth_failures, 0) + 1
+
+    if failures >= @max_auth_failures do
+      {:error, :too_many_auth_failures}
+    else
+      {:ok, Map.put(session_data, :auth_failures, failures),
+       [{:char_auth_failed, %CharAuthFailed{reason: 0}}]}
+    end
   end
 
   @spec build_char_list(non_neg_integer(), [Aesir.Commons.Models.Character.t()]) :: CharList.t()

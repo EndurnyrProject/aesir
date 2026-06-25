@@ -91,7 +91,7 @@ defmodule Aesir.CharServerTest do
     test "returns CharAuthFailed when session validation fails" do
       CharacterSession
       |> stub(:validate_character_session, fn 1001, 123, 456, 0 ->
-        {:error, :session_validation_failed}
+        {:error, :invalid_credentials}
       end)
 
       log =
@@ -104,7 +104,7 @@ defmodule Aesir.CharServerTest do
                    )
         end)
 
-      assert log =~ "Session validation failed for account 1001: session_validation_failed"
+      assert log =~ "Session validation failed for account 1001: invalid_credentials"
     end
 
     test "returns CharAuthFailed when the character list cannot be retrieved" do
@@ -155,6 +155,7 @@ defmodule Aesir.CharServerTest do
 
       SessionManager
       |> stub(:get_servers, fn :zone_server -> [zone_entry] end)
+      |> stub(:issue_zone_token, fn 1001, 5 -> {:ok, <<1, 2, 3, 4>>} end)
 
       assert {:ok, updated_session, [{:zone_server_info, zone_info}]} =
                CharServer.handle_message(%SelectChar{slot: 0}, :control, session_data)
@@ -163,7 +164,8 @@ defmodule Aesir.CharServerTest do
                char_id: 5,
                map_name: "prontera",
                ip: "127.0.0.1",
-               port: 5121
+               port: 5121,
+               auth_token: <<1, 2, 3, 4>>
              } = zone_info
 
       assert updated_session[:selected_character_id] == 5
@@ -423,6 +425,50 @@ defmodule Aesir.CharServerTest do
         end)
 
       assert log =~ "Failed to refresh character list"
+    end
+  end
+
+  describe "authentication gating" do
+    test "rejects an unauthenticated DeleteCharRequest without crashing" do
+      log =
+        capture_log(fn ->
+          assert {:ok, %{}, [{:char_auth_failed, %CharAuthFailed{reason: 0}}]} =
+                   CharServer.handle_message(%DeleteCharRequest{char_id: 42}, :control, %{})
+        end)
+
+      assert log =~ "Rejected unauthenticated DeleteCharRequest"
+    end
+
+    test "rejects an unauthenticated SelectChar" do
+      log =
+        capture_log(fn ->
+          assert {:ok, %{}, [{:char_auth_failed, %CharAuthFailed{reason: 0}}]} =
+                   CharServer.handle_message(%SelectChar{slot: 0}, :control, %{})
+        end)
+
+      assert log =~ "Rejected unauthenticated SelectChar"
+    end
+
+    test "closes the connection after repeated SessionAuth failures" do
+      CharacterSession
+      |> stub(:validate_character_session, fn 1001, 123, 456, 0 ->
+        {:error, :invalid_credentials}
+      end)
+
+      auth = %SessionAuth{account_id: 1001, login_id1: 123, login_id2: 456, sex: 0}
+
+      capture_log(fn ->
+        session =
+          Enum.reduce(1..4, %{}, fn _i, session_data ->
+            assert {:ok, new_session, [{:char_auth_failed, _}]} =
+                     CharServer.handle_message(auth, :control, session_data)
+
+            new_session
+          end)
+
+        assert {:error, :too_many_auth_failures} =
+                 CharServer.handle_message(auth, :control, session)
+      end)
     end
   end
 

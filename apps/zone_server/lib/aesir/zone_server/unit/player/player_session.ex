@@ -625,8 +625,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
     WarpHandler.leave_current_map(game_state, DespawnReason.logged_out())
 
-    # Clean up player data
-    UnitRegistry.unregister_player(game_state.character_id)
+    # Clean up player data (only if this process still owns the registry entry)
+    UnitRegistry.unregister_player(game_state.character_id, self())
 
     :ok
   end

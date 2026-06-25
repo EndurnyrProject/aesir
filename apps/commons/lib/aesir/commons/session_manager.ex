@@ -47,6 +47,56 @@ defmodule Aesir.Commons.SessionManager do
   @spec get_session(non_neg_integer()) :: {:ok, Session.t()} | {:error, :not_found}
   def get_session(account_id), do: read_session(account_id)
 
+  @doc """
+  Mints a single-use, character-bound zone-entry token and stores it on the
+  session. Returned to the client (via the char server) so it can prove it
+  passed character selection when it connects to the zone server.
+  """
+  @spec issue_zone_token(non_neg_integer(), non_neg_integer()) ::
+          {:ok, binary()} | {:error, :session_not_found}
+  def issue_zone_token(account_id, char_id) do
+    token = :crypto.strong_rand_bytes(32)
+
+    case lookup_pid({:session, account_id}) do
+      {:ok, pid} ->
+        try do
+          Entry.update(pid, &Session.put_zone_token(&1, char_id, token))
+          {:ok, token}
+        catch
+          :exit, _ -> {:error, :session_not_found}
+        end
+
+      :error ->
+        {:error, :session_not_found}
+    end
+  end
+
+  @doc """
+  Atomically validates and consumes the single-use zone-entry token bound to
+  `char_id`. Succeeds at most once per issued token; subsequent attempts fail.
+  """
+  @spec consume_zone_token(non_neg_integer(), non_neg_integer(), binary()) ::
+          :ok | {:error, :invalid_zone_token | :session_not_found}
+  def consume_zone_token(account_id, char_id, token) do
+    case lookup_pid({:session, account_id}) do
+      {:ok, pid} ->
+        try do
+          Entry.get_and_update(pid, fn session ->
+            if Session.valid_zone_token?(session, char_id, token) do
+              {:ok, Session.clear_zone_token(session)}
+            else
+              {{:error, :invalid_zone_token}, session}
+            end
+          end)
+        catch
+          :exit, _ -> {:error, :session_not_found}
+        end
+
+      :error ->
+        {:error, :session_not_found}
+    end
+  end
+
   @spec end_session(non_neg_integer()) :: :ok
   def end_session(account_id) do
     stop_entry({:session, account_id})

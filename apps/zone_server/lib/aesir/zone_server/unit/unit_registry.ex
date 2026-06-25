@@ -253,21 +253,35 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
   @doc """
   Unregisters a player from the registry.
 
-  This is a convenience function for player units.
+  When `owner_pid` is given, the entry is only removed if it is still owned by
+  that pid. This prevents a terminating session from deleting the registry entry
+  of a newer session that has since taken over the same `char_id`.
   """
-  @spec unregister_player(unit_id()) :: :ok
-  def unregister_player(char_id) do
-    # Get account_id before removing to clean up the reverse index
-    case get_player_account_id(char_id) do
-      {:ok, account_id} ->
-        :ets.delete(table_for(:unit_registry), {:account_index, account_id})
+  @spec unregister_player(unit_id(), pid() | nil) :: :ok
+  def unregister_player(char_id, owner_pid \\ nil) do
+    case get_unit(:player, char_id) do
+      {:ok, {_module, state, stored_pid}} when owner_pid == nil or owner_pid == stored_pid ->
+        cleanup_account_index(state)
+        unregister_unit(:player, char_id)
+
+      {:ok, {_module, _state, stored_pid}} ->
+        Logger.debug(
+          "Skipping unregister of char #{char_id}: registry owned by #{inspect(stored_pid)}, not #{inspect(owner_pid)}"
+        )
+
+        :ok
 
       {:error, :not_found} ->
         :ok
     end
-
-    unregister_unit(:player, char_id)
   end
+
+  defp cleanup_account_index(%{account_id: account_id}) do
+    :ets.delete(table_for(:unit_registry), {:account_index, account_id})
+    :ok
+  end
+
+  defp cleanup_account_index(_state), do: :ok
 
   @doc """
   Gets a character ID from account ID using the reverse lookup index.

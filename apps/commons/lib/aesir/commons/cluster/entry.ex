@@ -48,6 +48,16 @@ defmodule Aesir.Commons.Cluster.Entry do
   @spec update(pid(), (term() -> term())) :: {:ok, term()}
   def update(pid, fun), do: GenServer.call(pid, {:update, fun})
 
+  @doc """
+  Atomically transforms the value and returns a caller-chosen reply.
+
+  `fun.(value)` must return `{reply, new_value}`; `new_value` is stored and
+  `reply` is returned. Runs inside the owner process, so the read-decide-write is
+  serialized against other updates (used for single-use token consumption).
+  """
+  @spec get_and_update(pid(), (term() -> {reply, term()})) :: reply when reply: term()
+  def get_and_update(pid, fun), do: GenServer.call(pid, {:get_and_update, fun})
+
   @spec replace(pid(), term()) :: {:ok, term()}
   def replace(pid, value), do: GenServer.call(pid, {:replace, value})
 
@@ -84,6 +94,12 @@ defmodule Aesir.Commons.Cluster.Entry do
   def handle_call({:replace, value}, _from, %{key: key} = state) do
     put_value(key, value)
     {:reply, {:ok, value}, reset_ttl(%{state | value: value})}
+  end
+
+  def handle_call({:get_and_update, fun}, _from, %{key: key, value: value} = state) do
+    {reply, new} = fun.(value)
+    put_value(key, new)
+    {:reply, reply, reset_ttl(%{state | value: new})}
   end
 
   @impl true

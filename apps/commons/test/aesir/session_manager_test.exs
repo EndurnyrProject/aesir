@@ -27,6 +27,28 @@ defmodule Aesir.Commons.SessionManagerTest do
     assert {:error, :session_not_found} = SessionManager.validate_session(999, 1, 2)
   end
 
+  test "issue_zone_token then consume_zone_token succeeds exactly once" do
+    :ok = SessionManager.create_session(20, session_data())
+    assert {:ok, token} = SessionManager.issue_zone_token(20, 50)
+    assert byte_size(token) == 32
+
+    assert :ok = SessionManager.consume_zone_token(20, 50, token)
+    assert {:error, :invalid_zone_token} = SessionManager.consume_zone_token(20, 50, token)
+  end
+
+  test "consume_zone_token rejects a wrong token or wrong char_id" do
+    :ok = SessionManager.create_session(21, session_data())
+    {:ok, token} = SessionManager.issue_zone_token(21, 50)
+
+    assert {:error, :invalid_zone_token} = SessionManager.consume_zone_token(21, 50, <<0, 0, 0>>)
+    assert {:error, :invalid_zone_token} = SessionManager.consume_zone_token(21, 99, token)
+  end
+
+  test "zone token functions report a missing session" do
+    assert {:error, :session_not_found} = SessionManager.issue_zone_token(404, 1)
+    assert {:error, :session_not_found} = SessionManager.consume_zone_token(404, 1, <<1>>)
+  end
+
   test "set_user_online records presence and feeds the duplicate-login check" do
     :ok = SessionManager.create_session(3, session_data("bob"))
     assert :ok = SessionManager.set_user_online(3, :char_server)
