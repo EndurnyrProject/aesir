@@ -195,6 +195,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
       target_id ->
         cond do
+          not Interpreter.targetable?(:player, target_id) ->
+            # Target went untargetable (trick-dead), shed aggro
+            state
+            |> MobState.set_target(nil)
+            |> MobState.set_ai_state(:idle)
+
           target_in_attack_range?(state, target_id) ->
             # Can attack - perform attack logic here
             execute_mob_attack(state, target_id)
@@ -226,6 +232,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
       target_id ->
         cond do
+          not Interpreter.targetable?(:player, target_id) ->
+            # Target went untargetable (trick-dead), shed aggro and return to spawn
+            state
+            |> MobState.set_target(nil)
+            |> MobState.set_ai_state(:return)
+
           target_in_attack_range?(state, target_id) ->
             # Caught up to target, switch to combat
             MobState.set_ai_state(state, :combat)
@@ -244,14 +256,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
                 |> MobState.set_ai_state(:idle)
             end
 
-          should_return_to_spawn?(state) ->
-            # Too far from spawn, return
-            state
-            |> MobState.set_target(nil)
-            |> MobState.set_ai_state(:return)
-
           true ->
-            # Lost target, return to spawn
+            # Lost target or too far from spawn: return to spawn
             state
             |> MobState.set_target(nil)
             |> MobState.set_ai_state(:return)
@@ -280,12 +286,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   defp find_nearby_targets(state) do
     view_range = state.view_range
 
-    # Find players in range (primary targets)
-    players =
-      SpatialIndex.get_units_in_range(:player, state.map_name, state.x, state.y, view_range)
-
-    # Could extend to include other target types (pets, mercenaries, etc.)
-    players
+    # Find players in range (primary targets), excluding untargetable (trick-dead) players
+    SpatialIndex.get_units_in_range(:player, state.map_name, state.x, state.y, view_range)
+    |> Enum.filter(&Interpreter.targetable?(:player, &1))
   end
 
   defp select_closest_target(state, targets) when is_list(targets) do

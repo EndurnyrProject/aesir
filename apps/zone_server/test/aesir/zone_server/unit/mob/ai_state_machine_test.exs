@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
     stub(Interpreter, :can_move?, fn _type, _id -> true end)
     stub(Interpreter, :can_attack?, fn _type, _id -> true end)
+    stub(Interpreter, :targetable?, fn _type, _id -> true end)
     :ok
   end
 
@@ -97,6 +98,130 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     end
   end
 
+  describe "find_nearby_targets/1 targeting filter via process_ai aggro" do
+    test "an untargetable (trick-dead) player is not acquired by an idle aggressive mob" do
+      stub(Interpreter, :targetable?, fn :player, 2 -> false end)
+
+      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
+        [2]
+      end)
+
+      state = aggressive_idle_mob_state()
+
+      result = AIStateMachine.process_ai(state)
+
+      assert result.target_id == nil
+      assert result.ai_state == :idle
+    end
+
+    test "a targetable player is acquired by an idle aggressive mob" do
+      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
+        [2]
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
+        {:ok, {101, 101, "prontera"}}
+      end)
+
+      state = aggressive_idle_mob_state()
+
+      result = AIStateMachine.process_ai(state)
+
+      assert result.target_id == 2
+      assert result.ai_state == :alert
+    end
+  end
+
+  describe "process_combat/1 sheds aggro on untargetable target" do
+    test "a mob in combat drops a target that became untargetable (return to idle)" do
+      test_pid = self()
+      stub(Interpreter, :targetable?, fn :player, 2 -> false end)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
+        {:ok, {100, 100, "prontera"}}
+      end)
+
+      stub(Combat, :execute_mob_attack, fn _state, _target ->
+        send(test_pid, :attacked)
+        :ok
+      end)
+
+      state = combat_mob_state()
+
+      result = AIStateMachine.process_ai(state)
+
+      assert result.target_id == nil
+      assert result.ai_state == :idle
+      refute_received :attacked
+    end
+
+    test "a mob in combat retains a still-targetable target" do
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
+        {:ok, {100, 100, "prontera"}}
+      end)
+
+      stub(Combat, :execute_mob_attack, fn _state, _target -> :ok end)
+
+      state = combat_mob_state()
+
+      result = AIStateMachine.process_ai(state)
+
+      assert result.target_id == 2
+    end
+  end
+
+  describe "process_chase/1 sheds aggro on untargetable target" do
+    test "a mob in chase drops a target that became untargetable (return to spawn)" do
+      stub(Interpreter, :targetable?, fn :player, 2 -> false end)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
+        {:ok, {105, 105, "prontera"}}
+      end)
+
+      stub(MobSession, :move_to, fn _pid, _x, _y -> :ok end)
+
+      state = chase_mob_state()
+
+      result = AIStateMachine.process_ai(state)
+
+      assert result.target_id == nil
+      assert result.ai_state == :return
+    end
+
+    test "a mob in chase retains a still-targetable target" do
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
+        {:ok, {105, 105, "prontera"}}
+      end)
+
+      stub(MobSession, :move_to, fn _pid, _x, _y -> :ok end)
+
+      state = chase_mob_state()
+
+      result = AIStateMachine.process_ai(state)
+
+      assert result.target_id == 2
+      assert result.ai_state in [:chase, :combat, :alert]
+    end
+  end
+
+  defp aggressive_idle_mob_state do
+    base = base_mob_state(modes: [:aggressive])
+
+    %MobState{base | x: 100, y: 100, ai_state: :idle, target_id: nil}
+  end
+
+  defp chase_mob_state do
+    %MobState{
+      base_mob_state()
+      | x: 100,
+        y: 100,
+        ai_state: :chase,
+        target_id: 2,
+        movement_state: :standing,
+        process_pid: self()
+    }
+  end
+
   defp movable_mob_state do
     %MobState{
       base_mob_state()
@@ -119,7 +244,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     }
   end
 
-  defp base_mob_state do
+  defp base_mob_state(opts \\ []) do
     mob_data = %MobDefinition{
       id: 1001,
       aegis_name: "test_mob",
@@ -133,6 +258,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       def: 25,
       mdef: 10,
       attack_range: 2,
+      chase_range: 12,
       walk_speed: 200,
       attack_delay: 1200,
       attack_motion: 500,
@@ -140,7 +266,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       damage_motion: 300,
       element: {:neutral, 1},
       race: :formless,
-      size: :medium
+      size: :medium,
+      modes: Keyword.get(opts, :modes, [])
     }
 
     spawn_ref = %MobSpawn{
