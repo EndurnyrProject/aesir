@@ -157,9 +157,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     warp_to_save_point(state, idle_state)
   end
 
-  # Warp the revived player to their save point. On failure (unknown save map,
-  # blocked cell) fall back to resurrecting in place — rAthena's own behaviour
-  # when the save-point warp fails (clif_resurrection).
+  # Warp the revived player to their save point. On failure (unknown save map)
+  # fall back to resurrecting in place — rAthena's own behaviour when the
+  # save-point warp fails (clif_resurrection).
   defp warp_to_save_point(state, idle_state) do
     case WarpHandler.warp(state, idle_state.save_map, idle_state.save_x, idle_state.save_y) do
       {:ok, warped_state} ->

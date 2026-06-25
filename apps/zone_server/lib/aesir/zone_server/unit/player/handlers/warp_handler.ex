@@ -38,13 +38,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   If the destination cell is blocked, a spiral search for the nearest walkable
   cell within `#{@fallback_radius}` (Chebyshev distance) is attempted; the
   warp rewrites to that cell on hit. Real warp data and save-point respawn
-  occasionally target a slightly-off cell.
+  occasionally target a slightly-off cell. When no walkable cell is found the
+  warp still proceeds to the requested cell.
 
   Returns `{:ok, new_state}` with the player relocated and a `MapMove` sent, or
-  `{:error, :map_not_found | :cell_blocked}` leaving the session untouched.
+  `{:error, :map_not_found}` leaving the session untouched.
   """
   @spec warp(session_state(), String.t(), non_neg_integer(), non_neg_integer()) ::
-          {:ok, session_state()} | {:error, :map_not_found | :cell_blocked}
+          {:ok, session_state()} | {:error, :map_not_found}
   def warp(%{game_state: game_state, connection_pid: connection_pid} = state, dest_map, x, y) do
     dest_map = normalize_map(dest_map)
 
@@ -100,7 +101,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
     else
       case nearest_walkable(map_data, x, y) do
         {nx, ny} -> {:ok, {nx, ny}}
-        nil -> {:error, :cell_blocked}
+        nil -> {:ok, {x, y}}
       end
     end
   end

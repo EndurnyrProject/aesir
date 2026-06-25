@@ -129,13 +129,13 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert Dsl.position(ctx) == {150, 100, "prontera"}
     end
 
-    test "halts and leaves position unchanged on a blocked cell" do
-      stub(WarpHandler, :warp, fn _session, _map, _x, _y -> {:error, :cell_blocked} end)
+    test "halts and leaves position unchanged when the warp fails" do
+      stub(WarpHandler, :warp, fn _session, _map, _x, _y -> {:error, :map_not_found} end)
 
       ctx = build_ctx()
       result = Dsl.warp(ctx, {"prontera", 150, 100})
 
-      assert result.status == {:error, :cell_blocked}
+      assert result.status == {:error, :map_not_found}
       assert Dsl.position(result) == Dsl.position(ctx)
     end
   end

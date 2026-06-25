@@ -212,7 +212,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   end
 
   @doc """
-  Relocates the player to `(map, x, y)`. Halts on `:map_not_found`/`:cell_blocked`.
+  Relocates the player to `(map, x, y)`. Halts on `:map_not_found`.
   """
   @spec warp(Ctx.t(), {String.t(), non_neg_integer(), non_neg_integer()}) :: Ctx.t()
   def warp(%Ctx{} = ctx, {map, x, y}), do: warp(ctx, map, x, y)

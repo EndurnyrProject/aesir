@@ -55,13 +55,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
       refute_received {:send, :control, {:map_move, _}}
     end
 
-    test "non-walkable destination cell returns :cell_blocked and leaves the session untouched" do
+    test "non-walkable destination with no walkable neighbour still warps to the requested cell" do
       stub(MapCache, :get, fn "geffen" -> {:ok, %MapData{name: "geffen"}} end)
       stub(MapData, :walkable?, fn _, _, _ -> false end)
-      reject(&SpatialIndex.remove_player/1)
+      stub_teardown()
+      stub(Broadcast, :to_players, fn _visible, _packet, _opts -> :ok end)
 
-      assert {:error, :cell_blocked} = WarpHandler.warp(state(), "geffen", 100, 120)
-      refute_received {:send, :control, {:map_move, _}}
+      assert {:ok, %{game_state: gs}} = WarpHandler.warp(state(), "geffen", 100, 120)
+
+      assert gs.x == 100
+      assert gs.y == 120
+      assert_received {:send, :control, {:map_move, %MapMove{map_name: "geffen", x: 100, y: 120}}}
     end
   end
 
@@ -106,12 +110,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
       assert_received {:send, :control, {:map_move, %MapMove{map_name: "geffen", x: 105, y: 125}}}
     end
 
-    test "destination blocked beyond radius 5 returns :cell_blocked and leaves the session untouched" do
+    test "destination blocked beyond radius 5 falls back to the requested cell and succeeds" do
       stub(MapData, :walkable?, fn _, _, _ -> false end)
-      reject(&SpatialIndex.remove_player/1)
+      stub(Broadcast, :to_players, fn _visible, _packet, _opts -> :ok end)
 
-      assert {:error, :cell_blocked} = WarpHandler.warp(state(), "geffen", 100, 120)
-      refute_received {:send, :control, {:map_move, _}}
+      assert {:ok, %{game_state: gs}} = WarpHandler.warp(state(), "geffen", 100, 120)
+
+      assert gs.x == 100
+      assert gs.y == 120
+      assert_received {:send, :control, {:map_move, %MapMove{map_name: "geffen", x: 100, y: 120}}}
     end
 
     test "walkable destination is unchanged — fallback search is not invoked" do
