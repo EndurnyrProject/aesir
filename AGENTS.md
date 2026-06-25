@@ -4,161 +4,222 @@ This file provides guidelines for agentic coding agents operating in this reposi
 
 ## The Project
 
-Aesir is a Ragnarok Online Emulator written in Elixir, the objective is to build a stable, professional and well implemented server, following
-the good Elixir code practices and correctness with the Ragnarok Online Mechanics.
+Aesir is a Ragnarok Online emulator written in Elixir. The objective is a stable, professional,
+well-implemented server that follows good Elixir practices and is correct with respect to the
+Ragnarok Online (Renewal) mechanics. The server talks to a custom Rust client over QUIC using a
+Protobuf wire protocol (it is not the legacy kRO TCP/packet protocol).
 
 ## Project Structure
 
-The project follows an Elixir umbrella application structure, organized into four main apps:
+An Elixir umbrella (`apps/`) with four OTP applications:
 
-1. **commons** - Core shared functionality used by all server applications
-   - Network handling (TCP sockets via Ranch)
-   - Packet definitions and parsing
-   - Database models and schemas
-   - Authentication system
-   - Session management (distributed via Horde)
-   - Inter-server communication (via Phoenix.PubSub)
+1. **commons** - Shared functionality used by every server
+   - Network layer (QUIC transport + Protobuf protocol)
+   - Authentication (`Aesir.Commons.Auth`, bcrypt)
+   - Database models and `Repo` (Ecto/Postgres)
+   - Distributed session management (`SessionManager`, via Horde)
+   - Inter-server communication (`inter_server/`, via Phoenix.PubSub)
+   - Cluster setup (`cluster/`, via libcluster)
 
-2. **account_server** - Handles user authentication and login
-   - Login packet processing
-   - Account validation
-   - Server selection
-   - Client version checking
+2. **account_server** - Authentication and login
+   - Login request handling, account validation
+   - Char-server list / selection, client version (`packetver`) checking
+   - Hands the authenticated session to the char server
 
-3. **char_server** - Manages character-related operations
-   - Character creation, listing, and selection
-   - Character deletion
+3. **char_server** - Character lifecycle
+   - Character creation, listing, selection, deletion, slot management
    - Character data management
-   - Slot management
-   - Server transfer to zone servers
+   - Hands off to a zone server on character select
 
-4. **zone_server** - Implements in-game world functionality
-   - Map system and navigation
-   - Character movement and positioning
-   - Entity management (players, NPCs, monsters)
-   - Status effects and combat
-   - Mob management and AI (via gen_state_machine)
+4. **zone_server** - In-game world (by far the largest app)
+   - Maps (walkability cache, per-map coordinators, pathfinding)
+   - Units/entities (players, mobs, NPCs) and their state
+   - MMO mechanics (combat, skills, status effects, jobs, items, leveling)
+   - NPC scripting engine and dialog DSL
+   - GM commands
+   - Game content and the rAthena data-import pipeline
 
 ### Key Architectural Components
 
-- **Umbrella Structure**: Each server is a separate OTP application within an umbrella project
-- **Distributed System**: Uses libcluster for node discovery and communication
-- **Database**: Uses Ecto with Postgres for persistent storage
-- **In-Memory Storage**: Uses Horde (distributed Registry/DynamicSupervisor) for cluster-wide session data
-- **Inter-Server Communication**: Phoenix.PubSub for messaging between servers
-- **Network Layer**: Ranch TCP implementation with custom packet handling
+- **Umbrella Structure**: Each server is a separate OTP application within an umbrella project.
+- **Distributed System**: libcluster for node discovery, Phoenix.PubSub for inter-server messaging.
+- **Persistent Storage**: Ecto with Postgres (accounts, characters, inventory).
+- **In-Memory / Cluster State**: Horde (distributed Registry) for sessions; ETS and `:persistent_term`
+  for hot zone-server state (unit registry, map cache, status storage, NPC index, etc.).
+- **Network Layer**: QUIC (`erlang_quic` via the `:quic` dep) with a Protobuf protocol (`:protox`).
 
-## Packet System
+## Network & Protocol
 
-Ragnarok Online uses a binary packet-based protocol. Key components:
+The wire protocol is a single Protobuf schema, not hand-rolled binary packet modules.
 
-1. **Packet Base Module**: `Aesir.Commons.Network.Packet` provides the foundation for all packet types
-   - Defines common packet structure (2-byte header, variable/fixed size)
-   - Provides parsing and building utilities
-   - Contains binary encoding/decoding helpers
+1. **Schema**: `apps/commons/proto/aesir.proto` is the single source of truth for every message.
+   The Elixir side generates `Aesir.Net.*` structs from it via `protox`; the Rust client generates
+   the same schema with `prost`.
 
-2. **Packet Registry**: `Aesir.Commons.Network.PacketRegistry` manages packet definitions
-   - Maps packet IDs to their corresponding modules
-   - Handles packet size information
-   - Helps with packet validation
+2. **Proto host**: `Aesir.Commons.Network.Proto` uses `use Protox` to generate the message structs
+   at compile time (e.g. `Aesir.Net.Envelope`, `Aesir.Net.LoginRequest`). The `.proto` is tracked
+   as an `@external_resource` so edits force a recompile.
 
-3. **Individual Packet Modules**: Each packet type has its own module that:
-   - Defines the packet structure
-   - Implements parsing from binary data
-   - Implements building back to binary format
-   - Documents the packet format and purpose
+3. **Envelope**: Every reliable frame and datagram carries exactly one `Aesir.Net.Envelope`. It has
+   a `seq` (per-sender monotonic counter for correlation) and a `oneof body` that selects the
+   concrete message. Field numbers are grouped by category (16-31 control, 32-63 client intents,
+   64+ authoritative/world).
 
-4. **Connection Handling**: `Aesir.Commons.Network.Connection` manages TCP socket communication
-   - Receives and buffers incoming data
-   - Parses complete packets
-   - Routes packets to appropriate handlers
-   - Manages connection state
+4. **Framing**: `Aesir.Commons.Network.QuinnetCodec` handles channel framing around each Envelope.
 
-### Example Packet Implementation Pattern
+5. **Transport**: `Aesir.Commons.Network.QuicListener` builds the `:quic` server child spec;
+   `Aesir.Commons.Network.QuicConnection` owns a connection and forwards decoded messages to the
+   server's `c:Aesir.Commons.Network.QuicConnection.handle_message/3` callback. Each server wires a
+   `DynamicSupervisor` + `QuicListener` into its supervision tree with its own `impl_module`.
+
+### Adding or changing a message
+
+1. Edit `apps/commons/proto/aesir.proto` (add the `message`, then add it to the `Envelope` `oneof`
+   with a free field number in the right category range).
+2. Recompile commons; the `Aesir.Net.*` struct is generated automatically.
+3. Build/encode and decode through the generated structs:
 
 ```elixir
-defmodule MyServer.Packets.SomePacket do
-  use Aesir.Commons.Network.Packet
-  
-  @packet_id 0x1234
-  @packet_size 24  # or :variable for variable-sized packets
-  
-  defstruct [:field1, :field2, :field3]
-  
-  @impl true
-  def packet_id, do: @packet_id
-  
-  @impl true
-  def packet_size, do: @packet_size
-  
-  @impl true
-  def parse(<<@packet_id::16-little, data::binary>>), do: parse(data)
-  def parse(<<field1::32-little, field2::16-little, field3::binary-size(16)>>) do
-    {:ok, %__MODULE__{
-      field1: field1,
-      field2: field2,
-      field3: extract_string(field3)
-    }}
-  end
-  def parse(_), do: {:error, :invalid_packet}
-  
-  @impl true
-  def build(%__MODULE__{} = packet) do
-    data = <<packet.field1::32-little, packet.field2::16-little, pack_string(packet.field3, 16)::binary>>
-    build_packet(@packet_id, data)
-  end
-end
+alias Aesir.Net.{Envelope, LoginRequest}
+
+{:ok, iodata, _size} =
+  %Envelope{seq: 1, body: {:login_request, %LoginRequest{username: "u", password: "p"}}}
+  |> Envelope.encode()
+
+{:ok, %Envelope{body: {tag, msg}}} = Envelope.decode(binary)
 ```
+
+4. Handle the new `{tag, msg}` body in the relevant server's `handle_message/3` (account/char) or in
+   the zone server's player-session packet routing.
 
 ## Session Management
 
 The session system manages player connections and state across servers:
 
-1. **Session Creation**: Started in the account server during login
-2. **Session Validation**: Used by char/zone servers to verify authentication
-3. **Distributed Storage**: Uses Horde (distributed Registry) for cluster-wide access; sessions are carried as Horde.Registry values and are not persisted
-4. **Server Tracking**: Monitors which players are on which servers
-5. **Heartbeat System**: Detects disconnected nodes and cleans up orphaned sessions
+1. **Session Creation**: Started in the account server during login.
+2. **Session Validation**: Used by char/zone servers to verify authentication.
+3. **Distributed Storage**: Sessions are carried as Horde.Registry values (cluster-wide access);
+   they are not persisted.
+4. **Server Tracking**: Monitors which players are on which servers.
+5. **Heartbeat System**: Detects disconnected nodes and cleans up orphaned sessions.
 
-### Key Session Functions
+### Key Session Functions (`Aesir.Commons.SessionManager`)
 
-- `SessionManager.create_session/2` - Creates a new session after successful login
-- `SessionManager.validate_session/3` - Validates session credentials when changing servers
-- `SessionManager.set_user_online/4` - Marks a user as online on a specific server
-- `SessionManager.end_session/1` - Cleans up session data when a user logs out
+- `create_session/2` - Creates a new session after successful login.
+- `validate_session/3` - Validates session credentials when changing servers.
+- `set_user_online/4` - Marks a user as online on a specific server (last two args optional).
+- `end_session/1` - Cleans up session data when a user logs out.
+- `register_server/6`, `update_server_heartbeat/2`, `get_servers/1` - Server registry/heartbeat.
+
+Always verify the exact signature in the source before use; do not assume.
 
 ## Database Models
 
-The project uses Ecto for database interactions with two primary models:
+Persistent state is small and lives in `Aesir.Commons.Models`:
 
-1. **Account**: `Aesir.Commons.Models.Account`
-   - User authentication data (username, password hash)
-   - Account status (active, banned, etc.)
-   - Security information
+1. **Account** (`Aesir.Commons.Models.Account`) - Auth data (username, password hash), status, security.
+2. **Character** (`Aesir.Commons.Models.Character`) - Stats, position/map, appearance, zeny, char vars,
+   game state.
+3. **InventoryItem** (`Aesir.Commons.Models.InventoryItem`) - Per-character inventory rows.
 
-2. **Character**: `Aesir.Commons.Models.Character`
-   - Character attributes and stats
-   - Position and map information
-   - Equipment and appearance data
-   - Game state information
+Most zone-server runtime state (live unit state, status effects, map cells, NPC placements) is held
+in memory (ETS / `:persistent_term`) and only the durable bits are persisted back via
+`CharacterPersistence` and the inventory persistence layer.
+
+## Zone Server Subsystems
+
+The zone server (`apps/zone_server/lib/aesir/zone_server/`) is where most work happens.
+`MechanicsSupervisor` boots the subsystems in order (load map cache, status definitions, item
+scripts, NPC registry/verifier, warps) and then starts the runtime supervisors.
+
+- **`unit/`** - Polymorphic entity system. The `Unit` behaviour abstracts players/mobs/NPCs;
+  `UnitRegistry` (ETS) keys live units by `{unit_type, unit_id}`; `SpatialIndex` does proximity
+  queries; `Broadcast`/`SnapshotBuilder` push deltas to nearby players.
+  - **`unit/player/`** - `PlayerSession` (GenServer) is the **single writer** for a player; all
+    mutations route through it via cast/call handlers (movement, combat, skills, inventory, status,
+    health, experience, stats, warp, script effects). `PlayerState` is an immutable snapshot.
+  - **`unit/mob/`** - `MobSession` (GenServer, AI tick loop) per mob instance; `AIStateMachine` is a
+    plain functional state machine (patrol/aggro/chase/attack/flee). Note: `gen_state_machine` is a
+    listed dep but is **not** currently used.
+- **`mmo/`** - Game mechanics. `combat/` (melee + magic damage, hit/crit, element/race/size mods),
+  `skill/` + `skills/` (skill behaviour, catalog, cast/cooldown interpreter, ground units, and the
+  individual skill modules), `status_effect/` (definition behaviour, interpreter, registry, ETS
+  storage, tick manager, display metadata, and the individual effect modules), `job_management/`,
+  `item_management/` (includes `ScriptCompiler` that compiles item scripts), `mob_management/`,
+  plus `Leveling`, `StatPoint`, `SkillTree`, and generated `constants/` (`Efst`, `Opt1/2/3`,
+  `Option`, `EffectId`).
+- **`map/`** - `MapCache` (ETS walkability from `priv/maps.mcache`), `GatLoader`/`CacheLoader`
+  (build the cache from `.gat`), `Coordinator` (per-map game loop: spatial index, spawns, snapshot
+  broadcast), `MapManager` (lifecycle). `Pathfinding` (A*) and `Geometry` live at the app root.
+- **`npc/` + `script/`** - The NPC system and scripting engine (see below).
+- **`gm/`** - `Dispatcher` parses `@`-prefixed commands, gates on GM level, runs `Command` modules
+  (e.g. `@item`, `@warp`).
+- **`content/`** - Concrete game content, e.g. bespoke NPC modules under `content/npc/<map>/`.
+
+## NPC System & Scripting DSL
+
+Recent major work. NPCs are declarative Elixir modules with no compile-time coupling to the engine.
+
+- **`Npc`** - A `use` macro that injects the `@behaviour`, imports `Script.Dsl`, and accepts a
+  `spawn:` list of placement maps `%{map, x, y, dir, sprite, name}`. Requires an `on_talk/1`
+  callback (`on_init/1` optional).
+- **`Npc.Registry`** - Boot-time index (in `:persistent_term`) of placements, with cell and
+  unit-id lookups. NPC gids are synthetic, deterministically derived from `{map, x, y}`.
+- **`Npc.Verifier`** - Fails on cell collisions, warns on placements on unmapped maps.
+- **`Npc.Warps`** - Warp NPCs loaded from `priv/db/warps/*.yml` (imported from rAthena).
+- **`Script.Dsl`** - The DSL: effect ops `(ctx, args) -> ctx` (`heal`, `sc_start`, `warp`,
+  `give_item`, `delitem`, `pay_zeny`, `set_char_var`, ...), read ops `(ctx) -> value` (`zeny`,
+  `count_item`, `get_char_var`, `base_level`, `class`, ...), and blocking dialog primitives
+  (`mes`, `next`, `select`, `input`, `close`). State mutations are routed to the player session via
+  `{:script_apply, op}`.
+- **`Script.Ctx`** - The execution context threaded through every DSL call.
+- **`Script.Interaction`** - A suspendable coroutine process (supervised Task) that *is* the running
+  script; blocking dialog primitives suspend it on a `receive` until the client responds.
+
+Example NPC (`content/npc/<map>/<name>.ex`):
+
+```elixir
+defmodule Aesir.ZoneServer.Content.Npc.Morocc.TurbanThief do
+  use Aesir.ZoneServer.Npc,
+    spawn: [%{map: "morocc", x: 208, y: 90, dir: 6, sprite: 58, name: "Turban Thief"}]
+
+  @impl true
+  def on_talk(ctx) do
+    if get_char_var(ctx, :sphmask_q, 0) == 1 do
+      ctx |> mes("Go away!") |> close()
+    else
+      ctx
+      |> mes("Want to buy?")
+      |> select(["Yes", "No"])
+      |> handle_choice()
+    end
+  end
+end
+```
+
+## Data & Content Pipeline
+
+Game data is imported from rAthena into YAML/cache files under each app's `priv/`, then loaded at
+boot. The mix tasks (in `apps/zone_server/lib/mix/tasks/`) are idempotent, deterministic importers:
+
+- `mix aesir.gen.constants [<rathena_root>]` - Generates `mmo/constants/*.ex` from rAthena headers
+  (`status.hpp`, `script.hpp`).
+- `mix aesir.import.items [<rathena_root>]` - rAthena `item_db_*` -> `priv/db/items/*.yml`.
+- `mix aesir.import.jobs [<rathena_root>]` - Merges rAthena job tables -> `priv/db/jobs/*.yml`.
+- `mix aesir.import.mobs [<rathena_root>]` - rAthena `mob_db` -> `priv/db/mobs/mobs.yml`.
+- `mix aesir.import.warps [<rathena_root>]` - rAthena warp scripts -> `priv/db/warps/<map>.yml`.
+- `mix aesir.import.mapcache [<gat_dir>] [<out>]` - `.gat` files -> `priv/maps.mcache` (zlib walkability).
 
 ## Testing Approach
 
 Tests follow standard Elixir patterns with some custom helpers:
 
-1. **Unit Tests**: Test individual modules in isolation
-   - Use `Mimic` for mocking dependencies
-   - Follow AAA pattern (Arrange, Act, Assert)
-
-2. **Database Tests**: Use `Aesir.DataCase` for database-related tests
-   - Provides transaction sandboxing for isolation
-   - Includes helper functions for error assertions
-
-3. **Cluster Tests**: Use `Aesir.Commons.ClusterTestHelper` for Horde registry tests
-   - Clears cluster registry entries between tests
-   - Ensures isolated test environments
-
-4. **ETS Tests**: Use `Aesir.TestEtsSetup` to setup ETS tables for tests
+1. **Unit Tests**: Test modules in isolation; use `Mimic` for mocking; follow AAA (Arrange, Act, Assert).
+2. **Database Tests**: `Aesir.DataCase` provides transaction sandboxing and error-assertion helpers.
+3. **Cluster Tests**: `Aesir.Commons.ClusterTestHelper` clears Horde registry entries between tests.
+4. **ETS Tests**: `Aesir.TestEtsSetup` sets up ETS tables for tests.
+5. **End-to-end**: Zone features (warps, NPC interactions, quests) have integration tests driving the
+   real subsystems; mirror the existing ones when adding gameplay.
 
 ### Example Test Pattern
 
@@ -166,16 +227,16 @@ Tests follow standard Elixir patterns with some custom helpers:
 defmodule MyTest do
   use ExUnit.Case, async: true
   import Mimic
-  
+
   alias Module.Under.Test
-  
+
   setup :verify_on_exit!
-  
+
   test "some functionality" do
     stub(Dependency, :some_function, fn -> {:ok, expected_result} end)
-    
+
     result = Module.Under.Test.function_to_test()
-    
+
     assert result == expected_result
   end
 end
@@ -193,34 +254,38 @@ end
 - **Run a single test file**: `mix test path/to/test_file.exs`
 - **Run a single test**: `mix test path/to/test_file.exs:line_number`
 
+Always run the full test suite before considering a task done.
+
 ## Tool Preferences
 
-- When searching in the codebase, prefer using `rg` (ripgrep) over `grep` for better performance and features.
-- When Searching for Elixir library documentation, prefer using `hexdoc-mcp` for efficient access to Hex package docs.
+- When searching the codebase, prefer `rg` (ripgrep) over `grep`, and `ast-grep` for structural
+  (AST-aware) searches.
+- For Elixir/Hex library documentation, prefer the docs MCP tooling over guessing from memory.
 
 ## Code Style
 
-- **Formatting**: Adhere to the `.formatter.exs` file. Use `mix format` before committing.
-- **Linting**: Follow the rules in `.credo.exs`. Run `mix credo --strict` to check for issues.
-- **Naming Conventions**: Use `snake_case` for variables and function names. Use `CamelCase` for module names.
-- **Error Handling**: Use `with` statements for complex logic paths and pattern match on return values. Avoid raising exceptions for control flow.
-- **Typespecs**: Add `@spec` to all public functions, private functions do not need callbacks
-- **Module Documentation**: Add `@moduledoc` and `@doc` to all public modules and functions and @typedoc to all public types
-- **Prefer using with instead of nested cases**: Instead of using nested cases, prefer the usage of `with`
-- **Do not add superfluous comments**: Prefer to use module and function docs, only use in-code documentation and comments only if extremelly necessary for the understanding of a specific function piece
-- **Prefer TypedStructs over plain Structs**: TypedStructs provide better type safety and documentation, making the code more maintainable and understandable.
-- Numbers larger than 9999 should be written with underscores: 10_000
-- Always alias modules at the top of the file, instead of using the full module name in the code
+- **Formatting**: Adhere to `.formatter.exs`. Run `mix format` before committing.
+- **Linting**: Follow `.credo.exs`. Run `mix credo --strict`.
+- **Naming**: `snake_case` for variables/functions, `CamelCase` for modules.
+- **Error Handling**: Use `with` for complex paths and pattern-match on returns. Avoid exceptions for
+  control flow; return `{:ok, result}` / `{:error, reason}`.
+- **Typespecs**: Add `@spec` to all public functions.
+- **Docs**: Add `@moduledoc`/`@doc` to public modules/functions and `@typedoc` to public types.
+- **Prefer `with` over nested `case`**.
+- **No superfluous comments**: Prefer module/function docs; comment inline only when genuinely needed.
+- **Prefer TypedStructs over plain structs** for type safety and documentation.
+- **Aliases**: Always `alias` modules at the top of the file instead of using fully-qualified names.
+- **Numbers**: Numbers larger than 9999 must use underscores, e.g. `10_000`.
 
 ## Development Guidelines
 
-1. **Verify Everything**: Always check function signatures, return values, and schema field names. Never assume a function or field exists; always verify.
-2. **Ragnarok Mechanics**: Our main source of truth is the rathena.xml file, which is a repomix compressed version of the rAthena source code. Use it to verify mechanics and implementations.
-3. **Packet Handling**: When implementing new packet handlers, follow the existing pattern of defining packet modules and registering them in the appropriate server registry.
-4. **Session Management**: Always validate sessions before processing user requests to ensure security.
-5. **Error Handling**: Use the `{:ok, result}` and `{:error, reason}` pattern for function returns instead of raising exceptions.
-6. **Testing**: Write comprehensive tests for all new functionality, including both happy path and error cases.
-7. **Documentation**: Document all modules and functions, especially packet definitions which should include format and field descriptions.
-8. **Ragnarok Renewal Mechanics**: In the rAthena source code, you will often see mechanics for pre-re and renewal, we will focus on renewal for now.
-9. **Never assume a function signature or return value**: Always check the function definition and its return values, never assume anything.
-- big numbers shold ALWAYS be separated by _, eg: 10000 -> 10_000
+1. **Verify Everything**: Check function signatures, return values, and schema field names. Never
+   assume a function or field exists.
+2. **Protocol Changes**: New wire messages go through `apps/commons/proto/aesir.proto` and the
+   generated `Aesir.Net.*` structs; do not hand-roll binary packets.
+3. **Session Management**: Always validate sessions before processing user requests.
+4. **Error Handling**: Use the `{:ok, result}` / `{:error, reason}` pattern instead of raising.
+5. **Testing**: Write comprehensive tests for new functionality (happy path and error cases).
+6. **Documentation**: Document modules and functions; for protocol messages document field meaning.
+7. **Renewal Mechanics**: Ragnarok has pre-re and renewal mechanics; we target renewal.
+8. **Never assume a function signature or return value**: Always check the definition.

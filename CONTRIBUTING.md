@@ -248,7 +248,8 @@ end
 
 ### Source of Truth
 
-- Use the `rathena.xml` file as the primary reference for mechanics implementation
+- If you want, you can use rAthena as reference, they are pretty on par with the correct mechanics, and always give credits
+  if you do that!
 - Focus on Renewal mechanics unless specifically implementing pre-Renewal features
 - Verify formulas and calculations against rAthena source code
 - Document any deviations or simplifications from official mechanics
