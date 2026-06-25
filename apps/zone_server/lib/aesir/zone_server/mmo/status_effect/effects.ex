@@ -47,6 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects do
     Effects.Stone,
     Effects.Stun,
     Effects.Suffragium,
+    Effects.TrickDead,
     Effects.TwoHandQuicken,
     Effects.WatkElement
   ]

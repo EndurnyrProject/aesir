@@ -5,5 +5,7 @@
       max_level: 9
     - name: NV_FIRSTAID
       max_level: 1
+    - name: NV_TRICKDEAD
+      max_level: 1
     - name: WE_CALLBABY
       max_level: 1

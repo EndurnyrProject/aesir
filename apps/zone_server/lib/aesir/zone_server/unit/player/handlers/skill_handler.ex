@@ -3,7 +3,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   Session-side handler for skill casts. Runs the interpreter's two-phase
   lifecycle: instant casts commit immediately, timed casts enter `:casting`,
   show a cast bar, and resolve on a `{:cast_complete, token}` timer. On a
-  successful commit it updates the registry, persists SP, syncs SP to the
+  successful commit it updates the registry, persists HP/SP, syncs them to the
   client, and broadcasts the skill-use visual to nearby players.
   """
   require Logger
@@ -233,7 +233,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   # Shared success path: persist catalyst consumption, recalc stats, update
-  # registry, persist SP, sync to client, and emit the cooldown sweep.
+  # registry, persist HP/SP, sync to client, and emit the cooldown sweep.
   defp commit_cast(%{connection_pid: connection_pid}, new_game_state, skill_id, level) do
     new_game_state = persist_catalysts(new_game_state)
 
@@ -244,7 +244,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
     CharacterPersistence.update_character(
       new_game_state.character_id,
-      %{sp: updated_stats.current_state.sp},
+      %{hp: updated_stats.current_state.hp, sp: updated_stats.current_state.sp},
       async: true
     )
 

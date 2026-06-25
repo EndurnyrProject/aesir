@@ -32,6 +32,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
     Skills.MgSrecovery,
     Skills.MgStonecurse,
     Skills.MgThunderstorm,
+    Skills.NvFirstaid,
+    Skills.NvTrickdead,
     Skills.SmAutoberserk,
     Skills.SmBash,
     Skills.SmEndure,

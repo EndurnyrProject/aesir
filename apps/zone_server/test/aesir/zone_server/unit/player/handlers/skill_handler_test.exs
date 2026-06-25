@@ -61,8 +61,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       assert_received {:send, :bulk, {:skill_list, %SkillList{skills: skills}}}
 
-      # Swordman tree resolves to its 10 implemented SM_* skills.
-      assert length(skills) == 10
+      # Swordman tree resolves to its 10 implemented SM_* skills plus the two
+      # implemented Novice skills inherited from the Novice tree.
+      assert length(skills) == 12
 
       sword = Enum.find(skills, &(&1.skill_id == 2))
       assert %SkillInfo{name: "SM_SWORD", level: 3} = sword
