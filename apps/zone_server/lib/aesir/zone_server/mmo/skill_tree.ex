@@ -42,6 +42,8 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
   A plain map (no struct) so the network layer can consume it directly:
 
     * `:skill_id`       - numeric skill id
+    * `:owner_job_id`   - job that originally owns the skill (mage for an
+      inherited `MG_FROSTDIVER`, not the viewing job)
     * `:level`          - current learned level (`0` = available, not learned)
     * `:max_level`      - job-specific cap for this skill
     * `:requires`       - prerequisite `[{req_skill_id, req_level}]`
@@ -51,6 +53,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
   """
   @type view_entry :: %{
           skill_id: non_neg_integer(),
+          owner_job_id: non_neg_integer(),
           level: non_neg_integer(),
           max_level: pos_integer(),
           requires: [{non_neg_integer(), pos_integer()}],
@@ -153,6 +156,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
     |> Enum.map(fn entry ->
       %{
         skill_id: entry.skill_id,
+        owner_job_id: entry.owner_job_id,
         level: Learned.learned_level(progression.learned_skills, entry.skill_id),
         max_level: entry.max_level,
         requires: entry.requires,
@@ -186,8 +190,10 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
   (no inheritance) or `%{inherit: [parent_name], tree: [entry_map]}`. Returns
   `%{job_name => [entry_map]}` with parent entries merged in: a child entry
   overrides an inherited one with the same `"name"`, and an entry flagged
-  `"exclude" => true` removes the inherited entry of that name. Pure - no
-  process, no resolution against the skill/job registries.
+  `"exclude" => true` removes the inherited entry of that name. Each surviving
+  entry carries an `"owner_job"` key naming the job it originated from (the parent
+  for inherited entries, the job itself for its own). Pure - no process, no
+  resolution against the skill/job registries.
   """
   @spec flatten_inherit(map()) :: %{String.t() => [map()]}
   def flatten_inherit(jobs) do
@@ -200,7 +206,8 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
       {:ok, raw} ->
         job = normalize_job(raw)
         inherited = Enum.flat_map(job.inherit, fn parent -> flatten_job(parent, jobs) end)
-        merge_tree(inherited, job.tree)
+        own = Enum.map(job.tree, &Map.put(&1, "owner_job", name))
+        merge_tree(inherited, own)
 
       :error ->
         Logger.warning("[SkillTree] inherited job #{inspect(name)} has no tree, skipping")
@@ -296,6 +303,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
         [
           %Entry{
             skill_id: skill_id,
+            owner_job_id: resolve_owner_job_id(job_name, entry),
             max_level: entry["max_level"],
             base_level: Map.get(entry, "base_level", 0),
             job_level: Map.get(entry, "job_level", 0),
@@ -328,6 +336,24 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
           []
       end
     end)
+  end
+
+  @spec resolve_owner_job_id(String.t(), map()) :: non_neg_integer()
+  defp resolve_owner_job_id(job_name, entry) do
+    owner = Map.get(entry, "owner_job", job_name)
+
+    case AvailableJobs.job_name_to_id(String.to_atom(owner)) do
+      {:ok, job_id} ->
+        job_id
+
+      {:error, :unknown_job} ->
+        Logger.warning(
+          "[SkillTree] skill #{inspect(entry["name"])} owned by unknown job " <>
+            "#{inspect(owner)}, owner_job_id left unresolved as 0"
+        )
+
+        0
+    end
   end
 
   @spec resolve_skill_id(String.t()) :: {:ok, non_neg_integer()} | :error

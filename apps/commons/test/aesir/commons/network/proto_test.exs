@@ -1184,6 +1184,7 @@ defmodule Aesir.Commons.Network.ProtoTest do
   test "skill_info exposes the enriched tree fields" do
     info = %SkillInfo{
       skill_id: 2,
+      job_id: 1,
       type: 0,
       level: 1,
       sp: 8,
@@ -1197,6 +1198,7 @@ defmodule Aesir.Commons.Network.ProtoTest do
     }
 
     assert info.max_level == 10
+    assert info.job_id == 1
     assert info.req_base_level == 0
     assert info.req_job_level == 0
     assert [%Aesir.Net.SkillRequirement{skill_id: 1, level: 1}] = info.requires

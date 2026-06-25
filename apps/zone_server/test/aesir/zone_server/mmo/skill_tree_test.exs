@@ -193,6 +193,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
     test "returns :level_too_low when base/job minimums are not met" do
       entry = %Entry{
         skill_id: catalog_id(:sm_sword),
+        owner_job_id: @swordman_id,
         max_level: 10,
         base_level: 50,
         job_level: 10
@@ -262,6 +263,17 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
       progression = swordman_progression([])
       view = SkillTree.available_for(progression)
       assert length(view) == map_size(SkillTree.tree_for(@swordman_id))
+    end
+
+    test "annotates each entry with the job that owns the skill" do
+      {:ok, novice_id} = AvailableJobs.job_name_to_id(:novice)
+      view = SkillTree.available_for(swordman_progression([]))
+
+      sword = Enum.find(view, &(&1.skill_id == catalog_id(:sm_sword)))
+      assert sword.owner_job_id == @swordman_id
+
+      first_aid = Enum.find(view, &(&1.skill_id == catalog_id(:nv_firstaid)))
+      assert first_aid.owner_job_id == novice_id
     end
   end
 

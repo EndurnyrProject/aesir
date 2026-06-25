@@ -43,6 +43,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListView do
   defp to_skill_info(view_entry, %Definition{} = definition) do
     %SkillInfo{
       skill_id: view_entry.skill_id,
+      job_id: view_entry.owner_job_id,
       type: inf_for(definition.target_type),
       level: view_entry.level,
       sp: sp_for(definition.sp_cost, view_entry.level),

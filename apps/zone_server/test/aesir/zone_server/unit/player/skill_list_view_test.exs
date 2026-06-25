@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListViewTest do
   alias Aesir.ZoneServer.Unit.Player.SkillListView
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
 
+  @novice_job_id 0
   @swordman_job_id 1
   @sm_sword_id 2
   @sm_twohand_id 3
@@ -58,6 +59,17 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListViewTest do
       sword = SkillListView.build(progression(skill_point: 0)) |> by_id(@sm_sword_id)
       assert sword.req_base_level == 0
       assert sword.req_job_level == 0
+    end
+
+    test "job_id carries the owning job: own skills the viewing job, inherited the parent" do
+      %SkillList{skills: skills} = SkillListView.build(progression(skill_point: 0))
+
+      assert Enum.all?(skills, fn skill ->
+               case skill.name do
+                 "SM_" <> _ -> skill.job_id == @swordman_job_id
+                 "NV_" <> _ -> skill.job_id == @novice_job_id
+               end
+             end)
     end
 
     test "an available skill with a point and met prereqs is upgradable" do
