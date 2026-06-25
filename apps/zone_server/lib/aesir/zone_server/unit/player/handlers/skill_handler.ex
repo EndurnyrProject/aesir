@@ -139,9 +139,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     )
   end
 
-  # Branches on the interpreter's two-phase result: instant casts commit now,
-  # timed casts schedule a cast-complete timer and show the cast bar.
+  # A cast may only begin from idle, so an instant skill can't slip past the cast
+  # lock while a timed cast is in flight, nor stack on any other busy action.
+  # Once idle is guaranteed, branch on the interpreter's two-phase result: instant
+  # casts commit now, timed casts schedule a cast-complete timer and a cast bar.
   defp drive_cast(%{game_state: game_state} = state, skill_id, level, target) do
+    case ensure_idle_for_cast(state) do
+      {:ok, ready_state} ->
+        dispatch_cast(ready_state, skill_id, level, target)
+
+      :busy ->
+        Logger.debug(
+          "Skill #{skill_id} cast skipped for #{game_state.character_id}: busy in #{game_state.action_state}"
+        )
+
+        {:noreply, state}
+    end
+  end
+
+  defp dispatch_cast(%{game_state: game_state} = state, skill_id, level, target) do
     case Interpreter.begin_cast(game_state, skill_id, level, target) do
       {:instant, new_game_state} ->
         new_game_state = commit_cast(state, new_game_state, skill_id, level)
@@ -149,7 +165,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         {:noreply, %{state | game_state: new_game_state}}
 
       {:casting, new_game_state, info} ->
-        start_timed_cast(%{state | game_state: new_game_state}, info)
+        schedule_cast(%{state | game_state: new_game_state}, info)
 
       {:error, reason} ->
         log_cast_failure(skill_id, game_state.character_id, reason)
@@ -157,33 +173,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
-  # A timed cast may only begin from idle. A moving player is stopped first via
-  # the existing force-stop path; any other busy state aborts the cast so a
-  # player never starts a second cast while one is in flight.
-  defp start_timed_cast(%{game_state: %{action_state: :idle}} = state, info) do
-    schedule_cast(state, info)
-  end
+  # A cast may only begin from idle. A moving player is stopped first (using a
+  # skill ends movement); any other busy state (casting, attacking, sitting,
+  # trading, vending) aborts so a player can't act while a cast is in flight or
+  # stack a second action on top of a busy one.
+  defp ensure_idle_for_cast(%{game_state: %{action_state: :idle}} = state), do: {:ok, state}
 
-  defp start_timed_cast(%{game_state: %{action_state: moving}} = state, info)
+  defp ensure_idle_for_cast(%{game_state: %{action_state: moving}} = state)
        when moving in [:moving, :combat_moving] do
     {:noreply, stopped_state} = MovementHandler.handle_force_stop_movement(state)
 
     case PlayerState.transition_to(stopped_state.game_state, :idle) do
-      {:ok, idle_game_state} ->
-        schedule_cast(%{stopped_state | game_state: idle_game_state}, info)
-
-      {:error, _reason} ->
-        {:noreply, stopped_state}
+      {:ok, idle_game_state} -> {:ok, %{stopped_state | game_state: idle_game_state}}
+      {:error, _reason} -> :busy
     end
   end
 
-  defp start_timed_cast(%{game_state: game_state} = state, info) do
-    Logger.debug(
-      "Skill #{info.skill_id} cast skipped for #{game_state.character_id}: busy in #{game_state.action_state}"
-    )
-
-    {:noreply, state}
-  end
+  defp ensure_idle_for_cast(_state), do: :busy
 
   defp schedule_cast(%{game_state: game_state} = state, info) do
     now = System.monotonic_time(:millisecond)

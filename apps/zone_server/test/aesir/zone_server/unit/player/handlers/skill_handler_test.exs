@@ -456,6 +456,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert_received {:to_player, %CastCancel{gid: 1000}}
     end
 
+    test "an instant skill is rejected while a timed cast is in flight" do
+      reject(&Interpreter.begin_cast/4)
+      reject(&CharacterPersistence.update_character/3)
+      reject(&StatusInterpreter.apply_status/4)
+
+      s = casting_state(45, :casting)
+      assert {:noreply, ^s} = SkillHandler.handle_use_skill(s, 29, 1, 1000)
+    end
+
+    test "a ground skill is rejected while a timed cast is in flight" do
+      reject(&Interpreter.begin_cast/4)
+
+      s = casting_state(45, :casting)
+      assert {:noreply, ^s} = SkillHandler.handle_use_skill_ground(s, 89, 1, 12, 12)
+    end
+
+    test "a skill cast is rejected while attacking" do
+      reject(&Interpreter.begin_cast/4)
+
+      s = casting_state(45, :attacking)
+      assert {:noreply, ^s} = SkillHandler.handle_use_skill(s, 29, 1, 1000)
+    end
+
     test "a status landing during a timed cast drops to idle without committing" do
       stub(Broadcast, :to_player, fn 1000, _packet -> :ok end)
       stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
