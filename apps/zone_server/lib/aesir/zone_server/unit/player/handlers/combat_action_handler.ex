@@ -8,11 +8,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
 
   require Logger
 
+  alias Aesir.Net.MoveStop
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.WeaponTypes
+  alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -30,7 +33,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
     - {:noreply, updated_state} with appropriate action state set
   """
   @spec handle_attack_request(map(), integer(), integer()) :: {:noreply, map()}
-  def handle_attack_request(state, target_id, action_type) do
+  def handle_attack_request(%{game_state: game_state} = state, target_id, action_type) do
+    if Interpreter.can_attack?(:player, game_state.character_id) do
+      do_handle_attack_request(state, target_id, action_type)
+    else
+      block_attack_request(state)
+    end
+  end
+
+  defp block_attack_request(%{game_state: game_state} = state)
+       when game_state.action_state in [:combat_moving, :moving] do
+    packet = %MoveStop{gid: game_state.character_id, x: game_state.x, y: game_state.y}
+    MessageRouter.send_to(state.connection_pid, packet)
+    {:noreply, cancel_combat_intent(state)}
+  end
+
+  defp block_attack_request(state), do: {:noreply, state}
+
+  defp do_handle_attack_request(state, target_id, action_type) do
     Logger.debug(
       "Attack request: player #{state.game_state.character_id} -> target #{target_id} (action #{action_type})"
     )

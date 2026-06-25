@@ -1,12 +1,23 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
   use ExUnit.Case, async: true
+  use Mimic
 
   import ExUnit.CaptureLog
 
   alias Aesir.Net.ActionRequest
+  alias Aesir.Net.MoveStop
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+
+  setup :set_mimic_from_context
+
+  setup do
+    Mimic.copy(Interpreter)
+    stub(Interpreter, :can_attack?, fn _type, _id -> true end)
+    :ok
+  end
 
   describe "handle_message/2 inbound ActionRequest dispatch" do
     test "an attack ActionRequest casts request_attack with the same target/action" do
@@ -80,6 +91,57 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
 
       assert_received :done
       assert log =~ "range"
+    end
+  end
+
+  describe "handle_attack_request/3 status gating" do
+    defp restricted_state(action_state) do
+      game_state = %PlayerState{
+        character_id: 1000,
+        x: 10,
+        y: 10,
+        action_state: action_state,
+        last_attack_timestamp: 0,
+        act_delay_until: 0,
+        stats: %{derived_stats: %{aspd: 150}}
+      }
+
+      %{game_state: game_state, connection_pid: self()}
+    end
+
+    test "a no_attack player making a discrete swing does not attack nor enter :attacking" do
+      stub(Interpreter, :can_attack?, fn :player, 1000 -> false end)
+      state = restricted_state(:idle)
+
+      assert {:noreply, returned} = CombatActionHandler.handle_attack_request(state, 2000, 0)
+
+      assert returned.game_state.action_state == :idle
+      refute_received {:send, :gameplay, {:move_stop, %MoveStop{}}}
+    end
+
+    test "a no_attack player approaching a target is halted with a MoveStop and dropped to idle" do
+      stub(Interpreter, :can_attack?, fn :player, 1000 -> false end)
+      state = restricted_state(:combat_moving)
+
+      assert {:noreply, returned} = CombatActionHandler.handle_attack_request(state, 2000, 7)
+
+      assert returned.game_state.action_state == :idle
+      assert returned.game_state.combat_target_id == nil
+      assert_received {:send, :gameplay, {:move_stop, %MoveStop{gid: 1000, x: 10, y: 10}}}
+    end
+
+    test "an unafflicted player proceeds to the range check as before" do
+      state = restricted_state(:idle)
+
+      log =
+        capture_log(fn ->
+          assert {:noreply, _returned} = CombatActionHandler.handle_attack_request(state, 2000, 0)
+          send(self(), :done)
+        end)
+
+      assert_received :done
+      assert log =~ "range"
+      refute_received {:send, :gameplay, {:move_stop, %MoveStop{}}}
     end
   end
 
