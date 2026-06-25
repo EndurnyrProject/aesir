@@ -77,6 +77,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   @warp_cooldown_ms 500
 
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
@@ -214,7 +215,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       movement_intent: :none,
 
       # Visibility defaults
-      view_range: 14,
+      view_range: Config.view_range(),
       visible_players: MapSet.new(),
       visible_mobs: MapSet.new(),
       visible_warps: MapSet.new(),

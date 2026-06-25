@@ -13,12 +13,11 @@ defmodule Aesir.ZoneServer.Unit.SpecialEffect do
   require Logger
 
   alias Aesir.Net.SpecialEffect, as: SpecialEffectMsg
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.EffectId
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.SpatialIndex
-
-  @view_range 14
 
   @typedoc """
   A unit identity: a `{unit_type, unit_id}` tuple, the same key used by
@@ -62,7 +61,7 @@ defmodule Aesir.ZoneServer.Unit.SpecialEffect do
   defp dispatch({unit_type, unit_id}, packet, :area) do
     case SpatialIndex.get_unit_position(unit_type, unit_id) do
       {:ok, {x, y, map_name}} ->
-        Broadcast.to_in_range(map_name, x, y, @view_range, packet, [])
+        Broadcast.to_in_range(map_name, x, y, Config.view_range(), packet, [])
 
       {:error, :not_found} ->
         Logger.debug("SpecialEffect: unit #{inspect({unit_type, unit_id})} has no position")

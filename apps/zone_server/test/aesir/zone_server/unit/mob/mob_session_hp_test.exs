@@ -32,6 +32,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionHpTest do
     assert_received {:hp_broadcast, %UnitHp{id: 1, hp: 700, max_hp: 1000}}
   end
 
+  test "a dead mob ignores further damage and does not re-run the death path" do
+    reject(&Broadcast.to_in_range/5)
+
+    state = %{build_mob_state(hp: 0, max_hp: 1000) | is_dead: true}
+
+    assert {:noreply, ^state} = MobSession.handle_cast({:apply_damage, 100, 42}, state)
+  end
+
   defp build_mob_state(opts) do
     mob_data = %MobDefinition{
       id: 1001,

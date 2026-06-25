@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay do
 
   alias Aesir.Net.StatusChange
   alias Aesir.Net.UnitStateChange
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Efst
   alias Aesir.ZoneServer.Mmo.Opt1
   alias Aesir.ZoneServer.Mmo.Opt2
@@ -36,8 +37,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.SpecialEffect
-
-  @view_range 14
 
   @typedoc "Aggregate sprite-state ids for a unit, as carried in `UnitSpawn`."
   @type spawn_state :: %{
@@ -228,7 +227,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay do
   defp broadcast_area(unit_type, unit_id, packet) do
     case SpatialIndex.get_unit_position(unit_type, unit_id) do
       {:ok, {x, y, map_name}} ->
-        Broadcast.to_in_range(map_name, x, y, @view_range, packet, [])
+        Broadcast.to_in_range(map_name, x, y, Config.view_range(), packet, [])
 
       {:error, :not_found} ->
         Logger.debug("StatusDisplay: unit #{inspect({unit_type, unit_id})} has no position")

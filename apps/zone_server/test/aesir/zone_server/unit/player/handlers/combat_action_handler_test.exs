@@ -6,10 +6,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
 
   alias Aesir.Net.ActionRequest
   alias Aesir.Net.MoveStop
+  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.SpatialIndex
 
   setup :set_mimic_from_context
 
@@ -142,6 +144,63 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       assert_received :done
       assert log =~ "range"
       refute_received {:send, :gameplay, {:move_stop, %MoveStop{}}}
+    end
+  end
+
+  describe "target acquisition gate" do
+    defp acquire_state(map_name) do
+      game_state = %PlayerState{
+        character_id: 1000,
+        x: 10,
+        y: 10,
+        map_name: map_name,
+        action_state: :idle,
+        last_attack_timestamp: 0,
+        act_delay_until: 0,
+        stats: %{derived_stats: %{aspd: 150}}
+      }
+
+      %{game_state: game_state, connection_pid: self()}
+    end
+
+    test "an attack on a target on a different map is rejected without attacking or chasing" do
+      reject(&Combat.execute_attack/3)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:error, :not_found}
+        :mob, 2000 -> {:ok, {12, 12, "geffen"}}
+      end)
+
+      state = acquire_state("prontera")
+
+      capture_log(fn ->
+        assert {:noreply, returned} = CombatActionHandler.handle_attack_request(state, 2000, 7)
+        assert returned.game_state.action_state == :idle
+        send(self(), :done)
+      end)
+
+      assert_received :done
+      refute_received {:send, :gameplay, {:move_stop, _}}
+    end
+
+    test "an attack on a target beyond view range is rejected without attacking or chasing" do
+      reject(&Combat.execute_attack/3)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:error, :not_found}
+        :mob, 2000 -> {:ok, {100, 100, "prontera"}}
+      end)
+
+      state = acquire_state("prontera")
+
+      capture_log(fn ->
+        assert {:noreply, returned} = CombatActionHandler.handle_attack_request(state, 2000, 7)
+        assert returned.game_state.action_state == :idle
+        send(self(), :done)
+      end)
+
+      assert_received :done
+      refute_received {:send, :gameplay, {:move_stop, _}}
     end
   end
 

@@ -143,7 +143,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
   test "targeted skill cast beyond definition.range returns :out_of_range" do
     stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(5)} end)
-    stub(SpatialIndex, :get_unit_position, fn :player, 9999 -> {:ok, {20, 20, "prontera"}} end)
+
+    stub(SpatialIndex, :get_unit_position, fn
+      :player, 9999 -> {:error, :not_found}
+      :mob, 9999 -> {:ok, {20, 20, "prontera"}}
+    end)
 
     gs = game_state(100, %{6 => 1})
     assert {:error, :out_of_range} = Interpreter.cast(gs, 6, 1, {:unit, 9999})
@@ -151,11 +155,40 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
   test "targeted skill cast within definition.range proceeds to behavior" do
     stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(5)} end)
-    stub(SpatialIndex, :get_unit_position, fn :player, 9999 -> {:ok, {14, 10, "prontera"}} end)
+
+    stub(SpatialIndex, :get_unit_position, fn
+      :player, 9999 -> {:error, :not_found}
+      :mob, 9999 -> {:ok, {14, 10, "prontera"}}
+    end)
+
     stub(StatusInterpreter, :apply_status, fn _type, _id, _status, _params -> :ok end)
 
     gs = game_state(100, %{6 => 1})
     assert {:ok, _} = Interpreter.cast(gs, 6, 1, {:unit, 9999})
+  end
+
+  test "an enemy skill targeting another player is rejected as :invalid_target" do
+    stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(9)} end)
+
+    stub(SpatialIndex, :get_unit_position, fn
+      :mob, 9999 -> {:error, :not_found}
+      :player, 9999 -> {:ok, {12, 10, "prontera"}}
+    end)
+
+    gs = game_state(100, %{6 => 1})
+    assert {:error, :invalid_target} = Interpreter.cast(gs, 6, 1, {:unit, 9999})
+  end
+
+  test "an enemy skill targeting a mob on another map returns :different_map" do
+    stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(9)} end)
+
+    stub(SpatialIndex, :get_unit_position, fn
+      :player, 9999 -> {:error, :not_found}
+      :mob, 9999 -> {:ok, {12, 10, "geffen"}}
+    end)
+
+    gs = game_state(100, %{6 => 1})
+    assert {:error, :different_map} = Interpreter.cast(gs, 6, 1, {:unit, 9999})
   end
 
   test ":self skills bypass the range check" do
@@ -306,7 +339,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
     test "fizzles with :out_of_range and spends no SP when the target moved away" do
       stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(5)} end)
-      stub(SpatialIndex, :get_unit_position, fn :player, 9999 -> {:ok, {20, 20, "prontera"}} end)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 9999 -> {:error, :not_found}
+        :mob, 9999 -> {:ok, {20, 20, "prontera"}}
+      end)
 
       gs = game_state(100, %{6 => 1})
 

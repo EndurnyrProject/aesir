@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   require Logger
 
   alias Aesir.Net.MoveStop
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Combat
@@ -55,6 +56,63 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
       "Attack request: player #{state.game_state.character_id} -> target #{target_id} (action #{action_type})"
     )
 
+    case validate_target_acquirable(state.game_state, target_id) do
+      :ok ->
+        acquire_and_attack(state, target_id, action_type)
+
+      {:error, reason} ->
+        Logger.debug(
+          "Attack rejected: target #{target_id} not acquirable for player #{state.game_state.character_id} (#{inspect(reason)})"
+        )
+
+        {:noreply, state}
+    end
+  end
+
+  # Server-authoritative target acquisition: the client may only attack a unit it
+  # could legitimately see. A unit is acquirable only when it is on the same map
+  # and within view range (the Manhattan radius the coordinator uses to decide
+  # what entities a client is told about). This rejects cross-map attacks and
+  # attacks on units the client never received, and stops the move-to-attack
+  # logic from auto-walking the player toward an unseen target.
+  defp validate_target_acquirable(game_state, target_id) do
+    case get_target_location(target_id) do
+      {:ok, {target_map, target_x, target_y}} ->
+        cond do
+          target_map != game_state.map_name ->
+            {:error, :different_map}
+
+          Geometry.manhattan_distance(game_state.x, game_state.y, target_x, target_y) >
+              Config.view_range() ->
+            {:error, :out_of_view}
+
+          true ->
+            :ok
+        end
+
+      {:error, _reason} ->
+        # Target is not in the index. A non-existent target cannot be attacked
+        # anyway; the downstream range/path logic returns the player to idle.
+        # This gate only rejects targets whose position the client can resolve
+        # but is not allowed to act on (wrong map / outside view range).
+        :ok
+    end
+  end
+
+  defp get_target_location(target_id) do
+    case SpatialIndex.get_unit_position(:player, target_id) do
+      {:ok, {x, y, map}} ->
+        {:ok, {map, x, y}}
+
+      {:error, :not_found} ->
+        case SpatialIndex.get_unit_position(:mob, target_id) do
+          {:ok, {x, y, map}} -> {:ok, {map, x, y}}
+          {:error, :not_found} -> {:error, :target_not_found}
+        end
+    end
+  end
+
+  defp acquire_and_attack(state, target_id, action_type) do
     # Store the action type in game state for later use
     state = %{state | game_state: %{state.game_state | combat_action_type: action_type}}
 

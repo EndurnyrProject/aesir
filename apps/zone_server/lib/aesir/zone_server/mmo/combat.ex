@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   alias Aesir.Commons.Utils.ServerTick
   alias Aesir.Net.Knockback
   alias Aesir.Net.SkillDamage
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
@@ -23,9 +24,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
-
-  # Combat packets broadcast from the victim's position, per rAthena.
-  @combat_view_range 14
 
   # ZC_NOTIFY_SKILL `type` for a splash/area skill hit (e_damage_type DMG_SPLASH).
   @dmg_splash 5
@@ -58,6 +56,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     attacker_combatant = player_state.__struct__.to_combatant(player_state)
 
     with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
+         :ok <- ensure_targetable(target_state, target_type),
          target_combatant <- target_state.__struct__.to_combatant(target_state),
          :ok <- validate_attack_with_combatants(attacker_combatant, target_combatant),
          {:ok, combat_result} <-
@@ -244,7 +243,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
         type: @dmg_splash
       }
 
-      Broadcast.to_in_range(map_name, tx, ty, @combat_view_range, packet)
+      Broadcast.to_in_range(map_name, tx, ty, Config.view_range(), packet)
       deal_damage(target_id, damage, element, :skill_unit)
     end
   end
@@ -298,7 +297,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
         type: @dmg_splash
       }
 
-      Broadcast.to_in_range(target.map_name, tx, ty, @combat_view_range, packet)
+      Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
       hit_info = %{dmg_type: :magic, is_short: false, element: element}
       apply_unit_damage(target_type, target_pid, target_id, total, hit_info, attacker.unit_id)
       :ok
@@ -391,7 +390,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
         type: @dmg_splash
       }
 
-      Broadcast.to_in_range(target.map_name, tx, ty, @combat_view_range, packet)
+      Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
       hit_info = %{dmg_type: :magic, is_short: false, element: element}
       apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, attacker.unit_id)
       [target_id]
@@ -672,7 +671,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
 
   defp broadcast_blownback(unit_id, dst_x, dst_y, map_name) do
     packet = %Knockback{unit_id: unit_id, dst_x: dst_x, dst_y: dst_y}
-    Broadcast.to_in_range(map_name, dst_x, dst_y, @combat_view_range, packet)
+    Broadcast.to_in_range(map_name, dst_x, dst_y, Config.view_range(), packet)
   end
 
   @doc """
@@ -813,9 +812,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     end
   end
 
+  # A target that has died (or, for players, transitioned to :dead) is not a
+  # valid target. The melee path resolves the full unit state, so this is the
+  # authoritative gate; `MobSession` independently drops damage to dead mobs.
+  defp ensure_targetable(%{is_dead: true}, :mob), do: {:error, :target_dead}
+  defp ensure_targetable(%{hp: hp}, :mob) when hp <= 0, do: {:error, :target_dead}
+  defp ensure_targetable(_target_state, :mob), do: :ok
+  defp ensure_targetable(%{action_state: :dead}, :player), do: {:error, :target_dead}
+  defp ensure_targetable(_target_state, :player), do: :ok
+
   # New combatant-based functions
   defp validate_attack_with_combatants(attacker_combatant, target_combatant) do
-    # Validate attack range using combatant positions for players
+    if attacker_combatant.map_name == target_combatant.map_name do
+      validate_attack_range(attacker_combatant, target_combatant)
+    else
+      {:error, :different_map}
+    end
+  end
+
+  defp validate_attack_range(attacker_combatant, target_combatant) do
     attack_range = attacker_combatant.attack_range
     {attacker_x, attacker_y} = attacker_combatant.position
     {target_x, target_y} = target_combatant.position
@@ -886,6 +901,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   # combatant structs and map-based target stats (both carry position/map_name).
   defp broadcast_to_nearby_players(target, packet) do
     {x, y} = target.position
-    Broadcast.to_in_range(target.map_name, x, y, @combat_view_range, packet)
+    Broadcast.to_in_range(target.map_name, x, y, Config.view_range(), packet)
   end
 end

@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.Net.SkillCooldown
   alias Aesir.Net.SkillEffect
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
@@ -26,8 +27,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
-
-  @skill_view_range 14
 
   @spec handle_use_skill(map(), integer(), pos_integer(), integer()) :: {:noreply, map()}
   def handle_use_skill(%{game_state: game_state} = state, skill_id, level, target_id) do
@@ -134,7 +133,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       game_state.map_name,
       game_state.x,
       game_state.y,
-      @skill_view_range,
+      Config.view_range(),
       packet,
       exclude_id: game_state.character_id
     )
@@ -235,7 +234,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       game_state.map_name,
       game_state.x,
       game_state.y,
-      @skill_view_range,
+      Config.view_range(),
       packet,
       exclude_id: game_state.character_id
     )
@@ -343,7 +342,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
           game_state.map_name,
           game_state.x,
           game_state.y,
-          @skill_view_range,
+          Config.view_range(),
           packet
         )
     end

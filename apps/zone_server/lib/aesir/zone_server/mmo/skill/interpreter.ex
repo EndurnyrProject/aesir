@@ -200,7 +200,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp check_target(%{character_id: caster_id}, {:unit, caster_id}, %{target_type: :target_enemy}),
        do: {:error, :invalid_target}
 
-  defp check_target(_game_state, {:unit, _id}, %{target_type: :target_enemy}), do: :ok
+  # An enemy-targeted skill must not hit a friendly player. With PvP unimplemented,
+  # only mobs are valid enemies; a player target is rejected. A target that cannot
+  # be resolved falls through so `check_range` reports it as `:target_not_found`.
+  defp check_target(_game_state, {:unit, target_id}, %{target_type: :target_enemy}) do
+    case unit_type_of(target_id) do
+      :player -> {:error, :invalid_target}
+      _ -> :ok
+    end
+  end
 
   defp check_target(_game_state, {:unit, _id}, %{target_type: :target_ally}), do: :ok
 
@@ -216,10 +224,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     range = effective_range(definition, game_state)
 
     case resolve_unit_position(target_id) do
-      {:ok, {tx, ty, _map}} ->
-        if Geometry.chebyshev_distance(game_state.x, game_state.y, tx, ty) <= range,
-          do: :ok,
-          else: {:error, :out_of_range}
+      {:ok, {tx, ty, target_map}} ->
+        cond do
+          target_map != game_state.map_name ->
+            {:error, :different_map}
+
+          Geometry.chebyshev_distance(game_state.x, game_state.y, tx, ty) <= range ->
+            :ok
+
+          true ->
+            {:error, :out_of_range}
+        end
 
       {:error, _} ->
         {:error, :target_not_found}
@@ -260,6 +275,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     case SpatialIndex.get_unit_position(:player, unit_id) do
       {:ok, _} = result -> result
       {:error, :not_found} -> SpatialIndex.get_unit_position(:mob, unit_id)
+    end
+  end
+
+  defp unit_type_of(unit_id) do
+    case SpatialIndex.get_unit_position(:mob, unit_id) do
+      {:ok, _} ->
+        :mob
+
+      {:error, :not_found} ->
+        case SpatialIndex.get_unit_position(:player, unit_id) do
+          {:ok, _} -> :player
+          {:error, :not_found} -> :not_found
+        end
     end
   end
 

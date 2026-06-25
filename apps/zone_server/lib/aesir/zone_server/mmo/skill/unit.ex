@@ -12,14 +12,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
 
   alias Aesir.Commons.Utils.ServerTick
   alias Aesir.Net.GroundSkill
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-
-  # Matches the skill-cast view range used by the active-skill handler.
-  @view_range 14
 
   @doc """
   Places a ground skill-unit cast by `caster_state` at cell `{x, y}`.
@@ -147,6 +145,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
       server_tick: ServerTick.now()
     }
 
-    Broadcast.to_in_range(group.map_name, x, y, @view_range, packet)
+    Broadcast.to_in_range(group.map_name, x, y, Config.view_range(), packet)
   end
 end

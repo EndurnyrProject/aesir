@@ -42,7 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       attack_range: 5,
       attack_delay_ms: Keyword.get(opts, :attack_delay_ms, 500),
       position: {150, 150},
-      map_name: "prontera"
+      map_name: Keyword.get(opts, :map_name, "prontera")
     })
   end
 
@@ -133,6 +133,36 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       assert_received {:packet, %DamageDealt{} = packet}
       assert packet.div == 1
       assert packet.damage == 50
+    end
+  end
+
+  describe "execute_attack/3 target validation" do
+    setup do
+      attacker = combatant(1001, :player)
+      player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      %{player_state: player_state, stats: attacker}
+    end
+
+    test "rejects an attack on a dead mob without applying damage",
+         %{player_state: player_state, stats: stats} do
+      dead_target = %{is_dead: true, hp: 0, x: 150, y: 150, map_name: "prontera"}
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, dead_target, self()}} end)
+      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
+      reject(&MobSession.apply_damage/3)
+
+      assert {:error, :target_dead} = Combat.execute_attack(stats, player_state, 2001)
+    end
+
+    test "rejects an attack on a target on a different map without applying damage",
+         %{player_state: player_state, stats: stats} do
+      target = combatant(2001, :mob, map_name: "geffen")
+      target_state = %FakeUnit{combatant: target, x: 150, y: 150}
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
+      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "geffen"}} end)
+      reject(&MobSession.apply_damage/3)
+
+      assert {:error, :different_map} = Combat.execute_attack(stats, player_state, 2001)
     end
   end
 

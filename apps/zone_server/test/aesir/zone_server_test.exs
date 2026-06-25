@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServerTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.SessionManager
+  alias Aesir.Net.DamageDealt
   alias Aesir.Net.EnterAck
   alias Aesir.Net.Hello
   alias Aesir.Net.HelloAck
@@ -107,6 +108,20 @@ defmodule Aesir.ZoneServerTest do
       capture_log(fn ->
         assert {:ok, %{}} = ZoneServer.handle_message(msg, :gameplay, %{})
       end)
+    end
+
+    test "rejects a server-authoritative message even when a player session is present" do
+      test_pid = self()
+      player_pid = spawn(fn -> route_loop(test_pid) end)
+      session = %{player_session_pid: player_pid}
+
+      msg = %DamageDealt{src_id: 1, target_id: 2, damage: 9_999_999}
+
+      capture_log(fn ->
+        assert {:ok, ^session} = ZoneServer.handle_message(msg, :gameplay, session)
+      end)
+
+      refute_receive {:message, ^msg}, 50
     end
   end
 

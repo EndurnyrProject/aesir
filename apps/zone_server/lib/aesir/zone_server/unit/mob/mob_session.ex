@@ -128,6 +128,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   @impl GenServer
+  def handle_cast({:apply_damage, _damage, _attacker_id}, %{is_dead: true} = state) do
+    # A dead mob is no longer a valid target. Dropping the hit prevents re-running
+    # the death path (and re-awarding experience) during the ~1s window between
+    # death and process termination, while it is still in the registry/index.
+    {:noreply, state}
+  end
+
   def handle_cast({:apply_damage, damage, attacker_id}, state) do
     {updated_mob, status} = MobState.apply_damage(state, damage)
     current_time = System.system_time(:second)
