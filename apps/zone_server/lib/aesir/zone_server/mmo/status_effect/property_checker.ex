@@ -97,6 +97,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker do
   end
 
   @doc """
+  Check if a status makes the unit untargetable.
+
+  ## Parameters
+    - status_id: The ID of the status effect
+
+  ## Returns
+    - true if the status makes the unit untargetable, false otherwise
+  """
+  @spec untargetable?(atom()) :: boolean()
+  def untargetable?(status_id) do
+    has_property?(status_id, :untargetable)
+  end
+
+  @doc """
   Get all properties of a status.
 
   ## Parameters

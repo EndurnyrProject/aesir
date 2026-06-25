@@ -209,6 +209,40 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   @spec get_properties(atom()) :: [atom()]
   defdelegate get_properties(status_id), to: PropertyChecker
 
+  @doc """
+  Returns whether a unit may move, i.e. carries no `prevents_movement` status.
+  """
+  @spec can_move?(unit_type(), integer()) :: boolean()
+  def can_move?(unit_type, unit_id),
+    do: not restricted?(unit_type, unit_id, &prevents_movement?/1)
+
+  @doc """
+  Returns whether a unit may attack, i.e. carries no `prevents_attack` status.
+  """
+  @spec can_attack?(unit_type(), integer()) :: boolean()
+  def can_attack?(unit_type, unit_id),
+    do: not restricted?(unit_type, unit_id, &prevents_attack?/1)
+
+  @doc """
+  Returns whether a unit may use skills, i.e. carries no `prevents_skills` status.
+  """
+  @spec can_use_skill?(unit_type(), integer()) :: boolean()
+  def can_use_skill?(unit_type, unit_id),
+    do: not restricted?(unit_type, unit_id, &prevents_skills?/1)
+
+  @doc """
+  Returns whether a unit may be targeted, i.e. carries no `untargetable` status.
+  """
+  @spec targetable?(unit_type(), integer()) :: boolean()
+  def targetable?(unit_type, unit_id),
+    do: not restricted?(unit_type, unit_id, &PropertyChecker.untargetable?/1)
+
+  defp restricted?(unit_type, unit_id, pred) do
+    unit_type
+    |> StatusStorage.get_unit_statuses(unit_id)
+    |> Enum.any?(fn %StatusEntry{type: type} -> pred.(type) end)
+  end
+
   defp check_immunity(entity_info, definition) do
     if PropertyChecker.check_immunity(entity_info, definition) do
       {:error, :immune}

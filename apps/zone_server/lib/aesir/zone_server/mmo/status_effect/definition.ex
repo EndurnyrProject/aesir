@@ -111,6 +111,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     :prevents_movement,
     :prevents_skills,
     :prevents_attack,
+    :untargetable,
     :physical,
     :magical,
     :no_resistance

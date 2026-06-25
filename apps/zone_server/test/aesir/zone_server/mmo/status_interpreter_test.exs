@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -239,6 +240,68 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
       assert Interpreter.prevents_attack?(:sc_freeze) == true
       assert Interpreter.prevents_attack?(:sc_stun) == true
       assert Interpreter.prevents_attack?(:sc_sleep) == true
+    end
+
+    test "untargetable? reflects the :untargetable property" do
+      assert PropertyChecker.untargetable?(:sc_trickdead) == true
+      assert PropertyChecker.untargetable?(:sc_endure) == false
+    end
+
+    test "trick_dead declares the :untargetable property" do
+      assert :untargetable in Interpreter.get_properties(:sc_trickdead)
+    end
+  end
+
+  describe "unit-level action gates" do
+    test "can_move? is false while a no_move status is active", %{player_id: player_id} do
+      assert Interpreter.can_move?(:player, player_id) == true
+
+      assert :ok = Interpreter.apply_status(:player, player_id, :sc_stun, val1: 1, tick: 3000)
+
+      assert Interpreter.can_move?(:player, player_id) == false
+    end
+
+    test "can_attack? is false while a no_attack status is active", %{player_id: player_id} do
+      assert Interpreter.can_attack?(:player, player_id) == true
+
+      assert :ok = Interpreter.apply_status(:player, player_id, :sc_freeze, val1: 1, tick: 5000)
+
+      assert Interpreter.can_attack?(:player, player_id) == false
+    end
+
+    test "can_use_skill? is false while a no_skill status is active", %{player_id: player_id} do
+      assert Interpreter.can_use_skill?(:player, player_id) == true
+
+      assert :ok =
+               Interpreter.apply_status(:player, player_id, :sc_silence, val1: 1, tick: 30_000)
+
+      assert Interpreter.can_use_skill?(:player, player_id) == false
+    end
+
+    test "targetable? is false while an untargetable status is active", %{player_id: player_id} do
+      assert Interpreter.targetable?(:player, player_id) == true
+
+      assert :ok = Interpreter.apply_status(:player, player_id, :sc_trickdead)
+
+      assert Interpreter.targetable?(:player, player_id) == false
+    end
+
+    test "gates fold over multiple concurrent statuses", %{player_id: player_id} do
+      assert :ok = Interpreter.apply_status(:player, player_id, :sc_blind, val1: 1, tick: 30_000)
+      assert :ok = Interpreter.apply_status(:player, player_id, :sc_stun, val1: 1, tick: 3000)
+
+      assert Interpreter.can_move?(:player, player_id) == false
+      assert Interpreter.can_attack?(:player, player_id) == false
+      assert Interpreter.can_use_skill?(:player, player_id) == false
+    end
+
+    test "gates use the :mob unit_type key", %{player_id: player_id} do
+      assert Interpreter.can_move?(:mob, player_id) == true
+
+      assert :ok = Interpreter.apply_status(:mob, player_id, :sc_freeze, val1: 1, tick: 5000)
+
+      assert Interpreter.can_move?(:mob, player_id) == false
+      assert Interpreter.can_attack?(:mob, player_id) == false
     end
   end
 
