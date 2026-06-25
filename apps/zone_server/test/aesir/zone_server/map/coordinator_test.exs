@@ -13,9 +13,9 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
 
   describe "mob_died/2 routing" do
     test "routes a .gat-suffixed map name to the clean-named coordinator" do
-      # Coordinators register under the clean map name (no .gat), but mobs carry
-      # their map_name with the .gat suffix. Regression test for respawns never
-      # firing because the cast was routed to an unregistered .gat name.
+      # Coordinators register under the clean map name (no .gat). mob_died still
+      # tolerates a .gat-suffixed name from any caller, stripping it so the cast
+      # is not routed to an unregistered .gat name.
       {:ok, _} = Registry.register(Aesir.ZoneServer.MapRegistry, "coordinator_test_map", nil)
 
       Coordinator.mob_died("coordinator_test_map.gat", 4242)
@@ -41,7 +41,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
 
       assert mob.mob_id == @poring_id
       assert {mob.x, mob.y} == {150, 100}
-      assert mob.map_name == "prontera.gat"
+      assert mob.map_name == "prontera"
     end
 
     test "replies with the error when the mob id is unknown" do
