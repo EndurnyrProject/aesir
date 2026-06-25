@@ -5,11 +5,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.CastCancel
   alias Aesir.Net.MoveRequest
+  alias Aesir.Net.MoveStop
   alias Aesir.Net.SelfMove
   alias Aesir.Net.UnitDespawn
   alias Aesir.Net.UnitSpawn
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Npc.Warp
   alias Aesir.ZoneServer.Npc.Warps
@@ -17,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -33,6 +37,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
     Mimic.copy(UnitRegistry)
     Mimic.copy(Warps)
     Mimic.copy(StatusDisplay)
+    Mimic.copy(Interpreter)
 
     stub(MapCache, :get, fn "prontera" -> {:ok, %{width: 200, height: 200}} end)
     stub(Pathfinding, :find_path, fn _map, {50, 50}, {51, 50} -> {:ok, [{50, 50}, {51, 50}]} end)
@@ -47,6 +52,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
     end)
 
     stub(StatusDisplay, :active_icons, fn _type, _id -> [] end)
+    stub(Interpreter, :can_move?, fn _type, _id -> true end)
 
     :ok
   end
@@ -84,6 +90,53 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
       {:noreply, _new_state} = MovementHandler.handle_request_move(idle_state(), 51, 50)
 
       refute_received {:broadcast, _ids, %UnitSpawn{}}
+    end
+  end
+
+  describe "handle_request_move/4 status gating" do
+    test "a player under a no_move status is snapped back and no path is set" do
+      stub(Interpreter, :can_move?, fn :player, 1 -> false end)
+
+      {:noreply, new_state} = MovementHandler.handle_request_move(idle_state(), 51, 50)
+
+      assert new_state.game_state.movement_state == :standing
+      assert new_state.game_state.walk_path == []
+      assert_received {:send, :gameplay, {:move_stop, %MoveStop{gid: 1, x: 50, y: 50}}}
+      refute_received {:send, :gameplay, {:self_move, %SelfMove{}}}
+    end
+
+    test "an unafflicted player moves exactly as before" do
+      {:noreply, new_state} = MovementHandler.handle_request_move(idle_state(), 51, 50)
+
+      assert new_state.game_state.movement_state == :moving
+      assert_received {:send, :gameplay, {:self_move, %SelfMove{}}}
+      refute_received {:send, :gameplay, {:move_stop, %MoveStop{}}}
+    end
+  end
+
+  describe "handle_movement_tick/1 status gating" do
+    test "a moving player who becomes restricted stops and is snapped back" do
+      stub(Interpreter, :can_move?, fn :player, 1 -> false end)
+
+      {:noreply, new_state} = MovementHandler.handle_movement_tick(moving_state())
+
+      assert new_state.game_state.movement_state == :standing
+      assert new_state.game_state.walk_path == []
+      assert_received {:send, :gameplay, {:move_stop, %MoveStop{gid: 1, x: 50, y: 50}}}
+    end
+
+    test "an unafflicted moving player is not stopped by the gate" do
+      Mimic.copy(MapData)
+      Mimic.copy(Movement)
+      stub(MapData, :walkable?, fn _map, _x, _y -> true end)
+      stub(Movement, :set_position, fn _type, _id, _state, _map -> :ok end)
+
+      stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [] end)
+      stub(SpatialIndex, :get_units_in_range, fn :mob, _, _, _, _ -> [] end)
+
+      {:noreply, _new_state} = MovementHandler.handle_movement_tick(moving_state())
+
+      refute_received {:send, :gameplay, {:move_stop, %MoveStop{}}}
     end
   end
 
@@ -343,6 +396,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
 
   defp idle_state do
     %{game_state: PlayerState.new(character()), connection_pid: self()}
+  end
+
+  defp moving_state do
+    game_state = PlayerState.set_path(PlayerState.new(character()), [{51, 50}])
+    %{game_state: game_state, connection_pid: self()}
   end
 
   defp mob_state(instance_id) do

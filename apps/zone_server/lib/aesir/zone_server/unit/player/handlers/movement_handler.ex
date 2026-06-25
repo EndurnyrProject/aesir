@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Npc.Placement
@@ -59,6 +60,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
   def handle_movement_tick(%{game_state: game_state} = state)
       when game_state.movement_state == :moving do
+    if Interpreter.can_move?(:player, game_state.character_id) do
+      step_walk_path(state, game_state)
+    else
+      stop_restricted_walk(state, game_state)
+    end
+  end
+
+  defp step_walk_path(state, game_state) do
     case game_state.walk_path do
       [{next_x, next_y} | _] = walk_path ->
         if next_cell_walkable?(game_state.map_name, next_x, next_y) do
@@ -67,6 +76,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
           handle_blocked_player(state, game_state, List.last(walk_path))
         end
     end
+  end
+
+  defp stop_restricted_walk(state, game_state) do
+    stopped = PlayerState.stop_walking(game_state)
+
+    packet = %MoveStop{gid: stopped.character_id, x: stopped.x, y: stopped.y}
+    MessageRouter.send_to(state.connection_pid, packet)
+
+    broadcast_stop_to_nearby(stopped, packet)
+
+    {:noreply, %{state | game_state: stopped}}
   end
 
   defp step_player(state, game_state, {next_x, next_y}, remaining_path) do
@@ -218,6 +238,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         dest_y,
         opts
       ) do
+    if Interpreter.can_move?(:player, game_state.character_id) do
+      do_request_move(state, game_state, connection_pid, dest_x, dest_y, opts)
+    else
+      packet = %MoveStop{gid: game_state.character_id, x: game_state.x, y: game_state.y}
+      MessageRouter.send_to(connection_pid, packet)
+      {:noreply, state}
+    end
+  end
+
+  defp do_request_move(state, game_state, connection_pid, dest_x, dest_y, opts) do
     with {:ok, map_data} <- MapCache.get(game_state.map_name),
          {:ok, [_ | _] = path} <-
            Pathfinding.find_path(
