@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
@@ -30,14 +31,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   @spec handle_use_skill(map(), integer(), pos_integer(), integer()) :: {:noreply, map()}
   def handle_use_skill(%{game_state: game_state} = state, skill_id, level, target_id) do
-    target = resolve_target(game_state, target_id)
-    drive_cast(state, skill_id, level, target)
+    if StatusInterpreter.can_use_skill?(:player, game_state.character_id) do
+      target = resolve_target(game_state, target_id)
+      drive_cast(state, skill_id, level, target)
+    else
+      broadcast_cast_cancel(game_state)
+      {:noreply, state}
+    end
   end
 
   @spec handle_use_skill_ground(map(), integer(), pos_integer(), integer(), integer()) ::
           {:noreply, map()}
-  def handle_use_skill_ground(state, skill_id, level, x, y) do
-    drive_cast(state, skill_id, level, {:ground, x, y})
+  def handle_use_skill_ground(%{game_state: game_state} = state, skill_id, level, x, y) do
+    if StatusInterpreter.can_use_skill?(:player, game_state.character_id) do
+      drive_cast(state, skill_id, level, {:ground, x, y})
+    else
+      broadcast_cast_cancel(game_state)
+      {:noreply, state}
+    end
   end
 
   @doc """
@@ -51,6 +62,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       ) do
     game_state = state.game_state
 
+    if StatusInterpreter.can_use_skill?(:player, game_state.character_id) do
+      complete_cast(state, game_state, ctx)
+    else
+      broadcast_cast_cancel(game_state)
+      {:noreply, %{state | game_state: to_idle(game_state)}}
+    end
+  end
+
+  def handle_cast_complete(state, _token), do: {:noreply, state}
+
+  defp complete_cast(state, game_state, ctx) do
     case Interpreter.complete_cast(game_state, ctx.skill_id, ctx.skill_level, ctx.target) do
       {:ok, new_game_state} ->
         new_game_state = commit_cast(state, new_game_state, ctx.skill_id, ctx.skill_level)
@@ -62,8 +84,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         {:noreply, %{state | game_state: to_idle(game_state)}}
     end
   end
-
-  def handle_cast_complete(state, _token), do: {:noreply, state}
 
   @doc """
   Phase-aware damage interruption. A cast is immune during the fixed phase

@@ -26,6 +26,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
   setup :verify_on_exit!
 
+  setup do
+    stub(StatusInterpreter, :can_use_skill?, fn _type, _id -> true end)
+    :ok
+  end
+
   describe "handle_message/2 inbound skill dispatch" do
     test "a SkillCast casts use_skill with the same skill/level/target" do
       state = %{game_state: %PlayerState{character_id: 1000}}
@@ -415,6 +420,62 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       state = casting_state(45, :idle)
 
       assert SkillHandler.cancel_cast(state, :move) == state
+    end
+  end
+
+  describe "skill action-gating" do
+    test "a no_skill player calling handle_use_skill gets a CastCancel and no cast is driven" do
+      stub(StatusInterpreter, :can_use_skill?, fn :player, 1000 -> false end)
+      reject(&Interpreter.begin_cast/4)
+      reject(&Catalog.by_id/1)
+
+      test_pid = self()
+      stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:to_player, packet}) end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+
+      s = casting_state(45)
+      assert {:noreply, ^s} = SkillHandler.handle_use_skill(s, 29, 1, 1000)
+
+      assert s.game_state.action_state == :idle
+      assert_received {:to_player, %CastCancel{gid: 1000}}
+    end
+
+    test "a no_skill player calling handle_use_skill_ground gets a CastCancel and no cast is driven" do
+      stub(StatusInterpreter, :can_use_skill?, fn :player, 1000 -> false end)
+      reject(&Interpreter.begin_cast/4)
+      reject(&Catalog.by_id/1)
+
+      test_pid = self()
+      stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:to_player, packet}) end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+
+      s = casting_state(45)
+      assert {:noreply, ^s} = SkillHandler.handle_use_skill_ground(s, 89, 1, 12, 12)
+
+      assert s.game_state.action_state == :idle
+      assert_received {:to_player, %CastCancel{gid: 1000}}
+    end
+
+    test "a status landing during a timed cast drops to idle without committing" do
+      stub(Broadcast, :to_player, fn 1000, _packet -> :ok end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+
+      assert {:noreply, casting} = SkillHandler.handle_use_skill(casting_state(45), 29, 1, 1000)
+      token = casting.game_state.state_context.token
+
+      stub(StatusInterpreter, :can_use_skill?, fn :player, 1000 -> false end)
+      reject(&Interpreter.complete_cast/4)
+      reject(&CharacterPersistence.update_character/3)
+
+      test_pid = self()
+      stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:to_player, packet}) end)
+
+      assert {:noreply, dropped} = SkillHandler.handle_cast_complete(casting, token)
+
+      assert dropped.game_state.action_state == :idle
+      assert dropped.game_state.state_context == %{}
+      assert dropped.game_state.stats.current_state.sp == 45
+      assert_received {:to_player, %CastCancel{gid: 1000}}
     end
   end
 
