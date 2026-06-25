@@ -2,6 +2,16 @@
 
 Thank you for your interest in contributing to Aesir! This document outlines the development workflow using Jujutsu (jj) version control system, coding standards, and best practices for contributing to this Ragnarok Online server emulator.
 
+## Using AI Tools
+
+AI assistants (Copilot, Claude, ChatGPT, Cursor, and similar) are welcome here. They are not a shortcut around the bar every contribution has to clear, though. If you use one, **you** are the author and you are fully responsible for what you submit. The rules below are heavily inspired by [curl's stance on AI use](https://curl.se/dev/contribute.html#on-ai-use-in-curl).
+
+### You own the contribution
+
+- Understand every line you submit. You must be able to explain and defend it in review as if you had written it by hand.
+- Do not paste raw AI output. AI tends to be verbose, adds comments that explain the obvious, and invents details. Trim it down to match our style: early returns over nested `if`s, no superfluous comments, critical paths that fail loudly rather than papering over errors.
+- If a reviewer can tell a change was AI-generated and that you do not fully grasp it, you have more work to do before it is ready.
+
 ## Development Workflow with Jujutsu
 
 Aesir uses [Jujutsu](https://jj-vcs.github.io/jj/latest/) (jj) backed by Git for version control. Jujutsu provides a more intuitive and powerful version control experience compared to traditional Git workflows.
