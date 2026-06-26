@@ -1,5 +1,61 @@
 # Changelog
 
+## [0.4.0](https://github.com/EndurnyrProject/aesir/compare/aesir-v0.3.0...aesir-v0.4.0) (2026-06-26)
+
+
+### Features
+
+* **combat:** block attacks under no_attack statuses ([dd4b694](https://github.com/EndurnyrProject/aesir/commit/dd4b694a9eb13649fd788247f95bebae1d325455))
+* **mob:** block mob move/attack under no_move/no_attack statuses ([096f42c](https://github.com/EndurnyrProject/aesir/commit/096f42c470eae60357d605d9bbd0de3fcefb16d7))
+* **mob:** ignore and shed aggro on untargetable (trick-dead) players ([77059ec](https://github.com/EndurnyrProject/aesir/commit/77059ec38bfb7323c65d57a1febf20d0213348f3))
+* **movement:** block movement under no_move statuses ([b1da602](https://github.com/EndurnyrProject/aesir/commit/b1da602da31d74b57622e348db5b320a649b3874))
+* **proto:** add NPC dialog messages (NpcTalk/NpcDialog/NpcInteract) ([342087f](https://github.com/EndurnyrProject/aesir/commit/342087f0ff615d32908b3aa64b356c6f27e7c953))
+* **security:** Hardening authentication with a single-use token ([250da07](https://github.com/EndurnyrProject/aesir/commit/250da07b3b12dd6d6d71025964cb19d49c56c10f))
+* **skill:** Added owning job to the skill tree protobuf ([dd3078e](https://github.com/EndurnyrProject/aesir/commit/dd3078e3f312c22258ba4dbe472169b5540dab14))
+* **skill:** block skill casts under no_skill statuses ([529bf4f](https://github.com/EndurnyrProject/aesir/commit/529bf4f4ca0739bb1c413254769b09f9435f24dc))
+* **skill:** implement Novice skills NV_FIRSTAID and NV_TRICKDEAD ([4c3d01d](https://github.com/EndurnyrProject/aesir/commit/4c3d01d5ab9a539842646a7bd8da6d7857641c61))
+* **status:** add unit-level action-gate predicates and :untargetable property ([7213772](https://github.com/EndurnyrProject/aesir/commit/7213772b57e92198a9c48d4f237af9449b4d3539))
+* **zone:** add :target_any skill target type ([479a605](https://github.com/EndurnyrProject/aesir/commit/479a605fe9e58d047fd1c0dc977749974d3af033))
+* **zone:** add Combat.execute_magic_damage for fixed-amount magic hits ([d4b04a3](https://github.com/EndurnyrProject/aesir/commit/d4b04a37d707001b1daf376d68eca13d5fb89602))
+* **zone:** add PubSub heal application path ([29c6164](https://github.com/EndurnyrProject/aesir/commit/29c61644414614f8649fed7341038c3a4839d4b5))
+* **zone:** add sc_pneuma ranged-block status ([356a0bf](https://github.com/EndurnyrProject/aesir/commit/356a0bf61d54c92fd6bb07ec3fe07817d4deee75))
+* **zone:** add sc_ruwach reveal/damage aura status ([561e5c0](https://github.com/EndurnyrProject/aesir/commit/561e5c090b98720c5db47dffd1f30437b426d7dc))
+* **zone:** add skill warp directive and random-walkable-cell picker ([0dc6334](https://github.com/EndurnyrProject/aesir/commit/0dc63344de494a4027d528a4608a2367edab44cf))
+* **zone:** add use Npc macro, behaviour, registry and verifier ([9a1aee5](https://github.com/EndurnyrProject/aesir/commit/9a1aee5a6c836401b2928c748410586957b05061))
+* **zone:** carry Divine Protection / Demon Bane levels on the combatant ([533e2f9](https://github.com/EndurnyrProject/aesir/commit/533e2f952dd4cc2bbb3ba3e8a850ee6b3bc12472))
+* **zone:** expand Acolyte skill tree with Tier 1 skills ([9662e28](https://github.com/EndurnyrProject/aesir/commit/9662e2847dd9545441fbe14331cc42aabe2ec6b8))
+* **zone:** implement Angelus (AL_ANGELUS, self-only) ([ff4213a](https://github.com/EndurnyrProject/aesir/commit/ff4213afe1a06f18cd6feb82cccc43a3c68bf9fc))
+* **zone:** implement Aqua Benedicta (AL_HOLYWATER) ([9ded64f](https://github.com/EndurnyrProject/aesir/commit/9ded64f656c9d9ba4faf8efeab879584a40002f0))
+* **zone:** implement Blessing (AL_BLESSING) ([3658fd8](https://github.com/EndurnyrProject/aesir/commit/3658fd888d785eb3b031d557b54e4d60bc2cb3cf))
+* **zone:** implement Cure (AL_CURE) ([0e41e6a](https://github.com/EndurnyrProject/aesir/commit/0e41e6a5d9bcb13684fe8648d919c11fa1cd3826))
+* **zone:** implement Decrease AGI (AL_DECAGI) ([4f3f300](https://github.com/EndurnyrProject/aesir/commit/4f3f300de7fd44adca9736aea8968ee534785fcc))
+* **zone:** implement Divine Protection and Demon Bane (race modifiers) ([dc7e79d](https://github.com/EndurnyrProject/aesir/commit/dc7e79ddfc98d9d594fd1ad1f578d11cfc3ce594))
+* **zone:** implement Heal (AL_HEAL) ([b3de17f](https://github.com/EndurnyrProject/aesir/commit/b3de17f0cf4677fb04dae041d009972350124d48))
+* **zone:** implement Pneuma (AL_PNEUMA) ([0c91613](https://github.com/EndurnyrProject/aesir/commit/0c916137574fbc5ca4dd623bb77fb162f2955021))
+* **zone:** implement Ruwach (AL_RUWACH) ([7e12860](https://github.com/EndurnyrProject/aesir/commit/7e12860f6fa00b6e54e7318f5fe2f3bd1a95d373))
+* **zone:** implement Signum Crucis (AL_CRUCIS) ([d7ebfc2](https://github.com/EndurnyrProject/aesir/commit/d7ebfc22eebf5a870ec4db315eab222cb535f046))
+* **zone:** implement Teleport (AL_TELEPORT, menu-less) ([c20ef62](https://github.com/EndurnyrProject/aesir/commit/c20ef620d093575d7a84d99ef2272540313a49bd))
+* **zone:** NPC interaction process + dialog DSL ([140198a](https://github.com/EndurnyrProject/aesir/commit/140198aecaca59dc5b2c9eeb459e4eda51ddb10a))
+* **zone:** persist and load character vars + zeny on PlayerState ([e1300af](https://github.com/EndurnyrProject/aesir/commit/e1300af3c233c02afbff96987cb1bcbf1b02ceca))
+* **zone:** port Sphinx Mask quest (Turban Thief) + end-to-end test ([159cae3](https://github.com/EndurnyrProject/aesir/commit/159cae37fcc5faa008cfcdf6d33f5469ff9f0789))
+* **zone:** script effect seam + economy/inventory/variable DSL ([6f9f4a8](https://github.com/EndurnyrProject/aesir/commit/6f9f4a85778202dcfec54f613fdbfb1a5dabcf05))
+* **zone:** server-authoritative combat/skill target validation ([5b9f34b](https://github.com/EndurnyrProject/aesir/commit/5b9f34b4f1c9859b1d5cb978d98d9d1cff8cb280))
+* **zone:** spawn static NPC entities from the registry at boot ([651e4da](https://github.com/EndurnyrProject/aesir/commit/651e4da7d5fe2733963682205713d4f8e9b2422e))
+
+
+### Bug Fixes
+
+* Being a bit more lenient with warp ([a16803f](https://github.com/EndurnyrProject/aesir/commit/a16803ff90a40adaca1daebc48f1b0efa1b46c6f))
+* Being less strict with invalid scripts ([b7f90f7](https://github.com/EndurnyrProject/aesir/commit/b7f90f7f7e38cf52bc1887297708d73aa56aa12b))
+* Fix coordinator flush ([d96854d](https://github.com/EndurnyrProject/aesir/commit/d96854d7db5a47a918326424714395b67752b007))
+* Fixed Agents ([b0ac89e](https://github.com/EndurnyrProject/aesir/commit/b0ac89e3f83f4fdbb025ecc2c00faccb52b377b7))
+* Fixed mapcache and script ([35da648](https://github.com/EndurnyrProject/aesir/commit/35da6484a8bcde44de8e229d99f5a87086b3f423))
+* **status:** Fixed status storage update ([d6bd443](https://github.com/EndurnyrProject/aesir/commit/d6bd443b71b9e827ceda6d9e185e7d9bed9dfdcb))
+* **zone:** correct Blessing HIT bonus to val1*2 ([6450443](https://github.com/EndurnyrProject/aesir/commit/645044313c07f130275993ac45c3edf3fc356332))
+* **zone:** enforce cast lock before begin_cast ([f42775a](https://github.com/EndurnyrProject/aesir/commit/f42775a4d58366d9c6bfe88d059185ec0d344211))
+* **zone:** handle :target_any in SkillListView.inf_for ([fd20a30](https://github.com/EndurnyrProject/aesir/commit/fd20a302c57cb27e36c3e02b7c12d1f738380440))
+* **zone:** register players under PlayerState and disconnect on session crash ([9029227](https://github.com/EndurnyrProject/aesir/commit/902922768d1210dd9532d168a813025a782767a6))
+
 ## [0.3.0](https://github.com/EndurnyrProject/aesir/compare/aesir-v0.2.0...aesir-v0.3.0) (2026-06-24)
 
 
