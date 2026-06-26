@@ -265,26 +265,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
 
   @doc """
   Updates only the next_tick_at field of a status entry.
-  This is more efficient than update_status for the common tick case.
+
+  The entry is stored as a single struct in element 2 of the ETS tuple, so the
+  update is a read-modify-write of the whole struct. If the status no longer
+  exists the update is a no-op.
   """
   @spec update_next_tick(unit_type(), integer(), atom(), integer()) :: :ok
   def update_next_tick(unit_type, unit_id, status_type, next_tick_at) do
-    # Uses :ets.update_element/3 which is more efficient than read-modify-write
-    # Updates only the next_tick_at field in the entry map
-    key = {unit_type, unit_id, status_type}
-
-    # Element position 2 is the value part of the ETS tuple
-    # We update the next_tick_at field inside the map
-    :ets.update_element(
-      table_for(:player_statuses),
-      key,
-      {2, {:map_update, :next_tick_at, next_tick_at}}
-    )
-
-    :ok
-  rescue
-    # If the status no longer exists, just ignore
-    _ -> :ok
+    update_status(unit_type, unit_id, status_type, fn entry ->
+      %{entry | next_tick_at: next_tick_at}
+    end)
   end
 
   @doc """
