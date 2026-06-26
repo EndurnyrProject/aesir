@@ -12,6 +12,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListViewTest do
   @sm_sword_id 2
   @sm_twohand_id 3
   @sm_bash_id 5
+  @acolyte_job_id 4
+  @al_heal_id 28
 
   defp progression(fields) do
     struct!(
@@ -97,6 +99,15 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListViewTest do
       bash = by_id(list, @sm_bash_id)
       assert bash.level == 6
       assert bash.sp == 15
+    end
+
+    test "a :target_any skill (AL_HEAL) maps to the target-select type without crashing" do
+      heal =
+        progression(job_id: @acolyte_job_id)
+        |> SkillListView.build()
+        |> by_id(@al_heal_id)
+
+      assert %SkillInfo{name: "AL_HEAL", type: 16} = heal
     end
   end
 end
