@@ -210,7 +210,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  defp check_target(_game_state, {:unit, _id}, %{target_type: :target_ally}), do: :ok
+  defp check_target(_game_state, {:unit, _id}, %{target_type: target_type})
+       when target_type in [:target_ally, :target_any],
+       do: :ok
 
   defp check_target(_game_state, {:ground, _x, _y}, %{target_type: :ground}), do: :ok
 

@@ -198,21 +198,50 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     assert {:ok, _} = Interpreter.cast(gs, 29, 1, :self)
   end
 
-  defp ally_definition(range) do
+  defp unit_definition(target_type, range) do
     %Definition{
       id: 6,
       name: :sm_provoke,
-      display_name: "Ally Test",
+      display_name: "Unit Target Test",
       max_level: 10,
-      target_type: :target_ally,
+      target_type: target_type,
       damage_type: :no_damage,
       range: range,
       sp_cost: List.duplicate(9, 10)
     }
   end
 
+  test ":target_any skill accepts a unit target and proceeds to behavior" do
+    stub(Catalog, :by_id, fn 6 -> {:ok, unit_definition(:target_any, 9)} end)
+    stub(SpatialIndex, :get_unit_position, fn :player, 9999 -> {:ok, {14, 10, "prontera"}} end)
+    stub(SmProvoke, :cast, fn caster, {:unit, 9999}, 1, _definition -> {:ok, caster} end)
+
+    gs = game_state(100, %{6 => 1})
+    assert {:ok, _} = Interpreter.cast(gs, 6, 1, {:unit, 9999})
+  end
+
+  test ":target_any skill accepts :self target" do
+    stub(Catalog, :by_id, fn 6 -> {:ok, unit_definition(:target_any, 9)} end)
+    stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+
+    gs = game_state(100, %{6 => 1})
+    assert {:ok, _} = Interpreter.cast(gs, 6, 1, :self)
+  end
+
+  test ":target_any skill rejects an out-of-range unit target" do
+    stub(Catalog, :by_id, fn 6 -> {:ok, unit_definition(:target_any, 5)} end)
+
+    stub(SpatialIndex, :get_unit_position, fn
+      :player, 9999 -> {:error, :not_found}
+      :mob, 9999 -> {:ok, {20, 20, "prontera"}}
+    end)
+
+    gs = game_state(100, %{6 => 1})
+    assert {:error, :out_of_range} = Interpreter.cast(gs, 6, 1, {:unit, 9999})
+  end
+
   test "ally skill cast on another unit proceeds to behavior" do
-    stub(Catalog, :by_id, fn 6 -> {:ok, ally_definition(9)} end)
+    stub(Catalog, :by_id, fn 6 -> {:ok, unit_definition(:target_ally, 9)} end)
     stub(SpatialIndex, :get_unit_position, fn :player, 9999 -> {:ok, {14, 10, "prontera"}} end)
     stub(StatusInterpreter, :apply_status, fn _type, _id, _status, _params -> :ok end)
 

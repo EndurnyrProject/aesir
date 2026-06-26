@@ -17,7 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   alias Aesir.ZoneServer.Mmo.DefinitionValidation
 
   @typedoc "How a skill is targeted (rAthena `inf`)."
-  @type target_type :: :self | :target_enemy | :target_ally | :ground | :passive
+  @type target_type :: :self | :target_enemy | :target_ally | :target_any | :ground | :passive
 
   @typedoc "Whether casting deals damage (rAthena `DamageFlags.NoDamage`)."
   @type damage_type :: :damage | :no_damage
@@ -60,7 +60,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     name: {:required, :atom},
     display_name: {:required, :string},
     max_level: {:required, {:integer, {:gt, 0}}},
-    target_type: {:enum, [:self, :target_enemy, :target_ally, :ground, :passive]},
+    target_type: {:enum, [:self, :target_enemy, :target_ally, :target_any, :ground, :passive]},
     damage_type: {:enum, [:damage, :no_damage]},
     range: :integer,
     element: :atom,

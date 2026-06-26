@@ -10,6 +10,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.DefinitionTest do
     max_level: 5
   ]
 
+  describe "target_type" do
+    test "accepts :target_any" do
+      defn = Definition.build!(@required_opts ++ [target_type: :target_any], __MODULE__)
+      assert defn.target_type == :target_any
+    end
+
+    test "rejects an invalid target_type" do
+      assert_raise ArgumentError, ~r/DefinitionTest/, fn ->
+        Definition.build!(@required_opts ++ [target_type: :bogus_target], __MODULE__)
+      end
+    end
+  end
+
   describe "damage_kind" do
     test "defaults to :weapon when omitted" do
       defn = Definition.build!(@required_opts, __MODULE__)
