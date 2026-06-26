@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
   alias Aesir.ZoneServer.Mmo.Skills
 
   @skills [
+    Skills.AlCure,
     Skills.AlHeal,
     Skills.AlIncagi,
     Skills.MgColdbolt,
