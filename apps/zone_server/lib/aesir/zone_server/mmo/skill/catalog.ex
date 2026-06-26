@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
   @skills [
     Skills.AlAngelus,
     Skills.AlBlessing,
+    Skills.AlCrucis,
     Skills.AlCure,
     Skills.AlDecagi,
     Skills.AlHeal,

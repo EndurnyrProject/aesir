@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SignumCrucis do
     calc_flags: [:def],
     conflicts_with: [:sc_signumcrucis],
     prevented_by: [:sc_refresh, :sc_inspiration],
+    permanent: true,
     icon: :crucis
 
   @impl true
