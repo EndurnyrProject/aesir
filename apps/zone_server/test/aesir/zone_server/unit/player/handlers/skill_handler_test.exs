@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
@@ -93,6 +94,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         state_context: %{},
         pending_inventory_persist: [],
         pending_inventory_notify: [],
+        pending_warp: nil,
         stats: %{
           base_stats: %{dex: 1, int: 1},
           current_state: %{sp: sp, hp: 100},
@@ -556,6 +558,63 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
     {:ok, casting} = PlayerState.transition_to(state.game_state, :casting, context)
     %{state | game_state: casting}
+  end
+
+  describe "commit_cast warp drain" do
+    test "staged pending_warp causes WarpHandler.warp/4 to be called with the right args" do
+      base = instant_state(30)
+
+      staged = %{base.game_state | pending_warp: {"morocc", 155, 95}}
+
+      expect(Interpreter, :begin_cast, fn _gs, 26, 1, :self -> {:instant, staged} end)
+      stub(Catalog, :by_id, fn 26 -> {:ok, definition(id: 26, cooldown: [])} end)
+      stub(PlayerStats, :calculate_stats, fn stats, 1000 -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+
+      expect(WarpHandler, :warp, fn session_state, "morocc", 155, 95 ->
+        {:ok, session_state}
+      end)
+
+      assert {:noreply, new_state} = SkillHandler.handle_use_skill(base, 26, 1, 1000)
+      assert Map.get(new_state.game_state, :pending_warp) == nil
+    end
+
+    test "pending_warp is cleared even when WarpHandler returns an error" do
+      base = instant_state(30)
+
+      staged = %{base.game_state | pending_warp: {"unknown_map", 0, 0}}
+
+      expect(Interpreter, :begin_cast, fn _gs, 26, 1, :self -> {:instant, staged} end)
+      stub(Catalog, :by_id, fn 26 -> {:ok, definition(id: 26, cooldown: [])} end)
+      stub(PlayerStats, :calculate_stats, fn stats, 1000 -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+
+      stub(WarpHandler, :warp, fn _session_state, "unknown_map", 0, 0 ->
+        {:error, :map_not_found}
+      end)
+
+      assert {:noreply, new_state} = SkillHandler.handle_use_skill(base, 26, 1, 1000)
+      assert Map.get(new_state.game_state, :pending_warp) == nil
+    end
+
+    test "WarpHandler is not called when pending_warp is nil" do
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
+      stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)
+      stub(PlayerStats, :calculate_stats, fn stats, 1000 -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+      reject(&WarpHandler.warp/4)
+
+      assert {:noreply, _} = SkillHandler.handle_use_skill(instant_state(30), 29, 1, 1000)
+    end
   end
 
   defp definition(fields) do

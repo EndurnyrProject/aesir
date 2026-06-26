@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
@@ -75,9 +76,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp complete_cast(state, game_state, ctx) do
     case Interpreter.complete_cast(game_state, ctx.skill_id, ctx.skill_level, ctx.target) do
       {:ok, new_game_state} ->
-        new_game_state = commit_cast(state, new_game_state, ctx.skill_id, ctx.skill_level)
-        broadcast_skill_use(new_game_state, ctx.skill_id, ctx.skill_level, ctx.target)
-        {:noreply, %{state | game_state: to_idle(new_game_state)}}
+        new_state = commit_cast(state, new_game_state, ctx.skill_id, ctx.skill_level)
+        broadcast_skill_use(new_state.game_state, ctx.skill_id, ctx.skill_level, ctx.target)
+        {:noreply, %{new_state | game_state: to_idle(new_state.game_state)}}
 
       {:error, reason} ->
         log_cast_failure(ctx.skill_id, game_state.character_id, reason)
@@ -161,9 +162,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp dispatch_cast(%{game_state: game_state} = state, skill_id, level, target) do
     case Interpreter.begin_cast(game_state, skill_id, level, target) do
       {:instant, new_game_state} ->
-        new_game_state = commit_cast(state, new_game_state, skill_id, level)
-        broadcast_skill_use(new_game_state, skill_id, level, target)
-        {:noreply, %{state | game_state: new_game_state}}
+        new_state = commit_cast(state, new_game_state, skill_id, level)
+        broadcast_skill_use(new_state.game_state, skill_id, level, target)
+        {:noreply, new_state}
 
       {:casting, new_game_state, info} ->
         schedule_cast(%{state | game_state: new_game_state}, info)
@@ -259,8 +260,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   # Shared success path: persist catalyst consumption, recalc stats, update
-  # registry, persist HP/SP, sync to client, and emit the cooldown sweep.
-  defp commit_cast(%{connection_pid: connection_pid}, new_game_state, skill_id, level) do
+  # registry, persist HP/SP, sync to client, emit the cooldown sweep, and drain
+  # any pending warp directive staged by the skill's cast/4. Returns the full
+  # session state so that a warp (which mutates session-level fields) is
+  # threaded back to the caller cleanly.
+  defp commit_cast(%{connection_pid: connection_pid} = state, new_game_state, skill_id, level) do
     new_game_state = persist_catalysts(new_game_state)
     new_game_state = notify_inventory(connection_pid, new_game_state)
 
@@ -279,7 +283,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
     maybe_send_postdelay(connection_pid, skill_id, level)
 
-    new_game_state
+    drain_warp(%{state | game_state: new_game_state})
+  end
+
+  # Executes any warp directive the skill staged on pending_warp (SP and
+  # cooldowns are already committed at this point). Clears the field before
+  # calling WarpHandler so the warp state is clean. On error the directive is
+  # still cleared to avoid re-triggering on a subsequent cast.
+  defp drain_warp(%{game_state: game_state} = state) do
+    case game_state.pending_warp do
+      nil ->
+        state
+
+      {dest_map, x, y} ->
+        clean_game_state = %{game_state | pending_warp: nil}
+
+        case WarpHandler.warp(%{state | game_state: clean_game_state}, dest_map, x, y) do
+          {:ok, new_state} -> new_state
+          {:error, _reason} -> %{state | game_state: clean_game_state}
+        end
+    end
   end
 
   # Writes through each catalyst-consumption delta the interpreter staged, then

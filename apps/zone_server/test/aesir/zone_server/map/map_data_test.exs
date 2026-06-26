@@ -214,6 +214,31 @@ defmodule Aesir.ZoneServer.Map.MapDataTest do
     end
   end
 
+  describe "random_walkable_cell/2" do
+    test "returns a walkable cell on an all-walkable map" do
+      map = MapData.new("test_map", 10, 10)
+      :rand.seed(:exsss, {1, 2, 3})
+      assert {:ok, {x, y}} = MapData.random_walkable_cell(map)
+      assert x in 0..9
+      assert y in 0..9
+      assert MapData.walkable?(map, x, y)
+    end
+
+    test "returns :error when no walkable cell is found within max_attempts" do
+      cells = :binary.copy(<<GatType.wall()>>, 3 * 3)
+      map = MapData.load_from_gat_binary(MapData.new("walls", 3, 3), cells)
+      assert {:error, :no_walkable_cell} = MapData.random_walkable_cell(map, 50)
+    end
+
+    test "finds the single walkable cell on a mostly-blocked map" do
+      cells = :binary.copy(<<GatType.wall()>>, 5 * 5)
+      map = MapData.load_from_gat_binary(MapData.new("sparse", 5, 5), cells)
+      map = MapData.set_cell(map, 2, 2, GatType.walkable())
+      :rand.seed(:exsss, {42, 0, 0})
+      assert {:ok, {2, 2}} = MapData.random_walkable_cell(map, 1_000)
+    end
+  end
+
   describe "load_from_gat_binary/2" do
     test "loads binary GAT data directly" do
       map = MapData.new("test_map", 3, 3)

@@ -70,7 +70,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
             {%{non_neg_integer() => InventoryItem.t()}, %{non_neg_integer() => InventoryItem.t()},
              term()}
           ],
-          pending_inventory_notify: [tuple()]
+          pending_inventory_notify: [tuple()],
+          pending_warp: {String.t(), non_neg_integer(), non_neg_integer()} | nil
         }
 
   @client_index_offset 2
@@ -175,6 +176,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # Inventory-add change descriptors staged by a skill cast so the session
     # handler can emit an ItemAdded for each new/affected slot, then clear them.
     pending_inventory_notify: [],
+    # Warp directive staged by a skill cast. When non-nil the handler calls
+    # WarpHandler.warp/4 after committing SP/cooldowns, then clears this field.
+    pending_warp: nil,
     skill_cooldowns: %{},
     last_attack_timestamp: 0,
     act_delay_until: 0,

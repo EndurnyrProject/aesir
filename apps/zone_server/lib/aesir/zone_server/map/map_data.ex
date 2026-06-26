@@ -208,6 +208,32 @@ defmodule Aesir.ZoneServer.Map.MapData do
   def set_cell_flag(map, _, _, _, _), do: map
 
   @doc """
+  Returns a uniformly-random walkable `{x, y}` within the map's bounds.
+
+  Rejection-samples up to `max_attempts` times using `walkable?/3`. Returns
+  `{:error, :no_walkable_cell}` when no walkable cell is found within the
+  attempt budget (e.g. a fully-blocked map or a very low budget).
+  """
+  @spec random_walkable_cell(t(), pos_integer()) ::
+          {:ok, {non_neg_integer(), non_neg_integer()}} | {:error, :no_walkable_cell}
+  def random_walkable_cell(map, max_attempts \\ 100) do
+    do_random_walkable_cell(map, max_attempts)
+  end
+
+  defp do_random_walkable_cell(_map, 0), do: {:error, :no_walkable_cell}
+
+  defp do_random_walkable_cell(%{xs: xs, ys: ys} = map, attempts) do
+    x = :rand.uniform(xs) - 1
+    y = :rand.uniform(ys) - 1
+
+    if walkable?(map, x, y) do
+      {:ok, {x, y}}
+    else
+      do_random_walkable_cell(map, attempts - 1)
+    end
+  end
+
+  @doc """
   Loads cells directly from binary GAT data.
   """
   @spec load_from_gat_binary(t(), binary()) :: t()
