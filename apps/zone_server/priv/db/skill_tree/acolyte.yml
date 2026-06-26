@@ -3,8 +3,37 @@
   inherit:
     - novice
   tree:
+    - name: AL_HEAL
+      max_level: 10
     - name: AL_INCAGI
       max_level: 10
       requires:
         - name: AL_HEAL
           level: 3
+    - name: AL_DECAGI
+      max_level: 10
+      requires:
+        - name: AL_INCAGI
+          level: 1
+    - name: AL_RUWACH
+      max_level: 1
+    - name: AL_CURE
+      max_level: 1
+      requires:
+        - name: AL_HEAL
+          level: 2
+    - name: AL_CRUCIS
+      max_level: 10
+      requires:
+        - name: AL_DEMONBANE
+          level: 3
+    - name: AL_ANGELUS
+      max_level: 10
+      requires:
+        - name: AL_DP
+          level: 3
+    - name: AL_BLESSING
+      max_level: 10
+      requires:
+        - name: AL_DP
+          level: 5
