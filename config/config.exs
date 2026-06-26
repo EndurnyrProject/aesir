@@ -2,8 +2,7 @@ import Config
 
 config :commons,
   env: config_env(),
-  ecto_repos: [Aesir.Repo],
-  packetver: "20211103"
+  ecto_repos: [Aesir.Repo]
 
 import_config "database.exs"
 import_config "libcluster.exs"
