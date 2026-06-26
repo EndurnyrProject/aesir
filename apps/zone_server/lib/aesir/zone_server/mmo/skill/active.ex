@@ -34,4 +34,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
               :ok | {:error, atom()}
 
   @optional_callbacks validate: 4
+
+  @doc """
+  Resolves a cast target to a unit id.
+
+  When the target is `:self`, returns the caster's own `character_id`.
+  When the target is `{:unit, id}`, returns `id` directly.
+  """
+  @spec resolve_target_id(map(), target()) :: non_neg_integer()
+  def resolve_target_id(%{character_id: caster_id}, :self), do: caster_id
+  def resolve_target_id(_caster, {:unit, id}), do: id
 end

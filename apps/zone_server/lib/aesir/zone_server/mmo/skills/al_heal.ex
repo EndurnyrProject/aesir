@@ -54,7 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHeal do
   def cast(%{character_id: caster_id} = caster, target, level, _definition) do
     stats = PlayerState.get_stats(caster)
     heal_value = compute_heal(stats, level)
-    target_id = resolve_target_id(caster, target)
+    target_id = Active.resolve_target_id(caster, target)
 
     case Combat.resolve_combatant(target_id) do
       {:ok, %{race: race}} when race in [:undead, :demon] ->
@@ -76,7 +76,4 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHeal do
   defp compute_heal(%{base_level: base_level, int: int_val, matk: matk}, level) do
     div(div(base_level + int_val, 5) * 30 * level, 10) + matk
   end
-
-  defp resolve_target_id(%{character_id: caster_id}, :self), do: caster_id
-  defp resolve_target_id(_caster, {:unit, id}), do: id
 end

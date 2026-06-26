@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlCure do
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(caster, target, _level, _definition) do
-    target_id = resolve_target_id(caster, target)
+    target_id = Active.resolve_target_id(caster, target)
 
     Enum.each(@statuses_to_remove, fn status ->
       StatusInterpreter.remove_status(:player, target_id, status)
@@ -35,7 +35,4 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlCure do
 
     {:ok, caster}
   end
-
-  defp resolve_target_id(%{character_id: caster_id}, :self), do: caster_id
-  defp resolve_target_id(_caster, {:unit, id}), do: id
 end
