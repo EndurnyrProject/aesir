@@ -1,6 +1,7 @@
 Mimic.copy(Aesir.ZoneServer.Unit.MovementEngine)
 Mimic.copy(Aesir.ZoneServer.Unit.SpatialIndex)
 Mimic.copy(Aesir.ZoneServer.Unit.Player.Stats)
+Mimic.copy(Aesir.ZoneServer.Unit.Player.PlayerState)
 Mimic.copy(Aesir.ZoneServer.Map.MapCache)
 Mimic.copy(Aesir.ZoneServer.Map.MapData)
 Mimic.copy(Aesir.ZoneServer.Pathfinding)

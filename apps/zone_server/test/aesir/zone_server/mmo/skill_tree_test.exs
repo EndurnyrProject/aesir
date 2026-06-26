@@ -278,13 +278,13 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
   end
 
   describe "Catalog filtering" do
-    test "AL_INCAGI is kept but its unimplemented prerequisite (AL_HEAL) is dropped" do
+    test "AL_INCAGI keeps its AL_HEAL prerequisite now that it is implemented" do
       {:ok, acolyte_id} = AvailableJobs.job_name_to_id(:acolyte)
 
       {:ok, %Entry{requires: requires}} =
         SkillTree.entry(acolyte_id, catalog_id(:al_incagi))
 
-      assert requires == []
+      assert requires == [{catalog_id(:al_heal), 3}]
     end
 
     test "warns when a tree entry names an unimplemented skill" do
