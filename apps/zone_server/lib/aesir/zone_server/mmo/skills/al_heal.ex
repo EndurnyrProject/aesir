@@ -17,8 +17,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHeal do
     base = div(div(base_level + int, 5) * 30 * level, 10)
     heal = base + matk
 
-  Deferred: heal-rate bonuses (Meditatio, SC_INCHEALRATE, item scripts, MATK min/max
-  variance). All stat modifiers other than the base formula are out of scope for this task.
+  MATK is the single `combat_stats.matk` value, not rAthena's random min~max roll:
+  Aesir's magic is deterministic everywhere (`MagicDamageCalculator` uses one matk with
+  no variance), so heal matches the rest of the magic system rather than being the only
+  spell that rolls a range. Restoring heal variance would require adding min/max MATK to
+  the whole magic system — a separate, global change.
+
+  Deferred: heal-rate bonuses (Meditatio, SC_INCHEALRATE, item scripts). All stat
+  modifiers other than the base formula are out of scope for this task.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 28,
