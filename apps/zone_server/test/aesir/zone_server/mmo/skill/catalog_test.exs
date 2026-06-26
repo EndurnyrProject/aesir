@@ -25,6 +25,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
     assert :error = Catalog.by_id(999_999)
   end
 
+  test "by_id/1 loads AL_DP as a passive skill" do
+    assert {:ok, %Definition{} = defn} = Catalog.by_id(22)
+    assert defn.name == :al_dp
+    assert defn.target_type == :passive
+    assert defn.max_level == 10
+  end
+
+  test "by_id/1 loads AL_DEMONBANE as a passive skill" do
+    assert {:ok, %Definition{} = defn} = Catalog.by_id(23)
+    assert defn.name == :al_demonbane
+    assert defn.target_type == :passive
+    assert defn.max_level == 10
+  end
+
+  test "by_name/1 resolves AL_DP and AL_DEMONBANE" do
+    assert {:ok, %Definition{id: 22}} = Catalog.by_name(:al_dp)
+    assert {:ok, %Definition{id: 23}} = Catalog.by_name(:al_demonbane)
+  end
+
   test "by_id/1 loads SM_PROVOKE with correct target and damage type" do
     assert {:ok, %Definition{} = defn} = Catalog.by_id(6)
     assert defn.name == :sm_provoke

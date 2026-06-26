@@ -3,6 +3,13 @@
   inherit:
     - novice
   tree:
+    - name: AL_DP
+      max_level: 10
+    - name: AL_DEMONBANE
+      max_level: 10
+      requires:
+        - name: AL_DP
+          level: 3
     - name: AL_HEAL
       max_level: 10
     - name: AL_INCAGI

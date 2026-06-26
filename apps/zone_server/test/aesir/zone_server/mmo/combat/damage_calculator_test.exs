@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
+  alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
@@ -577,6 +578,165 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert {:ok, result_without_provoke} = DamageCalculator.calculate_damage(player, mob)
 
       assert result_with_provoke.damage > result_without_provoke.damage
+    end
+  end
+
+  describe "Demon Bane additive ATK (vs undead/demon)" do
+    setup do
+      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
+      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(RaceModifiers, :get_modifier, fn _, _ -> 1.0 end)
+      stub(RaceModifiers, :player_race, fn -> :demi_human end)
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+      :ok
+    end
+
+    test "raises physical damage vs an undead mob by the exact additive bonus" do
+      # def 0 mob: the renewal defense formula is a no-op, so the flat Demon Bane
+      # ATK flows straight through to the final damage. base_level 40, level 5 =>
+      # 5 * (40/20 + 3) = 25.
+      attacker = %{CombatTestHelper.create_player_combatant(base_level: 40) | demon_bane_level: 5}
+      undead_mob = CombatTestHelper.create_mob_combatant(race: :undead, def: 0)
+
+      :rand.seed(:exsss, {1, 2, 3})
+
+      {:ok, %{damage: with_bane}} =
+        DamageCalculator.calculate_damage(attacker, undead_mob, skip_crit: true)
+
+      :rand.seed(:exsss, {1, 2, 3})
+
+      {:ok, %{damage: without_bane}} =
+        DamageCalculator.calculate_damage(
+          %{attacker | demon_bane_level: 0},
+          undead_mob,
+          skip_crit: true
+        )
+
+      assert with_bane - without_bane == 25
+    end
+
+    test "leaves physical damage unchanged vs a non-undead/demon target" do
+      attacker = %{CombatTestHelper.create_player_combatant(base_level: 40) | demon_bane_level: 5}
+      brute_mob = CombatTestHelper.create_mob_combatant(race: :brute, def: 0)
+
+      :rand.seed(:exsss, {1, 2, 3})
+
+      {:ok, %{damage: with_bane}} =
+        DamageCalculator.calculate_damage(attacker, brute_mob, skip_crit: true)
+
+      :rand.seed(:exsss, {1, 2, 3})
+
+      {:ok, %{damage: without_bane}} =
+        DamageCalculator.calculate_damage(
+          %{attacker | demon_bane_level: 0},
+          brute_mob,
+          skip_crit: true
+        )
+
+      assert with_bane == without_bane
+    end
+
+    test "flows the Demon Bane ATK through the defense reduction (def > 0)" do
+      # With DEF > 0 the renewal formula scales the flat +25 ATK down, so the
+      # final-damage delta is the DEF-reduced amount: still positive, but
+      # strictly less than the raw bonus (it is not applied post-defense).
+      attacker = %{CombatTestHelper.create_player_combatant(base_level: 40) | demon_bane_level: 5}
+      undead_mob = CombatTestHelper.create_mob_combatant(race: :undead, def: 60)
+
+      :rand.seed(:exsss, {1, 2, 3})
+
+      {:ok, %{damage: with_bane}} =
+        DamageCalculator.calculate_damage(attacker, undead_mob, skip_crit: true)
+
+      :rand.seed(:exsss, {1, 2, 3})
+
+      {:ok, %{damage: without_bane}} =
+        DamageCalculator.calculate_damage(
+          %{attacker | demon_bane_level: 0},
+          undead_mob,
+          skip_crit: true
+        )
+
+      delta = with_bane - without_bane
+      assert delta > 0
+      assert delta < 25
+    end
+  end
+
+  describe "Divine Protection soft-DEF (vs undead/demon attacker)" do
+    setup do
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+      :ok
+    end
+
+    test "reduces physical damage taken from an undead attacker by the exact soft-DEF bonus" do
+      # base_level 50, level 5 => (50/25 + 3) * 5 + 0.5 = 25.5 -> 25 soft-DEF,
+      # subtracted from the final damage by the renewal defense formula.
+      undead_attacker = CombatTestHelper.create_mob_combatant(race: :undead)
+      defender = CombatTestHelper.create_player_combatant(base_level: 50, vit: 5)
+      defender = %{defender | combat_stats: %{defender.combat_stats | def: 10}}
+      with_dp = %{defender | divine_protection_level: 5}
+
+      {:ok, dmg_no_dp} = DamageCalculator.apply_defense_formula(200, defender, undead_attacker)
+      {:ok, dmg_dp} = DamageCalculator.apply_defense_formula(200, with_dp, undead_attacker)
+
+      assert dmg_no_dp - dmg_dp == 25
+    end
+
+    test "leaves damage from a non-undead/demon attacker unchanged" do
+      brute_attacker = CombatTestHelper.create_mob_combatant(race: :brute)
+      defender = CombatTestHelper.create_player_combatant(base_level: 50, vit: 5)
+      defender = %{defender | combat_stats: %{defender.combat_stats | def: 10}}
+      with_dp = %{defender | divine_protection_level: 5}
+
+      {:ok, dmg_no_dp} = DamageCalculator.apply_defense_formula(200, defender, brute_attacker)
+      {:ok, dmg_dp} = DamageCalculator.apply_defense_formula(200, with_dp, brute_attacker)
+
+      assert dmg_no_dp == dmg_dp
+    end
+
+    test "apply_defense_formula/2 without an attacker applies no Divine Protection" do
+      defender = CombatTestHelper.create_player_combatant(base_level: 50, vit: 5)
+      defender = %{defender | combat_stats: %{defender.combat_stats | def: 10}}
+      with_dp = %{defender | divine_protection_level: 5}
+
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+
+      {:ok, dmg_plain} = DamageCalculator.apply_defense_formula(200, defender)
+      {:ok, dmg_with_dp_field} = DamageCalculator.apply_defense_formula(200, with_dp)
+
+      assert dmg_plain == dmg_with_dp_field
+    end
+  end
+
+  describe "Divine Protection / Demon Bane do not affect magic" do
+    test "magic damage is identical regardless of DP / Demon Bane levels" do
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+
+      attacker = %{
+        unit_type: :player,
+        unit_id: 1001,
+        combat_stats: %{matk: 300, mdef: 0, soft_mdef: 0}
+      }
+
+      defender = %{
+        unit_type: :mob,
+        unit_id: 2001,
+        combat_stats: %{matk: 0, mdef: 10, soft_mdef: 5},
+        element: {:neutral, 1}
+      }
+
+      {:ok, plain} = MagicDamageCalculator.calculate_magic_damage(attacker, defender)
+
+      {:ok, boosted} =
+        MagicDamageCalculator.calculate_magic_damage(
+          Map.put(attacker, :demon_bane_level, 10),
+          Map.put(defender, :divine_protection_level, 10)
+        )
+
+      assert plain.damage == boosted.damage
     end
   end
 

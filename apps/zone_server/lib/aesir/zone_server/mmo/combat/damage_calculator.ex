@@ -119,10 +119,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
     with {:ok, base_atk} <- calculate_base_attack(attacker),
          skilled_atk = div(base_atk * skill_ratio, 100) + bonus_atk,
-         {:ok, total_atk} <- apply_modifier_pipeline(skilled_atk, attacker, defender),
-         {:ok, final_damage} <- apply_defense_formula(total_atk, defender) do
+         {:ok, modified_atk} <- apply_modifier_pipeline(skilled_atk, attacker, defender),
+         total_atk = modified_atk + demon_bane_bonus(attacker, defender),
+         {:ok, final_damage} <- apply_defense_formula(total_atk, defender, attacker) do
       finalize_damage(final_damage, attacker, skip_crit)
     end
+  end
+
+  # Demon Bane (AL_DEMONBANE): flat ATK added before the defense formula when the
+  # defender is undead/demon. Additive, unlike the multiplicative race modifier.
+  defp demon_bane_bonus(attacker, defender) do
+    RaceModifiers.demon_bane_atk(attacker, defender.race)
   end
 
   defp finalize_damage(damage, _attacker, true), do: {:ok, %{damage: damage, is_critical: false}}
@@ -211,10 +218,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   - eDEF = equipment/hard defense
   - sDEF = soft defense (VIT-based)
   """
-  @spec apply_defense_formula(number(), combatant()) :: {:ok, integer()}
-  def apply_defense_formula(total_atk, defender) do
+  @spec apply_defense_formula(number(), combatant(), combatant() | nil) :: {:ok, integer()}
+  def apply_defense_formula(total_atk, defender, attacker \\ nil) do
     hard_def = defender.combat_stats.def
-    soft_def = calculate_soft_defense(defender)
+    soft_def = calculate_soft_defense(defender) + divine_protection_bonus(attacker, defender)
 
     # Apply status effect defense modifiers
     {modified_hard_def, modified_soft_def} =
@@ -281,6 +288,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   defp calculate_soft_defense(%{unit_type: :mob}) do
     # Mobs typically don't have separate soft defense calculation
     0
+  end
+
+  # Divine Protection (AL_DP): flat soft-DEF added to the defender when the
+  # attacker is undead/demon. nil attacker (e.g. the legacy 2-arity call) means
+  # no attacker context, so no Divine Protection is applied.
+  defp divine_protection_bonus(nil, _defender), do: 0
+
+  defp divine_protection_bonus(attacker, defender) do
+    RaceModifiers.divine_protection_def(defender, attacker.race)
   end
 
   # Modifier application functions (unified from original Combat module)

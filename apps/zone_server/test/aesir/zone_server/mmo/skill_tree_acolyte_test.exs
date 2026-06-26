@@ -128,12 +128,65 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeAcolyteTest do
                )
     end
 
-    test "Blessing, Angelus and Signum Crucis are learnable immediately (deferred prereqs dropped)" do
-      base = acolyte_progression(learned_skills: %{})
+    test "Divine Protection is learnable with no prerequisites" do
+      assert :ok =
+               SkillTree.can_learn(
+                 acolyte_progression(learned_skills: %{}),
+                 catalog_id(:al_dp)
+               )
+    end
 
-      assert :ok = SkillTree.can_learn(base, catalog_id(:al_blessing))
-      assert :ok = SkillTree.can_learn(base, catalog_id(:al_angelus))
-      assert :ok = SkillTree.can_learn(base, catalog_id(:al_crucis))
+    test "Demon Bane requires Divine Protection level 3" do
+      demonbane = catalog_id(:al_demonbane)
+      dp = catalog_id(:al_dp)
+
+      assert {:error, :missing_prerequisite} =
+               SkillTree.can_learn(acolyte_progression(learned_skills: %{dp => 2}), demonbane)
+
+      assert :ok =
+               SkillTree.can_learn(acolyte_progression(learned_skills: %{dp => 3}), demonbane)
+    end
+
+    test "Angelus now requires Divine Protection level 3 (gate enforced once DP is catalogued)" do
+      angelus = catalog_id(:al_angelus)
+      dp = catalog_id(:al_dp)
+
+      assert {:error, :missing_prerequisite} =
+               SkillTree.can_learn(acolyte_progression(learned_skills: %{}), angelus)
+
+      assert :ok =
+               SkillTree.can_learn(acolyte_progression(learned_skills: %{dp => 3}), angelus)
+    end
+
+    test "Blessing now requires Divine Protection level 5 (gate enforced once DP is catalogued)" do
+      blessing = catalog_id(:al_blessing)
+      dp = catalog_id(:al_dp)
+
+      assert {:error, :missing_prerequisite} =
+               SkillTree.can_learn(acolyte_progression(learned_skills: %{dp => 4}), blessing)
+
+      assert :ok =
+               SkillTree.can_learn(acolyte_progression(learned_skills: %{dp => 5}), blessing)
+    end
+
+    test "Signum Crucis now requires Demon Bane level 3 (gate enforced once Demon Bane is catalogued)" do
+      crucis = catalog_id(:al_crucis)
+      demonbane = catalog_id(:al_demonbane)
+
+      assert {:error, :missing_prerequisite} =
+               SkillTree.can_learn(acolyte_progression(learned_skills: %{}), crucis)
+
+      assert :ok =
+               SkillTree.can_learn(acolyte_progression(learned_skills: %{demonbane => 3}), crucis)
+    end
+  end
+
+  describe "Divine Protection / Demon Bane in the tree" do
+    test "both resolve into the Acolyte tree" do
+      tree = SkillTree.tree_for(@acolyte_id)
+
+      assert Map.has_key?(tree, catalog_id(:al_dp))
+      assert Map.has_key?(tree, catalog_id(:al_demonbane))
     end
   end
 end

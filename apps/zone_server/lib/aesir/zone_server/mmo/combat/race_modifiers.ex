@@ -34,6 +34,50 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
           | :dragon
           | :boss
 
+  # Races against which Demon Bane / Divine Protection apply. Only mobs carry
+  # these, so both bonuses are PvE-only in practice.
+  @undead_demon [:undead, :demon]
+
+  @doc """
+  Demon Bane (AL_DEMONBANE) additive physical ATK bonus.
+
+  Returns the flat ATK added before defense when the defender's race is undead
+  or demon, matching renewal rAthena `battle_addmastery`
+  (`battle.cpp`): `level * (base_level / 20.0 + 3.0)` truncated to an integer.
+  Returns `0` when the attacker has no Demon Bane level or the defender is
+  neither undead nor demon.
+  """
+  @spec demon_bane_atk(map(), race()) :: non_neg_integer()
+  def demon_bane_atk(
+        %{demon_bane_level: level, progression: %{base_level: base_level}},
+        defender_race
+      )
+      when level > 0 and defender_race in @undead_demon do
+    trunc(level * (base_level / 20.0 + 3.0))
+  end
+
+  def demon_bane_atk(_attacker, _defender_race), do: 0
+
+  @doc """
+  Divine Protection (AL_DP) additive soft-DEF (VIT-DEF) bonus.
+
+  Returns the flat soft defense added to the defender when the attacker's race
+  is undead or demon, matching renewal rAthena `battle_calc_defense`
+  (`battle.cpp`): `(base_level / 25.0 + 3.0) * level + 0.5` truncated to an
+  integer. Returns `0` when the defender has no Divine Protection level or the
+  attacker is neither undead nor demon.
+  """
+  @spec divine_protection_def(map(), race()) :: non_neg_integer()
+  def divine_protection_def(
+        %{divine_protection_level: level, progression: %{base_level: base_level}},
+        attacker_race
+      )
+      when level > 0 and attacker_race in @undead_demon do
+    trunc((base_level / 25.0 + 3.0) * level + 0.5)
+  end
+
+  def divine_protection_def(_defender, _attacker_race), do: 0
+
   @doc """
   Gets the damage modifier for attacking a specific race.
 
