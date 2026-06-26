@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
     Skills.AlDecagi,
     Skills.AlHeal,
     Skills.AlIncagi,
+    Skills.AlRuwach,
     Skills.MgColdbolt,
     Skills.MgEnergycoat,
     Skills.MgFireball,
