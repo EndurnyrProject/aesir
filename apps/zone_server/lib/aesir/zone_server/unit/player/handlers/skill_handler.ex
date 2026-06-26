@@ -32,7 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   @spec handle_use_skill(map(), integer(), pos_integer(), integer()) :: {:noreply, map()}
   def handle_use_skill(%{game_state: game_state} = state, skill_id, level, target_id) do
-    if StatusInterpreter.can_use_skill?(:player, game_state.character_id) do
+    if StatusInterpreter.can_use_skill?(:player, game_state.character_id, skill_id) do
       target = resolve_target(game_state, target_id)
       drive_cast(state, skill_id, level, target)
     else
@@ -44,7 +44,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   @spec handle_use_skill_ground(map(), integer(), pos_integer(), integer(), integer()) ::
           {:noreply, map()}
   def handle_use_skill_ground(%{game_state: game_state} = state, skill_id, level, x, y) do
-    if StatusInterpreter.can_use_skill?(:player, game_state.character_id) do
+    if StatusInterpreter.can_use_skill?(:player, game_state.character_id, skill_id) do
       drive_cast(state, skill_id, level, {:ground, x, y})
     else
       broadcast_cast_cancel(game_state)
@@ -63,7 +63,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       ) do
     game_state = state.game_state
 
-    if StatusInterpreter.can_use_skill?(:player, game_state.character_id) do
+    if StatusInterpreter.can_use_skill?(:player, game_state.character_id, ctx.skill_id) do
       complete_cast(state, game_state, ctx)
     else
       broadcast_cast_cancel(game_state)

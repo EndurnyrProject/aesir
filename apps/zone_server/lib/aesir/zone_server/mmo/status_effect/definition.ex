@@ -35,6 +35,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     - `:prevented_by` - statuses that prevent this one from being applied
     - `:conflicts_with` - statuses that cannot coexist with this one
     - `:end_on_start` - statuses removed when this one is applied
+    - `:allow_skills` - skill ids exempt from this status' `:prevents_skills`, e.g.
+      the skill that toggles the status off (Play Dead recasts NV_TRICKDEAD)
     - `:immunity` - races/elements/special flags immune to this status
     - `:cleanse` - statuses that cure this one
     - `:resistance_type` - `:physical` or `:magical`
@@ -124,6 +126,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     prevented_by: [],
     conflicts_with: [],
     end_on_start: [],
+    allow_skills: [],
     immunity: [],
     cleanse: []
   }
@@ -151,6 +154,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     prevented_by: {:list, :atom},
     conflicts_with: {:list, :atom},
     end_on_start: {:list, :atom},
+    allow_skills: {:list, :integer},
     immunity: {:list, :atom},
     cleanse: {:list, :atom},
     resistance_type: {:enum, [:physical, :magical]},

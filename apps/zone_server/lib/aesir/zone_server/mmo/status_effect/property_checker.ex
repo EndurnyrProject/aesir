@@ -127,6 +127,26 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker do
     end
   end
 
+  @doc """
+  Returns the skill ids exempt from this status' `:prevents_skills`.
+
+  Lets a status permit a specific skill despite blocking the rest, e.g.
+  SC_TRICKDEAD allows recasting NV_TRICKDEAD to stand back up.
+
+  ## Parameters
+    - status_id: The ID of the status effect
+
+  ## Returns
+    - List of skill ids, or empty list if none defined
+  """
+  @spec allowed_skills(atom()) :: list(integer())
+  def allowed_skills(status_id) do
+    case Registry.get_definition(status_id) do
+      %{allow_skills: skills} when is_list(skills) -> skills
+      _ -> []
+    end
+  end
+
   @race_immunities ~w(plant demon dragon angel formless insect fish beast)a
   @element_immunities ~w(fire water earth wind poison holy shadow ghost undead)a
 

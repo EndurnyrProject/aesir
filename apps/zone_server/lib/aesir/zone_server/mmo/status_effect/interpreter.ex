@@ -231,6 +231,22 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     do: not restricted?(unit_type, unit_id, &prevents_skills?/1)
 
   @doc """
+  Returns whether a unit may cast a specific skill.
+
+  Like `can_use_skill?/2`, but a `prevents_skills` status does not block a skill
+  it lists in `:allow_skills`. This lets a feigning-death player recast
+  NV_TRICKDEAD to stand back up even though SC_TRICKDEAD prevents skills.
+  """
+  @spec can_use_skill?(unit_type(), integer(), integer()) :: boolean()
+  def can_use_skill?(unit_type, unit_id, skill_id) do
+    unit_type
+    |> StatusStorage.get_unit_statuses(unit_id)
+    |> Enum.all?(fn %StatusEntry{type: type} ->
+      not prevents_skills?(type) or skill_id in PropertyChecker.allowed_skills(type)
+    end)
+  end
+
+  @doc """
   Returns whether a unit may be targeted, i.e. carries no `untargetable` status.
   """
   @spec targetable?(unit_type(), integer()) :: boolean()

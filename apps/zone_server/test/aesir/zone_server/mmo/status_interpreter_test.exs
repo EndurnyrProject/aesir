@@ -278,6 +278,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
       assert Interpreter.can_use_skill?(:player, player_id) == false
     end
 
+    test "can_use_skill?/3 lets sc_trickdead permit its own toggle skill", %{player_id: player_id} do
+      assert :ok = Interpreter.apply_status(:player, player_id, :sc_trickdead)
+
+      # Blanket skill use is blocked, but NV_TRICKDEAD (143) is exempt so the
+      # player can recast it to stand back up.
+      assert Interpreter.can_use_skill?(:player, player_id) == false
+      assert Interpreter.can_use_skill?(:player, player_id, 143) == true
+      assert Interpreter.can_use_skill?(:player, player_id, 89) == false
+    end
+
     test "targetable? is false while an untargetable status is active", %{player_id: player_id} do
       assert Interpreter.targetable?(:player, player_id) == true
 

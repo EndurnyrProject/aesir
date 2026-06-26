@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   setup :verify_on_exit!
 
   setup do
-    stub(StatusInterpreter, :can_use_skill?, fn _type, _id -> true end)
+    stub(StatusInterpreter, :can_use_skill?, fn _type, _id, _skill -> true end)
     :ok
   end
 
@@ -454,7 +454,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
   describe "skill action-gating" do
     test "a no_skill player calling handle_use_skill gets a CastCancel and no cast is driven" do
-      stub(StatusInterpreter, :can_use_skill?, fn :player, 1000 -> false end)
+      stub(StatusInterpreter, :can_use_skill?, fn :player, 1000, _skill -> false end)
       reject(&Interpreter.begin_cast/4)
       reject(&Catalog.by_id/1)
 
@@ -470,7 +470,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     end
 
     test "a no_skill player calling handle_use_skill_ground gets a CastCancel and no cast is driven" do
-      stub(StatusInterpreter, :can_use_skill?, fn :player, 1000 -> false end)
+      stub(StatusInterpreter, :can_use_skill?, fn :player, 1000, _skill -> false end)
       reject(&Interpreter.begin_cast/4)
       reject(&Catalog.by_id/1)
 
@@ -515,7 +515,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert {:noreply, casting} = SkillHandler.handle_use_skill(casting_state(45), 29, 1, 1000)
       token = casting.game_state.state_context.token
 
-      stub(StatusInterpreter, :can_use_skill?, fn :player, 1000 -> false end)
+      stub(StatusInterpreter, :can_use_skill?, fn :player, 1000, _skill -> false end)
       reject(&Interpreter.complete_cast/4)
       reject(&CharacterPersistence.update_character/3)
 

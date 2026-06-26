@@ -52,6 +52,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.TrickDeadTest do
       assert :prevents_skills in properties
       assert :prevents_attack in properties
     end
+
+    test "exempts NV_TRICKDEAD from its own skill prevention" do
+      assert TrickDead.metadata().allow_skills == [143]
+    end
   end
 
   describe "apply / toggle" do
