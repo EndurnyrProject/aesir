@@ -104,6 +104,24 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     end
   end
 
+  describe "UnitRegistry.register_player/2" do
+    test "stores PlayerState so get_unit_info resolves player entity info", %{
+      character: character
+    } do
+      game_state = PlayerState.new(character)
+
+      assert :ok = UnitRegistry.register_player(game_state, self())
+
+      assert {:ok, {PlayerState, %PlayerState{account_id: 100}, _pid}} =
+               UnitRegistry.get_unit(:player, character.id)
+
+      # Regression: previously the player was registered under the UnitRegistry
+      # module itself, so this dispatched UnitRegistry.get_entity_info/1 and
+      # crashed the session with an UndefinedFunctionError.
+      assert {:ok, %{entity_type: :player}} = UnitRegistry.get_unit_info(:player, character.id)
+    end
+  end
+
   describe "handle_info(:spawn_player)" do
     test "adds player to spatial index and checks visibility", %{character: character} do
       expect(SpatialIndex, :add_player, fn 1, 50, 50, "prontera" -> :ok end)
@@ -238,8 +256,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       other_game_state = %{PlayerState.new(other_character) | movement_state: :standing}
 
       other_pid = spawn(fn -> Process.sleep(1000) end)
-      UnitRegistry.register_player(2, 200, "OtherPlayer", other_pid)
-      UnitRegistry.update_unit_state(:player, 2, other_game_state)
+      UnitRegistry.register_player(other_game_state, other_pid)
 
       state = %{
         character: character,
@@ -274,8 +291,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       other_game_state = %{PlayerState.new(other_character) | movement_state: :standing}
 
       other_pid = spawn(fn -> Process.sleep(1000) end)
-      UnitRegistry.register_player(2, 200, "OtherPlayer", other_pid)
-      UnitRegistry.update_unit_state(:player, 2, other_game_state)
+      UnitRegistry.register_player(other_game_state, other_pid)
 
       state = %{
         character: character,
@@ -319,8 +335,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       other_game_state = %{PlayerState.new(other_character) | movement_state: :standing}
 
       other_pid = spawn(fn -> Process.sleep(1000) end)
-      UnitRegistry.register_player(2, 200, "OtherPlayer", other_pid)
-      UnitRegistry.update_unit_state(:player, 2, other_game_state)
+      UnitRegistry.register_player(other_game_state, other_pid)
 
       state = %{
         character: character,
@@ -355,8 +370,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       other_game_state = %{PlayerState.new(other_character) | movement_state: :standing}
 
       other_pid = spawn(fn -> Process.sleep(1000) end)
-      UnitRegistry.register_player(2, 200, "OtherPlayer", other_pid)
-      UnitRegistry.update_unit_state(:player, 2, other_game_state)
+      UnitRegistry.register_player(other_game_state, other_pid)
 
       state = %{
         character: character,
@@ -665,7 +679,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     end
 
     test "cleans up ETS entries", %{character: character} do
-      UnitRegistry.register_player(1, 100, "TestPlayer", self())
+      UnitRegistry.register_player(PlayerState.new(character), self())
 
       expect(SpatialIndex, :get_visible_players, fn 1 -> [] end)
       expect(SpatialIndex, :remove_player, fn 1 -> :ok end)
@@ -713,7 +727,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
           []
         )
 
-      UnitRegistry.register_player(2, 200, "TestPlayer", other_pid)
+      UnitRegistry.register_player(
+        %PlayerState{character_id: 2, account_id: 200, character_name: "TestPlayer"},
+        other_pid
+      )
 
       # Set up expectations for SpatialIndex
       expect(SpatialIndex, :get_visible_players, fn 1 -> [2] end)

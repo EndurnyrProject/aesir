@@ -39,12 +39,13 @@ defmodule Aesir.Commons.Network.QuicConnectionTest do
     def handle_message(_message, _channel, session_data), do: {:ok, session_data}
   end
 
-  defp start_owner do
+  defp start_owner(extra_opts \\ []) do
     parent = self()
 
     {:ok, pid} =
       start_supervised(
-        {QuicConnection, conn: parent, impl_module: EchoHandler, transport: FakeTransport}
+        {QuicConnection,
+         [conn: parent, impl_module: EchoHandler, transport: FakeTransport] ++ extra_opts}
       )
 
     {pid, parent}
@@ -117,6 +118,21 @@ defmodule Aesir.Commons.Network.QuicConnectionTest do
     ref = Process.monitor(pid)
 
     send(pid, {:quic, parent, {:closed, :peer_closed}})
+
+    assert_receive {:DOWN, ^ref, :process, ^pid, :normal}
+  end
+
+  test "closes the connection when the monitored player session dies" do
+    session = spawn(fn -> Process.sleep(:infinity) end)
+    {pid, parent} = start_owner(session_data: %{player_session_pid: session})
+    ref = Process.monitor(pid)
+
+    # Drive one message so the owner picks up :player_session_pid and monitors it.
+    frame = control_frame(%Hello{protocol_version: 3, build: "dev"}, :hello)
+    send(pid, {:quic, parent, {:stream_data, 0, frame, false}})
+    assert_receive {:sent, _sid, _out_frame}
+
+    Process.exit(session, :kill)
 
     assert_receive {:DOWN, ^ref, :process, ^pid, :normal}
   end

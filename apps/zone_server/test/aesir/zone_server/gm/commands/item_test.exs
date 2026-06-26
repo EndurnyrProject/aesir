@@ -12,16 +12,16 @@ defmodule Aesir.ZoneServer.Gm.Commands.ItemTest do
 
   defp ctx, do: %{game_state: %PlayerState{character_name: "GmChar"}, connection_pid: self()}
 
-  # Mirrors how a live session ends up in the registry: registered, then its
-  # PlayerState written in. get_player_name/1 reads character_name off that struct.
+  # Mirrors how a live session ends up in the registry: the player's PlayerState
+  # is stored under the PlayerState module. get_player_name/1 reads character_name
+  # off that struct.
   defp register_target(char_id, name) do
     pid = spawn(fn -> Process.sleep(:infinity) end)
-    UnitRegistry.register_player(char_id, 1, name, pid)
 
-    UnitRegistry.update_unit_state(:player, char_id, %PlayerState{
-      character_id: char_id,
-      character_name: name
-    })
+    UnitRegistry.register_player(
+      %PlayerState{character_id: char_id, account_id: 1, character_name: name},
+      pid
+    )
 
     pid
   end

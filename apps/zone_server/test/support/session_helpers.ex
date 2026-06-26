@@ -67,10 +67,8 @@ defmodule Aesir.ZoneServer.SessionHelpers do
         y: y
       })
 
-    # Register in UnitRegistry
-    UnitRegistry.register_player(character.id, character.account_id, character.name, pid)
-
-    # Register in SpatialIndex
+    # PlayerSession.init/1 already registers the player in the UnitRegistry with
+    # its full PlayerState, so we only place it in the SpatialIndex here.
     SpatialIndex.add_unit(:player, character.id, x, y, map_name)
 
     %{

@@ -236,7 +236,7 @@ defmodule Aesir.ZoneServer.Npc.WarpIntegrationTest do
   end
 
   defp register_player(game_state) do
-    UnitRegistry.register_unit(:player, @char_id, PlayerSession, game_state, nil)
+    UnitRegistry.register_unit(:player, @char_id, PlayerState, game_state, nil)
     SpatialIndex.add_unit(:player, @char_id, game_state.x, game_state.y, @map)
     Movement.drain_dirty(@map)
   end

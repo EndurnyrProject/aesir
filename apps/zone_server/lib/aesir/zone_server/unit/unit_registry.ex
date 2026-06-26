@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @type unit_type :: Unit.unit_type()
   @type unit_id :: integer()
@@ -165,17 +166,20 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
   @doc """
   Registers a player unit in the registry.
 
-  This is a convenience function specifically for player units that stores
-  the account_id and character name in the state for easy lookup.
-  """
-  @spec register_player(unit_id(), integer(), String.t(), pid()) :: :ok
-  def register_player(char_id, account_id, char_name, pid) do
-    # Store account_id and char_name in state for name lookups
-    state = %{account_id: account_id, char_name: char_name}
-    register_unit(:player, char_id, __MODULE__, state, pid)
+  The full `PlayerState` is stored as the unit state under the `PlayerState`
+  module, mirroring how mobs are registered with `MobState`. This keeps
+  `get_unit_info/2` working (it dispatches `get_entity_info/1` on the stored
+  module) and is the single source of truth for the player's live state.
 
-    # Also create a reverse lookup index for account_id -> char_id
+  Also maintains a reverse `account_id -> char_id` lookup index.
+  """
+  @spec register_player(PlayerState.t(), pid()) :: :ok
+  def register_player(%PlayerState{character_id: char_id, account_id: account_id} = state, pid) do
+    register_unit(:player, char_id, PlayerState, state, pid)
+
     :ets.insert(table_for(:unit_registry), {{:account_index, account_id}, char_id})
+
+    :ok
   end
 
   @doc """
@@ -219,8 +223,7 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
   @spec get_player_name(unit_id()) :: {:ok, String.t()} | {:error, :not_found}
   def get_player_name(char_id) do
     case get_unit(:player, char_id) do
-      # Handle PlayerState struct format
-      {:ok, {_module, %Aesir.ZoneServer.Unit.Player.PlayerState{character_name: char_name}, _pid}} ->
+      {:ok, {_module, %PlayerState{character_name: char_name}, _pid}} ->
         {:ok, char_name}
 
       {:ok, _} ->

@@ -57,6 +57,7 @@ defmodule Aesir.Commons.Network.QuicConnection do
       field :out_seq, non_neg_integer(), default: 0
       field :client_id, non_neg_integer() | nil, default: nil
       field :account_id, non_neg_integer() | nil, default: nil
+      field :session_monitor_ref, reference() | nil, default: nil
     end
   end
 
@@ -130,6 +131,14 @@ defmodule Aesir.Commons.Network.QuicConnection do
     {:stop, :normal, state}
   end
 
+  def handle_info(
+        {:DOWN, ref, :process, _pid, reason},
+        %State{session_monitor_ref: ref} = state
+      ) do
+    Logger.debug("QuicConnection closing: player session ended (#{inspect(reason)})")
+    {:stop, :normal, state}
+  end
+
   def handle_info({:send, channel, {_tag, _message} = response}, %State{} = state) do
     {:noreply, send_response(state, channel, response)}
   end
@@ -192,15 +201,22 @@ defmodule Aesir.Commons.Network.QuicConnection do
   defp apply_handler(%State{} = state, channel, message) do
     case state.impl_module.handle_message(message, channel, state.session_data) do
       {:ok, session_data} ->
-        {:ok, maybe_subscribe_player_events(%State{state | session_data: session_data})}
+        {:ok, post_handle(state, session_data)}
 
       {:ok, session_data, responses} ->
-        state = maybe_subscribe_player_events(%State{state | session_data: session_data})
+        state = post_handle(state, session_data)
         {:ok, Enum.reduce(responses, state, &send_response(&2, channel, &1))}
 
       {:error, reason} ->
         {:error, {:handler, reason}}
     end
+  end
+
+  @spec post_handle(State.t(), map()) :: State.t()
+  defp post_handle(%State{} = state, session_data) do
+    %State{state | session_data: session_data}
+    |> maybe_subscribe_player_events()
+    |> maybe_monitor_session()
   end
 
   @spec maybe_subscribe_player_events(State.t()) :: State.t()
@@ -215,6 +231,22 @@ defmodule Aesir.Commons.Network.QuicConnection do
   end
 
   defp maybe_subscribe_player_events(%State{} = state), do: state
+
+  # Once a server hands this connection a long-lived session process (the zone
+  # server stores it as `:player_session_pid`), monitor it so the connection is
+  # torn down when that process dies — including on a crash. Stopping the owner
+  # closes the QUIC connection, disconnecting the client instead of leaving it
+  # attached to a dead session.
+  @spec maybe_monitor_session(State.t()) :: State.t()
+  defp maybe_monitor_session(%State{session_monitor_ref: ref} = state) when is_reference(ref),
+    do: state
+
+  defp maybe_monitor_session(%State{session_data: %{player_session_pid: pid}} = state)
+       when is_pid(pid) do
+    %State{state | session_monitor_ref: Process.monitor(pid)}
+  end
+
+  defp maybe_monitor_session(%State{} = state), do: state
 
   @spec send_response(State.t(), QuinnetCodec.channel(), response()) :: State.t()
   defp send_response(%State{} = state, channel, {tag, message}) do

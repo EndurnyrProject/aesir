@@ -2,9 +2,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @moduledoc """
   GenServer managing a single player's session.
   Each player gets their own process for fault isolation and concurrency.
+
+  Restart is `:temporary`: a player session is bound to a live connection and a
+  freshly loaded character. If it crashes there is no safe state to restart from
+  (the in-memory game state is gone and the original args are stale), so instead
+  the owning connection is torn down and the client must reconnect.
   """
 
-  use GenServer
+  use GenServer, restart: :temporary
 
   require Logger
 
@@ -210,7 +215,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
           interaction_lock: nil
         }
 
-        register_player(character.id, character.account_id, character.name)
+        register_player(final_game_state)
 
         # Subscribe to this player's event topic. Kill rewards and other
         # player-directed domain events arrive here, keeping emitters
@@ -637,8 +642,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     %{state | game_state: new_game_state}
   end
 
-  defp register_player(char_id, account_id, char_name),
-    do: UnitRegistry.register_player(char_id, account_id, char_name, self())
+  defp register_player(%PlayerState{} = game_state),
+    do: UnitRegistry.register_player(game_state, self())
 
   defp sex_to_int("F"), do: 0
   defp sex_to_int("M"), do: 1
