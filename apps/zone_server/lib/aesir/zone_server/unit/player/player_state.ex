@@ -81,6 +81,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
+  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
@@ -608,6 +609,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   @impl Aesir.ZoneServer.Unit
   def to_combatant(%__MODULE__{} = state) do
     weapon_type = PlayerStats.weapon_type(state.stats.equipment)
+    learned = state.stats.progression.learned_skills
 
     Combatant.new!(%{
       unit_id: state.character_id,
@@ -626,7 +628,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       attack_range: WeaponTypes.get_attack_range(weapon_type),
       attack_delay_ms: AttackSpeed.calculate_delay_from_stats(state.stats),
       position: {state.x, state.y},
-      map_name: state.map_name
+      map_name: state.map_name,
+      divine_protection_level: Learned.learned_level(learned, 22),
+      demon_bane_level: Learned.learned_level(learned, 23)
     })
   end
 end

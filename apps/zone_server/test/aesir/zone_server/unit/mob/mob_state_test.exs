@@ -94,4 +94,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
       assert combatant.attack_delay_ms == state.mob_data.attack_delay
     end
   end
+
+  describe "to_combatant/1 passive skill levels" do
+    test "mob combatant has divine_protection_level and demon_bane_level of 0" do
+      state = build_mob_state()
+
+      combatant = MobState.to_combatant(state)
+
+      assert combatant.divine_protection_level == 0
+      assert combatant.demon_bane_level == 0
+    end
+  end
 end

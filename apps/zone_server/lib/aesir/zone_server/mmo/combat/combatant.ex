@@ -108,6 +108,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
 
     # Map context (optional)
     field :map_name, String.t(), enforce: false
+
+    # Passive skill levels precomputed at combatant-build time (0 for mobs).
+    field :divine_protection_level, integer(), default: 0
+    field :demon_bane_level, integer(), default: 0
   end
 
   @doc """

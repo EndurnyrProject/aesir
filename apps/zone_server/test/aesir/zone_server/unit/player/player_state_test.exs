@@ -418,6 +418,23 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       assert combatant.combat_stats.mdef == state.stats.combat_stats.mdef
       assert combatant.combat_stats.soft_mdef == state.stats.combat_stats.soft_mdef
     end
+
+    test "defaults divine_protection_level and demon_bane_level to 0 with no learned skills",
+         %{state: state} do
+      combatant = PlayerState.to_combatant(state)
+
+      assert combatant.divine_protection_level == 0
+      assert combatant.demon_bane_level == 0
+    end
+
+    test "carries AL_DP and AL_DEMONBANE levels from learned skills onto the combatant",
+         %{state: state} do
+      state = put_in(state.stats.progression.learned_skills, %{22 => 5, 23 => 3})
+      combatant = PlayerState.to_combatant(state)
+
+      assert combatant.divine_protection_level == 5
+      assert combatant.demon_bane_level == 3
+    end
   end
 
   describe "indexed inventory" do
