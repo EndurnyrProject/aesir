@@ -33,7 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Blessing do
       str: instance.val2,
       int: instance.val2,
       dex: instance.val2,
-      hit: instance.val2 * 3
+      hit: instance.val1 * 2
     }
   end
 
