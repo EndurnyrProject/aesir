@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects do
     Effects.PoisonReact,
     Effects.Provoke,
     Effects.Quagmire,
+    Effects.Ruwach,
     Effects.Safetywall,
     Effects.SignumCrucis,
     Effects.Sight,
