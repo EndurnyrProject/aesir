@@ -26,6 +26,8 @@
       max_level: 1
     - name: AL_RUWACH
       max_level: 1
+    - name: AL_PNEUMA
+      max_level: 1
     - name: AL_CURE
       max_level: 1
       requires:
