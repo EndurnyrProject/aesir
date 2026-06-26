@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
+  alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
@@ -185,6 +186,66 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   @spec apply_heal(integer(), non_neg_integer(), integer() | nil) :: :ok
   def apply_heal(target_id, amount, source_id \\ nil) do
     PubSub.broadcast(Aesir.PubSub, "player:#{target_id}", {:apply_heal, amount, source_id})
+  end
+
+  @doc """
+  Applies an explicit damage amount as a single magic hit of the given element,
+  bypassing MATK and MDEF.
+
+  Intended for the Heal undead/demon branch: the already-computed heal value is
+  delivered as holy damage, so MATK and MDEF play no role — only the target's
+  element resistance modifies the amount. Resolves and range-checks the target
+  identically to `execute_magic_attack/3`, broadcasts a `SkillDamage` packet, and
+  applies the final damage.
+
+  ## Options
+
+    - `:skill_id` / `:skill_level` — identify the skill for the damage packet (required).
+    - `:element` — attack element applied against the target's element resistance
+      (default `:neutral`).
+
+  ## Returns
+
+    - `:ok` on success.
+    - `{:error, reason}` when the target is invalid, out of range, or a player (PvP).
+  """
+  @spec execute_magic_damage(struct(), integer(), non_neg_integer(), keyword()) ::
+          :ok | {:error, atom()}
+  def execute_magic_damage(caster_state, target_id, amount, opts) do
+    attacker = caster_state.__struct__.to_combatant(caster_state)
+    skill_id = Keyword.fetch!(opts, :skill_id)
+    skill_level = Keyword.fetch!(opts, :skill_level)
+    element = Keyword.get(opts, :element, :neutral)
+
+    with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
+         target <- target_state.__struct__.to_combatant(target_state),
+         :ok <- validate_attack_with_combatants(attacker, target),
+         :ok <- ensure_offensive_target(target_type) do
+      damage =
+        amount
+        |> DamageShared.apply_element(element, target)
+        |> DamageShared.clamp_min_one()
+
+      {tx, ty} = target.position
+
+      packet = %SkillDamage{
+        skill_id: skill_id,
+        level: skill_level,
+        src_id: attacker.unit_id,
+        target_id: target_id,
+        server_tick: ServerTick.now(),
+        src_delay: 0,
+        dst_delay: 0,
+        damage: damage,
+        div: 1,
+        type: @dmg_splash
+      }
+
+      Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
+      hit_info = %{dmg_type: :magic, is_short: false, element: element}
+      apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, attacker.unit_id)
+      :ok
+    end
   end
 
   @doc """
