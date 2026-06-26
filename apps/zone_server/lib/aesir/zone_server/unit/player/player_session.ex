@@ -351,6 +351,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
+  def handle_info({:apply_heal, amount, source_id}, state) do
+    HealthHandler.apply_heal(amount, source_id, state)
+  end
+
+  @impl true
   def handle_info({:mob_despawned, mob_instance_id}, state) do
     # Only clear combat if this player was targeting this specific mob
     if state.game_state.combat_target_id == mob_instance_id do

@@ -118,6 +118,54 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     end
   end
 
+  describe "apply_heal/3" do
+    test "raises HP and pushes an SP_HP update" do
+      {:noreply, %{game_state: game_state}} =
+        HealthHandler.apply_heal(20, nil, build_state(70, :idle))
+
+      assert game_state.stats.current_state.hp == 90
+      assert_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_hp, value: 90}}}
+    end
+
+    test "clamps HP at max_hp" do
+      {:noreply, %{game_state: game_state}} =
+        HealthHandler.apply_heal(30, nil, build_state(90, :idle))
+
+      assert game_state.stats.current_state.hp == 100
+      assert_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_hp, value: 100}}}
+    end
+
+    test "is a no-op when the player is dead" do
+      state = build_state(0, :dead)
+
+      assert {:noreply, ^state} = HealthHandler.apply_heal(50, nil, state)
+      refute_received {:send, _, _}
+    end
+
+    test "is a no-op when amount is zero or negative" do
+      state = build_state(70, :idle)
+
+      assert {:noreply, ^state} = HealthHandler.apply_heal(0, nil, state)
+      assert {:noreply, ^state} = HealthHandler.apply_heal(-10, nil, state)
+    end
+
+    test "does not trigger death or cast interrupt" do
+      {:noreply, %{game_state: game_state}} =
+        HealthHandler.apply_heal(20, nil, build_state(50, :idle))
+
+      assert game_state.action_state == :idle
+      assert game_state.stats.current_state.hp == 70
+    end
+
+    test "persists the updated HP asynchronously" do
+      expect(CharacterPersistence, :update_stats, fn 1, %{hp: 90}, [async: true] ->
+        {:ok, %Character{}}
+      end)
+
+      HealthHandler.apply_heal(20, nil, build_state(70, :idle))
+    end
+  end
+
   describe "handle_restart/2" do
     test "revives a dead player at full HP/SP and warps them to their save point" do
       stub(WarpHandler, :warp, fn warp_state, save_map, save_x, save_y ->

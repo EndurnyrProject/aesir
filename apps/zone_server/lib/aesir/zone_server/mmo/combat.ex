@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
+  alias Phoenix.PubSub
 
   # ZC_NOTIFY_SKILL `type` for a splash/area skill hit (e_damage_type DMG_SPLASH).
   @dmg_splash 5
@@ -173,6 +174,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
       apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, nil)
       :ok
     end
+  end
+
+  @doc """
+  Broadcasts a heal to a player session via PubSub.
+
+  An offline player (no subscriber) is a silent no-op. Mobs are never healed;
+  for undead/demon targets use the damage path instead.
+  """
+  @spec apply_heal(integer(), non_neg_integer(), integer() | nil) :: :ok
+  def apply_heal(target_id, amount, source_id \\ nil) do
+    PubSub.broadcast(Aesir.PubSub, "player:#{target_id}", {:apply_heal, amount, source_id})
   end
 
   @doc """

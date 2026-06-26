@@ -79,6 +79,35 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   def apply_damage(_damage, _attacker_id, state), do: {:noreply, state}
 
   @doc """
+  Applies a heal to the player.
+
+  Raises HP by `amount`, clamped at `max_hp`. No-op when the player is dead
+  or `amount` is non-positive. Does not trigger death or cast-interrupt logic.
+  """
+  @spec apply_heal(non_neg_integer(), integer() | nil, map()) :: {:noreply, map()}
+  def apply_heal(_amount, _source_id, %{game_state: %{action_state: :dead}} = state) do
+    {:noreply, state}
+  end
+
+  def apply_heal(amount, _source_id, state) when amount > 0 do
+    stats = state.game_state.stats
+    max_hp = stats.derived_stats.max_hp
+    new_hp = min(stats.current_state.hp + amount, max_hp)
+    char_id = state.game_state.character_id
+
+    updated_stats = %{stats | current_state: %{stats.current_state | hp: new_hp}}
+    game_state = %{state.game_state | stats: updated_stats}
+    state = StatsManager.update_game_state(state, game_state)
+
+    StatusSync.send_param(state.connection_pid, StatusParams.hp(), new_hp)
+    CharacterPersistence.update_stats(char_id, %{hp: new_hp}, async: true)
+
+    {:noreply, state}
+  end
+
+  def apply_heal(_amount, _source_id, state), do: {:noreply, state}
+
+  @doc """
   Drains SP from the player, clamping at zero, then syncs and persists it.
 
   Mirrors the natural-heal SP path: updates `current_state.sp`, pushes the new

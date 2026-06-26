@@ -166,6 +166,24 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
     end
   end
 
+  describe "apply_heal/3" do
+    test "broadcasts {:apply_heal, amount, source_id} on the player topic" do
+      Phoenix.PubSub.subscribe(Aesir.PubSub, "player:42000")
+
+      Combat.apply_heal(42_000, 500, 1001)
+
+      assert_receive {:apply_heal, 500, 1001}
+    end
+
+    test "source_id defaults to nil" do
+      Phoenix.PubSub.subscribe(Aesir.PubSub, "player:42001")
+
+      Combat.apply_heal(42_001, 300)
+
+      assert_receive {:apply_heal, 300, nil}
+    end
+  end
+
   describe "deal_damage/4" do
     test "returns error for non-existent target" do
       {result, _log} =
