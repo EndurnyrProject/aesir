@@ -26,6 +26,11 @@
       max_level: 1
     - name: AL_RUWACH
       max_level: 1
+    - name: AL_TELEPORT
+      max_level: 2
+      requires:
+        - name: AL_RUWACH
+          level: 1
     - name: AL_PNEUMA
       max_level: 1
     - name: AL_CURE
