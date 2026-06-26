@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -261,6 +262,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # registry, persist HP/SP, sync to client, and emit the cooldown sweep.
   defp commit_cast(%{connection_pid: connection_pid}, new_game_state, skill_id, level) do
     new_game_state = persist_catalysts(new_game_state)
+    new_game_state = notify_inventory(connection_pid, new_game_state)
 
     updated_stats = Stats.calculate_stats(new_game_state.stats, new_game_state.character_id)
     new_game_state = %{new_game_state | stats: updated_stats}
@@ -303,6 +305,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       end)
 
     %{game_state | inventory: inventory, pending_inventory_persist: []}
+  end
+
+  # Drains the inventory-add notifications a skill staged during its cast,
+  # emitting an ItemAdded for each affected slot from the now-persisted
+  # inventory, then clears the staging field. Mirrors `persist_catalysts`.
+  defp notify_inventory(_connection_pid, %{pending_inventory_notify: []} = game_state),
+    do: game_state
+
+  defp notify_inventory(connection_pid, %{pending_inventory_notify: changes} = game_state) do
+    Enum.each(changes, &InventoryManager.notify_added(connection_pid, game_state.inventory, &1))
+    %{game_state | pending_inventory_notify: []}
   end
 
   defp log_cast_failure(skill_id, character_id, reason) do

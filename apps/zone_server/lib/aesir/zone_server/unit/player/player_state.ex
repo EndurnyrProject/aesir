@@ -69,7 +69,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           pending_inventory_persist: [
             {%{non_neg_integer() => InventoryItem.t()}, %{non_neg_integer() => InventoryItem.t()},
              term()}
-          ]
+          ],
+          pending_inventory_notify: [tuple()]
         }
 
   @client_index_offset 2
@@ -171,6 +172,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # write through, then cleared. Each entry is `{old_inventory, new_inventory,
     # change}` as produced by `Inventory.remove/3`.
     pending_inventory_persist: [],
+    # Inventory-add change descriptors staged by a skill cast so the session
+    # handler can emit an ItemAdded for each new/affected slot, then clear them.
+    pending_inventory_notify: [],
     skill_cooldowns: %{},
     last_attack_timestamp: 0,
     act_delay_until: 0,

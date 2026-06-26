@@ -61,10 +61,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
            amount
          ) do
       {:ok, persisted, change} ->
-        Enum.each(affected_indices(change), fn index ->
-          item = PlayerState.get_by_index(persisted, index)
-          MessageRouter.send_to(state.connection_pid, PacketHandler.item_added(item, index))
-        end)
+        notify_added(state.connection_pid, persisted, change)
 
         {:noreply, %{state | game_state: %{game_state | inventory: persisted}}}
 
@@ -75,6 +72,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
 
         {:noreply, state}
     end
+  end
+
+  @doc """
+  Emits an `ItemAdded` to `connection_pid` for every slot `change` touched,
+  reading each affected item from `inventory`.
+
+  Shared by the give-item flow and any session-side commit that needs to notify
+  the client of an inventory add it staged earlier (e.g. a skill that produces
+  an item).
+  """
+  @spec notify_added(pid(), Inventory.t(), Inventory.change()) :: :ok
+  def notify_added(connection_pid, inventory, change) do
+    Enum.each(affected_indices(change), fn index ->
+      item = PlayerState.get_by_index(inventory, index)
+      MessageRouter.send_to(connection_pid, PacketHandler.item_added(item, index))
+    end)
   end
 
   defp affected_indices({:added, index, _item}), do: [index]

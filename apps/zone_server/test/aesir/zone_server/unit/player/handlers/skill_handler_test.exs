@@ -2,8 +2,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   use ExUnit.Case, async: true
   import Mimic
 
+  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.CastCancel
   alias Aesir.Net.GroundSkillCast
+  alias Aesir.Net.ItemAdded
   alias Aesir.Net.MapLoaded
   alias Aesir.Net.SkillCast
   alias Aesir.Net.SkillCasting
@@ -90,6 +92,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         action_state: :idle,
         state_context: %{},
         pending_inventory_persist: [],
+        pending_inventory_notify: [],
         stats: %{
           base_stats: %{dex: 1, int: 1},
           current_state: %{sp: sp, hp: 100},
@@ -200,6 +203,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       s = instant_state(1)
       assert {:noreply, ^s} = SkillHandler.handle_use_skill(s, 29, 1, 1000)
+    end
+
+    test "drains pending_inventory_notify on commit, emitting ItemAdded for the produced item" do
+      item = %InventoryItem{nameid: 523, amount: 1, identify: 1}
+
+      base = instant_state(30)
+
+      staged =
+        base.game_state
+        |> Map.put(:inventory, %{0 => item})
+        |> Map.put(:pending_inventory_notify, [{:added, 0, item}])
+
+      expect(Interpreter, :begin_cast, fn _gs, 31, 1, :self -> {:instant, staged} end)
+      stub(Catalog, :by_id, fn 31 -> {:ok, definition(id: 31, cooldown: [])} end)
+      stub(PlayerStats, :calculate_stats, fn stats, 1000 -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+
+      assert {:noreply, new_state} = SkillHandler.handle_use_skill(base, 31, 1, 1000)
+
+      assert_received {:send, :gameplay, {:item_added, %ItemAdded{nameid: 523}}}
+      assert new_state.game_state.pending_inventory_notify == []
     end
 
     test "sends ZC_SKILL_POSTDELAY when the skill has a cooldown" do

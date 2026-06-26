@@ -22,6 +22,8 @@
       requires:
         - name: AL_INCAGI
           level: 1
+    - name: AL_HOLYWATER
+      max_level: 1
     - name: AL_RUWACH
       max_level: 1
     - name: AL_CURE
