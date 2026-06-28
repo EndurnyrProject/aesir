@@ -46,5 +46,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
     field :equip_level_max, integer(), default: 0
     field :refineable, boolean(), default: false
     field :on_use, String.t(), default: nil
+    field :attack_element, atom(), default: nil
   end
 end

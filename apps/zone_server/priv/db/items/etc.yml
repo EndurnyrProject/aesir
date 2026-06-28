@@ -1552,6 +1552,7 @@
   weight: 1
 - aegis_name: Silver_Arrow
   attack: 30
+  attack_element: holy
   buy: 5
   equip_level_min: 1
   id: 1751
@@ -1570,6 +1571,7 @@
   weight: 1
 - aegis_name: Fire_Arrow
   attack: 30
+  attack_element: fire
   buy: 5
   equip_level_min: 1
   id: 1752
@@ -1606,6 +1608,7 @@
   weight: 1
 - aegis_name: Crystal_Arrow
   attack: 30
+  attack_element: water
   buy: 5
   equip_level_min: 1
   id: 1754
@@ -1624,6 +1627,7 @@
   weight: 1
 - aegis_name: Arrow_Of_Wind
   attack: 30
+  attack_element: wind
   buy: 5
   equip_level_min: 1
   id: 1755
@@ -1642,6 +1646,7 @@
   weight: 1
 - aegis_name: Stone_Arrow
   attack: 30
+  attack_element: earth
   buy: 5
   equip_level_min: 1
   id: 1756
@@ -1660,6 +1665,7 @@
   weight: 1
 - aegis_name: Immatrial_Arrow
   attack: 30
+  attack_element: ghost
   buy: 5
   equip_level_min: 1
   id: 1757
@@ -1696,6 +1702,7 @@
   weight: 1
 - aegis_name: Freezing_Arrow
   attack: 1
+  attack_element: water
   buy: 10
   equip_level_min: 1
   id: 1759
@@ -1750,6 +1757,7 @@
   weight: 1
 - aegis_name: Rusty_Arrow
   attack: 30
+  attack_element: poison
   buy: 5
   equip_level_min: 1
   id: 1762
@@ -1768,6 +1776,7 @@
   weight: 1
 - aegis_name: Poison_Arrow
   attack: 1
+  attack_element: poison
   buy: 10
   equip_level_min: 1
   id: 1763
@@ -1822,6 +1831,7 @@
   weight: 1
 - aegis_name: Arrow_Of_Counter_Evil
   attack: 50
+  attack_element: holy
   buy: 40
   equip_level_min: 1
   id: 1766
@@ -1840,6 +1850,7 @@
   weight: 3
 - aegis_name: Arrow_Of_Shadow
   attack: 30
+  attack_element: shadow
   buy: 5
   equip_level_min: 1
   id: 1767
@@ -1925,6 +1936,7 @@
   weight: 5
 - aegis_name: Holy_Arrow
   attack: 50
+  attack_element: holy
   buy: 3
   equip_level_min: 1
   id: 1772

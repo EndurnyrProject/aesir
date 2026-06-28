@@ -115,9 +115,64 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
 
       assert {:error, {:unknown_subtype, "Bogus"}} = Importer.to_definition(entry)
     end
+
+    test "parses bonus bAtkEle into attack_element for each supported element" do
+      for {ele_str, expected} <- [
+            {"Ele_Fire", :fire},
+            {"Ele_Water", :water},
+            {"Ele_Wind", :wind},
+            {"Ele_Earth", :earth},
+            {"Ele_Holy", :holy},
+            {"Ele_Dark", :shadow},
+            {"Ele_Ghost", :ghost},
+            {"Ele_Poison", :poison},
+            {"Ele_Undead", :undead},
+            {"Ele_Neutral", :neutral}
+          ] do
+        entry = %{
+          "Id" => 1755,
+          "AegisName" => "Test_Arrow",
+          "Name" => "Test Arrow",
+          "Script" => "bonus bAtkEle,#{ele_str};"
+        }
+
+        assert {:ok, %ItemDefinition{attack_element: ^expected}} = Importer.to_definition(entry)
+      end
+    end
+
+    test "attack_element is nil when no Script field" do
+      entry = %{"Id" => 1750, "AegisName" => "Arrow", "Name" => "Arrow"}
+
+      assert {:ok, %ItemDefinition{attack_element: nil}} = Importer.to_definition(entry)
+    end
+
+    test "attack_element is nil when Script has no bAtkEle bonus" do
+      entry = %{
+        "Id" => 1758,
+        "AegisName" => "Stun_Arrow",
+        "Name" => "Stun Arrow",
+        "Script" => "bonus2 bAddEff,Eff_Stun,2000;"
+      }
+
+      assert {:ok, %ItemDefinition{attack_element: nil}} = Importer.to_definition(entry)
+    end
   end
 
   describe "to_yaml_map/1" do
+    test "encodes attack_element as a string and omits nil" do
+      elemental = %ItemDefinition{
+        id: 1752,
+        aegis_name: "Fire_Arrow",
+        name: "Fire Arrow",
+        attack_element: :fire
+      }
+
+      plain = %ItemDefinition{id: 1750, aegis_name: "Arrow", name: "Arrow"}
+
+      assert %{"attack_element" => "fire"} = Importer.to_yaml_map(elemental)
+      refute Map.has_key?(Importer.to_yaml_map(plain), "attack_element")
+    end
+
     test "stringifies keys/atoms and omits default-valued fields" do
       definition = %ItemDefinition{
         id: 1201,
@@ -171,6 +226,25 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       File.write!(Path.join(dir, "items.yml"), yaml)
 
       assert %{by_id: %{1201 => ^definition}} = Loader.load(dir)
+    end
+
+    @tag :tmp_dir
+    test "round-trips attack_element through the Loader", %{tmp_dir: dir} do
+      definition = %ItemDefinition{
+        id: 1752,
+        aegis_name: "Fire_Arrow",
+        name: "Fire Arrow",
+        type: :ammo,
+        subtype: :arrow,
+        attack: 30,
+        locations: [:ammo],
+        attack_element: :fire
+      }
+
+      yaml = Ymlr.document!([Importer.to_yaml_map(definition)])
+      File.write!(Path.join(dir, "items.yml"), yaml)
+
+      assert %{by_id: %{1752 => ^definition}} = Loader.load(dir)
     end
   end
 end

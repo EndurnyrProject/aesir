@@ -121,6 +121,30 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
     end
 
     @tag :tmp_dir
+    test "atomizes attack_element when present and defaults to nil", %{tmp_dir: dir} do
+      write_yaml(dir, """
+      - id: 1752
+        aegis_name: Fire_Arrow
+        name: Fire Arrow
+        type: ammo
+        subtype: arrow
+        attack_element: fire
+      - id: 1750
+        aegis_name: Arrow
+        name: Arrow
+        type: ammo
+        subtype: arrow
+      """)
+
+      assert %{
+               by_id: %{
+                 1752 => %ItemDefinition{attack_element: :fire},
+                 1750 => %ItemDefinition{attack_element: nil}
+               }
+             } = Loader.load(dir)
+    end
+
+    @tag :tmp_dir
     test "on_use preserves multiline block content", %{tmp_dir: dir} do
       write_yaml(dir, """
       - id: 501

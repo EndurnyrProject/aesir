@@ -58,6 +58,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
     "enchant" => :enchant
   }
 
+  @b_atk_ele %{
+    "Fire" => :fire,
+    "Water" => :water,
+    "Wind" => :wind,
+    "Earth" => :earth,
+    "Holy" => :holy,
+    "Dark" => :shadow,
+    "Ghost" => :ghost,
+    "Poison" => :poison,
+    "Undead" => :undead,
+    "Neutral" => :neutral
+  }
+
   @always [:id, :aegis_name, :name, :type]
   @defaults Map.from_struct(struct(ItemDefinition, %{}))
 
@@ -72,7 +85,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
   end
 
   @spec encode_value(atom(), term()) :: term()
-  defp encode_value(field, value) when field in [:type, :subtype], do: Atom.to_string(value)
+  defp encode_value(field, value) when field in [:type, :subtype, :attack_element],
+    do: Atom.to_string(value)
 
   defp encode_value(field, value) when field in [:jobs, :locations] do
     Enum.map(value, &Atom.to_string/1)
@@ -106,7 +120,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
          armor_level: Map.get(entry, "ArmorLevel"),
          equip_level_min: Map.get(entry, "EquipLevelMin", 0),
          equip_level_max: Map.get(entry, "EquipLevelMax", 0),
-         refineable: Map.get(entry, "Refineable", false)
+         refineable: Map.get(entry, "Refineable", false),
+         attack_element: parse_attack_element(Map.get(entry, "Script"))
        }}
     end
   end
@@ -137,5 +152,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
   @spec atomize(String.t()) :: atom()
   defp atomize(str) do
     str |> Macro.underscore() |> String.replace("__", "_") |> String.to_atom()
+  end
+
+  @spec parse_attack_element(String.t() | nil) :: atom() | nil
+  defp parse_attack_element(nil), do: nil
+
+  defp parse_attack_element(script) do
+    case Regex.run(~r/bonus\s+bAtkEle\s*,\s*Ele_(\w+)/, script, capture: :all_but_first) do
+      [ele] -> Map.get(@b_atk_ele, ele)
+      nil -> nil
+    end
   end
 end
