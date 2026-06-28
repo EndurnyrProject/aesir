@@ -16,12 +16,23 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   @guard 2101
   @cotton_shirt 2301
   @soul_staff 1472
+  # Headgear and garment items with known view values.
+  @wedding_veil 2206
+  @sunglasses 2201
+  @flu_mask 2218
+  @adventurers_backpack 2576
+  # Two-handed bow that has a non-zero view (11) — used for the shield_view bug test.
+  @ixion_wing 18_129
 
   # EQP position bitmasks.
   @right_hand 2
   @left_hand 32
   @both_hand 34
   @armor_pos 16
+  @head_top_pos 256
+  @head_mid_pos 512
+  @head_low_pos 1
+  @garment_pos 4
 
   defp equipped(nameid, equip) do
     %InventoryItem{nameid: nameid, amount: 1, equip: equip, identify: 1}
@@ -678,6 +689,58 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert staffed.combat_stats.matk_max == bare.combat_stats.matk_max + 260
       assert staffed.combat_stats.matk_min < staffed.combat_stats.matk_max
       assert staffed.combat_stats.matk == staffed.combat_stats.matk_max
+    end
+  end
+
+  describe "view extractors" do
+    test "head_top_view returns item view for equipped head-top" do
+      equipment = Stats.equipment_from_inventory([equipped(@wedding_veil, @head_top_pos)])
+      assert Stats.head_top_view(equipment) == 44
+    end
+
+    test "head_top_view returns 0 for empty slot" do
+      assert Stats.head_top_view(%Equipment{}) == 0
+    end
+
+    test "head_mid_view returns item view for equipped head-mid" do
+      equipment = Stats.equipment_from_inventory([equipped(@sunglasses, @head_mid_pos)])
+      assert Stats.head_mid_view(equipment) == 12
+    end
+
+    test "head_mid_view returns 0 for empty slot" do
+      assert Stats.head_mid_view(%Equipment{}) == 0
+    end
+
+    test "head_bottom_view returns item view for equipped head-low" do
+      equipment = Stats.equipment_from_inventory([equipped(@flu_mask, @head_low_pos)])
+      assert Stats.head_bottom_view(equipment) == 8
+    end
+
+    test "head_bottom_view returns 0 for empty slot" do
+      assert Stats.head_bottom_view(%Equipment{}) == 0
+    end
+
+    test "robe_view returns item view for equipped garment" do
+      equipment = Stats.equipment_from_inventory([equipped(@adventurers_backpack, @garment_pos)])
+      assert Stats.robe_view(equipment) == 2
+    end
+
+    test "robe_view returns 0 for empty slot" do
+      assert Stats.robe_view(%Equipment{}) == 0
+    end
+
+    test "shield_view returns item view for a real shield" do
+      equipment = Stats.equipment_from_inventory([equipped(@guard, @left_hand)])
+      assert Stats.shield_view(equipment) == 1
+    end
+
+    test "shield_view returns 0 for empty slot" do
+      assert Stats.shield_view(%Equipment{}) == 0
+    end
+
+    test "shield_view returns 0 when left_hand holds a two-handed weapon" do
+      equipment = Stats.equipment_from_inventory([equipped(@ixion_wing, @both_hand)])
+      assert Stats.shield_view(equipment) == 0
     end
   end
 end

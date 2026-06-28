@@ -311,10 +311,37 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   def weapon_view(%Equipment{right_hand: nameid}), do: view_of(nameid)
 
   @doc """
-  Returns the client view (sprite) id of the equipped shield/left-hand item, or `0` when none.
+  Returns the client view (sprite) id of the equipped shield, or `0` when none
+  or when the left-hand item is itself a weapon (two-hander occupying both hands).
   """
   @spec shield_view(Equipment.t()) :: non_neg_integer()
-  def shield_view(%Equipment{left_hand: nameid}), do: view_of(nameid)
+  def shield_view(%Equipment{} = equipment) do
+    if shield?(equipment), do: view_of(equipment.left_hand), else: 0
+  end
+
+  @doc """
+  Returns the client view (sprite) id of the equipped head-top item, or `0` when none.
+  """
+  @spec head_top_view(Equipment.t()) :: non_neg_integer()
+  def head_top_view(%Equipment{head_top: nameid}), do: view_of(nameid)
+
+  @doc """
+  Returns the client view (sprite) id of the equipped head-mid item, or `0` when none.
+  """
+  @spec head_mid_view(Equipment.t()) :: non_neg_integer()
+  def head_mid_view(%Equipment{head_mid: nameid}), do: view_of(nameid)
+
+  @doc """
+  Returns the client view (sprite) id of the equipped head-low (head-bottom) item, or `0` when none.
+  """
+  @spec head_bottom_view(Equipment.t()) :: non_neg_integer()
+  def head_bottom_view(%Equipment{head_low: nameid}), do: view_of(nameid)
+
+  @doc """
+  Returns the client view (sprite) id of the equipped garment (robe), or `0` when none.
+  """
+  @spec robe_view(Equipment.t()) :: non_neg_integer()
+  def robe_view(%Equipment{garment: nameid}), do: view_of(nameid)
 
   defp normalize_items(items) when is_list(items), do: items
   defp normalize_items(items) when is_map(items), do: Map.values(items)
