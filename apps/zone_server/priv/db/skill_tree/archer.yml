@@ -1,0 +1,24 @@
+---
+- job: archer
+  inherit:
+    - novice
+  tree:
+    - name: AC_OWL
+      max_level: 10
+    - name: AC_VULTURE
+      max_level: 10
+      requires:
+        - name: AC_OWL
+          level: 3
+    - name: AC_CONCENTRATION
+      max_level: 10
+      requires:
+        - name: AC_VULTURE
+          level: 1
+    - name: AC_DOUBLE
+      max_level: 10
+    - name: AC_SHOWER
+      max_level: 10
+      requires:
+        - name: AC_DOUBLE
+          level: 5
