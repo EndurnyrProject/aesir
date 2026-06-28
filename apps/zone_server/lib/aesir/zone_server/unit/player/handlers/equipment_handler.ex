@@ -5,7 +5,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   Runs the pure inventory core, commits the change persist-first through
   `InventoryOps` (single transaction, memory advances only after the DB commit),
   then synchronizes the result to the client (equip/takeoff acks, recomputed stat
-  params, weight) and broadcasts the appearance change to nearby players.
+  params, weight) and emits the per-slot appearance changes to the equipping
+  player and nearby players.
 
   On any failure — invalid index, unmet requirement, broken item, or a DB error —
   the in-memory state is left untouched and only a failure ack is sent.
@@ -15,13 +16,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
 
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.EquipResult
-  alias Aesir.Net.SpriteChange
   alias Aesir.Net.UnequipResult
-  alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight
+  alias Aesir.ZoneServer.Unit.Player.Appearance
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -33,8 +33,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
 
   @unequip_result_success 0
   @unequip_result_failure 1
-
-  @look_weapon 2
 
   @doc """
   Handles an equip request for the item at `server_index` into `position`.
@@ -78,6 +76,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
          state
        ) do
     %{game_state: game_state} = state
+    old_equipment = game_state.stats.equipment
 
     case InventoryOps.apply_change(
            game_state.character_id,
@@ -88,12 +87,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
       {:ok, persisted} ->
         updated_game_state = advance(game_state, persisted)
 
-        view_id = equipped_view(persisted, mask)
-        send_packet(state, equip_success_result(server_index, mask, view_id))
+        send_packet(state, equip_success_result(server_index, mask))
         Enum.each(unequipped, &send_packet(state, unequip_success_result(&1, 0)))
 
         sync_after_change(updated_game_state, state)
-        broadcast_appearance(updated_game_state)
+        notify_appearance(state, old_equipment, updated_game_state)
 
         {:noreply, %{state | game_state: updated_game_state}}
 
@@ -107,6 +105,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   defp commit_unequip(server_index, new_inventory, change, state) do
     %{game_state: game_state} = state
     mask = unequipped_mask(game_state.inventory, server_index)
+    old_equipment = game_state.stats.equipment
 
     case InventoryOps.apply_change(
            game_state.character_id,
@@ -119,7 +118,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
 
         send_packet(state, unequip_success_result(server_index, mask))
         sync_after_change(updated_game_state, state)
-        broadcast_appearance(updated_game_state)
+        notify_appearance(state, old_equipment, updated_game_state)
 
         {:noreply, %{state | game_state: updated_game_state}}
 
@@ -150,32 +149,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
     })
   end
 
-  defp broadcast_appearance(game_state) do
-    packet = %SpriteChange{
-      gid: game_state.character_id,
-      type: @look_weapon,
-      val: Stats.weapon_view(game_state.stats.equipment),
-      val2: Stats.shield_view(game_state.stats.equipment)
-    }
-
-    Broadcast.to_visible_players(game_state, packet, exclude_id: game_state.character_id)
-  end
-
-  defp equipped_view(inventory, mask) do
-    inventory
-    |> Map.values()
-    |> Enum.find(fn item -> item.equip == mask end)
-    |> view_of()
-  end
-
-  defp view_of(nil), do: 0
-  defp view_of(item), do: item_view(item.nameid)
-
-  defp item_view(nameid) do
-    case ItemManagement.get_item_by_id(nameid) do
-      {:ok, %{view: view}} -> view
-      {:error, :item_not_found} -> 0
-    end
+  # Diffs the pre/post equipment and emits one SpriteChange per changed look slot
+  # to the equipping player (direct, independent of the spatial index) and to
+  # nearby players. The equipping player is in `visible_players`, so the broadcast
+  # excludes self to avoid a double delivery. Slots whose view is unchanged (e.g.
+  # view-0 ammo) emit nothing.
+  defp notify_appearance(state, old_equipment, game_state) do
+    game_state.character_id
+    |> Appearance.diff(old_equipment, game_state.stats.equipment)
+    |> Enum.each(fn change ->
+      send_packet(state, change)
+      Broadcast.to_visible_players(game_state, change, exclude_id: game_state.character_id)
+    end)
   end
 
   defp unequipped_mask(inventory, server_index) do
@@ -188,13 +173,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   defp equip_failure(:requirement_unmet), do: :level
   defp equip_failure(_reason), do: :fail
 
-  # Equip result: server index carries the +2 client offset, mirroring legacy
-  # ZcAckWearEquip. Result codes are preserved (0 ok / 1 fail-level / 2 fail).
-  defp equip_success_result(server_index, wear_location, view_id) do
+  # Equip result: a pure ack. The server index carries the +2 client offset,
+  # mirroring legacy ZcAckWearEquip. `view_id` is retained in the proto but always
+  # 0 — self appearance arrives via the self-targeted SpriteChange. Result codes
+  # are preserved (0 ok / 1 fail-level / 2 fail).
+  defp equip_success_result(server_index, wear_location) do
     %EquipResult{
       index: PlayerState.client_index(server_index),
       wear_location: wear_location,
-      view_id: view_id,
+      view_id: 0,
       result: @equip_result_ok
     }
   end

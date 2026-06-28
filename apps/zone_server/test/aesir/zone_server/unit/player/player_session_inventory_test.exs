@@ -443,18 +443,17 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       %{equip_char: character}
     end
 
-    test "equip request equips the item, acks success and broadcasts the sprite", %{
+    test "equip request equips the item and acks success with a pure ack", %{
       equip_char: character
     } do
       Mimic.copy(Broadcast)
-      # 1101 = Sword (right_hand, atk 25)
+      stub(Broadcast, :to_visible_players, fn _gs, _packet, _opts -> :ok end)
+      # 1101 = Sword (right_hand, atk 25, view 0 -> no SpriteChange)
       seed_item(character.id, 1101, 1)
       {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
 
       server_index = index_of(state.game_state.inventory, 1101)
       bare_atk = state.game_state.stats.combat_stats.atk
-
-      expect(Broadcast, :to_visible_players, fn _gs, %SpriteChange{}, _opts -> :ok end)
 
       {:noreply, new_state} =
         PlayerSession.handle_cast(
@@ -472,6 +471,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       ack = receive_message_of_type(EquipResult)
       assert ack.result == 0
       assert ack.wear_location == 2
+      # Pure ack: the view never rides the ack anymore.
+      assert ack.view_id == 0
+
+      # A view-0 weapon yields no appearance change.
+      refute_received {:send, _channel, {:sprite_change, _}}
     end
 
     test "equipping a two-hander emits a takeoff ack for the worn shield", %{
@@ -563,6 +567,98 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
 
       ack = receive_message_of_type(EquipResult)
       assert ack.result == 2
+
+      # A failed equip never touches appearance.
+      refute_received {:send, _channel, {:sprite_change, _}}
+    end
+
+    test "equipping a headgear emits a matching SpriteChange to self and nearby", %{
+      equip_char: character
+    } do
+      Mimic.copy(Broadcast)
+      # 2208 = Ribbon (head_top, view 17). LookType.head_top() == 4.
+      seed_item(character.id, 2208, 1)
+      {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
+
+      server_index = index_of(state.game_state.inventory, 2208)
+
+      expect(Broadcast, :to_visible_players, fn _gs,
+                                                %SpriteChange{type: 4, val: 17, val2: 0},
+                                                _opts ->
+        :ok
+      end)
+
+      {:noreply, _new_state} =
+        PlayerSession.handle_cast(
+          {:equip_item, PlayerState.client_index(server_index), 0x100},
+          state
+        )
+
+      ack = receive_message_of_type(EquipResult)
+      assert ack.result == 0
+      assert ack.wear_location == 0x100
+      assert ack.view_id == 0
+
+      change = receive_message_of_type(SpriteChange)
+      assert change.gid == character.id
+      assert change.type == 4
+      assert change.val == 17
+      assert change.val2 == 0
+    end
+
+    test "equipping a shield emits exactly one weapon-typed SpriteChange", %{
+      equip_char: character
+    } do
+      Mimic.copy(Broadcast)
+      # 2101 = Guard (left_hand shield, view 1). Weapon+shield collapse into the
+      # single weapon look (type 2): val = weapon_view (0), val2 = shield_view (1).
+      seed_item(character.id, 2101, 1)
+      {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
+
+      server_index = index_of(state.game_state.inventory, 2101)
+
+      expect(Broadcast, :to_visible_players, fn _gs,
+                                                %SpriteChange{type: 2, val: 0, val2: 1},
+                                                _opts ->
+        :ok
+      end)
+
+      {:noreply, _new_state} =
+        PlayerSession.handle_cast(
+          {:equip_item, PlayerState.client_index(server_index), 0x20},
+          state
+        )
+
+      change = receive_message_of_type(SpriteChange)
+      assert change.type == 2
+      assert change.val == 0
+      assert change.val2 == 1
+    end
+
+    test "equipping ammo acks success with no SpriteChange", %{equip_char: character} do
+      Mimic.copy(Broadcast)
+      stub(Broadcast, :to_visible_players, fn _gs, _packet, _opts -> :ok end)
+      # 13210 = Slug Ammunition L (ammo, view 0, no job/level requirement).
+      seed_item(character.id, 13210, 1)
+      {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
+
+      server_index = index_of(state.game_state.inventory, 13210)
+
+      {:noreply, new_state} =
+        PlayerSession.handle_cast(
+          {:equip_item, PlayerState.client_index(server_index), 0x8000},
+          state
+        )
+
+      assert new_state.game_state.inventory[server_index].equip == 0x8000
+
+      ack = receive_message_of_type(EquipResult)
+      assert ack.result == 0
+      assert ack.wear_location == 0x8000
+      assert ack.view_id == 0
+
+      # Arrows have view 0, so no appearance change rides the equip.
+      refute_received {:send, _channel, {:sprite_change, _}}
     end
   end
 
