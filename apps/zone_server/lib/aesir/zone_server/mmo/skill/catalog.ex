@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
     Skills.AcConcentration,
     Skills.AcDouble,
     Skills.AcOwl,
+    Skills.AcShower,
     Skills.AcVulture,
     Skills.AlAngelus,
     Skills.AlBlessing,
