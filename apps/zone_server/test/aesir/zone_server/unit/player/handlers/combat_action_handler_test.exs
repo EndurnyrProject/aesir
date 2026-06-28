@@ -4,19 +4,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
 
   import ExUnit.CaptureLog
 
+  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.ActionRequest
+  alias Aesir.Net.ItemRemoved
   alias Aesir.Net.MoveStop
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Unit.Inventory.Ammo
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
   setup :set_mimic_from_context
 
   setup do
     Mimic.copy(Interpreter)
+    Mimic.copy(Ammo)
     stub(Interpreter, :can_attack?, fn _type, _id -> true end)
     :ok
   end
@@ -318,6 +326,135 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
         )
 
       assert result == {100, 100}
+    end
+  end
+
+  describe "bow basic-attack ammo gate and consumption" do
+    @ammo_bit EquipLocation.location_bit(:ammo)
+
+    defp combat_state(inventory) do
+      game_state = %PlayerState{
+        character_id: 1000,
+        x: 10,
+        y: 10,
+        map_name: "prontera",
+        action_state: :idle,
+        last_attack_timestamp: 0,
+        act_delay_until: 0,
+        combat_action_type: 0,
+        inventory: inventory,
+        stats: %{derived_stats: %{aspd: 150}, equipment: %Equipment{}}
+      }
+
+      %{game_state: game_state, connection_pid: self()}
+    end
+
+    defp stub_target_in_range do
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:error, :not_found}
+        :mob, 2000 -> {:ok, {10, 11, "prontera"}}
+      end)
+    end
+
+    test "a bow attack with no arrows fails with :no_ammo and never strikes" do
+      stub(Stats, :weapon_type, fn _equipment -> :bow end)
+      stub_target_in_range()
+      reject(&Combat.execute_attack/3)
+
+      state = combat_state(%{})
+
+      log =
+        capture_log(fn ->
+          assert {:noreply, returned} = CombatActionHandler.handle_attack_request(state, 2000, 0)
+          assert returned.game_state.action_state == :idle
+          send(self(), :done)
+        end)
+
+      assert_received :done
+      assert log =~ "no_ammo"
+      refute_received {:send, :gameplay, {:item_removed, _}}
+    end
+
+    test "a bow attack decrementing a stack strikes, consumes one, persists, syncs without recalc" do
+      stub(Stats, :weapon_type, fn _equipment -> :bow end)
+
+      stub(Stats, :calculate_stats, fn _stats, _id, _equipped ->
+        send(self(), :stats_recalced)
+        :recalced
+      end)
+
+      stub_target_in_range()
+      stub(Combat, :execute_attack, fn _stats, _gs, _target -> :ok end)
+
+      stub(InventoryOps, :apply_change, fn _char, _old, new, _change ->
+        send(self(), :persisted)
+        {:ok, new}
+      end)
+
+      arrow = %InventoryItem{nameid: 1750, amount: 10, equip: @ammo_bit}
+      state = combat_state(%{0 => arrow})
+
+      capture_log(fn ->
+        assert {:noreply, returned} = CombatActionHandler.handle_attack_request(state, 2000, 0)
+        assert %{0 => %InventoryItem{amount: 9}} = returned.game_state.inventory
+        assert returned.game_state.stats == state.game_state.stats
+        send(self(), :done)
+      end)
+
+      assert_received :done
+      assert_received :persisted
+      assert_received {:send, :gameplay, {:item_removed, %ItemRemoved{amount: 1}}}
+      refute_received :stats_recalced
+    end
+
+    test "a bow attack consuming the last arrow recalcs stats and clears the slot" do
+      stub(Stats, :weapon_type, fn _equipment -> :bow end)
+
+      stub(Stats, :calculate_stats, fn _stats, _id, _equipped ->
+        send(self(), :stats_recalced)
+        :recalced
+      end)
+
+      stub_target_in_range()
+      stub(Combat, :execute_attack, fn _stats, _gs, _target -> :ok end)
+
+      stub(InventoryOps, :apply_change, fn _char, _old, new, _change ->
+        send(self(), :persisted)
+        {:ok, new}
+      end)
+
+      arrow = %InventoryItem{nameid: 1750, amount: 1, equip: @ammo_bit}
+      state = combat_state(%{0 => arrow})
+
+      capture_log(fn ->
+        assert {:noreply, returned} = CombatActionHandler.handle_attack_request(state, 2000, 0)
+        refute Map.has_key?(returned.game_state.inventory, 0)
+        assert returned.game_state.stats == :recalced
+        send(self(), :done)
+      end)
+
+      assert_received :done
+      assert_received :persisted
+      assert_received :stats_recalced
+      assert_received {:send, :gameplay, {:item_removed, %ItemRemoved{amount: 1}}}
+    end
+
+    test "a dagger attack strikes without consuming ammo" do
+      stub(Stats, :weapon_type, fn _equipment -> :dagger end)
+      stub_target_in_range()
+      stub(Combat, :execute_attack, fn _stats, _gs, _target -> :ok end)
+      reject(&Ammo.consume_one/1)
+
+      state = combat_state(%{})
+
+      capture_log(fn ->
+        assert {:noreply, returned} = CombatActionHandler.handle_attack_request(state, 2000, 0)
+        assert returned.game_state.action_state == :idle
+        send(self(), :done)
+      end)
+
+      assert_received :done
+      refute_received {:send, :gameplay, {:item_removed, _}}
     end
   end
 end

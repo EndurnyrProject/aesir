@@ -18,8 +18,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Pathfinding
+  alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.Inventory.Ammo
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @doc """
@@ -309,9 +314,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   end
 
   defp handle_attack_execution(state, target_id, transitioned_state) do
+    weapon_type = Stats.weapon_type(transitioned_state.stats.equipment)
+
+    if WeaponTypes.requires_ammo?(weapon_type) and
+         Ammo.equipped_ammo_index(transitioned_state.inventory) == nil do
+      handle_attack_failure(state, transitioned_state, :no_ammo)
+    else
+      do_execute_attack(state, target_id, transitioned_state, weapon_type)
+    end
+  end
+
+  defp do_execute_attack(state, target_id, transitioned_state, weapon_type) do
     case Combat.execute_attack(transitioned_state.stats, transitioned_state, target_id) do
       :ok ->
-        handle_successful_attack(state, transitioned_state)
+        handle_successful_attack(state, transitioned_state, weapon_type)
 
       {:error, :target_out_of_range} ->
         handle_target_out_of_range(state, target_id, transitioned_state)
@@ -321,11 +337,58 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
     end
   end
 
-  defp handle_successful_attack(state, transitioned_state) do
+  defp handle_successful_attack(state, transitioned_state, weapon_type) do
     current_timestamp = AttackSpeed.current_timestamp()
+    transitioned_state = maybe_consume_ammo(state, transitioned_state, weapon_type)
     game_state = determine_post_attack_state(state, transitioned_state, current_timestamp)
     {:noreply, %{state | game_state: game_state}}
   end
+
+  defp maybe_consume_ammo(state, game_state, weapon_type) do
+    if WeaponTypes.requires_ammo?(weapon_type) do
+      consume_ammo(state, game_state)
+    else
+      game_state
+    end
+  end
+
+  # Consumes one equipped arrow on a landed bow/gun attack: persists the delta and
+  # tells the client. The gate in handle_attack_execution/3 guarantees an arrow is
+  # equipped here; an unexpected consume failure leaves state untouched rather than
+  # crashing.
+  defp consume_ammo(%{connection_pid: connection_pid}, game_state) do
+    char_id = game_state.character_id
+
+    with {:ok, new_inventory, change} <- Ammo.consume_one(game_state.inventory),
+         {:ok, persisted} <-
+           InventoryOps.apply_change(char_id, game_state.inventory, new_inventory, change) do
+      notify_ammo_removed(connection_pid, change)
+
+      %{game_state | inventory: persisted}
+      |> recalc_after_consume(char_id, change)
+    else
+      {:error, reason} ->
+        Logger.warning("Ammo consume failed for #{char_id}: #{inspect(reason)}")
+        game_state
+    end
+  end
+
+  # Only a depleted stack ({:removed, _}) changes stats: the ammo slot clears, so
+  # rebuild from the now-current equipped items to drop the arrow's ATK/element. A
+  # plain decrement ({:reduced, ...}) leaves equipment identical, so the per-shot
+  # recalc is skipped on the attack hot path.
+  defp recalc_after_consume(game_state, char_id, {:removed, _index}) do
+    equipped = Map.values(Inventory.equipped_items(game_state.inventory))
+    %{game_state | stats: Stats.calculate_stats(game_state.stats, char_id, equipped)}
+  end
+
+  defp recalc_after_consume(game_state, _char_id, {:reduced, _index, _left}), do: game_state
+
+  defp notify_ammo_removed(connection_pid, {:removed, index}),
+    do: MessageRouter.send_to(connection_pid, PacketHandler.item_removed(index, 1))
+
+  defp notify_ammo_removed(connection_pid, {:reduced, index, _left}),
+    do: MessageRouter.send_to(connection_pid, PacketHandler.item_removed(index, 1))
 
   defp determine_post_attack_state(state, transitioned_state, current_timestamp) do
     if state.game_state.combat_action_type == 7 do
