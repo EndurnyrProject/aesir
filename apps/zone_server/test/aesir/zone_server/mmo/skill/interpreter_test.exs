@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   use ExUnit.Case, async: true
   import Mimic
 
+  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -565,6 +566,59 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       gs = %{game_state(100, %{29 => 1}) | act_delay_until: 0}
 
       assert {:casting, _gs, _info} = Interpreter.begin_cast(gs, 29, 1, :self)
+    end
+  end
+
+  describe "ammo requirement" do
+    @ammo_bit 0x008000
+
+    defp ammo_definition(requires_ammo) do
+      %Definition{
+        id: 6,
+        name: :sm_provoke,
+        display_name: "Ammo Test",
+        max_level: 10,
+        target_type: :self,
+        damage_type: :no_damage,
+        sp_cost: List.duplicate(9, 10),
+        requires_ammo: requires_ammo
+      }
+    end
+
+    defp ammo_game_state(inventory) do
+      Map.merge(game_state(100, %{6 => 1}), %{
+        inventory: inventory,
+        pending_inventory_persist: []
+      })
+    end
+
+    test "requires_ammo skill with no arrow equipped returns :no_ammo without running the behavior" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, ammo_definition(true)} end)
+      reject(&SmProvoke.cast/4)
+
+      assert {:error, :no_ammo} = Interpreter.cast(ammo_game_state(%{}), 6, 1, :self)
+    end
+
+    test "requires_ammo skill consumes exactly one arrow and records the inventory delta" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, ammo_definition(true)} end)
+      stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+
+      inventory = %{0 => %InventoryItem{nameid: 1750, amount: 30, equip: @ammo_bit}}
+
+      assert {:ok, updated} = Interpreter.cast(ammo_game_state(inventory), 6, 1, :self)
+      assert updated.inventory[0].amount == 29
+      assert [{_before, _after, {:reduced, 0, 29}}] = updated.pending_inventory_persist
+    end
+
+    test "requires_ammo: false skill consumes no arrow and records no delta" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, ammo_definition(false)} end)
+      stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+
+      inventory = %{0 => %InventoryItem{nameid: 1750, amount: 30, equip: @ammo_bit}}
+
+      assert {:ok, updated} = Interpreter.cast(ammo_game_state(inventory), 6, 1, :self)
+      assert updated.inventory[0].amount == 30
+      assert updated.pending_inventory_persist == []
     end
   end
 end

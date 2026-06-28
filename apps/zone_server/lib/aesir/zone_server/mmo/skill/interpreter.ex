@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.Inventory.Ammo
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
@@ -144,10 +145,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          cost = Enum.at(definition.sp_cost, level - 1),
          :ok <- check_sp(game_state, cost),
          :ok <- check_catalysts(game_state, definition),
+         :ok <- check_ammo(game_state, definition),
          {:ok, game_state} <- run_cast(module, game_state, target, level, definition) do
       {:ok,
        game_state
        |> deduct_sp(cost)
+       |> consume_ammo(definition)
        |> put_cooldown(skill_id, definition, level, now)
        |> put_act_delay(definition, level, now)}
     end
@@ -357,6 +360,42 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       :ok
     else
       {:error, :missing_catalyst}
+    end
+  end
+
+  # Verifies an arrow is equipped before the behavior runs, so a failed ammo
+  # check spends no SP (mirrors check_catalysts). Non-ammo skills always pass.
+  defp check_ammo(game_state, definition) do
+    if definition.requires_ammo and Ammo.equipped_ammo_index(game_state.inventory) == nil do
+      {:error, :no_ammo}
+    else
+      :ok
+    end
+  end
+
+  # Removes one equipped arrow on a successful cast, recording the change on
+  # `:pending_inventory_persist` for the handler to write through (same shape as
+  # consume_catalysts). Non-ammo skills are a no-op.
+  defp consume_ammo(game_state, definition) do
+    if definition.requires_ammo do
+      take_one_arrow(game_state)
+    else
+      game_state
+    end
+  end
+
+  defp take_one_arrow(game_state) do
+    case Ammo.consume_one(game_state.inventory) do
+      {:ok, new_inventory, change} ->
+        game_state
+        |> Map.put(:inventory, new_inventory)
+        |> Map.update!(
+          :pending_inventory_persist,
+          &(&1 ++ [{game_state.inventory, new_inventory, change}])
+        )
+
+      {:error, _reason} ->
+        game_state
     end
   end
 

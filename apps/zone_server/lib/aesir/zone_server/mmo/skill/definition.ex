@@ -53,6 +53,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     field :cooldown, [non_neg_integer()], default: []
     field :damage_kind, damage_kind(), default: :weapon
     field :item_cost, [item_cost_entry()], default: []
+    field :requires_ammo, boolean(), default: false
   end
 
   @metadata_schema %{
@@ -76,7 +77,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     after_cast_delay: {:list, :integer},
     cooldown: {:list, :integer},
     damage_kind: {:enum, [:weapon, :magic, :misc]},
-    item_cost: {:list, %{id: {:required, :integer}, amount: {:required, {:integer, {:gt, 0}}}}}
+    item_cost: {:list, %{id: {:required, :integer}, amount: {:required, {:integer, {:gt, 0}}}}},
+    requires_ammo: :boolean
   }
 
   @defaults %{
@@ -96,7 +98,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     after_cast_delay: [],
     cooldown: [],
     damage_kind: :weapon,
-    item_cost: []
+    item_cost: [],
+    requires_ammo: false
   }
 
   @doc """
