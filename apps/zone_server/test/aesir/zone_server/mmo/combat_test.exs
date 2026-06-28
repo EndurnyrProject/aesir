@@ -250,4 +250,59 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       assert match?({:error, :target_not_found}, result)
     end
   end
+
+  describe "execute_skill_attack/3 hit_count" do
+    setup do
+      attacker = combatant(1001, :player)
+      target = combatant(2001, :mob)
+      player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
+      target_state = %FakeUnit{combatant: target, x: 150, y: 150}
+
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
+      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
+
+      stub(DamageCalculator, :calculate_damage, fn _a, _d, _opts ->
+        {:ok, %{damage: 50, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+      %{player_state: player_state}
+    end
+
+    test "delivers damage hit_count times against the target", %{player_state: player_state} do
+      expect(MobSession, :apply_damage, 2, fn _pid, _damage, _attacker_id -> :ok end)
+
+      assert :ok =
+               Combat.execute_skill_attack(player_state, 2001,
+                 skill_id: 7,
+                 skill_level: 1,
+                 skill_ratio: 100,
+                 hit_count: 2
+               )
+    end
+
+    test "defaults to a single hit when hit_count is absent", %{player_state: player_state} do
+      expect(MobSession, :apply_damage, 1, fn _pid, _damage, _attacker_id -> :ok end)
+
+      assert :ok =
+               Combat.execute_skill_attack(player_state, 2001,
+                 skill_id: 7,
+                 skill_level: 1,
+                 skill_ratio: 100
+               )
+    end
+
+    test "hit_count: 1 is identical to absent hit_count", %{player_state: player_state} do
+      expect(MobSession, :apply_damage, 1, fn _pid, _damage, _attacker_id -> :ok end)
+
+      assert :ok =
+               Combat.execute_skill_attack(player_state, 2001,
+                 skill_id: 7,
+                 skill_level: 1,
+                 skill_ratio: 100,
+                 hit_count: 1
+               )
+    end
+  end
 end

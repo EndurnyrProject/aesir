@@ -603,6 +603,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     - `:skip_crit` - skip the critical roll (most skills don't crit)
     - `:bonus_atk` - flat ATK added after the skill ratio, before defense
     - `:fixed_damage` - deal exactly this value, bypassing weapon/defense/flee
+    - `:hit_count` - number of hits to deliver, each rolling its own damage (default `1`)
 
   ## Returns
     - :ok if the skill connected
@@ -613,6 +614,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     skill_id = Keyword.fetch!(opts, :skill_id)
     skill_level = Keyword.fetch!(opts, :skill_level)
+    hits = Keyword.get(opts, :hit_count, 1)
     calc_opts = Keyword.take(opts, [:skill_ratio, :skip_crit, :bonus_atk, :fixed_damage])
 
     # TODO: skills always connect here; skill miss/flee isn't modeled yet.
@@ -620,15 +622,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- validate_attack_with_combatants(attacker, target),
          :ok <- ensure_offensive_target(target_type) do
-      apply_skill_damage(
-        attacker,
-        target_type,
-        target_pid,
-        target,
-        skill_id,
-        skill_level,
-        calc_opts
-      )
+      Enum.each(1..hits//1, fn _ ->
+        apply_skill_damage(
+          attacker,
+          target_type,
+          target_pid,
+          target,
+          skill_id,
+          skill_level,
+          calc_opts
+        )
+      end)
+
+      :ok
     end
   end
 
