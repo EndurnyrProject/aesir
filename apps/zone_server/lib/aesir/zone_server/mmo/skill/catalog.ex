@@ -30,6 +30,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
     Skills.AlPneuma,
     Skills.AlRuwach,
     Skills.AlTeleport,
+    Skills.HtBlastmine,
+    Skills.HtLandmine,
     Skills.MgColdbolt,
     Skills.MgEnergycoat,
     Skills.MgFireball,
