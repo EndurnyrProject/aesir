@@ -1,13 +1,53 @@
+defmodule Aesir.ZoneServer.Unit.MovementTest.TouchSpy do
+  @moduledoc false
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+
+  def on_touch(%Group{group_id: gid}, mover) do
+    send(self(), {:touched, gid, mover})
+    :expire
+  end
+
+  def on_expire(%Group{group_id: gid}) do
+    send(self(), {:expired, gid})
+    :ok
+  end
+end
+
 defmodule Aesir.ZoneServer.Unit.MovementTest do
   use ExUnit.Case, async: true
 
   import Aesir.TestEtsSetup
+  import Mimic
 
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  alias __MODULE__.TouchSpy
+
   setup :setup_ets_tables
+  setup :verify_on_exit!
+
+  defp touch_group(group_id, map_name) do
+    %Group{
+      group_id: group_id,
+      skill_id: 999,
+      skill_name: :test_trap,
+      level: 1,
+      caster_id: 2000,
+      caster_type: :player,
+      map_name: map_name,
+      center: {55, 60},
+      cells: [{55, 60}],
+      next_tick_at: 0,
+      expires_at: 0,
+      interval: 1_000,
+      state: %{}
+    }
+  end
 
   describe "set_position/4" do
     test "updates the spatial index and registry and marks the unit dirty" do
@@ -22,6 +62,62 @@ defmodule Aesir.ZoneServer.Unit.MovementTest do
       assert {:ok, {55, 60, ^map_name}} = SpatialIndex.get_unit_position(:player, char_id)
       assert {:ok, {__MODULE__, ^updated_state, nil}} = UnitRegistry.get_unit(:player, char_id)
       assert [{:player, ^char_id, 1}] = Movement.drain_dirty(map_name)
+    end
+
+    test "fires ground-unit on_touch for a player mover via the single chokepoint" do
+      map_name = "prontera"
+      stub(Catalog, :ground_module_for, fn :test_trap -> {:ok, TouchSpy} end)
+      UnitRegistry.register_unit(:player, 1001, __MODULE__, %{movement_state: :standing}, nil)
+      SpatialIndex.add_unit(:player, 1001, 50, 50, map_name)
+      :ok = Storage.insert(touch_group(1, map_name))
+
+      assert :ok =
+               Movement.set_position(
+                 :player,
+                 1001,
+                 %{movement_state: :moving, x: 55, y: 60},
+                 map_name
+               )
+
+      assert_received {:touched, 1, {:player, 1001}}
+      assert nil == Storage.get(1)
+    end
+
+    test "fires ground-unit on_touch for a mob mover via the single chokepoint" do
+      map_name = "prontera"
+      stub(Catalog, :ground_module_for, fn :test_trap -> {:ok, TouchSpy} end)
+      UnitRegistry.register_unit(:mob, 2001, __MODULE__, %{movement_state: :standing}, nil)
+      SpatialIndex.add_unit(:mob, 2001, 50, 50, map_name)
+      :ok = Storage.insert(touch_group(1, map_name))
+
+      assert :ok =
+               Movement.set_position(
+                 :mob,
+                 2001,
+                 %{movement_state: :moving, x: 55, y: 60},
+                 map_name
+               )
+
+      assert_received {:touched, 1, {:mob, 2001}}
+      assert nil == Storage.get(1)
+    end
+
+    test "does not fire on_touch when the destination cell has no ground unit" do
+      map_name = "prontera"
+      UnitRegistry.register_unit(:player, 1002, __MODULE__, %{movement_state: :standing}, nil)
+      SpatialIndex.add_unit(:player, 1002, 50, 50, map_name)
+      :ok = Storage.insert(touch_group(1, map_name))
+
+      assert :ok =
+               Movement.set_position(
+                 :player,
+                 1002,
+                 %{movement_state: :moving, x: 10, y: 10},
+                 map_name
+               )
+
+      refute_received {:touched, _, _}
+      assert %Group{group_id: 1} = Storage.get(1)
     end
   end
 

@@ -98,4 +98,43 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.StorageTest do
       assert ids == [1, 2]
     end
   end
+
+  describe "get_groups_at_cell/3" do
+    test "returns groups whose footprint covers the cell on that map" do
+      :ok = Storage.insert(group(1, cells: [{100, 100}]))
+
+      assert [%Group{group_id: 1}] = Storage.get_groups_at_cell("prontera", 100, 100)
+    end
+
+    test "returns [] when no footprint covers the cell" do
+      :ok = Storage.insert(group(1, cells: [{100, 100}]))
+
+      assert [] == Storage.get_groups_at_cell("prontera", 50, 50)
+    end
+
+    test "is scoped to the map and ignores groups on other maps" do
+      :ok = Storage.insert(group(1, map_name: "geffen", cells: [{100, 100}]))
+
+      assert [] == Storage.get_groups_at_cell("prontera", 100, 100)
+    end
+
+    test "returns every group stacked on the same cell" do
+      :ok = Storage.insert(group(1, cells: [{100, 100}]))
+      :ok = Storage.insert(group(2, cells: [{99, 100}, {100, 100}, {101, 100}]))
+
+      ids =
+        Storage.get_groups_at_cell("prontera", 100, 100)
+        |> Enum.map(& &1.group_id)
+        |> Enum.sort()
+
+      assert ids == [1, 2]
+    end
+
+    test "matches any cell of a multi-cell footprint" do
+      :ok = Storage.insert(group(1, cells: [{10, 10}, {11, 10}, {12, 10}]))
+
+      assert [%Group{group_id: 1}] = Storage.get_groups_at_cell("prontera", 11, 10)
+      assert [] == Storage.get_groups_at_cell("prontera", 13, 10)
+    end
+  end
 end

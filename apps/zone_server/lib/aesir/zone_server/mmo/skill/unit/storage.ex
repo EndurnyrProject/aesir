@@ -58,6 +58,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Storage do
   end
 
   @doc """
+  Returns every group whose footprint covers cell `(x, y)` on `map_name`.
+
+  Used by the movement-pipeline `on_touch` hook to find ground units a mover
+  just stepped onto. Linear scan over all stored groups; the live ground-unit
+  count is small.
+  """
+  @spec get_groups_at_cell(String.t(), integer(), integer()) :: [Group.t()]
+  def get_groups_at_cell(map_name, x, y) do
+    Enum.filter(all(), fn group ->
+      group.map_name == map_name and {x, y} in group.cells
+    end)
+  end
+
+  @doc """
   Returns groups whose `next_tick_at <= now_ms` (due for an interval tick).
   """
   @spec get_due_groups(integer()) :: [Group.t()]

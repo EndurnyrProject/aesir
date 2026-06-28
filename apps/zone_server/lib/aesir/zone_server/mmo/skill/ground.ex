@@ -11,13 +11,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
 
   `on_expire/1` is optional - the tick manager invokes it only when defined.
 
+  `on_touch/2` and `on_out/2` are optional movement-pipeline hooks fired when a
+  unit steps onto / off a footprint cell (traps, Warp Portal, Fire Wall); the
+  movement chokepoint invokes them only when the skill module exports them.
+
   ## Documented extension points (not part of this contract yet)
 
-  These belong to later layers and are intentionally NOT declared as callbacks
+  This belongs to a later layer and is intentionally NOT declared as a callback
   (YAGNI):
 
-    - `on_touch` / `on_out` - fired when a unit steps onto/off a footprint cell
-      (movement-pipeline hook: traps, Warp Portal, Fire Wall).
     - cell-flag set/clear hooks (`walkable?` / block) - Safety Wall, Ice Wall,
       Pneuma, Land Protector.
   """
@@ -50,5 +52,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
   @doc "Invoked once when the group expires (or `:expire` is returned). Optional cleanup hook."
   @callback on_expire(Group.t()) :: :ok
 
-  @optional_callbacks on_expire: 1
+  @doc """
+  Invoked when `mover` steps onto a footprint cell (movement-pipeline hook).
+
+  Optional - implemented by traps/portals (Land Mine, Warp Portal). Returns the
+  updated group, or `:expire` to consume the unit after firing once.
+  """
+  @callback on_touch(Group.t(), mover :: {atom(), integer()}) :: {:ok, Group.t()} | :expire
+
+  @doc """
+  Invoked when `mover` steps off a footprint cell (movement-pipeline hook).
+
+  Optional. Returns the updated group, or `:expire` to end it.
+  """
+  @callback on_out(Group.t(), mover :: {atom(), integer()}) :: {:ok, Group.t()} | :expire
+
+  @optional_callbacks on_expire: 1, on_touch: 2, on_out: 2
 end

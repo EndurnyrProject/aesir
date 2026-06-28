@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Movement do
 
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
+  alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -46,6 +47,8 @@ defmodule Aesir.ZoneServer.Unit.Movement do
 
     UnitRegistry.update_unit_state(unit_type, unit_id, updated_state)
     mark_dirty(map_name, unit_type, unit_id, move_state(updated_state.movement_state))
+
+    Trigger.on_enter_cell({unit_type, unit_id}, map_name, updated_state.x, updated_state.y)
   end
 
   @doc """
