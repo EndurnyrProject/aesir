@@ -64,6 +64,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
             flee: integer(),
             perfect_dodge: integer(),
             matk: integer(),
+            matk_min: integer(),
+            matk_max: integer(),
             mdef: integer(),
             soft_mdef: integer()
           },

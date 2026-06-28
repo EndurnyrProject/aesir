@@ -67,6 +67,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
       assert combatant.combat_stats.soft_mdef == div(20 + 25, 4)
     end
 
+    test "mob MATK band is deterministic: matk_min == matk_max == matk" do
+      state = build_mob_state()
+
+      combatant = MobState.to_combatant(state)
+
+      assert combatant.combat_stats.matk_min == 60
+      assert combatant.combat_stats.matk_max == 60
+      assert combatant.combat_stats.matk_min == combatant.combat_stats.matk
+    end
+
     test "soft_mdef uses renewal non-PC formula div(int + level, 4)" do
       base = build_mob_state()
       %MobDefinition{} = base_mob_data = base.mob_data

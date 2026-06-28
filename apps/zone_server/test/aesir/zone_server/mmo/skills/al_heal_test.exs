@@ -108,5 +108,34 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHealTest do
       expect(Combat, :apply_heal, fn 1000, 350, 1000 -> :ok end)
       AlHeal.cast(@caster, :self, 5, definition)
     end
+
+    test "rolls the heal MATK band within [base + heal_matk_min, base + heal_matk_max - 1]",
+         %{definition: definition} do
+      # base = div(div(100,5)*30*5, 10) = 300; heal band 10..20 -> heal in [310, 319].
+      # Heal uses heal_matk_min/max (base_matk + weapon variance, NO flat MATK).
+      stub(PlayerState, :get_stats, fn _ ->
+        %{base_level: 50, int: 50, matk: 999, heal_matk_min: 10, heal_matk_max: 20}
+      end)
+
+      test_pid = self()
+      stub(Combat, :apply_heal, fn 1000, amount, 1000 -> send(test_pid, {:heal, amount}) end)
+
+      for _ <- 1..200, do: AlHeal.cast(@caster, :self, 5, definition)
+      amounts = for _ <- 1..200, do: receive(do: ({:heal, a} -> a))
+
+      assert Enum.all?(amounts, fn a -> a >= 310 and a <= 319 end)
+      assert length(Enum.uniq(amounts)) > 1
+    end
+
+    test "heal_matk_min == heal_matk_max heals the exact deterministic value",
+         %{definition: definition} do
+      stub(PlayerState, :get_stats, fn _ ->
+        %{base_level: 50, int: 50, matk: 999, heal_matk_min: 50, heal_matk_max: 50}
+      end)
+
+      # 300 + roll(50, 50) = 350; flat combat matk (999) is intentionally ignored
+      expect(Combat, :apply_heal, fn 1000, 350, 1000 -> :ok end)
+      AlHeal.cast(@caster, :self, 5, definition)
+    end
   end
 end

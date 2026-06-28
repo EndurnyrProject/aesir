@@ -44,4 +44,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageSharedTest do
       assert DamageShared.clamp_min_one(176.85) == 176
     end
   end
+
+  describe "roll/2" do
+    test "returns min when max equals min" do
+      assert DamageShared.roll(50, 50) == 50
+    end
+
+    test "returns min when max is below min" do
+      assert DamageShared.roll(50, 40) == 50
+    end
+
+    test "stays within [min, max - 1] across many rolls" do
+      for _ <- 1..1000 do
+        result = DamageShared.roll(10, 14)
+        assert result >= 10 and result <= 13
+      end
+    end
+
+    test "an adjacent band (max == min + 1) is deterministic at min" do
+      assert DamageShared.roll(7, 8) == 7
+    end
+  end
 end

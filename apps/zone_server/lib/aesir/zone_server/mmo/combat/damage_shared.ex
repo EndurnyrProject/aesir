@@ -50,4 +50,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageShared do
   def clamp_min_one(value) do
     max(1, trunc(value))
   end
+
+  @doc """
+  Rolls an integer in the half-open range `[min, max)`.
+
+  Mirrors rAthena's `min + rnd()%(max-min)` shape (upper bound exclusive), so
+  the result is `min` when `max <= min` and otherwise lands in `[min, max - 1]`.
+  """
+  @spec roll(non_neg_integer(), non_neg_integer()) :: non_neg_integer()
+  def roll(min, max) when max > min, do: min + (:rand.uniform(max - min) - 1)
+  def roll(min, _max), do: min
 end

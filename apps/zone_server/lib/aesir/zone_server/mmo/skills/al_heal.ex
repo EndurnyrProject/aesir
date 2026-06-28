@@ -15,13 +15,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHeal do
 
   Elixir equivalent:
     base = div(div(base_level + int, 5) * 30 * level, 10)
-    heal = base + matk
+    heal = base + DamageShared.roll(heal_matk_min, heal_matk_max)
 
-  MATK is the single `combat_stats.matk` value, not rAthena's random min~max roll:
-  Aesir's magic is deterministic everywhere (`MagicDamageCalculator` uses one matk with
-  no variance), so heal matches the rest of the magic system rather than being the only
-  spell that rolls a range. Restoring heal variance would require adding min/max MATK to
-  the whole magic system — a separate, global change.
+  Verified vs rAthena skill.cpp:705-729: the heal MATK band is
+  `status_base_matk_min/max + weapon MATK variance` ONLY - it does NOT include
+  flat item/status MATK (ematk, matk_rate). So heal rolls over the dedicated
+  `heal_matk_min`/`heal_matk_max` band (base_matk + weapon variance, no flat),
+  not the combat `matk_min`/`matk_max`. With no MATK weapon the band collapses
+  and the heal is deterministic, equal to `base + base_matk`.
 
   Deferred: heal-rate bonuses (Meditatio, SC_INCHEALRATE, item scripts). All stat
   modifiers other than the base formula are out of scope for this task.
@@ -39,6 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHeal do
     after_cast_delay: List.duplicate(500, 10)
 
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -79,7 +81,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHeal do
     end
   end
 
-  defp compute_heal(%{base_level: base_level, int: int_val, matk: matk}, level) do
-    div(div(base_level + int_val, 5) * 30 * level, 10) + matk
+  defp compute_heal(%{base_level: base_level, int: int_val} = stats, level) do
+    base = div(div(base_level + int_val, 5) * 30 * level, 10)
+    matk_min = Map.get(stats, :heal_matk_min, stats.matk)
+    matk_max = Map.get(stats, :heal_matk_max, stats.matk)
+    base + DamageShared.roll(matk_min, matk_max)
   end
 end

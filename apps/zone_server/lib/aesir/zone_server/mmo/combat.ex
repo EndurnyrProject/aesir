@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
+  alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -465,6 +466,120 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
 
       Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
       hit_info = %{dmg_type: :magic, is_short: false, element: element}
+      apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, attacker.unit_id)
+      [target_id]
+    else
+      _ -> []
+    end
+  end
+
+  @doc """
+  Executes a single-target BF_MISC skill (trap) from a caster against a target.
+
+  Routes the caller-supplied `:base_damage` through `MiscDamageCalculator`
+  (element + hard-DEF, soft-DEF/MDEF ignored), broadcasts a `ZC_NOTIFY_SKILL`
+  packet, then applies the misc damage. Unlike the magic path there is no
+  caster-target range check: a trap fires on contact regardless of where its
+  owner stands. Hostility (owner/ally exclusion) is decided by the trap's
+  `on_touch` before this is called.
+
+  ## Options
+    - `:skill_id` / `:skill_level` - identify the skill for the damage packet
+    - `:base_damage` - the skill's per-level base damage (required)
+    - `:element` - the skill's attack element (default `:neutral`)
+  """
+  @spec execute_misc_attack(struct(), integer(), keyword()) :: :ok | {:error, atom()}
+  def execute_misc_attack(caster_state, target_id, opts) do
+    attacker = caster_state.__struct__.to_combatant(caster_state)
+    skill_id = Keyword.fetch!(opts, :skill_id)
+    skill_level = Keyword.fetch!(opts, :skill_level)
+    base_damage = Keyword.fetch!(opts, :base_damage)
+    element = Keyword.get(opts, :element, :neutral)
+
+    with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
+         :ok <- ensure_offensive_target(target_type),
+         target <- target_state.__struct__.to_combatant(target_state),
+         {:ok, %{damage: damage}} <-
+           MiscDamageCalculator.calculate_misc_damage(attacker, target,
+             base_damage: base_damage,
+             element: element
+           ) do
+      {tx, ty} = target.position
+
+      packet = %SkillDamage{
+        skill_id: skill_id,
+        level: skill_level,
+        src_id: attacker.unit_id,
+        target_id: target_id,
+        server_tick: ServerTick.now(),
+        src_delay: 0,
+        dst_delay: 0,
+        damage: damage,
+        div: 1,
+        type: @dmg_splash
+      }
+
+      Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
+      hit_info = %{dmg_type: :misc, is_short: false, element: element}
+      apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, attacker.unit_id)
+      :ok
+    end
+  end
+
+  @doc """
+  Executes a center+radius BF_MISC splash (Blast Mine) against every offensive
+  target in range.
+
+  Mirrors `execute_magic_splash/4` but routes each target through
+  `MiscDamageCalculator` with the caller-supplied `:base_damage`. Returns the
+  list of hit target ids.
+
+  ## Options
+    - `:skill_id` / `:skill_level` - identify the skill for the damage packet
+    - `:base_damage` - the skill's per-level base damage (required)
+    - `:element` - the skill's attack element (default `:neutral`)
+  """
+  @spec execute_misc_splash(struct(), {integer(), integer()}, non_neg_integer(), keyword()) ::
+          [integer()]
+  def execute_misc_splash(caster_state, center, radius, opts) do
+    attacker = caster_state.__struct__.to_combatant(caster_state)
+    skill_id = Keyword.fetch!(opts, :skill_id)
+    skill_level = Keyword.fetch!(opts, :skill_level)
+    base_damage = Keyword.fetch!(opts, :base_damage)
+    element = Keyword.get(opts, :element, :neutral)
+
+    targets = splash_targets(attacker.map_name, center, radius, attacker.unit_id)
+
+    Enum.flat_map(targets, fn {_unit_type, target_id} ->
+      apply_misc_splash_hit(attacker, target_id, skill_id, skill_level, element, base_damage)
+    end)
+  end
+
+  defp apply_misc_splash_hit(attacker, target_id, skill_id, skill_level, element, base_damage) do
+    with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
+         target <- target_state.__struct__.to_combatant(target_state),
+         {:ok, %{damage: damage}} <-
+           MiscDamageCalculator.calculate_misc_damage(attacker, target,
+             base_damage: base_damage,
+             element: element
+           ) do
+      {tx, ty} = target.position
+
+      packet = %SkillDamage{
+        skill_id: skill_id,
+        level: skill_level,
+        src_id: attacker.unit_id,
+        target_id: target_id,
+        server_tick: ServerTick.now(),
+        src_delay: 0,
+        dst_delay: 0,
+        damage: damage,
+        div: 1,
+        type: @dmg_splash
+      }
+
+      Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
+      hit_info = %{dmg_type: :misc, is_short: false, element: element}
       apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, attacker.unit_id)
       [target_id]
     else

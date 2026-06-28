@@ -493,6 +493,33 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert result.combat_stats.matk == 96
     end
 
+    test "without a MATK weapon matk_min == matk_max == matk == base_matk" do
+      stats = caster(%{str: 0, agi: 0, vit: 0, int: 40, dex: 30, luk: 30}, 80)
+
+      result = Stats.calculate_combat_stats(stats)
+
+      assert result.combat_stats.matk_min == 96
+      assert result.combat_stats.matk_max == 96
+      assert result.combat_stats.matk == result.combat_stats.matk_max
+    end
+
+    test "a flat MATK bonus (cards/armor enchant) raises both matk_min and matk_max" do
+      stats = %Stats{
+        base_stats: %{str: 0, agi: 0, vit: 0, int: 40, dex: 30, luk: 30},
+        progression: %{base_level: 80, job_level: 0, learned_skills: %{}},
+        derived_stats: %{max_hp: 1, max_sp: 1},
+        equipment: %Equipment{},
+        modifiers: %{equipment: %{matk: 30}, status_effects: %{matk: 20}, job_bonuses: %{}}
+      }
+
+      result = Stats.calculate_combat_stats(stats)
+
+      # base 96 + flat (equipment 30 + status 20) on both ends, no variance band
+      assert result.combat_stats.matk_min == 146
+      assert result.combat_stats.matk_max == 146
+      assert result.combat_stats.matk == 146
+    end
+
     test "soft MDEF follows the renewal formula" do
       stats =
         caster(%{str: 0, agi: 0, vit: 20, int: 40, dex: 30, luk: 0}, 80)
@@ -637,13 +664,20 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert result.modifiers.equipment == %{atk: 99}
     end
 
-    test "equipping Soul Staff (magic_attack 200) raises combat matk by 200" do
+    test "equipping Soul Staff (magic_attack 200, weapon_level 3) opens a +-15% MATK band" do
       staff = equipped(@soul_staff, @both_hand)
 
       bare = Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, [])
       staffed = Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, [staff])
 
-      assert staffed.combat_stats.matk == bare.combat_stats.matk + 200
+      assert bare.combat_stats.matk_min == bare.combat_stats.matk_max
+
+      # rAthena status.cpp:6306: variance = matk * wlv / 10 = 200 * 3 / 10 = 60;
+      # min += matk - variance = 140, max += matk + variance = 260
+      assert staffed.combat_stats.matk_min == bare.combat_stats.matk_min + 140
+      assert staffed.combat_stats.matk_max == bare.combat_stats.matk_max + 260
+      assert staffed.combat_stats.matk_min < staffed.combat_stats.matk_max
+      assert staffed.combat_stats.matk == staffed.combat_stats.matk_max
     end
   end
 end

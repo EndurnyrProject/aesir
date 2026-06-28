@@ -45,6 +45,15 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
     }
   end
 
+  defp caster_with_band(min, max) do
+    caster = build_caster()
+
+    combat_stats =
+      Map.merge(caster.stats.combat_stats, %{matk_min: min, matk_max: max, matk: max})
+
+    put_in(caster.stats.combat_stats, combat_stats)
+  end
+
   defp build_mob_state(unit_id, x, y) do
     mob_definition = %MobDefinition{
       id: 1002,
@@ -142,6 +151,40 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
                )
 
       assert_received {:packet, %SkillDamage{damage: 90, div: 3, skill_id: 19, level: 3}}
+      assert_received {:damage, 90}
+    end
+
+    test "each of a multi-hit cast rolls magic damage independently and sums" do
+      caster = caster_with_band(10, 1000)
+      test_pid = self()
+      stub_single_target_mob()
+
+      # The MATK roll now lives inside the calculator (per call); a stubbed
+      # calculator just confirms each hit is a separate calculate call summed.
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _a, _t, _opts ->
+        {:ok, %{damage: 30, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, %SkillDamage{} = packet ->
+        send(test_pid, {:packet, packet})
+        :ok
+      end)
+
+      stub(MobSession, :apply_damage, fn _pid, damage, @caster_id ->
+        send(test_pid, {:damage, damage})
+        :ok
+      end)
+
+      assert :ok =
+               Combat.execute_magic_attack(caster, @target_id,
+                 skill_id: 19,
+                 skill_level: 3,
+                 skill_ratio: 100,
+                 element: :fire,
+                 hit_count: 3
+               )
+
+      assert_received {:packet, %SkillDamage{damage: 90, div: 3}}
       assert_received {:damage, 90}
     end
 
@@ -256,6 +299,84 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       assert Enum.sort(hits) == [2001, 2002]
       assert_received {:damage, 50}
       assert_received {:damage, 50}
+    end
+
+    test "each splash target rolls its magic damage independently (no shared roll)" do
+      # Real calculator (not stubbed) with a wide MATK band; over several casts
+      # the per-target damages must vary, proving each target rolls its own MATK.
+      caster = caster_with_band(1, 2000)
+      test_pid = self()
+
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+        [{:mob, 2001}, {:mob, 2002}]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :mob, 2001 -> {:ok, {MobState, build_mob_state(2001, 150, 150), self()}}
+        :mob, 2002 -> {:ok, {MobState, build_mob_state(2002, 151, 150), self()}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, _p -> :ok end)
+
+      stub(MobSession, :apply_damage, fn _pid, damage, @caster_id ->
+        send(test_pid, {:damage, damage})
+        :ok
+      end)
+
+      for _ <- 1..6 do
+        Combat.execute_magic_splash(caster, @center, 2,
+          skill_id: 17,
+          skill_level: 5,
+          skill_ratio: 240,
+          element: :fire
+        )
+      end
+
+      damages = drain_damages()
+
+      assert length(damages) == 12
+      assert Enum.all?(damages, &(&1 >= 1))
+      assert length(Enum.uniq(damages)) > 1
+    end
+
+    test "a degenerate band (min == max) gives deterministic splash damage" do
+      caster = caster_with_band(50, 50)
+      test_pid = self()
+
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+        [{:mob, 2001}, {:mob, 2002}]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :mob, 2001 -> {:ok, {MobState, build_mob_state(2001, 150, 150), self()}}
+        :mob, 2002 -> {:ok, {MobState, build_mob_state(2002, 151, 150), self()}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, _p -> :ok end)
+
+      stub(MobSession, :apply_damage, fn _pid, damage, @caster_id ->
+        send(test_pid, {:damage, damage})
+        :ok
+      end)
+
+      for _ <- 1..4 do
+        Combat.execute_magic_splash(caster, @center, 2,
+          skill_id: 17,
+          skill_level: 5,
+          skill_ratio: 240,
+          element: :fire
+        )
+      end
+
+      assert [_one] = drain_damages() |> Enum.uniq()
+    end
+  end
+
+  defp drain_damages(acc \\ []) do
+    receive do
+      {:damage, damage} -> drain_damages([damage | acc])
+    after
+      0 -> acc
     end
   end
 end

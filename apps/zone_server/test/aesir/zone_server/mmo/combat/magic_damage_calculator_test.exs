@@ -26,6 +26,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
     %{unit_type: :player, unit_id: 1001, combat_stats: %{matk: matk}}
   end
 
+  defp banded_attacker(min, max) do
+    %{
+      unit_type: :player,
+      unit_id: 1001,
+      combat_stats: %{matk: max, matk_min: min, matk_max: max}
+    }
+  end
+
   defp defender(hard_mdef, soft_mdef, element \\ {:neutral, 1}) do
     %{
       unit_type: :mob,
@@ -96,6 +104,28 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
       # matk 1, hard 0, soft 100: 1 * 1000/1000 - 100 = -99 -> clamp 1
       assert {:ok, %{damage: 1, is_critical: false}} =
                MagicDamageCalculator.calculate_magic_damage(attacker(1), defender(0, 100))
+    end
+
+    test "rolls the band per call: a degenerate band (min == max) is deterministic" do
+      assert {:ok, %{damage: 86, is_critical: false}} =
+               MagicDamageCalculator.calculate_magic_damage(
+                 banded_attacker(100, 100),
+                 defender(10, 5)
+               )
+    end
+
+    test "a wide band stays within its derived damage bounds across rolls" do
+      # band 1..101 -> skilled in [1, 100]; 1 * 1010/1100 - 5 floors to 1,
+      # 100 * 1010/1100 - 5 = 86. So every roll lands in [1, 86].
+      for _ <- 1..200 do
+        assert {:ok, %{damage: damage}} =
+                 MagicDamageCalculator.calculate_magic_damage(
+                   banded_attacker(1, 101),
+                   defender(10, 5)
+                 )
+
+        assert damage >= 1 and damage <= 86
+      end
     end
   end
 end

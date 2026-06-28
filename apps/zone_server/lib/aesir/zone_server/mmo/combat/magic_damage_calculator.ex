@@ -9,7 +9,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
 
   ## Pipeline
 
-  1. Base MATK from `attacker.combat_stats.matk`.
+  1. Base MATK: a roll over the attacker's `matk_min`/`matk_max` band. rAthena
+     rolls this per target inside `battle_calc_magic_attack` (battle.cpp:5969),
+     so each call rolls independently.
   2. Skill ratio + flat MATK bonus.
   3. Element resistance (skill element vs defender element/level).
   4. Generic status `damage_multiplier`.
@@ -59,13 +61,29 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
     end
   end
 
+  @doc """
+  Rolls a single MATK from a combatant's `combat_stats` variance band.
+
+  Falls back to the deterministic `:matk` when the band keys are absent (legacy
+  combatants), so a missing band behaves exactly like a fixed MATK.
+  """
+  @spec roll_matk(map()) :: non_neg_integer()
+  def roll_matk(combat_stats) do
+    DamageShared.roll(
+      Map.get(combat_stats, :matk_min, combat_stats.matk),
+      Map.get(combat_stats, :matk_max, combat_stats.matk)
+    )
+  end
+
   @spec calculate_pipeline_damage(map(), map(), keyword()) :: {:ok, magic_damage_result()}
   defp calculate_pipeline_damage(attacker, defender, opts) do
     skill_ratio = Keyword.get(opts, :skill_ratio, 100)
     bonus_matk = Keyword.get(opts, :bonus_matk, 0)
     element = Keyword.get(opts, :element, :neutral)
 
-    base_matk = attacker.combat_stats.matk
+    # rAthena rolls MATK inside battle_calc_magic_attack, which runs per target
+    # (battle.cpp:5969), so each call rolls its own MATK independently.
+    base_matk = roll_matk(attacker.combat_stats)
     skilled = div(base_matk * skill_ratio, 100) + bonus_matk
     modifiers = attacker_modifiers(attacker)
 

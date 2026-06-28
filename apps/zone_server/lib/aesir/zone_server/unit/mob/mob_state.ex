@@ -190,6 +190,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   @impl Aesir.ZoneServer.Unit
   def to_combatant(%__MODULE__{} = mob_state) do
     mob_data = mob_state.mob_data
+    mob_matk = MobCombatCalc.calculate_magic_attack(mob_data)
 
     Combatant.new!(%{
       unit_id: mob_state.instance_id,
@@ -208,7 +209,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
         perfect_dodge: MobCombatCalc.calculate_perfect_dodge(mob_data),
         def: MobCombatCalc.calculate_defense(mob_data),
         atk: MobCombatCalc.calculate_base_attack(mob_data),
-        matk: MobCombatCalc.calculate_magic_attack(mob_data),
+        matk: mob_matk,
+        matk_min: mob_matk,
+        matk_max: mob_matk,
         mdef: MobCombatCalc.calculate_magic_defense(mob_data),
         soft_mdef: MobCombatCalc.calculate_soft_mdef(mob_data)
       },

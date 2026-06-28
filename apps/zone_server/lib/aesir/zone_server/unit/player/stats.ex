@@ -155,6 +155,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       # Combat stats
       atk: stats.combat_stats.atk,
       matk: stats.combat_stats.matk,
+      matk_min: stats.combat_stats.matk_min,
+      matk_max: stats.combat_stats.matk_max,
+      heal_matk_min: stats.combat_stats.heal_matk_min,
+      heal_matk_max: stats.combat_stats.heal_matk_max,
       def: stats.combat_stats.def,
       mdef: stats.combat_stats.mdef,
       hit: stats.combat_stats.hit,
@@ -417,6 +421,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     base_def = calculate_base_def(stats)
     passive_atk = Passives.atk_bonus(stats)
 
+    flat_matk = get_status_modifier(stats, :matk) + get_equipment_modifier(stats, :matk)
+    wmatk_min = Map.get(stats.modifiers.equipment, :wmatk_min, 0)
+    wmatk_max = Map.get(stats.modifiers.equipment, :wmatk_max, 0)
+    matk_min = base_matk + wmatk_min + flat_matk
+    matk_max = base_matk + wmatk_max + flat_matk
+
+    # Heal MATK band excludes flat item/status MATK: rAthena's RE heal
+    # (skill.cpp:705-729) uses status_base_matk + weapon variance ONLY.
+    heal_matk_min = base_matk + wmatk_min
+    heal_matk_max = base_matk + wmatk_max
+
     combat_stats = %{
       hit: PlayerCombatCalc.calculate_hit(stats),
       flee: PlayerCombatCalc.calculate_flee(stats),
@@ -425,7 +440,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       atk:
         base_atk + get_status_modifier(stats, :atk) + get_equipment_modifier(stats, :atk) +
           passive_atk,
-      matk: base_matk + get_status_modifier(stats, :matk) + get_equipment_modifier(stats, :matk),
+      matk_min: matk_min,
+      matk_max: matk_max,
+      matk: matk_max,
+      heal_matk_min: heal_matk_min,
+      heal_matk_max: heal_matk_max,
       def: base_def + get_status_modifier(stats, :def) + get_equipment_modifier(stats, :def),
       mdef: get_status_modifier(stats, :mdef) + get_equipment_modifier(stats, :mdef),
       soft_mdef: calculate_soft_mdef(stats),
@@ -458,6 +477,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     trunc(effective_vit / 2 + base_level / 6)
   end
 
+  # Verified vs rAthena status_base_matk_min/max for BL_PC (status.cpp:2571/2590):
+  # INT + INT/2 + DEX/5 + LUK/3 + level/4 (+ 5*SPL). PC min == max (no inherent
+  # spread). The 5*SPL 4th-job trait term is omitted (SPL is 0 today); add it
+  # when the SPL stat exists.
   defp calculate_base_matk(%__MODULE__{} = stats) do
     effective_int = get_effective_stat(stats, :int)
     effective_dex = get_effective_stat(stats, :dex)
@@ -676,26 +699,48 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     0
   end
 
-  # Sums the flat item_db bonuses (attack -> atk, defense -> def,
-  # magic_attack -> matk) across the equipped items. Bonus scripts and card
+  # Sums the flat item_db bonuses (attack -> atk, defense -> def) across the
+  # equipped items. Weapon MATK (a magic weapon's `magic_attack`) becomes a
+  # renewal variance band (`wmatk_min`/`wmatk_max`) while non-weapon MATK
+  # (cards/armor enchants) stays a flat `matk` bonus. Bonus scripts and card
   # effects are intentionally out of scope here; that is the future
   # item-script engine's job. `aspd_rate` defaults to 100 (no modifier).
   defp calculate_equipment_bonuses(equipped_items) do
     equipped_items
     |> normalize_items()
-    |> Enum.reduce(%{atk: 0, def: 0, matk: 0, aspd_rate: 100}, fn item, acc ->
-      case ItemManagement.get_item_by_id(item.nameid) do
-        {:ok, %ItemDefinition{} = item_def} ->
-          %{
-            acc
-            | atk: acc.atk + item_def.attack,
-              def: acc.def + item_def.defense,
-              matk: acc.matk + item_def.magic_attack
-          }
-
-        _ ->
-          acc
+    |> Enum.reduce(
+      %{atk: 0, def: 0, matk: 0, wmatk_min: 0, wmatk_max: 0, aspd_rate: 100},
+      fn item, acc ->
+        case ItemManagement.get_item_by_id(item.nameid) do
+          {:ok, %ItemDefinition{} = item_def} -> accumulate_item_bonus(acc, item_def)
+          _ -> acc
+        end
       end
-    end)
+    )
+  end
+
+  # Weapon MATK variance, verified vs rAthena status.cpp:6306-6316:
+  # `variance = weapon.matk * weapon.wlv / 10` (integer div), then
+  # `matk_min += wMatk - variance; matk_max += wMatk + variance`.
+  defp accumulate_item_bonus(acc, %ItemDefinition{weapon_level: level, magic_attack: matk} = item)
+       when not is_nil(level) and matk > 0 do
+    variance = div(matk * level, 10)
+
+    %{
+      acc
+      | atk: acc.atk + item.attack,
+        def: acc.def + item.defense,
+        wmatk_min: acc.wmatk_min + (matk - variance),
+        wmatk_max: acc.wmatk_max + (matk + variance)
+    }
+  end
+
+  defp accumulate_item_bonus(acc, %ItemDefinition{} = item) do
+    %{
+      acc
+      | atk: acc.atk + item.attack,
+        def: acc.def + item.defense,
+        matk: acc.matk + item.magic_attack
+    }
   end
 end
