@@ -83,6 +83,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
+  alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit
@@ -630,7 +632,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       size: :medium,
       weapon: %{
         type: weapon_type,
-        element: :neutral,
+        element: weapon_element(state.stats.equipment),
         size: SizeModifiers.weapon_size(weapon_type)
       },
       attack_range: WeaponTypes.get_attack_range(weapon_type),
@@ -640,5 +642,18 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       divine_protection_level: Learned.learned_level(learned, 22),
       demon_bane_level: Learned.learned_level(learned, 23)
     })
+  end
+
+  defp weapon_element(%PlayerStats.Equipment{ammo: nil}), do: :neutral
+
+  defp weapon_element(%PlayerStats.Equipment{ammo: nameid}) do
+    case ItemManagement.get_item_by_id(nameid) do
+      {:ok, %ItemDefinition{attack_element: element}}
+      when is_atom(element) and not is_nil(element) ->
+        element
+
+      _ ->
+        :neutral
+    end
   end
 end

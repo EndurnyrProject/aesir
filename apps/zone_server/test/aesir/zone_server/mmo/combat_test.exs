@@ -136,6 +136,53 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
     end
   end
 
+  describe "execute_attack/3 weapon element" do
+    setup do
+      # Attacker with a resolved non-neutral weapon element (e.g. a Fire Arrow
+      # equipped on a bow), so handle_player_attack_hit builds hit_info with
+      # attacker_combatant.weapon.element rather than a hardcoded :neutral.
+      attacker = combatant(1001, :player)
+      attacker = %{attacker | weapon: %{attacker.weapon | element: :fire}}
+      target = combatant(2001, :mob)
+
+      player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
+      target_state = %FakeUnit{combatant: target, x: 150, y: 150}
+
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
+      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
+
+      stub(DamageCalculator, :calculate_damage, fn _a, _d ->
+        {:ok, %{damage: 50, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      stub(Passives, :attack_procs, fn _player -> %{} end)
+
+      %{player_state: player_state, stats: attacker}
+    end
+
+    # NOTE: the DamageDealt basic-attack packet carries no element field, and for a
+    # mob target hit_info is consumed only by the (identity) player-absorb path, so
+    # the element is not observable on the broadcast packet. This test exercises the
+    # hit_info construction that reads attacker_combatant.weapon.element, guarding the
+    # field access; functional element correctness is covered in damage_calculator_test.
+    test "a non-neutral weapon element drives a successful basic attack",
+         %{player_state: player_state, stats: stats} do
+      test_pid = self()
+
+      expect(MobSession, :apply_damage, 1, fn _pid, damage, _attacker_id ->
+        send(test_pid, {:damage_applied, damage})
+        :ok
+      end)
+
+      capture_log(fn ->
+        assert Combat.execute_attack(stats, player_state, 2001) == :ok
+      end)
+
+      assert_received {:damage_applied, 50}
+    end
+  end
+
   describe "execute_attack/3 target validation" do
     setup do
       attacker = combatant(1001, :player)

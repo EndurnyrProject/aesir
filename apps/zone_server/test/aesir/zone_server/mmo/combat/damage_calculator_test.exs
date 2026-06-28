@@ -125,57 +125,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert fire_result.damage >= neutral_result.damage
     end
 
-    test "sc_watk_element overrides the weapon element when present" do
-      stub(ElementModifiers, :get_modifier, fn attack_element, _, _ ->
-        send(self(), {:attack_element, attack_element})
-        1.0
-      end)
-
-      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
-      stub(SizeModifiers, :player_size, fn -> :medium end)
-      stub(RaceModifiers, :get_modifier, fn _, _ -> 1.0 end)
-      stub(RaceModifiers, :player_race, fn -> :human end)
-
-      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
-        %{damage: damage, is_critical: false}
-      end)
-
-      stub(ModifierCalculator, :get_all_modifiers, fn
-        :player, 1001 -> %{attack_element: :fire}
-        _, _ -> %{}
-      end)
-
-      attacker = CombatTestHelper.create_player_combatant(weapon_element: :neutral)
-      defender = CombatTestHelper.create_mob_combatant(element: {:earth, 1})
-
-      assert {:ok, _} = DamageCalculator.calculate_damage(attacker, defender)
-      assert_received {:attack_element, :fire}
-    end
-
-    test "falls back to the weapon element when no attack_element modifier" do
-      stub(ElementModifiers, :get_modifier, fn attack_element, _, _ ->
-        send(self(), {:attack_element, attack_element})
-        1.0
-      end)
-
-      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
-      stub(SizeModifiers, :player_size, fn -> :medium end)
-      stub(RaceModifiers, :get_modifier, fn _, _ -> 1.0 end)
-      stub(RaceModifiers, :player_race, fn -> :human end)
-
-      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
-        %{damage: damage, is_critical: false}
-      end)
-
-      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
-
-      attacker = CombatTestHelper.create_player_combatant(weapon_element: :water)
-      defender = CombatTestHelper.create_mob_combatant(element: {:earth, 1})
-
-      assert {:ok, _} = DamageCalculator.calculate_damage(attacker, defender)
-      assert_received {:attack_element, :water}
-    end
-
     test "applies size modifiers" do
       stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
       # All size weapons vs Large
@@ -204,6 +153,62 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       assert {:error, :unknown_unit_type} =
                DamageCalculator.calculate_damage(unknown_attacker, defender)
+    end
+  end
+
+  describe "calculate_damage/2 attack element resolution" do
+    setup do
+      stub(ElementModifiers, :get_modifier, fn attack_element, _, _ ->
+        send(self(), {:attack_element, attack_element})
+        1.0
+      end)
+
+      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
+      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(RaceModifiers, :get_modifier, fn _, _ -> 1.0 end)
+      stub(RaceModifiers, :player_race, fn -> :human end)
+
+      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
+        %{damage: damage, is_critical: false}
+      end)
+
+      :ok
+    end
+
+    test "sc_watk_element overrides the weapon element when present" do
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :player, 1001 -> %{attack_element: :fire}
+        _, _ -> %{}
+      end)
+
+      attacker = CombatTestHelper.create_player_combatant(weapon_element: :neutral)
+      defender = CombatTestHelper.create_mob_combatant(element: {:earth, 1})
+
+      assert {:ok, _} = DamageCalculator.calculate_damage(attacker, defender)
+      assert_received {:attack_element, :fire}
+    end
+
+    test "sc_watk_element beats the arrow weapon.element when both are set" do
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :player, 1001 -> %{attack_element: :water}
+        _, _ -> %{}
+      end)
+
+      attacker = CombatTestHelper.create_player_combatant(weapon_element: :fire)
+      defender = CombatTestHelper.create_mob_combatant(element: {:earth, 1})
+
+      assert {:ok, _} = DamageCalculator.calculate_damage(attacker, defender)
+      assert_received {:attack_element, :water}
+    end
+
+    test "falls back to the weapon element when no attack_element modifier" do
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+
+      attacker = CombatTestHelper.create_player_combatant(weapon_element: :water)
+      defender = CombatTestHelper.create_mob_combatant(element: {:earth, 1})
+
+      assert {:ok, _} = DamageCalculator.calculate_damage(attacker, defender)
+      assert_received {:attack_element, :water}
     end
   end
 

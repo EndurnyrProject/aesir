@@ -128,7 +128,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
 
     case target_type do
       :mob ->
-        hit_info = %{dmg_type: :physical, is_short: true, element: :neutral}
+        hit_info = %{
+          dmg_type: :physical,
+          is_short: true,
+          element: attacker_combatant.weapon.element
+        }
 
         Enum.each(1..hits//1, fn _ ->
           apply_unit_damage(

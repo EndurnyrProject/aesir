@@ -437,6 +437,59 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
     end
   end
 
+  describe "to_combatant/1 weapon element resolution" do
+    setup do
+      character = %Character{
+        id: 1,
+        name: "TestPlayer",
+        last_map: "prontera",
+        last_x: 100,
+        last_y: 100,
+        base_level: 1,
+        job_level: 1,
+        class: 0,
+        str: 1,
+        agi: 1,
+        vit: 1,
+        int: 1,
+        dex: 1,
+        luk: 1,
+        hp: 100,
+        max_hp: 100,
+        sp: 50,
+        max_sp: 50,
+        status_point: 0,
+        skill_point: 0,
+        account_id: 1
+      }
+
+      {:ok, %{state: PlayerState.new(character)}}
+    end
+
+    defp with_ammo(state, nameid) do
+      worn = %InventoryItem{nameid: nameid, amount: 1, equip: 0x008000, identify: 1}
+      equipment = Stats.equipment_from_inventory([worn])
+      put_in(state.stats.equipment, equipment)
+    end
+
+    test "weapon.element is :neutral with no arrow equipped", %{state: state} do
+      combatant = PlayerState.to_combatant(state)
+      assert combatant.weapon.element == :neutral
+    end
+
+    test "weapon.element is :fire when Fire Arrow (1752) is in the ammo slot", %{state: state} do
+      combatant = PlayerState.to_combatant(with_ammo(state, 1752))
+      assert combatant.weapon.element == :fire
+    end
+
+    test "weapon.element is :neutral for Arrow (1750) which has no attack_element", %{
+      state: state
+    } do
+      combatant = PlayerState.to_combatant(with_ammo(state, 1750))
+      assert combatant.weapon.element == :neutral
+    end
+  end
+
   describe "indexed inventory" do
     test "from_list assigns contiguous indices ordered by id" do
       items = [
