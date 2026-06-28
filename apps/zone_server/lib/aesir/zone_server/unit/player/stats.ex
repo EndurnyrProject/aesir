@@ -61,6 +61,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     field :equipment, map()
     field :status_effects, map()
     field :job_bonuses, map()
+    field :passive, map(), default: %{}
   end
 
   typedstruct do
@@ -123,7 +124,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       modifiers: %Modifiers{
         equipment: %{},
         status_effects: %{},
-        job_bonuses: %{}
+        job_bonuses: %{},
+        passive: %{}
       }
     }
 
@@ -183,8 +185,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     |> apply_job_bonuses()
     |> apply_equipment_modifiers(equipped_items)
     |> apply_status_effects(player_id)
+    |> apply_passive_modifiers()
     |> calculate_derived_stats()
     |> calculate_combat_stats()
+  end
+
+  @doc """
+  Aggregates the DEX/HIT/range bonuses from learned passive skills into
+  `modifiers.passive`.
+
+  Runs before `calculate_derived_stats/1` so the passive DEX feeds every
+  DEX-derived stat (HIT, ASPD, MATK) just like a real stat point, matching
+  rAthena (e.g. Owl's Eye).
+  """
+  @spec apply_passive_modifiers(t()) :: t()
+  def apply_passive_modifiers(%__MODULE__{} = stats) do
+    passive = %{
+      dex: Passives.dex_bonus(stats),
+      hit: Passives.hit_bonus(stats),
+      range: Passives.range_bonus(stats)
+    }
+
+    %{stats | modifiers: Map.put(stats.modifiers, :passive, passive)}
   end
 
   @doc """
@@ -538,8 +560,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     job_bonus = Map.get(stats.modifiers.job_bonuses, stat_name, 0)
     equipment_bonus = Map.get(stats.modifiers.equipment, stat_name, 0)
     status_bonus = Map.get(stats.modifiers.status_effects, stat_name, 0)
+    passive_bonus = stats.modifiers |> Map.get(:passive, %{}) |> Map.get(stat_name, 0)
 
-    base_value + job_bonus + equipment_bonus + status_bonus
+    base_value + job_bonus + equipment_bonus + status_bonus + passive_bonus
   end
 
   @doc """

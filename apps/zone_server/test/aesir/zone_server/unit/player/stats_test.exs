@@ -213,6 +213,24 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert Stats.get_effective_stat(stats, :dex) == 12
     end
 
+    test "includes the passive skill bonus for the stat" do
+      stats = %Stats{
+        base_stats: %{str: 10, agi: 15, vit: 20, int: 25, dex: 12, luk: 8},
+        modifiers: %{
+          equipment: %{},
+          status_effects: %{},
+          job_bonuses: %{},
+          passive: %{dex: 5}
+        },
+        equipment: %Equipment{}
+      }
+
+      # DEX: 12 (base) + 5 (passive) = 17
+      assert Stats.get_effective_stat(stats, :dex) == 17
+      # A stat with no passive contribution is unaffected
+      assert Stats.get_effective_stat(stats, :str) == 10
+    end
+
     test "handles missing modifiers gracefully" do
       stats = %Stats{
         base_stats: %{str: 10, agi: 15, vit: 20, int: 25, dex: 12, luk: 8},

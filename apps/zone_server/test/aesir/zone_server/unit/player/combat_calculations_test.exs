@@ -112,6 +112,20 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
       assert hit == 1
     end
 
+    test "includes the passive HIT bonus" do
+      stats =
+        create_test_stats(%{
+          base_stats: %{dex: 80, luk: 60},
+          progression: %{base_level: 60},
+          modifiers: %{passive: %{hit: 3}}
+        })
+
+      hit = CombatCalculations.calculate_hit(stats)
+
+      # Base 115 + 3 passive = 118
+      assert hit == 118
+    end
+
     test "handles high level scenario" do
       stats =
         create_test_stats(%{

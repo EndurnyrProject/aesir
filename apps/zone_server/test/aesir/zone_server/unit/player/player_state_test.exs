@@ -405,6 +405,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       assert combatant.attack_range == 1
     end
 
+    test "adds the passive range bonus to the weapon's attack range", %{state: state} do
+      state = put_in(state.stats.modifiers.passive, %{range: 2})
+      combatant = PlayerState.to_combatant(state)
+
+      # fist range 1 + 2 passive range = 3
+      assert combatant.attack_range == 3
+    end
+
     test "carries the player's attack delay as attack_delay_ms", %{state: state} do
       combatant = PlayerState.to_combatant(state)
 

@@ -114,6 +114,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
     end
   end
 
+  describe "dex_bonus/1, hit_bonus/1 and range_bonus/1" do
+    test "all return 0 when no passive contributes the channel" do
+      player = build_player(%{2 => 5}, :one_handed_sword)
+
+      assert Passives.dex_bonus(player) == 0
+      assert Passives.hit_bonus(player) == 0
+      assert Passives.range_bonus(player) == 0
+    end
+
+    test "return 0 when no skills are learned" do
+      player = build_player(%{}, :bow)
+
+      assert Passives.dex_bonus(player) == 0
+      assert Passives.hit_bonus(player) == 0
+      assert Passives.range_bonus(player) == 0
+    end
+  end
+
   describe "attack_procs/1" do
     test "returns an empty map when no passive procs on attack" do
       player = build_player(%{2 => 5}, :one_handed_sword)

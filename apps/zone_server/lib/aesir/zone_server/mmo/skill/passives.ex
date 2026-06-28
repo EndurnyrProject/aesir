@@ -60,6 +60,54 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   end
 
   @doc """
+  Sums the DEX bonus contributed by every learned passive for the player.
+  """
+  @spec dex_bonus(PlayerState.t() | PlayerStats.t()) :: integer()
+  def dex_bonus(%PlayerState{stats: stats}), do: dex_bonus(stats)
+
+  def dex_bonus(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
+    |> learned_passives()
+    |> Enum.reduce(0, fn {module, level}, acc ->
+      acc + module.dex_bonus(level, ctx)
+    end)
+  end
+
+  @doc """
+  Sums the HIT bonus contributed by every learned passive for the player.
+  """
+  @spec hit_bonus(PlayerState.t() | PlayerStats.t()) :: integer()
+  def hit_bonus(%PlayerState{stats: stats}), do: hit_bonus(stats)
+
+  def hit_bonus(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
+    |> learned_passives()
+    |> Enum.reduce(0, fn {module, level}, acc ->
+      acc + module.hit_bonus(level, ctx)
+    end)
+  end
+
+  @doc """
+  Sums the attack-range bonus contributed by every learned passive for the player.
+  """
+  @spec range_bonus(PlayerState.t() | PlayerStats.t()) :: integer()
+  def range_bonus(%PlayerState{stats: stats}), do: range_bonus(stats)
+
+  def range_bonus(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
+    |> learned_passives()
+    |> Enum.reduce(0, fn {module, level}, acc ->
+      acc + module.range_bonus(level, ctx)
+    end)
+  end
+
+  @doc """
   Folds the on-normal-attack procs of every learned passive into one map.
 
   Currently only `:multi_hit` is aggregated, keeping the maximum across passives.
@@ -154,10 +202,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
       weapon_type: PlayerStats.weapon_type(stats.equipment),
       base_level: stats.progression.base_level,
       job_level: stats.progression.job_level,
-      max_hp: stats.derived_stats.max_hp,
-      max_sp: stats.derived_stats.max_sp,
+      max_hp: derived_stat(stats.derived_stats, :max_hp),
+      max_sp: derived_stat(stats.derived_stats, :max_sp),
       vit: stats.base_stats.vit,
       int: stats.base_stats.int
     }
   end
+
+  # `dex_bonus`/`hit_bonus`/`range_bonus` are aggregated before derived stats
+  # are computed (so DEX feeds them), so `derived_stats` may still be nil here.
+  @spec derived_stat(map() | nil, atom()) :: non_neg_integer()
+  defp derived_stat(nil, _key), do: 0
+  defp derived_stat(derived, key), do: Map.get(derived, key, 0)
 end

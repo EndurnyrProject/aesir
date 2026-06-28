@@ -620,6 +620,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   def to_combatant(%__MODULE__{} = state) do
     weapon_type = PlayerStats.weapon_type(state.stats.equipment)
     learned = state.stats.progression.learned_skills
+    passive_range = passive_range(state.stats.modifiers)
 
     Combatant.new!(%{
       unit_id: state.character_id,
@@ -635,13 +636,19 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
         element: weapon_element(state.stats.equipment),
         size: SizeModifiers.weapon_size(weapon_type)
       },
-      attack_range: WeaponTypes.get_attack_range(weapon_type),
+      attack_range: WeaponTypes.get_attack_range(weapon_type) + passive_range,
       attack_delay_ms: AttackSpeed.calculate_delay_from_stats(state.stats),
       position: {state.x, state.y},
       map_name: state.map_name,
       divine_protection_level: Learned.learned_level(learned, 22),
       demon_bane_level: Learned.learned_level(learned, 23)
     })
+  end
+
+  defp passive_range(nil), do: 0
+
+  defp passive_range(modifiers) do
+    modifiers |> Map.get(:passive, %{}) |> Map.get(:range, 0)
   end
 
   defp weapon_element(%PlayerStats.Equipment{ammo: nil}), do: :neutral

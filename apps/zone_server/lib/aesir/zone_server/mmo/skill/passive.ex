@@ -28,6 +28,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
   @doc "Returns a flat FLEE bonus contributed by this passive at the given level."
   @callback flee_bonus(level :: pos_integer(), ctx()) :: integer()
 
+  @doc "Returns a flat DEX bonus contributed by this passive at the given level."
+  @callback dex_bonus(level :: pos_integer(), ctx()) :: integer()
+
+  @doc "Returns a flat HIT bonus contributed by this passive at the given level."
+  @callback hit_bonus(level :: pos_integer(), ctx()) :: integer()
+
+  @doc "Returns a flat attack-range bonus contributed by this passive at the given level."
+  @callback range_bonus(level :: pos_integer(), ctx()) :: integer()
+
   @doc """
   Returns the procs this passive triggers on a normal attack at the given level.
 
@@ -57,6 +66,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
 
   @optional_callbacks atk_bonus: 2,
                       flee_bonus: 2,
+                      dex_bonus: 2,
+                      hit_bonus: 2,
+                      range_bonus: 2,
                       attack_proc: 2,
                       regen_contribution: 2,
                       skill_rider: 4

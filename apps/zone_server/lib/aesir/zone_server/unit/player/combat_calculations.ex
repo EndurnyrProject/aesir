@@ -35,8 +35,10 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculations do
     # Base hit calculation
     base_hit = trunc(effective_dex + effective_luk / 3 + base_level / 4)
 
-    # Add modifiers from status effects and equipment
-    base_hit + Stats.get_status_modifier(stats, :hit)
+    passive_hit = stats.modifiers |> Map.get(:passive, %{}) |> Map.get(:hit, 0)
+
+    # Add modifiers from status effects, equipment, and passive skills
+    base_hit + Stats.get_status_modifier(stats, :hit) + passive_hit
   end
 
   @doc """
