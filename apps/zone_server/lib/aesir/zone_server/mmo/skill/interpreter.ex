@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Learned
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -66,8 +67,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   otherwise returns `{:casting, gs, cast_info}` with `gs` unchanged so the
   caller can schedule the cast.
 
-  NOTE: cast-time reduction uses base DEX/INT only; effective/buffed reduction
-  is a documented later refinement.
+  Variable-cast reduction sums the caster's status-sourced `:cast_time_reduction`
+  values (Suffragium, Bragi) and passes the total into `CastTime` as a plain
+  integer, keeping `CastTime` pure.
+
+  NOTE: cast-time reduction uses base DEX/INT only; effective/buffed DEX/INT is a
+  documented later refinement.
   """
   @spec begin_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
           {:instant, PlayerState.t()}
@@ -78,12 +83,46 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
     with {:ok, definition, _module} <- validate_cast(game_state, skill_id, level, target, now) do
       base_stats = game_state.stats.base_stats
-      timing = CastTime.compute(definition, level, %{dex: base_stats.dex, int: base_stats.int})
+
+      timing =
+        CastTime.compute(definition, level, %{
+          dex: base_stats.dex,
+          int: base_stats.int,
+          varcast_reductions: status_reductions(game_state.character_id, :cast_time_reduction)
+        })
+
       schedule(timing, game_state, skill_id, level, target, definition)
     end
   end
 
   def begin_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
+
+  # Collects each active status's stored reduction percentage as a list, for the
+  # variable-cast path that applies each as a separate multiplicative factor
+  # (rAthena skill_vfcastfix). Statuses without the key are skipped.
+  @spec status_reductions(integer(), atom()) :: [non_neg_integer()]
+  defp status_reductions(character_id, state_key) do
+    :player
+    |> StatusStorage.get_unit_statuses(character_id)
+    |> Enum.flat_map(fn entry ->
+      case Map.get(entry.state || %{}, state_key) do
+        nil -> []
+        value -> [value]
+      end
+    end)
+  end
+
+  # Sums a stored reduction percentage (`:delay_reduction`) across the caster's
+  # active statuses, for the after-cast delay path (additive sum, one multiply -
+  # rAthena skill_delayfix:10491).
+  @spec sum_status_reduction(integer(), atom()) :: non_neg_integer()
+  defp sum_status_reduction(character_id, state_key) do
+    :player
+    |> StatusStorage.get_unit_statuses(character_id)
+    |> Enum.reduce(0, fn entry, acc ->
+      acc + Map.get(entry.state || %{}, state_key, 0)
+    end)
+  end
 
   @doc """
   Runs a previously-validated cast to completion.
@@ -380,13 +419,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  # Flat after-cast act delay (rAthena AfterCastActDelay). ASPD/Bragi reduction
-  # is a documented later refinement.
+  # After-cast act delay (rAthena AfterCastActDelay) reduced by delay-rate sources
+  # (Bragi `:delay_reduction`), not ASPD. Reduction floors the delay at 0.
   defp put_act_delay(game_state, definition, level, now) do
     case Enum.at(definition.after_cast_delay, level - 1) do
-      nil -> game_state
-      0 -> game_state
-      delay -> %{game_state | act_delay_until: now + delay}
+      nil ->
+        game_state
+
+      0 ->
+        game_state
+
+      base ->
+        reduction = sum_status_reduction(game_state.character_id, :delay_reduction)
+        delay = max(0, round(base * (100 - reduction) / 100))
+        %{game_state | act_delay_until: now + delay}
     end
   end
 end

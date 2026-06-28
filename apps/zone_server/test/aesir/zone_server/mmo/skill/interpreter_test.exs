@@ -9,6 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skills.SmProvoke
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEntry
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
   setup :verify_on_exit!
@@ -352,6 +354,49 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert {:error, :insufficient_sp} =
                Interpreter.begin_cast(game_state(1, %{29 => 1}), 29, 1, :self)
     end
+
+    test "applies a status :cast_time_reduction to the variable cast, leaving fixed untouched" do
+      reject(&StatusInterpreter.apply_status/4)
+      gs = game_state(100, %{29 => 1})
+
+      stub(StatusStorage, :get_unit_statuses, fn :player, 1000 -> [] end)
+      assert {:casting, _gs, unreduced} = Interpreter.begin_cast(gs, 29, 1, :self)
+
+      stub(StatusStorage, :get_unit_statuses, fn :player, 1000 ->
+        [%StatusEntry{state: %{cast_time_reduction: 45}}]
+      end)
+
+      assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
+
+      assert reduced.fixed == unreduced.fixed
+      assert reduced.total - reduced.fixed == round((unreduced.total - unreduced.fixed) * 0.55)
+      assert reduced.total < unreduced.total
+    end
+
+    test "composes multiple status cast reductions multiplicatively, not additively" do
+      reject(&StatusInterpreter.apply_status/4)
+      gs = game_state(100, %{29 => 1})
+
+      stub(StatusStorage, :get_unit_statuses, fn :player, 1000 -> [] end)
+      assert {:casting, _gs, unreduced} = Interpreter.begin_cast(gs, 29, 1, :self)
+
+      stub(StatusStorage, :get_unit_statuses, fn :player, 1000 ->
+        [
+          %StatusEntry{state: %{cast_time_reduction: 30}},
+          %StatusEntry{state: %{cast_time_reduction: 15}}
+        ]
+      end)
+
+      assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
+
+      unreduced_variable = unreduced.total - unreduced.fixed
+      reduced_variable = reduced.total - reduced.fixed
+
+      # multiplicative 0.70 * 0.85 = 0.595 keeps MORE cast than the additive
+      # 30 + 15 = 45% (0.55) would, and never more than either factor alone
+      assert reduced_variable == round(unreduced_variable * 0.7 * 0.85)
+      assert reduced_variable > round(unreduced_variable * 0.55)
+    end
   end
 
   describe "complete_cast/4" do
@@ -435,6 +480,61 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
       assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
       assert updated.act_delay_until == 0
+    end
+
+    test "reduces the after-cast act delay by the summed :delay_reduction" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, definition_with_act_delay([500])} end)
+      stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+
+      stub(StatusStorage, :get_unit_statuses, fn :player, 1000 ->
+        [%StatusEntry{state: %{delay_reduction: 50}}]
+      end)
+
+      gs = game_state(100, %{6 => 1})
+      before = System.monotonic_time(:millisecond)
+
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+
+      # 50% of 500ms = 250ms; reduced delay sits below the flat 500ms value
+      assert updated.act_delay_until >= before + 250
+      assert updated.act_delay_until < before + 500
+    end
+
+    test "sums :delay_reduction across multiple statuses" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, definition_with_act_delay([500])} end)
+      stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+
+      stub(StatusStorage, :get_unit_statuses, fn :player, 1000 ->
+        [
+          %StatusEntry{state: %{delay_reduction: 30}},
+          %StatusEntry{state: %{delay_reduction: 20}}
+        ]
+      end)
+
+      gs = game_state(100, %{6 => 1})
+      before = System.monotonic_time(:millisecond)
+
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+
+      # 30 + 20 = 50% -> 250ms
+      assert updated.act_delay_until >= before + 250
+      assert updated.act_delay_until < before + 500
+    end
+
+    test "floors the reduced act delay at 0 when reductions exceed 100%" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, definition_with_act_delay([500])} end)
+      stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+
+      stub(StatusStorage, :get_unit_statuses, fn :player, 1000 ->
+        [%StatusEntry{state: %{delay_reduction: 150}}]
+      end)
+
+      gs = game_state(100, %{6 => 1})
+
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+
+      # floored delay leaves no future act delay
+      assert updated.act_delay_until <= System.monotonic_time(:millisecond)
     end
 
     test "begin_cast is blocked with :act_delayed while act-delayed" do
