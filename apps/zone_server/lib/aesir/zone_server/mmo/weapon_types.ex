@@ -65,6 +65,21 @@ defmodule Aesir.ZoneServer.Mmo.WeaponTypes do
   end
 
   @doc """
+  Returns true if weapons of the given type require ammunition (arrows or bullets).
+
+  Ammo-consuming types: bow, revolver, rifle, gatling, shotgun, grenade.
+  Whip and musical are ranged but do not require ammo.
+  """
+  @spec requires_ammo?(integer() | atom()) :: boolean()
+  def requires_ammo?(weapon) when is_integer(weapon) do
+    weapon |> get_weapon_atom() |> requires_ammo?()
+  end
+
+  def requires_ammo?(weapon) when is_atom(weapon) do
+    weapon in [:bow, :revolver, :rifle, :gatling, :shotgun, :grenade]
+  end
+
+  @doc """
   Check if weapon is two-handed.
   """
   @spec is_two_handed?(integer() | atom()) :: boolean()

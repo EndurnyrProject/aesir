@@ -62,6 +62,50 @@ defmodule Aesir.ZoneServer.Mmo.WeaponTypesTest do
     end
   end
 
+  describe "requires_ammo?/1" do
+    test "returns true for ammo-consuming weapon atoms" do
+      assert WeaponTypes.requires_ammo?(:bow)
+      assert WeaponTypes.requires_ammo?(:revolver)
+      assert WeaponTypes.requires_ammo?(:rifle)
+      assert WeaponTypes.requires_ammo?(:gatling)
+      assert WeaponTypes.requires_ammo?(:shotgun)
+      assert WeaponTypes.requires_ammo?(:grenade)
+    end
+
+    test "returns true for ammo-consuming weapon integer ids" do
+      # bow = 11
+      assert WeaponTypes.requires_ammo?(11)
+      # revolver = 17
+      assert WeaponTypes.requires_ammo?(17)
+      # rifle = 18
+      assert WeaponTypes.requires_ammo?(18)
+      # gatling = 19
+      assert WeaponTypes.requires_ammo?(19)
+      # shotgun = 20
+      assert WeaponTypes.requires_ammo?(20)
+      # grenade = 21
+      assert WeaponTypes.requires_ammo?(21)
+    end
+
+    test "returns false for melee weapons" do
+      refute WeaponTypes.requires_ammo?(:dagger)
+      refute WeaponTypes.requires_ammo?(:staff)
+      refute WeaponTypes.requires_ammo?(:fist)
+      # integer ids
+      refute WeaponTypes.requires_ammo?(1)
+      refute WeaponTypes.requires_ammo?(10)
+      refute WeaponTypes.requires_ammo?(0)
+    end
+
+    test "returns false for ranged weapons that do not use ammo" do
+      refute WeaponTypes.requires_ammo?(:whip)
+      refute WeaponTypes.requires_ammo?(:musical)
+      # integer ids
+      refute WeaponTypes.requires_ammo?(14)
+      refute WeaponTypes.requires_ammo?(13)
+    end
+  end
+
   describe "integration with existing functions" do
     test "ranged weapons correctly identified as ranged and have long range" do
       ranged_weapons = [:bow, :musical, :whip, :revolver, :rifle, :gatling, :shotgun, :grenade]
