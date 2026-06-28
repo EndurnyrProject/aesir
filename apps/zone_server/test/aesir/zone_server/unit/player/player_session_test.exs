@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
@@ -273,6 +274,44 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
                          gid: 2,
                          name: "OtherPlayer",
                          moving: false
+                       }}}
+
+      Process.exit(other_pid, :kill)
+    end
+
+    test "player_entered_view spawn derives appearance from the unit's equipped gear", %{
+      character: character
+    } do
+      # Ribbon (2208) is a head_top with sprite view 17; Adventurer's Backpack
+      # (2576) is a garment with view 2. accessory3 used to be hardcoded 0 and
+      # robe came from a stale character field; both must now reflect the gear.
+      equipment =
+        Stats.equipment_from_inventory([
+          %InventoryItem{nameid: 2208, equip: 0x100},
+          %InventoryItem{nameid: 2576, equip: 0x004}
+        ])
+
+      other_character = %{character | id: 2, account_id: 200, name: "OtherPlayer"}
+      base = %{PlayerState.new(other_character) | movement_state: :standing}
+      other_game_state = %{base | stats: %{base.stats | equipment: equipment}}
+
+      other_pid = spawn(fn -> Process.sleep(1000) end)
+      UnitRegistry.register_player(other_game_state, other_pid)
+
+      state = %{
+        character: character,
+        game_state: PlayerState.new(character),
+        connection_pid: self()
+      }
+
+      {:noreply, _new_state} = PlayerSession.handle_cast({:player_entered_view, 2}, state)
+
+      assert_receive {:send, :world,
+                      {:unit_spawn,
+                       %Aesir.Net.UnitSpawn{
+                         gid: 2,
+                         accessory3: 17,
+                         robe: 2
                        }}}
 
       Process.exit(other_pid, :kill)

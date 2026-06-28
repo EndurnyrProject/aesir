@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Movement
+  alias Aesir.ZoneServer.Unit.Player.Appearance
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
@@ -38,7 +39,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
@@ -674,6 +674,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     } =
       StatusDisplay.spawn_state(:player, game_state.character_id)
 
+    appearance = Appearance.spawn_fields(game_state.stats.equipment)
+
     %UnitSpawn{
       object_type: ObjectType.pc(),
       aid: game_state.account_id,
@@ -685,15 +687,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       virtue: virtue,
       job: game_state.stats.progression.job_id,
       head: game_state.hair,
-      weapon: PlayerStats.weapon_view(game_state.stats.equipment),
-      shield: PlayerStats.shield_view(game_state.stats.equipment),
-      accessory: game_state.head_bottom,
-      accessory2: game_state.head_mid,
-      accessory3: 0,
+      weapon: appearance.weapon,
+      shield: appearance.shield,
+      accessory: appearance.accessory,
+      accessory2: appearance.accessory2,
+      accessory3: appearance.accessory3,
       head_palette: game_state.hair_color,
       body_palette: game_state.clothes_color,
       head_dir: 0,
-      robe: game_state.robe,
+      robe: appearance.robe,
       guild_id: 0,
       sex: sex_to_int(game_state.sex),
       x: game_state.x,
