@@ -17,8 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Cloaking do
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
 
   @impl true
-  def modifiers(instance, context) do
-    %{cri: Map.get(context.target, :cri, 0), movement_speed: speed_modifier(instance.val1)}
+  def modifiers(_instance, context) do
+    %{cri: Map.get(context.target, :cri, 0)}
   end
 
   @impl true
@@ -28,8 +28,4 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Cloaking do
 
   @impl true
   def on_damage(_target, _instance, _damage_info, _context), do: :remove
-
-  defp speed_modifier(level) when level >= 10, do: -25
-  defp speed_modifier(level) when level >= 3, do: -(30 - 3 * level)
-  defp speed_modifier(_level), do: -300
 end

@@ -107,8 +107,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
       assert modifiers[:luk] == 0
       # ATK reduced by 25% (combined atk_rate)
       assert modifiers[:atk_rate] == -25
-      # Movement speed reduced
-      assert modifiers[:movement_speed] == -10
+      # Movement speed is neutralized for now: the live walk-speed bridge treats
+      # positive movement_speed as slower, and the rAthena-faithful curse value
+      # is a tracked follow-up, so curse must contribute nothing to speed today.
+      refute Map.has_key?(modifiers, :movement_speed)
     end
 
     test "applies stun status with action prevention flags", %{player_id: player_id} do

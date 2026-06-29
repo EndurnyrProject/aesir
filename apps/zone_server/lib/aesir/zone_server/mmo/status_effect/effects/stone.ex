@@ -20,7 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Stone do
   @wait_duration_ms 5_000
 
   @impl true
-  def modifiers(%{phase: :wait}, _context), do: %{mdef: 25, movement_speed: -50}
+  def modifiers(%{phase: :wait}, _context), do: %{mdef: 25}
   def modifiers(%{phase: :stone}, _context), do: %{element: :earth1, def: -50, mdef: 25}
 
   @impl true

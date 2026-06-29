@@ -14,7 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Curse do
 
   @impl true
   def modifiers(_instance, _context) do
-    %{luk: 0, atk_rate: -25, movement_speed: -10}
+    %{luk: 0, atk_rate: -25}
   end
 
   @impl true
