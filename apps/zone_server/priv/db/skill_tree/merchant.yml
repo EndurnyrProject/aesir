@@ -12,3 +12,11 @@
       requires:
         - name: MC_PUSHCART
           level: 1
+    - name: MC_CARTREVOLUTION
+      max_level: 1
+      # rAthena's re skill_tree gives Cart Revolution no skill prereq; it is gated
+      # in-game by `State: Cart` (a cart must be mounted). We model that mounted-cart
+      # requirement as the tree prerequisite MC_PUSHCART, at the design's lv5 gate.
+      requires:
+        - name: MC_PUSHCART
+          level: 5

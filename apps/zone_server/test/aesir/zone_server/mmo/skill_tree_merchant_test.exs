@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeMerchantTest do
 
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skills.McCartrevolution
   alias Aesir.ZoneServer.Mmo.Skills.McChangecart
   alias Aesir.ZoneServer.Mmo.Skills.McPushcart
   alias Aesir.ZoneServer.Mmo.SkillTree
@@ -54,6 +55,16 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeMerchantTest do
     test "Change Cart exposes the active capability" do
       assert :active in McChangecart.__skill_capabilities__()
     end
+
+    test "Cart Revolution resolves by name and by id 153" do
+      assert {:ok, definition} = Catalog.by_name(:mc_cartrevolution)
+      assert definition.id == 153
+      assert {:ok, ^definition} = Catalog.by_id(153)
+    end
+
+    test "Cart Revolution exposes the active capability" do
+      assert :active in McCartrevolution.__skill_capabilities__()
+    end
   end
 
   describe "tree_for/1 (real data)" do
@@ -84,6 +95,21 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeMerchantTest do
 
       refute log =~ ~r/references unimplemented skill "MC_CHANGECART"/
     end
+
+    test "Cart Revolution resolves into the Merchant tree at max level 1" do
+      tree = SkillTree.tree_for(@merchant_id)
+
+      assert Map.has_key?(tree, catalog_id(:mc_cartrevolution)),
+             "expected mc_cartrevolution in Merchant tree"
+
+      assert tree[catalog_id(:mc_cartrevolution)].max_level == 1
+    end
+
+    test "Cart Revolution is not dropped as unimplemented when reloading the tree" do
+      log = capture_log(fn -> SkillTree.reload() end)
+
+      refute log =~ ~r/references unimplemented skill "MC_CARTREVOLUTION"/
+    end
   end
 
   describe "prerequisite gating" do
@@ -108,6 +134,20 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeMerchantTest do
                SkillTree.can_learn(
                  merchant_progression(learned_skills: %{}),
                  catalog_id(:mc_changecart)
+               )
+    end
+
+    test "Cart Revolution requires MC_PUSHCART level 5" do
+      assert :ok =
+               SkillTree.can_learn(
+                 merchant_progression(learned_skills: %{catalog_id(:mc_pushcart) => 5}),
+                 catalog_id(:mc_cartrevolution)
+               )
+
+      assert {:error, :missing_prerequisite} =
+               SkillTree.can_learn(
+                 merchant_progression(learned_skills: %{catalog_id(:mc_pushcart) => 4}),
+                 catalog_id(:mc_cartrevolution)
                )
     end
   end
