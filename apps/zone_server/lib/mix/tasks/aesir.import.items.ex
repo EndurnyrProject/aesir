@@ -13,6 +13,10 @@ defmodule Mix.Tasks.Aesir.Import.Items do
   use Mix.Task
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.Importer
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Transpiler
+
+  @type failure :: {integer(), String.t(), term()}
 
   @sources ~w(usable equip etc)
   @out_dir Path.join(~w(apps zone_server priv db items))
@@ -23,16 +27,68 @@ defmodule Mix.Tasks.Aesir.Import.Items do
     re_dir = Path.join([rathena, "db", "re"])
     File.mkdir_p!(@out_dir)
 
-    Enum.each(@sources, &import_source(&1, re_dir))
+    results = Enum.map(@sources, &import_source(&1, re_dir))
+    transpiled = results |> Enum.map(&elem(&1, 0)) |> Enum.sum()
+    failures = Enum.flat_map(results, &elem(&1, 1))
+
+    report_path = Path.join(@out_dir, "_transpile_report.md")
+    File.write!(report_path, build_report(failures))
+
+    Mix.shell().info(
+      "transpiled #{transpiled}/#{transpiled + length(failures)} scripts, " <>
+        "#{length(failures)} unsupported -> #{report_path}"
+    )
   end
 
   defp import_source(kind, re_dir) do
     src = Path.join(re_dir, "item_db_#{kind}.yml")
-    definitions = src |> read_body!() |> Enum.map(&to_definition!/1)
+    results = src |> read_body!() |> Enum.map(&transpile_entry/1)
+    definitions = Enum.map(results, &elem(&1, 0))
+    failures = results |> Enum.map(&elem(&1, 1)) |> Enum.reject(&is_nil/1)
+    transpiled = Enum.count(definitions, &(&1.on_use != nil))
     yaml = definitions |> Enum.map(&Importer.to_yaml_map/1) |> Ymlr.document!()
     out = Path.join(@out_dir, "#{kind}.yml")
     File.write!(out, yaml)
     Mix.shell().info("#{kind}: #{length(definitions)} items -> #{out}")
+    {transpiled, failures}
+  end
+
+  defp transpile_entry(entry) do
+    apply_transpile(to_definition!(entry), Map.get(entry, "Script"))
+  end
+
+  @doc false
+  @spec apply_transpile(ItemDefinition.t(), String.t() | nil) ::
+          {ItemDefinition.t(), failure() | nil}
+  def apply_transpile(%ItemDefinition{type: type} = definition, script)
+      when type in [:usable, :healing] and is_binary(script) do
+    case Transpiler.transpile(script) do
+      {:ok, dsl} -> {%{definition | on_use: dsl}, nil}
+      {:error, reason} -> {definition, {definition.id, definition.name, reason}}
+    end
+  end
+
+  def apply_transpile(%ItemDefinition{} = definition, _script), do: {definition, nil}
+
+  @doc false
+  @spec build_report([failure()]) :: String.t()
+  def build_report([]) do
+    "# Transpile report\n\nAll usable item scripts transpiled.\n"
+  end
+
+  def build_report(failures) do
+    rows =
+      Enum.map_join(failures, "\n", fn {id, name, reason} ->
+        "| #{id} | #{name} | #{inspect(reason)} |"
+      end)
+
+    """
+    # Transpile report
+
+    | id | name | reason |
+    | --- | --- | --- |
+    #{rows}
+    """
   end
 
   defp read_body!(path) do
