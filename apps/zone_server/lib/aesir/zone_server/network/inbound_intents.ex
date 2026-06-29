@@ -30,7 +30,11 @@ defmodule Aesir.ZoneServer.Network.InboundIntents do
                     Aesir.Net.SkillCast,
                     Aesir.Net.StatUp,
                     Aesir.Net.UnequipItem,
-                    Aesir.Net.UseItem
+                    Aesir.Net.UseItem,
+                    Aesir.Net.VendingCloseRequest,
+                    Aesir.Net.VendingListRequest,
+                    Aesir.Net.VendingOpenRequest,
+                    Aesir.Net.VendingPurchaseRequest
                   ])
 
   @doc """

@@ -19,11 +19,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.VendingBoardRemoved
   alias Aesir.Net.VendingBoardShown
+  alias Aesir.Net.VendingList
   alias Aesir.Net.VendingSaleReport
+  alias Aesir.Net.VendingShopItem
   alias Aesir.Repo
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ClientItemType
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.McVending
@@ -39,6 +42,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
+  alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Aesir.ZoneServer.Unit.Vending
   alias Aesir.ZoneServer.Unit.Vending.Registry
   alias Aesir.ZoneServer.Unit.Vending.ShopItem
@@ -110,9 +114,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   Removes the registry entry, broadcasts `VendingBoardRemoved` to in-range
   players, and returns to `:idle`. Unsold stock stays in the cart — no item is
   moved. Returns `{:ok, state}`.
+
+  A safe no-op when the session is not currently in `:vending` (e.g. the
+  defensive `terminate/2` teardown of a non-vending session), so it never
+  `MatchError`s on the `:idle` transition.
   """
   @spec close_shop(state(), atom()) :: {:ok, state()}
-  def close_shop(%{game_state: gs} = state, reason) do
+  def close_shop(%{game_state: %{action_state: :vending} = gs} = state, reason) do
     char_id = gs.character_id
     Logger.debug("Closing vending shop for #{char_id}: #{inspect(reason)}")
 
@@ -122,6 +130,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
     {:ok, new_gs} = PlayerState.transition_to(gs, :idle)
     {:ok, %{state | game_state: new_gs}}
   end
+
+  def close_shop(state, _reason), do: {:ok, state}
 
   @doc """
   Buys `buy_lines` from this seller's live shop, the sole transactional authority.
@@ -209,6 +219,49 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
     StatusSync.send_param(state.connection_pid, StatusParams.zeny(), new_zeny)
 
     {:ok, %{state | game_state: new_gs}}
+  end
+
+  @doc """
+  Builds the `VendingList` browse reply for `vendor_unit_id`.
+
+  Reads the vendor's live `PlayerState` (for the current cart) and the open shop
+  from the `Vending.Registry`, then merges them into the display snapshot via the
+  pure `Vending.build_snapshot/2`. Returns `:error` when the vendor is gone or has
+  no shop open. Pure read — it never mutates the vendor session.
+  """
+  @spec build_list(integer()) :: {:ok, VendingList.t()} | :error
+  def build_list(vendor_unit_id) do
+    with {:ok, {_module, %PlayerState{cart: cart}, _pid}} <-
+           UnitRegistry.get_unit(:player, vendor_unit_id),
+         {:ok, %{title: title, items: items}} <- Registry.get(vendor_unit_id) do
+      shop_items = Enum.map(Vending.build_snapshot(cart, items), &to_shop_item/1)
+      {:ok, %VendingList{vendor_unit_id: vendor_unit_id, title: title, items: shop_items}}
+    else
+      _ -> :error
+    end
+  end
+
+  @spec to_shop_item(Vending.snapshot_item()) :: VendingShopItem.t()
+  defp to_shop_item(row) do
+    %VendingShopItem{
+      index: row.index,
+      nameid: row.nameid,
+      type: client_type(row.nameid),
+      amount: row.amount,
+      identified: row.identify == 1,
+      attribute: row.attribute,
+      refine: row.refine,
+      cards: row.cards,
+      price: row.price
+    }
+  end
+
+  @spec client_type(integer()) :: non_neg_integer()
+  defp client_type(nameid) do
+    case ItemManagement.get_item_by_id(nameid) do
+      {:ok, %ItemDefinition{type: type}} -> ClientItemType.to_client_type(type)
+      {:error, _} -> ClientItemType.to_client_type(:etc)
+    end
   end
 
   @spec collapse_lines([Vending.buy_line()]) :: [Vending.buy_line()]

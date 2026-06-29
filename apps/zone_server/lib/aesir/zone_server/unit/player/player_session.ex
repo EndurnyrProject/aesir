@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   alias Aesir.Net.UnitDespawn
   alias Aesir.Net.UnitSpawn
+  alias Aesir.Net.VendingBoardShown
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Constants.ObjectType
@@ -38,10 +39,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
+  alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
+  alias Aesir.ZoneServer.Unit.Vending.Registry, as: VendingRegistry
   alias Phoenix.PubSub
 
   # rAthena NATURAL_HEAL_INTERVAL
@@ -436,6 +439,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       {:ok, {_module, %PlayerState{} = other_game_state, _pid}} ->
         send_player_spawn_packet(state.connection_pid, other_game_state)
         send_active_icons(:player, other_char_id, state.game_state.character_id)
+        maybe_send_vending_board(state.connection_pid, other_char_id)
 
       _ ->
         :ok
@@ -511,6 +515,59 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:move_to_inventory, index, amount}, state) do
     CartHandler.move_to_inventory(index, amount, state)
+  end
+
+  @impl true
+  def handle_cast({:vending_open, title, entries}, state) do
+    case VendingHandler.open_shop(state, title, entries) do
+      {:ok, new_state} ->
+        {:noreply, update_game_state(new_state, new_state.game_state)}
+
+      {:error, reason} ->
+        Logger.debug(
+          "Vending open failed for #{state.game_state.character_id}: #{inspect(reason)}"
+        )
+
+        {:noreply, state}
+    end
+  end
+
+  @impl true
+  def handle_cast({:vending_close}, state) do
+    {:ok, new_state} = VendingHandler.close_shop(state, :user_closed)
+    {:noreply, update_game_state(new_state, new_state.game_state)}
+  end
+
+  @impl true
+  def handle_cast({:vending_list, vendor_unit_id}, state) do
+    case VendingHandler.build_list(vendor_unit_id) do
+      {:ok, packet} -> MessageRouter.send_to(state.connection_pid, packet)
+      :error -> :ok
+    end
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast(
+        {:vending_purchase_request, vendor_unit_id, buy_lines},
+        %{game_state: gs} = buyer_state
+      ) do
+    with :ok <- reject_self_purchase(vendor_unit_id, gs.character_id),
+         {:ok, seller_pid} <- UnitRegistry.get_player_pid(vendor_unit_id),
+         {:ok, buyer_delta} <-
+           GenServer.call(
+             seller_pid,
+             {:vending_purchase, gs.character_id, gs.inventory, gs.zeny, gs.stats,
+              gs.character_name, buy_lines}
+           ),
+         {:ok, new_state} <- VendingHandler.apply_purchase_as_buyer(buyer_state, buyer_delta) do
+      {:noreply, update_game_state(new_state, new_state.game_state)}
+    else
+      {:error, reason} ->
+        Logger.debug("Vending purchase failed for #{gs.character_id}: #{inspect(reason)}")
+        {:noreply, buyer_state}
+    end
   end
 
   @impl true
@@ -634,6 +691,38 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   # mutation (pay_zeny / give_item / delitem / set_char_var) against this
   # authoritative session. Replies with the fresh game_state or an error; on
   # success the new game_state is also published to the unit registry.
+  # The seller-authority buy seam: a buyer session (parked in its own cast)
+  # calls this on the seller session, which runs the whole atomic transaction
+  # and replies with the buyer's delta. `purchase/7` already pushed the seller's
+  # own cart/zeny packets; the per-line `VendingSaleReport`s are returned for us
+  # to deliver to the seller's client here.
+  @impl true
+  def handle_call(
+        {:vending_purchase, buyer_char_id, buyer_inventory, buyer_zeny, buyer_stats, buyer_name,
+         buy_lines},
+        _from,
+        seller_state
+      ) do
+    case VendingHandler.purchase(
+           seller_state,
+           buyer_char_id,
+           buyer_inventory,
+           buyer_zeny,
+           buyer_stats,
+           buyer_name,
+           buy_lines
+         ) do
+      {:ok, new_seller_state, buyer_delta, sale_reports} ->
+        Enum.each(sale_reports, &MessageRouter.send_to(new_seller_state.connection_pid, &1))
+
+        {:reply, {:ok, buyer_delta},
+         update_game_state(new_seller_state, new_seller_state.game_state)}
+
+      {:error, reason} ->
+        {:reply, {:error, reason}, seller_state}
+    end
+  end
+
   @impl true
   def handle_call({:script_apply, op}, _from, state) do
     case ScriptEffectHandler.apply_op(op, state) do
@@ -646,11 +735,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
-  def terminate(_reason, %{
-        game_state: game_state,
-        connection_monitor_ref: connection_monitor_ref
-      }) do
+  def terminate(
+        _reason,
+        %{game_state: game_state, connection_monitor_ref: connection_monitor_ref} = state
+      ) do
     Process.demonitor(connection_monitor_ref, [:flush])
+
+    # Tear down an open vending shop so the registry entry + board don't leak;
+    # a no-op when this session isn't vending.
+    VendingHandler.close_shop(state, :disconnected)
 
     # Save final position to database (synchronous to ensure it's persisted)
     CharacterPersistence.update_position(
@@ -684,6 +777,21 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   defp send_player_spawn_packet(connection_pid, game_state) do
     packet = build_unit_spawn(game_state)
     MessageRouter.send_to(connection_pid, packet)
+  end
+
+  # A player can't buy from their own shop; resolving the seller to self() would
+  # also deadlock the GenServer.call until its 5s timeout crashed the session.
+  defp reject_self_purchase(char_id, char_id), do: {:error, :self_purchase}
+  defp reject_self_purchase(_vendor_unit_id, _char_id), do: :ok
+
+  defp maybe_send_vending_board(connection_pid, char_id) do
+    case VendingRegistry.get(char_id) do
+      {:ok, %{title: title}} ->
+        MessageRouter.send_to(connection_pid, %VendingBoardShown{unit_id: char_id, title: title})
+
+      :error ->
+        :ok
+    end
   end
 
   defp send_active_icons(unit_type, subject_id, observer_id) do

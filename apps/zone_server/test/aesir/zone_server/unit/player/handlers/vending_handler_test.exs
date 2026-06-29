@@ -8,12 +8,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.VendingBoardRemoved
   alias Aesir.Net.VendingBoardShown
+  alias Aesir.Net.VendingList
+  alias Aesir.Net.VendingShopItem
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Aesir.ZoneServer.Unit.Vending.Registry
   alias Aesir.ZoneServer.Unit.Vending.ShopItem
 
@@ -152,6 +155,31 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
       assert closed.game_state.cart == opened.game_state.cart
       assert :error = Registry.get(@char_id)
       assert_received {:board, %VendingBoardRemoved{unit_id: @char_id}}
+    end
+
+    test "is a safe no-op when the session is not vending" do
+      base = state(learned_skills: %{})
+
+      assert {:ok, ^base} = VendingHandler.close_shop(base, :disconnected)
+      refute_received {:board, _}
+    end
+  end
+
+  describe "build_list/1" do
+    test "returns the current VendingList for an open vendor" do
+      mount_cart()
+      base = state(learned_skills: learned(@vending_level))
+      {:ok, opened} = VendingHandler.open_shop(base, "Cheap Pots", [{0, 5, 100}])
+      UnitRegistry.register_player(opened.game_state, self())
+
+      assert {:ok, %VendingList{vendor_unit_id: @char_id, title: "Cheap Pots", items: items}} =
+               VendingHandler.build_list(@char_id)
+
+      assert [%VendingShopItem{index: 0, nameid: 501, amount: 5, price: 100}] = items
+    end
+
+    test "returns :error for a vendor with no open shop" do
+      assert :error = VendingHandler.build_list(@char_id)
     end
   end
 end
