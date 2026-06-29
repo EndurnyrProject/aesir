@@ -1,0 +1,183 @@
+defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
+  @moduledoc """
+  Maps rAthena script symbols to Aesir runtime values for the item-script
+  transpiler.
+
+  Statuses, elements and classes are resolved through hand-curated maps (the
+  rAthena constant names do not line up with Aesir's internal atoms); skills and
+  items delegate to the live `Skill.Catalog` / `ItemManagement.Items` registries.
+
+  Every resolver returns `{:ok, value}` or `{:error, {:unknown_symbol, symbol}}`;
+  the error feeds the transpiler's all-or-nothing rule (an item with any
+  unresolvable symbol emits no `on_use`).
+  """
+
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
+
+  @typedoc "An unresolvable rAthena symbol, carried verbatim for the coverage report."
+  @type error :: {:error, {:unknown_symbol, String.t()}}
+
+  @statuses %{
+    "SC_BLESSING" => :sc_blessing,
+    "SC_INCAGI" => :sc_increaseagi,
+    "SC_INCREASEAGI" => :sc_increaseagi,
+    "SC_DECAGI" => :sc_decreaseagi,
+    "SC_DECREASEAGI" => :sc_decreaseagi,
+    "SC_ANGELUS" => :sc_angelus,
+    "SC_CONCENTRATE" => :sc_concentrate,
+    "SC_GLORIA" => :sc_gloria,
+    "SC_KYRIE" => :sc_kyrie,
+    "SC_MAGNIFICAT" => :sc_magnificat,
+    "SC_IMPOSITIO" => :sc_impositio,
+    "SC_SUFFRAGIUM" => :sc_suffragium,
+    "SC_ASPERSIO" => :sc_aspersio,
+    "SC_BENEDICTIO" => :sc_benedictio,
+    "SC_AETERNA" => :sc_aeterna,
+    "SC_SIGNUMCRUCIS" => :sc_signumcrucis,
+    "SC_PNEUMA" => :sc_pneuma,
+    "SC_RUWACH" => :sc_ruwach,
+    "SC_SAFETYWALL" => :sc_safetywall,
+    "SC_ENDURE" => :sc_endure,
+    "SC_AUTOBERSERK" => :sc_autoberserk,
+    "SC_ENERGYCOAT" => :sc_energycoat,
+    "SC_TWOHANDQUICKEN" => :sc_twohandquicken,
+    "SC_HIDING" => :sc_hiding,
+    "SC_CLOAKING" => :sc_cloaking,
+    "SC_QUAGMIRE" => :sc_quagmire,
+    "SC_SIGHT" => :sc_sight,
+    "SC_TRICKDEAD" => :sc_trickdead,
+    "SC_POEMBRAGI" => :sc_poembragi,
+    "SC_POISON" => :sc_poison,
+    "SC_DPOISON" => :sc_dpoison,
+    "SC_SLOWPOISON" => :sc_slowpoison,
+    "SC_ENCPOISON" => :sc_encpoison,
+    "SC_POISONREACT" => :sc_poisonreact,
+    "SC_BLIND" => :sc_blind,
+    "SC_CURSE" => :sc_curse,
+    "SC_SILENCE" => :sc_silence,
+    "SC_STUN" => :sc_stun,
+    "SC_SLEEP" => :sc_sleep,
+    "SC_FREEZE" => :sc_freeze,
+    "SC_STONE" => :sc_stone,
+    "SC_CONFUSION" => :sc_confusion,
+    "SC_BLEEDING" => :sc_bleeding
+  }
+
+  @elements %{
+    "Ele_Fire" => :fire,
+    "Ele_Water" => :water,
+    "Ele_Wind" => :wind,
+    "Ele_Earth" => :earth,
+    "Ele_Holy" => :holy,
+    "Ele_Dark" => :shadow,
+    "Ele_Ghost" => :ghost,
+    "Ele_Poison" => :poison,
+    "Ele_Undead" => :undead,
+    "Ele_Neutral" => :neutral
+  }
+
+  @classes %{
+    "Job_Novice" => :novice,
+    "Job_Swordman" => :swordman,
+    "Job_Mage" => :mage,
+    "Job_Archer" => :archer,
+    "Job_Acolyte" => :acolyte,
+    "Job_Merchant" => :merchant,
+    "Job_Thief" => :thief,
+    "Job_Knight" => :knight,
+    "Job_Priest" => :priest,
+    "Job_Wizard" => :wizard,
+    "Job_Blacksmith" => :blacksmith,
+    "Job_Hunter" => :hunter,
+    "Job_Assassin" => :assassin,
+    "Job_Crusader" => :crusader,
+    "Job_Monk" => :monk,
+    "Job_Sage" => :sage,
+    "Job_Rogue" => :rogue,
+    "Job_Alchemist" => :alchemist,
+    "Job_Bard" => :bard,
+    "Job_Dancer" => :dancer,
+    "Job_SuperNovice" => :super_novice,
+    "Job_Gunslinger" => :gunslinger,
+    "Job_Ninja" => :ninja,
+    "Job_Taekwon" => :taekwon,
+    "Job_Star_Gladiator" => :star_gladiator,
+    "Job_Soul_Linker" => :soul_linker
+  }
+
+  @spec resolve_status(String.t()) :: {:ok, atom()} | error()
+  def resolve_status(symbol) when is_binary(symbol), do: lookup(@statuses, symbol)
+
+  @spec resolve_element(String.t()) :: {:ok, atom()} | error()
+  def resolve_element(symbol) when is_binary(symbol), do: lookup(@elements, symbol)
+
+  @spec resolve_class(String.t()) :: {:ok, atom()} | error()
+  def resolve_class(symbol) when is_binary(symbol), do: lookup(@classes, symbol)
+
+  @spec resolve_skill(String.t() | integer()) :: {:ok, integer()} | error()
+  def resolve_skill(id) when is_integer(id) do
+    case Catalog.by_id(id) do
+      {:ok, %{id: skill_id}} -> {:ok, skill_id}
+      :error -> unknown(Integer.to_string(id))
+    end
+  end
+
+  def resolve_skill(symbol) when is_binary(symbol) do
+    case Integer.parse(symbol) do
+      {id, ""} -> resolve_skill(id)
+      _ -> resolve_skill_name(symbol)
+    end
+  end
+
+  @spec resolve_item(String.t() | integer()) :: {:ok, integer()} | error()
+  def resolve_item(id) when is_integer(id) do
+    case Items.by_id(id) do
+      {:ok, %{id: item_id}} -> {:ok, item_id}
+      :error -> unknown(Integer.to_string(id))
+    end
+  end
+
+  def resolve_item(symbol) when is_binary(symbol) do
+    case Integer.parse(symbol) do
+      {id, ""} -> resolve_item(id)
+      _ -> resolve_item_aegis(symbol)
+    end
+  end
+
+  @spec resolve_skill_name(String.t()) :: {:ok, integer()} | error()
+  defp resolve_skill_name(symbol) do
+    with {:ok, name} <- existing_atom(symbol),
+         {:ok, %{id: id}} <- Catalog.by_name(name) do
+      {:ok, id}
+    else
+      _ -> unknown(symbol)
+    end
+  end
+
+  @spec resolve_item_aegis(String.t()) :: {:ok, integer()} | error()
+  defp resolve_item_aegis(symbol) do
+    case Items.by_aegis(symbol) do
+      {:ok, %{id: id}} -> {:ok, id}
+      :error -> unknown(symbol)
+    end
+  end
+
+  @spec existing_atom(String.t()) :: {:ok, atom()} | :error
+  defp existing_atom(symbol) do
+    {:ok, String.to_existing_atom(String.downcase(symbol))}
+  rescue
+    ArgumentError -> :error
+  end
+
+  @spec lookup(map(), String.t()) :: {:ok, atom()} | error()
+  defp lookup(table, symbol) do
+    case Map.fetch(table, symbol) do
+      {:ok, value} -> {:ok, value}
+      :error -> unknown(symbol)
+    end
+  end
+
+  @spec unknown(String.t()) :: error()
+  defp unknown(symbol), do: {:error, {:unknown_symbol, symbol}}
+end
