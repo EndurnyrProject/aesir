@@ -145,6 +145,56 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
     end
 
     @tag :tmp_dir
+    test "script_overrides.yml replaces the generated on_use", %{tmp_dir: dir} do
+      write_yaml(dir, """
+      - id: 501
+        aegis_name: Red_Potion
+        name: Red Potion
+        type: healing
+        weight: 70
+        on_use: "heal(ctx, hp: 45..65)"
+      """)
+
+      File.write!(Path.join(dir, "script_overrides.yml"), """
+      - id: 501
+        on_use: "heal(ctx, hp: 999)"
+      """)
+
+      assert %{by_id: %{501 => %ItemDefinition{on_use: "heal(ctx, hp: 999)"}}} = Loader.load(dir)
+    end
+
+    @tag :tmp_dir
+    test "items without an override keep their on_use; the override file is not an item",
+         %{tmp_dir: dir} do
+      write_yaml(dir, @items_yaml)
+
+      File.write!(Path.join(dir, "script_overrides.yml"), """
+      - id: 999999
+        on_use: "heal(ctx, hp: 1)"
+      """)
+
+      assert %{all: all, by_id: by_id} = Loader.load(dir)
+      assert length(all) == 2
+      refute Map.has_key?(by_id, 999_999)
+    end
+
+    @tag :tmp_dir
+    test "touching script_overrides.yml invalidates the items.etf cache", %{tmp_dir: dir} do
+      items = write_yaml(dir, @items_yaml)
+      overrides = Path.join(dir, "script_overrides.yml")
+      File.write!(overrides, "- id: 501\n  on_use: \"heal(ctx, hp: 1)\"\n")
+      Loader.load(dir)
+
+      cache = Path.join([dir, ".cache", "items.etf"])
+      File.write!(overrides, "- id: 501\n  on_use: \"heal(ctx, hp: 2)\"\n")
+      File.touch!(items, 1_000_000)
+      File.touch!(cache, 2_000_000)
+      File.touch!(overrides, 3_000_000)
+
+      assert %{by_id: %{501 => %ItemDefinition{on_use: "heal(ctx, hp: 2)"}}} = Loader.load(dir)
+    end
+
+    @tag :tmp_dir
     test "on_use preserves multiline block content", %{tmp_dir: dir} do
       write_yaml(dir, """
       - id: 501

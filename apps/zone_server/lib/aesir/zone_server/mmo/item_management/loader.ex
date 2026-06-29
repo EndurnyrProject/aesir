@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Loader do
         }
 
   @cache_file "items.etf"
+  @overrides_file "script_overrides.yml"
 
   # Valid YAML keys -> struct field atoms. Sourced from the struct so the atoms
   # are guaranteed to exist regardless of load order, and unknown keys raise.
@@ -31,7 +32,30 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Loader do
 
   @spec build([Path.t()]) :: [ItemDefinition.t()]
   defp build(sources) do
-    sources |> Enum.flat_map(&DataLoader.parse_file/1) |> Enum.map(&to_struct!/1)
+    {override_sources, def_sources} =
+      Enum.split_with(sources, &(Path.basename(&1) == @overrides_file))
+
+    overrides = parse_overrides(override_sources)
+
+    def_sources
+    |> Enum.flat_map(&DataLoader.parse_file/1)
+    |> Enum.map(&to_struct!/1)
+    |> Enum.map(&apply_override(&1, overrides))
+  end
+
+  @spec parse_overrides([Path.t()]) :: %{integer() => String.t()}
+  defp parse_overrides(sources) do
+    sources
+    |> Enum.flat_map(&DataLoader.parse_file/1)
+    |> Map.new(fn %{"id" => id, "on_use" => on_use} -> {id, on_use} end)
+  end
+
+  @spec apply_override(ItemDefinition.t(), %{integer() => String.t()}) :: ItemDefinition.t()
+  defp apply_override(definition, overrides) do
+    case Map.fetch(overrides, definition.id) do
+      {:ok, on_use} -> %{definition | on_use: on_use}
+      :error -> definition
+    end
   end
 
   @spec index([ItemDefinition.t()]) :: index()
