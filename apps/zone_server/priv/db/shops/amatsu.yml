@@ -1,0 +1,13 @@
+---
+- dir: 3
+  id: Chef Assistant#ama
+  items:
+    - id: 7453
+      price:
+    - id: 579
+      price:
+  map: amatsu
+  name: Chef Assistant
+  sprite: 83
+  x: 206
+  'y': 150

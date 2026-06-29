@@ -1,0 +1,91 @@
+---
+- dir: 4
+  id: Flu Mask Dealer#ein
+  items:
+    - id: 5114
+      price:
+    - id: 2218
+      price:
+  map: einbroch
+  name: Flu Mask Dealer
+  sprite: 850
+  x: 138
+  'y': 66
+- dir: 4
+  id: Paddler#ein
+  items:
+    - id: 512
+      price:
+    - id: 645
+      price:
+    - id: 1750
+      price:
+    - id: 501
+      price:
+  map: einbroch
+  name: Paddler
+  sprite: 855
+  x: 82
+  'y': 199
+- dir: 5
+  id: Chef Assistant#ein
+  items:
+    - id: 7457
+      price:
+  map: einbroch
+  name: Chef Assistant
+  sprite: 83
+  x: 224
+  'y': 207
+- dir: 4
+  id: Black Marketeer#ein
+  items:
+    - id: 2139
+      price:
+    - id: 2800
+      price:
+    - id: 2801
+      price:
+    - id: 2802
+      price:
+    - id: 2803
+      price:
+    - id: 2804
+      price:
+    - id: 2805
+      price:
+    - id: 2806
+      price:
+    - id: 2807
+      price:
+    - id: 18000
+      price:
+    - id: 18001
+      price:
+    - id: 18002
+      price:
+    - id: 18003
+      price:
+    - id: 18004
+      price:
+    - id: 12392
+      price:
+    - id: 12393
+      price:
+    - id: 12394
+      price:
+    - id: 6145
+      price:
+    - id: 6146
+      price:
+    - id: 6147
+      price:
+    - id: 6186
+      price:
+    - id: 2808
+      price:
+  map: einbroch
+  name: Black Marketeer
+  sprite: 49
+  x: 122
+  'y': 250

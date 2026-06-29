@@ -1,0 +1,63 @@
+---
+- dir: 1
+  id: Axe Dealer#nif
+  items:
+    - id: 1301
+      price:
+    - id: 1351
+      price:
+    - id: 1354
+      price:
+    - id: 1357
+      price:
+    - id: 1360
+      price:
+  map: nif_in
+  name: Axe Dealer
+  sprite: 801
+  x: 37
+  'y': 93
+- dir: 1
+  id: Armor Dealer#nif
+  items:
+    - id: 2501
+      price:
+    - id: 2501
+      price:
+    - id: 2503
+      price:
+    - id: 2503
+      price:
+    - id: 2505
+      price:
+    - id: 2505
+      price:
+  map: nif_in
+  name: Armor Dealer
+  sprite: 801
+  x: 37
+  'y': 84
+- dir: 1
+  id: Tool Dealer#nif
+  items:
+    - id: 535
+      price:
+    - id: 1062
+      price:
+    - id: 902
+      price:
+    - id: 7106
+      price:
+    - id: 537
+      price:
+    - id: 7154
+      price:
+    - id: 1052
+      price:
+    - id: 934
+      price:
+  map: nif_in
+  name: Tool Dealer
+  sprite: 801
+  x: 145
+  'y': 23

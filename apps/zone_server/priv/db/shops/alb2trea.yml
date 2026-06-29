@@ -1,0 +1,71 @@
+---
+- dir: 5
+  id: Tool Dealer#alb
+  items:
+    - id: 1750
+      price:
+    - id: 1751
+      price:
+    - id: 1752
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+  map: alb2trea
+  name: Tool Dealer
+  sprite: 83
+  x: 87
+  'y': 65
+- dir: 5
+  id: Tool Dealer#Extended_Alb
+  items:
+    - id: 611
+      price:
+    - id: 602
+      price:
+    - id: 601
+      price:
+    - id: 23280
+      price:
+    - id: 23288
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 657
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 610
+      price:
+    - id: 713
+      price:
+    - id: 717
+      price:
+    - id: 1771
+      price:
+  map: alb2trea
+  name: Tool Dealer
+  sprite: 83
+  x: 87
+  'y': 65

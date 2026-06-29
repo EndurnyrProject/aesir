@@ -1,0 +1,13 @@
+---
+- dir: 5
+  id: Chef Assistant#xmas
+  items:
+    - id: 7457
+      price:
+    - id: 577
+      price:
+  map: xmas
+  name: Chef Assistant
+  sprite: 83
+  x: 152
+  'y': 137

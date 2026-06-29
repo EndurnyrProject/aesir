@@ -1,0 +1,77 @@
+---
+- dir: 5
+  id: Tool Dealer#lou
+  items:
+    - id: 1750
+      price:
+    - id: 1770
+      price:
+    - id: 611
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 1065
+      price:
+  map: lou_in02
+  name: Tool Dealer
+  sprite: 818
+  x: 239
+  'y': 176
+- dir: 5
+  id: Tool Dealer#Extended_Lou
+  items:
+    - id: 611
+      price:
+    - id: 602
+      price:
+    - id: 601
+      price:
+    - id: 23280
+      price:
+    - id: 23288
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 657
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 610
+      price:
+    - id: 713
+      price:
+    - id: 717
+      price:
+    - id: 1771
+      price:
+  map: lou_in02
+  name: Tool Dealer
+  sprite: 818
+  x: 239
+  'y': 176

@@ -1,0 +1,31 @@
+---
+- dir: 4
+  id: Nun#prt
+  items:
+    - id: 2608
+      price:
+    - id: 2216
+      price:
+    - id: 5092
+      price:
+    - id: 2323
+      price:
+    - id: 2325
+      price:
+    - id: 1501
+      price:
+    - id: 1504
+      price:
+    - id: 1507
+      price:
+    - id: 1510
+      price:
+    - id: 1513
+      price:
+    - id: 1519
+      price:
+  map: prt_church
+  name: Nun
+  sprite: 79
+  x: 108
+  'y': 124

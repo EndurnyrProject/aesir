@@ -1,0 +1,19 @@
+---
+- dir: 3
+  id: Fruit Gardener#ma
+  items:
+    - id: 512
+      price:
+    - id: 513
+      price:
+    - id: 515
+      price:
+    - id: 516
+      price:
+    - id: 535
+      price:
+  map: malaya
+  name: Fruit Gardener
+  sprite: 535
+  x: 150
+  'y': 261

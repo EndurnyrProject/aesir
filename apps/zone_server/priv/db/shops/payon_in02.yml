@@ -1,0 +1,93 @@
+---
+- dir: 0
+  id: Tool Dealer#pay2
+  items:
+    - id: 1750
+      price:
+    - id: 1751
+      price:
+    - id: 611
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 1065
+      price:
+  map: payon_in02
+  name: Tool Dealer
+  sprite: 75
+  x: 87
+  'y': 34
+- dir: 0
+  id: Tool Dealer#Extended_Pay2
+  items:
+    - id: 611
+      price:
+    - id: 602
+      price:
+    - id: 601
+      price:
+    - id: 23280
+      price:
+    - id: 23288
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 657
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 610
+      price:
+    - id: 713
+      price:
+    - id: 717
+      price:
+    - id: 1771
+      price:
+  map: payon_in02
+  name: Tool Dealer
+  sprite: 75
+  x: 87
+  'y': 34
+- dir: 3
+  id: Advanced Potion Merchant#pay3
+  items:
+    - id: 11621
+      price:
+    - id: 11622
+      price:
+    - id: 11623
+      price:
+    - id: 11624
+      price:
+  map: payon_in02
+  name: Advanced Potion Merchant
+  sprite: 83
+  x: 85
+  'y': 38

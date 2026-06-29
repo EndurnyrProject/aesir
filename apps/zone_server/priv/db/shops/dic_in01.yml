@@ -1,0 +1,17 @@
+---
+- dir: 5
+  id: Peddler#dic
+  items:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 611
+      price:
+    - id: 610
+      price:
+  map: dic_in01
+  name: Peddler
+  sprite: 900
+  x: 238
+  'y': 107

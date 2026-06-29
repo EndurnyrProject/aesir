@@ -1,10 +1,273 @@
-- id: prontera_tool_dealer
-  map: prontera
-  x: 150
-  y: 60
-  dir: 4
-  sprite: 85
-  name: "Tool Dealer"
+---
+- dir: 0
+  id: Vendor from Milk Ranch#p
   items:
-    - {id: 501, price: 50}
-    - {id: 502}
+    - id: 519
+      price:
+  map: prontera
+  name: Vendor from Milk Ranch
+  sprite: 90
+  x: 73
+  'y': 134
+- dir: 0
+  id: Fruit Gardener#prt
+  items:
+    - id: 512
+      price:
+    - id: 513
+      price:
+  map: prontera
+  name: Fruit Gardener
+  sprite: 102
+  x: 104
+  'y': 49
+- dir: 0
+  id: Butcher#prt
+  items:
+    - id: 517
+      price:
+    - id: 528
+      price:
+  map: prontera
+  name: Butcher
+  sprite: 87
+  x: 64
+  'y': 125
+- dir: 0
+  id: Flower Girl#prt
+  items:
+    - id: 712
+      price:
+    - id: 744
+      price:
+  map: prontera
+  name: Flower Girl
+  sprite: 96
+  x: 58
+  'y': 182
+- dir: 0
+  id: Flower Lady#prt
+  items:
+    - id: 712
+      price:
+    - id: 744
+      price:
+  map: prontera
+  name: Flower Lady
+  sprite: 90
+  x: 113
+  'y': 42
+- dir: 0
+  id: Gift Merchant#prt
+  items:
+    - id: 734
+      price:
+    - id: 735
+      price:
+    - id: 736
+      price:
+    - id: 737
+      price:
+    - id: 746
+      price:
+  map: prontera
+  name: Gift Merchant
+  sprite: 91
+  x: 105
+  'y': 87
+- dir: 0
+  id: Doll Supplier#prt
+  items:
+    - id: 740
+      price:
+    - id: 741
+      price:
+    - id: 742
+      price:
+  map: prontera
+  name: Doll Supplier
+  sprite: 85
+  x: 248
+  'y': 153
+- dir: 0
+  id: Vegetable Gardener#prt
+  items:
+    - id: 515
+      price:
+    - id: 516
+      price:
+    - id: 535
+      price:
+  map: prontera
+  name: Vegetable Gardener
+  sprite: 91
+  x: 48
+  'y': 58
+- dir: 3
+  id: Amatsu Trader#nin
+  items:
+    - id: 13250
+      price:
+    - id: 13251
+      price:
+    - id: 13252
+      price:
+    - id: 13253
+      price:
+    - id: 13254
+      price:
+    - id: 13294
+      price:
+    - id: 6493
+      price:
+    - id: 2117
+      price:
+    - id: 2171
+      price:
+    - id: 15053
+      price:
+    - id: 7521
+      price:
+    - id: 7522
+      price:
+    - id: 7523
+      price:
+    - id: 7524
+      price:
+    - id: 6512
+      price:
+    - id: 6513
+      price:
+    - id: 6514
+      price:
+    - id: 6515
+      price:
+  map: prontera
+  name: Amatsu Trader
+  sprite: 83
+  x: 178
+  'y': 244
+- dir: 4
+  id: Rebellion Accessories
+  items:
+    - id: 25187
+      price:
+    - id: 7663
+      price:
+    - id: 7664
+      price:
+    - id: 7665
+      price:
+    - id: 7940
+      price: 300
+    - id: 13200
+      price:
+    - id: 13221
+      price:
+    - id: 13222
+      price:
+    - id: 13215
+      price:
+    - id: 13216
+      price:
+    - id: 13217
+      price:
+    - id: 13218
+      price:
+    - id: 13219
+      price:
+    - id: 13220
+      price:
+    - id: 13228
+      price:
+    - id: 13229
+      price:
+    - id: 13231
+      price:
+    - id: 13232
+      price:
+    - id: 13230
+      price:
+  map: prontera
+  name: Rebellion Accessories
+  sprite: 564
+  x: 96
+  'y': 209
+- dir: 4
+  id: Rebellion Weapons
+  items:
+    - id: 13120
+      price:
+    - id: 13122
+      price:
+    - id: 13189
+      price:
+    - id: 13195
+      price:
+    - id: 13192
+      price:
+    - id: 13193
+      price:
+    - id: 13194
+      price:
+    - id: 13197
+      price:
+    - id: 13198
+      price:
+    - id: 28200
+      price:
+    - id: 28201
+      price:
+  map: prontera
+  name: Rebellion Weapons
+  sprite: 564
+  x: 92
+  'y': 209
+- dir: 1
+  id: Chef Assistant#prt
+  items:
+    - id: 12849
+      price:
+    - id: 581
+      price:
+    - id: 7482
+      price:
+    - id: 580
+      price:
+    - id: 577
+      price:
+    - id: 7457
+      price:
+    - id: 7454
+      price:
+    - id: 7455
+      price:
+    - id: 7453
+      price:
+    - id: 7456
+      price:
+    - id: 7452
+      price:
+    - id: 579
+      price:
+    - id: 12125
+      price:
+    - id: 12126
+      price:
+    - id: 12127
+      price:
+    - id: 7472
+      price:
+    - id: 7473
+      price:
+    - id: 7474
+      price:
+    - id: 7475
+      price:
+    - id: 7476
+      price:
+  map: prontera
+  name: Chef Assistant
+  sprite: 700
+  x: 156
+  'y': 212

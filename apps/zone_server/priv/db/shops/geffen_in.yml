@@ -1,0 +1,167 @@
+---
+- dir: 7
+  id: Weapon Dealer#gef
+  items:
+    - id: 1146
+      price:
+    - id: 1245
+      price:
+  map: geffen_in
+  name: Weapon Dealer
+  sprite: 84
+  x: 22
+  'y': 171
+- dir: 0
+  id: Trader#gef
+  items:
+    - id: 911
+      price:
+    - id: 910
+      price:
+    - id: 912
+      price:
+  map: geffen_in
+  name: Trader
+  sprite: 66
+  x: 74
+  'y': 144
+- dir: 0
+  id: Tool Dealer#gef
+  items:
+    - id: 1750
+      price:
+    - id: 611
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 2241
+      price:
+  map: geffen_in
+  name: Tool Dealer
+  sprite: 68
+  x: 77
+  'y': 167
+- dir: 0
+  id: Magical Item Seller#gef
+  items:
+    - id: 717
+      price:
+    - id: 1601
+      price:
+    - id: 1604
+      price:
+    - id: 1607
+      price:
+    - id: 1610
+      price:
+    - id: 2232
+      price:
+    - id: 2321
+      price:
+    - id: 2332
+      price:
+  map: geffen_in
+  name: Magical Item Seller
+  sprite: 64
+  x: 77
+  'y': 173
+- dir: 4
+  id: Tool Dealer#gef2
+  items:
+    - id: 1092
+      price:
+    - id: 1093
+      price:
+  map: geffen_in
+  name: Tool Dealer
+  sprite: 64
+  x: 171
+  'y': 123
+- dir: 0
+  id: Tool Dealer#Extended_Gef
+  items:
+    - id: 611
+      price:
+    - id: 602
+      price:
+    - id: 601
+      price:
+    - id: 23280
+      price:
+    - id: 23288
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 657
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 610
+      price:
+    - id: 713
+      price:
+    - id: 717
+      price:
+    - id: 1771
+      price:
+  map: geffen_in
+  name: Tool Dealer
+  sprite: 68
+  x: 77
+  'y': 167
+- dir: 4
+  id: Tool Dealer#Extended_Gef2
+  items:
+    - id: 1092
+      price:
+    - id: 1093
+      price:
+    - id: 713
+      price:
+  map: geffen_in
+  name: Tool Dealer
+  sprite: 64
+  x: 171
+  'y': 123
+- dir: 3
+  id: Advanced Potion Merchant#gef
+  items:
+    - id: 11621
+      price:
+    - id: 11622
+      price:
+    - id: 11623
+      price:
+    - id: 11624
+      price:
+  map: geffen_in
+  name: Advanced Potion Merchant
+  sprite: 83
+  x: 78
+  'y': 169

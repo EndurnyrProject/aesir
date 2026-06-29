@@ -1,0 +1,73 @@
+---
+- dir: 6
+  id: Tool Dealer#tu
+  items:
+    - id: 1750
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 2242
+      price:
+  map: tur_dun01
+  name: Tool Dealer
+  sprite: 99
+  x: 158
+  'y': 54
+- dir: 6
+  id: Tool Dealer#Extended_Tu
+  items:
+    - id: 611
+      price:
+    - id: 602
+      price:
+    - id: 601
+      price:
+    - id: 23280
+      price:
+    - id: 23288
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 657
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 610
+      price:
+    - id: 713
+      price:
+    - id: 717
+      price:
+    - id: 1771
+      price:
+  map: tur_dun01
+  name: Tool Dealer
+  sprite: 99
+  x: 158
+  'y': 54

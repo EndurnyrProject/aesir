@@ -1,0 +1,113 @@
+---
+- dir: 4
+  id: Weapon Dealer
+  items:
+    - id: 1207
+      price:
+    - id: 1216
+      price:
+    - id: 1107
+      price:
+    - id: 1122
+      price:
+    - id: 1116
+      price:
+    - id: 1154
+      price:
+    - id: 1407
+      price:
+    - id: 1457
+      price:
+    - id: 1354
+      price:
+    - id: 1519
+      price:
+  map: dewata
+  name: Weapon Dealer
+  sprite: 536
+  x: 218
+  'y': 164
+- dir: 6
+  id: Tool Dealer
+  items:
+    - id: 611
+      price:
+    - id: 1750
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 1065
+      price:
+    - id: 2239
+      price:
+    - id: 713
+      price:
+  map: dewata
+  name: Tool Dealer
+  sprite: 536
+  x: 182
+  'y': 164
+- dir: 6
+  id: Fruit Gardener
+  items:
+    - id: 512
+      price:
+    - id: 513
+      price:
+    - id: 515
+      price:
+    - id: 516
+      price:
+    - id: 535
+      price:
+  map: dewata
+  name: Fruit Gardener
+  sprite: 535
+  x: 145
+  'y': 267
+- dir: 6
+  id: Armor Dealer
+  items:
+    - id: 2211
+      price:
+    - id: 2401
+      price:
+    - id: 2403
+      price:
+    - id: 2501
+      price:
+    - id: 2503
+      price:
+    - id: 2101
+      price:
+    - id: 2103
+      price:
+    - id: 2305
+      price:
+    - id: 2321
+      price:
+    - id: 2332
+      price:
+    - id: 2328
+      price:
+    - id: 2627
+      price:
+  map: dewata
+  name: Armor Dealer
+  sprite: 536
+  x: 158
+  'y': 182

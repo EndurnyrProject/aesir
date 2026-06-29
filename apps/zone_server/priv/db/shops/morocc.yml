@@ -1,0 +1,315 @@
+---
+- dir: 6
+  id: Tool Dealer#Extended_Moc3
+  items:
+    - id: 611
+      price:
+    - id: 602
+      price:
+    - id: 601
+      price:
+    - id: 23280
+      price:
+    - id: 23288
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 657
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 610
+      price:
+    - id: 713
+      price:
+    - id: 717
+      price:
+    - id: 1771
+      price:
+  map: morocc
+  name: Tool Dealer
+  sprite: 93
+  x: 146
+  'y': 103
+- dir: 4
+  id: Tool Dealer#Extended_Moc4
+  items:
+    - id: 611
+      price:
+    - id: 602
+      price:
+    - id: 601
+      price:
+    - id: 23280
+      price:
+    - id: 23288
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 657
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 610
+      price:
+    - id: 713
+      price:
+    - id: 717
+      price:
+    - id: 1771
+      price:
+  map: morocc
+  name: Tool Dealer
+  sprite: 93
+  x: 151
+  'y': 241
+- dir: 4
+  id: Butcher#moc1
+  items:
+    - id: 517
+      price:
+  map: morocc
+  name: Butcher
+  sprite: 58
+  x: 156
+  'y': 76
+- dir: 6
+  id: Tool Dealer#moc3
+  items:
+    - id: 1750
+      price:
+    - id: 611
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 23280
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 23288
+      price:
+    - id: 1065
+      price:
+  map: morocc
+  name: Tool Dealer
+  sprite: 99
+  x: 146
+  'y': 103
+- dir: 4
+  id: Tool Dealer#moc4
+  items:
+    - id: 1750
+      price:
+    - id: 611
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 23280
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 23288
+      price:
+    - id: 1065
+      price:
+  map: morocc
+  name: Tool Dealer
+  sprite: 93
+  x: 151
+  'y': 241
+- dir: 4
+  id: Item Collector#moc3
+  items:
+    - id: 911
+      price:
+    - id: 528
+      price:
+    - id: 919
+      price:
+    - id: 925
+      price:
+  map: morocc
+  name: Item Collector
+  sprite: 85
+  x: 171
+  'y': 103
+- dir: 2
+  id: Item Collector#moc4
+  items:
+    - id: 911
+      price:
+    - id: 528
+      price:
+    - id: 919
+      price:
+    - id: 925
+      price:
+  map: morocc
+  name: Item Collector
+  sprite: 85
+  x: 205
+  'y': 247
+- dir: 6
+  id: Trader#moc6
+  items:
+    - id: 513
+      price:
+    - id: 513
+      price:
+    - id: 513
+      price:
+    - id: 513
+      price:
+    - id: 513
+      price:
+    - id: 513
+      price:
+  map: morocc
+  name: Trader
+  sprite: 99
+  x: 140
+  'y': 90
+- dir: 2
+  id: Jeweler#moc4
+  items:
+    - id: 721
+      price:
+    - id: 723
+      price:
+    - id: 726
+      price:
+    - id: 728
+      price:
+    - id: 729
+      price:
+    - id: 719
+      price:
+    - id: 720
+      price:
+    - id: 722
+      price:
+    - id: 1000321
+      price:
+    - id: 730
+      price:
+    - id: 2613
+      price:
+  map: morocc
+  name: Jeweler
+  sprite: 102
+  x: 166
+  'y': 54
+- dir: 0
+  id: Trader#moc7
+  items:
+    - id: 748
+      price:
+  map: morocc
+  name: Trader
+  sprite: 93
+  x: 34
+  'y': 68
+- dir: 4
+  id: Trader#moc8
+  items:
+    - id: 2609
+      price:
+    - id: 1516
+      price:
+    - id: 1522
+      price:
+  map: morocc
+  name: Trader
+  sprite: 89
+  x: 269
+  'y': 193
+- dir: 5
+  id: Trader#moc9
+  items:
+    - id: 2612
+      price:
+  map: morocc
+  name: Trader
+  sprite: 93
+  x: 256
+  'y': 191
+- dir: 7
+  id: Advanced Potion Merchant#moc1
+  items:
+    - id: 11621
+      price:
+    - id: 11622
+      price:
+    - id: 11623
+      price:
+    - id: 11624
+      price:
+  map: morocc
+  name: Advanced Potion Merchant
+  sprite: 83
+  x: 149
+  'y': 245
+- dir: 1
+  id: Advanced Potion Merchant#moc2
+  items:
+    - id: 11621
+      price:
+    - id: 11622
+      price:
+    - id: 11623
+      price:
+    - id: 11624
+      price:
+  map: morocc
+  name: Advanced Potion Merchant
+  sprite: 83
+  x: 170
+  'y': 84

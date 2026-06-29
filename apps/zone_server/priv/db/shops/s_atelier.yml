@@ -1,0 +1,49 @@
+---
+- dir: 1
+  id: Part-Timer#sc_yuno
+  items:
+    - id: 6123
+      price:
+    - id: 6120
+      price:
+  map: s_atelier
+  name: Part-Timer
+  sprite: 92
+  x: 114
+  'y': 117
+- dir: 5
+  id: Part-Timer#sc_lgt
+  items:
+    - id: 6123
+      price:
+    - id: 6120
+      price:
+  map: s_atelier
+  name: Part-Timer
+  sprite: 89
+  x: 15
+  'y': 65
+- dir: 1
+  id: Part-Timer#sc_prt
+  items:
+    - id: 6123
+      price:
+    - id: 6120
+      price:
+  map: s_atelier
+  name: Part-Timer
+  sprite: 67
+  x: 17
+  'y': 110
+- dir: 3
+  id: Part-Timer#sc_ra
+  items:
+    - id: 6123
+      price:
+    - id: 6120
+      price:
+  map: s_atelier
+  name: Part-Timer
+  sprite: 70
+  x: 137
+  'y': 60

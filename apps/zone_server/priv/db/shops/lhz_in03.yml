@@ -1,0 +1,153 @@
+---
+- dir: 5
+  id: Tool Dealer#lhz2
+  items:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 1065
+      price:
+    - id: 611
+      price:
+  map: lhz_in03
+  name: Tool Dealer
+  sprite: 850
+  x: 239
+  'y': 106
+- dir: 3
+  id: Arrow Merchant#lhz
+  items:
+    - id: 1750
+      price:
+    - id: 1770
+      price:
+    - id: 1752
+      price:
+    - id: 1751
+      price:
+  map: lhz_in03
+  name: Arrow Merchant
+  sprite: 855
+  x: 258
+  'y': 101
+- dir: 4
+  id: Merchant#lhz
+  items:
+    - id: 911
+      price:
+    - id: 910
+      price:
+    - id: 912
+      price:
+    - id: 528
+      price:
+  map: lhz_in03
+  name: Merchant
+  sprite: 855
+  x: 249
+  'y': 24
+- dir: 5
+  id: Tool Dealer#Extended_Lhz2
+  items:
+    - id: 611
+      price:
+    - id: 602
+      price:
+    - id: 601
+      price:
+    - id: 23280
+      price:
+    - id: 23288
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 657
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 610
+      price:
+    - id: 713
+      price:
+    - id: 717
+      price:
+    - id: 1771
+      price:
+  map: lhz_in03
+  name: Tool Dealer
+  sprite: 850
+  x: 239
+  'y': 106
+- dir: 4
+  id: Black Marketeer#lhz
+  items:
+    - id: 2139
+      price:
+    - id: 2800
+      price:
+    - id: 2801
+      price:
+    - id: 2802
+      price:
+    - id: 2803
+      price:
+    - id: 2804
+      price:
+    - id: 2805
+      price:
+    - id: 2806
+      price:
+    - id: 2807
+      price:
+    - id: 18000
+      price:
+    - id: 18001
+      price:
+    - id: 18002
+      price:
+    - id: 18003
+      price:
+    - id: 18004
+      price:
+    - id: 12392
+      price:
+    - id: 12393
+      price:
+    - id: 12394
+      price:
+    - id: 6145
+      price:
+    - id: 6146
+      price:
+    - id: 6147
+      price:
+    - id: 6186
+      price:
+    - id: 2808
+      price:
+  map: lhz_in03
+  name: Black Marketeer
+  sprite: 49
+  x: 181
+  'y': 17

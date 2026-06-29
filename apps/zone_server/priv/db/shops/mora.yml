@@ -1,0 +1,21 @@
+---
+- dir: 4
+  id: Tool Dealer#mora
+  items:
+    - id: 11522
+      price:
+    - id: 11523
+      price:
+    - id: 11524
+      price:
+    - id: 602
+      price:
+    - id: 601
+      price:
+    - id: 611
+      price:
+  map: mora
+  name: Tool Dealer
+  sprite: 517
+  x: 100
+  'y': 118
