@@ -1,6 +1,8 @@
 defmodule Aesir.Commons.Network.QuicConnectionTest do
   use ExUnit.Case, async: true
 
+  @moduletag :capture_log
+
   alias Aesir.Commons.Network.QuicConnection
   alias Aesir.Commons.Network.QuinnetCodec
   alias Aesir.Net.CharAuthFailed

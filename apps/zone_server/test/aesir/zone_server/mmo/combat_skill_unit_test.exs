@@ -8,6 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
   use ExUnit.Case, async: true
   import Mimic
 
+  @moduletag :capture_log
+
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition

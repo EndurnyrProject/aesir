@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Unit.Player.SkillListViewTest do
   use ExUnit.Case, async: true
 
+  @moduletag :capture_log
+
   alias Aesir.Net.SkillInfo
   alias Aesir.Net.SkillList
   alias Aesir.Net.SkillRequirement

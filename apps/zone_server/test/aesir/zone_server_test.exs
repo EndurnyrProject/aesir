@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServerTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  @moduletag :capture_log
+
   import ExUnit.CaptureLog
 
   alias Aesir.Commons.Models.Character

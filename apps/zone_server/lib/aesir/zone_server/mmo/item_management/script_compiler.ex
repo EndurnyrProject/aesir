@@ -37,8 +37,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler do
         unquote_splicing(clauses ++ [fallback_clause()])
       end
 
-    Module.create(@target, body, Macro.Env.location(__ENV__))
-    :ok
+    create_module!(body)
+  end
+
+  @spec create_module!(Macro.t()) :: :ok
+  defp create_module!(body) do
+    previous = Code.get_compiler_option(:ignore_module_conflict)
+    Code.put_compiler_option(:ignore_module_conflict, true)
+
+    try do
+      Module.create(@target, body, Macro.Env.location(__ENV__))
+      :ok
+    after
+      Code.put_compiler_option(:ignore_module_conflict, previous)
+    end
   end
 
   @spec clause(ItemDefinition.t()) :: Macro.t()

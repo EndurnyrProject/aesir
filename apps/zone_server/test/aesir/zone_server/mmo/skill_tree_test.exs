@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
   use ExUnit.Case, async: false
 
+  @moduletag :capture_log
+
   import ExUnit.CaptureLog
 
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs

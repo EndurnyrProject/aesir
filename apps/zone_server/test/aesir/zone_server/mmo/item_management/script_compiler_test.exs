@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompilerTest do
   use ExUnit.Case, async: false
   use Mimic
 
+  import ExUnit.CaptureIO
+
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.ItemManagement.CompiledItemScripts
@@ -54,9 +56,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompilerTest do
   end
 
   test "an on_use calling an undefined DSL fn makes compile_all!/1 raise" do
-    assert_raise CompileError, fn ->
-      ScriptCompiler.compile_all!([item_def(501, "no_such_dsl_fn(ctx)")])
-    end
+    capture_io(:stderr, fn ->
+      assert_raise CompileError, fn ->
+        ScriptCompiler.compile_all!([item_def(501, "no_such_dsl_fn(ctx)")])
+      end
+    end)
   end
 
   test "a conditional multi-line on_use compiles and dispatches the right branch" do

@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   use ExUnit.Case, async: true
   import Mimic
 
+  @moduletag :capture_log
+
   alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator

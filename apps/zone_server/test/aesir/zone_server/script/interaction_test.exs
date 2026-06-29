@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Script.InteractionTest do
   use ExUnit.Case, async: false
 
+  @moduletag :capture_log
+
   alias Aesir.Net.NpcDialog
   alias Aesir.Net.NpcInteract
   alias Aesir.ZoneServer.Script.Ctx

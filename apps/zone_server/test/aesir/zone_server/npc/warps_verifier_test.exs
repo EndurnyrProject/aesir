@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Npc.WarpsVerifierTest do
   use ExUnit.Case, async: true
   import Mimic
 
+  @moduletag :capture_log
+
   import ExUnit.CaptureLog
 
   alias Aesir.ZoneServer.Map.MapCache
