@@ -34,6 +34,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.StatUp
   alias Aesir.Net.UnequipItem
   alias Aesir.Net.UseItem
+  alias Aesir.Net.VendingBuy
+  alias Aesir.Net.VendingCloseRequest
+  alias Aesir.Net.VendingEntry
+  alias Aesir.Net.VendingListRequest
+  alias Aesir.Net.VendingOpenRequest
+  alias Aesir.Net.VendingPurchaseRequest
   alias Aesir.ZoneServer.Gm.Dispatcher
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ClientItemType
@@ -153,6 +159,41 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   # `cart_index` is the client index (server index + 2); the handler subtracts the offset.
   def handle_message(%MoveFromCartRequest{cart_index: index, amount: amount}, state) do
     GenServer.cast(self(), {:move_to_inventory, index, amount})
+    {:noreply, state}
+  end
+
+  # VendingOpenRequest - Merchant opens a vending shop selling cart items. The
+  # wire `VendingEntry` lines are flattened to `{cart_index, amount, price}`
+  # tuples the pure `Vending` core consumes.
+  def handle_message(%VendingOpenRequest{title: title, entries: entries}, state) do
+    lines =
+      Enum.map(entries, fn %VendingEntry{cart_index: i, amount: a, price: p} -> {i, a, p} end)
+
+    GenServer.cast(self(), {:vending_open, title, lines})
+    {:noreply, state}
+  end
+
+  # VendingCloseRequest - Merchant closes its own vending shop.
+  def handle_message(%VendingCloseRequest{}, state) do
+    GenServer.cast(self(), {:vending_close})
+    {:noreply, state}
+  end
+
+  # VendingListRequest - Player browses a nearby vendor's shop; the session reads
+  # the live shop from the registry and replies with a `VendingList`.
+  def handle_message(%VendingListRequest{vendor_unit_id: vendor_unit_id}, state) do
+    GenServer.cast(self(), {:vending_list, vendor_unit_id})
+    {:noreply, state}
+  end
+
+  # VendingPurchaseRequest - Buyer purchases from a vendor. The buy lines are
+  # flattened to `{index, amount}` tuples; the seller session is the authority.
+  def handle_message(
+        %VendingPurchaseRequest{vendor_unit_id: vendor_unit_id, items: items},
+        state
+      ) do
+    buy_lines = Enum.map(items, fn %VendingBuy{index: i, amount: a} -> {i, a} end)
+    GenServer.cast(self(), {:vending_purchase_request, vendor_unit_id, buy_lines})
     {:noreply, state}
   end
 

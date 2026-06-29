@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.EtsTable do
     status_effect_tables(seed)
     unit_registry_tables(seed)
     skill_unit_tables(seed)
+    vending_registry_tables(seed)
 
     :ok
   end
@@ -90,6 +91,20 @@ defmodule Aesir.ZoneServer.EtsTable do
   defp skill_unit_tables(seed) do
     :ets.new(
       table_for(:skill_units, seed),
+      [
+        :set,
+        :public,
+        :named_table,
+        {:read_concurrency, true},
+        {:write_concurrency, true}
+      ]
+    )
+  end
+
+  defp vending_registry_tables(seed) do
+    # Open vending shops keyed by vendor unit_id: {unit_id, {owner_pid, shop}}
+    :ets.new(
+      table_for(:vending_registry, seed),
       [
         :set,
         :public,

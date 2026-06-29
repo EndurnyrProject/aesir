@@ -26,9 +26,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
   @type op ::
           {:pay_zeny, non_neg_integer()}
+          | {:credit_zeny, non_neg_integer()}
           | {:give_item, integer(), pos_integer()}
           | {:delitem, integer(), pos_integer()}
           | {:set_char_var, atom(), term()}
+
+  @max_zeny 1_000_000_000
 
   @type reply :: {:ok, PlayerState.t()} | {:error, term()}
   @type state :: %{
@@ -57,6 +60,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
       commit(state, new_gs)
     end
+  end
+
+  def apply_op({:credit_zeny, amount}, %{game_state: gs} = state) do
+    new_zeny = min(gs.zeny + amount, @max_zeny)
+    new_gs = %{gs | zeny: new_zeny}
+
+    StatusSync.send_param(state.connection_pid, StatusParams.zeny(), new_zeny)
+    CharacterPersistence.update_character(gs.character_id, %{zeny: new_zeny}, async: true)
+
+    commit(state, new_gs)
   end
 
   def apply_op({:give_item, item_id, qty}, %{game_state: gs} = state) do

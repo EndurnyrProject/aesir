@@ -9,6 +9,10 @@ defmodule Aesir.ZoneServer.Network.InboundIntentsTest do
     assert InboundIntents.client_intent?(%Aesir.Net.GroundSkillCast{})
     assert InboundIntents.client_intent?(%Aesir.Net.MoveRequest{})
     assert InboundIntents.client_intent?(%Aesir.Net.NpcTalk{})
+    assert InboundIntents.client_intent?(%Aesir.Net.VendingOpenRequest{})
+    assert InboundIntents.client_intent?(%Aesir.Net.VendingCloseRequest{})
+    assert InboundIntents.client_intent?(%Aesir.Net.VendingListRequest{})
+    assert InboundIntents.client_intent?(%Aesir.Net.VendingPurchaseRequest{})
   end
 
   test "rejects server-authoritative / server -> client messages" do
@@ -17,6 +21,9 @@ defmodule Aesir.ZoneServer.Network.InboundIntentsTest do
     refute InboundIntents.client_intent?(%Aesir.Net.UnitHp{})
     refute InboundIntents.client_intent?(%Aesir.Net.Snapshot{})
     refute InboundIntents.client_intent?(%Aesir.Net.Knockback{})
+    refute InboundIntents.client_intent?(%Aesir.Net.VendingList{})
+    refute InboundIntents.client_intent?(%Aesir.Net.VendingBoardShown{})
+    refute InboundIntents.client_intent?(%Aesir.Net.VendingSaleReport{})
   end
 
   test "rejects non-struct input" do

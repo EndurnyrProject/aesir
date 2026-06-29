@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
     Skills.McCartrevolution,
     Skills.McChangecart,
     Skills.McPushcart,
+    Skills.McVending,
     Skills.MgColdbolt,
     Skills.MgEnergycoat,
     Skills.MgFireball,

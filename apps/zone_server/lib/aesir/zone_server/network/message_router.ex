@@ -47,6 +47,7 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def route(%Aesir.Net.ItemUseResult{}), do: {:gameplay, :item_use_result}
   def route(%Aesir.Net.ParamChange{}), do: {:gameplay, :param_change}
   def route(%Aesir.Net.Resurrect{}), do: {:gameplay, :resurrect}
+  def route(%Aesir.Net.VendingSaleReport{}), do: {:gameplay, :vending_sale_report}
 
   def route(%Aesir.Net.UnitSpawn{}), do: {:world, :unit_spawn}
   def route(%Aesir.Net.UnitDespawn{}), do: {:world, :unit_despawn}
@@ -59,10 +60,13 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def route(%Aesir.Net.UnitStateChange{}), do: {:world, :unit_state_change}
   def route(%Aesir.Net.SpecialEffect{}), do: {:world, :special_effect}
   def route(%Aesir.Net.NpcDialog{}), do: {:world, :npc_dialog}
+  def route(%Aesir.Net.VendingBoardShown{}), do: {:world, :vending_board_shown}
+  def route(%Aesir.Net.VendingBoardRemoved{}), do: {:world, :vending_board_removed}
 
   def route(%Aesir.Net.SkillList{}), do: {:bulk, :skill_list}
   def route(%Aesir.Net.InventoryList{}), do: {:bulk, :inventory_list}
   def route(%Aesir.Net.CartInfo{}), do: {:bulk, :cart_info}
+  def route(%Aesir.Net.VendingList{}), do: {:bulk, :vending_list}
 
   def route(%Aesir.Net.Snapshot{}), do: {:snapshots, :snapshot}
 

@@ -20,3 +20,11 @@
       requires:
         - name: MC_PUSHCART
           level: 5
+    - name: MC_VENDING
+      max_level: 10
+      # rAthena gates vending functionally via `State: Cart` (must have a cart
+      # mounted), not a skill prereq; we model that mounted-cart requirement as
+      # the tree prerequisite MC_PUSHCART, mirroring the other cart skills.
+      requires:
+        - name: MC_PUSHCART
+          level: 1

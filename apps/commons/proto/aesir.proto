@@ -97,6 +97,15 @@ message Envelope {
     CartMountRequest cart_mount_request = 86;
     MoveToCartRequest move_to_cart_request = 87;
     MoveFromCartRequest move_from_cart_request = 88;
+    // 89-96: vending (client intents + server->client board/list/sale deltas)
+    VendingOpenRequest vending_open_request = 89;
+    VendingCloseRequest vending_close_request = 90;
+    VendingListRequest vending_list_request = 91;
+    VendingPurchaseRequest vending_purchase_request = 92;
+    VendingBoardShown vending_board_shown = 93;
+    VendingBoardRemoved vending_board_removed = 94;
+    VendingList vending_list = 95;
+    VendingSaleReport vending_sale_report = 96;
   }
 }
 
@@ -690,6 +699,81 @@ message MoveToCartRequest {
 message MoveFromCartRequest {
   uint32 cart_index = 1;
   uint32 amount = 2;
+}
+
+// One line of a vending shop the merchant wants to open: a cart slot, how many
+// to sell, and the per-unit price.
+message VendingEntry {
+  uint32 cart_index = 1;
+  uint32 amount = 2;
+  uint32 price = 3;
+}
+
+// Client -> server, open a vending shop selling the given cart items under a title.
+message VendingOpenRequest {
+  string title = 1;
+  repeated VendingEntry entries = 2;
+}
+
+// Client -> server, close the player's own vending shop.
+message VendingCloseRequest {
+}
+
+// Client -> server, request the item list of a nearby vendor's shop.
+message VendingListRequest {
+  uint64 vendor_unit_id = 1;
+}
+
+// One line of a buy request: which shop entry and how many units to buy.
+message VendingBuy {
+  uint32 index = 1;
+  uint32 amount = 2;
+}
+
+// Client -> server, buy items from a vendor's shop.
+message VendingPurchaseRequest {
+  uint64 vendor_unit_id = 1;
+  repeated VendingBuy items = 2;
+}
+
+// Server -> client, a vending shop board appeared over a merchant (area broadcast / on view enter).
+message VendingBoardShown {
+  uint64 unit_id = 1;
+  string title = 2;
+}
+
+// Server -> client, a vending shop board was removed (close / sold out / out of view).
+message VendingBoardRemoved {
+  uint64 unit_id = 1;
+}
+
+// One item on display in a vending shop. Mirrors InventoryItem's display fields plus a price.
+message VendingShopItem {
+  uint32 index = 1;
+  uint32 nameid = 2;
+  uint32 type = 3;
+  uint32 amount = 4;
+  bool identified = 5;
+  uint32 attribute = 6;
+  uint32 refine = 7;
+  repeated uint32 cards = 8;
+  uint32 price = 9;
+}
+
+// Server -> client, the full item list of a vendor's shop (reply to VendingListRequest).
+message VendingList {
+  uint64 vendor_unit_id = 1;
+  string title = 2;
+  repeated VendingShopItem items = 3;
+}
+
+// Server -> client (seller), a unit of the shop was sold.
+message VendingSaleReport {
+  uint32 index = 1;
+  uint32 nameid = 2;
+  uint32 amount = 3;
+  uint32 zeny_gained = 4;
+  string buyer_name = 5;
 }
 
 // Client -> server, allocate a status point to a stat (replaces RO CZ_STATUS_CHANGE 0x00BB).
