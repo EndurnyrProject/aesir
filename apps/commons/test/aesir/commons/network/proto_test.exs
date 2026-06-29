@@ -75,6 +75,14 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.UnitSpawn
   alias Aesir.Net.UnitStateChange
   alias Aesir.Net.UseItem
+  alias Aesir.Net.VendingBoardShown
+  alias Aesir.Net.VendingBuy
+  alias Aesir.Net.VendingEntry
+  alias Aesir.Net.VendingList
+  alias Aesir.Net.VendingOpenRequest
+  alias Aesir.Net.VendingPurchaseRequest
+  alias Aesir.Net.VendingSaleReport
+  alias Aesir.Net.VendingShopItem
   alias Aesir.Net.ZoneServerInfo
 
   test "envelope round-trips a login_request through the oneof body" do
@@ -1339,6 +1347,139 @@ defmodule Aesir.Commons.Network.ProtoTest do
     assert {:ok,
             %Envelope{
               body: {:move_from_cart_request, %MoveFromCartRequest{cart_index: 4, amount: 5}}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "vending_open_request with nested entries round-trips through envelope oneof" do
+    env = %Envelope{
+      body:
+        {:vending_open_request,
+         %VendingOpenRequest{
+           title: "Cheap potions",
+           entries: [%VendingEntry{cart_index: 0, amount: 5, price: 1_200}]
+         }}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:vending_open_request,
+                 %VendingOpenRequest{
+                   title: "Cheap potions",
+                   entries: [%VendingEntry{cart_index: 0, amount: 5, price: 1_200}]
+                 }}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "vending_list with nested shop items round-trips through envelope oneof" do
+    env = %Envelope{
+      body:
+        {:vending_list,
+         %VendingList{
+           vendor_unit_id: 10_001,
+           title: "Cheap potions",
+           items: [
+             %VendingShopItem{
+               index: 0,
+               nameid: 501,
+               type: 0,
+               amount: 5,
+               identified: true,
+               refine: 0,
+               cards: [0, 0, 0, 0],
+               price: 1_200
+             }
+           ]
+         }}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:vending_list,
+                 %VendingList{
+                   vendor_unit_id: 10_001,
+                   title: "Cheap potions",
+                   items: [
+                     %VendingShopItem{
+                       index: 0,
+                       nameid: 501,
+                       amount: 5,
+                       identified: true,
+                       price: 1_200
+                     }
+                   ]
+                 }}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "vending_purchase_request with nested buys round-trips through envelope oneof" do
+    env = %Envelope{
+      body:
+        {:vending_purchase_request,
+         %VendingPurchaseRequest{
+           vendor_unit_id: 10_001,
+           items: [%VendingBuy{index: 0, amount: 2}]
+         }}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:vending_purchase_request,
+                 %VendingPurchaseRequest{
+                   vendor_unit_id: 10_001,
+                   items: [%VendingBuy{index: 0, amount: 2}]
+                 }}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "vending_board_shown round-trips through envelope oneof" do
+    env = %Envelope{
+      body: {:vending_board_shown, %VendingBoardShown{unit_id: 10_001, title: "Shop"}}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body: {:vending_board_shown, %VendingBoardShown{unit_id: 10_001, title: "Shop"}}
+            }} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "vending_sale_report round-trips through envelope oneof" do
+    env = %Envelope{
+      body:
+        {:vending_sale_report,
+         %VendingSaleReport{
+           index: 0,
+           nameid: 501,
+           amount: 2,
+           zeny_gained: 2_400,
+           buyer_name: "Loki"
+         }}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:vending_sale_report,
+                 %VendingSaleReport{
+                   index: 0,
+                   nameid: 501,
+                   amount: 2,
+                   zeny_gained: 2_400,
+                   buyer_name: "Loki"
+                 }}
             }} = Envelope.decode(IO.iodata_to_binary(iodata))
   end
 
