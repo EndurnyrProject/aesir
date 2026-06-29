@@ -202,14 +202,22 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
   @doc """
   Removes a status effect from the player. Returns the context unchanged.
-  """
-  @spec cure(Ctx.t(), atom()) :: Ctx.t()
-  def cure(%Ctx{status: {:error, _}} = ctx, _status), do: ctx
 
-  def cure(%Ctx{} = ctx, status) do
+  Canonical status-removal op, pairing with `sc_start/4`.
+  """
+  @spec sc_end(Ctx.t(), atom()) :: Ctx.t()
+  def sc_end(%Ctx{status: {:error, _}} = ctx, _status), do: ctx
+
+  def sc_end(%Ctx{} = ctx, status) do
     StatusInterpreter.remove_status(:player, ctx.char_id, status)
     ctx
   end
+
+  @doc """
+  Removes a status effect from the player. Alias for `sc_end/2`.
+  """
+  @spec cure(Ctx.t(), atom()) :: Ctx.t()
+  def cure(%Ctx{} = ctx, status), do: sc_end(ctx, status)
 
   @doc """
   Relocates the player to `(map, x, y)`. Halts on `:map_not_found`.

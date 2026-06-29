@@ -99,6 +99,22 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
   end
 
+  describe "sc_end/2" do
+    test "removes the status and returns ctx unchanged" do
+      test_pid = self()
+
+      expect(StatusInterpreter, :remove_status, fn :player, 1, :sc_poison ->
+        send(test_pid, :removed)
+        :ok
+      end)
+
+      ctx = build_ctx()
+
+      assert Dsl.sc_end(ctx, :sc_poison) == ctx
+      assert_received :removed
+    end
+  end
+
   describe "cure/2" do
     test "removes the status and returns ctx unchanged" do
       test_pid = self()
