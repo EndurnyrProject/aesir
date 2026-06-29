@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
@@ -268,7 +269,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     new_game_state = persist_catalysts(new_game_state)
     new_game_state = notify_inventory(connection_pid, new_game_state)
 
-    updated_stats = Stats.calculate_stats(new_game_state.stats, new_game_state.character_id)
+    equipped = Map.values(Inventory.equipped_items(new_game_state.inventory))
+
+    updated_stats =
+      Stats.calculate_stats(new_game_state.stats, new_game_state.character_id, equipped)
+
     new_game_state = %{new_game_state | stats: updated_stats}
 
     UnitRegistry.update_unit_state(:player, new_game_state.character_id, new_game_state)
