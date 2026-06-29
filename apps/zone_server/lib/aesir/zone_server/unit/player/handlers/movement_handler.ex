@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.StaticEntity
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
@@ -452,21 +453,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         manhattan(game_state.x, game_state.y, warp.x, warp.y) <= game_state.view_range
       end)
 
-    new_visible_warps = MapSet.new(warps_in_range, &Warp.Registry.entity_id/1)
-    old_visible_warps = game_state.visible_warps
-
-    now_visible_warps = MapSet.difference(new_visible_warps, old_visible_warps)
-    now_hidden_warps = MapSet.difference(old_visible_warps, new_visible_warps)
-
     warps_by_id = Map.new(warps_in_range, &{Warp.Registry.entity_id(&1), &1})
 
-    Enum.each(now_visible_warps, fn warp_id ->
-      send_warp_spawn_packet_to(game_state.character_id, warps_by_id[warp_id])
-    end)
-
-    Enum.each(now_hidden_warps, fn warp_id ->
-      send_warp_vanish_packet_to(game_state.character_id, warp_id)
-    end)
+    new_visible_warps =
+      StaticEntity.diff_visibility(
+        warps_by_id,
+        game_state.visible_warps,
+        &send_warp_spawn_packet_to(game_state.character_id, &1),
+        &send_warp_vanish_packet_to(game_state.character_id, &1)
+      )
 
     # Handle static NPC visibility — same model as warps: registered placements
     # are held statically (in `Npc.Registry`), not spatial-indexed, and diffed
@@ -478,26 +473,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
             game_state.view_range
       end)
 
-    new_visible_npcs =
-      MapSet.new(npcs_in_range, fn {_module, placement} -> NpcRegistry.entity_id(placement) end)
-
-    old_visible_npcs = game_state.visible_npcs
-
-    now_visible_npcs = MapSet.difference(new_visible_npcs, old_visible_npcs)
-    now_hidden_npcs = MapSet.difference(old_visible_npcs, new_visible_npcs)
-
     npcs_by_id =
       Map.new(npcs_in_range, fn {_module, placement} ->
         {NpcRegistry.entity_id(placement), placement}
       end)
 
-    Enum.each(now_visible_npcs, fn npc_id ->
-      send_npc_spawn_packet_to(game_state.character_id, npcs_by_id[npc_id])
-    end)
-
-    Enum.each(now_hidden_npcs, fn npc_id ->
-      send_npc_vanish_packet_to(game_state.character_id, npc_id)
-    end)
+    new_visible_npcs =
+      StaticEntity.diff_visibility(
+        npcs_by_id,
+        game_state.visible_npcs,
+        &send_npc_spawn_packet_to(game_state.character_id, &1),
+        &send_npc_vanish_packet_to(game_state.character_id, &1)
+      )
 
     # Update game state with new visibility info
     # Keep last_visibility_cell for potential optimization later
