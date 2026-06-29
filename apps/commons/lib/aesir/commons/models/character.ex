@@ -6,6 +6,7 @@ defmodule Aesir.Commons.Models.Character do
   schema "characters" do
     belongs_to :account, Aesir.Commons.Models.Account
     has_many :inventory_items, Aesir.Commons.Models.InventoryItem, foreign_key: :char_id
+    has_many :cart_items, Aesir.Commons.Models.CartItem, foreign_key: :char_id
 
     field :char_num, :integer
     field :name, :string
@@ -30,6 +31,7 @@ defmodule Aesir.Commons.Models.Character do
     field :learned_skills, :map, default: %{}
     field :vars, :map, default: %{}
     field :option, :integer, default: 0
+    field :cart, :integer, default: 0
     field :karma, :integer, default: 0
     field :manner, :integer, default: 0
     field :party_id, :integer, default: 0
@@ -102,6 +104,7 @@ defmodule Aesir.Commons.Models.Character do
       :learned_skills,
       :vars,
       :option,
+      :cart,
       :karma,
       :manner,
       :party_id,
