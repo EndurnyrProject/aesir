@@ -1,0 +1,61 @@
+---
+- id: prtch001
+  map: prt_church
+  name: ''
+  sprite: 45
+  to:
+    map: prontera
+    x: 234
+    'y': 314
+  x: 100
+  xs: 7
+  'y': 56
+  ys: 1
+- id: prtch01
+  map: prt_church
+  name: ''
+  sprite: 45
+  to:
+    map: prt_church
+    x: 172
+    'y': 19
+  x: 109
+  xs: 1
+  'y': 81
+  ys: 2
+- id: prtch01-1
+  map: prt_church
+  name: ''
+  sprite: 45
+  to:
+    map: prt_church
+    x: 105
+    'y': 81
+  x: 168
+  xs: 1
+  'y': 19
+  ys: 2
+- id: prtch02
+  map: prt_church
+  name: ''
+  sprite: 45
+  to:
+    map: prt_church
+    x: 94
+    'y': 81
+  x: 31
+  xs: 1
+  'y': 19
+  ys: 2
+- id: prtch02-1
+  map: prt_church
+  name: ''
+  sprite: 45
+  to:
+    map: prt_church
+    x: 27
+    'y': 19
+  x: 90
+  xs: 1
+  'y': 81
+  ys: 2

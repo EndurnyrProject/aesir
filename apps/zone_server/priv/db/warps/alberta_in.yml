@@ -1,4 +1,64 @@
 ---
+- id: alb09-1
+  map: alberta_in
+  name: ''
+  sprite: 45
+  to:
+    map: alberta
+    x: 102
+    'y': 153
+  x: 189
+  xs: 2
+  'y': 89
+  ys: 2
+- id: alb08-1
+  map: alberta_in
+  name: ''
+  sprite: 45
+  to:
+    map: alberta
+    x: 93
+    'y': 201
+  x: 114
+  xs: 2
+  'y': 130
+  ys: 2
+- id: alb07-1
+  map: alberta_in
+  name: ''
+  sprite: 45
+  to:
+    map: alberta
+    x: 61
+    'y': 233
+  x: 14
+  xs: 2
+  'y': 141
+  ys: 3
+- id: alb06-1
+  map: alberta_in
+  name: ''
+  sprite: 45
+  to:
+    map: alberta
+    x: 37
+    'y': 41
+  x: 78
+  xs: 2
+  'y': 44
+  ys: 5
+- id: alb10-1
+  map: alberta_in
+  name: ''
+  sprite: 45
+  to:
+    map: alberta
+    x: 102
+    'y': 222
+  x: 125
+  xs: 2
+  'y': 161
+  ys: 2
 - id: alb11
   map: alberta_in
   name: ''

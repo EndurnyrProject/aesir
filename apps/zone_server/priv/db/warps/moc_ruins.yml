@@ -1,4 +1,16 @@
 ---
+- id: moc02-2
+  map: moc_ruins
+  name: ''
+  sprite: 45
+  to:
+    map: morocc
+    x: 30
+    'y': 290
+  x: 159
+  xs: 2
+  'y': 39
+  ys: 4
 - id: moc006
   map: moc_ruins
   name: ''

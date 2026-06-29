@@ -167,30 +167,6 @@
   xs: 1
   'y': 25
   ys: 1
-- id: ein_ap01
-  map: einbroch
-  name: ''
-  sprite: 45
-  to:
-    map: airplane
-    x: 224
-    'y': 64
-  x: 92
-  xs: 1
-  'y': 281
-  ys: 1
-- id: ein_ap02
-  map: einbroch
-  name: ''
-  sprite: 45
-  to:
-    map: airport
-    x: 138
-    'y': 51
-  x: 64
-  xs: 1
-  'y': 234
-  ys: 1
 - id: ein_ap05a
   map: einbroch
   name: ''

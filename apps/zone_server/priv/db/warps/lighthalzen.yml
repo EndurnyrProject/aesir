@@ -191,42 +191,6 @@
   xs: 1
   'y': 329
   ys: 1
-- id: lairp3
-  map: lighthalzen
-  name: ''
-  sprite: 45
-  to:
-    map: lhz_airport
-    x: 143
-    'y': 15
-  x: 267
-  xs: 1
-  'y': 76
-  ys: 1
-- id: lairp4a
-  map: lighthalzen
-  name: ''
-  sprite: 45
-  to:
-    map: lhz_airport
-    x: 143
-    'y': 53
-  x: 294
-  xs: 1
-  'y': 76
-  ys: 1
-- id: lairp5
-  map: lighthalzen
-  name: ''
-  sprite: 45
-  to:
-    map: airplane
-    x: 224
-    'y': 58
-  x: 308
-  xs: 1
-  'y': 76
-  ys: 1
 - id: kh_mansion_01a
   map: lighthalzen
   name: ''

@@ -47,27 +47,3 @@
   xs: 1
   'y': 150
   ys: 1
-- id: arug402
-  map: aru_gld
-  name: ''
-  sprite: 45
-  to:
-    map: arug_cas04
-    x: 141
-    'y': 45
-  x: 289
-  xs: 1
-  'y': 347
-  ys: 1
-- id: arug502
-  map: aru_gld
-  name: ''
-  sprite: 45
-  to:
-    map: arug_cas05
-    x: 141
-    'y': 45
-  x: 287
-  xs: 1
-  'y': 107
-  ys: 1

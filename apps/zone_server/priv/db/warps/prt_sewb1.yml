@@ -1,4 +1,16 @@
 ---
+- id: prts001
+  map: prt_sewb1
+  name: ''
+  sprite: 45
+  to:
+    map: prt_fild05
+    x: 274
+    'y': 208
+  x: 135
+  xs: 2
+  'y': 248
+  ys: 2
 - id: prts01
   map: prt_sewb1
   name: ''

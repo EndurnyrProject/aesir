@@ -47,15 +47,3 @@
   xs: 1
   'y': 183
   ys: 1
-- id: schg502
-  map: sch_gld
-  name: ''
-  sprite: 45
-  to:
-    map: schg_cas05
-    x: 119
-    'y': 8
-  x: 65
-  xs: 1
-  'y': 315
-  ys: 1

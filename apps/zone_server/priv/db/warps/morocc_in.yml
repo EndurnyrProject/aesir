@@ -11,6 +11,42 @@
   xs: 1
   'y': 123
   ys: 3
+- id: moc07-1
+  map: morocc_in
+  name: ''
+  sprite: 45
+  to:
+    map: morocc
+    x: 283
+    'y': 173
+  x: 108
+  xs: 2
+  'y': 179
+  ys: 2
+- id: moc03-1
+  map: morocc_in
+  name: ''
+  sprite: 45
+  to:
+    map: morocc
+    x: 251
+    'y': 59
+  x: 134
+  xs: 3
+  'y': 77
+  ys: 1
+- id: moc04-1
+  map: morocc_in
+  name: ''
+  sprite: 45
+  to:
+    map: morocc
+    x: 271
+    'y': 269
+  x: 136
+  xs: 1
+  'y': 136
+  ys: 4
 - id: moc12-1
   map: morocc_in
   name: ''
@@ -155,6 +191,18 @@
   xs: 3
   'y': 166
   ys: 1
+- id: moc06-1
+  map: morocc_in
+  name: ''
+  sprite: 45
+  to:
+    map: morocc
+    x: 55
+    'y': 259
+  x: 183
+  xs: 2
+  'y': 65
+  ys: 3
 - id: moc17
   map: morocc_in
   name: ''
@@ -178,6 +226,18 @@
   x: 34
   xs: 1
   'y': 161
+  ys: 2
+- id: moc08-1
+  map: morocc_in
+  name: ''
+  sprite: 45
+  to:
+    map: morocc
+    x: 82
+    'y': 52
+  x: 44
+  xs: 3
+  'y': 146
   ys: 2
 - id: moc18-1
   map: morocc_in
@@ -239,6 +299,18 @@
   xs: 2
   'y': 62
   ys: 1
+- id: moc05-1
+  map: morocc_in
+  name: ''
+  sprite: 45
+  to:
+    map: morocc
+    x: 49
+    'y': 49
+  x: 68
+  xs: 2
+  'y': 75
+  ys: 1
 - id: moc19
   map: morocc_in
   name: ''
@@ -263,6 +335,18 @@
   xs: 1
   'y': 161
   ys: 3
+- id: moc01-1
+  map: morocc_in
+  name: ''
+  sprite: 45
+  to:
+    map: morocc
+    x: 199
+    'y': 64
+  x: 83
+  xs: 4
+  'y': 90
+  ys: 1
 - id: moc23
   map: morocc_in
   name: ''
