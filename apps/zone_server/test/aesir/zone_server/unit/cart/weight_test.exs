@@ -4,7 +4,8 @@ defmodule Aesir.ZoneServer.Unit.Cart.WeightTest do
 
   No DB, no sockets. Cart maps are built with real `%InventoryItem{}` structs
   via `PlayerState.from_list/1` using real item ids from `priv/db/items/`
-  (loaded into `:persistent_term` at app boot). The cart cap is a flat 8000.
+  (loaded into `:persistent_term` at app boot). The cart cap is a flat 80_000
+  (rAthena's 8000 display weight in the internal `×10` unit Aesir stores weights in).
 
   Reference values (loaded db):
   - Red Potion (501): weight 70
@@ -42,8 +43,8 @@ defmodule Aesir.ZoneServer.Unit.Cart.WeightTest do
   defp cart(items), do: PlayerState.from_list(items)
 
   describe "max_weight/0" do
-    test "is the flat 8000 cap" do
-      assert Weight.max_weight() == 8_000
+    test "is the flat 80_000 cap" do
+      assert Weight.max_weight() == 80_000
     end
   end
 
@@ -64,19 +65,19 @@ defmodule Aesir.ZoneServer.Unit.Cart.WeightTest do
   end
 
   describe "would_exceed?/2" do
-    test "false when current + added equals the 8000 cap exactly" do
-      assert Weight.would_exceed?(%{}, 8_000) == false
+    test "false when current + added equals the 80_000 cap exactly" do
+      assert Weight.would_exceed?(%{}, 80_000) == false
     end
 
     test "true when current + added crosses the cap by one" do
-      assert Weight.would_exceed?(%{}, 8_001) == true
+      assert Weight.would_exceed?(%{}, 80_001) == true
     end
 
     test "accounts for the current cart contents" do
       c = cart([item(nameid: @sword, amount: 1)])
 
-      refute Weight.would_exceed?(c, 7_500)
-      assert Weight.would_exceed?(c, 7_501)
+      refute Weight.would_exceed?(c, 79_500)
+      assert Weight.would_exceed?(c, 79_501)
     end
   end
 end

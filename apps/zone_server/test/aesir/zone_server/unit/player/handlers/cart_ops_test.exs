@@ -142,14 +142,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOpsTest do
     end
 
     test "rejects an over-cap cart with :overweight and writes nothing", %{character: char} do
-      # 115 potions weigh 8050 > the flat 8000 cart cap.
-      seed_inv(char.id, @potion, 200)
+      # 1143 potions weigh 80_010 > the flat 80_000 cart cap (1142 = 79_940 would fit).
+      seed_inv(char.id, @potion, 1200)
       inventory = inv_map(char.id)
       index = index_of(inventory, @potion)
 
-      assert {:error, :overweight} = CartOps.move_to_cart(char.id, inventory, %{}, index, 115)
+      assert {:error, :overweight} = CartOps.move_to_cart(char.id, inventory, %{}, index, 1143)
 
-      assert {:ok, [%InventoryItem{amount: 200}]} = InventoryPersistence.load_inventory(char.id)
+      assert {:ok, [%InventoryItem{amount: 1200}]} = InventoryPersistence.load_inventory(char.id)
       assert {:ok, []} = CartPersistence.load_cart(char.id)
     end
   end

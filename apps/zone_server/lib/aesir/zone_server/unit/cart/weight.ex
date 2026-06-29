@@ -8,13 +8,17 @@ defmodule Aesir.ZoneServer.Unit.Cart.Weight do
 
   - `current_weight/1` sums `ItemDefinition.weight × amount` over every item in
     the cart map.
-  - `max_weight/0` is the flat cart cap (`8000`).
+  - `max_weight/0` is the flat cart cap (`80_000`).
   - `would_exceed?/2` reports whether adding `added_weight` would cross the cap.
 
   ## Unit
 
-  Weights are kept in the same raw unit as `ItemDefinition.weight` (the db
-  values), with no `×10` scaling; that scaling is applied at the packet layer.
+  Weights use the same unit Aesir uses everywhere: the `ItemDefinition.weight` and
+  `Job.max_weight` db values (e.g. Red Potion = `70`, merchant inventory cap
+  `~28_000`). The cart cap is `80_000` — `~2.85×` the inventory cap, the RO
+  cart-to-inventory ratio. (An earlier `8000` was rAthena's `max_cart_weight`
+  config value copied directly; rAthena multiplies it by 10 at load, so it does not
+  belong in this unit.)
 
   Reads item definitions from `:persistent_term` via `ItemManagement`; no DB or
   socket access.
@@ -23,7 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Cart.Weight do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.ItemManagement
 
-  @max_cart_weight 8_000
+  @max_cart_weight 80_000
 
   @type cart :: %{non_neg_integer() => InventoryItem.t()}
 
