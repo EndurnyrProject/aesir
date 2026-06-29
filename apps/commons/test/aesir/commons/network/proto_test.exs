@@ -2,6 +2,10 @@ defmodule Aesir.Commons.Network.ProtoTest do
   use ExUnit.Case, async: true
 
   alias Aesir.Net.ActionRequest
+  alias Aesir.Net.CartInfo
+  alias Aesir.Net.CartItemAdded
+  alias Aesir.Net.CartItemRemoved
+  alias Aesir.Net.CartMountRequest
   alias Aesir.Net.CastCancel
   alias Aesir.Net.Character
   alias Aesir.Net.CharAuthFailed
@@ -33,8 +37,10 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.LoginRequest
   alias Aesir.Net.LoginResponse
   alias Aesir.Net.MapLoaded
+  alias Aesir.Net.MoveFromCartRequest
   alias Aesir.Net.MoveRequest
   alias Aesir.Net.MoveStop
+  alias Aesir.Net.MoveToCartRequest
   alias Aesir.Net.NameRequest
   alias Aesir.Net.NameResponse
   alias Aesir.Net.NpcDialog
@@ -1229,6 +1235,111 @@ defmodule Aesir.Commons.Network.ProtoTest do
       assert {:ok, %Envelope{body: {:npc_dialog, ^dialog}}} =
                Envelope.decode(IO.iodata_to_binary(iodata))
     end
+  end
+
+  test "cart_info with nested items round-trips through envelope oneof" do
+    env = %Envelope{
+      body:
+        {:cart_info,
+         %CartInfo{
+           items: [
+             %InventoryItem{index: 0, nameid: 501, type: 0, amount: 10, identified: true}
+           ]
+         }}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:cart_info,
+                 %CartInfo{
+                   items: [%InventoryItem{index: 0, nameid: 501, amount: 10, identified: true}]
+                 }}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "cart_item_added with cards round-trips through envelope oneof" do
+    env = %Envelope{
+      body:
+        {:cart_item_added,
+         %CartItemAdded{
+           index: 5,
+           amount: 1,
+           nameid: 1_201,
+           identified: true,
+           refine: 0,
+           cards: [4_001, 0, 0, 0],
+           location: 2,
+           type: 4,
+           result: 0
+         }}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:cart_item_added,
+                 %CartItemAdded{
+                   index: 5,
+                   amount: 1,
+                   nameid: 1_201,
+                   identified: true,
+                   cards: [4_001, 0, 0, 0],
+                   location: 2,
+                   type: 4
+                 }}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "cart_item_removed round-trips through envelope oneof" do
+    env = %Envelope{body: {:cart_item_removed, %CartItemRemoved{index: 5, amount: 1, reason: 0}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body: {:cart_item_removed, %CartItemRemoved{index: 5, amount: 1, reason: 0}}
+            }} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "cart_mount_request round-trips through envelope oneof" do
+    env = %Envelope{body: {:cart_mount_request, %CartMountRequest{mount: true}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok, %Envelope{body: {:cart_mount_request, %CartMountRequest{mount: true}}}} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "move_to_cart_request round-trips through envelope oneof" do
+    env =
+      %Envelope{
+        body: {:move_to_cart_request, %MoveToCartRequest{inventory_index: 3, amount: 10}}
+      }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body: {:move_to_cart_request, %MoveToCartRequest{inventory_index: 3, amount: 10}}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "move_from_cart_request round-trips through envelope oneof" do
+    env =
+      %Envelope{body: {:move_from_cart_request, %MoveFromCartRequest{cart_index: 4, amount: 5}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body: {:move_from_cart_request, %MoveFromCartRequest{cart_index: 4, amount: 5}}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
   end
 
   test "npc_interact round-trips every response arm through envelope oneof" do

@@ -90,6 +90,13 @@ message Envelope {
     NpcTalk npc_talk = 80;
     NpcDialog npc_dialog = 81;
     NpcInteract npc_interact = 82;
+    // 83-88: cart (server->client deltas + client intents)
+    CartInfo cart_info = 83;
+    CartItemAdded cart_item_added = 84;
+    CartItemRemoved cart_item_removed = 85;
+    CartMountRequest cart_mount_request = 86;
+    MoveToCartRequest move_to_cart_request = 87;
+    MoveFromCartRequest move_from_cart_request = 88;
   }
 }
 
@@ -637,6 +644,52 @@ message ItemRemoved {
   uint32 index = 1;
   uint32 amount = 2;
   uint32 reason = 3;
+}
+
+// Server -> client, the full cart dump (sent on mount/login). Mirrors InventoryList
+// but for the separate cart container.
+message CartInfo {
+  repeated InventoryItem items = 1;
+}
+
+// Server -> client, an item was added to the cart. Mirrors ItemAdded.
+message CartItemAdded {
+  uint32 index = 1;
+  uint32 amount = 2;
+  uint32 nameid = 3;
+  bool identified = 4;
+  uint32 attribute = 5;
+  uint32 refine = 6;
+  repeated uint32 cards = 7;
+  uint32 location = 8;
+  uint32 type = 9;
+  uint32 result = 10;
+  uint64 expire_time = 11;
+  uint32 look = 12;
+}
+
+// Server -> client, an item was removed from the cart. Mirrors ItemRemoved.
+message CartItemRemoved {
+  uint32 index = 1;
+  uint32 amount = 2;
+  uint32 reason = 3;
+}
+
+// Client -> server, mount (true) or unmount (false) the cart. Gated on Pushcart learned.
+message CartMountRequest {
+  bool mount = 1;
+}
+
+// Client -> server, move an inventory item into the cart.
+message MoveToCartRequest {
+  uint32 inventory_index = 1;
+  uint32 amount = 2;
+}
+
+// Client -> server, move a cart item back into the inventory.
+message MoveFromCartRequest {
+  uint32 cart_index = 1;
+  uint32 amount = 2;
 }
 
 // Client -> server, allocate a status point to a stat (replaces RO CZ_STATUS_CHANGE 0x00BB).
