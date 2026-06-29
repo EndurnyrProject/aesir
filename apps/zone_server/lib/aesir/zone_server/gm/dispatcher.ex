@@ -12,7 +12,10 @@ defmodule Aesir.ZoneServer.Gm.Dispatcher do
   # Registered commands keyed by their lowercase token.
   @commands %{
     "item" => Aesir.ZoneServer.Gm.Commands.Item,
-    "warp" => Aesir.ZoneServer.Gm.Commands.Warp
+    "warp" => Aesir.ZoneServer.Gm.Commands.Warp,
+    "job" => Aesir.ZoneServer.Gm.Commands.Job,
+    "baselevelup" => Aesir.ZoneServer.Gm.Commands.BaseLevel,
+    "joblevelup" => Aesir.ZoneServer.Gm.Commands.JobLevel
   }
 
   @spec dispatch(String.t(), Aesir.ZoneServer.Gm.Command.ctx()) :: :ok

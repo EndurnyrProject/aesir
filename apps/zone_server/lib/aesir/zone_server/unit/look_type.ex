@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Unit.LookType do
   """
 
   @look_types [
+    base: 0,
     weapon: 2,
     head_bottom: 3,
     head_top: 4,

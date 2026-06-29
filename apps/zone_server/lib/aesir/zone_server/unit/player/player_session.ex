@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
@@ -606,6 +607,21 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:apply_damage, damage, attacker_id}, state) do
     HealthHandler.apply_damage(damage, attacker_id, state)
+  end
+
+  @impl true
+  def handle_cast({:add_base_level, amount}, state) do
+    ProgressionHandler.handle_add_base_level(amount, state)
+  end
+
+  @impl true
+  def handle_cast({:add_job_level, amount}, state) do
+    ProgressionHandler.handle_add_job_level(amount, state)
+  end
+
+  @impl true
+  def handle_cast({:change_job, job_id}, state) do
+    ProgressionHandler.handle_change_job(job_id, state)
   end
 
   @impl true
