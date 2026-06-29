@@ -5,6 +5,8 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
+  alias Aesir.ZoneServer.Npc.Shops
+  alias Aesir.ZoneServer.Npc.ShopVerifier
   alias Aesir.ZoneServer.Npc.Verifier, as: NpcVerifier
   alias Aesir.ZoneServer.Npc.Warps
 
@@ -14,6 +16,8 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
     :ok = ScriptCompiler.compile_all!()
     :ok = NpcVerifier.verify!(NpcRegistry.reload().entries)
     :ok = Warps.reload()
+    :ok = Shops.reload()
+    :ok = ShopVerifier.verify!(Shops.all())
 
     children = [
       Aesir.ZoneServer.Map.PartitionedSupervisor,
