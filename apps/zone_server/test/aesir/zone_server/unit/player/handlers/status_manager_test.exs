@@ -67,8 +67,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManagerTest do
       {:reply, :ok, applied} =
         StatusManager.handle_apply_status(:sc_decreaseagi, [val1: 1], state)
 
-      assert applied.game_state.walk_speed == 168
-      assert_receive {:send, :gameplay, {:param_change, %ParamChange{var_id: 0, value: 168}}}
+      assert applied.game_state.walk_speed == 187
+      assert_receive {:send, :gameplay, {:param_change, %ParamChange{var_id: 0, value: 187}}}
     end
 
     test "removing Decrease AGI restores the base speed of 150", %{state: state} do
@@ -85,8 +85,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManagerTest do
       {:reply, :ok, applied} =
         StatusManager.handle_apply_status(:sc_increaseagi, [val1: 1, val2: 6], state)
 
-      assert applied.game_state.walk_speed == 132
-      assert_receive {:send, :gameplay, {:param_change, %ParamChange{var_id: 0, value: 132}}}
+      assert applied.game_state.walk_speed == 112
+      assert_receive {:send, :gameplay, {:param_change, %ParamChange{var_id: 0, value: 112}}}
+    end
+
+    test "applying Curse slows the player by rAthena's flat 300 rate", %{state: state} do
+      {:reply, :ok, applied} = StatusManager.handle_apply_status(:sc_curse, [], state)
+
+      assert applied.game_state.walk_speed == 600
+      assert_receive {:send, :gameplay, {:param_change, %ParamChange{var_id: 0, value: 600}}}
+    end
+
+    test "applying Cloaking (level 3) applies the not-against-wall slow", %{state: state} do
+      {:reply, :ok, applied} =
+        StatusManager.handle_apply_status(:sc_cloaking, [val1: 3], state)
+
+      assert applied.game_state.walk_speed == 181
+      assert_receive {:send, :gameplay, {:param_change, %ParamChange{var_id: 0, value: 181}}}
     end
   end
 

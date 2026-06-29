@@ -3,7 +3,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DecreaseAgi do
   Decrease AGI (SC_DECREASEAGI).
 
   Lowers AGI by 2 + skill level (val1) and reduces movement speed, stripping
-  active speed buffs when applied.
+  active speed buffs when applied. rAthena's `status_calc_speed` applies a flat
+  `max(val, 25)` slow regardless of skill level, modelled here as
+  `movement_speed: 25` (positive = slower).
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_decreaseagi,
@@ -29,7 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DecreaseAgi do
   def modifiers(instance, _context) do
     %{
       agi: -(2 + instance.val1),
-      movement_speed: div((instance.val1 + 1) * 25, 4)
+      movement_speed: 25
     }
   end
 end

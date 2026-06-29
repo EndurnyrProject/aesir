@@ -2,8 +2,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Curse do
   @moduledoc """
   Curse (SC_CURSE).
 
-  Drops LUK to 0, reduces ATK by 25% and slows movement. Targets whose LUK is
-  already 0 are unaffected (rAthena behavior).
+  Drops LUK to 0, reduces ATK by 25% and slows movement. rAthena's
+  `status_calc_speed` applies a flat `max(val, 300)` speed-rate penalty for
+  curse, modelled here as `movement_speed: 300` (positive = slower). Targets
+  whose LUK is already 0 are unaffected (rAthena behavior).
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_curse,
@@ -14,7 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Curse do
 
   @impl true
   def modifiers(_instance, _context) do
-    %{luk: 0, atk_rate: -25}
+    %{luk: 0, atk_rate: -25, movement_speed: 300}
   end
 
   @impl true
