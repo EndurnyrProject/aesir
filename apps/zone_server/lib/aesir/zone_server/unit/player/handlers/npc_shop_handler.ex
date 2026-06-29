@@ -17,6 +17,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
   alias Aesir.Net.NpcBuyEntry
   alias Aesir.Net.NpcBuyRequest
   alias Aesir.Net.NpcBuyResult
+  alias Aesir.Net.NpcSellEntry
+  alias Aesir.Net.NpcSellRequest
+  alias Aesir.Net.NpcSellResult
   alias Aesir.Net.NpcShopBuyItem
   alias Aesir.Net.NpcShopOpen
   alias Aesir.Net.NpcShopSellItem
@@ -39,13 +42,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
   # (Chebyshev). Intentionally separate from `Config.view_range/0`.
   @talk_range 15
 
-  # `NpcBuyResult.result` codes, in the design §5 enum order.
+  # The shared `Npc*Result.result` enum, in the design §5 order. Buy uses every
+  # code; sell only surfaces ok / invalid / out_of_range.
   @result_ok 0
   @result_not_enough_zeny 1
   @result_overweight 2
   @result_no_slots 3
   @result_invalid 4
   @result_out_of_range 5
+
+  @max_zeny 1_000_000_000
 
   @type state :: %{
           required(:connection_pid) => pid(),
@@ -109,6 +115,42 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
     end
   end
 
+  @doc """
+  Sells `request.items` back to the shop identified by `request.unit_id`.
+
+  Re-resolves the shop by gid and re-checks talk range (the player must be at a
+  real shop, though selling itself is not restricted to the shop's buy list). On
+  a valid, in-range request it commits every inventory removal and the zeny
+  credit (clamped to `#{@max_zeny}`) inside one `Repo.transact`, so a partial
+  sell can never persist; it then updates in-memory state, pushes one
+  `ItemRemoved` per sold slot, a zeny `ParamChange`, and `NpcSellResult{ok}`. Any
+  gate or transaction failure replies with the mapped result code and leaves
+  inventory, zeny and the client view untouched. Always returns
+  `{:noreply, state}`.
+  """
+  @spec sell(state(), NpcSellRequest.t()) :: {:noreply, state()}
+  def sell(%{game_state: gs, connection_pid: connection_pid} = state, %NpcSellRequest{
+        unit_id: unit_id,
+        items: entries
+      }) do
+    requests =
+      Enum.map(entries, fn %NpcSellEntry{inventory_index: index, amount: a} -> {index, a} end)
+
+    with {:ok, _shop} <- fetch_in_range(gs, unit_id),
+         {:ok, %{total_credit: total_credit, removals: removals}} <-
+           ShopCore.compute_sell(requests, gs),
+         {:ok, inventory} <-
+           transact_sell(gs.character_id, gs.inventory, gs.zeny, total_credit, removals) do
+      new_state = finalize_sell(state, inventory, removals, total_credit)
+      reply(connection_pid, %NpcSellResult{result: @result_ok})
+      {:noreply, new_state}
+    else
+      {:error, reason} ->
+        reply(connection_pid, %NpcSellResult{result: sell_result_code(reason)})
+        {:noreply, state}
+    end
+  end
+
   @spec fetch_in_range(PlayerState.t(), non_neg_integer()) ::
           {:ok, ShopData.t()} | {:error, :invalid | :out_of_range}
   defp fetch_in_range(gs, unit_id) do
@@ -160,6 +202,67 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
     end
   end
 
+  @spec transact_sell(
+          integer(),
+          Inventory.t(),
+          non_neg_integer(),
+          non_neg_integer(),
+          [{non_neg_integer(), pos_integer()}]
+        ) :: {:ok, Inventory.t()} | {:error, term()}
+  defp transact_sell(char_id, inventory, zeny, total_credit, removals) do
+    new_zeny = min(zeny + total_credit, @max_zeny)
+
+    result =
+      Repo.transact(fn ->
+        with {:ok, inv} <- apply_sell_removals(char_id, inventory, removals),
+             {:ok, _} <- CharacterPersistence.update_character(char_id, %{zeny: new_zeny}) do
+          {:ok, inv}
+        end
+      end)
+
+    case result do
+      {:ok, inv} -> {:ok, inv}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @spec apply_sell_removals(integer(), Inventory.t(), [{non_neg_integer(), pos_integer()}]) ::
+          {:ok, Inventory.t()} | {:error, term()}
+  defp apply_sell_removals(char_id, inventory, removals) do
+    Enum.reduce_while(removals, {:ok, inventory}, fn {index, amount}, {:ok, current} ->
+      with {:ok, new_inv, change} <- Inventory.remove(current, index, amount),
+           {:ok, persisted} <- InventoryOps.apply_change(char_id, current, new_inv, change) do
+        {:cont, {:ok, persisted}}
+      else
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  @spec finalize_sell(
+          state(),
+          Inventory.t(),
+          [{non_neg_integer(), pos_integer()}],
+          non_neg_integer()
+        ) ::
+          state()
+  defp finalize_sell(%{game_state: gs} = state, inventory, removals, total_credit) do
+    new_zeny = min(gs.zeny + total_credit, @max_zeny)
+    new_gs = %{gs | inventory: inventory, zeny: new_zeny}
+
+    notify_removed(state.connection_pid, removals)
+    StatusSync.send_param(state.connection_pid, StatusParams.zeny(), new_zeny)
+
+    %{state | game_state: new_gs}
+  end
+
+  @spec notify_removed(pid(), [{non_neg_integer(), pos_integer()}]) :: :ok
+  defp notify_removed(connection_pid, removals) do
+    Enum.each(removals, fn {index, amount} ->
+      MessageRouter.send_to(connection_pid, PacketHandler.item_removed(index, amount))
+    end)
+  end
+
   @spec finalize_buy(state(), Inventory.t(), [Inventory.change()], non_neg_integer()) :: state()
   defp finalize_buy(%{game_state: gs} = state, inventory, changes, total_cost) do
     new_zeny = gs.zeny - total_cost
@@ -195,8 +298,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
   defp buy_result_code(:out_of_range), do: @result_out_of_range
   defp buy_result_code(_), do: @result_invalid
 
-  @spec reply(pid(), NpcBuyResult.t()) :: :ok
-  defp reply(connection_pid, %NpcBuyResult{} = result) do
+  # Sell shares the §5 enum but only ever yields ok / out_of_range / invalid;
+  # `:invalid_item`, `:insufficient_amount`, `:unsellable` and a forged gid all
+  # collapse to the generic invalid code.
+  @spec sell_result_code(atom()) :: non_neg_integer()
+  defp sell_result_code(:out_of_range), do: @result_out_of_range
+  defp sell_result_code(_), do: @result_invalid
+
+  @spec reply(pid(), NpcBuyResult.t() | NpcSellResult.t()) :: :ok
+  defp reply(connection_pid, result) do
     MessageRouter.send_to(connection_pid, result)
   end
 
