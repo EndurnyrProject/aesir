@@ -775,6 +775,7 @@
   weight: 500
 - aegis_name: Ice_Falchon
   attack: 100
+  attack_element: water
   buy: 20
   equip_level_min: 40
   id: 1131
@@ -823,6 +824,7 @@
   weight: 700
 - aegis_name: Fire_Brand
   attack: 100
+  attack_element: fire
   buy: 20
   equip_level_min: 40
   id: 1133
@@ -895,6 +897,7 @@
   weight: 900
 - aegis_name: Solar_Sword
   attack: 85
+  attack_element: fire
   buy: 20
   equip_level_min: 40
   id: 1136
@@ -919,6 +922,7 @@
   weight: 1200
 - aegis_name: Excalibur
   attack: 150
+  attack_element: holy
   buy: 20
   equip_level_min: 40
   id: 1137
@@ -943,6 +947,7 @@
   weight: 1200
 - aegis_name: Mysteltainn_
   attack: 170
+  attack_element: shadow
   buy: 20
   equip_level_min: 40
   id: 1138
@@ -967,6 +972,7 @@
   weight: 1000
 - aegis_name: Tale_Fing_
   attack: 200
+  attack_element: shadow
   buy: 20
   equip_level_min: 40
   id: 1139
@@ -1015,6 +1021,7 @@
   weight: 900
 - aegis_name: Immaterial_Sword
   attack: 140
+  attack_element: ghost
   buy: 20
   equip_level_min: 40
   id: 1141
@@ -1087,6 +1094,7 @@
   weight: 2500
 - aegis_name: Sasimi
   attack: 75
+  attack_element: wind
   buy: 20
   equip_level_min: 48
   id: 1144
@@ -1111,6 +1119,7 @@
   weight: 1400
 - aegis_name: Holy_Avenger
   attack: 125
+  attack_element: holy
   buy: 450000
   equip_level_min: 75
   id: 1145
@@ -1508,6 +1517,7 @@
   weight: 1300
 - aegis_name: Schweizersabel
   attack: 160
+  attack_element: wind
   buy: 20
   equip_level_min: 48
   id: 1167
@@ -1544,6 +1554,7 @@
   weight: 2200
 - aegis_name: Executioner_
   attack: 155
+  attack_element: shadow
   buy: 20
   equip_level_min: 48
   id: 1169
@@ -1633,6 +1644,7 @@
   weapon_level: 4
 - aegis_name: Executioner_C
   attack: 190
+  attack_element: shadow
   buy: 2
   id: 1174
   jobs:
@@ -1701,6 +1713,7 @@
   weapon_level: 1
 - aegis_name: Schweizersabel_
   attack: 160
+  attack_element: wind
   buy: 20
   equip_level_min: 48
   id: 1178
@@ -1720,6 +1733,7 @@
   weight: 1600
 - aegis_name: Executioner__
   attack: 155
+  attack_element: shadow
   buy: 20
   equip_level_min: 48
   id: 1179
@@ -1777,6 +1791,7 @@
   weight: 2000
 - aegis_name: Bloody_Eater
   attack: 200
+  attack_element: ghost
   buy: 20
   equip_level_min: 50
   id: 1182
@@ -1984,6 +1999,7 @@
   weapon_level: 2
 - aegis_name: F_Executioner_C
   attack: 190
+  attack_element: shadow
   buy: 2
   id: 1194
   jobs:
@@ -1999,6 +2015,7 @@
   weapon_level: 4
 - aegis_name: E_Executioner_C
   attack: 190
+  attack_element: shadow
   buy: 2
   id: 1195
   jobs:
@@ -3121,6 +3138,7 @@
   weight: 600
 - aegis_name: Bazerald
   attack: 70
+  attack_element: fire
   buy: 20
   equip_level_min: 36
   id: 1231
@@ -3155,6 +3173,7 @@
   weight: 500
 - aegis_name: Assasin_Dagger
   attack: 140
+  attack_element: shadow
   buy: 20
   equip_level_min: 36
   id: 1232
@@ -3352,6 +3371,7 @@
   weight: 1200
 - aegis_name: Poison_Knife
   attack: 64
+  attack_element: poison
   buy: 20
   equip_level_min: 65
   id: 1239
@@ -3471,6 +3491,7 @@
   weight: 1
 - aegis_name: Holy_Dagger
   attack: 100
+  attack_element: holy
   buy: 20
   equip_level_min: 55
   id: 1244
@@ -3527,6 +3548,7 @@
   weight: 700
 - aegis_name: Kindling_Dagger
   attack: 39
+  attack_element: fire
   buy: 10000
   equip_level_min: 1
   id: 1247
@@ -3562,6 +3584,7 @@
   weight: 600
 - aegis_name: Obsidian_Dagger
   attack: 39
+  attack_element: earth
   buy: 10000
   equip_level_min: 1
   id: 1248
@@ -3597,6 +3620,7 @@
   weight: 600
 - aegis_name: Fisherman's_Dagger
   attack: 39
+  attack_element: water
   buy: 10000
   equip_level_min: 1
   id: 1249
@@ -3733,6 +3757,7 @@
   weight: 1500
 - aegis_name: Katar_Of_Cold_Icicle
   attack: 105
+  attack_element: water
   buy: 45000
   equip_level_min: 55
   id: 1256
@@ -3749,6 +3774,7 @@
   weight: 1200
 - aegis_name: Katar_Of_Thornbush
   attack: 105
+  attack_element: earth
   buy: 45000
   equip_level_min: 55
   id: 1257
@@ -3765,6 +3791,7 @@
   weight: 1200
 - aegis_name: Katar_Of_Raging_Blaze
   attack: 105
+  attack_element: fire
   buy: 45000
   equip_level_min: 55
   id: 1258
@@ -3781,6 +3808,7 @@
   weight: 1200
 - aegis_name: Katar_Of_Piercing_Wind
   attack: 105
+  attack_element: wind
   buy: 45000
   equip_level_min: 55
   id: 1259
@@ -3797,6 +3825,7 @@
   weight: 1200
 - aegis_name: Ghoul_Leg
   attack: 150
+  attack_element: undead
   buy: 52500
   equip_level_min: 65
   id: 1260
@@ -3845,6 +3874,7 @@
   weight: 1200
 - aegis_name: Unholy_Touch
   attack: 151
+  attack_element: shadow
   buy: 20
   equip_level_min: 70
   id: 1263
@@ -3942,6 +3972,7 @@
   weight: 1450
 - aegis_name: Inverse_Scale
   attack: 140
+  attack_element: holy
   buy: 20
   equip_level_min: 55
   id: 1269
@@ -4018,6 +4049,7 @@
   weapon_level: 4
 - aegis_name: Unholy_Touch_C
   attack: 179
+  attack_element: shadow
   buy: 1
   id: 1274
   jobs:
@@ -4031,6 +4063,7 @@
   weapon_level: 4
 - aegis_name: Katar_Of_Cold_Icicle_
   attack: 105
+  attack_element: water
   buy: 45000
   equip_level_min: 55
   id: 1275
@@ -4048,6 +4081,7 @@
   weight: 1200
 - aegis_name: Katar_Of_Thornbush_
   attack: 105
+  attack_element: earth
   buy: 45000
   equip_level_min: 55
   id: 1276
@@ -4065,6 +4099,7 @@
   weight: 1200
 - aegis_name: Katar_Of_Raging_Blaze_
   attack: 105
+  attack_element: fire
   buy: 45000
   equip_level_min: 55
   id: 1277
@@ -4082,6 +4117,7 @@
   weight: 1200
 - aegis_name: Katar_Of_Piercing_Wind_
   attack: 105
+  attack_element: wind
   buy: 45000
   equip_level_min: 55
   id: 1278
@@ -4379,6 +4415,7 @@
   weapon_level: 3
 - aegis_name: Inverse_Scale_
   attack: 140
+  attack_element: holy
   buy: 20
   equip_level_min: 55
   id: 1297
@@ -4586,6 +4623,7 @@
   weight: 4200
 - aegis_name: Windhawk
   attack: 115
+  attack_element: wind
   buy: 18000
   equip_level_min: 14
   id: 1307
@@ -4737,6 +4775,7 @@
   weight: 500
 - aegis_name: F_Tomahawk_C
   attack: 200
+  attack_element: wind
   buy: 2
   id: 1314
   jobs:
@@ -4755,6 +4794,7 @@
   weapon_level: 4
 - aegis_name: F_Right_Epsilon_C
   attack: 229
+  attack_element: holy
   buy: 1
   equip_level_min: 1
   id: 1315
@@ -5575,6 +5615,7 @@
   weight: 1800
 - aegis_name: Sabbath
   attack: 120
+  attack_element: shadow
   buy: 20
   equip_level_min: 44
   id: 1365
@@ -5596,6 +5637,7 @@
   weight: 2300
 - aegis_name: Right_Epsilon
   attack: 180
+  attack_element: holy
   buy: 20
   equip_level_min: 44
   id: 1366
@@ -5617,6 +5659,7 @@
   weight: 2300
 - aegis_name: Slaughter
   attack: 120
+  attack_element: earth
   buy: 20
   equip_level_min: 44
   id: 1367
@@ -5638,6 +5681,7 @@
   weight: 2500
 - aegis_name: Tomahawk
   attack: 165
+  attack_element: wind
   buy: 20
   equip_level_min: 44
   id: 1368
@@ -5723,6 +5767,7 @@
   weight: 6000
 - aegis_name: Right_Epsilon_C
   attack: 229
+  attack_element: holy
   buy: 1
   equip_level_min: 1
   id: 1372
@@ -5760,6 +5805,7 @@
   weapon_level: 4
 - aegis_name: Tomahawk_C
   attack: 200
+  attack_element: wind
   buy: 2
   id: 1374
   jobs:
@@ -6051,6 +6097,7 @@
   weapon_level: 3
 - aegis_name: E_Tomahawk_C
   attack: 200
+  attack_element: wind
   buy: 2
   id: 1389
   jobs:
@@ -6069,6 +6116,7 @@
   weapon_level: 4
 - aegis_name: E_Right_Epsilon_C
   attack: 229
+  attack_element: holy
   buy: 1
   equip_level_min: 1
   id: 1390
@@ -6106,6 +6154,7 @@
   weapon_level: 3
 - aegis_name: Ygnus_Stale
   attack: 250
+  attack_element: fire
   buy: 56000
   equip_level_min: 95
   id: 1392
@@ -6128,6 +6177,7 @@
   weight: 1900
 - aegis_name: End_Sektura
   attack: 250
+  attack_element: water
   buy: 56000
   equip_level_min: 95
   id: 1393
@@ -6512,6 +6562,7 @@
   weight: 2500
 - aegis_name: Gungnir
   attack: 120
+  attack_element: wind
   buy: 20
   equip_level_min: 4
   id: 1413
@@ -6530,6 +6581,7 @@
   weight: 500
 - aegis_name: Gelerdria
   attack: 145
+  attack_element: earth
   buy: 20
   equip_level_min: 48
   id: 1414
@@ -6603,6 +6655,7 @@
   weight: 3800
 - aegis_name: Gungnir_
   attack: 120
+  attack_element: wind
   buy: 20
   equip_level_min: 4
   id: 1418
@@ -6639,6 +6692,7 @@
   weight: 4800
 - aegis_name: Long_Horn
   attack: 150
+  attack_element: holy
   buy: 20
   equip_level_min: 65
   id: 1420
@@ -6776,6 +6830,7 @@
   weapon_level: 3
 - aegis_name: Long_Horn_M
   attack: 150
+  attack_element: holy
   buy: 20
   equip_level_min: 65
   id: 1428
@@ -7055,6 +7110,7 @@
   weight: 900
 - aegis_name: Spear_of_Trust
   attack: 140
+  attack_element: wind
   equip_level_min: 50
   id: 1444
   jobs:
@@ -7073,6 +7129,7 @@
   weight: 2000
 - aegis_name: Spear_of_Trust2
   attack: 140
+  attack_element: fire
   buy: 20
   equip_level_min: 50
   id: 1445
@@ -7108,6 +7165,7 @@
   weight: 1000
 - aegis_name: Poison_Forged_Spear
   attack: 150
+  attack_element: poison
   equip_level_min: 100
   id: 1447
   jobs:
@@ -7126,6 +7184,7 @@
   weight: 500
 - aegis_name: UnrivaledSpear
   attack: 140
+  attack_element: earth
   equip_level_min: 50
   id: 1448
   jobs:
@@ -7144,6 +7203,7 @@
   weight: 2000
 - aegis_name: Gelerdria_
   attack: 145
+  attack_element: earth
   buy: 20
   equip_level_min: 48
   id: 1449
@@ -7498,6 +7558,7 @@
   weight: 1000
 - aegis_name: Zephyrus
   attack: 170
+  attack_element: wind
   buy: 20
   equip_level_min: 48
   id: 1468
@@ -7516,6 +7577,7 @@
   weight: 2000
 - aegis_name: Longinus's_Spear
   attack: 180
+  attack_element: shadow
   buy: 20
   equip_level_min: 48
   id: 1469
@@ -7534,6 +7596,7 @@
   weight: 2500
 - aegis_name: Brionac
   attack: 190
+  attack_element: holy
   buy: 20
   equip_level_min: 48
   id: 1470
@@ -7552,6 +7615,7 @@
   weight: 3000
 - aegis_name: Hell_Fire
   attack: 200
+  attack_element: fire
   buy: 20
   equip_level_min: 48
   id: 1471
@@ -7738,6 +7802,7 @@
   weight: 2000
 - aegis_name: Zephyrus_
   attack: 170
+  attack_element: wind
   buy: 20
   equip_level_min: 48
   id: 1481
@@ -7963,6 +8028,7 @@
   weapon_level: 3
 - aegis_name: Undine_Spear
   attack: 190
+  attack_element: water
   buy: 50000
   equip_level_min: 105
   id: 1494
@@ -8018,6 +8084,7 @@
   weight: 3750
 - aegis_name: Hell_Fire_S
   attack: 200
+  attack_element: fire
   buy: 20
   equip_level_min: 48
   id: 1497
@@ -8722,6 +8789,7 @@
   weight: 900
 - aegis_name: Grand_Cross
   attack: 140
+  attack_element: holy
   buy: 20
   equip_level_min: 40
   id: 1528
@@ -8757,6 +8825,7 @@
   weight: 3000
 - aegis_name: Mjolnir
   attack: 350
+  attack_element: wind
   buy: 20
   equip_level_min: 95
   id: 1530
@@ -8942,6 +9011,7 @@
   weight: 800
 - aegis_name: Grand_Cross_
   attack: 140
+  attack_element: holy
   buy: 20
   equip_level_min: 40
   id: 1540
@@ -8961,6 +9031,7 @@
   weight: 1500
 - aegis_name: Nemesis
   attack: 120
+  attack_element: holy
   buy: 20
   equip_level_min: 60
   id: 1541
@@ -9209,6 +9280,7 @@
   weight: 800
 - aegis_name: Book_Of_Billows
   attack: 90
+  attack_element: water
   buy: 35000
   equip_level_min: 27
   id: 1553
@@ -9227,6 +9299,7 @@
   weight: 750
 - aegis_name: Book_Of_Mother_Earth
   attack: 90
+  attack_element: earth
   buy: 35000
   equip_level_min: 27
   id: 1554
@@ -9245,6 +9318,7 @@
   weight: 750
 - aegis_name: Book_Of_Blazing_Sun
   attack: 90
+  attack_element: fire
   buy: 35000
   equip_level_min: 27
   id: 1555
@@ -9263,6 +9337,7 @@
   weight: 750
 - aegis_name: Book_Of_Gust_Of_Wind
   attack: 90
+  attack_element: wind
   buy: 35000
   equip_level_min: 27
   id: 1556
@@ -9281,6 +9356,7 @@
   weight: 750
 - aegis_name: Book_Of_The_Apocalypse
   attack: 120
+  attack_element: shadow
   buy: 60000
   equip_level_min: 40
   id: 1557
@@ -9483,6 +9559,7 @@
   weapon_level: 4
 - aegis_name: Book_Of_Billows_
   attack: 90
+  attack_element: water
   buy: 35000
   equip_level_min: 27
   id: 1568
@@ -9502,6 +9579,7 @@
   weight: 750
 - aegis_name: Book_Of_Mother_Earth_
   attack: 90
+  attack_element: earth
   buy: 35000
   equip_level_min: 27
   id: 1569
@@ -9521,6 +9599,7 @@
   weight: 750
 - aegis_name: Book_Of_Blazing_Sun_
   attack: 90
+  attack_element: fire
   buy: 35000
   equip_level_min: 27
   id: 1570
@@ -9540,6 +9619,7 @@
   weight: 750
 - aegis_name: Book_Of_Gust_Of_Wind_
   attack: 90
+  attack_element: wind
   buy: 35000
   equip_level_min: 27
   id: 1571
@@ -9770,6 +9850,7 @@
   weapon_level: 3
 - aegis_name: Chilly_Spell_Book
   attack: 100
+  attack_element: water
   buy: 56000
   equip_level_min: 100
   id: 1584
@@ -9919,6 +10000,7 @@
   weapon_level: 3
 - aegis_name: Thor_Pedigree_Book
   attack: 90
+  attack_element: wind
   buy: 10
   equip_level_min: 27
   id: 1592
@@ -9959,6 +10041,7 @@
   weight: 400
 - aegis_name: Fire_Pedigree_Book
   attack: 90
+  attack_element: fire
   buy: 10
   equip_level_min: 27
   id: 1594
@@ -9979,6 +10062,7 @@
   weight: 400
 - aegis_name: Ice_Pedigree_Book
   attack: 90
+  attack_element: water
   buy: 10
   equip_level_min: 27
   id: 1595
@@ -9999,6 +10083,7 @@
   weight: 400
 - aegis_name: Earth_Pedigree_Book
   attack: 90
+  attack_element: earth
   buy: 10
   equip_level_min: 27
   id: 1596
@@ -10439,6 +10524,7 @@
   weight: 700
 - aegis_name: Bone_Wand
   attack: 40
+  attack_element: undead
   buy: 20
   equip_level_min: 24
   id: 1615
@@ -10462,6 +10548,7 @@
   weight: 700
 - aegis_name: Staff_Of_Wing
   attack: 60
+  attack_element: wind
   buy: 20
   equip_level_min: 40
   id: 1616
@@ -10635,6 +10722,7 @@
   weapon_level: 3
 - aegis_name: Lich_Bone_Wand
   attack: 60
+  attack_element: undead
   buy: 20
   equip_level_min: 70
   id: 1624
@@ -10658,6 +10746,7 @@
   weight: 800
 - aegis_name: Healing_Staff
   attack: 10
+  attack_element: holy
   buy: 20
   equip_level_min: 55
   id: 1625
@@ -10783,6 +10872,7 @@
   weight: 500
 - aegis_name: Holy_Stick
   attack: 50
+  attack_element: holy
   buy: 20
   equip_level_min: 70
   id: 1631
@@ -10890,6 +10980,7 @@
   weapon_level: 3
 - aegis_name: Thorn_Staff
   attack: 60
+  attack_element: shadow
   buy: 20
   equip_level_min: 75
   id: 1636
@@ -10934,6 +11025,7 @@
   weight: 500
 - aegis_name: Healing_Staff_C
   attack: 10
+  attack_element: holy
   buy: 20
   equip_level_min: 1
   id: 1638
@@ -11084,6 +11176,7 @@
   weight: 500
 - aegis_name: Lich_Bone_Wand_M
   attack: 60
+  attack_element: undead
   buy: 20
   equip_level_min: 70
   id: 1645
@@ -11127,6 +11220,7 @@
   weight: 500
 - aegis_name: Croce_Staff
   attack: 30
+  attack_element: holy
   buy: 20
   equip_level_min: 50
   id: 1647
@@ -11248,6 +11342,7 @@
   weight: 500
 - aegis_name: Staff_Of_Healing_C
   attack: 10
+  attack_element: holy
   buy: 20
   equip_level_min: 1
   id: 1653
@@ -11318,6 +11413,7 @@
   weight: 600
 - aegis_name: Wand_Of_Affection
   attack: 30
+  attack_element: holy
   buy: 20
   equip_level_min: 100
   id: 1657
@@ -11356,6 +11452,7 @@
   weapon_level: 3
 - aegis_name: Recovery_Light
   attack: 30
+  attack_element: holy
   buy: 56000
   equip_level_min: 110
   id: 1659
@@ -11374,6 +11471,7 @@
   weight: 400
 - aegis_name: Wand_Of_Affection2
   attack: 30
+  attack_element: holy
   buy: 20
   equip_level_min: 130
   id: 1660
@@ -11409,6 +11507,7 @@
   weight: 1400
 - aegis_name: Bone_Wand_
   attack: 40
+  attack_element: undead
   buy: 20
   equip_level_min: 24
   id: 1662
@@ -11453,6 +11552,7 @@
   weight: 500
 - aegis_name: Thorn_Staff_
   attack: 60
+  attack_element: shadow
   buy: 10
   equip_level_min: 75
   id: 1664
@@ -11498,6 +11598,7 @@
   weight: 500
 - aegis_name: Healing_Staff_
   attack: 10
+  attack_element: holy
   buy: 20
   equip_level_min: 55
   id: 1666
@@ -11953,6 +12054,7 @@
   weight: 100
 - aegis_name: Staff_of_Trust
   attack: 160
+  attack_element: wind
   equip_level_min: 50
   id: 1688
   jobs:
@@ -11978,6 +12080,7 @@
   weight: 1000
 - aegis_name: Staff_of_Trust2
   attack: 160
+  attack_element: fire
   equip_level_min: 50
   id: 1689
   jobs:
@@ -12550,6 +12653,7 @@
   weight: 500
 - aegis_name: Bow_Of_Rudra
   attack: 150
+  attack_element: holy
   buy: 20
   equip_level_min: 48
   id: 1720
@@ -12713,6 +12817,7 @@
   weapon_level: 4
 - aegis_name: Bow_Of_Rudra_C
   attack: 185
+  attack_element: holy
   buy: 2
   equip_level_min: 1
   id: 1729
@@ -13333,6 +13438,7 @@
   weight: 500
 - aegis_name: Kaiser_Knuckle
   attack: 110
+  attack_element: wind
   buy: 20
   equip_level_min: 36
   id: 1813
@@ -13367,6 +13473,7 @@
   weight: 500
 - aegis_name: Claw_Of_Garm
   attack: 152
+  attack_element: shadow
   buy: 20
   equip_level_min: 70
   id: 1815
@@ -14405,6 +14512,7 @@
   weight: 1300
 - aegis_name: Electronic_Guitar
   attack: 110
+  attack_element: wind
   buy: 20
   equip_level_min: 70
   id: 1913
@@ -14421,6 +14529,7 @@
   weight: 1800
 - aegis_name: Guitar_Of_Passion
   attack: 110
+  attack_element: fire
   buy: 20
   equip_level_min: 27
   id: 1914
@@ -14437,6 +14546,7 @@
   weight: 900
 - aegis_name: Guitar_Of_Blue_Solo
   attack: 110
+  attack_element: water
   buy: 20
   equip_level_min: 27
   id: 1915
@@ -14453,6 +14563,7 @@
   weight: 900
 - aegis_name: Guitar_Of_Vast_Land
   attack: 110
+  attack_element: earth
   buy: 20
   equip_level_min: 27
   id: 1916
@@ -14469,6 +14580,7 @@
   weight: 900
 - aegis_name: Guitar_Of_Gentle_Breeze
   attack: 110
+  attack_element: wind
   buy: 20
   equip_level_min: 27
   id: 1917
@@ -15217,6 +15329,7 @@
   weight: 400
 - aegis_name: Rapture_Rose
   attack: 115
+  attack_element: poison
   buy: 20
   equip_level_min: 44
   id: 1963
@@ -15249,6 +15362,7 @@
   weight: 700
 - aegis_name: Whip_Of_Red_Flame
   attack: 110
+  attack_element: fire
   buy: 20
   equip_level_min: 30
   id: 1965
@@ -15265,6 +15379,7 @@
   weight: 700
 - aegis_name: Whip_Of_Ice_Piece
   attack: 110
+  attack_element: water
   buy: 20
   equip_level_min: 30
   id: 1966
@@ -15281,6 +15396,7 @@
   weight: 700
 - aegis_name: Whip_Of_Earth
   attack: 110
+  attack_element: earth
   buy: 20
   equip_level_min: 30
   id: 1967
@@ -15345,6 +15461,7 @@
   weight: 1100
 - aegis_name: Electric_Wire
   attack: 110
+  attack_element: wind
   buy: 20
   equip_level_min: 30
   id: 1971
@@ -15361,6 +15478,7 @@
   weight: 700
 - aegis_name: Electric_Eel
   attack: 100
+  attack_element: wind
   buy: 20
   equip_level_min: 70
   id: 1972
@@ -15830,6 +15948,7 @@
   weight: 2500
 - aegis_name: Divine_Cross
   attack: 120
+  attack_element: holy
   buy: 20
   equip_level_min: 70
   id: 2001
@@ -15907,6 +16026,7 @@
   weight: 1000
 - aegis_name: Dea_Staff
   attack: 30
+  attack_element: holy
   buy: 20
   equip_level_min: 50
   id: 2005
@@ -15927,6 +16047,7 @@
   weight: 1000
 - aegis_name: G_Staff_Of_Light
   attack: 80
+  attack_element: holy
   buy: 20
   equip_level_min: 60
   id: 2006
@@ -15947,6 +16068,7 @@
   weight: 1900
 - aegis_name: Golden_Rod_Staff
   attack: 30
+  attack_element: wind
   buy: 20
   equip_level_min: 100
   id: 2007
@@ -15965,6 +16087,7 @@
   weight: 900
 - aegis_name: Aqua_Staff
   attack: 30
+  attack_element: water
   buy: 20
   equip_level_min: 100
   id: 2008
@@ -15983,6 +16106,7 @@
   weight: 900
 - aegis_name: Crimson_Staff
   attack: 30
+  attack_element: fire
   buy: 20
   equip_level_min: 100
   id: 2009
@@ -16001,6 +16125,7 @@
   weight: 900
 - aegis_name: Forest_Staff
   attack: 30
+  attack_element: earth
   buy: 20
   equip_level_min: 100
   id: 2010
@@ -16019,6 +16144,7 @@
   weight: 900
 - aegis_name: Golden_Rod_Staff2
   attack: 30
+  attack_element: wind
   buy: 20
   equip_level_min: 130
   id: 2011
@@ -16037,6 +16163,7 @@
   weight: 900
 - aegis_name: Aqua_Staff2
   attack: 30
+  attack_element: water
   buy: 20
   equip_level_min: 130
   id: 2012
@@ -16055,6 +16182,7 @@
   weight: 900
 - aegis_name: Crimson_Staff2
   attack: 30
+  attack_element: fire
   buy: 20
   equip_level_min: 130
   id: 2013
@@ -16073,6 +16201,7 @@
   weight: 900
 - aegis_name: Forest_Staff2
   attack: 30
+  attack_element: earth
   buy: 20
   equip_level_min: 130
   id: 2014
@@ -16138,6 +16267,7 @@
   weight: 800
 - aegis_name: Divine_Cross_
   attack: 120
+  attack_element: holy
   buy: 20
   equip_level_min: 70
   id: 2017
@@ -16357,6 +16487,7 @@
   weight: 1500
 - aegis_name: Aion_Staff
   attack: 180
+  attack_element: ghost
   buy: 49800
   equip_level_min: 110
   id: 2028
@@ -41043,6 +41174,7 @@
   weight: 300
 - aegis_name: Red_Pencil_Mouth
   armor_level: 1
+  attack_element: fire
   buy: 20
   equip_level_min: 30
   id: 5945
@@ -42211,6 +42343,7 @@
   weight: 10
 - aegis_name: Jujube_Dagger
   attack: 39
+  attack_element: wind
   buy: 10000
   equip_level_min: 1
   id: 13000
@@ -42281,6 +42414,7 @@
   weight: 900
 - aegis_name: Ginnungagap
   attack: 148
+  attack_element: shadow
   buy: 20
   equip_level_min: 70
   id: 13002
@@ -42376,6 +42510,7 @@
   weight: 600
 - aegis_name: Khukri
   attack: 150
+  attack_element: shadow
   buy: 240000
   equip_level_min: 65
   id: 13006
@@ -42428,6 +42563,7 @@
   weight: 400
 - aegis_name: Kamaitachi
   attack: 125
+  attack_element: wind
   buy: 48000
   equip_level_min: 70
   id: 13009
@@ -42483,6 +42619,7 @@
   weight: 600
 - aegis_name: Murasame
   attack: 95
+  attack_element: water
   buy: 20
   equip_level_min: 24
   id: 13012
@@ -42501,6 +42638,7 @@
   weight: 700
 - aegis_name: Murasame_
   attack: 95
+  attack_element: water
   buy: 20
   equip_level_min: 24
   id: 13013
@@ -42554,6 +42692,7 @@
   weight: 800
 - aegis_name: Poison_Knife_
   attack: 64
+  attack_element: poison
   buy: 20
   equip_level_min: 65
   id: 13016
@@ -42656,6 +42795,7 @@
   weight: 800
 - aegis_name: Ginnungagap_
   attack: 148
+  attack_element: shadow
   buy: 20
   equip_level_min: 70
   id: 13019
@@ -43056,6 +43196,7 @@
   weight: 1000
 - aegis_name: Assasin_Dagger_
   attack: 140
+  attack_element: shadow
   buy: 20
   equip_level_min: 36
   id: 13033
@@ -43381,6 +43522,7 @@
   weapon_level: 4
 - aegis_name: Kamaitachi_I
   attack: 155
+  attack_element: wind
   id: 13045
   jobs:
     - kagerou_oboro
@@ -43983,6 +44125,7 @@
   weapon_level: 1
 - aegis_name: Aztoe_Nail
   attack: 160
+  attack_element: wind
   buy: 56000
   equip_level_min: 110
   id: 13069
@@ -44008,6 +44151,7 @@
   weight: 500
 - aegis_name: Scarletto_Nail
   attack: 160
+  attack_element: fire
   buy: 56000
   equip_level_min: 110
   id: 13070
@@ -44245,6 +44389,7 @@
   weapon_level: 3
 - aegis_name: Rogue_Kinfe
   attack: 80
+  attack_element: water
   buy: 20
   equip_level_min: 60
   id: 13080
@@ -44374,6 +44519,7 @@
   weapon_level: 3
 - aegis_name: Eihwaz_Knife
   attack: 80
+  attack_element: earth
   buy: 20
   equip_level_min: 60
   id: 13084
@@ -44406,6 +44552,7 @@
   weight: 200
 - aegis_name: Volcano_Knife
   attack: 80
+  attack_element: fire
   buy: 10
   equip_level_min: 60
   id: 13085
@@ -44472,6 +44619,7 @@
   weight: 500
 - aegis_name: Hagalas_Knife
   attack: 80
+  attack_element: wind
   buy: 20
   equip_level_min: 60
   id: 13087
@@ -44538,6 +44686,7 @@
   weight: 500
 - aegis_name: FaceWorm_Leg
   attack: 110
+  attack_element: poison
   buy: 20
   equip_level_min: 24
   id: 13089
@@ -45302,6 +45451,7 @@
   weight: 500
 - aegis_name: Gun_of_Trust
   attack: 60
+  attack_element: wind
   equip_level_min: 50
   id: 13130
   jobs:
@@ -45319,6 +45469,7 @@
   weight: 1000
 - aegis_name: Gun_of_Trust2
   attack: 60
+  attack_element: fire
   equip_level_min: 50
   id: 13131
   jobs:
@@ -45351,6 +45502,7 @@
   weapon_level: 3
 - aegis_name: UnrivaledGun
   attack: 60
+  attack_element: earth
   buy: 20
   equip_level_min: 50
   id: 13133
@@ -46375,6 +46527,7 @@
   weight: 2500
 - aegis_name: Huuma_Bird_Wing
   attack: 150
+  attack_element: wind
   buy: 90000
   equip_level_min: 65
   id: 13300
@@ -46428,6 +46581,7 @@
   weight: 2500
 - aegis_name: Huuma_Blaze
   attack: 185
+  attack_element: fire
   buy: 78000
   equip_level_min: 55
   id: 13303
@@ -46512,6 +46666,7 @@
   weapon_level: 4
 - aegis_name: Huuma_Blaze_I
   attack: 230
+  attack_element: fire
   id: 13308
   jobs:
     - kagerou_oboro
@@ -46605,6 +46760,7 @@
   weight: 1500
 - aegis_name: Huuma_Fluttering_Snow
   attack: 200
+  attack_element: water
   buy: 100000
   equip_level_min: 110
   id: 13314
@@ -46623,6 +46779,7 @@
   weight: 1500
 - aegis_name: Huuma_Thunderstorm
   attack: 200
+  attack_element: wind
   buy: 100000
   equip_level_min: 110
   id: 13315
@@ -47069,6 +47226,7 @@
   weight: 900
 - aegis_name: Excalibur_C
   attack: 199
+  attack_element: holy
   buy: 1
   equip_level_min: 1
   id: 13401
@@ -47112,6 +47270,7 @@
   weapon_level: 4
 - aegis_name: Solar_Sword_C
   attack: 120
+  attack_element: fire
   buy: 2
   id: 13403
   jobs:
@@ -47225,6 +47384,7 @@
   weapon_level: 4
 - aegis_name: Fire_Brand_C
   attack: 120
+  attack_element: fire
   buy: 1
   id: 13408
   jobs:
@@ -47246,6 +47406,7 @@
   weapon_level: 4
 - aegis_name: Immaterial_Sword_C
   attack: 160
+  attack_element: ghost
   buy: 1
   id: 13409
   jobs:
@@ -47318,6 +47479,7 @@
   weapon_level: 3
 - aegis_name: Twin_Edge_B
   attack: 150
+  attack_element: water
   buy: 20
   equip_level_min: 75
   id: 13412
@@ -47343,6 +47505,7 @@
   weight: 1500
 - aegis_name: Twin_Edge_R
   attack: 160
+  attack_element: fire
   buy: 20
   equip_level_min: 75
   id: 13413
@@ -47659,6 +47822,7 @@
   weapon_level: 4
 - aegis_name: F_Solar_Sword_C
   attack: 120
+  attack_element: fire
   buy: 2
   id: 13427
   jobs:
@@ -47726,6 +47890,7 @@
   weapon_level: 4
 - aegis_name: E_Solar_Sword_C
   attack: 120
+  attack_element: fire
   buy: 2
   id: 13430
   jobs:
@@ -47822,6 +47987,7 @@
   weapon_level: 3
 - aegis_name: Fire_Brand_
   attack: 100
+  attack_element: fire
   buy: 20
   equip_level_min: 40
   id: 13435
@@ -47847,6 +48013,7 @@
   weight: 500
 - aegis_name: Ice_Falchon_
   attack: 100
+  attack_element: water
   buy: 20
   equip_level_min: 40
   id: 13436
@@ -47952,6 +48119,7 @@
   weapon_level: 3
 - aegis_name: Ceremonial_Sword
   attack: 60
+  attack_element: holy
   buy: 20
   equip_level_min: 1
   id: 13440
@@ -48223,6 +48391,7 @@
   weight: 1200
 - aegis_name: Mysteltainn_S
   attack: 170
+  attack_element: shadow
   buy: 20
   equip_level_min: 40
   id: 13453
@@ -48428,6 +48597,7 @@
   weight: 1500
 - aegis_name: Save_The_King
   attack: 170
+  attack_element: ghost
   buy: 20
   equip_level_min: 100
   id: 13465
@@ -48505,6 +48675,7 @@
   weight: 600
 - aegis_name: Immaterial_Sword_IL
   attack: 180
+  attack_element: ghost
   equip_level_min: 120
   id: 13469
   jobs:
@@ -48529,6 +48700,7 @@
   weight: 900
 - aegis_name: Sealed_Magic_SwordJ
   attack: 180
+  attack_element: fire
   buy: 20
   equip_level_min: 120
   id: 13470
@@ -48553,6 +48725,7 @@
   weight: 1500
 - aegis_name: Sealed_Evil_SwordJ
   attack: 180
+  attack_element: shadow
   buy: 20
   equip_level_min: 120
   id: 13471
@@ -48577,6 +48750,7 @@
   weight: 1500
 - aegis_name: Sealed_Max_SwordJ
   attack: 180
+  attack_element: holy
   buy: 20
   equip_level_min: 120
   id: 13472
@@ -51256,6 +51430,7 @@
   weight: 100
 - aegis_name: PureWhite_Marching_Hat
   armor_level: 1
+  attack_element: ghost
   buy: 20
   equip_level_min: 60
   id: 15165
@@ -55146,6 +55321,7 @@
   weight: 500
 - aegis_name: Mjolnir_C
   attack: 250
+  attack_element: wind
   buy: 20
   equip_level_min: 95
   id: 16007
@@ -55246,6 +55422,7 @@
   weight: 1000
 - aegis_name: Mace_Of_Judgement
   attack: 140
+  attack_element: holy
   buy: 20
   equip_level_min: 100
   id: 16013
@@ -55333,6 +55510,7 @@
   weapon_level: 1
 - aegis_name: Bloody_Cross
   attack: 170
+  attack_element: shadow
   buy: 20
   equip_level_min: 100
   id: 16017
@@ -55351,6 +55529,7 @@
   weight: 1500
 - aegis_name: Mace_Of_Judgement2
   attack: 170
+  attack_element: holy
   buy: 20
   equip_level_min: 130
   id: 16018
@@ -55448,6 +55627,7 @@
   weight: 1500
 - aegis_name: Nemesis_
   attack: 120
+  attack_element: holy
   buy: 20
   equip_level_min: 60
   id: 16022
@@ -55610,6 +55790,7 @@
   weight: 3000
 - aegis_name: Noble_Cross
   attack: 195
+  attack_element: holy
   buy: 10
   equip_level_min: 40
   id: 16029
@@ -55701,6 +55882,7 @@
   weight: 3000
 - aegis_name: Half_Mjolnir
   attack: 350
+  attack_element: wind
   buy: 20
   equip_level_min: 95
   id: 16034
@@ -55926,6 +56108,7 @@
   weight: 400
 - aegis_name: Mace_of_Trust
   attack: 130
+  attack_element: wind
   equip_level_min: 50
   id: 16049
   jobs:
@@ -55952,6 +56135,7 @@
   weight: 2000
 - aegis_name: Mace_of_Trust2
   attack: 130
+  attack_element: fire
   equip_level_min: 50
   id: 16050
   jobs:
@@ -56019,6 +56203,7 @@
   weight: 3000
 - aegis_name: Lora_Iron_Ball
   attack: 170
+  attack_element: fire
   equip_level_min: 130
   id: 16053
   jobs:
@@ -56065,6 +56250,7 @@
   weapon_level: 3
 - aegis_name: UnrivaledMace
   attack: 130
+  attack_element: earth
   buy: 20
   equip_level_min: 50
   id: 16055
@@ -56110,6 +56296,7 @@
   weight: 1800
 - aegis_name: Blue_Mace
   attack: 130
+  attack_element: water
   buy: 20
   equip_level_min: 50
   id: 16057
@@ -56585,6 +56772,7 @@
   weapon_level: 4
 - aegis_name: F_Bow_Of_Rudra_C
   attack: 185
+  attack_element: holy
   buy: 2
   id: 18101
   jobs:
@@ -56601,6 +56789,7 @@
   weapon_level: 4
 - aegis_name: E_Bow_Of_Rudra_C
   attack: 185
+  attack_element: holy
   buy: 2
   id: 18102
   jobs:
@@ -57147,6 +57336,7 @@
   weight: 600
 - aegis_name: Bow_of_Trust
   attack: 120
+  attack_element: wind
   equip_level_min: 50
   id: 18133
   jobs:
@@ -57265,6 +57455,7 @@
   weapon_level: 3
 - aegis_name: UnrivaledBow
   attack: 120
+  attack_element: earth
   buy: 20
   equip_level_min: 50
   id: 18142
@@ -60035,6 +60226,7 @@
   weight: 100
 - aegis_name: Boitata_Hat
   armor_level: 1
+  attack_element: fire
   buy: 20
   defense: 5
   id: 18659
@@ -62418,6 +62610,7 @@
   view: 865
 - aegis_name: Aviator_Hat
   armor_level: 1
+  attack_element: wind
   buy: 10
   defense: 10
   equip_level_min: 1
@@ -93361,6 +93554,7 @@
   weapon_level: 3
 - aegis_name: UnrivaledStaff
   attack: 160
+  attack_element: earth
   buy: 20
   equip_level_min: 50
   id: 26102
@@ -93405,6 +93599,7 @@
   weight: 500
 - aegis_name: Blue_Staff
   attack: 160
+  attack_element: water
   buy: 20
   equip_level_min: 50
   id: 26104
@@ -95201,6 +95396,7 @@
   weight: 4000
 - aegis_name: Tornado_Axe
   attack: 320
+  attack_element: wind
   buy: 30000
   equip_level_min: 100
   id: 28101
@@ -98881,6 +99077,7 @@
   weight: 500
 - aegis_name: Demon_Hunting_Bible
   attack: 30
+  attack_element: holy
   equip_level_min: 110
   id: 28602
   jobs:
@@ -99616,6 +99813,7 @@
   weight: 1050
 - aegis_name: Dagger_of_Trust
   attack: 150
+  attack_element: wind
   equip_level_min: 50
   id: 28708
   jobs:
@@ -99759,6 +99957,7 @@
   weapon_level: 3
 - aegis_name: UnrivaledDagger
   attack: 150
+  attack_element: earth
   buy: 20
   equip_level_min: 50
   id: 28715
@@ -99899,6 +100098,7 @@
   weight: 650
 - aegis_name: Blue_Dagger
   attack: 150
+  attack_element: water
   buy: 20
   equip_level_min: 50
   id: 28720
@@ -100104,6 +100304,7 @@
   weapon_level: 3
 - aegis_name: Mist_Sword
   attack: 120
+  attack_element: ghost
   buy: 20
   equip_level_min: 130
   id: 28737
@@ -100435,6 +100636,7 @@
   weight: 300
 - aegis_name: Bazerald_IL
   attack: 120
+  attack_element: fire
   buy: 20
   equip_level_min: 120
   id: 28762
@@ -109975,6 +110177,7 @@
   view: 1122
 - aegis_name: Blue_Spear
   attack: 140
+  attack_element: water
   buy: 20
   equip_level_min: 50
   id: 32000
@@ -112817,6 +113020,7 @@
   weight: 500
 - aegis_name: GoldFish_Hat_LT
   armor_level: 2
+  attack_element: holy
   defense: 2
   equip_level_min: 150
   id: 400155
@@ -112830,6 +113034,7 @@
   weight: 400
 - aegis_name: Imp_Hat_LT
   armor_level: 2
+  attack_element: fire
   defense: 1
   equip_level_min: 150
   id: 400156
@@ -143893,6 +144098,7 @@
   weight: 1800
 - aegis_name: Copy_Gram
   attack: 200
+  attack_element: holy
   buy: 500000
   equip_level_min: 99
   id: 500009
@@ -145587,6 +145793,7 @@
   weight: 300
 - aegis_name: Kings_Bless_A
   attack: 120
+  attack_element: holy
   buy: 20
   equip_level_min: 130
   id: 510043
@@ -145616,6 +145823,7 @@
   weight: 600
 - aegis_name: Kings_Eager_A
   attack: 120
+  attack_element: shadow
   buy: 20
   equip_level_min: 130
   id: 510044
@@ -149734,6 +149942,7 @@
   weight: 1500
 - aegis_name: Thorn_Staff_IL
   attack: 60
+  attack_element: shadow
   equip_level_min: 120
   id: 550030
   jobs:
@@ -149757,6 +149966,7 @@
   weight: 1200
 - aegis_name: Dea_Staff_IL
   attack: 50
+  attack_element: holy
   equip_level_min: 120
   id: 550031
   jobs:
@@ -157971,6 +158181,7 @@
   weight: 1500
 - aegis_name: Ep172_Bh_Huuma
   attack: 320
+  attack_element: wind
   equip_level_min: 150
   id: 650003
   jobs:

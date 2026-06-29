@@ -2,40 +2,42 @@
 - aegis_name: Warnut_Chocoball
   id: 500
   name: Choko Gangjeong
+  on_use: 'percent_heal(ctx, hp: 10, sp: 10)'
   type: healing
   weight: 10
 - aegis_name: Red_Potion
   buy: 10
   id: 501
   name: Red Potion
-  on_use: "heal(ctx, hp: 45..65)"
+  on_use: 'heal(ctx, hp: 45..65)'
   type: healing
   weight: 70
 - aegis_name: Orange_Potion
   buy: 50
   id: 502
   name: Orange Potion
-  on_use: "heal(ctx, hp: 105..145)"
+  on_use: 'heal(ctx, hp: 105..145)'
   type: healing
   weight: 100
 - aegis_name: Yellow_Potion
   buy: 180
   id: 503
   name: Yellow Potion
-  on_use: "heal(ctx, hp: 175..235)"
+  on_use: 'heal(ctx, hp: 175..235)'
   type: healing
   weight: 130
 - aegis_name: White_Potion
   buy: 1200
   id: 504
   name: White Potion
-  on_use: "heal(ctx, hp: 325..405)"
+  on_use: 'heal(ctx, hp: 325..405)'
   type: healing
   weight: 150
 - aegis_name: Blue_Potion
   buy: 5000
   id: 505
   name: Blue Potion
+  on_use: 'heal(ctx, sp: 40..60)'
   type: healing
   weight: 150
 - aegis_name: Green_Potion
@@ -48,102 +50,119 @@
   buy: 18
   id: 507
   name: Red Herb
+  on_use: 'heal(ctx, hp: 18..28)'
   type: healing
   weight: 30
 - aegis_name: Yellow_Herb
   buy: 40
   id: 508
   name: Yellow Herb
+  on_use: 'heal(ctx, hp: 38..58)'
   type: healing
   weight: 50
 - aegis_name: White_Herb
   buy: 120
   id: 509
   name: White Herb
+  on_use: 'heal(ctx, hp: 75..115)'
   type: healing
   weight: 70
 - aegis_name: Blue_Herb
   buy: 60
   id: 510
   name: Blue Herb
+  on_use: 'heal(ctx, sp: 15..30)'
   type: healing
   weight: 70
 - aegis_name: Green_Herb
   buy: 10
   id: 511
   name: Green Herb
+  on_use: sc_end(ctx, :sc_poison)
   type: healing
   weight: 30
 - aegis_name: Apple
   buy: 15
   id: 512
   name: Apple
+  on_use: 'heal(ctx, hp: 16..22)'
   type: healing
   weight: 20
 - aegis_name: Banana
   buy: 15
   id: 513
   name: Banana
+  on_use: 'heal(ctx, hp: 17..21)'
   type: healing
   weight: 20
 - aegis_name: Grape
   buy: 200
   id: 514
   name: Grape
+  on_use: 'heal(ctx, sp: 10..15)'
   type: healing
   weight: 20
 - aegis_name: Carrot
   buy: 15
   id: 515
   name: Carrot
+  on_use: 'heal(ctx, hp: 18..20)'
   type: healing
   weight: 20
 - aegis_name: Sweet_Potato
   buy: 15
   id: 516
   name: Potato
+  on_use: 'heal(ctx, hp: 15..23)'
   type: healing
   weight: 20
 - aegis_name: Meat
   buy: 50
   id: 517
   name: Meat
+  on_use: 'heal(ctx, hp: 70..100)'
   type: healing
   weight: 150
 - aegis_name: Honey
   buy: 500
   id: 518
   name: Honey
+  on_use: 'heal(ctx, hp: 70..100, sp: 20..40)'
   type: healing
   weight: 100
 - aegis_name: Milk
   buy: 25
   id: 519
   name: Milk
+  on_use: 'heal(ctx, hp: 27..37)'
   type: healing
   weight: 30
 - aegis_name: Leaflet_Of_Hinal
   buy: 150
   id: 520
   name: Hinalle Leaflet
+  on_use: 'heal(ctx, hp: 175..235)'
   type: healing
   weight: 10
 - aegis_name: Leaflet_Of_Aloe
   buy: 360
   id: 521
   name: Aloe Leaflet
+  on_use: 'heal(ctx, hp: 325..405)'
   type: healing
   weight: 20
 - aegis_name: Fruit_Of_Mastela
   buy: 8500
   id: 522
   name: Mastela Fruit
+  on_use: 'heal(ctx, hp: 400..600)'
   type: healing
   weight: 30
 - aegis_name: Holy_Water
   buy: 20
   id: 523
   name: Holy Water
+  on_use: sc_end(ctx, :sc_curse)
   type: healing
   weight: 30
 - aegis_name: Panacea
@@ -156,54 +175,70 @@
   buy: 7000
   id: 526
   name: Royal Jelly
+  on_use: |-
+    ctx = heal(ctx, hp: 325..405, sp: 40..60)
+    ctx = sc_end(ctx, :sc_poison)
+    ctx = sc_end(ctx, :sc_silence)
+    ctx = sc_end(ctx, :sc_blind)
+    ctx = sc_end(ctx, :sc_confusion)
+    ctx = sc_end(ctx, :sc_curse)
+    ctx
   type: healing
   weight: 150
 - aegis_name: Monster's_Feed
   buy: 60
   id: 528
   name: Monster's Feed
+  on_use: 'heal(ctx, hp: 72..108)'
   type: healing
   weight: 150
 - aegis_name: Candy
   buy: 10
   id: 529
   name: Candy
+  on_use: 'heal(ctx, hp: 45..65)'
   type: healing
   weight: 30
 - aegis_name: Candy_Striper
   buy: 20
   id: 530
   name: Candy Cane
+  on_use: 'heal(ctx, hp: 105..145)'
   type: healing
   weight: 40
 - aegis_name: Apple_Juice
   buy: 20
   id: 531
   name: Apple Juice
+  on_use: 'heal(ctx, hp: 25..35)'
   type: healing
   weight: 40
 - aegis_name: Banana_Juice
   buy: 20
   id: 532
   name: Banana Juice
+  on_use: 'heal(ctx, hp: 26..34)'
   type: healing
   weight: 40
 - aegis_name: Grape_Juice
   buy: 250
   id: 533
   name: Grape Juice
+  on_use: 'heal(ctx, sp: 15..25)'
   type: healing
   weight: 40
 - aegis_name: Carrot_Juice
   buy: 20
   id: 534
   name: Carrot Juice
+  on_use: 'heal(ctx, hp: 27..33)'
   type: healing
   weight: 40
 - aegis_name: Pumpkin
   buy: 15
   id: 535
   name: Pumpkin
+  on_use: 'heal(ctx, hp: 19)'
   type: healing
   weight: 20
 - aegis_name: Ice_Cream
@@ -216,72 +251,84 @@
   buy: 1000
   id: 537
   name: Pet Food
+  on_use: 'heal(ctx, hp: 50..90)'
   type: healing
   weight: 10
 - aegis_name: Well_Baked_Cookie
   buy: 1000
   id: 538
   name: Well-baked Cookie
+  on_use: 'heal(ctx, hp: 160..200)'
   type: healing
   weight: 30
 - aegis_name: Piece_Of_Cake
   buy: 3000
   id: 539
   name: Piece of Cake
+  on_use: 'heal(ctx, hp: 270..330)'
   type: healing
   weight: 100
 - aegis_name: Falcon's_Feed
   buy: 2000
   id: 540
   name: Falcon Food
+  on_use: 'heal(ctx, hp: 185..225)'
   type: healing
   weight: 50
 - aegis_name: Pecopeco's_Feed
   buy: 3000
   id: 541
   name: PecoPeco Food
+  on_use: 'heal(ctx, hp: 325..405)'
   type: healing
   weight: 50
 - aegis_name: Festive_Cookie
   buy: 10
   id: 542
   name: Festival Cookie
+  on_use: 'heal(ctx, hp: 325..405)'
   type: healing
   weight: 10
 - aegis_name: Festive_Rainbow_Cake
   buy: 10
   id: 543
   name: Festival Rainbow Cake
+  on_use: 'heal(ctx, hp: 325..405)'
   type: healing
   weight: 10
 - aegis_name: Fish_Slice
   buy: 20
   id: 544
   name: Raw Fish
+  on_use: 'heal(ctx, hp: 25..60)'
   type: healing
   weight: 30
 - aegis_name: Red_Slim_Potion
   buy: 150
   id: 545
   name: Condensed Red Potion
+  on_use: 'heal(ctx, hp: 45..65)'
   type: healing
   weight: 20
 - aegis_name: Yellow_Slim_Potion
   buy: 600
   id: 546
   name: Condensed Yellow Potion
+  on_use: 'heal(ctx, hp: 175..235)'
   type: healing
   weight: 30
 - aegis_name: White_Slim_Potion
   buy: 1650
   id: 547
   name: Condensed White Potion
+  on_use: 'heal(ctx, hp: 325..405)'
   type: healing
   weight: 50
 - aegis_name: Cheese
   buy: 2800
   id: 548
   name: Cheese
+  on_use: 'heal(ctx, sp: 10..15)'
   type: healing
   weight: 50
 - aegis_name: Nice_Sweet_Potato
@@ -294,24 +341,28 @@
   buy: 10
   id: 550
   name: Rice Cake
+  on_use: 'heal(ctx, hp: 10..15)'
   type: healing
   weight: 10
 - aegis_name: Shusi
   buy: 1
   id: 551
   name: Sushi
+  on_use: 'heal(ctx, hp: 50..60)'
   type: healing
   weight: 50
 - aegis_name: KETUPAT
   buy: 1
   id: 552
   name: Ketupat
+  on_use: 'heal(ctx, hp: 70..90, sp: 20..30)'
   type: healing
   weight: 10
 - aegis_name: Bun
   buy: 1
   id: 553
   name: Bao
+  on_use: 'heal(ctx, hp: 35..70)'
   type: healing
   weight: 50
 - aegis_name: Mojji
@@ -324,66 +375,77 @@
   buy: 100
   id: 555
   name: Traditional Rice Cake
+  on_use: 'heal(ctx, hp: 105..145)'
   type: healing
   weight: 20
 - aegis_name: Long_Rice_Cake
   buy: 10
   id: 556
   name: Rice Cake Stick
+  on_use: 'heal(ctx, hp: 20..25)'
   type: healing
   weight: 10
 - aegis_name: Hash_Rice_Cake
   buy: 10
   id: 557
   name: Neatly Sliced Rice Cake
+  on_use: 'heal(ctx, hp: 25..30)'
   type: healing
   weight: 10
 - aegis_name: Chocolate
   buy: 1
   id: 558
   name: Chocolate
+  on_use: 'heal(ctx, hp: 1, sp: 1)'
   type: healing
   weight: 20
 - aegis_name: HandMade_Chocolate
   buy: 1
   id: 559
   name: Hand-made Chocolate
+  on_use: 'heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: HandMade_Chocolate_
   buy: 5000
   id: 560
   name: Handmade White Chocolate
+  on_use: 'heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: White_Chocolate
   buy: 5000
   id: 561
   name: White Chocolate
+  on_use: 'heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: Pizza
   buy: 100
   id: 562
   name: Doublecrust Swiss Fondue
+  on_use: 'heal(ctx, hp: 70..100)'
   type: healing
   weight: 150
 - aegis_name: Pizza_01
   buy: 1200
   id: 563
   name: Doublecrust Swiss Fondue
+  on_use: 'heal(ctx, hp: 375..445)'
   type: healing
   weight: 150
 - aegis_name: Rice_Ball
   buy: 1
   id: 564
   name: Rice Ball
+  on_use: 'heal(ctx, hp: 200)'
   type: healing
   weight: 30
 - aegis_name: Vita500_Bottle
   buy: 580
   id: 565
   name: Vita500
+  on_use: 'heal(ctx, hp: 142..274)'
   type: healing
   weight: 100
 - aegis_name: Tomyumkung
@@ -396,35 +458,41 @@
   buy: 500
   id: 567
   name: Shrimp
+  on_use: 'heal(ctx, hp: 117..192)'
   type: healing
   weight: 40
 - aegis_name: Lemon
   buy: 60
   id: 568
   name: Lemon
+  on_use: 'heal(ctx, sp: 10..20)'
   type: healing
   weight: 40
 - aegis_name: Novice_Potion
   id: 569
   name: Novice Potion
+  on_use: 'heal(ctx, hp: 44..66)'
   type: healing
   weight: 10
 - aegis_name: Lucky_Candy
   buy: 10
   id: 570
   name: Lucky Candy
+  on_use: 'heal(ctx, hp: 45..65)'
   type: healing
   weight: 30
 - aegis_name: Lucky_Candy_Cane
   buy: 20
   id: 571
   name: Lucky Candy Cane
+  on_use: 'heal(ctx, hp: 105..145)'
   type: healing
   weight: 40
 - aegis_name: Lucky_Cookie
   buy: 1000
   id: 572
   name: Lucky Cookie
+  on_use: 'heal(ctx, hp: 160..200)'
   type: healing
   weight: 30
 - aegis_name: Chocolate_Drink
@@ -437,54 +505,63 @@
   buy: 20
   id: 574
   name: Egg
+  on_use: 'heal(ctx, hp: 33..42)'
   type: healing
   weight: 30
 - aegis_name: Piece_Of_Cake_
   buy: 10
   id: 575
   name: 2nd Anniversary Cake
+  on_use: 'heal(ctx, hp: 270..330)'
   type: healing
   weight: 100
 - aegis_name: Prickly_Fruit
   buy: 540
   id: 576
   name: Prickly Fruit
+  on_use: 'heal(ctx, hp: 150..300, sp: 20..30)'
   type: healing
   weight: 60
 - aegis_name: Grain
   buy: 200
   id: 577
   name: Bag of Grain
+  on_use: 'heal(ctx, hp: 60..70)'
   type: healing
   weight: 20
 - aegis_name: Strawberry
   buy: 200
   id: 578
   name: Strawberry
+  on_use: 'heal(ctx, sp: 16..28)'
   type: healing
   weight: 20
 - aegis_name: Delicious_Fish
   buy: 700
   id: 579
   name: Fresh Fish
+  on_use: 'heal(ctx, hp: 100..150)'
   type: healing
   weight: 20
 - aegis_name: Bread
   buy: 150
   id: 580
   name: Bread
+  on_use: 'heal(ctx, hp: 50..90)'
   type: healing
   weight: 20
 - aegis_name: Mushroom
   buy: 40
   id: 581
   name: Edible Mushroom
+  on_use: 'heal(ctx, hp: 20..30)'
   type: healing
   weight: 20
 - aegis_name: Orange
   buy: 300
   id: 582
   name: Orange
+  on_use: 'heal(ctx, hp: 10..20, sp: 10..20)'
   type: healing
   weight: 20
 - aegis_name: KETUPAT_
@@ -497,6 +574,7 @@
   buy: 100
   id: 584
   name: Fish Cake Soup
+  on_use: 'heal(ctx, hp: 40..70)'
   type: healing
   weight: 60
 - aegis_name: Wurst
@@ -509,30 +587,35 @@
   buy: 20
   id: 586
   name: Mother's Cake
+  on_use: 'heal(ctx, hp: 325..405)'
   type: healing
   weight: 100
 - aegis_name: Prickly_Fruit_
   buy: 880
   id: 587
   name: Red Prickly Fruit
+  on_use: 'heal(ctx, hp: 270..330, sp: 20..30)'
   type: healing
   weight: 60
 - aegis_name: Spaghetti
   buy: 100
   id: 588
   name: Spaghetti
+  on_use: 'heal(ctx, hp: 40..70)'
   type: healing
   weight: 100
 - aegis_name: Pizza_02
   buy: 1200
   id: 589
   name: Pizza
+  on_use: 'heal(ctx, hp: 375..445)'
   type: healing
   weight: 150
 - aegis_name: Brezel_
   buy: 2
   id: 590
   name: Pretzel
+  on_use: 'heal(ctx, hp: 50..90)'
   type: healing
   weight: 20
 - aegis_name: Caviar_Pancake
@@ -564,24 +647,28 @@
   buy: 20
   id: 596
   name: Cute Strawberry-Choco
+  on_use: 'heal(ctx, sp: 1..100)'
   type: healing
   weight: 100
 - aegis_name: Lovely_Choco_Tart
   buy: 20
   id: 597
   name: Lovely Choco-Tart
+  on_use: 'heal(ctx, hp: 10..400)'
   type: healing
   weight: 100
 - aegis_name: Light_Red_Pot
   buy: 50
   id: 598
   name: Light Red Potion
+  on_use: 'heal(ctx, hp: 45..65)'
   type: healing
   weight: 10
 - aegis_name: Light_Orange_Pot
   buy: 200
   id: 599
   name: Light Orange Potion
+  on_use: 'heal(ctx, hp: 105..145)'
   type: healing
   weight: 10
 - aegis_name: Wing_Of_Fly
@@ -624,12 +711,14 @@
   buy: 5000
   id: 607
   name: Yggdrasil Berry
+  on_use: 'percent_heal(ctx, hp: 100, sp: 100)'
   type: healing
   weight: 300
 - aegis_name: Seed_Of_Yggdrasil
   buy: 5000
   id: 608
   name: Yggdrasil Seed
+  on_use: 'percent_heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 300
 - aegis_name: Amulet
@@ -944,6 +1033,7 @@
   buy: 1
   id: 663
   name: Korean Rice Cake
+  on_use: 'percent_heal(ctx, hp: 10)'
   type: healing
   weight: 10
 - aegis_name: Gift_Box_1
@@ -979,6 +1069,7 @@
   buy: 500
   id: 669
   name: Tempting Rice-Cake Soup
+  on_use: 'percent_heal(ctx, hp: 10, sp: 10)'
   type: healing
   weight: 100
 - aegis_name: Gold_Coin
@@ -1010,6 +1101,7 @@
 - aegis_name: Magical_Carnation
   id: 680
   name: Magic Carnation
+  on_use: 'percent_heal(ctx, sp: 20)'
   type: healing
   weight: 1000
 - aegis_name: Memory_Of_Wedding
@@ -1038,6 +1130,7 @@
   buy: 5000
   id: 685
   name: Ramadan
+  on_use: 'percent_heal(ctx, hp: 100, sp: 50)'
   type: healing
   weight: 300
 - aegis_name: Earth_Scroll_1_3
@@ -1413,86 +1506,101 @@
   buy: 550
   id: 11500
   name: Light Yellow Potion
+  on_use: 'heal(ctx, hp: 175..235)'
   type: healing
   weight: 10
 - aegis_name: Light_White_Pot
   buy: 1200
   id: 11501
   name: Light White Potion
+  on_use: 'heal(ctx, hp: 325..405)'
   type: healing
   weight: 10
 - aegis_name: Light_Blue_Pot
   buy: 5000
   id: 11502
   name: Light Blue Potion
+  on_use: 'heal(ctx, sp: 40..60)'
   type: healing
   weight: 10
 - aegis_name: Siege_White_Potion
   id: 11503
   name: WoE White Potion
+  on_use: 'heal(ctx, hp: 400..500)'
   type: healing
   weight: 100
 - aegis_name: Siege_Blue_Potion
   id: 11504
   name: WoE Blue Potion
+  on_use: 'heal(ctx, sp: 50..70)'
   type: healing
   weight: 100
 - aegis_name: Iris
   id: 11505
   name: Iris
+  on_use: 'heal(ctx, sp: 150)'
   type: healing
   weight: 30
 - aegis_name: Fanta_Orange
   buy: 800
   id: 11506
   name: Fanta Orange
+  on_use: 'heal(ctx, hp: 50..70, sp: 10..12)'
   type: healing
   weight: 10
 - aegis_name: Fanta_Grape
   buy: 800
   id: 11507
   name: Fanta Grape
+  on_use: 'heal(ctx, hp: 50..70, sp: 10..12)'
   type: healing
   weight: 10
 - aegis_name: Karada_Meguri_Tea
   buy: 800
   id: 11508
   name: Karada Meguricha
+  on_use: 'heal(ctx, hp: 50..70, sp: 10..12)'
   type: healing
   weight: 100
 - aegis_name: Royal_Milk_Tea
   buy: 800
   id: 11509
   name: Black Tea Kochakaden
+  on_use: 'heal(ctx, hp: 50..70, sp: 10..12)'
   type: healing
   weight: 100
 - aegis_name: Coke_Zero
   buy: 800
   id: 11510
   name: Coca Cola Zero
+  on_use: 'heal(ctx, hp: 50..70, sp: 10..12)'
   type: healing
   weight: 100
 - aegis_name: Coke_No_Cal
   buy: 800
   id: 11511
   name: Diet Coca Cola
+  on_use: 'heal(ctx, hp: 50..70, sp: 10..12)'
   type: healing
   weight: 100
 - aegis_name: Coca_Cola
   buy: 800
   id: 11512
   name: Coca Cola
+  on_use: 'heal(ctx, hp: 50..70, sp: 10..12)'
   type: healing
   weight: 100
 - aegis_name: Protect_Neck_Candy
   buy: 250
   id: 11513
   name: Protect Neck Candy
+  on_use: 'heal(ctx, hp: 5..25)'
   type: healing
   weight: 1
 - aegis_name: Enriched_Slim_Pot
   id: 11514
   name: Enriched Slim Pot
+  on_use: 'heal(ctx, hp: 335..415)'
   type: healing
   weight: 50
 - aegis_name: Coconut
@@ -1505,23 +1613,27 @@
   buy: 15
   id: 11516
   name: Asai Fruit
+  on_use: 'heal(ctx, hp: 16..22)'
   type: healing
   weight: 20
 - aegis_name: Puri_Potion
   buy: 20
   id: 11517
   name: Puri Potion
+  on_use: 'heal(ctx, hp: 400..600)'
   type: healing
   weight: 100
 - aegis_name: N_Blue_Potion
   id: 11518
   name: Blue Potion
+  on_use: 'heal(ctx, sp: 5)'
   type: healing
   weight: 50
 - aegis_name: Beef_Toast
   buy: 1200
   id: 11519
   name: Beef Toast
+  on_use: 'heal(ctx, hp: 170..250)'
   type: healing
   weight: 40
 - aegis_name: Mora_Mandarin
@@ -1529,6 +1641,7 @@
   equip_level_min: 100
   id: 11520
   name: Mora Mandar
+  on_use: 'heal(ctx, sp: 50..80)'
   type: healing
   weight: 20
 - aegis_name: Pingui_Berry_Juice
@@ -1536,6 +1649,7 @@
   equip_level_min: 100
   id: 11521
   name: Pingui Berry Juice
+  on_use: 'heal(ctx, hp: 400..800, sp: 50..80)'
   type: healing
   weight: 50
 - aegis_name: Red_Raffle_Sap
@@ -1543,6 +1657,7 @@
   equip_level_min: 100
   id: 11522
   name: Red Raffle Sap
+  on_use: 'heal(ctx, hp: 400..800)'
   type: healing
   weight: 100
 - aegis_name: Yellow_Raffle_Sap
@@ -1550,6 +1665,7 @@
   equip_level_min: 110
   id: 11523
   name: Yellow Raffle Sap
+  on_use: 'heal(ctx, hp: 600..1000)'
   type: healing
   weight: 120
 - aegis_name: White_Raffle_Sap
@@ -1557,6 +1673,7 @@
   equip_level_min: 120
   id: 11524
   name: White Raffle Sap
+  on_use: 'heal(ctx, hp: 800..1200)'
   type: healing
   weight: 140
 - aegis_name: Mora_Hip_Tea
@@ -1564,6 +1681,7 @@
   equip_level_min: 120
   id: 11525
   name: Mora Hip Tea
+  on_use: 'heal(ctx, hp: 1500..2000)'
   type: healing
   weight: 150
 - aegis_name: Rafflecino
@@ -1571,60 +1689,70 @@
   equip_level_min: 120
   id: 11526
   name: Rafflecino
+  on_use: 'heal(ctx, sp: 120..160)'
   type: healing
   weight: 100
 - aegis_name: Baklava
   buy: 3500
   id: 11527
   name: Baklava
+  on_use: 'heal(ctx, hp: 1200, sp: 440)'
   type: healing
   weight: 600
 - aegis_name: Kanafeh
   buy: 1500
   id: 11528
   name: Kanafeh
+  on_use: 'heal(ctx, hp: 300, sp: 240)'
   type: healing
   weight: 200
 - aegis_name: MAAMOUL_
   buy: 500
   id: 11529
   name: Maamoul
+  on_use: 'heal(ctx, hp: 120, sp: 60)'
   type: healing
   weight: 100
 - aegis_name: Jujube
   buy: 10
   id: 11530
   name: Jujube
+  on_use: 'heal(ctx, hp: 30)'
   type: healing
   weight: 100
 - aegis_name: Coffee
   buy: 10
   id: 11531
   name: Coffee
+  on_use: 'heal(ctx, sp: 10)'
   type: healing
   weight: 100
 - aegis_name: Nasi_Goreng
   buy: 15
   id: 11532
   name: Nasi Goreng
+  on_use: 'heal(ctx, hp: 17..23)'
   type: healing
   weight: 20
 - aegis_name: Satay
   buy: 15
   id: 11533
   name: Satay
+  on_use: 'heal(ctx, hp: 17..23)'
   type: healing
   weight: 20
 - aegis_name: Coco_Juice
   buy: 20
   id: 11534
   name: Coconut Juice
+  on_use: 'heal(ctx, hp: 17..23)'
   type: healing
   weight: 50
 - aegis_name: Almond_Chocolate
   buy: 190
   id: 11535
   name: Almond Chocolate
+  on_use: 'heal(ctx, sp: 8..16)'
   type: healing
   weight: 200
 - aegis_name: Cat_Hard_Biscuit
@@ -1641,75 +1769,88 @@
   buy: 20
   id: 11538
   name: Fresh Octopus Legs
+  on_use: 'heal(ctx, hp: 35..60, sp: 5..10)'
   type: healing
   weight: 30
 - aegis_name: Athale_Choco
   buy: 1
   id: 11539
   name: Athale Choco
+  on_use: 'heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: Shyai_Choco
   buy: 1
   id: 11540
   name: Shyai Choco
+  on_use: 'heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: Mid_Choco
   buy: 1
   id: 11541
   name: Mid Choco
+  on_use: 'heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: Zonda_Choco
   buy: 1
   id: 11542
   name: Zonda Choco
+  on_use: 'heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: Goedo_Choco
   buy: 1
   id: 11543
   name: Goedo Choco
+  on_use: 'heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: Huike_Choco
   buy: 1
   id: 11544
   name: Huike Choco
+  on_use: 'heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: Rune_Choco
   buy: 1
   id: 11545
   name: Rune Choco
+  on_use: 'heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: Pope_Choco
   buy: 1
   id: 11546
   name: Pope Choco
+  on_use: 'heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: Woe_Violet_Potion
   id: 11547
   name: Siege Purple Potion
+  on_use: 'heal(ctx, hp: 500..700, sp: 60..85)'
   type: healing
   weight: 80
 - aegis_name: Woe_White_Potion
   id: 11548
   name: Siege White Potion
+  on_use: 'percent_heal(ctx, hp: 10)'
   type: healing
   weight: 80
 - aegis_name: Woe_Blue_Potion
   id: 11549
   name: Siege Blue Potion
+  on_use: 'percent_heal(ctx, sp: 10)'
   type: healing
   weight: 80
 - aegis_name: Pumpkin_Cake
   buy: 10
   id: 11550
   name: Pumpkin Cake
+  on_use: 'percent_heal(ctx, hp: 5, sp: 5)'
   type: healing
   weight: 40
 - aegis_name: Savory_Herb_Salad
@@ -1735,28 +1876,33 @@
 - aegis_name: Red_Potion_RG
   id: 11555
   name: Red Potion RG
+  on_use: 'heal(ctx, hp: 325)'
   type: healing
   weight: 40
 - aegis_name: Blue_Potion_RG
   id: 11556
   name: RG Blue Potion
+  on_use: 'heal(ctx, sp: 40..60)'
   type: healing
   weight: 90
 - aegis_name: TE_White_Potion
   buy: 200
   id: 11557
   name: TE White Potion
+  on_use: 'heal(ctx, hp: 325)'
   type: healing
   weight: 300
 - aegis_name: TE_White_Slim_Potion
   buy: 275
   id: 11558
   name: TE White Slim Potion
+  on_use: 'heal(ctx, hp: 325)'
   type: healing
   weight: 100
 - aegis_name: Pie_Fruit
   id: 11562
   name: Pie Fruit
+  on_use: 'heal(ctx, hp: 65..90, sp: 35..40)'
   type: healing
   weight: 30
 - aegis_name: Hot_Tee
@@ -1769,91 +1915,112 @@
   buy: 10
   id: 11564
   name: Sweet Canape
+  on_use: 'heal(ctx, hp: 1000)'
   type: usable
   weight: 20
 - aegis_name: White_Potion_B
   buy: 10
   id: 11565
   name: White Potion
+  on_use: 'heal(ctx, hp: 325..405)'
   type: healing
   weight: 150
 - aegis_name: Yellow_Potion_B
   id: 11566
   name: '[Not For Sale] Yellow Potion'
+  on_use: 'heal(ctx, hp: 175..235)'
   type: healing
   weight: 130
 - aegis_name: Novice_Potion_B
   buy: 10
   id: 11567
   name: Novice Potion
+  on_use: 'heal(ctx, hp: 44..66)'
   type: healing
 - aegis_name: Red_Slim_Potion_B
   buy: 10
   id: 11568
   name: Red Slim Potion
+  on_use: 'heal(ctx, hp: 45..65)'
   type: healing
   weight: 20
 - aegis_name: Orange_Potion_B
   id: 11569
   name: '[Not For Sale] Orange Potion'
+  on_use: 'heal(ctx, hp: 105..145)'
   type: healing
   weight: 100
 - aegis_name: Red_Potion_B
   id: 11570
   name: '[Not For Sale] Red Potion'
+  on_use: 'heal(ctx, hp: 45..65)'
   type: healing
   weight: 70
 - aegis_name: Green_Potion_B
   buy: 10
   id: 11571
   name: Green Potion
+  on_use: |-
+    ctx = sc_end(ctx, :sc_poison)
+    ctx = sc_end(ctx, :sc_silence)
+    ctx = sc_end(ctx, :sc_blind)
+    ctx = sc_end(ctx, :sc_confusion)
+    ctx
   type: healing
   weight: 70
 - aegis_name: Blue_Potion_B
   id: 11572
   name: '[Not For Sale] Blue Potion'
+  on_use: 'heal(ctx, sp: 40..60)'
   type: healing
   weight: 150
 - aegis_name: White_Slim_Potion_B
   buy: 10
   id: 11573
   name: White Slim Potion
+  on_use: 'heal(ctx, hp: 325..405)'
   type: healing
   weight: 50
 - aegis_name: Yellow_Slim_Potion_B
   buy: 10
   id: 11574
   name: Yellow Slim Potion
+  on_use: 'heal(ctx, hp: 175..235)'
   type: healing
   weight: 30
 - aegis_name: Rice_Ball_B
   buy: 10
   id: 11577
   name: Rice Ball
+  on_use: 'heal(ctx, hp: 200)'
   type: healing
   weight: 30
 - aegis_name: Candy_Striper_B
   buy: 10
   id: 11578
   name: Candy Bar
+  on_use: 'heal(ctx, hp: 105..145)'
   type: healing
   weight: 40
 - aegis_name: Candy_B
   buy: 10
   id: 11580
   name: Candy
+  on_use: 'heal(ctx, hp: 45..65)'
   type: healing
   weight: 30
 - aegis_name: Piece_Of_Cake_B
   buy: 10
   id: 11581
   name: Piece of Cake
+  on_use: 'heal(ctx, hp: 270..330)'
   type: healing
   weight: 100
 - aegis_name: Well_Baked_Cookie_B
   buy: 10
   id: 11582
   name: Well-baked Cookie
+  on_use: 'heal(ctx, hp: 160..200)'
   type: healing
   weight: 30
 - aegis_name: Chocolate_Drink_B
@@ -1866,42 +2033,49 @@
   buy: 10
   id: 11584
   name: White Chocolate
+  on_use: 'heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: HandMade_Chocolate_B
   buy: 10
   id: 11585
   name: Hand-made Chocolate
+  on_use: 'heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: HandMade_Chocolate_B_
   buy: 10
   id: 11586
   name: Hand-made White Chocolate
+  on_use: 'heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: Chocolate_B
   buy: 10
   id: 11587
   name: Chocolate
+  on_use: 'heal(ctx, hp: 1, sp: 1)'
   type: healing
   weight: 20
 - aegis_name: Strawberry_
   buy: 10
   id: 11588
   name: Fresh Strawberries
+  on_use: 'heal(ctx, hp: 32..56, sp: 16..28)'
   type: healing
   weight: 10
 - aegis_name: Iceflake
   buy: 20
   id: 11589
   name: Cold Snow Cone
+  on_use: 'percent_heal(ctx, hp: 5, sp: 5)'
   type: healing
   weight: 50
 - aegis_name: Meat_Skewer5
   buy: 5000
   id: 11590
   name: Skewer No.5
+  on_use: 'heal(ctx, hp: 760..810, sp: 10)'
   type: healing
   weight: 300
 - aegis_name: Trance_Candy_R
@@ -1932,6 +2106,7 @@
   buy: 20
   id: 11596
   name: Blood In Skull
+  on_use: 'heal(ctx, hp: 600..800)'
   type: healing
   weight: 50
 - aegis_name: Iron_Bug
@@ -1997,16 +2172,19 @@
 - aegis_name: Chocolate_Egg
   id: 11608
   name: Chocolate Egg
+  on_use: 'heal(ctx, hp: 325..405)'
   type: healing
   weight: 50
 - aegis_name: Yummy_Cookie_Egg
   id: 11609
   name: Tasty Cookie Egg
+  on_use: 'heal(ctx, sp: 40..60)'
   type: healing
   weight: 50
 - aegis_name: Sweet_Melon
   id: 11610
   name: Sweet Melon
+  on_use: 'heal(ctx, hp: 350)'
   type: healing
   weight: 50
 - aegis_name: Pop_Corn
@@ -2022,22 +2200,29 @@
 - aegis_name: Harvest_Cookie
   id: 11613
   name: Harvest Biscuit
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 3)
+    ctx = heal(ctx, sp: 100)
+    ctx
   type: healing
   weight: 30
 - aegis_name: Fresh_Milk
   id: 11614
   name: Fresh Milk
+  on_use: 'heal(ctx, hp: 27..37)'
   type: healing
   weight: 30
 - aegis_name: Sweet_Potato_
   id: 11615
   name: Sweet Potato
+  on_use: 'heal(ctx, hp: 15..23)'
   type: healing
   weight: 20
 - aegis_name: Yummy_Meat
   buy: 1400
   id: 11616
   name: Delicious Meat
+  on_use: 'heal(ctx, hp: 100..150)'
   type: healing
   weight: 50
 - aegis_name: Silvervine_Choco
@@ -2056,6 +2241,7 @@
   equip_level_min: 60
   id: 11621
   name: Red Syrup
+  on_use: 'heal(ctx, hp: 325)'
   type: healing
   weight: 70
 - aegis_name: High_YelloPotion
@@ -2063,6 +2249,7 @@
   equip_level_min: 60
   id: 11622
   name: Yellow Syrup
+  on_use: 'heal(ctx, hp: 900)'
   type: healing
   weight: 100
 - aegis_name: High_WhitePotion
@@ -2070,6 +2257,7 @@
   equip_level_min: 60
   id: 11623
   name: White Syrup
+  on_use: 'heal(ctx, hp: 1800)'
   type: healing
   weight: 140
 - aegis_name: High_BluePotion
@@ -2077,6 +2265,7 @@
   equip_level_min: 60
   id: 11624
   name: Blue Syrup
+  on_use: 'heal(ctx, sp: 180)'
   type: healing
   weight: 100
 - aegis_name: Gourmet_Popcorn
@@ -2110,16 +2299,19 @@
 - aegis_name: Pignic_Lunch
   id: 11630
   name: Lunch Box
+  on_use: 'percent_heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 150
 - aegis_name: 2401_ev_Rainbow
   id: 11631
   name: New Year Rainbow Rice Cake
+  on_use: 'percent_heal(ctx, hp: 100, sp: 100)'
   type: healing
   weight: 50
 - aegis_name: 2401_ev_Sesamepastry
   id: 11632
   name: New Year Dasik
+  on_use: 'percent_heal(ctx, hp: 20, sp: 20)'
   type: healing
   weight: 20
 - aegis_name: 2401_ev_WindTteok
@@ -2179,6 +2371,7 @@
   buy: 20
   id: 11701
   name: Girl's Bouquet
+  on_use: 'heal(ctx, hp: 105..145)'
   type: healing
   weight: 50
 - aegis_name: Moon_Cookie
@@ -2189,65 +2382,76 @@
 - aegis_name: Mysterious_Blood
   id: 11703
   name: Mystery Blood
+  on_use: 'heal(ctx, sp: 25..35)'
   type: healing
   weight: 10
 - aegis_name: KETUPAT_F
   buy: 2
   id: 11704
   name: Ketupat
+  on_use: 'heal(ctx, hp: 70..90)'
   type: healing
   weight: 10
 - aegis_name: Special_White_Potion
   buy: 1
   id: 11705
   name: Children's Potion
+  on_use: 'heal(ctx, hp: 425)'
   type: healing
   weight: 10
 - aegis_name: Steak
   buy: 1
   id: 11706
   name: Steak
+  on_use: 'heal(ctx, hp: 700..1000)'
   type: healing
   weight: 200
 - aegis_name: Roasted_Beef
   buy: 1
   id: 11707
   name: Roast Beef
+  on_use: 'heal(ctx, sp: 100..200)'
   type: healing
   weight: 200
 - aegis_name: Fore_Flank_Sirloin
   buy: 20
   id: 11708
   name: Fore Flank Sirloin
+  on_use: 'heal(ctx, hp: 30..50, sp: 1..5)'
   type: healing
   weight: 100
 - aegis_name: Fanta_Zero_Lemon
   buy: 800
   id: 11709
   name: Fanta Zero Lemon
+  on_use: 'heal(ctx, hp: 50..70, sp: 10..12)'
   type: healing
   weight: 100
 - aegis_name: Sakura_Mist
   buy: 800
   id: 11710
   name: Sakura Mist
+  on_use: 'heal(ctx, hp: 50..70, sp: 10..12)'
   type: healing
   weight: 100
 - aegis_name: Sakura_Milk_Tea
   buy: 800
   id: 11711
   name: Sakura Milk Tea
+  on_use: 'heal(ctx, hp: 50..70, sp: 10..12)'
   type: healing
   weight: 100
 - aegis_name: First_Leaf_Tea
   buy: 800
   id: 11712
   name: Flower
+  on_use: 'heal(ctx, hp: 50..70, sp: 10..12)'
   type: healing
   weight: 100
 - aegis_name: Julia's_Candy
   id: 11713
   name: Julia's Candy
+  on_use: 'heal(ctx, hp: 40..45)'
   type: healing
   weight: 30
 - aegis_name: Cold_Scroll_2_5
@@ -2278,72 +2482,84 @@
   buy: 2
   id: 12004
   name: Quiver
+  on_use: give_item(ctx, 1750, 500)
   type: usable
   weight: 250
 - aegis_name: Iron_Arrow_Container
   buy: 2
   id: 12005
   name: Iron Arrow Quiver
+  on_use: give_item(ctx, 1770, 500)
   type: usable
   weight: 250
 - aegis_name: Steel_Arrow_Container
   buy: 2
   id: 12006
   name: Steel Arrow Quiver
+  on_use: give_item(ctx, 1753, 500)
   type: usable
   weight: 250
 - aegis_name: Ori_Arrow_Container
   buy: 2
   id: 12007
   name: Oridecon Arrow Quiver
+  on_use: give_item(ctx, 1765, 500)
   type: usable
   weight: 250
 - aegis_name: Fire_Arrow_Container
   buy: 2
   id: 12008
   name: Fire Arrow Quiver
+  on_use: give_item(ctx, 1752, 500)
   type: usable
   weight: 250
 - aegis_name: Silver_Arrow_Container
   buy: 2
   id: 12009
   name: Silver Arrow Quiver
+  on_use: give_item(ctx, 1751, 500)
   type: usable
   weight: 250
 - aegis_name: Wind_Arrow_Container
   buy: 2
   id: 12010
   name: Wind Arrow Quiver
+  on_use: give_item(ctx, 1755, 500)
   type: usable
   weight: 250
 - aegis_name: Stone_Arrow_Container
   buy: 2
   id: 12011
   name: Stone Arrow Quiver
+  on_use: give_item(ctx, 1756, 500)
   type: usable
   weight: 250
 - aegis_name: Crystal_Arrow_Container
   buy: 2
   id: 12012
   name: Crystal Arrow Quiver
+  on_use: give_item(ctx, 1754, 500)
   type: usable
   weight: 250
 - aegis_name: Shadow_Arrow_Container
   buy: 2
   id: 12013
   name: Shadow Arrow Quiver
+  on_use: give_item(ctx, 1767, 500)
   type: usable
   weight: 250
 - aegis_name: Imma_Arrow_Container
   buy: 2
   id: 12014
   name: Immaterial Arrow Quiver
+  on_use: give_item(ctx, 1757, 500)
   type: usable
   weight: 250
 - aegis_name: Rusty_Arrow_Container
   buy: 2
   id: 12015
   name: Rusty Arrow Quiver
+  on_use: give_item(ctx, 1762, 500)
   type: usable
   weight: 250
 - aegis_name: Speed_Up_Potion
@@ -2918,11 +3134,13 @@
 - aegis_name: Tropical_Sograt
   id: 12112
   name: Tropical Sograt
+  on_use: sc_start(ctx, :sc_curse, 10000, 1)
   type: usable
   weight: 100
 - aegis_name: Vermilion_The_Beach
   id: 12113
   name: Vermilion on the Beach
+  on_use: sc_start(ctx, :sc_stun, 10000, 1)
   type: usable
   weight: 100
 - aegis_name: Elemental_Fire
@@ -3089,54 +3307,63 @@
   buy: 50000
   id: 12143
   name: Red Can
+  on_use: 'percent_heal(ctx, hp: 25, sp: 25)'
   type: usable
   weight: 300
 - aegis_name: Sphere_Case_Wind
   buy: 2
   id: 12144
   name: Lightning Sphere Pack
+  on_use: give_item(ctx, 13204, 500)
   type: usable
   weight: 350
 - aegis_name: Sphere_Case_Darkness
   buy: 2
   id: 12145
   name: Blind Sphere Pack
+  on_use: give_item(ctx, 13206, 500)
   type: usable
   weight: 350
 - aegis_name: Sphere_Case_Poison
   buy: 2
   id: 12146
   name: Poison Sphere Pack
+  on_use: give_item(ctx, 13205, 500)
   type: usable
   weight: 350
 - aegis_name: Sphere_Case_Water
   buy: 2
   id: 12147
   name: Freezing Sphere Pack
+  on_use: give_item(ctx, 13207, 500)
   type: usable
   weight: 350
 - aegis_name: Sphere_Case_Fire
   buy: 2
   id: 12148
   name: Flare Sphere Pack
+  on_use: give_item(ctx, 13203, 500)
   type: usable
   weight: 350
 - aegis_name: Bullet_Case
   buy: 2
   id: 12149
   name: Cartridge
+  on_use: give_item(ctx, 13200, 500)
   type: usable
   weight: 250
 - aegis_name: Bullet_Case_Blood
   buy: 2
   id: 12150
   name: Blood Cartridge
+  on_use: give_item(ctx, 13202, 500)
   type: usable
   weight: 250
 - aegis_name: Bullet_Case_Silver
   buy: 2
   id: 12151
   name: Silver Cartridge
+  on_use: give_item(ctx, 13201, 500)
   type: usable
   weight: 250
 - aegis_name: Special_Box
@@ -3328,6 +3555,7 @@
   buy: 2
   id: 12183
   name: Holy Arrow Quiver
+  on_use: give_item(ctx, 1772, 500)
   type: usable
   weight: 250
 - aegis_name: Mercenary_Red_Potion
@@ -3358,6 +3586,7 @@
   buy: 20
   id: 12188
   name: Grace Moon Cake
+  on_use: 'percent_heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 300
 - aegis_name: Red_Box_
@@ -3382,12 +3611,14 @@
   buy: 20
   id: 12192
   name: Pumpkin Pie
+  on_use: 'percent_heal(ctx, hp: 5, sp: 5)'
   type: healing
   weight: 30
 - aegis_name: Brezel
   buy: 20
   id: 12193
   name: Pretzel
+  on_use: 'percent_heal(ctx, hp: 5, sp: 5)'
   type: usable
   weight: 20
 - aegis_name: Hometown_Gift
@@ -3400,18 +3631,21 @@
   buy: 20
   id: 12195
   name: Plain Rice Cake
+  on_use: 'percent_heal(ctx, sp: 20)'
   type: healing
   weight: 100
 - aegis_name: Hearty_Rice_Cake
   buy: 20
   id: 12196
   name: Hearty Rice Cake
+  on_use: 'percent_heal(ctx, hp: 50)'
   type: healing
   weight: 100
 - aegis_name: Salty_Rice_Cake
   buy: 20
   id: 12197
   name: Salty Rice Cake
+  on_use: 'percent_heal(ctx, hp: 10, sp: 10)'
   type: healing
   weight: 100
 - aegis_name: Lucky_Rice_Cake
@@ -3615,12 +3849,14 @@
   buy: 20
   id: 12233
   name: Kvass
+  on_use: 'percent_heal(ctx, hp: 100, sp: 100)'
   type: healing
   weight: 200
 - aegis_name: Cacao99
   buy: 20
   id: 12234
   name: Fierce Cacao 99%
+  on_use: 'percent_heal(ctx, hp: 25)'
   type: healing
   weight: 100
 - aegis_name: Strawberry_Choco
@@ -3638,6 +3874,11 @@
 - aegis_name: Choco_Lump
   id: 12237
   name: Junky Chocolate
+  on_use: |-
+    ctx = percent_heal(ctx, sp: 5)
+    ctx = sc_start(ctx, :sc_poison, 18000, 0)
+    ctx = sc_start(ctx, :sc_bleeding, 18000, 0)
+    ctx
   type: usable
   weight: 100
 - aegis_name: New_Year_Rice_Cake_1
@@ -3686,6 +3927,7 @@
   buy: 5000
   id: 12245
   name: Green Ale
+  on_use: 'percent_heal(ctx, hp: 100)'
   type: healing
   weight: 500
 - aegis_name: Magic_Card_Album
@@ -3753,6 +3995,7 @@
   equip_level_min: 50
   id: 12257
   name: Cold Medicine
+  on_use: 'percent_heal(ctx, hp: 25, sp: 25)'
   type: healing
   weight: 100
 - aegis_name: Bombring_Box
@@ -3829,6 +4072,7 @@
   buy: 2
   id: 12271
   name: Military Ration A
+  on_use: 'percent_heal(ctx, hp: 5)'
   type: healing
   weight: 70
 - aegis_name: Mre_B
@@ -3940,12 +4184,14 @@
   buy: 500
   id: 12292
   name: Unripe Yggdrasilberry
+  on_use: 'percent_heal(ctx, hp: 20)'
   type: healing
   weight: 200
 - aegis_name: Dried_Yggdrasilberry
   buy: 500
   id: 12293
   name: Dried Yggdrasilberry
+  on_use: 'percent_heal(ctx, sp: 20)'
   type: healing
   weight: 200
 - aegis_name: PC_Bang_Coin_Box1
@@ -4083,6 +4329,7 @@
 - aegis_name: Chocolate_Pie
   id: 12322
   name: Chocolate Pie
+  on_use: 'percent_heal(ctx, hp: 5, sp: 5)'
   type: healing
   weight: 50
 - aegis_name: N_Fly_Wing
@@ -4128,11 +4375,13 @@
 - aegis_name: Ginseng
   id: 12331
   name: Ginseng
+  on_use: 'percent_heal(ctx, hp: 6)'
   type: healing
   weight: 10
 - aegis_name: Fruit_Juice
   id: 12332
   name: Fruit Juice
+  on_use: 'percent_heal(ctx, sp: 6)'
   type: healing
   weight: 10
 - aegis_name: Ansila
@@ -4149,18 +4398,21 @@
   buy: 1000
   id: 12335
   name: Grilled Delicious Skewer
+  on_use: 'percent_heal(ctx, hp: 60, sp: 60)'
   type: healing
   weight: 350
 - aegis_name: Baked_Mushroom
   buy: 500
   id: 12336
   name: Grilled Mushroom
+  on_use: 'percent_heal(ctx, hp: 30, sp: 30)'
   type: healing
   weight: 300
 - aegis_name: Grilled_Sausage
   buy: 300
   id: 12337
   name: Grilled Sausages
+  on_use: 'percent_heal(ctx, hp: 20, sp: 20)'
   type: healing
   weight: 200
 - aegis_name: Grilled_Corn
@@ -4183,6 +4435,7 @@
   buy: 30000
   id: 12341
   name: Special Alloy Trap Box
+  on_use: give_item(ctx, 7940, 500)
   type: usable
   weight: 100
 - aegis_name: Manuk's_Opportunity
@@ -4208,6 +4461,7 @@
 - aegis_name: Unripe_Acorn
   id: 12346
   name: Unripe Acorn
+  on_use: 'heal(ctx, hp: -100)'
   type: usable
 - aegis_name: Acorn_Jelly
   id: 12347
@@ -4387,6 +4641,7 @@
   buy: 10
   id: 12378
   name: Rice Cake Soup
+  on_use: 'percent_heal(ctx, hp: 50, sp: 50)'
   type: usable
   weight: 100
 - aegis_name: Pope's_Cookie
@@ -4417,6 +4672,7 @@
   buy: 11000
   id: 12383
   name: Vulcan Bullet Magazine
+  on_use: give_item(ctx, 6145, 1000)
   type: usable
   weight: 500
 - aegis_name: Rainbow_Ruby_Water
@@ -4526,6 +4782,7 @@
 - aegis_name: 29Fruit
   id: 12402
   name: 29Fruit
+  on_use: 'percent_heal(ctx, hp: 5, sp: 5)'
   type: usable
 - aegis_name: Lucky_Egg_C2
   buy: 20
@@ -5206,35 +5463,43 @@
 - aegis_name: White_Slim_Potion_Box
   id: 12529
   name: White Slim Potion Box
+  on_use: give_item(ctx, 547, 200)
   type: usable
 - aegis_name: Mastela_Fruit_Box
   id: 12530
   name: Mastela Fruit Box
+  on_use: give_item(ctx, 522, 200)
   type: usable
 - aegis_name: White_Potion_Box
   id: 12531
   name: White Potion Box
+  on_use: give_item(ctx, 504, 100)
   type: usable
 - aegis_name: Royal_Jelly_Box2
   id: 12532
   name: Royal Jelly Box
+  on_use: give_item(ctx, 526, 100)
   type: usable
 - aegis_name: Blue_Herb_Box2
   id: 12533
   name: Blue Herb Box
+  on_use: give_item(ctx, 510, 100)
   type: usable
 - aegis_name: Yggdrasil_Seed_Box
   id: 12534
   name: Yggdrasil Seed Box
+  on_use: give_item(ctx, 608, 30)
   type: usable
 - aegis_name: Iggdrasilberry_Box
   id: 12535
   name: Iggdrasilberry Box
+  on_use: give_item(ctx, 607, 15)
   type: usable
 - aegis_name: NY_Rice_Cake_Soup
   buy: 20
   id: 12536
   name: NY Rice Cake Soup
+  on_use: 'percent_heal(ctx, hp: 20, sp: 20)'
   type: usable
   weight: 100
 - aegis_name: Solo_Gift_Basket
@@ -5295,6 +5560,7 @@
   buy: 100
   id: 12546
   name: Suspicious Dish
+  on_use: sc_start(ctx, :sc_poison, 50000, 0)
   type: usable
   weight: 50
 - aegis_name: Chalcenodny_Box
@@ -5311,10 +5577,12 @@
 - aegis_name: White_Slim_Pot_Box2
   id: 12549
   name: White Slim Pot Box2
+  on_use: give_item(ctx, 547, 100)
   type: usable
 - aegis_name: Poison_Bottle_Box2
   id: 12550
   name: Deadly Poison Box
+  on_use: give_item(ctx, 678, 30)
   type: usable
 - aegis_name: MVP_Tele_Scroll
   id: 12551
@@ -5378,6 +5646,7 @@
   buy: 20
   id: 12561
   name: Mysterious Seed
+  on_use: warp(ctx, "bif_fild01", 32, 382)
   type: usable
   weight: 10
 - aegis_name: Bubble_Gum_Plus
@@ -5453,12 +5722,14 @@
   buy: 500
   id: 12575
   name: Arrow Of Elf Cntr
+  on_use: give_item(ctx, 1773, 500)
   type: usable
   weight: 250
 - aegis_name: Hunting_Arrow_Cntr
   buy: 500
   id: 12576
   name: Hunting Arrow Cntr
+  on_use: give_item(ctx, 1774, 500)
   type: usable
   weight: 250
 - aegis_name: Lucky_Egg_C6
@@ -5595,6 +5866,7 @@
   buy: 20
   id: 12601
   name: Fresh Watermelon Juice
+  on_use: 'percent_heal(ctx, hp: 5, sp: 5)'
   type: healing
   weight: 100
 - aegis_name: Special_Box1
@@ -5724,6 +5996,7 @@
   buy: 20
   id: 12624
   name: Delicious Jelly
+  on_use: 'percent_heal(ctx, hp: 3, sp: 3)'
   type: healing
   weight: 50
 - aegis_name: Sapa_Feat_Cert_Pack
@@ -5786,29 +6059,34 @@
   buy: 20
   id: 12636
   name: Malangdo Canned Specialties
+  on_use: warp(ctx, "malangdo", 140, 114)
   type: usable
 - aegis_name: Gong_Bug_Pocket
   buy: 20
   id: 12637
   name: Sow Bug Pocket
+  on_use: give_item(ctx, 13208, 200)
   type: usable
   weight: 500
 - aegis_name: Dried_Squid_Box
   buy: 20
   id: 12638
   name: Dried Squid Box
+  on_use: give_item(ctx, 13292, 200)
   type: usable
   weight: 2000
 - aegis_name: Flying_Fish_Box
   buy: 20
   id: 12639
   name: Flying Fish Box
+  on_use: give_item(ctx, 13293, 200)
   type: usable
   weight: 2000
 - aegis_name: Starfish_Box
   buy: 20
   id: 12640
   name: Starfish Box
+  on_use: give_item(ctx, 13291, 200)
   type: usable
   weight: 500
 - aegis_name: Lucky_Egg_C8
@@ -5820,10 +6098,12 @@
 - aegis_name: Fruit_Of_Mastela_Box2
   id: 12642
   name: Fruit Of Mastela 100 Box
+  on_use: give_item(ctx, 522, 100)
   type: usable
 - aegis_name: E_Coin_Pack50
   id: 12643
   name: E Coin Pack50
+  on_use: give_item(ctx, 6422, 50)
   type: usable
 - aegis_name: PCBang_Coupon_Box4
   buy: 20
@@ -5835,6 +6115,7 @@
   buy: 2
   id: 12645
   name: J Aspersio 5 Scroll C
+  on_use: sc_start(ctx, :sc_aspersio, 180000, 1)
   type: usable
   weight: 10
 - aegis_name: Takoyaki
@@ -5853,36 +6134,65 @@
   buy: 20
   id: 12648
   name: Comprehensive Set Of Potions
+  on_use: |-
+    ctx = give_item(ctx, 501, 10)
+    ctx = give_item(ctx, 502, 10)
+    ctx = give_item(ctx, 503, 10)
+    ctx = give_item(ctx, 504, 10)
+    ctx = give_item(ctx, 505, 10)
+    ctx
   type: usable
   weight: 100
 - aegis_name: Lv70_Imperial_Gift
   buy: 20
   id: 12649
   name: Level 70 Bounty
+  on_use: |-
+    ctx = give_item(ctx, 12073, 5)
+    ctx = give_item(ctx, 12088, 5)
+    ctx = give_item(ctx, 12078, 5)
+    ctx = give_item(ctx, 12083, 5)
+    ctx = give_item(ctx, 12093, 5)
+    ctx = give_item(ctx, 12098, 5)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Lv90_Imperial_Gift
   buy: 20
   id: 12650
   name: Level 90 Bounty
+  on_use: give_item(ctx, 12263, 5)
   type: usable
   weight: 10
 - aegis_name: Lv110_Imperial_Gift
   buy: 20
   id: 12651
   name: Level 110 Bounty
+  on_use: |-
+    ctx = give_item(ctx, 12623, 1)
+    ctx = give_item(ctx, 16765, 1)
+    ctx = give_item(ctx, 16765, 1)
+    ctx = give_item(ctx, 16765, 1)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Lv130_Imperial_Gift
   buy: 20
   id: 12652
   name: Level 130 Bounty
+  on_use: give_item(ctx, 12613, 10)
   type: usable
   weight: 10
 - aegis_name: Lv150_Imperial_Gift
   buy: 20
   id: 12653
   name: Level 150 Bounty
+  on_use: |-
+    ctx = give_item(ctx, 16740, 1)
+    ctx = give_item(ctx, 16740, 1)
+    ctx = give_item(ctx, 16740, 1)
+    ctx = give_item(ctx, 5364, 1)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Lucky_Egg_C9
@@ -5995,6 +6305,12 @@
   buy: 20
   id: 12672
   name: Start New Box
+  on_use: |-
+    ctx = give_item(ctx, 617, 2)
+    ctx = give_item(ctx, 12263, 2)
+    ctx = give_item(ctx, 12329, 3)
+    ctx = give_item(ctx, 12330, 2)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Lucky_Egg_C10
@@ -6019,6 +6335,7 @@
   buy: 20
   id: 12676
   name: Siege Violet Potion Box
+  on_use: give_item(ctx, 11547, 50)
   type: usable
   weight: 200
 - aegis_name: Siege_Arrow_Quiver_S
@@ -6026,6 +6343,7 @@
   equip_level_min: 130
   id: 12677
   name: Siege Arrow Quiver S
+  on_use: give_item(ctx, 1775, 500)
   type: usable
   weight: 100
 - aegis_name: Siege_Arrow_Quiver_A
@@ -6033,18 +6351,21 @@
   equip_level_min: 95
   id: 12678
   name: Siege Arrow Quiver A
+  on_use: give_item(ctx, 1776, 500)
   type: usable
   weight: 100
 - aegis_name: Sg_White_Potion_Box
   buy: 20
   id: 12679
   name: Siege White Potion Box
+  on_use: give_item(ctx, 11548, 30)
   type: usable
   weight: 200
 - aegis_name: Sg_Blue_Potion_Box
   buy: 20
   id: 12680
   name: Siege Blue Potion Box
+  on_use: give_item(ctx, 11549, 10)
   type: usable
   weight: 200
 - aegis_name: Nestea_Lemon
@@ -6061,6 +6382,7 @@
   buy: 20
   id: 12683
   name: Siege Violet Potion Box (200)
+  on_use: give_item(ctx, 11547, 200)
   type: usable
   weight: 200
 - aegis_name: ASPD_Potion
@@ -6156,6 +6478,7 @@
   buy: 20
   id: 12700
   name: Inside-out Shirt
+  on_use: warp(ctx, "malaya", 242, 211)
   type: usable
   weight: 10
 - aegis_name: Old_Blue_Box_F
@@ -6177,6 +6500,7 @@
   equip_level_min: 85
   id: 12704
   name: Elixir of Life
+  on_use: 'percent_heal(ctx, hp: 100)'
   type: healing
   weight: 10
 - aegis_name: Noble_Nameplate
@@ -6203,6 +6527,7 @@
 - aegis_name: Guyak_Candy
   id: 12709
   name: Guyak Candy
+  on_use: 'percent_heal(ctx, hp: 30, sp: 30)'
   type: healing
   weight: 150
 - aegis_name: Guyak_Pudding
@@ -6214,12 +6539,14 @@
   buy: 2
   id: 12711
   name: Pretzel
+  on_use: 'heal(ctx, hp: 50..90)'
   type: healing
   weight: 100
 - aegis_name: Green_Beer
   buy: 2
   id: 12712
   name: Green Beer
+  on_use: 'percent_heal(ctx, sp: 50)'
   type: usable
   weight: 100
 - aegis_name: Monster_Extract
@@ -6388,6 +6715,7 @@
 - aegis_name: Snow_Flower
   id: 12739
   name: Snow Flowers
+  on_use: 'percent_heal(ctx, hp: 10, sp: 10)'
   type: usable
   weight: 10
 - aegis_name: Inc_Str_Scroll
@@ -6403,14 +6731,17 @@
 - aegis_name: Valentine_Gift_Box1
   id: 12742
   name: Valentine Gift Box
+  on_use: give_item(ctx, 7946, 1)
   type: usable
 - aegis_name: Valentine_Gift_Box2
   id: 12743
   name: Valentine Gift Box
+  on_use: give_item(ctx, 7947, 1)
   type: usable
 - aegis_name: Chocotate_Box
   id: 12744
   name: Chocolate Box
+  on_use: give_item(ctx, 558, 1)
   type: usable
 - aegis_name: Skull_Scroll
   buy: 20
@@ -6469,6 +6800,7 @@
 - aegis_name: New_Year_Bun
   id: 12754
   name: Chinese Pastel
+  on_use: 'percent_heal(ctx, hp: 50, sp: 50)'
   type: usable
   weight: 10
 - aegis_name: Traditional_Firecrack
@@ -6520,6 +6852,7 @@
   buy: 20
   id: 12763
   name: Bubble Gum Red
+  on_use: sc_start(ctx, :sc_increaseagi, 1200000, 10)
   type: usable
   weight: 10
 - aegis_name: Fools_Day_Box_Tw
@@ -6664,11 +6997,13 @@
   buy: 20
   id: 12793
   name: Combat Pill Box10
+  on_use: give_item(ctx, 12791, 10)
   type: usable
 - aegis_name: P_Combat_Pill_Box10
   buy: 20
   id: 12794
   name: P Combat Pill Box10
+  on_use: give_item(ctx, 12792, 10)
   type: usable
 - aegis_name: 2011_RWC_Scroll_Kr
   buy: 20
@@ -6742,6 +7077,12 @@
   equip_level_min: 20
   id: 12807
   name: Mercenary Casting
+  on_use: |-
+    ctx = give_item(ctx, 12160, 5)
+    ctx = give_item(ctx, 12170, 5)
+    ctx = give_item(ctx, 12180, 5)
+    ctx = give_item(ctx, 12808, 1)
+    ctx
   type: usable
 - aegis_name: Mother_Love_Box
   equip_level_max: 120
@@ -6752,6 +7093,13 @@
   equip_level_min: 120
   id: 12809
   name: Level Up Box
+  on_use: |-
+    ctx = give_item(ctx, 12263, 5)
+    ctx = give_item(ctx, 12264, 5)
+    ctx = give_item(ctx, 12265, 5)
+    ctx = give_item(ctx, 12766, 5)
+    ctx = give_item(ctx, 12819, 1)
+    ctx
   type: usable
 - aegis_name: Event_Gift_Box
   buy: 20
@@ -6804,6 +7152,7 @@
   equip_level_min: 150
   id: 12819
   name: Zherlthsh Tck Box
+  on_use: give_item(ctx, 6184, 1)
   type: usable
 - aegis_name: Mao_Guai_Scroll
   buy: 20
@@ -6821,6 +7170,7 @@
   buy: 20
   id: 12822
   name: Songpyun Box50
+  on_use: give_item(ctx, 663, 50)
   type: usable
   weight: 10
 - aegis_name: Sedora_Scroll
@@ -6874,6 +7224,12 @@
 - aegis_name: Potion_Box
   id: 12831
   name: Potion Box
+  on_use: |-
+    ctx = give_item(ctx, 545, 100)
+    ctx = give_item(ctx, 546, 100)
+    ctx = give_item(ctx, 547, 100)
+    ctx = give_item(ctx, 505, 100)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Mysterious_Water
@@ -6942,6 +7298,7 @@
 - aegis_name: WOB_Amatsu
   id: 12845
   name: Amatsu_Butterfly_Wing
+  on_use: warp(ctx, "iz_ng01", 26, 57)
   type: usable
 - aegis_name: Unripe_Apple2
   buy: 10
@@ -7003,11 +7360,13 @@
 - aegis_name: GoldenApple_P_RG
   id: 12856
   name: RG Golden Apple Slice
+  on_use: 'percent_heal(ctx, hp: 50, sp: 50)'
   type: usable
   weight: 300
 - aegis_name: GoldenApple_RG
   id: 12857
   name: RG Golden Apple
+  on_use: 'percent_heal(ctx, hp: 100, sp: 100)'
   type: usable
   weight: 300
 - aegis_name: Golden_Potion_RG
@@ -12475,26 +12834,31 @@
 - aegis_name: FCloth_Dye_Coupon_Box
   id: 14291
   name: Clothing Dye Coupon Box
+  on_use: give_item(ctx, 6046, 1)
   type: usable
   weight: 10
 - aegis_name: FCloth_Dye_Coupon_Box2
   id: 14292
   name: Clothing Dye Coupon Box II
+  on_use: give_item(ctx, 6047, 1)
   type: usable
   weight: 10
 - aegis_name: Mercenary_Contract_Box
   id: 14293
   name: Mercenary Contract Box
+  on_use: give_item(ctx, 6050, 1)
   type: usable
   weight: 10
 - aegis_name: Mercenary_Contract_5Box
   id: 14294
   name: Mercenary Contract Box 5ea
+  on_use: give_item(ctx, 6050, 5)
   type: usable
   weight: 10
 - aegis_name: Mercenary_Con_10Box
   id: 14295
   name: Mercenary Contract Box 10ea
+  on_use: give_item(ctx, 6050, 10)
   type: usable
   weight: 10
 - aegis_name: Angel_Scroll
@@ -13693,6 +14057,7 @@
 - aegis_name: Dun_1HR_Voucher
   id: 14505
   name: Sky Fortress Ticket
+  on_use: warp(ctx, "dali02", 117, 69)
   type: usable
 - aegis_name: Dun_Voucher
   id: 14506
@@ -13818,16 +14183,19 @@
 - aegis_name: Big_Bun
   id: 14522
   name: Big Bun
+  on_use: 'percent_heal(ctx, hp: 100)'
   type: healing
   weight: 10
 - aegis_name: Pill_
   id: 14523
   name: Pill
+  on_use: 'percent_heal(ctx, sp: 100)'
   type: healing
   weight: 10
 - aegis_name: Superb_Fish_Slice
   id: 14524
   name: Superb Fish Slice
+  on_use: 'percent_heal(ctx, hp: 100, sp: 100)'
   type: healing
   weight: 10
 - aegis_name: Chewy_Ricecake
@@ -13848,6 +14216,7 @@
 - aegis_name: PVP_Tele_Scroll
   id: 14528
   name: PVP Teleport Scroll
+  on_use: warp(ctx, "pvp_n_room", 52, 25)
   type: usable
   weight: 10
 - aegis_name: Greed_Scroll
@@ -14217,6 +14586,7 @@
 - aegis_name: Unsealed_Magic_Spell
   id: 14595
   name: Unsealed Magic Spell
+  on_use: warp(ctx, "yuno_fild09", 255, 127)
   type: usable
 - aegis_name: Pierre_Treasurebox
   id: 14596
@@ -14289,6 +14659,7 @@
   buy: 5000
   id: 14609
   name: Spoiled Cuisine
+  on_use: 'percent_heal(ctx, hp: 10, sp: 10)'
   type: usable
   weight: 300
 - aegis_name: M_Def_Potion
@@ -14676,6 +15047,7 @@
   buy: 2
   id: 14841
   name: '[Scroll] Korean Rice Cake'
+  on_use: 'percent_heal(ctx, hp: 10)'
   type: healing
   weight: 10
 - aegis_name: DF_Insurance
@@ -14780,6 +15152,7 @@
 - aegis_name: Korea_Rice_Cake_B
   id: 14908
   name: '[Not For Sale] Korean Rice Cake'
+  on_use: 'percent_heal(ctx, hp: 20)'
   type: healing
 - aegis_name: Angry_Mouth_C_Box
   buy: 20
@@ -15673,48 +16046,56 @@
   buy: 20
   id: 16258
   name: HD Bradium 5 Box
+  on_use: give_item(ctx, 6226, 5)
   type: usable
   weight: 10
 - aegis_name: HD_Carnium_Box5
   buy: 20
   id: 16259
   name: HD Carnium 5 Box
+  on_use: give_item(ctx, 6225, 5)
   type: usable
   weight: 10
 - aegis_name: HD_Bradium_Box10
   buy: 20
   id: 16260
   name: HD Bradium 10 Box
+  on_use: give_item(ctx, 6226, 10)
   type: usable
   weight: 10
 - aegis_name: HD_Carnium_Box10
   buy: 20
   id: 16261
   name: HD Carnium 10 Box
+  on_use: give_item(ctx, 6225, 10)
   type: usable
   weight: 10
 - aegis_name: F_HD_Bradium_Box5
   buy: 20
   id: 16262
   name: HD Bradium 5 Box
+  on_use: give_item(ctx, 6226, 5)
   type: usable
   weight: 10
 - aegis_name: F_HD_Carnium_Box5
   buy: 20
   id: 16263
   name: HD Carnium 5 Box
+  on_use: give_item(ctx, 6225, 5)
   type: usable
   weight: 10
 - aegis_name: F_HD_Bradium_Box10
   buy: 20
   id: 16264
   name: HD Bradium 10 Box
+  on_use: give_item(ctx, 6226, 10)
   type: usable
   weight: 10
 - aegis_name: F_HD_Carnium_Box10
   buy: 20
   id: 16265
   name: HD Carnium 10 Box
+  on_use: give_item(ctx, 6225, 10)
   type: usable
   weight: 10
 - aegis_name: Idn_Inde_Beret_Box
@@ -15728,12 +16109,14 @@
   buy: 20
   id: 16267
   name: HE Battle Manual Box
+  on_use: give_item(ctx, 12411, 10)
   type: usable
   weight: 10
 - aegis_name: HE_Bubble_Gum_Box
   buy: 20
   id: 16268
   name: HE Bubble Gum Box
+  on_use: give_item(ctx, 12412, 10)
   type: usable
   weight: 10
 - aegis_name: Cancer_Diadem_Box
@@ -16417,12 +16800,14 @@
   buy: 20
   id: 16381
   name: WoE Teleport Scroll 100 Box
+  on_use: give_item(ctx, 12444, 100)
   type: usable
   weight: 10
 - aegis_name: F_Siege_Scroll_Box1_30
   buy: 20
   id: 16382
   name: WoE Teleport Scroll 30 Box
+  on_use: give_item(ctx, 12444, 30)
   type: usable
   weight: 10
 - aegis_name: F_Siege_Scroll_Box2_10
@@ -16489,24 +16874,28 @@
   buy: 20
   id: 16393
   name: HD Oridecon 5 Box
+  on_use: give_item(ctx, 6240, 5)
   type: usable
   weight: 10
 - aegis_name: HD_Ori_Box10
   buy: 20
   id: 16394
   name: HD Oridecon 10 Box
+  on_use: give_item(ctx, 6240, 10)
   type: usable
   weight: 10
 - aegis_name: HD_Elu_Box5
   buy: 20
   id: 16395
   name: HD Elunium 5 Box
+  on_use: give_item(ctx, 6241, 5)
   type: usable
   weight: 10
 - aegis_name: HD_Elu_Box10
   buy: 20
   id: 16396
   name: HD Elunium 10 Box
+  on_use: give_item(ctx, 6241, 10)
   type: usable
   weight: 10
 - aegis_name: Virgo_Diadem_Box
@@ -16621,12 +17010,14 @@
   buy: 20
   id: 16418
   name: Giant Fly Wing Box 500
+  on_use: give_item(ctx, 12212, 500)
   type: usable
   weight: 1
 - aegis_name: F_Greed_Box30
   buy: 20
   id: 16419
   name: Greed Scroll Box 30
+  on_use: give_item(ctx, 14529, 30)
   type: usable
   weight: 1
 - aegis_name: F_Pet_Egg_Scroll9
@@ -16639,6 +17030,7 @@
   buy: 20
   id: 16421
   name: Written Oath Of Marriage Box
+  on_use: give_item(ctx, 6026, 1)
   type: usable
   weight: 1
 - aegis_name: F_Magestic_Goat_Box
@@ -16921,12 +17313,14 @@
   buy: 20
   id: 16481
   name: Small Life Potion Box (10)
+  on_use: give_item(ctx, 12516, 10)
   type: usable
   weight: 10
 - aegis_name: E_Abrasive_Box10
   buy: 20
   id: 16483
   name: Abrasive Box (10)
+  on_use: give_item(ctx, 12514, 10)
   type: usable
   weight: 10
 - aegis_name: E_Bunny_Band_Box
@@ -17040,6 +17434,7 @@
   buy: 20
   id: 16554
   name: Elven Sunglasses Box
+  on_use: give_item(ctx, 5245, 1)
   type: usable
   weight: 1
 - aegis_name: Pr_Reset_Stone_Box
@@ -17621,6 +18016,7 @@
 - aegis_name: New_Insurance_Box
   id: 16674
   name: 10 New Life Insurance Box
+  on_use: give_item(ctx, 6413, 10)
   type: usable
   weight: 10
 - aegis_name: Splash_Scroll
@@ -17638,21 +18034,25 @@
 - aegis_name: Vending_Scroll2_Box10
   id: 16677
   name: Universal Catalog Gold 10 Box
+  on_use: give_item(ctx, 12581, 10)
   type: usable
   weight: 10
 - aegis_name: Vending_Scroll2_Box50
   id: 16678
   name: Universal Catalog Gold 50 Box
+  on_use: give_item(ctx, 12581, 50)
   type: usable
   weight: 10
 - aegis_name: F_Vending_Scroll2_Box10
   id: 16679
   name: Universal Catalog Gold 10 Box
+  on_use: give_item(ctx, 12581, 10)
   type: usable
   weight: 10
 - aegis_name: F_Vending_Scroll2_Box50
   id: 16680
   name: Universal Catalog Gold 50 Box
+  on_use: give_item(ctx, 12581, 50)
   type: usable
   weight: 10
 - aegis_name: BR_Independence_Scrol
@@ -17677,16 +18077,19 @@
   buy: 20
   id: 16684
   name: Wing Of Fly Box10
+  on_use: give_item(ctx, 601, 10)
   type: usable
 - aegis_name: Wing_Of_Fly_Box50
   buy: 20
   id: 16685
   name: Wing Of Fly Box50
+  on_use: give_item(ctx, 601, 50)
   type: usable
 - aegis_name: Wing_Of_Fly_Box100
   buy: 20
   id: 16686
   name: Wing Of Fly Box100
+  on_use: give_item(ctx, 601, 100)
   type: usable
 - aegis_name: RWC2010_SuitcaseA
   buy: 20
@@ -17722,282 +18125,329 @@
   buy: 20
   id: 16692
   name: Alice Hat Box
+  on_use: give_item(ctx, 5137, 1)
   type: usable
   weight: 10
 - aegis_name: Crescent_Helm_Box
   buy: 20
   id: 16693
   name: Crescent Helm Box
+  on_use: give_item(ctx, 5142, 1)
   type: usable
   weight: 10
 - aegis_name: FCrescent_Helm_Box
   buy: 20
   id: 16694
   name: Crescent Helm Box
+  on_use: give_item(ctx, 5142, 1)
   type: usable
   weight: 10
 - aegis_name: Dragon_Skull_Box
   buy: 20
   id: 16695
   name: Dragon Skull Box
+  on_use: give_item(ctx, 5292, 1)
   type: usable
   weight: 10
 - aegis_name: FDragon_Skull_Box
   buy: 20
   id: 16696
   name: Dragon Skull Box
+  on_use: give_item(ctx, 5292, 1)
   type: usable
   weight: 10
 - aegis_name: Drooping_Bunny_Box
   buy: 20
   id: 16697
   name: Drooping Bunny Box
+  on_use: give_item(ctx, 5290, 1)
   type: usable
   weight: 10
 - aegis_name: FDrooping_Bunny_Box
   buy: 20
   id: 16698
   name: Drooping Bunny Box
+  on_use: give_item(ctx, 5290, 1)
   type: usable
   weight: 10
 - aegis_name: Fish_On_Head_Box
   buy: 20
   id: 16699
   name: Evolved Blue Fish Box
+  on_use: give_item(ctx, 5222, 1)
   type: usable
   weight: 10
 - aegis_name: Pair_Ribbon_Box
   buy: 20
   id: 16701
   name: Evolved Pair of Red Ribbon Box
+  on_use: give_item(ctx, 5221, 1)
   type: usable
   weight: 10
 - aegis_name: FPair_Ribbon_Box
   buy: 20
   id: 16702
   name: Evolved Pair of Red Ribbon Box
+  on_use: give_item(ctx, 5221, 1)
   type: usable
   weight: 10
 - aegis_name: Smoking_Pipe_Box
   buy: 20
   id: 16703
   name: Evolved Pipe Box
+  on_use: give_item(ctx, 5220, 1)
   type: usable
   weight: 10
 - aegis_name: FSmoking_Pipe_Box
   buy: 20
   id: 16704
   name: Evolved Pipe Box
+  on_use: give_item(ctx, 5220, 1)
   type: usable
   weight: 10
 - aegis_name: Hibiscus_Bpx
   buy: 20
   id: 16705
   name: Hibiscus Box
+  on_use: give_item(ctx, 5139, 1)
   type: usable
   weight: 10
 - aegis_name: F_Hibiscus_Bpx
   buy: 20
   id: 16706
   name: Hibiscus Box
+  on_use: give_item(ctx, 5139, 1)
   type: usable
   weight: 10
 - aegis_name: Jumping_Poring_Box
   buy: 20
   id: 16707
   name: Jumping Poring Box
+  on_use: give_item(ctx, 5335, 1)
   type: usable
   weight: 10
 - aegis_name: FJumping_Poring_Box
   buy: 20
   id: 16708
   name: Jumping Poring Box
+  on_use: give_item(ctx, 5335, 1)
   type: usable
   weight: 10
 - aegis_name: Kettle_Hat_Box
   buy: 20
   id: 16709
   name: Kettle Hat Box
+  on_use: give_item(ctx, 5291, 1)
   type: usable
   weight: 10
 - aegis_name: FKettle_Hat_Box
   buy: 20
   id: 16710
   name: Kettle Hat Box
+  on_use: give_item(ctx, 5291, 1)
   type: usable
   weight: 10
 - aegis_name: Magic_Eyes_Box
   buy: 20
   id: 16711
   name: Magic Eyes Box
+  on_use: give_item(ctx, 5138, 1)
   type: usable
   weight: 10
 - aegis_name: FMagic_Eyes_Box
   buy: 20
   id: 16712
   name: Magic Eyes Box
+  on_use: give_item(ctx, 5138, 1)
   type: usable
   weight: 10
 - aegis_name: Propeller_Box
   buy: 20
   id: 16713
   name: Mini Propeller Box
+  on_use: give_item(ctx, 5226, 1)
   type: usable
   weight: 10
 - aegis_name: F_Propeller_Box
   buy: 20
   id: 16714
   name: Mini Propeller Box
+  on_use: give_item(ctx, 5226, 1)
   type: usable
   weight: 10
 - aegis_name: Dog_Hat_Box
   buy: 20
   id: 16715
   name: Puppy Hat Box
+  on_use: give_item(ctx, 5182, 1)
   type: usable
   weight: 10
 - aegis_name: F_Dog_Hat_Box
   buy: 20
   id: 16716
   name: Puppy Hat Box
+  on_use: give_item(ctx, 5182, 1)
   type: usable
   weight: 10
 - aegis_name: Sheep_Hat_Box
   buy: 20
   id: 16717
   name: Sheep Hat Box
+  on_use: give_item(ctx, 5133, 1)
   type: usable
   weight: 10
 - aegis_name: FSheep_Hat_Box
   buy: 20
   id: 16718
   name: Sheep Hat Box
+  on_use: give_item(ctx, 5133, 1)
   type: usable
   weight: 10
 - aegis_name: FTiger_Mask_Box
   buy: 20
   id: 16719
   name: Tiger Mask Box
+  on_use: give_item(ctx, 5098, 1)
   type: usable
   weight: 10
 - aegis_name: Vacation_Hat_Box
   buy: 20
   id: 16720
   name: Tiger Mask Box
+  on_use: give_item(ctx, 5098, 1)
   type: usable
   weight: 10
 - aegis_name: FVacation_Hat_Box
   buy: 20
   id: 16721
   name: Vacation Hat Box
+  on_use: give_item(ctx, 5629, 1)
   type: usable
   weight: 10
 - aegis_name: Vane_Hairpin_Box
   buy: 20
   id: 16722
   name: Vane Hairpin Box
+  on_use: give_item(ctx, 5285, 1)
   type: usable
   weight: 10
 - aegis_name: FVane_Hairpin_Box
   buy: 20
   id: 16723
   name: Vane Hairpin Box
+  on_use: give_item(ctx, 5285, 1)
   type: usable
   weight: 10
 - aegis_name: Vanilmirth_Hat_Box
   buy: 20
   id: 16724
   name: Vanilmirth Hat Box
+  on_use: give_item(ctx, 5289, 1)
   type: usable
   weight: 10
 - aegis_name: FVanilmirth_Hat_Box
   buy: 20
   id: 16725
   name: Vanilmirth Hat Box
+  on_use: give_item(ctx, 5289, 1)
   type: usable
   weight: 10
 - aegis_name: Water_Lily_Crown_Box
   buy: 20
   id: 16726
   name: Water Lily Crown Box
+  on_use: give_item(ctx, 5284, 1)
   type: usable
   weight: 10
 - aegis_name: FWater_Lily_Crown_Box
   buy: 20
   id: 16727
   name: Water Lily Crown Box
+  on_use: give_item(ctx, 5284, 1)
   type: usable
   weight: 10
 - aegis_name: Pink_Fur_Hat_Box
   buy: 20
   id: 16728
   name: Pink Beanie Hat Box
+  on_use: give_item(ctx, 5237, 1)
   type: usable
   weight: 10
 - aegis_name: F_Pink_Fur_Hat_Box
   buy: 20
   id: 16729
   name: Pink Beanie Hat Box
+  on_use: give_item(ctx, 5237, 1)
   type: usable
   weight: 10
 - aegis_name: Ribbon_Green_Box
   buy: 20
   id: 16730
   name: Green Ribbon Box
+  on_use: give_item(ctx, 5193, 1)
   type: usable
   weight: 10
 - aegis_name: F_Ribbon_Green_Box
   buy: 20
   id: 16731
   name: Green Ribbon Box
+  on_use: give_item(ctx, 5193, 1)
   type: usable
   weight: 10
 - aegis_name: Wh_Deviruchi_Cap_Box
   buy: 20
   id: 16732
   name: Gray Deviruchi Hat Box
+  on_use: give_item(ctx, 5229, 1)
   type: usable
   weight: 10
 - aegis_name: F_Wh_Deviruchi_Cap_Box
   buy: 20
   id: 16733
   name: Gray Deviruchi Hat Box
+  on_use: give_item(ctx, 5229, 1)
   type: usable
   weight: 10
 - aegis_name: Blu_Drooping_Kitty_Box
   buy: 20
   id: 16734
   name: Blue Drooping Cat Box
+  on_use: give_item(ctx, 5233, 1)
   type: usable
   weight: 10
 - aegis_name: FBlu_Drooping_Kitty_Box
   buy: 20
   id: 16735
   name: Blue Drooping Cat Box
+  on_use: give_item(ctx, 5233, 1)
   type: usable
   weight: 10
 - aegis_name: Fantastic_Wig_Box
   buy: 20
   id: 16736
   name: Fantastic Wig Box
+  on_use: give_item(ctx, 5276, 1)
   type: usable
   weight: 10
 - aegis_name: F_Fantastic_Wig_Box
   buy: 20
   id: 16737
   name: Fantastic Wig Box
+  on_use: give_item(ctx, 5276, 1)
   type: usable
   weight: 10
 - aegis_name: Yellow_Wizard_Hat_Box
   buy: 20
   id: 16738
   name: Yellow Mage Hat Box
+  on_use: give_item(ctx, 5242, 1)
   type: usable
   weight: 10
 - aegis_name: F_Yellow_Wizard_Hat_Box
   buy: 20
   id: 16739
   name: Yellow Mage Hat Box
+  on_use: give_item(ctx, 5242, 1)
   type: usable
   weight: 10
 - aegis_name: Ptotection_Seagod_Box
@@ -18094,24 +18544,28 @@
   buy: 20
   id: 16753
   name: Unbreakable Weapon Box
+  on_use: give_item(ctx, 6438, 1)
   type: usable
   weight: 10
 - aegis_name: F_Unbreak_Weap_Box
   buy: 20
   id: 16754
   name: Unbreakable Weapon Box
+  on_use: give_item(ctx, 6438, 1)
   type: usable
   weight: 10
 - aegis_name: Unbreak_Def_Box
   buy: 20
   id: 16755
   name: Unbreakable Armor Box
+  on_use: give_item(ctx, 6439, 1)
   type: usable
   weight: 10
 - aegis_name: F_Unbreak_Def_Box
   buy: 20
   id: 16756
   name: Unbreakable Armor Box
+  on_use: give_item(ctx, 6439, 1)
   type: usable
   weight: 10
 - aegis_name: Hallo_Scroll
@@ -18207,11 +18661,13 @@
 - aegis_name: C_Vending_Scroll2_Box10
   id: 16776
   name: Universal Catalog Gold 10 Box
+  on_use: give_item(ctx, 12581, 10)
   type: usable
   weight: 10
 - aegis_name: C_Vending_Scroll2_Box50
   id: 16777
   name: Universal Catalog Gold 50 Box
+  on_use: give_item(ctx, 12581, 50)
   type: usable
   weight: 10
 - aegis_name: C_Str_Dish_Box
@@ -19832,12 +20288,20 @@
   buy: 20
   id: 17069
   name: Acidbomb Box100
+  on_use: |-
+    ctx = give_item(ctx, 7135, 100)
+    ctx = give_item(ctx, 7136, 100)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Acidbomb_Box500
   buy: 20
   id: 17070
   name: Acidbomb Box500
+  on_use: |-
+    ctx = give_item(ctx, 7135, 500)
+    ctx = give_item(ctx, 7136, 500)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Superb_Fish_Box50
@@ -20599,6 +21063,7 @@
   buy: 10
   id: 17241
   name: Amistir Cap Box
+  on_use: give_item(ctx, 5766, 1)
   type: usable
   weight: 10
 - aegis_name: Immortal_Egg
@@ -21298,12 +21763,14 @@
   buy: 10
   id: 17468
   name: Neuralizer II Box (3)
+  on_use: give_item(ctx, 14724, 3)
   type: usable
   weight: 10
 - aegis_name: LI_Neuralizer_1Box
   buy: 10
   id: 17469
   name: Neuralizer I Box
+  on_use: give_item(ctx, 14723, 1)
   type: usable
   weight: 10
 - aegis_name: Costama_Egg19
@@ -21579,24 +22046,28 @@
   buy: 20
   id: 17547
   name: (Limited)2015 Neuralizer Box
+  on_use: give_item(ctx, 22894, 1)
   type: usable
   weight: 10
 - aegis_name: 2015LI_S_R_C_Box
   buy: 20
   id: 17548
   name: (Limited)2015 Status Initialization Volume Box
+  on_use: give_item(ctx, 22895, 1)
   type: usable
   weight: 10
 - aegis_name: LI_HD_BradiumBox30
   buy: 20
   id: 17549
   name: (Limited)High Density Bradium Box (30)
+  on_use: give_item(ctx, 6327, 30)
   type: usable
   weight: 10
 - aegis_name: LI_HD_CarniumBox30
   buy: 20
   id: 17550
   name: (Limited)High Density Kalunium Box (30)
+  on_use: give_item(ctx, 6906, 30)
   type: usable
   weight: 10
 - aegis_name: Garnet_Lucky_Scroll
@@ -22361,6 +22832,7 @@
 - aegis_name: Para_Team_Mark_
   id: 22508
   name: Eden Group Mark
+  on_use: warp(ctx, "moc_para01", 171, 115)
   type: usable
 - aegis_name: WolfKing_Scroll
   buy: 20
@@ -22725,6 +23197,11 @@
   buy: 10
   id: 22610
   name: New Beginnings Box
+  on_use: |-
+    ctx = give_item(ctx, 12803, 1)
+    ctx = give_item(ctx, 12802, 1)
+    ctx = give_item(ctx, 12809, 1)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Packing_Envelope
@@ -22784,6 +23261,7 @@
 - aegis_name: Riesen_Bretzel
   id: 22624
   name: Riesen Bretzel
+  on_use: 'percent_heal(ctx, hp: 100)'
   type: healing
 - aegis_name: Oktoberfest_Bag
   id: 22625
@@ -22890,6 +23368,7 @@
   buy: 20
   id: 22657
   name: Honey Songpyun
+  on_use: 'percent_heal(ctx, hp: 20)'
   type: healing
   weight: 200
 - aegis_name: BraisedShortRibs
@@ -22912,6 +23391,7 @@
 - aegis_name: Guyak_Pudding_20_Box
   id: 22668
   name: Guyak Pudding Box
+  on_use: give_item(ctx, 12710, 20)
   type: usable
   weight: 100
 - aegis_name: HALLOWEEN_G_BOX
@@ -22964,6 +23444,7 @@
 - aegis_name: Solo_Cookie
   id: 22686
   name: Single Cookie
+  on_use: 'percent_heal(ctx, hp: 5, sp: 5)'
   type: healing
   weight: 50
 - aegis_name: Pieces_Of_Sentiment
@@ -22975,22 +23456,27 @@
 - aegis_name: Piece_Of_Record1
   id: 22691
   name: Record Fragment
+  on_use: warp(ctx, "un_bk_q", 98, 143)
   type: healing
 - aegis_name: Piece_Of_Record2
   id: 22692
   name: Record Fragment
+  on_use: warp(ctx, "un_bk_q", 45, 276)
   type: healing
 - aegis_name: Piece_Of_Record3
   id: 22693
   name: Record Fragment
+  on_use: warp(ctx, "un_bk_q", 217, 346)
   type: healing
 - aegis_name: Piece_Of_Record4
   id: 22694
   name: Record Fragment
+  on_use: warp(ctx, "un_bk_q", 273, 235)
   type: healing
 - aegis_name: Piece_Of_Record5
   id: 22695
   name: Record Fragment
+  on_use: warp(ctx, "un_bk_q", 275, 290)
   type: healing
 - aegis_name: Test_Reagent
   id: 22699
@@ -23004,6 +23490,7 @@
 - aegis_name: Pegasus_Cotton_Candy
   id: 22701
   name: Pegasus Cotton Candy
+  on_use: 'percent_heal(ctx, hp: 40, sp: 40)'
   type: usable
   weight: 50
 - aegis_name: Minus_Str
@@ -23065,78 +23552,91 @@
   buy: 10
   id: 22737
   name: Bloody Cartridge
+  on_use: give_item(ctx, 13222, 500)
   type: usable
   weight: 250
 - aegis_name: Bullet_Case_Silver_
   buy: 10
   id: 22738
   name: Silver Cartridge
+  on_use: give_item(ctx, 13221, 500)
   type: usable
   weight: 250
 - aegis_name: Sphere_Case_Wind_
   buy: 10
   id: 22739
   name: Lightning Sphere Pack
+  on_use: give_item(ctx, 13224, 500)
   type: usable
   weight: 350
 - aegis_name: Sphere_Case_Darkness_
   buy: 10
   id: 22740
   name: Blind Sphere Pack
+  on_use: give_item(ctx, 13226, 500)
   type: usable
   weight: 350
 - aegis_name: Sphere_Case_Poison_
   buy: 10
   id: 22741
   name: Poison Sphere Pack
+  on_use: give_item(ctx, 13225, 500)
   type: usable
   weight: 350
 - aegis_name: Sphere_Case_Water_
   buy: 10
   id: 22742
   name: Freezing Sphere Pack
+  on_use: give_item(ctx, 13227, 500)
   type: usable
   weight: 350
 - aegis_name: Sphere_Case_Fire_
   buy: 10
   id: 22743
   name: Flare Sphere Pack
+  on_use: give_item(ctx, 13223, 500)
   type: usable
   weight: 350
 - aegis_name: Bullet_Case_AP
   buy: 10
   id: 22744
   name: Armor-Piercing Cartridge
+  on_use: give_item(ctx, 13215, 500)
   type: usable
   weight: 250
 - aegis_name: Bullet_Case_Blaze
   buy: 10
   id: 22745
   name: Incandescence Shot Cartridge
+  on_use: give_item(ctx, 13216, 500)
   type: usable
   weight: 250
 - aegis_name: Bullet_Case_Fleeze
   buy: 10
   id: 22746
   name: Glaciation Shot Cartridge
+  on_use: give_item(ctx, 13217, 500)
   type: usable
   weight: 250
 - aegis_name: Bullet_Case_Electric
   buy: 10
   id: 22747
   name: Dengeki Shot Cartridge
+  on_use: give_item(ctx, 13218, 500)
   type: usable
   weight: 250
 - aegis_name: Bullet_Case_Stone
   buy: 10
   id: 22748
   name: Hearthstone Shot Cartridge
+  on_use: give_item(ctx, 13219, 500)
   type: usable
   weight: 250
 - aegis_name: Sanctified_Bullet_Case
   buy: 10
   id: 22749
   name: Purification Shot Cartridge
+  on_use: give_item(ctx, 13220, 500)
   type: usable
   weight: 250
 - aegis_name: Trans_Scroll_Sca
@@ -23289,6 +23789,12 @@
   buy: 10
   id: 22808
   name: Special Gift Box
+  on_use: |-
+    ctx = give_item(ctx, 7444, 1)
+    ctx = give_item(ctx, 12610, 1)
+    ctx = give_item(ctx, 12265, 5)
+    ctx = give_item(ctx, 22979, 5)
+    ctx
   type: usable
   weight: 100
 - aegis_name: Sealed_Dracula_Scroll
@@ -23379,6 +23885,7 @@
   equip_level_min: 50
   id: 22837
   name: Integer Time
+  on_use: give_item(ctx, 673, 5)
   type: usable
   weight: 50
 - aegis_name: Something_Candy_Holder
@@ -23398,6 +23905,7 @@
 - aegis_name: Pumpkin_Candy
   id: 22841
   name: Pumpkin Candy
+  on_use: 'percent_heal(ctx, sp: 25)'
   type: usable
   weight: 50
 - aegis_name: Sealed_Dracula_Scroll2
@@ -23431,18 +23939,21 @@
   buy: 10
   id: 22847
   name: Prontera Badge
+  on_use: warp(ctx, "prontera", 159, 192)
   type: usable
   weight: 10
 - aegis_name: KeysPrison
   buy: 10
   id: 22848
   name: Prison Key
+  on_use: warp(ctx, "prt_prison", 188, 23)
   type: usable
   weight: 10
 - aegis_name: P_Temporal_Crystal
   buy: 10
   id: 22849
   name: Prontera Time Crystal
+  on_use: warp(ctx, "prt_q", 155, 27)
   type: usable
   weight: 10
 - aegis_name: JanuaryGiftBox
@@ -23536,6 +24047,7 @@
   buy: 10
   id: 22882
   name: Chocolate Rice Cake Soup
+  on_use: 'percent_heal(ctx, hp: 10, sp: 10)'
   type: usable
 - aegis_name: SeptemberGiftBox_
   id: 22883
@@ -23866,6 +24378,7 @@
 - aegis_name: InfinityD_ReturnScroll
   id: 22980
   name: Return of Infinite Dungeon
+  on_use: warp(ctx, "cmd_fild07", 83, 270)
   type: usable
   weight: 10
 - aegis_name: Service30P_M_01_Call
@@ -23901,6 +24414,7 @@
 - aegis_name: Soccer_Cake
   id: 22991
   name: Soccer Cake
+  on_use: 'percent_heal(ctx, hp: 30, sp: 30)'
   type: usable
   weight: 10
 - aegis_name: Comp_Neuralizer
@@ -23998,6 +24512,7 @@
 - aegis_name: Dandelion_Ring
   id: 23027
   name: Dandelion Ring
+  on_use: warp(ctx, "rachel", 120, 125)
   type: usable
 - aegis_name: Capture_Rope
   id: 23028
@@ -24044,6 +24559,7 @@
 - aegis_name: White_Slim_Potion_Box_
   id: 23038
   name: '[Sale] Slim White Potion Box'
+  on_use: give_item(ctx, 11573, 200)
   type: usable
 - aegis_name: Mastela_Fruit_Box_
   id: 23039
@@ -24060,11 +24576,13 @@
 - aegis_name: Seed_Of_Yggdrasil_
   id: 23042
   name: '[Not For Sale] Yggdrasil Seed'
+  on_use: 'percent_heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 300
 - aegis_name: Yggdrasil_Seed_Box_
   id: 23043
   name: '[Sale] Yggdrasil Seed Box'
+  on_use: give_item(ctx, 23042, 30)
   type: usable
 - aegis_name: Elvira_Candy
   id: 23044
@@ -24235,6 +24753,14 @@
 - aegis_name: Small_Leather_Bag
   id: 23087
   name: Small Leather Bag
+  on_use: |-
+    ctx = give_item(ctx, 25180, 1)
+    ctx = give_item(ctx, 25181, 1)
+    ctx = give_item(ctx, 25182, 1)
+    ctx = give_item(ctx, 25183, 1)
+    ctx = give_item(ctx, 25184, 1)
+    ctx = give_item(ctx, 25185, 1)
+    ctx
   type: usable
 - aegis_name: Comp_Glass_Of_Illusion
   id: 23094
@@ -24298,30 +24824,35 @@
   buy: 10
   id: 23123
   name: Flare Bullet Cartridge
+  on_use: give_item(ctx, 13228, 500)
   type: usable
   weight: 250
 - aegis_name: Bullet_Case_Lighting
   buy: 10
   id: 23124
   name: Lightning Bullet Cartridge
+  on_use: give_item(ctx, 13229, 500)
   type: usable
   weight: 250
 - aegis_name: Bullet_Case_Ice
   buy: 10
   id: 23125
   name: Ice Bullet Cartridge
+  on_use: give_item(ctx, 13230, 500)
   type: usable
   weight: 250
 - aegis_name: Bullet_Case_Poison
   buy: 10
   id: 23126
   name: Poison Bullet Cartridge
+  on_use: give_item(ctx, 13231, 500)
   type: usable
   weight: 250
 - aegis_name: Bullet_Case_Blind
   buy: 10
   id: 23127
   name: Blind Bullet Cartridge
+  on_use: give_item(ctx, 13232, 500)
   type: usable
   weight: 250
 - aegis_name: Cachua_Weapon
@@ -24362,6 +24893,12 @@
   buy: 10
   id: 23136
   name: Butterfly Wing Box
+  on_use: |-
+    ctx = give_item(ctx, 12507, 3)
+    ctx = give_item(ctx, 12508, 3)
+    ctx = give_item(ctx, 12509, 3)
+    ctx = give_item(ctx, 12510, 3)
+    ctx
   type: usable
   weight: 20
 - aegis_name: Ribel_Jumping_Box
@@ -24385,12 +24922,14 @@
   buy: 2
   id: 23144
   name: Minor Growth Elixir Box
+  on_use: give_item(ctx, 23142, 5)
   type: usable
   weight: 10
 - aegis_name: JEXPUP_Potion1Box
   buy: 2
   id: 23145
   name: Minor Job Elixir Box
+  on_use: give_item(ctx, 23143, 5)
   type: usable
   weight: 10
 - aegis_name: Premium_Box_2d
@@ -25061,6 +25600,7 @@
 - aegis_name: Comp_Cherryblossom_C
   id: 23317
   name: '[NotForSale] Cherry Blossom Cake'
+  on_use: 'percent_heal(ctx, hp: 30, sp: 30)'
   type: usable
   weight: 30
 - aegis_name: Shadow_Scroll2
@@ -25076,6 +25616,7 @@
 - aegis_name: Sweet_Melon_Juice
   id: 23321
   name: Sweet Melon Juice
+  on_use: 'percent_heal(ctx, hp: 30, sp: 30)'
   type: usable
   weight: 100
 - aegis_name: Melon_Parfait
@@ -25239,10 +25780,12 @@
 - aegis_name: Pig_Potato
   id: 23362
   name: Meatball
+  on_use: 'percent_heal(ctx, hp: 10, sp: 10)'
   type: usable
 - aegis_name: E_Watermelon_Pudding
   id: 23363
   name: Watermelon Pudding
+  on_use: 'percent_heal(ctx, hp: 30, sp: 30)'
   type: usable
 - aegis_name: Cryptura_Cookie
   id: 23364
@@ -25255,6 +25798,7 @@
 - aegis_name: Tamato_Noodle
   id: 23367
   name: Spaghetti and Sauce
+  on_use: 'percent_heal(ctx, hp: 30, sp: 30)'
   type: usable
   weight: 100
 - aegis_name: Store_Search1
@@ -25320,6 +25864,7 @@
 - aegis_name: Grilled_Turkey
   id: 23445
   name: Home Food
+  on_use: 'percent_heal(ctx, hp: 20, sp: 20)'
   type: usable
   weight: 100
 - aegis_name: Savage_Trap
@@ -25345,112 +25890,230 @@
   equip_level_min: 5
   id: 23484
   name: First aid Box (5)
+  on_use: |-
+    ctx = give_item(ctx, 11518, 10)
+    ctx = give_item(ctx, 11614, 20)
+    ctx = give_item(ctx, 12325, 15)
+    ctx = give_item(ctx, 22542, 1)
+    ctx = give_item(ctx, 23485, 1)
+    ctx
   type: usable
 - aegis_name: Firstaid_Box_10
   equip_level_min: 10
   id: 23485
   name: First aid Box (10)
+  on_use: |-
+    ctx = give_item(ctx, 11518, 15)
+    ctx = give_item(ctx, 11614, 40)
+    ctx = give_item(ctx, 12325, 15)
+    ctx = give_item(ctx, 22542, 1)
+    ctx = give_item(ctx, 23486, 1)
+    ctx
   type: usable
 - aegis_name: Firstaid_Box_15
   equip_level_min: 15
   id: 23486
   name: First aid Box (15)
+  on_use: |-
+    ctx = give_item(ctx, 11518, 20)
+    ctx = give_item(ctx, 11614, 60)
+    ctx = give_item(ctx, 12325, 10)
+    ctx = give_item(ctx, 22542, 2)
+    ctx = give_item(ctx, 23487, 1)
+    ctx
   type: usable
 - aegis_name: Firstaid_Box_20
   equip_level_min: 20
   id: 23487
   name: First aid Box (20)
+  on_use: |-
+    ctx = give_item(ctx, 11518, 15)
+    ctx = give_item(ctx, 11615, 80)
+    ctx = give_item(ctx, 12325, 10)
+    ctx = give_item(ctx, 22542, 2)
+    ctx = give_item(ctx, 23488, 1)
+    ctx
   type: usable
 - aegis_name: Firstaid_Box_25
   equip_level_min: 25
   id: 23488
   name: First aid Box (25)
+  on_use: |-
+    ctx = give_item(ctx, 11518, 20)
+    ctx = give_item(ctx, 11615, 100)
+    ctx = give_item(ctx, 12325, 5)
+    ctx = give_item(ctx, 22542, 3)
+    ctx = give_item(ctx, 23489, 1)
+    ctx
   type: usable
 - aegis_name: Firstaid_Box_30
   equip_level_min: 30
   id: 23489
   name: First aid Box (30)
+  on_use: |-
+    ctx = give_item(ctx, 11518, 25)
+    ctx = give_item(ctx, 11615, 120)
+    ctx = give_item(ctx, 12325, 5)
+    ctx = give_item(ctx, 22542, 3)
+    ctx = give_item(ctx, 23490, 1)
+    ctx
   type: usable
 - aegis_name: Firstaid_Box_35
   equip_level_min: 35
   id: 23490
   name: First aid Box (35)
+  on_use: |-
+    ctx = give_item(ctx, 11572, 15)
+    ctx = give_item(ctx, 22542, 3)
+    ctx = give_item(ctx, 23491, 1)
+    ctx = give_item(ctx, 23503, 5)
+    ctx
   type: usable
 - aegis_name: Firstaid_Box_40
   equip_level_min: 40
   id: 23491
   name: First aid Box (40)
+  on_use: |-
+    ctx = give_item(ctx, 11572, 15)
+    ctx = give_item(ctx, 22544, 2)
+    ctx = give_item(ctx, 23492, 1)
+    ctx = give_item(ctx, 23503, 6)
+    ctx
   type: usable
 - aegis_name: Firstaid_Box_45
   equip_level_min: 45
   id: 23492
   name: First aid Box (45)
+  on_use: |-
+    ctx = give_item(ctx, 11572, 20)
+    ctx = give_item(ctx, 22544, 2)
+    ctx = give_item(ctx, 23493, 1)
+    ctx = give_item(ctx, 23503, 7)
+    ctx
   type: usable
 - aegis_name: Firstaid_Box_50
   equip_level_min: 50
   id: 23493
   name: First aid Box (50)
+  on_use: |-
+    ctx = give_item(ctx, 11572, 20)
+    ctx = give_item(ctx, 22544, 2)
+    ctx = give_item(ctx, 23494, 1)
+    ctx = give_item(ctx, 23504, 7)
+    ctx
   type: usable
 - aegis_name: Firstaid_Box_55
   equip_level_min: 55
   id: 23494
   name: First aid Box (55)
+  on_use: |-
+    ctx = give_item(ctx, 11572, 25)
+    ctx = give_item(ctx, 22544, 2)
+    ctx = give_item(ctx, 23495, 1)
+    ctx = give_item(ctx, 23504, 8)
+    ctx
   type: usable
 - aegis_name: Firstaid_Box_60
   equip_level_min: 60
   id: 23495
   name: First aid Box (60)
+  on_use: |-
+    ctx = give_item(ctx, 11572, 25)
+    ctx = give_item(ctx, 23496, 1)
+    ctx = give_item(ctx, 23504, 9)
+    ctx
   type: usable
 - aegis_name: Firstaid_Box_65
   equip_level_min: 65
   id: 23496
   name: First aid Box (65)
+  on_use: |-
+    ctx = give_item(ctx, 11572, 30)
+    ctx = give_item(ctx, 23497, 1)
+    ctx = give_item(ctx, 23505, 5)
+    ctx
   type: usable
 - aegis_name: Firstaid_Box_70
   equip_level_min: 70
   id: 23497
   name: First aid Box (70)
+  on_use: |-
+    ctx = give_item(ctx, 11572, 30)
+    ctx = give_item(ctx, 23498, 1)
+    ctx = give_item(ctx, 23505, 6)
+    ctx
   type: usable
 - aegis_name: Firstaid_Box_75
   equip_level_min: 75
   id: 23498
   name: First aid Box (75)
+  on_use: |-
+    ctx = give_item(ctx, 11572, 35)
+    ctx = give_item(ctx, 23499, 1)
+    ctx = give_item(ctx, 23505, 7)
+    ctx
   type: usable
 - aegis_name: Firstaid_Box_80
   equip_level_min: 80
   id: 23499
   name: First aid Box (80)
+  on_use: |-
+    ctx = give_item(ctx, 11572, 35)
+    ctx = give_item(ctx, 23500, 1)
+    ctx = give_item(ctx, 23505, 8)
+    ctx
   type: usable
 - aegis_name: Firstaid_Box_85
   equip_level_min: 85
   id: 23500
   name: First aid Box (85)
+  on_use: |-
+    ctx = give_item(ctx, 11572, 40)
+    ctx = give_item(ctx, 22543, 2)
+    ctx = give_item(ctx, 23501, 1)
+    ctx = give_item(ctx, 23506, 7)
+    ctx
   type: usable
 - aegis_name: Firstaid_Box_90
   equip_level_min: 90
   id: 23501
   name: First aid Box (90)
+  on_use: |-
+    ctx = give_item(ctx, 11572, 40)
+    ctx = give_item(ctx, 22543, 2)
+    ctx = give_item(ctx, 23502, 1)
+    ctx = give_item(ctx, 23506, 8)
+    ctx
   type: usable
 - aegis_name: Firstaid_Box_95
   equip_level_min: 95
   id: 23502
   name: First aid Box (95)
+  on_use: |-
+    ctx = give_item(ctx, 11572, 45)
+    ctx = give_item(ctx, 22543, 2)
+    ctx = give_item(ctx, 23506, 8)
+    ctx
   type: usable
 - aegis_name: Red_Potion_B_20
   id: 23503
   name: '[Not For Sale] Crate of 20 Red Potions'
+  on_use: give_item(ctx, 11570, 20)
   type: usable
 - aegis_name: Orange_Potion_B_20
   id: 23504
   name: '[Not For Sale] Crate of 20 Orange Potions'
+  on_use: give_item(ctx, 11569, 20)
   type: usable
 - aegis_name: Yellow_Potion_B_20
   id: 23505
   name: '[Not For Sale] Crate of 20 Yellow Potions'
+  on_use: give_item(ctx, 11566, 20)
   type: usable
 - aegis_name: White_Potion_B_20
   id: 23506
   name: '[Not For Sale] Box of 20 White Potion'
+  on_use: give_item(ctx, 11565, 20)
   type: usable
 - aegis_name: Enchant_Stone_Box13
   id: 23524
@@ -25528,36 +26191,72 @@
 - aegis_name: Adventurer_Box_1
   id: 23575
   name: Adventurer Box (1)
+  on_use: |-
+    ctx = give_item(ctx, 11567, 100)
+    ctx = give_item(ctx, 12265, 5)
+    ctx = give_item(ctx, 22979, 5)
+    ctx = give_item(ctx, 23338, 50)
+    ctx = give_item(ctx, 23576, 1)
+    ctx
   type: usable
 - aegis_name: Adventurer_Box_15
   equip_level_min: 15
   id: 23576
   name: Adventurer Box (15)
+  on_use: |-
+    ctx = give_item(ctx, 11567, 150)
+    ctx = give_item(ctx, 23338, 50)
+    ctx = give_item(ctx, 23577, 1)
+    ctx
   type: usable
 - aegis_name: Adventurer_Box_30
   equip_level_min: 30
   id: 23577
   name: Adventurer Box (30)
+  on_use: |-
+    ctx = give_item(ctx, 23338, 50)
+    ctx = give_item(ctx, 23503, 20)
+    ctx = give_item(ctx, 23578, 1)
+    ctx
   type: usable
 - aegis_name: Adventurer_Box_45
   equip_level_min: 45
   id: 23578
   name: Adventurer Box (45)
+  on_use: |-
+    ctx = give_item(ctx, 23338, 50)
+    ctx = give_item(ctx, 23503, 25)
+    ctx = give_item(ctx, 23579, 1)
+    ctx
   type: usable
 - aegis_name: Adventurer_Box_60
   equip_level_min: 60
   id: 23579
   name: Adventurer Box (60)
+  on_use: |-
+    ctx = give_item(ctx, 23338, 50)
+    ctx = give_item(ctx, 23504, 20)
+    ctx = give_item(ctx, 23580, 1)
+    ctx
   type: usable
 - aegis_name: Adventurer_Box_75
   equip_level_min: 75
   id: 23580
   name: Adventurer Box (75)
+  on_use: |-
+    ctx = give_item(ctx, 23338, 50)
+    ctx = give_item(ctx, 23504, 25)
+    ctx = give_item(ctx, 23581, 1)
+    ctx
   type: usable
 - aegis_name: Adventurer_Box_90
   equip_level_min: 90
   id: 23581
   name: Adventurer Box (90)
+  on_use: |-
+    ctx = give_item(ctx, 23505, 20)
+    ctx = give_item(ctx, 23338, 50)
+    ctx
   type: usable
 - aegis_name: E_Wing_Of_Fly_3Day_Box
   id: 23582
@@ -25577,16 +26276,34 @@
   equip_level_min: 100
   id: 23585
   name: Beginner Support Box (100)
+  on_use: |-
+    ctx = give_item(ctx, 23505, 25)
+    ctx = give_item(ctx, 23583, 1)
+    ctx = give_item(ctx, 23582, 1)
+    ctx = give_item(ctx, 25427, 1)
+    ctx = give_item(ctx, 23586, 1)
+    ctx
   type: usable
 - aegis_name: Rebeginer_Box_110
   equip_level_min: 110
   id: 23586
   name: Beginner Support Box (110)
+  on_use: |-
+    ctx = give_item(ctx, 23506, 20)
+    ctx = give_item(ctx, 23582, 2)
+    ctx = give_item(ctx, 25428, 1)
+    ctx = give_item(ctx, 23587, 1)
+    ctx
   type: usable
 - aegis_name: Rebeginer_Box_120
   equip_level_min: 120
   id: 23587
   name: Beginner Support Box (120)
+  on_use: |-
+    ctx = give_item(ctx, 23506, 25)
+    ctx = give_item(ctx, 23582, 3)
+    ctx = give_item(ctx, 23584, 1)
+    ctx
   type: usable
 - aegis_name: Main_Dish_Course
   id: 23604
@@ -25649,6 +26366,7 @@
 - aegis_name: Dogly_Bottle_Z
   id: 23660
   name: Dogly Bottle Z
+  on_use: 'percent_heal(ctx, hp: 18, sp: 18)'
   type: healing
   weight: 180
 - aegis_name: 2018_New_Year_Scroll
@@ -28540,22 +29258,27 @@
 - aegis_name: Teleport_Ep19_01
   id: 100900
   name: Ice Castle Transport Wing
+  on_use: warp(ctx, "icas_in", 175, 63)
   type: usable
 - aegis_name: Teleport_Ep18_01
   id: 100901
   name: Gray Wolf Village Transport Wing
+  on_use: warp(ctx, "wolfvill", 164, 141)
   type: usable
 - aegis_name: Teleport_Ep17_02
   id: 100902
   name: Varmundt Mansion Teleport Wing
+  on_use: warp(ctx, "ba_in01", 87, 389)
   type: usable
 - aegis_name: Teleport_Ep17_01
   id: 100903
   name: Border Area Cor Teleport Wing
+  on_use: warp(ctx, "sp_cor", 152, 158)
   type: usable
 - aegis_name: Teleport_Ep16_01
   id: 100904
   name: Military Base Teleport Wing
+  on_use: warp(ctx, "rebel_in", 100, 40)
   type: usable
 - aegis_name: E_All_In_One_Buff
   id: 100906
@@ -29170,6 +29893,7 @@
 - aegis_name: DF_Halloween_Candy
   id: 101126
   name: '[Scroll] Halloween Candy'
+  on_use: 'percent_heal(ctx, hp: 30, sp: 30)'
   type: healing
   weight: 10
 - aegis_name: Season_Evt_Reward_11
@@ -29397,6 +30121,7 @@
 - aegis_name: New_Year_Rice_Soup
   id: 101276
   name: New Year Rice Soup
+  on_use: 'percent_heal(ctx, hp: 30, sp: 30)'
   type: usable
 - aegis_name: 2022_LunarNewYears_box
   id: 101279
@@ -29445,6 +30170,7 @@
 - aegis_name: TH_DF_Special01
   id: 101322
   name: Love Confession Chocolate
+  on_use: 'percent_heal(ctx, hp: 30, sp: 30)'
   type: healing
 - aegis_name: Fruits_Set_Trap
   id: 101331
@@ -31498,11 +32224,13 @@
 - aegis_name: 2403_ev_Parfait
   id: 102908
   name: Fruit Parfait
+  on_use: 'percent_heal(ctx, hp: 20, sp: 20)'
   type: usable
   weight: 1
 - aegis_name: 2403_ev_Berry_Cake
   id: 102910
   name: Strawberry Cream Cake
+  on_use: 'percent_heal(ctx, hp: 50, sp: 50)'
   type: usable
   weight: 1
 - aegis_name: 2403_ev_Mont_Blanc
@@ -31528,6 +32256,7 @@
 - aegis_name: 2403_ev_Melon_Parfait
   id: 102925
   name: Melon Parfait
+  on_use: 'percent_heal(ctx, hp: 100, sp: 100)'
   type: usable
   weight: 1
 - aegis_name: aegis_102947
@@ -32198,6 +32927,7 @@
 - aegis_name: E_Winter_Stew
   id: 103656
   name: Tasty Meat Stew
+  on_use: 'percent_heal(ctx, hp: 100, sp: 100)'
   type: usable
   weight: 50
 - aegis_name: E_Card_Pack
@@ -34370,6 +35100,7 @@
   equip_level_min: 120
   id: 1100003
   name: Concentrated Red Potion
+  on_use: 'heal(ctx, hp: 655..675)'
   type: healing
   weight: 2
 - aegis_name: Concentrated_B_P
@@ -34377,6 +35108,7 @@
   equip_level_min: 120
   id: 1100004
   name: Concentrated Blue Potion
+  on_use: 'heal(ctx, sp: 340..360)'
   type: healing
   weight: 2
 - aegis_name: Concentrated_G_P
@@ -34384,6 +35116,7 @@
   equip_level_min: 180
   id: 1100005
   name: Concentrated Gold Potion
+  on_use: 'heal(ctx, hp: 2730..2750)'
   type: healing
   weight: 2
 - aegis_name: Ep19_Dry_Icegangu
@@ -34391,6 +35124,7 @@
   equip_level_min: 200
   id: 1100006
   name: Dried Ice Gangu
+  on_use: 'heal(ctx, hp: 1925)'
   type: healing
   weight: 5
 - aegis_name: Fried_Sausage
@@ -34443,6 +35177,7 @@
   equip_level_min: 60
   id: 1100015
   name: Fire-grilled Suspicious Skewers
+  on_use: 'percent_heal(ctx, hp: 10, sp: 10)'
   type: healing
   weight: 10
 - aegis_name: Night_M_Ice_Flakes

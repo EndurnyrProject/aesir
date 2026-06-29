@@ -19776,6 +19776,7 @@
   weight: 1
 - aegis_name: Silver_Bullet
   attack: 15
+  attack_element: holy
   buy: 15
   equip_level_min: 1
   id: 13201
@@ -19804,6 +19805,7 @@
   weight: 2
 - aegis_name: Flare_Sphere
   attack: 50
+  attack_element: fire
   buy: 80
   id: 13203
   locations:
@@ -19814,6 +19816,7 @@
   weight: 5
 - aegis_name: Lighting_Sphere
   attack: 50
+  attack_element: wind
   buy: 80
   id: 13204
   locations:
@@ -19824,6 +19827,7 @@
   weight: 5
 - aegis_name: Poison_Sphere
   attack: 50
+  attack_element: poison
   buy: 80
   id: 13205
   locations:
@@ -19834,6 +19838,7 @@
   weight: 5
 - aegis_name: Blind_Sphere
   attack: 50
+  attack_element: shadow
   buy: 80
   id: 13206
   locations:
@@ -19844,6 +19849,7 @@
   weight: 5
 - aegis_name: Freezing_Sphere
   attack: 50
+  attack_element: water
   buy: 80
   id: 13207
   locations:
@@ -19917,6 +19923,7 @@
   weight: 1200
 - aegis_name: AP_Ammo
   attack: 50
+  attack_element: neutral
   buy: 5
   equip_level_min: 100
   id: 13215
@@ -19931,6 +19938,7 @@
   weight: 1
 - aegis_name: Blaze_Bullet
   attack: 40
+  attack_element: fire
   buy: 5
   equip_level_min: 100
   id: 13216
@@ -19945,6 +19953,7 @@
   weight: 1
 - aegis_name: Freezing_Bullet
   attack: 40
+  attack_element: water
   buy: 5
   equip_level_min: 100
   id: 13217
@@ -19959,6 +19968,7 @@
   weight: 1
 - aegis_name: Electric_Shock_Bullet
   attack: 40
+  attack_element: wind
   buy: 5
   equip_level_min: 100
   id: 13218
@@ -19973,6 +19983,7 @@
   weight: 1
 - aegis_name: Magical_Stone_Bullet
   attack: 40
+  attack_element: earth
   buy: 5
   equip_level_min: 100
   id: 13219
@@ -19987,6 +19998,7 @@
   weight: 1
 - aegis_name: Sanctified_Bullet
   attack: 40
+  attack_element: holy
   buy: 5
   equip_level_min: 100
   id: 13220
@@ -20001,6 +20013,7 @@
   weight: 1
 - aegis_name: Silver_Bullet_
   attack: 15
+  attack_element: holy
   buy: 5
   equip_level_min: 1
   id: 13221
@@ -20029,6 +20042,7 @@
   weight: 1
 - aegis_name: Flare_Sphere_
   attack: 50
+  attack_element: fire
   buy: 15
   id: 13223
   locations:
@@ -20039,6 +20053,7 @@
   weight: 5
 - aegis_name: Lighting_Sphere_
   attack: 50
+  attack_element: wind
   buy: 15
   id: 13224
   locations:
@@ -20049,6 +20064,7 @@
   weight: 5
 - aegis_name: Poison_Sphere_
   attack: 50
+  attack_element: poison
   buy: 15
   id: 13225
   locations:
@@ -20059,6 +20075,7 @@
   weight: 5
 - aegis_name: Blind_Sphere_
   attack: 50
+  attack_element: shadow
   buy: 15
   id: 13226
   locations:
@@ -20069,6 +20086,7 @@
   weight: 5
 - aegis_name: Freezing_Sphere_
   attack: 50
+  attack_element: water
   buy: 15
   id: 13227
   locations:
@@ -20079,6 +20097,7 @@
   weight: 5
 - aegis_name: Flare_Bullet
   attack: 20
+  attack_element: fire
   buy: 5
   equip_level_min: 1
   id: 13228
@@ -20093,6 +20112,7 @@
   weight: 1
 - aegis_name: Lighting_Bullet
   attack: 20
+  attack_element: wind
   buy: 5
   equip_level_min: 1
   id: 13229
@@ -20107,6 +20127,7 @@
   weight: 1
 - aegis_name: Ice_Bullet
   attack: 20
+  attack_element: water
   buy: 5
   equip_level_min: 1
   id: 13230
@@ -20121,6 +20142,7 @@
   weight: 1
 - aegis_name: Poison_Bullet
   attack: 20
+  attack_element: poison
   buy: 5
   equip_level_min: 1
   id: 13231
@@ -20135,6 +20157,7 @@
   weight: 1
 - aegis_name: Blind_Bullet
   attack: 20
+  attack_element: shadow
   buy: 5
   equip_level_min: 1
   id: 13232
@@ -20219,6 +20242,7 @@
   weight: 1
 - aegis_name: Kunai_Of_Icicle
   attack: 30
+  attack_element: water
   buy: 30
   equip_level_min: 1
   id: 13255
@@ -20233,6 +20257,7 @@
   weight: 1
 - aegis_name: Kunai_Of_Black_Soil
   attack: 30
+  attack_element: earth
   buy: 30
   equip_level_min: 1
   id: 13256
@@ -20247,6 +20272,7 @@
   weight: 1
 - aegis_name: Kunai_Of_Furious_Wind
   attack: 30
+  attack_element: wind
   buy: 30
   equip_level_min: 1
   id: 13257
@@ -20261,6 +20287,7 @@
   weight: 1
 - aegis_name: Kunai_Of_Fierce_Flame
   attack: 30
+  attack_element: fire
   buy: 30
   equip_level_min: 1
   id: 13258
@@ -20275,6 +20302,7 @@
   weight: 1
 - aegis_name: Kunai_Of_Deadly_Poison
   attack: 30
+  attack_element: poison
   buy: 30
   equip_level_min: 1
   id: 13259
@@ -20661,6 +20689,7 @@
   weight: 50
 - aegis_name: Starfish
   attack: 110
+  attack_element: neutral
   equip_level_min: 50
   id: 13291
   jobs:
@@ -20674,6 +20703,7 @@
   weight: 5
 - aegis_name: Dried_Squid
   attack: 50
+  attack_element: neutral
   buy: 10
   equip_level_min: 1
   id: 13292
@@ -20688,6 +20718,7 @@
   weight: 20
 - aegis_name: Flying_Fish
   attack: 50
+  attack_element: neutral
   buy: 10
   equip_level_min: 1
   id: 13293
@@ -20702,6 +20733,7 @@
   weight: 20
 - aegis_name: Explosive_Kunai
   attack: 50
+  attack_element: neutral
   buy: 100
   equip_level_min: 100
   id: 13294
@@ -20743,6 +20775,7 @@
   weight: 1
 - aegis_name: Holy_Cannon_Ball
   attack: 120
+  attack_element: holy
   buy: 50
   equip_level_min: 99
   id: 18001
@@ -20757,6 +20790,7 @@
   weight: 1
 - aegis_name: Dark_Cannon_Ball
   attack: 120
+  attack_element: shadow
   buy: 50
   equip_level_min: 99
   id: 18002
@@ -20771,6 +20805,7 @@
   weight: 1
 - aegis_name: Soul_Cannon_Ball
   attack: 120
+  attack_element: ghost
   buy: 50
   equip_level_min: 99
   id: 18003
@@ -20799,6 +20834,7 @@
   weight: 1
 - aegis_name: Ice_Cannon_Ball
   attack: 120
+  attack_element: water
   buy: 50
   equip_level_min: 99
   id: 18005
@@ -20813,6 +20849,7 @@
   weight: 1
 - aegis_name: Lightning_Cannon_Ball
   attack: 120
+  attack_element: wind
   buy: 50
   equip_level_min: 99
   id: 18006
@@ -20827,6 +20864,7 @@
   weight: 1
 - aegis_name: Stone_Cannon_Ball
   attack: 120
+  attack_element: earth
   buy: 50
   equip_level_min: 99
   id: 18007
@@ -20841,6 +20879,7 @@
   weight: 1
 - aegis_name: Flare_Cannon_Ball
   attack: 120
+  attack_element: fire
   buy: 50
   equip_level_min: 99
   id: 18008
@@ -20855,6 +20894,7 @@
   weight: 1
 - aegis_name: Poisoning_Cannon_Ball
   attack: 120
+  attack_element: poison
   equip_level_min: 99
   id: 18009
   jobs:
@@ -56233,6 +56273,7 @@
   weight: 1
 - aegis_name: Kunai_Of_Nothing
   attack: 30
+  attack_element: ghost
   buy: 30
   equip_level_min: 1
   id: 1220002
@@ -56247,6 +56288,7 @@
   weight: 1
 - aegis_name: Kunai_Of_Shadow
   attack: 30
+  attack_element: shadow
   buy: 30
   equip_level_min: 1
   id: 1220003
@@ -56261,6 +56303,7 @@
   weight: 1
 - aegis_name: Kunai_Of_Hamaya
   attack: 30
+  attack_element: holy
   buy: 30
   equip_level_min: 1
   id: 1220004
