@@ -202,14 +202,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOps do
     }
   end
 
-  # Adds the moved item to `destination`, preserving its attributes. A plain item
-  # (no refine/cards/random options/attribute/bound) may stack via the shared
-  # core; anything distinguishing always takes its own fresh slot so a refined or
-  # carded item never merges onto a plain stack and loses its attributes (the
-  # core's stack test keys on the existing slot only and ignores refine).
+  @doc """
+  Adds the moved item to `destination`, preserving its attributes.
+
+  A plain item (no refine/cards/random options/attribute/bound) may stack via the
+  shared core; anything distinguishing always takes its own fresh slot so a
+  refined or carded item never merges onto a plain stack and loses its attributes
+  (the core's stack test keys on the existing slot only and ignores refine). Pure:
+  it computes the new container map and change descriptor without any DB write, so
+  it composes inside a larger transaction (e.g. the vending cross-player buy).
+  """
   @spec add_preserving(map(), ItemDefinition.t(), pos_integer(), InventoryItem.t()) ::
           Inventory.op_result()
-  defp add_preserving(destination, %ItemDefinition{} = item_def, amount, %InventoryItem{} = item) do
+  def add_preserving(destination, %ItemDefinition{} = item_def, amount, %InventoryItem{} = item) do
     if plain?(item) do
       Inventory.add(destination, item_def, amount, item_opts(item))
     else
