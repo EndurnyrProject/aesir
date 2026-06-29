@@ -40,6 +40,8 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def route(%Aesir.Net.UnequipResult{}), do: {:gameplay, :unequip_result}
   def route(%Aesir.Net.ItemAdded{}), do: {:gameplay, :item_added}
   def route(%Aesir.Net.ItemRemoved{}), do: {:gameplay, :item_removed}
+  def route(%Aesir.Net.CartItemAdded{}), do: {:gameplay, :cart_item_added}
+  def route(%Aesir.Net.CartItemRemoved{}), do: {:gameplay, :cart_item_removed}
   def route(%Aesir.Net.StatUpResult{}), do: {:gameplay, :stat_up_result}
   def route(%Aesir.Net.LearnSkillResult{}), do: {:gameplay, :learn_skill_result}
   def route(%Aesir.Net.ItemUseResult{}), do: {:gameplay, :item_use_result}
@@ -60,6 +62,7 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
 
   def route(%Aesir.Net.SkillList{}), do: {:bulk, :skill_list}
   def route(%Aesir.Net.InventoryList{}), do: {:bulk, :inventory_list}
+  def route(%Aesir.Net.CartInfo{}), do: {:bulk, :cart_info}
 
   def route(%Aesir.Net.Snapshot{}), do: {:snapshots, :snapshot}
 

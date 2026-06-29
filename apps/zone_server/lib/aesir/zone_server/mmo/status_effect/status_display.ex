@@ -90,6 +90,35 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay do
   end
 
   @doc """
+  Recomputes a unit's sprite-state aggregate and broadcasts it to its area as a
+  `UnitStateChange`, unconditionally.
+
+  The apply/remove display path only broadcasts when the applied status carries a
+  *static* opt field. A status whose sprite bit is instance-derived (e.g.
+  `SC_PUSHCART`'s cart tier, which carries no static `:option`) is therefore
+  skipped by `on_applied/on_removed`, so its mount/unmount/tier-change flows call
+  this directly to light up or clear the sprite. The broadcast reaches every
+  player in range including the unit's own owner, exactly as the apply/remove
+  path does, so the caller must not also direct-send the same packet to the
+  owner.
+  """
+  @spec broadcast_state(Unit.unit_type(), integer()) :: :ok
+  def broadcast_state(unit_type, unit_id) do
+    %{body_state: b, health_state: h, effect_state: e, virtue: v} =
+      aggregate(unit_type, unit_id)
+
+    packet = %UnitStateChange{
+      unit_id: unit_id,
+      body_state: b,
+      health_state: h,
+      effect_state: e,
+      virtue: v
+    }
+
+    broadcast_area(unit_type, unit_id, packet)
+  end
+
+  @doc """
   Returns one `StatusChange{on: true}` message per active icon-bearing status,
   for the spawn-resync follow-up sent to a newly-visible observer.
   """
@@ -141,22 +170,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay do
   end
 
   defp broadcast_aggregate_if_opt(unit_type, unit_id, definition) do
-    if opt_bearing?(definition) do
-      %{body_state: b, health_state: h, effect_state: e, virtue: v} =
-        aggregate(unit_type, unit_id)
-
-      packet = %UnitStateChange{
-        unit_id: unit_id,
-        body_state: b,
-        health_state: h,
-        effect_state: e,
-        virtue: v
-      }
-
-      broadcast_area(unit_type, unit_id, packet)
-    else
-      :ok
-    end
+    if opt_bearing?(definition), do: broadcast_state(unit_type, unit_id), else: :ok
   end
 
   defp opt_bearing?(%{opt1: o1, opt2: o2, option: op, opt3: o3}) do

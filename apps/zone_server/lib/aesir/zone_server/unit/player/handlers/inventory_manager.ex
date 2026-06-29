@@ -90,9 +90,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
     end)
   end
 
-  defp affected_indices({:added, index, _item}), do: [index]
-  defp affected_indices({:stacked, index, _total}), do: [index]
+  @doc """
+  Returns the session indices an add-type `change` touched.
 
-  defp affected_indices({:split, [{topped_index, _}, {new_index, _}]}),
+  Shared with the cart move flow, which stages the same change descriptors and
+  needs the affected destination slots to emit its `CartItemAdded` deltas.
+  """
+  @spec affected_indices(Inventory.change()) :: [non_neg_integer()]
+  def affected_indices({:added, index, _item}), do: [index]
+  def affected_indices({:stacked, index, _total}), do: [index]
+
+  def affected_indices({:split, [{topped_index, _}, {new_index, _}]}),
     do: [topped_index, new_index]
 end

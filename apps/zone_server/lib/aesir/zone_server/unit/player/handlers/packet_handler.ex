@@ -9,6 +9,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.ActionRequest
+  alias Aesir.Net.CartInfo
+  alias Aesir.Net.CartItemAdded
+  alias Aesir.Net.CartItemRemoved
+  alias Aesir.Net.CartMountRequest
   alias Aesir.Net.ChatMessage
   alias Aesir.Net.ChatRequest
   alias Aesir.Net.EquipItem
@@ -18,7 +22,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.ItemRemoved
   alias Aesir.Net.LearnSkill
   alias Aesir.Net.MapLoaded
+  alias Aesir.Net.MoveFromCartRequest
   alias Aesir.Net.MoveRequest
+  alias Aesir.Net.MoveToCartRequest
   alias Aesir.Net.NameRequest
   alias Aesir.Net.NameResponse
   alias Aesir.Net.NpcInteract
@@ -127,6 +133,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   # `index` is the client index (server index + 2); the handler subtracts the offset.
   def handle_message(%UseItem{index: index}, state) do
     GenServer.cast(self(), {:use_item, index})
+    {:noreply, state}
+  end
+
+  # CartMountRequest - Player mounts (true) or unmounts (false) the pushcart.
+  def handle_message(%CartMountRequest{mount: mount}, state) do
+    GenServer.cast(self(), {:cart_mount, mount})
+    {:noreply, state}
+  end
+
+  # MoveToCartRequest - Player moves an inventory item into the cart. `inventory_index`
+  # is the client index (server index + 2); the handler subtracts the offset.
+  def handle_message(%MoveToCartRequest{inventory_index: index, amount: amount}, state) do
+    GenServer.cast(self(), {:move_to_cart, index, amount})
+    {:noreply, state}
+  end
+
+  # MoveFromCartRequest - Player moves a cart item back into the inventory.
+  # `cart_index` is the client index (server index + 2); the handler subtracts the offset.
+  def handle_message(%MoveFromCartRequest{cart_index: index, amount: amount}, state) do
+    GenServer.cast(self(), {:move_to_inventory, index, amount})
     {:noreply, state}
   end
 
@@ -323,6 +349,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
 
     StatusSync.send_stat_updates(connection_pid, game_state.stats)
     send_inventory_data(connection_pid, game_state.inventory)
+    maybe_send_cart_info(connection_pid, game_state)
 
     skill_list = SkillListView.build(game_state.stats.progression)
     MessageRouter.send_to(connection_pid, skill_list)
@@ -398,6 +425,57 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     }
   end
 
+  @doc """
+  Builds the full `CartInfo` dump for a cart map (sent on mount/login).
+
+  Mirrors `send_inventory_data/2`'s `InventoryList` but for the cart: each slot is
+  reused through `to_inventory_item/2`, so cart wire items carry the same +2
+  client index offset as inventory items.
+  """
+  @spec cart_info(%{non_neg_integer() => InventoryItem.t()}) :: CartInfo.t()
+  def cart_info(cart) do
+    items =
+      cart
+      |> Enum.sort_by(fn {index, _item} -> index end)
+      |> Enum.map(fn {index, item} -> to_inventory_item(index, item) end)
+
+    %CartInfo{items: items}
+  end
+
+  @doc """
+  Builds a `CartItemAdded` for a cart slot, mirroring `item_added/2`.
+  """
+  @spec cart_item_added(InventoryItem.t(), non_neg_integer()) :: CartItemAdded.t()
+  def cart_item_added(%InventoryItem{} = item, server_index) do
+    %CartItemAdded{
+      index: PlayerState.client_index(server_index),
+      amount: item.amount,
+      nameid: item.nameid,
+      identified: item.identify == 1,
+      attribute: item.attribute,
+      refine: item.refine,
+      cards: [item.card0, item.card1, item.card2, item.card3],
+      location: item.equip,
+      type: client_type(item.nameid),
+      result: 0,
+      expire_time: encode_expire_time(item.expire_time),
+      look: item_view(item.nameid)
+    }
+  end
+
+  @doc """
+  Builds a `CartItemRemoved` for a cart slot, mirroring `item_removed/3`.
+  """
+  @spec cart_item_removed(non_neg_integer(), pos_integer(), non_neg_integer()) ::
+          CartItemRemoved.t()
+  def cart_item_removed(server_index, amount, reason \\ 0) do
+    %CartItemRemoved{
+      index: PlayerState.client_index(server_index),
+      amount: amount,
+      reason: reason
+    }
+  end
+
   # Collapses the legacy 4-packet inventory dump (ZC_INVENTORY_START/ITEMLIST_NORMAL/
   # ITEMLIST_EQUIP/END) into a single InventoryList on the Bulk channel. Items split
   # by `equip`: 0 -> normal (stackable), >0 -> equip (worn), both sorted by the unified
@@ -414,6 +492,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     }
 
     MessageRouter.send_to(connection_pid, list)
+  end
+
+  # Sends the cart dump on map load only for a mounted player; an unmounted
+  # player has an empty cart and needs no CartInfo.
+  defp maybe_send_cart_info(_connection_pid, %{cart_type: 0}), do: :ok
+
+  defp maybe_send_cart_info(connection_pid, %{cart: cart}) do
+    MessageRouter.send_to(connection_pid, cart_info(cart))
   end
 
   @spec to_inventory_item(non_neg_integer(), InventoryItem.t()) :: Aesir.Net.InventoryItem.t()

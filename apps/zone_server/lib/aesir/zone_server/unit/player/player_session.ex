@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.Appearance
+  alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
@@ -216,6 +217,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         }
 
         register_player(final_game_state)
+
+        # Restore a mounted cart: load its rows, set the tier, and re-apply
+        # SC_PUSHCART so the sprite folds into the spawn effect_state and the
+        # walk-speed penalty is recomputed. Runs after registration so the
+        # status apply can resolve the unit's entity info.
+        state = CartHandler.load_on_spawn(character, state)
 
         # Subscribe to this player's event topic. Kill rewards and other
         # player-directed domain events arrive here, keeping emitters
@@ -484,6 +491,26 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:use_item, index}, state) do
     ItemHandler.handle_use_item(index, state)
+  end
+
+  @impl true
+  def handle_cast({:cart_mount, true}, state) do
+    CartHandler.mount(state)
+  end
+
+  @impl true
+  def handle_cast({:cart_mount, false}, state) do
+    CartHandler.unmount(state)
+  end
+
+  @impl true
+  def handle_cast({:move_to_cart, index, amount}, state) do
+    CartHandler.move_to_cart(index, amount, state)
+  end
+
+  @impl true
+  def handle_cast({:move_to_inventory, index, amount}, state) do
+    CartHandler.move_to_inventory(index, amount, state)
   end
 
   @impl true
