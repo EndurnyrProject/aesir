@@ -85,6 +85,38 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
     end
   end
 
+  describe "{:credit_zeny, amount}" do
+    test "credits, pushes the zeny param, persists, returns the new game_state" do
+      test_pid = self()
+
+      expect(CharacterPersistence, :update_character, fn 1000, %{zeny: zeny}, async: true ->
+        send(test_pid, {:persisted_zeny, zeny})
+        {:ok, %Character{}}
+      end)
+
+      {reply, new_state} =
+        ScriptEffectHandler.apply_op({:credit_zeny, 500}, base_state(zeny: 1_000))
+
+      assert {:ok, game_state} = reply
+      assert game_state.zeny == 1_500
+      assert new_state.game_state.zeny == 1_500
+
+      assert_received {:send, _ch,
+                       {:param_change, %ParamChange{var_id: @zeny_param, value: 1_500}}}
+
+      assert_received {:persisted_zeny, 1_500}
+    end
+
+    test "clamps the credited total to MAX_ZENY" do
+      {reply, new_state} =
+        ScriptEffectHandler.apply_op({:credit_zeny, 500}, base_state(zeny: 999_999_999))
+
+      assert {:ok, game_state} = reply
+      assert game_state.zeny == 1_000_000_000
+      assert new_state.game_state.zeny == 1_000_000_000
+    end
+  end
+
   describe "{:give_item, item_id, qty}" do
     test "adds via InventoryOps, emits ItemAdded, returns the new game_state" do
       definition = item_definition(@sphmask_id)
