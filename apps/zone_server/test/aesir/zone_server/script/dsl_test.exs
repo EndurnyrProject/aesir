@@ -7,6 +7,8 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   alias Aesir.Net.ParamChange
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Map.Coordinator
+  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -31,6 +33,8 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     Mimic.copy(WarpHandler)
     Mimic.copy(SkillInterpreter)
     Mimic.copy(Coordinator)
+    Mimic.copy(MapCache)
+    Mimic.copy(MapData)
 
     stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
     stub(StatusInterpreter, :apply_status, fn _, _, _, _ -> :ok end)
@@ -153,6 +157,72 @@ defmodule Aesir.ZoneServer.Script.DslTest do
 
       assert result.status == {:error, :map_not_found}
       assert Dsl.position(result) == Dsl.position(ctx)
+    end
+  end
+
+  describe "warp/2 :random" do
+    test "relocates the player to a random walkable cell on the current map" do
+      relocated = %{build_game_state() | map_name: "prontera", x: 33, y: 44}
+
+      expect(MapCache, :get, fn "prontera" -> {:ok, :map_data} end)
+      expect(MapData, :random_walkable_cell, fn :map_data -> {:ok, {33, 44}} end)
+
+      expect(WarpHandler, :warp, fn _session, "prontera", 33, 44 ->
+        {:ok, %{game_state: relocated}}
+      end)
+
+      ctx = Dsl.warp(build_ctx(), :random)
+
+      assert ctx.status == :ok
+      assert Dsl.position(ctx) == {33, 44, "prontera"}
+    end
+
+    test "halts when no walkable cell can be resolved" do
+      stub(MapCache, :get, fn _map -> {:error, :not_found} end)
+
+      result = Dsl.warp(build_ctx(), :random)
+
+      assert result.status == {:error, :not_found}
+    end
+
+    test "halts immediately when already in an error state" do
+      ctx = Ctx.halt(build_ctx(), :boom)
+
+      assert Dsl.warp(ctx, :random) == ctx
+    end
+  end
+
+  describe "warp/2 :save_point" do
+    test "relocates the player to their save point" do
+      game_state = %{build_game_state() | save_map: "izlude", save_x: 90, save_y: 105}
+      relocated = %{game_state | map_name: "izlude", x: 90, y: 105}
+
+      expect(WarpHandler, :warp, fn _session, "izlude", 90, 105 ->
+        {:ok, %{game_state: relocated}}
+      end)
+
+      ctx = Dsl.warp(%{build_ctx() | game_state: game_state}, :save_point)
+
+      assert ctx.status == :ok
+      assert Dsl.position(ctx) == {90, 105, "izlude"}
+    end
+
+    test "halts and leaves position unchanged when the warp fails" do
+      stub(WarpHandler, :warp, fn _session, _map, _x, _y -> {:error, :map_not_found} end)
+
+      game_state = %{build_game_state() | save_map: "izlude", save_x: 90, save_y: 105}
+      ctx = %{build_ctx() | game_state: game_state}
+
+      result = Dsl.warp(ctx, :save_point)
+
+      assert result.status == {:error, :map_not_found}
+      assert Dsl.position(result) == Dsl.position(ctx)
+    end
+
+    test "halts immediately when already in an error state" do
+      ctx = Ctx.halt(build_ctx(), :boom)
+
+      assert Dsl.warp(ctx, :save_point) == ctx
     end
   end
 

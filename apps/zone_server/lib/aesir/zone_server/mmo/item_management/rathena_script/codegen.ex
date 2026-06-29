@@ -30,6 +30,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   amount it becomes a range literal (`heal` rolls within it); anywhere else it
   becomes `Enum.random/1`. No randomness happens at transpile time — same script,
   same string.
+
+  ## `warp`
+
+  `warp "map",x,y` emits `warp(ctx, "map", x, y)`. The two string-target forms
+  `warp "Random",0,0` (fly wing) and `warp "SavePoint",0,0` (butterfly wing) emit
+  the one-arg DSL atom form `warp(ctx, :random)` / `warp(ctx, :save_point)` via
+  `CommandSet.warp_target/1`.
   """
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet
@@ -67,7 +74,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
 
   @spec render_command(String.t(), [term()]) ::
           {:ok, String.t()} | {:error, {:unsupported, detail()}}
-  defp render_command(name, args) do
+  defp render_command("warp", [target, _x, _y] = args) when is_binary(target) do
+    case CommandSet.warp_target(target) do
+      {:ok, dsl_atom} -> {:ok, "warp(ctx, #{dsl_atom})"}
+      :error -> render_known_command("warp", args)
+    end
+  end
+
+  defp render_command(name, args), do: render_known_command(name, args)
+
+  @spec render_known_command(String.t(), [term()]) ::
+          {:ok, String.t()} | {:error, {:unsupported, detail()}}
+  defp render_known_command(name, args) do
     case CommandSet.command(name) do
       {:ok, rule} -> render_rule(rule, args)
       :error -> unsupported(name)

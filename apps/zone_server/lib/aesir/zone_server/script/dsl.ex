@@ -20,6 +20,8 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.Net.NpcInteract
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Map.Coordinator
+  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -220,10 +222,34 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   def cure(%Ctx{} = ctx, status), do: sc_end(ctx, status)
 
   @doc """
-  Relocates the player to `(map, x, y)`. Halts on `:map_not_found`.
+  Relocates the player.
+
+  - `{map, x, y}` — to an explicit cell. Halts on `:map_not_found`.
+  - `:random` — to a random walkable cell on the current map (fly wing).
+  - `:save_point` — to the player's save point (butterfly wing).
+
+  Halts on a resolution or warp error.
   """
-  @spec warp(Ctx.t(), {String.t(), non_neg_integer(), non_neg_integer()}) :: Ctx.t()
+  @spec warp(Ctx.t(), {String.t(), non_neg_integer(), non_neg_integer()} | :random | :save_point) ::
+          Ctx.t()
   def warp(%Ctx{} = ctx, {map, x, y}), do: warp(ctx, map, x, y)
+
+  def warp(%Ctx{status: {:error, _}} = ctx, :random), do: ctx
+
+  def warp(%Ctx{game_state: game_state} = ctx, :random) do
+    with {:ok, map_data} <- MapCache.get(game_state.map_name),
+         {:ok, {x, y}} <- MapData.random_walkable_cell(map_data) do
+      warp(ctx, game_state.map_name, x, y)
+    else
+      {:error, reason} -> Ctx.halt(ctx, reason)
+    end
+  end
+
+  def warp(%Ctx{status: {:error, _}} = ctx, :save_point), do: ctx
+
+  def warp(%Ctx{game_state: game_state} = ctx, :save_point) do
+    warp(ctx, game_state.save_map, game_state.save_x, game_state.save_y)
+  end
 
   @spec warp(Ctx.t(), String.t(), non_neg_integer(), non_neg_integer()) :: Ctx.t()
   def warp(%Ctx{status: {:error, _}} = ctx, _map, _x, _y), do: ctx

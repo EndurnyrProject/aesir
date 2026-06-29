@@ -42,6 +42,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet do
     "itemskill" => %{shape: :itemskill, dsl: "itemskill"}
   }
 
+  @warp_targets %{
+    "Random" => ":random",
+    "SavePoint" => ":save_point"
+  }
+
   @reads %{
     "BaseLevel" => "base_level",
     "JobLevel" => "job_level",
@@ -57,6 +62,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet do
 
   @spec command(String.t()) :: {:ok, rule()} | :error
   def command(name) when is_binary(name), do: Map.fetch(@commands, name)
+
+  @doc """
+  Maps a `warp` first-argument string-target (`"Random"`, `"SavePoint"`) to the
+  one-arg DSL atom form (`:random`, `:save_point`). Returns `:error` for literal
+  map names, which fall through to the standard `warp "map",x,y` codegen.
+  """
+  @spec warp_target(String.t()) :: {:ok, String.t()} | :error
+  def warp_target(name) when is_binary(name), do: Map.fetch(@warp_targets, name)
 
   @spec read(String.t()) :: {:ok, String.t()} | :error
   def read(name) when is_binary(name), do: Map.fetch(@reads, name)

@@ -137,6 +137,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CodegenTest do
       assert {:ok, "warp(ctx, \"prontera\", 155, 183)"} =
                Codegen.generate([{:call, "warp", ["prontera", 155, 183]}])
     end
+
+    test "warp \"Random\" emits the random-cell form (fly wing)" do
+      assert {:ok, "warp(ctx, :random)"} =
+               Codegen.generate([{:call, "warp", ["Random", 0, 0]}])
+    end
+
+    test "warp \"SavePoint\" emits the save-point form (butterfly wing)" do
+      assert {:ok, "warp(ctx, :save_point)"} =
+               Codegen.generate([{:call, "warp", ["SavePoint", 0, 0]}])
+    end
   end
 
   describe "generate/1 unsupported" do

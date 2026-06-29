@@ -52,6 +52,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.TranspilerTest do
       assert {:ok, "heal(ctx, hp: 45..65)"} = Transpiler.transpile("itemheal rand(45,65),0;")
     end
 
+    test "a fly wing" do
+      assert {:ok, "warp(ctx, :random)"} = Transpiler.transpile("warp \"Random\",0,0;")
+    end
+
+    test "a butterfly wing" do
+      assert {:ok, "warp(ctx, :save_point)"} = Transpiler.transpile("warp \"SavePoint\",0,0;")
+    end
+
     test "a class-branch scroll" do
       script = "if (Class == Job_Knight) sc_start SC_BLESSING,60000,10; else itemheal 50,0;"
 
