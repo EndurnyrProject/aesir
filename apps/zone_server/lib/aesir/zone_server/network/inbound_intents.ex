@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Network.InboundIntents do
                     Aesir.Net.MapLoaded,
                     Aesir.Net.MoveRequest,
                     Aesir.Net.NameRequest,
+                    Aesir.Net.NpcBuyRequest,
                     Aesir.Net.NpcInteract,
                     Aesir.Net.NpcTalk,
                     Aesir.Net.Respawn,

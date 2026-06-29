@@ -13,20 +13,39 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
   clause it is delegated from.
   """
 
+  alias Aesir.Commons.StatusParams
+  alias Aesir.Net.NpcBuyEntry
+  alias Aesir.Net.NpcBuyRequest
+  alias Aesir.Net.NpcBuyResult
   alias Aesir.Net.NpcShopBuyItem
   alias Aesir.Net.NpcShopOpen
   alias Aesir.Net.NpcShopSellItem
+  alias Aesir.Repo
+  alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Geometry
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Npc.Shop, as: ShopData
   alias Aesir.ZoneServer.Npc.Shop.Registry, as: ShopRegistry
+  alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
+  alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.Shop, as: ShopCore
 
   # rAthena clicks NPCs within `AREA_SIZE + 1` cells (`npc_checknear`,
   # src/map/npc.cpp); `AREA_SIZE` defaults to 14, so the talk gate is 15 cells
   # (Chebyshev). Intentionally separate from `Config.view_range/0`.
   @talk_range 15
+
+  # `NpcBuyResult.result` codes, in the design §5 enum order.
+  @result_ok 0
+  @result_not_enough_zeny 1
+  @result_overweight 2
+  @result_no_slots 3
+  @result_invalid 4
+  @result_out_of_range 5
 
   @type state :: %{
           required(:connection_pid) => pid(),
@@ -54,6 +73,131 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
     end
 
     {:noreply, state}
+  end
+
+  @doc """
+  Buys `request.items` from the shop identified by `request.unit_id`.
+
+  Re-resolves the shop by gid and re-checks talk range (anti-forgery: the client
+  never names a price or trusts the open-window list). On a valid, in-range,
+  affordable request it commits every inventory add and the zeny debit inside one
+  `Repo.transact`, so a partial buy can never persist; it then updates in-memory
+  state, pushes one `ItemAdded` per touched slot, a zeny `ParamChange`, and
+  `NpcBuyResult{ok}`. Any gate or transaction failure replies with the mapped
+  result code and leaves inventory, zeny and the client view untouched. Always
+  returns `{:noreply, state}`.
+  """
+  @spec buy(state(), NpcBuyRequest.t()) :: {:noreply, state()}
+  def buy(%{game_state: gs, connection_pid: connection_pid} = state, %NpcBuyRequest{
+        unit_id: unit_id,
+        items: entries
+      }) do
+    requests = Enum.map(entries, fn %NpcBuyEntry{nameid: id, amount: a} -> {id, a} end)
+
+    with {:ok, shop} <- fetch_in_range(gs, unit_id),
+         {:ok, %{total_cost: total_cost, item_adds: item_adds}} <-
+           ShopCore.compute_buy(shop, requests, gs),
+         {:ok, inventory, changes} <-
+           transact_buy(gs.character_id, gs.inventory, gs.zeny, total_cost, item_adds) do
+      new_state = finalize_buy(state, inventory, changes, total_cost)
+      reply(connection_pid, %NpcBuyResult{result: @result_ok})
+      {:noreply, new_state}
+    else
+      {:error, reason} ->
+        reply(connection_pid, %NpcBuyResult{result: buy_result_code(reason)})
+        {:noreply, state}
+    end
+  end
+
+  @spec fetch_in_range(PlayerState.t(), non_neg_integer()) ::
+          {:ok, ShopData.t()} | {:error, :invalid | :out_of_range}
+  defp fetch_in_range(gs, unit_id) do
+    case ShopRegistry.fetch(unit_id) do
+      {:ok, shop} -> if in_talk_range?(gs, shop), do: {:ok, shop}, else: {:error, :out_of_range}
+      :error -> {:error, :invalid}
+    end
+  end
+
+  @spec transact_buy(
+          integer(),
+          Inventory.t(),
+          non_neg_integer(),
+          non_neg_integer(),
+          [{ItemDefinition.t(), pos_integer()}]
+        ) :: {:ok, Inventory.t(), [Inventory.change()]} | {:error, term()}
+  defp transact_buy(char_id, inventory, zeny, total_cost, item_adds) do
+    new_zeny = zeny - total_cost
+
+    result =
+      Repo.transact(fn ->
+        with {:ok, inv, changes} <- apply_buy_adds(char_id, inventory, item_adds),
+             {:ok, _} <- CharacterPersistence.update_character(char_id, %{zeny: new_zeny}) do
+          {:ok, {inv, changes}}
+        end
+      end)
+
+    case result do
+      {:ok, {inv, changes}} -> {:ok, inv, changes}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @spec apply_buy_adds(integer(), Inventory.t(), [{ItemDefinition.t(), pos_integer()}]) ::
+          {:ok, Inventory.t(), [Inventory.change()]} | {:error, term()}
+  defp apply_buy_adds(char_id, inventory, item_adds) do
+    item_adds
+    |> Enum.reduce_while({:ok, inventory, []}, fn {item_def, amount}, {:ok, current, changes} ->
+      with {:ok, new_inv, change} <- Inventory.add(current, item_def, amount),
+           {:ok, persisted} <- InventoryOps.apply_change(char_id, current, new_inv, change) do
+        {:cont, {:ok, persisted, [change | changes]}}
+      else
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+    |> case do
+      {:ok, inv, changes} -> {:ok, inv, Enum.reverse(changes)}
+      error -> error
+    end
+  end
+
+  @spec finalize_buy(state(), Inventory.t(), [Inventory.change()], non_neg_integer()) :: state()
+  defp finalize_buy(%{game_state: gs} = state, inventory, changes, total_cost) do
+    new_zeny = gs.zeny - total_cost
+    new_gs = %{gs | inventory: inventory, zeny: new_zeny}
+
+    notify_added(state.connection_pid, inventory, changes)
+    StatusSync.send_param(state.connection_pid, StatusParams.zeny(), new_zeny)
+
+    %{state | game_state: new_gs}
+  end
+
+  @spec notify_added(pid(), Inventory.t(), [Inventory.change()]) :: :ok
+  defp notify_added(connection_pid, inventory, changes) do
+    Enum.each(changes, fn change ->
+      Enum.each(affected_indices(change), fn index ->
+        item = PlayerState.get_by_index(inventory, index)
+        MessageRouter.send_to(connection_pid, PacketHandler.item_added(item, index))
+      end)
+    end)
+  end
+
+  @spec affected_indices(Inventory.change()) :: [non_neg_integer()]
+  defp affected_indices({:added, index, _item}), do: [index]
+  defp affected_indices({:stacked, index, _total}), do: [index]
+
+  defp affected_indices({:split, [{topped_index, _}, {new_index, _}]}),
+    do: [topped_index, new_index]
+
+  @spec buy_result_code(atom()) :: non_neg_integer()
+  defp buy_result_code(:not_enough_zeny), do: @result_not_enough_zeny
+  defp buy_result_code(:overweight), do: @result_overweight
+  defp buy_result_code(:no_slots), do: @result_no_slots
+  defp buy_result_code(:out_of_range), do: @result_out_of_range
+  defp buy_result_code(_), do: @result_invalid
+
+  @spec reply(pid(), NpcBuyResult.t()) :: :ok
+  defp reply(connection_pid, %NpcBuyResult{} = result) do
+    MessageRouter.send_to(connection_pid, result)
   end
 
   @spec in_talk_range?(PlayerState.t(), ShopData.t()) :: boolean()

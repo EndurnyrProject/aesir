@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.MoveToCartRequest
   alias Aesir.Net.NameRequest
   alias Aesir.Net.NameResponse
+  alias Aesir.Net.NpcBuyRequest
   alias Aesir.Net.NpcInteract
   alias Aesir.Net.NpcTalk
   alias Aesir.Net.Respawn
@@ -320,6 +321,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
 
   def handle_message(%NpcInteract{}, state) do
     {:noreply, state}
+  end
+
+  # NpcBuyRequest - Player buys items from a clicked NPC shop. The buyer is the
+  # sole writer, so the handler runs the buy transaction inline in this session.
+  def handle_message(%NpcBuyRequest{} = msg, state) do
+    NpcShopHandler.buy(state, msg)
   end
 
   def handle_message(message, state) do
