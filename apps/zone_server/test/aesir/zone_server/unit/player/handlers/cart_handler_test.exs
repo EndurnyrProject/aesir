@@ -349,6 +349,74 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandlerTest do
     end
   end
 
+  describe "change_cart_tier/2" do
+    @cart2_bit Option.id(:cart2)
+    @cart3_bit Option.id(:cart3)
+
+    setup do
+      test_pid = self()
+
+      stub(SpatialIndex, :get_unit_position, fn :player, @char_id ->
+        {:ok, {150, 150, "prontera"}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet, _opts ->
+        send(test_pid, {:cart_sprite, packet})
+        :ok
+      end)
+
+      StatusStorage.apply_status(:player, @char_id, :sc_push_cart, val1: @pushcart_level, val2: 1)
+      :ok
+    end
+
+    test "at the tier-2 base level sets cart_type 2, persists, RMWs val2, broadcasts cart2" do
+      expect(CharacterPersistence, :update_character, fn @char_id, %{cart: 2}, async: true ->
+        :ok
+      end)
+
+      game_state = state(cart_type: 1).game_state
+
+      assert {:ok, updated} = CartHandler.change_cart_tier(game_state, 50)
+
+      assert updated.cart_type == 2
+      assert StatusStorage.get_status(:player, @char_id, :sc_push_cart).val2 == 2
+
+      assert_received {:cart_sprite,
+                       %UnitStateChange{unit_id: @char_id, effect_state: effect_state}}
+
+      assert (effect_state &&& @cart2_bit) == @cart2_bit
+    end
+
+    test "jumps straight to tier 3 above the tier-3 base level" do
+      expect(CharacterPersistence, :update_character, fn @char_id, %{cart: 3}, async: true ->
+        :ok
+      end)
+
+      game_state = state(cart_type: 1).game_state
+
+      assert {:ok, updated} = CartHandler.change_cart_tier(game_state, 70)
+
+      assert updated.cart_type == 3
+      assert StatusStorage.get_status(:player, @char_id, :sc_push_cart).val2 == 3
+
+      assert_received {:cart_sprite,
+                       %UnitStateChange{unit_id: @char_id, effect_state: effect_state}}
+
+      assert (effect_state &&& @cart3_bit) == @cart3_bit
+    end
+
+    test "below the tier-2 base level returns an error and changes nothing" do
+      reject(&CharacterPersistence.update_character/3)
+
+      game_state = state(cart_type: 1).game_state
+
+      assert {:error, :no_cart_upgrade} = CartHandler.change_cart_tier(game_state, 30)
+
+      assert StatusStorage.get_status(:player, @char_id, :sc_push_cart).val2 == 1
+      refute_received {:cart_sprite, _}
+    end
+  end
+
   describe "packet dispatch" do
     test "CartMountRequest{mount: true} casts {:cart_mount, true}" do
       base = %{game_state: %PlayerState{character_id: @char_id}}

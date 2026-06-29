@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
     Skills.AlTeleport,
     Skills.HtBlastmine,
     Skills.HtLandmine,
+    Skills.McChangecart,
     Skills.McPushcart,
     Skills.MgColdbolt,
     Skills.MgEnergycoat,

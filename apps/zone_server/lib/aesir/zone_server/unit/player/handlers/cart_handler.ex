@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.McPushcart
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Cart
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartOps
@@ -44,6 +45,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   @status_id :sc_push_cart
   @mc_pushcart_id McPushcart.definition().id
   @first_tier 1
+
+  # rAthena `clif_parse_ChangeCart` base-level gates (strict `>`). Tiers 4-5 are
+  # out of scope (3rd-job cart decorations), so the sprite tops out at tier 3.
+  @tier2_min_level 40
+  @tier3_min_level 65
 
   @doc """
   Mounts the cart.
@@ -194,6 +200,45 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   end
 
   def load_on_spawn(%Character{}, state), do: state
+
+  @doc """
+  Upgrades the mounted cart's sprite tier to the highest one `base_level` permits
+  and commits it, for the `MC_CHANGECART` self-cast (design "Change Cart flow").
+
+  Unlike the mount/unmount handlers this runs inside a skill `cast/4`, so it takes
+  and returns the player's `game_state` (`PlayerState`) rather than the session
+  `state` map; the interpreter's `commit_cast` writes the returned state back. It
+  picks the tier from `base_level` (rAthena `clif_parse_ChangeCart` gates: tier 2
+  above base level 40, tier 3 above 65), sets `cart_type`, persists
+  `character.cart`, read-modify-writes the live `SC_PUSHCART` `val2` to the new
+  tier (a whole-entry write via `StatusStorage.update_status/4`, never an
+  `update_element` on a nested field), and rebroadcasts the cart sprite. When
+  `base_level` grants no tier above the current one it changes nothing and returns
+  `{:error, :no_cart_upgrade}` so the cast fizzles without spending SP.
+  """
+  @spec change_cart_tier(PlayerState.t(), non_neg_integer()) ::
+          {:ok, PlayerState.t()} | {:error, :no_cart_upgrade}
+  def change_cart_tier(%{character_id: char_id, cart_type: current} = game_state, base_level) do
+    case tier_for_base_level(base_level) do
+      tier when tier > current ->
+        persist_cart_type(char_id, tier)
+
+        StatusStorage.update_status(:player, char_id, @status_id, fn entry ->
+          %{entry | val2: tier}
+        end)
+
+        StatusDisplay.broadcast_state(:player, char_id)
+        {:ok, %{game_state | cart_type: tier}}
+
+      _tier ->
+        {:error, :no_cart_upgrade}
+    end
+  end
+
+  @spec tier_for_base_level(non_neg_integer()) :: 1..3
+  defp tier_for_base_level(base_level) when base_level > @tier3_min_level, do: 3
+  defp tier_for_base_level(base_level) when base_level > @tier2_min_level, do: 2
+  defp tier_for_base_level(_base_level), do: 1
 
   @spec do_mount(map()) :: {:noreply, map()}
   defp do_mount(%{game_state: game_state} = state) do
