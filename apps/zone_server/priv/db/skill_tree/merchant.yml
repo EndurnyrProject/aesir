@@ -1,0 +1,7 @@
+---
+- job: merchant
+  inherit:
+    - novice
+  tree:
+    - name: MC_PUSHCART
+      max_level: 10
