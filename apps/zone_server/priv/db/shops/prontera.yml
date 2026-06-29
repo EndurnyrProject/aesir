@@ -1,0 +1,10 @@
+- id: prontera_tool_dealer
+  map: prontera
+  x: 150
+  y: 60
+  dir: 4
+  sprite: 85
+  name: "Tool Dealer"
+  items:
+    - {id: 501, price: 50}
+    - {id: 502}
