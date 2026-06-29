@@ -260,10 +260,14 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   @right_accessory 0x08
   @left_accessory 0x80
 
+  # The worn slot is derived from the item's own location mask, mirroring
+  # rAthena's `pc_equipitem`. The client-supplied `position` is only consulted to
+  # disambiguate the dual accessory slots (see `worn_mask/3`); for every other
+  # item the position the client requests is irrelevant.
   defp resolve_worn_mask(inventory, %ItemDefinition{locations: locations}, position) do
     allowed = EquipLocation.location_atoms_to_bitmask(locations)
 
-    if allowed == 0 or position == 0 or (position &&& allowed) == 0 do
+    if allowed == 0 do
       {:error, :cannot_equip}
     else
       {:ok, worn_mask(inventory, allowed, position)}

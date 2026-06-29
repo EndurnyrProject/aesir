@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
   @body_armor 2301
   @ring 2601
   @earring 2602
+  @amistr_cap 5766
 
   # EQP position bitmasks (rAthena enum equip_pos).
   @right_hand 2
@@ -29,6 +30,7 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
   @left_accessory 128
   @both_hand 34
   @both_accessory 136
+  @head_top 256
 
   # Job ids: swordman (1) can wear the katana, novice (0) cannot.
   @swordman 1
@@ -255,18 +257,27 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
              } = new_inv
     end
 
-    test "returns :cannot_equip when the requested position is not allowed by the item", %{
+    test "wears the item at its own location, ignoring a mismatched requested position", %{
       ctx: ctx
     } do
       inv = inventory([item(nameid: @sword, amount: 1)])
 
-      assert {:error, :cannot_equip} = Inventory.equip(inv, 0, @armor_pos, ctx)
+      assert {:ok, %{0 => %InventoryItem{equip: @right_hand}}, {:equipped, 0, @right_hand, []}} =
+               Inventory.equip(inv, 0, @armor_pos, ctx)
     end
 
-    test "returns :cannot_equip when the requested position is zero", %{ctx: ctx} do
+    test "wears the item at its own location when the requested position is zero", %{ctx: ctx} do
       inv = inventory([item(nameid: @sword, amount: 1)])
 
-      assert {:error, :cannot_equip} = Inventory.equip(inv, 0, 0, ctx)
+      assert {:ok, %{0 => %InventoryItem{equip: @right_hand}}, {:equipped, 0, @right_hand, []}} =
+               Inventory.equip(inv, 0, 0, ctx)
+    end
+
+    test "equips a head_top headgear regardless of the client position", %{ctx: ctx} do
+      inv = inventory([item(nameid: @amistr_cap, amount: 1)])
+
+      assert {:ok, %{0 => %InventoryItem{equip: @head_top}}, {:equipped, 0, @head_top, []}} =
+               Inventory.equip(inv, 0, 0, ctx)
     end
 
     test "returns :not_found for a missing index", %{ctx: ctx} do
