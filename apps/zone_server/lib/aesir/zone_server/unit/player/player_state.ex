@@ -71,6 +71,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
              term()}
           ],
           pending_inventory_notify: [tuple()],
+          cart: %{non_neg_integer() => InventoryItem.t()},
+          pending_cart_persist: [
+            {%{non_neg_integer() => InventoryItem.t()}, %{non_neg_integer() => InventoryItem.t()},
+             term()}
+          ],
+          pending_cart_notify: [tuple()],
+          cart_type: non_neg_integer(),
           pending_warp: {String.t(), non_neg_integer(), non_neg_integer()} | nil
         }
 
@@ -178,6 +185,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # Inventory-add change descriptors staged by a skill cast so the session
     # handler can emit an ItemAdded for each new/affected slot, then clear them.
     pending_inventory_notify: [],
+    # Cart keyed by stable session index, mirroring inventory
+    cart: %{},
+    pending_cart_persist: [],
+    pending_cart_notify: [],
+    # In-memory copy of character.cart (0 = no cart, 1/2/3 = sprite tier)
+    cart_type: 0,
     # Warp directive staged by a skill cast. When non-nil the handler calls
     # WarpHandler.warp/4 after committing SP/cooldowns, then clears this field.
     pending_warp: nil,
@@ -250,7 +263,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       zeny: character.zeny,
 
       # Inventory (will be loaded separately)
-      inventory: %{}
+      inventory: %{},
+
+      # Cart (will be loaded separately)
+      cart: %{}
     }
   end
 

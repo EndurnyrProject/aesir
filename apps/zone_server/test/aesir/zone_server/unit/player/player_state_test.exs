@@ -68,6 +68,41 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
 
       assert %PlayerState{vars: %{}, temp_vars: %{}, zeny: 0} = PlayerState.new(character)
     end
+
+    test "yields empty cart defaults" do
+      character = %Character{
+        id: 3,
+        name: "Carter",
+        last_map: "prontera",
+        last_x: 100,
+        last_y: 100,
+        base_level: 1,
+        job_level: 1,
+        class: 0,
+        str: 1,
+        agi: 1,
+        vit: 1,
+        int: 1,
+        dex: 1,
+        luk: 1,
+        hp: 100,
+        max_hp: 100,
+        sp: 50,
+        max_sp: 50,
+        status_point: 0,
+        skill_point: 0,
+        account_id: 1,
+        zeny: 0,
+        vars: nil
+      }
+
+      assert %PlayerState{
+               cart: %{},
+               cart_type: 0,
+               pending_cart_persist: [],
+               pending_cart_notify: []
+             } = PlayerState.new(character)
+    end
   end
 
   describe "state transitions" do
