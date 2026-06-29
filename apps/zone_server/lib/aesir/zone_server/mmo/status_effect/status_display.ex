@@ -174,18 +174,26 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay do
   end
 
   defp aggregate(unit_type, unit_id) do
+    empty = %{body_state: 0, health_state: 0, effect_state: 0, virtue: 0}
+
     unit_type
     |> StatusStorage.get_unit_statuses(unit_id)
-    |> Enum.map(fn instance -> Registry.get_definition(instance.type) end)
-    |> Enum.reject(&is_nil/1)
-    |> Enum.reduce(%{body_state: 0, health_state: 0, effect_state: 0, virtue: 0}, fn def, acc ->
-      acc
-      |> put_opt1(def[:opt1])
-      |> or_opt(:health_state, Opt2, def[:opt2])
-      |> or_opt(:effect_state, Option, def[:option])
-      |> or_opt(:virtue, Opt3, def[:opt3])
-    end)
+    |> Enum.map(fn instance -> {instance, Registry.get_definition(instance.type)} end)
+    |> Enum.reject(fn {_instance, definition} -> is_nil(definition) end)
+    |> Enum.reduce(empty, &fold_state/2)
   end
+
+  defp fold_state({instance, definition}, acc) do
+    acc
+    |> put_opt1(definition[:opt1])
+    |> or_opt(:health_state, Opt2, definition[:opt2])
+    |> or_opt(:effect_state, Option, definition[:option])
+    |> or_opt(:effect_state, Option, dynamic_option(definition, instance))
+    |> or_opt(:virtue, Opt3, definition[:opt3])
+  end
+
+  defp dynamic_option(%{module: module}, instance), do: module.dynamic_option(instance)
+  defp dynamic_option(_definition, _instance), do: nil
 
   defp put_opt1(acc, nil), do: acc
 

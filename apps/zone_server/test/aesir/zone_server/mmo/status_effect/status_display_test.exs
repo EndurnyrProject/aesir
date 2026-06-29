@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplayTest do
 
   alias Aesir.Net.StatusChange
   alias Aesir.Net.UnitStateChange
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusEntry
@@ -267,6 +268,45 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplayTest do
 
       assert %{body_state: 0, health_state: 0, effect_state: 0, virtue: 0} =
                StatusDisplay.spawn_state(:player, 3)
+    end
+  end
+
+  describe "spawn_state/2 dynamic_option" do
+    test "ORs the cart sprite bit derived from the live instance into effect_state" do
+      cart = timed_instance(:sc_push_cart, val2: 2)
+
+      stub(StatusStorage, :get_unit_statuses, fn :player, 3 -> [cart] end)
+
+      stub(Registry, :get_definition, fn
+        :sc_push_cart -> definition(module: Effects.PushCart)
+      end)
+
+      assert %{effect_state: 128, body_state: 0, health_state: 0, virtue: 0} =
+               StatusDisplay.spawn_state(:player, 3)
+    end
+
+    test "a tier-1 cart lights up the :cart1 bit" do
+      cart = timed_instance(:sc_push_cart, val2: 1)
+
+      stub(StatusStorage, :get_unit_statuses, fn :player, 3 -> [cart] end)
+
+      stub(Registry, :get_definition, fn
+        :sc_push_cart -> definition(module: Effects.PushCart)
+      end)
+
+      assert %{effect_state: 8} = StatusDisplay.spawn_state(:player, 3)
+    end
+
+    test "a status whose module has no dynamic_option leaves effect_state untouched" do
+      poison = timed_instance(:sc_poison)
+
+      stub(StatusStorage, :get_unit_statuses, fn :player, 3 -> [poison] end)
+
+      stub(Registry, :get_definition, fn
+        :sc_poison -> definition(module: Effects.Poison, opt2: :poison)
+      end)
+
+      assert %{effect_state: 0, health_state: 1} = StatusDisplay.spawn_state(:player, 3)
     end
   end
 

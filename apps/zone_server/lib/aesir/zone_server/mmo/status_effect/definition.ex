@@ -106,6 +106,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   @callback absorb_damage(target(), StatusEntry.t(), map(), context()) ::
               {:ok, integer(), StatusEntry.t()} | :remove
 
+  @doc """
+  Derives an `Option` sprite bit from this status' live instance.
+
+  Unlike the static `:option` metadata (fixed per definition), this lets a
+  status pick its sprite bit from the instance's stored values, so the same
+  status can light up different sprites (e.g. the cart tier). Defaults to `nil`,
+  meaning the status contributes nothing beyond its static opt metadata.
+  """
+  @callback dynamic_option(StatusEntry.t()) :: atom() | nil
+
   @known_properties [
     :buff,
     :debuff,
@@ -205,12 +215,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       def absorb_damage(_target, instance, %{damage: damage}, _context),
         do: {:ok, damage, instance}
 
+      @impl true
+      def dynamic_option(_instance), do: nil
+
       defoverridable modifiers: 2,
                      on_apply: 3,
                      on_expire: 3,
                      on_tick: 3,
                      on_damage: 4,
-                     absorb_damage: 4
+                     absorb_damage: 4,
+                     dynamic_option: 1
     end
   end
 
