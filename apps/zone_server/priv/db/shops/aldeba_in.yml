@@ -1,0 +1,157 @@
+---
+- dir: 0
+  id: Armor Dealer#alde
+  items:
+    - id: 2228
+      price:
+    - id: 2103
+      price:
+    - id: 2105
+      price:
+    - id: 2307
+      price:
+    - id: 2309
+      price:
+    - id: 2312
+      price:
+    - id: 2314
+      price:
+    - id: 2316
+      price:
+    - id: 2505
+      price:
+    - id: 2405
+      price:
+    - id: 2628
+      price:
+    - id: 2627
+      price:
+  map: aldeba_in
+  name: Armor Dealer
+  sprite: 101
+  x: 20
+  'y': 60
+- dir: 0
+  id: Weapon Dealer#alde
+  items:
+    - id: 1201
+      price:
+    - id: 1204
+      price:
+    - id: 1207
+      price:
+    - id: 1210
+      price:
+    - id: 1213
+      price:
+    - id: 1216
+      price:
+    - id: 1219
+      price:
+    - id: 1222
+      price:
+  map: aldeba_in
+  name: Weapon Dealer
+  sprite: 49
+  x: 28
+  'y': 54
+- dir: 4
+  id: Weapon Dealer#alde2
+  items:
+    - id: 1146
+      price:
+    - id: 1245
+      price:
+  map: aldeba_in
+  name: Weapon Dealer
+  sprite: 713
+  x: 22
+  'y': 47
+- dir: 5
+  id: Tool Dealer#alde
+  items:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 611
+      price:
+    - id: 610
+      price:
+  map: aldeba_in
+  name: Tool Dealer
+  sprite: 83
+  x: 94
+  'y': 56
+- dir: 5
+  id: Tool Dealer#Extended_Alde
+  items:
+    - id: 611
+      price:
+    - id: 602
+      price:
+    - id: 601
+      price:
+    - id: 23280
+      price:
+    - id: 23288
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 657
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 610
+      price:
+    - id: 713
+      price:
+    - id: 717
+      price:
+    - id: 1771
+      price:
+  map: aldeba_in
+  name: Tool Dealer
+  sprite: 83
+  x: 94
+  'y': 56
+- dir: 5
+  id: Advanced Potion Merchant#alde
+  items:
+    - id: 11621
+      price:
+    - id: 11622
+      price:
+    - id: 11623
+      price:
+    - id: 11624
+      price:
+  map: aldeba_in
+  name: Advanced Potion Merchant
+  sprite: 83
+  x: 99
+  'y': 56

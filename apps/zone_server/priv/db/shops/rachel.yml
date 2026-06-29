@@ -1,0 +1,15 @@
+---
+- dir: 1
+  id: Vegetable Gardener#ra
+  items:
+    - id: 515
+      price:
+    - id: 535
+      price:
+    - id: 516
+      price:
+  map: rachel
+  name: Vegetable Gardener
+  sprite: 919
+  x: 65
+  'y': 80

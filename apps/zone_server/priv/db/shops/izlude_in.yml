@@ -1,0 +1,161 @@
+---
+- dir: 4
+  id: Weapon Dealer#iz
+  items:
+    - id: 1750
+      price:
+    - id: 1751
+      price:
+    - id: 1701
+      price:
+    - id: 1601
+      price:
+    - id: 1201
+      price:
+    - id: 1204
+      price:
+    - id: 1207
+      price:
+    - id: 1101
+      price:
+    - id: 1104
+      price:
+    - id: 1107
+      price:
+    - id: 1116
+      price:
+    - id: 1151
+      price:
+    - id: 1154
+      price:
+    - id: 1157
+      price:
+    - id: 1160
+      price:
+    - id: 1301
+      price:
+  map: izlude_in
+  name: Weapon Dealer
+  sprite: 72
+  x: 60
+  'y': 127
+- dir: 4
+  id: Armor Dealer#iz
+  items:
+    - id: 2103
+      price:
+    - id: 2105
+      price:
+    - id: 2403
+      price:
+    - id: 2405
+      price:
+    - id: 2503
+      price:
+    - id: 2505
+      price:
+    - id: 2226
+      price:
+    - id: 2228
+      price:
+    - id: 2303
+      price:
+    - id: 2305
+      price:
+    - id: 2328
+      price:
+    - id: 2307
+      price:
+    - id: 2309
+      price:
+    - id: 2312
+      price:
+    - id: 2314
+      price:
+    - id: 2316
+      price:
+    - id: 2628
+      price:
+  map: izlude_in
+  name: Armor Dealer
+  sprite: 62
+  x: 70
+  'y': 127
+- dir: 0
+  id: Tool Dealer#iz
+  items:
+    - id: 611
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 1065
+      price:
+    - id: 1750
+      price:
+  map: izlude_in
+  name: Tool Dealer
+  sprite: 47
+  x: 57
+  'y': 110
+- dir: 3
+  id: Trading Merchant#iz
+  items:
+    - id: 13200
+      price:
+    - id: 13221
+      price:
+    - id: 13222
+      price:
+    - id: 13150
+      price:
+    - id: 13102
+      price:
+    - id: 13151
+      price:
+    - id: 13154
+      price:
+    - id: 13155
+      price:
+    - id: 13163
+      price:
+    - id: 13165
+      price:
+    - id: 13168
+      price:
+  map: izlude_in
+  name: Trading Merchant
+  sprite: 900
+  x: 72
+  'y': 102
+- dir: 5
+  id: Advanced Potion Merchant#iz
+  items:
+    - id: 11621
+      price:
+    - id: 11622
+      price:
+    - id: 11623
+      price:
+    - id: 11624
+      price:
+  map: izlude_in
+  name: Advanced Potion Merchant
+  sprite: 83
+  x: 59
+  'y': 113

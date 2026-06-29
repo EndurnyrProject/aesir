@@ -1,0 +1,145 @@
+---
+- dir: 4
+  id: Armor Dealer#cmd
+  items:
+    - id: 2226
+      price:
+    - id: 2228
+      price:
+    - id: 2103
+      price:
+    - id: 2105
+      price:
+    - id: 2405
+      price:
+    - id: 2503
+      price:
+    - id: 2505
+      price:
+    - id: 2305
+      price:
+    - id: 2321
+      price:
+    - id: 2307
+      price:
+    - id: 2309
+      price:
+    - id: 2335
+      price:
+    - id: 2312
+      price:
+    - id: 2314
+      price:
+    - id: 2316
+      price:
+  map: cmd_in01
+  name: Armor Dealer
+  sprite: 101
+  x: 117
+  'y': 165
+- dir: 2
+  id: Weapon Dealer#cmd
+  items:
+    - id: 1901
+      price:
+    - id: 1903
+      price:
+    - id: 1905
+      price:
+    - id: 1909
+      price:
+    - id: 1911
+      price:
+    - id: 1907
+      price:
+    - id: 1950
+      price:
+    - id: 1952
+      price:
+    - id: 1954
+      price:
+    - id: 1958
+      price:
+    - id: 1960
+      price:
+    - id: 1956
+      price:
+  map: cmd_in01
+  name: Weapon Dealer
+  sprite: 49
+  x: 128
+  'y': 165
+- dir: 5
+  id: Tool Dealer#cmd
+  items:
+    - id: 1770
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 657
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 611
+      price:
+    - id: 1065
+      price:
+  map: cmd_in01
+  name: Tool Dealer
+  sprite: 83
+  x: 79
+  'y': 182
+- dir: 5
+  id: Tool Dealer#Extended_Cmd
+  items:
+    - id: 611
+      price:
+    - id: 602
+      price:
+    - id: 601
+      price:
+    - id: 23280
+      price:
+    - id: 23288
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 657
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 610
+      price:
+    - id: 713
+      price:
+    - id: 717
+      price:
+    - id: 1771
+      price:
+  map: cmd_in01
+  name: Tool Dealer
+  sprite: 83
+  x: 79
+  'y': 182

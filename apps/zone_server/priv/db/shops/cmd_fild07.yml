@@ -1,0 +1,137 @@
+---
+- dir: 5
+  id: Tool Dealer#cmd2
+  items:
+    - id: 1770
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 611
+      price:
+    - id: 1065
+      price:
+  map: cmd_fild07
+  name: Tool Dealer
+  sprite: 83
+  x: 257
+  'y': 126
+- dir: 2
+  id: Weapon Dealer#cmd2
+  items:
+    - id: 1401
+      price:
+    - id: 1404
+      price:
+    - id: 1407
+      price:
+    - id: 1451
+      price:
+    - id: 1454
+      price:
+    - id: 1457
+      price:
+    - id: 1460
+      price:
+    - id: 1463
+      price:
+    - id: 1410
+      price:
+  map: cmd_fild07
+  name: Weapon Dealer
+  sprite: 49
+  x: 250
+  'y': 98
+- dir: 4
+  id: Armor Dealer#cmd2
+  items:
+    - id: 2226
+      price:
+    - id: 2228
+      price:
+    - id: 2103
+      price:
+    - id: 2105
+      price:
+    - id: 2405
+      price:
+    - id: 2503
+      price:
+    - id: 2505
+      price:
+    - id: 2305
+      price:
+    - id: 2321
+      price:
+    - id: 2307
+      price:
+    - id: 2309
+      price:
+    - id: 2335
+      price:
+    - id: 2312
+      price:
+    - id: 2314
+      price:
+    - id: 2316
+      price:
+  map: cmd_fild07
+  name: Armor Dealer
+  sprite: 101
+  x: 277
+  'y': 85
+- dir: 5
+  id: Tool Dealer#Extended_Cmd2
+  items:
+    - id: 611
+      price:
+    - id: 602
+      price:
+    - id: 601
+      price:
+    - id: 23280
+      price:
+    - id: 23288
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 657
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 610
+      price:
+    - id: 713
+      price:
+    - id: 717
+      price:
+    - id: 1771
+      price:
+  map: cmd_fild07
+  name: Tool Dealer
+  sprite: 83
+  x: 257
+  'y': 126

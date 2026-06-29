@@ -9,6 +9,8 @@ defmodule Aesir.ZoneServer.Network.InboundIntentsTest do
     assert InboundIntents.client_intent?(%Aesir.Net.GroundSkillCast{})
     assert InboundIntents.client_intent?(%Aesir.Net.MoveRequest{})
     assert InboundIntents.client_intent?(%Aesir.Net.NpcTalk{})
+    assert InboundIntents.client_intent?(%Aesir.Net.NpcBuyRequest{})
+    assert InboundIntents.client_intent?(%Aesir.Net.NpcSellRequest{})
     assert InboundIntents.client_intent?(%Aesir.Net.VendingOpenRequest{})
     assert InboundIntents.client_intent?(%Aesir.Net.VendingCloseRequest{})
     assert InboundIntents.client_intent?(%Aesir.Net.VendingListRequest{})

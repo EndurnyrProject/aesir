@@ -27,7 +27,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.MoveToCartRequest
   alias Aesir.Net.NameRequest
   alias Aesir.Net.NameResponse
+  alias Aesir.Net.NpcBuyRequest
   alias Aesir.Net.NpcInteract
+  alias Aesir.Net.NpcSellRequest
   alias Aesir.Net.NpcTalk
   alias Aesir.Net.Respawn
   alias Aesir.Net.SkillCast
@@ -47,6 +49,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Mmo.StatPoint
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
+  alias Aesir.ZoneServer.Npc.Shop.Registry, as: ShopRegistry
   alias Aesir.ZoneServer.Npc.Warp
   alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Script.Ctx
@@ -55,6 +58,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SkillListView
@@ -299,22 +303,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   end
 
   def handle_message(%NpcTalk{npc_id: gid}, %{game_state: game_state} = state) do
-    case NpcRegistry.module_for_unit(gid) do
-      {:ok, {module, _placement}} ->
-        base_ctx =
-          Ctx.from_session(
-            %{game_state: game_state, connection_pid: state.connection_pid},
-            {:npc, module.npc_id()}
-          )
-
-        base_ctx = %{base_ctx | npc_gid: gid}
-        {:ok, pid} = Interaction.start(self(), module, base_ctx)
-        ref = Process.monitor(pid)
-
-        {:noreply, %{state | interaction_lock: {pid, ref, gid}}}
-
-      :error ->
-        {:noreply, state}
+    case ShopRegistry.fetch(gid) do
+      {:ok, shop} -> NpcShopHandler.open_window(state, shop)
+      :error -> talk_to_npc(gid, game_state, state)
     end
   end
 
@@ -333,9 +324,44 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     {:noreply, state}
   end
 
+  # NpcBuyRequest - Player buys items from a clicked NPC shop. The buyer is the
+  # sole writer, so the handler runs the buy transaction inline in this session.
+  def handle_message(%NpcBuyRequest{} = msg, state) do
+    NpcShopHandler.buy(state, msg)
+  end
+
+  # NpcSellRequest - Player sells items back to a clicked NPC shop. The seller is
+  # the sole writer, so the handler runs the sell transaction inline in this session.
+  def handle_message(%NpcSellRequest{} = msg, state) do
+    NpcShopHandler.sell(state, msg)
+  end
+
   def handle_message(message, state) do
     Logger.warning("Unhandled message in PacketHandler: #{inspect(message.__struct__)}")
     {:noreply, state}
+  end
+
+  # Resolves the clicked gid to its bespoke NPC module and starts a supervised,
+  # monitored interaction process, storing the lock. A gid that resolves to no
+  # NPC module is ignored. Reached only after the shop branch declines the gid.
+  defp talk_to_npc(gid, game_state, state) do
+    case NpcRegistry.module_for_unit(gid) do
+      {:ok, {module, _placement}} ->
+        base_ctx =
+          Ctx.from_session(
+            %{game_state: game_state, connection_pid: state.connection_pid},
+            {:npc, module.npc_id()}
+          )
+
+        base_ctx = %{base_ctx | npc_gid: gid}
+        {:ok, pid} = Interaction.start(self(), module, base_ctx)
+        ref = Process.monitor(pid)
+
+        {:noreply, %{state | interaction_lock: {pid, ref, gid}}}
+
+      :error ->
+        {:noreply, state}
+    end
   end
 
   # Returns the `@`-prefixed command string when `raw_message` carries the valid

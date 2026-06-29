@@ -1,0 +1,13 @@
+---
+- dir: 3
+  id: Chef Assistant#um
+  items:
+    - id: 7456
+      price:
+    - id: 577
+      price:
+  map: umbala
+  name: Chef Assistant
+  sprite: 83
+  x: 102
+  'y': 154

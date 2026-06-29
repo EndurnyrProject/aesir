@@ -1,0 +1,13 @@
+---
+- dir: 3
+  id: Chef Assistant#ayo
+  items:
+    - id: 7455
+      price:
+    - id: 577
+      price:
+  map: ayothaya
+  name: Chef Assistant
+  sprite: 83
+  x: 203
+  'y': 178

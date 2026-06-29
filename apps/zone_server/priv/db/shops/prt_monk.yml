@@ -1,0 +1,15 @@
+---
+- dir: 5
+  id: Weapon Dealer#prt4
+  items:
+    - id: 1801
+      price:
+    - id: 1803
+      price:
+    - id: 1805
+      price:
+  map: prt_monk
+  name: Weapon Dealer
+  sprite: 726
+  x: 135
+  'y': 263

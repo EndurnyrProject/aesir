@@ -1,0 +1,51 @@
+---
+- dir: 4
+  id: Souvenir Vendor#cmd
+  items:
+    - id: 965
+      price:
+    - id: 964
+      price:
+  map: comodo
+  name: Souvenir Vendor
+  sprite: 101
+  x: 296
+  'y': 125
+- dir: 3
+  id: Chef Assistant#cmd
+  items:
+    - id: 7455
+      price:
+    - id: 7453
+      price:
+    - id: 7454
+      price:
+    - id: 579
+      price:
+  map: comodo
+  name: Chef Assistant
+  sprite: 83
+  x: 225
+  'y': 164
+- dir: 5
+  id: Tropic Fruit Dealer
+  items:
+    - id: 6258
+      price:
+  map: comodo
+  name: Tropic Fruit Dealer
+  sprite: 724
+  x: 106
+  'y': 213
+- dir: 3
+  id: Harive#candy
+  items:
+    - id: 11513
+      price:
+    - id: 6144
+      price:
+  map: comodo
+  name: Harive
+  sprite: 479
+  x: 196
+  'y': 162

@@ -33,6 +33,8 @@ Mimic.copy(Aesir.ZoneServer.Unit.Cart)
 Mimic.copy(Aesir.ZoneServer.Mmo.StatusEffect.Registry)
 Mimic.copy(Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay)
 Mimic.copy(Aesir.ZoneServer.Unit.SpecialEffect)
+Mimic.copy(Aesir.ZoneServer.Npc.Registry)
+Mimic.copy(Aesir.ZoneServer.Npc.Warps)
 Mimic.copy(Aesir.Commons.Utils.ServerTick)
 
 ExUnit.start()

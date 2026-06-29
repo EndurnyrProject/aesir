@@ -1,0 +1,29 @@
+---
+- dir: 3
+  id: Material Seller#alche
+  items:
+    - id: 7143
+      price:
+    - id: 7141
+      price:
+    - id: 7140
+      price:
+    - id: 6248
+      price:
+    - id: 6250
+      price:
+    - id: 6251
+      price:
+    - id: 6255
+      price:
+    - id: 6261
+      price:
+    - id: 6262
+      price:
+    - id: 6297
+      price:
+  map: alde_alche
+  name: Material Seller
+  sprite: 755
+  x: 38
+  'y': 184

@@ -1,0 +1,85 @@
+---
+- dir: 4
+  id: Tool Dealer#pay3
+  items:
+    - id: 1750
+      price:
+    - id: 501
+      price:
+    - id: 645
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+  map: payon
+  name: Tool Dealer
+  sprite: 88
+  x: 159
+  'y': 96
+- dir: 4
+  id: Trap Specialist#pay
+  items:
+    - id: 7940
+      price:
+    - id: 12341
+      price:
+  map: payon
+  name: Trap Specialist
+  sprite: 66
+  x: 123
+  'y': 109
+- dir: 3
+  id: Advanced Potion Merchant#pay
+  items:
+    - id: 11621
+      price:
+    - id: 11622
+      price:
+    - id: 11623
+      price:
+    - id: 11624
+      price:
+  map: payon
+  name: Advanced Potion Merchant
+  sprite: 83
+  x: 157
+  'y': 96
+- dir: 5
+  id: Chef Assistant#pay
+  items:
+    - id: 12849
+      price:
+    - id: 581
+      price:
+    - id: 7482
+      price:
+    - id: 580
+      price:
+    - id: 577
+      price:
+    - id: 7457
+      price:
+    - id: 7454
+      price:
+    - id: 7455
+      price:
+    - id: 7453
+      price:
+    - id: 7456
+      price:
+    - id: 7452
+      price:
+    - id: 579
+      price:
+    - id: 12125
+      price:
+    - id: 12126
+      price:
+    - id: 12127
+      price:
+  map: payon
+  name: Chef Assistant
+  sprite: 89
+  x: 206
+  'y': 119

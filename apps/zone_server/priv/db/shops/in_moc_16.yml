@@ -1,0 +1,11 @@
+---
+- dir: 7
+  id: Sepulchral Merchant#moc
+  items:
+    - id: 1771
+      price:
+  map: in_moc_16
+  name: Sepulchral Merchant
+  sprite: 880
+  x: 22
+  'y': 20

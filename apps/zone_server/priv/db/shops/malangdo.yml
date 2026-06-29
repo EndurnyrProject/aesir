@@ -1,0 +1,25 @@
+---
+- dir: 5
+  id: Tool Dealer Myo
+  items:
+    - id: 611
+      price:
+    - id: 1750
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 1065
+      price:
+    - id: 713
+      price:
+  map: malangdo
+  name: Tool Dealer Myo
+  sprite: 560
+  x: 232
+  'y': 163

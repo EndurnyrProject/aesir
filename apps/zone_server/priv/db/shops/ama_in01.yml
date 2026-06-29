@@ -1,0 +1,61 @@
+---
+- dir: 5
+  id: Armor Dealer#ama
+  items:
+    - id: 2211
+      price:
+    - id: 2401
+      price:
+    - id: 2403
+      price:
+    - id: 2501
+      price:
+    - id: 2503
+      price:
+    - id: 2101
+      price:
+    - id: 2103
+      price:
+    - id: 2305
+      price:
+    - id: 2321
+      price:
+    - id: 2332
+      price:
+    - id: 2328
+      price:
+    - id: 2627
+      price:
+  map: ama_in01
+  name: Armor Dealer
+  sprite: 757
+  x: 89
+  'y': 28
+- dir: 3
+  id: Weapon Dealer#ama
+  items:
+    - id: 1207
+      price:
+    - id: 1216
+      price:
+    - id: 1107
+      price:
+    - id: 1122
+      price:
+    - id: 1116
+      price:
+    - id: 1154
+      price:
+    - id: 1407
+      price:
+    - id: 1457
+      price:
+    - id: 1354
+      price:
+    - id: 1519
+      price:
+  map: ama_in01
+  name: Weapon Dealer
+  sprite: 766
+  x: 102
+  'y': 28

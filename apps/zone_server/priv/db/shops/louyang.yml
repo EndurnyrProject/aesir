@@ -1,0 +1,13 @@
+---
+- dir: 5
+  id: Chef Assistant#lou
+  items:
+    - id: 7454
+      price:
+    - id: 577
+      price:
+  map: louyang
+  name: Chef Assistant
+  sprite: 820
+  x: 256
+  'y': 123

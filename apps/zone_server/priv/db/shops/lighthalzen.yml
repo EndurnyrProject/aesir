@@ -1,0 +1,75 @@
+---
+- dir: 5
+  id: Fruit Gardener#lhz
+  items:
+    - id: 512
+      price:
+    - id: 513
+      price:
+  map: lighthalzen
+  name: Fruit Gardener
+  sprite: 102
+  x: 69
+  'y': 75
+- dir: 0
+  id: Flower Girl#lhz
+  items:
+    - id: 712
+      price:
+    - id: 744
+      price:
+    - id: 748
+      price:
+  map: lighthalzen
+  name: Flower Girl
+  sprite: 90
+  x: 112
+  'y': 44
+- dir: 0
+  id: Vegetable Gardener#lhz
+  items:
+    - id: 515
+      price:
+    - id: 516
+      price:
+    - id: 535
+      price:
+  map: lighthalzen
+  name: Vegetable Gardener
+  sprite: 91
+  x: 124
+  'y': 129
+- dir: 3
+  id: Vendor from Milk Ranch#l
+  items:
+    - id: 519
+      price:
+  map: lighthalzen
+  name: Vendor from Milk Ranch
+  sprite: 90
+  x: 220
+  'y': 122
+- dir: 3
+  id: Chef Assistant#lhz
+  items:
+    - id: 7456
+      price:
+    - id: 7452
+      price:
+  map: lighthalzen
+  name: Chef Assistant
+  sprite: 83
+  x: 126
+  'y': 126
+- dir: 4
+  id: Trap Specialist#lhz
+  items:
+    - id: 7940
+      price:
+    - id: 12341
+      price:
+  map: lighthalzen
+  name: Trap Specialist
+  sprite: 66
+  x: 337
+  'y': 240

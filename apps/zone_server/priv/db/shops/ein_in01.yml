@@ -1,0 +1,219 @@
+---
+- dir: 4
+  id: One Hand Weapon Dealer
+  items:
+    - id: 1101
+      price:
+    - id: 1104
+      price:
+    - id: 1107
+      price:
+    - id: 1110
+      price:
+    - id: 1113
+      price:
+    - id: 1119
+      price:
+    - id: 1122
+      price:
+    - id: 1123
+      price:
+    - id: 1126
+      price:
+    - id: 1129
+      price:
+    - id: 1201
+      price:
+    - id: 1204
+      price:
+    - id: 1207
+      price:
+    - id: 1210
+      price:
+    - id: 1213
+      price:
+    - id: 1216
+      price:
+    - id: 1219
+      price:
+    - id: 1222
+      price:
+    - id: 1301
+      price:
+    - id: 1401
+      price:
+    - id: 1404
+      price:
+    - id: 1407
+      price:
+    - id: 1501
+      price:
+    - id: 1504
+      price:
+    - id: 1507
+      price:
+    - id: 1510
+      price:
+    - id: 1513
+      price:
+    - id: 1516
+      price:
+    - id: 1519
+      price:
+    - id: 1522
+      price:
+    - id: 1801
+      price:
+    - id: 1803
+      price:
+    - id: 1805
+      price:
+    - id: 1807
+      price:
+    - id: 1809
+      price:
+    - id: 1811
+      price:
+  map: ein_in01
+  name: One Hand Weapon Dealer
+  sprite: 850
+  x: 106
+  'y': 27
+- dir: 4
+  id: Two Hand Weapon Dealer
+  items:
+    - id: 1116
+      price:
+    - id: 1151
+      price:
+    - id: 1154
+      price:
+    - id: 1157
+      price:
+    - id: 1160
+      price:
+    - id: 1351
+      price:
+    - id: 1354
+      price:
+    - id: 1357
+      price:
+    - id: 1360
+      price:
+    - id: 1410
+      price:
+    - id: 1451
+      price:
+    - id: 1454
+      price:
+    - id: 1457
+      price:
+    - id: 1460
+      price:
+    - id: 1463
+      price:
+    - id: 1250
+      price:
+    - id: 1252
+      price:
+    - id: 1254
+      price:
+  map: ein_in01
+  name: Two Hand Weapon Dealer
+  sprite: 850
+  x: 109
+  'y': 27
+- dir: 4
+  id: Weapon Dealer#ein
+  items:
+    - id: 1247
+      price:
+    - id: 1248
+      price:
+    - id: 1249
+      price:
+    - id: 13000
+      price:
+  map: ein_in01
+  name: Weapon Dealer
+  sprite: 855
+  x: 119
+  'y': 26
+- dir: 1
+  id: Tool Dealer#ein
+  items:
+    - id: 1750
+      price:
+    - id: 1752
+      price:
+    - id: 1751
+      price:
+    - id: 611
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 1065
+      price:
+  map: ein_in01
+  name: Tool Dealer
+  sprite: 850
+  x: 189
+  'y': 15
+- dir: 1
+  id: Tool Dealer#Extended_Ein
+  items:
+    - id: 611
+      price:
+    - id: 602
+      price:
+    - id: 601
+      price:
+    - id: 23280
+      price:
+    - id: 23288
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 657
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 610
+      price:
+    - id: 713
+      price:
+    - id: 717
+      price:
+    - id: 1771
+      price:
+  map: ein_in01
+  name: Tool Dealer
+  sprite: 850
+  x: 189
+  'y': 15

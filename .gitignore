@@ -144,5 +144,6 @@ apps/zone_server/priv/db/skills/.cache/
 apps/zone_server/priv/db/spawns/.cache/
 apps/zone_server/priv/db/statpoint/.cache/
 apps/zone_server/priv/db/warps/.cache/
+apps/zone_server/priv/db/shops/.cache/
 
 # End of https://www.toptal.com/developers/gitignore/api/elixir,erlang,vim,visualstudiocode,macos

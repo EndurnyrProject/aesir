@@ -1,0 +1,97 @@
+---
+- dir: 3
+  id: Tool Dealer#bra
+  items:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 611
+      price:
+    - id: 1065
+      price:
+    - id: 610
+      price:
+  map: brasilis
+  name: Tool Dealer
+  sprite: 478
+  x: 252
+  'y': 257
+- dir: 3
+  id: Weapon Dealer#bra
+  items:
+    - id: 1407
+      price:
+    - id: 1457
+      price:
+    - id: 1354
+      price:
+    - id: 1519
+      price:
+    - id: 13003
+      price:
+  map: brasilis
+  name: Weapon Dealer
+  sprite: 477
+  x: 244
+  'y': 243
+- dir: 3
+  id: Fruit Gardener#bra
+  items:
+    - id: 11515
+      price:
+    - id: 513
+      price:
+    - id: 11516
+      price:
+  map: brasilis
+  name: Fruit Gardener
+  sprite: 477
+  x: 221
+  'y': 128
+- dir: 3
+  id: Tool Dealer#Extended_Bra
+  items:
+    - id: 611
+      price:
+    - id: 602
+      price:
+    - id: 601
+      price:
+    - id: 23280
+      price:
+    - id: 23288
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 657
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 610
+      price:
+    - id: 713
+      price:
+    - id: 717
+      price:
+    - id: 1771
+      price:
+  map: brasilis
+  name: Tool Dealer
+  sprite: 478
+  x: 252
+  'y': 257

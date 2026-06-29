@@ -43,8 +43,17 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.MoveToCartRequest
   alias Aesir.Net.NameRequest
   alias Aesir.Net.NameResponse
+  alias Aesir.Net.NpcBuyEntry
+  alias Aesir.Net.NpcBuyRequest
+  alias Aesir.Net.NpcBuyResult
   alias Aesir.Net.NpcDialog
   alias Aesir.Net.NpcInteract
+  alias Aesir.Net.NpcSellEntry
+  alias Aesir.Net.NpcSellRequest
+  alias Aesir.Net.NpcSellResult
+  alias Aesir.Net.NpcShopBuyItem
+  alias Aesir.Net.NpcShopOpen
+  alias Aesir.Net.NpcShopSellItem
   alias Aesir.Net.NpcTalk
   alias Aesir.Net.ParamChange
   alias Aesir.Net.Respawn
@@ -1481,6 +1490,103 @@ defmodule Aesir.Commons.Network.ProtoTest do
                    buyer_name: "Loki"
                  }}
             }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "npc_shop_open with nested buy and sell items round-trips through envelope oneof" do
+    env = %Envelope{
+      seq: 1,
+      body:
+        {:npc_shop_open,
+         %NpcShopOpen{
+           unit_id: 1,
+           buy_items: [%NpcShopBuyItem{nameid: 501, type: 0, price: 50}],
+           sell_items: [
+             %NpcShopSellItem{
+               inventory_index: 3,
+               nameid: 502,
+               type: 0,
+               amount: 7,
+               sell_price: 25
+             }
+           ]
+         }}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              seq: 1,
+              body:
+                {:npc_shop_open,
+                 %NpcShopOpen{
+                   unit_id: 1,
+                   buy_items: [%NpcShopBuyItem{nameid: 501, type: 0, price: 50}],
+                   sell_items: [
+                     %NpcShopSellItem{
+                       inventory_index: 3,
+                       nameid: 502,
+                       amount: 7,
+                       sell_price: 25
+                     }
+                   ]
+                 }}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "npc_buy_request with nested entries round-trips through envelope oneof" do
+    env = %Envelope{
+      body:
+        {:npc_buy_request,
+         %NpcBuyRequest{unit_id: 1, items: [%NpcBuyEntry{nameid: 501, amount: 3}]}}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:npc_buy_request,
+                 %NpcBuyRequest{unit_id: 1, items: [%NpcBuyEntry{nameid: 501, amount: 3}]}}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "npc_sell_request with nested entries round-trips through envelope oneof" do
+    env = %Envelope{
+      body:
+        {:npc_sell_request,
+         %NpcSellRequest{unit_id: 1, items: [%NpcSellEntry{inventory_index: 3, amount: 2}]}}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:npc_sell_request,
+                 %NpcSellRequest{
+                   unit_id: 1,
+                   items: [%NpcSellEntry{inventory_index: 3, amount: 2}]
+                 }}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "npc_buy_result round-trips through envelope oneof" do
+    env = %Envelope{body: {:npc_buy_result, %NpcBuyResult{result: 1}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok, %Envelope{body: {:npc_buy_result, %NpcBuyResult{result: 1}}}} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "npc_sell_result round-trips through envelope oneof" do
+    env = %Envelope{body: {:npc_sell_result, %NpcSellResult{result: 2}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok, %Envelope{body: {:npc_sell_result, %NpcSellResult{result: 2}}}} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
   end
 
   test "npc_interact round-trips every response arm through envelope oneof" do

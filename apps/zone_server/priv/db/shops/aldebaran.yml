@@ -1,0 +1,15 @@
+---
+- dir: 2
+  id: Chef Assistant#alde
+  items:
+    - id: 7456
+      price:
+    - id: 7452
+      price:
+    - id: 580
+      price:
+  map: aldebaran
+  name: Chef Assistant
+  sprite: 97
+  x: 165
+  'y': 107

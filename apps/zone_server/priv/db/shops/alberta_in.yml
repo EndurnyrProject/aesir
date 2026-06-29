@@ -1,0 +1,59 @@
+---
+- dir: 4
+  id: Weapon Dealer#alb2
+  items:
+    - id: 1146
+      price:
+    - id: 1245
+      price:
+  map: alberta_in
+  name: Weapon Dealer
+  sprite: 82
+  x: 175
+  'y': 97
+- dir: 3
+  id: Trading Merchant#alb
+  items:
+    - id: 13200
+      price:
+    - id: 13221
+      price:
+    - id: 13222
+      price:
+    - id: 13150
+      price:
+    - id: 13102
+      price:
+    - id: 13151
+      price:
+    - id: 13154
+      price:
+    - id: 13155
+      price:
+    - id: 13163
+      price:
+    - id: 13165
+      price:
+    - id: 13168
+      price:
+  map: alberta_in
+  name: Trading Merchant
+  sprite: 900
+  x: 176
+  'y': 81
+- dir: 5
+  id: Advanced Potion Merchant#alb
+  items:
+    - id: 11621
+      price:
+    - id: 11622
+      price:
+    - id: 11623
+      price:
+    - id: 11624
+      price:
+  map: alberta_in
+  name: Advanced Potion Merchant
+  sprite: 83
+  x: 176
+  'y': 97

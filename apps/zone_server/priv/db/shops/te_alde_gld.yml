@@ -1,0 +1,13 @@
+---
+- dir: 4
+  id: TE Potion Merchant#alde
+  items:
+    - id: 11557
+      price:
+    - id: 11558
+      price:
+  map: te_alde_gld
+  name: TE Potion Merchant
+  sprite: 83
+  x: 215
+  'y': 184

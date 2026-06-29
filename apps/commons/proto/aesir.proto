@@ -106,6 +106,12 @@ message Envelope {
     VendingBoardRemoved vending_board_removed = 94;
     VendingList vending_list = 95;
     VendingSaleReport vending_sale_report = 96;
+    // 97-101: npc shop (server->client window/result + client buy/sell intents)
+    NpcShopOpen npc_shop_open = 97;
+    NpcBuyRequest npc_buy_request = 98;
+    NpcSellRequest npc_sell_request = 99;
+    NpcBuyResult npc_buy_result = 100;
+    NpcSellResult npc_sell_result = 101;
   }
 }
 
@@ -774,6 +780,63 @@ message VendingSaleReport {
   uint32 amount = 3;
   uint32 zeny_gained = 4;
   string buyer_name = 5;
+}
+
+// One item the NPC shop sells, shown in the buy window at its buy price.
+message NpcShopBuyItem {
+  uint32 nameid = 1;
+  uint32 type = 2;
+  uint32 price = 3;
+}
+
+// One sellable inventory slot, shown in the sell window at its server-computed sell price.
+message NpcShopSellItem {
+  uint32 inventory_index = 1;
+  uint32 nameid = 2;
+  uint32 type = 3;
+  uint32 amount = 4;
+  uint32 sell_price = 5;
+}
+
+// Server -> client, opens the NPC shop window with both buy and sell lists computed server-side.
+message NpcShopOpen {
+  uint64 unit_id = 1;
+  repeated NpcShopBuyItem buy_items = 2;
+  repeated NpcShopSellItem sell_items = 3;
+}
+
+// One line of a buy request: which shop item and how many units to buy.
+message NpcBuyEntry {
+  uint32 nameid = 1;
+  uint32 amount = 2;
+}
+
+// Client -> server, buy items from an NPC shop.
+message NpcBuyRequest {
+  uint64 unit_id = 1;
+  repeated NpcBuyEntry items = 2;
+}
+
+// One line of a sell request: which inventory slot and how many units to sell.
+message NpcSellEntry {
+  uint32 inventory_index = 1;
+  uint32 amount = 2;
+}
+
+// Client -> server, sell inventory items to an NPC shop.
+message NpcSellRequest {
+  uint64 unit_id = 1;
+  repeated NpcSellEntry items = 2;
+}
+
+// Server -> client, result of a buy request (ok | not_enough_zeny | overweight | no_slots | invalid | out_of_range).
+message NpcBuyResult {
+  uint32 result = 1;
+}
+
+// Server -> client, result of a sell request (ok | invalid | out_of_range).
+message NpcSellResult {
+  uint32 result = 1;
 }
 
 // Client -> server, allocate a status point to a stat (replaces RO CZ_STATUS_CHANGE 0x00BB).

@@ -1,0 +1,65 @@
+---
+- dir: 4
+  id: Trap Specialist#mid
+  items:
+    - id: 7940
+      price:
+    - id: 12341
+      price:
+  map: mid_camp
+  name: Trap Specialist
+  sprite: 66
+  x: 129
+  'y': 284
+- dir: 4
+  id: Black Marketeer#mid
+  items:
+    - id: 2139
+      price:
+    - id: 2800
+      price:
+    - id: 2801
+      price:
+    - id: 2802
+      price:
+    - id: 2803
+      price:
+    - id: 2804
+      price:
+    - id: 2805
+      price:
+    - id: 2806
+      price:
+    - id: 2807
+      price:
+    - id: 18000
+      price:
+    - id: 18001
+      price:
+    - id: 18002
+      price:
+    - id: 18003
+      price:
+    - id: 18004
+      price:
+    - id: 12392
+      price:
+    - id: 12393
+      price:
+    - id: 12394
+      price:
+    - id: 6145
+      price:
+    - id: 6146
+      price:
+    - id: 6147
+      price:
+    - id: 6186
+      price:
+    - id: 2808
+      price:
+  map: mid_camp
+  name: Black Marketeer
+  sprite: 49
+  x: 184
+  'y': 263

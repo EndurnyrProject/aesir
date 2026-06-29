@@ -1,0 +1,137 @@
+---
+- dir: 1
+  id: Tool Dealer#ayo
+  items:
+    - id: 1750
+      price:
+    - id: 1770
+      price:
+    - id: 611
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 1065
+      price:
+  map: ayo_in01
+  name: Tool Dealer
+  sprite: 840
+  x: 18
+  'y': 182
+- dir: 3
+  id: Weapon Dealer#ayo
+  items:
+    - id: 1207
+      price:
+    - id: 1216
+      price:
+    - id: 1107
+      price:
+    - id: 1122
+      price:
+    - id: 1116
+      price:
+    - id: 1154
+      price:
+    - id: 1407
+      price:
+    - id: 1457
+      price:
+    - id: 1354
+      price:
+    - id: 1519
+      price:
+  map: ayo_in01
+  name: Weapon Dealer
+  sprite: 843
+  x: 90
+  'y': 192
+- dir: 1
+  id: Armor Dealer#ayo
+  items:
+    - id: 2211
+      price:
+    - id: 2401
+      price:
+    - id: 2403
+      price:
+    - id: 2501
+      price:
+    - id: 2503
+      price:
+    - id: 2101
+      price:
+    - id: 2103
+      price:
+    - id: 2305
+      price:
+    - id: 2321
+      price:
+    - id: 2332
+      price:
+    - id: 2328
+      price:
+    - id: 2627
+      price:
+  map: ayo_in01
+  name: Armor Dealer
+  sprite: 842
+  x: 90
+  'y': 160
+- dir: 1
+  id: Tool Dealer#Extended_Ayo
+  items:
+    - id: 611
+      price:
+    - id: 602
+      price:
+    - id: 601
+      price:
+    - id: 23280
+      price:
+    - id: 23288
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 657
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 610
+      price:
+    - id: 713
+      price:
+    - id: 717
+      price:
+    - id: 1771
+      price:
+  map: ayo_in01
+  name: Tool Dealer
+  sprite: 840
+  x: 18
+  'y': 182

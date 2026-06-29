@@ -1,0 +1,361 @@
+---
+- dir: 2
+  id: Item Collector#moc1
+  items:
+    - id: 911
+      price:
+    - id: 528
+      price:
+    - id: 919
+      price:
+    - id: 925
+      price:
+  map: moc_ruins
+  name: Item Collector
+  sprite: 85
+  x: 93
+  'y': 53
+- dir: 0
+  id: Item Collector#moc2
+  items:
+    - id: 911
+      price:
+    - id: 528
+      price:
+    - id: 919
+      price:
+    - id: 925
+      price:
+  map: moc_ruins
+  name: Item Collector
+  sprite: 85
+  x: 81
+  'y': 113
+- dir: 4
+  id: Trader#moc1
+  items:
+    - id: 747
+      price:
+  map: moc_ruins
+  name: Trader
+  sprite: 99
+  x: 113
+  'y': 126
+- dir: 0
+  id: Trader#moc2
+  items:
+    - id: 748
+      price:
+  map: moc_ruins
+  name: Trader
+  sprite: 93
+  x: 131
+  'y': 138
+- dir: 5
+  id: Trader#moc3
+  items:
+    - id: 2612
+      price:
+  map: moc_ruins
+  name: Trader
+  sprite: 93
+  x: 71
+  'y': 139
+- dir: 6
+  id: Trader#moc4
+  items:
+    - id: 2609
+      price:
+    - id: 1516
+      price:
+    - id: 1522
+      price:
+  map: moc_ruins
+  name: Trader
+  sprite: 89
+  x: 125
+  'y': 135
+- dir: 0
+  id: Butcher#moc
+  items:
+    - id: 517
+      price:
+  map: moc_ruins
+  name: Butcher
+  sprite: 58
+  x: 87
+  'y': 109
+- dir: 6
+  id: Trader#moc5
+  items:
+    - id: 513
+      price:
+    - id: 513
+      price:
+    - id: 513
+      price:
+    - id: 513
+      price:
+    - id: 513
+      price:
+    - id: 513
+      price:
+  map: moc_ruins
+  name: Trader
+  sprite: 99
+  x: 90
+  'y': 149
+- dir: 4
+  id: Tool Dealer#Extended_Moc1
+  items:
+    - id: 611
+      price:
+    - id: 602
+      price:
+    - id: 601
+      price:
+    - id: 23280
+      price:
+    - id: 23288
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 657
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 610
+      price:
+    - id: 713
+      price:
+    - id: 717
+      price:
+    - id: 1771
+      price:
+  map: moc_ruins
+  name: Tool Dealer
+  sprite: 93
+  x: 91
+  'y': 128
+- dir: 6
+  id: Tool Dealer#Extended_Moc2
+  items:
+    - id: 611
+      price:
+    - id: 602
+      price:
+    - id: 601
+      price:
+    - id: 23280
+      price:
+    - id: 23288
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 657
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 610
+      price:
+    - id: 713
+      price:
+    - id: 717
+      price:
+    - id: 1771
+      price:
+  map: moc_ruins
+  name: Tool Dealer
+  sprite: 99
+  x: 114
+  'y': 63
+- dir: 4
+  id: Tool Dealer#moc1
+  items:
+    - id: 1750
+      price:
+    - id: 611
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 713
+      price:
+    - id: 23280
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 23288
+      price:
+    - id: 1065
+      price:
+  map: moc_ruins
+  name: Tool Dealer
+  sprite: 93
+  x: 91
+  'y': 128
+- dir: 6
+  id: Tool Dealer#moc2
+  items:
+    - id: 1750
+      price:
+    - id: 611
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 23280
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 23288
+      price:
+    - id: 1065
+      price:
+  map: moc_ruins
+  name: Tool Dealer
+  sprite: 99
+  x: 114
+  'y': 63
+- dir: 2
+  id: Jeweler#moc1
+  items:
+    - id: 721
+      price:
+    - id: 723
+      price:
+    - id: 726
+      price:
+    - id: 728
+      price:
+    - id: 729
+      price:
+    - id: 719
+      price:
+    - id: 720
+      price:
+    - id: 722
+      price:
+    - id: 1000321
+      price:
+    - id: 730
+      price:
+    - id: 2613
+      price:
+  map: moc_ruins
+  name: Jeweler
+  sprite: 102
+  x: 110
+  'y': 105
+- dir: 6
+  id: Jeweler#moc2
+  items:
+    - id: 721
+      price:
+    - id: 723
+      price:
+    - id: 726
+      price:
+    - id: 728
+      price:
+    - id: 729
+      price:
+    - id: 719
+      price:
+    - id: 720
+      price:
+    - id: 722
+      price:
+    - id: 1000321
+      price:
+    - id: 730
+      price:
+    - id: 2613
+      price:
+  map: moc_ruins
+  name: Jeweler
+  sprite: 99
+  x: 52
+  'y': 85
+- dir: 5
+  id: Chef Assistant#moc
+  items:
+    - id: 12849
+      price:
+    - id: 581
+      price:
+    - id: 7482
+      price:
+    - id: 580
+      price:
+    - id: 577
+      price:
+    - id: 7457
+      price:
+    - id: 7454
+      price:
+    - id: 7455
+      price:
+    - id: 7453
+      price:
+    - id: 7456
+      price:
+    - id: 7452
+      price:
+    - id: 579
+      price:
+    - id: 12125
+      price:
+    - id: 12126
+      price:
+    - id: 12127
+      price:
+  map: moc_ruins
+  name: Chef Assistant
+  sprite: 86
+  x: 115
+  'y': 123

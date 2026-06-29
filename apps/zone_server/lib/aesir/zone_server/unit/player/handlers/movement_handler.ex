@@ -20,6 +20,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
+  alias Aesir.ZoneServer.Npc.Shop
+  alias Aesir.ZoneServer.Npc.Shops
   alias Aesir.ZoneServer.Npc.Warp
   alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Pathfinding
@@ -30,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.StaticEntity
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
@@ -452,21 +455,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         manhattan(game_state.x, game_state.y, warp.x, warp.y) <= game_state.view_range
       end)
 
-    new_visible_warps = MapSet.new(warps_in_range, &Warp.Registry.entity_id/1)
-    old_visible_warps = game_state.visible_warps
-
-    now_visible_warps = MapSet.difference(new_visible_warps, old_visible_warps)
-    now_hidden_warps = MapSet.difference(old_visible_warps, new_visible_warps)
-
     warps_by_id = Map.new(warps_in_range, &{Warp.Registry.entity_id(&1), &1})
 
-    Enum.each(now_visible_warps, fn warp_id ->
-      send_warp_spawn_packet_to(game_state.character_id, warps_by_id[warp_id])
-    end)
-
-    Enum.each(now_hidden_warps, fn warp_id ->
-      send_warp_vanish_packet_to(game_state.character_id, warp_id)
-    end)
+    new_visible_warps =
+      StaticEntity.diff_visibility(
+        warps_by_id,
+        game_state.visible_warps,
+        &send_warp_spawn_packet_to(game_state.character_id, &1),
+        &send_warp_vanish_packet_to(game_state.character_id, &1)
+      )
 
     # Handle static NPC visibility — same model as warps: registered placements
     # are held statically (in `Npc.Registry`), not spatial-indexed, and diffed
@@ -478,26 +475,42 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
             game_state.view_range
       end)
 
-    new_visible_npcs =
-      MapSet.new(npcs_in_range, fn {_module, placement} -> NpcRegistry.entity_id(placement) end)
-
-    old_visible_npcs = game_state.visible_npcs
-
-    now_visible_npcs = MapSet.difference(new_visible_npcs, old_visible_npcs)
-    now_hidden_npcs = MapSet.difference(old_visible_npcs, new_visible_npcs)
-
     npcs_by_id =
       Map.new(npcs_in_range, fn {_module, placement} ->
         {NpcRegistry.entity_id(placement), placement}
       end)
 
-    Enum.each(now_visible_npcs, fn npc_id ->
-      send_npc_spawn_packet_to(game_state.character_id, npcs_by_id[npc_id])
-    end)
+    new_visible_npcs =
+      StaticEntity.diff_visibility(
+        npcs_by_id,
+        game_state.visible_npcs,
+        &send_npc_spawn_packet_to(game_state.character_id, &1),
+        &send_npc_vanish_packet_to(game_state.character_id, &1)
+      )
 
-    Enum.each(now_hidden_npcs, fn npc_id ->
-      send_npc_vanish_packet_to(game_state.character_id, npc_id)
-    end)
+    # Handle static shop visibility — same model as warps: shop placements are
+    # held per-map in `Npc.Shops`, not spatial-indexed, and diffed against
+    # `visible_shops` by Manhattan distance vs `view_range`.
+    shops_on_map =
+      case Shops.for_map(game_state.map_name) do
+        {:ok, list} -> list
+        :error -> []
+      end
+
+    shops_in_range =
+      Enum.filter(shops_on_map, fn shop ->
+        manhattan(game_state.x, game_state.y, shop.x, shop.y) <= game_state.view_range
+      end)
+
+    shops_by_id = Map.new(shops_in_range, &{Shop.Registry.entity_id(&1), &1})
+
+    new_visible_shops =
+      StaticEntity.diff_visibility(
+        shops_by_id,
+        game_state.visible_shops,
+        &send_shop_spawn_packet_to(game_state.character_id, &1),
+        &send_shop_vanish_packet_to(game_state.character_id, &1)
+      )
 
     # Update game state with new visibility info
     # Keep last_visibility_cell for potential optimization later
@@ -509,6 +522,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         visible_mobs: new_visible_mobs,
         visible_warps: new_visible_warps,
         visible_npcs: new_visible_npcs,
+        visible_shops: new_visible_shops,
         last_visibility_cell: current_cell
     }
   end
@@ -718,6 +732,65 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       {:ok, to_pid} ->
         vanish_packet = %UnitDespawn{
           gid: npc_entity_id,
+          reason: DespawnReason.out_of_sight()
+        }
+
+        GenServer.cast(to_pid, {:send_packet, vanish_packet})
+
+      {:error, :not_found} ->
+        :ok
+    end
+  end
+
+  defp send_shop_spawn_packet_to(to_char_id, %Shop{} = shop) do
+    case UnitRegistry.get_player_pid(to_char_id) do
+      {:ok, to_pid} ->
+        shop_entity_id = Shop.Registry.entity_id(shop)
+
+        packet = %UnitSpawn{
+          object_type: ObjectType.npc(),
+          aid: shop_entity_id,
+          gid: shop_entity_id,
+          speed: 0,
+          body_state: 0,
+          health_state: 0,
+          effect_state: 0,
+          job: shop.sprite,
+          head: 0,
+          weapon: 0,
+          shield: 0,
+          accessory: 0,
+          accessory2: 0,
+          accessory3: 0,
+          head_palette: 0,
+          body_palette: 0,
+          head_dir: 0,
+          robe: 0,
+          guild_id: 0,
+          sex: 0,
+          x: shop.x,
+          y: shop.y,
+          dir: shop.dir,
+          clevel: 0,
+          max_hp: 0,
+          hp: 0,
+          is_boss: false,
+          name: shop.name,
+          moving: false
+        }
+
+        GenServer.cast(to_pid, {:send_packet, packet})
+
+      {:error, :not_found} ->
+        :ok
+    end
+  end
+
+  defp send_shop_vanish_packet_to(to_char_id, shop_entity_id) do
+    case UnitRegistry.get_player_pid(to_char_id) do
+      {:ok, to_pid} ->
+        vanish_packet = %UnitDespawn{
+          gid: shop_entity_id,
           reason: DespawnReason.out_of_sight()
         }
 
