@@ -37,6 +37,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore do
   end
 
   @doc """
+  Returns the ground item `ground_id` on `map_name` without removing it, or
+  `{:error, :gone}` when it is absent. Lock-free read used to locate an item the
+  player clicked from out of pickup range so we can walk to it.
+  """
+  @spec get(String.t(), pos_integer()) :: {:ok, GroundItem.t()} | {:error, :gone}
+  def get(map_name, ground_id) do
+    case :ets.lookup(table_for(:ground_items), {map_name, ground_id}) do
+      [{_key, item}] -> {:ok, item}
+      [] -> {:error, :gone}
+    end
+  end
+
+  @doc """
   Atomically removes and returns the ground item `ground_id` from `map_name`.
 
   Uses `:ets.take/2` so two concurrent claims resolve to exactly one `{:ok, item}`

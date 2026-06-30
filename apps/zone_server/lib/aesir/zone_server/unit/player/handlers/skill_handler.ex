@@ -183,7 +183,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp ensure_idle_for_cast(%{game_state: %{action_state: :idle}} = state), do: {:ok, state}
 
   defp ensure_idle_for_cast(%{game_state: %{action_state: moving}} = state)
-       when moving in [:moving, :combat_moving] do
+       when moving in [:moving, :combat_moving, :moving_to_item] do
     {:noreply, stopped_state} = MovementHandler.handle_force_stop_movement(state)
 
     case PlayerState.transition_to(stopped_state.game_state, :idle) do

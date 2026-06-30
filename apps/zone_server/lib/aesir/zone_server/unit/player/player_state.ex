@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           :idle
           | :moving
           | :combat_moving
+          | :moving_to_item
           | :attacking
           | :casting
           | :sitting
@@ -56,7 +57,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           movement_state: movement_state(),
           walk_path: list({integer(), integer()}),
           walk_speed: integer(),
-          movement_intent: :none | :normal | :combat,
+          movement_intent: :none | :normal | :combat | :pickup,
           view_range: integer(),
           visible_players: MapSet.t(),
           visible_mobs: MapSet.t(),
@@ -69,6 +70,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           combat_target_id: integer() | nil,
           combat_action_type: integer() | nil,
           last_target_position: {integer(), integer()} | nil,
+          pickup_target_id: integer() | nil,
           last_attack_timestamp: integer(),
           act_delay_until: integer(),
           last_warp_at: integer() | nil,
@@ -146,7 +148,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     :walk_speed,
 
     # Movement intent - why are we moving?
-    # :none | :normal | :combat
+    # :none | :normal | :combat | :pickup
     :movement_intent,
 
     # Visibility
@@ -172,6 +174,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     :combat_action_type,
     :last_target_position,
     :continuous_attack_timer,
+
+    # Move-to-pickup state — the ground item we are walking toward to pick up.
+    :pickup_target_id,
 
     # Character Stats
     :stats,
@@ -259,6 +264,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       combat_target_id: nil,
       combat_action_type: nil,
       last_target_position: nil,
+      pickup_target_id: nil,
       last_attack_timestamp: 0,
       act_delay_until: 0,
 
@@ -310,6 +316,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     }
     |> stop_walking()
     |> clear_combat_intent()
+    |> clear_pickup_intent()
   end
 
   @doc """
@@ -494,6 +501,27 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   end
 
   @doc """
+  Sets pickup intent for move-to-pickup behavior, recording the ground item the
+  player is walking toward.
+  """
+  @spec set_pickup_intent(t(), integer()) :: t()
+  def set_pickup_intent(%__MODULE__{} = state, ground_id) do
+    %{state | pickup_target_id: ground_id, movement_intent: :pickup}
+  end
+
+  @doc """
+  Clears pickup intent.
+  """
+  @spec clear_pickup_intent(t()) :: t()
+  def clear_pickup_intent(%__MODULE__{} = state) do
+    %{
+      state
+      | pickup_target_id: nil,
+        movement_intent: if(state.movement_state == :moving, do: :normal, else: :none)
+    }
+  end
+
+  @doc """
   Checks if player is moving for combat purposes.
   """
   @spec combat_moving?(t()) :: boolean()
@@ -570,6 +598,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   defp valid_state_transition?(:idle, to), do: valid_from_idle?(to)
   defp valid_state_transition?(:moving, to), do: valid_from_moving?(to)
   defp valid_state_transition?(:combat_moving, to), do: valid_from_combat_moving?(to)
+  defp valid_state_transition?(:moving_to_item, to), do: valid_from_moving_to_item?(to)
   defp valid_state_transition?(:attacking, to), do: valid_from_attacking?(to)
   defp valid_state_transition?(:casting, to), do: valid_from_casting?(to)
   defp valid_state_transition?(:sitting, to), do: valid_from_sitting?(to)
@@ -578,11 +607,22 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   defp valid_state_transition?(_, _), do: false
 
   defp valid_from_idle?(to),
-    do: to in [:moving, :combat_moving, :attacking, :casting, :sitting, :trading, :vending]
+    do:
+      to in [
+        :moving,
+        :combat_moving,
+        :moving_to_item,
+        :attacking,
+        :casting,
+        :sitting,
+        :trading,
+        :vending
+      ]
 
-  defp valid_from_moving?(to), do: to in [:idle, :combat_moving, :attacking]
-  defp valid_from_combat_moving?(to), do: to in [:idle, :attacking, :moving]
-  defp valid_from_attacking?(to), do: to in [:idle, :combat_moving]
+  defp valid_from_moving?(to), do: to in [:idle, :combat_moving, :moving_to_item, :attacking]
+  defp valid_from_combat_moving?(to), do: to in [:idle, :attacking, :moving, :moving_to_item]
+  defp valid_from_moving_to_item?(to), do: to in [:idle, :moving, :combat_moving, :attacking]
+  defp valid_from_attacking?(to), do: to in [:idle, :combat_moving, :moving_to_item]
   defp valid_from_casting?(to), do: to == :idle
   defp valid_from_sitting?(to), do: to == :idle
   defp valid_from_trading?(to), do: to == :idle
@@ -606,6 +646,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   defp handle_state_entry(state, :combat_moving) do
     # Ensure movement intent is combat
     %{state | movement_intent: :combat}
+  end
+
+  defp handle_state_entry(state, :moving_to_item) do
+    # Ensure movement intent is pickup
+    %{state | movement_intent: :pickup}
   end
 
   defp handle_state_entry(state, _new_state), do: state

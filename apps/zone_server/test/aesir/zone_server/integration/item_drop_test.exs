@@ -26,10 +26,12 @@ defmodule Aesir.ZoneServer.Integration.ItemDropTest do
   alias Aesir.Net.PickupItemRequest
   alias Aesir.Net.PickupResult
   alias Aesir.Repo
+  alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapManager
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
+  alias Aesir.ZoneServer.Pathfinding
   alias Phoenix.PubSub
 
   @map "prontera"
@@ -74,22 +76,29 @@ defmodule Aesir.ZoneServer.Integration.ItemDropTest do
     end
   end
 
-  describe "pickup distance" do
-    test "a player more than 2 cells away gets TOO_FAR and the item stays" do
-      player = start_looter(name: "FarOff", position: {150, 150})
+  describe "move-to-pickup" do
+    test "a player more than 2 cells from a reachable item walks to it and picks it up" do
+      origin = nearest_walkable({150, 150})
+      player = start_looter(name: "Walker", position: origin)
 
-      item = GroundItem.new(@potion, 1, 160, 160)
+      {item_x, item_y} = reachable_target(origin, 3)
+      item = GroundItem.new(@potion, 1, item_x, item_y)
       GroundItemStore.put(@map, item)
       on_exit(fn -> GroundItemStore.claim(@map, item.id) end)
       flush_packets()
 
+      # The item is out of pickup range, so the request walks the player to it
+      # (move-to-pickup) and the pickup fires when movement completes.
       simulate_incoming_message(player.pid, %PickupItemRequest{ground_id: item.id})
 
-      assert_receive {:packet_sent, %PickupResult{ground_id: id, result: :TOO_FAR}, _}, 1_000
+      assert_receive {:packet_sent, %ItemAdded{nameid: @potion}, _}, 5_000
+      assert_receive {:packet_sent, %PickupResult{ground_id: id, result: :OK}, _}, 5_000
       assert id == item.id
 
-      assert [%GroundItem{id: kept}] = GroundItemStore.query_in_range(@map, 160, 160, 0)
-      assert kept == item.id
+      assert_receive {:packet_sent, %ItemVanished{ground_id: ^id, reason: :PICKED_UP}, _}, 5_000
+
+      assert held(get_player_state(player.pid).inventory, @potion) == 1
+      assert GroundItemStore.query_in_range(@map, item_x, item_y, 0) == []
     end
   end
 
@@ -176,6 +185,45 @@ defmodule Aesir.ZoneServer.Integration.ItemDropTest do
                    1_000
 
     ground_id
+  end
+
+  # Nearest walkable cell to a candidate spawn, so the move-to-pickup walk has a
+  # real path origin regardless of the exact map geometry under the test point.
+  defp nearest_walkable({ox, oy}) do
+    for(d <- 0..10, dx <- -d..d, dy <- -d..d, do: {ox + dx, oy + dy})
+    |> Enum.find(fn {x, y} -> MapCache.walkable?(@map, x, y) end)
+    |> case do
+      nil -> flunk("no walkable cell found near #{ox},#{oy}")
+      cell -> cell
+    end
+  end
+
+  # A walkable cell at least `min_dist` cells (Manhattan) from `origin` that the
+  # pathfinder can actually reach — the move-to-pickup destination.
+  defp reachable_target(origin, min_dist) do
+    {:ok, map_data} = MapCache.get(@map)
+    {ox, oy} = origin
+
+    candidates =
+      for d <- min_dist..(min_dist + 5),
+          dx <- -d..d,
+          dy <- -d..d,
+          abs(dx) + abs(dy) >= min_dist,
+          do: {ox + dx, oy + dy}
+
+    candidates
+    |> Enum.find_value(fn {x, y} ->
+      with true <- MapCache.walkable?(@map, x, y),
+           {:ok, [_ | _]} <- Pathfinding.find_path(map_data, origin, {x, y}) do
+        {x, y}
+      else
+        _ -> nil
+      end
+    end)
+    |> case do
+      nil -> flunk("no reachable cell found near #{ox},#{oy}")
+      cell -> cell
+    end
   end
 
   defp start_looter(opts) do

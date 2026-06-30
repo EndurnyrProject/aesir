@@ -48,7 +48,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   end
 
   defp block_attack_request(%{game_state: game_state} = state)
-       when game_state.action_state in [:combat_moving, :moving] do
+       when game_state.action_state in [:combat_moving, :moving, :moving_to_item] do
     packet = %MoveStop{gid: game_state.character_id, x: game_state.x, y: game_state.y}
     MessageRouter.send_to(state.connection_pid, packet)
     {:noreply, cancel_combat_intent(state)}

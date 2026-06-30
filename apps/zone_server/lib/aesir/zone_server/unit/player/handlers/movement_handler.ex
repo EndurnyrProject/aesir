@@ -265,11 +265,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       # Simplify path to reduce network traffic
       simplified_path = Pathfinding.simplify_path(path)
 
-      # Check if we're in combat_moving state and this is a player-initiated move
-      # Only clear combat intent if this is NOT a combat-initiated movement
-      is_combat_initiated = Keyword.get(opts, :combat_initiated, false)
-
-      game_state = maybe_clear_combat_intent(game_state, is_combat_initiated)
+      # A manual move (no combat_initiated:/pickup_initiated: flag) while heading
+      # to a target or item cancels that pending intent so the player can walk away.
+      game_state = maybe_clear_action_intent(game_state, opts)
 
       # Update game state with new path
       game_state = PlayerState.set_path(game_state, simplified_path)
@@ -312,19 +310,35 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     end
   end
 
-  defp maybe_clear_combat_intent(%{action_state: :combat_moving} = game_state, false) do
-    Logger.debug("Player manually moving while in combat, clearing combat intent")
+  defp maybe_clear_action_intent(%{action_state: :combat_moving} = game_state, opts) do
+    if Keyword.get(opts, :combat_initiated, false) do
+      game_state
+    else
+      Logger.debug("Player manually moving while in combat, clearing combat intent")
+      clear_intent_to_moving(game_state, &PlayerState.clear_combat_intent/1)
+    end
+  end
 
+  defp maybe_clear_action_intent(%{action_state: :moving_to_item} = game_state, opts) do
+    if Keyword.get(opts, :pickup_initiated, false) do
+      game_state
+    else
+      Logger.debug("Player manually moving while heading to an item, clearing pickup intent")
+      clear_intent_to_moving(game_state, &PlayerState.clear_pickup_intent/1)
+    end
+  end
+
+  defp maybe_clear_action_intent(game_state, _opts), do: game_state
+
+  defp clear_intent_to_moving(game_state, clear_fun) do
     game_state
-    |> PlayerState.clear_combat_intent()
+    |> clear_fun.()
     |> PlayerState.transition_to(:moving)
     |> case do
       {:ok, transitioned} -> transitioned
       _ -> game_state
     end
   end
-
-  defp maybe_clear_combat_intent(game_state, _is_combat_initiated), do: game_state
 
   @doc """
   Forces a player to stop moving immediately.
