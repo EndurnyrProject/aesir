@@ -112,6 +112,11 @@ message Envelope {
     NpcSellRequest npc_sell_request = 99;
     NpcBuyResult npc_buy_result = 100;
     NpcSellResult npc_sell_result = 101;
+    // 102-105: item drops (server->client ground spawn/vanish + client pickup intent/result)
+    ItemOnGround item_on_ground = 102;
+    ItemVanished item_vanished = 103;
+    PickupItemRequest pickup_item_request = 104;
+    PickupResult pickup_result = 105;
   }
 }
 
@@ -931,4 +936,50 @@ message NpcInteract {
     string input = 5;
     bool cancel = 6;
   }
+}
+
+// Why a ground item disappeared.
+enum ItemVanishReason {
+  PICKED_UP = 0;
+  EXPIRED = 1;
+}
+
+// Outcome of a pickup request.
+enum PickupResultCode {
+  OK = 0;
+  TOO_FAR = 1;
+  OVERWEIGHT = 2;
+  INVENTORY_FULL = 3;
+  GONE = 4;
+}
+
+// Server -> client, an item appeared on a map cell (drop or walk-up discovery).
+// is_falling marks a fresh drop (animated) vs an already-lying item (view-enter).
+message ItemOnGround {
+  uint64 ground_id = 1;
+  uint32 nameid = 2;
+  uint32 amount = 3;
+  uint32 x = 4;
+  uint32 y = 5;
+  bool identified = 6;
+  bool is_falling = 7;
+  uint32 sub_x = 8;
+  uint32 sub_y = 9;
+}
+
+// Server -> client, a ground item was removed (picked up or expired).
+message ItemVanished {
+  uint64 ground_id = 1;
+  ItemVanishReason reason = 2;
+}
+
+// Client -> server, request to pick up a ground item by its ground id.
+message PickupItemRequest {
+  uint64 ground_id = 1;
+}
+
+// Server -> client, result of a pickup request; the inventory delta rides the existing ItemAdded.
+message PickupResult {
+  uint64 ground_id = 1;
+  PickupResultCode result = 2;
 }

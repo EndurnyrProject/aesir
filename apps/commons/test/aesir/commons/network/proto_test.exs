@@ -29,8 +29,10 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.InventoryItem
   alias Aesir.Net.InventoryList
   alias Aesir.Net.ItemAdded
+  alias Aesir.Net.ItemOnGround
   alias Aesir.Net.ItemRemoved
   alias Aesir.Net.ItemUseResult
+  alias Aesir.Net.ItemVanished
   alias Aesir.Net.Knockback
   alias Aesir.Net.LearnSkill
   alias Aesir.Net.LearnSkillResult
@@ -56,6 +58,8 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.NpcShopSellItem
   alias Aesir.Net.NpcTalk
   alias Aesir.Net.ParamChange
+  alias Aesir.Net.PickupItemRequest
+  alias Aesir.Net.PickupResult
   alias Aesir.Net.Respawn
   alias Aesir.Net.Resurrect
   alias Aesir.Net.SelectChar
@@ -1587,6 +1591,78 @@ defmodule Aesir.Commons.Network.ProtoTest do
 
     assert {:ok, %Envelope{body: {:npc_sell_result, %NpcSellResult{result: 2}}}} =
              Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "item_on_ground round-trips through envelope oneof" do
+    env = %Envelope{
+      seq: 1,
+      body:
+        {:item_on_ground,
+         %ItemOnGround{
+           ground_id: 42,
+           nameid: 501,
+           amount: 3,
+           x: 150,
+           y: 100,
+           identified: true,
+           is_falling: true,
+           sub_x: 4,
+           sub_y: 7
+         }}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              seq: 1,
+              body:
+                {:item_on_ground,
+                 %ItemOnGround{
+                   ground_id: 42,
+                   nameid: 501,
+                   amount: 3,
+                   x: 150,
+                   y: 100,
+                   identified: true,
+                   is_falling: true,
+                   sub_x: 4,
+                   sub_y: 7
+                 }}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "item_vanished round-trips every reason through envelope oneof" do
+    for reason <- [:PICKED_UP, :EXPIRED] do
+      env = %Envelope{body: {:item_vanished, %ItemVanished{ground_id: 42, reason: reason}}}
+
+      {:ok, iodata, _size} = Envelope.encode(env)
+
+      assert {:ok,
+              %Envelope{body: {:item_vanished, %ItemVanished{ground_id: 42, reason: ^reason}}}} =
+               Envelope.decode(IO.iodata_to_binary(iodata))
+    end
+  end
+
+  test "pickup_item_request round-trips through envelope oneof" do
+    env = %Envelope{body: {:pickup_item_request, %PickupItemRequest{ground_id: 42}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok, %Envelope{body: {:pickup_item_request, %PickupItemRequest{ground_id: 42}}}} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "pickup_result round-trips every result through envelope oneof" do
+    for result <- [:OK, :TOO_FAR, :OVERWEIGHT, :INVENTORY_FULL, :GONE] do
+      env = %Envelope{body: {:pickup_result, %PickupResult{ground_id: 42, result: result}}}
+
+      {:ok, iodata, _size} = Envelope.encode(env)
+
+      assert {:ok,
+              %Envelope{body: {:pickup_result, %PickupResult{ground_id: 42, result: ^result}}}} =
+               Envelope.decode(IO.iodata_to_binary(iodata))
+    end
   end
 
   test "npc_interact round-trips every response arm through envelope oneof" do
