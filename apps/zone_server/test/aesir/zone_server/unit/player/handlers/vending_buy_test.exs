@@ -63,13 +63,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingBuyTest do
                )
 
       # Seller side: cart row reduced, characters.zeny credited.
-      assert {:ok, [%CartItem{nameid: @potion, amount: 6}]} = CartPersistence.load_cart(seller.id)
+      assert [%CartItem{nameid: @potion, amount: 6}] = CartPersistence.load_cart(seller.id)
       assert reload_zeny(seller.id) == 1_000_000 + 400
       assert %{^index => %InventoryItem{amount: 6}} = new_state.game_state.cart
       assert new_state.game_state.zeny == 1_000_000 + 400
 
       # Buyer side: inventory row inserted, characters.zeny debited.
-      assert {:ok, [%InventoryItem{nameid: @potion, amount: 4}]} =
+      assert [%InventoryItem{nameid: @potion, amount: 4}] =
                InventoryPersistence.load_inventory(buyer.id)
 
       assert reload_zeny(buyer.id) == 1_000 - 400
@@ -135,10 +135,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingBuyTest do
                  ]
                )
 
-      assert {:ok, [%CartItem{amount: 3}]} = CartPersistence.load_cart(seller.id)
+      assert [%CartItem{amount: 3}] = CartPersistence.load_cart(seller.id)
       assert reload_zeny(seller.id) == 1_000_000
       assert reload_zeny(buyer.id) == 1_000
-      assert {:ok, []} = InventoryPersistence.load_inventory(buyer.id)
+      assert [] = InventoryPersistence.load_inventory(buyer.id)
     end
 
     test "a forced failure on the buyer insert rolls back all four writes", ctx do
@@ -186,7 +186,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingBuyTest do
 
       assert new_state.game_state.action_state == :idle
       assert :error = Registry.get(seller.id)
-      assert {:ok, []} = CartPersistence.load_cart(seller.id)
+      assert [] = CartPersistence.load_cart(seller.id)
     end
 
     test "accumulates duplicate buy-lines on the same index into one removal", ctx do
@@ -208,8 +208,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingBuyTest do
                  ]
                )
 
-      assert {:ok, [%CartItem{amount: 3}]} = CartPersistence.load_cart(seller.id)
-      assert {:ok, [%InventoryItem{amount: 7}]} = InventoryPersistence.load_inventory(buyer.id)
+      assert [%CartItem{amount: 3}] = CartPersistence.load_cart(seller.id)
+      assert [%InventoryItem{amount: 7}] = InventoryPersistence.load_inventory(buyer.id)
       assert buyer_delta.zeny_spent == 700
       assert reload_zeny(seller.id) == 1_000_000 + 700
       assert reload_zeny(buyer.id) == 1_000 - 700
@@ -262,20 +262,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingBuyTest do
                  ]
                )
 
-      assert {:ok, [%CartItem{amount: 10}]} = CartPersistence.load_cart(seller.id)
+      assert [%CartItem{amount: 10}] = CartPersistence.load_cart(seller.id)
       assert reload_zeny(seller.id) == 1_000_000
       assert reload_zeny(buyer.id) == 1_000
 
-      assert {:ok, [%InventoryItem{amount: ^fill}]} =
+      assert [%InventoryItem{amount: ^fill}] =
                InventoryPersistence.load_inventory(buyer.id)
     end
   end
 
   defp assert_nothing_written(seller, buyer) do
-    assert {:ok, [%CartItem{amount: 10}]} = CartPersistence.load_cart(seller.id)
+    assert [%CartItem{amount: 10}] = CartPersistence.load_cart(seller.id)
     assert reload_zeny(seller.id) == 1_000_000
     assert reload_zeny(buyer.id) == 1_000
-    assert {:ok, []} = InventoryPersistence.load_inventory(buyer.id)
+    assert [] = InventoryPersistence.load_inventory(buyer.id)
   end
 
   defp insert_character(name, zeny) do
@@ -356,12 +356,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingBuyTest do
   end
 
   defp load_inventory_map(char_id) do
-    {:ok, items} = InventoryPersistence.load_inventory(char_id)
+    items = InventoryPersistence.load_inventory(char_id)
     PlayerState.from_list(items)
   end
 
   defp load_cart_map(char_id) do
-    {:ok, rows} = CartPersistence.load_cart(char_id)
+    rows = CartPersistence.load_cart(char_id)
 
     rows
     |> Enum.map(&cart_row_to_item/1)

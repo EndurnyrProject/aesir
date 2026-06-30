@@ -13,7 +13,8 @@ defmodule ZoneServer.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+      dialyzer: dialyzer()
     ]
   end
 
@@ -43,4 +44,11 @@ defmodule ZoneServer.MixProject do
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
+
+  defp dialyzer do
+    [
+      plt_add_apps: [:mix],
+      ignore_warnings: "../../.dialyzer_ignore.exs"
+    ]
+  end
 end

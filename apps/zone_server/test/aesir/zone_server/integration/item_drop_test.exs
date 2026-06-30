@@ -69,7 +69,7 @@ defmodule Aesir.ZoneServer.Integration.ItemDropTest do
       assert held(get_player_state(player.pid).inventory, @potion) == 1
       assert GroundItemStore.query_in_range(@map, 150, 150, 0) == []
 
-      assert {:ok, [%InventoryItem{nameid: @potion, amount: 1}]} =
+      assert [%InventoryItem{nameid: @potion, amount: 1}] =
                load_inventory(player.character.id)
     end
   end

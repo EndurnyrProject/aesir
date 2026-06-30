@@ -194,7 +194,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   3. Element modifiers
   4. Status effect modifiers
   """
-  @spec apply_modifier_pipeline(integer(), combatant(), combatant()) :: {:ok, integer()}
+  @spec apply_modifier_pipeline(integer(), combatant(), combatant()) :: {:ok, number()}
   def apply_modifier_pipeline(base_damage, attacker, defender) do
     {unit_type, unit_id} = get_unit_type_and_id(attacker)
     attacker_modifiers = ModifierCalculator.get_all_modifiers(unit_type, unit_id)
@@ -247,7 +247,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   @doc """
   Applies critical hit calculation to final damage.
   """
-  @spec apply_critical_hit(integer(), combatant()) :: {:ok, damage_result()}
+  @spec apply_critical_hit(integer(), combatant()) :: {:ok, CriticalHits.critical_result()}
   def apply_critical_hit(base_damage, attacker) do
     attacker_for_crit = %{luk: attacker.base_stats.luk}
     critical_result = CriticalHits.calculate_critical_hit(attacker_for_crit, base_damage)
@@ -273,12 +273,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     max(1, weapon_attack)
   end
 
-  defp calculate_mastery_bonus(attacker) do
-    case attacker.unit_type do
-      :player -> attacker.combat_stats.passive_atk
-      _ -> 0
-    end
-  end
+  defp calculate_mastery_bonus(attacker), do: attacker.combat_stats.passive_atk
 
   defp calculate_soft_defense(%{unit_type: :player} = defender) do
     # Renewal: soft_def = vit (direct VIT value)

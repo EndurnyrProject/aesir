@@ -1,7 +1,6 @@
 defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
   use Aesir.DataCase, async: true
   use Mimic
-  import ExUnit.CaptureLog
 
   import Aesir.TestEtsSetup
 
@@ -149,25 +148,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       assert equipped_item.equip == 2
       assert inventory_item.nameid == 501
       assert inventory_item.equip == 0
-    end
-
-    test "fails initialization when inventory load fails", %{character: character} do
-      # Mock inventory load to fail
-      expect(Persistence, :load_inventory, fn _char_id ->
-        {:error, :database_error}
-      end)
-
-      connection_pid = self()
-
-      {result, _log} =
-        with_log(fn ->
-          PlayerSession.init(%{
-            character: character,
-            connection_pid: connection_pid
-          })
-        end)
-
-      assert {:stop, {:error, :inventory_load_failed}} = result
     end
   end
 
@@ -698,7 +678,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
   end
 
   defp reload(char_id) do
-    {:ok, items} = Persistence.load_inventory(char_id)
+    items = Persistence.load_inventory(char_id)
     PlayerState.from_list(items)
   end
 

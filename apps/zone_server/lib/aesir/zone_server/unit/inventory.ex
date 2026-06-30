@@ -58,7 +58,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   Forwards to `Aesir.ZoneServer.Unit.Inventory.Persistence`; kept here so the
   load path used by the inventory manager has a stable entry point.
   """
-  @spec load_inventory(integer()) :: {:ok, [InventoryItem.t()]} | {:error, term()}
+  @spec load_inventory(integer()) :: [InventoryItem.t()]
   defdelegate load_inventory(char_id), to: Persistence
 
   @doc """

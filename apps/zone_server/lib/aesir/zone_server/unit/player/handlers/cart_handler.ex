@@ -329,14 +329,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
 
   @spec load_cart_map(integer()) :: Cart.t()
   defp load_cart_map(char_id) do
-    case Cart.load_cart(char_id) do
-      {:ok, rows} ->
-        rows |> Enum.map(&cart_row_to_item/1) |> PlayerState.from_list()
-
-      {:error, reason} ->
-        Logger.error("Failed to load cart for #{char_id}: #{inspect(reason)}")
-        %{}
-    end
+    char_id
+    |> Cart.load_cart()
+    |> Enum.map(&cart_row_to_item/1)
+    |> PlayerState.from_list()
   end
 
   # The in-memory cart holds `%InventoryItem{}` (so the pure Inventory core and

@@ -130,9 +130,6 @@ defmodule Aesir.CharServer.CharacterSession do
       {:ok, _session} ->
         {:ok, :online}
 
-      {:error, :not_found} ->
-        {:ok, :offline}
-
       {:error, _reason} ->
         {:ok, :offline}
     end

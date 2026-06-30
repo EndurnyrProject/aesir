@@ -103,7 +103,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
                  request(shop, [{0, 4}])
                )
 
-      assert {:ok, [%InventoryItem{nameid: @potion, amount: 6}]} =
+      assert [%InventoryItem{nameid: @potion, amount: 6}] =
                InventoryPersistence.load_inventory(ctx.seller.id)
 
       assert reload_zeny(ctx.seller.id) == 1_000 + 4 * 25
@@ -129,7 +129,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
                  request(shop, [{0, 3}])
                )
 
-      assert {:ok, []} = InventoryPersistence.load_inventory(ctx.seller.id)
+      assert [] = InventoryPersistence.load_inventory(ctx.seller.id)
       assert new_state.game_state.inventory == %{}
       assert reload_zeny(ctx.seller.id) == 1_075
       assert_receive {:send, _ch, {:npc_sell_result, %NpcSellResult{result: 0}}}
@@ -145,7 +145,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
           request(shop, [{7, 1}])
         )
 
-      assert {:ok, []} = InventoryPersistence.load_inventory(ctx.seller.id)
+      assert [] = InventoryPersistence.load_inventory(ctx.seller.id)
       assert reload_zeny(ctx.seller.id) == 1_000
       assert_receive {:send, _ch, {:npc_sell_result, %NpcSellResult{result: 4}}}
     end
@@ -161,7 +161,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
           request(shop, [{0, 5}])
         )
 
-      assert {:ok, [%InventoryItem{amount: 2}]} =
+      assert [%InventoryItem{amount: 2}] =
                InventoryPersistence.load_inventory(ctx.seller.id)
 
       assert reload_zeny(ctx.seller.id) == 1_000
@@ -180,7 +180,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
           request(shop, [{0, 1}])
         )
 
-      assert {:ok, [%InventoryItem{amount: 3}]} =
+      assert [%InventoryItem{amount: 3}] =
                InventoryPersistence.load_inventory(ctx.seller.id)
 
       assert reload_zeny(ctx.seller.id) == 1_000
@@ -220,7 +220,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
           request(shop, [{0, 1}])
         )
 
-      assert {:ok, []} = InventoryPersistence.load_inventory(ctx.seller.id)
+      assert [] = InventoryPersistence.load_inventory(ctx.seller.id)
       assert reload_zeny(ctx.seller.id) == 1_025
       assert_receive {:send, _ch, {:npc_sell_result, %NpcSellResult{result: 0}}}
     end
@@ -236,7 +236,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
           request(shop, [{0, 1}])
         )
 
-      assert {:ok, [%InventoryItem{amount: 3}]} =
+      assert [%InventoryItem{amount: 3}] =
                InventoryPersistence.load_inventory(ctx.seller.id)
 
       assert reload_zeny(ctx.seller.id) == 1_000
@@ -265,7 +265,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
       # `Repo.transact` must roll back, leaving both slots and the zeny untouched.
       {:ok, _} = InventoryPersistence.insert_item(ctx.seller.id, %{nameid: @potion, amount: 5})
       {:ok, _} = InventoryPersistence.insert_item(ctx.seller.id, %{nameid: 502, amount: 3})
-      {:ok, items} = InventoryPersistence.load_inventory(ctx.seller.id)
+      items = InventoryPersistence.load_inventory(ctx.seller.id)
       inventory = PlayerState.from_list(items)
 
       stub(InventoryPersistence, :delete_item, fn _item -> {:error, :forced_failure} end)
@@ -276,7 +276,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
           request(shop, [{0, 2}, {1, 3}])
         )
 
-      assert {:ok, loaded} = InventoryPersistence.load_inventory(ctx.seller.id)
+      loaded = InventoryPersistence.load_inventory(ctx.seller.id)
       assert [3, 5] = loaded |> Enum.map(& &1.amount) |> Enum.sort()
       assert reload_zeny(ctx.seller.id) == 1_000
       assert_receive {:send, _ch, {:npc_sell_result, %NpcSellResult{result: 4}}}
@@ -293,7 +293,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
           request(shop, [{0, 1}])
         )
 
-      assert {:ok, [%InventoryItem{amount: 3}]} =
+      assert [%InventoryItem{amount: 3}] =
                InventoryPersistence.load_inventory(ctx.seller.id)
 
       assert reload_zeny(ctx.seller.id) == 1_000
@@ -342,7 +342,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
 
   defp seed_inventory(char_id, amount) do
     {:ok, _} = InventoryPersistence.insert_item(char_id, %{nameid: @potion, amount: amount})
-    {:ok, items} = InventoryPersistence.load_inventory(char_id)
+    items = InventoryPersistence.load_inventory(char_id)
     PlayerState.from_list(items)
   end
 

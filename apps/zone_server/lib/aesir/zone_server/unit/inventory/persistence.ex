@@ -14,20 +14,16 @@ defmodule Aesir.ZoneServer.Unit.Inventory.Persistence do
   alias Aesir.Repo
 
   @type item_result :: {:ok, InventoryItem.t()} | {:error, Ecto.Changeset.t()}
-  @type load_result :: {:ok, [InventoryItem.t()]} | {:error, term()}
 
   @doc """
   Loads a character's complete inventory ordered by row `id`.
   """
-  @spec load_inventory(integer()) :: load_result()
+  @spec load_inventory(integer()) :: [InventoryItem.t()]
   def load_inventory(char_id) do
-    items =
-      InventoryItem
-      |> where([i], i.char_id == ^char_id)
-      |> order_by([i], i.id)
-      |> Repo.all()
-
-    {:ok, items}
+    InventoryItem
+    |> where([i], i.char_id == ^char_id)
+    |> order_by([i], i.id)
+    |> Repo.all()
   end
 
   @doc """

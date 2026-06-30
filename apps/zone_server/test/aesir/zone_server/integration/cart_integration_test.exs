@@ -118,8 +118,8 @@ defmodule Aesir.ZoneServer.Integration.CartIntegrationTest do
       assert %{0 => %InventoryItem{nameid: @potion, amount: 4}} = moved_in.cart
       assert held(moved_in.inventory, @potion) == 6
 
-      assert {:ok, [%InventoryItem{amount: 6}]} = InventoryPersistence.load_inventory(char.id)
-      assert {:ok, [%CartItem{nameid: @potion, amount: 4}]} = CartPersistence.load_cart(char.id)
+      assert [%InventoryItem{amount: 6}] = InventoryPersistence.load_inventory(char.id)
+      assert [%CartItem{nameid: @potion, amount: 4}] = CartPersistence.load_cart(char.id)
 
       cart_index = client_index_of(moved_in.cart, @potion)
 
@@ -134,8 +134,8 @@ defmodule Aesir.ZoneServer.Integration.CartIntegrationTest do
       assert moved_out.cart == %{}
       assert held(moved_out.inventory, @potion) == 10
 
-      assert {:ok, [%InventoryItem{amount: 10}]} = InventoryPersistence.load_inventory(char.id)
-      assert {:ok, []} = CartPersistence.load_cart(char.id)
+      assert [%InventoryItem{amount: 10}] = InventoryPersistence.load_inventory(char.id)
+      assert [] = CartPersistence.load_cart(char.id)
     end
   end
 
@@ -247,7 +247,7 @@ defmodule Aesir.ZoneServer.Integration.CartIntegrationTest do
       simulate_incoming_message(pid, %MoveToCartRequest{inventory_index: inv_index, amount: 4})
       assert_receive {:packet_sent, %CartItemAdded{}, _}, 1_000
 
-      assert {:ok, [%CartItem{nameid: @potion, amount: 4}]} = CartPersistence.load_cart(char.id)
+      assert [%CartItem{nameid: @potion, amount: 4}] = CartPersistence.load_cart(char.id)
       assert Repo.get(Character, char.id).cart == 1
 
       # Disconnect: stop the session and wipe the in-memory status so the relog

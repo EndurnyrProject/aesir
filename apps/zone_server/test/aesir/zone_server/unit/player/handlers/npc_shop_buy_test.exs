@@ -78,7 +78,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopBuyTest do
                  request(shop, [{@potion, 4}])
                )
 
-      assert {:ok, [%InventoryItem{nameid: @potion, amount: 4}]} =
+      assert [%InventoryItem{nameid: @potion, amount: 4}] =
                InventoryPersistence.load_inventory(ctx.buyer.id)
 
       assert reload_zeny(ctx.buyer.id) == 1_000 - 4 * @price
@@ -103,7 +103,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopBuyTest do
           request(shop, [{@potion, 4}])
         )
 
-      assert {:ok, []} = InventoryPersistence.load_inventory(ctx.buyer.id)
+      assert [] = InventoryPersistence.load_inventory(ctx.buyer.id)
       assert reload_zeny(ctx.buyer.id) == 1_000
       assert_receive {:send, _ch, {:npc_buy_result, %NpcBuyResult{result: 1}}}
     end
@@ -122,7 +122,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopBuyTest do
           request(shop, [{@potion, 1}])
         )
 
-      assert {:ok, [%InventoryItem{amount: ^fill}]} =
+      assert [%InventoryItem{amount: ^fill}] =
                InventoryPersistence.load_inventory(ctx.buyer.id)
 
       assert reload_zeny(ctx.buyer.id) == 1_000
@@ -140,7 +140,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopBuyTest do
           request(shop, [{@potion, 1}])
         )
 
-      assert {:ok, []} = InventoryPersistence.load_inventory(ctx.buyer.id)
+      assert [] = InventoryPersistence.load_inventory(ctx.buyer.id)
       assert reload_zeny(ctx.buyer.id) == 1_000
       assert_receive {:send, _ch, {:npc_buy_result, %NpcBuyResult{result: 3}}}
     end
@@ -152,7 +152,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopBuyTest do
       {:noreply, _} =
         NpcShopHandler.buy(buyer_state(ctx.buyer, %{}, 1_000, 150, 60), request(shop, [{909, 1}]))
 
-      assert {:ok, []} = InventoryPersistence.load_inventory(ctx.buyer.id)
+      assert [] = InventoryPersistence.load_inventory(ctx.buyer.id)
       assert reload_zeny(ctx.buyer.id) == 1_000
       assert_receive {:send, _ch, {:npc_buy_result, %NpcBuyResult{result: 4}}}
     end
@@ -167,7 +167,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopBuyTest do
           request(shop, [{@potion, 1}])
         )
 
-      assert {:ok, []} = InventoryPersistence.load_inventory(ctx.buyer.id)
+      assert [] = InventoryPersistence.load_inventory(ctx.buyer.id)
       assert reload_zeny(ctx.buyer.id) == 1_000
       assert_receive {:send, _ch, {:npc_buy_result, %NpcBuyResult{result: 4}}}
     end
@@ -182,7 +182,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopBuyTest do
           request(shop, [{@potion, 1}])
         )
 
-      assert {:ok, []} = InventoryPersistence.load_inventory(ctx.buyer.id)
+      assert [] = InventoryPersistence.load_inventory(ctx.buyer.id)
       assert reload_zeny(ctx.buyer.id) == 1_000
       assert_receive {:send, _ch, {:npc_buy_result, %NpcBuyResult{result: 5}}}
     end
@@ -201,7 +201,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopBuyTest do
           request(shop, [{@potion, 4}])
         )
 
-      assert {:ok, []} = InventoryPersistence.load_inventory(ctx.buyer.id)
+      assert [] = InventoryPersistence.load_inventory(ctx.buyer.id)
       assert reload_zeny(ctx.buyer.id) == 1_000
       assert_receive {:send, _ch, {:npc_buy_result, %NpcBuyResult{result: 4}}}
     end
@@ -252,7 +252,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopBuyTest do
   end
 
   defp load_inventory_map(char_id) do
-    {:ok, items} = InventoryPersistence.load_inventory(char_id)
+    items = InventoryPersistence.load_inventory(char_id)
     PlayerState.from_list(items)
   end
 

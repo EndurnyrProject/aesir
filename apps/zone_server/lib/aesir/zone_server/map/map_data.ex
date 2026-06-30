@@ -33,7 +33,7 @@ defmodule Aesir.ZoneServer.Map.MapData do
   """
   @type t :: %__MODULE__{
           name: String.t(),
-          index: integer(),
+          index: integer() | nil,
           xs: integer(),
           ys: integer(),
           cells: binary(),

@@ -15,20 +15,16 @@ defmodule Aesir.ZoneServer.Unit.Cart.Persistence do
   alias Aesir.Repo
 
   @type item_result :: {:ok, CartItem.t()} | {:error, Ecto.Changeset.t()}
-  @type load_result :: {:ok, [CartItem.t()]} | {:error, term()}
 
   @doc """
   Loads a character's complete cart ordered by row `id`.
   """
-  @spec load_cart(integer()) :: load_result()
+  @spec load_cart(integer()) :: [CartItem.t()]
   def load_cart(char_id) do
-    items =
-      CartItem
-      |> where([i], i.char_id == ^char_id)
-      |> order_by([i], i.id)
-      |> Repo.all()
-
-    {:ok, items}
+    CartItem
+    |> where([i], i.char_id == ^char_id)
+    |> order_by([i], i.id)
+    |> Repo.all()
   end
 
   @doc """

@@ -13,6 +13,7 @@ defmodule Commons.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       aliases: aliases(),
       start_permanent: Mix.env() == :prod,
+      dialyzer: dialyzer(),
       deps: deps()
     ]
   end
@@ -24,6 +25,13 @@ defmodule Commons.MixProject do
     ]
   end
 
+  defp dialyzer do
+    [
+      plt_add_apps: [:mix],
+      ignore_warnings: "../../.dialyzer_ignore.exs"
+    ]
+  end
+
   defp deps do
     [
       {:bandit, "~> 1.0", only: :dev},
@@ -31,6 +39,7 @@ defmodule Commons.MixProject do
       {:benchee, "~> 1.4", only: [:dev, :test]},
       {:bunt, "~> 1.0"},
       {:credo, "~> 1.7", only: [:dev], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_check, "~> 0.16", only: [:dev, :test], runtime: false},
       {:ecto, "~> 3.13"},
       {:ecto_sql, "~> 3.13"},

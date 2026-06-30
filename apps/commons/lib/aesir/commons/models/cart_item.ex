@@ -13,8 +13,8 @@ defmodule Aesir.Commons.Models.CartItem do
   alias Aesir.Commons.Models.Character
 
   @type t :: %__MODULE__{
-          id: integer(),
-          char_id: integer(),
+          id: integer() | nil,
+          char_id: integer() | nil,
           nameid: integer(),
           amount: integer(),
           equip: integer(),
@@ -33,8 +33,8 @@ defmodule Aesir.Commons.Models.CartItem do
           equip_switch: integer(),
           enchant_grade: integer(),
           character: Character.t() | Ecto.Association.NotLoaded.t(),
-          inserted_at: NaiveDateTime.t(),
-          updated_at: NaiveDateTime.t()
+          inserted_at: NaiveDateTime.t() | nil,
+          updated_at: NaiveDateTime.t() | nil
         }
 
   schema "cart_inventory" do

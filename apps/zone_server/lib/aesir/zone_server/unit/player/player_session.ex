@@ -211,45 +211,40 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     connection_pid = args[:connection_pid]
     game_state = PlayerState.new(character)
 
-    case InventoryManager.load_character_inventory(character, game_state) do
-      {:ok, updated_game_state} ->
-        final_game_state = PlayerState.set_process_pid(updated_game_state, self())
+    {:ok, updated_game_state} = InventoryManager.load_character_inventory(character, game_state)
+    final_game_state = PlayerState.set_process_pid(updated_game_state, self())
 
-        # Monitor the connection process to detect crashes
-        connection_monitor_ref = Process.monitor(connection_pid)
+    # Monitor the connection process to detect crashes
+    connection_monitor_ref = Process.monitor(connection_pid)
 
-        state = %{
-          game_state: final_game_state,
-          connection_pid: connection_pid,
-          connection_monitor_ref: connection_monitor_ref,
-          interaction_lock: nil
-        }
+    state = %{
+      game_state: final_game_state,
+      connection_pid: connection_pid,
+      connection_monitor_ref: connection_monitor_ref,
+      interaction_lock: nil
+    }
 
-        register_player(final_game_state)
+    register_player(final_game_state)
 
-        # Restore a mounted cart: load its rows, set the tier, and re-apply
-        # SC_PUSHCART so the sprite folds into the spawn effect_state and the
-        # walk-speed penalty is recomputed. Runs after registration so the
-        # status apply can resolve the unit's entity info.
-        state = CartHandler.load_on_spawn(character, state)
+    # Restore a mounted cart: load its rows, set the tier, and re-apply
+    # SC_PUSHCART so the sprite folds into the spawn effect_state and the
+    # walk-speed penalty is recomputed. Runs after registration so the
+    # status apply can resolve the unit's entity info.
+    state = CartHandler.load_on_spawn(character, state)
 
-        # Subscribe to this player's event topic. Kill rewards and other
-        # player-directed domain events arrive here, keeping emitters
-        # (mobs, etc.) decoupled from the player session.
-        PubSub.subscribe(Aesir.PubSub, "player:#{character.id}")
+    # Subscribe to this player's event topic. Kill rewards and other
+    # player-directed domain events arrive here, keeping emitters
+    # (mobs, etc.) decoupled from the player session.
+    PubSub.subscribe(Aesir.PubSub, "player:#{character.id}")
 
-        # Subscribe to mob despawns on this map so we can drop a combat target
-        # when the mob we were attacking dies.
-        # subscribe at spawn; re-subscribe on warp when warps land.
-        Broadcast.subscribe_mob_despawns(final_game_state.map_name)
+    # Subscribe to mob despawns on this map so we can drop a combat target
+    # when the mob we were attacking dies.
+    # subscribe at spawn; re-subscribe on warp when warps land.
+    Broadcast.subscribe_mob_despawns(final_game_state.map_name)
 
-        send(self(), :spawn_player)
+    send(self(), :spawn_player)
 
-        {:ok, state}
-
-      {:error, reason} ->
-        {:stop, {:error, reason}}
-    end
+    {:ok, state}
   end
 
   @impl true

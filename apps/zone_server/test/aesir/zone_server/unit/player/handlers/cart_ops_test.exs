@@ -71,7 +71,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOpsTest do
 
       assert %{0 => %InventoryItem{id: id, nameid: @sword}} = persisted
       assert is_integer(id)
-      assert {:ok, [%CartItem{nameid: @sword}]} = CartPersistence.load_cart(char.id)
+      assert [%CartItem{nameid: @sword}] = CartPersistence.load_cart(char.id)
     end
   end
 
@@ -87,8 +87,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOpsTest do
       assert %{^index => %InventoryItem{amount: 6}} = p_inv
       assert %{0 => %InventoryItem{nameid: @potion, amount: 4}} = p_cart
 
-      assert {:ok, [%InventoryItem{amount: 6}]} = InventoryPersistence.load_inventory(char.id)
-      assert {:ok, [%CartItem{nameid: @potion, amount: 4}]} = CartPersistence.load_cart(char.id)
+      assert [%InventoryItem{amount: 6}] = InventoryPersistence.load_inventory(char.id)
+      assert [%CartItem{nameid: @potion, amount: 4}] = CartPersistence.load_cart(char.id)
     end
 
     test "removes the inventory row entirely when the whole stack moves", %{character: char} do
@@ -100,8 +100,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOpsTest do
                CartOps.move_to_cart(char.id, inventory, %{}, index, 4)
 
       assert p_inv == %{}
-      assert {:ok, []} = InventoryPersistence.load_inventory(char.id)
-      assert {:ok, [%CartItem{amount: 4}]} = CartPersistence.load_cart(char.id)
+      assert [] = InventoryPersistence.load_inventory(char.id)
+      assert [%CartItem{amount: 4}] = CartPersistence.load_cart(char.id)
     end
 
     test "stacks onto an existing plain cart stack", %{character: char} do
@@ -114,7 +114,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOpsTest do
       assert {:ok, _p_inv, _p_cart, {:reduced, ^index, 7}, {:stacked, _, 8}} =
                CartOps.move_to_cart(char.id, inventory, cart, index, 3)
 
-      assert {:ok, [%CartItem{amount: 8}]} = CartPersistence.load_cart(char.id)
+      assert [%CartItem{amount: 8}] = CartPersistence.load_cart(char.id)
     end
 
     test "preserves refine/cards and does not merge a carded item with a plain stack", %{
@@ -129,7 +129,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOpsTest do
       assert {:ok, _p_inv, _p_cart, _inv_change, {:added, _, _}} =
                CartOps.move_to_cart(char.id, inventory, cart, index, 1)
 
-      {:ok, rows} = CartPersistence.load_cart(char.id)
+      rows = CartPersistence.load_cart(char.id)
       assert length(rows) == 2
 
       plain = Enum.find(rows, &(&1.card0 == 0))
@@ -149,8 +149,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOpsTest do
 
       assert {:error, :overweight} = CartOps.move_to_cart(char.id, inventory, %{}, index, 1143)
 
-      assert {:ok, [%InventoryItem{amount: 1200}]} = InventoryPersistence.load_inventory(char.id)
-      assert {:ok, []} = CartPersistence.load_cart(char.id)
+      assert [%InventoryItem{amount: 1200}] = InventoryPersistence.load_inventory(char.id)
+      assert [] = CartPersistence.load_cart(char.id)
     end
   end
 
@@ -167,8 +167,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOpsTest do
                CartOps.move_to_inventory(char.id, %{}, cart, stats, index, 4)
 
       assert %{0 => %InventoryItem{nameid: @potion, amount: 4}} = p_inv
-      assert {:ok, [%InventoryItem{amount: 4}]} = InventoryPersistence.load_inventory(char.id)
-      assert {:ok, [%CartItem{amount: 6}]} = CartPersistence.load_cart(char.id)
+      assert [%InventoryItem{amount: 4}] = InventoryPersistence.load_inventory(char.id)
+      assert [%CartItem{amount: 6}] = CartPersistence.load_cart(char.id)
     end
 
     test "deletes the cart row when the whole stack moves back", %{character: char, stats: stats} do
@@ -180,8 +180,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOpsTest do
                CartOps.move_to_inventory(char.id, %{}, cart, stats, index, 4)
 
       assert p_cart == %{}
-      assert {:ok, [%InventoryItem{amount: 4}]} = InventoryPersistence.load_inventory(char.id)
-      assert {:ok, []} = CartPersistence.load_cart(char.id)
+      assert [%InventoryItem{amount: 4}] = InventoryPersistence.load_inventory(char.id)
+      assert [] = CartPersistence.load_cart(char.id)
     end
 
     test "rejects when the player would be overweight and writes nothing", %{
@@ -200,8 +200,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOpsTest do
       assert {:error, :overweight} =
                CartOps.move_to_inventory(char.id, inventory, cart, stats, index, 1)
 
-      assert {:ok, [%InventoryItem{amount: ^fill}]} = InventoryPersistence.load_inventory(char.id)
-      assert {:ok, [%CartItem{amount: 1}]} = CartPersistence.load_cart(char.id)
+      assert [%InventoryItem{amount: ^fill}] = InventoryPersistence.load_inventory(char.id)
+      assert [%CartItem{amount: 1}] = CartPersistence.load_cart(char.id)
     end
   end
 
@@ -217,8 +217,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOpsTest do
                CartOps.move_to_cart(char.id, inventory, %{}, index, 4)
 
       # The inventory reduce (10 -> 6) must have rolled back with the cart insert.
-      assert {:ok, [%InventoryItem{amount: 10}]} = InventoryPersistence.load_inventory(char.id)
-      assert {:ok, []} = CartPersistence.load_cart(char.id)
+      assert [%InventoryItem{amount: 10}] = InventoryPersistence.load_inventory(char.id)
+      assert [] = CartPersistence.load_cart(char.id)
     end
 
     test "a forced failure on the cart update rolls back the inventory add", %{
@@ -235,8 +235,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOpsTest do
                CartOps.move_to_inventory(char.id, %{}, cart, stats, index, 4)
 
       # The inventory add must have rolled back with the cart reduce.
-      assert {:ok, []} = InventoryPersistence.load_inventory(char.id)
-      assert {:ok, [%CartItem{amount: 10}]} = CartPersistence.load_cart(char.id)
+      assert [] = InventoryPersistence.load_inventory(char.id)
+      assert [%CartItem{amount: 10}] = CartPersistence.load_cart(char.id)
     end
   end
 
@@ -259,8 +259,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOpsTest do
 
       assert %{0 => %InventoryItem{amount: 5}} = p_cart2
       assert %{^index => %InventoryItem{amount: 5}} = p_inv2
-      assert {:ok, [%CartItem{amount: 5}]} = CartPersistence.load_cart(char.id)
-      assert {:ok, [%InventoryItem{amount: 5}]} = InventoryPersistence.load_inventory(char.id)
+      assert [%CartItem{amount: 5}] = CartPersistence.load_cart(char.id)
+      assert [%InventoryItem{amount: 5}] = InventoryPersistence.load_inventory(char.id)
     end
 
     test "reducing a just-inserted cart slot via the returned map commits", %{
@@ -279,8 +279,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOpsTest do
 
       assert %{0 => %InventoryItem{amount: 4}} = p_cart2
       assert %{^index => %InventoryItem{amount: 6}} = p_inv2
-      assert {:ok, [%CartItem{amount: 4}]} = CartPersistence.load_cart(char.id)
-      assert {:ok, [%InventoryItem{amount: 6}]} = InventoryPersistence.load_inventory(char.id)
+      assert [%CartItem{amount: 4}] = CartPersistence.load_cart(char.id)
+      assert [%InventoryItem{amount: 6}] = InventoryPersistence.load_inventory(char.id)
     end
   end
 
@@ -302,12 +302,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOpsTest do
   end
 
   defp inv_map(char_id) do
-    {:ok, items} = InventoryPersistence.load_inventory(char_id)
+    items = InventoryPersistence.load_inventory(char_id)
     PlayerState.from_list(items)
   end
 
   defp cart_map(char_id) do
-    {:ok, rows} = CartPersistence.load_cart(char_id)
+    rows = CartPersistence.load_cart(char_id)
 
     rows
     |> Enum.map(&cart_row_to_item/1)

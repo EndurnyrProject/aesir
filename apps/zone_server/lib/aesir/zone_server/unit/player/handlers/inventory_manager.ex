@@ -26,21 +26,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
 
   ## Returns
     - {:ok, updated_game_state} - Success with inventory loaded
-    - {:error, reason} - Failure during inventory loading
   """
   def load_character_inventory(character, game_state) do
-    case Inventory.load_inventory(character.id) do
-      {:ok, inventory_items} ->
-        inventory = PlayerState.from_list(inventory_items)
-        equipped = Map.values(Inventory.equipped_items(inventory))
-        stats = Stats.calculate_stats(game_state.stats, character.id, equipped)
+    inventory_items = Inventory.load_inventory(character.id)
+    inventory = PlayerState.from_list(inventory_items)
+    equipped = Map.values(Inventory.equipped_items(inventory))
+    stats = Stats.calculate_stats(game_state.stats, character.id, equipped)
 
-        {:ok, %{game_state | inventory: inventory, stats: stats}}
-
-      {:error, reason} ->
-        Logger.error("Failed to load inventory for character #{character.id}: #{inspect(reason)}")
-        {:error, :inventory_load_failed}
-    end
+    {:ok, %{game_state | inventory: inventory, stats: stats}}
   end
 
   @doc """

@@ -222,12 +222,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
                stats.progression.job_level
              ) do
         %{
-          str: bonus_stats.str || 0,
-          agi: bonus_stats.agi || 0,
-          vit: bonus_stats.vit || 0,
-          int: bonus_stats.int || 0,
-          dex: bonus_stats.dex || 0,
-          luk: bonus_stats.luk || 0
+          str: bonus_stats.str,
+          agi: bonus_stats.agi,
+          vit: bonus_stats.vit,
+          int: bonus_stats.int,
+          dex: bonus_stats.dex,
+          luk: bonus_stats.luk
         }
       else
         {:error, :level_out_of_range} ->
@@ -443,7 +443,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
         # Calculate ASPD
         aspd = calculate_aspd(stats)
 
-        derived_stats = %{
+        derived_stats = %Stats.DerivedStats{
           max_hp: max_hp,
           max_sp: max_sp,
           aspd: aspd
@@ -481,7 +481,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     heal_matk_min = base_matk + wmatk_min
     heal_matk_max = base_matk + wmatk_max
 
-    combat_stats = %{
+    combat_stats = %Stats.CombatStats{
       hit: PlayerCombatCalc.calculate_hit(stats),
       flee: PlayerCombatCalc.calculate_flee(stats),
       critical: base_critical + get_status_modifier(stats, :critical),
@@ -663,9 +663,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       %{
         base_hp: base_stats.hp,
         base_sp: base_stats.sp,
-        hp_factor: job.hp_factor || 0,
-        hp_increase: job.hp_increase || 0,
-        sp_increase: job.sp_increase || 0
+        hp_factor: job.hp_factor,
+        hp_increase: job.hp_increase,
+        sp_increase: job.sp_increase
       }
     else
       _ ->
@@ -679,15 +679,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
     # Apply job-specific HP factor if any
     hp_with_factor =
-      if hp_factor && hp_factor > 0 do
+      if hp_factor > 0 do
         trunc(hp_with_vit * (100 + hp_factor) / 100)
       else
         hp_with_vit
       end
 
     # Apply increases and bonuses
-    hp_increase_value = hp_increase || 0
-    total_hp = hp_with_factor + hp_increase_value + get_hp_bonus_flat(stats)
+    total_hp = hp_with_factor + hp_increase + get_hp_bonus_flat(stats)
 
     max(total_hp, 1)
   end
@@ -697,8 +696,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     sp_with_int = trunc(base_sp * (1.0 + effective_int * 0.01))
 
     # Apply increases and bonuses
-    sp_increase_value = sp_increase || 0
-    total_sp = sp_with_int + sp_increase_value + get_sp_bonus_flat(stats)
+    total_sp = sp_with_int + sp_increase + get_sp_bonus_flat(stats)
 
     max(total_sp, 1)
   end

@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Cart do
   cart-specific 8000-weight cap lives in `Aesir.ZoneServer.Unit.Cart.Weight`.
   """
 
+  alias Aesir.Commons.Models.CartItem
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Unit.Cart.Persistence
@@ -29,7 +30,7 @@ defmodule Aesir.ZoneServer.Unit.Cart do
   path used by the cart orchestrator has a stable entry point, mirroring
   `Inventory.load_inventory/1`.
   """
-  @spec load_cart(integer()) :: Persistence.load_result()
+  @spec load_cart(integer()) :: [CartItem.t()]
   defdelegate load_cart(char_id), to: Persistence
 
   @doc """

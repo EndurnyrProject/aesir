@@ -3,6 +3,35 @@ defmodule Aesir.Commons.Models.Account do
 
   import Ecto.Changeset
 
+  alias Aesir.Commons.Models.Character
+
+  @type t :: %__MODULE__{
+          id: integer() | nil,
+          userid: String.t() | nil,
+          user_pass: String.t() | nil,
+          sex: String.t(),
+          email: String.t() | nil,
+          group_id: integer(),
+          state: integer(),
+          unban_time: NaiveDateTime.t() | nil,
+          expiration_time: NaiveDateTime.t() | nil,
+          logincount: integer(),
+          lastlogin: NaiveDateTime.t() | nil,
+          last_ip: String.t() | nil,
+          birthdate: Date.t() | nil,
+          character_slots: integer(),
+          pincode: String.t() | nil,
+          pincode_change: NaiveDateTime.t() | nil,
+          vip_time: NaiveDateTime.t() | nil,
+          old_group: integer(),
+          web_auth_token: String.t() | nil,
+          web_auth_token_enabled: integer(),
+          gm_level: integer(),
+          characters: [Character.t()] | Ecto.Association.NotLoaded.t(),
+          inserted_at: NaiveDateTime.t() | nil,
+          updated_at: NaiveDateTime.t() | nil
+        }
+
   schema "accounts" do
     field :userid, :string
     field :user_pass, :string

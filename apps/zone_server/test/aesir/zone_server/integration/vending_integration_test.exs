@@ -130,10 +130,10 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
       assert buyer_after.zeny == 4_600
 
       # Persisted both ways.
-      assert {:ok, [%CartItem{nameid: @potion, amount: 6}]} = CartPersistence.load_cart(seller_id)
+      assert [%CartItem{nameid: @potion, amount: 6}] = CartPersistence.load_cart(seller_id)
       assert Repo.get(Character, seller_id).zeny == 1_400
 
-      assert {:ok, [%InventoryItem{nameid: @potion, amount: 4}]} =
+      assert [%InventoryItem{nameid: @potion, amount: 4}] =
                InventoryPersistence.load_inventory(buyer.character.id)
 
       assert Repo.get(Character, buyer.character.id).zeny == 4_600
@@ -157,12 +157,12 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
 
       assert :error = VendingRegistry.get(seller_id)
       assert get_player_state(seller.pid).action_state == :idle
-      assert {:ok, []} = CartPersistence.load_cart(seller_id)
+      assert [] = CartPersistence.load_cart(seller_id)
 
       # Both buys of the identified potion stack into a single buyer slot (4 + 6).
       assert held(get_player_state(buyer.pid).inventory, @potion) == 10
 
-      assert {:ok, [%InventoryItem{nameid: @potion, amount: 10}]} =
+      assert [%InventoryItem{nameid: @potion, amount: 10}] =
                InventoryPersistence.load_inventory(buyer.character.id)
     end
 
@@ -185,7 +185,7 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
       assert :error = VendingRegistry.get(seller_id)
 
       # No item loss: the unsold cart stock is still persisted.
-      assert {:ok, [%CartItem{nameid: @potion, amount: 10}]} =
+      assert [%CartItem{nameid: @potion, amount: 10}] =
                CartPersistence.load_cart(seller_id)
     end
 
@@ -211,7 +211,7 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
       assert closed.action_state == :idle
       assert held(closed.cart, @potion) == 10
 
-      assert {:ok, [%CartItem{nameid: @potion, amount: 10}]} =
+      assert [%CartItem{nameid: @potion, amount: 10}] =
                CartPersistence.load_cart(seller_id)
     end
   end

@@ -24,7 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     field :mob_id, integer(), enforce: true
     field :mob_data, MobDefinition.t(), enforce: true
     field :spawn_ref, MobSpawn.t(), enforce: true
-    field :process_pid, pid(), default: nil
+    field :process_pid, pid() | nil, default: nil
 
     # Position & Movement
     field :x, integer(), enforce: true
@@ -36,17 +36,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     field :movement_state, movement_state(), default: :standing
     field :walk_path, list(), default: []
     field :walk_speed, integer(), default: 200
-    field :target_position, {integer(), integer()}, default: nil
+    field :target_position, {integer(), integer()} | nil, default: nil
 
     # AI state machine
     field :ai_state, ai_state(), default: :idle
-    field :target_id, integer(), default: nil
-    field :last_ai_tick, integer(), default: nil
+    field :target_id, integer() | nil, default: nil
+    field :last_ai_tick, integer() | nil, default: nil
     field :aggro_list, map(), default: %{}
-    field :last_action_time, integer(), default: nil
-    field :last_movement_end_time, integer(), default: nil
-    field :last_idle_movement_time, integer(), default: nil
-    field :last_attack_time, integer(), default: nil
+    field :last_action_time, integer() | nil, default: nil
+    field :last_movement_end_time, integer() | nil, default: nil
+    field :last_idle_movement_time, integer() | nil, default: nil
+    field :last_attack_time, integer() | nil, default: nil
 
     # Combat state
     field :hp, integer(), enforce: true
@@ -61,7 +61,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
 
     # Lifecycle
     field :spawned_at, integer(), enforce: true
-    field :last_damage_time, integer(), default: nil
+    field :last_damage_time, integer() | nil, default: nil
     field :respawn_delay, integer(), default: 0
 
     # Status effects

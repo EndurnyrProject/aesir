@@ -11,6 +11,7 @@ defmodule CharServer.MixProject do
       lockfile: "../../mix.lock",
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
+      dialyzer: dialyzer(),
       deps: deps()
     ]
   end
@@ -26,6 +27,13 @@ defmodule CharServer.MixProject do
   defp deps do
     [
       {:commons, in_umbrella: true}
+    ]
+  end
+
+  defp dialyzer do
+    [
+      plt_add_apps: [:mix],
+      ignore_warnings: "../../.dialyzer_ignore.exs"
     ]
   end
 end

@@ -76,7 +76,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
   end
 
   defp load(char_id) do
-    {:ok, items} = Persistence.load_inventory(char_id)
+    items = Persistence.load_inventory(char_id)
     PlayerState.from_list(items)
   end
 
@@ -90,7 +90,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
       assert %{0 => %InventoryItem{id: id, nameid: @sword}} = persisted
       assert is_integer(id)
 
-      assert {:ok, [%InventoryItem{nameid: @sword}]} = Persistence.load_inventory(char.id)
+      assert [%InventoryItem{nameid: @sword}] = Persistence.load_inventory(char.id)
     end
   end
 
@@ -102,7 +102,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
       assert {:ok, persisted, {:added, 0, _}} = InventoryOps.add(char.id, inv, stats, def_, 5)
       assert %{0 => %InventoryItem{nameid: @potion, amount: 5}} = persisted
 
-      assert {:ok, [%InventoryItem{nameid: @potion, amount: 5}]} =
+      assert [%InventoryItem{nameid: @potion, amount: 5}] =
                Persistence.load_inventory(char.id)
     end
 
@@ -115,7 +115,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
       huge_amount = div(Weight.max_weight(tiny), def_.weight) + 100
 
       assert {:error, :overweight} = InventoryOps.add(char.id, %{}, tiny, def_, huge_amount)
-      assert {:ok, []} = Persistence.load_inventory(char.id)
+      assert [] = Persistence.load_inventory(char.id)
     end
   end
 
@@ -129,7 +129,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
 
       assert {:ok, persisted} = InventoryOps.apply_change(char.id, inv, new_inv, change)
       assert %{0 => %InventoryItem{amount: 8}} = persisted
-      assert {:ok, [%InventoryItem{amount: 8}]} = Persistence.load_inventory(char.id)
+      assert [%InventoryItem{amount: 8}] = Persistence.load_inventory(char.id)
     end
 
     test "split tops the existing row and inserts the remainder, both persisted", %{
@@ -146,7 +146,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
       assert %{1 => %InventoryItem{id: id}} = persisted
       assert is_integer(id)
 
-      {:ok, rows} = Persistence.load_inventory(char.id)
+      rows = Persistence.load_inventory(char.id)
       assert Enum.map(rows, & &1.amount) |> Enum.sort() == [4, 30_000]
     end
   end
@@ -158,7 +158,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
 
       assert {:ok, persisted, {:reduced, 0, 7}} = InventoryOps.remove(char.id, inv, 0, 3)
       assert %{0 => %InventoryItem{amount: 7}} = persisted
-      assert {:ok, [%InventoryItem{amount: 7}]} = Persistence.load_inventory(char.id)
+      assert [%InventoryItem{amount: 7}] = Persistence.load_inventory(char.id)
     end
 
     test "deletes the row when the amount reaches zero", %{character: char} do
@@ -167,7 +167,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
 
       assert {:ok, persisted, {:removed, 0}} = InventoryOps.remove(char.id, inv, 0, 3)
       assert persisted == %{}
-      assert {:ok, []} = Persistence.load_inventory(char.id)
+      assert [] = Persistence.load_inventory(char.id)
     end
   end
 

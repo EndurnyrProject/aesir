@@ -6,7 +6,15 @@ defmodule Aesir.MixProject do
       apps_path: "apps",
       version: "0.4.0",
       start_permanent: Mix.env() == :prod,
+      dialyzer: dialyzer(),
       deps: deps()
+    ]
+  end
+
+  defp dialyzer do
+    [
+      plt_add_apps: [:mix],
+      ignore_warnings: ".dialyzer_ignore.exs"
     ]
   end
 

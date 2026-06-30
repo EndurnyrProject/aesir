@@ -69,6 +69,8 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Spawns do
     with :error <- Mobs.by_id(id) do
       raise ArgumentError, "spawn map #{map} references unknown mob id #{id}"
     end
+
+    :ok
   end
 
   @spec data_dir() :: Path.t()

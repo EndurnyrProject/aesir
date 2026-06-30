@@ -31,6 +31,10 @@ defmodule Aesir.ZoneServer.Unit.Stats do
     @typedoc "Battle-related statistics"
     field :atk, non_neg_integer()
     field :matk, non_neg_integer()
+    field :matk_min, non_neg_integer()
+    field :matk_max, non_neg_integer()
+    field :heal_matk_min, non_neg_integer()
+    field :heal_matk_max, non_neg_integer()
     field :def, non_neg_integer()
     field :mdef, non_neg_integer()
     field :soft_mdef, non_neg_integer()

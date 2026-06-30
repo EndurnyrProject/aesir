@@ -6,6 +6,18 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
   @behaviour Aesir.ZoneServer.Unit
 
+  alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
+  alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
+  alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.Skill.Learned
+  alias Aesir.ZoneServer.Mmo.WeaponTypes
+  alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
+
   @type direction :: 0..7
   @type movement_state :: :standing | :moving
   @type action_state ::
@@ -86,18 +98,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   @client_index_offset 2
 
   @warp_cooldown_ms 500
-
-  alias Aesir.Commons.Models.InventoryItem
-  alias Aesir.ZoneServer.Config
-  alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
-  alias Aesir.ZoneServer.Mmo.Combat.Combatant
-  alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
-  alias Aesir.ZoneServer.Mmo.ItemManagement
-  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
-  alias Aesir.ZoneServer.Mmo.WeaponTypes
-  alias Aesir.ZoneServer.Unit
-  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   defstruct [
     # Character identification

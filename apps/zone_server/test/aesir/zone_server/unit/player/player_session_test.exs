@@ -39,7 +39,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   setup do
     Mimic.copy(Persistence)
 
-    stub(Persistence, :load_inventory, fn _char_id -> {:ok, []} end)
+    stub(Persistence, :load_inventory, fn _char_id -> [] end)
 
     character = %Character{
       id: 1,

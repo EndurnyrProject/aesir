@@ -32,14 +32,14 @@ defmodule Aesir.ZoneServer.Unit.Cart.PersistenceTest do
 
   describe "load_cart/1" do
     test "returns an empty list for a character with no items", %{character: character} do
-      assert {:ok, []} = Persistence.load_cart(character.id)
+      assert [] = Persistence.load_cart(character.id)
     end
 
     test "returns items ordered by id", %{character: character} do
       {:ok, first} = Persistence.insert_item(character.id, %{nameid: 501, amount: 1})
       {:ok, second} = Persistence.insert_item(character.id, %{nameid: 1201, amount: 1})
 
-      assert {:ok, [%CartItem{id: first_id}, %CartItem{id: second_id}]} =
+      assert [%CartItem{id: first_id}, %CartItem{id: second_id}] =
                Persistence.load_cart(character.id)
 
       assert first_id == first.id
@@ -69,7 +69,7 @@ defmodule Aesir.ZoneServer.Unit.Cart.PersistenceTest do
       {:ok, item} = Persistence.insert_item(character.id, %{nameid: 501, amount: 5})
 
       assert {:ok, %CartItem{}} = Persistence.delete_item(item)
-      assert {:ok, []} = Persistence.load_cart(character.id)
+      assert [] = Persistence.load_cart(character.id)
     end
   end
 end

@@ -37,6 +37,9 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   @typedoc "An HP/SP heal amount: a flat integer or a `lo..hi` range to roll within."
   @type amount :: integer() | Range.t()
 
+  @typedoc "The dialog frame kind, mirroring the `NpcDialog.Expect` proto enum."
+  @type expect :: :NEXT | :MENU | :INPUT_INT | :INPUT_STR | :CLOSE
+
   # Idle deadline for a blocking dialog suspension. The client freezes the
   # player during a dialog, so a `receive` that never returns means the player
   # abandoned the window; the interaction exits and the session clears the lock.
@@ -111,7 +114,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     %{ctx | page: []}
   end
 
-  @spec flush(Ctx.t(), NpcDialog.Expect.t(), [String.t()]) :: :ok
+  @spec flush(Ctx.t(), expect(), [String.t()]) :: :ok
   defp flush(%Ctx{} = ctx, expect, options) do
     dialog = %NpcDialog{
       npc_id: ctx.npc_gid,

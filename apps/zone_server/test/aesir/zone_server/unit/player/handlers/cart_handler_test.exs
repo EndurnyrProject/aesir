@@ -321,7 +321,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandlerTest do
         enchant_grade: 0
       }
 
-      stub(Cart, :load_cart, fn @char_id -> {:ok, [row]} end)
+      stub(Cart, :load_cart, fn @char_id -> [row] end)
 
       learned = %{Integer.to_string(catalog_pushcart_id()) => @pushcart_level}
       character = character(cart: 1, learned_skills: learned)

@@ -119,7 +119,7 @@ defmodule Aesir.ZoneServer.Npc.ShopIntegrationTest do
       assert held(bought.inventory, buy_nameid) == @buy_amount
       assert bought.zeny == after_buy_zeny
       assert Repo.get(Character, character.id).zeny == after_buy_zeny
-      assert {:ok, persisted_after_buy} = InventoryPersistence.load_inventory(character.id)
+      persisted_after_buy = InventoryPersistence.load_inventory(character.id)
 
       assert Enum.any?(
                persisted_after_buy,
@@ -148,7 +148,7 @@ defmodule Aesir.ZoneServer.Npc.ShopIntegrationTest do
       assert sold.zeny == after_sell_zeny
       assert Repo.get(Character, character.id).zeny == after_sell_zeny
 
-      assert {:ok, persisted_after_sell} = InventoryPersistence.load_inventory(character.id)
+      persisted_after_sell = InventoryPersistence.load_inventory(character.id)
 
       assert Enum.any?(
                persisted_after_sell,

@@ -32,14 +32,14 @@ defmodule Aesir.ZoneServer.Unit.Inventory.PersistenceTest do
 
   describe "load_inventory/1" do
     test "returns an empty list for a character with no items", %{character: character} do
-      assert {:ok, []} = Persistence.load_inventory(character.id)
+      assert [] = Persistence.load_inventory(character.id)
     end
 
     test "returns items ordered by id", %{character: character} do
       {:ok, first} = Persistence.insert_item(character.id, %{nameid: 501, amount: 1})
       {:ok, second} = Persistence.insert_item(character.id, %{nameid: 1201, amount: 1})
 
-      assert {:ok, [%InventoryItem{id: first_id}, %InventoryItem{id: second_id}]} =
+      assert [%InventoryItem{id: first_id}, %InventoryItem{id: second_id}] =
                Persistence.load_inventory(character.id)
 
       assert first_id == first.id
@@ -70,7 +70,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory.PersistenceTest do
       {:ok, _} = Persistence.insert_item(character.id, %{nameid: 501, amount: 1})
       {:ok, _} = Persistence.insert_item(other_character.id, %{nameid: 1201, amount: 1})
 
-      assert {:ok, [%InventoryItem{nameid: 501}]} = Persistence.load_inventory(character.id)
+      assert [%InventoryItem{nameid: 501}] = Persistence.load_inventory(character.id)
     end
   end
 
@@ -108,7 +108,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory.PersistenceTest do
       {:ok, item} = Persistence.insert_item(character.id, %{nameid: 501, amount: 5})
 
       assert {:ok, %InventoryItem{}} = Persistence.delete_item(item)
-      assert {:ok, []} = Persistence.load_inventory(character.id)
+      assert [] = Persistence.load_inventory(character.id)
     end
   end
 
@@ -122,7 +122,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory.PersistenceTest do
         end)
 
       assert {:ok, :done} = result
-      assert {:ok, [_, _]} = Persistence.load_inventory(character.id)
+      assert [_, _] = Persistence.load_inventory(character.id)
     end
 
     test "rolls back all writes when the function returns {:error, _}", %{character: character} do
@@ -133,7 +133,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory.PersistenceTest do
         end)
 
       assert {:error, :boom} = result
-      assert {:ok, []} = Persistence.load_inventory(character.id)
+      assert [] = Persistence.load_inventory(character.id)
     end
   end
 end
