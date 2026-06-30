@@ -276,6 +276,13 @@ Always run the full test suite before considering a task done.
 - **Prefer TypedStructs over plain structs** for type safety and documentation.
 - **Aliases**: Always `alias` modules at the top of the file instead of using fully-qualified names.
 - **Numbers**: Numbers larger than 9999 must use underscores, e.g. `10_000`.
+- **Tell, don't ask**: Avoid `get`/`put` patterns; prefer passing state through function calls.
+- **Reduce coupling**: Prefer `Phoenix.PubSub` to decouple subsystems when possible; broadcast events
+  rather than calling another subsystem's modules directly, so producers and consumers stay independent.
+- **Keep compile times low**: Avoid baking large/derived data into compile-time module attributes or
+  generated functions — they recompile every dependent module on change. Prefer loading data at runtime
+  and caching it in `:persistent_term` (with a `reload/0`), as in
+  `Aesir.ZoneServer.Mmo.ItemManagement.Items` and `MobManagement.Mobs`.
 
 ## Development Guidelines
 
