@@ -37,6 +37,8 @@ defmodule Aesir.ZoneServer.Unit.Movement do
   """
   @spec set_position(unit_type(), unit_id(), map(), String.t()) :: :ok
   def set_position(unit_type, unit_id, updated_state, map_name) do
+    previous = SpatialIndex.get_unit_position(unit_type, unit_id)
+
     SpatialIndex.update_unit_position(
       unit_type,
       unit_id,
@@ -48,8 +50,24 @@ defmodule Aesir.ZoneServer.Unit.Movement do
     UnitRegistry.update_unit_state(unit_type, unit_id, updated_state)
     mark_dirty(map_name, unit_type, unit_id, move_state(updated_state.movement_state))
 
-    Trigger.on_enter_cell({unit_type, unit_id}, map_name, updated_state.x, updated_state.y)
+    mover = {unit_type, unit_id}
+    fire_on_leave(mover, previous, map_name, updated_state.x, updated_state.y)
+    Trigger.on_enter_cell(mover, map_name, updated_state.x, updated_state.y)
   end
+
+  @spec fire_on_leave(
+          {atom(), unit_id()},
+          {:ok, {integer(), integer(), String.t()}} | {:error, term()},
+          String.t(),
+          integer(),
+          integer()
+        ) :: :ok
+  defp fire_on_leave(mover, {:ok, {old_x, old_y, old_map}}, new_map, new_x, new_y)
+       when old_map != new_map or old_x != new_x or old_y != new_y do
+    Trigger.on_leave_cell(mover, old_map, old_x, old_y, new_map, new_x, new_y)
+  end
+
+  defp fire_on_leave(_mover, _previous, _new_map, _new_x, _new_y), do: :ok
 
   @doc """
   Records a unit in its map's dirty set with the given `move_state`.

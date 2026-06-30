@@ -1,12 +1,16 @@
 defmodule Aesir.ZoneServer.Mmo.Skill.Ground.Trigger do
   @moduledoc """
-  Movement-pipeline hook that fires ground skill-unit `on_touch` callbacks.
+  Movement-pipeline hook that fires ground skill-unit `on_touch`/`on_out`
+  callbacks.
 
   Invoked from the single `Aesir.ZoneServer.Unit.Movement.set_position/4`
   chokepoint after a unit's position changes, so both player and mob movers
-  trigger ground units (traps, Warp Portal). For every group whose footprint
-  covers the new cell and whose skill module exports `on_touch/2`, the callback
-  is invoked with the mover and its result applied:
+  trigger ground units (traps, Warp Portal, Pneuma). `on_enter_cell/4` fires
+  `on_touch/2` for every group covering the new cell; `on_leave_cell/7` fires
+  `on_out/2` for every group whose footprint covered the old cell but not the new
+  one (i.e. the mover stepped off the footprint entirely — moving between cells of
+  the same footprint does not count). Both only invoke modules that export the
+  matching callback, and apply its result:
 
     - `{:ok, updated_group}` - the updated group is persisted.
     - `:expire` - the group is torn down with the same teardown the central tick
@@ -36,23 +40,46 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.Trigger do
     |> Enum.each(&maybe_touch(&1, mover))
   end
 
+  @doc """
+  Fires `on_out` for every ground unit the mover stepped off.
+
+  A group qualifies when its footprint covered `(old_x, old_y)` but does not cover
+  the mover's new cell `(new_x, new_y)` on `new_map` - so moving between cells of
+  the same footprint is not a leave. Returns `:ok`.
+  """
+  @spec on_leave_cell(mover(), String.t(), integer(), integer(), String.t(), integer(), integer()) ::
+          :ok
+  def on_leave_cell(mover, old_map, old_x, old_y, new_map, new_x, new_y) do
+    old_map
+    |> Storage.get_groups_at_cell(old_x, old_y)
+    |> Enum.reject(&still_inside?(&1, new_map, new_x, new_y))
+    |> Enum.each(&maybe_out(&1, mover))
+  end
+
+  @spec still_inside?(Group.t(), String.t(), integer(), integer()) :: boolean()
+  defp still_inside?(%Group{map_name: map_name, cells: cells}, new_map, new_x, new_y) do
+    new_map == map_name and {new_x, new_y} in cells
+  end
+
   @spec maybe_touch(Group.t(), mover()) :: :ok
-  defp maybe_touch(%Group{skill_name: skill_name} = group, mover) do
+  defp maybe_touch(group, mover), do: maybe_dispatch(group, mover, :on_touch)
+
+  @spec maybe_out(Group.t(), mover()) :: :ok
+  defp maybe_out(group, mover), do: maybe_dispatch(group, mover, :on_out)
+
+  @spec maybe_dispatch(Group.t(), mover(), atom()) :: :ok
+  defp maybe_dispatch(%Group{skill_name: skill_name} = group, mover, callback) do
     with {:ok, module} <- Catalog.ground_module_for(skill_name),
-         true <- function_exported?(module, :on_touch, 2) do
-      apply_touch(module, group, mover)
+         true <- function_exported?(module, callback, 2) do
+      apply_result(apply(module, callback, [group, mover]), module, group)
     else
       _ -> :ok
     end
   end
 
-  @spec apply_touch(module(), Group.t(), mover()) :: :ok
-  defp apply_touch(module, group, mover) do
-    case module.on_touch(group, mover) do
-      {:ok, %Group{} = updated} -> Storage.update(updated)
-      :expire -> expire(module, group)
-    end
-  end
+  @spec apply_result({:ok, Group.t()} | :expire, module(), Group.t()) :: :ok
+  defp apply_result({:ok, %Group{} = updated}, _module, _group), do: Storage.update(updated)
+  defp apply_result(:expire, module, group), do: expire(module, group)
 
   # Mirrors the tick manager's expiry teardown: run the cleanup hook, then delete.
   @spec expire(module(), Group.t()) :: :ok

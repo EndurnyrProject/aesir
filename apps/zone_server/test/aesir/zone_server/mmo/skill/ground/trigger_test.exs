@@ -25,6 +25,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest.TouchExpire do
   end
 end
 
+defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest.OutPersist do
+  @moduledoc false
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+
+  def on_out(%Group{group_id: gid} = group, mover) do
+    send(self(), {:out, gid, mover})
+    {:ok, group}
+  end
+
+  def on_expire(_group), do: :ok
+end
+
 defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
   use ExUnit.Case, async: true
 
@@ -36,6 +48,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
 
+  alias __MODULE__.OutPersist
   alias __MODULE__.TouchExpire
   alias __MODULE__.TouchPersist
 
@@ -104,6 +117,46 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
 
       refute_received {:touched, _, _}
       assert %Group{group_id: 1} = Storage.get(1)
+    end
+  end
+
+  describe "on_leave_cell/7" do
+    @footprint for x <- 4..6, y <- 4..6, do: {x, y}
+
+    test "invokes on_out when the mover steps off the footprint entirely" do
+      stub(Catalog, :ground_module_for, fn :test_field -> {:ok, OutPersist} end)
+      :ok = Storage.insert(group(1, skill_name: :test_field, cells: @footprint))
+
+      assert :ok = Trigger.on_leave_cell(@mover, "prontera", 5, 5, "prontera", 9, 9)
+
+      assert_received {:out, 1, {:player, 1000}}
+    end
+
+    test "does not fire when the mover moves within the same footprint" do
+      stub(Catalog, :ground_module_for, fn :test_field -> {:ok, OutPersist} end)
+      :ok = Storage.insert(group(1, skill_name: :test_field, cells: @footprint))
+
+      assert :ok = Trigger.on_leave_cell(@mover, "prontera", 5, 5, "prontera", 6, 6)
+
+      refute_received {:out, _, _}
+    end
+
+    test "fires when the mover changes maps while still on the footprint cell" do
+      stub(Catalog, :ground_module_for, fn :test_field -> {:ok, OutPersist} end)
+      :ok = Storage.insert(group(1, skill_name: :test_field, cells: @footprint))
+
+      assert :ok = Trigger.on_leave_cell(@mover, "prontera", 5, 5, "morocc", 5, 5)
+
+      assert_received {:out, 1, {:player, 1000}}
+    end
+
+    test "ignores ground units whose module does not export on_out/2" do
+      :ok = Storage.insert(group(1, skill_name: :wz_stormgust, cells: @footprint))
+
+      assert :ok = Trigger.on_leave_cell(@mover, "prontera", 5, 5, "prontera", 9, 9)
+
+      assert %Group{group_id: 1} = Storage.get(1)
+      refute_received {:out, _, _}
     end
   end
 end

@@ -112,4 +112,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlPneumaTest do
       assert {:ok, %Group{}} = AlPneuma.on_interval(group(1, 9), 0)
     end
   end
+
+  describe "on_out/2" do
+    test "removes sc_pneuma from the unit that left the footprint" do
+      test_pid = self()
+
+      stub(StatusInterpreter, :remove_status, fn unit_type, unit_id, :sc_pneuma ->
+        send(test_pid, {:removed, unit_type, unit_id})
+        :ok
+      end)
+
+      assert {:ok, %Group{}} = AlPneuma.on_out(group(1), {:player, 2001})
+
+      assert_received {:removed, :player, 2001}
+    end
+  end
 end

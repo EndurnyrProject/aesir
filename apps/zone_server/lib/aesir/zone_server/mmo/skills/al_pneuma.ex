@@ -17,12 +17,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlPneuma do
       `splash_radius: 1` drives `Layout.square/2` exactly like Storm Gust.
     - `Duration1: 10000` -> the field (and the granted status) lasts 10s.
     - `Unit.Interval: -1` -> rAthena applies the status on cell-entry and removes
-      it on cell-exit (`skill_unit_onout`), with no periodic tick. Aesir has no
-      `on_out` movement hook yet (deferred ground-unit infra), so this skill
-      instead re-grants the status on a 1s framework tick to any new occupant
-      lacking it. The status carries the field's 10s duration explicitly, so a
-      unit that walks off keeps the ranged-block only until that duration elapses
-      rather than forever — the same on-leave gap Safety Wall has.
+      it on cell-exit (`skill_unit_onout`), with no periodic tick. Aesir mirrors
+      this: `on_interval` re-grants the status on a 1s framework tick to any new
+      occupant lacking it, and `on_out` removes it the moment a unit steps off the
+      footprint (via the movement-pipeline hook). The status still carries the
+      field's 10s duration as a backstop, so it also expires if the unit is still
+      standing on the field when the field is torn down.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 25,
@@ -79,6 +79,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlPneuma do
       )
     end)
 
+    {:ok, group}
+  end
+
+  @impl Ground
+  @spec on_out(Group.t(), {atom(), integer()}) :: {:ok, Group.t()}
+  def on_out(%Group{} = group, {unit_type, unit_id}) do
+    StatusInterpreter.remove_status(unit_type, unit_id, :sc_pneuma)
     {:ok, group}
   end
 end
