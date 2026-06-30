@@ -112,6 +112,8 @@ defmodule Aesir.ZoneServer.Map.CoordinatorGroundItemTest do
         amount: 1,
         x: 50,
         y: 50,
+        sub_x: 3,
+        sub_y: 3,
         identified: true,
         dropped_at: System.monotonic_time(:millisecond) - 61_000
       }

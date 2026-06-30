@@ -23,6 +23,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStoreTest do
       assert a.y == 100
       assert a.identified == true
     end
+
+    test "scatters stacked drops with a sub-cell offset in {3, 6, 9, 12}" do
+      subs =
+        for _ <- 1..50, item <- [GroundItem.new(501, 1, 100, 100)] do
+          {item.sub_x, item.sub_y}
+        end
+
+      assert Enum.all?(subs, fn {sx, sy} -> sx in [3, 6, 9, 12] and sy in [3, 6, 9, 12] end)
+    end
   end
 
   describe "put/2 and query_in_range/4" do

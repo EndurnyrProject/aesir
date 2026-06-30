@@ -112,6 +112,8 @@ defmodule Aesir.ZoneServer.Integration.ItemDropTest do
         amount: 1,
         x: 150,
         y: 150,
+        sub_x: 3,
+        sub_y: 3,
         identified: true,
         dropped_at: System.monotonic_time(:millisecond) - (@ttl_ms + 1_000)
       }
@@ -180,9 +182,16 @@ defmodule Aesir.ZoneServer.Integration.ItemDropTest do
                       nameid: ^nameid,
                       x: ^x,
                       y: ^y,
+                      sub_x: sub_x,
+                      sub_y: sub_y,
                       is_falling: ^falling
                     }, _},
                    1_000
+
+    # The drop carries a real sub-cell offset so stacked items don't render on
+    # top of each other (instead of the wire always shipping 0).
+    assert sub_x in [3, 6, 9, 12]
+    assert sub_y in [3, 6, 9, 12]
 
     ground_id
   end

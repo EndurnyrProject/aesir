@@ -30,6 +30,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandlerTest do
       amount: 1,
       x: x,
       y: y,
+      sub_x: 3,
+      sub_y: 3,
       identified: true,
       dropped_at: 0
     }

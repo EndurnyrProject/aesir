@@ -207,6 +207,8 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
           amount: item.amount,
           x: item.x,
           y: item.y,
+          sub_x: item.sub_x,
+          sub_y: item.sub_y,
           identified: item.identified,
           is_falling: true
         }

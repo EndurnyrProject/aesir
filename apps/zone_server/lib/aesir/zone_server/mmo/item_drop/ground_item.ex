@@ -6,6 +6,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItem do
   as the ground handle (distinct from an inventory slot); `dropped_at` is a
   monotonic millisecond stamp used by the expiry sweep. `x`/`y` are the cell on
   the owning map, which is keyed elsewhere by the clean map name (no `.gat`).
+
+  `sub_x`/`sub_y` are the sub-cell offset the client renders the sprite at within
+  the tile, so items stacked on one cell don't draw exactly on top of each other.
   """
 
   use TypedStruct
@@ -16,13 +19,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItem do
     field :amount, pos_integer()
     field :x, non_neg_integer()
     field :y, non_neg_integer()
+    field :sub_x, non_neg_integer()
+    field :sub_y, non_neg_integer()
     field :identified, boolean()
     field :dropped_at, integer()
   end
 
   @doc """
-  Builds a `GroundItem`, generating a fresh unique `id` and stamping
-  `dropped_at` with the current monotonic time in milliseconds.
+  Builds a `GroundItem`, generating a fresh unique `id`, a random sub-cell
+  position, and stamping `dropped_at` with the current monotonic time in
+  milliseconds.
   """
   @spec new(non_neg_integer(), pos_integer(), non_neg_integer(), non_neg_integer(), boolean()) ::
           t()
@@ -33,8 +39,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItem do
       amount: amount,
       x: x,
       y: y,
+      sub_x: random_sub_cell(),
+      sub_y: random_sub_cell(),
       identified: identified,
       dropped_at: System.monotonic_time(:millisecond)
     }
   end
+
+  # Mirrors rAthena's map_addflooritem, which scatters stacked drops across a
+  # 4x4 sub-grid within the cell: each axis is one of {3, 6, 9, 12}.
+  @spec random_sub_cell() :: non_neg_integer()
+  defp random_sub_cell, do: (:rand.uniform(4) - 1) * 3 + 3
 end
