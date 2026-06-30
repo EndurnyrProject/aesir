@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.PickupHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
@@ -578,6 +579,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
+  def handle_cast({:pickup_item_request, ground_id}, state) do
+    PickupHandler.handle_pickup(ground_id, state)
+  end
+
+  @impl true
   def handle_cast({:warp, map_name, x, y}, state) do
     case WarpHandler.warp(state, map_name, x, y) do
       {:ok, new_state} -> {:noreply, new_state}
@@ -607,7 +613,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @impl true
   def handle_cast({:give_item, item_def, amount}, state) do
-    InventoryManager.handle_give_item(item_def, amount, state)
+    case InventoryManager.handle_give_item(item_def, amount, state) do
+      {:ok, new_state} -> {:noreply, new_state}
+      {:error, _reason, unchanged_state} -> {:noreply, unchanged_state}
+    end
   end
 
   @impl true

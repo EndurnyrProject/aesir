@@ -50,8 +50,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
   `game_state.inventory`, and notifies the client with an `ItemAdded` for each
   affected slot. On `{:error, :overweight}` (or any DB error) the state is left
   untouched and nothing is sent.
+
+  Returns `{:ok, new_state}` on success and `{:error, reason, state}` (original
+  state) on failure so callers can react to a lost add (e.g. re-place a claimed
+  ground item).
   """
-  @spec handle_give_item(ItemDefinition.t(), pos_integer(), map()) :: {:noreply, map()}
+  @spec handle_give_item(ItemDefinition.t(), pos_integer(), map()) ::
+          {:ok, map()} | {:error, term(), map()}
   def handle_give_item(%ItemDefinition{} = item_def, amount, %{game_state: game_state} = state) do
     case InventoryOps.add(
            game_state.character_id,
@@ -63,14 +68,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
       {:ok, persisted, change} ->
         notify_added(state.connection_pid, persisted, change)
 
-        {:noreply, %{state | game_state: %{game_state | inventory: persisted}}}
+        {:ok, %{state | game_state: %{game_state | inventory: persisted}}}
 
       {:error, reason} ->
         Logger.warning(
           "give_item failed for #{game_state.character_id} (#{item_def.id} x#{amount}): #{inspect(reason)}"
         )
 
-        {:noreply, state}
+        {:error, reason, state}
     end
   end
 

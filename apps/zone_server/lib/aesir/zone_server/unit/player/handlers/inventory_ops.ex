@@ -62,6 +62,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps do
   end
 
   @doc """
+  Whether `amount` of `item_def` can be added without a write.
+
+  Runs the same checks `add/6` enforces before its DB write — max weight first,
+  then slot availability — so a pre-check (e.g. ground-item pickup) can refuse
+  before committing to an irreversible step. Returns `:ok`, `{:error, :overweight}`
+  or `{:error, :inventory_full}`.
+  """
+  @spec can_add(inventory(), Stats.t(), ItemDefinition.t(), pos_integer()) ::
+          :ok | {:error, :overweight | :inventory_full}
+  def can_add(inventory, %Stats{} = stats, %ItemDefinition{} = item_def, amount) do
+    cond do
+      Weight.would_exceed?(inventory, stats, item_def.weight * amount) ->
+        {:error, :overweight}
+
+      match?({:error, :inventory_full}, Inventory.add(inventory, item_def, amount)) ->
+        {:error, :inventory_full}
+
+      true ->
+        :ok
+    end
+  end
+
+  @doc """
   Removes `amount` from the item at `index`, then persists.
   """
   @spec remove(integer(), inventory(), non_neg_integer(), pos_integer()) ::

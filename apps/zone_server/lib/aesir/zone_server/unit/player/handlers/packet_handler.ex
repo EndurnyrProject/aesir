@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.NpcInteract
   alias Aesir.Net.NpcSellRequest
   alias Aesir.Net.NpcTalk
+  alias Aesir.Net.PickupItemRequest
   alias Aesir.Net.Respawn
   alias Aesir.Net.SkillCast
   alias Aesir.Net.StatUp
@@ -198,6 +199,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
       ) do
     buy_lines = Enum.map(items, fn %VendingBuy{index: i, amount: a} -> {i, a} end)
     GenServer.cast(self(), {:vending_purchase_request, vendor_unit_id, buy_lines})
+    {:noreply, state}
+  end
+
+  # PickupItemRequest - Player requests to pick up a ground item by its ground id.
+  def handle_message(%PickupItemRequest{ground_id: ground_id}, state) do
+    GenServer.cast(self(), {:pickup_item_request, ground_id})
     {:noreply, state}
   end
 

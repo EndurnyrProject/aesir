@@ -951,6 +951,7 @@ enum PickupResultCode {
   OVERWEIGHT = 2;
   INVENTORY_FULL = 3;
   GONE = 4;
+  FAILED = 5;
 }
 
 // Server -> client, an item appeared on a map cell (drop or walk-up discovery).
