@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
   use Supervisor
 
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
   alias Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
@@ -17,6 +18,7 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
     :ok = NpcVerifier.verify!(NpcRegistry.reload().entries)
     :ok = Warps.reload()
     :ok = Shops.reload()
+    :ok = LevelPenalty.reload()
     :ok = ShopVerifier.verify!(Shops.all())
 
     children = [
