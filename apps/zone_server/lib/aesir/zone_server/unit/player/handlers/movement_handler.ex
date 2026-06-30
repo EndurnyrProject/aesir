@@ -6,6 +6,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
   require Logger
 
+  alias Aesir.Net.ItemOnGround
+  alias Aesir.Net.ItemVanished
   alias Aesir.Net.MoveStop
   alias Aesir.Net.SelfMove
   alias Aesir.Net.UnitDespawn
@@ -15,6 +17,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
+  alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -512,6 +516,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         &send_shop_vanish_packet_to(game_state.character_id, &1)
       )
 
+    # Handle ground-item visibility — items live in the Coordinator-owned
+    # `GroundItemStore` (clean map keying), not the spatial index, and are diffed
+    # against `visible_items` so a player sees items already lying on the map when
+    # they walk into range and stops seeing them when they leave.
+    items_by_id =
+      game_state.map_name
+      |> GroundItemStore.query_in_range(game_state.x, game_state.y, game_state.view_range)
+      |> Map.new(&{&1.id, &1})
+
+    new_visible_items =
+      StaticEntity.diff_visibility(
+        items_by_id,
+        game_state.visible_items,
+        &send_item_spawn_packet_to(game_state.character_id, &1),
+        &send_item_vanish_packet_to(game_state.character_id, &1)
+      )
+
     # Update game state with new visibility info
     # Keep last_visibility_cell for potential optimization later
     current_cell = {div(game_state.x, 8), div(game_state.y, 8)}
@@ -523,6 +544,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         visible_warps: new_visible_warps,
         visible_npcs: new_visible_npcs,
         visible_shops: new_visible_shops,
+        visible_items: new_visible_items,
         last_visibility_cell: current_cell
     }
   end
@@ -795,6 +817,43 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         }
 
         GenServer.cast(to_pid, {:send_packet, vanish_packet})
+
+      {:error, :not_found} ->
+        :ok
+    end
+  end
+
+  defp send_item_spawn_packet_to(to_char_id, %GroundItem{} = item) do
+    case UnitRegistry.get_player_pid(to_char_id) do
+      {:ok, to_pid} ->
+        packet = %ItemOnGround{
+          ground_id: item.id,
+          nameid: item.nameid,
+          amount: item.amount,
+          x: item.x,
+          y: item.y,
+          identified: item.identified,
+          is_falling: false
+        }
+
+        GenServer.cast(to_pid, {:send_packet, packet})
+
+      {:error, :not_found} ->
+        :ok
+    end
+  end
+
+  # NOTE: leaving view is neither a pickup nor an expiry, but the frozen proto
+  # only offers PICKED_UP/EXPIRED; EXPIRED is the silent-removal visual that
+  # matches "walked out of range". Add a dedicated reason if the client ever
+  # needs to distinguish them.
+  defp send_item_vanish_packet_to(to_char_id, ground_id) do
+    case UnitRegistry.get_player_pid(to_char_id) do
+      {:ok, to_pid} ->
+        GenServer.cast(
+          to_pid,
+          {:send_packet, %ItemVanished{ground_id: ground_id, reason: :EXPIRED}}
+        )
 
       {:error, :not_found} ->
         :ok

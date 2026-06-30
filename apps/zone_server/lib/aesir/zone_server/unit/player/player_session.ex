@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   require Logger
 
+  alias Aesir.Net.ItemVanished
   alias Aesir.Net.UnitDespawn
   alias Aesir.Net.UnitSpawn
   alias Aesir.Net.VendingBoardShown
@@ -637,6 +638,23 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast(:force_stop_movement, state) do
     MovementHandler.handle_force_stop_movement(state)
+  end
+
+  # A Coordinator-broadcast ground-item vanish: forward it like any other packet
+  # but also drop the id from `visible_items` so re-entering the cell's range
+  # later re-spawns the item via the walk-up diff.
+  @impl true
+  def handle_cast(
+        {:send_packet, %ItemVanished{ground_id: ground_id} = packet},
+        %{game_state: game_state, connection_pid: connection_pid} = state
+      ) do
+    if connection_pid do
+      MessageRouter.send_to(connection_pid, packet)
+    end
+
+    game_state = %{game_state | visible_items: MapSet.delete(game_state.visible_items, ground_id)}
+
+    {:noreply, %{state | game_state: game_state}}
   end
 
   @impl true

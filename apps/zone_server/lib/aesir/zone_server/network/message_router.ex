@@ -65,6 +65,8 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def route(%Aesir.Net.NpcDialog{}), do: {:world, :npc_dialog}
   def route(%Aesir.Net.VendingBoardShown{}), do: {:world, :vending_board_shown}
   def route(%Aesir.Net.VendingBoardRemoved{}), do: {:world, :vending_board_removed}
+  def route(%Aesir.Net.ItemOnGround{}), do: {:world, :item_on_ground}
+  def route(%Aesir.Net.ItemVanished{}), do: {:world, :item_vanished}
 
   def route(%Aesir.Net.SkillList{}), do: {:bulk, :skill_list}
   def route(%Aesir.Net.InventoryList{}), do: {:bulk, :inventory_list}

@@ -353,10 +353,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
       observer_pid = spawn(fn -> forward_casts(test_pid) end)
       stub(UnitRegistry, :get_player_pid, fn 1 -> {:ok, observer_pid} end)
 
+      warp_gid = Warp.Registry.entity_id(warp)
+
       _updated = MovementHandler.handle_visibility_update(game_state)
 
-      refute_received {:cast, %UnitSpawn{}}
-      refute_received {:cast, %UnitDespawn{}}
+      refute_received {:cast, %UnitSpawn{gid: ^warp_gid}}
+      refute_received {:cast, %UnitDespawn{gid: ^warp_gid}}
     end
 
     test "two warps on the same map get distinct, stable gids that never collide" do

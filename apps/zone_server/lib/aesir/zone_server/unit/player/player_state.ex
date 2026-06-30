@@ -51,6 +51,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           visible_warps: MapSet.t(),
           visible_npcs: MapSet.t(),
           visible_shops: MapSet.t(),
+          visible_items: MapSet.t(),
           last_visibility_cell: {integer(), integer()} | nil,
           target_id: integer() | nil,
           combat_target_id: integer() | nil,
@@ -160,6 +161,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     :visible_npcs,
     # MapSet of static shop entity_ids currently visible (ephemeral, not persisted)
     :visible_shops,
+    # MapSet of ground-item ids currently visible (ephemeral, not persisted)
+    :visible_items,
     # Last grid cell for visibility check
     :last_visibility_cell,
 
@@ -248,6 +251,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       visible_warps: MapSet.new(),
       visible_npcs: MapSet.new(),
       visible_shops: MapSet.new(),
+      visible_items: MapSet.new(),
       last_visibility_cell: nil,
 
       # Combat defaults
@@ -301,6 +305,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
         visible_warps: MapSet.new(),
         visible_npcs: MapSet.new(),
         visible_shops: MapSet.new(),
+        visible_items: MapSet.new(),
         last_visibility_cell: nil
     }
     |> stop_walking()
