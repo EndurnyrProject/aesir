@@ -19,6 +19,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Constants.ObjectType
+  alias Aesir.ZoneServer.Map.Coordinator
+  alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -43,6 +45,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Aesir.ZoneServer.Unit.Vending.Registry, as: VendingRegistry
@@ -352,8 +355,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
-  def handle_info({:mob_killed, %{base_exp: base_exp, job_exp: job_exp}}, state) do
-    ExperienceHandler.handle_gain_exp(base_exp, job_exp, state)
+  def handle_info({:mob_killed, %{base_exp: base_exp, job_exp: job_exp} = payload}, state) do
+    {:noreply, new_state} = ExperienceHandler.handle_gain_exp(base_exp, job_exp, state)
+    maybe_drop_items(payload, new_state)
+    {:noreply, new_state}
   end
 
   @impl true
@@ -776,6 +781,23 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
     :ok
   end
+
+  # Rolls the slain mob's drop table from the killer's session (the only place
+  # holding both the table and the killer's stats) and places any results as
+  # ground items through the map coordinator. Legacy payloads without a drop
+  # table fall through to the no-op clause.
+  defp maybe_drop_items(%{drops: drops, mob_level: mob_level, map: map, x: x, y: y}, state) do
+    stats = state.game_state.stats
+    luk = Stats.get_effective_stat(stats, :luk)
+    base_level = stats.progression.base_level
+
+    case DropCalculator.roll(drops, luk, base_level, mob_level, map, x, y) do
+      [] -> :ok
+      rolled -> Coordinator.drop_items(map, rolled, x, y)
+    end
+  end
+
+  defp maybe_drop_items(_payload, _state), do: :ok
 
   defp update_game_state(state, new_game_state) do
     UnitRegistry.update_unit_state(:player, new_game_state.character_id, new_game_state)

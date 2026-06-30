@@ -300,12 +300,21 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   # party-shared rewards once parties exist.
   defp announce_kill(_state, nil), do: :ok
 
-  defp announce_kill(%MobState{mob_data: mob_data}, attacker_id) do
+  defp announce_kill(%MobState{mob_data: mob_data} = state, attacker_id) do
     PubSub.broadcast(
       Aesir.PubSub,
       "player:#{attacker_id}",
       {:mob_killed,
-       %{mob_id: mob_data.id, base_exp: mob_data.base_exp, job_exp: mob_data.job_exp}}
+       %{
+         mob_id: mob_data.id,
+         base_exp: mob_data.base_exp,
+         job_exp: mob_data.job_exp,
+         drops: mob_data.drops,
+         mob_level: mob_data.level,
+         map: state.map_name,
+         x: state.x,
+         y: state.y
+       }}
     )
   end
 
