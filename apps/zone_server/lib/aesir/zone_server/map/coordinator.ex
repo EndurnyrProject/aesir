@@ -4,11 +4,17 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   require Logger
 
   alias Aesir.Commons.Utils.ServerTick
+  alias Aesir.Net.ItemOnGround
+  alias Aesir.Net.ItemVanished
   alias Aesir.Net.Snapshot, as: NetSnapshot
   alias Aesir.Net.SnapshotEntity
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
+  alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore
   alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
   alias Aesir.ZoneServer.Unit.Movement
@@ -29,6 +35,11 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   @standing 0
   @moving 1
 
+  # rAthena `flooritem_lifetime`: a ground item despawns 60 s after it lands.
+  @ground_item_lifetime_ms 60_000
+  # Cadence of the ground-item expiry sweep.
+  @ground_item_sweep_ms 10_000
+
   defstruct [
     :map_name,
     :map_data,
@@ -36,7 +47,6 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     :npcs,
     :respawn_timers,
     :next_mob_id,
-    :items,
     :weather,
     :pvp_enabled,
     :pk_enabled,
@@ -53,10 +63,33 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   end
 
   @doc """
-  Spawns an item on the ground.
+  Places rolled drops on the ground around `{x, y}`.
+
+  Each entry is `{nameid, amount, item_x, item_y}` as produced by
+  `DropCalculator` (scatter already resolved). The coordinator is the single
+  writer of the ground-item store, so placement routes through here.
   """
-  def spawn_item(map_name, item_id, amount, x, y) do
-    GenServer.cast(via_tuple(map_name), {:spawn_item, item_id, amount, x, y})
+  @spec drop_items(
+          String.t(),
+          [{non_neg_integer(), pos_integer(), non_neg_integer(), non_neg_integer()}],
+          integer(),
+          integer()
+        ) ::
+          :ok
+  def drop_items(map_name, items, x, y) do
+    GenServer.cast(via_tuple(map_name), {:drop_items, items, x, y})
+  end
+
+  @doc """
+  Atomically claims the ground item `ground_id` for `char_id`.
+
+  Returns `{:ok, GroundItem.t()}` for the winner (and broadcasts the vanish to
+  in-range players) or `{:error, :gone}` if it was already taken or expired.
+  """
+  @spec claim_item(String.t(), pos_integer(), integer()) ::
+          {:ok, GroundItem.t()} | {:error, :gone}
+  def claim_item(map_name, ground_id, char_id) do
+    GenServer.call(via_tuple(map_name), {:claim_item, ground_id, char_id})
   end
 
   @doc """
@@ -108,7 +141,6 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
       npcs: %{},
       respawn_timers: %{},
       next_mob_id: 1,
-      items: %{},
       weather: :clear,
       pvp_enabled: Keyword.get(opts, :pvp_enabled, false),
       pk_enabled: Keyword.get(opts, :pk_enabled, false),
@@ -120,7 +152,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
       Process.send_after(self(), :initial_spawn, 100)
     end
 
-    schedule_cleanup()
+    schedule_item_sweep()
     schedule_broadcast()
 
     {:ok, state}
@@ -159,23 +191,29 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   end
 
   @impl true
-  def handle_cast({:spawn_item, item_id, amount, x, y}, state) do
-    instance_id = generate_item_id()
+  def handle_cast({:drop_items, items, _x, _y}, state) do
+    Enum.each(items, fn {nameid, amount, item_x, item_y} ->
+      item = GroundItem.new(nameid, amount, item_x, item_y)
+      GroundItemStore.put(state.map_name, item)
 
-    item = %{
-      id: instance_id,
-      item_id: item_id,
-      amount: amount,
-      x: x,
-      y: y,
-      spawned_at: System.system_time(:second)
-    }
+      Broadcast.to_in_range(
+        state.map_name,
+        item_x,
+        item_y,
+        Config.view_range(),
+        %ItemOnGround{
+          ground_id: item.id,
+          nameid: item.nameid,
+          amount: item.amount,
+          x: item.x,
+          y: item.y,
+          identified: item.identified,
+          is_falling: true
+        }
+      )
+    end)
 
-    new_items = Map.put(state.items, instance_id, item)
-
-    broadcast_item_spawn(state.map_name, item, x, y)
-
-    {:noreply, %{state | items: new_items}}
+    {:noreply, state}
   end
 
   @impl true
@@ -242,13 +280,31 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
       weather: state.weather,
       pvp_enabled: state.pvp_enabled,
       pk_enabled: state.pk_enabled,
-      item_count: map_size(state.items),
       npc_count: map_size(state.npcs),
       player_count: SpatialIndex.count_players_on_map(state.map_name),
       mob_count: UnitRegistry.count_units_by_type(:mob)
     }
 
     {:reply, info, state}
+  end
+
+  @impl true
+  def handle_call({:claim_item, ground_id, _char_id}, _from, state) do
+    case GroundItemStore.claim(state.map_name, ground_id) do
+      {:ok, %GroundItem{} = item} ->
+        Broadcast.to_in_range(
+          state.map_name,
+          item.x,
+          item.y,
+          Config.view_range(),
+          %ItemVanished{ground_id: ground_id, reason: :PICKED_UP}
+        )
+
+        {:reply, {:ok, item}, state}
+
+      {:error, :gone} ->
+        {:reply, {:error, :gone}, state}
+    end
   end
 
   @impl true
@@ -325,29 +381,22 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   end
 
   @impl true
-  def handle_info(:cleanup_items, state) do
-    # Remove items older than 3 minutes
-    now = System.system_time(:second)
-    # 3 minutes
-    timeout = 180
-
-    new_items =
-      state.items
-      |> Enum.reject(fn {_id, item} ->
-        now - item.spawned_at > timeout
-      end)
-      |> Map.new()
-
-    expired = Map.keys(state.items) -- Map.keys(new_items)
-
-    Enum.each(expired, fn item_id ->
-      item = state.items[item_id]
-      broadcast_item_remove(state.map_name, item_id, item.x, item.y)
+  def handle_info(:expire_ground_items, state) do
+    state.map_name
+    |> GroundItemStore.expire_due(System.monotonic_time(:millisecond), @ground_item_lifetime_ms)
+    |> Enum.each(fn %GroundItem{} = item ->
+      Broadcast.to_in_range(
+        state.map_name,
+        item.x,
+        item.y,
+        Config.view_range(),
+        %ItemVanished{ground_id: item.id, reason: :EXPIRED}
+      )
     end)
 
-    schedule_cleanup()
+    schedule_item_sweep()
 
-    {:noreply, %{state | items: new_items}}
+    {:noreply, state}
   end
 
   @doc """
@@ -569,7 +618,8 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     end
   end
 
-  defp schedule_cleanup, do: Process.send_after(self(), :cleanup_items, 60_000)
+  defp schedule_item_sweep,
+    do: Process.send_after(self(), :expire_ground_items, @ground_item_sweep_ms)
 
   defp schedule_broadcast, do: Process.send_after(self(), :broadcast_tick, broadcast_interval())
 
@@ -577,30 +627,6 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   @spec broadcast_interval() :: pos_integer()
   def broadcast_interval,
     do: Application.get_env(:zone_server, :broadcast_interval_ms, @broadcast_interval)
-
-  defp generate_item_id, do: :crypto.strong_rand_bytes(8) |> Base.encode16()
-
-  defp broadcast_item_spawn(map_name, item, x, y) do
-    cell_x = div(x, 8)
-    cell_y = div(y, 8)
-
-    PubSub.broadcast(
-      Aesir.PubSub,
-      "map:#{map_name}:cell:#{cell_x}:#{cell_y}",
-      {:item_spawned, item}
-    )
-  end
-
-  defp broadcast_item_remove(map_name, item_id, x, y) do
-    cell_x = div(x, 8)
-    cell_y = div(y, 8)
-
-    PubSub.broadcast(
-      Aesir.PubSub,
-      "map:#{map_name}:cell:#{cell_x}:#{cell_y}",
-      {:item_removed, item_id}
-    )
-  end
 
   @impl true
   def terminate(reason, state) do
