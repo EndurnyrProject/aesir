@@ -7,6 +7,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  alias Aesir.ZoneServer.Geometry
+  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
@@ -25,10 +28,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     Mimic.copy(MobSession)
     Mimic.copy(Combat)
     Mimic.copy(SpatialIndex)
+    Mimic.copy(MapCache)
+    Mimic.copy(MapData)
 
     stub(Interpreter, :can_move?, fn _type, _id -> true end)
     stub(Interpreter, :can_attack?, fn _type, _id -> true end)
     stub(Interpreter, :targetable?, fn _type, _id -> true end)
+    stub(MapCache, :get, fn _map -> {:ok, :map_data} end)
+    stub(MapData, :walkable?, fn _map_data, _x, _y -> true end)
+    stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _range -> [] end)
     :ok
   end
 
@@ -201,6 +209,48 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       assert result.target_id == 2
       assert result.ai_state in [:chase, :combat, :alert]
+    end
+  end
+
+  describe "process_chase/1 targets an adjacent, unoccupied cell" do
+    test "a chasing mob paths to a cell adjacent to the player, never the player's cell" do
+      test_pid = self()
+
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
+        {:ok, {105, 105, "prontera"}}
+      end)
+
+      stub(MobSession, :move_to, fn _pid, x, y -> send(test_pid, {:moved, x, y}) end)
+
+      AIStateMachine.process_ai(chase_mob_state())
+
+      assert_received {:moved, dest_x, dest_y}
+      assert {dest_x, dest_y} != {105, 105}
+      assert Geometry.chebyshev_distance(dest_x, dest_y, 105, 105) <= 2
+    end
+
+    test "re-picks another adjacent cell when the best cell is occupied" do
+      test_pid = self()
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2 -> {:ok, {105, 105, "prontera"}}
+        :mob, 55 -> {:ok, {103, 103, "prontera"}}
+      end)
+
+      # (103,103) is the closest walkable adjacent cell along the approach; a
+      # second unit sitting there must be avoided rather than overlapped.
+      stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _range ->
+        [{:mob, 55}]
+      end)
+
+      stub(MobSession, :move_to, fn _pid, x, y -> send(test_pid, {:moved, x, y}) end)
+
+      AIStateMachine.process_ai(chase_mob_state())
+
+      assert_received {:moved, dest_x, dest_y}
+      assert {dest_x, dest_y} != {103, 103}
+      assert {dest_x, dest_y} != {105, 105}
+      assert Geometry.chebyshev_distance(dest_x, dest_y, 105, 105) <= 2
     end
   end
 

@@ -16,7 +16,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   require Logger
 
   alias Aesir.ZoneServer.Geometry
+  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.AttackPositioning
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -121,6 +124,54 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
         state
     end
+  end
+
+  # Picks the cell the mob should path to while chasing: an adjacent, unoccupied
+  # cell within attack range of the target (shared with the player approach via
+  # AttackPositioning), never the target's own cell. Recomputed every AI tick, so
+  # a cell taken by another unit mid-approach is re-picked on the next tick.
+  # Falls back to the target's cell when no free cell is known (e.g. map missing).
+  defp chase_destination(%MobState{} = state, {target_x, target_y}) do
+    attack_range = MobState.get_attack_range(state)
+
+    case MapCache.get(state.map_name) do
+      {:ok, map_data} ->
+        walkable? = fn x, y -> MapData.walkable?(map_data, x, y) end
+        occupied? = build_occupied?(state, {target_x, target_y}, attack_range)
+
+        AttackPositioning.adjacent_attack_cell(
+          {state.x, state.y},
+          {target_x, target_y},
+          attack_range,
+          walkable?,
+          occupied?
+        ) || {target_x, target_y}
+
+      {:error, _reason} ->
+        {target_x, target_y}
+    end
+  end
+
+  # Builds an `(x, y) -> bool` occupancy predicate from currently-known nearby
+  # units, excluding the chasing mob itself and the target player so the mob is
+  # not blocked by its own or the target's cell. A radius of `range * 2` covers
+  # the full Chebyshev square of candidate cells.
+  defp build_occupied?(%MobState{} = state, {target_x, target_y}, range) do
+    cells =
+      state.map_name
+      |> SpatialIndex.get_all_units_in_range(target_x, target_y, range * 2)
+      |> Enum.reject(fn {type, id} ->
+        (type == :mob and id == state.instance_id) or
+          (type == :player and id == state.target_id)
+      end)
+      |> Enum.reduce(MapSet.new(), fn {type, id}, acc ->
+        case SpatialIndex.get_unit_position(type, id) do
+          {:ok, {x, y, _map}} -> MapSet.put(acc, {x, y})
+          {:error, _reason} -> acc
+        end
+      end)
+
+    fn x, y -> MapSet.member?(cells, {x, y}) end
   end
 
   @doc """
@@ -247,7 +298,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
             # credo:disable-for-next-line Credo.Check.Refactor.Nesting
             case SpatialIndex.get_unit_position(:player, target_id) do
               {:ok, {target_x, target_y, map_name}} when map_name == state.map_name ->
-                move_toward(state, target_x, target_y)
+                {dest_x, dest_y} = chase_destination(state, {target_x, target_y})
+                move_toward(state, dest_x, dest_y)
 
               _ ->
                 # Target not found or on different map
