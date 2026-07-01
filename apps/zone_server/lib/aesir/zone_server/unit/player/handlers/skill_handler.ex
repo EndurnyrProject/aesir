@@ -14,14 +14,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.Net.SkillEffect
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
@@ -29,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @spec handle_use_skill(map(), integer(), pos_integer(), integer()) :: {:noreply, map()}
@@ -170,9 +174,110 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       {:casting, new_game_state, info} ->
         schedule_cast(%{state | game_state: new_game_state}, info)
 
+      # Out of range: walk into range instead of fizzling (mirrors attack-move).
+      # The approach re-dispatches this same cast on arrival, so a moving target
+      # is chased and a genuinely in-range recast just casts.
+      {:error, :out_of_range} ->
+        initiate_skill_movement(state, skill_id, level, target)
+
       {:error, reason} ->
         log_cast_failure(skill_id, game_state.character_id, reason)
         {:noreply, state}
+    end
+  end
+
+  @doc """
+  Re-dispatches the pending skill after the move-to-range approach completes.
+
+  The skill (id, level, target) is carried in `state_context` while walking. We
+  drop back to idle and run the normal cast dispatch: if the target is now in
+  range it casts, if it drifted further it re-approaches, and if it vanished the
+  cast quietly fails.
+  """
+  @spec handle_reached_skill_position(map()) :: {:noreply, map()}
+  def handle_reached_skill_position(
+        %{
+          game_state:
+            %{state_context: %{skill_id: skill_id, skill_level: level, target: target}} =
+              game_state
+        } = state
+      ) do
+    drive_cast(%{state | game_state: to_idle(game_state)}, skill_id, level, target)
+  end
+
+  def handle_reached_skill_position(%{game_state: game_state} = state) do
+    {:noreply, %{state | game_state: to_idle(game_state)}}
+  end
+
+  # Starts walking the caster to within skill range of the target. Gives up
+  # (leaving the player idle) when the target is gone, no closer cell exists, or
+  # no path reaches it — never loops.
+  defp initiate_skill_movement(%{game_state: game_state} = state, skill_id, level, target) do
+    with {:ok, target_pos} <- skill_target_position(target),
+         {:ok, definition} <- Catalog.by_id(skill_id),
+         {:ok, map_data} <- MapCache.get(game_state.map_name) do
+      range = Interpreter.effective_range(definition, game_state)
+      current = {game_state.x, game_state.y}
+      optimal = CombatActionHandler.get_optimal_attack_position(current, target_pos, range)
+
+      move_toward_skill_target(state, skill_id, level, target, current, optimal, map_data)
+    else
+      _ ->
+        log_cast_failure(skill_id, game_state.character_id, :out_of_range)
+        {:noreply, state}
+    end
+  end
+
+  # Optimal cell equals the current cell: no closer approach exists, so stop
+  # rather than re-issue a zero-length move and spin.
+  defp move_toward_skill_target(state, skill_id, _level, _target, current, current, _map_data) do
+    log_cast_failure(skill_id, state.game_state.character_id, :out_of_range)
+    {:noreply, state}
+  end
+
+  defp move_toward_skill_target(state, skill_id, level, target, current, optimal, map_data) do
+    case Pathfinding.find_path(map_data, current, optimal) do
+      {:ok, [_ | _]} ->
+        start_skill_approach(state, skill_id, level, target, optimal)
+
+      _ ->
+        log_cast_failure(skill_id, state.game_state.character_id, :no_path)
+        {:noreply, state}
+    end
+  end
+
+  defp start_skill_approach(%{game_state: game_state} = state, skill_id, level, target, {x, y}) do
+    context = %{skill_id: skill_id, skill_level: level, target: target}
+
+    case PlayerState.transition_to(game_state, :skill_moving, context) do
+      {:ok, moving_state} ->
+        MovementHandler.handle_request_move(
+          %{state | game_state: moving_state},
+          x,
+          y,
+          skill_initiated: true
+        )
+
+      {:error, _reason} ->
+        {:noreply, state}
+    end
+  end
+
+  defp skill_target_position({:unit, target_id}) do
+    case resolve_unit_position(target_id) do
+      {:ok, {x, y, _map}} -> {:ok, {x, y}}
+      {:error, _} -> :error
+    end
+  end
+
+  defp skill_target_position({:ground, x, y}), do: {:ok, {x, y}}
+  # A self-target is always in range, so it never reaches the move-to-range path.
+  defp skill_target_position(:self), do: :error
+
+  defp resolve_unit_position(unit_id) do
+    case SpatialIndex.get_unit_position(:player, unit_id) do
+      {:ok, _} = ok -> ok
+      {:error, :not_found} -> SpatialIndex.get_unit_position(:mob, unit_id)
     end
   end
 
@@ -183,7 +288,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp ensure_idle_for_cast(%{game_state: %{action_state: :idle}} = state), do: {:ok, state}
 
   defp ensure_idle_for_cast(%{game_state: %{action_state: moving}} = state)
-       when moving in [:moving, :combat_moving, :moving_to_item] do
+       when moving in [:moving, :combat_moving, :skill_moving, :moving_to_item] do
     {:noreply, stopped_state} = MovementHandler.handle_force_stop_movement(state)
 
     case PlayerState.transition_to(stopped_state.game_state, :idle) do

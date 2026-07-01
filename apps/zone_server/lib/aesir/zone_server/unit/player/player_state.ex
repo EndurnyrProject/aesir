@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           :idle
           | :moving
           | :combat_moving
+          | :skill_moving
           | :moving_to_item
           | :attacking
           | :casting
@@ -57,7 +58,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           movement_state: movement_state(),
           walk_path: list({integer(), integer()}),
           walk_speed: integer(),
-          movement_intent: :none | :normal | :combat | :pickup,
+          movement_intent: :none | :normal | :combat | :skill | :pickup,
           view_range: integer(),
           visible_players: MapSet.t(),
           visible_mobs: MapSet.t(),
@@ -148,7 +149,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     :walk_speed,
 
     # Movement intent - why are we moving?
-    # :none | :normal | :combat | :pickup
+    # :none | :normal | :combat | :skill | :pickup
     :movement_intent,
 
     # Visibility
@@ -501,6 +502,20 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   end
 
   @doc """
+  Clears skill-move intent: the pending skill lives in `state_context`, so drop
+  it and reset the movement intent (mirrors `clear_combat_intent/1`). Used when a
+  manual move interrupts a player walking into range to cast.
+  """
+  @spec clear_skill_intent(t()) :: t()
+  def clear_skill_intent(%__MODULE__{} = state) do
+    %{
+      state
+      | state_context: %{},
+        movement_intent: if(state.movement_state == :moving, do: :normal, else: :none)
+    }
+  end
+
+  @doc """
   Sets pickup intent for move-to-pickup behavior, recording the ground item the
   player is walking toward.
   """
@@ -598,6 +613,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   defp valid_state_transition?(:idle, to), do: valid_from_idle?(to)
   defp valid_state_transition?(:moving, to), do: valid_from_moving?(to)
   defp valid_state_transition?(:combat_moving, to), do: valid_from_combat_moving?(to)
+  defp valid_state_transition?(:skill_moving, to), do: valid_from_skill_moving?(to)
   defp valid_state_transition?(:moving_to_item, to), do: valid_from_moving_to_item?(to)
   defp valid_state_transition?(:attacking, to), do: valid_from_attacking?(to)
   defp valid_state_transition?(:casting, to), do: valid_from_casting?(to)
@@ -611,6 +627,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       to in [
         :moving,
         :combat_moving,
+        :skill_moving,
         :moving_to_item,
         :attacking,
         :casting,
@@ -621,6 +638,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
   defp valid_from_moving?(to), do: to in [:idle, :combat_moving, :moving_to_item, :attacking]
   defp valid_from_combat_moving?(to), do: to in [:idle, :attacking, :moving, :moving_to_item]
+  defp valid_from_skill_moving?(to), do: to in [:idle, :moving]
   defp valid_from_moving_to_item?(to), do: to in [:idle, :moving, :combat_moving, :attacking]
   defp valid_from_attacking?(to), do: to in [:idle, :combat_moving, :moving_to_item]
   defp valid_from_casting?(to), do: to == :idle
@@ -646,6 +664,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   defp handle_state_entry(state, :combat_moving) do
     # Ensure movement intent is combat
     %{state | movement_intent: :combat}
+  end
+
+  defp handle_state_entry(state, :skill_moving) do
+    # Ensure movement intent is skill (walking into range to cast)
+    %{state | movement_intent: :skill}
   end
 
   defp handle_state_entry(state, :moving_to_item) do

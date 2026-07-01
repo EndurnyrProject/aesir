@@ -14,19 +14,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.Net.SkillInfo
   alias Aesir.Net.SkillList
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
+  alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
@@ -282,11 +286,88 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     end
 
     test "failed ground cast leaves state unchanged and does not persist" do
-      stub(Interpreter, :begin_cast, fn _gs, _id, _lvl, _target -> {:error, :out_of_range} end)
+      # A genuine failure (not :out_of_range, which now triggers move-to-range).
+      stub(Interpreter, :begin_cast, fn _gs, _id, _lvl, _target -> {:error, :invalid_target} end)
       reject(&CharacterPersistence.update_character/3)
 
       s = instant_state(30)
       assert {:noreply, ^s} = SkillHandler.handle_use_skill_ground(s, 89, 1, 12, 12)
+    end
+  end
+
+  describe "move-to-range on out-of-range cast" do
+    test "an out-of-range unit skill walks the caster toward the target instead of fizzling" do
+      stub(Interpreter, :begin_cast, fn _gs, 29, 1, {:unit, 2000} -> {:error, :out_of_range} end)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:error, :not_found}
+        :mob, 2000 -> {:ok, {160, 150, "prontera"}}
+      end)
+
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(range: 9)} end)
+      stub(MapCache, :get, fn "prontera" -> {:ok, :map_data} end)
+
+      stub(Pathfinding, :find_path, fn :map_data, {150, 150}, {151, 150} ->
+        {:ok, [{151, 150}]}
+      end)
+
+      test_pid = self()
+
+      stub(MovementHandler, :handle_request_move, fn state, x, y, opts ->
+        send(test_pid, {:move, state.game_state, x, y, opts})
+        {:noreply, state}
+      end)
+
+      assert {:noreply, _} = SkillHandler.handle_use_skill(casting_state(45), 29, 1, 2000)
+
+      # Target sits 10 cells east of a range-9 skill: approach cell is one step in.
+      assert_received {:move, moving_gs, 151, 150, opts}
+      assert Keyword.get(opts, :skill_initiated) == true
+      assert moving_gs.action_state == :skill_moving
+      assert moving_gs.movement_intent == :skill
+      assert moving_gs.state_context == %{skill_id: 29, skill_level: 1, target: {:unit, 2000}}
+    end
+
+    test "reaching casting range re-dispatches the pending skill from context" do
+      test_pid = self()
+
+      stub(Interpreter, :begin_cast, fn _gs, skill_id, level, target ->
+        send(test_pid, {:redispatch, skill_id, level, target})
+        {:error, :insufficient_sp}
+      end)
+
+      {:ok, moving} =
+        PlayerState.transition_to(
+          casting_state(45).game_state,
+          :skill_moving,
+          %{skill_id: 29, skill_level: 1, target: {:unit, 2000}}
+        )
+
+      state = %{connection_pid: self(), game_state: moving}
+
+      assert {:noreply, new_state} = SkillHandler.handle_reached_skill_position(state)
+
+      assert_received {:redispatch, 29, 1, {:unit, 2000}}
+      assert new_state.game_state.action_state == :idle
+    end
+
+    test "gives up (no move, stays idle) when no path reaches the target" do
+      stub(Interpreter, :begin_cast, fn _gs, 29, 1, {:unit, 2000} -> {:error, :out_of_range} end)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:error, :not_found}
+        :mob, 2000 -> {:ok, {160, 150, "prontera"}}
+      end)
+
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(range: 9)} end)
+      stub(MapCache, :get, fn "prontera" -> {:ok, :map_data} end)
+
+      stub(Pathfinding, :find_path, fn :map_data, {150, 150}, {151, 150} -> {:error, :blocked} end)
+
+      reject(&MovementHandler.handle_request_move/4)
+
+      assert {:noreply, new_state} = SkillHandler.handle_use_skill(casting_state(45), 29, 1, 2000)
+      assert new_state.game_state.action_state == :idle
     end
   end
 

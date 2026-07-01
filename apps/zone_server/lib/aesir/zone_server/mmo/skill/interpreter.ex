@@ -300,11 +300,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       else: {:error, :out_of_range}
   end
 
-  # rAthena encodes melee skills as `range: -1` ("use the weapon's range").
-  # Resolve it to the caster's equipped-weapon attack range at cast time.
-  defp effective_range(%{range: range}, _game_state) when range >= 0, do: range
+  @doc """
+  The cast-range of a skill for a given caster, in cells (Chebyshev).
 
-  defp effective_range(_definition, %{stats: %{equipment: equipment}}) do
+  rAthena encodes melee skills as `range: -1` ("use the weapon's range"); that is
+  resolved to the caster's equipped-weapon attack range at cast time. Exposed so
+  the session handler can size the move-to-range approach for an out-of-range cast.
+  """
+  @spec effective_range(Definition.t(), PlayerState.t()) :: non_neg_integer()
+  def effective_range(%{range: range}, _game_state) when range >= 0, do: range
+
+  def effective_range(_definition, %{stats: %{equipment: equipment}}) do
     equipment
     |> PlayerStats.weapon_type()
     |> WeaponTypes.get_attack_range()

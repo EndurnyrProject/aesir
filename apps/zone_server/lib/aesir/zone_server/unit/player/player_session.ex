@@ -325,6 +325,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         # Combat movement completed, attempt attack
         CombatActionHandler.handle_reached_attack_position(state)
 
+      {:skill_moving, :skill} ->
+        # Reached casting range, dispatch the pending skill
+        SkillHandler.handle_reached_skill_position(state)
+
       {:moving_to_item, :pickup} when game_state.pickup_target_id != nil ->
         # Reached the ground item, attempt pickup
         PickupHandler.handle_reached_item(state)
