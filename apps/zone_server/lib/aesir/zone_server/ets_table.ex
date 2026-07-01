@@ -40,6 +40,14 @@ defmodule Aesir.ZoneServer.EtsTable do
       table_for(:visibility_pairs, seed),
       [:set, :public, :named_table, read_concurrency: true]
     )
+
+    # Per-map unit membership: {{map_name, unit_type, unit_id}}. An ordered_set
+    # so map/type prefix selects traverse only the matching subtree instead of
+    # scanning the whole position table.
+    :ets.new(
+      table_for(:map_units, seed),
+      [:ordered_set, :public, :named_table, read_concurrency: true, write_concurrency: true]
+    )
   end
 
   defp movement_tables(seed) do

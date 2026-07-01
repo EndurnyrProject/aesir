@@ -33,9 +33,6 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
   def register_unit(unit_type, unit_id, module, state, pid \\ nil) do
     key = {unit_type, unit_id}
     :ets.insert(table_for(:unit_registry), {key, module, state, pid})
-
-    Logger.debug("Registered #{unit_type} unit with ID #{unit_id}")
-
     :ok
   end
 

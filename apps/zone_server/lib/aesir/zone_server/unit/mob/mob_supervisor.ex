@@ -22,12 +22,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
 
   @doc """
   Spawns a new mob session under supervision.
+
+  Pass `awake: false` to start the mob dormant (no AI tick loop) when its map
+  currently has no players; the coordinator wakes it on player arrival.
   """
-  @spec spawn_mob(String.t(), MobState.t()) :: {:ok, pid()} | {:error, term()}
-  def spawn_mob(map_name, mob_state) do
+  @spec spawn_mob(String.t(), MobState.t(), keyword()) :: {:ok, pid()} | {:error, term()}
+  def spawn_mob(map_name, mob_state, opts \\ []) do
     child_spec = %{
       id: MobSession,
-      start: {MobSession, :start_link, [%{state: mob_state}]},
+      start:
+        {MobSession, :start_link, [%{state: mob_state, awake: Keyword.get(opts, :awake, true)}]},
       restart: :temporary,
       type: :worker
     }
@@ -69,6 +73,26 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
   @spec count_mobs(String.t()) :: integer()
   def count_mobs(map_name) do
     DynamicSupervisor.count_children(via_tuple(map_name)).active
+  end
+
+  @doc """
+  Suspends the AI loop of every mob on a map (see `MobSession.sleep/1`).
+  """
+  @spec sleep_all_mobs(String.t()) :: :ok
+  def sleep_all_mobs(map_name) do
+    map_name
+    |> get_mob_processes()
+    |> Enum.each(&MobSession.sleep/1)
+  end
+
+  @doc """
+  Resumes the AI loop of every mob on a map (see `MobSession.wake/1`).
+  """
+  @spec wake_all_mobs(String.t()) :: :ok
+  def wake_all_mobs(map_name) do
+    map_name
+    |> get_mob_processes()
+    |> Enum.each(&MobSession.wake/1)
   end
 
   @doc """

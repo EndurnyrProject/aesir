@@ -28,8 +28,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
     setup :setup_ets_tables
 
     test "registers the summoned mob in UnitRegistry so it is attackable" do
-      Mimic.copy(MobSupervisor)
-      stub(MobSupervisor, :spawn_mob, fn _map, %MobState{} -> {:ok, self()} end)
+      stub(MobSupervisor, :spawn_mob, fn _map, %MobState{}, _opts -> {:ok, self()} end)
 
       state = %Coordinator{map_name: "prontera", next_mob_id: 1}
 

@@ -40,6 +40,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
 
     # AI state machine
     field :ai_state, ai_state(), default: :idle
+    field :ai_awake, boolean(), default: true
+    field :ai_timer_ref, reference() | nil, default: nil
+    # The cell the mob actually spawned on. AI wander/return anchors here, not
+    # on `spawn_ref.spawn_area`, whose 0,0 means "random cell anywhere".
+    field :spawn_point, {integer(), integer()} | nil, default: nil
     field :target_id, integer() | nil, default: nil
     field :last_ai_tick, integer() | nil, default: nil
     field :aggro_list, map(), default: %{}
@@ -86,6 +91,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       map_name: map_name,
       x: x,
       y: y,
+      spawn_point: {x, y},
       hp: mob_data.hp,
       max_hp: mob_data.hp,
       sp: mob_data.sp,

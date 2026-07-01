@@ -189,7 +189,12 @@ defmodule Aesir.ZoneServer.Map.CoordinatorFlushTest do
       register_mob(instance_id: 5001, x: 52, y: 50, movement_state: :moving, map_name: @map_name)
       Movement.mark_dirty(@map_name, :mob, 5001, 1)
 
-      state = %Coordinator{map_name: @map_name, recently_stopped: %{}}
+      state = %Coordinator{
+        map_name: @map_name,
+        recently_stopped: %{},
+        mobs_spawned: true,
+        mobs_awake: true
+      }
 
       assert {:noreply, %Coordinator{recently_stopped: %{}}} =
                Coordinator.handle_info(:broadcast_tick, state)

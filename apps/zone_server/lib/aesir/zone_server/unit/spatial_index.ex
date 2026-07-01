@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   def add_unit(unit_type, unit_id, x, y, map_name) do
     key = {unit_type, unit_id}
     :ets.insert(unit_positions_table(), {key, {map_name, x, y}})
+    :ets.insert(map_units_table(), {{map_name, unit_type, unit_id}})
 
     cell_key = cell_key(map_name, x, y)
 
@@ -83,6 +84,7 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
 
         :ets.insert(spatial_index_table(), {new_cell, updated})
         :ets.insert(unit_positions_table(), {key, {new_map, new_x, new_y}})
+        move_map_membership(unit_type, unit_id, old_map, new_map)
 
         :ok
 
@@ -125,6 +127,7 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
         end
 
         :ets.delete(unit_positions_table(), key)
+        :ets.delete(map_units_table(), {map_name, unit_type, unit_id})
 
         :ok
 
@@ -225,14 +228,13 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
 
   @doc """
   Gets all units of a specific type on a map.
+
+  Served from the `map_units` ordered_set, so the select walks only the
+  `{map_name, unit_type, _}` prefix instead of scanning every unit position.
   """
   def get_units_on_map(unit_type, map_name) do
-    :ets.select(unit_positions_table(), [
-      {
-        {{unit_type, :"$1"}, {:"$2", :_, :_}},
-        [{:==, :"$2", map_name}],
-        [:"$1"]
-      }
+    :ets.select(map_units_table(), [
+      {{{map_name, unit_type, :"$1"}}, [], [:"$1"]}
     ])
   end
 
@@ -240,7 +242,9 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   Gets count of units of a specific type on a map.
   """
   def count_units_on_map(unit_type, map_name) do
-    length(get_units_on_map(unit_type, map_name))
+    :ets.select_count(map_units_table(), [
+      {{{map_name, unit_type, :_}}, [], [true]}
+    ])
   end
 
   # Player-specific wrapper functions for backward compatibility
@@ -320,6 +324,14 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
     count_units_on_map(:player, map_name)
   end
 
+  defp move_map_membership(_unit_type, _unit_id, same_map, same_map), do: :ok
+
+  defp move_map_membership(unit_type, unit_id, old_map, new_map) do
+    :ets.delete(map_units_table(), {old_map, unit_type, unit_id})
+    :ets.insert(map_units_table(), {{new_map, unit_type, unit_id}})
+    :ok
+  end
+
   defp cell_key(map_name, x, y) do
     {map_name, div(x, @cell_size), div(y, @cell_size)}
   end
@@ -392,4 +404,5 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   defp unit_positions_table, do: table_for(:player_positions)
   defp spatial_index_table, do: table_for(:spatial_index)
   defp visibility_pairs_table, do: table_for(:visibility_pairs)
+  defp map_units_table, do: table_for(:map_units)
 end

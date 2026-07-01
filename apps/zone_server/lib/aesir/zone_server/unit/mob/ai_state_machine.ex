@@ -179,9 +179,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   """
   @spec should_return_to_spawn?(MobState.t()) :: boolean()
   def should_return_to_spawn?(%MobState{} = state) do
-    spawn_area = state.spawn_ref.spawn_area
-    spawn_x = spawn_area.x
-    spawn_y = spawn_area.y
+    {spawn_x, spawn_y} = spawn_anchor(state)
 
     # Calculate distance from spawn
     distance_from_spawn = abs(state.x - spawn_x) + abs(state.y - spawn_y)
@@ -196,12 +194,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   """
   @spec at_spawn_area?(MobState.t()) :: boolean()
   def at_spawn_area?(%MobState{} = state) do
-    spawn_area = state.spawn_ref.spawn_area
-    spawn_x = spawn_area.x
-    spawn_y = spawn_area.y
+    {spawn_x, spawn_y} = spawn_anchor(state)
 
     abs(state.x - spawn_x) <= 2 and abs(state.y - spawn_y) <= 2
   end
+
+  # The cell the mob actually spawned on. `spawn_ref.spawn_area` is the raw
+  # spawn config, whose x/y of 0,0 means "random cell anywhere on the map", so
+  # it cannot anchor wander/return behavior.
+  defp spawn_anchor(%MobState{spawn_point: {x, y}}), do: {x, y}
+  defp spawn_anchor(%MobState{} = state), do: {state.x, state.y}
 
   defp process_idle(state) do
     result = check_aggro(state)
@@ -327,9 +329,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
       |> MobState.stop_movement()
     else
       # Continue returning to spawn using pathfinding
-      spawn_area = state.spawn_ref.spawn_area
-      spawn_x = spawn_area.x
-      spawn_y = spawn_area.y
+      {spawn_x, spawn_y} = spawn_anchor(state)
 
       move_toward(state, spawn_x, spawn_y)
     end
@@ -394,20 +394,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
         current_time - state.last_idle_movement_time >= 3
 
     if can_move and random_chance and enough_time_passed do
-      # Get spawn area for movement bounds
-      spawn_area = state.spawn_ref.spawn_area
-      spawn_x = spawn_area.x
-      spawn_y = spawn_area.y
+      {spawn_x, spawn_y} = spawn_anchor(state)
       # Maximum distance from spawn to wander
       max_wander_distance = 5
 
-      # Generate random destination within spawn area
+      # Random destination around the spawn cell; pathfinding rejects
+      # unwalkable or out-of-bounds picks, so no further clamping is needed.
       random_x = spawn_x + :rand.uniform(max_wander_distance * 2 + 1) - max_wander_distance - 1
       random_y = spawn_y + :rand.uniform(max_wander_distance * 2 + 1) - max_wander_distance - 1
 
-      # Clamp to reasonable bounds (assuming maps are at least 50x50)
-      target_x = max(10, min(random_x, 300))
-      target_y = max(10, min(random_y, 300))
+      target_x = max(random_x, 0)
+      target_y = max(random_y, 0)
 
       # Update last idle movement attempt time and move
       updated_state = %{state | last_idle_movement_time: current_time}

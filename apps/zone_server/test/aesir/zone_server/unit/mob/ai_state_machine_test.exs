@@ -254,6 +254,33 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     end
   end
 
+  describe "spawn anchoring" do
+    test "spawn checks anchor on the cell the mob spawned at, not the raw spawn config" do
+      # Imported rAthena spawn lines use x/y 0,0 ("random cell anywhere"); the
+      # AI must anchor on the resolved spawn_point or every mob would try to
+      # wander to and return toward the map corner.
+      state = %MobState{
+        base_mob_state()
+        | spawn_ref: %MobSpawn{
+            mob: 1001,
+            amount: 1,
+            respawn_time: 5000,
+            spawn_area: %SpawnArea{x: 0, y: 0}
+          }
+      }
+
+      assert AIStateMachine.at_spawn_area?(state)
+      refute AIStateMachine.should_return_to_spawn?(state)
+    end
+
+    test "a mob far from its spawn point wants to return to it" do
+      state = %MobState{base_mob_state() | x: 200, y: 200}
+
+      refute AIStateMachine.at_spawn_area?(state)
+      assert AIStateMachine.should_return_to_spawn?(state)
+    end
+  end
+
   defp aggressive_idle_mob_state do
     base = base_mob_state(modes: [:aggressive])
 

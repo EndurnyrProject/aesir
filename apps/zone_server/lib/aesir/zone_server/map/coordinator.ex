@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   alias Aesir.Net.SnapshotEntity
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore
   alias Aesir.ZoneServer.Mmo.MobManagement
@@ -40,6 +41,13 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   # Cadence of the ground-item expiry sweep.
   @ground_item_sweep_ms 10_000
 
+  # Tick cadence while the map has no players: just often enough to notice a
+  # player arriving, instead of burning the 10 Hz snapshot loop on empty maps.
+  @idle_broadcast_interval 1000
+  # How long a map must stay empty before its mobs are put to sleep, so players
+  # hopping between adjacent maps don't churn sleep/wake sweeps.
+  @mob_sleep_grace 30_000
+
   defstruct [
     :map_name,
     :map_data,
@@ -51,6 +59,9 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     :pvp_enabled,
     :pk_enabled,
     :mob_supervisor_pid,
+    :empty_since,
+    mobs_spawned: false,
+    mobs_awake: false,
     recently_stopped: %{}
   ]
 
@@ -148,12 +159,10 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
       recently_stopped: %{}
     }
 
-    if spawn_data != [] do
-      Process.send_after(self(), :initial_spawn, 100)
-    end
-
+    # Mobs are spawned lazily on the first tick that sees a player on this map
+    # (see :broadcast_tick), so boot doesn't create 60k+ mob processes at once.
     schedule_item_sweep()
-    schedule_broadcast()
+    schedule_broadcast(idle_broadcast_interval())
 
     {:ok, state}
   end
@@ -355,13 +364,6 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   end
 
   @impl true
-  def handle_info(:initial_spawn, state) do
-    Logger.debug("Starting initial mob spawn for #{state.map_name}")
-    state = spawn_all_mobs(state)
-    {:noreply, state}
-  end
-
-  @impl true
   def handle_info({:respawn_mob, spawn_config}, state) do
     Logger.debug("Respawning mob on #{state.map_name}")
     state = spawn_single_mob(spawn_config, state)
@@ -370,16 +372,29 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
   @impl true
   def handle_info(:broadcast_tick, state) do
-    schedule_broadcast()
+    has_players = SpatialIndex.count_players_on_map(state.map_name) > 0
+    state = manage_mob_activity(has_players, state)
 
-    {deliveries, recently_stopped} =
-      flush_snapshots(state.map_name, state.recently_stopped, ServerTick.now())
+    state =
+      if has_players do
+        {deliveries, recently_stopped} =
+          flush_snapshots(state.map_name, state.recently_stopped, ServerTick.now())
 
-    Enum.each(deliveries, fn {pid, chunks} ->
-      Enum.each(chunks, &PlayerSession.send_packet(pid, &1))
-    end)
+        Enum.each(deliveries, fn {pid, chunks} ->
+          Enum.each(chunks, &PlayerSession.send_packet(pid, &1))
+        end)
 
-    {:noreply, %{state | recently_stopped: recently_stopped}}
+        %{state | recently_stopped: recently_stopped}
+      else
+        # Nobody is observing: keep the dirty set from accumulating while mobs
+        # finish their walks, but skip snapshot building entirely.
+        Movement.drain_dirty(state.map_name)
+        %{state | recently_stopped: %{}}
+      end
+
+    schedule_broadcast(if has_players, do: broadcast_interval(), else: idle_broadcast_interval())
+
+    {:noreply, state}
   end
 
   @impl true
@@ -506,6 +521,45 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
   # Mob Spawning Functions
 
+  # Drives the mob population from player presence: the first player to reach
+  # the map triggers its initial spawn, a repopulated map wakes its dormant
+  # mobs, and a map that stays empty past the grace period puts them to sleep.
+  defp manage_mob_activity(true, state) do
+    cond do
+      not state.mobs_spawned ->
+        Logger.debug("First player on #{state.map_name}, spawning mobs")
+
+        # Summons/respawns that landed dormant before the first visit wake too.
+        MobSupervisor.wake_all_mobs(state.map_name)
+
+        %{state | mobs_spawned: true, mobs_awake: true, empty_since: nil}
+        |> spawn_all_mobs()
+
+      not state.mobs_awake ->
+        Logger.debug("Players back on #{state.map_name}, waking mobs")
+        MobSupervisor.wake_all_mobs(state.map_name)
+        %{state | mobs_awake: true, empty_since: nil}
+
+      true ->
+        %{state | empty_since: nil}
+    end
+  end
+
+  defp manage_mob_activity(false, %{mobs_awake: true} = state) do
+    now = System.monotonic_time(:millisecond)
+    empty_since = state.empty_since || now
+
+    if now - empty_since >= mob_sleep_grace() do
+      Logger.debug("#{state.map_name} empty for #{mob_sleep_grace()}ms, sleeping mobs")
+      MobSupervisor.sleep_all_mobs(state.map_name)
+      %{state | mobs_awake: false, empty_since: empty_since}
+    else
+      %{state | empty_since: empty_since}
+    end
+  end
+
+  defp manage_mob_activity(false, state), do: state
+
   defp spawn_all_mobs(state) do
     Enum.reduce(state.spawn_data, state, fn spawn_config, acc_state ->
       spawn_mob_group(spawn_config, acc_state)
@@ -546,14 +600,11 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     spawn_ref = Keyword.get_lazy(opts, :spawn_ref, fn -> summon_spawn_ref(mob_data, x, y) end)
     mob_state = MobState.new(instance_id, mob_data, spawn_ref, state.map_name, x, y)
 
-    case MobSupervisor.spawn_mob(state.map_name, mob_state) do
+    # Respawns and summons on a currently-empty map start dormant; the
+    # coordinator wakes them when a player next shows up.
+    case MobSupervisor.spawn_mob(state.map_name, mob_state, awake: state.mobs_awake) do
       {:ok, mob_pid} ->
         UnitRegistry.register_unit(:mob, instance_id, MobState, mob_state, mob_pid)
-
-        Logger.debug(
-          "Spawned mob #{mob_data.name} (#{instance_id}) at #{x},#{y} on #{state.map_name} with pid #{inspect(mob_pid)}"
-        )
-
         {{:ok, instance_id}, %{state | next_mob_id: state.next_mob_id + 1}}
 
       {:error, reason} ->
@@ -573,26 +624,45 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     }
   end
 
-  # Random position within spawn area
-  # spawn_area.x/y are center coordinates
-  # spawn_area.xs/ys are radius from center
-  defp calculate_spawn_position(spawn_area, _map_data) do
-    x =
-      if spawn_area.xs > 0 do
-        spawn_area.x + :rand.uniform(spawn_area.xs * 2 + 1) - spawn_area.xs - 1
-      else
-        spawn_area.x
-      end
+  # Picks a spawn cell using rAthena spawn-line semantics: `x: 0, y: 0` means a
+  # random walkable cell anywhere on the map (the common case in imported spawn
+  # data), `xs`/`ys` > 0 a random walkable cell in the area around `{x, y}`, and
+  # a bare `{x, y}` the exact cell.
+  @spawn_position_attempts 100
 
-    y =
-      if spawn_area.ys > 0 do
-        spawn_area.y + :rand.uniform(spawn_area.ys * 2 + 1) - spawn_area.ys - 1
-      else
-        spawn_area.y
-      end
+  defp calculate_spawn_position(%MobSpawn.SpawnArea{x: 0, y: 0}, %MapData{} = map_data) do
+    random_walkable_cell(map_data, @spawn_position_attempts)
+  end
 
-    # TODO: Validate walkable with map_data when available
-    {max(0, x), max(0, y)}
+  defp calculate_spawn_position(%MobSpawn.SpawnArea{xs: 0, ys: 0} = spawn_area, _map_data) do
+    {max(spawn_area.x, 0), max(spawn_area.y, 0)}
+  end
+
+  defp calculate_spawn_position(spawn_area, map_data) do
+    random_area_cell(spawn_area, map_data, @spawn_position_attempts)
+  end
+
+  defp random_walkable_cell(%MapData{xs: width, ys: height} = map_data, attempts) do
+    x = :rand.uniform(width) - 1
+    y = :rand.uniform(height) - 1
+
+    cond do
+      MapData.walkable?(map_data, x, y) -> {x, y}
+      attempts > 1 -> random_walkable_cell(map_data, attempts - 1)
+      true -> {div(width, 2), div(height, 2)}
+    end
+  end
+
+  defp random_area_cell(spawn_area, map_data, attempts) do
+    x = spawn_area.x + :rand.uniform(spawn_area.xs * 2 + 1) - spawn_area.xs - 1
+    y = spawn_area.y + :rand.uniform(spawn_area.ys * 2 + 1) - spawn_area.ys - 1
+
+    cond do
+      not match?(%MapData{}, map_data) -> {max(x, 0), max(y, 0)}
+      MapData.walkable?(map_data, x, y) -> {x, y}
+      attempts > 1 -> random_area_cell(spawn_area, map_data, attempts - 1)
+      true -> {max(spawn_area.x, 0), max(spawn_area.y, 0)}
+    end
   end
 
   defp generate_mob_instance_id do
@@ -623,12 +693,22 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   defp schedule_item_sweep,
     do: Process.send_after(self(), :expire_ground_items, @ground_item_sweep_ms)
 
-  defp schedule_broadcast, do: Process.send_after(self(), :broadcast_tick, broadcast_interval())
+  defp schedule_broadcast(interval), do: Process.send_after(self(), :broadcast_tick, interval)
 
   @doc "The per-map delta-snapshot flush interval in milliseconds."
   @spec broadcast_interval() :: pos_integer()
   def broadcast_interval,
     do: Application.get_env(:zone_server, :broadcast_interval_ms, @broadcast_interval)
+
+  @doc "The tick interval in milliseconds while a map has no players."
+  @spec idle_broadcast_interval() :: pos_integer()
+  def idle_broadcast_interval,
+    do: Application.get_env(:zone_server, :idle_broadcast_interval_ms, @idle_broadcast_interval)
+
+  @doc "How long a map must stay empty before its mobs are put to sleep."
+  @spec mob_sleep_grace() :: pos_integer()
+  def mob_sleep_grace,
+    do: Application.get_env(:zone_server, :mob_sleep_grace_ms, @mob_sleep_grace)
 
   @impl true
   def terminate(reason, state) do

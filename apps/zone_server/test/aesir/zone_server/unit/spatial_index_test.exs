@@ -188,4 +188,45 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndexTest do
       assert 1002 in players
     end
   end
+
+  describe "per-map unit index" do
+    test "units are listed and counted per map and type" do
+      SpatialIndex.add_player(1001, 50, 50, "prontera")
+      SpatialIndex.add_player(1002, 60, 60, "prontera")
+      SpatialIndex.add_player(1003, 50, 50, "geffen")
+      SpatialIndex.add_unit(:mob, 5001, 55, 55, "prontera")
+
+      assert Enum.sort(SpatialIndex.get_players_on_map("prontera")) == [1001, 1002]
+      assert SpatialIndex.get_players_on_map("geffen") == [1003]
+      assert SpatialIndex.get_units_on_map(:mob, "prontera") == [5001]
+      assert SpatialIndex.count_players_on_map("prontera") == 2
+      assert SpatialIndex.count_units_on_map(:mob, "geffen") == 0
+    end
+
+    test "a cross-map position update moves the unit's map membership" do
+      SpatialIndex.add_player(1001, 50, 50, "prontera")
+
+      SpatialIndex.update_unit_position(:player, 1001, 30, 30, "geffen")
+
+      assert SpatialIndex.get_players_on_map("prontera") == []
+      assert SpatialIndex.get_players_on_map("geffen") == [1001]
+    end
+
+    test "a same-map position update keeps the membership intact" do
+      SpatialIndex.add_player(1001, 50, 50, "prontera")
+
+      SpatialIndex.update_unit_position(:player, 1001, 90, 90, "prontera")
+
+      assert SpatialIndex.get_players_on_map("prontera") == [1001]
+      assert SpatialIndex.count_players_on_map("prontera") == 1
+    end
+
+    test "removing a unit clears its map membership" do
+      SpatialIndex.add_unit(:mob, 5001, 55, 55, "prontera")
+
+      SpatialIndex.remove_unit(:mob, 5001)
+
+      assert SpatialIndex.get_units_on_map(:mob, "prontera") == []
+    end
+  end
 end

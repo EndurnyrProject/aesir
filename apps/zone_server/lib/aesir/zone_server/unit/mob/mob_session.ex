@@ -89,6 +89,25 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   @doc """
+  Suspends the mob's AI loop while its map has no players.
+
+  The mob keeps its full state (HP, aggro history, position) but stops ticking,
+  so dormant maps cost no CPU. `wake/1` resumes the loop.
+  """
+  @spec sleep(pid()) :: :ok
+  def sleep(pid) do
+    GenServer.cast(pid, :sleep)
+  end
+
+  @doc """
+  Resumes the AI loop of a mob previously put to sleep with `sleep/1`.
+  """
+  @spec wake(pid()) :: :ok
+  def wake(pid) do
+    GenServer.cast(pid, :wake)
+  end
+
+  @doc """
   Stops the mob session.
   """
   @spec stop(pid()) :: :ok
@@ -99,9 +118,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   # GenServer Callbacks
 
   @impl GenServer
-  def init(%{state: mob_state}) do
+  def init(%{state: mob_state} = args) do
+    awake = Map.get(args, :awake, true)
+
     # Set this process as the mob's process
-    updated_state = MobState.set_process_pid(mob_state, self())
+    updated_state =
+      mob_state
+      |> MobState.set_process_pid(self())
+      |> Map.put(:ai_awake, awake)
 
     # Register in spatial index
     :ok =
@@ -116,10 +140,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     # Notify nearby players of mob spawn
     notify_spawn(updated_state)
 
-    # Schedule first AI tick
-    schedule_ai_tick()
-
-    {:ok, updated_state}
+    # Schedule the first AI tick, or start dormant (and heap-compacted) when the
+    # map has no players.
+    if awake do
+      {:ok, schedule_jittered_ai_tick(updated_state)}
+    else
+      {:ok, updated_state, :hibernate}
+    end
   end
 
   @impl GenServer
@@ -215,6 +242,33 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   @impl GenServer
+  def handle_cast(:sleep, %{ai_awake: false} = state), do: {:noreply, state}
+
+  def handle_cast(:sleep, state) do
+    if state.ai_timer_ref, do: Process.cancel_timer(state.ai_timer_ref)
+
+    # Shed any in-flight movement and combat intent so the mob is inert while
+    # dormant; aggro toward players who left the map must not survive the nap.
+    # Hibernating compacts the heap, so a dormant map costs no CPU and little
+    # memory until a player shows up again.
+    updated_state =
+      state
+      |> MobState.stop_movement()
+      |> MobState.set_target(nil)
+      |> MobState.set_ai_state(:idle)
+      |> Map.merge(%{ai_awake: false, ai_timer_ref: nil})
+
+    {:noreply, updated_state, :hibernate}
+  end
+
+  @impl GenServer
+  def handle_cast(:wake, %{ai_awake: true} = state), do: {:noreply, state}
+
+  def handle_cast(:wake, state) do
+    {:noreply, schedule_jittered_ai_tick(%{state | ai_awake: true})}
+  end
+
+  @impl GenServer
   def handle_cast({:knocked_back, x, y}, state) do
     updated_state =
       state
@@ -228,17 +282,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   @impl GenServer
   def handle_info(:ai_tick, state) do
-    if state.is_dead do
-      # Dead mobs don't process AI
-      {:noreply, state}
-    else
-      # Process AI logic
-      updated_state = process_ai(state)
+    cond do
+      state.is_dead ->
+        # Dead mobs don't process AI
+        {:noreply, state}
 
-      # Schedule next AI tick
-      schedule_ai_tick()
+      not state.ai_awake ->
+        # A tick that raced a :sleep; drop it without rescheduling
+        {:noreply, state}
 
-      {:noreply, updated_state}
+      true ->
+        updated_state = state |> process_ai() |> schedule_ai_tick()
+        {:noreply, updated_state}
     end
   end
 
@@ -416,8 +471,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   # AI logic is now handled by AIStateMachine module
 
-  defp schedule_ai_tick do
-    Process.send_after(self(), :ai_tick, @ai_tick_interval)
+  defp schedule_ai_tick(state, interval \\ @ai_tick_interval) do
+    %{state | ai_timer_ref: Process.send_after(self(), :ai_tick, interval)}
+  end
+
+  # First tick after spawn/wake lands at a random offset so a whole map waking
+  # at once doesn't tick every mob in the same millisecond thereafter.
+  defp schedule_jittered_ai_tick(state) do
+    schedule_ai_tick(state, :rand.uniform(@ai_tick_interval))
   end
 
   # Mob Visibility Helper Functions
