@@ -344,7 +344,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   end
 
   def handle_message(message, state) do
-    Logger.warning("Unhandled message in PacketHandler: #{inspect(message.__struct__)}")
+    Logger.warning(
+      "Dropping unrecognized inbound message #{inspect(message.__struct__)} in PacketHandler " <>
+        "(unhandled client intent or forged authoritative message)"
+    )
+
     {:noreply, state}
   end
 

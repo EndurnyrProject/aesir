@@ -19,7 +19,6 @@ defmodule Aesir.ZoneServer do
   alias Aesir.Net.TimeSync
   alias Aesir.Net.TimeSyncAck
   alias Aesir.ZoneServer.CharacterLoader
-  alias Aesir.ZoneServer.Network.InboundIntents
   alias Aesir.ZoneServer.Unit.Player.PlayerSupervisor
 
   @protocol_version 1
@@ -102,15 +101,7 @@ defmodule Aesir.ZoneServer do
   end
 
   def handle_message(message, _channel, session_data) do
-    if InboundIntents.client_intent?(message) do
-      forward_to_player_session(message, session_data)
-    else
-      Logger.warning(
-        "Rejected non-client message #{inspect(message.__struct__)} from client in ZoneServer"
-      )
-
-      {:ok, session_data}
-    end
+    forward_to_player_session(message, session_data)
   end
 
   defp forward_to_player_session(message, session_data) do
