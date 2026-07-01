@@ -97,6 +97,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         skill_cooldowns: %{},
         act_delay_until: 0,
         action_state: :idle,
+        combat_target_id: nil,
         state_context: %{},
         inventory: %{},
         pending_inventory_persist: [],
@@ -325,7 +326,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert Keyword.get(opts, :skill_initiated) == true
       assert moving_gs.action_state == :skill_moving
       assert moving_gs.movement_intent == :skill
-      assert moving_gs.state_context == %{skill_id: 29, skill_level: 1, target: {:unit, 2000}}
+
+      assert moving_gs.state_context == %{
+               skill_id: 29,
+               skill_level: 1,
+               target: {:unit, 2000},
+               combat_target_id: nil
+             }
     end
 
     test "reaching casting range re-dispatches the pending skill from context" do
@@ -631,11 +638,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert {:noreply, ^s} = SkillHandler.handle_use_skill_ground(s, 89, 1, 12, 12)
     end
 
-    test "a skill cast is rejected while attacking" do
-      reject(&Interpreter.begin_cast/4)
+    test "a skill cast while auto-attacking stops the pending swing and drives the cast" do
+      stub(Broadcast, :to_player, fn 1000, _packet -> :ok end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
 
-      s = casting_state(45, :attacking)
-      assert {:noreply, ^s} = SkillHandler.handle_use_skill(s, 29, 1, 1000)
+      swing_timer = Process.send_after(self(), {:auto_attack, 2000}, 60_000)
+
+      base = casting_state(45, :attacking)
+
+      s = %{
+        base
+        | game_state: %{
+            base.game_state
+            | combat_target_id: 2000,
+              combat_action_type: 7,
+              continuous_attack_timer: swing_timer
+          }
+      }
+
+      assert {:noreply, new_state} = SkillHandler.handle_use_skill(s, 29, 1, 1000)
+
+      assert new_state.game_state.action_state == :casting
+      # Starting the cast dropped through :idle, cancelling the queued swing.
+      assert Process.cancel_timer(swing_timer) == false
     end
 
     test "a status landing during a timed cast drops to idle without committing" do
@@ -661,6 +686,138 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     end
   end
 
+  describe "skills preserve the lock and resume auto-attack" do
+    setup do
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:error, :not_found}
+        :mob, 2000 -> {:ok, {150, 150, "prontera"}}
+      end)
+
+      :ok
+    end
+
+    test "an instant cast while locked re-sets the lock and reschedules auto-attack" do
+      stub(Interpreter, :begin_cast, fn gs, 29, 1, {:unit, 2000} -> {:instant, gs} end)
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [], cooldown: [])} end)
+      stub(StatusInterpreter, :apply_status, fn :player, 1000, _sc, _ -> :ok end)
+      stub_commit()
+
+      assert {:noreply, new_state} =
+               SkillHandler.handle_use_skill(locked_attacking_state(45), 29, 1, 2000)
+
+      assert new_state.game_state.combat_target_id == 2000
+      assert is_reference(new_state.game_state.continuous_attack_timer)
+      assert_receive {:auto_attack, 2000}
+    end
+
+    test "a timed cast completing while locked re-sets the lock and reschedules auto-attack" do
+      stub_commit()
+      stub(StatusInterpreter, :apply_status, fn :player, _id, _sc, _ -> :ok end)
+
+      assert {:noreply, casting} =
+               SkillHandler.handle_use_skill(locked_attacking_state(45), 29, 1, 2000)
+
+      assert casting.game_state.action_state == :casting
+      token = casting.game_state.state_context.token
+
+      assert {:noreply, completed} = SkillHandler.handle_cast_complete(casting, token)
+
+      assert completed.game_state.action_state == :idle
+      assert completed.game_state.combat_target_id == 2000
+      assert is_reference(completed.game_state.continuous_attack_timer)
+      assert_receive {:auto_attack, 2000}
+    end
+
+    test "an instant cast with no lock does not start an auto-attack loop" do
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [], cooldown: [])} end)
+      stub(StatusInterpreter, :apply_status, fn :player, 1000, _sc, _ -> :ok end)
+      stub_commit()
+
+      assert {:noreply, new_state} = SkillHandler.handle_use_skill(instant_state(30), 29, 1, 1000)
+
+      assert new_state.game_state.combat_target_id == nil
+      refute_receive {:auto_attack, _}
+    end
+
+    test "a cast whose locked target has died does not resume" do
+      stub(SpatialIndex, :get_unit_position, fn _type, _id -> {:error, :not_found} end)
+      stub(Interpreter, :begin_cast, fn gs, 29, 1, {:unit, 2000} -> {:instant, gs} end)
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [], cooldown: [])} end)
+      stub(StatusInterpreter, :apply_status, fn :player, _id, _sc, _ -> :ok end)
+      stub_commit()
+
+      assert {:noreply, new_state} =
+               SkillHandler.handle_use_skill(locked_attacking_state(45), 29, 1, 2000)
+
+      assert new_state.game_state.combat_target_id == nil
+      refute_receive {:auto_attack, _}
+    end
+
+    test "a locked skill that walked into range resumes auto-attack after casting" do
+      stub(Interpreter, :begin_cast, fn gs, 29, 1, {:unit, 2000} -> {:instant, gs} end)
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [], cooldown: [])} end)
+      stub(StatusInterpreter, :apply_status, fn :player, _id, _sc, _ -> :ok end)
+      stub_commit()
+
+      {:ok, moving} =
+        PlayerState.transition_to(
+          casting_state(45).game_state,
+          :skill_moving,
+          %{skill_id: 29, skill_level: 1, target: {:unit, 2000}, combat_target_id: 2000}
+        )
+
+      state = %{connection_pid: self(), game_state: moving}
+
+      assert {:noreply, new_state} = SkillHandler.handle_reached_skill_position(state)
+
+      assert new_state.game_state.combat_target_id == 2000
+      assert is_reference(new_state.game_state.continuous_attack_timer)
+      assert_receive {:auto_attack, 2000}
+    end
+
+    test "a damage interrupt keeps the lock and resumes auto-attack" do
+      stub(Broadcast, :to_player, fn 1000, _packet -> :ok end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+
+      state = interrupting_state(45, fixed_offset: -100, combat_target_id: 2000)
+
+      result = SkillHandler.interrupt_cast_on_damage(state)
+
+      assert result.game_state.action_state == :idle
+      assert result.game_state.combat_target_id == 2000
+      assert is_reference(result.game_state.continuous_attack_timer)
+      assert_receive {:auto_attack, 2000}
+    end
+
+    test "a manual-move cancel drops the lock and does not resume" do
+      stub(Broadcast, :to_player, fn 1000, _packet -> :ok end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+
+      state = interrupting_state(45, fixed_offset: 60_000, combat_target_id: 2000)
+
+      result = SkillHandler.cancel_cast(state, :move)
+
+      assert result.game_state.action_state == :idle
+      assert result.game_state.combat_target_id == nil
+      refute_receive {:auto_attack, _}
+    end
+  end
+
+  defp locked_attacking_state(sp) do
+    s = casting_state(sp, :attacking)
+    %{s | game_state: %{s.game_state | combat_target_id: 2000, combat_action_type: 7}}
+  end
+
+  defp stub_commit do
+    stub(Broadcast, :to_player, fn 1000, _packet -> :ok end)
+    stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
+    stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+    stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+    stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+    stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+    stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+  end
+
   # Builds a real :casting state with a live cast-complete timer and a controllable
   # phase. `fixed_offset` is added to `now`: negative = variable phase (past),
   # positive = fixed phase (future).
@@ -683,7 +840,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       total_until: now + 60_000,
       timer_ref: timer_ref,
       token: token,
-      interruptible: interruptible
+      interruptible: interruptible,
+      combat_target_id: Keyword.get(opts, :combat_target_id)
     }
 
     {:ok, casting} = PlayerState.transition_to(state.game_state, :casting, context)

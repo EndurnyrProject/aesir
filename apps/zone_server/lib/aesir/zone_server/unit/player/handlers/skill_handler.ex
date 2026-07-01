@@ -83,7 +83,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       {:ok, new_game_state} ->
         new_state = commit_cast(state, new_game_state, ctx.skill_id, ctx.skill_level)
         broadcast_skill_use(new_state.game_state, ctx.skill_id, ctx.skill_level, ctx.target)
-        {:noreply, %{new_state | game_state: to_idle(new_state.game_state)}}
+        idle_state = %{new_state | game_state: to_idle(new_state.game_state)}
+        {:noreply, maybe_resume_lock(idle_state, Map.get(ctx, :combat_target_id))}
 
       {:error, reason} ->
         log_cast_failure(ctx.skill_id, game_state.character_id, reason)
@@ -118,18 +119,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   @spec cancel_cast(map(), atom()) :: map()
   def cancel_cast(
         %{game_state: %{action_state: :casting, state_context: ctx} = game_state} = state,
-        _reason
+        reason
       ) do
     Process.cancel_timer(ctx.timer_ref)
     broadcast_cast_cancel(game_state)
 
-    case PlayerState.transition_to(game_state, :idle) do
-      {:ok, idle_game_state} -> %{state | game_state: idle_game_state}
-      {:error, _reason} -> %{state | game_state: game_state}
-    end
+    idle_state =
+      case PlayerState.transition_to(game_state, :idle) do
+        {:ok, idle_game_state} -> %{state | game_state: idle_game_state}
+        {:error, _reason} -> %{state | game_state: game_state}
+      end
+
+    maybe_resume_on_cancel(idle_state, reason, Map.get(ctx, :combat_target_id))
   end
 
   def cancel_cast(state, _reason), do: state
+
+  # A damage interrupt does not disengage: keep the target locked and resume the
+  # auto-attack loop. A manual-move cancel (any other reason) is a deliberate
+  # disengage, so the lock stays cleared. The pre-cast timer was already cancelled
+  # by the idle transition, so no timer is double-armed.
+  defp maybe_resume_on_cancel(state, :damage, target_id), do: maybe_resume_lock(state, target_id)
+  defp maybe_resume_on_cancel(state, _reason, _target_id), do: state
 
   defp broadcast_cast_cancel(game_state) do
     packet = %CastCancel{gid: game_state.character_id}
@@ -151,9 +162,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # Once idle is guaranteed, branch on the interpreter's two-phase result: instant
   # casts commit now, timed casts schedule a cast-complete timer and a cast bar.
   defp drive_cast(%{game_state: game_state} = state, skill_id, level, target) do
+    # Capture the lock before ensure_idle_for_cast/1 drops through :idle, which
+    # clears combat intent. A lock present here means the player was engaged
+    # (auto-attacking or approaching), so the loop is resumed after the cast.
+    locked = game_state.combat_target_id
+
     case ensure_idle_for_cast(state) do
       {:ok, ready_state} ->
-        dispatch_cast(ready_state, skill_id, level, target)
+        dispatch_cast(ready_state, skill_id, level, target, locked)
 
       :busy ->
         Logger.debug(
@@ -164,21 +180,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
-  defp dispatch_cast(%{game_state: game_state} = state, skill_id, level, target) do
+  defp dispatch_cast(%{game_state: game_state} = state, skill_id, level, target, locked) do
     case Interpreter.begin_cast(game_state, skill_id, level, target) do
       {:instant, new_game_state} ->
         new_state = commit_cast(state, new_game_state, skill_id, level)
         broadcast_skill_use(new_state.game_state, skill_id, level, target)
-        {:noreply, new_state}
+        {:noreply, maybe_resume_lock(new_state, locked)}
 
       {:casting, new_game_state, info} ->
-        schedule_cast(%{state | game_state: new_game_state}, info)
+        schedule_cast(%{state | game_state: new_game_state}, info, locked)
 
       # Out of range: walk into range instead of fizzling (mirrors attack-move).
       # The approach re-dispatches this same cast on arrival, so a moving target
-      # is chased and a genuinely in-range recast just casts.
+      # is chased and a genuinely in-range recast just casts. The lock rides along
+      # in the skill_moving context so it survives the walk-in and resumes after.
       {:error, :out_of_range} ->
-        initiate_skill_movement(state, skill_id, level, target)
+        initiate_skill_movement(state, skill_id, level, target, locked)
 
       {:error, reason} ->
         log_cast_failure(skill_id, game_state.character_id, reason)
@@ -198,11 +215,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   def handle_reached_skill_position(
         %{
           game_state:
-            %{state_context: %{skill_id: skill_id, skill_level: level, target: target}} =
+            %{state_context: %{skill_id: skill_id, skill_level: level, target: target} = ctx} =
               game_state
         } = state
       ) do
-    drive_cast(%{state | game_state: to_idle(game_state)}, skill_id, level, target)
+    # Restore the pre-walk lock onto the freshly-idled state so drive_cast's
+    # capture carries it forward and the auto-attack loop resumes after the cast.
+    idled = %{to_idle(game_state) | combat_target_id: Map.get(ctx, :combat_target_id)}
+    drive_cast(%{state | game_state: idled}, skill_id, level, target)
   end
 
   def handle_reached_skill_position(%{game_state: game_state} = state) do
@@ -212,7 +232,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # Starts walking the caster to within skill range of the target. Gives up
   # (leaving the player idle) when the target is gone, no closer cell exists, or
   # no path reaches it — never loops.
-  defp initiate_skill_movement(%{game_state: game_state} = state, skill_id, level, target) do
+  defp initiate_skill_movement(%{game_state: game_state} = state, skill_id, level, target, locked) do
     with {:ok, target_pos} <- skill_target_position(target),
          {:ok, definition} <- Catalog.by_id(skill_id),
          {:ok, map_data} <- MapCache.get(game_state.map_name) do
@@ -220,7 +240,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       current = {game_state.x, game_state.y}
       optimal = CombatActionHandler.get_optimal_attack_position(current, target_pos, range)
 
-      move_toward_skill_target(state, skill_id, level, target, current, optimal, map_data)
+      move_toward_skill_target(state, skill_id, level, target, current, optimal, map_data, locked)
     else
       _ ->
         log_cast_failure(skill_id, game_state.character_id, :out_of_range)
@@ -230,15 +250,33 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   # Optimal cell equals the current cell: no closer approach exists, so stop
   # rather than re-issue a zero-length move and spin.
-  defp move_toward_skill_target(state, skill_id, _level, _target, current, current, _map_data) do
+  defp move_toward_skill_target(
+         state,
+         skill_id,
+         _level,
+         _target,
+         current,
+         current,
+         _map_data,
+         _locked
+       ) do
     log_cast_failure(skill_id, state.game_state.character_id, :out_of_range)
     {:noreply, state}
   end
 
-  defp move_toward_skill_target(state, skill_id, level, target, current, optimal, map_data) do
+  defp move_toward_skill_target(
+         state,
+         skill_id,
+         level,
+         target,
+         current,
+         optimal,
+         map_data,
+         locked
+       ) do
     case Pathfinding.find_path(map_data, current, optimal) do
       {:ok, [_ | _]} ->
-        start_skill_approach(state, skill_id, level, target, optimal)
+        start_skill_approach(state, skill_id, level, target, optimal, locked)
 
       _ ->
         log_cast_failure(skill_id, state.game_state.character_id, :no_path)
@@ -246,8 +284,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
-  defp start_skill_approach(%{game_state: game_state} = state, skill_id, level, target, {x, y}) do
-    context = %{skill_id: skill_id, skill_level: level, target: target}
+  defp start_skill_approach(
+         %{game_state: game_state} = state,
+         skill_id,
+         level,
+         target,
+         {x, y},
+         locked
+       ) do
+    context = %{skill_id: skill_id, skill_level: level, target: target, combat_target_id: locked}
 
     case PlayerState.transition_to(game_state, :skill_moving, context) do
       {:ok, moving_state} ->
@@ -297,9 +342,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
+  # A player mid-swing in the auto-attack loop sits in :attacking between swings.
+  # Casting from there is legal: drop through :idle (a valid transition that
+  # cancels the pending swing) so the cast starts, then resume the loop after.
+  defp ensure_idle_for_cast(%{game_state: %{action_state: :attacking}} = state) do
+    case PlayerState.transition_to(state.game_state, :idle) do
+      {:ok, idle_game_state} -> {:ok, %{state | game_state: idle_game_state}}
+      {:error, _reason} -> :busy
+    end
+  end
+
   defp ensure_idle_for_cast(_state), do: :busy
 
-  defp schedule_cast(%{game_state: game_state} = state, info) do
+  defp schedule_cast(%{game_state: game_state} = state, info, locked) do
     now = System.monotonic_time(:millisecond)
     token = make_ref()
     timer_ref = Process.send_after(self(), {:cast_complete, token}, info.total)
@@ -314,7 +369,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       total_until: now + info.total,
       timer_ref: timer_ref,
       token: token,
-      interruptible: true
+      interruptible: true,
+      combat_target_id: locked
     }
 
     case PlayerState.transition_to(game_state, :casting, context) do
@@ -364,6 +420,31 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       {:error, _reason} -> game_state
     end
   end
+
+  # Skills count as engaging in combat: after a cast the player keeps attacking
+  # the target that was locked when the cast began. Re-set combat intent and hand
+  # the target back to Task 4's `{:auto_attack}` loop. No lock (idle caster) or a
+  # dead target means no resume, so a lone skill never starts a spurious loop. The
+  # lock survives instant casts, timed casts, a walk-into-range (skill_moving), and
+  # a damage interrupt.
+  defp maybe_resume_lock(state, nil), do: state
+
+  defp maybe_resume_lock(%{game_state: game_state} = state, target_id) do
+    if target_alive?(target_id) do
+      timer_ref = Process.send_after(self(), {:auto_attack, target_id}, 0)
+
+      game_state =
+        game_state
+        |> PlayerState.set_combat_intent(target_id, 7)
+        |> PlayerState.set_continuous_timer(timer_ref)
+
+      %{state | game_state: game_state}
+    else
+      state
+    end
+  end
+
+  defp target_alive?(target_id), do: match?({:ok, _}, resolve_unit_position(target_id))
 
   # Shared success path: persist catalyst consumption, recalc stats, update
   # registry, persist HP/SP, sync to client, emit the cooldown sweep, and drain
