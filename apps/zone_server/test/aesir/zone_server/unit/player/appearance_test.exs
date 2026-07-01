@@ -50,7 +50,7 @@ defmodule Aesir.ZoneServer.Unit.Player.AppearanceTest do
 
       views = Appearance.look_views(equipment)
 
-      assert views.weapon == {0, 1}
+      assert views.weapon == {2, 1}
       assert views.head_top == {0, 0}
       assert views.robe == {0, 0}
     end
@@ -92,7 +92,7 @@ defmodule Aesir.ZoneServer.Unit.Player.AppearanceTest do
           equipped(@guard, @left_hand)
         ])
 
-      assert [%SpriteChange{gid: @gid, type: type, val: 0, val2: 1}] =
+      assert [%SpriteChange{gid: @gid, type: type, val: 2, val2: 1}] =
                Appearance.diff(@gid, old, new)
 
       assert type == LookType.weapon()

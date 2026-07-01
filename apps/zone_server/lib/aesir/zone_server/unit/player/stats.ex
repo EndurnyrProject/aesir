@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Stats
 
   typedstruct module: PlayerProgression do
@@ -330,7 +331,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   Returns the client view (sprite) id of the equipped weapon, or `0` when bare-handed.
   """
   @spec weapon_view(Equipment.t()) :: non_neg_integer()
-  def weapon_view(%Equipment{right_hand: nameid}), do: view_of(nameid)
+  def weapon_view(%Equipment{right_hand: nameid} = equipment) do
+    # A weapon's sprite is its weapon-class view (dagger, one-handed sword, ...),
+    # derived from the item subtype. Item DBs only set an explicit `view` for
+    # weapons with a unique sprite (e.g. collection weapons); prefer that when
+    # present, otherwise fall back to the class so ordinary weapons still render.
+    case view_of(nameid) do
+      0 -> WeaponTypes.get_weapon_id(weapon_type(equipment))
+      view -> view
+    end
+  end
 
   @doc """
   Returns the client view (sprite) id of the equipped shield, or `0` when none

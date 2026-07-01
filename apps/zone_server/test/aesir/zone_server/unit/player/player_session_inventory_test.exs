@@ -428,7 +428,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
     } do
       Mimic.copy(Broadcast)
       stub(Broadcast, :to_visible_players, fn _gs, _packet, _opts -> :ok end)
-      # 1101 = Sword (right_hand, atk 25, view 0 -> no SpriteChange)
+      # 1101 = Sword (right_hand, atk 25, no explicit view -> class view 2).
       seed_item(character.id, 1101, 1)
       {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
 
@@ -454,8 +454,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       # Pure ack: the view never rides the ack anymore.
       assert ack.view_id == 0
 
-      # A view-0 weapon yields no appearance change.
-      refute_received {:send, _channel, {:sprite_change, _}}
+      # The sword's class view (2 = one-handed sword) rides a weapon SpriteChange;
+      # the ack itself stays pure (view_id 0 above).
+      assert_received {:send, _channel, {:sprite_change, %SpriteChange{type: 2, val: 2, val2: 0}}}
     end
 
     test "equipping a two-hander emits a takeoff ack for the worn shield", %{
