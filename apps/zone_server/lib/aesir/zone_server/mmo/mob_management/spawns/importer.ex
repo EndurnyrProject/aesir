@@ -6,11 +6,16 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Spawns.Importer do
 
       <map>,<x>[,<y>[,<xs>,<ys>]]	monster	<Name>	<mobId>,<amount>,<delay1>[,<delay2>,<event>,<size>,<ai>]
 
-  The location field is three parts (`map,x,y`, implying `xs=ys=0`) or five
-  parts (`map,x,y,xs,ys`); `x,y = 0,0` means "anywhere on the map". The mob CSV
-  maps `mobId -> mob`, `amount`, and `delay1 -> respawn_time` (ms); the trailing
-  `delay2,event,size,ai` fields are not modeled and dropped. `Name` is
-  decorative - we key by numeric id.
+  The location field is one part (bare `map`, implying `x=y=xs=ys=0`), three
+  parts (`map,x,y`, implying `xs=ys=0`), or five parts (`map,x,y,xs,ys`);
+  `x,y = 0,0` means "anywhere on the map". The mob CSV maps `mobId -> mob`,
+  `amount`, and optional `delay1 -> respawn_time` (ms, defaulting to 0); the
+  trailing `delay2,event,size,ai` fields are not modeled and dropped. `Name` is
+  decorative - we key by the mob token.
+
+  The `mob` token is kept as-is: an integer id, or a non-numeric rAthena
+  constant/aegis name (a `String.t()`) to be resolved against `Mobs` by the Mix
+  task. Keeping the token here keeps this module pure.
 
   Only `monster` lines are imported; `boss_monster`, comments, blanks, and any
   other NPC line are skipped. Pure functions - the boot-safety checks against
@@ -22,7 +27,9 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Spawns.Importer do
   @doc """
   Parses one line of a rAthena mob-spawn script.
 
-    * `{:ok, spawn_map}` - a valid `monster` spawn, keyed as our YAML schema
+    * `{:ok, spawn_map}` - a valid `monster` spawn, keyed as our YAML schema.
+      The spawn's `"mob"` is an integer id or a non-numeric aegis-name token
+      (`String.t()`) for the Mix task to resolve.
     * `:skip` - a blank line, `//` comment, `boss_monster`, non-`monster`, or
       non-UTF-8 line
     * `{:error, reason}` - a `monster` line that fails to parse
@@ -30,15 +37,17 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Spawns.Importer do
   @spec parse_line(String.t()) :: {:ok, spawn_map()} | :skip | {:error, term()}
   def parse_line(line) when is_binary(line) do
     if String.valid?(line) do
-      classify(String.trim(line))
+      line |> strip_comment() |> String.trim() |> classify()
     else
       :skip
     end
   end
 
+  @spec strip_comment(String.t()) :: String.t()
+  defp strip_comment(line), do: line |> String.split("//", parts: 2) |> hd()
+
   @spec classify(String.t()) :: {:ok, spawn_map()} | :skip | {:error, term()}
   defp classify(""), do: :skip
-  defp classify("//" <> _), do: :skip
 
   defp classify(line) do
     case String.split(line, "\t", trim: true) do
@@ -72,6 +81,9 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Spawns.Importer do
           {:ok, String.t(), integer(), integer(), integer(), integer()} | :error
   defp parse_location(location) do
     case String.split(location, ",") do
+      [map] ->
+        {:ok, map, 0, 0, 0, 0}
+
       [map, x, y] ->
         with {:ok, x} <- to_int(x), {:ok, y} <- to_int(y), do: {:ok, map, x, y, 0, 0}
 
@@ -87,17 +99,27 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Spawns.Importer do
     end
   end
 
-  @spec parse_csv(String.t()) :: {:ok, integer(), integer(), integer()} | :error
+  @spec parse_csv(String.t()) :: {:ok, integer() | String.t(), integer(), integer()} | :error
   defp parse_csv(csv) do
-    case String.split(csv, ",") do
+    case csv |> String.split(",") |> Enum.map(&String.trim/1) do
+      [mob, amount] ->
+        with {:ok, amount} <- to_int(amount), do: {:ok, mob_token(mob), amount, 0}
+
       [mob, amount, respawn_time | _rest] ->
-        with {:ok, mob} <- to_int(mob),
-             {:ok, amount} <- to_int(amount),
+        with {:ok, amount} <- to_int(amount),
              {:ok, respawn_time} <- to_int(respawn_time),
-             do: {:ok, mob, amount, respawn_time}
+             do: {:ok, mob_token(mob), amount, respawn_time}
 
       _ ->
         :error
+    end
+  end
+
+  @spec mob_token(String.t()) :: integer() | String.t()
+  defp mob_token(mob) do
+    case to_int(mob) do
+      {:ok, id} -> id
+      :error -> mob
     end
   end
 
