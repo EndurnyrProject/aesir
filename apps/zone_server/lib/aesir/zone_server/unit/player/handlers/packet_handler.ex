@@ -49,6 +49,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.Skills.NvBasic
   alias Aesir.ZoneServer.Mmo.StatPoint
+  alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Shop.Registry, as: ShopRegistry
@@ -645,6 +646,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   @spec item_view(integer()) :: integer()
   defp item_view(nameid) do
     case ItemManagement.get_item_by_id(nameid) do
+      # Weapons carry their sprite as the weapon class (derived from the subtype)
+      # unless the item sets an explicit `view` for a unique sprite. Mirrors
+      # `Stats.weapon_view/1` so the inventory `look` matches the appearance view.
+      {:ok, %{type: :weapon, view: 0, subtype: subtype}} -> WeaponTypes.get_weapon_id(subtype)
       {:ok, %{view: view}} -> view
       {:error, :item_not_found} -> 0
     end
