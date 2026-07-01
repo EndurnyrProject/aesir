@@ -591,9 +591,5 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
     end)
   end
 
-  defp get_weapon_type(_stats) do
-    # TODO: Get actual weapon type from equipment
-    # For now, return same as Combat.build_attacker_stats to ensure consistency
-    :one_handed_sword
-  end
+  defp get_weapon_type(%{equipment: equipment}), do: Stats.weapon_type(equipment)
 end

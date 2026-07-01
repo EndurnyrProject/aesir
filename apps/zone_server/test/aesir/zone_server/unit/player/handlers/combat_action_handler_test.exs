@@ -69,7 +69,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
         action_state: :idle,
         last_attack_timestamp: 0,
         act_delay_until: act_delay_until,
-        stats: %{derived_stats: %{aspd: 150}}
+        stats: %{derived_stats: %{aspd: 150}, equipment: %Equipment{}}
       }
 
       %{game_state: game_state}
@@ -113,7 +113,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
         action_state: action_state,
         last_attack_timestamp: 0,
         act_delay_until: 0,
-        stats: %{derived_stats: %{aspd: 150}}
+        stats: %{derived_stats: %{aspd: 150}, equipment: %Equipment{}}
       }
 
       %{game_state: game_state, connection_pid: self()}
@@ -165,7 +165,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
         action_state: :idle,
         last_attack_timestamp: 0,
         act_delay_until: 0,
-        stats: %{derived_stats: %{aspd: 150}}
+        stats: %{derived_stats: %{aspd: 150}, equipment: %Equipment{}}
       }
 
       %{game_state: game_state, connection_pid: self()}

@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Ammo
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @typedoc """
@@ -303,8 +304,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # Resolve it to the caster's equipped-weapon attack range at cast time.
   defp effective_range(%{range: range}, _game_state) when range >= 0, do: range
 
-  defp effective_range(_definition, %{stats: %{equipment: %{weapon: weapon}}}),
-    do: WeaponTypes.get_attack_range(weapon)
+  defp effective_range(_definition, %{stats: %{equipment: equipment}}) do
+    equipment
+    |> PlayerStats.weapon_type()
+    |> WeaponTypes.get_attack_range()
+  end
 
   defp check_ground_walkable(map_name, x, y) do
     with {:ok, map} <- MapCache.get(map_name),

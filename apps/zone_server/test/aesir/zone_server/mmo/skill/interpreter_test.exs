@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
   setup :verify_on_exit!
@@ -28,7 +29,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
         base_stats: %{dex: 1, int: 1},
         current_state: %{sp: sp, hp: 100},
         derived_stats: %{max_sp: 200, max_hp: 100},
-        progression: %{learned_skills: learned}
+        progression: %{learned_skills: learned},
+        equipment: %Equipment{}
       }
     }
   end
@@ -168,6 +170,32 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
     gs = game_state(100, %{6 => 1})
     assert {:ok, _} = Interpreter.cast(gs, 6, 1, {:unit, 9999})
+  end
+
+  test "a melee skill (range: -1) resolves to the weapon range: adjacent target is in range" do
+    stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(-1)} end)
+
+    stub(SpatialIndex, :get_unit_position, fn
+      :player, 9999 -> {:error, :not_found}
+      :mob, 9999 -> {:ok, {11, 10, "prontera"}}
+    end)
+
+    stub(StatusInterpreter, :apply_status, fn _type, _id, _status, _params -> :ok end)
+
+    gs = game_state(100, %{6 => 1})
+    assert {:ok, _} = Interpreter.cast(gs, 6, 1, {:unit, 9999})
+  end
+
+  test "a melee skill (range: -1) resolves to the weapon range: a 3-cell target is out of range" do
+    stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(-1)} end)
+
+    stub(SpatialIndex, :get_unit_position, fn
+      :player, 9999 -> {:error, :not_found}
+      :mob, 9999 -> {:ok, {13, 10, "prontera"}}
+    end)
+
+    gs = game_state(100, %{6 => 1})
+    assert {:error, :out_of_range} = Interpreter.cast(gs, 6, 1, {:unit, 9999})
   end
 
   test "an enemy skill targeting another player is rejected as :invalid_target" do
