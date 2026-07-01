@@ -653,4 +653,172 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       assert_receive {:auto_attack, 2000}, 500
     end
   end
+
+  describe "move-to-attack adjacency and re-pick on arrival" do
+    alias Aesir.ZoneServer.Map.MapCache
+    alias Aesir.ZoneServer.Map.MapData
+    alias Aesir.ZoneServer.Pathfinding
+    alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
+
+    defp approach_state(extra \\ %{}) do
+      game_state =
+        %PlayerState{
+          character_id: 1000,
+          x: 10,
+          y: 10,
+          map_name: "prontera",
+          action_state: :idle,
+          last_attack_timestamp: 0,
+          act_delay_until: 0,
+          combat_action_type: 7,
+          stats: %{derived_stats: %{aspd: 150}, equipment: %Equipment{}}
+        }
+        |> Map.merge(Map.new(extra))
+
+      %{game_state: game_state, connection_pid: self()}
+    end
+
+    defp stub_open_terrain do
+      stub(MapCache, :get, fn "prontera" -> {:ok, :map_data} end)
+      stub(MapData, :walkable?, fn _map, _x, _y -> true end)
+      stub(Pathfinding, :find_path, fn _map, _from, to -> {:ok, [to]} end)
+    end
+
+    defp capture_moves(tag) do
+      stub(MovementHandler, :handle_request_move, fn s, x, y, _opts ->
+        send(self(), {tag, {x, y}})
+        {:noreply, s}
+      end)
+    end
+
+    test "approach destination is an adjacent cell within range, never the target's cell" do
+      stub(Stats, :weapon_type, fn _equipment -> :dagger end)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:error, :not_found}
+        :mob, 2000 -> {:ok, {14, 14, "prontera"}}
+      end)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _r -> [] end)
+      stub_open_terrain()
+      capture_moves(:approach)
+
+      {:noreply, returned} = CombatActionHandler.handle_attack_request(approach_state(), 2000, 7)
+
+      assert returned.game_state.action_state == :combat_moving
+      assert_received {:approach, {dest_x, dest_y}}
+      assert max(abs(dest_x - 14), abs(dest_y - 14)) == 1
+      refute {dest_x, dest_y} == {14, 14}
+    end
+
+    test "approach avoids a candidate adjacent cell already occupied by another unit" do
+      stub(Stats, :weapon_type, fn _equipment -> :dagger end)
+
+      # {13,13} is the cell the approach would pick if it were free (nearest
+      # adjacent to the target along the approach vector); unit 5000 sits on it.
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:error, :not_found}
+        :mob, 2000 -> {:ok, {14, 14, "prontera"}}
+        :mob, 5000 -> {:ok, {13, 13, "prontera"}}
+      end)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _r -> [{:mob, 5000}] end)
+      stub_open_terrain()
+      capture_moves(:approach)
+
+      {:noreply, returned} = CombatActionHandler.handle_attack_request(approach_state(), 2000, 7)
+
+      assert returned.game_state.action_state == :combat_moving
+      assert_received {:approach, {dest_x, dest_y}}
+      refute {dest_x, dest_y} == {13, 13}
+      refute {dest_x, dest_y} == {14, 14}
+      assert max(abs(dest_x - 14), abs(dest_y - 14)) == 1
+    end
+
+    test "re-picks and steps again when the arrival cell is occupied by another unit" do
+      stub(Stats, :weapon_type, fn _equipment -> :dagger end)
+
+      # Target mob at {20,20}; the player arrived on {21,20}, but unit 5000 is
+      # already standing on {21,20} (a simultaneous move).
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:error, :not_found}
+        :mob, 2000 -> {:ok, {20, 20, "prontera"}}
+        :mob, 5000 -> {:ok, {21, 20, "prontera"}}
+      end)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _r -> [{:mob, 5000}] end)
+      stub_open_terrain()
+      capture_moves(:repick)
+      reject(&Combat.execute_attack/3)
+
+      state = approach_state(%{x: 21, y: 20, combat_target_id: 2000})
+
+      {:noreply, returned} = CombatActionHandler.handle_reached_attack_position(state)
+
+      assert returned.game_state.action_state == :combat_moving
+      assert_received {:repick, {dest_x, dest_y}}
+      refute {dest_x, dest_y} == {21, 20}
+      assert max(abs(dest_x - 20), abs(dest_y - 20)) == 1
+    end
+
+    test "attacks from the arrival cell when it is not occupied by another unit" do
+      stub(Stats, :weapon_type, fn _equipment -> :dagger end)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:error, :not_found}
+        :mob, 2000 -> {:ok, {20, 20, "prontera"}}
+      end)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _r -> [] end)
+
+      stub(Combat, :execute_attack, fn _stats, _gs, 2000 ->
+        send(self(), :attacked)
+        :ok
+      end)
+
+      state = approach_state(%{x: 21, y: 20, combat_target_id: 2000})
+
+      {:noreply, _returned} = CombatActionHandler.handle_reached_attack_position(state)
+
+      assert_received :attacked
+    end
+
+    test "still re-paths when the target moves more than 3 cells" do
+      stub(Stats, :weapon_type, fn _equipment -> :dagger end)
+      stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _r -> [] end)
+      stub_open_terrain()
+      capture_moves(:repath)
+
+      stub(MovementHandler, :handle_force_stop_movement, fn s ->
+        send(self(), :force_stopped)
+        {:noreply, s}
+      end)
+
+      state =
+        approach_state(%{
+          action_state: :combat_moving,
+          combat_target_id: 2000,
+          last_target_position: {20, 20}
+        })
+
+      {:noreply, _returned} = CombatActionHandler.handle_target_movement(state, {30, 30})
+
+      assert_received :force_stopped
+      assert_received {:repath, _dest}
+    end
+
+    test "does not re-path when the target moves 3 cells or fewer" do
+      stub(Stats, :weapon_type, fn _equipment -> :dagger end)
+      reject(&MovementHandler.handle_force_stop_movement/1)
+
+      state =
+        approach_state(%{
+          action_state: :combat_moving,
+          combat_target_id: 2000,
+          last_target_position: {20, 20}
+        })
+
+      assert {:noreply, ^state} = CombatActionHandler.handle_target_movement(state, {22, 21})
+    end
+  end
 end
