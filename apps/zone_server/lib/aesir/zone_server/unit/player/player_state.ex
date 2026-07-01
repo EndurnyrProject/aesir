@@ -488,17 +488,38 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   end
 
   @doc """
-  Clears combat intent.
+  Stores the continuous auto-attack timer reference, cancelling any previously
+  scheduled swing so the loop never double-schedules.
+  """
+  @spec set_continuous_timer(t(), reference()) :: t()
+  def set_continuous_timer(%__MODULE__{} = state, timer_ref) when is_reference(timer_ref) do
+    cancel_continuous_timer(state.continuous_attack_timer)
+    %{state | continuous_attack_timer: timer_ref}
+  end
+
+  @doc """
+  Clears combat intent, cancelling any pending auto-attack swing so no orphaned
+  timer keeps firing after a disengage.
   """
   @spec clear_combat_intent(t()) :: t()
   def clear_combat_intent(%__MODULE__{} = state) do
+    cancel_continuous_timer(state.continuous_attack_timer)
+
     %{
       state
       | combat_target_id: nil,
         combat_action_type: nil,
         last_target_position: nil,
+        continuous_attack_timer: nil,
         movement_intent: if(state.movement_state == :moving, do: :normal, else: :none)
     }
+  end
+
+  defp cancel_continuous_timer(nil), do: :ok
+
+  defp cancel_continuous_timer(ref) when is_reference(ref) do
+    Process.cancel_timer(ref)
+    :ok
   end
 
   @doc """
@@ -640,7 +661,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   defp valid_from_combat_moving?(to), do: to in [:idle, :attacking, :moving, :moving_to_item]
   defp valid_from_skill_moving?(to), do: to in [:idle, :moving]
   defp valid_from_moving_to_item?(to), do: to in [:idle, :moving, :combat_moving, :attacking]
-  defp valid_from_attacking?(to), do: to in [:idle, :combat_moving, :moving_to_item]
+  defp valid_from_attacking?(to), do: to in [:idle, :moving, :combat_moving, :moving_to_item]
   defp valid_from_casting?(to), do: to == :idle
   defp valid_from_sitting?(to), do: to == :idle
   defp valid_from_trading?(to), do: to == :idle

@@ -503,4 +503,154 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       refute_received {:send, :gameplay, {:item_removed, _}}
     end
   end
+
+  describe "continuous auto-attack loop" do
+    alias Aesir.ZoneServer.Map.MapCache
+    alias Aesir.ZoneServer.Pathfinding
+    alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
+
+    # ASPD 193 -> 70ms delay, so the rescheduled swing arrives promptly in tests.
+    defp loop_state do
+      game_state = %PlayerState{
+        character_id: 1000,
+        x: 10,
+        y: 10,
+        map_name: "prontera",
+        action_state: :idle,
+        last_attack_timestamp: 0,
+        act_delay_until: 0,
+        combat_action_type: 7,
+        stats: %{derived_stats: %{aspd: 193}, equipment: %Equipment{}}
+      }
+
+      %{game_state: game_state, connection_pid: self()}
+    end
+
+    defp locked_state(extra) do
+      game_state = Map.merge(loop_state().game_state, Map.new(extra))
+      %{game_state: game_state, connection_pid: self()}
+    end
+
+    test "a continuous attack swings, locks the target and reschedules on the tick" do
+      stub(Stats, :weapon_type, fn _equipment -> :dagger end)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:error, :not_found}
+        :mob, 2000 -> {:ok, {10, 11, "prontera"}}
+      end)
+
+      stub(Combat, :execute_attack, fn _stats, _gs, 2000 ->
+        send(self(), :attacked)
+        :ok
+      end)
+
+      {:noreply, s1} = CombatActionHandler.handle_attack_request(loop_state(), 2000, 7)
+
+      assert_received :attacked
+      assert s1.game_state.combat_target_id == 2000
+      assert is_reference(s1.game_state.continuous_attack_timer)
+
+      assert_receive {:auto_attack, 2000}, 500
+
+      {:noreply, s2} = CombatActionHandler.handle_auto_attack(s1, 2000)
+
+      assert_received :attacked
+      assert is_reference(s2.game_state.continuous_attack_timer)
+      assert_receive {:auto_attack, 2000}, 500
+    end
+
+    test "a dead or missing target stops the loop and clears combat intent" do
+      stub(Stats, :weapon_type, fn _equipment -> :dagger end)
+      stub(SpatialIndex, :get_unit_position, fn _type, _id -> {:error, :not_found} end)
+      reject(&Combat.execute_attack/3)
+
+      ref = Process.send_after(self(), :never, 60_000)
+      state = locked_state(%{combat_target_id: 2000, continuous_attack_timer: ref})
+
+      {:noreply, returned} = CombatActionHandler.handle_auto_attack(state, 2000)
+
+      assert returned.game_state.combat_target_id == nil
+      assert returned.game_state.continuous_attack_timer == nil
+      assert Process.read_timer(ref) == false
+      refute_received {:auto_attack, _}
+    end
+
+    test "a stunned player stops the loop instead of swinging through" do
+      stub(Interpreter, :can_attack?, fn :player, 1000 -> false end)
+      reject(&Combat.execute_attack/3)
+
+      ref = Process.send_after(self(), :never, 60_000)
+      state = locked_state(%{combat_target_id: 2000, continuous_attack_timer: ref})
+
+      {:noreply, returned} = CombatActionHandler.handle_auto_attack(state, 2000)
+
+      assert returned.game_state.combat_target_id == nil
+      assert Process.read_timer(ref) == false
+      refute_received {:auto_attack, _}
+    end
+
+    test "an auto-attack for a target that is no longer locked is ignored" do
+      reject(&Combat.execute_attack/3)
+      state = locked_state(%{combat_target_id: 9999})
+
+      assert {:noreply, ^state} = CombatActionHandler.handle_auto_attack(state, 2000)
+    end
+
+    test "an out-of-range target triggers re-approach and keeps the loop alive" do
+      stub(Stats, :weapon_type, fn _equipment -> :dagger end)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:error, :not_found}
+        :mob, 2000 -> {:ok, {30, 30, "prontera"}}
+      end)
+
+      reject(&Combat.execute_attack/3)
+      stub(MapCache, :get, fn "prontera" -> {:ok, :map_data} end)
+      stub(Pathfinding, :find_path, fn _map, _from, _to -> {:ok, [{29, 29}]} end)
+
+      stub(MovementHandler, :handle_request_move, fn s, _x, _y, _opts ->
+        send(self(), :move_requested)
+        {:noreply, s}
+      end)
+
+      state = locked_state(%{combat_target_id: 2000})
+
+      {:noreply, returned} = CombatActionHandler.handle_auto_attack(state, 2000)
+
+      assert_received :move_requested
+      assert returned.game_state.action_state == :combat_moving
+      assert returned.game_state.combat_target_id == 2000
+    end
+
+    test "an early tick is absorbed by the ASPD gate instead of double-swinging" do
+      stub(Stats, :weapon_type, fn _equipment -> :dagger end)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:error, :not_found}
+        :mob, 2000 -> {:ok, {10, 11, "prontera"}}
+      end)
+
+      # Any swing here would violate the ASPD cadence: the last one just landed.
+      reject(&Combat.execute_attack/3)
+
+      old_ref = Process.send_after(self(), :never, 60_000)
+
+      state =
+        locked_state(%{
+          combat_target_id: 2000,
+          action_state: :attacking,
+          last_attack_timestamp: System.monotonic_time(:millisecond),
+          continuous_attack_timer: old_ref
+        })
+
+      {:noreply, returned} = CombatActionHandler.handle_auto_attack(state, 2000)
+
+      # No extra swing and no double-armed timer: the old one is replaced by a reschedule.
+      assert Process.read_timer(old_ref) == false
+      assert is_reference(returned.game_state.continuous_attack_timer)
+      assert returned.game_state.continuous_attack_timer != old_ref
+      assert returned.game_state.action_state == :attacking
+      assert_receive {:auto_attack, 2000}, 500
+    end
+  end
 end

@@ -186,6 +186,59 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   end
 
   @doc """
+  Drives one iteration of the server-authoritative continuous auto-attack loop,
+  fired by the `{:auto_attack, target_id}` timer.
+
+  Only proceeds while the target is still the locked one and the player may
+  attack (no stun/freeze status). In range it swings and re-arms the next
+  timer; out of range it re-approaches (the loop resumes from
+  `handle_reached_attack_position/1`); otherwise it disengages.
+  """
+  @spec handle_auto_attack(map(), integer()) :: {:noreply, map()}
+  def handle_auto_attack(%{game_state: game_state} = state, target_id) do
+    cond do
+      game_state.combat_target_id != target_id ->
+        {:noreply, state}
+
+      not Interpreter.can_attack?(:player, game_state.character_id) ->
+        {:noreply, cancel_combat_intent(state)}
+
+      true ->
+        continue_auto_attack(state, target_id)
+    end
+  end
+
+  defp continue_auto_attack(state, target_id) do
+    case check_attack_range(state, target_id) do
+      {:in_range, _distance} ->
+        swing_or_wait(state, target_id)
+
+      {:out_of_range, target_pos} ->
+        initiate_combat_movement(state, target_id, 7, target_pos)
+
+      {:error, _reason} ->
+        {:noreply, cancel_combat_intent(state)}
+    end
+  end
+
+  # Honour the ASPD gate on the loop the same way `acquire_and_attack/3` does: a
+  # duplicate or early `{:auto_attack}` tick must not swing before the cooldown
+  # elapses. When it is too soon, re-arm for the remaining delay instead.
+  defp swing_or_wait(%{game_state: game_state} = state, target_id) do
+    attack_delay = AttackSpeed.calculate_delay_from_stats(game_state.stats)
+
+    if AttackSpeed.can_attack?(game_state.last_attack_timestamp, attack_delay) do
+      execute_immediate_attack(state, target_id)
+    else
+      remaining =
+        attack_delay - (AttackSpeed.current_timestamp() - game_state.last_attack_timestamp)
+
+      timer_ref = Process.send_after(self(), {:auto_attack, target_id}, max(remaining, 0))
+      {:noreply, %{state | game_state: PlayerState.set_continuous_timer(game_state, timer_ref)}}
+    end
+  end
+
+  @doc """
   Handles target movement during combat approach.
   Recalculates path if target moved significantly.
   """
@@ -327,7 +380,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   defp do_execute_attack(state, target_id, transitioned_state, weapon_type) do
     case Combat.execute_attack(transitioned_state.stats, transitioned_state, target_id) do
       :ok ->
-        handle_successful_attack(state, transitioned_state, weapon_type)
+        handle_successful_attack(state, target_id, transitioned_state, weapon_type)
 
       {:error, :target_out_of_range} ->
         handle_target_out_of_range(state, target_id, transitioned_state)
@@ -337,10 +390,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
     end
   end
 
-  defp handle_successful_attack(state, transitioned_state, weapon_type) do
+  defp handle_successful_attack(state, target_id, transitioned_state, weapon_type) do
     current_timestamp = AttackSpeed.current_timestamp()
     transitioned_state = maybe_consume_ammo(state, transitioned_state, weapon_type)
-    game_state = determine_post_attack_state(state, transitioned_state, current_timestamp)
+
+    game_state =
+      determine_post_attack_state(state, target_id, transitioned_state, current_timestamp)
+
     {:noreply, %{state | game_state: game_state}}
   end
 
@@ -390,13 +446,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   defp notify_ammo_removed(connection_pid, {:reduced, index, _left}),
     do: MessageRouter.send_to(connection_pid, PacketHandler.item_removed(index, 1))
 
-  defp determine_post_attack_state(state, transitioned_state, current_timestamp) do
+  defp determine_post_attack_state(state, target_id, transitioned_state, current_timestamp) do
     if state.game_state.combat_action_type == 7 do
-      %{transitioned_state | last_attack_timestamp: current_timestamp}
+      schedule_next_auto_attack(transitioned_state, target_id, current_timestamp)
     else
       {:ok, idle_state} = PlayerState.transition_to(transitioned_state, :idle)
       %{idle_state | last_attack_timestamp: current_timestamp}
     end
+  end
+
+  # Continuous (action 7) attacks are server-driven: keep the target locked and
+  # arm the next swing on ASPD cadence. The loop resumes in
+  # `handle_auto_attack/2` when the timer fires.
+  defp schedule_next_auto_attack(game_state, target_id, current_timestamp) do
+    attack_delay = AttackSpeed.calculate_delay_from_stats(game_state.stats)
+    timer_ref = Process.send_after(self(), {:auto_attack, target_id}, attack_delay)
+
+    %{
+      game_state
+      | combat_target_id: target_id,
+        combat_action_type: 7,
+        last_attack_timestamp: current_timestamp
+    }
+    |> PlayerState.set_continuous_timer(timer_ref)
   end
 
   defp handle_target_out_of_range(state, target_id, transitioned_state) do

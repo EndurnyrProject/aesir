@@ -240,6 +240,37 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       assert cleared_state.movement_intent == :normal
     end
 
+    test "set_continuous_timer stores the timer reference", %{state: state} do
+      ref = Process.send_after(self(), :never, 60_000)
+      updated_state = PlayerState.set_continuous_timer(state, ref)
+
+      assert updated_state.continuous_attack_timer == ref
+      Process.cancel_timer(ref)
+    end
+
+    test "set_continuous_timer cancels a previously scheduled swing", %{state: state} do
+      old_ref = Process.send_after(self(), :never, 60_000)
+      state = PlayerState.set_continuous_timer(state, old_ref)
+
+      new_ref = Process.send_after(self(), :never, 60_000)
+      updated_state = PlayerState.set_continuous_timer(state, new_ref)
+
+      assert Process.read_timer(old_ref) == false
+      assert updated_state.continuous_attack_timer == new_ref
+      Process.cancel_timer(new_ref)
+    end
+
+    test "clear_combat_intent cancels and nils the auto-attack timer", %{state: state} do
+      ref = Process.send_after(self(), :never, 60_000)
+      state = PlayerState.set_combat_intent(state, 12_345, 7, {150, 150})
+      state = PlayerState.set_continuous_timer(state, ref)
+
+      cleared_state = PlayerState.clear_combat_intent(state)
+
+      assert Process.read_timer(ref) == false
+      assert cleared_state.continuous_attack_timer == nil
+    end
+
     test "combat_moving? returns true for combat_moving state", %{state: state} do
       {:ok, combat_moving_state} = PlayerState.transition_to(state, :combat_moving)
       assert PlayerState.combat_moving?(combat_moving_state) == true

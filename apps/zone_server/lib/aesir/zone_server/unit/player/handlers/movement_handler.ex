@@ -319,6 +319,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     end
   end
 
+  defp maybe_clear_action_intent(%{action_state: :attacking} = game_state, opts) do
+    if Keyword.get(opts, :combat_initiated, false) do
+      game_state
+    else
+      Logger.debug("Player manually moving while attacking, clearing combat intent")
+      clear_intent_to_moving(game_state, &PlayerState.clear_combat_intent/1)
+    end
+  end
+
   defp maybe_clear_action_intent(%{action_state: :skill_moving} = game_state, opts) do
     if Keyword.get(opts, :skill_initiated, false) do
       game_state

@@ -114,6 +114,33 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
     end
   end
 
+  describe "handle_request_move/4 combat disengage" do
+    test "a manual move cancels a locked auto-attack loop and clears the timer" do
+      stub(Pathfinding, :find_path, fn _map, _from, _to ->
+        {:ok, [{50, 50}, {55, 55}, {60, 60}]}
+      end)
+
+      ref = Process.send_after(self(), {:auto_attack, 2000}, 60_000)
+
+      game_state =
+        character()
+        |> PlayerState.new()
+        |> PlayerState.set_combat_intent(2000, 7, {60, 60})
+
+      {:ok, attacking} = PlayerState.transition_to(game_state, :attacking)
+      attacking = PlayerState.set_continuous_timer(attacking, ref)
+      state = %{game_state: attacking, connection_pid: self()}
+
+      {:noreply, new_state} = MovementHandler.handle_request_move(state, 60, 60)
+
+      assert Process.read_timer(ref) == false
+      assert new_state.game_state.continuous_attack_timer == nil
+      assert new_state.game_state.combat_target_id == nil
+      assert new_state.game_state.action_state == :moving
+      refute_received {:auto_attack, _}
+    end
+  end
+
   describe "handle_movement_tick/1 status gating" do
     test "a moving player who becomes restricted stops and is snapped back" do
       stub(Interpreter, :can_move?, fn :player, 1 -> false end)

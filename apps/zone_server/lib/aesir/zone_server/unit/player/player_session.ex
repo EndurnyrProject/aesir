@@ -355,6 +355,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
+  def handle_info({:auto_attack, target_id}, state) do
+    CombatActionHandler.handle_auto_attack(state, target_id)
+  end
+
+  @impl true
   def handle_info({:cast_complete, token}, state) do
     SkillHandler.handle_cast_complete(state, token)
   end
