@@ -47,6 +47,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ClientItemType
   alias Aesir.ZoneServer.Mmo.Leveling
+  alias Aesir.ZoneServer.Mmo.Skills.NvBasic
   alias Aesir.ZoneServer.Mmo.StatPoint
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
@@ -63,6 +64,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SkillListView
+  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -89,16 +91,34 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   end
 
   # ActionRequest - Player action request (protobuf analogue of CZ_REQUEST_ACT 0x0437)
+  #
+  # NV_BASIC gates (rAthena clif.cpp, gated by basic_skill_check, bypassed by
+  # SU_BASIC_SKILL >= 1 which is not yet implemented):
+  #   - sit/stand    >= 3  (clif.cpp:11739) -- implemented below
+  #   - trade        >= 1  (clif.cpp:12515) -- TODO: no trade handler yet
+  #   - emotion      >= 2  (clif.cpp:11636) -- TODO: no emotion handler yet
+  #   - chat room    >= 4  (clif.cpp:12378) -- TODO: no chat-room creation yet
+  #   - party create >= 7  (clif.cpp:13806) -- TODO: no party handler yet
   def handle_message(%ActionRequest{target_id: target_id, action: action}, state) do
     case action do
       action when action in [0, 7] ->
         GenServer.cast(self(), {:request_attack, target_id, action})
 
       2 ->
-        Logger.debug("Player sitting down")
+        # NV_BASIC >= 3 gate (rAthena clif.cpp:11739, gated by basic_skill_check).
+        # TODO: also bypass when SU_BASIC_SKILL >= 1 is implemented.
+        case nv_basic_gate(state, :sit) do
+          :ok -> Logger.debug("Player sitting down")
+          {:error, _} -> Logger.warning("Player blocked from sitting: NV_BASIC level too low")
+        end
 
       3 ->
-        Logger.debug("Player standing up")
+        # Standing up is gated the same as sitting in rAthena (DMG_SIT_DOWN path
+        # checks NV_BASIC < 3); a player who can't sit can't stand either.
+        case nv_basic_gate(state, :sit) do
+          :ok -> Logger.debug("Player standing up")
+          {:error, _} -> Logger.warning("Player blocked from standing: NV_BASIC level too low")
+        end
 
       _ ->
         Logger.warning("Unknown action type in ActionRequest: #{action}")
@@ -351,6 +371,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
 
     {:noreply, state}
   end
+
+  # Reads the player's learned NV_BASIC level and gates the action via
+  # `NvBasic.allows_action?/2`. Returns `:ok` when the player lacks a stats
+  # struct (e.g. pre-spawn), so an early client action never crashes the session.
+  defp nv_basic_gate(
+         %{
+           game_state: %PlayerState{stats: %Stats{progression: %{learned_skills: learned_skills}}}
+         },
+         action
+       )
+       when is_map(learned_skills) do
+    NvBasic.allows_action?(learned_skills, action)
+  end
+
+  defp nv_basic_gate(_state, _action), do: :ok
 
   # Resolves the clicked gid to its bespoke NPC module and starts a supervised,
   # monitored interaction process, storing the lock. A gid that resolves to no

@@ -18,7 +18,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
+  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.SpatialIndex
+
+  @nv_basic_id 1
 
   setup :set_mimic_from_context
 
@@ -49,15 +52,58 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
     end
 
     test "a sit ActionRequest does not cast request_attack" do
-      state = %{game_state: %PlayerState{character_id: 1000}}
+      state = sit_state(%{@nv_basic_id => 9})
 
-      capture_log(fn ->
-        assert {:noreply, ^state} =
-                 PacketHandler.handle_message(%ActionRequest{target_id: 0, action: 2}, state)
-      end)
+      assert {:noreply, ^state} =
+               PacketHandler.handle_message(%ActionRequest{target_id: 0, action: 2}, state)
 
       refute_received {:"$gen_cast", {:request_attack, _, _}}
     end
+
+    test "a sit ActionRequest is blocked when NV_BASIC < 3" do
+      state = sit_state(%{})
+
+      log =
+        capture_log(fn ->
+          assert {:noreply, ^state} =
+                   PacketHandler.handle_message(%ActionRequest{target_id: 0, action: 2}, state)
+        end)
+
+      assert log =~ "NV_BASIC"
+      refute_received {:"$gen_cast", {:request_attack, _, _}}
+    end
+
+    test "a sit ActionRequest is blocked at NV_BASIC level 2" do
+      state = sit_state(%{@nv_basic_id => 2})
+
+      log =
+        capture_log(fn ->
+          assert {:noreply, ^state} =
+                   PacketHandler.handle_message(%ActionRequest{target_id: 0, action: 2}, state)
+        end)
+
+      assert log =~ "NV_BASIC"
+    end
+
+    test "a stand ActionRequest passes when NV_BASIC >= 3" do
+      state = sit_state(%{@nv_basic_id => 3})
+
+      assert {:noreply, ^state} =
+               PacketHandler.handle_message(%ActionRequest{target_id: 0, action: 3}, state)
+
+      refute_received {:"$gen_cast", {:request_attack, _, _}}
+    end
+  end
+
+  defp sit_state(learned_skills) do
+    progression = %PlayerProgression{learned_skills: learned_skills}
+
+    %{
+      game_state: %PlayerState{
+        character_id: 1000,
+        stats: %Stats{progression: progression}
+      }
+    }
   end
 
   describe "after-cast act delay gate" do

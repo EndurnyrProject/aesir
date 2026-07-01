@@ -39,12 +39,12 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListViewTest do
       %SkillList{skills: skills} = SkillListView.build(progression(skill_point: 0))
 
       # The Swordman tree's implemented entries are the 10 SM_* skills plus the
-      # two implemented Novice skills inherited from the Novice tree
-      # (NV_FIRSTAID, NV_TRICKDEAD); the rest of the Novice tree is unimplemented
-      # and filtered out by the loader.
-      assert length(skills) == 12
+      # three implemented Novice skills inherited from the Novice tree
+      # (NV_BASIC, NV_FIRSTAID, NV_TRICKDEAD); the rest of the Novice tree is
+      # unimplemented and filtered out by the loader.
+      assert length(skills) == 13
       assert Enum.count(skills, &String.starts_with?(&1.name, "SM_")) == 10
-      assert Enum.count(skills, &String.starts_with?(&1.name, "NV_")) == 2
+      assert Enum.count(skills, &String.starts_with?(&1.name, "NV_")) == 3
       assert Enum.all?(skills, &(&1.level == 0))
       assert Enum.all?(skills, &(&1.upgradable == false))
     end

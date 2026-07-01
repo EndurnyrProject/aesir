@@ -74,7 +74,8 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
 
       assert Map.has_key?(tree, catalog_id(:nv_firstaid))
       assert Map.has_key?(tree, catalog_id(:nv_trickdead))
-      assert map_size(tree) == 12
+      assert Map.has_key?(tree, catalog_id(:nv_basic))
+      assert map_size(tree) == 13
     end
 
     test "entry/2 returns :error for a skill not in the job tree" do
@@ -89,7 +90,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
   describe "reload/0" do
     test "rebuilds the index" do
       assert :ok = SkillTree.reload()
-      assert map_size(SkillTree.tree_for(@swordman_id)) == 12
+      assert map_size(SkillTree.tree_for(@swordman_id)) == 13
     end
   end
 
@@ -295,7 +296,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
           SkillTree.reload()
         end)
 
-      assert log =~ "NV_BASIC"
+      assert log =~ "WE_CALLBABY"
     end
   end
 end

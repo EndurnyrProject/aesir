@@ -77,7 +77,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       # Swordman tree resolves to its 10 implemented SM_* skills plus the two
       # implemented Novice skills inherited from the Novice tree.
-      assert length(skills) == 12
+      assert length(skills) == 13
 
       sword = Enum.find(skills, &(&1.skill_id == 2))
       assert %SkillInfo{name: "SM_SWORD", level: 3} = sword
