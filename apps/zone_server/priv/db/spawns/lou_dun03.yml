@@ -1,51 +1,51 @@
 ---
-- map: prt_fild01
+- map: lou_dun03
   spawns:
-    - amount: 2
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 2771
-      respawn_time: 180000
-    - amount: 196
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 1063
-      respawn_time: 5000
-    - amount: 42
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 1002
-      respawn_time: 5000
-    - amount: 42
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 1007
-      respawn_time: 5000
-    - amount: 3
-      area:
-        x: 199
-        xs: 3
-        'y': 266
-        ys: 3
-      mob: 1080
-      respawn_time: 360000
     - amount: 1
       area:
-        x: 199
-        xs: 3
-        'y': 266
-        ys: 3
-      mob: 1079
-      respawn_time: 900000
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2862
+      respawn_time: 180000
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1514
+      respawn_time: 5000
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1512
+      respawn_time: 5000
+    - amount: 18
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1513
+      respawn_time: 5000
+    - amount: 6
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1631
+      respawn_time: 5000
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1631
+      respawn_time: 3000000

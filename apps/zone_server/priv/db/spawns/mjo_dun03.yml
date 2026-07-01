@@ -1,5 +1,5 @@
 ---
-- map: prt_fild01
+- map: mjo_dun03
   spawns:
     - amount: 2
       area:
@@ -7,45 +7,45 @@
         xs: 0
         'y': 0
         ys: 0
-      mob: 2771
+      mob: 2660
       respawn_time: 180000
-    - amount: 196
+    - amount: 78
       area:
         x: 0
         xs: 0
         'y': 0
         ys: 0
-      mob: 1063
+      mob: 1169
       respawn_time: 5000
-    - amount: 42
+    - amount: 39
       area:
         x: 0
         xs: 0
         'y': 0
         ys: 0
-      mob: 1002
+      mob: 1151
       respawn_time: 5000
-    - amount: 42
+    - amount: 5
       area:
         x: 0
         xs: 0
         'y': 0
         ys: 0
-      mob: 1007
+      mob: 1121
+      respawn_time: 5000
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1145
       respawn_time: 5000
     - amount: 3
       area:
-        x: 199
-        xs: 3
-        'y': 266
-        ys: 3
-      mob: 1080
-      respawn_time: 360000
-    - amount: 1
-      area:
-        x: 199
-        xs: 3
-        'y': 266
-        ys: 3
-      mob: 1079
-      respawn_time: 900000
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1209
+      respawn_time: 5000

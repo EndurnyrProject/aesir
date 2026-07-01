@@ -1,0 +1,11 @@
+---
+- map: prt_cas
+  spawns:
+    - amount: 15
+      area:
+        x: 367
+        xs: 16
+        'y': 138
+        ys: 22
+      mob: 3455
+      respawn_time: 0

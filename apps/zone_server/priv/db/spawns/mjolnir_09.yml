@@ -1,0 +1,123 @@
+---
+- map: mjolnir_09
+  spawns:
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2671
+      respawn_time: 180000
+    - amount: 159
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1167
+      respawn_time: 5000
+    - amount: 34
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1010
+      respawn_time: 5000
+    - amount: 34
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1004
+      respawn_time: 5000
+    - amount: 1
+      area:
+        x: 205
+        xs: 0
+        'y': 352
+        ys: 0
+      mob: 1085
+      respawn_time: 180000
+    - amount: 1
+      area:
+        x: 199
+        xs: 0
+        'y': 344
+        ys: 0
+      mob: 1085
+      respawn_time: 180000
+    - amount: 1
+      area:
+        x: 210
+        xs: 0
+        'y': 331
+        ys: 0
+      mob: 1085
+      respawn_time: 180000
+    - amount: 1
+      area:
+        x: 204
+        xs: 0
+        'y': 321
+        ys: 0
+      mob: 1085
+      respawn_time: 180000
+    - amount: 1
+      area:
+        x: 212
+        xs: 0
+        'y': 312
+        ys: 0
+      mob: 1085
+      respawn_time: 180000
+    - amount: 1
+      area:
+        x: 198
+        xs: 0
+        'y': 297
+        ys: 0
+      mob: 1085
+      respawn_time: 180000
+    - amount: 1
+      area:
+        x: 73
+        xs: 0
+        'y': 122
+        ys: 0
+      mob: 1085
+      respawn_time: 180000
+    - amount: 1
+      area:
+        x: 89
+        xs: 0
+        'y': 141
+        ys: 0
+      mob: 1085
+      respawn_time: 180000
+    - amount: 1
+      area:
+        x: 120
+        xs: 0
+        'y': 126
+        ys: 0
+      mob: 1085
+      respawn_time: 180000
+    - amount: 1
+      area:
+        x: 139
+        xs: 0
+        'y': 84
+        ys: 0
+      mob: 1085
+      respawn_time: 180000
+    - amount: 1
+      area:
+        x: 125
+        xs: 0
+        'y': 82
+        ys: 0
+      mob: 1085
+      respawn_time: 180000

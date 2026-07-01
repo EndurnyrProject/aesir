@@ -1,0 +1,35 @@
+---
+- map: xmas_fild01
+  spawns:
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2762
+      respawn_time: 180000
+    - amount: 65
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1242
+      respawn_time: 5000
+    - amount: 9
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1243
+      respawn_time: 5000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1515
+      respawn_time: 5000

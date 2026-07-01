@@ -1,5 +1,5 @@
 ---
-- map: prt_fild01
+- map: prt_fild05
   spawns:
     - amount: 2
       area:
@@ -7,15 +7,15 @@
         xs: 0
         'y': 0
         ys: 0
-      mob: 2771
+      mob: 2798
       respawn_time: 180000
-    - amount: 196
+    - amount: 199
       area:
         x: 0
         xs: 0
         'y': 0
         ys: 0
-      mob: 1063
+      mob: 1004
       respawn_time: 5000
     - amount: 42
       area:
@@ -23,7 +23,7 @@
         xs: 0
         'y': 0
         ys: 0
-      mob: 1002
+      mob: 1048
       respawn_time: 5000
     - amount: 42
       area:
@@ -31,21 +31,21 @@
         xs: 0
         'y': 0
         ys: 0
-      mob: 1007
+      mob: 1051
       respawn_time: 5000
-    - amount: 3
+    - amount: 6
       area:
-        x: 199
-        xs: 3
-        'y': 266
-        ys: 3
+        x: 208
+        xs: 10
+        'y': 37
+        ys: 10
       mob: 1080
-      respawn_time: 360000
+      respawn_time: 900000
     - amount: 1
       area:
-        x: 199
-        xs: 3
-        'y': 266
-        ys: 3
+        x: 208
+        xs: 10
+        'y': 37
+        ys: 10
       mob: 1079
       respawn_time: 900000

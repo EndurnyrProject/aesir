@@ -1,0 +1,59 @@
+---
+- map: nif_fild02
+  spawns:
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2774
+      respawn_time: 180000
+    - amount: 21
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1505
+      respawn_time: 5000
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1503
+      respawn_time: 5000
+    - amount: 11
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1507
+      respawn_time: 5000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1504
+      respawn_time: 5000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1509
+      respawn_time: 5000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1510
+      respawn_time: 5000

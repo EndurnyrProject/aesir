@@ -1,51 +1,59 @@
 ---
-- map: prt_fild01
+- map: glast_01
   spawns:
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2826
+      respawn_time: 180000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1253
+      respawn_time: 5000
+    - amount: 8
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1080
+      respawn_time: 5000
     - amount: 2
       area:
         x: 0
         xs: 0
         'y': 0
         ys: 0
-      mob: 2771
-      respawn_time: 180000
-    - amount: 196
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 1063
+      mob: 1219
       respawn_time: 5000
-    - amount: 42
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 1002
-      respawn_time: 5000
-    - amount: 42
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 1007
-      respawn_time: 5000
-    - amount: 3
-      area:
-        x: 199
-        xs: 3
-        'y': 266
-        ys: 3
-      mob: 1080
-      respawn_time: 360000
     - amount: 1
       area:
-        x: 199
-        xs: 3
-        'y': 266
-        ys: 3
+        x: 233
+        xs: 15
+        'y': 209
+        ys: 15
+      mob: 1083
+      respawn_time: 1800000
+    - amount: 8
+      area:
+        x: 233
+        xs: 15
+        'y': 209
+        ys: 15
+      mob: 1080
+      respawn_time: 360000
+    - amount: 2
+      area:
+        x: 233
+        xs: 15
+        'y': 209
+        ys: 15
       mob: 1079
       respawn_time: 900000

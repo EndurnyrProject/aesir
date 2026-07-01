@@ -1,0 +1,27 @@
+---
+- map: sp_os
+  spawns:
+    - amount: 112
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20355
+      respawn_time: 5000
+    - amount: 108
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20357
+      respawn_time: 5000
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20363
+      respawn_time: 5000

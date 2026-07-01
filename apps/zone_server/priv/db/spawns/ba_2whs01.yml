@@ -1,0 +1,27 @@
+---
+- map: ba_2whs01
+  spawns:
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20639
+      respawn_time: 5000
+    - amount: 90
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20641
+      respawn_time: 5000
+    - amount: 70
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20682
+      respawn_time: 5000

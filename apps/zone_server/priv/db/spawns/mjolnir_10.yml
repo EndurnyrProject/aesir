@@ -1,5 +1,5 @@
 ---
-- map: prt_fild01
+- map: mjolnir_10
   spawns:
     - amount: 2
       area:
@@ -7,45 +7,45 @@
         xs: 0
         'y': 0
         ys: 0
-      mob: 2771
+      mob: 2890
       respawn_time: 180000
-    - amount: 196
+    - amount: 194
       area:
         x: 0
         xs: 0
         'y': 0
         ys: 0
-      mob: 1063
+      mob: 1100
       respawn_time: 5000
-    - amount: 42
+    - amount: 41
       area:
         x: 0
         xs: 0
         'y': 0
         ys: 0
-      mob: 1002
+      mob: 1494
       respawn_time: 5000
-    - amount: 42
+    - amount: 41
       area:
         x: 0
         xs: 0
         'y': 0
         ys: 0
-      mob: 1007
+      mob: 1118
       respawn_time: 5000
-    - amount: 3
-      area:
-        x: 199
-        xs: 3
-        'y': 266
-        ys: 3
-      mob: 1080
-      respawn_time: 360000
     - amount: 1
       area:
-        x: 199
-        xs: 3
-        'y': 266
-        ys: 3
-      mob: 1079
-      respawn_time: 900000
+        x: 123
+        xs: 10
+        'y': 331
+        ys: 10
+      mob: 1083
+      respawn_time: 1800000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1080
+      respawn_time: 180000

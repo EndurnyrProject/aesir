@@ -1,0 +1,59 @@
+---
+- map: gld2_gef
+  spawns:
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2819
+      respawn_time: 180000
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2282
+      respawn_time: 5000
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2283
+      respawn_time: 5000
+    - amount: 80
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2281
+      respawn_time: 5000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1302
+      respawn_time: 1200000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2256
+      respawn_time: 1800000
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2288
+      respawn_time: 5000

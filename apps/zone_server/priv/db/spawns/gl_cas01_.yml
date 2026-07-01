@@ -1,0 +1,67 @@
+---
+- map: gl_cas01_
+  spawns:
+    - amount: 49
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20367
+      respawn_time: 0
+    - amount: 77
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20368
+      respawn_time: 0
+    - amount: 27
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20369
+      respawn_time: 0
+    - amount: 26
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20370
+      respawn_time: 0
+    - amount: 32
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20371
+      respawn_time: 0
+    - amount: 42
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20379
+      respawn_time: 0
+    - amount: 41
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20380
+      respawn_time: 0
+    - amount: 33
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20420
+      respawn_time: 0

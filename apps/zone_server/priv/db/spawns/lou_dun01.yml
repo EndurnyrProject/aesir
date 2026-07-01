@@ -1,0 +1,75 @@
+---
+- map: lou_dun01
+  spawns:
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2778
+      respawn_time: 180000
+    - amount: 52
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1517
+      respawn_time: 5000
+    - amount: 17
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1381
+      respawn_time: 5000
+    - amount: 17
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1516
+      respawn_time: 5000
+    - amount: 17
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1129
+      respawn_time: 5000
+    - amount: 11
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1037
+      respawn_time: 5000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1306
+      respawn_time: 300000
+    - amount: 5
+      area:
+        x: 197
+        xs: 10
+        'y': 77
+        ys: 10
+      mob: 1084
+      respawn_time: 5000
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1083
+      respawn_time: 5000

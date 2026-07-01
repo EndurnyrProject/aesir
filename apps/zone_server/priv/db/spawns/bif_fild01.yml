@@ -1,0 +1,59 @@
+---
+- map: bif_fild01
+  spawns:
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2751
+      respawn_time: 180000
+    - amount: 29
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1994
+      respawn_time: 5000
+    - amount: 17
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1992
+      respawn_time: 5000
+    - amount: 58
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2137
+      respawn_time: 5000
+    - amount: 34
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2136
+      respawn_time: 5000
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2133
+      respawn_time: 5000
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2132
+      respawn_time: 5000

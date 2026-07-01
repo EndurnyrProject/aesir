@@ -1,0 +1,35 @@
+---
+- map: nif_dun02
+  spawns:
+    - amount: 80
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20936
+      respawn_time: 0
+    - amount: 80
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20941
+      respawn_time: 0
+    - amount: 80
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20942
+      respawn_time: 0
+    - amount: 80
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20940
+      respawn_time: 0

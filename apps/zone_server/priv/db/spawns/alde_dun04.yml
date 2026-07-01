@@ -1,0 +1,35 @@
+---
+- map: alde_dun04
+  spawns:
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2885
+      respawn_time: 180000
+    - amount: 57
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1102
+      respawn_time: 5000
+    - amount: 11
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1179
+      respawn_time: 5000
+    - amount: 11
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1131
+      respawn_time: 5000

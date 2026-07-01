@@ -1,0 +1,35 @@
+---
+- map: brasilis
+  spawns:
+    - amount: 5
+      area:
+        x: 283
+        xs: 6
+        'y': 88
+        ys: 6
+      mob: 2081
+      respawn_time: 5000
+    - amount: 4
+      area:
+        x: 284
+        xs: 6
+        'y': 104
+        ys: 6
+      mob: 2081
+      respawn_time: 5000
+    - amount: 4
+      area:
+        x: 215
+        xs: 6
+        'y': 80
+        ys: 6
+      mob: 2081
+      respawn_time: 5000
+    - amount: 5
+      area:
+        x: 96
+        xs: 8
+        'y': 50
+        ys: 8
+      mob: 2081
+      respawn_time: 5000

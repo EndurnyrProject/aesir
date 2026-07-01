@@ -1,0 +1,11 @@
+---
+- map: alb_ship
+  spawns:
+    - amount: 25
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2057
+      respawn_time: 0

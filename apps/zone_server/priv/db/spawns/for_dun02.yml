@@ -1,0 +1,131 @@
+---
+- map: for_dun02
+  spawns:
+    - amount: 24
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 22216
+      respawn_time: 0
+    - amount: 28
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 22217
+      respawn_time: 0
+    - amount: 32
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 22218
+      respawn_time: 0
+    - amount: 24
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 22220
+      respawn_time: 0
+    - amount: 28
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 22221
+      respawn_time: 0
+    - amount: 32
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 22222
+      respawn_time: 0
+    - amount: 24
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 22224
+      respawn_time: 0
+    - amount: 28
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 22225
+      respawn_time: 0
+    - amount: 32
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 22226
+      respawn_time: 0
+    - amount: 24
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 22228
+      respawn_time: 0
+    - amount: 28
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 22229
+      respawn_time: 0
+    - amount: 32
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 22230
+      respawn_time: 0
+    - amount: 7
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 22219
+      respawn_time: 0
+    - amount: 7
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 22223
+      respawn_time: 0
+    - amount: 7
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 22227
+      respawn_time: 0
+    - amount: 7
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 22231
+      respawn_time: 0

@@ -1,0 +1,163 @@
+---
+- map: gl_knt01
+  spawns:
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2691
+      respawn_time: 180000
+    - amount: 126
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1163
+      respawn_time: 5000
+    - amount: 29
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1195
+      respawn_time: 5000
+    - amount: 14
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1276
+      respawn_time: 5000
+    - amount: 14
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1219
+      respawn_time: 5000
+    - amount: 14
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1132
+      respawn_time: 5000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1275
+      respawn_time: 5000
+    - amount: 1
+      area:
+        x: 21
+        xs: 0
+        'y': 278
+        ys: 0
+      mob: 1186
+      respawn_time: 3600000
+    - amount: 1
+      area:
+        x: 9
+        xs: 0
+        'y': 184
+        ys: 0
+      mob: 1084
+      respawn_time: 3600000
+    - amount: 1
+      area:
+        x: 8
+        xs: 0
+        'y': 184
+        ys: 0
+      mob: 1084
+      respawn_time: 3600000
+    - amount: 1
+      area:
+        x: 7
+        xs: 0
+        'y': 184
+        ys: 0
+      mob: 1084
+      respawn_time: 3600000
+    - amount: 1
+      area:
+        x: 6
+        xs: 0
+        'y': 184
+        ys: 0
+      mob: 1084
+      respawn_time: 3600000
+    - amount: 1
+      area:
+        x: 5
+        xs: 0
+        'y': 184
+        ys: 0
+      mob: 1084
+      respawn_time: 3600000
+    - amount: 1
+      area:
+        x: 4
+        xs: 0
+        'y': 184
+        ys: 0
+      mob: 1084
+      respawn_time: 3600000
+    - amount: 1
+      area:
+        x: 9
+        xs: 0
+        'y': 185
+        ys: 0
+      mob: 1084
+      respawn_time: 3600000
+    - amount: 1
+      area:
+        x: 8
+        xs: 0
+        'y': 185
+        ys: 0
+      mob: 1084
+      respawn_time: 3600000
+    - amount: 1
+      area:
+        x: 7
+        xs: 0
+        'y': 185
+        ys: 0
+      mob: 1084
+      respawn_time: 3600000
+    - amount: 1
+      area:
+        x: 6
+        xs: 0
+        'y': 185
+        ys: 0
+      mob: 1084
+      respawn_time: 3600000
+    - amount: 1
+      area:
+        x: 5
+        xs: 0
+        'y': 185
+        ys: 0
+      mob: 1084
+      respawn_time: 3600000
+    - amount: 1
+      area:
+        x: 4
+        xs: 0
+        'y': 185
+        ys: 0
+      mob: 1084
+      respawn_time: 3600000

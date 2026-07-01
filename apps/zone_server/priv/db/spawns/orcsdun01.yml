@@ -1,0 +1,83 @@
+---
+- map: orcsdun01
+  spawns:
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2723
+      respawn_time: 180000
+    - amount: 80
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1153
+      respawn_time: 5000
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1005
+      respawn_time: 5000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1042
+      respawn_time: 5000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1152
+      respawn_time: 5000
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1111
+      respawn_time: 5000
+    - amount: 5
+      area:
+        x: 167
+        xs: 5
+        'y': 133
+        ys: 5
+      mob: 1084
+      respawn_time: 900000
+    - amount: 5
+      area:
+        x: 67
+        xs: 5
+        'y': 34
+        ys: 5
+      mob: 1084
+      respawn_time: 900000
+    - amount: 2
+      area:
+        x: 83
+        xs: 5
+        'y': 50
+        ys: 5
+      mob: 1082
+      respawn_time: 180000
+    - amount: 3
+      area:
+        x: 58
+        xs: 10
+        'y': 67
+        ys: 10
+      mob: 1082
+      respawn_time: 180000

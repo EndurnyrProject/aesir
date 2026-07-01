@@ -1,0 +1,115 @@
+---
+- map: gl_cas02
+  spawns:
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2620
+      respawn_time: 180000
+    - amount: 41
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1208
+      respawn_time: 5000
+    - amount: 36
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1163
+      respawn_time: 5000
+    - amount: 29
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1195
+      respawn_time: 5000
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1276
+      respawn_time: 5000
+    - amount: 9
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1117
+      respawn_time: 5000
+    - amount: 7
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1219
+      respawn_time: 5000
+    - amount: 6
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1132
+      respawn_time: 5000
+    - amount: 3
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1283
+      respawn_time: 5000
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1191
+      respawn_time: 5000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1275
+      respawn_time: 5000
+    - amount: 1
+      area:
+        x: 102
+        xs: 0
+        'y': 180
+        ys: 0
+      mob: 1185
+      respawn_time: 1800000
+    - amount: 1
+      area:
+        x: 104
+        xs: 5
+        'y': 145
+        ys: 5
+      mob: 1203
+      respawn_time: 7200000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1204
+      respawn_time: 7200000

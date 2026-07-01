@@ -1,51 +1,51 @@
 ---
-- map: prt_fild01
+- map: hu_fild06
   spawns:
-    - amount: 2
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 2771
-      respawn_time: 180000
-    - amount: 196
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 1063
-      respawn_time: 5000
-    - amount: 42
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 1002
-      respawn_time: 5000
-    - amount: 42
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 1007
-      respawn_time: 5000
-    - amount: 3
-      area:
-        x: 199
-        xs: 3
-        'y': 266
-        ys: 3
-      mob: 1080
-      respawn_time: 360000
     - amount: 1
       area:
-        x: 199
-        xs: 3
-        'y': 266
-        ys: 3
-      mob: 1079
-      respawn_time: 900000
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2666
+      respawn_time: 180000
+    - amount: 87
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1074
+      respawn_time: 5000
+    - amount: 35
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1073
+      respawn_time: 5000
+    - amount: 35
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1266
+      respawn_time: 5000
+    - amount: 10
+      area:
+        x: 234
+        xs: 14
+        'y': 251
+        ys: 120
+      mob: 1080
+      respawn_time: 600000
+    - amount: 10
+      area:
+        x: 234
+        xs: 14
+        'y': 251
+        ys: 120
+      mob: 1081
+      respawn_time: 600000

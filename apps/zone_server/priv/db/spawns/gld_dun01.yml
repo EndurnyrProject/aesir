@@ -1,0 +1,35 @@
+---
+- map: gld_dun01
+  spawns:
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2780
+      respawn_time: 180000
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1311
+      respawn_time: 5000
+    - amount: 55
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1306
+      respawn_time: 5000
+    - amount: 3
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1307
+      respawn_time: 1200000

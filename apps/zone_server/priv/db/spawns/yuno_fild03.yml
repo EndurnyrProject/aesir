@@ -1,0 +1,91 @@
+---
+- map: yuno_fild03
+  spawns:
+    - amount: 3
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2807
+      respawn_time: 180000
+    - amount: 174
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1376
+      respawn_time: 5000
+    - amount: 46
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1372
+      respawn_time: 5000
+    - amount: 46
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1386
+      respawn_time: 5000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1582
+      respawn_time: 3600000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1096
+      respawn_time: 3600000
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1078
+      respawn_time: 1800000
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1081
+      respawn_time: 1800000
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1080
+      respawn_time: 1800000
+    - amount: 1
+      area:
+        x: 358
+        xs: 10
+        'y': 215
+        ys: 10
+      mob: 1083
+      respawn_time: 1800000
+    - amount: 4
+      area:
+        x: 358
+        xs: 10
+        'y': 215
+        ys: 10
+      mob: 1079
+      respawn_time: 1800000

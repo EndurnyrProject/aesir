@@ -1,0 +1,19 @@
+---
+- map: moc_pryd01
+  spawns:
+    - amount: 72
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1005
+      respawn_time: 5000
+    - amount: 28
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1031
+      respawn_time: 5000

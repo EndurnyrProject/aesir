@@ -1,0 +1,19 @@
+---
+- map: tur_d03_i
+  spawns:
+    - amount: 40
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 3802
+      respawn_time: 0
+    - amount: 50
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 3800
+      respawn_time: 0

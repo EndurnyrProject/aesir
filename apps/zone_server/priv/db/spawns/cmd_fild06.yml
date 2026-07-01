@@ -1,0 +1,43 @@
+---
+- map: cmd_fild06
+  spawns:
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2812
+      respawn_time: 180000
+    - amount: 165
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1040
+      respawn_time: 5000
+    - amount: 55
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1058
+      respawn_time: 5000
+    - amount: 2
+      area:
+        x: 293
+        xs: 5
+        'y': 235
+        ys: 5
+      mob: 1081
+      respawn_time: 1800000
+    - amount: 3
+      area:
+        x: 84
+        xs: 10
+        'y': 375
+        ys: 10
+      mob: 1081
+      respawn_time: 1800000

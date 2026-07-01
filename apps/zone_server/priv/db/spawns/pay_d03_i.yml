@@ -1,0 +1,123 @@
+---
+- map: pay_d03_i
+  spawns:
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1079
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1080
+      respawn_time: 5000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1081
+      respawn_time: 5000
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1082
+      respawn_time: 5000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1185
+      respawn_time: 5000
+    - amount: 1
+      area:
+        x: 154
+        xs: 0
+        'y': 112
+        ys: 0
+      mob: 1185
+      respawn_time: 5000
+    - amount: 1
+      area:
+        x: 161
+        xs: 0
+        'y': 117
+        ys: 0
+      mob: 1185
+      respawn_time: 5000
+    - amount: 1
+      area:
+        x: 84
+        xs: 0
+        'y': 63
+        ys: 0
+      mob: 1185
+      respawn_time: 5000
+    - amount: 1
+      area:
+        x: 81
+        xs: 0
+        'y': 61
+        ys: 0
+      mob: 1185
+      respawn_time: 5000
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 3760
+      respawn_time: 5000
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 3761
+      respawn_time: 5000
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 3762
+      respawn_time: 5000
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 3763
+      respawn_time: 0
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 3765
+      respawn_time: 15000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 3759
+      respawn_time: 5000

@@ -1,0 +1,43 @@
+---
+- map: tur_d04_i
+  spawns:
+    - amount: 16
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 3800
+      respawn_time: 5000
+    - amount: 36
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 3801
+      respawn_time: 5000
+    - amount: 16
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 3799
+      respawn_time: 5000
+    - amount: 16
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 3802
+      respawn_time: 5000
+    - amount: 36
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 3803
+      respawn_time: 5000

@@ -1,0 +1,75 @@
+---
+- map: mjolnir_05
+  spawns:
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2892
+      respawn_time: 180000
+    - amount: 166
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1099
+      respawn_time: 5000
+    - amount: 44
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1139
+      respawn_time: 5000
+    - amount: 44
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1380
+      respawn_time: 5000
+    - amount: 3
+      area:
+        x: 200
+        xs: 40
+        'y': 240
+        ys: 40
+      mob: 1079
+      respawn_time: 360000
+    - amount: 1
+      area:
+        x: 200
+        xs: 40
+        'y': 240
+        ys: 40
+      mob: 1083
+      respawn_time: 1800000
+    - amount: 3
+      area:
+        x: 134
+        xs: 20
+        'y': 103
+        ys: 20
+      mob: 1079
+      respawn_time: 360000
+    - amount: 3
+      area:
+        x: 261
+        xs: 20
+        'y': 100
+        ys: 10
+      mob: 1079
+      respawn_time: 360000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1078
+      respawn_time: 180000

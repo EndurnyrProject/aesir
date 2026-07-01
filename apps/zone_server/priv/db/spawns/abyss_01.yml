@@ -1,0 +1,75 @@
+---
+- map: abyss_01
+  spawns:
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2832
+      respawn_time: 180000
+    - amount: 55
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1717
+      respawn_time: 5000
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1216
+      respawn_time: 5000
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1714
+      respawn_time: 5000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1191
+      respawn_time: 5000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1699
+      respawn_time: 5000
+    - amount: 9
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1715
+      respawn_time: 5000
+    - amount: 9
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1718
+      respawn_time: 5000
+    - amount: 8
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1721
+      respawn_time: 5000

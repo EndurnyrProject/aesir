@@ -1,0 +1,107 @@
+---
+- map: gef_dun02
+  spawns:
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2854
+      respawn_time: 180000
+    - amount: 45
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1109
+      respawn_time: 5000
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1143
+      respawn_time: 5000
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1061
+      respawn_time: 5000
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1179
+      respawn_time: 5000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1036
+      respawn_time: 5000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1035
+      respawn_time: 5000
+    - amount: 3
+      area:
+        x: 214
+        xs: 10
+        'y': 212
+        ys: 10
+      mob: 1082
+      respawn_time: 180000
+    - amount: 3
+      area:
+        x: 215
+        xs: 10
+        'y': 67
+        ys: 10
+      mob: 1082
+      respawn_time: 180000
+    - amount: 3
+      area:
+        x: 72
+        xs: 20
+        'y': 210
+        ys: 20
+      mob: 1082
+      respawn_time: 180000
+    - amount: 3
+      area:
+        x: 106
+        xs: 20
+        'y': 151
+        ys: 7
+      mob: 1082
+      respawn_time: 180000
+    - amount: 1
+      area:
+        x: 58
+        xs: 10
+        'y': 167
+        ys: 10
+      mob: 1083
+      respawn_time: 1800000
+    - amount: 1
+      area:
+        x: 185
+        xs: 3
+        'y': 83
+        ys: 3
+      mob: 1083
+      respawn_time: 1800000

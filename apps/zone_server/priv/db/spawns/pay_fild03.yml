@@ -1,0 +1,59 @@
+---
+- map: pay_fild03
+  spawns:
+    - amount: 3
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2836
+      respawn_time: 180000
+    - amount: 130
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1007
+      respawn_time: 5000
+    - amount: 25
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1002
+      respawn_time: 5000
+    - amount: 25
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1010
+      respawn_time: 5000
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1008
+      respawn_time: 5000
+    - amount: 6
+      area:
+        x: 153
+        xs: 10
+        'y': 216
+        ys: 10
+      mob: 1085
+      respawn_time: 900000
+    - amount: 4
+      area:
+        x: 372
+        xs: 15
+        'y': 64
+        ys: 15
+      mob: 1080
+      respawn_time: 180000

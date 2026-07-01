@@ -1,0 +1,59 @@
+---
+- map: ra_san02
+  spawns:
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2791
+      respawn_time: 180000
+    - amount: 110
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1772
+      respawn_time: 5000
+    - amount: 38
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1771
+      respawn_time: 5000
+    - amount: 12
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1632
+      respawn_time: 5000
+    - amount: 12
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1633
+      respawn_time: 5000
+    - amount: 3
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1773
+      respawn_time: 5000
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1774
+      respawn_time: 5000

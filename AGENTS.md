@@ -207,6 +207,7 @@ boot. The mix tasks (in `apps/zone_server/lib/mix/tasks/`) are idempotent, deter
 - `mix aesir.import.items [<rathena_root>]` - rAthena `item_db_*` -> `priv/db/items/*.yml`.
 - `mix aesir.import.jobs [<rathena_root>]` - Merges rAthena job tables -> `priv/db/jobs/*.yml`.
 - `mix aesir.import.mobs [<rathena_root>]` - rAthena `mob_db` -> `priv/db/mobs/mobs.yml`.
+- `mix aesir.import.spawns [<rathena_root>]` - rAthena mob-spawn scripts -> `priv/db/spawns/<map>.yml`.
 - `mix aesir.import.warps [<rathena_root>]` - rAthena warp scripts -> `priv/db/warps/<map>.yml`.
 - `mix aesir.import.mapcache [<gat_dir>] [<out>]` - `.gat` files -> `priv/maps.mcache` (zlib walkability).
 

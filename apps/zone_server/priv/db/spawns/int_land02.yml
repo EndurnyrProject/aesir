@@ -1,0 +1,11 @@
+---
+- map: int_land02
+  spawns:
+    - amount: 40
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2401
+      respawn_time: 5000

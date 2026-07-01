@@ -1,51 +1,51 @@
 ---
-- map: prt_fild01
+- map: c_tower3_
   spawns:
+    - amount: 9
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2479
+      respawn_time: 5000
+    - amount: 8
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2478
+      respawn_time: 5000
+    - amount: 109
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2917
+      respawn_time: 5000
     - amount: 2
       area:
         x: 0
         xs: 0
         'y': 0
         ys: 0
-      mob: 2771
-      respawn_time: 180000
-    - amount: 196
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 1063
-      respawn_time: 5000
-    - amount: 42
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 1002
-      respawn_time: 5000
-    - amount: 42
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 1007
+      mob: 2918
       respawn_time: 5000
     - amount: 3
       area:
-        x: 199
-        xs: 3
-        'y': 266
-        ys: 3
-      mob: 1080
-      respawn_time: 360000
-    - amount: 1
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2921
+      respawn_time: 5000
+    - amount: 3
       area:
-        x: 199
-        xs: 3
-        'y': 266
-        ys: 3
-      mob: 1079
-      respawn_time: 900000
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2923
+      respawn_time: 5000

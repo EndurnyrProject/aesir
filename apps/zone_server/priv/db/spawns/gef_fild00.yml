@@ -1,0 +1,67 @@
+---
+- map: gef_fild00
+  spawns:
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2872
+      respawn_time: 180000
+    - amount: 160
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1011
+      respawn_time: 5000
+    - amount: 34
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1002
+      respawn_time: 5000
+    - amount: 34
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1007
+      respawn_time: 5000
+    - amount: 1
+      area:
+        x: 95
+        xs: 0
+        'y': 128
+        ys: 0
+      mob: 1079
+      respawn_time: 900000
+    - amount: 1
+      area:
+        x: 124
+        xs: 0
+        'y': 321
+        ys: 0
+      mob: 1079
+      respawn_time: 900000
+    - amount: 3
+      area:
+        x: 54
+        xs: 5
+        'y': 212
+        ys: 5
+      mob: 1080
+      respawn_time: 360000
+    - amount: 3
+      area:
+        x: 54
+        xs: 5
+        'y': 186
+        ys: 5
+      mob: 1080
+      respawn_time: 360000

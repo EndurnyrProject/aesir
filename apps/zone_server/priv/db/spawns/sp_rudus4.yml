@@ -1,0 +1,43 @@
+---
+- map: sp_rudus4
+  spawns:
+    - amount: 75
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20929
+      respawn_time: 0
+    - amount: 75
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20930
+      respawn_time: 0
+    - amount: 75
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20932
+      respawn_time: 0
+    - amount: 75
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20933
+      respawn_time: 0
+    - amount: 75
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20931
+      respawn_time: 0

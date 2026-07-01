@@ -1,0 +1,83 @@
+---
+- map: prt_fild03
+  spawns:
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2608
+      respawn_time: 180000
+    - amount: 127
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1057
+      respawn_time: 5000
+    - amount: 38
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1031
+      respawn_time: 5000
+    - amount: 38
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1128
+      respawn_time: 5000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1214
+      respawn_time: 5000
+    - amount: 5
+      area:
+        x: 296
+        xs: 15
+        'y': 58
+        ys: 15
+      mob: 1080
+      respawn_time: 180000
+    - amount: 2
+      area:
+        x: 296
+        xs: 15
+        'y': 58
+        ys: 15
+      mob: 1079
+      respawn_time: 900000
+    - amount: 5
+      area:
+        x: 307
+        xs: 5
+        'y': 75
+        ys: 5
+      mob: 1080
+      respawn_time: 360000
+    - amount: 5
+      area:
+        x: 147
+        xs: 5
+        'y': 219
+        ys: 5
+      mob: 1080
+      respawn_time: 360000
+    - amount: 5
+      area:
+        x: 148
+        xs: 5
+        'y': 107
+        ys: 5
+      mob: 1080
+      respawn_time: 360000

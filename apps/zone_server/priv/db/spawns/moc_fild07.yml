@@ -1,0 +1,59 @@
+---
+- map: moc_fild07
+  spawns:
+    - amount: 3
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2845
+      respawn_time: 180000
+    - amount: 214
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1113
+      respawn_time: 5000
+    - amount: 46
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1011
+      respawn_time: 5000
+    - amount: 23
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1050
+      respawn_time: 5000
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1047
+      respawn_time: 5000
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1049
+      respawn_time: 5000
+    - amount: 5
+      area:
+        x: 162
+        xs: 12
+        'y': 333
+        ys: 12
+      mob: 1081
+      respawn_time: 360000

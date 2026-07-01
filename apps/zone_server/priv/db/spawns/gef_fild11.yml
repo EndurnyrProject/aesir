@@ -1,51 +1,51 @@
 ---
-- map: prt_fild01
+- map: gef_fild11
   spawns:
-    - amount: 2
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 2771
-      respawn_time: 180000
-    - amount: 196
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 1063
-      respawn_time: 5000
-    - amount: 42
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 1002
-      respawn_time: 5000
-    - amount: 42
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 1007
-      respawn_time: 5000
     - amount: 3
       area:
-        x: 199
-        xs: 3
-        'y': 266
-        ys: 3
-      mob: 1080
-      respawn_time: 360000
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2814
+      respawn_time: 180000
+    - amount: 58
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1122
+      respawn_time: 5000
+    - amount: 58
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1123
+      respawn_time: 5000
+    - amount: 58
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1124
+      respawn_time: 5000
+    - amount: 58
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1125
+      respawn_time: 5000
     - amount: 1
       area:
-        x: 199
-        xs: 3
-        'y': 266
-        ys: 3
-      mob: 1079
-      respawn_time: 900000
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1299
+      respawn_time: 1800000

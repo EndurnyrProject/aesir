@@ -1,0 +1,59 @@
+---
+- map: nameless_n
+  spawns:
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2822
+      respawn_time: 180000
+    - amount: 40
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1036
+      respawn_time: 5000
+    - amount: 17
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1866
+      respawn_time: 5000
+    - amount: 16
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1867
+      respawn_time: 5000
+    - amount: 12
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1865
+      respawn_time: 5000
+    - amount: 12
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1864
+      respawn_time: 5000
+    - amount: 3
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1869
+      respawn_time: 5000

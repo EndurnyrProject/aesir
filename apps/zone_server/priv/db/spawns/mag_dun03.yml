@@ -1,0 +1,59 @@
+---
+- map: mag_dun03
+  spawns:
+    - amount: 18
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20378
+      respawn_time: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20377
+      respawn_time: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20376
+      respawn_time: 0
+    - amount: 32
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20374
+      respawn_time: 0
+    - amount: 32
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20375
+      respawn_time: 0
+    - amount: 27
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20373
+      respawn_time: 0
+    - amount: 18
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20372
+      respawn_time: 0

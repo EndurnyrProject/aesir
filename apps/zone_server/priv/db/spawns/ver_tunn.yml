@@ -1,0 +1,11 @@
+---
+- map: ver_tunn
+  spawns:
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 3154
+      respawn_time: 30000

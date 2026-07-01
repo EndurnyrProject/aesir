@@ -1,0 +1,35 @@
+---
+- map: sp_rudus2
+  spawns:
+    - amount: 40
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20356
+      respawn_time: 5000
+    - amount: 37
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20358
+      respawn_time: 5000
+    - amount: 58
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20359
+      respawn_time: 5000
+    - amount: 45
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20362
+      respawn_time: 5000

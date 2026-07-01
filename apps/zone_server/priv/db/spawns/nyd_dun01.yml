@@ -1,0 +1,131 @@
+---
+- map: nyd_dun01
+  spawns:
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2849
+      respawn_time: 180000
+    - amount: 40
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2013
+      respawn_time: 5000
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2016
+      respawn_time: 5000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2015
+      respawn_time: 5000
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2017
+      respawn_time: 900000
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2018
+      respawn_time: 900000
+    - amount: 1
+      area:
+        x: 47
+        xs: 0
+        'y': 219
+        ys: 0
+      mob: 2014
+      respawn_time: 60000
+    - amount: 1
+      area:
+        x: 57
+        xs: 0
+        'y': 220
+        ys: 0
+      mob: 2014
+      respawn_time: 60000
+    - amount: 1
+      area:
+        x: 57
+        xs: 0
+        'y': 226
+        ys: 0
+      mob: 2014
+      respawn_time: 60000
+    - amount: 1
+      area:
+        x: 56
+        xs: 0
+        'y': 226
+        ys: 0
+      mob: 2014
+      respawn_time: 60000
+    - amount: 1
+      area:
+        x: 64
+        xs: 0
+        'y': 219
+        ys: 0
+      mob: 2014
+      respawn_time: 60000
+    - amount: 1
+      area:
+        x: 53
+        xs: 0
+        'y': 221
+        ys: 0
+      mob: 2014
+      respawn_time: 60000
+    - amount: 1
+      area:
+        x: 58
+        xs: 0
+        'y': 216
+        ys: 0
+      mob: 2014
+      respawn_time: 60000
+    - amount: 1
+      area:
+        x: 60
+        xs: 0
+        'y': 226
+        ys: 0
+      mob: 2014
+      respawn_time: 60000
+    - amount: 1
+      area:
+        x: 53
+        xs: 0
+        'y': 228
+        ys: 0
+      mob: 2014
+      respawn_time: 60000
+    - amount: 1
+      area:
+        x: 47
+        xs: 0
+        'y': 218
+        ys: 0
+      mob: 2014
+      respawn_time: 60000

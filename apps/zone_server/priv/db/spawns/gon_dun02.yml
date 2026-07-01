@@ -1,51 +1,51 @@
 ---
-- map: prt_fild01
+- map: gon_dun02
   spawns:
-    - amount: 2
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 2771
-      respawn_time: 180000
-    - amount: 196
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 1063
-      respawn_time: 5000
-    - amount: 42
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 1002
-      respawn_time: 5000
-    - amount: 42
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 1007
-      respawn_time: 5000
-    - amount: 3
-      area:
-        x: 199
-        xs: 3
-        'y': 266
-        ys: 3
-      mob: 1080
-      respawn_time: 360000
     - amount: 1
       area:
-        x: 199
-        xs: 3
-        'y': 266
-        ys: 3
-      mob: 1079
-      respawn_time: 900000
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2775
+      respawn_time: 180000
+    - amount: 27
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1410
+      respawn_time: 5000
+    - amount: 26
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1412
+      respawn_time: 5000
+    - amount: 26
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1408
+      respawn_time: 5000
+    - amount: 7
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1415
+      respawn_time: 5000
+    - amount: 13
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1081
+      respawn_time: 5000

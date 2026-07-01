@@ -1,0 +1,99 @@
+---
+- map: odin_tem01
+  spawns:
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2880
+      respawn_time: 180000
+    - amount: 14
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1693
+      respawn_time: 5000
+    - amount: 14
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1692
+      respawn_time: 5000
+    - amount: 7
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1753
+      respawn_time: 5000
+    - amount: 7
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1752
+      respawn_time: 5000
+    - amount: 4
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1697
+      respawn_time: 5000
+    - amount: 4
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1695
+      respawn_time: 5000
+    - amount: 4
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1696
+      respawn_time: 5000
+    - amount: 4
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1694
+      respawn_time: 5000
+    - amount: 7
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1080
+      respawn_time: 60000
+    - amount: 7
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1081
+      respawn_time: 60000
+    - amount: 7
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1079
+      respawn_time: 600000

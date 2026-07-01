@@ -1,51 +1,43 @@
 ---
-- map: prt_fild01
+- map: in_sphinx1
   spawns:
-    - amount: 2
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 2771
-      respawn_time: 180000
-    - amount: 196
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 1063
-      respawn_time: 5000
-    - amount: 42
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 1002
-      respawn_time: 5000
-    - amount: 42
-      area:
-        x: 0
-        xs: 0
-        'y': 0
-        ys: 0
-      mob: 1007
-      respawn_time: 5000
-    - amount: 3
-      area:
-        x: 199
-        xs: 3
-        'y': 266
-        ys: 3
-      mob: 1080
-      respawn_time: 360000
     - amount: 1
       area:
-        x: 199
-        xs: 3
-        'y': 266
-        ys: 3
-      mob: 1079
-      respawn_time: 900000
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2847
+      respawn_time: 180000
+    - amount: 76
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1111
+      respawn_time: 5000
+    - amount: 38
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1164
+      respawn_time: 5000
+    - amount: 38
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1178
+      respawn_time: 5000
+    - amount: 19
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1146
+      respawn_time: 5000

@@ -1,0 +1,59 @@
+---
+- map: ra_fild06
+  spawns:
+    - amount: 3
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2784
+      respawn_time: 180000
+    - amount: 87
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1282
+      respawn_time: 5000
+    - amount: 49
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1133
+      respawn_time: 5000
+    - amount: 49
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1134
+      respawn_time: 5000
+    - amount: 49
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1135
+      respawn_time: 5000
+    - amount: 12
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1627
+      respawn_time: 5000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1296
+      respawn_time: 1800000

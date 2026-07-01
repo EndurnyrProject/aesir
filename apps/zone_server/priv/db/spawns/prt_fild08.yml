@@ -1,0 +1,211 @@
+---
+- map: prt_fild08
+  spawns:
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2770
+      respawn_time: 180000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2696
+      respawn_time: 180000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2697
+      respawn_time: 180000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2698
+      respawn_time: 180000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2699
+      respawn_time: 180000
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1002
+      respawn_time: 5000
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1063
+      respawn_time: 5000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1007
+      respawn_time: 5000
+    - amount: 2
+      area:
+        x: 305
+        xs: 10
+        'y': 233
+        ys: 10
+      mob: 1002
+      respawn_time: 15000
+    - amount: 2
+      area:
+        x: 305
+        xs: 10
+        'y': 233
+        ys: 10
+      mob: 1063
+      respawn_time: 15000
+    - amount: 2
+      area:
+        x: 305
+        xs: 10
+        'y': 233
+        ys: 10
+      mob: 1007
+      respawn_time: 15000
+    - amount: 5
+      area:
+        x: 271
+        xs: 20
+        'y': 249
+        ys: 20
+      mob: 1002
+      respawn_time: 15000
+    - amount: 5
+      area:
+        x: 271
+        xs: 20
+        'y': 249
+        ys: 20
+      mob: 1063
+      respawn_time: 15000
+    - amount: 5
+      area:
+        x: 271
+        xs: 20
+        'y': 249
+        ys: 20
+      mob: 1007
+      respawn_time: 15000
+    - amount: 20
+      area:
+        x: 94
+        xs: 50
+        'y': 335
+        ys: 50
+      mob: 1002
+      respawn_time: 10000
+    - amount: 20
+      area:
+        x: 166
+        xs: 50
+        'y': 334
+        ys: 50
+      mob: 1002
+      respawn_time: 10000
+    - amount: 20
+      area:
+        x: 253
+        xs: 50
+        'y': 337
+        ys: 50
+      mob: 1002
+      respawn_time: 10000
+    - amount: 10
+      area:
+        x: 228
+        xs: 30
+        'y': 230
+        ys: 30
+      mob: 1063
+      respawn_time: 10000
+    - amount: 10
+      area:
+        x: 246
+        xs: 50
+        'y': 263
+        ys: 50
+      mob: 1063
+      respawn_time: 10000
+    - amount: 10
+      area:
+        x: 190
+        xs: 50
+        'y': 237
+        ys: 50
+      mob: 1063
+      respawn_time: 10000
+    - amount: 10
+      area:
+        x: 100
+        xs: 50
+        'y': 256
+        ys: 50
+      mob: 1063
+      respawn_time: 10000
+    - amount: 20
+      area:
+        x: 70
+        xs: 70
+        'y': 164
+        ys: 70
+      mob: 1007
+      respawn_time: 10000
+    - amount: 20
+      area:
+        x: 144
+        xs: 70
+        'y': 147
+        ys: 70
+      mob: 1007
+      respawn_time: 10000
+    - amount: 20
+      area:
+        x: 263
+        xs: 90
+        'y': 79
+        ys: 90
+      mob: 1007
+      respawn_time: 10000
+    - amount: 20
+      area:
+        x: 336
+        xs: 40
+        'y': 113
+        ys: 40
+      mob: 1008
+      respawn_time: 10000
+    - amount: 20
+      area:
+        x: 330
+        xs: 40
+        'y': 269
+        ys: 40
+      mob: 2398
+      respawn_time: 10000

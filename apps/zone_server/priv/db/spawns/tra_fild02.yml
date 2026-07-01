@@ -1,0 +1,579 @@
+---
+- map: tra_fild02
+  spawns:
+    - amount: 1
+      area:
+        x: 24
+        xs: 0
+        'y': 36
+        ys: 0
+      mob: 22572
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 24
+        xs: 0
+        'y': 55
+        ys: 0
+      mob: 22568
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 24
+        xs: 0
+        'y': 74
+        ys: 0
+      mob: 22564
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 24
+        xs: 0
+        'y': 93
+        ys: 0
+      mob: 22561
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 43
+        xs: 0
+        'y': 36
+        ys: 0
+      mob: 22573
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 43
+        xs: 0
+        'y': 55
+        ys: 0
+      mob: 22569
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 43
+        xs: 0
+        'y': 74
+        ys: 0
+      mob: 22565
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 43
+        xs: 0
+        'y': 93
+        ys: 0
+      mob: 22562
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 62
+        xs: 0
+        'y': 36
+        ys: 0
+      mob: 22574
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 62
+        xs: 0
+        'y': 55
+        ys: 0
+      mob: 22570
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 62
+        xs: 0
+        'y': 74
+        ys: 0
+      mob: 22566
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 62
+        xs: 0
+        'y': 93
+        ys: 0
+      mob: 22563
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 81
+        xs: 0
+        'y': 36
+        ys: 0
+      mob: 22571
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 81
+        xs: 0
+        'y': 55
+        ys: 0
+      mob: 22567
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 81
+        xs: 0
+        'y': 74
+        ys: 0
+      mob: 21088
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 81
+        xs: 0
+        'y': 93
+        ys: 0
+      mob: 21087
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 195
+        xs: 0
+        'y': 36
+        ys: 0
+      mob: 22611
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 195
+        xs: 0
+        'y': 55
+        ys: 0
+      mob: 22607
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 195
+        xs: 0
+        'y': 74
+        ys: 0
+      mob: 22603
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 195
+        xs: 0
+        'y': 93
+        ys: 0
+      mob: 22600
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 176
+        xs: 0
+        'y': 36
+        ys: 0
+      mob: 22612
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 176
+        xs: 0
+        'y': 55
+        ys: 0
+      mob: 22608
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 176
+        xs: 0
+        'y': 74
+        ys: 0
+      mob: 22604
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 176
+        xs: 0
+        'y': 93
+        ys: 0
+      mob: 22601
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 157
+        xs: 0
+        'y': 36
+        ys: 0
+      mob: 22613
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 157
+        xs: 0
+        'y': 55
+        ys: 0
+      mob: 22609
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 157
+        xs: 0
+        'y': 74
+        ys: 0
+      mob: 22605
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 157
+        xs: 0
+        'y': 93
+        ys: 0
+      mob: 22602
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 138
+        xs: 0
+        'y': 36
+        ys: 0
+      mob: 22610
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 138
+        xs: 0
+        'y': 55
+        ys: 0
+      mob: 22606
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 138
+        xs: 0
+        'y': 93
+        ys: 0
+      mob: 21088
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 138
+        xs: 0
+        'y': 74
+        ys: 0
+      mob: 21087
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 24
+        xs: 0
+        'y': 132
+        ys: 0
+      mob: 22652
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 24
+        xs: 0
+        'y': 151
+        ys: 0
+      mob: 22649
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 43
+        xs: 0
+        'y': 132
+        ys: 0
+      mob: 22651
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 43
+        xs: 0
+        'y': 151
+        ys: 0
+      mob: 22650
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 62
+        xs: 0
+        'y': 132
+        ys: 0
+      mob: 22655
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 62
+        xs: 0
+        'y': 151
+        ys: 0
+      mob: 22648
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 81
+        xs: 0
+        'y': 132
+        ys: 0
+      mob: 22653
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 81
+        xs: 0
+        'y': 151
+        ys: 0
+      mob: 22656
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 100
+        xs: 0
+        'y': 132
+        ys: 0
+      mob: 22657
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 100
+        xs: 0
+        'y': 151
+        ys: 0
+      mob: 22654
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 195
+        xs: 0
+        'y': 151
+        ys: 0
+      mob: 22652
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 195
+        xs: 0
+        'y': 132
+        ys: 0
+      mob: 22649
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 176
+        xs: 0
+        'y': 151
+        ys: 0
+      mob: 22651
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 176
+        xs: 0
+        'y': 132
+        ys: 0
+      mob: 22650
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 157
+        xs: 0
+        'y': 151
+        ys: 0
+      mob: 22655
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 157
+        xs: 0
+        'y': 132
+        ys: 0
+      mob: 22648
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 138
+        xs: 0
+        'y': 151
+        ys: 0
+      mob: 22653
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 138
+        xs: 0
+        'y': 132
+        ys: 0
+      mob: 22656
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 119
+        xs: 0
+        'y': 151
+        ys: 0
+      mob: 22657
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 119
+        xs: 0
+        'y': 132
+        ys: 0
+      mob: 22654
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 24
+        xs: 0
+        'y': 170
+        ys: 0
+      mob: 22637
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 24
+        xs: 0
+        'y': 189
+        ys: 0
+      mob: 22628
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 43
+        xs: 0
+        'y': 170
+        ys: 0
+      mob: 22636
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 43
+        xs: 0
+        'y': 189
+        ys: 0
+      mob: 22629
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 62
+        xs: 0
+        'y': 170
+        ys: 0
+      mob: 22635
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 62
+        xs: 0
+        'y': 189
+        ys: 0
+      mob: 22630
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 81
+        xs: 0
+        'y': 170
+        ys: 0
+      mob: 22634
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 81
+        xs: 0
+        'y': 189
+        ys: 0
+      mob: 22631
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 100
+        xs: 0
+        'y': 170
+        ys: 0
+      mob: 22633
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 100
+        xs: 0
+        'y': 189
+        ys: 0
+      mob: 22632
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 195
+        xs: 0
+        'y': 189
+        ys: 0
+      mob: 22637
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 195
+        xs: 0
+        'y': 170
+        ys: 0
+      mob: 22628
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 176
+        xs: 0
+        'y': 189
+        ys: 0
+      mob: 22636
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 176
+        xs: 0
+        'y': 170
+        ys: 0
+      mob: 22629
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 157
+        xs: 0
+        'y': 189
+        ys: 0
+      mob: 22635
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 157
+        xs: 0
+        'y': 170
+        ys: 0
+      mob: 22630
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 138
+        xs: 0
+        'y': 189
+        ys: 0
+      mob: 22634
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 138
+        xs: 0
+        'y': 170
+        ys: 0
+      mob: 22631
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 119
+        xs: 0
+        'y': 189
+        ys: 0
+      mob: 22633
+      respawn_time: 0
+    - amount: 1
+      area:
+        x: 119
+        xs: 0
+        'y': 170
+        ys: 0
+      mob: 22632
+      respawn_time: 0

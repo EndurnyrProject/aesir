@@ -1,0 +1,67 @@
+---
+- map: thor_v03
+  spawns:
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2675
+      respawn_time: 180000
+    - amount: 66
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1831
+      respawn_time: 5000
+    - amount: 44
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1833
+      respawn_time: 5000
+    - amount: 11
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1830
+      respawn_time: 5000
+    - amount: 11
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1829
+      respawn_time: 5000
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1839
+      respawn_time: 5000
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1830
+      respawn_time: 1800000
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1829
+      respawn_time: 1800000

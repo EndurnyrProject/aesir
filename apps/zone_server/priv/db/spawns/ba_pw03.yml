@@ -1,0 +1,35 @@
+---
+- map: ba_pw03
+  spawns:
+    - amount: 80
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20691
+      respawn_time: 5000
+    - amount: 80
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20692
+      respawn_time: 5000
+    - amount: 70
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20693
+      respawn_time: 5000
+    - amount: 70
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 20694
+      respawn_time: 5000

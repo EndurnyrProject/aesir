@@ -1,0 +1,27 @@
+---
+- map: gl_sew02
+  spawns:
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2827
+      respawn_time: 180000
+    - amount: 89
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1253
+      respawn_time: 5000
+    - amount: 24
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1209
+      respawn_time: 5000

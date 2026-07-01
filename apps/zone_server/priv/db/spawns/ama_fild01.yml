@@ -1,0 +1,163 @@
+---
+- map: ama_fild01
+  spawns:
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2789
+      respawn_time: 180000
+    - amount: 14
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1060
+      respawn_time: 5000
+    - amount: 72
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1400
+      respawn_time: 5000
+    - amount: 57
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1406
+      respawn_time: 5000
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1404
+      respawn_time: 5000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1402
+      respawn_time: 5000
+    - amount: 1
+      area:
+        x: 173
+        xs: 0
+        'y': 313
+        ys: 0
+      mob: 1068
+      respawn_time: 60000
+    - amount: 1
+      area:
+        x: 173
+        xs: 0
+        'y': 314
+        ys: 0
+      mob: 1068
+      respawn_time: 60000
+    - amount: 1
+      area:
+        x: 173
+        xs: 0
+        'y': 310
+        ys: 0
+      mob: 1068
+      respawn_time: 60000
+    - amount: 1
+      area:
+        x: 177
+        xs: 0
+        'y': 315
+        ys: 0
+      mob: 1068
+      respawn_time: 60000
+    - amount: 1
+      area:
+        x: 175
+        xs: 0
+        'y': 315
+        ys: 0
+      mob: 1068
+      respawn_time: 63000
+    - amount: 1
+      area:
+        x: 169
+        xs: 0
+        'y': 314
+        ys: 0
+      mob: 1068
+      respawn_time: 63000
+    - amount: 1
+      area:
+        x: 177
+        xs: 0
+        'y': 314
+        ys: 0
+      mob: 1068
+      respawn_time: 66000
+    - amount: 1
+      area:
+        x: 175
+        xs: 0
+        'y': 313
+        ys: 0
+      mob: 1068
+      respawn_time: 66000
+    - amount: 1
+      area:
+        x: 173
+        xs: 0
+        'y': 315
+        ys: 0
+      mob: 1068
+      respawn_time: 66000
+    - amount: 1
+      area:
+        x: 171
+        xs: 0
+        'y': 313
+        ys: 0
+      mob: 1068
+      respawn_time: 66000
+    - amount: 1
+      area:
+        x: 171
+        xs: 0
+        'y': 314
+        ys: 0
+      mob: 1068
+      respawn_time: 69000
+    - amount: 1
+      area:
+        x: 171
+        xs: 0
+        'y': 315
+        ys: 0
+      mob: 1068
+      respawn_time: 69000
+    - amount: 1
+      area:
+        x: 175
+        xs: 0
+        'y': 314
+        ys: 0
+      mob: 1068
+      respawn_time: 72000
+    - amount: 1
+      area:
+        x: 169
+        xs: 0
+        'y': 315
+        ys: 0
+      mob: 1068
+      respawn_time: 72000

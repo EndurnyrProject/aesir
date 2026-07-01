@@ -1,0 +1,59 @@
+---
+- map: abbey01
+  spawns:
+    - amount: 3
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2887
+      respawn_time: 180000
+    - amount: 96
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1867
+      respawn_time: 5000
+    - amount: 57
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1036
+      respawn_time: 5000
+    - amount: 34
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1865
+      respawn_time: 5000
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1864
+      respawn_time: 5000
+    - amount: 25
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1866
+      respawn_time: 5000
+    - amount: 21
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1869
+      respawn_time: 5000

@@ -1,0 +1,67 @@
+---
+- map: iz_dun03
+  spawns:
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2713
+      respawn_time: 180000
+    - amount: 45
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1158
+      respawn_time: 5000
+    - amount: 40
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1045
+      respawn_time: 5000
+    - amount: 40
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1069
+      respawn_time: 5000
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1142
+      respawn_time: 5000
+    - amount: 3
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1264
+      respawn_time: 5000
+    - amount: 1
+      area:
+        x: 108
+        xs: 0
+        'y': 249
+        ys: 0
+      mob: 1068
+      respawn_time: 300000
+    - amount: 1
+      area:
+        x: 80
+        xs: 0
+        'y': 163
+        ys: 0
+      mob: 1068
+      respawn_time: 300000

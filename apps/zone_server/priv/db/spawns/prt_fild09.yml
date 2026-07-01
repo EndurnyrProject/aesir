@@ -1,0 +1,35 @@
+---
+- map: prt_fild09
+  spawns:
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2768
+      respawn_time: 180000
+    - amount: 212
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1138
+      respawn_time: 5000
+    - amount: 91
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1058
+      respawn_time: 5000
+    - amount: 3
+      area:
+        x: 237
+        xs: 5
+        'y': 115
+        ys: 5
+      mob: 1081
+      respawn_time: 360000

@@ -1,0 +1,67 @@
+---
+- map: un_bunker
+  spawns:
+    - amount: 6
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1051
+      respawn_time: 5000
+    - amount: 68
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 3255
+      respawn_time: 5000
+    - amount: 80
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 3256
+      respawn_time: 5000
+    - amount: 28
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 3250
+      respawn_time: 5000
+    - amount: 14
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 3252
+      respawn_time: 5000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 3251
+      respawn_time: 5000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1084
+      respawn_time: 5000
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1011
+      respawn_time: 5000

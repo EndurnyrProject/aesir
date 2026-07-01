@@ -1,0 +1,107 @@
+---
+- map: lhz_dun03
+  spawns:
+    - amount: 3
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 2667
+      respawn_time: 180000
+    - amount: 81
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1638
+      respawn_time: 5000
+    - amount: 57
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1639
+      respawn_time: 5000
+    - amount: 42
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1637
+      respawn_time: 5000
+    - amount: 42
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1636
+      respawn_time: 5000
+    - amount: 42
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1635
+      respawn_time: 5000
+    - amount: 42
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1634
+      respawn_time: 5000
+    - amount: 1
+      area:
+        x: 139
+        xs: 20
+        'y': 158
+        ys: 11
+      mob: 1641
+      respawn_time: 2580000
+    - amount: 1
+      area:
+        x: 138
+        xs: 36
+        'y': 138
+        ys: 34
+      mob: 1645
+      respawn_time: 2580000
+    - amount: 1
+      area:
+        x: 114
+        xs: 12
+        'y': 138
+        ys: 16
+      mob: 1640
+      respawn_time: 2700000
+    - amount: 1
+      area:
+        x: 139
+        xs: 20
+        'y': 117
+        ys: 11
+      mob: 1644
+      respawn_time: 2700000
+    - amount: 1
+      area:
+        x: 163
+        xs: 12
+        'y': 138
+        ys: 16
+      mob: 1642
+      respawn_time: 3000000
+    - amount: 1
+      area:
+        x: 138
+        xs: 36
+        'y': 138
+        ys: 34
+      mob: 1643
+      respawn_time: 3300000

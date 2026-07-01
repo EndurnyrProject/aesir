@@ -1,0 +1,11 @@
+---
+- map: rockmi2
+  spawns:
+    - amount: 31
+      area:
+        x: 100
+        xs: 20
+        'y': 36
+        ys: 20
+      mob: 3742
+      respawn_time: 0
