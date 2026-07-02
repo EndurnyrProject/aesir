@@ -391,6 +391,20 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
   end
 
+  describe "todo/3" do
+    test "raises NotImplementedError naming the buildin" do
+      assert_raise Aesir.ZoneServer.Script.NotImplementedError,
+                   ~r/getpartymember/,
+                   fn -> Dsl.todo(build_ctx(), :getpartymember, [0]) end
+    end
+
+    test "Todo.const!/1 raises naming the constant" do
+      assert_raise Aesir.ZoneServer.Script.NotImplementedError,
+                   ~r/SOME_CONST/,
+                   fn -> Aesir.ZoneServer.Script.Todo.const!(:SOME_CONST) end
+    end
+  end
+
   describe "get_temp_var/3" do
     test "reads a session temp var from the snapshot, defaulting to 0" do
       ctx = build_ctx()

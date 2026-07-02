@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Script.Ctx
+  alias Aesir.ZoneServer.Script.NotImplementedError
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
@@ -378,6 +379,21 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   @spec set_char_var(Ctx.t(), atom(), term()) :: Ctx.t()
   def set_char_var(%Ctx{status: {:error, _}} = ctx, _key, _value), do: ctx
   def set_char_var(%Ctx{} = ctx, key, value), do: apply_op(ctx, {:set_char_var, key, value})
+
+  @doc """
+  Stub for an rAthena buildin with no Aesir implementation yet.
+
+  Transpiled scripts call this in place of the unsupported command; reaching it
+  raises `NotImplementedError` naming the buildin, which ends the interaction
+  (a supervised Task) without harming the player session.
+  """
+  @spec todo(Ctx.t(), atom(), [term()]) :: no_return()
+  def todo(%Ctx{}, buildin, args) do
+    raise NotImplementedError,
+      message: "rAthena buildin not implemented: #{buildin}(#{inspect(args)})",
+      buildin: buildin,
+      args: args
+  end
 
   @doc """
   Reads the session temp variable `key` (rAthena `@var`), defaulting an unset

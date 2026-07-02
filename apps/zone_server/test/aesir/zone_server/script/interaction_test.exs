@@ -53,6 +53,16 @@ defmodule Aesir.ZoneServer.Script.InteractionTest do
     def on_talk(_ctx), do: raise("boom")
   end
 
+  defmodule TodoNpc do
+    use Aesir.ZoneServer.Npc, spawn: []
+
+    @impl true
+    def on_talk(ctx) do
+      ctx = ctx |> mes("hi") |> next()
+      todo(ctx, :getpartymember, [0])
+    end
+  end
+
   setup do
     Process.register(self(), :interaction_test_probe)
     :ok
@@ -122,6 +132,24 @@ defmodule Aesir.ZoneServer.Script.InteractionTest do
 
     assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :NEXT}}}
     assert_receive {:DOWN, ^ref, :process, ^pid, :normal}, 1_000
+  end
+
+  test "a todo stub raise ends the interaction without killing the session" do
+    session = spawn(fn -> Process.sleep(:infinity) end)
+    session_ref = Process.monitor(session)
+
+    {:ok, pid} = Interaction.start(session, TodoNpc, base_ctx())
+    ref = Process.monitor(pid)
+
+    assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :NEXT, text: "hi"}}}
+    send(pid, {:npc_interact, %NpcInteract{npc_id: @gid, response: {:continue, true}}})
+
+    assert_receive {:DOWN, ^ref, :process, ^pid,
+                    {%Aesir.ZoneServer.Script.NotImplementedError{buildin: :getpartymember}, _}},
+                   500
+
+    assert Process.alive?(session)
+    refute_receive {:DOWN, ^session_ref, :process, ^session, _}, 100
   end
 
   test "an interaction crash does not kill the spawning session (no link)" do
