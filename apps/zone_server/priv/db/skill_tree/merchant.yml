@@ -32,3 +32,5 @@
       max_level: 10
     - name: MC_MAMMONITE
       max_level: 10
+    - name: MC_LOUD
+      max_level: 1
