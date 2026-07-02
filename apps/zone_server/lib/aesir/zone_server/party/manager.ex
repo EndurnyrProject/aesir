@@ -5,8 +5,9 @@ defmodule Aesir.ZoneServer.Party.Manager do
 
   The `parties` table plus `characters.party_id` are the persistence source of
   truth; the entry is the runtime working copy, lazily rebuilt from the DB via
-  `ensure_started/1`. This module covers lifecycle only (create/rebuild/lookup/
-  disband) -- membership mutations land in a later task.
+  `ensure_started/1`. Covers lifecycle (create/rebuild/lookup/disband) and
+  membership mutations (join/leave/kick/leader transfer/options) -- presence
+  and level-spread tracking land in a later task.
   """
 
   import Ecto.Query
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.Party
   alias Aesir.Repo
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Party.State
 
@@ -164,6 +166,252 @@ defmodule Aesir.ZoneServer.Party.Manager do
     case Repo.transaction(multi) do
       {:ok, _changes} -> :ok
       {:error, _step, reason, _changes} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Adds `character` to `party_id`, re-validating inside the entry that the
+  party is not full (`Party.State.full?/1`) and that no existing member
+  shares `character.account_id` (design "Same-account rule"). Persists
+  `characters.party_id` and broadcasts `{:party_updated, state}` on success;
+  leaves the state and the character's row untouched on failure.
+  """
+  @spec add_member(non_neg_integer(), Character.t()) ::
+          {:ok, State.t()} | {:error, :party_full | :same_account | :not_found | term()}
+  def add_member(party_id, %Character{} = character) do
+    mutate(party_id, &add_member_reply(character, &1))
+  end
+
+  defp add_member_reply(character, state) do
+    cond do
+      State.full?(state) ->
+        {{:error, :party_full}, state}
+
+      same_account_member?(state, character.account_id) ->
+        {{:error, :same_account}, state}
+
+      true ->
+        case persist_add_member(state.party_id, character) do
+          :ok ->
+            new_state = put_member(state, character)
+            {{:ok, new_state}, new_state}
+
+          {:error, reason} ->
+            {{:error, reason}, state}
+        end
+    end
+  end
+
+  defp same_account_member?(state, account_id) do
+    member_account_ids =
+      state.members
+      |> Map.keys()
+      |> account_ids_by_char_id()
+
+    State.same_account?(member_account_ids, account_id)
+  end
+
+  defp account_ids_by_char_id(char_ids) do
+    Character
+    |> where([c], c.id in ^char_ids)
+    |> select([c], {c.id, c.account_id})
+    |> Repo.all()
+    |> Map.new()
+  end
+
+  defp persist_add_member(party_id, character) do
+    case Repo.update(Character.changeset(character, %{party_id: party_id})) do
+      {:ok, _character} -> :ok
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  defp put_member(%State{} = state, character) do
+    member =
+      Member.new(character.id, character.name, character.base_level, true, character.last_map)
+
+    %State{state | members: Map.put(state.members, character.id, member)}
+  end
+
+  @doc """
+  Removes `char_id` from `party_id`, resets its `characters.party_id` to `0`,
+  persists, and broadcasts `{:party_updated, state}`. Removing the leader
+  disbands the party instead (design "Leader leaves"), delegating to
+  `disband/2`. The leader check is made against live entry state, so it
+  cannot be fooled by a stale read racing a concurrent leadership transfer.
+  """
+  @spec remove_member(non_neg_integer(), non_neg_integer()) ::
+          :ok | {:ok, State.t()} | {:error, :not_member | :not_found | term()}
+  def remove_member(party_id, char_id) do
+    case mutate(party_id, &remove_member_reply(char_id, &1)) do
+      {:disband, reason} -> disband(party_id, reason)
+      other -> other
+    end
+  end
+
+  defp remove_member_reply(char_id, %State{} = state) do
+    cond do
+      char_id == state.leader_char_id ->
+        {{:disband, "leader_left"}, state}
+
+      Map.has_key?(state.members, char_id) ->
+        case persist_remove_member(char_id) do
+          :ok ->
+            new_state = %State{state | members: Map.delete(state.members, char_id)}
+            {{:ok, new_state}, new_state}
+
+          {:error, reason} ->
+            {{:error, reason}, state}
+        end
+
+      true ->
+        {{:error, :not_member}, state}
+    end
+  end
+
+  defp persist_remove_member(char_id) do
+    case Repo.get(Character, char_id) do
+      nil ->
+        :ok
+
+      character ->
+        case Repo.update(Character.changeset(character, %{party_id: 0})) do
+          {:ok, _character} -> :ok
+          {:error, changeset} -> {:error, changeset}
+        end
+    end
+  end
+
+  @doc """
+  Leader-only kick of `target_char_id`. Works for an offline target (the DB
+  write happens regardless of presence); the leader kicking themselves
+  disbands the party (design "Kick"). Both the requester and target checks
+  are made against live entry state.
+  """
+  @spec kick(non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
+          :ok | {:ok, State.t()} | {:error, :not_leader | :not_member | :not_found | term()}
+  def kick(party_id, requester_char_id, target_char_id) do
+    case mutate(party_id, &kick_reply(requester_char_id, target_char_id, &1)) do
+      {:disband, reason} -> disband(party_id, reason)
+      other -> other
+    end
+  end
+
+  defp kick_reply(requester_char_id, target_char_id, %State{} = state) do
+    if state.leader_char_id != requester_char_id do
+      {{:error, :not_leader}, state}
+    else
+      remove_member_reply(target_char_id, state)
+    end
+  end
+
+  @doc """
+  Leader-only leadership transfer to `target_char_id`, which must be an
+  online member on the same map as the current leader (design "Leader
+  transfer"). Swaps `leader_char_id`, persists, and broadcasts.
+  """
+  @spec transfer_leader(non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
+          {:ok, State.t()}
+          | {:error, :not_leader | :not_member | :not_same_map | :not_found | term()}
+  def transfer_leader(party_id, requester_char_id, target_char_id) do
+    mutate(party_id, &transfer_leader_reply(requester_char_id, target_char_id, &1))
+  end
+
+  defp transfer_leader_reply(requester_char_id, target_char_id, %State{} = state) do
+    cond do
+      state.leader_char_id != requester_char_id ->
+        {{:error, :not_leader}, state}
+
+      not Map.has_key?(state.members, target_char_id) ->
+        {{:error, :not_member}, state}
+
+      not same_map_as_leader?(state, target_char_id) ->
+        {{:error, :not_same_map}, state}
+
+      true ->
+        case persist_party(state.party_id, %{leader_char_id: target_char_id}) do
+          :ok ->
+            new_state = %State{state | leader_char_id: target_char_id}
+            {{:ok, new_state}, new_state}
+
+          {:error, reason} ->
+            {{:error, reason}, state}
+        end
+    end
+  end
+
+  defp same_map_as_leader?(%State{} = state, target_char_id) do
+    leader_member = Map.fetch!(state.members, state.leader_char_id)
+    target_member = Map.fetch!(state.members, target_char_id)
+
+    target_member.online and target_member.map_name == leader_member.map_name
+  end
+
+  @doc """
+  Leader-only toggling of the `exp_share` option. Turning it on is rejected
+  with `{:error, :level_range}` when the online members' base-level spread
+  exceeds `Config.party_share_level/0` (design "Options").
+  """
+  @spec set_options(non_neg_integer(), non_neg_integer(), boolean()) ::
+          {:ok, State.t()} | {:error, :not_leader | :level_range | :not_found | term()}
+  def set_options(party_id, requester_char_id, exp_share) do
+    mutate(party_id, &set_options_reply(requester_char_id, exp_share, &1))
+  end
+
+  defp set_options_reply(requester_char_id, exp_share, %State{} = state) do
+    cond do
+      state.leader_char_id != requester_char_id ->
+        {{:error, :not_leader}, state}
+
+      exp_share and State.level_spread(state) > Config.party_share_level() ->
+        {{:error, :level_range}, state}
+
+      true ->
+        case persist_party(state.party_id, %{exp_share: exp_share}) do
+          :ok ->
+            new_state = %State{state | exp_share: exp_share}
+            {{:ok, new_state}, new_state}
+
+          {:error, reason} ->
+            {{:error, reason}, state}
+        end
+    end
+  end
+
+  defp persist_party(party_id, changes) do
+    case Repo.get(Party, party_id) do
+      nil ->
+        {:error, :not_found}
+
+      party ->
+        case Repo.update(Party.changeset(party, changes)) do
+          {:ok, _party} -> :ok
+          {:error, changeset} -> {:error, changeset}
+        end
+    end
+  end
+
+  defp mutate(party_id, reply_fun) do
+    case lookup_pid({:party, party_id}) do
+      {:ok, pid} ->
+        try do
+          case Entry.get_and_update(pid, reply_fun) do
+            {:ok, state} = ok ->
+              broadcast(party_id, {:party_updated, state})
+              ok
+
+            {:error, _reason} = error ->
+              error
+
+            other ->
+              other
+          end
+        catch
+          :exit, _ -> {:error, :not_found}
+        end
+
+      :error ->
+        {:error, :not_found}
     end
   end
 
