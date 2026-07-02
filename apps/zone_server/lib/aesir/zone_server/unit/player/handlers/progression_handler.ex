@@ -17,8 +17,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.StatPoint
+  alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.LookType
+  alias Aesir.ZoneServer.Unit.Player.SkillListView
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -81,9 +83,36 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   Changes the character's job to `job_id`, recomputes job-dependent stats,
   full-heals, and broadcasts the new class sprite to the player and nearby
   observers.
+
+  Thin wrapper over `apply_job_change/2` kept as the `{:noreply, _}` entry
+  point for the GM cast path; an unknown `job_id` leaves `state` untouched.
   """
   @spec handle_change_job(non_neg_integer(), map()) :: {:noreply, map()}
-  def handle_change_job(job_id, %{game_state: game_state} = state) do
+  def handle_change_job(job_id, state) do
+    case apply_job_change(job_id, state) do
+      {:ok, new_state} -> {:noreply, new_state}
+      {:error, _reason} -> {:noreply, state}
+    end
+  end
+
+  @doc """
+  Authoritative core for a job change: validates `job_id`, updates
+  `progression.job_id`, recomputes job-dependent stats, full-heals, notifies
+  the client (class sprite, refreshed skill list, stat/param sync), persists
+  `class:`, and updates the `UnitRegistry`.
+
+  Returns `{:error, :unknown_job}` without mutating `state` when `job_id`
+  does not resolve to a known job.
+  """
+  @spec apply_job_change(non_neg_integer(), map()) :: {:ok, map()} | {:error, :unknown_job}
+  def apply_job_change(job_id, %{game_state: game_state} = state) do
+    case AvailableJobs.job_id_to_name(job_id) do
+      {:ok, _job_name} -> do_apply_job_change(job_id, state, game_state)
+      {:error, :unknown_job_id} -> {:error, :unknown_job}
+    end
+  end
+
+  defp do_apply_job_change(job_id, state, game_state) do
     progression = %{game_state.stats.progression | job_id: job_id}
 
     stats =
@@ -104,7 +133,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     Broadcast.to_player(game_state.character_id, sprite)
     Broadcast.to_visible_players(game_state, sprite, exclude_id: game_state.character_id)
 
-    commit(state, game_state, progression, class: job_id)
+    skill_list = SkillListView.build(progression)
+    MessageRouter.send_to(state.connection_pid, skill_list)
+
+    {:noreply, new_state} = commit(state, game_state, progression, class: job_id)
+    {:ok, new_state}
   end
 
   defp commit(state, game_state, progression, extra_persist \\ []) do
