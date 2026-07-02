@@ -37,6 +37,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
   @doc "Returns a flat attack-range bonus contributed by this passive at the given level."
   @callback range_bonus(level :: pos_integer(), ctx()) :: integer()
 
+  @doc "Returns a flat max-weight bonus contributed by this passive at the given level."
+  @callback max_weight_bonus(level :: pos_integer(), ctx()) :: integer()
+
   @doc """
   Returns the procs this passive triggers on a normal attack at the given level.
 
@@ -69,6 +72,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
                       dex_bonus: 2,
                       hit_bonus: 2,
                       range_bonus: 2,
+                      max_weight_bonus: 2,
                       attack_proc: 2,
                       regen_contribution: 2,
                       skill_rider: 4

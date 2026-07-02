@@ -67,6 +67,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
     def attack_proc(_level, _ctx), do: %{multi_hit: 3}
   end
 
+  defmodule MaxWeightPassive do
+    @moduledoc false
+    use Aesir.ZoneServer.Mmo.Skill,
+      id: 9_900_004,
+      name: :test_max_weight_passive,
+      display_name: "Test Max Weight Passive",
+      max_level: 10,
+      target_type: :passive
+
+    alias Aesir.ZoneServer.Mmo.Skill.Passive
+
+    @behaviour Passive
+
+    @impl Passive
+    def max_weight_bonus(level, _ctx), do: 2000 * level
+  end
+
   defp build_player(learned_skills, weapon_atom) do
     equip = if weapon_atom == :bow, do: @both_hand, else: @right_hand
     nameid = Map.fetch!(@weapon_ids, weapon_atom)
@@ -129,6 +146,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
       assert Passives.dex_bonus(player) == 0
       assert Passives.hit_bonus(player) == 0
       assert Passives.range_bonus(player) == 0
+    end
+  end
+
+  describe "max_weight_bonus/1" do
+    test "returns 0 when no max-weight passive is learned" do
+      player = build_player(%{2 => 5}, :one_handed_sword)
+      assert Passives.max_weight_bonus(player) == 0
+    end
+
+    test "sums the max weight bonus contributed by a learned passive" do
+      stub(Catalog, :by_id, fn 9_900_004 -> {:ok, MaxWeightPassive.definition()} end)
+
+      stub(Catalog, :passive_module_for, fn :test_max_weight_passive ->
+        {:ok, MaxWeightPassive}
+      end)
+
+      player = build_player(%{9_900_004 => 5}, :one_handed_sword)
+
+      assert Passives.max_weight_bonus(player) == 10_000
     end
   end
 

@@ -90,6 +90,20 @@ defmodule Aesir.ZoneServer.Unit.Inventory.WeightTest do
     test "uses the swordman base and effective str" do
       assert Weight.max_weight(stats(@swordman, 50)) == 28_000 + 50 * 300
     end
+
+    test "adds the passive max_weight_bonus modifier when present (e.g. MC_INCCARRY)" do
+      stats = %{
+        stats(@novice, 1)
+        | modifiers: %Modifiers{
+            equipment: %{},
+            status_effects: %{},
+            job_bonuses: %{},
+            passive: %{max_weight_bonus: 20_000}
+          }
+      }
+
+      assert Weight.max_weight(stats) == 20_000 + 1 * 300 + 20_000
+    end
   end
 
   describe "would_exceed?/3" do

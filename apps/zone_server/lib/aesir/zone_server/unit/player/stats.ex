@@ -204,7 +204,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     passive = %{
       dex: Passives.dex_bonus(stats),
       hit: Passives.hit_bonus(stats),
-      range: Passives.range_bonus(stats)
+      range: Passives.range_bonus(stats),
+      max_weight_bonus: Passives.max_weight_bonus(stats)
     }
 
     %{stats | modifiers: Map.put(stats.modifiers, :passive, passive)}

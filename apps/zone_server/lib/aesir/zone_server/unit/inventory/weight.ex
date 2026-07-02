@@ -4,7 +4,8 @@ defmodule Aesir.ZoneServer.Unit.Inventory.Weight do
 
   - `current_weight/1` sums `ItemDefinition.weight × amount` over every item in
     the inventory map (equipped and not).
-  - `max_weight/1` is the per-job base (`Job.max_weight`) plus `STR × 300`.
+  - `max_weight/1` is the per-job base (`Job.max_weight`) plus `STR × 300` plus
+    any passive max-weight bonus (e.g. MC_INCCARRY).
 
   ## Unit
 
@@ -39,12 +40,15 @@ defmodule Aesir.ZoneServer.Unit.Inventory.Weight do
   end
 
   @doc """
-  Maximum weight the player can carry: job base plus `STR × 300`.
+  Maximum weight the player can carry: job base plus `STR × 300` plus any
+  passive max-weight bonus (e.g. MC_INCCARRY).
   """
   @spec max_weight(Stats.t()) :: non_neg_integer()
   def max_weight(%Stats{} = stats) do
     str = Stats.get_effective_stat(stats, :str)
-    job_base(stats.progression.job_id) + str * @str_weight_per_point
+    passive_bonus = Map.get(stats.modifiers.passive, :max_weight_bonus, 0)
+
+    job_base(stats.progression.job_id) + str * @str_weight_per_point + passive_bonus
   end
 
   @doc """

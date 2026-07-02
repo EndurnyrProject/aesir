@@ -127,34 +127,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill do
 
   defp validate_default(_mod, false, _behaviours), do: nil
 
+  @passive_channel_defaults [
+    {:atk_bonus, 2, quote(do: def(atk_bonus(_level, _ctx), do: 0))},
+    {:flee_bonus, 2, quote(do: def(flee_bonus(_level, _ctx), do: 0))},
+    {:dex_bonus, 2, quote(do: def(dex_bonus(_level, _ctx), do: 0))},
+    {:hit_bonus, 2, quote(do: def(hit_bonus(_level, _ctx), do: 0))},
+    {:range_bonus, 2, quote(do: def(range_bonus(_level, _ctx), do: 0))},
+    {:max_weight_bonus, 2, quote(do: def(max_weight_bonus(_level, _ctx), do: 0))},
+    {:attack_proc, 2, quote(do: def(attack_proc(_level, _ctx), do: %{}))},
+    {:regen_contribution, 2, quote(do: def(regen_contribution(_level, _ctx), do: %{}))},
+    {:skill_rider, 4,
+     quote(do: def(skill_rider(_target_skill, _target_level, _level, _ctx), do: :none))}
+  ]
+
   defp passive_defaults(_mod, false = _passive?), do: []
 
   defp passive_defaults(mod, true) do
-    [
-      default(mod, {:atk_bonus, 2}, Passive, quote(do: def(atk_bonus(_level, _ctx), do: 0))),
-      default(mod, {:flee_bonus, 2}, Passive, quote(do: def(flee_bonus(_level, _ctx), do: 0))),
-      default(mod, {:dex_bonus, 2}, Passive, quote(do: def(dex_bonus(_level, _ctx), do: 0))),
-      default(mod, {:hit_bonus, 2}, Passive, quote(do: def(hit_bonus(_level, _ctx), do: 0))),
-      default(mod, {:range_bonus, 2}, Passive, quote(do: def(range_bonus(_level, _ctx), do: 0))),
-      default(
-        mod,
-        {:attack_proc, 2},
-        Passive,
-        quote(do: def(attack_proc(_level, _ctx), do: %{}))
-      ),
-      default(
-        mod,
-        {:regen_contribution, 2},
-        Passive,
-        quote(do: def(regen_contribution(_level, _ctx), do: %{}))
-      ),
-      default(
-        mod,
-        {:skill_rider, 4},
-        Passive,
-        quote(do: def(skill_rider(_target_skill, _target_level, _level, _ctx), do: :none))
-      )
-    ]
+    Enum.map(@passive_channel_defaults, fn {name, arity, def_ast} ->
+      default(mod, {name, arity}, Passive, def_ast)
+    end)
   end
 
   defp on_expire_default(mod, true = _ground?) do
