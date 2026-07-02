@@ -28,3 +28,5 @@
       requires:
         - name: MC_PUSHCART
           level: 1
+    - name: MC_INCCARRY
+      max_level: 10
