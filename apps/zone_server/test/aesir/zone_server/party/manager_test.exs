@@ -426,4 +426,156 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
       assert {:error, :not_found} = Manager.set_options(999_999, 1, true)
     end
   end
+
+  describe "push_base_level/3" do
+    defp force_exp_share(party_id, exp_share) do
+      [{pid, _value}] = Horde.Registry.lookup(Cluster.registry(), {:party, party_id})
+
+      Entry.update(pid, fn %State{} = state -> %State{state | exp_share: exp_share} end)
+    end
+
+    test "updates the member's base_level and broadcasts {:party_updated, state}" do
+      {_leader, created} = party_fixture("Milo")
+      target = leader_fixture("Nadia")
+      {:ok, joined} = Manager.add_member(created.party_id, target)
+
+      Phoenix.PubSub.subscribe(Aesir.PubSub, "party:#{joined.party_id}")
+
+      assert {:ok, state} = Manager.push_base_level(joined.party_id, target.id, 42)
+      assert Map.fetch!(state.members, target.id).base_level == 42
+      assert_receive {:party_updated, ^state}
+    end
+
+    test "auto-disables exp_share when the new spread exceeds party_share_level" do
+      {leader, created} = party_fixture("Otto")
+      target = leader_fixture("Petra")
+      {:ok, joined} = Manager.add_member(created.party_id, target)
+      {:ok, shared} = Manager.set_options(joined.party_id, leader.id, true)
+      assert shared.exp_share == true
+
+      over_limit = leader.base_level + Config.party_share_level() + 1
+
+      assert {:ok, state} = Manager.push_base_level(shared.party_id, target.id, over_limit)
+      assert state.exp_share == false
+      assert Repo.get(Party, shared.party_id).exp_share == false
+    end
+
+    test "leaves exp_share enabled exactly at the boundary spread" do
+      {leader, created} = party_fixture("Quill")
+      target = leader_fixture("Rosa")
+      {:ok, joined} = Manager.add_member(created.party_id, target)
+      {:ok, shared} = Manager.set_options(joined.party_id, leader.id, true)
+
+      at_limit = leader.base_level + Config.party_share_level()
+
+      assert {:ok, state} = Manager.push_base_level(shared.party_id, target.id, at_limit)
+      assert state.exp_share == true
+    end
+
+    test "returns {:error, :not_member} for a char_id that is not a member" do
+      {_leader, created} = party_fixture("Silas")
+
+      assert {:error, :not_member} = Manager.push_base_level(created.party_id, 999_999, 50)
+    end
+
+    test "returns {:error, :not_found} when no party entry is running" do
+      assert {:error, :not_found} = Manager.push_base_level(999_999, 1, 50)
+    end
+  end
+
+  describe "push_map_change/3" do
+    test "updates the member's map_name and broadcasts {:party_updated, state}" do
+      {_leader, created} = party_fixture("Tara")
+      target = leader_fixture("Ulric")
+      {:ok, joined} = Manager.add_member(created.party_id, target)
+
+      Phoenix.PubSub.subscribe(Aesir.PubSub, "party:#{joined.party_id}")
+
+      assert {:ok, state} = Manager.push_map_change(joined.party_id, target.id, "geffen")
+      assert Map.fetch!(state.members, target.id).map_name == "geffen"
+      assert_receive {:party_updated, ^state}
+    end
+
+    test "never touches exp_share even when the spread is already out of range" do
+      {leader, created} = party_fixture("Vito")
+
+      target =
+        leader_fixture("Wren", %{base_level: leader.base_level + Config.party_share_level() + 1})
+
+      {:ok, joined} = Manager.add_member(created.party_id, target)
+      force_exp_share(joined.party_id, true)
+
+      assert {:ok, state} = Manager.push_map_change(joined.party_id, target.id, "prontera")
+      assert state.exp_share == true
+    end
+
+    test "returns {:error, :not_member} for a char_id that is not a member" do
+      {_leader, created} = party_fixture("Xander")
+
+      assert {:error, :not_member} = Manager.push_map_change(created.party_id, 999_999, "geffen")
+    end
+
+    test "returns {:error, :not_found} when no party entry is running" do
+      assert {:error, :not_found} = Manager.push_map_change(999_999, 1, "geffen")
+    end
+  end
+
+  describe "set_online/3" do
+    test "updates the member's online flag and broadcasts {:party_updated, state}" do
+      {_leader, created} = party_fixture("Yara")
+      target = leader_fixture("Zebulon")
+      {:ok, joined} = Manager.add_member(created.party_id, target)
+
+      Phoenix.PubSub.subscribe(Aesir.PubSub, "party:#{joined.party_id}")
+
+      assert {:ok, state} = Manager.set_online(joined.party_id, target.id, false)
+      assert Map.fetch!(state.members, target.id).online == false
+      assert_receive {:party_updated, ^state}
+    end
+
+    test "bringing a far-level member online auto-disables exp_share" do
+      {leader, created} = party_fixture("Aldo")
+
+      target =
+        leader_fixture("Bianca", %{base_level: leader.base_level + Config.party_share_level() + 1})
+
+      {:ok, joined} = Manager.add_member(created.party_id, target)
+      {:ok, _offline} = Manager.set_online(joined.party_id, target.id, false)
+      {:ok, shared} = Manager.set_options(joined.party_id, leader.id, true)
+      assert shared.exp_share == true
+
+      assert {:ok, state} = Manager.set_online(shared.party_id, target.id, true)
+      assert state.exp_share == false
+      assert Repo.get(Party, shared.party_id).exp_share == false
+    end
+
+    test "taking the out-of-range member offline narrows the spread but does not re-enable exp_share" do
+      {leader, created} = party_fixture("Cato")
+
+      target =
+        leader_fixture("Della", %{base_level: leader.base_level + Config.party_share_level() + 1})
+
+      {:ok, joined} = Manager.add_member(created.party_id, target)
+      {:ok, _offline} = Manager.set_online(joined.party_id, target.id, false)
+      {:ok, shared} = Manager.set_options(joined.party_id, leader.id, true)
+      assert shared.exp_share == true
+
+      {:ok, disabled} = Manager.set_online(shared.party_id, target.id, true)
+      assert disabled.exp_share == false
+
+      assert {:ok, state} = Manager.set_online(shared.party_id, target.id, false)
+      assert state.exp_share == false
+      assert State.level_spread(state) == 0
+    end
+
+    test "returns {:error, :not_member} for a char_id that is not a member" do
+      {_leader, created} = party_fixture("Egon")
+
+      assert {:error, :not_member} = Manager.set_online(created.party_id, 999_999, false)
+    end
+
+    test "returns {:error, :not_found} when no party entry is running" do
+      assert {:error, :not_found} = Manager.set_online(999_999, 1, false)
+    end
+  end
 end

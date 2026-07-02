@@ -5,9 +5,10 @@ defmodule Aesir.ZoneServer.Party.Manager do
 
   The `parties` table plus `characters.party_id` are the persistence source of
   truth; the entry is the runtime working copy, lazily rebuilt from the DB via
-  `ensure_started/1`. Covers lifecycle (create/rebuild/lookup/disband) and
-  membership mutations (join/leave/kick/leader transfer/options) -- presence
-  and level-spread tracking land in a later task.
+  `ensure_started/1`. Covers lifecycle (create/rebuild/lookup/disband),
+  membership mutations (join/leave/kick/leader transfer/options), and
+  presence/level-spread tracking (`push_base_level/3`, `push_map_change/3`,
+  `set_online/3`).
   """
 
   import Ecto.Query
@@ -375,6 +376,101 @@ defmodule Aesir.ZoneServer.Party.Manager do
           {:error, reason} ->
             {{:error, reason}, state}
         end
+    end
+  end
+
+  @doc """
+  Pushes `char_id`'s new `base_level` into the entry. Recomputes the online
+  level spread; if `exp_share` was on and the new spread exceeds
+  `Config.party_share_level/0`, flips it off, persists, and broadcasts
+  (design "Level/presence tracking"). No-op returning `{:error, :not_found}`
+  if the entry isn't running; `{:error, :not_member}` if `char_id` isn't a
+  current member (e.g. a stale push racing a leave).
+  """
+  @spec push_base_level(non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
+          {:ok, State.t()} | {:error, :not_member | :not_found | term()}
+  def push_base_level(party_id, char_id, base_level) do
+    mutate(party_id, fn state ->
+      update_member(
+        state,
+        char_id,
+        fn %Member{} = member -> %Member{member | base_level: base_level} end,
+        check_spread?: true
+      )
+    end)
+  end
+
+  @doc """
+  Pushes `char_id`'s new `map_name` into the entry. Map changes don't affect
+  the level-range gate, so `exp_share` is left untouched (design
+  "Level/presence tracking").
+  """
+  @spec push_map_change(non_neg_integer(), non_neg_integer(), String.t()) ::
+          {:ok, State.t()} | {:error, :not_member | :not_found | term()}
+  def push_map_change(party_id, char_id, map_name) do
+    mutate(party_id, fn state ->
+      update_member(
+        state,
+        char_id,
+        fn %Member{} = member -> %Member{member | map_name: map_name} end,
+        check_spread?: false
+      )
+    end)
+  end
+
+  @doc """
+  Pushes `char_id`'s `online` flag into the entry. Recomputes the online
+  level spread and auto-disables `exp_share` per the same rule as
+  `push_base_level/3` -- both login and logout cross this path (design
+  "Level/presence tracking"). Never re-enables `exp_share`; re-enabling is a
+  manual leader action via `set_options/3`.
+  """
+  @spec set_online(non_neg_integer(), non_neg_integer(), boolean()) ::
+          {:ok, State.t()} | {:error, :not_member | :not_found | term()}
+  def set_online(party_id, char_id, online?) do
+    mutate(party_id, fn state ->
+      update_member(
+        state,
+        char_id,
+        fn %Member{} = member -> %Member{member | online: online?} end,
+        check_spread?: true
+      )
+    end)
+  end
+
+  defp update_member(%State{} = state, char_id, member_fun, check_spread?: check_spread?) do
+    case Map.fetch(state.members, char_id) do
+      :error ->
+        {{:error, :not_member}, state}
+
+      {:ok, member} ->
+        candidate = %State{state | members: Map.put(state.members, char_id, member_fun.(member))}
+        candidate = if check_spread?, do: maybe_disable_share(candidate), else: candidate
+        finalize_member_update(state, candidate)
+    end
+  end
+
+  defp maybe_disable_share(%State{exp_share: true} = state) do
+    if State.level_spread(state) > Config.party_share_level() do
+      %State{state | exp_share: false}
+    else
+      state
+    end
+  end
+
+  defp maybe_disable_share(%State{} = state), do: state
+
+  defp finalize_member_update(
+         %State{exp_share: exp_share},
+         %State{exp_share: exp_share} = new_state
+       ) do
+    {{:ok, new_state}, new_state}
+  end
+
+  defp finalize_member_update(old_state, %State{} = new_state) do
+    case persist_party(new_state.party_id, %{exp_share: new_state.exp_share}) do
+      :ok -> {{:ok, new_state}, new_state}
+      {:error, reason} -> {{:error, reason}, old_state}
     end
   end
 
