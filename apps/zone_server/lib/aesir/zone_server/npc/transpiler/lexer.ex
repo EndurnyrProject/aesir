@@ -86,6 +86,16 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Lexer do
     |> map({String, :to_integer, [16]})
     |> unwrap_and_tag(:int)
 
+  # rAthena constants may start with digits (e.g. the `4_DR_KID_01` sprite
+  # constants); a digit run is only an identifier when letters/underscore
+  # follow, so this must be tried after hex but before plain integers.
+  digit_identifier =
+    ascii_string([?0..?9], min: 1)
+    |> ascii_char([?a..?z, ?A..?Z, ?_])
+    |> repeat(ascii_char([?a..?z, ?A..?Z, ?0..?9, ?_]))
+    |> reduce({List, :to_string, []})
+    |> unwrap_and_tag(:ident)
+
   integer_token = integer(min: 1) |> unwrap_and_tag(:int)
 
   string_char =
@@ -158,6 +168,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Lexer do
       variable,
       identifier,
       hex_integer,
+      digit_identifier,
       integer_token,
       string_literal,
       operator,
