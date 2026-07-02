@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Script.Ctx
-  alias Aesir.ZoneServer.Script.NotImplementedError
+  alias Aesir.ZoneServer.Script.Todo
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
@@ -393,14 +393,14 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
   Transpiled scripts call this in place of the unsupported command; reaching it
   raises `NotImplementedError` naming the buildin, which ends the interaction
-  (a supervised Task) without harming the player session.
+  (a supervised Task) without harming the player session. The raise is
+  indirect (see `Todo`) so generated `ctx = todo(...)` lines do not trip the
+  compiler's no_return inference.
   """
-  @spec todo(Ctx.t(), atom(), [term()]) :: no_return()
-  def todo(%Ctx{}, buildin, args) do
-    raise NotImplementedError,
-      message: "rAthena buildin not implemented: #{buildin}(#{inspect(args)})",
-      buildin: buildin,
-      args: args
+  @spec todo(Ctx.t(), atom(), [term()]) :: Ctx.t()
+  def todo(%Ctx{} = ctx, buildin, args) do
+    Todo.call!(buildin, args)
+    ctx
   end
 
   @doc """

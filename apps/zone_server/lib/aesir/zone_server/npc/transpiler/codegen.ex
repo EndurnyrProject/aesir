@@ -141,13 +141,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     """
     @impl true
     def on_talk(#{param(body_lines)}) do
-      #{Enum.join(body_lines, "\n")}
+      #{join_body(body_lines)}
     end
     """
   end
 
   defp function_entry(body_lines) do
-    body = Enum.join(body_lines, "\n")
+    body = join_body(body_lines)
     args = if String.contains?(body, "args"), do: "args", else: "_args"
 
     """
@@ -158,9 +158,80 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     """
   end
 
+  # A `ctx = ...` rebinding whose value is only followed by `exit(:normal)`
+  # (the `close2; warp; end` idiom, or an if/case feeding a trailing `end`
+  # command) is dead; unbind it to keep generated modules warning-free.
+  defp join_body(lines), do: lines |> tidy() |> tidy_block_bind() |> Enum.join("\n")
+
+  defp tidy([<<"ctx = ", expr::binary>>, "exit(:normal)" | rest]),
+    do: ["_ = " <> expr, "exit(:normal)" | tidy(rest)]
+
+  defp tidy([line | rest]), do: [line | tidy(rest)]
+  defp tidy([]), do: []
+
+  # `ctx = if ... do … end` (or a standalone `ctx =` before `case`/`try`)
+  # immediately followed by `exit(:normal)`: locate the block opener by
+  # depth-matching the emitted lines and drop the binding.
+  defp tidy_block_bind(lines) do
+    arr = List.to_tuple(lines)
+
+    0..(tuple_size(arr) - 1)
+    |> Enum.filter(fn i ->
+      elem(arr, i) == "exit(:normal)" and i > 0 and elem(arr, i - 1) == "end"
+    end)
+    |> Enum.reduce(lines, fn i, acc ->
+      case find_opener(arr, i - 1) do
+        nil -> acc
+        opener -> unbind_at(acc, arr, opener)
+      end
+    end)
+  end
+
+  defp find_opener(arr, end_idx) do
+    Enum.reduce_while((end_idx - 1)..0//-1, 1, fn i, depth ->
+      line = elem(arr, i)
+
+      cond do
+        line == "end" -> {:cont, depth + 1}
+        not String.ends_with?(line, " do") -> {:cont, depth}
+        depth == 1 -> {:halt, {:found, i}}
+        true -> {:cont, depth - 1}
+      end
+    end)
+    |> case do
+      {:found, i} -> i
+      _ -> nil
+    end
+  end
+
+  defp unbind_at(lines, arr, opener) do
+    cond do
+      String.starts_with?(elem(arr, opener), "ctx = ") ->
+        List.update_at(lines, opener, &("_ = " <> String.trim_leading(&1, "ctx = ")))
+
+      opener > 0 and elem(arr, opener - 1) == "ctx =" ->
+        List.replace_at(lines, opener - 1, "_ =")
+
+      true ->
+        lines
+    end
+  end
+
   defp param(body_lines) do
     if Enum.any?(body_lines, &String.contains?(&1, "ctx")), do: "ctx", else: "_ctx"
   end
+
+  # Inside a subroutine/function body, helper functions (loops, label
+  # segments) thread the enclosing `args` through so `getarg` keeps working.
+  defp helper_call(%{sub: true}), do: ", args"
+  defp helper_call(_env), do: ""
+
+  defp helper_params(lines, %{sub: true}) do
+    args = if Enum.any?(lines, &String.contains?(&1, "args")), do: "args", else: "_args"
+    "#{param(lines)}, #{args}"
+  end
+
+  defp helper_params(lines, _env), do: param(lines)
 
   # -- segmentation ------------------------------------------------------------
 
@@ -205,10 +276,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp emit_segment(:sub, name, stmts, _next, env) do
     {lines, terminal} = emit_block(stmts, %{env | sub: true})
     lines = lines ++ if terminal == :cont, do: ["{ctx, nil}"], else: []
+    args = if Enum.any?(lines, &String.contains?(&1, "args")), do: "args", else: "_args"
 
     """
-    defp #{fn_name(env, name)}(#{param(lines)}, args) do
-      #{Enum.join(lines, "\n")}
+    defp #{fn_name(env, name)}(#{param(lines)}, #{args}) do
+      #{join_body(lines)}
     end
     """
   end
@@ -219,8 +291,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     visibility = if kind == :event, do: "def", else: "defp"
 
     """
-    #{visibility} #{fn_name(env, name)}(#{param(lines)}) do
-      #{Enum.join(lines, "\n")}
+    #{visibility} #{fn_name(env, name)}(#{helper_params(lines, env)}) do
+      #{join_body(lines)}
     end
     """
   end
@@ -230,7 +302,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp fall_through(terminal, _next, _env) when terminal != :cont, do: []
   defp fall_through(:cont, [], _env), do: ["ctx"]
 
-  defp fall_through(:cont, [{:jump, name, _} | _], env), do: ["#{fn_name(env, name)}(ctx)"]
+  defp fall_through(:cont, [{:jump, name, _} | _], env),
+    do: ["#{fn_name(env, name)}(ctx#{helper_call(env)})"]
 
   # Falling into an event label ends normal flow (events run on their own
   # engine triggers, not as dialog continuation).
@@ -293,7 +366,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
     defer("""
     defp #{local_fn_name(name)}(#{param(lines)}, #{args}) do
-      #{Enum.join(lines, "\n")}
+      #{join_body(lines)}
     end
     """)
 
@@ -302,7 +375,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   defp emit_stmt({:goto, label}, env) do
     if Map.has_key?(env.labels, label) do
-      {["#{fn_name(env, label)}(ctx)"], :stop}
+      {["#{fn_name(env, label)}(ctx#{helper_call(env)})"], :stop}
     else
       flag(:todo_fun)
       {["ctx = todo(ctx, :goto, [#{inspect(label)}])"], :cont}
@@ -318,7 +391,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
       |> Enum.with_index(1)
       |> Enum.map(fn {{_, label}, idx} ->
         if Map.has_key?(env.labels, label) do
-          "#{idx} -> #{fn_name(env, label)}(ctx)"
+          "#{idx} -> #{fn_name(env, label)}(ctx#{helper_call(env)})"
         else
           flag(:todo_fun)
           "#{idx} -> todo(ctx, :goto, [#{inspect(label)}])"
@@ -695,10 +768,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
       # What runs when an iteration completes: while loops step and recurse
       # (the condition guards the body); do-while recurses conditionally.
+      recurse = "#{fname}(ctx#{helper_call(env)})"
+
       on_next =
         case kind do
-          :while -> step_lines ++ ["#{fname}(ctx)"]
-          :do_while -> ["if #{cond_s} do", "#{fname}(ctx)", "else", "ctx", "end"]
+          :while -> step_lines ++ [recurse]
+          :do_while -> ["if #{cond_s} do", recurse, "else", "ctx", "end"]
         end
 
       body = loop_body(body_lines, terminal, on_next, needs_try, id)
@@ -710,12 +785,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
         end
 
       defer("""
-      defp #{fname}(ctx) do
-        #{Enum.join(inner, "\n")}
+      defp #{fname}(#{helper_params(inner, env)}) do
+        #{join_body(inner)}
       end
       """)
 
-      {["ctx = #{fname}(ctx)"], :cont}
+      {["ctx = #{fname}(ctx#{helper_call(env)})"], :cont}
     end
   end
 

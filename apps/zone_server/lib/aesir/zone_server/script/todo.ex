@@ -21,26 +21,33 @@ defmodule Aesir.ZoneServer.Script.Todo do
 
   alias Aesir.ZoneServer.Script.NotImplementedError
 
+  # The raise goes through apply/3 so the compiler cannot infer no_return;
+  # otherwise every `ctx = todo(...)` / `v == Todo.call!(...)` in the
+  # thousands of generated modules would emit a type warning.
   @doc """
   Raises for an rAthena buildin (or variable scope) reached in expression
   position with no Aesir implementation yet.
   """
-  @spec call!(atom(), [term()]) :: no_return()
+  @spec call!(atom(), [term()]) :: term()
   def call!(name, args) do
-    raise NotImplementedError,
-      message: "rAthena buildin not implemented: #{name}(#{inspect(args)})",
-      buildin: name,
-      args: args
+    apply(__MODULE__, :raise!, [
+      "rAthena buildin not implemented: #{name}(#{inspect(args)})",
+      name,
+      args
+    ])
   end
 
   @doc """
   Raises for an rAthena constant the transpiler could not resolve.
   """
-  @spec const!(atom()) :: no_return()
+  @spec const!(atom()) :: term()
   def const!(name) do
-    raise NotImplementedError,
-      message: "unresolved rAthena constant: #{name}",
-      buildin: name,
-      args: []
+    apply(__MODULE__, :raise!, ["unresolved rAthena constant: #{name}", name, []])
+  end
+
+  @doc false
+  @spec raise!(String.t(), atom(), [term()]) :: no_return()
+  def raise!(message, buildin, args) do
+    raise NotImplementedError, message: message, buildin: buildin, args: args
   end
 end
