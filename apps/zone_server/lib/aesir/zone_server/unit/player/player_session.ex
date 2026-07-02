@@ -14,6 +14,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   require Logger
 
   alias Aesir.Net.ItemVanished
+  alias Aesir.Net.PartyDisbanded
+  alias Aesir.Net.PartyInfo
+  alias Aesir.Net.PartyMember
   alias Aesir.Net.UnitDespawn
   alias Aesir.Net.UnitSpawn
   alias Aesir.Net.VendingBoardShown
@@ -24,6 +27,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Party.Manager, as: PartyManager
+  alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.Appearance
@@ -238,10 +243,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # (mobs, etc.) decoupled from the player session.
     PubSub.subscribe(Aesir.PubSub, "player:#{character.id}")
 
+    # Join the party's presence topic and send the initial snapshot when the
+    # character is party'd. A missing party row or a live party that no
+    # longer lists this character (kicked while offline) silently resets
+    # `party_id` back to 0 instead of subscribing (design "Login/logout").
+    state = subscribe_party(state)
+
     # Subscribe to mob despawns on this map so we can drop a combat target
     # when the mob we were attacking dies.
     # subscribe at spawn; re-subscribe on warp when warps land.
-    Broadcast.subscribe_mob_despawns(final_game_state.map_name)
+    Broadcast.subscribe_mob_despawns(state.game_state.map_name)
 
     send(self(), :spawn_player)
 
@@ -370,6 +381,51 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     {:noreply, new_state} = ExperienceHandler.handle_gain_exp(base_exp, job_exp, state)
     maybe_drop_items(payload, new_state)
     {:noreply, new_state}
+  end
+
+  # A membership or option change on our own live party: relay the fresh
+  # `PartyInfo` snapshot. If we're no longer listed among the members (an
+  # ordinary kick/leave while online), unsubscribe and clear `party_id`
+  # instead so the topic subscription doesn't leak (design "Flows": Kick,
+  # Leave).
+  @impl true
+  def handle_info(
+        {:party_updated, %PartyState{party_id: party_id} = party_state},
+        %{game_state: %{party_id: party_id, character_id: char_id} = game_state} = state
+      ) do
+    if Map.has_key?(party_state.members, char_id) do
+      MessageRouter.send_to(state.connection_pid, build_party_info(party_state))
+      {:noreply, state}
+    else
+      PubSub.unsubscribe(Aesir.PubSub, "party:#{party_id}")
+      {:noreply, update_game_state(state, %{game_state | party_id: 0})}
+    end
+  end
+
+  # A stale broadcast for a party we've already left/switched away from.
+  @impl true
+  def handle_info({:party_updated, %PartyState{}}, state), do: {:noreply, state}
+
+  @impl true
+  def handle_info(
+        {:party_disbanded, party_id, reason},
+        %{game_state: %{party_id: party_id} = game_state} = state
+      ) do
+    MessageRouter.send_to(state.connection_pid, %PartyDisbanded{
+      party_id: party_id,
+      reason: reason
+    })
+
+    PubSub.unsubscribe(Aesir.PubSub, "party:#{party_id}")
+    {:noreply, update_game_state(state, %{game_state | party_id: 0})}
+  end
+
+  @impl true
+  def handle_info({:party_disbanded, _party_id, _reason}, state), do: {:noreply, state}
+
+  @impl true
+  def handle_info(:party_invite_expired, state) do
+    {:noreply, Map.delete(state, :pending_party_invite)}
   end
 
   @impl true
@@ -697,6 +753,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       game_state.map_name
     )
 
+    if game_state.party_id > 0 do
+      PartyManager.set_online(game_state.party_id, game_state.character_id, false)
+    end
+
     WarpHandler.leave_current_map(game_state, DespawnReason.logged_out())
 
     # Clean up player data (only if this process still owns the registry entry)
@@ -730,6 +790,46 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   defp register_player(%PlayerState{} = game_state),
     do: UnitRegistry.register_player(game_state, self())
+
+  defp subscribe_party(%{game_state: %{party_id: 0}} = state), do: state
+
+  defp subscribe_party(%{game_state: %{party_id: party_id, character_id: char_id}} = state) do
+    with {:ok, _party_state} <- PartyManager.ensure_started(party_id),
+         {:ok, party_state} <- PartyManager.set_online(party_id, char_id, true) do
+      PubSub.subscribe(Aesir.PubSub, "party:#{party_id}")
+      MessageRouter.send_to(state.connection_pid, build_party_info(party_state))
+      state
+    else
+      {:error, _reason} -> reconcile_missing_party(state)
+    end
+  end
+
+  # Kicked-while-offline reconciliation: the party row is gone, or the
+  # character no longer appears in a still-live party's member list. Silent
+  # per design ("Login/logout") -- no ack, just a fire-and-forget persist.
+  defp reconcile_missing_party(%{game_state: game_state} = state) do
+    CharacterPersistence.update_character(game_state.character_id, %{party_id: 0}, async: true)
+    update_game_state(state, %{game_state | party_id: 0})
+  end
+
+  defp build_party_info(%PartyState{} = party_state) do
+    %PartyInfo{
+      party_id: party_state.party_id,
+      name: party_state.name,
+      leader_char_id: party_state.leader_char_id,
+      exp_share: party_state.exp_share,
+      members:
+        Enum.map(party_state.members, fn {_char_id, member} ->
+          %PartyMember{
+            char_id: member.char_id,
+            name: member.name,
+            base_level: member.base_level,
+            online: member.online,
+            map: member.map_name || ""
+          }
+        end)
+    }
+  end
 
   defp sex_to_int("F"), do: 0
   defp sex_to_int("M"), do: 1

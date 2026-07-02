@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -62,6 +63,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
 
       UnitRegistry.update_unit_state(:player, new_game_state.character_id, new_game_state)
       MessageRouter.send_to(connection_pid, %MapMove{map_name: dest_map, x: fx, y: fy})
+
+      if new_game_state.party_id > 0 do
+        PartyManager.push_map_change(
+          new_game_state.party_id,
+          new_game_state.character_id,
+          dest_map
+        )
+      end
 
       Logger.debug(
         "Player #{game_state.character_id} warping #{game_state.map_name} -> #{dest_map} (#{fx}, #{fy})"

@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           character_name: String.t(),
           account_id: integer(),
           process_pid: pid() | nil,
+          party_id: non_neg_integer(),
           sex: String.t(),
           hair: integer(),
           hair_color: integer(),
@@ -210,7 +211,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     last_attack_timestamp: 0,
     act_delay_until: 0,
     last_warp_at: nil,
-    regen_accumulators: %{hp_acc: 0, sp_acc: 0, skill_hp_acc: 0, skill_sp_acc: 0}
+    regen_accumulators: %{hp_acc: 0, sp_acc: 0, skill_hp_acc: 0, skill_sp_acc: 0},
+    # Party membership (0 = none), sourced from the Character at spawn and
+    # kept current by Party.Manager pushes (`characters.party_id` is the
+    # source of truth; this mirrors it for the session's lifetime).
+    party_id: 0
   ]
 
   @doc """
@@ -223,6 +228,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       account_id: character.account_id,
       # Will be set later if needed
       process_pid: nil,
+      party_id: character.party_id,
       sex: character.sex,
       hair: character.hair,
       hair_color: character.hair_color,

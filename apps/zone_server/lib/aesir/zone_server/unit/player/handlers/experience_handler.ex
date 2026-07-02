@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.StatPoint
+  alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -47,9 +48,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
     sync_client(new_state, progression)
     persist(char_id, stats)
     UnitRegistry.update_unit_state(:player, char_id, game_state)
+    push_base_level(game_state, base_gained)
 
     {:noreply, new_state}
   end
+
+  defp push_base_level(%{party_id: party_id} = game_state, base_gained)
+       when party_id > 0 and base_gained > 0 do
+    PartyManager.push_base_level(
+      party_id,
+      game_state.character_id,
+      game_state.stats.progression.base_level
+    )
+  end
+
+  defp push_base_level(_game_state, _base_gained), do: :ok
 
   defp maybe_full_heal(stats, 0), do: stats
 
