@@ -130,6 +130,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Analyzer do
   defp walk_stmt({:fn_decl, name}, acc),
     do: %{acc | local_functions: MapSet.put(acc.local_functions, name)}
 
+  defp walk_stmt({:expr, expr}, acc), do: walk_expr(expr, acc)
   defp walk_stmt({:return, nil}, acc), do: acc
   defp walk_stmt({:return, expr}, acc), do: walk_expr(expr, acc)
   defp walk_stmt({:break}, acc), do: acc

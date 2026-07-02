@@ -123,7 +123,20 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Parser do
   defp statement([{:ident, name}, {:punct, :colon} | rest]), do: {:ok, {:label, name}, rest}
 
   defp statement([{:ident, _} | _] = tokens), do: assign_or_command(tokens)
-  defp statement([{:var, _, _, _} | _] = tokens), do: assignment(tokens)
+
+  # A var-first statement is normally an assignment; a bare expression
+  # statement (evaluated and discarded — corpus typos rely on it) is the
+  # fallback.
+  defp statement([{:var, _, _, _} | _] = tokens) do
+    case assignment(tokens) do
+      {:ok, _, _} = ok ->
+        ok
+
+      {:error, _} ->
+        with {:ok, expr, rest} <- expression(tokens), do: terminated({:expr, expr}, rest)
+    end
+  end
+
   defp statement([{:op, :inc} | rest]), do: incdec(rest, :+)
   defp statement([{:op, :dec} | rest]), do: incdec(rest, :-)
   defp statement(tokens), do: {:error, unexpected(tokens)}
