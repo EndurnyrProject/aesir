@@ -418,37 +418,37 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandlerTest do
   end
 
   describe "packet dispatch" do
-    test "CartMountRequest{mount: true} casts {:cart_mount, true}" do
+    test "CartMountRequest{mount: true} dispatches to CartHandler.mount/1" do
       base = %{game_state: %PlayerState{character_id: @char_id}}
+
+      expect(CartHandler, :mount, fn st -> {:noreply, st} end)
 
       assert {:noreply, ^base} =
                PacketHandler.handle_message(%Aesir.Net.CartMountRequest{mount: true}, base)
-
-      assert_received {:"$gen_cast", {:cart_mount, true}}
     end
 
-    test "MoveToCartRequest casts {:move_to_cart, index, amount}" do
+    test "MoveToCartRequest dispatches move_to_cart with the client index/amount" do
       base = %{game_state: %PlayerState{character_id: @char_id}}
+
+      expect(CartHandler, :move_to_cart, fn 5, 2, st -> {:noreply, st} end)
 
       assert {:noreply, ^base} =
                PacketHandler.handle_message(
                  %Aesir.Net.MoveToCartRequest{inventory_index: 5, amount: 2},
                  base
                )
-
-      assert_received {:"$gen_cast", {:move_to_cart, 5, 2}}
     end
 
-    test "MoveFromCartRequest casts {:move_to_inventory, index, amount}" do
+    test "MoveFromCartRequest dispatches move_to_inventory with the client index/amount" do
       base = %{game_state: %PlayerState{character_id: @char_id}}
+
+      expect(CartHandler, :move_to_inventory, fn 3, 4, st -> {:noreply, st} end)
 
       assert {:noreply, ^base} =
                PacketHandler.handle_message(
                  %Aesir.Net.MoveFromCartRequest{cart_index: 3, amount: 4},
                  base
                )
-
-      assert_received {:"$gen_cast", {:move_to_inventory, 3, 4}}
     end
   end
 

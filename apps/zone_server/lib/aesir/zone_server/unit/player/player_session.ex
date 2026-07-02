@@ -29,11 +29,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Appearance
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
-  alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
-  alias Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
@@ -41,7 +39,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
-  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
@@ -61,13 +58,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   """
   def start_link(args) do
     GenServer.start_link(__MODULE__, args)
-  end
-
-  @doc """
-  Handles a movement request from the client.
-  """
-  def request_move(pid, dest_x, dest_y) do
-    GenServer.cast(pid, {:request_move, dest_x, dest_y})
   end
 
   @doc """
@@ -499,129 +489,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
-  def handle_cast({:request_move, dest_x, dest_y}, state) do
-    MovementHandler.handle_request_move(state, dest_x, dest_y)
-  end
-
-  @impl true
-  def handle_cast({:use_skill, skill_id, level, target_id}, state) do
-    SkillHandler.handle_use_skill(state, skill_id, level, target_id)
-  end
-
-  @impl true
-  def handle_cast({:learn_skill, skill_id}, state) do
-    SkillLearningHandler.handle_learn_skill(skill_id, state)
-  end
-
-  @impl true
-  def handle_cast({:use_item, index}, state) do
-    ItemHandler.handle_use_item(index, state)
-  end
-
-  @impl true
-  def handle_cast({:cart_mount, true}, state) do
-    CartHandler.mount(state)
-  end
-
-  @impl true
-  def handle_cast({:cart_mount, false}, state) do
-    CartHandler.unmount(state)
-  end
-
-  @impl true
-  def handle_cast({:move_to_cart, index, amount}, state) do
-    CartHandler.move_to_cart(index, amount, state)
-  end
-
-  @impl true
-  def handle_cast({:move_to_inventory, index, amount}, state) do
-    CartHandler.move_to_inventory(index, amount, state)
-  end
-
-  @impl true
-  def handle_cast({:vending_open, title, entries}, state) do
-    case VendingHandler.open_shop(state, title, entries) do
-      {:ok, new_state} ->
-        {:noreply, update_game_state(new_state, new_state.game_state)}
-
-      {:error, reason} ->
-        Logger.debug(
-          "Vending open failed for #{state.game_state.character_id}: #{inspect(reason)}"
-        )
-
-        {:noreply, state}
-    end
-  end
-
-  @impl true
-  def handle_cast({:vending_close}, state) do
-    {:ok, new_state} = VendingHandler.close_shop(state, :user_closed)
-    {:noreply, update_game_state(new_state, new_state.game_state)}
-  end
-
-  @impl true
-  def handle_cast({:vending_list, vendor_unit_id}, state) do
-    case VendingHandler.build_list(vendor_unit_id) do
-      {:ok, packet} -> MessageRouter.send_to(state.connection_pid, packet)
-      :error -> :ok
-    end
-
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_cast(
-        {:vending_purchase_request, vendor_unit_id, buy_lines},
-        %{game_state: gs} = buyer_state
-      ) do
-    with :ok <- reject_self_purchase(vendor_unit_id, gs.character_id),
-         {:ok, seller_pid} <- UnitRegistry.get_player_pid(vendor_unit_id),
-         {:ok, buyer_delta} <-
-           GenServer.call(
-             seller_pid,
-             {:vending_purchase, gs.character_id, gs.inventory, gs.zeny, gs.stats,
-              gs.character_name, buy_lines}
-           ),
-         {:ok, new_state} <- VendingHandler.apply_purchase_as_buyer(buyer_state, buyer_delta) do
-      {:noreply, update_game_state(new_state, new_state.game_state)}
-    else
-      {:error, reason} ->
-        Logger.debug("Vending purchase failed for #{gs.character_id}: #{inspect(reason)}")
-        {:noreply, buyer_state}
-    end
-  end
-
-  @impl true
-  def handle_cast({:pickup_item_request, ground_id}, state) do
-    PickupHandler.handle_pickup(ground_id, state)
-  end
-
-  @impl true
   def handle_cast({:warp, map_name, x, y}, state) do
     case WarpHandler.warp(state, map_name, x, y) do
       {:ok, new_state} -> {:noreply, new_state}
       {:error, _reason} -> {:noreply, state}
     end
-  end
-
-  @impl true
-  def handle_cast({:use_skill_ground, skill_id, level, x, y}, state) do
-    SkillHandler.handle_use_skill_ground(state, skill_id, level, x, y)
-  end
-
-  def handle_cast({:request_attack, target_id, action}, state) do
-    # Delegate to CombatActionHandler for state machine based combat
-    CombatActionHandler.handle_attack_request(state, target_id, action)
-  end
-
-  @impl true
-  def handle_cast({:equip_item, client_index, position}, state) do
-    EquipmentHandler.handle_equip(PlayerState.server_index(client_index), position, state)
-  end
-
-  @impl true
-  def handle_cast({:unequip_item, client_index}, state) do
-    EquipmentHandler.handle_unequip(PlayerState.server_index(client_index), state)
   end
 
   @impl true
@@ -851,11 +723,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     packet = build_unit_spawn(game_state)
     MessageRouter.send_to(connection_pid, packet)
   end
-
-  # A player can't buy from their own shop; resolving the seller to self() would
-  # also deadlock the GenServer.call until its 5s timeout crashed the session.
-  defp reject_self_purchase(char_id, char_id), do: {:error, :self_purchase}
-  defp reject_self_purchase(_vendor_unit_id, _char_id), do: :ok
 
   defp maybe_send_vending_board(connection_pid, char_id) do
     case VendingRegistry.get(char_id) do

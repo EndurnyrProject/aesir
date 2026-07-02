@@ -190,8 +190,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       }
 
       {:noreply, new_state} =
-        PlayerSession.handle_cast(
-          {:request_move, 60, 60},
+        PlayerSession.handle_info(
+          {:message, %Aesir.Net.MoveRequest{dest_x: 60, dest_y: 60}},
           state
         )
 

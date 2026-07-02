@@ -7,7 +7,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   from the spatial index), swaps `PlayerState` to the destination, and tells the
   client to load the new map via `MapMove`. The player re-enters the world when
   the client re-acks `MapLoaded`, which re-runs the normal spawn flow on the
-  destination map (see `PacketHandler.handle_map_loaded/1`).
+  destination map (see `MapLoadHandler.handle_map_loaded/1`).
 
   `leave_current_map/2` is the shared teardown also used by the disconnect path.
   """

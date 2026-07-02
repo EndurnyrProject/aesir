@@ -37,9 +37,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   alias Aesir.ZoneServer.Unit.Cart
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
-  alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
+  alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @status_id :sc_push_cart
@@ -256,7 +256,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
 
         MessageRouter.send_to(
           committed.connection_pid,
-          PacketHandler.cart_info(committed.game_state.cart)
+          InventoryView.cart_info(committed.game_state.cart)
         )
 
         {:noreply, committed}
@@ -367,7 +367,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   defp notify_inventory_removed(connection_pid, change, amount) do
     MessageRouter.send_to(
       connection_pid,
-      PacketHandler.item_removed(removal_index(change), amount)
+      InventoryView.item_removed(removal_index(change), amount)
     )
   end
 
@@ -375,7 +375,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   defp notify_cart_removed(connection_pid, change, amount) do
     MessageRouter.send_to(
       connection_pid,
-      PacketHandler.cart_item_removed(removal_index(change), amount)
+      InventoryView.cart_item_removed(removal_index(change), amount)
     )
   end
 
@@ -383,7 +383,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   defp notify_cart_added(connection_pid, cart, change) do
     Enum.each(InventoryManager.affected_indices(change), fn index ->
       item = PlayerState.get_by_index(cart, index)
-      MessageRouter.send_to(connection_pid, PacketHandler.cart_item_added(item, index))
+      MessageRouter.send_to(connection_pid, InventoryView.cart_item_added(item, index))
     end)
   end
 

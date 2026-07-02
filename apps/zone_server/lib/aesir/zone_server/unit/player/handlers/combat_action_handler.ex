@@ -24,7 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   alias Aesir.ZoneServer.Unit.Inventory.Ammo
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
-  alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
+  alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -473,10 +473,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   defp recalc_after_consume(game_state, _char_id, {:reduced, _index, _left}), do: game_state
 
   defp notify_ammo_removed(connection_pid, {:removed, index}),
-    do: MessageRouter.send_to(connection_pid, PacketHandler.item_removed(index, 1))
+    do: MessageRouter.send_to(connection_pid, InventoryView.item_removed(index, 1))
 
   defp notify_ammo_removed(connection_pid, {:reduced, index, _left}),
-    do: MessageRouter.send_to(connection_pid, PacketHandler.item_removed(index, 1))
+    do: MessageRouter.send_to(connection_pid, InventoryView.item_removed(index, 1))
 
   defp determine_post_attack_state(state, target_id, transitioned_state, current_timestamp) do
     if state.game_state.combat_action_type == 7 do

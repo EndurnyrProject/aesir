@@ -33,35 +33,37 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
   end
 
   describe "handle_message/2 inbound ActionRequest dispatch" do
-    test "an attack ActionRequest casts request_attack with the same target/action" do
+    test "an attack ActionRequest dispatches request_attack with the same target/action" do
       state = %{game_state: %PlayerState{character_id: 1000}}
+
+      expect(CombatActionHandler, :handle_attack_request, fn st, 2000, 0 -> {:noreply, st} end)
 
       assert {:noreply, ^state} =
                PacketHandler.handle_message(%ActionRequest{target_id: 2000, action: 0}, state)
-
-      assert_received {:"$gen_cast", {:request_attack, 2000, 0}}
     end
 
-    test "a continuous-attack ActionRequest casts request_attack with action 7" do
+    test "a continuous-attack ActionRequest dispatches request_attack with action 7" do
       state = %{game_state: %PlayerState{character_id: 1000}}
+
+      expect(CombatActionHandler, :handle_attack_request, fn st, 2000, 7 -> {:noreply, st} end)
 
       assert {:noreply, ^state} =
                PacketHandler.handle_message(%ActionRequest{target_id: 2000, action: 7}, state)
-
-      assert_received {:"$gen_cast", {:request_attack, 2000, 7}}
     end
 
-    test "a sit ActionRequest does not cast request_attack" do
+    test "a sit ActionRequest does not dispatch request_attack" do
       state = sit_state(%{@nv_basic_id => 9})
+
+      reject(&CombatActionHandler.handle_attack_request/3)
 
       assert {:noreply, ^state} =
                PacketHandler.handle_message(%ActionRequest{target_id: 0, action: 2}, state)
-
-      refute_received {:"$gen_cast", {:request_attack, _, _}}
     end
 
     test "a sit ActionRequest is blocked when NV_BASIC < 3" do
       state = sit_state(%{})
+
+      reject(&CombatActionHandler.handle_attack_request/3)
 
       log =
         capture_log(fn ->
@@ -70,7 +72,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
         end)
 
       assert log =~ "NV_BASIC"
-      refute_received {:"$gen_cast", {:request_attack, _, _}}
     end
 
     test "a sit ActionRequest is blocked at NV_BASIC level 2" do
@@ -88,10 +89,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
     test "a stand ActionRequest passes when NV_BASIC >= 3" do
       state = sit_state(%{@nv_basic_id => 3})
 
+      reject(&CombatActionHandler.handle_attack_request/3)
+
       assert {:noreply, ^state} =
                PacketHandler.handle_message(%ActionRequest{target_id: 0, action: 3}, state)
-
-      refute_received {:"$gen_cast", {:request_attack, _, _}}
     end
   end
 

@@ -20,8 +20,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
-  alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
+  alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StatusSync
 
@@ -92,7 +92,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
          index when is_integer(index) <- Inventory.stackable_index(gs.inventory, item_id),
          {:ok, persisted, _change} <-
            InventoryOps.remove(gs.character_id, gs.inventory, index, qty) do
-      MessageRouter.send_to(state.connection_pid, PacketHandler.item_removed(index, qty))
+      MessageRouter.send_to(state.connection_pid, InventoryView.item_removed(index, qty))
       commit(state, %{gs | inventory: persisted})
     else
       {:error, reason} -> {{:error, reason}, state}
@@ -133,7 +133,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   defp push_added(connection_pid, inventory, change) do
     Enum.each(affected_indices(change), fn index ->
       item = PlayerState.get_by_index(inventory, index)
-      MessageRouter.send_to(connection_pid, PacketHandler.item_added(item, index))
+      MessageRouter.send_to(connection_pid, InventoryView.item_added(item, index))
     end)
   end
 

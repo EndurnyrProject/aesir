@@ -38,7 +38,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   alias Aesir.ZoneServer.Unit.Inventory.Weight, as: InventoryWeight
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
-  alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
+  alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
@@ -132,6 +132,85 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   end
 
   def close_shop(state, _reason), do: {:ok, state}
+
+  @doc """
+  Session-facing wrapper for `open_shop/3`: commits the new game state to the
+  unit registry on success and logs-and-drops on failure.
+  """
+  @spec handle_open(state(), String.t(), [Vending.entry()]) :: {:noreply, state()}
+  def handle_open(state, title, entries) do
+    case open_shop(state, title, entries) do
+      {:ok, new_state} ->
+        {:noreply, sync_game_state(new_state)}
+
+      {:error, reason} ->
+        Logger.debug(
+          "Vending open failed for #{state.game_state.character_id}: #{inspect(reason)}"
+        )
+
+        {:noreply, state}
+    end
+  end
+
+  @doc """
+  Session-facing wrapper for `close_shop/2` with the `:user_closed` reason.
+  """
+  @spec handle_close(state()) :: {:noreply, state()}
+  def handle_close(state) do
+    {:ok, new_state} = close_shop(state, :user_closed)
+    {:noreply, sync_game_state(new_state)}
+  end
+
+  @doc """
+  Session-facing wrapper for `build_list/1`: replies with the `VendingList`
+  when the vendor's shop is live, silently drops otherwise.
+  """
+  @spec handle_list(state(), integer()) :: {:noreply, state()}
+  def handle_list(state, vendor_unit_id) do
+    case build_list(vendor_unit_id) do
+      {:ok, packet} -> MessageRouter.send_to(state.connection_pid, packet)
+      :error -> :ok
+    end
+
+    {:noreply, state}
+  end
+
+  @doc """
+  Runs a purchase from the buyer session: parks a `call` on the seller session
+  (the transactional authority) and reconciles the returned buyer delta via
+  `apply_purchase_as_buyer/2`. Any failure logs and leaves the buyer untouched.
+  """
+  @spec handle_purchase_request(state(), integer(), [{non_neg_integer(), pos_integer()}]) ::
+          {:noreply, state()}
+  def handle_purchase_request(%{game_state: gs} = buyer_state, vendor_unit_id, buy_lines) do
+    with :ok <- reject_self_purchase(vendor_unit_id, gs.character_id),
+         {:ok, seller_pid} <- UnitRegistry.get_player_pid(vendor_unit_id),
+         {:ok, buyer_delta} <-
+           GenServer.call(
+             seller_pid,
+             {:vending_purchase, gs.character_id, gs.inventory, gs.zeny, gs.stats,
+              gs.character_name, buy_lines}
+           ),
+         {:ok, new_state} <- apply_purchase_as_buyer(buyer_state, buyer_delta) do
+      {:noreply, sync_game_state(new_state)}
+    else
+      {:error, reason} ->
+        Logger.debug("Vending purchase failed for #{gs.character_id}: #{inspect(reason)}")
+        {:noreply, buyer_state}
+    end
+  end
+
+  # A player can't buy from their own shop; resolving the seller to self() would
+  # also deadlock the GenServer.call until its 5s timeout crashed the session.
+  defp reject_self_purchase(char_id, char_id), do: {:error, :self_purchase}
+  defp reject_self_purchase(_vendor_unit_id, _char_id), do: :ok
+
+  # Mirrors the session's registry sync: any wrapper that commits a new
+  # game_state must also publish it to the unit registry.
+  defp sync_game_state(%{game_state: gs} = state) do
+    UnitRegistry.update_unit_state(:player, gs.character_id, gs)
+    state
+  end
 
   @doc """
   Buys `buy_lines` from this seller's live shop, the sole transactional authority.
@@ -446,7 +525,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   @spec notify_seller(pid(), [{non_neg_integer(), pos_integer()}], non_neg_integer()) :: :ok
   defp notify_seller(connection_pid, removals, new_zeny) do
     Enum.each(removals, fn {index, amount} ->
-      MessageRouter.send_to(connection_pid, PacketHandler.cart_item_removed(index, amount))
+      MessageRouter.send_to(connection_pid, InventoryView.cart_item_removed(index, amount))
     end)
 
     StatusSync.send_param(connection_pid, StatusParams.zeny(), new_zeny)
@@ -457,7 +536,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
     Enum.each(changes, fn change ->
       Enum.each(affected_indices(change), fn index ->
         item = PlayerState.get_by_index(inventory, index)
-        MessageRouter.send_to(connection_pid, PacketHandler.item_added(item, index))
+        MessageRouter.send_to(connection_pid, InventoryView.item_added(item, index))
       end)
     end)
   end

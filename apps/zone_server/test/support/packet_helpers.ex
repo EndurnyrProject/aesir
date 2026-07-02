@@ -5,7 +5,7 @@ defmodule Aesir.ZoneServer.PacketHelpers do
   verify outgoing packets to clients.
   """
 
-  alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.Net.MoveRequest
 
   @doc """
   Simulates an incoming decoded protobuf message from a client by sending it
@@ -33,7 +33,7 @@ defmodule Aesir.ZoneServer.PacketHelpers do
       simulate_move_request(player_pid, 150, 150)
   """
   def simulate_move_request(player_pid, dest_x, dest_y) do
-    PlayerSession.request_move(player_pid, dest_x, dest_y)
+    simulate_incoming_message(player_pid, %MoveRequest{dest_x: dest_x, dest_y: dest_y})
   end
 
   @doc """

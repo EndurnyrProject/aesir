@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionVendingTest do
   alias Aesir.Net.VendingBoardShown
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -96,7 +97,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionVendingTest do
       state = %{game_state: buyer, connection_pid: self()}
 
       assert {:noreply, ^state} =
-               PlayerSession.handle_cast({:vending_purchase_request, 1, [{0, 1}]}, state)
+               VendingHandler.handle_purchase_request(state, 1, [{0, 1}])
 
       refute_received {:send, _ch, _body}
     end

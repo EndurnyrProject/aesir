@@ -125,13 +125,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
   end
 
   describe "packet dispatch" do
-    test "a UseItem packet casts {:use_item, index}" do
+    test "a UseItem packet dispatches to the handler with the client index" do
       state = %{game_state: %PlayerState{character_id: 1000}}
+
+      expect(ItemHandler, :handle_use_item, fn @red_potion_client_index, st ->
+        {:noreply, st}
+      end)
 
       assert {:noreply, ^state} =
                PacketHandler.handle_message(%UseItem{index: @red_potion_client_index}, state)
-
-      assert_received {:"$gen_cast", {:use_item, @red_potion_client_index}}
     end
   end
 

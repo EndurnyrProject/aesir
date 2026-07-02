@@ -32,7 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
   alias Aesir.ZoneServer.Npc.Shop.Registry, as: ShopRegistry
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
-  alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
+  alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.Shop, as: ShopCore
@@ -259,7 +259,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
   @spec notify_removed(pid(), [{non_neg_integer(), pos_integer()}]) :: :ok
   defp notify_removed(connection_pid, removals) do
     Enum.each(removals, fn {index, amount} ->
-      MessageRouter.send_to(connection_pid, PacketHandler.item_removed(index, amount))
+      MessageRouter.send_to(connection_pid, InventoryView.item_removed(index, amount))
     end)
   end
 
@@ -279,7 +279,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
     Enum.each(changes, fn change ->
       Enum.each(affected_indices(change), fn index ->
         item = PlayerState.get_by_index(inventory, index)
-        MessageRouter.send_to(connection_pid, PacketHandler.item_added(item, index))
+        MessageRouter.send_to(connection_pid, InventoryView.item_added(item, index))
       end)
     end)
   end

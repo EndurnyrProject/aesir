@@ -19,7 +19,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Inventory.Weight
+  alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
+  alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -251,7 +253,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
     test "item_added maps a gained item, applying the +2 client offset", %{character: character} do
       item = seed_item(character.id, 501, 5, %{identify: 1, refine: 0, card0: 4001, favorite: 1})
 
-      assert %ItemAdded{} = added = PacketHandler.item_added(item, 0)
+      assert %ItemAdded{} = added = InventoryView.item_added(item, 0)
 
       assert added.index == PlayerState.client_index(0)
       assert added.amount == 5
@@ -264,13 +266,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
 
     test "item_removed names the index, amount and reason", %{character: _character} do
       assert %ItemRemoved{index: index, amount: 3, reason: 1} =
-               PacketHandler.item_removed(0, 3, 1)
+               InventoryView.item_removed(0, 3, 1)
 
       assert index == PlayerState.client_index(0)
     end
 
     test "item_removed defaults to the normal reason code", %{character: _character} do
-      assert %ItemRemoved{reason: 0} = PacketHandler.item_removed(0, 1)
+      assert %ItemRemoved{reason: 0} = InventoryView.item_removed(0, 1)
     end
   end
 
@@ -379,22 +381,24 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
   end
 
   describe "equip/unequip inbound dispatch" do
-    test "an EquipItem casts equip_item with the same index/position" do
+    test "an EquipItem dispatches handle_equip with the server index/position" do
       state = %{game_state: %PlayerState{character_id: 1000}}
+      server_index = PlayerState.server_index(7)
+
+      expect(EquipmentHandler, :handle_equip, fn ^server_index, 2, st -> {:noreply, st} end)
 
       assert {:noreply, ^state} =
                PacketHandler.handle_message(%EquipItem{index: 7, position: 2}, state)
-
-      assert_received {:"$gen_cast", {:equip_item, 7, 2}}
     end
 
-    test "an UnequipItem casts unequip_item with the same index" do
+    test "an UnequipItem dispatches handle_unequip with the server index" do
       state = %{game_state: %PlayerState{character_id: 1000}}
+      server_index = PlayerState.server_index(7)
+
+      expect(EquipmentHandler, :handle_unequip, fn ^server_index, st -> {:noreply, st} end)
 
       assert {:noreply, ^state} =
                PacketHandler.handle_message(%UnequipItem{index: 7}, state)
-
-      assert_received {:"$gen_cast", {:unequip_item, 7}}
     end
   end
 
@@ -436,8 +440,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       bare_atk = state.game_state.stats.combat_stats.atk
 
       {:noreply, new_state} =
-        PlayerSession.handle_cast(
-          {:equip_item, PlayerState.client_index(server_index), 2},
+        PlayerSession.handle_info(
+          {:message, %EquipItem{index: PlayerState.client_index(server_index), position: 2}},
           state
         )
 
@@ -475,8 +479,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       shield_index = index_of(state.game_state.inventory, 2101)
 
       {:noreply, new_state} =
-        PlayerSession.handle_cast(
-          {:equip_item, PlayerState.client_index(katana_index), 34},
+        PlayerSession.handle_info(
+          {:message, %EquipItem{index: PlayerState.client_index(katana_index), position: 34}},
           state
         )
 
@@ -502,8 +506,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       server_index = index_of(state.game_state.inventory, 1101)
 
       {:noreply, new_state} =
-        PlayerSession.handle_cast(
-          {:unequip_item, PlayerState.client_index(server_index)},
+        PlayerSession.handle_info(
+          {:message, %UnequipItem{index: PlayerState.client_index(server_index)}},
           state
         )
 
@@ -525,8 +529,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       stub(Persistence, :transaction, fn _fun -> {:error, :persist_failed} end)
 
       {:noreply, new_state} =
-        PlayerSession.handle_cast(
-          {:equip_item, PlayerState.client_index(server_index), 2},
+        PlayerSession.handle_info(
+          {:message, %EquipItem{index: PlayerState.client_index(server_index), position: 2}},
           state
         )
 
@@ -542,7 +546,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
 
       {:noreply, new_state} =
-        PlayerSession.handle_cast({:equip_item, PlayerState.client_index(99), 2}, state)
+        PlayerSession.handle_info(
+          {:message, %EquipItem{index: PlayerState.client_index(99), position: 2}},
+          state
+        )
 
       assert new_state.game_state.inventory == state.game_state.inventory
 
@@ -570,8 +577,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       end)
 
       {:noreply, _new_state} =
-        PlayerSession.handle_cast(
-          {:equip_item, PlayerState.client_index(server_index), 0x100},
+        PlayerSession.handle_info(
+          {:message, %EquipItem{index: PlayerState.client_index(server_index), position: 0x100}},
           state
         )
 
@@ -605,8 +612,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       end)
 
       {:noreply, _new_state} =
-        PlayerSession.handle_cast(
-          {:equip_item, PlayerState.client_index(server_index), 0x20},
+        PlayerSession.handle_info(
+          {:message, %EquipItem{index: PlayerState.client_index(server_index), position: 0x20}},
           state
         )
 
@@ -626,8 +633,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       server_index = index_of(state.game_state.inventory, 13210)
 
       {:noreply, new_state} =
-        PlayerSession.handle_cast(
-          {:equip_item, PlayerState.client_index(server_index), 0x8000},
+        PlayerSession.handle_info(
+          {:message, %EquipItem{index: PlayerState.client_index(server_index), position: 0x8000}},
           state
         )
 

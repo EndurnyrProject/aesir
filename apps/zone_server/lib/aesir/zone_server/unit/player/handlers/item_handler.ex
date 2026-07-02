@@ -18,8 +18,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
-  alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
+  alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   # CompiledItemScripts is created at runtime by ScriptCompiler.compile_all!/1, so
@@ -64,7 +64,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
         final_gs = %{ctx.game_state | inventory: new_inventory}
         committed = StatsManager.update_game_state(state, final_gs)
 
-        MessageRouter.send_to(state.connection_pid, PacketHandler.item_removed(server_index, 1))
+        MessageRouter.send_to(state.connection_pid, InventoryView.item_removed(server_index, 1))
 
         MessageRouter.send_to(state.connection_pid, %ItemUseResult{
           index: client_index,

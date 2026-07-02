@@ -41,28 +41,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   end
 
   describe "handle_message/2 inbound skill dispatch" do
-    test "a SkillCast casts use_skill with the same skill/level/target" do
+    test "a SkillCast dispatches use_skill with the same skill/level/target" do
       state = %{game_state: %PlayerState{character_id: 1000}}
+
+      expect(SkillHandler, :handle_use_skill, fn st, 29, 1, 2000 -> {:noreply, st} end)
 
       assert {:noreply, ^state} =
                PacketHandler.handle_message(
                  %SkillCast{skill_id: 29, level: 1, target_id: 2000},
                  state
                )
-
-      assert_received {:"$gen_cast", {:use_skill, 29, 1, 2000}}
     end
 
-    test "a GroundSkillCast casts use_skill_ground with the same skill/level/cell" do
+    test "a GroundSkillCast dispatches use_skill_ground with the same skill/level/cell" do
       state = %{game_state: %PlayerState{character_id: 1000}}
+
+      expect(SkillHandler, :handle_use_skill_ground, fn st, 89, 1, 12, 12 -> {:noreply, st} end)
 
       assert {:noreply, ^state} =
                PacketHandler.handle_message(
                  %GroundSkillCast{skill_id: 89, level: 1, x: 12, y: 12},
                  state
                )
-
-      assert_received {:"$gen_cast", {:use_skill_ground, 89, 1, 12, 12}}
     end
   end
 

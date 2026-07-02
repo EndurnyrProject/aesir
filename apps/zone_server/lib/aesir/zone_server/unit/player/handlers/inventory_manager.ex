@@ -9,7 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
-  alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
+  alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
 
@@ -84,7 +84,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
   def notify_added(connection_pid, inventory, change) do
     Enum.each(affected_indices(change), fn index ->
       item = PlayerState.get_by_index(inventory, index)
-      MessageRouter.send_to(connection_pid, PacketHandler.item_added(item, index))
+      MessageRouter.send_to(connection_pid, InventoryView.item_added(item, index))
     end)
   end
 

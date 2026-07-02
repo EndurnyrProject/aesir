@@ -152,14 +152,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandlerTest do
   end
 
   describe "packet dispatch" do
-    test "a LearnSkill packet casts {:learn_skill, id}" do
+    test "a LearnSkill packet dispatches to the handler with the skill id" do
       sword_id = catalog_id(:sm_sword)
       state = %{game_state: %PlayerState{character_id: 1000}}
 
+      expect(SkillLearningHandler, :handle_learn_skill, fn ^sword_id, st -> {:noreply, st} end)
+
       assert {:noreply, ^state} =
                PacketHandler.handle_message(%LearnSkill{skill_id: sword_id}, state)
-
-      assert_received {:"$gen_cast", {:learn_skill, ^sword_id}}
     end
   end
 end
