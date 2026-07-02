@@ -26,6 +26,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.NpcInteract
   alias Aesir.Net.NpcSellRequest
   alias Aesir.Net.NpcTalk
+  alias Aesir.Net.PartyCreateRequest
+  alias Aesir.Net.PartyInviteRequest
+  alias Aesir.Net.PartyInviteResponse
+  alias Aesir.Net.PartyKickRequest
+  alias Aesir.Net.PartyLeaderRequest
+  alias Aesir.Net.PartyLeaveRequest
+  alias Aesir.Net.PartyOptionsRequest
   alias Aesir.Net.PickupItemRequest
   alias Aesir.Net.Respawn
   alias Aesir.Net.SkillCast
@@ -50,6 +57,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.NameHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PickupHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
@@ -230,6 +238,41 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   # CZ_REQNAME2 0x0368).
   def handle_message(%NameRequest{entity_id: entity_id}, state) do
     NameHandler.handle_name_request(entity_id, state)
+  end
+
+  # PartyCreateRequest - Player creates a new party with themselves as leader.
+  def handle_message(%PartyCreateRequest{} = msg, state) do
+    PartyHandler.handle_create_request(msg, state)
+  end
+
+  # PartyInviteRequest - Leader invites a character to the party by id or name.
+  def handle_message(%PartyInviteRequest{} = msg, state) do
+    PartyHandler.handle_invite_request(msg, state)
+  end
+
+  # PartyInviteResponse - Invitee's accept/decline response to a pending invite.
+  def handle_message(%PartyInviteResponse{} = msg, state) do
+    PartyHandler.handle_invite_response(msg, state)
+  end
+
+  # PartyLeaveRequest - Player leaves their current party (leader leaving disbands it).
+  def handle_message(%PartyLeaveRequest{} = msg, state) do
+    PartyHandler.handle_leave_request(msg, state)
+  end
+
+  # PartyKickRequest - Leader removes a member from the party.
+  def handle_message(%PartyKickRequest{} = msg, state) do
+    PartyHandler.handle_kick_request(msg, state)
+  end
+
+  # PartyOptionsRequest - Leader toggles even-share EXP.
+  def handle_message(%PartyOptionsRequest{} = msg, state) do
+    PartyHandler.handle_options_request(msg, state)
+  end
+
+  # PartyLeaderRequest - Leader transfers leadership to another member.
+  def handle_message(%PartyLeaderRequest{} = msg, state) do
+    PartyHandler.handle_leader_request(msg, state)
   end
 
   # NpcTalk - Player clicked an NPC unit (protobuf analogue of CZ_CONTACTNPC 0x0090).

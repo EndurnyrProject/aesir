@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PickupHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
@@ -193,6 +194,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   """
   def has_status?(pid, status_id) do
     GenServer.call(pid, {:has_status, status_id})
+  end
+
+  @doc """
+  Delivers a pending party invite to this player's session: stores it, sends
+  the `PartyInviteNotify`, and arms its 30s expiry timer. Rejects a second
+  invite while one is already pending and unexpired.
+  """
+  @spec deliver_party_invite(pid(), map()) :: :ok | {:error, :invite_pending}
+  def deliver_party_invite(pid, invite) do
+    GenServer.call(pid, {:deliver_party_invite, invite})
   end
 
   @impl true
@@ -649,6 +660,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       {:error, reason} ->
         {:reply, {:error, reason}, seller_state}
     end
+  end
+
+  @impl true
+  def handle_call({:deliver_party_invite, invite}, _from, state) do
+    PartyHandler.handle_invite_delivery(invite, state)
   end
 
   @impl true

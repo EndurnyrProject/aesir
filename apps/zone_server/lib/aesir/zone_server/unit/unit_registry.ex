@@ -303,4 +303,23 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
   def list_players do
     list_units_by_type(:player)
   end
+
+  @doc """
+  Finds an online player's character id by exact name match.
+
+  No name index exists (only the `account_id` reverse index), so this scans
+  `list_players/0`; the online player count is small enough for a linear scan
+  to be cheap.
+  """
+  @spec find_char_id_by_name(String.t()) :: {:ok, unit_id()} | {:error, :not_found}
+  def find_char_id_by_name(name) do
+    :player
+    |> list_units_by_type()
+    |> Enum.find_value({:error, :not_found}, fn char_id ->
+      case get_player_name(char_id) do
+        {:ok, ^name} -> {:ok, char_id}
+        _ -> nil
+      end
+    end)
+  end
 end

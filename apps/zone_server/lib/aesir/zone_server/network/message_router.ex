@@ -51,6 +51,8 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def route(%Aesir.Net.NpcShopOpen{}), do: {:gameplay, :npc_shop_open}
   def route(%Aesir.Net.NpcBuyResult{}), do: {:gameplay, :npc_buy_result}
   def route(%Aesir.Net.NpcSellResult{}), do: {:gameplay, :npc_sell_result}
+  def route(%Aesir.Net.PartyActionResult{}), do: {:gameplay, :party_action_result}
+  def route(%Aesir.Net.PartyInviteNotify{}), do: {:gameplay, :party_invite_notify}
 
   def route(%Aesir.Net.UnitSpawn{}), do: {:world, :unit_spawn}
   def route(%Aesir.Net.UnitDespawn{}), do: {:world, :unit_despawn}
