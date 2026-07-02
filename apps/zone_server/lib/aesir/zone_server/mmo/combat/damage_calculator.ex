@@ -330,9 +330,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   end
 
   defp apply_status_effect_damage_modifiers(damage, modifiers) do
-    damage_modifier = Map.get(modifiers, :damage_bonus, 0) + Map.get(modifiers, :atk_bonus, 0)
+    damage_bonus = Map.get(modifiers, :damage_bonus, 0)
+    atk_bonus = Map.get(modifiers, :atk_bonus, 0)
+    # :watk is flat weapon ATK granted by statuses (SC_LOUD / Crazy Uproar, Impositio
+    # Manus); it is added as flat ATK alongside :atk_bonus / :damage_bonus.
+    weapon_atk = Map.get(modifiers, :watk, 0)
 
-    DamageShared.apply_damage_multiplier(damage + damage_modifier, modifiers)
+    flat_atk = damage_bonus + atk_bonus + weapon_atk
+
+    DamageShared.apply_damage_multiplier(damage + flat_atk, modifiers)
   end
 
   defp apply_status_effect_defense_modifiers(hard_def, soft_def, defender) do

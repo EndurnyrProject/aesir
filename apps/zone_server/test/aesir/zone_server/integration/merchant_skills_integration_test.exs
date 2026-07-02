@@ -23,13 +23,13 @@ defmodule Aesir.ZoneServer.Integration.MerchantSkillsIntegrationTest do
 
   - MC_LOUD's `Effects.Loud` grants `%{str: 4, watk: 30}` (rAthena's `+4 STR,
     +30 batk`). Effective STR is wired through `Stats.get_effective_stat/2` and
-    is asserted directly. The `:watk` bonus mirrors the existing (pre-spec)
-    `Effects.Impositio` convention: it lands in `modifiers.status_effects` and
-    is readable via `Stats.get_status_modifier/2`, but — like Impositio's own
-    `:watk` — is not yet wired into `combat_stats.atk` (only the `:atk` key
-    is consumed there). This test asserts the real, wired value
-    (`get_status_modifier/2`), not a `combat_stats.atk` delta that the current
-    pipeline does not produce.
+    is asserted directly. The `:watk` bonus (shared with `Effects.Impositio`)
+    lands in `modifiers.status_effects`, is readable via
+    `Stats.get_status_modifier/2` (asserted here), and flows into melee/skill
+    damage as flat weapon ATK via `DamageCalculator`'s status-effect damage
+    modifiers — the `:watk`-reaches-damage wiring is proven deterministically in
+    `damage_calculator_test.exs` ("adds flat weapon ATK (:watk) granted by
+    statuses").
   """
 
   use Aesir.ZoneServer.IntegrationCase

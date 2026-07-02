@@ -295,6 +295,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       # No modifiers = no change
       assert result == 100
     end
+
+    test "adds flat weapon ATK (:watk) granted by statuses (SC_LOUD / Impositio)" do
+      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
+      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(RaceModifiers, :get_modifier, fn _, _ -> 1.0 end)
+      stub(RaceModifiers, :player_race, fn -> :human end)
+      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{watk: 30} end)
+
+      attacker = CombatTestHelper.create_player_combatant()
+      defender = CombatTestHelper.create_mob_combatant()
+
+      assert {:ok, result} = DamageCalculator.apply_modifier_pipeline(100, attacker, defender)
+      # SC_LOUD's +30 base ATK flows into damage as flat weapon ATK
+      assert result == 130
+    end
   end
 
   describe "apply_defense_formula/2" do
