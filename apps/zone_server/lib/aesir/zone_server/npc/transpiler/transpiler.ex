@@ -26,7 +26,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
   Runs the transpile.
 
   Options:
-  - `:only` — glob (relative to `npc/re/`) limiting the source files
+  - `:only` — glob (relative to `npc`) limiting the source files
   - `:out_root` — zone_server app root the output paths hang off
     (default `apps/zone_server`)
   """
@@ -89,7 +89,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
   end
 
   defp parse_files(root, only) do
-    base = Path.join([root, "npc", "re"])
+    base = Path.join([root, "npc"])
     files = base |> Path.join("**/*.txt") |> Path.wildcard()
 
     files =

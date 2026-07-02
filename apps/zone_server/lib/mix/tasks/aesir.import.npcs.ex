@@ -82,7 +82,7 @@ defmodule Mix.Tasks.Aesir.Import.Npcs do
 
     #{list_or_none(result.unresolved_sprites)}
 
-    ## Orphan duplicates (source NPC not in npc/re)
+    ## Orphan duplicates (source NPC not in npc)
 
     #{list_or_none(result.orphan_duplicates)}
 

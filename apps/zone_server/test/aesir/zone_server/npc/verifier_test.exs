@@ -55,15 +55,19 @@ defmodule Aesir.ZoneServer.Npc.VerifierTest do
       assert log =~ "not loaded"
     end
 
-    test "raises ArgumentError at boot on a cell collision" do
+    test "warns but does not raise at boot on a cell collision" do
       stub(MapCache, :exists?, fn _ -> true end)
 
-      assert_raise ArgumentError, fn ->
-        Verifier.verify!([
-          {ModA, placement(x: 150, y: 150)},
-          {ModB, placement(x: 150, y: 150)}
-        ])
-      end
+      log =
+        capture_log(fn ->
+          assert :ok =
+                   Verifier.verify!([
+                     {ModA, placement(x: 150, y: 150)},
+                     {ModB, placement(x: 150, y: 150)}
+                   ])
+        end)
+
+      assert log =~ "cell collision"
     end
   end
 end

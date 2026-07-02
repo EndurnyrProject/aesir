@@ -5,19 +5,24 @@ defmodule Aesir.ZoneServer.Npc.Verifier do
   Given the registry's `{module, placement}` entries:
 
     * `{:cell_collision, {map, x, y}, modules}` — two or more NPCs sharing one
-      cell — is a **fatal** error. NPC unit gids are derived deterministically
-      from the cell, so colliding NPCs would collapse onto one gid and shadow
-      each other on a click.
+      cell. NPC unit gids are derived deterministically from the cell, so
+      colliding NPCs collapse onto one gid and only the registry's last-write
+      survives on a click; the rest are shadowed and unreachable.
+
+  A cell collision is a data problem worth surfacing, but it must **not** take
+  the zone server down: one bad NPC (often an auto-imported duplicate) should
+  never block boot. `verify!/1` therefore logs a warning per collision and boots
+  on, leaving the surviving NPC reachable.
 
   NPCs are objects, not walking units, so a spawn cell is **not** required to be
   walkable — official NPCs routinely sit on walls, edges, and decorative cells.
   A placement on a map that is not loaded in `Aesir.ZoneServer.Map.MapCache` is
-  likewise not fatal: `verify!/1` logs a warning for it (likely a typo or a
-  not-yet-imported map — the NPC is simply unreachable until that map is added)
-  and boots on.
+  likewise non-fatal: `verify!/1` logs a warning for it (likely a typo or a
+  not-yet-imported map — the NPC is simply unreachable until that map is added).
 
-  `verify/1` returns `:ok` or the list of fatal errors; `verify!/1` logs the
-  unloaded-map warnings and then raises on any fatal error.
+  `verify/1` returns `:ok` or the list of detected collisions for programmatic
+  use; `verify!/1` logs both the unloaded-map and collision warnings and always
+  returns `:ok`.
   """
 
   require Logger
@@ -43,17 +48,28 @@ defmodule Aesir.ZoneServer.Npc.Verifier do
 
   @doc """
   Boot-time verification: logs a warning for every placement on a map that is not
-  loaded (mirroring `Aesir.ZoneServer.Npc.Warps.sanitize/1`'s non-fatal handling),
-  then returns `:ok` or raises `ArgumentError` on a fatal error (a cell collision).
+  loaded and for every cell collision (mirroring
+  `Aesir.ZoneServer.Npc.Warps.sanitize/1`'s non-fatal handling), then always
+  returns `:ok`. Invalid NPCs are dropped/shadowed, never fatal to boot.
   """
   @spec verify!([entry()]) :: :ok
   def verify!(entries) do
     warn_unloaded_maps(entries)
+    warn_collisions(entries)
 
-    case verify(entries) do
-      :ok -> :ok
-      {:error, errors} -> raise ArgumentError, "invalid NPC placements: #{inspect(errors)}"
+    :ok
+  end
+
+  @spec warn_collisions([entry()]) :: :ok
+  defp warn_collisions(entries) do
+    for {:cell_collision, {map, x, y}, modules} <- collision_errors(entries) do
+      Logger.warning(
+        "NPC cell collision at #{inspect({map, x, y})}: #{inspect(modules)} share one cell; " <>
+          "only one will be reachable, the rest are shadowed."
+      )
     end
+
+    :ok
   end
 
   @spec warn_unloaded_maps([entry()]) :: :ok
