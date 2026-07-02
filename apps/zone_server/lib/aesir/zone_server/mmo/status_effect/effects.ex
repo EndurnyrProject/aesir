@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects do
     Effects.Impositio,
     Effects.IncreaseAgi,
     Effects.Kyrie,
+    Effects.Loud,
     Effects.Magnificat,
     Effects.Pneuma,
     Effects.PoemBragi,
