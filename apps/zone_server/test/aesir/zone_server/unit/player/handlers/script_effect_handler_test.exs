@@ -17,9 +17,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @sphmask_id 7114
   @zeny_param 20
@@ -31,8 +34,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
     Mimic.copy(Items)
     Mimic.copy(InventoryOps)
     Mimic.copy(CharacterPersistence)
+    Mimic.copy(Broadcast)
+    Mimic.copy(UnitRegistry)
 
     stub(CharacterPersistence, :update_character, fn _, _, _ -> {:ok, %Character{}} end)
+    stub(Broadcast, :to_player, fn _char_id, _packet -> :ok end)
+    stub(Broadcast, :to_visible_players, fn _game_state, _packet, _opts -> :ok end)
+    stub(UnitRegistry, :update_unit_state, fn :player, _char_id, _game_state -> :ok end)
     :ok
   end
 
@@ -189,6 +197,58 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
       assert new_state == state
       refute_received {:send, _ch, {:item_removed, _}}
     end
+  end
+
+  describe "{:change_job, job_id}" do
+    test "updates progression.job_id and returns the new game_state" do
+      {:ok, knight_id} = AvailableJobs.job_name_to_id(:knight)
+
+      {reply, new_state} =
+        ScriptEffectHandler.apply_op({:change_job, knight_id}, job_change_state())
+
+      assert {:ok, game_state} = reply
+      assert game_state.stats.progression.job_id == knight_id
+      assert new_state.game_state.stats.progression.job_id == knight_id
+    end
+
+    test "rejects :unknown_job and mutates nothing" do
+      reject(&CharacterPersistence.update_character/3)
+
+      state = job_change_state()
+      {reply, new_state} = ScriptEffectHandler.apply_op({:change_job, 99_999}, state)
+
+      assert reply == {:error, :unknown_job}
+      assert new_state == state
+    end
+  end
+
+  defp job_change_state do
+    character = %Character{
+      id: 1000,
+      account_id: 2000,
+      name: "Swordy",
+      last_map: "prontera",
+      last_x: 150,
+      last_y: 150,
+      sex: "M",
+      hair: 1,
+      hair_color: 0,
+      clothes_color: 0,
+      head_mid: 0,
+      head_bottom: 0,
+      robe: 0,
+      str: 10,
+      agi: 1,
+      vit: 1,
+      int: 1,
+      dex: 1,
+      luk: 1,
+      base_level: 50,
+      job_level: 50,
+      class: 0
+    }
+
+    %{connection_pid: self(), game_state: PlayerState.new(character)}
   end
 
   defp base_state(opts \\ []) do

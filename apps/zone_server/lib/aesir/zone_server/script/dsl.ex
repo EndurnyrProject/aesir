@@ -379,6 +379,15 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   def set_char_var(%Ctx{status: {:error, _}} = ctx, _key, _value), do: ctx
   def set_char_var(%Ctx{} = ctx, key, value), do: apply_op(ctx, {:set_char_var, key, value})
 
+  @doc """
+  Changes the player's job to `job_id` through the session seam, recomputing
+  job-dependent stats and refreshing the client's sprite/skill window. Halts
+  `:unknown_job` when `job_id` does not resolve to a known job.
+  """
+  @spec jobchange(Ctx.t(), non_neg_integer()) :: Ctx.t()
+  def jobchange(%Ctx{status: {:error, _}} = ctx, _job_id), do: ctx
+  def jobchange(%Ctx{} = ctx, job_id), do: apply_op(ctx, {:change_job, job_id})
+
   # Routes a state-mutating op through the single-writer session (always a
   # cross-process GenServer.call from the interaction, never a self-call), then
   # folds the authoritative game_state back into ctx or halts on error.
