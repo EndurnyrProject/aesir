@@ -21,7 +21,7 @@ defmodule Aesir.ZoneServer.Integration.StatusPointsIntegrationTest do
       {:ok, req} = JobManagement.get_base_exp(:novice, 1)
 
       flush_packets()
-      send(player.pid, {:mob_killed, %{base_exp: req, job_exp: 0}})
+      send(player.pid, {:mob_killed, %{base_exp: req, job_exp: 0, mob_level: 1}})
 
       status_point_id = StatusParams.status_point()
       assert_receive {:packet_sent, %ParamChange{var_id: ^status_point_id, value: 3}, _}, 1_000

@@ -43,13 +43,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
     %{game_state: PlayerState.new(character()), connection_pid: self()}
   end
 
+  # mob_level matches the killer's base_level (50) so the renewal level-gap
+  # penalty is neutral (rate 100) and does not affect the mocked EXP amounts
+  # this file is actually exercising (drop wiring).
   defp payload(drops) do
     %{
       mob_id: 1001,
       base_exp: 100,
       job_exp: 50,
       drops: drops,
-      mob_level: 25,
+      mob_level: 50,
       map: "morocc",
       x: 200,
       y: 90
@@ -67,7 +70,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
     drops = [%MobDrop{item: "Red_Potion", rate: 10_000}]
     rolled = [{501, 1, 200, 90}]
 
-    expect(DropCalculator, :roll, fn ^drops, 7, 50, 25, "morocc", 200, 90 -> rolled end)
+    expect(DropCalculator, :roll, fn ^drops, 7, 50, 50, "morocc", 200, 90 -> rolled end)
     expect(Coordinator, :drop_items, fn "morocc", ^rolled, 200, 90 -> :ok end)
 
     {:noreply, _state} = PlayerSession.handle_info({:mob_killed, payload(drops)}, state())
@@ -79,7 +82,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
     expect(ExperienceHandler, :handle_gain_exp, fn 100, 50, state -> {:noreply, state} end)
 
     drops = [%MobDrop{item: "Red_Potion", rate: 1}]
-    expect(DropCalculator, :roll, fn ^drops, 7, 50, 25, "morocc", 200, 90 -> [] end)
+    expect(DropCalculator, :roll, fn ^drops, 7, 50, 50, "morocc", 200, 90 -> [] end)
     reject(&Coordinator.drop_items/4)
 
     {:noreply, _state} = PlayerSession.handle_info({:mob_killed, payload(drops)}, state())
@@ -91,6 +94,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
     reject(&Coordinator.drop_items/4)
 
     {:noreply, _state} =
-      PlayerSession.handle_info({:mob_killed, %{base_exp: 10, job_exp: 0}}, state())
+      PlayerSession.handle_info(
+        {:mob_killed, %{base_exp: 10, job_exp: 0, mob_level: 50}},
+        state()
+      )
   end
 end

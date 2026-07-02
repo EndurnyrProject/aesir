@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Constants.ObjectType
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
+  alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
@@ -377,8 +378,20 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
-  def handle_info({:mob_killed, %{base_exp: base_exp, job_exp: job_exp} = payload}, state) do
-    {:noreply, new_state} = ExperienceHandler.handle_gain_exp(base_exp, job_exp, state)
+  def handle_info(
+        {:mob_killed, %{base_exp: base_exp, job_exp: job_exp, mob_level: mob_level} = payload},
+        state
+      ) do
+    killer_base_level = state.game_state.stats.progression.base_level
+    rate = LevelPenalty.exp(mob_level, killer_base_level)
+
+    {:noreply, new_state} =
+      ExperienceHandler.handle_gain_exp(
+        apply_level_penalty(base_exp, rate),
+        apply_level_penalty(job_exp, rate),
+        state
+      )
+
     maybe_drop_items(payload, new_state)
     {:noreply, new_state}
   end
@@ -781,6 +794,17 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   defp maybe_drop_items(_payload, _state), do: :ok
+
+  # Scales a mob-kill EXP amount by the renewal level-gap penalty rate
+  # (`LevelPenalty.exp/2`, 100 = neutral). Floors a positive amount at 1 so a
+  # kill that granted some EXP never rounds all the way down to zero
+  # (rAthena `mob.cpp:3211`).
+  defp apply_level_penalty(amount, rate) do
+    case div(amount * rate, 100) do
+      0 when amount > 0 -> 1
+      scaled -> scaled
+    end
+  end
 
   defp update_game_state(state, new_game_state) do
     UnitRegistry.update_unit_state(:player, new_game_state.character_id, new_game_state)
