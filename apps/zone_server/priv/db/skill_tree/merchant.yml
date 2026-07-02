@@ -30,3 +30,5 @@
           level: 1
     - name: MC_INCCARRY
       max_level: 10
+    - name: MC_MAMMONITE
+      max_level: 10
