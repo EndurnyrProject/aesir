@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandlerTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.PartyActionResult
   alias Aesir.Net.PartyCreateRequest
+  alias Aesir.Net.PartyInfo
   alias Aesir.Net.PartyInviteRequest
   alias Aesir.Net.PartyInviteResponse
   alias Aesir.Net.PartyKickRequest
@@ -23,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
+  alias Phoenix.PubSub
 
   setup :verify_on_exit!
   setup :set_mimic_from_context
@@ -95,6 +97,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandlerTest do
                         %PartyActionResult{action: "create", success: true, error: :NONE}}}
 
       assert Repo.get(Character, leader.id).party_id > 0
+    end
+
+    test "a valid name attaches the requester's own session to the new party" do
+      leader = character_fixture("Alice2", %{})
+
+      assert {:noreply, new_state} =
+               PartyHandler.handle_create_request(
+                 %PartyCreateRequest{name: "Vanguard2"},
+                 state_for(leader)
+               )
+
+      party_id = Repo.get(Character, leader.id).party_id
+      assert new_state.game_state.party_id == party_id
+
+      assert_received {:send, :gameplay, {:party_info, %PartyInfo{party_id: ^party_id}}}
+
+      PubSub.broadcast(Aesir.PubSub, "party:#{party_id}", :probe)
+      assert_receive :probe
     end
 
     test "a duplicate name acks NAME_TAKEN" do
@@ -304,6 +324,36 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandlerTest do
                         }}}
 
       assert Repo.get(Character, invitee.id).party_id == party.party_id
+    end
+
+    test "accept attaches the invitee's own session to the joined party" do
+      {_leader, party} = party_fixture("Randy2")
+      invitee = character_fixture("Sybil2", %{})
+
+      pending = %{
+        pending_party_invite: %{
+          party_id: party.party_id,
+          inviter_char_id: 1,
+          expires_at: System.monotonic_time(:millisecond) + 30_000
+        }
+      }
+
+      state = Map.merge(state_for(invitee), pending)
+
+      assert {:noreply, new_state} =
+               PartyHandler.handle_invite_response(
+                 %PartyInviteResponse{party_id: party.party_id, accept: true},
+                 state
+               )
+
+      assert new_state.game_state.party_id == party.party_id
+
+      assert_received {:send, :gameplay, {:party_info, %PartyInfo{party_id: party_id}}}
+
+      assert party_id == party.party_id
+
+      PubSub.broadcast(Aesir.PubSub, "party:#{party.party_id}", :probe)
+      assert_receive :probe
     end
 
     test "accept with an expired pending invite acks a failure without crashing" do

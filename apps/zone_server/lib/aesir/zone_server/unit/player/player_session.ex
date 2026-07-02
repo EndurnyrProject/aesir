@@ -214,6 +214,22 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.call(pid, {:deliver_party_invite, invite})
   end
 
+  @doc """
+  Subscribes the calling session to a party it just created or joined
+  mid-session, updates `game_state.party_id`, and sends the initial
+  `PartyInfo` snapshot. Must run inside the owning `PlayerSession` process
+  (e.g. from `PartyHandler`, which executes inline during packet dispatch).
+  Mirrors what `subscribe_party/1` does for a party already recorded at
+  login -- `ensure_started`/`set_online` aren't needed here since the caller
+  already holds a freshly-created/joined, already-online `Party.State`.
+  """
+  @spec attach_to_party(map(), PartyState.t()) :: map()
+  def attach_to_party(%{game_state: game_state} = state, %PartyState{} = party_state) do
+    PubSub.subscribe(Aesir.PubSub, "party:#{party_state.party_id}")
+    MessageRouter.send_to(state.connection_pid, build_party_info(party_state))
+    update_game_state(state, %{game_state | party_id: party_state.party_id})
+  end
+
   @impl true
   def init(args) do
     character = args[:character]

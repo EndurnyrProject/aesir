@@ -60,7 +60,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
         PartyManager.create(name, requester)
       end
 
-    ack_result(state, "create", result)
+    ack_and_attach(state, "create", result)
   end
 
   @doc """
@@ -269,8 +269,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
         PartyManager.add_member(invite.party_id, character)
       end
 
-    ack_result(state, "invite_response", result)
+    ack_and_attach(state, "invite_response", result)
   end
+
+  defp ack_and_attach(state, action, {:ok, %PartyState{} = party_state} = result) do
+    state
+    |> PlayerSession.attach_to_party(party_state)
+    |> ack_result(action, result)
+  end
+
+  defp ack_and_attach(state, action, result), do: ack_result(state, action, result)
 
   defp ack_result(state, action, :ok), do: ack(state, action, true, :NONE)
   defp ack_result(state, action, {:ok, _}), do: ack(state, action, true, :NONE)
