@@ -22,6 +22,18 @@ defmodule Aesir.ZoneServer.Script.Todo do
   alias Aesir.ZoneServer.Script.NotImplementedError
 
   @doc """
+  Raises for an rAthena buildin (or variable scope) reached in expression
+  position with no Aesir implementation yet.
+  """
+  @spec call!(atom(), [term()]) :: no_return()
+  def call!(name, args) do
+    raise NotImplementedError,
+      message: "rAthena buildin not implemented: #{name}(#{inspect(args)})",
+      buildin: name,
+      args: args
+  end
+
+  @doc """
   Raises for an rAthena constant the transpiler could not resolve.
   """
   @spec const!(atom()) :: no_return()

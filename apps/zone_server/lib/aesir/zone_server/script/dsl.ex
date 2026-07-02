@@ -340,6 +340,14 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   def pay_zeny(%Ctx{} = ctx, amount), do: apply_op(ctx, {:pay_zeny, amount})
 
   @doc """
+  Credits `amount` zeny through the session seam, clamped at the zeny cap,
+  pushing the change to the client and persisting it. Never fails.
+  """
+  @spec credit_zeny(Ctx.t(), non_neg_integer()) :: Ctx.t()
+  def credit_zeny(%Ctx{status: {:error, _}} = ctx, _amount), do: ctx
+  def credit_zeny(%Ctx{} = ctx, amount), do: apply_op(ctx, {:credit_zeny, amount})
+
+  @doc """
   Gives `qty` of item `item_id` through the session seam (persisting and
   emitting `ItemAdded`). Halts on a full/overweight inventory.
   """
