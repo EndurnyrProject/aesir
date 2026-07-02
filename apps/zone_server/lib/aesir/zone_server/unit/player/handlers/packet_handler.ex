@@ -315,7 +315,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
         end
 
       true ->
-        Logger.debug("Ignoring name request for entity #{entity_id} (not in view range)")
+        reply_npc_name(connection_pid, entity_id)
     end
 
     {:noreply, state}
@@ -387,6 +387,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   end
 
   defp nv_basic_gate(_state, _action), do: :ok
+
+  # Resolves entity_id to a static NPC placement and replies with its name.
+  # Reached only after the own-char/visible_players/visible_mobs branches
+  # decline the id; an id that resolves to no NPC module is ignored.
+  defp reply_npc_name(connection_pid, entity_id) do
+    case NpcRegistry.module_for_unit(entity_id) do
+      {:ok, {_module, placement}} ->
+        MessageRouter.send_to(connection_pid, %NameResponse{gid: entity_id, name: placement.name})
+
+      :error ->
+        Logger.debug("Ignoring name request for entity #{entity_id} (not in view range)")
+    end
+  end
 
   # Resolves the clicked gid to its bespoke NPC module and starts a supervised,
   # monitored interaction process, storing the lock. A gid that resolves to no

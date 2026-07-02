@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerNpcTest do
   use ExUnit.Case, async: false
 
+  alias Aesir.Net.NameRequest
+  alias Aesir.Net.NameResponse
   alias Aesir.Net.NpcDialog
   alias Aesir.Net.NpcInteract
   alias Aesir.Net.NpcTalk
@@ -154,5 +156,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerNpcTest do
 
     assert {:stop, :normal, ^state} =
              PlayerSession.handle_info({:DOWN, conn_ref, :process, self(), :killed}, state)
+  end
+
+  test "NameRequest for an in-view NPC gid replies with the placement name", %{gid: gid} do
+    s = %{
+      game_state: %PlayerState{
+        character_id: 1,
+        account_id: 100,
+        visible_players: MapSet.new(),
+        visible_mobs: MapSet.new()
+      },
+      connection_pid: self()
+    }
+
+    {:noreply, ^s} = PacketHandler.handle_message(%NameRequest{entity_id: gid}, s)
+
+    assert_receive {:send, _ch,
+                    {:name_response,
+                     %NameResponse{
+                       gid: ^gid,
+                       name: "Talker",
+                       party_name: "",
+                       guild_name: "",
+                       position_name: ""
+                     }}}
   end
 end
