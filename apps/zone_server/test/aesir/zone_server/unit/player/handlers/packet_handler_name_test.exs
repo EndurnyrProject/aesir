@@ -11,6 +11,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerNameTest do
 
   alias Aesir.Net.NameRequest
   alias Aesir.Net.NameResponse
+  alias Aesir.ZoneServer.Party.Manager, as: PartyManager
+  alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -27,6 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerNameTest do
         account_id: @account_id,
         character_id: @character_id,
         character_name: @char_name,
+        party_id: Keyword.get(opts, :party_id, 0),
         visible_players: Keyword.get(opts, :visible_players, MapSet.new()),
         visible_mobs: Keyword.get(opts, :visible_mobs, MapSet.new())
       }
@@ -49,11 +52,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerNameTest do
                      }}}
   end
 
+  test "self request replies with the party name when in a party" do
+    s = state(party_id: 5)
+
+    expect(PartyManager, :get, fn 5 ->
+      {:ok, %PartyState{party_id: 5, name: "Vanguard", leader_char_id: 1, exp_share: false}}
+    end)
+
+    {:noreply, ^s} = PacketHandler.handle_message(%NameRequest{entity_id: @character_id}, s)
+
+    assert_receive {:send, :world,
+                    {:name_response, %NameResponse{gid: @character_id, party_name: "Vanguard"}}}
+  end
+
   test "visible player request replies with the player's name (party/guild empty)" do
     other_id = 42
     s = state(visible_players: MapSet.new([other_id]))
+    other_player_state = %{character_name: "OtherPlayer", party_id: 0}
 
-    expect(UnitRegistry, :get_player_name, fn ^other_id -> {:ok, "OtherPlayer"} end)
+    expect(UnitRegistry, :get_unit, fn :player, ^other_id ->
+      {:ok, {SomeMod, other_player_state, self()}}
+    end)
 
     {:noreply, ^s} = PacketHandler.handle_message(%NameRequest{entity_id: other_id}, s)
 
@@ -66,6 +85,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerNameTest do
                        guild_name: "",
                        position_name: ""
                      }}}
+  end
+
+  test "visible player request replies with the party name when the player is in a party" do
+    other_id = 42
+    s = state(visible_players: MapSet.new([other_id]))
+    other_player_state = %{character_name: "OtherPlayer", party_id: 7}
+
+    expect(UnitRegistry, :get_unit, fn :player, ^other_id ->
+      {:ok, {SomeMod, other_player_state, self()}}
+    end)
+
+    expect(PartyManager, :get, fn 7 ->
+      {:ok, %PartyState{party_id: 7, name: "Vanguard", leader_char_id: 1, exp_share: false}}
+    end)
+
+    {:noreply, ^s} = PacketHandler.handle_message(%NameRequest{entity_id: other_id}, s)
+
+    assert_receive {:send, :world,
+                    {:name_response,
+                     %NameResponse{gid: ^other_id, name: "OtherPlayer", party_name: "Vanguard"}}}
   end
 
   test "visible mob request replies with the mob name only" do

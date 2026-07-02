@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NameHandler do
   alias Aesir.Net.NameResponse
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
+  alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
@@ -30,13 +31,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NameHandler do
       entity_id == game_state.character_id ->
         MessageRouter.send_to(connection_pid, %NameResponse{
           gid: game_state.character_id,
-          name: game_state.character_name
+          name: game_state.character_name,
+          party_name: party_name(game_state.party_id)
         })
 
       MapSet.member?(game_state.visible_players, entity_id) ->
-        case UnitRegistry.get_player_name(entity_id) do
-          {:ok, player_name} ->
-            MessageRouter.send_to(connection_pid, %NameResponse{gid: entity_id, name: player_name})
+        case UnitRegistry.get_unit(:player, entity_id) do
+          {:ok, {_module, player_state, _pid}} ->
+            MessageRouter.send_to(connection_pid, %NameResponse{
+              gid: entity_id,
+              name: player_state.character_name,
+              party_name: party_name(player_state.party_id)
+            })
 
           {:error, :not_found} ->
             Logger.warning(
@@ -63,6 +69,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NameHandler do
     end
 
     {:noreply, state}
+  end
+
+  # Resolves a party_id to its party name, defaulting to the proto3 zero-value
+  # for a player with no party or a stale party_id (entry not live).
+  defp party_name(0), do: ""
+
+  defp party_name(party_id) do
+    case PartyManager.get(party_id) do
+      {:ok, party_state} -> party_state.name
+      {:error, :not_found} -> ""
+    end
   end
 
   # Resolves entity_id to a static NPC placement and replies with its name.
