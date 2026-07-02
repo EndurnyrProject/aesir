@@ -22,7 +22,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ManifestTest do
   end
 
   test "round-trips deterministically" do
-    path = Path.join(System.tmp_dir!(), "manifest_test_#{System.unique_integer([:positive])}.json")
+    path =
+      Path.join(System.tmp_dir!(), "manifest_test_#{System.unique_integer([:positive])}.json")
+
     on_exit(fn -> File.rm(path) end)
 
     manifest = %{

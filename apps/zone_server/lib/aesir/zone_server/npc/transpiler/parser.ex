@@ -178,31 +178,30 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Parser do
 
   defp assignment(tokens) do
     with {:ok, target, rest} <- assign_target(tokens) do
-      case rest do
-        [{:op, :assign} | rest] ->
-          assign_rhs(target, rest)
-
-        [{:op, :inc} | rest] ->
-          terminated({:assign, target, {:bin, :+, target, {:int, 1}}}, rest)
-
-        [{:op, :dec} | rest] ->
-          terminated({:assign, target, {:bin, :-, target, {:int, 1}}}, rest)
-
-        [{:op, op} | rest] ->
-          case compound_op(op) do
-            nil ->
-              {:error, unexpected(rest)}
-
-            bin_op ->
-              with {:ok, expr, rest} <- expression(rest),
-                   do: terminated({:assign, target, {:bin, bin_op, target, expr}}, rest)
-          end
-
-        _ ->
-          {:error, unexpected(rest)}
-      end
+      assignment_op(target, rest)
     end
   end
+
+  defp assignment_op(target, [{:op, :assign} | rest]), do: assign_rhs(target, rest)
+
+  defp assignment_op(target, [{:op, :inc} | rest]),
+    do: terminated({:assign, target, {:bin, :+, target, {:int, 1}}}, rest)
+
+  defp assignment_op(target, [{:op, :dec} | rest]),
+    do: terminated({:assign, target, {:bin, :-, target, {:int, 1}}}, rest)
+
+  defp assignment_op(target, [{:op, op} | rest]) do
+    case compound_op(op) do
+      nil ->
+        {:error, unexpected(rest)}
+
+      bin_op ->
+        with {:ok, expr, rest} <- expression(rest),
+             do: terminated({:assign, target, {:bin, bin_op, target, expr}}, rest)
+    end
+  end
+
+  defp assignment_op(_target, tokens), do: {:error, unexpected(tokens)}
 
   # Right-associative chained assignment (`a = b = 0`) desugars to a block:
   # innermost first, then each outer target copies from the inner one.
@@ -293,16 +292,16 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Parser do
 
   defp call_command(name, tokens) do
     with {:ok, {:call, ^name, args}, rest} <- call_expression(name, tokens) do
-      case rest do
-        [{:punct, :comma} | more] ->
-          with {:ok, more_args, rest} <- expression_list(more),
-               do: terminated({:cmd, name, [wrap_call(name, args) | more_args]}, rest)
-
-        _ ->
-          terminated({:cmd, name, args}, rest)
-      end
+      call_command_tail(name, args, rest)
     end
   end
+
+  defp call_command_tail(name, args, [{:punct, :comma} | more]) do
+    with {:ok, more_args, rest} <- expression_list(more),
+         do: terminated({:cmd, name, [wrap_call(name, args) | more_args]}, rest)
+  end
+
+  defp call_command_tail(name, args, rest), do: terminated({:cmd, name, args}, rest)
 
   # `cmd (expr), more` is a parenthesized first argument, not a call.
   defp wrap_call(_name, [single]), do: single
@@ -310,15 +309,15 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Parser do
 
   defp expression_list(tokens) do
     with {:ok, expr, rest} <- expression(tokens) do
-      case rest do
-        [{:punct, :comma} | more] ->
-          with {:ok, exprs, rest} <- expression_list(more), do: {:ok, [expr | exprs], rest}
-
-        _ ->
-          {:ok, [expr], rest}
-      end
+      expression_list_tail(expr, rest)
     end
   end
+
+  defp expression_list_tail(expr, [{:punct, :comma} | more]) do
+    with {:ok, exprs, rest} <- expression_list(more), do: {:ok, [expr | exprs], rest}
+  end
+
+  defp expression_list_tail(expr, rest), do: {:ok, [expr], rest}
 
   # A statement terminator: `;`, or leniently a following `}` / `)` / `,`
   # (for-loop clauses, left unconsumed) / end of input.
@@ -346,16 +345,17 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Parser do
          {:ok, cond_expr, rest} <- expression(rest),
          {:ok, rest} <- expect(rest, {:punct, :rparen}),
          {:ok, then_stmts, rest} <- branch(rest) do
-      case rest do
-        [{:ident, "else"} | rest] ->
-          with {:ok, else_stmts, rest} <- branch(rest),
-               do: {:ok, {:if, cond_expr, then_stmts, else_stmts}, rest}
-
-        _ ->
-          {:ok, {:if, cond_expr, then_stmts, []}, rest}
-      end
+      else_branch(cond_expr, then_stmts, rest)
     end
   end
+
+  defp else_branch(cond_expr, then_stmts, [{:ident, "else"} | rest]) do
+    with {:ok, else_stmts, rest} <- branch(rest),
+         do: {:ok, {:if, cond_expr, then_stmts, else_stmts}, rest}
+  end
+
+  defp else_branch(cond_expr, then_stmts, rest),
+    do: {:ok, {:if, cond_expr, then_stmts, []}, rest}
 
   # A branch body: a block or a single statement, normalized to a list.
   defp branch([{:punct, :lbrace} | rest]), do: block_tail(rest)
@@ -406,16 +406,16 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Parser do
 
   defp for_clause(tokens, stop) do
     with {:ok, stmt, rest} <- statement(tokens) do
-      case rest do
-        [{:punct, :comma} | more] ->
-          with {:ok, stmts, rest} <- for_clause(more, stop),
-               do: {:ok, unblock(stmt) ++ stmts, rest}
-
-        _ ->
-          {:ok, unblock(stmt), rest}
-      end
+      for_clause_tail(stmt, rest, stop)
     end
   end
+
+  defp for_clause_tail(stmt, [{:punct, :comma} | more], stop) do
+    with {:ok, stmts, rest} <- for_clause(more, stop),
+         do: {:ok, unblock(stmt) ++ stmts, rest}
+  end
+
+  defp for_clause_tail(stmt, rest, _stop), do: {:ok, unblock(stmt), rest}
 
   defp switch_statement(tokens) do
     with {:ok, rest} <- expect(tokens, {:punct, :lparen}),
@@ -491,19 +491,19 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Parser do
 
   defp ternary(tokens) do
     with {:ok, cond_expr, rest} <- binary(tokens, 0) do
-      case rest do
-        [{:op, :question} | rest] ->
-          with {:ok, then_expr, rest} <- ternary(rest),
-               {:ok, rest} <- expect(rest, {:punct, :colon}),
-               {:ok, else_expr, rest} <- ternary(rest) do
-            {:ok, {:ternary, cond_expr, then_expr, else_expr}, rest}
-          end
-
-        _ ->
-          {:ok, cond_expr, rest}
-      end
+      ternary_tail(cond_expr, rest)
     end
   end
+
+  defp ternary_tail(cond_expr, [{:op, :question} | rest]) do
+    with {:ok, then_expr, rest} <- ternary(rest),
+         {:ok, rest} <- expect(rest, {:punct, :colon}),
+         {:ok, else_expr, rest} <- ternary(rest) do
+      {:ok, {:ternary, cond_expr, then_expr, else_expr}, rest}
+    end
+  end
+
+  defp ternary_tail(cond_expr, rest), do: {:ok, cond_expr, rest}
 
   defp binary(tokens, level) when level >= length(@levels), do: unary(tokens)
 

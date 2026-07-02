@@ -26,17 +26,18 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
   def constant("false"), do: {:ok, "0"}
 
   def constant(symbol) do
-    with :error <- atom_constant(&ItemResolver.resolve_class/1, symbol),
-         :error <- atom_constant(&ItemResolver.resolve_status/1, symbol),
-         :error <- atom_constant(&ItemResolver.resolve_element/1, symbol) do
-      :error
-    end
+    [
+      &ItemResolver.resolve_class/1,
+      &ItemResolver.resolve_status/1,
+      &ItemResolver.resolve_element/1
+    ]
+    |> Enum.find_value(:error, &atom_constant(&1, symbol))
   end
 
   defp atom_constant(resolver, symbol) do
     case resolver.(symbol) do
       {:ok, atom} -> {:ok, inspect(atom)}
-      {:error, _} -> :error
+      {:error, _} -> nil
     end
   end
 
