@@ -324,7 +324,17 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
       assert result3 == {:error, :target_out_of_range},
              "Attack succeeded but should have failed for distance 2 position"
 
-      refute_packet_sent(DamageDealt, 100)
+      # The earlier in-range attacks aggro'd mob1/mob2, which retaliate against the
+      # players and emit their own DamageDealt packets into the shared test mailbox.
+      # Scope the refutation to player3 -> mob3 so those retaliations don't cause a
+      # spurious failure; the point is that the out-of-range attack dealt no damage.
+      damage_from_attack3 =
+        DamageDealt
+        |> collect_packets_of_type(100)
+        |> Enum.filter(&(&1.src_id == player3.character.id and &1.target_id == mob3.unit_id))
+
+      assert damage_from_attack3 == [],
+             "Out-of-range attack unexpectedly dealt damage: #{inspect(damage_from_attack3)}"
     end
 
     test "validates mob attack range using same Chebyshev distance" do
