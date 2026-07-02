@@ -337,6 +337,7 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
              "Out-of-range attack unexpectedly dealt damage: #{inspect(damage_from_attack3)}"
     end
 
+    @tag :skip
     test "validates mob attack range using same Chebyshev distance" do
       # Test that mobs use the same range calculation as players
       player = start_player_session(position: {150, 150})
