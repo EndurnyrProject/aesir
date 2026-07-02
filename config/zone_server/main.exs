@@ -8,7 +8,7 @@ config :zone_server, :server_info,
 # Player view range (rAthena AREA_SIZE): the cell radius a client is told about.
 # Drives entity visibility, combat/skill/effect broadcasts, and the radius within
 # which a client may acquire an attack/skill target.
-config :zone_server, view_range: 14
+config :zone_server, view_range: 20
 
 # Require a valid single-use zone-entry token (issued by the char server on
 # character selection) in SessionAuth before admitting a client to the zone.

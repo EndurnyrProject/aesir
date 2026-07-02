@@ -86,7 +86,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       assert state.game_state.map_name == "prontera"
       assert state.game_state.movement_state == :standing
       assert state.game_state.walk_speed == 150
-      assert state.game_state.view_range == 14
+      assert state.game_state.view_range == 20
 
       # Verify player is registered in UnitRegistry
       assert {:ok, {_module, %{account_id: 100}, _pid}} = UnitRegistry.get_unit(:player, 1)
@@ -126,7 +126,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   describe "handle_info(:spawn_player)" do
     test "adds player to spatial index and checks visibility", %{character: character} do
       expect(SpatialIndex, :add_player, fn 1, 50, 50, "prontera" -> :ok end)
-      expect(SpatialIndex, :get_players_in_range, fn "prontera", 50, 50, 14 -> [] end)
+      expect(SpatialIndex, :get_players_in_range, fn "prontera", 50, 50, 20 -> [] end)
 
       game_state = PlayerState.new(character)
 
@@ -204,7 +204,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
     test "movement_tick updates position along path", %{character: character} do
       expect(SpatialIndex, :update_unit_position, fn :player, 1, 51, 50, "prontera" -> :ok end)
-      expect(SpatialIndex, :get_players_in_range, fn "prontera", 51, 50, 14 -> [] end)
+      expect(SpatialIndex, :get_players_in_range, fn "prontera", 51, 50, 20 -> [] end)
 
       game_state = %{
         PlayerState.new(character)
@@ -861,7 +861,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     end
 
     test "handles visibility update with self in range", %{character: character} do
-      expect(SpatialIndex, :get_players_in_range, fn "prontera", 50, 50, 14 ->
+      expect(SpatialIndex, :get_players_in_range, fn "prontera", 50, 50, 20 ->
         [1, 2, 3]
       end)
 

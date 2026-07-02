@@ -6,7 +6,7 @@ defmodule Aesir.ZoneServer.Config do
   there is a single source of truth in `config/zone_server/main.exs`.
   """
 
-  @default_view_range 14
+  @default_view_range 20
 
   @doc """
   Player view range (rAthena `AREA_SIZE`): the cell radius a client is told about.
