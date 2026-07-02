@@ -10,6 +10,11 @@ config :zone_server, :server_info,
 # which a client may acquire an attack/skill target.
 config :zone_server, view_range: 20
 
+# Party tunables (rAthena MAX_PARTY / inter_athena.conf / party.conf).
+config :zone_server, max_party: 12
+config :zone_server, party_share_level: 15
+config :zone_server, party_even_share_bonus: 0
+
 # Require a valid single-use zone-entry token (issued by the char server on
 # character selection) in SessionAuth before admitting a client to the zone.
 # Set to false only during a client rollout that does not yet echo the token;
