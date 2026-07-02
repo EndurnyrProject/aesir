@@ -380,6 +380,21 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   def set_char_var(%Ctx{} = ctx, key, value), do: apply_op(ctx, {:set_char_var, key, value})
 
   @doc """
+  Sets the script-local variable `key` (rAthena `.@var`). Pure Ctx update; the
+  value lives only for the duration of the running script.
+  """
+  @spec set_local(Ctx.t(), atom(), term()) :: Ctx.t()
+  def set_local(%Ctx{status: {:error, _}} = ctx, _key, _value), do: ctx
+  def set_local(%Ctx{vars: vars} = ctx, key, value), do: %{ctx | vars: Map.put(vars, key, value)}
+
+  @doc """
+  Reads the script-local variable `key`, defaulting an unset var to `default`
+  (`0` matching rAthena).
+  """
+  @spec get_local(Ctx.t(), atom(), term()) :: term()
+  def get_local(%Ctx{vars: vars}, key, default \\ 0), do: Map.get(vars, key, default)
+
+  @doc """
   Changes the player's job to `job_id` through the session seam, recomputing
   job-dependent stats and refreshing the client's sprite/skill window. Halts
   `:unknown_job` when `job_id` does not resolve to a known job.

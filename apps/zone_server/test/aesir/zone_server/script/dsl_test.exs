@@ -387,6 +387,22 @@ defmodule Aesir.ZoneServer.Script.DslTest do
 
       assert Dsl.heal(ctx, hp: 100) == ctx
       assert Dsl.warp(ctx, {"prontera", 1, 1}) == ctx
+      assert Dsl.set_local(ctx, :x, 1) == ctx
+    end
+  end
+
+  describe "set_local/3 and get_local/3" do
+    test "round-trips a value on the ctx" do
+      ctx = Dsl.set_local(build_ctx(), :price, 500)
+
+      assert Dsl.get_local(ctx, :price) == 500
+    end
+
+    test "defaults an unset var to 0, or to the given default" do
+      ctx = build_ctx()
+
+      assert Dsl.get_local(ctx, :missing) == 0
+      assert Dsl.get_local(ctx, :missing, "") == ""
     end
   end
 

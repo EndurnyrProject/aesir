@@ -39,6 +39,7 @@ defmodule Aesir.ZoneServer.Script.Ctx do
     field :npc_gid, non_neg_integer()
     field :page, [String.t()], default: []
     field :session_ref, reference()
+    field :vars, map(), default: %{}
   end
 
   @doc """
