@@ -48,6 +48,7 @@ defmodule Aesir.ZoneServer.Integration.MerchantSkillsIntegrationTest do
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Inventory.Weight
+  alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Player.Stats
 
   # rAthena class id for the 1st-class Merchant; PlayerState derives job_id from it.
@@ -103,7 +104,12 @@ defmodule Aesir.ZoneServer.Integration.MerchantSkillsIntegrationTest do
       %{pid: pid, character: char} = start_merchant(zeny: 1_000)
 
       mob =
-        start_mob_session(unit_id: 96_101, map_name: "prontera", position: {151, 150}, hp: 5_000)
+        start_stationary_mob(
+          unit_id: 96_101,
+          map_name: "prontera",
+          position: {151, 150},
+          hp: 5_000
+        )
 
       mob_id = mob.unit_id
 
@@ -131,7 +137,12 @@ defmodule Aesir.ZoneServer.Integration.MerchantSkillsIntegrationTest do
       %{pid: pid, character: char} = start_merchant(zeny: 50)
 
       mob =
-        start_mob_session(unit_id: 96_102, map_name: "prontera", position: {151, 150}, hp: 5_000)
+        start_stationary_mob(
+          unit_id: 96_102,
+          map_name: "prontera",
+          position: {151, 150},
+          hp: 5_000
+        )
 
       mob_id = mob.unit_id
 
@@ -207,6 +218,18 @@ defmodule Aesir.ZoneServer.Integration.MerchantSkillsIntegrationTest do
       |> Repo.insert()
 
     character
+  end
+
+  # A freshly spawned mob runs an AI tick loop that wanders it off its spawn cell,
+  # which intermittently trips the interpreter's range check before the behaviour
+  # under test. Sleeping the mob cancels its AI timer and pins it in place; the
+  # synchronous state read flushes the sleep cast so the mob is dormant before we
+  # cast at it.
+  defp start_stationary_mob(opts) do
+    mob = start_mob_session(opts)
+    MobSession.sleep(mob.pid)
+    _ = get_mob_state(mob.pid)
+    mob
   end
 
   defp catalog_id(name) do
