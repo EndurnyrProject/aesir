@@ -103,6 +103,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         pending_inventory_persist: [],
         pending_inventory_notify: [],
         pending_warp: nil,
+        zeny: 0,
         stats: %{
           base_stats: %{dex: 1, int: 1},
           current_state: %{sp: sp, hp: 100},

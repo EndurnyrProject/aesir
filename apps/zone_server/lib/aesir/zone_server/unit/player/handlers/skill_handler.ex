@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   """
   require Logger
 
+  alias Aesir.Commons.StatusParams
   alias Aesir.Net.CastCancel
   alias Aesir.Net.SkillCasting
   alias Aesir.Net.SkillCooldown
@@ -466,11 +467,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
     CharacterPersistence.update_character(
       new_game_state.character_id,
-      %{hp: updated_stats.current_state.hp, sp: updated_stats.current_state.sp},
+      %{
+        hp: updated_stats.current_state.hp,
+        sp: updated_stats.current_state.sp,
+        zeny: new_game_state.zeny
+      },
       async: true
     )
 
     StatusSync.send_stat_updates(connection_pid, updated_stats)
+    StatusSync.send_param(connection_pid, StatusParams.zeny(), new_game_state.zeny)
 
     maybe_send_postdelay(connection_pid, skill_id, level)
 

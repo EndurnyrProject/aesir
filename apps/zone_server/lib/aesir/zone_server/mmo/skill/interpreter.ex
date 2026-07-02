@@ -145,12 +145,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_range(game_state, target, definition),
          cost = Enum.at(definition.sp_cost, level - 1),
          :ok <- check_sp(game_state, cost),
+         zeny = Enum.at(definition.zeny_cost, level - 1, 0),
+         :ok <- check_zeny(game_state, zeny),
          :ok <- check_catalysts(game_state, definition),
          :ok <- check_ammo(game_state, definition),
          {:ok, game_state} <- run_cast(module, game_state, target, level, definition) do
       {:ok,
        game_state
        |> deduct_sp(cost)
+       |> deduct_zeny(zeny)
        |> consume_ammo(definition)
        |> put_cooldown(skill_id, definition, level, now)
        |> put_act_delay(definition, level, now)}
@@ -173,7 +176,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_act_delay(game_state, now),
          :ok <- module.validate(game_state, target, level, definition),
          cost = Enum.at(definition.sp_cost, level - 1),
-         :ok <- check_sp(game_state, cost) do
+         :ok <- check_sp(game_state, cost),
+         zeny = Enum.at(definition.zeny_cost, level - 1, 0),
+         :ok <- check_zeny(game_state, zeny) do
       {:ok, definition, module}
     end
   end
@@ -361,6 +366,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     if game_state.stats.current_state.sp >= cost, do: :ok, else: {:error, :insufficient_sp}
   end
 
+  # A zero cost is always allowed without reading game_state.zeny: every skill
+  # defaults to zeny_cost: [], so the common path must not require a :zeny key
+  # (bare-map game_state fixtures in the test suite would otherwise raise).
+  defp check_zeny(_game_state, 0), do: :ok
+
+  defp check_zeny(game_state, cost) do
+    if game_state.zeny >= cost, do: :ok, else: {:error, :insufficient_zeny}
+  end
+
   # Verifies the caster holds every declared catalyst (summed across stacks)
   # before the behavior runs, so a failed catalyst check spends no SP.
   defp check_catalysts(game_state, %{item_cost: item_cost}) do
@@ -456,6 +470,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     current = %{stats.current_state | sp: stats.current_state.sp - cost}
     %{game_state | stats: %{stats | current_state: current}}
   end
+
+  defp deduct_zeny(game_state, 0), do: game_state
+  defp deduct_zeny(game_state, cost), do: %{game_state | zeny: game_state.zeny - cost}
 
   defp put_cooldown(game_state, skill_id, definition, level, now) do
     case Cooldown.duration(definition, level) do
