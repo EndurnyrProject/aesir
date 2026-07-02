@@ -3,8 +3,16 @@ defmodule Aesir.ZoneServer.Gm.Commands.JobTest do
 
   alias Aesir.ZoneServer.Gm.Commands.Job
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Phoenix.PubSub
 
-  defp ctx, do: %{game_state: %PlayerState{character_name: "Gm"}, connection_pid: self()}
+  @char_id 4242
+
+  defp ctx do
+    %{
+      game_state: %PlayerState{character_id: @char_id, character_name: "Gm"},
+      connection_pid: self()
+    }
+  end
 
   test "name and required_level" do
     assert Job.name() == "job"
@@ -25,13 +33,17 @@ defmodule Aesir.ZoneServer.Gm.Commands.JobTest do
     end
   end
 
-  test "valid numeric id casts {:change_job, id}" do
+  test "valid numeric id broadcasts {:change_job, id} on the caller's topic" do
+    PubSub.subscribe(Aesir.PubSub, "player:#{@char_id}")
+
     assert {:ok, "Changed job to knight (7)"} = Job.execute(["7"], ctx())
-    assert_received {:"$gen_cast", {:change_job, 7}}
+    assert_receive {:change_job, 7}
   end
 
-  test "valid job name casts {:change_job, id}" do
+  test "valid job name broadcasts {:change_job, id} on the caller's topic" do
+    PubSub.subscribe(Aesir.PubSub, "player:#{@char_id}")
+
     assert {:ok, "Changed job to knight (7)"} = Job.execute(["Knight"], ctx())
-    assert_received {:"$gen_cast", {:change_job, 7}}
+    assert_receive {:change_job, 7}
   end
 end

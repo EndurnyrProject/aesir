@@ -1,12 +1,13 @@
 defmodule Aesir.ZoneServer.Gm.Commands.Job do
   @moduledoc """
   `@job <job_id | job_name>` - changes the calling GM's job/class. Accepts either
-  a numeric job id or a job name (e.g. `knight`). Delivery is the
-  `{:change_job, job_id}` cast on the caller's own session.
+  a numeric job id or a job name (e.g. `knight`). Delivery is
+  `JobChange.request/2`, which broadcasts to the caller's own session.
   """
   @behaviour Aesir.ZoneServer.Gm.Command
 
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
+  alias Aesir.ZoneServer.Mmo.JobManagement.JobChange
 
   @usage "Usage: @job <job_id | job_name>"
 
@@ -17,9 +18,9 @@ defmodule Aesir.ZoneServer.Gm.Commands.Job do
   def required_level, do: 60
 
   @impl true
-  def execute([arg], _ctx) do
+  def execute([arg], ctx) do
     with {:ok, job_id, job_name} <- resolve(arg) do
-      GenServer.cast(self(), {:change_job, job_id})
+      JobChange.request(ctx.game_state.character_id, job_id)
       {:ok, "Changed job to #{job_name} (#{job_id})"}
     end
   end

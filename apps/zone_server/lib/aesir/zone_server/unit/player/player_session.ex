@@ -382,6 +382,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
+  def handle_info({:change_job, job_id}, state) do
+    ProgressionHandler.handle_change_job(job_id, state)
+  end
+
+  @impl true
   def handle_info({:mob_despawned, mob_instance_id}, state) do
     # Only clear combat if this player was targeting this specific mob
     if state.game_state.combat_target_id == mob_instance_id do
@@ -640,11 +645,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:add_job_level, amount}, state) do
     ProgressionHandler.handle_add_job_level(amount, state)
-  end
-
-  @impl true
-  def handle_cast({:change_job, job_id}, state) do
-    ProgressionHandler.handle_change_job(job_id, state)
   end
 
   @impl true

@@ -85,7 +85,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   observers.
 
   Thin wrapper over `apply_job_change/2` kept as the `{:noreply, _}` entry
-  point for the GM cast path; an unknown `job_id` leaves `state` untouched.
+  point for `PlayerSession`'s `{:change_job, _}` info handler (driven by
+  `JobChange.request/2`); an unknown `job_id` leaves `state` untouched.
   """
   @spec handle_change_job(non_neg_integer(), map()) :: {:noreply, map()}
   def handle_change_job(job_id, state) do
