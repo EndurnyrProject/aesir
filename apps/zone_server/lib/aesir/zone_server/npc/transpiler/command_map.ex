@@ -1,0 +1,89 @@
+defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
+  @moduledoc """
+  Data-driven registry of rAthena NPC buildins the transpiler maps onto the
+  Aesir script DSL.
+
+  The single extension point of the NPC codegen: implementing a new buildin is
+  a DSL op plus a data edit here. Anything absent emits a raising stub —
+  `todo(ctx, name, args)` in statement position, `Todo.call!(name, args)` in
+  expression position.
+
+  Dialog primitives (`mes`, `next`, `close`, `close2`, `end`, `select`,
+  `prompt`, `input`, `menu`) and the subroutine machinery (`callfunc`,
+  `callsub`, `getarg`, `rand`) are shaped directly by `Codegen`, not listed
+  here.
+
+  ## Command rules
+
+  - `%{dsl: name, args: types}` — positional DSL call `name(ctx, a0, …)`;
+    each type (`:int`, `:string`, `:item`, `:status`) tells the codegen how
+    to render/resolve the argument.
+  - `%{shape: :heal, dsl: name}` — `heal <hp>,<sp>` → `name(ctx, hp: _, sp: _)`.
+  - `%{shape: :warp}` — `warp "map",x,y` with `"Random"`/`"SavePoint"`
+    special targets.
+
+  ## Reads
+
+  `@reads` maps bare parameter names (`BaseLevel`, `Zeny`, …) to DSL read
+  functions; `@call_reads` maps call-style reads (`countitem(id)`) the same
+  way.
+  """
+
+  @type rule :: map()
+
+  @commands %{
+    "getitem" => %{dsl: "give_item", args: [:item, :int]},
+    "delitem" => %{dsl: "delitem", args: [:item, :int]},
+    "heal" => %{shape: :heal, dsl: "heal"},
+    "percentheal" => %{shape: :heal, dsl: "percent_heal"},
+    "sc_start" => %{dsl: "sc_start", args: [:status, :int, :int]},
+    "sc_end" => %{dsl: "sc_end", args: [:status]},
+    "warp" => %{shape: :warp},
+    "jobchange" => %{dsl: "jobchange", args: [:int]},
+    "itemskill" => %{dsl: "itemskill", args: [:skill_opts]}
+  }
+
+  @warp_targets %{
+    "Random" => ":random",
+    "SavePoint" => ":save_point"
+  }
+
+  @reads %{
+    "BaseLevel" => "base_level",
+    "JobLevel" => "job_level",
+    "Class" => "class",
+    "Sex" => "sex",
+    "Hp" => "hp",
+    "MaxHp" => "max_hp",
+    "Sp" => "sp",
+    "MaxSp" => "max_sp",
+    "Weight" => "weight",
+    "Zeny" => "zeny"
+  }
+
+  @call_reads %{
+    "countitem" => %{dsl: "count_item", args: [:item]},
+    "isequipped" => %{dsl: "is_equipped", args: [:item]}
+  }
+
+  @spec command(String.t()) :: {:ok, rule()} | :error
+  def command(name) when is_binary(name), do: Map.fetch(@commands, name)
+
+  @spec read(String.t()) :: {:ok, String.t()} | :error
+  def read(name) when is_binary(name), do: Map.fetch(@reads, name)
+
+  @spec call_read(String.t()) :: {:ok, rule()} | :error
+  def call_read(name) when is_binary(name), do: Map.fetch(@call_reads, name)
+
+  @doc """
+  Maps a `warp` string target (`"Random"`, `"SavePoint"`) to the one-arg DSL
+  atom form. `:error` means a literal map name.
+  """
+  @spec warp_target(String.t()) :: {:ok, String.t()} | :error
+  def warp_target(name) when is_binary(name), do: Map.fetch(@warp_targets, name)
+
+  @doc "Every supported buildin name (commands + call reads), for the analyzer."
+  @spec supported?(String.t()) :: boolean()
+  def supported?(name),
+    do: Map.has_key?(@commands, name) or Map.has_key?(@call_reads, name)
+end
