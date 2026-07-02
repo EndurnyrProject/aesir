@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.Net.UnitSpawn
   alias Aesir.Net.VendingBoardShown
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Constants.ObjectType
   alias Aesir.ZoneServer.Map.Coordinator
@@ -28,6 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Party.ExpShare
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -382,18 +384,19 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         {:mob_killed, %{base_exp: base_exp, job_exp: job_exp, mob_level: mob_level} = payload},
         state
       ) do
-    killer_base_level = state.game_state.stats.progression.base_level
-    rate = LevelPenalty.exp(mob_level, killer_base_level)
-
-    {:noreply, new_state} =
-      ExperienceHandler.handle_gain_exp(
-        apply_level_penalty(base_exp, rate),
-        apply_level_penalty(job_exp, rate),
-        state
-      )
+    {:noreply, new_state} = grant_kill_exp(state, base_exp, job_exp, mob_level)
 
     maybe_drop_items(payload, new_state)
     {:noreply, new_state}
+  end
+
+  # Another eligible party member's share of a killing blow's pooled EXP,
+  # already scaled by the pool/bonus/penalty math in `ExpShare.split/5`
+  # (design "EXP share"). Applied the same way the killer applies its own
+  # in-line share.
+  @impl true
+  def handle_info({:party_exp, base, job}, state) do
+    ExperienceHandler.handle_gain_exp(base, job, state)
   end
 
   # A membership or option change on our own live party: relay the fresh
@@ -794,6 +797,64 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   defp maybe_drop_items(_payload, _state), do: :ok
+
+  # Killer's party pools the killing blow's EXP and splits it per
+  # `ExpShare.split/5` (design "EXP share"); everyone else falls through to
+  # the Task 10 solo-penalty grant.
+  defp grant_kill_exp(%{game_state: %{party_id: party_id}} = state, base_exp, job_exp, mob_level)
+       when party_id > 0 do
+    case PartyManager.get(party_id) do
+      {:ok, %PartyState{exp_share: true} = party_state} ->
+        grant_party_exp(state, party_state, base_exp, job_exp, mob_level)
+
+      _ ->
+        grant_solo_exp(state, base_exp, job_exp, mob_level)
+    end
+  end
+
+  defp grant_kill_exp(state, base_exp, job_exp, mob_level),
+    do: grant_solo_exp(state, base_exp, job_exp, mob_level)
+
+  defp grant_solo_exp(state, base_exp, job_exp, mob_level) do
+    killer_base_level = state.game_state.stats.progression.base_level
+    rate = LevelPenalty.exp(mob_level, killer_base_level)
+
+    ExperienceHandler.handle_gain_exp(
+      apply_level_penalty(base_exp, rate),
+      apply_level_penalty(job_exp, rate),
+      state
+    )
+  end
+
+  defp grant_party_exp(state, party_state, base_exp, job_exp, mob_level) do
+    killer_char_id = state.game_state.character_id
+
+    shares =
+      party_state
+      |> ExpShare.eligible_members(state.game_state.map_name)
+      |> then(&ExpShare.split(base_exp, job_exp, &1, Config.party_even_share_bonus(), mob_level))
+
+    broadcast_other_shares(shares, killer_char_id)
+    apply_killer_share(state, shares, killer_char_id)
+  end
+
+  defp broadcast_other_shares(shares, killer_char_id) do
+    shares
+    |> Enum.reject(fn {char_id, _slice} -> char_id == killer_char_id end)
+    |> Enum.each(fn {char_id, {base_slice, job_slice}} ->
+      PubSub.broadcast(Aesir.PubSub, "player:#{char_id}", {:party_exp, base_slice, job_slice})
+    end)
+  end
+
+  defp apply_killer_share(state, shares, killer_char_id) do
+    case Map.fetch(shares, killer_char_id) do
+      {:ok, {base_slice, job_slice}} ->
+        ExperienceHandler.handle_gain_exp(base_slice, job_slice, state)
+
+      :error ->
+        {:noreply, state}
+    end
+  end
 
   # Scales a mob-kill EXP amount by the renewal level-gap penalty rate
   # (`LevelPenalty.exp/2`, 100 = neutral). Floors a positive amount at 1 so a
