@@ -380,6 +380,24 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   def set_char_var(%Ctx{} = ctx, key, value), do: apply_op(ctx, {:set_char_var, key, value})
 
   @doc """
+  Reads the session temp variable `key` (rAthena `@var`), defaulting an unset
+  var to `default` (`0` matching rAthena). Temp vars live on `PlayerState` for
+  the session's lifetime and are never persisted.
+  """
+  @spec get_temp_var(Ctx.t(), atom(), term()) :: term()
+  def get_temp_var(%Ctx{game_state: gs}, key, default \\ 0) do
+    Map.get(gs.temp_vars, to_string(key), default)
+  end
+
+  @doc """
+  Sets the session temp variable `key` to `value` through the session seam.
+  Never fails and never persists; the var vanishes on logout.
+  """
+  @spec set_temp_var(Ctx.t(), atom(), term()) :: Ctx.t()
+  def set_temp_var(%Ctx{status: {:error, _}} = ctx, _key, _value), do: ctx
+  def set_temp_var(%Ctx{} = ctx, key, value), do: apply_op(ctx, {:set_temp_var, key, value})
+
+  @doc """
   Sets the script-local variable `key` (rAthena `.@var`). Pure Ctx update; the
   value lives only for the duration of the running script.
   """

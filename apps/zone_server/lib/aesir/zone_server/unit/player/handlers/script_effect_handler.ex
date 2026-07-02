@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
   An NPC interaction runs in its own process and holds only a read snapshot of
   the player's `PlayerState`. Every state mutation it needs (`pay_zeny`,
-  `give_item`, `delitem`, `set_char_var`, `jobchange`) is routed here as a
+  `give_item`, `delitem`, `set_char_var`, `set_temp_var`, `jobchange`) is routed here as a
   `{:script_apply, op}` `GenServer.call` so the player session stays the sole
   writer of its own state. This module applies the op to the authoritative
   state, persists the change, pushes the relevant proto to the client, and
@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:give_item, integer(), pos_integer()}
           | {:delitem, integer(), pos_integer()}
           | {:set_char_var, atom(), term()}
+          | {:set_temp_var, atom(), term()}
           | {:change_job, non_neg_integer()}
 
   @max_zeny 1_000_000_000
@@ -105,6 +106,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     CharacterPersistence.update_character(gs.character_id, %{vars: vars}, async: true)
 
     commit(state, %{gs | vars: vars})
+  end
+
+  def apply_op({:set_temp_var, key, value}, %{game_state: gs} = state) do
+    commit(state, %{gs | temp_vars: Map.put(gs.temp_vars, to_string(key), value)})
   end
 
   def apply_op({:change_job, job_id}, state) do

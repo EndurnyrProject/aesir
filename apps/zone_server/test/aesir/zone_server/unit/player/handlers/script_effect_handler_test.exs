@@ -63,6 +63,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
     end
   end
 
+  describe "{:set_temp_var, key, value}" do
+    test "puts the string-keyed value into temp_vars without persisting" do
+      reject(&CharacterPersistence.update_character/3)
+
+      {reply, new_state} =
+        ScriptEffectHandler.apply_op({:set_temp_var, :quest_step, 3}, base_state())
+
+      assert {:ok, game_state} = reply
+      assert game_state.temp_vars == %{"quest_step" => 3}
+      assert new_state.game_state.temp_vars == %{"quest_step" => 3}
+    end
+  end
+
   describe "{:pay_zeny, amount}" do
     test "debits, pushes the zeny param, persists, returns the new game_state" do
       test_pid = self()

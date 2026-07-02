@@ -391,6 +391,16 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
   end
 
+  describe "get_temp_var/3" do
+    test "reads a session temp var from the snapshot, defaulting to 0" do
+      ctx = build_ctx()
+      gs = %{ctx.game_state | temp_vars: %{"quest_step" => 3}}
+
+      assert Dsl.get_temp_var(%{ctx | game_state: gs}, :quest_step) == 3
+      assert Dsl.get_temp_var(ctx, :missing) == 0
+    end
+  end
+
   describe "set_local/3 and get_local/3" do
     test "round-trips a value on the ctx" do
       ctx = Dsl.set_local(build_ctx(), :price, 500)
