@@ -58,6 +58,18 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.NpcShopSellItem
   alias Aesir.Net.NpcTalk
   alias Aesir.Net.ParamChange
+  alias Aesir.Net.PartyActionResult
+  alias Aesir.Net.PartyCreateRequest
+  alias Aesir.Net.PartyDisbanded
+  alias Aesir.Net.PartyInfo
+  alias Aesir.Net.PartyInviteNotify
+  alias Aesir.Net.PartyInviteRequest
+  alias Aesir.Net.PartyInviteResponse
+  alias Aesir.Net.PartyKickRequest
+  alias Aesir.Net.PartyLeaderRequest
+  alias Aesir.Net.PartyLeaveRequest
+  alias Aesir.Net.PartyMember
+  alias Aesir.Net.PartyOptionsRequest
   alias Aesir.Net.PickupItemRequest
   alias Aesir.Net.PickupResult
   alias Aesir.Net.Respawn
@@ -1680,5 +1692,183 @@ defmodule Aesir.Commons.Network.ProtoTest do
       assert {:ok, %Envelope{body: {:npc_interact, %NpcInteract{npc_id: 7, response: ^response}}}} =
                Envelope.decode(IO.iodata_to_binary(iodata))
     end
+  end
+
+  test "party_create_request round-trips through envelope oneof" do
+    env = %Envelope{body: {:party_create_request, %PartyCreateRequest{name: "Valhalla"}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok, %Envelope{body: {:party_create_request, %PartyCreateRequest{name: "Valhalla"}}}} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "party_invite_request round-trips through envelope oneof" do
+    env = %Envelope{
+      body: {:party_invite_request, %PartyInviteRequest{target_char_id: 10_001, target_name: ""}}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body: {:party_invite_request, %PartyInviteRequest{target_char_id: 10_001}}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "party_invite_notify round-trips through envelope oneof" do
+    env = %Envelope{
+      body:
+        {:party_invite_notify,
+         %PartyInviteNotify{party_id: 1, party_name: "Valhalla", inviter_name: "Sigrid"}}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:party_invite_notify,
+                 %PartyInviteNotify{party_id: 1, party_name: "Valhalla", inviter_name: "Sigrid"}}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "party_invite_response round-trips through envelope oneof" do
+    env = %Envelope{
+      body: {:party_invite_response, %PartyInviteResponse{party_id: 1, accept: true}}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body: {:party_invite_response, %PartyInviteResponse{party_id: 1, accept: true}}
+            }} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "party_leave_request round-trips through envelope oneof" do
+    env = %Envelope{body: {:party_leave_request, %PartyLeaveRequest{}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok, %Envelope{body: {:party_leave_request, %PartyLeaveRequest{}}}} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "party_kick_request round-trips through envelope oneof" do
+    env = %Envelope{body: {:party_kick_request, %PartyKickRequest{target_char_id: 10_001}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{body: {:party_kick_request, %PartyKickRequest{target_char_id: 10_001}}}} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "party_options_request round-trips through envelope oneof" do
+    env = %Envelope{body: {:party_options_request, %PartyOptionsRequest{exp_share: true}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok, %Envelope{body: {:party_options_request, %PartyOptionsRequest{exp_share: true}}}} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "party_leader_request round-trips through envelope oneof" do
+    env = %Envelope{body: {:party_leader_request, %PartyLeaderRequest{target_char_id: 10_002}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{body: {:party_leader_request, %PartyLeaderRequest{target_char_id: 10_002}}}} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "party_action_result round-trips every PartyError value through envelope oneof" do
+    for error <- [
+          :NONE,
+          :NAME_TAKEN,
+          :ALREADY_IN_PARTY,
+          :PARTY_FULL,
+          :NOT_LEADER,
+          :LEVEL_RANGE,
+          :SAME_ACCOUNT,
+          :TARGET_OFFLINE,
+          :NOT_MEMBER,
+          :NOT_SAME_MAP
+        ] do
+      env = %Envelope{
+        body:
+          {:party_action_result,
+           %PartyActionResult{action: "create", success: false, error: error}}
+      }
+
+      {:ok, iodata, _size} = Envelope.encode(env)
+
+      assert {:ok,
+              %Envelope{
+                body:
+                  {:party_action_result,
+                   %PartyActionResult{action: "create", success: false, error: ^error}}
+              }} = Envelope.decode(IO.iodata_to_binary(iodata))
+    end
+  end
+
+  test "party_info with nested members round-trips through envelope oneof" do
+    env = %Envelope{
+      body:
+        {:party_info,
+         %PartyInfo{
+           party_id: 1,
+           name: "Valhalla",
+           leader_char_id: 10_001,
+           exp_share: true,
+           members: [
+             %PartyMember{
+               char_id: 10_001,
+               name: "Sigrid",
+               base_level: 99,
+               online: true,
+               map: "prontera"
+             }
+           ]
+         }}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:party_info,
+                 %PartyInfo{
+                   party_id: 1,
+                   name: "Valhalla",
+                   leader_char_id: 10_001,
+                   exp_share: true,
+                   members: [
+                     %PartyMember{
+                       char_id: 10_001,
+                       name: "Sigrid",
+                       base_level: 99,
+                       online: true,
+                       map: "prontera"
+                     }
+                   ]
+                 }}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "party_disbanded round-trips through envelope oneof" do
+    env = %Envelope{body: {:party_disbanded, %PartyDisbanded{party_id: 1, reason: "leader_left"}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body: {:party_disbanded, %PartyDisbanded{party_id: 1, reason: "leader_left"}}
+            }} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
   end
 end

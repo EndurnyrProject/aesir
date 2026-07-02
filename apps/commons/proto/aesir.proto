@@ -117,6 +117,18 @@ message Envelope {
     ItemVanished item_vanished = 103;
     PickupItemRequest pickup_item_request = 104;
     PickupResult pickup_result = 105;
+    // 106-116: party
+    PartyCreateRequest party_create_request = 106;
+    PartyInviteRequest party_invite_request = 107;
+    PartyInviteNotify party_invite_notify = 108;
+    PartyInviteResponse party_invite_response = 109;
+    PartyLeaveRequest party_leave_request = 110;
+    PartyKickRequest party_kick_request = 111;
+    PartyOptionsRequest party_options_request = 112;
+    PartyLeaderRequest party_leader_request = 113;
+    PartyActionResult party_action_result = 114;
+    PartyInfo party_info = 115;
+    PartyDisbanded party_disbanded = 116;
   }
 }
 
@@ -983,4 +995,96 @@ message PickupItemRequest {
 message PickupResult {
   uint64 ground_id = 1;
   PickupResultCode result = 2;
+}
+
+// Client -> server, create a new party with the requester as leader.
+message PartyCreateRequest {
+  string name = 1;
+}
+
+// Client -> server, invite a character to the sender's party by id or by name
+// (char_id wins when both are set; name is resolved via a UnitRegistry reverse lookup).
+message PartyInviteRequest {
+  uint32 target_char_id = 1;
+  string target_name = 2;
+}
+
+// Server -> client, party invite notification shown to the invitee.
+message PartyInviteNotify {
+  uint32 party_id = 1;
+  string party_name = 2;
+  string inviter_name = 3;
+}
+
+// Client -> server, the invitee's accept/decline response to a PartyInviteNotify.
+message PartyInviteResponse {
+  uint32 party_id = 1;
+  bool accept = 2;
+}
+
+// Client -> server, leave the sender's current party. If the sender is the
+// leader, the party disbands instead.
+message PartyLeaveRequest {}
+
+// Client -> server, leader-only request to remove a member from the party.
+message PartyKickRequest {
+  uint32 target_char_id = 1;
+}
+
+// Client -> server, leader-only request to toggle even-share EXP.
+message PartyOptionsRequest {
+  bool exp_share = 1;
+}
+
+// Client -> server, leader-only request to transfer leadership to an online,
+// same-map member.
+message PartyLeaderRequest {
+  uint32 target_char_id = 1;
+}
+
+// Reason a party request failed; NONE means it succeeded.
+enum PartyError {
+  NONE = 0;
+  NAME_TAKEN = 1;
+  ALREADY_IN_PARTY = 2;
+  PARTY_FULL = 3;
+  NOT_LEADER = 4;
+  LEVEL_RANGE = 5;
+  SAME_ACCOUNT = 6;
+  TARGET_OFFLINE = 7;
+  NOT_MEMBER = 8;
+  NOT_SAME_MAP = 9;
+}
+
+// Server -> client, acknowledgement of a party request. `action` names the
+// request being acked (e.g. "create", "invite", "kick"); `error` is
+// PartyError.NONE on success.
+message PartyActionResult {
+  string action = 1;
+  bool success = 2;
+  PartyError error = 3;
+}
+
+// One member entry within a PartyInfo snapshot.
+message PartyMember {
+  uint32 char_id = 1;
+  string name = 2;
+  uint32 base_level = 3;
+  bool online = 4;
+  string map = 5;
+}
+
+// Server -> client, full party snapshot sent on any membership or option change.
+message PartyInfo {
+  uint32 party_id = 1;
+  string name = 2;
+  uint32 leader_char_id = 3;
+  bool exp_share = 4;
+  repeated PartyMember members = 5;
+}
+
+// Server -> client, the party was disbanded (leader left, or the last member left).
+message PartyDisbanded {
+  uint32 party_id = 1;
+  string reason = 2;
 }
