@@ -91,6 +91,13 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.StatUp
   alias Aesir.Net.StatUpResult
   alias Aesir.Net.StatusChange
+  alias Aesir.Net.StorageCloseRequest
+  alias Aesir.Net.StorageDepositRequest
+  alias Aesir.Net.StorageItemAdded
+  alias Aesir.Net.StorageItemRemoved
+  alias Aesir.Net.StorageOpened
+  alias Aesir.Net.StorageResult
+  alias Aesir.Net.StorageWithdrawRequest
   alias Aesir.Net.TimeSync
   alias Aesir.Net.TimeSyncAck
   alias Aesir.Net.UnequipItem
@@ -1870,5 +1877,136 @@ defmodule Aesir.Commons.Network.ProtoTest do
               body: {:party_disbanded, %PartyDisbanded{party_id: 1, reason: "leader_left"}}
             }} =
              Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "storage_opened with nested items round-trips through envelope oneof" do
+    env = %Envelope{
+      body:
+        {:storage_opened,
+         %StorageOpened{
+           capacity: 600,
+           items: [
+             %InventoryItem{index: 0, nameid: 501, type: 0, amount: 10, identified: true}
+           ]
+         }}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:storage_opened,
+                 %StorageOpened{
+                   capacity: 600,
+                   items: [%InventoryItem{index: 0, nameid: 501, amount: 10, identified: true}]
+                 }}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "storage_deposit_request round-trips through envelope oneof" do
+    env = %Envelope{
+      body: {:storage_deposit_request, %StorageDepositRequest{inventory_index: 3, amount: 10}}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:storage_deposit_request, %StorageDepositRequest{inventory_index: 3, amount: 10}}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "storage_withdraw_request round-trips through envelope oneof" do
+    env = %Envelope{
+      body: {:storage_withdraw_request, %StorageWithdrawRequest{storage_index: 4, amount: 5}}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:storage_withdraw_request, %StorageWithdrawRequest{storage_index: 4, amount: 5}}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "storage_close_request round-trips through envelope oneof" do
+    env = %Envelope{body: {:storage_close_request, %StorageCloseRequest{}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok, %Envelope{body: {:storage_close_request, %StorageCloseRequest{}}}} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "storage_item_added with cards round-trips through envelope oneof" do
+    env = %Envelope{
+      body:
+        {:storage_item_added,
+         %StorageItemAdded{
+           index: 5,
+           amount: 1,
+           nameid: 1_201,
+           identified: true,
+           refine: 0,
+           cards: [4_001, 0, 0, 0],
+           location: 2,
+           type: 4,
+           result: 0
+         }}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:storage_item_added,
+                 %StorageItemAdded{
+                   index: 5,
+                   amount: 1,
+                   nameid: 1_201,
+                   identified: true,
+                   cards: [4_001, 0, 0, 0],
+                   location: 2,
+                   type: 4
+                 }}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "storage_item_removed round-trips through envelope oneof" do
+    env = %Envelope{
+      body: {:storage_item_removed, %StorageItemRemoved{index: 5, amount: 1, reason: 0}}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body: {:storage_item_removed, %StorageItemRemoved{index: 5, amount: 1, reason: 0}}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "storage_result round-trips every StorageResultCode value through envelope oneof" do
+    for result <- [
+          :STORAGE_OK,
+          :STORAGE_FULL,
+          :STORAGE_INVENTORY_FULL,
+          :STORAGE_OVERWEIGHT,
+          :STORAGE_NOT_STORABLE,
+          :STORAGE_ITEM_EQUIPPED,
+          :STORAGE_INVALID_AMOUNT,
+          :STORAGE_NOT_OPEN,
+          :STORAGE_BASIC_SKILL_REQUIRED
+        ] do
+      env = %Envelope{body: {:storage_result, %StorageResult{result: result}}}
+
+      {:ok, iodata, _size} = Envelope.encode(env)
+
+      assert {:ok, %Envelope{body: {:storage_result, %StorageResult{result: ^result}}}} =
+               Envelope.decode(IO.iodata_to_binary(iodata))
+    end
   end
 end

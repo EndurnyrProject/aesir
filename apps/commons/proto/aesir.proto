@@ -129,6 +129,14 @@ message Envelope {
     PartyActionResult party_action_result = 114;
     PartyInfo party_info = 115;
     PartyDisbanded party_disbanded = 116;
+    // 117-123: storage (server->client window/deltas/result + client deposit/withdraw/close intents)
+    StorageOpened storage_opened = 117;
+    StorageDepositRequest storage_deposit_request = 118;
+    StorageWithdrawRequest storage_withdraw_request = 119;
+    StorageCloseRequest storage_close_request = 120;
+    StorageItemAdded storage_item_added = 121;
+    StorageItemRemoved storage_item_removed = 122;
+    StorageResult storage_result = 123;
   }
 }
 
@@ -1087,4 +1095,68 @@ message PartyInfo {
 message PartyDisbanded {
   uint32 party_id = 1;
   string reason = 2;
+}
+
+// Server -> client, the full storage dump (sent on open). Mirrors CartInfo.
+message StorageOpened {
+  uint32 capacity = 1;
+  repeated InventoryItem items = 2;
+}
+
+// Client -> server, move an inventory item into storage.
+message StorageDepositRequest {
+  uint32 inventory_index = 1;
+  uint32 amount = 2;
+}
+
+// Client -> server, move a storage item back into the inventory.
+message StorageWithdrawRequest {
+  uint32 storage_index = 1;
+  uint32 amount = 2;
+}
+
+// Client -> server, close the currently open storage window.
+message StorageCloseRequest {}
+
+// Server -> client, an item was added to storage. Mirrors CartItemAdded.
+message StorageItemAdded {
+  uint32 index = 1;
+  uint32 amount = 2;
+  uint32 nameid = 3;
+  bool identified = 4;
+  uint32 attribute = 5;
+  uint32 refine = 6;
+  repeated uint32 cards = 7;
+  uint32 location = 8;
+  uint32 type = 9;
+  uint32 result = 10;
+  uint64 expire_time = 11;
+  uint32 look = 12;
+}
+
+// Server -> client, an item was removed from storage. Mirrors CartItemRemoved.
+message StorageItemRemoved {
+  uint32 index = 1;
+  uint32 amount = 2;
+  uint32 reason = 3;
+}
+
+// Outcome of a storage deposit/withdraw/open request. Values are prefixed
+// because proto3 enum constants share the package namespace (C++ scoping
+// rules), and OK/INVENTORY_FULL/OVERWEIGHT already exist on PickupResultCode.
+enum StorageResultCode {
+  STORAGE_OK = 0;
+  STORAGE_FULL = 1;
+  STORAGE_INVENTORY_FULL = 2;
+  STORAGE_OVERWEIGHT = 3;
+  STORAGE_NOT_STORABLE = 4;
+  STORAGE_ITEM_EQUIPPED = 5;
+  STORAGE_INVALID_AMOUNT = 6;
+  STORAGE_NOT_OPEN = 7;
+  STORAGE_BASIC_SKILL_REQUIRED = 8;
+}
+
+// Server -> client, result of a storage deposit/withdraw/open request.
+message StorageResult {
+  StorageResultCode result = 1;
 }
