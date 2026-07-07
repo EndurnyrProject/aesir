@@ -1,0 +1,52 @@
+{
+  "re/jobs/1-1/acolyte.txt|script|Ascetic#2aco|moc_fild07:41:355": {
+    "output_hash": "d2711459cc4087411e7ea3daeaef1330bf4035424193e8067f4094dc07ce3151",
+    "output_path": "lib/aesir/zone_server/content/npc/moc_fild07/ascetic.ex",
+    "source_hash": "d2941cd91e0b328b8aaac02a6fe719cf85cd5a976a7b2086a6908a0eb349e3a9"
+  },
+  "re/jobs/1-1/acolyte.txt|script|Ascetic#3aco|prt_fild00:208:218": {
+    "output_hash": "e3e1dfebd5ff449c7d4c8ffe08c5fbcaf955d6c766315088af7d0023a3f72a03",
+    "output_path": "lib/aesir/zone_server/content/npc/prt_fild00/ascetic.ex",
+    "source_hash": "2e62f7f35e602f73c430494eaf524d8a5972a7c37df7c1fce16ebd1630bbe8a0"
+  },
+  "re/jobs/1-1/acolyte.txt|script|Ascetic#aco|prt_fild03:365:255": {
+    "output_hash": "8906f1ba8252b3b444e9bc925d4fce054f6f2e65a995a2b2889a0ddae7fd7466",
+    "output_path": "lib/aesir/zone_server/content/npc/prt_fild03/ascetic.ex",
+    "source_hash": "23fb30c850a31b4b58ea1e72f9a5cb3c54136763fd7c7b4e386e10e928c70674"
+  },
+  "re/jobs/1-1/acolyte.txt|script|Cleric#aco|prt_church:184:41": {
+    "output_hash": "17128c8498058a017060b5ab19a9cb7447a98906ffff42b4b925a210b82be47a",
+    "output_path": "lib/aesir/zone_server/content/npc/prt_church/cleric.ex",
+    "source_hash": "7ee5f86baa09e27b2a55b516aea5df0fbd70232795892336b7a1b7a2a1dde572"
+  },
+  "re/jobs/1-1/archer.txt|script|Archer Guildsman#archer|payon_in02:64:71": {
+    "output_hash": "af76d78130a673db3aeb3d10d0c3cae0b652f394469a4f82039fbcf0d069f507",
+    "output_path": "lib/aesir/zone_server/content/npc/payon_in02/archer_guildsman.ex",
+    "source_hash": "c1fb9303c8962574afe87404307e8ca4cb19546dd67ffad230497cac051d51bb"
+  },
+  "re/jobs/1-1/mage.txt|script|Mage Guildsman#mage|geffen_in:164:124": {
+    "output_hash": "725f086406cd1657770f7164346819008f6d7352b23f2e066e079ecd13aa4984",
+    "output_path": "lib/aesir/zone_server/content/npc/geffen_in/mage_guildsman.ex",
+    "source_hash": "7a8291c56ffdf6f41171ff338c6aa0d0d798b0f9ec6ae0f627de37c9faad1d63"
+  },
+  "re/jobs/1-1/merchant.txt|script|Merchant#mer|alberta_in:53:43": {
+    "output_hash": "964e52ccf8abfbdd0752aec416b79263843a948c8be0e9356dfc70b5fb9fdf19",
+    "output_path": "lib/aesir/zone_server/content/npc/alberta_in/merchant.ex",
+    "source_hash": "5fafa8006d3edfecbcccbf234278511b162d2f82e0d9fd0a6bbff9496a23f17f"
+  },
+  "re/jobs/1-1/swordman.txt|script|Swordman#swd|izlude_in:74:172": {
+    "output_hash": "a1bbb7931e576c563a5b384f50ceeb5a253a7157297edb18569324814e5f7b5e",
+    "output_path": "lib/aesir/zone_server/content/npc/izlude_in/swordman.ex",
+    "source_hash": "badad406b0fcdcf8b7995dc58bae103898cd9d07b85289086c32bbde70290ed9"
+  },
+  "re/jobs/1-1/thief.txt|script|Thief Guide#thief|moc_prydb1:39:129": {
+    "output_hash": "85d9a778033557cd17d8af98bf5942fd506a6ad878e776c6af788e847d89c48b",
+    "output_path": "lib/aesir/zone_server/content/npc/moc_prydb1/thief_guide.ex",
+    "source_hash": "542ed4e7b4b7270fc7e09b5c8eb23f1e43184aba9269ec5868ca27cea2a1da38"
+  },
+  "re/jobs/1-1/thief.txt|script|Thief Guildsman#thief|moc_prydb1:42:133": {
+    "output_hash": "ad5997e435d820a0fff5edd4e087389fe875b440dc45fcd71a6d96b1cc850dd3",
+    "output_path": "lib/aesir/zone_server/content/npc/moc_prydb1/thief_guildsman.ex",
+    "source_hash": "71a20efe540cdefb3685ab9ff30b1fcc6583916ba351702d43b007f1261e54d9"
+  }
+}
