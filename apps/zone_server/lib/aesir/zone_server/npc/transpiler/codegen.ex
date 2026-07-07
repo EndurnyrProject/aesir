@@ -4,8 +4,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   Translation model:
 
-  - Statements thread `ctx` by rebinding (`ctx = mes(ctx, "…")`), mirroring
-    the hand-written NPC style.
+  - Statements thread `ctx` by rebinding (`ctx = mes(ctx, "…")`); runs of
+    consecutive `ctx`-threading calls then collapse into pipe chains
+    (`ctx |> mes("…") |> close()`), mirroring the hand-written NPC style.
   - `close`/`end` terminate the script by exiting the interaction process
     (`exit(:normal)`), exactly like rAthena stops execution there; the
     interaction Task treats it as a clean end. `close2`/`close3` flush the
@@ -38,6 +39,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   @comparisons %{==: "==", !=: "!=", <: "<", <=: "<=", >: ">", >=: ">="}
   @arith %{+: "+", -: "-", *: "*"}
   @bitwise %{&: "band", |: "bor", ^: "bxor", shl: "bsl", shr: "bsr"}
+
+  @pipe_rebind ~r/^ctx = ([a-z_][a-zA-Z0-9_]*[!?]?)\(ctx(?:, (.+))?\)$/
+  @pipe_call ~r/^([A-Za-z_][A-Za-z0-9_.]*[!?]?)\(ctx(?:, (.+))?\)$/
+  @pipe_bind ~r/^(\{ctx, [A-Za-z0-9_]+\}) = ([A-Za-z_][A-Za-z0-9_.]*[!?]?)\(ctx(?:, (.+))?\)$/
+  @ctx_word ~r/\bctx\b/
 
   @typedoc """
   Options: `:module` (full module name string), `:spawns` (resolved placement
@@ -161,13 +167,17 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   # A `ctx = ...` rebinding whose value is only followed by `exit(:normal)`
   # (the `close2; warp; end` idiom, or an if/case feeding a trailing `end`
   # command) is dead; unbind it to keep generated modules warning-free.
-  defp join_body(lines), do: lines |> tidy() |> tidy_block_bind() |> Enum.join("\n")
+  defp join_body(lines),
+    do: lines |> pipe_chains() |> tidy() |> tidy_block_bind() |> Enum.join("\n")
 
   defp tidy([<<"ctx = ", expr::binary>>, "exit(:normal)" | rest]),
-    do: ["_ = " <> expr, "exit(:normal)" | tidy(rest)]
+    do: [unbound(expr), "exit(:normal)" | tidy(rest)]
 
   defp tidy([line | rest]), do: [line | tidy(rest)]
   defp tidy([]), do: []
+
+  defp unbound("ctx |> " <> _ = pipe), do: pipe
+  defp unbound(expr), do: "_ = " <> expr
 
   # `ctx = if ... do … end` (or a standalone `ctx =` before `case`/`try`)
   # immediately followed by `exit(:normal)`: locate the block opener by
@@ -216,6 +226,96 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
         lines
     end
   end
+
+  # -- pipe chains ---------------------------------------------------------
+
+  # Folds runs of consecutive `ctx = f(ctx, …)` rebinds — plus an optional
+  # capping `g(ctx, …)` tail call, `{ctx, v} = g(ctx, …)` binding, or a
+  # block-final bare `ctx` — into a single `|>` chain, mirroring the
+  # hand-written NPC style. A call whose other arguments mention `ctx` may
+  # only open a chain: mid-chain it would read the pre-pipe binding.
+  defp pipe_chains(lines), do: pipe_chains(lines, [])
+
+  defp pipe_chains([], out), do: Enum.reverse(out)
+
+  defp pipe_chains([line | rest], out) do
+    case pipe_step(@pipe_rebind, line) do
+      nil -> pipe_chains(rest, [line | out])
+      step -> pipe_run(rest, [line], [step], out)
+    end
+  end
+
+  # pipe_run(remaining, run lines (reversed), run steps (reversed), out)
+  defp pipe_run([], run_lines, steps, out),
+    do: pipe_chains([], flush_run(run_lines, steps) ++ out)
+
+  defp pipe_run([line | rest] = remaining, run_lines, steps, out) do
+    rebind = pipe_step(@pipe_rebind, line)
+    bind = bind_step(line)
+    call = pipe_step(@pipe_call, line)
+
+    cond do
+      safe_step?(rebind) ->
+        pipe_run(rest, [line | run_lines], [rebind | steps], out)
+
+      bind != nil and safe_step?(elem(bind, 1)) ->
+        {target, step} = bind
+        pipe_chains(rest, [chain(target <> " = ", [step | steps]) | out])
+
+      safe_step?(call) ->
+        pipe_chains(rest, [chain("", [call | steps]) | out])
+
+      line == "ctx" and block_final?(rest) ->
+        pipe_chains(rest, [value_run(run_lines, steps) | out])
+
+      true ->
+        pipe_chains(remaining, flush_run(run_lines, steps) ++ out)
+    end
+  end
+
+  defp flush_run(run_lines, steps) do
+    if length(steps) >= 2, do: [chain("ctx = ", steps)], else: run_lines
+  end
+
+  # A run whose value falls off the block end: a real run pipes; a single
+  # rebind just loses the dead `ctx =` binding.
+  defp value_run([line], [_step]), do: String.replace_prefix(line, "ctx = ", "")
+  defp value_run(_run_lines, steps), do: chain("", steps)
+
+  defp chain(prefix, reversed_steps) do
+    calls = reversed_steps |> Enum.reverse() |> Enum.map(&step_call/1)
+    prefix <> Enum.join(["ctx" | calls], " |> ")
+  end
+
+  defp step_call({fun, nil}), do: "#{fun}()"
+  defp step_call({fun, args}), do: "#{fun}(#{args})"
+
+  defp pipe_step(regex, line) do
+    case not String.contains?(line, "\n") && Regex.run(regex, line) do
+      [_, fun] -> {fun, nil}
+      [_, fun, args] -> {fun, args}
+      _ -> nil
+    end
+  end
+
+  defp bind_step(line) do
+    case not String.contains?(line, "\n") && Regex.run(@pipe_bind, line) do
+      [_, target, fun] -> {target, {fun, nil}}
+      [_, target, fun, args] -> {target, {fun, args}}
+      _ -> nil
+    end
+  end
+
+  defp safe_step?(nil), do: false
+  defp safe_step?({_fun, nil}), do: true
+  defp safe_step?({_fun, args}), do: not Regex.match?(@ctx_word, args)
+
+  # Emitted bare `ctx` lines only ever close a block; merging one away is
+  # only allowed where the next line proves that (or the body ends).
+  defp block_final?([]), do: true
+
+  defp block_final?([next | _]),
+    do: next in ["else", "end", "catch"] or String.ends_with?(next, "->")
 
   defp param(body_lines) do
     if Enum.any?(body_lines, &String.contains?(&1, "ctx")), do: "ctx", else: "_ctx"

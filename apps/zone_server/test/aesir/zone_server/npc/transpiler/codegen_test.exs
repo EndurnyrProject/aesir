@@ -42,12 +42,66 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
 
              @impl true
              def on_talk(ctx) do
-               ctx = mes(ctx, "Hello!")
-               close(ctx)
+               ctx |> mes("Hello!") |> close()
                exit(:normal)
              end
            end
            """
+  end
+
+  test "consecutive ctx-threading calls collapse into a pipe chain" do
+    src =
+      gen!("""
+      mes "a";
+      mes "b";
+      next;
+      mes "c";
+      close;
+      """)
+
+    assert src =~ ~S{ctx |> mes("a") |> mes("b") |> next() |> mes("c") |> close()}
+  end
+
+  test "a call reading ctx in its arguments opens a chain but never joins one" do
+    src =
+      gen!("""
+      mes "a";
+      mes strcharinfo(0);
+      close;
+      """)
+
+    assert src =~ ~S{ctx = mes(ctx, "a")}
+    assert src =~ ~S{ctx |> mes(to_string(char_name(ctx, 0))) |> close()}
+  end
+
+  test "branch bodies pipe; a lone rebind just drops the dead binding" do
+    src =
+      gen!("""
+      if (BaseLevel > 10) {
+        mes "big";
+        next;
+      }
+      if (BaseLevel > 20) mes "huge";
+      mes "done";
+      close;
+      """)
+
+    assert src =~ ~S{ctx |> mes("big") |> next()}
+    assert src =~ ~S{mes(ctx, "huge")}
+    refute src =~ ~S{ctx = mes(ctx, "huge")}
+    assert src =~ ~S{ctx |> mes("done") |> close()}
+  end
+
+  test "a trailing effect run before end loses the dead rebinding" do
+    src =
+      gen!("""
+      close2;
+      warp "prontera",155,180;
+      end;
+      """)
+
+    assert src =~ ~S{ctx |> close() |> warp("prontera", 155, 180)}
+    refute src =~ "ctx = ctx |> close()"
   end
 
   test "switch(select) with supported commands, char vars and zeny" do
@@ -67,12 +121,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       }
       """)
 
-    assert src =~ ~S|{ctx, v1} = select(ctx, ["Yes", "No"])|
+    assert src =~ "{ctx, v1} = ctx |> mes(\"Want it?\") |> next() |> select([\"Yes\", \"No\"])"
     assert src =~ "case v1 do"
     assert src =~ "if zeny(ctx) < 500 do"
-    assert src =~ "ctx = pay_zeny(ctx, 500)"
-    assert src =~ "ctx = give_item(ctx, 2278, 1)"
-    assert src =~ "ctx = set_char_var(ctx, :sphmask_q, 1)"
+    assert src =~ "|> pay_zeny(500)"
+    assert src =~ "|> give_item(2278, 1)"
+    assert src =~ "|> set_char_var(:sphmask_q, 1)"
     assert src =~ "_ ->"
   end
 
@@ -101,7 +155,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       close;
       """)
 
-    assert src =~ "l_l_end(ctx)"
+    assert src =~ ~S{ctx |> mes("start") |> l_l_end()}
     assert src =~ "defp l_l_end(ctx) do"
     refute src =~ "defp l_l_mid"
   end
@@ -142,7 +196,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       close;
       """)
 
-    assert plain =~ "ctx = loop_1(ctx)"
+    assert plain =~ ~S{ctx |> loop_1() |> close()}
     assert plain =~ "defp loop_1(ctx) do"
     refute plain =~ "throw"
 
@@ -166,7 +220,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       close;
       """)
 
-    assert src =~ "ctx = set_local(ctx, :i, 0)"
+    assert src =~ "|> set_local(:i, 0)"
     assert src =~ "get_local(ctx, :i, 0) + 1"
   end
 
@@ -181,9 +235,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       """)
 
     assert src =~ "{ctx, v1} = input(ctx, :string)"
-    assert src =~ ~S|ctx = set_local(ctx, :"name$", v1)|
-    assert src =~ "ctx = set_temp_var(ctx, :step, 2)"
-    assert src =~ "ctx = set_local(ctx, :list, [1, 2, 3])"
+    assert src =~ ~S{|> set_local(:"name$", v1)}
+    assert src =~ "|> set_temp_var(:step, 2)"
+    assert src =~ "|> set_local(:list, [1, 2, 3])"
     assert src =~ "Enum.at(get_local(ctx, :list, []), 1, 0)"
   end
 
@@ -195,9 +249,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       close;
       """)
 
-    assert src =~ ~S|ctx = todo(ctx, :set_var, ["$server_var", 1])| or
-             src =~ ~S|todo(ctx, :set_var, ["$server_var", 1])|
-
+    assert src =~ ~S{|> todo(:set_var, ["$server_var", 1])}
     assert src =~ ~S|Todo.call!(:get_var, ["#account_var"])|
   end
 
@@ -244,11 +296,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       """)
 
     assert src =~ "= can_change_job?(ctx)"
-    assert src =~ "ctx = jobchange(ctx, :thief)"
-    assert src =~ ~S|ctx = savepoint(ctx, "prt_fild03", 361, 255)|
+    assert src =~ "|> jobchange(:thief)"
+    assert src =~ ~S{|> savepoint("prt_fild03", 361, 255)}
     assert src =~ "char_name(ctx, 0)"
     assert src =~ "job_name(ctx, class(ctx))"
     refute src =~ "todo(ctx, :savepoint"
+    refute src =~ "todo(:savepoint"
     refute src =~ ~S|Todo.call!(:callfunc, ["Job_Change"|
   end
 
