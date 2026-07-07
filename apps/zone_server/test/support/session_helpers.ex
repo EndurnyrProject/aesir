@@ -91,6 +91,9 @@ defmodule Aesir.ZoneServer.SessionHelpers do
   - :hp - Current HP
   - :max_hp - Maximum HP
   - :level - Mob level
+  - :dex - Mob DEX stat (default 10)
+  - :modes - Mob mode list, e.g. `[:boss]` (default `[]`)
+  - :drops - Mob drop table (default `[]`)
 
   ## Examples
 
@@ -121,7 +124,7 @@ defmodule Aesir.ZoneServer.SessionHelpers do
       matk: 0,
       def: 5,
       mdef: 3,
-      stats: %{str: 10, agi: 10, vit: 10, int: 5, dex: 10, luk: 5},
+      stats: %{str: 10, agi: 10, vit: 10, int: 5, dex: opts[:dex] || 10, luk: 5},
       attack_range: 1,
       skill_range: 10,
       chase_range: 12,
@@ -134,8 +137,8 @@ defmodule Aesir.ZoneServer.SessionHelpers do
       client_attack_motion: 500,
       damage_motion: 400,
       ai_type: 0,
-      modes: [],
-      drops: []
+      modes: opts[:modes] || [],
+      drops: opts[:drops] || []
     }
 
     mob_spawn = %MobSpawn{

@@ -210,6 +210,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert {:ok, _} = DamageCalculator.calculate_damage(attacker, defender)
       assert_received {:attack_element, :water}
     end
+
+    test "an :element opt overrides both the weapon element and sc_watk_element" do
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :player, 1001 -> %{attack_element: :water}
+        _, _ -> %{}
+      end)
+
+      attacker = CombatTestHelper.create_player_combatant(weapon_element: :fire)
+      defender = CombatTestHelper.create_mob_combatant(element: {:earth, 1})
+
+      assert {:ok, _} = DamageCalculator.calculate_damage(attacker, defender, element: :poison)
+      assert_received {:attack_element, :poison}
+    end
   end
 
   describe "calculate_base_attack/1" do

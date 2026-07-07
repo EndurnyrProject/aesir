@@ -44,9 +44,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
   Returns the procs this passive triggers on a normal attack at the given level.
 
   Aggregated by `Skill.Passives.attack_procs/1` and queried in the normal-attack
-  path. A `:multi_hit` value of `n` delivers the basic attack as `n` hits.
+  path. A `:multi_hit` value of `n` delivers the basic attack as `n` hits;
+  `:chance` (1-100) is the percent chance the multi-hit rolls, defaulting to 100
+  (always) when absent.
   """
-  @callback attack_proc(level :: pos_integer(), ctx()) :: %{optional(:multi_hit) => pos_integer()}
+  @callback attack_proc(level :: pos_integer(), ctx()) :: %{
+              optional(:multi_hit) => pos_integer(),
+              optional(:chance) => 1..100
+            }
 
   @doc "Returns a map of regen contributions from this passive at the given level."
   @callback regen_contribution(level :: pos_integer(), ctx()) ::

@@ -102,11 +102,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   end
 
   # The number of basic-attack hits to deliver, driven by passive procs (e.g.
-  # Double Attack's `%{multi_hit: 2}`). Defaults to a single hit.
+  # Double Attack's `%{multi_hit: 2, chance: 7 * level}`). The proc's `:chance`
+  # (default 100 when absent) is rolled out of 100 before the multi-hit is
+  # delivered; a failed roll (or no proc) delivers a single hit.
   defp attack_hits(player_state) do
     case Passives.attack_procs(player_state) do
-      %{multi_hit: n} when n > 1 -> n
-      _ -> 1
+      %{multi_hit: n} = proc when n > 1 ->
+        chance = Map.get(proc, :chance, 100)
+        if :rand.uniform(100) <= chance, do: n, else: 1
+
+      _ ->
+        1
     end
   end
 
@@ -604,6 +610,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     - `:bonus_atk` - flat ATK added after the skill ratio, before defense
     - `:fixed_damage` - deal exactly this value, bypassing weapon/defense/flee
     - `:hit_count` - number of hits to deliver, each rolling its own damage (default `1`)
+    - `:element` - forces the attack element for this hit, overriding the
+      weapon element (e.g. Envenom's poison, Sand Attack's earth)
 
   ## Returns
     - :ok if the skill connected
@@ -615,7 +623,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     skill_id = Keyword.fetch!(opts, :skill_id)
     skill_level = Keyword.fetch!(opts, :skill_level)
     hits = Keyword.get(opts, :hit_count, 1)
-    calc_opts = Keyword.take(opts, [:skill_ratio, :skip_crit, :bonus_atk, :fixed_damage])
+
+    calc_opts =
+      Keyword.take(opts, [:skill_ratio, :skip_crit, :bonus_atk, :fixed_damage, :element])
 
     # TODO: skills always connect here; skill miss/flee isn't modeled yet.
     with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),

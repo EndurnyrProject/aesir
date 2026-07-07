@@ -98,6 +98,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       pipeline and returns that flat value, bypassing base attack, skill ratio,
       modifiers, defense, criticals, and any flee/hit consideration (e.g. Stone
       Fling's fixed `50`). Default `nil`.
+    - `:element` - overrides the attack element for this hit only, taking
+      priority over both the weapon element and an `SC_WATK_ELEMENT` endow
+      (e.g. Envenom's poison, Sand Attack's earth). Default `nil` (resolve
+      normally).
 
   The skill ratio is applied to base attack before the size/race/element/status
   modifier pipeline. todo: faithful-enough Renewal ordering; card-vs-ratio
@@ -119,7 +123,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
     with {:ok, base_atk} <- calculate_base_attack(attacker),
          skilled_atk = div(base_atk * skill_ratio, 100) + bonus_atk,
-         {:ok, modified_atk} <- apply_modifier_pipeline(skilled_atk, attacker, defender),
+         {:ok, modified_atk} <- apply_modifier_pipeline(skilled_atk, attacker, defender, opts),
          total_atk = modified_atk + demon_bane_bonus(attacker, defender),
          {:ok, final_damage} <- apply_defense_formula(total_atk, defender, attacker) do
       finalize_damage(final_damage, attacker, skip_crit)
@@ -190,20 +194,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   Modifiers are applied in this order:
   1. Size modifiers
-  2. Race modifiers  
+  2. Race modifiers
   3. Element modifiers
   4. Status effect modifiers
+
+  `opts` accepts `:element` to force the attack element for this call (see
+  `calculate_damage/3`), taking priority over both the weapon element and any
+  `attack_element` status modifier.
   """
-  @spec apply_modifier_pipeline(integer(), combatant(), combatant()) :: {:ok, number()}
-  def apply_modifier_pipeline(base_damage, attacker, defender) do
+  @spec apply_modifier_pipeline(integer(), combatant(), combatant(), keyword()) :: {:ok, number()}
+  def apply_modifier_pipeline(base_damage, attacker, defender, opts \\ []) do
     {unit_type, unit_id} = get_unit_type_and_id(attacker)
     attacker_modifiers = ModifierCalculator.get_all_modifiers(unit_type, unit_id)
+    forced_element = Keyword.get(opts, :element)
 
     total_atk =
       base_damage
       |> apply_size_modifier(attacker, defender)
       |> apply_race_modifier(attacker, defender)
-      |> apply_element_modifier(attacker, defender, attacker_modifiers)
+      |> apply_element_modifier(attacker, defender, attacker_modifiers, forced_element)
       |> apply_status_effect_damage_modifiers(attacker_modifiers)
 
     {:ok, total_atk}
@@ -296,8 +305,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   # Modifier application functions (unified from original Combat module)
 
-  defp apply_element_modifier(damage, attacker, defender, attacker_modifiers) do
-    attack_element = resolve_attack_element(attacker, attacker_modifiers)
+  defp apply_element_modifier(damage, attacker, defender, attacker_modifiers, forced_element) do
+    attack_element = forced_element || resolve_attack_element(attacker, attacker_modifiers)
     DamageShared.apply_element(damage, attack_element, defender)
   end
 

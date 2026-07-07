@@ -82,6 +82,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
     Skills.SmRecovery,
     Skills.SmSword,
     Skills.SmTwohand,
+    Skills.TfBacksliding,
+    Skills.TfDetoxify,
+    Skills.TfDouble,
+    Skills.TfHiding,
+    Skills.TfMiss,
+    Skills.TfPickstone,
+    Skills.TfPoison,
+    Skills.TfSprinklesand,
+    Skills.TfSteal,
+    Skills.TfThrowstone,
     Skills.WzStormgust
   ]
 

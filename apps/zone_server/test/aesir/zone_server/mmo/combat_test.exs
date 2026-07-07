@@ -134,6 +134,48 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       assert packet.div == 1
       assert packet.damage == 50
     end
+
+    test "rolls the proc's :chance and delivers the multi-hit when it succeeds",
+         %{player_state: player_state, stats: stats} do
+      test_pid = self()
+
+      # Seed {1,2,3} yields :rand.uniform(100) == 27, at or below a 50% chance.
+      :rand.seed(:exsss, {1, 2, 3})
+      stub(Passives, :attack_procs, fn _player -> %{multi_hit: 2, chance: 50} end)
+
+      expect(MobSession, :apply_damage, 2, fn _pid, damage, _attacker_id ->
+        send(test_pid, {:damage_applied, damage})
+        :ok
+      end)
+
+      capture_log(fn ->
+        assert Combat.execute_attack(stats, player_state, 2001) == :ok
+      end)
+
+      assert_received {:damage_applied, 50}
+      assert_received {:damage_applied, 50}
+    end
+
+    test "rolls the proc's :chance and delivers a single hit when it fails",
+         %{player_state: player_state, stats: stats} do
+      test_pid = self()
+
+      # Seed {6,7,8} yields :rand.uniform(100) == 87, above a 50% chance.
+      :rand.seed(:exsss, {6, 7, 8})
+      stub(Passives, :attack_procs, fn _player -> %{multi_hit: 2, chance: 50} end)
+
+      expect(MobSession, :apply_damage, 1, fn _pid, damage, _attacker_id ->
+        send(test_pid, {:damage_applied, damage})
+        :ok
+      end)
+
+      capture_log(fn ->
+        assert Combat.execute_attack(stats, player_state, 2001) == :ok
+      end)
+
+      assert_received {:damage_applied, 50}
+      refute_received {:damage_applied, _}
+    end
   end
 
   describe "execute_attack/3 weapon element" do

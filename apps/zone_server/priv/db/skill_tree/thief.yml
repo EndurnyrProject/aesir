@@ -1,0 +1,31 @@
+---
+- job: thief
+  inherit:
+    - novice
+  tree:
+    - name: TF_DOUBLE
+      max_level: 10
+    - name: TF_MISS
+      max_level: 10
+    - name: TF_STEAL
+      max_level: 10
+    - name: TF_HIDING
+      max_level: 10
+      requires:
+        - name: TF_STEAL
+          level: 5
+    - name: TF_POISON
+      max_level: 10
+    - name: TF_DETOXIFY
+      max_level: 1
+      requires:
+        - name: TF_POISON
+          level: 3
+    - name: TF_SPRINKLESAND
+      max_level: 1
+    - name: TF_BACKSLIDING
+      max_level: 1
+    - name: TF_PICKSTONE
+      max_level: 1
+    - name: TF_THROWSTONE
+      max_level: 1

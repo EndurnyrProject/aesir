@@ -67,6 +67,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
     def attack_proc(_level, _ctx), do: %{multi_hit: 3}
   end
 
+  defmodule ChanceMultiHitPassive do
+    @moduledoc false
+    use Aesir.ZoneServer.Mmo.Skill,
+      id: 9_900_005,
+      name: :test_chance_multi_hit_passive,
+      display_name: "Test Chance Multi Hit Passive",
+      max_level: 10,
+      target_type: :passive
+
+    alias Aesir.ZoneServer.Mmo.Skill.Passive
+
+    @behaviour Passive
+
+    @impl Passive
+    def attack_proc(_level, _ctx), do: %{multi_hit: 2, chance: 42}
+  end
+
   defmodule MaxWeightPassive do
     @moduledoc false
     use Aesir.ZoneServer.Mmo.Skill,
@@ -195,6 +212,34 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
       end)
 
       player = build_player(%{9_900_002 => 5, 9_900_003 => 5}, :one_handed_sword)
+
+      assert Passives.attack_procs(player) == %{multi_hit: 3}
+    end
+
+    test "carries the :chance of the winning multi_hit proc" do
+      stub(Catalog, :by_id, fn 9_900_005 -> {:ok, ChanceMultiHitPassive.definition()} end)
+
+      stub(Catalog, :passive_module_for, fn :test_chance_multi_hit_passive ->
+        {:ok, ChanceMultiHitPassive}
+      end)
+
+      player = build_player(%{9_900_005 => 5}, :one_handed_sword)
+
+      assert Passives.attack_procs(player) == %{multi_hit: 2, chance: 42}
+    end
+
+    test "a higher chanceless multi_hit proc wins over a lower proc with a chance" do
+      stub(Catalog, :by_id, fn
+        9_900_003 -> {:ok, HigherMultiHitPassive.definition()}
+        9_900_005 -> {:ok, ChanceMultiHitPassive.definition()}
+      end)
+
+      stub(Catalog, :passive_module_for, fn
+        :test_higher_multi_hit_passive -> {:ok, HigherMultiHitPassive}
+        :test_chance_multi_hit_passive -> {:ok, ChanceMultiHitPassive}
+      end)
+
+      player = build_player(%{9_900_003 => 5, 9_900_005 => 5}, :one_handed_sword)
 
       assert Passives.attack_procs(player) == %{multi_hit: 3}
     end

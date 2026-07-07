@@ -17,6 +17,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -90,6 +92,22 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   @doc """
+  Attempts to steal one item from this mob (TF_STEAL).
+
+  Runs the full rate roll, per-drop roll and `stolen_from` flip inside the
+  mob's own process so concurrent attempts can't both succeed. Rejects bosses
+  and mobs already stolen from without consuming a roll. Returns `{:ok,
+  item_id}` on a successful steal, or `{:error, reason}` (`:boss`,
+  `:already_stolen`, `:miss`, `:no_drop`) — all but `:boss`/`:already_stolen`
+  leave `stolen_from` untouched, so the caller may retry.
+  """
+  @spec attempt_steal(pid(), non_neg_integer(), pos_integer()) ::
+          {:ok, non_neg_integer()} | {:error, atom()}
+  def attempt_steal(pid, caster_dex, skill_level) do
+    GenServer.call(pid, {:attempt_steal, caster_dex, skill_level})
+  end
+
+  @doc """
   Suspends the mob's AI loop while its map has no players.
 
   The mob keeps its full state (HP, aggro history, position) but stops ticking,
@@ -153,6 +171,26 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   @impl GenServer
   def handle_call(:get_state, _from, state) do
     {:reply, state, state}
+  end
+
+  @impl GenServer
+  def handle_call({:attempt_steal, caster_dex, skill_level}, _from, %{mob_data: mob_data} = state) do
+    cond do
+      :boss in (mob_data.modes || []) ->
+        {:reply, {:error, :boss}, state}
+
+      state.stolen_from ->
+        {:reply, {:error, :already_stolen}, state}
+
+      :rand.uniform(100) > steal_rate(caster_dex, mob_data.stats.dex, skill_level) ->
+        {:reply, {:error, :miss}, state}
+
+      true ->
+        case steal_drop(mob_data.drops) do
+          {:ok, item_id} -> {:reply, {:ok, item_id}, MobState.mark_stolen(state)}
+          :error -> {:reply, {:error, :no_drop}, state}
+        end
+    end
   end
 
   @impl GenServer
@@ -323,6 +361,32 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   # Private Functions
+
+  # rAthena pc_steal_item renewal rate formula, expressed as a percent out of 100.
+  @spec steal_rate(non_neg_integer(), non_neg_integer(), pos_integer()) :: integer()
+  defp steal_rate(caster_dex, mob_dex, skill_level) do
+    div(caster_dex - mob_dex, 2) + 6 * skill_level + 4
+  end
+
+  # Walks the drop table in order, skipping steal-protected entries, and rolls
+  # each remaining drop's own `rnd(10000) <= rate`. The first roll to succeed
+  # wins; an unresolvable item name is treated as a miss on that drop rather
+  # than aborting the whole steal.
+  @spec steal_drop([MobDrop.t()]) :: {:ok, non_neg_integer()} | :error
+  defp steal_drop([]), do: :error
+
+  defp steal_drop([%MobDrop{steal_protected: true} | rest]), do: steal_drop(rest)
+
+  defp steal_drop([%MobDrop{item: item, rate: rate} | rest]) do
+    if :rand.uniform(10_000) <= rate do
+      case ItemManagement.get_item_by_aegis(item) do
+        {:ok, %{id: item_id}} -> {:ok, item_id}
+        {:error, _reason} -> steal_drop(rest)
+      end
+    else
+      steal_drop(rest)
+    end
+  end
 
   defp maybe_add_aggro(state, nil, _damage), do: state
 
