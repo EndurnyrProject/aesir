@@ -94,6 +94,10 @@ defmodule Aesir.ZoneServer.SessionHelpers do
   - :dex - Mob DEX stat (default 10)
   - :modes - Mob mode list, e.g. `[:boss]` (default `[]`)
   - :drops - Mob drop table (default `[]`)
+  - :awake - Whether to start the AI tick loop (default `false`). Test mobs are
+    stationary targets; an awake mob's jittered idle tick can wander it off its
+    cell and put it out of attack range, making combat tests flaky. Pass
+    `awake: true` only when a test needs autonomous AI behavior.
 
   ## Examples
 
@@ -170,8 +174,10 @@ defmodule Aesir.ZoneServer.SessionHelpers do
       aggro_list: %{}
     }
 
-    # Start the MobSession with correct argument structure
-    {:ok, pid} = MobSession.start_link(%{state: mob_state})
+    # Start the MobSession with correct argument structure. Test mobs default to
+    # dormant so their idle AI tick can't wander them out of range mid-test.
+    awake = Keyword.get(opts, :awake, false)
+    {:ok, pid} = MobSession.start_link(%{state: mob_state, awake: awake})
 
     # Register in UnitRegistry with proper format
     UnitRegistry.register_unit(:mob, unit_id, MobSession, mob_state, pid)
