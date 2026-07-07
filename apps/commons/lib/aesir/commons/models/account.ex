@@ -4,6 +4,7 @@ defmodule Aesir.Commons.Models.Account do
   import Ecto.Changeset
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.Commons.Models.StorageItem
 
   @type t :: %__MODULE__{
           id: integer() | nil,
@@ -28,6 +29,7 @@ defmodule Aesir.Commons.Models.Account do
           web_auth_token_enabled: integer(),
           gm_level: integer(),
           characters: [Character.t()] | Ecto.Association.NotLoaded.t(),
+          storage_items: [StorageItem.t()] | Ecto.Association.NotLoaded.t(),
           inserted_at: NaiveDateTime.t() | nil,
           updated_at: NaiveDateTime.t() | nil
         }
@@ -55,6 +57,7 @@ defmodule Aesir.Commons.Models.Account do
     field :gm_level, :integer, default: 0
 
     has_many :characters, Aesir.Commons.Models.Character
+    has_many :storage_items, StorageItem, foreign_key: :account_id
 
     timestamps()
   end
