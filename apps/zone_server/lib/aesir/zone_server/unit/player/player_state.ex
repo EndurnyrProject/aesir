@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @type direction :: 0..7
@@ -358,36 +359,27 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   """
   @spec get_by_index(%{non_neg_integer() => InventoryItem.t()}, non_neg_integer()) ::
           InventoryItem.t() | nil
-  def get_by_index(inventory, index) when is_map(inventory) do
-    Map.get(inventory, index)
-  end
+  defdelegate get_by_index(inventory, index), to: ItemContainer
 
   @doc """
   Returns the smallest unused non-negative index in the inventory map.
   """
   @spec lowest_free_index(%{non_neg_integer() => InventoryItem.t()}) :: non_neg_integer()
-  def lowest_free_index(inventory) when is_map(inventory) do
-    Stream.iterate(0, &(&1 + 1))
-    |> Enum.find(fn index -> not Map.has_key?(inventory, index) end)
-  end
+  defdelegate lowest_free_index(inventory), to: ItemContainer
 
   @doc """
   Puts an item at the given session index.
   """
   @spec put_item(%{non_neg_integer() => InventoryItem.t()}, non_neg_integer(), InventoryItem.t()) ::
           %{non_neg_integer() => InventoryItem.t()}
-  def put_item(inventory, index, %InventoryItem{} = item) when is_map(inventory) do
-    Map.put(inventory, index, item)
-  end
+  defdelegate put_item(inventory, index, item), to: ItemContainer
 
   @doc """
   Removes the item at the given session index.
   """
   @spec delete_index(%{non_neg_integer() => InventoryItem.t()}, non_neg_integer()) ::
           %{non_neg_integer() => InventoryItem.t()}
-  def delete_index(inventory, index) when is_map(inventory) do
-    Map.delete(inventory, index)
-  end
+  defdelegate delete_index(inventory, index), to: ItemContainer
 
   @doc """
   Converts a server-side session index to the client-side index (+2 offset).

@@ -18,12 +18,11 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.ItemContainer
 
   import Bitwise
 
   @max_inventory 100
-  @max_stack 30_000
 
   @equippable_types [
     :weapon,
@@ -41,11 +40,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
 
   @typedoc "Descriptor of the change produced by a successful operation."
   @type change ::
-          {:added, non_neg_integer(), InventoryItem.t()}
-          | {:stacked, non_neg_integer(), pos_integer()}
-          | {:split, [{non_neg_integer(), pos_integer()}]}
-          | {:removed, non_neg_integer()}
-          | {:reduced, non_neg_integer(), pos_integer()}
+          ItemContainer.change()
           | {:equipped, non_neg_integer(), non_neg_integer(), [non_neg_integer()]}
           | {:unequipped, non_neg_integer()}
 
@@ -62,23 +57,21 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   defdelegate load_inventory(char_id), to: Persistence
 
   @doc """
-  Adds `amount` of `item_def` to `inventory`.
+  Adds `amount` of `item_def` to `inventory`, reusing the container core.
 
   Stacks into an existing stackable item (same `nameid`, not equipped, no cards,
-  no random options) up to `#{@max_stack}` and spills the overflow into the
-  lowest free index(es). With no stackable target it creates a new item at the
-  lowest free index. The add is all-or-nothing: if any required slot is missing
-  the inventory is left untouched and `{:error, :inventory_full}` is returned.
+  no random options) up to the shared 30,000 cap and spills the overflow into
+  the lowest free index(es). With no stackable target it creates a new item at
+  the lowest free index. The add is all-or-nothing: if any required slot is
+  missing the inventory is left untouched and `{:error, :inventory_full}` is
+  returned. The 100-slot cap is enforced via `ItemContainer`.
 
   Weight is intentionally NOT enforced here; the orchestrator enforces it.
   """
   @spec add(t(), ItemDefinition.t(), pos_integer(), map()) :: op_result()
   def add(inventory, %ItemDefinition{} = item_def, amount, opts \\ %{})
       when is_map(inventory) and is_integer(amount) and amount > 0 do
-    case find_stackable_index(inventory, item_def.id) do
-      nil -> add_to_new_slots(inventory, item_def, amount, opts)
-      index -> stack_onto(inventory, index, item_def, amount, opts)
-    end
+    ItemContainer.add(inventory, item_def, amount, @max_inventory, opts)
   end
 
   @doc """
@@ -88,19 +81,13 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   options); equipped or carded copies do not count toward the stackable total.
   """
   @spec held_amount(t(), integer()) :: non_neg_integer()
-  def held_amount(inventory, nameid) when is_map(inventory) do
-    Enum.reduce(inventory, 0, fn {_index, item}, acc ->
-      if stackable?(item, nameid), do: acc + item.amount, else: acc
-    end)
-  end
+  defdelegate held_amount(inventory, nameid), to: ItemContainer
 
   @doc """
   Index of a stackable slot holding item `nameid`, or `nil` when none exists.
   """
   @spec stackable_index(t(), integer()) :: non_neg_integer() | nil
-  def stackable_index(inventory, nameid) when is_map(inventory) do
-    find_stackable_index(inventory, nameid)
-  end
+  defdelegate stackable_index(inventory, nameid), to: ItemContainer
 
   @doc """
   Removes `amount` from the item at `index`.
@@ -108,24 +95,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   Reduces the stack or, when the amount reaches zero, drops the slot entirely.
   """
   @spec remove(t(), non_neg_integer(), pos_integer()) :: op_result()
-  def remove(inventory, index, amount)
-      when is_map(inventory) and is_integer(amount) and amount > 0 do
-    case Map.get(inventory, index) do
-      nil ->
-        {:error, :not_found}
-
-      %InventoryItem{amount: held} when held < amount ->
-        {:error, :insufficient_amount}
-
-      %InventoryItem{amount: held} when held == amount ->
-        {:ok, PlayerState.delete_index(inventory, index), {:removed, index}}
-
-      %InventoryItem{amount: held} = item ->
-        left = held - amount
-        updated = %{item | amount: left}
-        {:ok, PlayerState.put_item(inventory, index, updated), {:reduced, index, left}}
-    end
-  end
+  defdelegate remove(inventory, index, amount), to: ItemContainer
 
   @doc """
   Equips the item at `index` into the client-requested `position` bitmask.
@@ -151,7 +121,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
          {:ok, worn_mask} <- resolve_worn_mask(inventory, item_def, position) do
       {inventory, unequipped} = unequip_conflicts(inventory, index, worn_mask)
       equipped = %{item | equip: worn_mask}
-      new_inventory = PlayerState.put_item(inventory, index, equipped)
+      new_inventory = ItemContainer.put_item(inventory, index, equipped)
       {:ok, new_inventory, {:equipped, index, worn_mask, unequipped}}
     else
       {:error, :item_not_found} -> {:error, :cannot_equip}
@@ -184,7 +154,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
 
   defp do_unequip(inventory, index, item) do
     updated = %{item | equip: 0}
-    {:ok, PlayerState.put_item(inventory, index, updated), {:unequipped, index}}
+    {:ok, ItemContainer.put_item(inventory, index, updated), {:unequipped, index}}
   end
 
   defp fetch(inventory, index) do
@@ -192,68 +162,6 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
       nil -> {:error, :not_found}
       %InventoryItem{} = item -> {:ok, item}
     end
-  end
-
-  defp find_stackable_index(inventory, nameid) do
-    Enum.find_value(inventory, fn {index, item} ->
-      if stackable?(item, nameid), do: index
-    end)
-  end
-
-  defp stackable?(%InventoryItem{} = item, nameid) do
-    item.nameid == nameid and item.equip == 0 and
-      item.card0 == 0 and item.card1 == 0 and item.card2 == 0 and item.card3 == 0 and
-      map_size(item.random_options) == 0
-  end
-
-  defp stack_onto(inventory, index, item_def, amount, opts) do
-    item = Map.fetch!(inventory, index)
-    total = item.amount + amount
-
-    if total <= @max_stack do
-      updated = %{item | amount: total}
-      {:ok, PlayerState.put_item(inventory, index, updated), {:stacked, index, total}}
-    else
-      remainder = total - @max_stack
-      topped = %{item | amount: @max_stack}
-      inventory = PlayerState.put_item(inventory, index, topped)
-
-      case add_to_new_slots(inventory, item_def, remainder, opts) do
-        {:ok, new_inventory, {:added, new_index, %InventoryItem{amount: new_amount}}} ->
-          {:ok, new_inventory, {:split, [{index, @max_stack}, {new_index, new_amount}]}}
-
-        {:error, reason} ->
-          {:error, reason}
-      end
-    end
-  end
-
-  defp add_to_new_slots(inventory, item_def, amount, opts) do
-    if map_size(inventory) >= @max_inventory do
-      {:error, :inventory_full}
-    else
-      index = PlayerState.lowest_free_index(inventory)
-      new_item = build_item(item_def, amount, opts)
-      {:ok, PlayerState.put_item(inventory, index, new_item), {:added, index, new_item}}
-    end
-  end
-
-  defp build_item(%ItemDefinition{} = item_def, amount, opts) do
-    %InventoryItem{
-      nameid: item_def.id,
-      amount: amount,
-      equip: 0,
-      identify: Map.get(opts, :identify, 1),
-      refine: Map.get(opts, :refine, 0),
-      attribute: Map.get(opts, :attribute, 0),
-      card0: Map.get(opts, :card0, 0),
-      card1: Map.get(opts, :card1, 0),
-      card2: Map.get(opts, :card2, 0),
-      card3: Map.get(opts, :card3, 0),
-      random_options: Map.get(opts, :random_options, %{}),
-      bound: Map.get(opts, :bound, 0),
-      favorite: Map.get(opts, :favorite, 0)
-    }
   end
 
   @both_accessory 0x88
@@ -335,7 +243,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
 
       {index, %InventoryItem{equip: equip} = item}, {inv, removed} when equip > 0 ->
         if (equip &&& location) != 0 do
-          {PlayerState.put_item(inv, index, %{item | equip: 0}), [index | removed]}
+          {ItemContainer.put_item(inv, index, %{item | equip: 0}), [index | removed]}
         else
           {inv, removed}
         end
