@@ -31,8 +31,16 @@
       requires:
         - name: AL_RUWACH
           level: 1
+    - name: AL_WARP
+      max_level: 4
+      requires:
+        - name: AL_TELEPORT
+          level: 2
     - name: AL_PNEUMA
       max_level: 1
+      requires:
+        - name: AL_WARP
+          level: 4
     - name: AL_CURE
       max_level: 1
       requires:
@@ -53,3 +61,5 @@
       requires:
         - name: AL_DP
           level: 5
+    - name: AL_HOLYLIGHT
+      max_level: 1
