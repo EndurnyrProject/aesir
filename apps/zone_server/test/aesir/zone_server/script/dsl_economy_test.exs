@@ -3,7 +3,7 @@ defmodule Aesir.ZoneServer.Script.DslEconomyTest do
   Covers the Task 6 state-mutating/reading DSL surface: the pure reads
   (`zeny/1`, `count_item/2`, `get_char_var/2,3`) over the ctx snapshot, and the
   seam-routed mutations (`pay_zeny/2`, `give_item/3`, `delitem/3`,
-  `set_char_var/3`, `jobchange/2`) which call `{:script_apply, op}` on the
+  `set_char_var/3`, `jobchange/2`, `openstorage/1`) which call `{:script_apply, op}` on the
   session and fold the reply into the ctx (or `Ctx.halt/2` on `{:error, _}`).
   """
 
@@ -145,6 +145,19 @@ defmodule Aesir.ZoneServer.Script.DslEconomyTest do
     end
   end
 
+  describe "openstorage/1" do
+    test "routes {:openstorage} and folds the returned game_state" do
+      gs = %{build_game_state() | storage: %{}}
+      ctx = build_ctx(session: ok_session(gs))
+
+      result = Dsl.openstorage(ctx)
+
+      assert result.status == :ok
+      assert result.game_state.storage == %{}
+      assert_received {:script_apply, {:openstorage}}
+    end
+  end
+
   describe "delitem/3" do
     test "routes {:delitem, id, qty} and folds the returned game_state" do
       gs = %{build_game_state() | inventory: %{}}
@@ -175,6 +188,7 @@ defmodule Aesir.ZoneServer.Script.DslEconomyTest do
       assert Dsl.delitem(ctx, 7114, 1) == ctx
       assert Dsl.set_char_var(ctx, :k, 1) == ctx
       assert Dsl.jobchange(ctx, 1) == ctx
+      assert Dsl.openstorage(ctx) == ctx
 
       refute_received {:script_apply, _}
     end

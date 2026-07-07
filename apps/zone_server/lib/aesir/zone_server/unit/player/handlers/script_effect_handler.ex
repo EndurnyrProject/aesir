@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StatusSync
@@ -34,6 +35,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:set_temp_var, atom(), term()}
           | {:change_job, non_neg_integer()}
           | {:set_save_point, String.t(), non_neg_integer(), non_neg_integer()}
+          | {:openstorage}
 
   @max_zeny 1_000_000_000
 
@@ -130,6 +132,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     )
 
     commit(state, new_gs)
+  end
+
+  def apply_op({:openstorage}, state) do
+    {:noreply, new_state} = StorageHandler.open(state)
+    {{:ok, new_state.game_state}, new_state}
   end
 
   @spec commit(state(), PlayerState.t()) :: {reply(), state()}

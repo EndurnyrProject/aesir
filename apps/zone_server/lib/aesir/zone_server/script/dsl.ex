@@ -465,6 +465,18 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     end
   end
 
+  @doc """
+  Opens the account storage window through the session seam (rAthena
+  `openstorage`). Never halts: a gate failure (missing `NV_BASIC`) is reported
+  to the client as a `StorageResult`, not a script error.
+
+  Call `openstorage` immediately before `close` so the NPC dialog does not
+  linger alongside the storage window.
+  """
+  @spec openstorage(Ctx.t()) :: Ctx.t()
+  def openstorage(%Ctx{status: {:error, _}} = ctx), do: ctx
+  def openstorage(%Ctx{} = ctx), do: apply_op(ctx, {:openstorage})
+
   # Routes a state-mutating op through the single-writer session (always a
   # cross-process GenServer.call from the interaction, never a self-call), then
   # folds the authoritative game_state back into ctx or halts on error.

@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -36,6 +37,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
     Mimic.copy(CharacterPersistence)
     Mimic.copy(Broadcast)
     Mimic.copy(UnitRegistry)
+    Mimic.copy(StorageHandler)
 
     stub(CharacterPersistence, :update_character, fn _, _, _ -> {:ok, %Character{}} end)
     stub(Broadcast, :to_player, fn _char_id, _packet -> :ok end)
@@ -232,6 +234,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
 
       assert reply == {:error, :unknown_job}
       assert new_state == state
+    end
+  end
+
+  describe "{:openstorage}" do
+    test "delegates to StorageHandler.open/1 and returns its game_state" do
+      state = base_state()
+      opened_state = %{state | game_state: %{state.game_state | storage: %{}}}
+
+      expect(StorageHandler, :open, fn ^state -> {:noreply, opened_state} end)
+
+      {reply, new_state} = ScriptEffectHandler.apply_op({:openstorage}, state)
+
+      assert {:ok, game_state} = reply
+      assert game_state.storage == %{}
+      assert new_state.game_state.storage == %{}
     end
   end
 
