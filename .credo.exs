@@ -29,7 +29,12 @@
           "apps/*/src/",
           "apps/*/web/"
         ],
-        excluded: [~r"/_build/", ~r"/deps/", ~r"/node_modules/"]
+        excluded: [
+          ~r"/_build/",
+          ~r"/deps/",
+          ~r"/node_modules/",
+          ~r"apps/zone_server/lib/aesir/zone_server/content/npc/"
+        ]
       },
       #
       # Load and configure plugins here:
