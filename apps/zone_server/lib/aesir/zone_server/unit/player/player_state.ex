@@ -97,6 +97,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           ],
           pending_cart_notify: [tuple()],
           cart_type: non_neg_integer(),
+          storage: nil | %{non_neg_integer() => InventoryItem.t()},
           pending_warp: {String.t(), non_neg_integer(), non_neg_integer()} | nil,
           pending_interaction: module() | nil
         }
@@ -206,6 +207,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     pending_cart_notify: [],
     # In-memory copy of character.cart (0 = no cart, 1/2/3 = sprite tier)
     cart_type: 0,
+    # Account storage keyed by stable session index, mirroring inventory/cart;
+    # nil means the storage window is closed (nothing loaded for this session).
+    storage: nil,
     # Warp directive staged by a skill cast. When non-nil the handler calls
     # WarpHandler.warp/4 after committing SP/cooldowns, then clears this field.
     pending_warp: nil,
