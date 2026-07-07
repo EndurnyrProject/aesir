@@ -7,11 +7,15 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
   no broadcast, and a level-up past `party_share_level` auto-disabling
   `exp_share` for every connected client.
 
-  `Party.Manager`, `Party.ExpShare` and the renewal level-gap penalty
-  (`LevelPenalty`) all run for real against a live Horde entry and DB rows;
-  only the usual integration-test I/O (map cache, spatial index) goes
-  through the real ETS-backed implementations `IntegrationCase` already
-  wires up, mirroring `warp_test.exs`/`cart_integration_test.exs`.
+  `Party.Manager`, `Party.ExpShare`, `Unit.Mob.KillExp` and the renewal
+  level-gap penalty (`LevelPenalty`) all run for real against a live Horde
+  entry and DB rows; only the usual integration-test I/O (map cache, spatial
+  index) goes through the real ETS-backed implementations `IntegrationCase`
+  already wires up, mirroring `warp_test.exs`/`cart_integration_test.exs`.
+  `kill_mob/1` calls `KillExp.distribute/5` directly with the killer as the
+  mob's sole (100%-damage) attacker -- the exact seam `MobSession` uses in
+  production -- so the party pooling/eligibility logic under test is the real
+  thing, not a hand-computed stand-in.
 
   `form_party/1` drives the real create/invite/accept protocol messages
   end to end, with no relog: `PartyHandler.handle_create_request/2` and the
@@ -36,6 +40,7 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
   alias Aesir.Net.PartyInviteResponse
   alias Aesir.Net.PartyOptionsRequest
   alias Aesir.Repo
+  alias Aesir.ZoneServer.Unit.Mob.KillExp
 
   # rAthena `level_penalty.yml` `Type: Exp` breakpoint: diff -31 -> 10%.
   @mob_level 19
@@ -121,7 +126,8 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
       enable_exp_share(leader.pid)
       flush_packets()
 
-      send(riser.pid, {:mob_killed, %{base_exp: 1_000_000_000, job_exp: 0, mob_level: 1}})
+      %{character_id: riser_char_id, map_name: riser_map} = get_player_state(riser.pid)
+      KillExp.distribute(%{riser_char_id => 1}, 1_000_000_000, 0, 1, riser_map)
 
       leader_state = get_player_state(leader.pid)
       riser_state = get_player_state(riser.pid)
@@ -134,10 +140,8 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
   end
 
   defp kill_mob(killer_pid) do
-    send(
-      killer_pid,
-      {:mob_killed, %{base_exp: @base_exp, job_exp: @job_exp, mob_level: @mob_level}}
-    )
+    %{character_id: char_id, map_name: map_name} = get_player_state(killer_pid)
+    KillExp.distribute(%{char_id => 1}, @base_exp, @job_exp, @mob_level, map_name)
   end
 
   defp enable_exp_share(leader_pid) do
