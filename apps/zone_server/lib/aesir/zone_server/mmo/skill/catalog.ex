@@ -24,8 +24,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
   @pt_key __MODULE__
 
   @skills [
+    Skills.AcChargearrow,
     Skills.AcConcentration,
     Skills.AcDouble,
+    Skills.AcMakingarrow,
     Skills.AcOwl,
     Skills.AcShower,
     Skills.AcVulture,

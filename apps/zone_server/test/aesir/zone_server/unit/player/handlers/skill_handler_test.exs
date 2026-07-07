@@ -89,6 +89,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   defp instant_state(sp) do
     %{
       connection_pid: self(),
+      interaction_lock: nil,
       game_state: %{
         character_id: 1000,
         map_name: "prontera",
@@ -103,6 +104,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         pending_inventory_persist: [],
         pending_inventory_notify: [],
         pending_warp: nil,
+        pending_interaction: nil,
         zeny: 0,
         stats: %{
           base_stats: %{dex: 1, int: 1},
@@ -172,6 +174,38 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   end
 
   describe "instant cast" do
+    test "a staged pending_interaction starts a dialog and takes the lock" do
+      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+
+      # Real catalog entry: AC_MAKINGARROW (147) is an instant self-cast whose
+      # cast/4 stages pending_interaction. The empty fixture inventory makes the
+      # dialog close immediately with the no-materials notice. A real
+      # PlayerState is required: the drain builds a Ctx from the session.
+      state =
+        casting_state(30)
+        |> put_in(
+          [
+            :game_state,
+            Access.key!(:stats),
+            Access.key!(:progression),
+            Access.key!(:learned_skills)
+          ],
+          %{147 => 1}
+        )
+        |> Map.put(:interaction_lock, nil)
+
+      assert {:noreply, new_state} = SkillHandler.handle_use_skill(state, 147, 1, 1000)
+
+      assert {pid, _ref, 0x6000_0000} = new_state.interaction_lock
+      assert is_pid(pid)
+      assert new_state.game_state.pending_interaction == nil
+      assert_receive {:send, _, {:npc_dialog, %Aesir.Net.NpcDialog{expect: :CLOSE}}}
+    end
+
     test "applies the effect, recalculates stats, persists, syncs and broadcasts" do
       stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
       stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)

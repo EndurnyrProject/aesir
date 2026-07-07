@@ -96,7 +96,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           ],
           pending_cart_notify: [tuple()],
           cart_type: non_neg_integer(),
-          pending_warp: {String.t(), non_neg_integer(), non_neg_integer()} | nil
+          pending_warp: {String.t(), non_neg_integer(), non_neg_integer()} | nil,
+          pending_interaction: module() | nil
         }
 
   @client_index_offset 2
@@ -207,6 +208,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # Warp directive staged by a skill cast. When non-nil the handler calls
     # WarpHandler.warp/4 after committing SP/cooldowns, then clears this field.
     pending_warp: nil,
+    # Dialog directive staged by a skill cast: a module implementing
+    # `on_talk/1` (e.g. AC_MAKINGARROW's crafting menu). The handler starts a
+    # Script.Interaction for it after the cast commits, then clears this field.
+    pending_interaction: nil,
     skill_cooldowns: %{},
     last_attack_timestamp: 0,
     act_delay_until: 0,

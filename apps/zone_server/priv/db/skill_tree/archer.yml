@@ -22,3 +22,7 @@
       requires:
         - name: AC_DOUBLE
           level: 5
+    - name: AC_MAKINGARROW
+      max_level: 1
+    - name: AC_CHARGEARROW
+      max_level: 1

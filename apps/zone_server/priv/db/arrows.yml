@@ -1,0 +1,711 @@
+---
+- make:
+    - amount: 50
+      item: 1764
+    - amount: 50
+      item: 1768
+  source: 603
+- make:
+    - amount: 40
+      item: 1769
+  source: 604
+- make:
+    - amount: 40
+      item: 1761
+  source: 609
+- make:
+    - amount: 2
+      item: 1770
+  source: 713
+- make:
+    - amount: 600
+      item: 1757
+    - amount: 600
+      item: 1765
+    - amount: 600
+      item: 1769
+  source: 714
+- make:
+    - amount: 1
+      item: 1768
+    - amount: 30
+      item: 1756
+  source: 715
+- make:
+    - amount: 1
+      item: 1761
+    - amount: 1
+      item: 1763
+    - amount: 10
+      item: 1762
+  source: 716
+- make:
+    - amount: 30
+      item: 1754
+    - amount: 1
+      item: 1759
+  source: 717
+- make:
+    - amount: 50
+      item: 1761
+    - amount: 10
+      item: 1768
+  source: 724
+- make:
+    - amount: 50
+      item: 1764
+  source: 733
+- make:
+    - amount: 50
+      item: 1765
+  source: 756
+- make:
+    - amount: 200
+      item: 1753
+    - amount: 5
+      item: 1758
+  source: 757
+- make:
+    - amount: 7
+      item: 1750
+  source: 902
+- make:
+    - amount: 3
+      item: 1762
+  source: 904
+- make:
+    - amount: 4
+      item: 1750
+  source: 909
+- make:
+    - amount: 12
+      item: 1770
+  source: 910
+- make:
+    - amount: 8
+      item: 1753
+  source: 911
+- make:
+    - amount: 50
+      item: 1751
+  source: 912
+- make:
+    - amount: 1
+      item: 1767
+  source: 913
+- make:
+    - amount: 15
+      item: 1770
+  source: 920
+- make:
+    - amount: 30
+      item: 1770
+    - amount: 5
+      item: 1753
+    - amount: 10
+      item: 1756
+  source: 922
+- make:
+    - amount: 20
+      item: 1767
+    - amount: 10
+      item: 1760
+    - amount: 5
+      item: 1758
+  source: 923
+- make:
+    - amount: 1
+      item: 1763
+  source: 937
+- make:
+    - amount: 1
+      item: 1762
+  source: 939
+- make:
+    - amount: 35
+      item: 1770
+  source: 947
+- make:
+    - amount: 50
+      item: 1750
+  source: 952
+- make:
+    - amount: 150
+      item: 1754
+    - amount: 80
+      item: 1770
+  source: 956
+- make:
+    - amount: 1
+      item: 1767
+    - amount: 1
+      item: 1762
+  source: 957
+- make:
+    - amount: 5
+      item: 1767
+  source: 958
+- make:
+    - amount: 1
+      item: 1763
+  source: 959
+- make:
+    - amount: 1
+      item: 1765
+    - amount: 5
+      item: 1758
+  source: 968
+- make:
+    - amount: 50
+      item: 1760
+    - amount: 50
+      item: 1765
+  source: 969
+- make:
+    - amount: 250
+      item: 1765
+  source: 984
+- make:
+    - amount: 1000
+      item: 1753
+    - amount: 50
+      item: 1758
+  source: 985
+- make:
+    - amount: 600
+      item: 1752
+  source: 990
+- make:
+    - amount: 150
+      item: 1754
+  source: 991
+- make:
+    - amount: 150
+      item: 1755
+  source: 992
+- make:
+    - amount: 150
+      item: 1756
+  source: 993
+- make:
+    - amount: 1800
+      item: 1752
+    - amount: 5
+      item: 1769
+  source: 994
+- make:
+    - amount: 450
+      item: 1754
+    - amount: 5
+      item: 1759
+  source: 995
+- make:
+    - amount: 450
+      item: 1755
+    - amount: 5
+      item: 1768
+  source: 996
+- make:
+    - amount: 5
+      item: 1760
+    - amount: 450
+      item: 1756
+  source: 997
+- make:
+    - amount: 100
+      item: 1770
+  source: 998
+- make:
+    - amount: 100
+      item: 1753
+  source: 999
+- make:
+    - amount: 30
+      item: 1760
+  source: 1000
+- make:
+    - amount: 10
+      item: 1760
+  source: 1001
+- make:
+    - amount: 50
+      item: 1770
+  source: 1002
+- make:
+    - amount: 8
+      item: 1767
+  source: 1003
+- make:
+    - amount: 50
+      item: 1770
+  source: 1010
+- make:
+    - amount: 200
+      item: 1770
+    - amount: 40
+      item: 1751
+  source: 1011
+- make:
+    - amount: 50
+      item: 1770
+    - amount: 60
+      item: 1756
+  source: 1018
+- make:
+    - amount: 40
+      item: 1750
+  source: 1019
+- make:
+    - amount: 2
+      item: 1767
+    - amount: 40
+      item: 1770
+  source: 1021
+- make:
+    - amount: 70
+      item: 1750
+    - amount: 30
+      item: 1756
+  source: 1027
+- make:
+    - amount: 1
+      item: 1764
+  source: 1031
+- make:
+    - amount: 50
+      item: 1770
+    - amount: 1
+      item: 1765
+  source: 1035
+- make:
+    - amount: 2
+      item: 1761
+    - amount: 50
+      item: 1770
+  source: 1038
+- make:
+    - amount: 80
+      item: 1770
+  source: 1041
+- make:
+    - amount: 10
+      item: 1753
+  source: 1043
+- make:
+    - amount: 5
+      item: 1762
+  source: 1044
+- make:
+    - amount: 300
+      item: 1754
+    - amount: 20
+      item: 1753
+  source: 1053
+- make:
+    - amount: 2
+      item: 1764
+    - amount: 40
+      item: 1751
+  source: 1063
+- make:
+    - amount: 100
+      item: 1770
+    - amount: 50
+      item: 1753
+  source: 1064
+- make:
+    - amount: 20
+      item: 1750
+  source: 1066
+- make:
+    - amount: 20
+      item: 1750
+  source: 1067
+- make:
+    - amount: 20
+      item: 1750
+  source: 1068
+- make:
+    - amount: 100
+      item: 1750
+    - amount: 5
+      item: 1768
+  source: 1095
+- make:
+    - amount: 50
+      item: 1753
+  source: 1098
+- make:
+    - amount: 1000
+      item: 1751
+  source: 2257
+- make:
+    - amount: 40
+      item: 1769
+    - amount: 200
+      item: 1753
+  source: 2281
+- make:
+    - amount: 200
+      item: 1764
+    - amount: 300
+      item: 1753
+  source: 2288
+- make:
+    - amount: 200
+      item: 1753
+    - amount: 40
+      item: 1758
+  source: 2292
+- make:
+    - amount: 1000
+      item: 1760
+  source: 2319
+- make:
+    - amount: 700
+      item: 1750
+    - amount: 500
+      item: 1770
+  source: 2328
+- make:
+    - amount: 1000
+      item: 1750
+    - amount: 700
+      item: 1770
+  source: 2329
+- make:
+    - amount: 700
+      item: 1751
+  source: 2332
+- make:
+    - amount: 10
+      item: 1757
+    - amount: 1000
+      item: 1751
+  source: 2333
+- make:
+    - amount: 700
+      item: 1770
+    - amount: 50
+      item: 1753
+  source: 2408
+- make:
+    - amount: 150
+      item: 1755
+    - amount: 10
+      item: 1764
+    - amount: 100
+      item: 1753
+  source: 2618
+- make:
+    - amount: 600
+      item: 1754
+    - amount: 200
+      item: 1753
+  source: 5014
+- make:
+    - amount: 5
+      item: 1762
+    - amount: 30
+      item: 1753
+  source: 7002
+- make:
+    - amount: 2
+      item: 1758
+  source: 7008
+- make:
+    - amount: 1
+      item: 1763
+    - amount: 250
+      item: 1753
+  source: 7010
+- make:
+    - amount: 1000
+      item: 1769
+  source: 7018
+- make:
+    - amount: 1000
+      item: 1767
+  source: 7019
+- make:
+    - amount: 1000
+      item: 1761
+  source: 7020
+- make:
+    - amount: 200
+      item: 1760
+  source: 7021
+- make:
+    - amount: 1000
+      item: 1765
+  source: 7022
+- make:
+    - amount: 200
+      item: 1767
+    - amount: 600
+      item: 1764
+  source: 7023
+- make:
+    - amount: 200
+      item: 1761
+    - amount: 600
+      item: 1764
+  source: 7024
+- make:
+    - amount: 400
+      item: 1769
+    - amount: 800
+      item: 1768
+    - amount: 800
+      item: 1758
+  source: 7025
+- make:
+    - amount: 50
+      item: 1765
+  source: 7026
+- make:
+    - amount: 100
+      item: 1767
+  source: 7027
+- make:
+    - amount: 3000
+      item: 1752
+  source: 7035
+- make:
+    - amount: 300
+      item: 1754
+  source: 7036
+- make:
+    - amount: 100
+      item: 1754
+  source: 7066
+- make:
+    - amount: 50
+      item: 1756
+    - amount: 30
+      item: 1758
+  source: 7067
+- make:
+    - amount: 250
+      item: 1752
+  source: 7068
+- make:
+    - amount: 150
+      item: 1753
+  source: 7069
+- make:
+    - amount: 150
+      item: 1752
+  source: 7097
+- make:
+    - amount: 100
+      item: 1752
+  source: 7098
+- make:
+    - amount: 30
+      item: 1764
+  source: 7100
+- make:
+    - amount: 300
+      item: 1757
+    - amount: 100
+      item: 1765
+    - amount: 100
+      item: 1753
+  source: 7108
+- make:
+    - amount: 100
+      item: 1765
+  source: 7109
+- make:
+    - amount: 100
+      item: 1753
+  source: 7120
+- make:
+    - amount: 50
+      item: 1761
+    - amount: 50
+      item: 1769
+    - amount: 10
+      item: 1753
+  source: 7123
+- make:
+    - amount: 100
+      item: 1750
+  source: 7150
+- make:
+    - amount: 20
+      item: 1763
+  source: 7155
+- make:
+    - amount: 20
+      item: 1764
+  source: 7163
+- make:
+    - amount: 30
+      item: 1758
+  source: 7164
+- make:
+    - amount: 10
+      item: 1764
+  source: 7172
+- make:
+    - amount: 150
+      item: 1767
+  source: 7210
+- make:
+    - amount: 50
+      item: 1767
+    - amount: 50
+      item: 1753
+  source: 7221
+- make:
+    - amount: 200
+      item: 1755
+  source: 7263
+- make:
+    - amount: 50
+      item: 1767
+    - amount: 30
+      item: 1761
+  source: 7315
+- make:
+    - amount: 10
+      item: 1764
+    - amount: 50
+      item: 1763
+  source: 7316
+- make:
+    - amount: 100
+      item: 1762
+    - amount: 50
+      item: 1753
+  source: 7318
+- make:
+    - amount: 100
+      item: 1762
+    - amount: 100
+      item: 1753
+  source: 7319
+- make:
+    - amount: 10
+      item: 1760
+    - amount: 30
+      item: 1768
+  source: 7321
+- make:
+    - amount: 50
+      item: 1753
+  source: 7323
+- make:
+    - amount: 50
+      item: 1767
+    - amount: 30
+      item: 1761
+    - amount: 30
+      item: 1763
+  source: 7340
+- make:
+    - amount: 300
+      item: 1772
+    - amount: 200
+      item: 1751
+  source: 7435
+- make:
+    - amount: 50
+      item: 1761
+    - amount: 50
+      item: 1769
+  source: 7442
+- make:
+    - amount: 80
+      item: 1763
+    - amount: 100
+      item: 1756
+  source: 7445
+- make:
+    - amount: 50
+      item: 1755
+    - amount: 50
+      item: 1754
+    - amount: 80
+      item: 1759
+  source: 7446
+- make:
+    - amount: 100
+      item: 1752
+    - amount: 80
+      item: 1760
+  source: 7447
+- make:
+    - amount: 50
+      item: 1757
+    - amount: 50
+      item: 1751
+    - amount: 80
+      item: 1768
+  source: 7448
+- make:
+    - amount: 200
+      item: 1767
+    - amount: 500
+      item: 1757
+    - amount: 100
+      item: 1765
+  source: 7450
+- make:
+    - amount: 300
+      item: 1752
+    - amount: 300
+      item: 1758
+  source: 7451
+- make:
+    - amount: 600
+      item: 1772
+    - amount: 600
+      item: 1757
+    - amount: 600
+      item: 1764
+  source: 7510
+- make:
+    - amount: 300
+      item: 1767
+    - amount: 150
+      item: 1760
+  source: 7511
+- make:
+    - amount: 50
+      item: 1754
+    - amount: 50
+      item: 1759
+  source: 7561
+- make:
+    - amount: 150
+      item: 1754
+    - amount: 400
+      item: 1759
+    - amount: 200
+      item: 1769
+  source: 7562
+- make:
+    - amount: 100
+      item: 1767
+    - amount: 200
+      item: 1761
+    - amount: 200
+      item: 1763
+  source: 7566
+- make:
+    - amount: 50
+      item: 1767
+    - amount: 50
+      item: 1761
+  source: 7752
+- make:
+    - amount: 20
+      item: 1761
+    - amount: 10
+      item: 1770
+    - amount: 50
+      item: 1762
+  source: 7753

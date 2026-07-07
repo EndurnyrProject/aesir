@@ -23,6 +23,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Pathfinding
+  alias Aesir.ZoneServer.Script.Ctx
+  alias Aesir.ZoneServer.Script.Interaction
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
@@ -480,7 +482,42 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
     maybe_send_postdelay(connection_pid, skill_id, level)
 
-    drain_warp(%{state | game_state: new_game_state})
+    %{state | game_state: new_game_state}
+    |> drain_warp()
+    |> drain_interaction()
+  end
+
+  # Synthetic gid stamped on skill-triggered dialogs (AC_MAKINGARROW's crafting
+  # menu). Outside every real unit-id range (warps 0x4000_0000.., NPCs
+  # 0x5000_0000..0x57FF_FFFF) so it can never collide with a spawned unit; the
+  # client only echoes it back on NpcInteract.
+  @system_dialog_gid 0x6000_0000
+
+  # Starts the Script.Interaction a skill staged on pending_interaction (the
+  # same lock-and-monitor wiring as NpcInteractionHandler.talk_to_npc). Dropped
+  # when a dialog is already active, mirroring the NPC-click guard.
+  defp drain_interaction(%{game_state: %{pending_interaction: nil}} = state), do: state
+
+  defp drain_interaction(%{game_state: game_state, interaction_lock: lock} = state)
+       when not is_nil(lock) do
+    %{state | game_state: %{game_state | pending_interaction: nil}}
+  end
+
+  defp drain_interaction(%{game_state: game_state} = state) do
+    module = game_state.pending_interaction
+    clean_game_state = %{game_state | pending_interaction: nil}
+
+    base_ctx =
+      Ctx.from_session(
+        %{game_state: clean_game_state, connection_pid: state.connection_pid},
+        {:npc, module}
+      )
+
+    base_ctx = %{base_ctx | npc_gid: @system_dialog_gid}
+    {:ok, pid} = Interaction.start(self(), module, base_ctx)
+    ref = Process.monitor(pid)
+
+    %{state | game_state: clean_game_state, interaction_lock: {pid, ref, @system_dialog_gid}}
   end
 
   # Executes any warp directive the skill staged on pending_warp (SP and
