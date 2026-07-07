@@ -43,12 +43,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   warp still proceeds to the requested cell.
 
   Returns `{:ok, new_state}` with the player relocated and a `MapMove` sent, or
-  `{:error, :map_not_found}` leaving the session untouched.
+  `{:error, :map_not_found}` leaving the session untouched. An open storage
+  window is force-closed only on a cross-map warp (design "Storage window
+  lifecycle": it stays open across same-map movement); a same-map warp (e.g.
+  `AL_TELEPORT` level 1) leaves it untouched.
   """
   @spec warp(session_state(), String.t(), non_neg_integer(), non_neg_integer()) ::
           {:ok, session_state()} | {:error, :map_not_found}
   def warp(%{game_state: game_state, connection_pid: connection_pid} = state, dest_map, x, y) do
     dest_map = normalize_map(dest_map)
+    same_map? = dest_map == game_state.map_name
 
     with {:ok, map_data} <- fetch_map(dest_map),
          {:ok, {fx, fy}} <- ensure_walkable(map_data, x, y) do
@@ -60,6 +64,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
         game_state
         |> PlayerState.relocate(dest_map, fx, fy)
         |> Map.put(:pending_map_load, :warp)
+        |> close_storage_on_cross_map(same_map?)
 
       UnitRegistry.update_unit_state(:player, new_game_state.character_id, new_game_state)
       MessageRouter.send_to(connection_pid, %MapMove{map_name: dest_map, x: fx, y: fy})
@@ -97,6 +102,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
     SpatialIndex.clear_visibility(char_id)
     :ok
   end
+
+  @spec close_storage_on_cross_map(PlayerState.t(), boolean()) :: PlayerState.t()
+  defp close_storage_on_cross_map(game_state, true), do: game_state
+  defp close_storage_on_cross_map(game_state, false), do: %{game_state | storage: nil}
 
   defp fetch_map(map_name) do
     with {:error, :not_found} <- MapCache.get(map_name) do

@@ -37,6 +37,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.Respawn
   alias Aesir.Net.SkillCast
   alias Aesir.Net.StatUp
+  alias Aesir.Net.StorageCloseRequest
+  alias Aesir.Net.StorageDepositRequest
+  alias Aesir.Net.StorageWithdrawRequest
   alias Aesir.Net.UnequipItem
   alias Aesir.Net.UseItem
   alias Aesir.Net.VendingBuy
@@ -62,6 +65,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -178,6 +182,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   # `cart_index` is the client index (server index + 2); the handler subtracts the offset.
   def handle_message(%MoveFromCartRequest{cart_index: index, amount: amount}, state) do
     CartHandler.move_to_inventory(index, amount, state)
+  end
+
+  # StorageDepositRequest - Player moves an inventory item into account storage.
+  # `inventory_index` is the client index (server index + 2); the handler subtracts the offset.
+  def handle_message(%StorageDepositRequest{inventory_index: index, amount: amount}, state) do
+    StorageHandler.deposit(index, amount, state)
+  end
+
+  # StorageWithdrawRequest - Player moves a storage item back into the inventory.
+  # `storage_index` is the client index (server index + 2); the handler subtracts the offset.
+  def handle_message(%StorageWithdrawRequest{storage_index: index, amount: amount}, state) do
+    StorageHandler.withdraw(index, amount, state)
+  end
+
+  # StorageCloseRequest - Player closes the storage window.
+  def handle_message(%StorageCloseRequest{}, state) do
+    StorageHandler.close(state)
   end
 
   # VendingOpenRequest - Merchant opens a vending shop selling cart items. The

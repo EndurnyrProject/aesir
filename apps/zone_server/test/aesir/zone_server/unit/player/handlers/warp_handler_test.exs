@@ -198,6 +198,43 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
     end
   end
 
+  describe "warp/4 storage window" do
+    setup do
+      stub(MapCache, :get, fn
+        "geffen" -> {:ok, %MapData{name: "geffen"}}
+        "prontera" -> {:ok, %MapData{name: "prontera"}}
+      end)
+
+      stub(MapData, :walkable?, fn _map, _x, _y -> true end)
+      stub_teardown()
+      stub(Broadcast, :to_players, fn _visible, _packet, _opts -> :ok end)
+      :ok
+    end
+
+    defp state_with_storage(storage) do
+      base = state()
+      %{base | game_state: %{base.game_state | storage: storage}}
+    end
+
+    test "cross-map warp force-closes an open storage window" do
+      storage = %{0 => :placeholder}
+
+      assert {:ok, %{game_state: gs}} =
+               WarpHandler.warp(state_with_storage(storage), "geffen", 100, 120)
+
+      assert gs.storage == nil
+    end
+
+    test "same-map warp leaves an open storage window untouched" do
+      storage = %{0 => :placeholder}
+
+      assert {:ok, %{game_state: gs}} =
+               WarpHandler.warp(state_with_storage(storage), "prontera", 100, 120)
+
+      assert gs.storage == storage
+    end
+  end
+
   describe "leave_current_map/2" do
     test "vanishes observers, removes from the index and clears visibility" do
       expect(SpatialIndex, :get_visible_players, fn 1000 -> [2001, 2002] end)

@@ -55,6 +55,9 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def route(%Aesir.Net.PartyInviteNotify{}), do: {:gameplay, :party_invite_notify}
   def route(%Aesir.Net.PartyInfo{}), do: {:gameplay, :party_info}
   def route(%Aesir.Net.PartyDisbanded{}), do: {:gameplay, :party_disbanded}
+  def route(%Aesir.Net.StorageItemAdded{}), do: {:gameplay, :storage_item_added}
+  def route(%Aesir.Net.StorageItemRemoved{}), do: {:gameplay, :storage_item_removed}
+  def route(%Aesir.Net.StorageResult{}), do: {:gameplay, :storage_result}
 
   def route(%Aesir.Net.UnitSpawn{}), do: {:world, :unit_spawn}
   def route(%Aesir.Net.UnitDespawn{}), do: {:world, :unit_despawn}
@@ -77,6 +80,7 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def route(%Aesir.Net.InventoryList{}), do: {:bulk, :inventory_list}
   def route(%Aesir.Net.CartInfo{}), do: {:bulk, :cart_info}
   def route(%Aesir.Net.VendingList{}), do: {:bulk, :vending_list}
+  def route(%Aesir.Net.StorageOpened{}), do: {:bulk, :storage_opened}
 
   def route(%Aesir.Net.Snapshot{}), do: {:snapshots, :snapshot}
 

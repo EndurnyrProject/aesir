@@ -14,10 +14,14 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
   alias Aesir.Net.InventoryList
   alias Aesir.Net.ItemAdded
   alias Aesir.Net.ItemRemoved
+  alias Aesir.Net.StorageItemAdded
+  alias Aesir.Net.StorageItemRemoved
+  alias Aesir.Net.StorageOpened
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ClientItemType
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Storage
 
   @doc """
   Builds an `ItemAdded` for an item that just entered the inventory.
@@ -125,6 +129,56 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
           CartItemRemoved.t()
   def cart_item_removed(server_index, amount, reason \\ 0) do
     %CartItemRemoved{
+      index: PlayerState.client_index(server_index),
+      amount: amount,
+      reason: reason
+    }
+  end
+
+  @doc """
+  Builds the full `StorageOpened` dump for a storage map (sent on window open).
+
+  Mirrors `cart_info/1`: each slot reuses `to_inventory_item/2`, so storage wire
+  items carry the same +2 client index offset as inventory and cart items.
+  """
+  @spec storage_opened(%{non_neg_integer() => InventoryItem.t()}) :: StorageOpened.t()
+  def storage_opened(storage) do
+    items =
+      storage
+      |> Enum.sort_by(fn {index, _item} -> index end)
+      |> Enum.map(fn {index, item} -> to_inventory_item(index, item) end)
+
+    %StorageOpened{capacity: Storage.capacity(), items: items}
+  end
+
+  @doc """
+  Builds a `StorageItemAdded` for a storage slot, mirroring `cart_item_added/2`.
+  """
+  @spec storage_item_added(InventoryItem.t(), non_neg_integer()) :: StorageItemAdded.t()
+  def storage_item_added(%InventoryItem{} = item, server_index) do
+    %StorageItemAdded{
+      index: PlayerState.client_index(server_index),
+      amount: item.amount,
+      nameid: item.nameid,
+      identified: item.identify == 1,
+      attribute: item.attribute,
+      refine: item.refine,
+      cards: [item.card0, item.card1, item.card2, item.card3],
+      location: item.equip,
+      type: client_type(item.nameid),
+      result: 0,
+      expire_time: encode_expire_time(item.expire_time),
+      look: item_view(item.nameid)
+    }
+  end
+
+  @doc """
+  Builds a `StorageItemRemoved` for a storage slot, mirroring `cart_item_removed/3`.
+  """
+  @spec storage_item_removed(non_neg_integer(), pos_integer(), non_neg_integer()) ::
+          StorageItemRemoved.t()
+  def storage_item_removed(server_index, amount, reason \\ 0) do
+    %StorageItemRemoved{
       index: PlayerState.client_index(server_index),
       amount: amount,
       reason: reason
