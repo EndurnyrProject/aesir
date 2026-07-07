@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Config do
   @default_max_party 12
   @default_party_share_level 15
   @default_party_even_share_bonus 0
+  @default_exp_bonus_attacker 25
+  @default_exp_bonus_max_attacker 12
 
   @doc """
   Player view range (rAthena `AREA_SIZE`): the cell radius a client is told about.
@@ -42,4 +44,25 @@ defmodule Aesir.ZoneServer.Config do
   def party_even_share_bonus,
     do:
       Application.get_env(:zone_server, :party_even_share_bonus, @default_party_even_share_bonus)
+
+  @doc """
+  Percentage bonus applied to a damage-based kill-EXP share per additional
+  distinct attacker beyond the first (rAthena `battle.conf exp_bonus_attacker`).
+  """
+  @spec exp_bonus_attacker() :: non_neg_integer()
+  def exp_bonus_attacker,
+    do: Application.get_env(:zone_server, :exp_bonus_attacker, @default_exp_bonus_attacker)
+
+  @doc """
+  Maximum number of attackers counted toward `exp_bonus_attacker/0`'s bonus
+  (rAthena `battle.conf exp_bonus_max_attacker`).
+  """
+  @spec exp_bonus_max_attacker() :: pos_integer()
+  def exp_bonus_max_attacker,
+    do:
+      Application.get_env(
+        :zone_server,
+        :exp_bonus_max_attacker,
+        @default_exp_bonus_max_attacker
+      )
 end

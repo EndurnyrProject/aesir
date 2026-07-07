@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Integration.StatusPointsIntegrationTest do
   alias Aesir.Net.StatUp
   alias Aesir.Net.StatUpResult
   alias Aesir.ZoneServer.Mmo.JobManagement
+  alias Aesir.ZoneServer.Unit.Mob.KillExp
 
   describe "leveling up" do
     test "grants the table's status points on a base level-up" do
@@ -21,7 +22,8 @@ defmodule Aesir.ZoneServer.Integration.StatusPointsIntegrationTest do
       {:ok, req} = JobManagement.get_base_exp(:novice, 1)
 
       flush_packets()
-      send(player.pid, {:mob_killed, %{base_exp: req, job_exp: 0, mob_level: 1}})
+      %{character_id: char_id, map_name: map_name} = get_player_state(player.pid)
+      KillExp.distribute(%{char_id => 1}, req, 0, 1, map_name)
 
       status_point_id = StatusParams.status_point()
       assert_receive {:packet_sent, %ParamChange{var_id: ^status_point_id, value: 3}, _}, 1_000

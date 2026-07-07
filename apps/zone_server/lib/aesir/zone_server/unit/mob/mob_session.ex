@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
+  alias Aesir.ZoneServer.Unit.Mob.KillExp
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.MovementEngine
@@ -347,23 +348,29 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     {:noreply, updated_state}
   end
 
-  # Publishes the kill so consumers (the killer's session for experience today,
-  # drops/quests later) can react. The mob stays ignorant of who listens; an
-  # absent killer simply has no subscriber.
-  #
-  # only the killing blow is credited. Add aggro-proportional and
-  # party-shared rewards once parties exist.
+  # Distributes EXP to every attacker who damaged the mob, proportional to
+  # damage dealt (`KillExp.distribute/5`, design "Damage-based EXP share"),
+  # then publishes the drop-rolling payload to the killing blow's own session
+  # (the only place holding both the drop table and the killer's stats). The
+  # mob stays ignorant of who listens; an absent killer simply has no
+  # subscriber.
   defp announce_kill(_state, nil), do: :ok
 
-  defp announce_kill(%MobState{mob_data: mob_data} = state, attacker_id) do
+  defp announce_kill(%MobState{mob_data: mob_data, aggro_list: aggro_list} = state, attacker_id) do
+    KillExp.distribute(
+      aggro_list,
+      mob_data.base_exp,
+      mob_data.job_exp,
+      mob_data.level,
+      state.map_name
+    )
+
     PubSub.broadcast(
       Aesir.PubSub,
       "player:#{attacker_id}",
       {:mob_killed,
        %{
          mob_id: mob_data.id,
-         base_exp: mob_data.base_exp,
-         job_exp: mob_data.job_exp,
          drops: mob_data.drops,
          mob_level: mob_data.level,
          map: state.map_name,

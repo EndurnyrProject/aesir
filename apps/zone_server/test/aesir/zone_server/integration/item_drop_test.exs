@@ -8,9 +8,9 @@ defmodule Aesir.ZoneServer.Integration.ItemDropTest do
   Every step drives the real session/handler/coordinator/store subsystems. Mob
   death is delivered through the exact PubSub seam the live `MobSession` uses
   (`announce_kill/2` broadcasts `{:mob_killed, payload}` to the killer's player
-  topic), with a real `MobDrop` table containing a rate-10000 entry so the roll is
-  deterministic (a guaranteed drop, no `:rand` seeding needed; with
-  `mob_level == base_level` the renewal level penalty is the 100% no-op band).
+  topic; EXP itself flows separately through `Unit.Mob.KillExp` and is not
+  exercised here), with a real `MobDrop` table containing a rate-10000 entry
+  so the roll is deterministic (a guaranteed drop, no `:rand` seeding needed).
   """
 
   use Aesir.ZoneServer.IntegrationCase
@@ -158,8 +158,6 @@ defmodule Aesir.ZoneServer.Integration.ItemDropTest do
 
     payload = %{
       mob_id: 1002,
-      base_exp: 50,
-      job_exp: 25,
       drops: Keyword.fetch!(opts, :drops),
       mob_level: base_level,
       map: @map,

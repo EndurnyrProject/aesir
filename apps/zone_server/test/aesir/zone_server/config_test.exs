@@ -20,4 +20,16 @@ defmodule Aesir.ZoneServer.ConfigTest do
       assert Config.party_even_share_bonus() == 0
     end
   end
+
+  describe "exp_bonus_attacker/0" do
+    test "returns the configured default when unset" do
+      assert Config.exp_bonus_attacker() == 25
+    end
+  end
+
+  describe "exp_bonus_max_attacker/0" do
+    test "returns the configured default when unset" do
+      assert Config.exp_bonus_max_attacker() == 12
+    end
+  end
 end

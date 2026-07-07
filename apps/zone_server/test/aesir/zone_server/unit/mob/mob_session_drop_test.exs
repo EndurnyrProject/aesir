@@ -1,8 +1,9 @@
 defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
   @moduledoc """
-  Verifies that a mob death widens the `:mob_killed` reward broadcast with the
-  drop table, mob level, and death position, and that a death with no killer
-  produces no broadcast at all.
+  Verifies that a mob death broadcasts the drop-rolling `:mob_killed` payload
+  (drop table, mob level, death position -- no EXP fields, since EXP now
+  flows through `Unit.Mob.KillExp.distribute/5` as `{:mob_kill_exp, ...}`) to
+  the killer, and that a death with no killer produces no broadcast at all.
   """
 
   use ExUnit.Case, async: false
@@ -21,7 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
   setup :verify_on_exit!
   setup :set_mimic_global
 
-  test "killing a mob broadcasts a widened :mob_killed payload to the killer" do
+  test "killing a mob broadcasts the drop-rolling :mob_killed payload to the killer" do
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     stub(Coordinator, :mob_died, fn _map, _id -> :ok end)
 
@@ -33,8 +34,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
     {:noreply, _state} = MobSession.handle_cast({:apply_damage, 100, 42}, state)
 
     assert_receive {:mob_killed, payload}
-    assert payload.base_exp == 100
-    assert payload.job_exp == 50
     assert payload.drops == drops
     assert payload.mob_level == 25
     assert payload.map == "prontera"
