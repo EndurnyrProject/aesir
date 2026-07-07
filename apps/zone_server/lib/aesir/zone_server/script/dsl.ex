@@ -23,9 +23,11 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.JobManagement
+  alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
+  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Script.Ctx
@@ -268,6 +270,14 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   end
 
   @doc """
+  Sets the player's save (respawn) point to `map`,`x`,`y` — the destination
+  they return to on death. Mirrors rAthena's `savepoint`.
+  """
+  @spec savepoint(Ctx.t(), String.t(), non_neg_integer(), non_neg_integer()) :: Ctx.t()
+  def savepoint(%Ctx{status: {:error, _}} = ctx, _map, _x, _y), do: ctx
+  def savepoint(%Ctx{} = ctx, map, x, y), do: apply_op(ctx, {:set_save_point, map, x, y})
+
+  @doc """
   Casts a skill programmatically on the player.
 
   `skill_id_or_name` is a skill id or its catalog name atom. `opts` accepts
@@ -437,13 +447,23 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   def get_local(%Ctx{vars: vars}, key, default \\ 0), do: Map.get(vars, key, default)
 
   @doc """
-  Changes the player's job to `job_id` through the session seam, recomputing
-  job-dependent stats and refreshing the client's sprite/skill window. Halts
-  `:unknown_job` when `job_id` does not resolve to a known job.
+  Changes the player's job through the session seam, recomputing job-dependent
+  stats and refreshing the client's sprite/skill window. Accepts either a
+  numeric job id or a job name atom (as `Job_*` constants transpile to). Halts
+  `:unknown_job` when the job does not resolve to a known job.
   """
-  @spec jobchange(Ctx.t(), non_neg_integer()) :: Ctx.t()
-  def jobchange(%Ctx{status: {:error, _}} = ctx, _job_id), do: ctx
-  def jobchange(%Ctx{} = ctx, job_id), do: apply_op(ctx, {:change_job, job_id})
+  @spec jobchange(Ctx.t(), non_neg_integer() | atom()) :: Ctx.t()
+  def jobchange(%Ctx{status: {:error, _}} = ctx, _job), do: ctx
+
+  def jobchange(%Ctx{} = ctx, job_id) when is_integer(job_id),
+    do: apply_op(ctx, {:change_job, job_id})
+
+  def jobchange(%Ctx{} = ctx, job_name) when is_atom(job_name) do
+    case AvailableJobs.job_name_to_id(job_name) do
+      {:ok, job_id} -> apply_op(ctx, {:change_job, job_id})
+      {:error, reason} -> Ctx.halt(ctx, reason)
+    end
+  end
 
   # Routes a state-mutating op through the single-writer session (always a
   # cross-process GenServer.call from the interaction, never a self-call), then
@@ -469,6 +489,48 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   def class(%Ctx{game_state: gs}) do
     {:ok, job} = JobManagement.get_job_by_id(gs.stats.progression.job_id)
     job.name
+  end
+
+  # NV_BASIC level a Novice must reach to change into a first job.
+  @basic_skill_job_req 9
+
+  @doc """
+  Whether the player meets the Basic Skill requirement to change job — a learned
+  `NV_BASIC` at level #{@basic_skill_job_req} (rAthena `F_CanChangeJob`).
+  """
+  @spec can_change_job?(Ctx.t()) :: boolean()
+  def can_change_job?(%Ctx{game_state: gs}) do
+    case Catalog.by_name(:nv_basic) do
+      {:ok, %{id: id}} ->
+        Learned.learned_level(gs.stats.progression.learned_skills, id) >= @basic_skill_job_req
+
+      :error ->
+        false
+    end
+  end
+
+  @doc """
+  `strcharinfo(type)`: the character's name (type `0`) or current map (type `3`).
+  rAthena's party/guild info types are not modelled and return an empty string.
+  """
+  @spec char_name(Ctx.t(), integer()) :: String.t()
+  def char_name(%Ctx{game_state: gs}, 0), do: gs.character_name
+  def char_name(%Ctx{game_state: gs}, 3), do: gs.map_name
+  def char_name(%Ctx{}, _type), do: ""
+
+  @doc "The display name of a job, given its class atom or id (rAthena `jobname`)."
+  @spec job_name(Ctx.t(), atom() | integer()) :: String.t()
+  def job_name(%Ctx{}, job) when is_atom(job), do: humanize_job(job)
+
+  def job_name(%Ctx{}, job_id) when is_integer(job_id) do
+    case JobManagement.get_job_by_id(job_id) do
+      {:ok, job} -> humanize_job(job.name)
+      {:error, _} -> ""
+    end
+  end
+
+  defp humanize_job(name) do
+    name |> to_string() |> String.split("_") |> Enum.map_join(" ", &String.capitalize/1)
   end
 
   @doc "The player's sex."

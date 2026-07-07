@@ -527,8 +527,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
         {pre ++ ["{ctx, _} = #{module}.call(ctx, [#{rendered}])"], :cont}
 
       :error ->
-        flag(:todo_fun)
-        {pre ++ ["ctx = todo(ctx, :callfunc, [#{inspect(fname)}, #{rendered}])"], :cont}
+        case CommandMap.function(fname) do
+          {:ok, %{kind: :command, dsl: dsl}} ->
+            {pre ++ ["ctx = #{dsl}(ctx, #{rendered})"], :cont}
+
+          _ ->
+            flag(:todo_fun)
+            {pre ++ ["ctx = todo(ctx, :callfunc, [#{inspect(fname)}, #{rendered}])"], :cont}
+        end
     end
   end
 
@@ -576,6 +582,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre, args} = hoist_all(args, env)
     rendered = Enum.map_join(args, ", ", &render(&1, env))
     {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
+  end
+
+  # `savepoint "map",x,y{,rx,ry}` — the optional range args are dropped.
+  defp emit_mapped(_name, %{shape: :savepoint}, args, env) do
+    {pre, [map, x, y | _rest]} = hoist_all(args, env)
+
+    {pre ++
+       ["ctx = savepoint(ctx, #{render(map, env)}, #{render(x, env)}, #{render(y, env)})"], :cont}
   end
 
   defp emit_mapped(_name, %{dsl: dsl, args: types}, args, env) do
@@ -1005,8 +1019,16 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
         {{:temp, tmp}, ["{ctx, #{tmp}} = #{module}.call(ctx, [#{rendered}])" | pre]}
 
       :error ->
-        flag(:todo_mod)
-        {{:temp, tmp}, ["#{tmp} = Todo.call!(:callfunc, [#{inspect(fname)}, #{rendered}])" | pre]}
+        case CommandMap.function(fname) do
+          {:ok, %{kind: :read, dsl: dsl}} ->
+            {{:temp, tmp}, ["#{tmp} = #{dsl}(ctx)" | pre]}
+
+          _ ->
+            flag(:todo_mod)
+
+            {{:temp, tmp},
+             ["#{tmp} = Todo.call!(:callfunc, [#{inspect(fname)}, #{rendered}])" | pre]}
+        end
     end
   end
 

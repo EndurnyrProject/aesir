@@ -232,6 +232,26 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "use Aesir.ZoneServer.Npc"
   end
 
+  test "first-job buildins and global functions map to DSL primitives" do
+    src =
+      gen!("""
+      if (callfunc("F_CanChangeJob")) close;
+      callfunc "Job_Change", Job_Thief;
+      savepoint "prt_fild03",361,255,1,1;
+      mes strcharinfo(0);
+      mes jobname(Class);
+      close;
+      """)
+
+    assert src =~ "= can_change_job?(ctx)"
+    assert src =~ "ctx = jobchange(ctx, :thief)"
+    assert src =~ ~S|ctx = savepoint(ctx, "prt_fild03", 361, 255)|
+    assert src =~ "char_name(ctx, 0)"
+    assert src =~ "job_name(ctx, class(ctx))"
+    refute src =~ "todo(ctx, :savepoint"
+    refute src =~ ~S|Todo.call!(:callfunc, ["Job_Change"|
+  end
+
   test "callfunc resolves through the functions map or stubs" do
     functions = %{"F_Check" => "Aesir.ZoneServer.Content.Npc.Functions.FCheck"}
 

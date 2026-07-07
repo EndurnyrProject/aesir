@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.MobManagement
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Script.Ctx
@@ -430,6 +431,32 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
   end
 
+  describe "job-change reads" do
+    test "can_change_job?/1 requires learned NV_BASIC at level 9" do
+      {:ok, %{id: nv_basic_id}} = Catalog.by_name(:nv_basic)
+
+      refute Dsl.can_change_job?(build_ctx(learned_skills: %{nv_basic_id => 8}))
+      assert Dsl.can_change_job?(build_ctx(learned_skills: %{nv_basic_id => 9}))
+      refute Dsl.can_change_job?(build_ctx(learned_skills: %{}))
+    end
+
+    test "char_name/2 returns the character name for type 0 and map for type 3" do
+      ctx = build_ctx(character_name: "Bob")
+
+      assert Dsl.char_name(ctx, 0) == "Bob"
+      assert Dsl.char_name(ctx, 3) == "prontera"
+      assert Dsl.char_name(ctx, 1) == ""
+    end
+
+    test "job_name/2 humanizes a class atom and resolves a job id" do
+      ctx = build_ctx(job_id: 6)
+
+      assert Dsl.job_name(ctx, :thief) == "Thief"
+      assert Dsl.job_name(ctx, :super_novice) == "Super Novice"
+      assert Dsl.job_name(ctx, 6) == "Thief"
+    end
+  end
+
   defp build_ctx(opts \\ []) do
     %Ctx{
       char_id: 1,
@@ -447,12 +474,18 @@ defmodule Aesir.ZoneServer.Script.DslTest do
         sp: Keyword.get(opts, :sp, 10)
       },
       derived_stats: %DerivedStats{max_hp: 500, max_sp: 200, aspd: 150},
-      progression: %PlayerProgression{base_level: 10, job_level: 3, job_id: 0}
+      progression: %PlayerProgression{
+        base_level: 10,
+        job_level: 3,
+        job_id: Keyword.get(opts, :job_id, 0),
+        learned_skills: Keyword.get(opts, :learned_skills, %{})
+      }
     }
 
     %PlayerState{
       character_id: 1,
       account_id: 100,
+      character_name: Keyword.get(opts, :character_name, "Alice"),
       sex: "M",
       x: 50,
       y: 50,

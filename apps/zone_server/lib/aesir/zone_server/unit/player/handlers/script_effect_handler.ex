@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:set_char_var, atom(), term()}
           | {:set_temp_var, atom(), term()}
           | {:change_job, non_neg_integer()}
+          | {:set_save_point, String.t(), non_neg_integer(), non_neg_integer()}
 
   @max_zeny 1_000_000_000
 
@@ -117,6 +118,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
       {:ok, new_state} -> {{:ok, new_state.game_state}, new_state}
       {:error, reason} -> {{:error, reason}, state}
     end
+  end
+
+  def apply_op({:set_save_point, map, x, y}, %{game_state: gs} = state) do
+    new_gs = %{gs | save_map: map, save_x: x, save_y: y}
+
+    CharacterPersistence.update_character(
+      gs.character_id,
+      %{save_map: map, save_x: x, save_y: y},
+      async: true
+    )
+
+    commit(state, new_gs)
   end
 
   @spec commit(state(), PlayerState.t()) :: {reply(), state()}

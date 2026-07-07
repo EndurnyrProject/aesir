@@ -39,8 +39,17 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "sc_start" => %{dsl: "sc_start", args: [:status, :int, :int]},
     "sc_end" => %{dsl: "sc_end", args: [:status]},
     "warp" => %{shape: :warp},
+    "savepoint" => %{shape: :savepoint},
     "jobchange" => %{dsl: "jobchange", args: [:int]},
     "itemskill" => %{dsl: "itemskill", args: [:skill_opts]}
+  }
+
+  # Global rAthena functions (`callfunc "Name"`) mapped onto DSL primitives.
+  # `:command` emits `dsl(ctx, args…)` in statement position; `:read` emits
+  # `dsl(ctx)` in expression position.
+  @functions %{
+    "Job_Change" => %{kind: :command, dsl: "jobchange"},
+    "F_CanChangeJob" => %{kind: :read, dsl: "can_change_job?"}
   }
 
   @warp_targets %{
@@ -63,7 +72,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
 
   @call_reads %{
     "countitem" => %{dsl: "count_item", args: [:item]},
-    "isequipped" => %{dsl: "is_equipped", args: [:item]}
+    "isequipped" => %{dsl: "is_equipped", args: [:item]},
+    "strcharinfo" => %{dsl: "char_name", args: [:int]},
+    "jobname" => %{dsl: "job_name", args: [:int]}
   }
 
   @spec command(String.t()) :: {:ok, rule()} | :error
@@ -74,6 +85,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
 
   @spec call_read(String.t()) :: {:ok, rule()} | :error
   def call_read(name) when is_binary(name), do: Map.fetch(@call_reads, name)
+
+  @doc "A global `callfunc` name mapped onto a DSL primitive, or `:error`."
+  @spec function(String.t()) :: {:ok, rule()} | :error
+  def function(name) when is_binary(name), do: Map.fetch(@functions, name)
 
   @doc """
   Maps a `warp` string target (`"Random"`, `"SavePoint"`) to the one-arg DSL
