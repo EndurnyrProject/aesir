@@ -193,6 +193,103 @@ defmodule Aesir.ZoneServer.Unit.ItemContainerTest do
     end
   end
 
+  describe "add_preserving/5" do
+    test "a plain item stacks onto an existing plain stack" do
+      def_ = def!(@red_potion)
+      c = container([item(nameid: @red_potion, amount: 5)])
+      source = item(nameid: @red_potion, amount: 3)
+
+      assert {:ok, new_c, {:stacked, 0, 8}} =
+               ItemContainer.add_preserving(c, def_, 3, @inventory_capacity, source)
+
+      assert %{0 => %InventoryItem{amount: 8}} = new_c
+    end
+
+    test "a carded item never merges onto a plain stack of the same nameid" do
+      def_ = def!(@red_potion)
+      c = container([item(nameid: @red_potion, amount: 5)])
+      source = item(nameid: @red_potion, amount: 1, card0: 4001)
+
+      assert {:ok, new_c, {:added, 1, %InventoryItem{card0: 4001}}} =
+               ItemContainer.add_preserving(c, def_, 1, @inventory_capacity, source)
+
+      assert %{0 => %InventoryItem{amount: 5, card0: 0}, 1 => %InventoryItem{card0: 4001}} =
+               new_c
+    end
+
+    test "a refined item never merges onto a plain stack" do
+      def_ = def!(@red_potion)
+      c = container([item(nameid: @red_potion, amount: 5)])
+      source = item(nameid: @red_potion, amount: 1, refine: 7)
+
+      assert {:ok, new_c, {:added, 1, %InventoryItem{refine: 7}}} =
+               ItemContainer.add_preserving(c, def_, 1, @inventory_capacity, source)
+
+      assert map_size(new_c) == 2
+    end
+
+    test "an item carrying random options never merges onto a plain stack" do
+      def_ = def!(@red_potion)
+      c = container([item(nameid: @red_potion, amount: 5)])
+      source = item(nameid: @red_potion, amount: 1, random_options: %{"1" => %{val: 5, parm: 0}})
+
+      assert {:ok, new_c, {:added, 1, _item}} =
+               ItemContainer.add_preserving(c, def_, 1, @inventory_capacity, source)
+
+      assert map_size(new_c) == 2
+    end
+
+    test "unique_id, enchant_grade, and expire_time survive the transfer round-trip" do
+      def_ = def!(@red_potion)
+      expire_time = ~N[2030-01-01 00:00:00]
+
+      source =
+        item(nameid: @red_potion, amount: 1, unique_id: 123, enchant_grade: 2)
+        |> Map.put(:expire_time, expire_time)
+
+      assert {:ok, new_c, {:added, 0, _item}} =
+               ItemContainer.add_preserving(%{}, def_, 1, @inventory_capacity, source)
+
+      assert %{
+               0 => %InventoryItem{
+                 unique_id: 123,
+                 enchant_grade: 2,
+                 expire_time: ^expire_time
+               }
+             } = new_c
+    end
+
+    test "respects the destination's capacity parameter" do
+      def_ = def!(@red_potion)
+      full = container(for n <- 1..100, do: item(nameid: 600 + n, amount: 1, card0: 4001))
+      source = item(nameid: @red_potion, amount: 1, card0: 4001)
+
+      assert {:error, :inventory_full} =
+               ItemContainer.add_preserving(full, def_, 1, @inventory_capacity, source)
+    end
+  end
+
+  describe "plain?/1" do
+    test "a default item is plain" do
+      assert ItemContainer.plain?(item(nameid: @red_potion))
+    end
+
+    test "cards, refine, random options, bound, favorite, unique_id, enchant_grade, and expire_time all make an item not plain" do
+      refute ItemContainer.plain?(item(nameid: @red_potion, card0: 4001))
+      refute ItemContainer.plain?(item(nameid: @red_potion, refine: 1))
+      refute ItemContainer.plain?(item(nameid: @red_potion, random_options: %{"1" => %{}}))
+      refute ItemContainer.plain?(item(nameid: @red_potion, bound: 1))
+      refute ItemContainer.plain?(item(nameid: @red_potion, favorite: 1))
+      refute ItemContainer.plain?(item(nameid: @red_potion, unique_id: 1))
+      refute ItemContainer.plain?(item(nameid: @red_potion, enchant_grade: 1))
+
+      refute ItemContainer.plain?(
+               item(nameid: @red_potion)
+               |> Map.put(:expire_time, ~N[2030-01-01 00:00:00])
+             )
+    end
+  end
+
   describe "index-map helpers" do
     test "put_item/3 puts an item at the given index" do
       c = ItemContainer.put_item(%{}, 0, item(nameid: @red_potion))

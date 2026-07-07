@@ -36,6 +36,12 @@ defmodule Aesir.ZoneServer.Unit.Cart do
   defdelegate load_cart(char_id), to: Persistence
 
   @doc """
+  The cart's slot cap.
+  """
+  @spec capacity() :: pos_integer()
+  def capacity, do: @max_cart
+
+  @doc """
   Adds `amount` of `item_def` to `cart`, reusing the shared container core.
 
   Stacks, splits, and the 100-slot cap behave exactly as `Inventory.add/4`;

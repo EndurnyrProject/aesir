@@ -57,6 +57,12 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   defdelegate load_inventory(char_id), to: Persistence
 
   @doc """
+  The inventory's slot cap.
+  """
+  @spec capacity() :: pos_integer()
+  def capacity, do: @max_inventory
+
+  @doc """
   Adds `amount` of `item_def` to `inventory`, reusing the container core.
 
   Stacks into an existing stackable item (same `nameid`, not equipped, no cards,

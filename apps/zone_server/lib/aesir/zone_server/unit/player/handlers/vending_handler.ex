@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   alias Aesir.ZoneServer.Unit.Cart
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight, as: InventoryWeight
+  alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.InventoryView
@@ -436,7 +437,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   defp apply_buyer_adds(char_id, inventory, adds) do
     Enum.reduce_while(adds, {:ok, inventory, []}, fn {source, amount}, {:ok, current, changes} ->
       with {:ok, %ItemDefinition{} = item_def} <- ItemManagement.get_item_by_id(source.nameid),
-           {:ok, new_inv, change} <- CartOps.add_preserving(current, item_def, amount, source),
+           {:ok, new_inv, change} <-
+             ItemContainer.add_preserving(current, item_def, amount, Inventory.capacity(), source),
            {:ok, persisted} <- InventoryOps.apply_change(char_id, current, new_inv, change) do
         {:cont, {:ok, persisted, [change | changes]}}
       else

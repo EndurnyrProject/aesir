@@ -27,6 +27,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOps do
   cart side by this module's `apply_change/4`. Removing from a container never
   needs a weight check; only the destination is validated, against the cart's
   flat 8000 cap or the player's STR-derived inventory cap respectively.
+
+  The moved item's full attribute set (identify/refine/attribute/cards/random
+  options/bound/favorite/`unique_id`/`enchant_grade`/`expire_time`) is preserved
+  across the move via `Aesir.ZoneServer.Unit.ItemContainer.add_preserving/5`, the
+  shared transfer-fidelity add: a plain item may stack, anything distinguishing
+  always takes a fresh slot.
   """
 
   alias Aesir.Commons.Models.CartItem
@@ -38,11 +44,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOps do
   alias Aesir.ZoneServer.Unit.Cart.Weight, as: CartWeight
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight, as: InventoryWeight
+  alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
-
-  @max_slots 100
 
   @type cart :: Cart.t()
   @type inventory :: Inventory.t()
@@ -70,10 +75,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOps do
 
   Validates the cart's flat weight cap for the moved item before any write and
   rejects with `{:error, :overweight}` when it would be exceeded; the 100-slot
-  cap is enforced while adding. The item's identify/refine/attribute/cards/random
-  options/bound/favorite are preserved so it arrives unchanged (a carded or
-  refined item never merges with a plain stack). The inventory removal and the
-  cart add commit in one transaction.
+  cap is enforced while adding. The item's full attribute set is preserved so it
+  arrives unchanged (a carded or refined item never merges with a plain stack).
+  The inventory removal and the cart add commit in one transaction.
   """
   @spec move_to_cart(integer(), inventory(), cart(), non_neg_integer(), pos_integer()) ::
           move_result()
@@ -83,7 +87,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOps do
          {:ok, %ItemDefinition{} = item_def} <- ItemManagement.get_item_by_id(item.nameid),
          :ok <- ensure_cart_capacity(cart, item_def.weight * amount),
          {:ok, new_inventory, inv_change} <- Inventory.remove(inventory, index, amount),
-         {:ok, new_cart, cart_change} <- add_preserving(cart, item_def, amount, item),
+         {:ok, new_cart, cart_change} <-
+           ItemContainer.add_preserving(cart, item_def, amount, Cart.capacity(), item),
          {:ok, persisted_inventory, persisted_cart} <-
            transact_move(
              char_id,
@@ -122,7 +127,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOps do
          {:ok, %ItemDefinition{} = item_def} <- ItemManagement.get_item_by_id(item.nameid),
          :ok <- ensure_inventory_capacity(inventory, stats, item_def.weight * amount),
          {:ok, new_cart, cart_change} <- Cart.remove(cart, index, amount),
-         {:ok, new_inventory, inv_change} <- add_preserving(inventory, item_def, amount, item),
+         {:ok, new_inventory, inv_change} <-
+           ItemContainer.add_preserving(inventory, item_def, amount, Inventory.capacity(), item),
          {:ok, persisted_inventory, persisted_cart} <-
            transact_move(
              char_id,
@@ -184,94 +190,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOps do
       %InventoryItem{amount: held} when held < amount -> {:error, :insufficient_amount}
       %InventoryItem{} = item -> {:ok, item}
     end
-  end
-
-  @spec item_opts(InventoryItem.t()) :: map()
-  defp item_opts(%InventoryItem{} = item) do
-    %{
-      identify: item.identify,
-      refine: item.refine,
-      attribute: item.attribute,
-      card0: item.card0,
-      card1: item.card1,
-      card2: item.card2,
-      card3: item.card3,
-      random_options: item.random_options,
-      bound: item.bound,
-      favorite: item.favorite
-    }
-  end
-
-  @doc """
-  Adds the moved item to `destination`, preserving its attributes.
-
-  A plain item (no refine/cards/random options/attribute/bound) may stack via the
-  shared core; anything distinguishing always takes its own fresh slot so a
-  refined or carded item never merges onto a plain stack and loses its attributes
-  (the core's stack test keys on the existing slot only and ignores refine). Pure:
-  it computes the new container map and change descriptor without any DB write, so
-  it composes inside a larger transaction (e.g. the vending cross-player buy).
-  """
-  @spec add_preserving(map(), ItemDefinition.t(), pos_integer(), InventoryItem.t()) ::
-          Inventory.op_result()
-  def add_preserving(destination, %ItemDefinition{} = item_def, amount, %InventoryItem{} = item) do
-    if plain?(item) do
-      Inventory.add(destination, item_def, amount, item_opts(item))
-    else
-      add_to_new_slot(destination, item_def, amount, item)
-    end
-  end
-
-  @spec plain?(InventoryItem.t()) :: boolean()
-  defp plain?(%InventoryItem{} = item) do
-    zero_fields = [
-      item.refine,
-      item.attribute,
-      item.bound,
-      item.card0,
-      item.card1,
-      item.card2,
-      item.card3
-    ]
-
-    item.identify == 1 and item.favorite == 0 and
-      map_size(item.random_options) == 0 and Enum.all?(zero_fields, &(&1 == 0))
-  end
-
-  @spec add_to_new_slot(map(), ItemDefinition.t(), pos_integer(), InventoryItem.t()) ::
-          Inventory.op_result()
-  defp add_to_new_slot(
-         destination,
-         %ItemDefinition{} = item_def,
-         amount,
-         %InventoryItem{} = source
-       ) do
-    if map_size(destination) >= @max_slots do
-      {:error, :inventory_full}
-    else
-      index = PlayerState.lowest_free_index(destination)
-      item = build_item(item_def, amount, source)
-      {:ok, PlayerState.put_item(destination, index, item), {:added, index, item}}
-    end
-  end
-
-  @spec build_item(ItemDefinition.t(), pos_integer(), InventoryItem.t()) :: InventoryItem.t()
-  defp build_item(%ItemDefinition{} = item_def, amount, %InventoryItem{} = source) do
-    %InventoryItem{
-      nameid: item_def.id,
-      amount: amount,
-      equip: 0,
-      identify: source.identify,
-      refine: source.refine,
-      attribute: source.attribute,
-      card0: source.card0,
-      card1: source.card1,
-      card2: source.card2,
-      card3: source.card3,
-      random_options: source.random_options,
-      bound: source.bound,
-      favorite: source.favorite
-    }
   end
 
   @spec persist(integer(), cart(), cart(), change()) :: {:ok, cart()} | {:error, term()}
@@ -344,7 +262,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOps do
       card3: item.card3,
       random_options: item.random_options,
       bound: item.bound,
-      favorite: item.favorite
+      favorite: item.favorite,
+      unique_id: item.unique_id,
+      enchant_grade: item.enchant_grade,
+      expire_time: item.expire_time
     }
   end
 end
