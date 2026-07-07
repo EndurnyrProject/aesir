@@ -11,6 +11,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.FileParser do
 
   Comments are stripped up front (newlines preserved, string literals
   respected) so header detection and brace matching never trip over them.
+
+  A few upstream files carry legacy EUC-KR bytes (Korean NPC names); those
+  are not representable without a codec, so invalid UTF-8 bytes are scrubbed
+  to `?` byte-for-byte up front, keeping every downstream string (names,
+  bodies, generated source) valid UTF-8 with positions intact.
   """
 
   @skipped_types ~w(shop cashshop itemshop pointshop marketshop mapflag)
@@ -27,11 +32,24 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.FileParser do
   def parse(source, path \\ "nofile") do
     entries =
       source
+      |> scrub_utf8()
       |> strip_comments()
       |> scan(1, path, [])
       |> Enum.reverse()
 
     {:ok, entries}
+  end
+
+  defp scrub_utf8(source) do
+    if String.valid?(source) do
+      source
+    else
+      source |> String.chunk(:valid) |> Enum.map_join(&scrub_chunk/1)
+    end
+  end
+
+  defp scrub_chunk(chunk) do
+    if String.valid?(chunk), do: chunk, else: String.duplicate("?", byte_size(chunk))
   end
 
   defp scan("", _line_no, _path, acc), do: acc

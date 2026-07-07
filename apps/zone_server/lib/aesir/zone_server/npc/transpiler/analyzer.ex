@@ -9,6 +9,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Analyzer do
   - `jump_targets` — labels reached by `goto` or `menu`, emitted as functions
   - `callsub_targets` — labels called by `callsub`, emitted as subroutines
     returning `{ctx, value}`
+
+  rAthena resolves label references case-insensitively, so both target sets
+  hold downcased names; `labels` keeps the declared spelling.
   - `events` — `On*` labels (`OnInit`, `OnTouch`, `OnTimer…`)
   - `assigned_names` — bare identifiers the script writes (assignment or
     `input`); these are permanent char vars, distinguishing them from
@@ -68,17 +71,22 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Analyzer do
   defp walk_stmt({:label, name}, acc), do: %{acc | labels: [name | acc.labels]}
 
   defp walk_stmt({:goto, label}, acc),
-    do: %{acc | jump_targets: MapSet.put(acc.jump_targets, label)}
+    do: %{acc | jump_targets: MapSet.put(acc.jump_targets, String.downcase(label))}
 
   defp walk_stmt({:menu, pairs}, acc) do
     acc = Enum.reduce(pairs, acc, fn {text, _label}, a -> walk_expr(text, a) end)
-    targets = Enum.reduce(pairs, acc.jump_targets, fn {_, label}, s -> MapSet.put(s, label) end)
+
+    targets =
+      Enum.reduce(pairs, acc.jump_targets, fn {_, label}, s ->
+        MapSet.put(s, String.downcase(label))
+      end)
+
     %{acc | jump_targets: targets}
   end
 
   defp walk_stmt({:cmd, "callsub", [{:name, label} | args]}, acc) do
     acc = walk_exprs(args, acc)
-    %{acc | callsub_targets: MapSet.put(acc.callsub_targets, label)}
+    %{acc | callsub_targets: MapSet.put(acc.callsub_targets, String.downcase(label))}
   end
 
   defp walk_stmt({:cmd, "input", [target | args]}, acc),
@@ -147,6 +155,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Analyzer do
   # -- expressions -------------------------------------------------------------
 
   defp walk_exprs(exprs, acc), do: Enum.reduce(exprs, acc, &walk_expr/2)
+
+  defp walk_expr({:call, "callsub", [{:name, label} | args]}, acc) do
+    acc = walk_exprs(args, acc)
+    %{acc | callsub_targets: MapSet.put(acc.callsub_targets, String.downcase(label))}
+  end
 
   defp walk_expr({:call, name, args}, acc), do: walk_exprs(args, count_buildin(acc, name))
 

@@ -31,6 +31,19 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.FileParserTest do
     assert entry.body =~ "close;"
   end
 
+  test "invalid UTF-8 bytes are scrubbed to ? so entries stay transpilable" do
+    source =
+      "prontera,10,10,4\tscript\t" <>
+        <<169, 172>> <> "#ep17\t58,{\n\tmes \"" <> <<165, 225>> <> "\";\n\tclose;\n}\n"
+
+    assert {:ok, [entry]} = FileParser.parse(source, "quests.txt")
+
+    assert entry.kind == :script
+    assert entry.name == "??#ep17"
+    assert entry.body =~ ~s(mes "??")
+    assert String.valid?(entry.body)
+  end
+
   test "parses a one-line body and a numeric sprite with touch area" do
     source =
       ~s(izlude,1,2,3\tscript\tOneliner\t545,2,2,{ mes "x"; close; }\n) <>

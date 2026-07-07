@@ -356,9 +356,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   end
 
   defp segment_kind(name, analysis) do
+    key = String.downcase(name)
+
     cond do
-      MapSet.member?(analysis.callsub_targets, name) -> :sub
-      MapSet.member?(analysis.jump_targets, name) -> :jump
+      MapSet.member?(analysis.callsub_targets, key) -> :sub
+      MapSet.member?(analysis.jump_targets, key) -> :jump
       String.starts_with?(name, "On") -> :event
       true -> nil
     end
@@ -412,25 +414,28 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp fall_through(:cont, [{:sub, name, _} | _], env),
     do: ["{ctx, _} = #{fn_name(env, name)}(ctx, [])", "ctx"]
 
-  # Label → emitted function name, deduplicated case-insensitively.
+  # Label → emitted function name. Keyed by downcased label, so references
+  # resolve case-insensitively like rAthena's own label lookup.
   defp label_fns(analysis) do
     analysis.labels
     |> Enum.reduce({%{}, MapSet.new()}, fn label, {map, taken} ->
       prefix =
         cond do
-          MapSet.member?(analysis.callsub_targets, label) -> "s_"
+          MapSet.member?(analysis.callsub_targets, String.downcase(label)) -> "s_"
           String.starts_with?(label, "On") -> "ev_"
           true -> "l_"
         end
 
       base = prefix <> ModuleName.slug(label)
       name = if MapSet.member?(taken, base), do: base <> "_#{map_size(map)}", else: base
-      {Map.put(map, label, name), MapSet.put(taken, name)}
+      {Map.put(map, String.downcase(label), name), MapSet.put(taken, name)}
     end)
     |> elem(0)
   end
 
-  defp fn_name(env, label), do: Map.fetch!(env.labels, label)
+  defp fn_name(env, label), do: Map.fetch!(env.labels, String.downcase(label))
+
+  defp label?(env, label), do: Map.has_key?(env.labels, String.downcase(label))
 
   # -- statement emission ------------------------------------------------------
 
@@ -474,7 +479,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   end
 
   defp emit_stmt({:goto, label}, env) do
-    if Map.has_key?(env.labels, label) do
+    if label?(env, label) do
       {["#{fn_name(env, label)}(ctx#{helper_call(env)})"], :stop}
     else
       flag(:todo_fun)
@@ -490,7 +495,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
       pairs
       |> Enum.with_index(1)
       |> Enum.map(fn {{_, label}, idx} ->
-        if Map.has_key?(env.labels, label) do
+        if label?(env, label) do
           "#{idx} -> #{fn_name(env, label)}(ctx#{helper_call(env)})"
         else
           flag(:todo_fun)

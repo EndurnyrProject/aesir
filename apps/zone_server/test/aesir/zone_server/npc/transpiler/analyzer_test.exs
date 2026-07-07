@@ -26,8 +26,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.AnalyzerTest do
       """)
 
     assert a.labels == ["OnInit", "L_Start", "L_Buy", "S_Give", "OnTouch"]
-    assert MapSet.equal?(a.jump_targets, MapSet.new(["L_Buy", "L_Start"]))
-    assert MapSet.equal?(a.callsub_targets, MapSet.new(["S_Give"]))
+    assert MapSet.equal?(a.jump_targets, MapSet.new(["l_buy", "l_start"]))
+    assert MapSet.equal?(a.callsub_targets, MapSet.new(["s_give"]))
     assert a.events == ["OnInit", "OnTouch"]
   end
 

@@ -160,6 +160,25 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "defp l_l_mid"
   end
 
+  test "label references resolve case-insensitively like rAthena" do
+    src =
+      gen!("""
+      callsub S_Warpchar, 1;
+      goto L_end;
+      L_End:
+      mes "bye";
+      close;
+      S_WarpChar:
+      return;
+      """)
+
+    assert src =~ "{ctx, _} = s_s_warpchar(ctx, [1])"
+    assert src =~ "defp s_s_warpchar"
+    assert src =~ "l_l_end(ctx)"
+    assert src =~ "defp l_l_end(ctx) do"
+    refute src =~ "todo(ctx, :goto"
+  end
+
   test "menu dispatches to label functions" do
     src =
       gen!("""
