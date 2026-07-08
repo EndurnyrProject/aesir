@@ -793,4 +793,77 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert {:ok, ^expected} = DamageCalculator.calculate_base_attack(mob)
     end
   end
+
+  describe "P.Atk / Res physical integration" do
+    setup do
+      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
+      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(RaceModifiers, :get_modifier, fn _, _ -> 1.0 end)
+      stub(RaceModifiers, :player_race, fn -> :human end)
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+      :ok
+    end
+
+    test "attacker P.Atk doubles the base-ATK contribution before the skill ratio" do
+      attacker = CombatTestHelper.create_player_combatant()
+      patk_attacker = %{attacker | combat_stats: Map.put(attacker.combat_stats, :patk, 100)}
+      defender = CombatTestHelper.create_mob_combatant(def: 0)
+
+      :rand.seed(:exsss, {1, 2, 3})
+
+      {:ok, %{damage: baseline}} =
+        DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
+
+      :rand.seed(:exsss, {1, 2, 3})
+
+      {:ok, %{damage: doubled}} =
+        DamageCalculator.calculate_damage(patk_attacker, defender, skip_crit: true)
+
+      assert doubled == baseline * 2
+    end
+
+    test "defender Res of 400 reduces pre-DEF damage by 40%" do
+      attacker = CombatTestHelper.create_player_combatant()
+      defender = CombatTestHelper.create_mob_combatant(def: 0)
+      res_defender = %{defender | combat_stats: Map.put(defender.combat_stats, :res, 400)}
+
+      :rand.seed(:exsss, {1, 2, 3})
+
+      {:ok, %{damage: baseline}} =
+        DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
+
+      :rand.seed(:exsss, {1, 2, 3})
+
+      {:ok, %{damage: reduced}} =
+        DamageCalculator.calculate_damage(attacker, res_defender, skip_crit: true)
+
+      assert reduced == baseline - trunc(400 / 800 * 0.8 * baseline)
+    end
+
+    test "a mob defender with no :res key takes full damage without crashing" do
+      attacker = CombatTestHelper.create_player_combatant()
+      defender = CombatTestHelper.create_mob_combatant(def: 0)
+
+      refute Map.has_key?(defender.combat_stats, :res)
+
+      assert {:ok, %{damage: damage}} =
+               DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
+
+      assert damage > 0
+    end
+
+    test "fixed_damage bypasses both P.Atk and Res" do
+      attacker = CombatTestHelper.create_player_combatant()
+      patk_attacker = %{attacker | combat_stats: Map.put(attacker.combat_stats, :patk, 100)}
+      defender = CombatTestHelper.create_mob_combatant()
+      res_defender = %{defender | combat_stats: Map.put(defender.combat_stats, :res, 400)}
+
+      assert {:ok, %{damage: 50}} =
+               DamageCalculator.calculate_damage(patk_attacker, res_defender,
+                 fixed_damage: 50,
+                 skip_crit: true
+               )
+    end
+  end
 end

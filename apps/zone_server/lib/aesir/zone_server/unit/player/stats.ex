@@ -508,7 +508,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       def: base_def + get_status_modifier(stats, :def) + get_equipment_modifier(stats, :def),
       mdef: get_status_modifier(stats, :mdef) + get_equipment_modifier(stats, :mdef),
       soft_mdef: calculate_soft_mdef(stats),
-      passive_atk: passive_atk
+      passive_atk: passive_atk,
+      patk: combat_modifier(stats, :patk),
+      smatk: combat_modifier(stats, :smatk),
+      res: combat_modifier(stats, :res),
+      mres: combat_modifier(stats, :mres),
+      hplus: combat_modifier(stats, :hplus),
+      crate: combat_modifier(stats, :crate)
     }
 
     %{stats | combat_stats: combat_stats}
@@ -600,6 +606,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   def get_equipment_modifier(%__MODULE__{} = stats, modifier_key) do
     Map.get(stats.modifiers.equipment, modifier_key, 0)
   end
+
+  defp combat_modifier(%__MODULE__{} = stats, modifier_key) do
+    (get_status_modifier(stats, modifier_key) + get_equipment_modifier(stats, modifier_key))
+    |> clamp(0, 32_767)
+  end
+
+  defp clamp(value, lo, hi), do: value |> max(lo) |> min(hi)
 
   @doc """
   Checks if the player has a specific status flag set by status effects.
@@ -768,7 +781,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     equipped_items
     |> normalize_items()
     |> Enum.reduce(
-      %{atk: 0, def: 0, matk: 0, wmatk_min: 0, wmatk_max: 0, aspd_rate: 100},
+      %{
+        atk: 0,
+        def: 0,
+        matk: 0,
+        wmatk_min: 0,
+        wmatk_max: 0,
+        aspd_rate: 100,
+        patk: 0,
+        smatk: 0,
+        res: 0,
+        mres: 0
+      },
       fn item, acc ->
         case ItemManagement.get_item_by_id(item.nameid) do
           {:ok, %ItemDefinition{} = item_def} -> accumulate_item_bonus(acc, item_def)
@@ -790,7 +814,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       | atk: acc.atk + item.attack,
         def: acc.def + item.defense,
         wmatk_min: acc.wmatk_min + (matk - variance),
-        wmatk_max: acc.wmatk_max + (matk + variance)
+        wmatk_max: acc.wmatk_max + (matk + variance),
+        patk: acc.patk + item.patk,
+        smatk: acc.smatk + item.smatk,
+        res: acc.res + item.res,
+        mres: acc.mres + item.mres
     }
   end
 
@@ -799,7 +827,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       acc
       | atk: acc.atk + item.attack,
         def: acc.def + item.defense,
-        matk: acc.matk + item.magic_attack
+        matk: acc.matk + item.magic_attack,
+        patk: acc.patk + item.patk,
+        smatk: acc.smatk + item.smatk,
+        res: acc.res + item.res,
+        mres: acc.mres + item.mres
     }
   end
 end

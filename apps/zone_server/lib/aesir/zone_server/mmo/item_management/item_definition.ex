@@ -35,6 +35,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
     field :attack, integer(), default: 0
     field :magic_attack, integer(), default: 0
     field :defense, integer(), default: 0
+    field :patk, integer(), default: 0
+    field :smatk, integer(), default: 0
+    field :res, integer(), default: 0
+    field :mres, integer(), default: 0
     field :range, integer(), default: 0
     field :slots, integer(), default: 0
     field :view, integer(), default: 0

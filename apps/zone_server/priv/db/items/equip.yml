@@ -5288,6 +5288,7 @@
   locations:
     - right_hand
   name: Destruction Axe
+  patk: 20
   range: 1
   refineable: true
   slots: 2
@@ -52855,6 +52856,7 @@
     - armor
   name: Rabbit Pattern Shirt
   refineable: true
+  res: 15
   slots: 1
   type: armor
   weight: 500

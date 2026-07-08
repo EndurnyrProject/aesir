@@ -60,4 +60,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageShared do
   @spec roll(non_neg_integer(), non_neg_integer()) :: non_neg_integer()
   def roll(min, max) when max > min, do: min + (:rand.uniform(max - min) - 1)
   def roll(min, _max), do: min
+
+  @doc """
+  Applies the rAthena Res/MRes soft-capped reduction curve to `damage`.
+
+  Reduces `damage` by `res/(res+400) * 0.8`, so the reduction trends toward
+  but never reaches 80% as `res` grows. A `res` of `0` (or below) is a no-op.
+  """
+  @spec res_reduction(number(), non_neg_integer()) :: number()
+  def res_reduction(damage, res) when res > 0,
+    do: damage - trunc(res / (res + 400) * 0.8 * damage)
+
+  # ponytail: no ignore_res/ignore_mres pierce term yet -- every source is an
+  # unmodeled 4th-job skill/status. Add the capped (50%) pierce when one
+  # lands. rAthena battle.cpp:5603 / 6063.
+  def res_reduction(damage, _res), do: damage
 end

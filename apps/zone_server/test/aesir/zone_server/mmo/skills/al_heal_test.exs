@@ -79,6 +79,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHealTest do
         assert {:ok, @caster} = AlHeal.cast(@caster, {:unit, @ally_id}, 5, definition)
       end
     end
+
+    test "smatk on the caster's combat_stats does not change the heal-as-damage amount",
+         %{definition: definition} do
+      # Heal reads base_level/int (and heal_matk_min/max when present), never
+      # smatk. execute_magic_damage/4 (Combat) applies element + min-1 clamp
+      # directly to the precomputed heal value -- it never routes through
+      # MagicDamageCalculator, so smatk cannot affect it either.
+      stub(PlayerState, :get_stats, fn _caster ->
+        %{base_level: 50, int: 50, matk: 50, smatk: 500}
+      end)
+
+      stub(Combat, :resolve_combatant, fn _id -> {:ok, %{race: :undead}} end)
+      expect(Combat, :execute_magic_damage, fn _caster, @ally_id, 350, _opts -> :ok end)
+
+      assert {:ok, @caster} = AlHeal.cast(@caster, {:unit, @ally_id}, 5, definition)
+    end
   end
 
   describe "heal amount formula (renewal: base = div(lv+int,5)*30*lv/10 + matk)" do

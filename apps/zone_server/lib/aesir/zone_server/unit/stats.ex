@@ -43,6 +43,12 @@ defmodule Aesir.ZoneServer.Unit.Stats do
     field :critical, non_neg_integer()
     field :perfect_dodge, non_neg_integer()
     field :passive_atk, non_neg_integer()
+    field :patk, non_neg_integer(), default: 0
+    field :smatk, non_neg_integer(), default: 0
+    field :res, non_neg_integer(), default: 0
+    field :mres, non_neg_integer(), default: 0
+    field :hplus, non_neg_integer(), default: 0
+    field :crate, non_neg_integer(), default: 0
   end
 
   typedstruct module: CurrentState do

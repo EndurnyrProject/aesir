@@ -45,6 +45,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageSharedTest do
     end
   end
 
+  describe "res_reduction/2" do
+    test "is a no-op when res is 0" do
+      assert DamageShared.res_reduction(1000, 0) == 1000
+    end
+
+    test "applies the soft-capped reduction curve" do
+      assert DamageShared.res_reduction(1000, 400) == 600
+    end
+
+    test "reduction is monotonic in res and trends toward but never exceeds 80%" do
+      reductions =
+        for res <- [0, 100, 400, 1000, 10_000, 100_000] do
+          1000 - DamageShared.res_reduction(1000, res)
+        end
+
+      assert reductions == Enum.sort(reductions)
+      assert Enum.all?(reductions, fn reduction -> reduction < 800 end)
+    end
+  end
+
   describe "roll/2" do
     test "returns min when max equals min" do
       assert DamageShared.roll(50, 50) == 50

@@ -1,14 +1,18 @@
 defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   use ExUnit.Case, async: true
+  use Mimic
 
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
 
   setup :setup_ets_tables
+  setup :verify_on_exit!
 
   # Real equip.yml ids.
   @sword 1101
@@ -583,6 +587,87 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     end
   end
 
+  describe "derived combat stats (patk/smatk/res/mres/hplus/crate)" do
+    test "sums status and equipment modifiers into each slot" do
+      stats = %Stats{
+        base_stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
+        progression: %{base_level: 0, job_level: 0, learned_skills: %{}},
+        derived_stats: %{max_hp: 1, max_sp: 1},
+        equipment: %Equipment{},
+        modifiers: %{
+          equipment: %{patk: 30, smatk: 30, res: 30, mres: 30, hplus: 30, crate: 30},
+          status_effects: %{patk: 20, smatk: 20, res: 20, mres: 20, hplus: 20, crate: 20},
+          job_bonuses: %{}
+        }
+      }
+
+      result = Stats.calculate_combat_stats(stats)
+
+      assert result.combat_stats.patk == 50
+      assert result.combat_stats.smatk == 50
+      assert result.combat_stats.res == 50
+      assert result.combat_stats.mres == 50
+      assert result.combat_stats.hplus == 50
+      assert result.combat_stats.crate == 50
+    end
+
+    test "defaults to 0 with no modifiers" do
+      stats = %Stats{
+        base_stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
+        progression: %{base_level: 0, job_level: 0, learned_skills: %{}},
+        derived_stats: %{max_hp: 1, max_sp: 1},
+        equipment: %Equipment{},
+        modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
+      }
+
+      result = Stats.calculate_combat_stats(stats)
+
+      assert result.combat_stats.patk == 0
+      assert result.combat_stats.smatk == 0
+      assert result.combat_stats.res == 0
+      assert result.combat_stats.mres == 0
+      assert result.combat_stats.hplus == 0
+      assert result.combat_stats.crate == 0
+    end
+
+    test "clamps above 32767 down to 32767" do
+      stats = %Stats{
+        base_stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
+        progression: %{base_level: 0, job_level: 0, learned_skills: %{}},
+        derived_stats: %{max_hp: 1, max_sp: 1},
+        equipment: %Equipment{},
+        modifiers: %{
+          equipment: %{patk: 20_000, res: 20_000},
+          status_effects: %{patk: 20_000, res: 20_000},
+          job_bonuses: %{}
+        }
+      }
+
+      result = Stats.calculate_combat_stats(stats)
+
+      assert result.combat_stats.patk == 32_767
+      assert result.combat_stats.res == 32_767
+    end
+
+    test "clamps negative values up to 0" do
+      stats = %Stats{
+        base_stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
+        progression: %{base_level: 0, job_level: 0, learned_skills: %{}},
+        derived_stats: %{max_hp: 1, max_sp: 1},
+        equipment: %Equipment{},
+        modifiers: %{
+          equipment: %{},
+          status_effects: %{mres: -50},
+          job_bonuses: %{}
+        }
+      }
+
+      result = Stats.calculate_combat_stats(stats)
+
+      assert result.combat_stats.mres == 0
+    end
+  end
+
   describe "equipment_from_inventory/1" do
     test "places each equipped item's nameid at its worn location" do
       equipment =
@@ -707,6 +792,47 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert staffed.combat_stats.matk_max == bare.combat_stats.matk_max + 260
       assert staffed.combat_stats.matk_min < staffed.combat_stats.matk_max
       assert staffed.combat_stats.matk == staffed.combat_stats.matk_max
+    end
+
+    test "patk/smatk/res/mres accumulate across equipped items into combat stats" do
+      item_a = %ItemDefinition{
+        id: 90_001,
+        aegis_name: "test_derived_a",
+        name: "Test A",
+        patk: 5,
+        smatk: 2,
+        res: 4,
+        mres: 1
+      }
+
+      item_b = %ItemDefinition{
+        id: 90_002,
+        aegis_name: "test_derived_b",
+        name: "Test B",
+        patk: 3,
+        smatk: 6,
+        res: 9,
+        mres: 7
+      }
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_001 -> {:ok, item_a}
+        90_002 -> {:ok, item_b}
+      end)
+
+      equipped_items = [equipped(90_001, @right_hand), equipped(90_002, @left_hand)]
+
+      result = Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, equipped_items)
+
+      assert result.modifiers.equipment.patk == 8
+      assert result.modifiers.equipment.smatk == 8
+      assert result.modifiers.equipment.res == 13
+      assert result.modifiers.equipment.mres == 8
+
+      assert result.combat_stats.patk == 8
+      assert result.combat_stats.smatk == 8
+      assert result.combat_stats.res == 13
+      assert result.combat_stats.mres == 8
     end
   end
 

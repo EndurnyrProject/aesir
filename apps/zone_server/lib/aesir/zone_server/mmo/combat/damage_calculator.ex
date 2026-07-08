@@ -122,12 +122,28 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     bonus_atk = Keyword.get(opts, :bonus_atk, 0)
 
     with {:ok, base_atk} <- calculate_base_attack(attacker),
-         skilled_atk = div(base_atk * skill_ratio, 100) + bonus_atk,
+         patk_atk = apply_patk_multiplier(base_atk, attacker),
+         skilled_atk = div(patk_atk * skill_ratio, 100) + bonus_atk,
          {:ok, modified_atk} <- apply_modifier_pipeline(skilled_atk, attacker, defender, opts),
          total_atk = modified_atk + demon_bane_bonus(attacker, defender),
+         total_atk = apply_res_reduction(total_atk, defender),
          {:ok, final_damage} <- apply_defense_formula(total_atk, defender, attacker) do
       finalize_damage(final_damage, attacker, skip_crit)
     end
+  end
+
+  # P.Atk (renewal 4th-job attacker stat): a percentage multiplier on base ATK
+  # applied before the skill ratio. rAthena battle.cpp:5532.
+  defp apply_patk_multiplier(base_atk, attacker) do
+    patk = Map.get(attacker.combat_stats, :patk, 0)
+    div(base_atk * (100 + patk), 100)
+  end
+
+  # Res (renewal 4th-job defender stat): a soft-capped reduction applied to
+  # total ATK before the DEF formula. rAthena battle.cpp:5608.
+  defp apply_res_reduction(total_atk, defender) do
+    res = Map.get(defender.combat_stats, :res, 0)
+    DamageShared.res_reduction(total_atk, res)
   end
 
   # Demon Bane (AL_DEMONBANE): flat ATK added before the defense formula when the
