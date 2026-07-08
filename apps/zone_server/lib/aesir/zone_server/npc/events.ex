@@ -79,6 +79,31 @@ defmodule Aesir.ZoneServer.Npc.Events do
   end
 
   @doc """
+  Targeted, detached event dispatch for an already-known gid — what
+  `Npc.Session`'s timer fire invokes.
+
+  Resolves `gid` to its module and spawns a detached `on_event/2` task when
+  the module declares `label` in `events/0`. An unresolved gid or an
+  undeclared label logs a warning and returns `:ok`, matching this module's
+  fire-and-forget contract.
+  """
+  @spec trigger_gid(non_neg_integer(), String.t()) :: :ok
+  def trigger_gid(gid, label) do
+    with {:ok, {module, _placement}} <- Registry.module_for_unit(gid),
+         true <- label in module.events() do
+      spawn_detached(module, gid, label)
+    else
+      :error ->
+        Logger.warning("npc event trigger: unresolved gid #{inspect(gid)}")
+        :ok
+
+      false ->
+        Logger.warning("npc event trigger: #{inspect(gid)} has no handler for #{inspect(label)}")
+        :ok
+    end
+  end
+
+  @doc """
   Player-attached event dispatch (`OnTouch`, `doevent`, ...).
 
   Resolves `gid` to its NPC module and, when the module declares `label` in

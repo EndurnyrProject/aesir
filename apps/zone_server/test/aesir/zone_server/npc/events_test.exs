@@ -138,6 +138,35 @@ defmodule Aesir.ZoneServer.Npc.EventsTest do
     end
   end
 
+  describe "trigger_gid/2" do
+    test "spawns a detached task that runs on_event when the module declares the label" do
+      Registry.reload([NamedNpcA])
+      {NamedNpcA, placement} = hd(Registry.entries())
+      gid = Registry.entity_id(placement)
+
+      assert :ok = Events.trigger_gid(gid, "OnStart")
+
+      assert_receive {:fired, NamedNpcA, ^gid}
+    end
+
+    test "logs a warning and returns :ok for an unresolved gid" do
+      log = capture_log(fn -> assert :ok = Events.trigger_gid(0x5000_0000 - 1, "OnStart") end)
+
+      assert log =~ "unresolved gid"
+    end
+
+    test "logs a warning and returns :ok when the label isn't declared" do
+      Registry.reload([NamedNpcA])
+      {NamedNpcA, placement} = hd(Registry.entries())
+      gid = Registry.entity_id(placement)
+
+      log = capture_log(fn -> assert :ok = Events.trigger_gid(gid, "OnMissing") end)
+
+      assert log =~ "no handler"
+      refute_received {:fired, _module, _gid}
+    end
+  end
+
   describe "trigger_attached/4" do
     test "starts an interaction entering on_event, suspends on dialog" do
       Registry.reload([DialogNpc])
