@@ -914,6 +914,117 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     end
   end
 
+  @doc """
+  Enables the calling NPC, restoring its visibility and clickability (rAthena
+  `enablenpc`). Targets `ctx.npc_gid`; valid on both an attached and a
+  detached ctx, since it mutates NPC state, not player state. A ctx with no
+  `npc_gid` logs a warning and no-ops.
+
+  Independent of the `hidden` flag set by `hideonnpc`/`hideoffnpc` — an NPC
+  is visible only when enabled and not hidden (see `Npc.Session`'s moduledoc).
+  """
+  @spec enablenpc(Ctx.t()) :: Ctx.t()
+  def enablenpc(%Ctx{status: {:error, _}} = ctx), do: ctx
+  def enablenpc(%Ctx{npc_gid: nil} = ctx), do: warn_no_npc_gid(ctx, "enablenpc/1")
+
+  def enablenpc(%Ctx{npc_gid: gid} = ctx) do
+    NpcSession.set_enabled(gid, true)
+    ctx
+  end
+
+  @doc """
+  Enables every placement registered under `name` (rAthena
+  `enablenpc("Name")`) — applies to every duplicate sharing the name, not
+  just the first. An unresolved name logs a warning and no-ops.
+  """
+  @spec enablenpc(Ctx.t(), String.t()) :: Ctx.t()
+  def enablenpc(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
+
+  def enablenpc(%Ctx{} = ctx, name) do
+    each_named(ctx, name, "enablenpc/2", &NpcSession.set_enabled(&1, true))
+  end
+
+  @doc """
+  Disables the calling NPC, making it invisible and unclickable (rAthena
+  `disablenpc`). Targets `ctx.npc_gid`; valid on both an attached and a
+  detached ctx. A ctx with no `npc_gid` logs a warning and no-ops.
+
+  Independent of the `hidden` flag — see `enablenpc/1`.
+  """
+  @spec disablenpc(Ctx.t()) :: Ctx.t()
+  def disablenpc(%Ctx{status: {:error, _}} = ctx), do: ctx
+  def disablenpc(%Ctx{npc_gid: nil} = ctx), do: warn_no_npc_gid(ctx, "disablenpc/1")
+
+  def disablenpc(%Ctx{npc_gid: gid} = ctx) do
+    NpcSession.set_enabled(gid, false)
+    ctx
+  end
+
+  @doc """
+  Disables every placement registered under `name` (rAthena
+  `disablenpc("Name")`). An unresolved name logs a warning and no-ops.
+  """
+  @spec disablenpc(Ctx.t(), String.t()) :: Ctx.t()
+  def disablenpc(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
+
+  def disablenpc(%Ctx{} = ctx, name) do
+    each_named(ctx, name, "disablenpc/2", &NpcSession.set_enabled(&1, false))
+  end
+
+  @doc """
+  Hides the calling NPC, making it invisible and unclickable regardless of
+  its `enabled` flag (rAthena `hideonnpc`). Targets `ctx.npc_gid`; valid on
+  both an attached and a detached ctx. A ctx with no `npc_gid` logs a
+  warning and no-ops.
+  """
+  @spec hideonnpc(Ctx.t()) :: Ctx.t()
+  def hideonnpc(%Ctx{status: {:error, _}} = ctx), do: ctx
+  def hideonnpc(%Ctx{npc_gid: nil} = ctx), do: warn_no_npc_gid(ctx, "hideonnpc/1")
+
+  def hideonnpc(%Ctx{npc_gid: gid} = ctx) do
+    NpcSession.set_hidden(gid, true)
+    ctx
+  end
+
+  @doc """
+  Hides every placement registered under `name` (rAthena
+  `hideonnpc("Name")`). An unresolved name logs a warning and no-ops.
+  """
+  @spec hideonnpc(Ctx.t(), String.t()) :: Ctx.t()
+  def hideonnpc(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
+
+  def hideonnpc(%Ctx{} = ctx, name) do
+    each_named(ctx, name, "hideonnpc/2", &NpcSession.set_hidden(&1, true))
+  end
+
+  @doc """
+  Un-hides the calling NPC (rAthena `hideoffnpc`). Targets `ctx.npc_gid`;
+  valid on both an attached and a detached ctx. A ctx with no `npc_gid` logs
+  a warning and no-ops.
+
+  Restores visibility only if the NPC is also enabled — a disabled, hidden
+  NPC stays invisible after `hideoffnpc` until `enablenpc` runs too.
+  """
+  @spec hideoffnpc(Ctx.t()) :: Ctx.t()
+  def hideoffnpc(%Ctx{status: {:error, _}} = ctx), do: ctx
+  def hideoffnpc(%Ctx{npc_gid: nil} = ctx), do: warn_no_npc_gid(ctx, "hideoffnpc/1")
+
+  def hideoffnpc(%Ctx{npc_gid: gid} = ctx) do
+    NpcSession.set_hidden(gid, false)
+    ctx
+  end
+
+  @doc """
+  Un-hides every placement registered under `name` (rAthena
+  `hideoffnpc("Name")`). An unresolved name logs a warning and no-ops.
+  """
+  @spec hideoffnpc(Ctx.t(), String.t()) :: Ctx.t()
+  def hideoffnpc(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
+
+  def hideoffnpc(%Ctx{} = ctx, name) do
+    each_named(ctx, name, "hideoffnpc/2", &NpcSession.set_hidden(&1, false))
+  end
+
   @spec dispatch_doevent(Ctx.t(), String.t(), String.t()) :: Ctx.t()
   defp dispatch_doevent(ctx, name, label) do
     case NpcRegistry.by_name(name) do

@@ -22,8 +22,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Npc.Packets, as: NpcPackets
   alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
+  alias Aesir.ZoneServer.Npc.Session, as: NpcSession
   alias Aesir.ZoneServer.Npc.Shop
   alias Aesir.ZoneServer.Npc.Shops
   alias Aesir.ZoneServer.Npc.Warp
@@ -506,12 +508,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
     # Handle static NPC visibility — same model as warps: registered placements
     # are held statically (in `Npc.Registry`), not spatial-indexed, and diffed
-    # against `visible_npcs` by Manhattan distance vs `view_range`.
+    # against `visible_npcs` by Manhattan distance vs `view_range`. A disabled
+    # or hidden NPC (`Npc.Session.visible?/1`) is filtered out here, so the
+    # diff never sends a spawn for one and drops it from `visible_npcs` (as a
+    # vanish, if the player already had it visible) the moment it stops
+    # qualifying — the flag flip itself is broadcast immediately by
+    # `Npc.Session`, so a player standing still doesn't have to wait for this
+    # diff to notice.
     npcs_in_range =
       Enum.filter(NpcRegistry.entries(), fn {_module, placement} ->
         placement.map == game_state.map_name and
           manhattan(game_state.x, game_state.y, placement.x, placement.y) <=
-            game_state.view_range
+            game_state.view_range and
+          NpcSession.visible?(NpcRegistry.entity_id(placement))
       end)
 
     npcs_by_id =
@@ -743,41 +752,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   defp send_npc_spawn_packet_to(to_char_id, %Placement{} = placement) do
     case UnitRegistry.get_player_pid(to_char_id) do
       {:ok, to_pid} ->
-        npc_entity_id = NpcRegistry.entity_id(placement)
-
-        packet = %UnitSpawn{
-          object_type: ObjectType.npc(),
-          aid: npc_entity_id,
-          gid: npc_entity_id,
-          speed: 0,
-          body_state: 0,
-          health_state: 0,
-          effect_state: 0,
-          job: placement.sprite,
-          head: 0,
-          weapon: 0,
-          shield: 0,
-          accessory: 0,
-          accessory2: 0,
-          accessory3: 0,
-          head_palette: 0,
-          body_palette: 0,
-          head_dir: 0,
-          robe: 0,
-          guild_id: 0,
-          sex: 0,
-          x: placement.x,
-          y: placement.y,
-          dir: placement.dir,
-          clevel: 0,
-          max_hp: 0,
-          hp: 0,
-          is_boss: false,
-          name: placement.name,
-          moving: false
-        }
-
-        GenServer.cast(to_pid, {:send_packet, packet})
+        GenServer.cast(to_pid, {:send_packet, NpcPackets.spawn_packet(placement)})
 
       {:error, :not_found} ->
         :ok
@@ -787,12 +762,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   defp send_npc_vanish_packet_to(to_char_id, npc_entity_id) do
     case UnitRegistry.get_player_pid(to_char_id) do
       {:ok, to_pid} ->
-        vanish_packet = %UnitDespawn{
-          gid: npc_entity_id,
-          reason: DespawnReason.out_of_sight()
-        }
-
-        GenServer.cast(to_pid, {:send_packet, vanish_packet})
+        GenServer.cast(to_pid, {:send_packet, NpcPackets.vanish_packet(npc_entity_id)})
 
       {:error, :not_found} ->
         :ok

@@ -7,10 +7,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   is stored as the session's interaction lock. One dialog at a time: a click
   while a lock is held is ignored (matches the client), and dialog responses
   are only forwarded to the locked interaction.
+
+  A click on a bespoke NPC module gid that is currently disabled or hidden
+  (`Npc.Session.visible?/1`) starts no interaction: the movement diff already
+  keeps such an NPC off the client's screen, but this guards against a click
+  the client sent just before the vanish packet arrived.
   """
 
   alias Aesir.Net.NpcInteract
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
+  alias Aesir.ZoneServer.Npc.Session, as: NpcSession
   alias Aesir.ZoneServer.Npc.Shop.Registry, as: ShopRegistry
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Interaction
@@ -54,24 +60,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
 
   # Resolves the clicked gid to its bespoke NPC module and starts a supervised,
   # monitored interaction process, storing the lock. A gid that resolves to no
-  # NPC module is ignored. Reached only after the shop branch declines the gid.
+  # NPC module, or one that is currently disabled/hidden, is ignored. Reached
+  # only after the shop branch declines the gid.
   defp talk_to_npc(gid, game_state, state) do
-    case NpcRegistry.module_for_unit(gid) do
-      {:ok, {module, _placement}} ->
-        base_ctx =
-          Ctx.from_session(
-            %{game_state: game_state, connection_pid: state.connection_pid},
-            {:npc, module.npc_id()}
-          )
+    with {:ok, {module, _placement}} <- NpcRegistry.module_for_unit(gid),
+         true <- NpcSession.visible?(gid) do
+      base_ctx =
+        Ctx.from_session(
+          %{game_state: game_state, connection_pid: state.connection_pid},
+          {:npc, module.npc_id()}
+        )
 
-        base_ctx = %{base_ctx | npc_gid: gid}
-        {:ok, pid} = Interaction.start(self(), module, base_ctx)
-        ref = Process.monitor(pid)
+      base_ctx = %{base_ctx | npc_gid: gid}
+      {:ok, pid} = Interaction.start(self(), module, base_ctx)
+      ref = Process.monitor(pid)
 
-        {:noreply, %{state | interaction_lock: {pid, ref, gid}}}
-
-      :error ->
-        {:noreply, state}
+      {:noreply, %{state | interaction_lock: {pid, ref, gid}}}
+    else
+      _not_visible_or_no_module -> {:noreply, state}
     end
   end
 end

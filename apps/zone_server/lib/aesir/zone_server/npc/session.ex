@@ -36,20 +36,40 @@ defmodule Aesir.ZoneServer.Npc.Session do
   ## Flags
 
   `set_enabled/2` and `set_hidden/2` write this process's state and mirror it
-  to the public `:npc_session_flags` ETS table, so `enabled?/1` and
-  `hidden?/1` can read it lock-free with no GenServer call; a missing row
-  means enabled/not-hidden. The table is owned by
+  to the public `:npc_session_flags` ETS table, so `enabled?/1`, `hidden?/1`
+  and `visible?/1` can read it lock-free with no GenServer call; a missing row
+  means enabled/not-hidden (so visible). The table is owned by
   `Aesir.ZoneServer.Npc.SessionSupervisor`, not by any one session, so it
   survives a session crash. A session clears its own row on init and on
   terminate, so a crashed (and, under the dynamic supervisor, restarted)
   session resets to defaults.
+
+  An NPC is visible iff enabled and not hidden. When a `set_enabled/2` or
+  `set_hidden/2` call flips that effective visibility, this process
+  broadcasts the transition itself (`Npc.Packets.spawn_packet/1` on
+  invisible->visible, `vanish_packet/1` on visible->invisible) to every
+  player within `Config.view_range/0` of the placement, so a player standing
+  still sees the change without waiting for their next movement tick.
+
+  This broadcast never touches `PlayerState.visible_npcs` — that bookkeeping
+  is owned by each player's own session, not written here — so it cannot
+  desync it: a player's `visible_npcs` simply lags one flag flip behind until
+  their next movement tick. `MovementHandler.handle_visibility_update/1`
+  recomputes `visible_npcs` from scratch against this same flag filter every
+  time it runs, so it always catches up — at worst re-sending one redundant
+  spawn or vanish for the gid this broadcast already covered, never leaving
+  the player's state stuck out of sync with the flag.
   """
 
   use GenServer
   use TypedStruct
 
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Npc.Events
+  alias Aesir.ZoneServer.Npc.Packets, as: NpcPackets
+  alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
+  alias Aesir.ZoneServer.Unit.Broadcast
 
   @flags_table :npc_session_flags
   @interaction_supervisor Aesir.ZoneServer.Npc.InteractionSupervisor
@@ -168,6 +188,21 @@ defmodule Aesir.ZoneServer.Npc.Session do
   end
 
   @doc """
+  Reads the NPC's effective visibility directly from ETS, no GenServer call:
+  visible iff enabled and not hidden.
+
+  A single lookup rather than two `enabled?/1`/`hidden?/1` calls, so the
+  per-player movement diff and the click-gating check pay one ETS read each.
+  """
+  @spec visible?(non_neg_integer()) :: boolean()
+  def visible?(gid) do
+    case :ets.lookup(@flags_table, gid) do
+      [{^gid, enabled?, hidden?}] -> enabled? and not hidden?
+      [] -> true
+    end
+  end
+
+  @doc """
   Starts a session for `gid`.
 
   Accepts `:on_fire` (defaults to `Aesir.ZoneServer.Npc.Events.trigger_gid/2`,
@@ -245,12 +280,14 @@ defmodule Aesir.ZoneServer.Npc.Session do
   @impl GenServer
   def handle_call({:set_enabled, enabled?}, _from, state) do
     new_state = %{state | enabled?: enabled?} |> mirror_flags()
+    broadcast_visibility_transition(state, new_state)
     {:reply, :ok, new_state}
   end
 
   @impl GenServer
   def handle_call({:set_hidden, hidden?}, _from, state) do
     new_state = %{state | hidden?: hidden?} |> mirror_flags()
+    broadcast_visibility_transition(state, new_state)
     {:reply, :ok, new_state}
   end
 
@@ -352,4 +389,47 @@ defmodule Aesir.ZoneServer.Npc.Session do
 
   @spec clear_flags(non_neg_integer()) :: true
   defp clear_flags(gid), do: :ets.delete(@flags_table, gid)
+
+  # Broadcasts the immediate spawn/vanish delta when a flag change flips this
+  # NPC's effective visibility (see the moduledoc's "Flags" section). A
+  # change that doesn't flip visibility (e.g. hiding an already-disabled NPC)
+  # broadcasts nothing.
+  @spec broadcast_visibility_transition(t(), t()) :: :ok
+  defp broadcast_visibility_transition(old_state, new_state) do
+    case {effectively_visible?(old_state), effectively_visible?(new_state)} do
+      {true, false} -> broadcast_vanish(new_state.gid)
+      {false, true} -> broadcast_spawn(new_state.gid)
+      _unchanged -> :ok
+    end
+  end
+
+  @spec effectively_visible?(t()) :: boolean()
+  defp effectively_visible?(%{enabled?: enabled?, hidden?: hidden?}), do: enabled? and not hidden?
+
+  @spec broadcast_spawn(non_neg_integer()) :: :ok
+  defp broadcast_spawn(gid) do
+    with_placement(gid, fn placement ->
+      broadcast_to_range(placement, NpcPackets.spawn_packet(placement))
+    end)
+  end
+
+  @spec broadcast_vanish(non_neg_integer()) :: :ok
+  defp broadcast_vanish(gid) do
+    with_placement(gid, fn placement ->
+      broadcast_to_range(placement, NpcPackets.vanish_packet(gid))
+    end)
+  end
+
+  @spec broadcast_to_range(Placement.t(), struct()) :: :ok
+  defp broadcast_to_range(placement, packet) do
+    Broadcast.to_in_range(placement.map, placement.x, placement.y, Config.view_range(), packet)
+  end
+
+  @spec with_placement(non_neg_integer(), (Placement.t() -> :ok)) :: :ok
+  defp with_placement(gid, fun) do
+    case NpcRegistry.module_for_unit(gid) do
+      {:ok, {_module, placement}} -> fun.(placement)
+      :error -> :ok
+    end
+  end
 end
