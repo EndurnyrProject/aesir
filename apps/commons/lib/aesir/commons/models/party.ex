@@ -11,8 +11,8 @@ defmodule Aesir.Commons.Models.Party do
 
   @type t :: %__MODULE__{
           id: integer() | nil,
-          name: String.t(),
-          leader_char_id: integer(),
+          name: String.t() | nil,
+          leader_char_id: integer() | nil,
           exp_share: boolean(),
           inserted_at: NaiveDateTime.t() | nil,
           updated_at: NaiveDateTime.t() | nil
