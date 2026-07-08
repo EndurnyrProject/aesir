@@ -49,6 +49,7 @@ defmodule Aesir.ZoneServer.Unit.Stats do
     field :mres, non_neg_integer(), default: 0
     field :hplus, non_neg_integer(), default: 0
     field :crate, non_neg_integer(), default: 0
+    field :overrefine_band, non_neg_integer(), default: 0
   end
 
   typedstruct module: CurrentState do

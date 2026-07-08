@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
+  alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
@@ -514,7 +515,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       res: combat_modifier(stats, :res),
       mres: combat_modifier(stats, :mres),
       hplus: combat_modifier(stats, :hplus),
-      crate: combat_modifier(stats, :crate)
+      crate: combat_modifier(stats, :crate),
+      overrefine_band: get_equipment_modifier(stats, :overrefine_band)
     }
 
     %{stats | combat_stats: combat_stats}
@@ -777,39 +779,59 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   # (cards/armor enchants) stays a flat `matk` bonus. Bonus scripts and card
   # effects are intentionally out of scope here; that is the future
   # item-script engine's job. `aspd_rate` defaults to 100 (no modifier).
+  #
+  # Refined items additionally fold in `RefineDatabase.level_info/3` bonuses
+  # (rAthena status.cpp:3955-4096): weapon ATK/MATK, the overrefine band, and
+  # the wlv5/armor-lv2 trait riders accumulate alongside the flat bonuses.
+  # Armor refine DEF is summed raw into `refine_def` and folded into `def`
+  # once, after the reduce, per the rAthena `(refinedef+50)/100` rounding.
   defp calculate_equipment_bonuses(equipped_items) do
-    equipped_items
-    |> normalize_items()
-    |> Enum.reduce(
-      %{
-        atk: 0,
-        def: 0,
-        matk: 0,
-        wmatk_min: 0,
-        wmatk_max: 0,
-        aspd_rate: 100,
-        patk: 0,
-        smatk: 0,
-        res: 0,
-        mres: 0
-      },
-      fn item, acc ->
-        case ItemManagement.get_item_by_id(item.nameid) do
-          {:ok, %ItemDefinition{} = item_def} -> accumulate_item_bonus(acc, item_def)
-          _ -> acc
+    bonuses =
+      equipped_items
+      |> normalize_items()
+      |> Enum.reduce(
+        %{
+          atk: 0,
+          def: 0,
+          matk: 0,
+          wmatk_min: 0,
+          wmatk_max: 0,
+          aspd_rate: 100,
+          patk: 0,
+          smatk: 0,
+          res: 0,
+          mres: 0,
+          overrefine_band: 0,
+          refine_def: 0
+        },
+        fn item, acc ->
+          case ItemManagement.get_item_by_id(item.nameid) do
+            {:ok, %ItemDefinition{} = item_def} ->
+              accumulate_item_bonus(acc, item_def, item.refine)
+
+            _ ->
+              acc
+          end
         end
-      end
-    )
+      )
+
+    bonuses
+    |> Map.update!(:def, &(&1 + div(bonuses.refine_def + 50, 100)))
+    |> Map.delete(:refine_def)
   end
 
   # Weapon MATK variance, verified vs rAthena status.cpp:6306-6316:
   # `variance = weapon.matk * weapon.wlv / 10` (integer div), then
   # `matk_min += wMatk - variance; matk_max += wMatk + variance`.
-  defp accumulate_item_bonus(acc, %ItemDefinition{weapon_level: level, magic_attack: matk} = item)
+  defp accumulate_item_bonus(
+         acc,
+         %ItemDefinition{weapon_level: level, magic_attack: matk} = item,
+         refine
+       )
        when not is_nil(level) and matk > 0 do
     variance = div(matk * level, 10)
 
-    %{
+    acc = %{
       acc
       | atk: acc.atk + item.attack,
         def: acc.def + item.defense,
@@ -820,10 +842,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
         res: acc.res + item.res,
         mres: acc.mres + item.mres
     }
+
+    apply_refine_bonus(acc, item, refine)
   end
 
-  defp accumulate_item_bonus(acc, %ItemDefinition{} = item) do
-    %{
+  defp accumulate_item_bonus(acc, %ItemDefinition{} = item, refine) do
+    acc = %{
       acc
       | atk: acc.atk + item.attack,
         def: acc.def + item.defense,
@@ -833,5 +857,64 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
         res: acc.res + item.res,
         mres: acc.mres + item.mres
     }
+
+    apply_refine_bonus(acc, item, refine)
   end
+
+  defp apply_refine_bonus(acc, _item_def, refine) when refine <= 0, do: acc
+
+  defp apply_refine_bonus(
+         acc,
+         %ItemDefinition{type: :weapon, weapon_level: item_level} = item,
+         refine
+       ) do
+    case RefineDatabase.level_info(:weapon, item_level, refine) do
+      nil ->
+        acc
+
+      %{bonus: bonus, randombonus_max: randombonus_max} ->
+        acc
+        |> Map.put(:atk, acc.atk + div(bonus, 100))
+        |> apply_weapon_matk_refine(item.subtype, bonus)
+        |> Map.update!(:overrefine_band, &(&1 + div(randombonus_max, 100)))
+        |> apply_weapon_rider(item_level, refine)
+    end
+  end
+
+  defp apply_refine_bonus(acc, %ItemDefinition{type: :armor, armor_level: item_level}, refine) do
+    case RefineDatabase.level_info(:armor, item_level, refine) do
+      nil ->
+        acc
+
+      %{bonus: bonus} ->
+        acc
+        |> Map.update!(:refine_def, &(&1 + bonus))
+        |> apply_armor_rider(item_level, refine)
+    end
+  end
+
+  defp apply_refine_bonus(acc, %ItemDefinition{}, _refine), do: acc
+
+  # ponytail: enchantgrade multiplier deferred (roadmap SP-D - no grade-bonus
+  # system exists yet). rAthena applies
+  # `atk2/matk += (bonus/100 * enchantgrade_bonus)/100` (status.cpp:3961,3980);
+  # here the refine bonus is applied unmultiplied.
+  defp apply_weapon_matk_refine(acc, :bow, _bonus), do: acc
+
+  defp apply_weapon_matk_refine(acc, _subtype, bonus) do
+    matk_bonus = div(bonus, 100)
+    %{acc | wmatk_min: acc.wmatk_min + matk_bonus, wmatk_max: acc.wmatk_max + matk_bonus}
+  end
+
+  defp apply_weapon_rider(acc, 5, refine) do
+    %{acc | patk: acc.patk + refine * 2, smatk: acc.smatk + refine * 2}
+  end
+
+  defp apply_weapon_rider(acc, _item_level, _refine), do: acc
+
+  defp apply_armor_rider(acc, 2, refine) do
+    %{acc | res: acc.res + refine * 2, mres: acc.mres + refine * 2}
+  end
+
+  defp apply_armor_rider(acc, _item_level, _refine), do: acc
 end

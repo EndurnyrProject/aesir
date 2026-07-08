@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
 
@@ -40,6 +41,10 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
   defp equipped(nameid, equip) do
     %InventoryItem{nameid: nameid, amount: 1, equip: equip, identify: 1}
+  end
+
+  defp refined(nameid, equip, refine) do
+    %InventoryItem{nameid: nameid, amount: 1, equip: equip, identify: 1, refine: refine}
   end
 
   describe "from_character/1" do
@@ -833,6 +838,189 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert result.combat_stats.smatk == 8
       assert result.combat_stats.res == 13
       assert result.combat_stats.mres == 8
+    end
+  end
+
+  describe "equipment refine bonuses" do
+    # Goes through apply_equipment_modifiers + calculate_combat_stats directly
+    # (skipping calculate_derived_stats/ASPD, which needs a real job/weapon
+    # ASPD table entry irrelevant to refine bonuses, e.g. novice+bow has none).
+    defp with_equipped(item) do
+      swordman(%Equipment{}, %{})
+      |> Stats.apply_equipment_modifiers([item])
+      |> Stats.calculate_combat_stats()
+    end
+
+    test "a refined weapon adds bonus/100 atk and randombonus_max/100 overrefine band" do
+      weapon = %ItemDefinition{
+        id: 90_101,
+        aegis_name: "test_weapon",
+        name: "Test Weapon",
+        type: :weapon,
+        subtype: :one_handed_sword,
+        weapon_level: 4,
+        attack: 10
+      }
+
+      stub(ItemManagement, :get_item_by_id, fn 90_101 -> {:ok, weapon} end)
+
+      stub(RefineDatabase, :level_info, fn :weapon, 4, 7 ->
+        %{bonus: 700, randombonus_max: 300}
+      end)
+
+      item = refined(90_101, @right_hand, 7)
+      result = with_equipped(item)
+
+      # rAthena status.cpp:3956: atk2 += bonus/100 = 700/100 = 7, on top of the flat 10.
+      assert result.combat_stats.atk == 10 + 7
+      # randombonus_max/100 = 300/100 = 3.
+      assert result.combat_stats.overrefine_band == 3
+      # Non-bow refine MATK lands in both ends of the wmatk band.
+      assert result.modifiers.equipment.wmatk_min == 7
+      assert result.modifiers.equipment.wmatk_max == 7
+    end
+
+    test "a bow's refine adds atk but not matk" do
+      bow = %ItemDefinition{
+        id: 90_102,
+        aegis_name: "test_bow",
+        name: "Test Bow",
+        type: :weapon,
+        subtype: :bow,
+        weapon_level: 4
+      }
+
+      stub(ItemManagement, :get_item_by_id, fn 90_102 -> {:ok, bow} end)
+      stub(RefineDatabase, :level_info, fn :weapon, 4, 5 -> %{bonus: 500, randombonus_max: 0} end)
+
+      item = refined(90_102, @both_hand, 5)
+      result = with_equipped(item)
+
+      assert result.combat_stats.atk == 5
+      assert result.modifiers.equipment.wmatk_min == 0
+      assert result.modifiers.equipment.wmatk_max == 0
+    end
+
+    test "a refined armor adds (bonus+50)/100 def" do
+      armor = %ItemDefinition{
+        id: 90_103,
+        aegis_name: "test_armor",
+        name: "Test Armor",
+        type: :armor,
+        armor_level: 4,
+        defense: 5
+      }
+
+      stub(ItemManagement, :get_item_by_id, fn 90_103 -> {:ok, armor} end)
+      stub(RefineDatabase, :level_info, fn :armor, 4, 3 -> %{bonus: 250} end)
+
+      item = refined(90_103, @armor_pos, 3)
+      result = with_equipped(item)
+
+      # (refine_def + 50) / 100 = (250 + 50) / 100 = 3, on top of the flat 5.
+      assert result.combat_stats.def == 5 + 3
+      assert result.combat_stats.res == 0
+      assert result.combat_stats.mres == 0
+    end
+
+    test "a wlv5 weapon's refine grants patk/smatk riders" do
+      wlv5 = %ItemDefinition{
+        id: 90_104,
+        aegis_name: "test_wlv5",
+        name: "Test Wlv5",
+        type: :weapon,
+        subtype: :one_handed_sword,
+        weapon_level: 5
+      }
+
+      stub(ItemManagement, :get_item_by_id, fn 90_104 -> {:ok, wlv5} end)
+      stub(RefineDatabase, :level_info, fn :weapon, 5, 10 -> %{bonus: 0, randombonus_max: 0} end)
+
+      item = refined(90_104, @right_hand, 10)
+      result = with_equipped(item)
+
+      assert result.combat_stats.patk == 20
+      assert result.combat_stats.smatk == 20
+    end
+
+    test "a non-wlv5 weapon's refine grants no patk/smatk rider" do
+      wlv4 = %ItemDefinition{
+        id: 90_108,
+        aegis_name: "test_wlv4",
+        name: "Test Wlv4",
+        type: :weapon,
+        subtype: :one_handed_sword,
+        weapon_level: 4
+      }
+
+      stub(ItemManagement, :get_item_by_id, fn 90_108 -> {:ok, wlv4} end)
+      stub(RefineDatabase, :level_info, fn :weapon, 4, 10 -> %{bonus: 0, randombonus_max: 0} end)
+
+      item = refined(90_108, @right_hand, 10)
+      result = with_equipped(item)
+
+      assert result.combat_stats.patk == 0
+      assert result.combat_stats.smatk == 0
+    end
+
+    test "an armor-lv2 refine grants res/mres riders" do
+      armor2 = %ItemDefinition{
+        id: 90_105,
+        aegis_name: "test_armorlv2",
+        name: "Test Armor Lv2",
+        type: :armor,
+        armor_level: 2
+      }
+
+      stub(ItemManagement, :get_item_by_id, fn 90_105 -> {:ok, armor2} end)
+      stub(RefineDatabase, :level_info, fn :armor, 2, 10 -> %{bonus: 0} end)
+
+      item = refined(90_105, @armor_pos, 10)
+      result = with_equipped(item)
+
+      assert result.combat_stats.res == 20
+      assert result.combat_stats.mres == 20
+    end
+
+    test "refine == 0 adds no refine bonus" do
+      weapon = %ItemDefinition{
+        id: 90_106,
+        aegis_name: "test_unrefined",
+        name: "Test Unrefined",
+        type: :weapon,
+        subtype: :one_handed_sword,
+        weapon_level: 4,
+        attack: 10
+      }
+
+      stub(ItemManagement, :get_item_by_id, fn 90_106 -> {:ok, weapon} end)
+
+      item = refined(90_106, @right_hand, 0)
+      result = with_equipped(item)
+
+      assert result.combat_stats.atk == 10
+      assert result.combat_stats.overrefine_band == 0
+    end
+
+    test "a missing refine.yml entry adds no refine bonus" do
+      weapon = %ItemDefinition{
+        id: 90_107,
+        aegis_name: "test_nilinfo",
+        name: "Test Nil Info",
+        type: :weapon,
+        subtype: :one_handed_sword,
+        weapon_level: 4,
+        attack: 10
+      }
+
+      stub(ItemManagement, :get_item_by_id, fn 90_107 -> {:ok, weapon} end)
+      stub(RefineDatabase, :level_info, fn :weapon, 4, 7 -> nil end)
+
+      item = refined(90_107, @right_hand, 7)
+      result = with_equipped(item)
+
+      assert result.combat_stats.atk == 10
+      assert result.combat_stats.overrefine_band == 0
     end
   end
 
