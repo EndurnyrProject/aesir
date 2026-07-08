@@ -609,10 +609,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
         _, _ -> %{}
       end)
 
+      :rand.seed(:exsss, {1, 2, 3})
       assert {:ok, result_with_provoke} = DamageCalculator.calculate_damage(player, mob)
 
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
 
+      :rand.seed(:exsss, {1, 2, 3})
       assert {:ok, result_without_provoke} = DamageCalculator.calculate_damage(player, mob)
 
       assert result_with_provoke.damage > result_without_provoke.damage
