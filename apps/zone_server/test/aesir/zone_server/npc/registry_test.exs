@@ -5,6 +5,8 @@ defmodule Aesir.ZoneServer.Npc.RegistryTest do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Registry
+  alias Aesir.ZoneServer.Npc.Session
+  alias Aesir.ZoneServer.Npc.SessionDynamicSupervisor
   alias Aesir.ZoneServer.Npc.Verifier
 
   defmodule DiscoverableNpc do
@@ -100,6 +102,20 @@ defmodule Aesir.ZoneServer.Npc.RegistryTest do
 
       assert DiscoverableNpc in modules
       refute NotAnNpc in modules
+    end
+
+    test "terminates every running Npc.Session before rebuilding" do
+      {DiscoverableNpc, placement} = hd(Registry.entries())
+      gid = Registry.entity_id(placement)
+
+      pid = Session.ensure_started(gid)
+      ref = Process.monitor(pid)
+
+      Registry.reload([DiscoverableNpc, NotAnNpc])
+
+      assert_receive {:DOWN, ^ref, :process, ^pid, _reason}
+      assert DynamicSupervisor.which_children(SessionDynamicSupervisor) == []
+      assert Elixir.Registry.lookup(Aesir.ZoneServer.Npc.SessionRegistry, gid) == []
     end
   end
 

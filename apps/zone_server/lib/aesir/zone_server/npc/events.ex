@@ -10,6 +10,11 @@ defmodule Aesir.ZoneServer.Npc.Events do
   player, no session): each hit spawns its own supervised, unlinked task
   under `Aesir.ZoneServer.Npc.InteractionSupervisor`, so one handler crashing
   never takes another down, nor the caller that fired the event.
+
+  `run_on_init/1` is the boot-time (and `@reloadscript`-time) counterpart:
+  synchronous, so callers can await every `OnInit` handler before proceeding,
+  but still isolates each NPC's handler in its own detached task so one
+  crashing or hanging NPC cannot block or fail the others.
   """
 
   require Logger
@@ -19,6 +24,7 @@ defmodule Aesir.ZoneServer.Npc.Events do
   alias Aesir.ZoneServer.Script.Interaction
 
   @supervisor Aesir.ZoneServer.Npc.InteractionSupervisor
+  @on_init_timeout 5_000
 
   @doc """
   Targeted, detached event dispatch — what `donpcevent "Name::OnLabel"`
@@ -104,6 +110,32 @@ defmodule Aesir.ZoneServer.Npc.Events do
   end
 
   @doc """
+  Runs `on_event("OnInit", ctx)` once per placement declaring it, synchronously.
+
+  Meant to be called once at boot, right after the NPC registry loads, and
+  again by `@reloadscript` after `Registry.reload/1` — rAthena semantics.
+  Every gid in `Registry.gids_for_label("OnInit")` gets its own detached task
+  (the same isolated body `trigger_gid/2` uses), then this waits up to
+  `:timeout` (default #{@on_init_timeout}ms; a test seam, not a production
+  knob) total for all of them via `Task.yield_many/2`. A handler that raises
+  is logged and does not stop the others; a handler still running past the
+  timeout is logged as a straggler and killed. Always returns `:ok` so the
+  boot sequence proceeds regardless of outcome.
+  """
+  @spec run_on_init(keyword()) :: :ok
+  def run_on_init(opts \\ []) do
+    timeout = Keyword.get(opts, :timeout, @on_init_timeout)
+
+    "OnInit"
+    |> Registry.gids_for_label()
+    |> Enum.map(&start_on_init_task/1)
+    |> Enum.reject(&is_nil/1)
+    |> await_on_init(timeout)
+
+    :ok
+  end
+
+  @doc """
   Player-attached event dispatch (`OnTouch`, `doevent`, ...).
 
   Resolves `gid` to its NPC module and, when the module declares `label` in
@@ -159,6 +191,56 @@ defmodule Aesir.ZoneServer.Npc.Events do
 
         :ok
     end
+  end
+
+  @spec start_on_init_task(non_neg_integer()) :: {non_neg_integer(), Task.t()} | nil
+  defp start_on_init_task(gid) do
+    case Registry.module_for_unit(gid) do
+      {:ok, {module, _placement}} ->
+        task =
+          Task.Supervisor.async_nolink(@supervisor, fn -> run_detached(module, gid, "OnInit") end)
+
+        {gid, task}
+
+      :error ->
+        Logger.warning("npc OnInit: unresolved gid #{inspect(gid)}")
+        nil
+    end
+  end
+
+  @spec await_on_init([{non_neg_integer(), Task.t()}], timeout()) :: :ok
+  defp await_on_init(gid_tasks, timeout) do
+    gids_by_ref = Map.new(gid_tasks, fn {gid, task} -> {task.ref, gid} end)
+    tasks = Enum.map(gid_tasks, fn {_gid, task} -> task end)
+
+    tasks
+    |> Task.yield_many(timeout: timeout)
+    |> Enum.each(fn {task, result} ->
+      handle_on_init_result(gids_by_ref[task.ref], task, result, timeout)
+    end)
+
+    :ok
+  end
+
+  @spec handle_on_init_result(
+          non_neg_integer(),
+          Task.t(),
+          {:ok, any()} | {:exit, term()} | nil,
+          timeout()
+        ) :: :ok
+  defp handle_on_init_result(_gid, _task, {:ok, _result}, _timeout), do: :ok
+
+  defp handle_on_init_result(gid, _task, {:exit, reason}, _timeout) do
+    Logger.warning("npc OnInit: gid #{inspect(gid)} crashed: #{inspect(reason)}")
+  end
+
+  defp handle_on_init_result(gid, task, nil, timeout) do
+    Logger.warning(
+      "npc OnInit: gid #{inspect(gid)} did not finish within #{timeout}ms, abandoning"
+    )
+
+    Task.shutdown(task, :brutal_kill)
+    :ok
   end
 
   # Runs the handler with nothing swallowed: an exception, exit, or throw is

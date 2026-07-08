@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Npc.Registry do
   alias Aesir.ZoneServer.Npc.Placement
 
   @pt_key __MODULE__
+  @session_dynamic_supervisor Aesir.ZoneServer.Npc.SessionDynamicSupervisor
 
   # Reserved high gid range for static NPC entities, disjoint from every other
   # gid: mob `instance_id`s (2..1_999_999), player `character_id`s (low DB PKs),
@@ -81,12 +82,20 @@ defmodule Aesir.ZoneServer.Npc.Registry do
   Rebuilds the registry from the given modules (default: the `:zone_server`
   application's modules), keeping only those declaring the `Npc` behaviour.
 
-  Stores the fresh registry in `:persistent_term`, replacing any previous one,
-  and returns it. The `modules` argument is an injectable seam for tests, which
+  First terminates every running `Npc.Session`, matching rAthena's
+  `@reloadscript` behavior: a session surviving a reload could double-arm its
+  timer when `Events.run_on_init/0` re-runs `OnInit`, or keep stale
+  enabled/hidden flags for a placement that moved or disappeared. Stores the
+  fresh registry in `:persistent_term`, replacing any previous one, and
+  returns it. The `modules` argument is an injectable seam for tests, which
   pass their own in-file NPC modules.
+
+  Does **not** run `OnInit` itself — callers that want rAthena's full
+  `@reloadscript` semantics call `Events.run_on_init/0` afterwards.
   """
   @spec reload([module()]) :: registry()
   def reload(modules \\ default_app_modules()) do
+    terminate_sessions()
     registry = build(npc_modules(modules))
     :persistent_term.put(@pt_key, registry)
     registry
@@ -152,6 +161,27 @@ defmodule Aesir.ZoneServer.Npc.Registry do
   """
   @spec touch_rects(String.t()) :: [touch_rect()]
   def touch_rects(map), do: Map.get(registry().touch_rects, map, [])
+
+  # Guarded on the supervisor being started at all: many tests reload the
+  # registry standalone, without booting the NPC session tree.
+  @spec terminate_sessions() :: :ok
+  defp terminate_sessions do
+    case Process.whereis(@session_dynamic_supervisor) do
+      nil ->
+        :ok
+
+      supervisor ->
+        supervisor
+        |> DynamicSupervisor.which_children()
+        |> Enum.each(fn
+          {_id, child_pid, _type, _modules} when is_pid(child_pid) ->
+            DynamicSupervisor.terminate_child(supervisor, child_pid)
+
+          _not_a_pid ->
+            :ok
+        end)
+    end
+  end
 
   @spec registry() :: registry()
   defp registry do
