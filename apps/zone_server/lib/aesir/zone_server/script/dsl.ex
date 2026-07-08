@@ -14,6 +14,8 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     status.
   """
 
+  require Logger
+
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.NpcDialog
@@ -33,6 +35,9 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Npc.Events, as: NpcEvents
+  alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
+  alias Aesir.ZoneServer.Npc.Session, as: NpcSession
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Todo
   alias Aesir.ZoneServer.Unit.Inventory
@@ -715,6 +720,227 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   @spec openstorage(Ctx.t()) :: Ctx.t()
   def openstorage(%Ctx{status: {:error, _}} = ctx), do: ctx
   def openstorage(%Ctx{} = ctx), do: apply_op(ctx, {:openstorage})
+
+  @doc """
+  Fires `"Name::OnLabel"` as a detached, fire-and-forget event (rAthena
+  `donpcevent`). Delegates to `Npc.Events.trigger/1`: an unresolved name or
+  undeclared label logs a warning and no-ops. Returns `ctx` unchanged; valid
+  on both an attached and a detached ctx, since it touches no player state.
+  """
+  @spec donpcevent(Ctx.t(), String.t()) :: Ctx.t()
+  def donpcevent(%Ctx{status: {:error, _}} = ctx, _ref), do: ctx
+
+  def donpcevent(%Ctx{} = ctx, ref) do
+    NpcEvents.trigger(ref)
+    ctx
+  end
+
+  @doc """
+  Runs `"Name::OnLabel"` as a brand-new attached `Script.Interaction` for the
+  *current* player (rAthena `doevent`). Resolves `name` through
+  `Npc.Registry.by_name/1`; rAthena `doevent` targets exactly one NPC, so the
+  first placement registered under `name` is used, logging a warning if the
+  name maps to several. The new interaction's ctx is built fresh (own
+  page/vars, `npc_gid` set to the target) but shares the current player's
+  identity — char/account/connection/session — the same way a click builds
+  one (see `NpcInteractionHandler.handle_talk/2`).
+
+  Halts `{:error, :no_player}` on a detached ctx: there is no live player
+  session for the new interaction to attach to. Also halts `{:error,
+  :no_player}` when `ctx.session_pid` is `nil` even with `game_state` present
+  — an item-script ctx's shape (`Ctx.from_session/2` runs inline on the
+  session, never through a cross-process call) — since the new interaction
+  needs a real session pid to monitor; starting one against `nil` would
+  monitor nothing, never register as an interaction lock, and kill the
+  interaction on its first blocking dialog primitive. Mirrors `apply_op/2`'s
+  `session_pid` discriminator.
+
+  The spawned interaction is an independent coroutine from the one calling
+  `doevent`, not a subroutine: content should call `doevent` as its final
+  act, since interleaving dialog between the two would race the client.
+  """
+  @spec doevent(Ctx.t(), String.t()) :: Ctx.t()
+  def doevent(%Ctx{status: {:error, _}} = ctx, _ref), do: ctx
+  def doevent(%Ctx{game_state: nil} = ctx, _ref), do: Ctx.halt(ctx, :no_player)
+
+  def doevent(%Ctx{session_pid: nil} = ctx, _ref) do
+    Logger.warning("npc doevent: ctx has no session_pid, no-op")
+    Ctx.halt(ctx, :no_player)
+  end
+
+  def doevent(%Ctx{} = ctx, ref) do
+    case split_ref(ref) do
+      {:ok, name, label} ->
+        dispatch_doevent(ctx, name, label)
+
+      :error ->
+        Logger.warning("npc doevent: malformed ref #{inspect(ref)}")
+        ctx
+    end
+  end
+
+  @doc """
+  Arms the calling NPC's own timer, starting its session if needed (rAthena
+  `initnpctimer`). Targets `ctx.npc_gid`; valid on both an attached and a
+  detached ctx, since it mutates NPC state, not player state. A ctx with no
+  `npc_gid` (e.g. an item script) logs a warning and no-ops.
+  """
+  @spec initnpctimer(Ctx.t()) :: Ctx.t()
+  def initnpctimer(%Ctx{status: {:error, _}} = ctx), do: ctx
+  def initnpctimer(%Ctx{npc_gid: nil} = ctx), do: warn_no_npc_gid(ctx, "initnpctimer/1")
+
+  def initnpctimer(%Ctx{npc_gid: gid} = ctx) do
+    NpcSession.init_timer(gid)
+    ctx
+  end
+
+  @doc """
+  Arms the timer of every placement registered under `name` (rAthena
+  `initnpctimer("Name")`) — the per-placement timer model applies to every
+  duplicate sharing the name, not just the first. An unresolved name logs a
+  warning and no-ops.
+  """
+  @spec initnpctimer(Ctx.t(), String.t()) :: Ctx.t()
+  def initnpctimer(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
+
+  def initnpctimer(%Ctx{} = ctx, name) do
+    each_named(ctx, name, "initnpctimer/2", &NpcSession.init_timer/1)
+  end
+
+  @doc """
+  Cancels the calling NPC's own pending timer fire and freezes its elapsed
+  time (rAthena `stopnpctimer`). Targets `ctx.npc_gid`; valid on both an
+  attached and a detached ctx. A ctx with no `npc_gid` logs a warning and
+  no-ops.
+  """
+  @spec stopnpctimer(Ctx.t()) :: Ctx.t()
+  def stopnpctimer(%Ctx{status: {:error, _}} = ctx), do: ctx
+  def stopnpctimer(%Ctx{npc_gid: nil} = ctx), do: warn_no_npc_gid(ctx, "stopnpctimer/1")
+
+  def stopnpctimer(%Ctx{npc_gid: gid} = ctx) do
+    NpcSession.stop_timer(gid)
+    ctx
+  end
+
+  @doc """
+  Cancels the pending timer fire of every placement registered under `name`
+  (rAthena `stopnpctimer("Name")`). An unresolved name logs a warning and
+  no-ops.
+  """
+  @spec stopnpctimer(Ctx.t(), String.t()) :: Ctx.t()
+  def stopnpctimer(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
+
+  def stopnpctimer(%Ctx{} = ctx, name) do
+    each_named(ctx, name, "stopnpctimer/2", &NpcSession.stop_timer/1)
+  end
+
+  @doc """
+  Reads the calling NPC's own timer's elapsed milliseconds (rAthena
+  `getnpctimer`). Targets `ctx.npc_gid`; a pure read that ignores
+  `ctx.status` and does not raise on a detached ctx, since npc timer state
+  is not player state. A ctx with no `npc_gid` logs a warning and returns `0`.
+  """
+  @spec getnpctimer(Ctx.t()) :: non_neg_integer()
+  def getnpctimer(%Ctx{npc_gid: nil} = ctx) do
+    warn_no_npc_gid(ctx, "getnpctimer/1")
+    0
+  end
+
+  def getnpctimer(%Ctx{npc_gid: gid}), do: NpcSession.get_timer(gid)
+
+  @doc """
+  Reads the timer of the first placement registered under `name` (rAthena
+  `getnpctimer("Name")`), logging a warning if `name` maps to several
+  (same per-placement timer model as `initnpctimer/2`). An unresolved name
+  logs a warning and returns `0`.
+  """
+  @spec getnpctimer(Ctx.t(), String.t()) :: non_neg_integer()
+  def getnpctimer(%Ctx{}, name) do
+    case NpcRegistry.by_name(name) do
+      [] ->
+        Logger.warning("npc getnpctimer/2: unknown name #{inspect(name)}")
+        0
+
+      [{_module, placement} | _rest] = entries ->
+        warn_if_ambiguous(entries, name, "getnpctimer/2")
+        NpcSession.get_timer(NpcRegistry.entity_id(placement))
+    end
+  end
+
+  @spec dispatch_doevent(Ctx.t(), String.t(), String.t()) :: Ctx.t()
+  defp dispatch_doevent(ctx, name, label) do
+    case NpcRegistry.by_name(name) do
+      [] ->
+        Logger.warning("npc doevent: unknown name #{inspect(name)}")
+        ctx
+
+      [{module, placement} | _rest] = entries ->
+        warn_if_ambiguous(entries, name, "doevent/2")
+        gid = NpcRegistry.entity_id(placement)
+        start_attached_event(ctx, module, gid, label, name)
+        ctx
+    end
+  end
+
+  @spec start_attached_event(Ctx.t(), module(), non_neg_integer(), String.t(), String.t()) :: :ok
+  defp start_attached_event(ctx, module, gid, label, name) do
+    target_ctx = build_event_ctx(ctx, module, gid)
+
+    case NpcEvents.trigger_attached(gid, label, target_ctx, ctx.session_pid) do
+      {:ok, _pid} ->
+        :ok
+
+      {:error, reason} ->
+        Logger.warning("npc doevent: #{inspect(name)} #{inspect(reason)} for #{inspect(label)}")
+    end
+  end
+
+  @spec build_event_ctx(Ctx.t(), module(), non_neg_integer()) :: Ctx.t()
+  defp build_event_ctx(%Ctx{} = ctx, module, gid) do
+    base_ctx =
+      Ctx.from_session(
+        %{game_state: ctx.game_state, connection_pid: ctx.connection_pid},
+        {:npc, module.npc_id()}
+      )
+
+    %{base_ctx | npc_gid: gid}
+  end
+
+  @spec split_ref(String.t()) :: {:ok, String.t(), String.t()} | :error
+  defp split_ref(ref) do
+    case String.split(ref, "::", parts: 2) do
+      [name, label] -> {:ok, name, label}
+      _malformed -> :error
+    end
+  end
+
+  @spec each_named(Ctx.t(), String.t(), String.t(), (non_neg_integer() -> any())) :: Ctx.t()
+  defp each_named(ctx, name, op, fun) do
+    case NpcRegistry.by_name(name) do
+      [] ->
+        Logger.warning("npc #{op}: unknown name #{inspect(name)}")
+
+      entries ->
+        Enum.each(entries, fn {_module, placement} -> fun.(NpcRegistry.entity_id(placement)) end)
+    end
+
+    ctx
+  end
+
+  @spec warn_if_ambiguous([NpcRegistry.entry()], String.t(), String.t()) :: :ok
+  defp warn_if_ambiguous([_single], _name, _op), do: :ok
+
+  defp warn_if_ambiguous(entries, name, op) do
+    Logger.warning(
+      "npc #{op}: #{inspect(name)} maps to #{length(entries)} placements, using the first"
+    )
+  end
+
+  @spec warn_no_npc_gid(Ctx.t(), String.t()) :: Ctx.t()
+  defp warn_no_npc_gid(ctx, op) do
+    Logger.warning("npc #{op}: ctx has no npc_gid, no-op")
+    ctx
+  end
 
   # Raises for a read op called on a detached ctx (no player attached). Reads
   # return bare values, not a Ctx, so they cannot carry a `{:error, :no_player}`
