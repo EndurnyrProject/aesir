@@ -41,28 +41,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   end
 
   @doc """
-  Forwards the player's response to the pending NpcDialog to the locked
-  interaction process. Dropped when no dialog is active or the response
-  carries a different npc_id than the active interaction.
+  Resolves `gid` to its bespoke NPC module and starts a supervised, monitored
+  interaction process, storing the lock. A gid that resolves to no NPC
+  module, or one that is currently disabled/hidden, is a no-op.
+
+  Public so `MovementHandler`'s `OnTouch` fallback (a trigger area whose
+  module declares no `OnTouch` label — rAthena warper behavior) can start the
+  same `on_talk/1` interaction the click path does, without duplicating this
+  resolution/visibility/lock logic.
   """
-  @spec handle_interact(NpcInteract.t(), map()) :: {:noreply, map()}
-  def handle_interact(
-        %NpcInteract{npc_id: gid} = msg,
-        %{interaction_lock: {pid, _ref, gid}} = state
-      ) do
-    send(pid, {:npc_interact, msg})
-    {:noreply, state}
-  end
-
-  def handle_interact(%NpcInteract{}, state) do
-    {:noreply, state}
-  end
-
-  # Resolves the clicked gid to its bespoke NPC module and starts a supervised,
-  # monitored interaction process, storing the lock. A gid that resolves to no
-  # NPC module, or one that is currently disabled/hidden, is ignored. Reached
-  # only after the shop branch declines the gid.
-  defp talk_to_npc(gid, game_state, state) do
+  @spec talk_to_npc(non_neg_integer(), map(), map()) :: {:noreply, map()}
+  def talk_to_npc(gid, game_state, state) do
     with {:ok, {module, _placement}} <- NpcRegistry.module_for_unit(gid),
          true <- NpcSession.visible?(gid) do
       base_ctx =
@@ -79,5 +68,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
     else
       _not_visible_or_no_module -> {:noreply, state}
     end
+  end
+
+  @doc """
+  Forwards the player's response to the pending NpcDialog to the locked
+  interaction process. Dropped when no dialog is active or the response
+  carries a different npc_id than the active interaction.
+  """
+  @spec handle_interact(NpcInteract.t(), map()) :: {:noreply, map()}
+  def handle_interact(
+        %NpcInteract{npc_id: gid} = msg,
+        %{interaction_lock: {pid, _ref, gid}} = state
+      ) do
+    send(pid, {:npc_interact, msg})
+    {:noreply, state}
+  end
+
+  def handle_interact(%NpcInteract{}, state) do
+    {:noreply, state}
   end
 end
