@@ -48,7 +48,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOps do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
 
-  @max_refine 20
+  @max_refine RefineDatabase.max_refine()
   @ore_amount 1
   @blessing_aegis "Blacksmith_Blessing"
 
@@ -167,17 +167,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOps do
 
   @spec group_and_level(ItemDefinition.t()) ::
           {:ok, RefineDatabase.group(), integer()} | {:error, :not_refinable}
-  defp group_and_level(%ItemDefinition{type: :weapon, weapon_level: level})
-       when is_integer(level) do
-    {:ok, :weapon, level}
+  defp group_and_level(item_def) do
+    case RefineDatabase.group_and_level(item_def) do
+      {:ok, group, level} -> {:ok, group, level}
+      :error -> {:error, :not_refinable}
+    end
   end
-
-  defp group_and_level(%ItemDefinition{type: :armor, armor_level: level})
-       when is_integer(level) do
-    {:ok, :armor, level}
-  end
-
-  defp group_and_level(%ItemDefinition{}), do: {:error, :not_refinable}
 
   @spec fetch_level_info(RefineDatabase.group(), integer(), integer()) ::
           {:ok, RefineDatabase.level_info()} | {:error, :not_refinable}

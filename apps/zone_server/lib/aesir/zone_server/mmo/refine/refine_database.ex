@@ -17,9 +17,14 @@ defmodule Aesir.ZoneServer.Mmo.Refine.RefineDatabase do
 
   require Logger
 
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
 
   @pt_key __MODULE__
+
+  # Renewal MAX_REFINE (`+20`); the single source of truth every consumer
+  # (`RefineOps`, the DSL read ops, the stat layer) reads through `max_refine/0`.
+  @max_refine 20
 
   @typedoc "Refine table group, derived from item type + weapon/armor level."
   @type group :: :armor | :weapon | :shadow_armor | :shadow_weapon
@@ -57,6 +62,30 @@ defmodule Aesir.ZoneServer.Mmo.Refine.RefineDatabase do
   def level_info(group, item_level, yml_level) do
     Map.get(index(), {group, item_level, yml_level})
   end
+
+  @doc "Renewal `MAX_REFINE` (`+20`), the refine level cap."
+  @spec max_refine() :: 20
+  def max_refine, do: @max_refine
+
+  @doc """
+  Resolves an item definition's refine group and item level: a weapon reads
+  `weapon_level` into group `:weapon`, an armor reads `armor_level` into group
+  `:armor`. `:error` for any other item type, or a weapon/armor missing its
+  level field. Shared by every caller that needs to key `level_info/3`
+  (`RefineOps`, the DSL read ops).
+  """
+  @spec group_and_level(ItemDefinition.t()) :: {:ok, group(), integer()} | :error
+  def group_and_level(%ItemDefinition{type: :weapon, weapon_level: level})
+      when is_integer(level) do
+    {:ok, :weapon, level}
+  end
+
+  def group_and_level(%ItemDefinition{type: :armor, armor_level: level})
+      when is_integer(level) do
+    {:ok, :armor, level}
+  end
+
+  def group_and_level(%ItemDefinition{}), do: :error
 
   @doc """
   Rebuilds the cached index after editing `refine.yml` in a running session.

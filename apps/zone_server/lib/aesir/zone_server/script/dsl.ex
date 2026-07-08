@@ -22,9 +22,12 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.MobManagement
+  alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
   alias Aesir.ZoneServer.Mmo.Skill.Learned
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Script.Todo
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight
+  alias Aesir.ZoneServer.Unit.Player.Handlers.RefineOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.StatusSync
 
@@ -42,6 +46,26 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
   @typedoc "The dialog frame kind, mirroring the `NpcDialog.Expect` proto enum."
   @type expect :: :NEXT | :MENU | :INPUT_INT | :INPUT_STR | :CLOSE
+
+  @typedoc "One inventory item's refine state and eligibility, from `refine_targets/1`."
+  @type refine_target :: %{
+          index: non_neg_integer(),
+          nameid: integer(),
+          name: String.t(),
+          refine: non_neg_integer(),
+          refinable?: boolean()
+        }
+
+  @typedoc "The ore/zeny/blessing cost of one refine attempt, from `refine_cost/3`."
+  @type refine_cost :: %{
+          ore_nameid: integer() | nil,
+          ore_amount: non_neg_integer(),
+          zeny: non_neg_integer(),
+          blessing_amount: non_neg_integer()
+        }
+
+  @max_refine RefineDatabase.max_refine()
+  @refine_ore_amount 1
 
   # Idle deadline for a blocking dialog suspension. The client freezes the
   # player during a dialog, so a `receive` that never returns means the player
@@ -378,6 +402,156 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   """
   @spec count_item(Ctx.t(), integer()) :: non_neg_integer()
   def count_item(%Ctx{game_state: gs}, item_id), do: Inventory.held_amount(gs.inventory, item_id)
+
+  @doc """
+  Lists every refinable equip in inventory with its current refine state. Pure
+  read over `ctx.game_state` + `RefineDatabase`; no session round-trip.
+  """
+  @spec refine_targets(Ctx.t()) :: [refine_target()]
+  def refine_targets(%Ctx{game_state: gs}) do
+    gs.inventory
+    |> Enum.flat_map(&to_refine_target/1)
+    |> Enum.sort_by(& &1.index)
+  end
+
+  @spec to_refine_target({non_neg_integer(), InventoryItem.t()}) :: [refine_target()]
+  defp to_refine_target({index, %InventoryItem{nameid: nameid, refine: refine} = item}) do
+    case ItemManagement.get_item_by_id(nameid) do
+      {:ok, %ItemDefinition{refineable: true, name: name} = item_def} ->
+        [
+          %{
+            index: index,
+            nameid: nameid,
+            name: name,
+            refine: refine,
+            refinable?: refine_eligible?(item, item_def)
+          }
+        ]
+
+      _not_refinable ->
+        []
+    end
+  end
+
+  @doc """
+  Whether the inventory item at `index` is currently refinable (a refineable
+  item type, below `MAX_REFINE`). Pure read; `false` for a missing index.
+  """
+  @spec refinable?(Ctx.t(), non_neg_integer()) :: boolean()
+  def refinable?(%Ctx{game_state: gs}, index) do
+    case Map.get(gs.inventory, index) do
+      %InventoryItem{nameid: nameid} = item ->
+        case ItemManagement.get_item_by_id(nameid) do
+          {:ok, item_def} -> refine_eligible?(item, item_def)
+          {:error, _reason} -> false
+        end
+
+      nil ->
+        false
+    end
+  end
+
+  @doc """
+  The success rate, as a display-friendly `0..100` percent, of refining the
+  item at `index` with `cost_type` — the yml `Rate/100` for the attempt going
+  `refine -> refine + 1`. Pure read. `0` when the item is not currently
+  refinable or `cost_type` has no entry at this level.
+  """
+  @spec refine_rate(Ctx.t(), non_neg_integer(), RefineDatabase.cost_type()) :: 0..100
+  def refine_rate(%Ctx{} = ctx, index, cost_type) do
+    case fetch_process(ctx, index, cost_type) do
+      {:ok, _level_info, chance} -> div(chance.rate, 100)
+      :error -> 0
+    end
+  end
+
+  @doc """
+  The ore/zeny/blessing cost of attempting to refine the item at `index` with
+  `cost_type`. Pure read; an ineligible item or missing process data returns an
+  all-zero cost with a `nil` ore.
+  """
+  @spec refine_cost(Ctx.t(), non_neg_integer(), RefineDatabase.cost_type()) :: refine_cost()
+  def refine_cost(%Ctx{} = ctx, index, cost_type) do
+    case fetch_process(ctx, index, cost_type) do
+      {:ok, level_info, chance} ->
+        %{
+          ore_nameid: chance.material_nameid,
+          ore_amount: @refine_ore_amount,
+          zeny: chance.price,
+          blessing_amount: level_info.blessing_amount
+        }
+
+      :error ->
+        %{ore_nameid: nil, ore_amount: 0, zeny: 0, blessing_amount: 0}
+    end
+  end
+
+  @doc """
+  Attempts to refine the item at inventory `index` using `cost_type` through
+  the session seam (ore + zeny, and a Blacksmith Blessing when `use_blessing?`
+  is requested and available). Unlike other effect ops, returns the tagged
+  `RefineOps` outcome directly instead of folding an updated `ctx` — the script
+  branches on the result to drive the rest of the dialog.
+
+  The expected `nameid` at `index` is captured here and threaded into the op as
+  a TOCTOU guard: `RefineOps` re-reads the item under the single-writer and
+  rejects with `{:error, :no_item}` if the slot changed since the script chose
+  it (e.g. from `refine_targets/1`). A missing item at `index` is rejected the
+  same way without a session round-trip.
+
+  ponytail: because this returns the tagged result instead of an updated
+  `ctx`, a script that keeps dialoging after a successful refine (`mes`/`next`)
+  sees the pre-refine `ctx.game_state` (stale zeny/inventory/refine level) —
+  fine for branching on the outcome, not fine for a follow-up line that reads
+  those values. A real refine NPC will need a refreshed `ctx`; add one if/when
+  that NPC is written (Task 10 or later).
+  """
+  @spec refine(Ctx.t(), non_neg_integer(), RefineDatabase.cost_type(), boolean()) ::
+          RefineOps.result()
+  def refine(ctx, index, cost_type, use_blessing? \\ false)
+
+  def refine(%Ctx{status: {:error, reason}}, _index, _cost_type, _use_blessing?),
+    do: {:error, reason}
+
+  def refine(%Ctx{game_state: gs, session_pid: session_pid}, index, cost_type, use_blessing?) do
+    case Map.get(gs.inventory, index) do
+      %InventoryItem{nameid: nameid} ->
+        GenServer.call(
+          session_pid,
+          {:script_apply, {:refine, index, nameid, cost_type, use_blessing?}}
+        )
+
+      nil ->
+        {:error, :no_item}
+    end
+  end
+
+  @spec refine_eligible?(InventoryItem.t(), ItemDefinition.t()) :: boolean()
+  defp refine_eligible?(
+         %InventoryItem{refine: refine},
+         %ItemDefinition{refineable: true} = item_def
+       ) do
+    refine < @max_refine and
+      match?({:ok, _group, _item_level}, RefineDatabase.group_and_level(item_def))
+  end
+
+  defp refine_eligible?(%InventoryItem{}, %ItemDefinition{}), do: false
+
+  @spec fetch_process(Ctx.t(), non_neg_integer(), RefineDatabase.cost_type()) ::
+          {:ok, RefineDatabase.level_info(), RefineDatabase.chance()} | :error
+  defp fetch_process(%Ctx{game_state: gs}, index, cost_type) do
+    with %InventoryItem{} = item <- Map.get(gs.inventory, index),
+         {:ok, item_def} <- ItemManagement.get_item_by_id(item.nameid),
+         true <- refine_eligible?(item, item_def),
+         {:ok, group, item_level} <- RefineDatabase.group_and_level(item_def),
+         level_info when not is_nil(level_info) <-
+           RefineDatabase.level_info(group, item_level, item.refine + 1),
+         {:ok, chance} <- Map.fetch(level_info.chances, cost_type) do
+      {:ok, level_info, chance}
+    else
+      _not_refinable -> :error
+    end
+  end
 
   @doc """
   Reads the permanent char variable `key`, defaulting an unset var to `default`

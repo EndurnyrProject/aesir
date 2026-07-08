@@ -753,12 +753,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @impl true
   def handle_call({:script_apply, op}, _from, state) do
-    case ScriptEffectHandler.apply_op(op, state) do
-      {{:ok, game_state} = reply, new_state} ->
-        {:reply, reply, update_game_state(new_state, game_state)}
+    {reply, new_state} = ScriptEffectHandler.apply_op(op, state)
 
-      {{:error, _reason} = reply, new_state} ->
+    case reply do
+      {:error, _reason} ->
         {:reply, reply, new_state}
+
+      _ok_reply ->
+        {:reply, reply, update_game_state(new_state, new_state.game_state)}
     end
   end
 

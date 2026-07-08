@@ -14,13 +14,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   any error the session state is returned untouched.
   """
 
+  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.StatusParams
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.RefineOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -36,10 +39,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:change_job, non_neg_integer()}
           | {:set_save_point, String.t(), non_neg_integer(), non_neg_integer()}
           | {:openstorage}
+          | {:refine, non_neg_integer(), integer(), RefineDatabase.cost_type(), boolean()}
 
   @max_zeny 1_000_000_000
 
-  @type reply :: {:ok, PlayerState.t()} | {:error, term()}
+  @type reply :: {:ok, PlayerState.t()} | RefineOps.result() | {:error, term()}
   @type state :: %{
           required(:connection_pid) => pid(),
           required(:game_state) => PlayerState.t(),
@@ -139,6 +143,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     {{:ok, new_state.game_state}, new_state}
   end
 
+  # ponytail: only the owner's inventory view is re-sent here (design step 5).
+  # Design step 4's own-client stat-param push after an equipped-item refine
+  # is deferred — RefineOps already recalculates `new_gs.stats` server-side and
+  # the registry sync below keeps other players' view of this unit correct;
+  # only the owning client's own StatusParams push (str/def/atk/etc.) is
+  # missing. Add a StatusSync push here (mirroring `apply_heal/3` in `Dsl`) if
+  # a real refine NPC needs the owner's stat window to update live.
+  def apply_op({:refine, index, nameid, cost_type, use_blessing?}, %{game_state: gs} = state) do
+    {new_gs, result} = RefineOps.apply(gs, index, nameid, cost_type, use_blessing?)
+    push_refine_view(state.connection_pid, new_gs, index, result)
+    {result, %{state | game_state: new_gs}}
+  end
+
   @spec commit(state(), PlayerState.t()) :: {reply(), state()}
   defp commit(state, new_gs), do: {{:ok, new_gs}, %{state | game_state: new_gs}}
 
@@ -155,6 +172,33 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
       item = PlayerState.get_by_index(inventory, index)
       MessageRouter.send_to(connection_pid, InventoryView.item_added(item, index))
     end)
+  end
+
+  # Re-sends the owner's item view for the touched refine index (design step
+  # 5): the new +N on success/downgrade, the removal on break; nothing on a
+  # plain/blessing-protected fail or a rejected attempt (nothing changed).
+  @spec push_refine_view(pid(), PlayerState.t(), non_neg_integer(), RefineOps.result()) :: :ok
+  defp push_refine_view(connection_pid, new_gs, index, {:ok, :success, _new_level}),
+    do: push_refined_item(connection_pid, new_gs, index)
+
+  defp push_refine_view(connection_pid, new_gs, index, {:ok, :downgrade, _new_level}),
+    do: push_refined_item(connection_pid, new_gs, index)
+
+  defp push_refine_view(connection_pid, _new_gs, index, {:ok, :broke}),
+    do: MessageRouter.send_to(connection_pid, InventoryView.item_removed(index, 1))
+
+  defp push_refine_view(_connection_pid, _new_gs, _index, {:ok, :fail}), do: :ok
+  defp push_refine_view(_connection_pid, _new_gs, _index, {:error, _reason}), do: :ok
+
+  @spec push_refined_item(pid(), PlayerState.t(), non_neg_integer()) :: :ok
+  defp push_refined_item(connection_pid, new_gs, index) do
+    case Map.get(new_gs.inventory, index) do
+      %InventoryItem{} = item ->
+        MessageRouter.send_to(connection_pid, InventoryView.item_added(item, index))
+
+      nil ->
+        :ok
+    end
   end
 
   defp affected_indices({:added, index, _item}), do: [index]
