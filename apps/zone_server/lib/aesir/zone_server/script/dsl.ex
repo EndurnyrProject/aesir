@@ -18,9 +18,11 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.StatusParams
+  alias Aesir.Net.ChatMessage
   alias Aesir.Net.NpcDialog
   alias Aesir.Net.NpcInteract
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
@@ -40,6 +42,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Npc.Session, as: NpcSession
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Todo
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.Handlers.RefineOps
@@ -864,6 +867,50 @@ defmodule Aesir.ZoneServer.Script.Dsl do
       [{_module, placement} | _rest] = entries ->
         warn_if_ambiguous(entries, name, "getnpctimer/2")
         NpcSession.get_timer(NpcRegistry.entity_id(placement))
+    end
+  end
+
+  @doc """
+  Broadcasts overhead chat from the NPC to every player within view range of
+  its placement (rAthena `npctalk`). Resolves the NPC's map/x/y through
+  `Npc.Registry.module_for_unit/1` — the NPC's own placement, not any
+  player's position — so this behaves identically whether `ctx` is attached
+  or detached; it mutates no player state.
+
+  Unlike player chat (`ChatHandler`), where the client already typed the
+  `"Name : text"` prefix into the wire message before the server ever sees
+  it, an NPC has no client-typed input to echo, and the client does not
+  render a display name from `gid` on its own. The `"Name : text"` prefix
+  (rAthena's overhead-chat format) is therefore built here from the
+  placement's `name`, matching what the client already expects to display
+  verbatim for a `ChatMessage`.
+
+  A ctx with no `npc_gid` (e.g. an item script), or a `npc_gid` that does not
+  resolve to a registered placement, logs a warning and no-ops. Always
+  returns `ctx`.
+  """
+  @spec npctalk(Ctx.t(), String.t()) :: Ctx.t()
+  def npctalk(%Ctx{status: {:error, _}} = ctx, _text), do: ctx
+  def npctalk(%Ctx{npc_gid: nil} = ctx, _text), do: warn_no_npc_gid(ctx, "npctalk/2")
+
+  def npctalk(%Ctx{npc_gid: gid} = ctx, text) do
+    case NpcRegistry.module_for_unit(gid) do
+      {:ok, {_module, placement}} ->
+        packet = %ChatMessage{gid: gid, message: "#{placement.name} : #{text}"}
+
+        Broadcast.to_in_range(
+          placement.map,
+          placement.x,
+          placement.y,
+          Config.view_range(),
+          packet
+        )
+
+        ctx
+
+      :error ->
+        Logger.warning("npc npctalk/2: gid #{gid} not registered, no-op")
+        ctx
     end
   end
 
