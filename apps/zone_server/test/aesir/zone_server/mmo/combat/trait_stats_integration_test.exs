@@ -133,8 +133,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TraitStatsIntegrationTest do
 
       assert geared_attacker.combat_stats.patk == bare_attacker.combat_stats.patk + @weapon_patk
 
+      # Seed identically before each call so the weapon-ATK variance band (renewal 80-120%)
+      # is the same for both, isolating the P.Atk difference under test.
+      :rand.seed(:exsss, {1, 2, 3})
+
       {:ok, bare_result} =
         DamageCalculator.calculate_damage(bare_attacker, defender, skip_crit: true)
+
+      :rand.seed(:exsss, {1, 2, 3})
 
       {:ok, geared_result} =
         DamageCalculator.calculate_damage(geared_attacker, defender, skip_crit: true)
@@ -159,8 +165,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TraitStatsIntegrationTest do
 
       assert geared_defender.combat_stats.res == bare_defender.combat_stats.res + @armor_res
 
+      # Seed identically before each call so the attacker's weapon-ATK variance is the same
+      # for both, isolating the defender Res reduction under test.
+      :rand.seed(:exsss, {1, 2, 3})
+
       {:ok, bare_result} =
         DamageCalculator.calculate_damage(attacker, bare_defender, skip_crit: true)
+
+      :rand.seed(:exsss, {1, 2, 3})
 
       {:ok, geared_result} =
         DamageCalculator.calculate_damage(attacker, geared_defender, skip_crit: true)
