@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOpsTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.InterServer.PubSub
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
@@ -19,6 +20,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOpsTest do
   @phracon 1010
   # HD_Oridecon: the weapon-lv1 "hd" ore (refine.yml).
   @hd_oridecon 6240
+  # Bradium: the weapon-lv1 "normal" ore at yml Level 13, the first weapon-lv1
+  # refine level with broadcast_success/broadcast_failure set.
+  @bradium 6224
   # Blacksmith Blessing: fixed protection item across all levels.
   @blessing 6635
   # A plain non-equipment item: not refineable.
@@ -294,6 +298,76 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOpsTest do
 
       assert {^state, {:error, :no_blessing}} =
                RefineOps.apply(state, index, @sword, :normal, true)
+    end
+  end
+
+  describe "apply/6 - server-wide broadcast" do
+    setup do
+      PubSub.subscribe_to_announcements()
+      :ok
+    end
+
+    test "publishes one server_announce on a flagged broadcast_success outcome", %{
+      character: char,
+      stats: stats
+    } do
+      seed_inv(char.id, @sword, 1, %{refine: 12})
+      seed_inv(char.id, @bradium, 1)
+
+      inventory = inv_map(char.id)
+      index = index_of(inventory, @sword)
+      state = build_state(char, stats, inventory)
+
+      {_new_state, result} =
+        RefineOps.apply(state, index, @sword, :normal, false, success_roll: 0, break_roll: 9999)
+
+      assert result == {:ok, :success, 13}
+
+      assert_receive {:server_announce, event}, 1000
+      assert event.message == %{nameid: @sword, refine: 13}
+      refute_receive {:server_announce, _other}, 200
+    end
+
+    test "publishes one server_announce on a flagged broadcast_failure break outcome", %{
+      character: char,
+      stats: stats
+    } do
+      seed_inv(char.id, @sword, 1, %{refine: 12})
+      seed_inv(char.id, @bradium, 1)
+
+      inventory = inv_map(char.id)
+      index = index_of(inventory, @sword)
+      state = build_state(char, stats, inventory)
+
+      {_new_state, result} =
+        RefineOps.apply(state, index, @sword, :normal, false,
+          success_roll: 9999,
+          break_roll: 0
+        )
+
+      assert result == {:ok, :broke}
+
+      assert_receive {:server_announce, event}, 1000
+      assert event.message == %{nameid: @sword, refine: 12}
+      refute_receive {:server_announce, _other}, 200
+    end
+
+    test "publishes nothing when the refine level is unflagged", %{
+      character: char,
+      stats: stats
+    } do
+      seed_inv(char.id, @sword, 1, %{refine: 0})
+      seed_inv(char.id, @phracon, 1)
+
+      inventory = inv_map(char.id)
+      index = index_of(inventory, @sword)
+      state = build_state(char, stats, inventory)
+
+      {_new_state, result} =
+        RefineOps.apply(state, index, @sword, :normal, false, success_roll: 0, break_roll: 9999)
+
+      assert result == {:ok, :success, 1}
+      refute_receive {:server_announce, _event}, 200
     end
   end
 

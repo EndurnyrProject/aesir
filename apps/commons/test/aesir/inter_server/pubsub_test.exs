@@ -69,4 +69,32 @@ defmodule Aesir.Commons.InterServer.PubSubTest do
       assert event.reason == :admin_kick
     end
   end
+
+  describe "server_announce/1" do
+    setup do
+      PubSub.subscribe_to_announcements()
+      :ok
+    end
+
+    test "broadcasts a server-wide announce message to subscribers" do
+      message = %{nameid: 1201, refine: 10}
+
+      assert :ok = PubSub.server_announce(message)
+
+      assert_receive {:server_announce, event}, 1000
+      assert event.event == "server_announce"
+      assert event.message == message
+      assert event.node == Node.self()
+      assert %DateTime{} = event.timestamp
+    end
+
+    test "does not leak onto the player events topic" do
+      PubSub.subscribe_to_player_events()
+
+      assert :ok = PubSub.server_announce(%{nameid: 1201, refine: 10})
+
+      assert_receive {:server_announce, _event}, 1000
+      refute_receive {:player_event, _event}, 200
+    end
+  end
 end

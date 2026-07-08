@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
   require Logger
 
+  alias Aesir.Commons.InterServer.PubSub, as: ServerPubSub
   alias Aesir.Commons.Utils.ServerTick
   alias Aesir.Net.ItemOnGround
   alias Aesir.Net.ItemVanished
@@ -161,6 +162,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
     # Mobs are spawned lazily on the first tick that sees a player on this map
     # (see :broadcast_tick), so boot doesn't create 60k+ mob processes at once.
+    ServerPubSub.subscribe_to_announcements()
     schedule_item_sweep()
     schedule_broadcast(idle_broadcast_interval())
 
@@ -361,6 +363,12 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
       |> Enum.reject(&is_nil/1)
 
     {:reply, mob_info, state}
+  end
+
+  @impl true
+  def handle_info({:server_announce, event}, state) do
+    PubSub.broadcast(Aesir.PubSub, "map:#{state.map_name}", {:map_announcement, event.message})
+    {:noreply, state}
   end
 
   @impl true

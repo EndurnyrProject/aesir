@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOps do
   `ScriptEffectHandler`), not this module's.
   """
 
+  alias Aesir.Commons.InterServer.PubSub
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.ItemManagement
@@ -260,6 +261,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOps do
 
     case result do
       {:ok, final_inventory} ->
+        announce(level_info, item, outcome)
         {advance_state(state, final_inventory, new_zeny, item, outcome), tag(outcome)}
 
       {:error, reason} ->
@@ -346,4 +348,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOps do
   defp tag({:break}), do: {:ok, :broke}
   defp tag({:downgrade, new_level}), do: {:ok, :downgrade, new_level}
   defp tag({:fail}), do: {:ok, :fail}
+
+  # Emits a server-wide announce once the transaction has committed - never
+  # from inside `Persistence.transaction/1`, so a rollback never broadcasts.
+  # Only the outcome family the level actually flags is announced.
+  @spec announce(RefineDatabase.level_info(), InventoryItem.t(), Refine.result()) :: :ok
+  defp announce(%{broadcast_success: true}, item, {:success, new_level}) do
+    PubSub.server_announce(%{nameid: item.nameid, refine: new_level})
+  end
+
+  defp announce(%{broadcast_failure: true}, item, {:downgrade, new_level}) do
+    PubSub.server_announce(%{nameid: item.nameid, refine: new_level})
+  end
+
+  defp announce(%{broadcast_failure: true}, item, outcome) when outcome in [{:break}, {:fail}] do
+    PubSub.server_announce(%{nameid: item.nameid, refine: item.refine})
+  end
+
+  defp announce(_level_info, _item, _outcome), do: :ok
 end

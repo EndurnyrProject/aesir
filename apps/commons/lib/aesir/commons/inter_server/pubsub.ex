@@ -9,6 +9,7 @@ defmodule Aesir.Commons.InterServer.PubSub do
   @players_topic "players:auth"
   @characters_topic "characters:events"
   @servers_topic "servers:status"
+  @announce_topic "servers:announce"
 
   # Player Authentication Events (Account -> Char)
 
@@ -114,6 +115,32 @@ defmodule Aesir.Commons.InterServer.PubSub do
     }
 
     Phoenix.PubSub.broadcast(@pubsub_name, @servers_topic, {:server_event, event})
+  end
+
+  # Server-Wide Announcements
+
+  @doc """
+  Broadcasts a server-wide announcement, e.g. a flagged refine outcome, a WoE
+  notice, or a GM broadcast. Every zone `Coordinator` subscribes to this topic
+  and relays `message` to its local players.
+  """
+  @spec server_announce(term()) :: :ok
+  def server_announce(message) do
+    event = %{
+      event: "server_announce",
+      message: message,
+      node: Node.self(),
+      timestamp: DateTime.utc_now()
+    }
+
+    Phoenix.PubSub.broadcast(@pubsub_name, @announce_topic, {:server_announce, event})
+  end
+
+  @doc """
+  Subscribes the caller to server-wide announcements.
+  """
+  def subscribe_to_announcements do
+    Phoenix.PubSub.subscribe(@pubsub_name, @announce_topic)
   end
 
   # Subscription Functions
