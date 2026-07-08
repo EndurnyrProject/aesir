@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
   alias Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler
+  alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Shops
@@ -19,6 +20,7 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
     :ok = Warps.reload()
     :ok = Shops.reload()
     :ok = LevelPenalty.reload()
+    :ok = RefineDatabase.reload()
     :ok = ShopVerifier.verify!(Shops.all())
 
     children = [
