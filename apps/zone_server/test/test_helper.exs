@@ -59,5 +59,6 @@ Mimic.copy(Aesir.ZoneServer.Party.Manager)
 Mimic.copy(Aesir.ZoneServer.Unit.Player.Handlers.StorageOps)
 Mimic.copy(Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler)
 Mimic.copy(Aesir.ZoneServer.Unit.Storage.Persistence)
+Mimic.copy(Aesir.ZoneServer.Unit.Player.Handlers.RefineOps)
 
 ExUnit.start()
