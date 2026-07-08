@@ -34,6 +34,11 @@ defmodule Aesir.ZoneServer.Mmo.Refine.RefineDatabaseTest do
   end
 
   test "reload/0 leaves material_nameid nil and logs a single warning for an unresolved aegis" do
+    # This test deliberately reloads with a stubbed-out Items lookup, which writes the
+    # corrupted (nil-material) table into the shared :persistent_term. Restore the real
+    # table on exit (the stub is gone by then) so the corruption can't leak to other modules.
+    on_exit(fn -> RefineDatabase.reload() end)
+
     stub(Items, :by_aegis, fn
       "Phracon" -> :error
       aegis -> call_original(Items, :by_aegis, [aegis])
