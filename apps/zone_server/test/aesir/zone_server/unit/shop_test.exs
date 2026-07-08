@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.ShopTest do
   @orange_potion 502
   @sword 1101
   @jellopy 909
+  @worthless 910
   @priceless 9999
   @novice 0
 
@@ -34,6 +35,7 @@ defmodule Aesir.ZoneServer.Unit.ShopTest do
     @orange_potion => %{type: :healing, buy: 100, sell: 40, weight: 100},
     @sword => %{type: :weapon, buy: 100, sell: 50, weight: 500},
     @jellopy => %{type: :etc, buy: 6, sell: 0, weight: 1},
+    @worthless => %{type: :etc, buy: 0, sell: 0, weight: 1},
     @priceless => %{type: :etc, buy: 1, sell: 2_000_000_000, weight: 1}
   }
 
@@ -188,10 +190,17 @@ defmodule Aesir.ZoneServer.Unit.ShopTest do
                Shop.compute_sell([{0, 5}], player(%{inventory: inv}))
     end
 
-    test "rejects an item with sell == 0" do
-      inv = inventory([item(nameid: @jellopy, amount: 3)])
+    test "rejects an item with no value (buy and sell both 0)" do
+      inv = inventory([item(nameid: @worthless, amount: 3)])
 
       assert {:error, :unsellable} =
+               Shop.compute_sell([{0, 1}], player(%{inventory: inv}))
+    end
+
+    test "sells an item with sell == 0 at the Buy / 2 fallback" do
+      inv = inventory([item(nameid: @jellopy, amount: 3)])
+
+      assert {:ok, %{total_credit: 3, removals: [{0, 1}]}} =
                Shop.compute_sell([{0, 1}], player(%{inventory: inv}))
     end
 
@@ -231,7 +240,7 @@ defmodule Aesir.ZoneServer.Unit.ShopTest do
       inv =
         inventory([
           item(nameid: @red_potion, amount: 3),
-          item(nameid: @jellopy, amount: 1),
+          item(nameid: @worthless, amount: 1),
           item(nameid: @sword, amount: 1, favorite: 1),
           item(nameid: @orange_potion, amount: 1, equip: 2)
         ])

@@ -48,4 +48,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
     field :on_use, String.t() | nil, default: nil
     field :attack_element, atom(), default: nil
   end
+
+  @doc """
+  The item's sell price, applying the rAthena default: when `sell` is unset
+  (`0`), it falls back to half the buy price (`Buy / 2`).
+  """
+  @spec sell_price(t()) :: non_neg_integer()
+  def sell_price(%__MODULE__{sell: sell}) when sell > 0, do: sell
+  def sell_price(%__MODULE__{buy: buy}), do: div(buy, 2)
 end

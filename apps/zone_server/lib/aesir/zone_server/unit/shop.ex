@@ -126,12 +126,13 @@ defmodule Aesir.ZoneServer.Unit.Shop do
   end
 
   @doc """
-  The sell price for `nameid`: `ItemDefinition.sell`. The Overcharge choke point.
+  The sell price for `nameid`: `ItemDefinition.sell_price/1` (rAthena's `Buy / 2`
+  fallback when `sell` is unset). The Overcharge choke point.
   """
   @spec effective_sell_price(pos_integer()) :: non_neg_integer()
   def effective_sell_price(nameid) do
     case ItemManagement.get_item_by_id(nameid) do
-      {:ok, %ItemDefinition{sell: sell}} -> sell
+      {:ok, %ItemDefinition{} = def} -> ItemDefinition.sell_price(def)
       {:error, _} -> 0
     end
   end
@@ -279,8 +280,10 @@ defmodule Aesir.ZoneServer.Unit.Shop do
        do: {:error, :unsellable}
 
   defp sellable(%InventoryItem{nameid: nameid}) do
-    case ItemManagement.get_item_by_id(nameid) do
-      {:ok, %ItemDefinition{sell: sell} = def} when sell > 0 -> {:ok, def}
+    with {:ok, %ItemDefinition{} = def} <- ItemManagement.get_item_by_id(nameid),
+         true <- ItemDefinition.sell_price(def) > 0 do
+      {:ok, def}
+    else
       _ -> {:error, :unsellable}
     end
   end

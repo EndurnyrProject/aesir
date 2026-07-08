@@ -61,7 +61,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
 
   defp register_shop(shop), do: stub(Shops, :all, fn -> %{"prontera" => [shop]} end)
 
-  defp stub_sell_price(nameid, sell) do
+  defp stub_sell_price(nameid, sell), do: stub_price(nameid, 10, sell)
+
+  defp stub_price(nameid, buy, sell) do
     stub(ItemManagement, :get_item_by_id, fn
       ^nameid ->
         {:ok,
@@ -70,7 +72,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
            aegis_name: "i#{nameid}",
            name: "i#{nameid}",
            type: :healing,
-           buy: 10,
+           buy: buy,
            sell: sell,
            weight: 70
          }}
@@ -168,10 +170,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
       assert_receive {:send, _ch, {:npc_sell_result, %NpcSellResult{result: 4}}}
     end
 
-    test "an unsellable item (sell == 0) is rejected and writes nothing", ctx do
+    test "an item with no value (buy and sell both 0) is rejected and writes nothing", ctx do
       shop = shop()
       register_shop(shop)
-      # No stub: the real item 501 ships no sell value (defaults to 0).
+      # buy and sell both 0, so the Buy / 2 fallback still yields 0: unsellable.
+      stub_price(@potion, 0, 0)
       inventory = seed_inventory(ctx.seller.id, 3)
 
       {:noreply, _} =
