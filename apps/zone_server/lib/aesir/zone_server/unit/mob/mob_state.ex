@@ -74,6 +74,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
 
     # Skill interaction flags
     field :stolen_from, boolean(), default: false
+
+    # OnMyMobDead owner event (rAthena): a raw "Name::OnLabel" ref threaded
+    # through from the summoning op's `event:` opt, resolved only at death
+    # time. `nil` for every ordinary spawn -- exactly today's behavior.
+    field :owner_event, String.t() | nil, default: nil
   end
 
   @doc """
@@ -248,6 +253,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   @spec set_process_pid(t(), pid()) :: t()
   def set_process_pid(%__MODULE__{} = state, pid) when is_pid(pid) do
     %{state | process_pid: pid}
+  end
+
+  @doc """
+  Tags this mob state with an OnMyMobDead owner event ref (rAthena
+  "Name::OnLabel"), resolved only when the mob dies.
+  """
+  @spec set_owner_event(t(), String.t() | nil) :: t()
+  def set_owner_event(%__MODULE__{} = state, owner_event) do
+    %{state | owner_event: owner_event}
   end
 
   @doc """

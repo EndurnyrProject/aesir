@@ -370,18 +370,21 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
   `opts` accepts `:mob_id` or `:mob_name` (one is required; `:mob_name` is the
   AEGIS name, matching `MobManagement.get_mob_by_name/1`), `:at` as a `{x, y}`
-  tuple (defaults to the player's current position), and `:aggressive` (accepted
-  but deferred in Phase 1, kept for the Dead Branch interface). Halts on an
-  unknown mob or a spawn failure; returns the context unchanged on success.
+  tuple (defaults to the player's current position), `:aggressive` (accepted
+  but deferred in Phase 1, kept for the Dead Branch interface), and `:event`
+  (optional, a `"Name::OnLabel"` ref — rAthena OnMyMobDead — run with the
+  killer attached if the mob is later killed by a player; a malformed ref
+  logs a warning and is dropped, the mob still spawns without it). Halts on
+  an unknown mob or a spawn failure; returns the context unchanged on
+  success.
 
-  Halts `:no_player` on a detached ctx, even when `:at` is given: there is no
-  player position to default to and no NPC-placement fallback yet (a later
-  task will make this detached-capable off the NPC's own placement and lift
-  this guard).
+  Detached-capable: on a detached ctx, `:at` still overrides position, but the
+  map and default position come from `ctx.npc_gid`'s own placement
+  (`Npc.Registry.module_for_unit/1`) instead of a player. Halts `:no_player`
+  when `ctx.npc_gid` is `nil` or doesn't resolve — there is nowhere to spawn.
   """
   @spec summon_mob(Ctx.t(), keyword()) :: Ctx.t()
   def summon_mob(%Ctx{status: {:error, _}} = ctx, _opts), do: ctx
-  def summon_mob(%Ctx{game_state: nil} = ctx, _opts), do: Ctx.halt(ctx, :no_player)
 
   def summon_mob(%Ctx{} = ctx, opts) do
     case resolve_mob(opts) do
@@ -393,13 +396,12 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   @doc """
   Spawns a random monster from the catalog, like `summon_mob/2` with a rolled id.
 
-  `opts` accepts `:at` (defaults to the player's position) and `:aggressive`.
-  Halts with `:no_mobs` if the catalog is empty. Halts `:no_player` on a
-  detached ctx, same reasoning as `summon_mob/2`.
+  `opts` accepts `:at` (defaults to the player's position), `:aggressive`, and
+  `:event` (see `summon_mob/2`). Halts with `:no_mobs` if the catalog is
+  empty. Detached-capable, same reasoning as `summon_mob/2`.
   """
   @spec summon_random_mob(Ctx.t(), keyword()) :: Ctx.t()
   def summon_random_mob(%Ctx{status: {:error, _}} = ctx, _opts), do: ctx
-  def summon_random_mob(%Ctx{game_state: nil} = ctx, _opts), do: Ctx.halt(ctx, :no_player)
 
   def summon_random_mob(%Ctx{} = ctx, opts) do
     case MobManagement.get_all_mobs() do
@@ -1283,12 +1285,55 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     end
   end
 
-  defp spawn_mob_at(%Ctx{game_state: gs} = ctx, mob_id, opts) do
+  defp spawn_mob_at(%Ctx{game_state: gs} = ctx, mob_id, opts) when not is_nil(gs) do
     {x, y} = Keyword.get(opts, :at, {gs.x, gs.y})
+    do_summon(ctx, gs.map_name, x, y, mob_id, opts)
+  end
 
-    case Coordinator.summon_mob(gs.map_name, mob_id, x, y, aggressive: aggressive?(opts)) do
+  defp spawn_mob_at(%Ctx{npc_gid: nil} = ctx, _mob_id, _opts), do: Ctx.halt(ctx, :no_player)
+
+  defp spawn_mob_at(%Ctx{npc_gid: gid} = ctx, mob_id, opts) do
+    case NpcRegistry.module_for_unit(gid) do
+      {:ok, {_module, placement}} ->
+        {x, y} = Keyword.get(opts, :at, {placement.x, placement.y})
+        do_summon(ctx, placement.map, x, y, mob_id, opts)
+
+      :error ->
+        Ctx.halt(ctx, :no_player)
+    end
+  end
+
+  defp do_summon(ctx, map_name, x, y, mob_id, opts) do
+    case Coordinator.summon_mob(map_name, mob_id, x, y, summon_opts(opts)) do
       {:ok, _instance_id} -> ctx
       {:error, reason} -> Ctx.halt(ctx, reason)
+    end
+  end
+
+  defp summon_opts(opts) do
+    [aggressive: aggressive?(opts)]
+    |> maybe_put_event(Keyword.get(opts, :event))
+  end
+
+  defp maybe_put_event(base_opts, nil), do: base_opts
+
+  defp maybe_put_event(base_opts, event) do
+    case validate_event_ref(event) do
+      {:ok, ref} ->
+        Keyword.put(base_opts, :event, ref)
+
+      :error ->
+        Logger.warning("summon_mob: malformed event ref #{inspect(event)}, ignoring")
+        base_opts
+    end
+  end
+
+  # rAthena OnMyMobDead only ever targets "Name::OnLabel" — the bare-label
+  # form some rAthena events accept is out of scope (design decision, Task 11).
+  defp validate_event_ref(ref) do
+    case split_ref(ref) do
+      {:ok, name, label} when name != "" and label != "" -> {:ok, ref}
+      _malformed -> :error
     end
   end
 

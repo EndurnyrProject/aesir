@@ -403,8 +403,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
     announce_kill(state, attacker_id)
 
-    # Notify coordinator of death for respawn scheduling
-    Coordinator.mob_died(state.map_name, state.instance_id)
+    # Notify coordinator of death for respawn scheduling and OnMyMobDead dispatch
+    Coordinator.mob_died(state.map_name, state.instance_id, attacker_id)
 
     # Schedule process termination after a brief delay to handle cleanup
     Process.send_after(self(), :terminate, 1000)

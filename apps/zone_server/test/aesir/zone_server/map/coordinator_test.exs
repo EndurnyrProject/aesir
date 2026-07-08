@@ -20,7 +20,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
 
       Coordinator.mob_died("coordinator_test_map.gat", 4242)
 
-      assert_receive {:"$gen_cast", {:mob_died, 4242}}
+      assert_receive {:"$gen_cast", {:mob_died, 4242, nil}}
     end
   end
 

@@ -24,7 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
 
   test "killing a mob broadcasts the drop-rolling :mob_killed payload to the killer" do
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-    stub(Coordinator, :mob_died, fn _map, _id -> :ok end)
+    stub(Coordinator, :mob_died, fn _map, _id, _killer -> :ok end)
 
     :ok = PubSub.subscribe(Aesir.PubSub, "player:42")
 
@@ -43,7 +43,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
 
   test "a mob death with no killer broadcasts nothing" do
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-    stub(Coordinator, :mob_died, fn _map, _id -> :ok end)
+    stub(Coordinator, :mob_died, fn _map, _id, _killer -> :ok end)
 
     :ok = PubSub.subscribe(Aesir.PubSub, "player:0")
 

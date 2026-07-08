@@ -39,6 +39,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.NpcOwnerEventHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PickupHandler
@@ -88,6 +89,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @spec consume_sp(pid(), non_neg_integer()) :: :ok
   def consume_sp(pid, amount) do
     GenServer.cast(pid, {:consume_sp, amount})
+  end
+
+  @doc """
+  Runs an attached NPC event for this player session on `module`'s `gid`
+  (currently only `Map.Coordinator`'s OnMyMobDead owner-event dispatch, fired
+  when a mob tagged with `event:` dies to this player).
+  """
+  @spec run_attached_event(pid(), module(), non_neg_integer(), String.t()) :: :ok
+  def run_attached_event(pid, module, gid, label) do
+    GenServer.cast(pid, {:run_attached_event, module, gid, label})
   end
 
   @doc """
@@ -617,6 +628,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:consume_sp, amount}, state) do
     HealthHandler.consume_sp(amount, state)
+  end
+
+  @impl true
+  def handle_cast({:run_attached_event, module, gid, label}, state) do
+    NpcOwnerEventHandler.run(module, gid, label, state)
+    {:noreply, state}
   end
 
   @impl true

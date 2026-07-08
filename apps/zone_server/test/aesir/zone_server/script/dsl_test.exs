@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import ExUnit.CaptureLog
+
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.ParamChange
@@ -346,6 +348,42 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       ctx = Ctx.halt(build_ctx(), :already_dead)
 
       assert Dsl.summon_mob(ctx, mob_id: @poring_id, at: {10, 10}) == ctx
+    end
+
+    test "threads a well-formed :event ref into the coordinator opts" do
+      test_pid = self()
+
+      expect(Coordinator, :summon_mob, fn _map, _mob_id, _x, _y, opts ->
+        send(test_pid, {:summon_opts, opts})
+        {:ok, 12_345}
+      end)
+
+      ctx = Dsl.summon_mob(build_ctx(), mob_id: @poring_id, at: {10, 10}, event: "Guard::OnDead")
+
+      assert ctx.status == :ok
+      assert_received {:summon_opts, opts}
+      assert Keyword.get(opts, :event) == "Guard::OnDead"
+    end
+
+    test "a malformed :event ref logs a warning and spawns without it" do
+      test_pid = self()
+
+      expect(Coordinator, :summon_mob, fn _map, _mob_id, _x, _y, opts ->
+        send(test_pid, {:summon_opts, opts})
+        {:ok, 12_345}
+      end)
+
+      log =
+        capture_log(fn ->
+          ctx =
+            Dsl.summon_mob(build_ctx(), mob_id: @poring_id, at: {10, 10}, event: "NoSeparator")
+
+          assert ctx.status == :ok
+        end)
+
+      assert log =~ "malformed event ref"
+      assert_received {:summon_opts, opts}
+      refute Keyword.has_key?(opts, :event)
     end
   end
 

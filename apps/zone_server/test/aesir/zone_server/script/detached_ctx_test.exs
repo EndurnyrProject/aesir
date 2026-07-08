@@ -8,6 +8,12 @@ defmodule Aesir.ZoneServer.Script.DetachedCtxTest do
   the pre-existing `%Ctx{status: {:error, _}}` clause without re-checking
   `game_state`. Player reads raise instead, since they have no `status` to
   carry an error.
+
+  `summon_mob/2` and `summon_random_mob/2` are the exception: Task 11 makes
+  them detached-capable off the calling NPC's own placement, so their
+  detached-ctx coverage (including the still-halting unresolvable-gid case)
+  lives in `Aesir.ZoneServer.Npc.OnMyMobDeadTest` instead, alongside the rest
+  of the OnMyMobDead owner-event feature.
   """
 
   use ExUnit.Case, async: true
@@ -146,20 +152,6 @@ defmodule Aesir.ZoneServer.Script.DetachedCtxTest do
 
     test "itemskill/3 halts :no_player" do
       result = Dsl.itemskill(Ctx.detached(DetachedTestNpc, @npc_gid), 14, [])
-
-      assert result.status == {:error, :no_player}
-    end
-
-    test "summon_mob/2 halts :no_player even when :at is given" do
-      ctx = Ctx.detached(DetachedTestNpc, @npc_gid)
-
-      result = Dsl.summon_mob(ctx, mob_id: 1002, at: {50, 50})
-
-      assert result.status == {:error, :no_player}
-    end
-
-    test "summon_random_mob/2 halts :no_player" do
-      result = Dsl.summon_random_mob(Ctx.detached(DetachedTestNpc, @npc_gid), [])
 
       assert result.status == {:error, :no_player}
     end
