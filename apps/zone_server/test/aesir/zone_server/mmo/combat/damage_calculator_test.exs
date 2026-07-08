@@ -549,8 +549,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       # straight through to the final damage.
       {attacker, defender} = CombatTestHelper.create_combat_scenario([], def: 0)
 
+      :rand.seed(:exsss, {1, 2, 3})
+
       assert {:ok, %{damage: baseline}} =
                DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
+
+      :rand.seed(:exsss, {1, 2, 3})
 
       assert {:ok, %{damage: boosted}} =
                DamageCalculator.calculate_damage(attacker, defender,
@@ -771,6 +775,33 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
         )
 
       assert plain.damage == boosted.damage
+    end
+  end
+
+  describe "calculate_base_attack/1 weapon-ATK path" do
+    test "player equipment ATK (combat_stats.atk) raises melee base attack over a bare-handed player" do
+      bare_handed = CombatTestHelper.create_player_combatant()
+      bare_handed = %{bare_handed | combat_stats: %{bare_handed.combat_stats | atk: 0}}
+
+      equipped = CombatTestHelper.create_player_combatant()
+      equipped = %{equipped | combat_stats: %{equipped.combat_stats | atk: 100}}
+
+      {:ok, bare_handed_atk} = DamageCalculator.calculate_base_attack(bare_handed)
+      {:ok, equipped_atk} = DamageCalculator.calculate_base_attack(equipped)
+
+      assert equipped_atk > bare_handed_atk
+    end
+
+    test "mob base attack is unaffected by the player weapon-ATK path change" do
+      mob = CombatTestHelper.create_mob_combatant(atk: 100, str: 10, base_level: 5)
+
+      results =
+        for _ <- 1..50 do
+          {:ok, atk} = DamageCalculator.calculate_base_attack(mob)
+          atk
+        end
+
+      assert Enum.all?(results, fn atk -> atk >= 95 and atk <= 134 end)
     end
   end
 

@@ -287,13 +287,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   # Private helper functions
 
   defp calculate_weapon_attack(%{unit_type: :player} = attacker) do
-    # TODO: Get actual weapon attack from equipment
-    # For now, use a base weapon attack based on level (same as original)
-    base_weapon_attack = div(attacker.progression.base_level, 4) + 5
+    # Renewal player weapon ATK: the equipped weapon's accumulated flat ATK
+    # (combat_stats.atk, includes the refine bonus) rolls uniformly across an
+    # 80%-120% weapon-level variance band, mirroring the mob variance shape
+    # (calculate_base_attack/1 for :mob). Not a full port of rAthena's
+    # battle_calc_weapon_attack (no eatk/statusatk/star-crumb buckets).
+    atk = attacker.combat_stats.atk
+    atk_min = div(atk * 80, 100)
+    atk_max = div(atk * 120, 100)
 
-    # Add some variance (±5%)
-    variance = :rand.uniform(11) - 6
-    weapon_attack = base_weapon_attack + div(base_weapon_attack * variance, 100)
+    weapon_attack =
+      if atk_max > atk_min do
+        atk_min + :rand.uniform(atk_max - atk_min) - 1
+      else
+        atk_min
+      end
 
     max(1, weapon_attack)
   end
