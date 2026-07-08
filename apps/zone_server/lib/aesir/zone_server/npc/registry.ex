@@ -19,6 +19,14 @@ defmodule Aesir.ZoneServer.Npc.Registry do
   render to clients as a static NPC unit; `module_for_unit/1` reverses that id
   back to the owning module for click routing. Both are pure functions of the
   static placement set — there is no runtime, spawn-assigned id to track.
+
+  Three further indexes support event-driven scripting: `by_name/1` resolves a
+  placement's `unique_name` to every placement sharing it (rAthena duplicates
+  legitimately share a name — `donpcevent` fires on each); `gids_for_label/1`
+  resolves an event label to every gid whose module declares it in `events/0`
+  (used by `trigger_all/1` and the clock scheduler); `touch_rects/1` lists the
+  touch-area rects on a map, derived from placements with `trigger` set (used
+  by movement's `OnTouch` check).
   """
 
   alias Aesir.ZoneServer.Npc
@@ -44,8 +52,30 @@ defmodule Aesir.ZoneServer.Npc.Registry do
   @typedoc "Maps a placement's synthetic unit id to the NPC module that owns it."
   @type by_unit :: %{non_neg_integer() => entry()}
 
-  @typedoc "The stored registry: the raw entries plus the cell and unit indexes."
-  @type registry :: %{entries: [entry()], index: index(), by_unit: by_unit()}
+  @typedoc "Maps a unique name to every placement registered under it."
+  @type by_name :: %{String.t() => [entry()]}
+
+  @typedoc "Maps an event label to every gid whose module declares it in `events/0`."
+  @type by_label :: %{String.t() => [non_neg_integer()]}
+
+  @typedoc "A touch-area rect: the owning gid plus its x and y ranges."
+  @type touch_rect :: {non_neg_integer(), Range.t(), Range.t()}
+
+  @typedoc "Maps a map name to its touch rects."
+  @type touch_rects :: %{String.t() => [touch_rect()]}
+
+  @typedoc """
+  The stored registry: the raw entries plus the cell, unit, name, label, and
+  touch-rect indexes.
+  """
+  @type registry :: %{
+          entries: [entry()],
+          index: index(),
+          by_unit: by_unit(),
+          by_name: by_name(),
+          by_label: by_label(),
+          touch_rects: touch_rects()
+        }
 
   @doc """
   Rebuilds the registry from the given modules (default: the `:zone_server`
@@ -99,6 +129,30 @@ defmodule Aesir.ZoneServer.Npc.Registry do
   @spec module_for_unit(non_neg_integer()) :: {:ok, entry()} | :error
   def module_for_unit(unit_id), do: Map.fetch(registry().by_unit, unit_id)
 
+  @doc """
+  Returns every placement registered under `unique_name`, or `[]` if none.
+
+  A unique name may legitimately map to more than one placement — rAthena
+  duplicates share a name — callers are expected to fire on each.
+  """
+  @spec by_name(String.t()) :: [entry()]
+  def by_name(unique_name), do: Map.get(registry().by_name, unique_name, [])
+
+  @doc """
+  Returns every gid whose module declares `label` in its `events/0`, or `[]`
+  if no module does.
+  """
+  @spec gids_for_label(String.t()) :: [non_neg_integer()]
+  def gids_for_label(label), do: Map.get(registry().by_label, label, [])
+
+  @doc """
+  Returns the touch rects on `map`, one per placement with a `trigger` set, or
+  `[]` if none. Each rect is `{gid, x_range, y_range}`, the placement's cell
+  expanded by the trigger's half-extents.
+  """
+  @spec touch_rects(String.t()) :: [touch_rect()]
+  def touch_rects(map), do: Map.get(registry().touch_rects, map, [])
+
   @spec registry() :: registry()
   defp registry do
     case :persistent_term.get(@pt_key, nil) do
@@ -122,7 +176,43 @@ defmodule Aesir.ZoneServer.Npc.Registry do
           into: %{},
           do: {entity_id(placement), {module, placement}}
 
-    %{entries: entries, index: index, by_unit: by_unit}
+    by_name =
+      entries
+      |> Enum.reject(fn {_module, placement} -> placement.unique_name == "" end)
+      |> Enum.group_by(fn {_module, placement} -> placement.unique_name end)
+
+    by_label =
+      for {module, placement} <- entries,
+          label <- module.events(),
+          do: {label, entity_id(placement)}
+
+    by_label =
+      by_label
+      |> Enum.group_by(fn {label, _gid} -> label end, fn {_label, gid} -> gid end)
+      |> Map.new(fn {label, gids} -> {label, Enum.uniq(gids)} end)
+
+    touch_rects =
+      entries
+      |> Enum.filter(fn {_module, placement} -> not is_nil(placement.trigger) end)
+      |> Enum.group_by(
+        fn {_module, placement} -> placement.map end,
+        fn {_module, placement} -> touch_rect(placement) end
+      )
+
+    %{
+      entries: entries,
+      index: index,
+      by_unit: by_unit,
+      by_name: by_name,
+      by_label: by_label,
+      touch_rects: touch_rects
+    }
+  end
+
+  @spec touch_rect(Placement.t()) :: touch_rect()
+  defp touch_rect(%Placement{trigger: {xs, ys}} = placement) do
+    {entity_id(placement), (placement.x - xs)..(placement.x + xs),
+     (placement.y - ys)..(placement.y + ys)}
   end
 
   @spec default_app_modules() :: [module()]

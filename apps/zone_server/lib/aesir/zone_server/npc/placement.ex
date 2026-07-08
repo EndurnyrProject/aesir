@@ -4,7 +4,11 @@ defmodule Aesir.ZoneServer.Npc.Placement do
 
   Declared via `use Aesir.ZoneServer.Npc, spawn: [...]`; the raw map given there
   is normalized into this struct at compile time. `sprite` is the NPC's view
-  class (e.g. `58`); `dir` is the facing direction `0..7`.
+  class (e.g. `58`); `dir` is the facing direction `0..7`. `unique_name` is the
+  name used for `donpcevent`-style targeting; `to_placement!/1` falls back
+  to `name` when not declared, so this struct carries whatever it is given.
+  `trigger` is the touch-area half-extents `{xs, ys}` around the placement's
+  cell, or `nil` when the NPC has no touch area.
   """
 
   use TypedStruct
@@ -16,5 +20,7 @@ defmodule Aesir.ZoneServer.Npc.Placement do
     field :dir, non_neg_integer(), default: 0
     field :sprite, non_neg_integer(), enforce: true
     field :name, String.t(), default: ""
+    field :unique_name, String.t(), default: ""
+    field :trigger, {non_neg_integer(), non_neg_integer()} | nil, default: nil
   end
 end

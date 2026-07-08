@@ -13,6 +13,10 @@ defmodule Aesir.ZoneServer.Npc do
       hook, publishes a generated `npc_id/0` and a `spawn/0` returning the
       placements normalized into `Aesir.ZoneServer.Npc.Placement` structs.
 
+  Each spawn entry may also declare `unique_name` (defaults to `name` when
+  omitted; used for `donpcevent`-style targeting) and `trigger: {xs, ys}`
+  (touch-area half-extents around the cell; omit for no touch area).
+
   NPCs may also implement `on_event/2`, the uniform handler for rAthena-style
   event labels (`on_event("OnTouch", ctx)`, `on_event("OnTimer5000", ctx)`,
   `on_event("OnInit", ctx)`, ...). The same `@before_compile` hook derives
@@ -110,14 +114,31 @@ defmodule Aesir.ZoneServer.Npc do
 
   @spec to_placement!(map()) :: Placement.t()
   defp to_placement!(entry) do
+    name = Map.get(entry, :name, "")
+
     %Placement{
       map: Map.fetch!(entry, :map),
       x: Map.fetch!(entry, :x),
       y: Map.fetch!(entry, :y),
       dir: Map.get(entry, :dir, 0),
       sprite: Map.fetch!(entry, :sprite),
-      name: Map.get(entry, :name, "")
+      name: name,
+      unique_name: Map.get(entry, :unique_name, name),
+      trigger: validate_trigger!(Map.get(entry, :trigger))
     }
+  end
+
+  @spec validate_trigger!(term()) :: {non_neg_integer(), non_neg_integer()} | nil
+  defp validate_trigger!(nil), do: nil
+
+  defp validate_trigger!({xs, ys})
+       when is_integer(xs) and xs >= 0 and is_integer(ys) and ys >= 0 do
+    {xs, ys}
+  end
+
+  defp validate_trigger!(other) do
+    raise ArgumentError,
+          "npc trigger must be a {non_neg_integer, non_neg_integer} tuple, got: #{inspect(other)}"
   end
 
   @spec derive_npc_id(module()) :: npc_id()
