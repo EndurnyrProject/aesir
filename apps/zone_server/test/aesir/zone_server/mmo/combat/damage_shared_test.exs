@@ -85,4 +85,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageSharedTest do
       assert DamageShared.roll(7, 8) == 7
     end
   end
+
+  describe "overrefine_roll/1" do
+    test "a band of 0 is a no-op" do
+      assert DamageShared.overrefine_roll(0) == 0
+    end
+
+    test "stays within 1..band across many rolls" do
+      for _ <- 1..1000 do
+        result = DamageShared.overrefine_roll(9)
+        assert result >= 1 and result <= 9
+      end
+    end
+  end
 end

@@ -805,6 +805,37 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       assert Enum.all?(results, fn atk -> atk >= 95 and atk <= 134 end)
     end
+
+    test "adds a per-hit overrefine extra within 1..band to the weapon-ATK contribution" do
+      overrefine_band = 9
+
+      :rand.seed(:exsss, {1, 2, 3})
+      bare = CombatTestHelper.create_player_combatant()
+      {:ok, base_atk} = DamageCalculator.calculate_base_attack(bare)
+
+      :rand.seed(:exsss, {1, 2, 3})
+
+      refined = %{
+        bare
+        | combat_stats: Map.put(bare.combat_stats, :overrefine_band, overrefine_band)
+      }
+
+      {:ok, boosted_atk} = DamageCalculator.calculate_base_attack(refined)
+
+      assert (boosted_atk - base_atk) in 1..overrefine_band
+    end
+
+    test "an overrefine_band of 0 adds nothing to the weapon-ATK contribution" do
+      :rand.seed(:exsss, {1, 2, 3})
+      bare = CombatTestHelper.create_player_combatant()
+      {:ok, base_atk} = DamageCalculator.calculate_base_attack(bare)
+
+      :rand.seed(:exsss, {1, 2, 3})
+      zero_band = %{bare | combat_stats: Map.put(bare.combat_stats, :overrefine_band, 0)}
+      {:ok, same_atk} = DamageCalculator.calculate_base_attack(zero_band)
+
+      assert same_atk == base_atk
+    end
   end
 
   describe "calculate_base_attack/1 mastery bonus" do

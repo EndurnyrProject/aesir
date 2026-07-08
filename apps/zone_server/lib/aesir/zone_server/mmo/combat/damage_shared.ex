@@ -62,6 +62,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageShared do
   def roll(min, _max), do: min
 
   @doc """
+  Rolls the per-hit weapon overrefine damage extra.
+
+  Mirrors rAthena's `damage += rnd()%overrefine + 1` (`battle.cpp:2419`): a
+  uniform integer in `1..band`. A `band` of `0` is a no-op.
+  """
+  @spec overrefine_roll(non_neg_integer()) :: non_neg_integer()
+  def overrefine_roll(0), do: 0
+  def overrefine_roll(band) when band > 0, do: roll(1, band + 1)
+
+  @doc """
   Applies the rAthena Res/MRes soft-capped reduction curve to `damage`.
 
   Reduces `damage` by `res/(res+400) * 0.8`, so the reduction trends toward

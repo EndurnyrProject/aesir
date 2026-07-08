@@ -303,7 +303,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
         atk_min
       end
 
-    max(1, weapon_attack)
+    # Overrefine (rAthena battle.cpp:2413-2420): a per-hit rnd()%band + 1 extra.
+    # ponytail: Aesir sums both hands into one combat_stats.overrefine_band;
+    # left/right-hand dual-wield split is deferred.
+    overrefine_band = Map.get(attacker.combat_stats, :overrefine_band, 0)
+    overrefine_extra = DamageShared.overrefine_roll(overrefine_band)
+
+    max(1, weapon_attack + overrefine_extra)
   end
 
   defp calculate_mastery_bonus(attacker), do: attacker.combat_stats.passive_atk
