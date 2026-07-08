@@ -155,6 +155,17 @@ defmodule Aesir.ZoneServer.Npc.Registry do
   def gids_for_label(label), do: Map.get(registry().by_label, label, [])
 
   @doc """
+  Returns every distinct event label declared by a registered module's
+  `events/0`.
+
+  Used by `Aesir.ZoneServer.Npc.ClockScheduler` to find the clock-style
+  labels (`OnClock*`, `OnHour*`, `OnMinute*`, `On<Ddd>*`) present at tick
+  time, without scanning every module directly.
+  """
+  @spec labels() :: [String.t()]
+  def labels, do: Map.keys(registry().by_label)
+
+  @doc """
   Returns the touch rects on `map`, one per placement with a `trigger` set, or
   `[]` if none. Each rect is `{gid, x_range, y_range}`, the placement's cell
   expanded by the trigger's half-extents.
