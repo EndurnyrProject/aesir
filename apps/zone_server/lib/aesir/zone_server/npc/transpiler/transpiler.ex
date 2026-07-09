@@ -191,16 +191,24 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
     Enum.map_reduce(placements, MapSet.new(), fn placement, unresolved ->
       {sprite, unresolved} = resolve_sprite(placement.sprite, sprites, unresolved)
 
-      {%{
-         map: placement.map,
-         x: placement.x,
-         y: placement.y,
-         dir: placement[:dir],
-         sprite: sprite,
-         name: ModuleName.display_name(placement.name)
-       }, unresolved}
+      spawn =
+        %{
+          map: placement.map,
+          x: placement.x,
+          y: placement.y,
+          dir: placement[:dir],
+          sprite: sprite,
+          name: ModuleName.display_name(placement.name)
+        }
+        |> maybe_put(:unique_name, ModuleName.exname(placement.name))
+        |> maybe_put(:trigger, placement[:touch])
+
+      {spawn, unresolved}
     end)
   end
+
+  defp maybe_put(map, _key, nil), do: map
+  defp maybe_put(map, key, value), do: Map.put(map, key, value)
 
   defp placed?(%{map: _} = entry), do: visible_sprite?(entry.sprite)
   defp placed?(_entry), do: false

@@ -10,8 +10,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
 
   Dialog primitives (`mes`, `next`, `close`, `close2`, `end`, `select`,
   `prompt`, `input`, `menu`) and the subroutine machinery (`callfunc`,
-  `callsub`, `getarg`, `rand`) are shaped directly by `Codegen`, not listed
-  here.
+  `callsub`, `getarg`, `rand`, `getnpctimer`) are shaped directly by
+  `Codegen`, not listed here.
 
   ## Command rules
 
@@ -21,6 +21,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
   - `%{shape: :heal, dsl: name}` — `heal <hp>,<sp>` → `name(ctx, hp: _, sp: _)`.
   - `%{shape: :warp}` — `warp "map",x,y` with `"Random"`/`"SavePoint"`
     special targets.
+  - `%{shape: :ref1, dsl: name}` — a single-argument buildin (an event ref or
+    an NPC name) → `name(ctx, arg)`; any other arg count stays a stub.
+  - `%{shape: :timer, dsl: name}` — `initnpctimer`/`stopnpctimer`: zero args
+    (self) → `name(ctx)`, one name arg → `name(ctx, arg)`; attach-flag
+    variants stay a stub.
 
   ## Reads
 
@@ -41,7 +46,16 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "warp" => %{shape: :warp},
     "savepoint" => %{shape: :savepoint},
     "jobchange" => %{dsl: "jobchange", args: [:int]},
-    "itemskill" => %{dsl: "itemskill", args: [:skill_opts]}
+    "itemskill" => %{dsl: "itemskill", args: [:skill_opts]},
+    "donpcevent" => %{shape: :ref1, dsl: "donpcevent"},
+    "doevent" => %{shape: :ref1, dsl: "doevent"},
+    "npctalk" => %{shape: :ref1, dsl: "npctalk"},
+    "enablenpc" => %{shape: :ref1, dsl: "enablenpc"},
+    "disablenpc" => %{shape: :ref1, dsl: "disablenpc"},
+    "hideonnpc" => %{shape: :ref1, dsl: "hideonnpc"},
+    "hideoffnpc" => %{shape: :ref1, dsl: "hideoffnpc"},
+    "initnpctimer" => %{shape: :timer, dsl: "initnpctimer"},
+    "stopnpctimer" => %{shape: :timer, dsl: "stopnpctimer"}
   }
 
   # Global rAthena functions (`callfunc "Name"`) mapped onto DSL primitives.

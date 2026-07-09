@@ -47,13 +47,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.AnalyzerTest do
     a =
       analyze!("""
       getitem 501, 1;
-      npctalk "hi";
-      npctalk "again";
+      showscript "hi";
+      showscript "again";
       if (checkweight(501, 1) == 0) close;
       mes "level " + getpartnerid();
       """)
 
-    assert a.stubs == %{"npctalk" => 2, "checkweight" => 1, "getpartnerid" => 1}
+    assert a.stubs == %{"showscript" => 2, "checkweight" => 1, "getpartnerid" => 1}
   end
 
   test "local functions are not stubs" do

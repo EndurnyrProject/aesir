@@ -133,12 +133,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
   test "unsupported buildins become todo stubs, expressions become Todo.call!" do
     src =
       gen!("""
-      npctalk "hi";
+      showscript "hi";
       if (checkweight(501, 1) == 0) close;
       close;
       """)
 
-    assert src =~ ~S|ctx = todo(ctx, :npctalk, ["hi"])|
+    assert src =~ ~S|ctx = todo(ctx, :showscript, ["hi"])|
     assert src =~ "Todo.call!(:checkweight, [501, 1]) == 0"
     assert src =~ "alias Aesir.ZoneServer.Script.Todo"
   end
@@ -272,17 +272,123 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ ~S|Todo.call!(:get_var, ["#account_var"])|
   end
 
-  test "event labels emit unwired public functions" do
+  test "On* labels wire to on_event/2 clauses; the macro derives events/0" do
+    src =
+      gen!(
+        """
+        mes "hi";
+        close;
+
+        OnInit:
+        end;
+
+        OnTimer1000:
+        end;
+        """,
+        module: "Aesir.ZoneServer.Content.Npc.Payon.TestNpcOnEvents"
+      )
+
+    assert src =~ ~S|def on_event("OnInit", ctx), do: ev_oninit(ctx)|
+    assert src =~ ~S|def on_event("OnTimer1000", ctx), do: ev_ontimer1000(ctx)|
+    refute src =~ "unwired_events"
+
+    [{module, _}] = Code.compile_string(src)
+    assert module.events() == ["OnInit", "OnTimer1000"]
+  end
+
+  test "OnTouch_ normalizes to the OnTouch head the engine dispatches, deduping with OnTouch" do
+    src =
+      gen!(
+        """
+        mes "hi";
+        close;
+
+        OnTouch:
+        end;
+
+        OnTouch_:
+        end;
+        """,
+        module: "Aesir.ZoneServer.Content.Npc.Payon.TestNpcOnTouchDedupe"
+      )
+
+    assert src =~ ~S|def on_event("OnTouch", ctx), do: ev_ontouch(ctx)|
+    refute src =~ "OnTouch_"
+
+    [{module, _}] = Code.compile_string(src)
+    assert module.events() == ["OnTouch"]
+  end
+
+  test "npc session/event buildins map to DSL calls" do
     src =
       gen!("""
-      mes "hi";
+      donpcevent "Boss::OnDead";
+      doevent "Boss::OnRespawn";
+      initnpctimer;
+      initnpctimer "Boss";
+      stopnpctimer;
+      stopnpctimer "Boss";
+      npctalk "hi!";
+      enablenpc "Boss";
+      disablenpc "Boss";
+      hideonnpc "Boss";
+      hideoffnpc "Boss";
       close;
-      OnTouch:
-      end;
       """)
 
-    assert src =~ ~S|def unwired_events, do: ["OnTouch"]|
-    assert src =~ "def ev_ontouch"
+    assert src =~ ~S{|> donpcevent("Boss::OnDead")}
+    assert src =~ ~S{|> doevent("Boss::OnRespawn")}
+    assert src =~ "|> initnpctimer()"
+    assert src =~ ~S{|> initnpctimer("Boss")}
+    assert src =~ "|> stopnpctimer()"
+    assert src =~ ~S{|> stopnpctimer("Boss")}
+    assert src =~ ~S{|> npctalk("hi!")}
+    assert src =~ ~S{|> enablenpc("Boss")}
+    assert src =~ ~S{|> disablenpc("Boss")}
+    assert src =~ ~S{|> hideonnpc("Boss")}
+    assert src =~ ~S{|> hideoffnpc("Boss")}
+    assert src =~ "|> close()"
+  end
+
+  test "getnpctimer type 0 reads elapsed ms; other types and arities stay stubs" do
+    src =
+      gen!("""
+      if (getnpctimer(0) > 500) close;
+      .@t = getnpctimer(0, "Boss");
+      if (getnpctimer(1) > 0) close;
+      npctalk "hi", 1;
+      close;
+      """)
+
+    assert src =~ "getnpctimer(ctx) > 500"
+    assert src =~ ~S{set_local(ctx, :t, getnpctimer(ctx, "Boss"))}
+    assert src =~ ~S|Todo.call!(:getnpctimer, [1])|
+    assert src =~ ~S|todo(:npctalk, ["hi", 1])|
+  end
+
+  test "spawn placements render optional trigger and unique_name" do
+    src =
+      gen!(
+        """
+        mes "hi";
+        close;
+        """,
+        spawns: [
+          %{
+            map: "payon",
+            x: 1,
+            y: 2,
+            dir: 3,
+            sprite: 58,
+            name: "Guard",
+            unique_name: "GuardEx",
+            trigger: {2, 2}
+          }
+        ]
+      )
+
+    assert src =~ ~S|unique_name: "GuardEx"|
+    assert src =~ "trigger: {2, 2}"
   end
 
   test "global function modules take args and return {ctx, value}" do

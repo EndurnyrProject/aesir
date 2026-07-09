@@ -50,7 +50,7 @@ defmodule Aesir.ZoneServer.NpcTranspilerIntegrationTest do
   case 2:
     close;
   case 3:
-    npctalk "I refuse.";
+    showscript "I refuse.";
     close;
   }
   """
@@ -158,7 +158,7 @@ defmodule Aesir.ZoneServer.NpcTranspilerIntegrationTest do
     choose(pid, 3)
 
     assert_receive {:DOWN, ^ref, :process, ^pid,
-                    {%NotImplementedError{buildin: :npctalk}, _stack}},
+                    {%NotImplementedError{buildin: :showscript}, _stack}},
                    500
 
     assert Process.alive?(session)
