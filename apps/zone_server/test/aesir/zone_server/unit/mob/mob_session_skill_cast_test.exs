@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.MobSkill.Db, as: MobSkillDb
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -27,6 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
 
   setup do
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+    stub(StatusStorage, :has_status?, fn _unit_type, _unit_id, _status -> false end)
     :ok
   end
 
@@ -210,6 +212,123 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       {:noreply, updated} = MobSession.handle_info(:cast_complete, state)
 
       assert updated.skill_cooldowns == %{}
+    end
+
+    test "a silenced mob aborts at cast_complete without executing but still sets the delay" do
+      ref = Process.send_after(self(), :cast_complete, 10_000)
+
+      state =
+        build_mob_state()
+        |> MobState.set_casting(%{row: row(), complete_at: 0, timer_ref: ref})
+
+      stub(StatusStorage, :has_status?, fn
+        :mob, 1, :sc_silence -> true
+        :mob, _id, _status -> false
+      end)
+
+      reject(&Combat.execute_magic_damage/4)
+
+      before = System.system_time(:millisecond)
+      {:noreply, updated} = MobSession.handle_info(:cast_complete, state)
+
+      assert updated.casting == nil
+      assert updated.skill_cooldowns["NPC_FIREATTACK"] >= before + 5_000
+      assert updated.ai_timer_ref
+    end
+  end
+
+  describe "silence/stun cast interruption" do
+    test "a silence hook mid-cast clears casting, cancels the timer and sets the delay cooldown" do
+      row = row(%{cast_time: 100})
+      stub(MobSkillDb, :rows_for, fn 1001 -> [row] end)
+
+      {:noreply, casting_state} = MobSession.handle_info(:ai_tick, build_mob_state())
+      assert %{row: ^row, timer_ref: ref} = casting_state.casting
+      assert is_reference(ref)
+
+      before = System.system_time(:millisecond)
+
+      {:noreply, updated} =
+        MobSession.handle_cast({:status_changed, :sc_silence, :apply}, casting_state)
+
+      assert updated.casting == nil
+      assert updated.skill_cooldowns["NPC_FIREATTACK"] >= before + 5_000
+      # The cancelled timer must never deliver :cast_complete (window > cast_time).
+      refute_receive :cast_complete, 200
+    end
+
+    test "a status_changed for an unrelated status leaves the cast running" do
+      ref = Process.send_after(self(), :cast_complete, 10_000)
+
+      state =
+        build_mob_state()
+        |> MobState.set_casting(%{row: row(), complete_at: 0, timer_ref: ref})
+
+      {:noreply, updated} =
+        MobSession.handle_cast({:status_changed, :sc_poison, :tick}, state)
+
+      assert updated.casting == state.casting
+      Process.cancel_timer(ref)
+    end
+
+    test "a status_changed on a non-casting mob is a no-op" do
+      state = build_mob_state()
+
+      {:noreply, updated} =
+        MobSession.handle_cast({:status_changed, :sc_stun, :apply}, state)
+
+      assert updated.casting == nil
+    end
+
+    test "an ai_tick on a stunned mid-cast mob aborts the cast and cancels the timer" do
+      ref = Process.send_after(self(), :cast_complete, 100)
+
+      state =
+        build_mob_state()
+        |> MobState.set_casting(%{row: row(), complete_at: 0, timer_ref: ref})
+
+      stub(StatusStorage, :has_status?, fn
+        :mob, 1, :sc_stun -> true
+        :mob, _id, _status -> false
+      end)
+
+      reject(&Combat.execute_magic_damage/4)
+
+      before = System.system_time(:millisecond)
+      {:noreply, updated} = MobSession.handle_info(:ai_tick, state)
+
+      assert updated.casting == nil
+      assert updated.skill_cooldowns["NPC_FIREATTACK"] >= before + 5_000
+      assert updated.ai_timer_ref
+      refute_receive :cast_complete, 200
+    end
+
+    test "a silenced mob does not begin a new cast on its ai tick" do
+      stub(MobSkillDb, :rows_for, fn 1001 -> [row()] end)
+
+      stub(StatusStorage, :has_status?, fn
+        :mob, 1, :sc_silence -> true
+        :mob, _id, _status -> false
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, @target_id ->
+        {:ok, {100, 100, "prontera"}}
+      end)
+
+      stub(StatusInterpreter, :targetable?, fn :player, @target_id -> true end)
+      stub(StatusInterpreter, :can_attack?, fn :mob, 1 -> true end)
+      reject(&Combat.execute_magic_damage/4)
+      test_pid = self()
+
+      expect(Combat, :execute_mob_attack, fn _state, @target_id ->
+        send(test_pid, :melee)
+        :ok
+      end)
+
+      {:noreply, updated} = MobSession.handle_info(:ai_tick, build_mob_state())
+
+      assert updated.casting == nil
+      assert_received :melee
     end
   end
 end
