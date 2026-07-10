@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Network.MessageRouterTest do
     {%Aesir.Net.StatusChange{}, {:world, :status_change}},
     {%Aesir.Net.UnitStateChange{}, {:world, :unit_state_change}},
     {%Aesir.Net.SpecialEffect{}, {:world, :special_effect}},
+    {%Aesir.Net.Announcement{}, {:world, :announcement}},
     {%Aesir.Net.SkillList{}, {:bulk, :skill_list}},
     {%Aesir.Net.InventoryList{}, {:bulk, :inventory_list}},
     {%Aesir.Net.Snapshot{}, {:snapshots, :snapshot}}

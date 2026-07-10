@@ -137,6 +137,8 @@ message Envelope {
     StorageItemAdded storage_item_added = 121;
     StorageItemRemoved storage_item_removed = 122;
     StorageResult storage_result = 123;
+    // 124: broadcast messages (GM + script announce/mapannounce/areaannounce/broadcast)
+    Announcement announcement = 124;
   }
 }
 
@@ -1172,4 +1174,19 @@ enum StorageResultCode {
 // Server -> client, result of a storage deposit/withdraw/open request.
 message StorageResult {
   StorageResultCode result = 1;
+}
+
+// Server -> client, a styled broadcast message (GM @broadcast, or the rAthena
+// announce/mapannounce/areaannounce/broadcast script buildins).
+message Announcement {
+  enum Style {
+    TOP = 0;
+    CENTER = 1;
+    LOCAL = 2;
+  }
+
+  string text = 1;
+  uint32 color = 2;
+  Style style = 3;
+  string source_name = 4;
 }
