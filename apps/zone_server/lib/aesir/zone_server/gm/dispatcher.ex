@@ -15,7 +15,8 @@ defmodule Aesir.ZoneServer.Gm.Dispatcher do
     "warp" => Aesir.ZoneServer.Gm.Commands.Warp,
     "job" => Aesir.ZoneServer.Gm.Commands.Job,
     "baselevelup" => Aesir.ZoneServer.Gm.Commands.BaseLevel,
-    "joblevelup" => Aesir.ZoneServer.Gm.Commands.JobLevel
+    "joblevelup" => Aesir.ZoneServer.Gm.Commands.JobLevel,
+    "broadcast" => Aesir.ZoneServer.Gm.Commands.Broadcast
   }
 
   @spec dispatch(String.t(), Aesir.ZoneServer.Gm.Command.ctx()) :: :ok
