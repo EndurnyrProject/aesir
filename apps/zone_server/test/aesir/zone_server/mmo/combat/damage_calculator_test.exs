@@ -33,7 +33,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
-      stub(RaceModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
       stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
@@ -54,7 +53,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
-      stub(RaceModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
       stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
@@ -76,7 +74,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
-      stub(RaceModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
       stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
@@ -102,7 +99,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
-      stub(RaceModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
       stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
@@ -130,7 +126,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       # All size weapons vs Large
       stub(SizeModifiers, :get_modifier, fn :all, :large -> 1.25 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
-      stub(RaceModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
       stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
@@ -165,7 +160,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
-      stub(RaceModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
       stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
@@ -274,7 +268,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     test "applies all modifiers in sequence" do
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.1 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
-      stub(RaceModifiers, :get_modifier, fn _, _ -> 1.2 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
       stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.5 end)
 
@@ -296,7 +289,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     test "handles no modifiers gracefully" do
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
-      stub(RaceModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
       stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
@@ -312,7 +304,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     test "adds flat weapon ATK (:watk) granted by statuses (SC_LOUD / Impositio)" do
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
-      stub(RaceModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
       stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{watk: 30} end)
@@ -434,7 +425,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
-      stub(RaceModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
       stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
@@ -455,7 +445,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
-      stub(RaceModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
       stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
@@ -482,7 +471,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
-      stub(RaceModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
       stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
@@ -504,7 +492,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
-      stub(RaceModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
       :ok
@@ -590,7 +577,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
-      stub(RaceModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
       stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
@@ -626,7 +612,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
-      stub(RaceModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(RaceModifiers, :player_race, fn -> :demi_human end)
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
       :ok
@@ -863,7 +848,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
-      stub(RaceModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
       :ok

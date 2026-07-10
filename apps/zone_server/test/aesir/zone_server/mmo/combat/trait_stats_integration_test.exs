@@ -52,7 +52,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TraitStatsIntegrationTest do
     stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
     stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
     stub(SizeModifiers, :player_size, fn -> :medium end)
-    stub(RaceModifiers, :get_modifier, fn _, _ -> 1.0 end)
     stub(RaceModifiers, :player_race, fn -> :human end)
 
     stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
