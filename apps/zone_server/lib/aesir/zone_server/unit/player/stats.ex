@@ -764,12 +764,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   end
 
   defp get_hp_bonus_flat(%__MODULE__{}) do
-    # TODO: Implement equipment and status effect HP bonuses
+    # NOTE: Implement equipment and status effect HP bonuses
     0
   end
 
   defp get_sp_bonus_flat(%__MODULE__{}) do
-    # TODO: Implement equipment and status effect SP bonuses
+    # NOTE: Implement equipment and status effect SP bonuses
     0
   end
 

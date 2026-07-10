@@ -146,7 +146,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
     else
       # Attack is too soon, rate limited
       Logger.debug("Attack rate limited for player #{state.game_state.character_id}")
-      # TODO: Send error packet to client about attack cooldown
+      # NOTE: Send error packet to client about attack cooldown
       {:noreply, state}
     end
   end

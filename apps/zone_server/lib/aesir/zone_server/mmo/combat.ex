@@ -627,7 +627,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     calc_opts =
       Keyword.take(opts, [:skill_ratio, :skip_crit, :bonus_atk, :fixed_damage, :element])
 
-    # TODO: skills always connect here; skill miss/flee isn't modeled yet.
+    # NOTE: skills always connect here; skill miss/flee isn't modeled yet.
     with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- validate_attack_with_combatants(attacker, target),

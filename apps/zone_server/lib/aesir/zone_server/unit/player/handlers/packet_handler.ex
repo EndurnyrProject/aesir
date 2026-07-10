@@ -93,17 +93,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   # NV_BASIC gates (rAthena clif.cpp, gated by basic_skill_check, bypassed by
   # SU_BASIC_SKILL >= 1 which is not yet implemented):
   #   - sit/stand    >= 3  (clif.cpp:11739) -- implemented below
-  #   - trade        >= 1  (clif.cpp:12515) -- TODO: no trade handler yet
-  #   - emotion      >= 2  (clif.cpp:11636) -- TODO: no emotion handler yet
-  #   - chat room    >= 4  (clif.cpp:12378) -- TODO: no chat-room creation yet
-  #   - party create >= 7  (clif.cpp:13806) -- TODO: no party handler yet
+  #   - trade        >= 1  (clif.cpp:12515) -- NOTE: no trade handler yet
+  #   - emotion      >= 2  (clif.cpp:11636) -- NOTE: no emotion handler yet
+  #   - chat room    >= 4  (clif.cpp:12378) -- NOTE: no chat-room creation yet
+  #   - party create >= 7  (clif.cpp:13806) -- NOTE: no party handler yet
   def handle_message(%ActionRequest{target_id: target_id, action: action}, state)
       when action in [0, 7] do
     CombatActionHandler.handle_attack_request(state, target_id, action)
   end
 
   # NV_BASIC >= 3 gate (rAthena clif.cpp:11739, gated by basic_skill_check).
-  # TODO: also bypass when SU_BASIC_SKILL >= 1 is implemented.
+  # NOTE: also bypass when SU_BASIC_SKILL >= 1 is implemented.
   def handle_message(%ActionRequest{action: 2}, state) do
     case nv_basic_gate(state, :sit) do
       :ok -> Logger.debug("Player sitting down")

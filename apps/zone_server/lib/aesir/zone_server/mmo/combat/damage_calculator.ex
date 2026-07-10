@@ -227,7 +227,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     total_atk =
       base_damage
       |> apply_size_modifier(attacker, defender)
-      |> apply_race_modifier(attacker, defender)
       |> apply_element_modifier(attacker, defender, attacker_modifiers, forced_element)
       |> apply_status_effect_damage_modifiers(attacker_modifiers)
 
@@ -351,20 +350,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     defender_size = Map.get(defender, :size, SizeModifiers.player_size())
 
     modifier = SizeModifiers.get_modifier(attacker_size, defender_size)
-    damage * modifier
-  end
-
-  defp apply_race_modifier(damage, _attacker, defender) do
-    defender_race = Map.get(defender, :race, RaceModifiers.player_race())
-
-    # TODO: Pass actual attacker equipment/skills data
-    attacker_data = %{
-      weapon_cards: [],
-      equipment: %{},
-      skills: %{}
-    }
-
-    modifier = RaceModifiers.get_modifier(attacker_data, defender_race)
     damage * modifier
   end
 

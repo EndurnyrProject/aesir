@@ -81,7 +81,7 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
       assert mob_state.hp < 100
       assert mob_state.hp == 100 - damage_packet.damage
 
-      # TODO: Fix aggro checking - mob aggro system may work differently
+      # NOTE: Fix aggro checking - mob aggro system may work differently
       # assert mob_has_aggro?(mob.unit_id, player.character.id)
     end
 
