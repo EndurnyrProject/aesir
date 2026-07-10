@@ -245,6 +245,10 @@
   buy: 150
   id: 536
   name: Ice Cream
+  on_use: |-
+    ctx = heal(ctx, hp: 105..145)
+    ctx = if(Enum.random(1..10_000) <= 2500, do: sc_start(ctx, :sc_freeze, 10000, 0), else: ctx)
+    ctx
   type: healing
   weight: 80
 - aegis_name: Pet_Food
@@ -335,6 +339,10 @@
   buy: 180
   id: 549
   name: Yam
+  on_use: |-
+    ctx = heal(ctx, hp: 50..100)
+    ctx = if(Enum.random(1..10_000) <= 1500, do: sc_start(ctx, :sc_stun, 3000, 0), else: ctx)
+    ctx
   type: healing
   weight: 80
 - aegis_name: Popped_Rice
@@ -369,6 +377,11 @@
   buy: 100
   id: 554
   name: Mochi
+  on_use: |-
+    ctx = heal(ctx, hp: 105..145)
+    ctx = sc_start(ctx, :sc_stun, 3000, 0)
+    ctx = if(Enum.random(1..10_000) <= 1500, do: sc_start(ctx, :sc_blind, 2000, 0), else: ctx)
+    ctx
   type: healing
   weight: 80
 - aegis_name: Rice_Cake
@@ -1096,6 +1109,10 @@
   buy: 5000
   id: 679
   name: Pilule
+  on_use: |-
+    ctx = if(Enum.random(1..10_000) <= 1000, do: sc_start(ctx, :sc_dpoison, 10000, 0), else: ctx)
+    ctx = sc_start(ctx, :sc_poison, 50000, 0)
+    ctx
   type: usable
   weight: 300
 - aegis_name: Magical_Carnation
@@ -2673,6 +2690,10 @@
   buy: 1000
   id: 12027
   name: Giggling Box
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 9)
+    ctx = if(Enum.random(1..10_000) <= 3000, do: sc_start(ctx, :sc_curse, 30000, 0), else: ctx)
+    ctx
   type: usable
   weight: 200
 - aegis_name: Box_Of_Thunder
@@ -2715,6 +2736,10 @@
   buy: 1000
   id: 12034
   name: Box of Panting
+  on_use: |-
+    ctx = percent_heal(ctx, sp: 9)
+    ctx = if(Enum.random(1..10_000) <= 3000, do: sc_start(ctx, :sc_silence, 30000, 0), else: ctx)
+    ctx
   type: usable
   weight: 200
 - aegis_name: Lotto_Box01
@@ -3563,6 +3588,10 @@
   buy: 20
   id: 12135
   name: Green Ale
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 50, sp: 50)
+    ctx = if(Enum.random(1..10_000) <= 1000, do: sc_start(ctx, :sc_confusion, 10000, 0), else: ctx)
+    ctx
   type: usable
   weight: 30
 - aegis_name: Women's_Bundle
@@ -4178,12 +4207,20 @@
   buy: 20
   id: 12238
   name: New Year Rice Cake
+  on_use: |-
+    ctx = if(Enum.random(1..10_000) <= 1000, do: sc_start(ctx, :sc_dpoison, 10000, 0), else: ctx)
+    ctx = sc_start(ctx, :sc_poison, 50000, 0)
+    ctx
   type: usable
   weight: 100
 - aegis_name: New_Year_Rice_Cake_2
   buy: 20
   id: 12239
   name: New Year Rice Cake
+  on_use: |-
+    ctx = if(Enum.random(1..10_000) <= 1000, do: sc_start(ctx, :sc_dpoison, 10000, 0), else: ctx)
+    ctx = sc_start(ctx, :sc_poison, 50000, 0)
+    ctx
   type: usable
   weight: 100
 - aegis_name: Old_Yellow_Box
@@ -23335,6 +23372,7 @@
   buy: 10
   id: 22516
   name: Black As Night Piece
+  on_use: 'if(Enum.random(1..10_000) <= 1500, do: sc_start(ctx, :sc_curse, 4000, 0), else: ctx)'
   type: usable
 - aegis_name: Loki_Summon_Scroll
   buy: 10
@@ -26705,6 +26743,10 @@
 - aegis_name: Ice_Candy
   id: 23548
   name: Snow Candy
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 5, sp: 5)
+    ctx = sc_start(ctx, :sc_freeze, 3000, 0)
+    ctx
   type: usable
   weight: 20
 - aegis_name: Snow_Cookie

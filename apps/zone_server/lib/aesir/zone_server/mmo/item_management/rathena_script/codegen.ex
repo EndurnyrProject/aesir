@@ -37,6 +37,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   `warp "Random",0,0` (fly wing) and `warp "SavePoint",0,0` (butterfly wing) emit
   the one-arg DSL atom form `warp(ctx, :random)` / `warp(ctx, :save_point)` via
   `CommandSet.warp_target/1`.
+
+  ## `sc_start`
+
+  The base `sc_start type,ticks,val1` form emits `sc_start(ctx, status, ticks,
+  val1)` via the standard `CommandSet` rule. rAthena's optional `rate` (out of
+  10000) and `flag` arguments — `sc_start type,ticks,val1,rate{,flag}`, common on
+  foods that carry a chance to inflict a negative status — are handled here: the
+  `rate` becomes a runtime `Enum.random(1..10_000) <= rate` guard around the base
+  call, and the `flag` bitmask is dropped (no sc-flag is modelled). A `rate` of
+  `10000` (always) collapses back to the plain call. The six-arg GID-targeted form
+  is unsupported.
   """
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet
@@ -81,7 +92,26 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
     end
   end
 
+  defp render_command("sc_start", [status, ticks, val1, rate | flag])
+       when flag == [] or (is_list(flag) and length(flag) == 1) do
+    with {:ok, s} <- render_arg(:status, status),
+         {:ok, t} <- render_arg(:int, ticks),
+         {:ok, v} <- render_arg(:int, val1),
+         {:ok, r} <- render_arg(:int, rate) do
+      render_sc_start_rate(s, t, v, r)
+    end
+  end
+
   defp render_command(name, args), do: render_known_command(name, args)
+
+  @spec render_sc_start_rate(String.t(), String.t(), String.t(), String.t()) :: {:ok, String.t()}
+  defp render_sc_start_rate(status, ticks, val, "10000"),
+    do: {:ok, "sc_start(ctx, #{status}, #{ticks}, #{val})"}
+
+  defp render_sc_start_rate(status, ticks, val, rate),
+    do:
+      {:ok,
+       "if(Enum.random(1..10_000) <= #{rate}, do: sc_start(ctx, #{status}, #{ticks}, #{val}), else: ctx)"}
 
   @spec render_known_command(String.t(), [term()]) ::
           {:ok, String.t()} | {:error, {:unsupported, detail()}}

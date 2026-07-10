@@ -47,6 +47,24 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CodegenTest do
       assert {:ok, "sc_start(ctx, :sc_blessing, 60000, 10)"} = Codegen.generate(ast)
     end
 
+    test "sc_start with rate wraps the call in a random-roll guard" do
+      ast = [{:call, "sc_start", [{:const, "SC_FREEZE"}, 10_000, 0, 2500, 0]}]
+
+      assert {:ok,
+              "if(Enum.random(1..10_000) <= 2500, do: sc_start(ctx, :sc_freeze, 10000, 0), else: ctx)"} =
+               Codegen.generate(ast)
+    end
+
+    test "sc_start with a 10000 rate collapses to the plain call" do
+      ast = [{:call, "sc_start", [{:const, "SC_STUN"}, 3000, 0, 10_000, 0]}]
+      assert {:ok, "sc_start(ctx, :sc_stun, 3000, 0)"} = Codegen.generate(ast)
+    end
+
+    test "sc_start GID-targeted six-arg form is unsupported" do
+      ast = [{:call, "sc_start", [{:const, "SC_BLIND"}, 2000, 0, 1500, 0, 12_345]}]
+      assert {:error, {:unsupported, _}} = Codegen.generate(ast)
+    end
+
     test "sc_end resolves the status constant" do
       ast = [{:call, "sc_end", [{:const, "SC_BLESSING"}]}]
       assert {:ok, "sc_end(ctx, :sc_blessing)"} = Codegen.generate(ast)
