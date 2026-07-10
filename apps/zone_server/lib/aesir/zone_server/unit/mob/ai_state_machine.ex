@@ -59,6 +59,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
           state
           |> MobState.set_target(closest_target)
+          |> MobState.set_initiated(true)
           |> MobState.set_ai_state(:alert)
       end
     else
@@ -73,13 +74,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   def handle_damage_reaction(state, attacker_id) do
     case {state.ai_state, attacker_id} do
       {:idle, nil} ->
-        # Damaged but no attacker info, become alert
-        MobState.set_ai_state(state, :alert)
+        # Damaged but no attacker info, become alert (retaliation, not self-initiated)
+        state
+        |> MobState.set_initiated(false)
+        |> MobState.set_ai_state(:alert)
 
       {:idle, attacker_id} when is_integer(attacker_id) ->
-        # Attacked by specific entity, target them
+        # Attacked by specific entity, target them (retaliation, not self-initiated)
         state
         |> MobState.set_target(attacker_id)
+        |> MobState.set_initiated(false)
         |> MobState.set_ai_state(:combat)
 
       {_, attacker_id} when is_integer(attacker_id) ->
@@ -87,7 +91,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
         highest_aggro_target = MobState.get_highest_aggro_target(state)
 
         if highest_aggro_target != state.target_id do
-          MobState.set_target(state, highest_aggro_target)
+          # Aggro targets only ever come from taking damage, so a switch here is
+          # always a retaliation against the new attacker.
+          state
+          |> MobState.set_target(highest_aggro_target)
+          |> MobState.set_initiated(false)
         else
           state
         end

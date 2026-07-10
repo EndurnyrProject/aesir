@@ -138,6 +138,52 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       assert result.target_id == 2
       assert result.ai_state == :alert
     end
+
+    test "aggro acquired by scan marks the combat as self-initiated" do
+      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
+        [2]
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
+        {:ok, {101, 101, "prontera"}}
+      end)
+
+      state = aggressive_idle_mob_state()
+
+      result = AIStateMachine.check_aggro(state)
+
+      assert result.target_id == 2
+      assert result.ai_state == :alert
+      assert result.initiated_by_self? == true
+    end
+  end
+
+  describe "handle_damage_reaction/2 initiator tagging" do
+    test "an idle mob attacked by a specific entity retaliates (not self-initiated)" do
+      state = %MobState{base_mob_state() | ai_state: :idle, initiated_by_self?: true}
+
+      result = AIStateMachine.handle_damage_reaction(state, 2)
+
+      assert result.target_id == 2
+      assert result.ai_state == :combat
+      assert result.initiated_by_self? == false
+    end
+
+    test "switching to a higher-aggro attacker clears the self-initiated flag" do
+      state =
+        %MobState{
+          base_mob_state()
+          | ai_state: :alert,
+            target_id: 2,
+            initiated_by_self?: true
+        }
+        |> MobState.add_aggro(3, 100)
+
+      result = AIStateMachine.handle_damage_reaction(state, 3)
+
+      assert result.target_id == 3
+      assert result.initiated_by_self? == false
+    end
   end
 
   describe "process_combat/1 sheds aggro on untargetable target" do

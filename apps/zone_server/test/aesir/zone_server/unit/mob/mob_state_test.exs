@@ -56,6 +56,21 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     end
   end
 
+  describe "initiated_by_self?" do
+    test "a freshly built mob state did not initiate combat itself" do
+      state = build_mob_state()
+
+      assert state.initiated_by_self? == false
+    end
+
+    test "set_initiated/2 toggles the initiated_by_self? flag" do
+      state = build_mob_state()
+
+      assert MobState.set_initiated(state, true).initiated_by_self? == true
+      assert MobState.set_initiated(state, false).initiated_by_self? == false
+    end
+  end
+
   describe "to_combatant/1 magic stats" do
     test "carries matk, mdef and soft_mdef in combat_stats" do
       state = build_mob_state()

@@ -46,6 +46,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     # on `spawn_ref.spawn_area`, whose 0,0 means "random cell anywhere".
     field :spawn_point, {integer(), integer()} | nil, default: nil
     field :target_id, integer() | nil, default: nil
+    # true when aggro was acquired by the aggressive scan (mob walked up to a
+    # target that has not hit it), false when acquired by taking damage. Reads
+    # the `angry` vs `attack` skill-state distinction.
+    field :initiated_by_self?, boolean(), default: false
     field :last_ai_tick, integer() | nil, default: nil
     field :aggro_list, map(), default: %{}
     field :last_action_time, integer() | nil, default: nil
@@ -320,6 +324,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   @spec set_target(t(), integer() | nil) :: t()
   def set_target(%__MODULE__{} = state, target_id) do
     %{state | target_id: target_id}
+  end
+
+  @doc """
+  Records whether the mob initiated combat itself (aggressive scan) or is
+  retaliating after taking damage.
+  """
+  @spec set_initiated(t(), boolean()) :: t()
+  def set_initiated(%__MODULE__{} = state, initiated_by_self?)
+      when is_boolean(initiated_by_self?) do
+    %{state | initiated_by_self?: initiated_by_self?}
   end
 
   @doc """
