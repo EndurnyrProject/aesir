@@ -103,6 +103,63 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     end
   end
 
+  describe "skill cooldowns" do
+    test "a freshly built mob state has no skill cooldowns" do
+      state = build_mob_state()
+
+      assert state.skill_cooldowns == %{}
+    end
+
+    test "a skill with no cooldown entry is ready" do
+      state = build_mob_state()
+
+      assert MobState.skill_ready?(state, "NPC_FIREATTACK", 0)
+    end
+
+    test "put_skill_cooldown/3 gates the skill until now reaches expires_at" do
+      state =
+        build_mob_state()
+        |> MobState.put_skill_cooldown("NPC_FIREATTACK", 5_000)
+
+      assert state.skill_cooldowns == %{"NPC_FIREATTACK" => 5_000}
+      refute MobState.skill_ready?(state, "NPC_FIREATTACK", 4_999)
+      assert MobState.skill_ready?(state, "NPC_FIREATTACK", 5_000)
+      assert MobState.skill_ready?(state, "NPC_FIREATTACK", 5_001)
+    end
+  end
+
+  describe "casting" do
+    test "a freshly built mob state is not casting" do
+      state = build_mob_state()
+
+      assert state.casting == nil
+    end
+
+    test "set_casting/2 and clear_casting/1 round-trip" do
+      cast = %{skill: "NPC_FIREATTACK", target: 42, complete_at: 5_000}
+      state = build_mob_state()
+
+      set = MobState.set_casting(state, cast)
+      assert set.casting == cast
+
+      assert MobState.clear_casting(set).casting == nil
+    end
+  end
+
+  describe "master link" do
+    test "a freshly built mob state has no master" do
+      state = build_mob_state()
+
+      assert state.master_id == nil
+    end
+
+    test "set_master/2 sets the master instance id" do
+      state = build_mob_state()
+
+      assert MobState.set_master(state, 99).master_id == 99
+    end
+  end
+
   describe "to_combatant/1 magic stats" do
     test "carries matk, mdef and soft_mdef in combat_stats" do
       state = build_mob_state()

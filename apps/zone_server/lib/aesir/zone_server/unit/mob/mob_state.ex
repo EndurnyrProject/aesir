@@ -55,6 +55,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     # Phase 1 only records the signal (no teleport/flee).
     field :rude_attack_count, integer(), default: 0
     field :rude_attacked?, boolean(), default: false
+    # Per-skill cooldown gate: `skill_name => expires_at` in the same
+    # millisecond timestamp domain as the melee `last_attack_time` delay. The
+    # `casting` map (`%{skill, target, complete_at}`) marks an in-progress cast;
+    # `master_id` links a summoned slave back to its summoner's instance id.
+    field :skill_cooldowns, %{optional(String.t()) => integer()}, default: %{}
+    field :casting, map() | nil, default: nil
+    field :master_id, integer() | nil, default: nil
     field :last_ai_tick, integer() | nil, default: nil
     field :aggro_list, map(), default: %{}
     field :last_action_time, integer() | nil, default: nil
@@ -356,6 +363,56 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   @spec clear_rude_attacked(t()) :: t()
   def clear_rude_attacked(%__MODULE__{} = state) do
     %{state | rude_attacked?: false}
+  end
+
+  @doc """
+  Records the per-skill cooldown gate: stores `expires_at` for `skill_name`.
+  `expires_at` is a millisecond timestamp in the same domain the caller uses
+  for `skill_ready?/3`, following `Aesir.ZoneServer.Mmo.Skill.Cooldown`'s
+  clock-agnostic lazy-comparison model (no time is read here).
+  """
+  @spec put_skill_cooldown(t(), String.t(), integer()) :: t()
+  def put_skill_cooldown(%__MODULE__{skill_cooldowns: cooldowns} = state, skill_name, expires_at) do
+    %{state | skill_cooldowns: Map.put(cooldowns, skill_name, expires_at)}
+  end
+
+  @doc """
+  Returns `true` when `skill_name` has no cooldown entry or `now` has reached
+  the recorded `expires_at`. `now` is a millisecond timestamp in the same
+  domain as `put_skill_cooldown/3`.
+  """
+  @spec skill_ready?(t(), String.t(), integer()) :: boolean()
+  def skill_ready?(%__MODULE__{skill_cooldowns: cooldowns}, skill_name, now) do
+    case Map.fetch(cooldowns, skill_name) do
+      :error -> true
+      {:ok, expires_at} -> now >= expires_at
+    end
+  end
+
+  @doc """
+  Sets the in-progress cast descriptor (`%{skill, target, complete_at}`), or
+  `nil` to indicate no cast.
+  """
+  @spec set_casting(t(), map() | nil) :: t()
+  def set_casting(%__MODULE__{} = state, casting) do
+    %{state | casting: casting}
+  end
+
+  @doc """
+  Clears the in-progress cast descriptor.
+  """
+  @spec clear_casting(t()) :: t()
+  def clear_casting(%__MODULE__{} = state) do
+    %{state | casting: nil}
+  end
+
+  @doc """
+  Links this mob to its summoner by instance id (used by slave summons for
+  owner-death events and the `slavele` skill condition).
+  """
+  @spec set_master(t(), integer() | nil) :: t()
+  def set_master(%__MODULE__{} = state, master_id) do
+    %{state | master_id: master_id}
   end
 
   @doc """
