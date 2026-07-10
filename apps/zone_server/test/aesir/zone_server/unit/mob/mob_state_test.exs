@@ -1,10 +1,27 @@
 defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
   use ExUnit.Case, async: true
 
+  import Aesir.TestEtsSetup
+
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  setup :setup_ets_tables
+
+  defmodule TestAtkBuff do
+    @moduledoc false
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_mob_atk_buff,
+      properties: [:buff]
+
+    @impl true
+    def modifiers(instance, _context), do: %{atk: instance.val1}
+  end
 
   defp build_mob_state do
     mob_data = %MobDefinition{
@@ -217,6 +234,46 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
 
       assert combatant.divine_protection_level == 0
       assert combatant.demon_bane_level == 0
+    end
+  end
+
+  describe "to_combatant/1 status modifiers" do
+    test "an ATK-raising status on the mob raises combat_stats.atk" do
+      state = build_mob_state()
+      Registry.register_module(TestAtkBuff)
+      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
+
+      baseline = MobState.to_combatant(state).combat_stats.atk
+
+      StatusStorage.apply_status(:mob, state.instance_id, :sc_test_mob_atk_buff, val1: 30)
+
+      buffed = MobState.to_combatant(state).combat_stats.atk
+
+      assert buffed == baseline + 30
+      assert buffed > baseline
+    end
+
+    test "with no active statuses, to_combatant/1 is unchanged from the un-buffed values" do
+      state = build_mob_state()
+      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
+
+      combatant = MobState.to_combatant(state)
+
+      assert combatant.combat_stats.atk == 50
+      assert combatant.combat_stats.def == 25
+      assert combatant.base_stats.str == 40
+    end
+  end
+
+  describe "get_stats/1 status modifiers" do
+    test "with no active statuses, get_stats/1 is unchanged from the un-buffed values" do
+      state = build_mob_state()
+
+      stats = MobState.get_stats(state)
+
+      assert stats.atk == 50
+      assert stats.def == 25
+      assert stats.str == 40
     end
   end
 end

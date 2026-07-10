@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Mob.CombatCalculations, as: MobCombatCalc
 
@@ -221,28 +222,29 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   def to_combatant(%__MODULE__{} = mob_state) do
     mob_data = mob_state.mob_data
     mob_matk = MobCombatCalc.calculate_magic_attack(mob_data)
+    modifiers = Interpreter.get_all_modifiers(:mob, mob_state.instance_id)
 
     Combatant.new!(%{
       unit_id: mob_state.instance_id,
       unit_type: :mob,
       base_stats: %{
-        str: mob_data.stats.str,
-        agi: mob_data.stats.agi,
-        vit: mob_data.stats.vit,
-        int: mob_data.stats.int,
-        dex: mob_data.stats.dex,
-        luk: mob_data.stats.luk
+        str: mob_data.stats.str + modifier(modifiers, :str),
+        agi: mob_data.stats.agi + modifier(modifiers, :agi),
+        vit: mob_data.stats.vit + modifier(modifiers, :vit),
+        int: mob_data.stats.int + modifier(modifiers, :int),
+        dex: mob_data.stats.dex + modifier(modifiers, :dex),
+        luk: mob_data.stats.luk + modifier(modifiers, :luk)
       },
       combat_stats: %{
-        hit: MobCombatCalc.calculate_hit(mob_data),
-        flee: MobCombatCalc.calculate_flee(mob_data),
+        hit: MobCombatCalc.calculate_hit(mob_data) + modifier(modifiers, :hit),
+        flee: MobCombatCalc.calculate_flee(mob_data) + modifier(modifiers, :flee),
         perfect_dodge: MobCombatCalc.calculate_perfect_dodge(mob_data),
-        def: MobCombatCalc.calculate_defense(mob_data),
-        atk: MobCombatCalc.calculate_base_attack(mob_data),
-        matk: mob_matk,
-        matk_min: mob_matk,
-        matk_max: mob_matk,
-        mdef: MobCombatCalc.calculate_magic_defense(mob_data),
+        def: MobCombatCalc.calculate_defense(mob_data) + modifier(modifiers, :def),
+        atk: MobCombatCalc.calculate_base_attack(mob_data) + modifier(modifiers, :atk),
+        matk: mob_matk + modifier(modifiers, :matk),
+        matk_min: mob_matk + modifier(modifiers, :matk),
+        matk_max: mob_matk + modifier(modifiers, :matk),
+        mdef: MobCombatCalc.calculate_magic_defense(mob_data) + modifier(modifiers, :mdef),
         soft_mdef: MobCombatCalc.calculate_soft_mdef(mob_data)
       },
       progression: %{
@@ -582,4 +584,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       12
     end
   end
+
+  defp modifier(modifiers, key), do: Map.get(modifiers, key, 0)
 end
