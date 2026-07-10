@@ -35,6 +35,18 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert CommandMap.supported?("hideoffnpc")
   end
 
+  test "buildin lookups are case-insensitive like rAthena's engine" do
+    assert {:ok, %{shape: :timer, dsl: "initnpctimer"}} = CommandMap.command("Initnpctimer")
+    assert {:ok, %{dsl: "give_item"}} = CommandMap.command("GetItem")
+    assert {:ok, %{dsl: "count_item"}} = CommandMap.call_read("CountItem")
+    assert CommandMap.supported?("Monster")
+    refute CommandMap.supported?("GetMapXY")
+  end
+
+  test "monster maps to the monster shape" do
+    assert {:ok, %{shape: :monster}} = CommandMap.command("monster")
+  end
+
   test "warp special targets" do
     assert {:ok, ":random"} = CommandMap.warp_target("Random")
     assert {:ok, ":save_point"} = CommandMap.warp_target("SavePoint")

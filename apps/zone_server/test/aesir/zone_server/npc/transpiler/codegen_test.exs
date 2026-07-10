@@ -366,6 +366,43 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ ~S|todo(:npctalk, ["hi", 1])|
   end
 
+  test "monster maps onto summon_mob with map, coords, amount and event" do
+    src =
+      gen!("""
+      monster "prontera",155,180,"Poring",1002,1;
+      monster "prontera",0,0,"P",1002,5,"B::OnD";
+      monster "this",10,20,"Poring",1002,1;
+      monster "gefenia",-1,-1,"D",PORING,2,"B::OnD";
+      close;
+      """)
+
+    assert src =~ ~S|summon_mob(mob_id: 1002, map: "prontera", at: {155, 180})|
+
+    assert src =~
+             ~S|summon_mob(mob_id: 1002, map: "prontera", at: :random, amount: 5, event: "B::OnD")|
+
+    assert src =~ ~S|summon_mob(mob_id: 1002, at: {10, 20})|
+
+    assert src =~
+             ~S|summon_mob(mob_name: "PORING", map: "gefenia", at: :random, amount: 2, event: "B::OnD")|
+  end
+
+  test "monster case variant and dynamic args render; wrong arity stays a stub" do
+    src =
+      gen!("""
+      Monster .@map$,.@x,.@y," ",1002,.@n,.@label$;
+      monster "prontera",155,180;
+      close;
+      """)
+
+    assert src =~ ~S|mob_id: 1002|
+    assert src =~ ~S|map: get_local(ctx, :"map$", "")|
+    assert src =~ ~S|at: {get_local(ctx, :x, 0), get_local(ctx, :y, 0)}|
+    assert src =~ ~S|amount: get_local(ctx, :n, 0)|
+    assert src =~ ~S|event: get_local(ctx, :"label$", "")|
+    assert src =~ ~S|todo(:monster, ["prontera", 155, 180])|
+  end
+
   test "spawn placements render optional trigger and unique_name" do
     src =
       gen!(

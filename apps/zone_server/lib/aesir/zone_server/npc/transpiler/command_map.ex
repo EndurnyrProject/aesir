@@ -13,6 +13,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
   `callsub`, `getarg`, `rand`, `getnpctimer`) are shaped directly by
   `Codegen`, not listed here.
 
+  Buildin lookups (`command/1`, `call_read/1`, `supported?/1`) are
+  case-insensitive, matching rAthena's script engine — the corpus spells
+  `Initnpctimer`, `Monster` and friends freely.
+
   ## Command rules
 
   - `%{dsl: name, args: types}` — positional DSL call `name(ctx, a0, …)`;
@@ -26,6 +30,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
   - `%{shape: :timer, dsl: name}` — `initnpctimer`/`stopnpctimer`: zero args
     (self) → `name(ctx)`, one name arg → `name(ctx, arg)`; attach-flag
     variants stay a stub.
+  - `%{shape: :monster}` — `monster "map",x,y,"name",id,amount{,"event"...}`
+    → `summon_mob(ctx, mob_id: _, map: _, at: _, ...)`; the display name and
+    the size/ai tail are dropped.
 
   ## Reads
 
@@ -55,7 +62,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "hideonnpc" => %{shape: :ref1, dsl: "hideonnpc"},
     "hideoffnpc" => %{shape: :ref1, dsl: "hideoffnpc"},
     "initnpctimer" => %{shape: :timer, dsl: "initnpctimer"},
-    "stopnpctimer" => %{shape: :timer, dsl: "stopnpctimer"}
+    "stopnpctimer" => %{shape: :timer, dsl: "stopnpctimer"},
+    "monster" => %{shape: :monster}
   }
 
   # Global rAthena functions (`callfunc "Name"`) mapped onto DSL primitives.
@@ -92,13 +100,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
   }
 
   @spec command(String.t()) :: {:ok, rule()} | :error
-  def command(name) when is_binary(name), do: Map.fetch(@commands, name)
+  def command(name) when is_binary(name), do: Map.fetch(@commands, String.downcase(name))
 
   @spec read(String.t()) :: {:ok, String.t()} | :error
   def read(name) when is_binary(name), do: Map.fetch(@reads, name)
 
   @spec call_read(String.t()) :: {:ok, rule()} | :error
-  def call_read(name) when is_binary(name), do: Map.fetch(@call_reads, name)
+  def call_read(name) when is_binary(name), do: Map.fetch(@call_reads, String.downcase(name))
 
   @doc "A global `callfunc` name mapped onto a DSL primitive, or `:error`."
   @spec function(String.t()) :: {:ok, rule()} | :error
@@ -113,6 +121,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
 
   @doc "Every supported buildin name (commands + call reads), for the analyzer."
   @spec supported?(String.t()) :: boolean()
-  def supported?(name),
-    do: Map.has_key?(@commands, name) or Map.has_key?(@call_reads, name)
+  def supported?(name) when is_binary(name) do
+    key = String.downcase(name)
+    Map.has_key?(@commands, key) or Map.has_key?(@call_reads, key)
+  end
 end

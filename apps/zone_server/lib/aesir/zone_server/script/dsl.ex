@@ -370,18 +370,22 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
   `opts` accepts `:mob_id` or `:mob_name` (one is required; `:mob_name` is the
   AEGIS name, matching `MobManagement.get_mob_by_name/1`), `:at` as a `{x, y}`
-  tuple (defaults to the player's current position), `:aggressive` (accepted
-  but deferred in Phase 1, kept for the Dead Branch interface), and `:event`
-  (optional, a `"Name::OnLabel"` ref — rAthena OnMyMobDead — run with the
-  killer attached if the mob is later killed by a player; a malformed ref
-  logs a warning and is dropped, the mob still spawns without it). Halts on
-  an unknown mob or a spawn failure; returns the context unchanged on
-  success.
+  tuple or `:random` for a random walkable cell (defaults to the player's
+  current position), `:map` to spawn on an explicit map instead of the
+  player's (rAthena `monster "map",...`; with `:map`, `:at` defaults to
+  `:random` and an unknown map halts `:map_not_found`), `:amount` (spawn
+  count, default 1), `:aggressive` (accepted but deferred in Phase 1, kept
+  for the Dead Branch interface), and `:event` (optional, a `"Name::OnLabel"`
+  ref — rAthena OnMyMobDead — run with the killer attached if the mob is
+  later killed by a player; a malformed ref logs a warning and is dropped,
+  the mob still spawns without it). Halts on an unknown mob or a spawn
+  failure; returns the context unchanged on success.
 
-  Detached-capable: on a detached ctx, `:at` still overrides position, but the
-  map and default position come from `ctx.npc_gid`'s own placement
-  (`Npc.Registry.module_for_unit/1`) instead of a player. Halts `:no_player`
-  when `ctx.npc_gid` is `nil` or doesn't resolve — there is nowhere to spawn.
+  Detached-capable: on a detached ctx, `:map`/`:at` still apply, but the
+  default map and position come from `ctx.npc_gid`'s own placement
+  (`Npc.Registry.module_for_unit/1`) instead of a player. Without `:map`,
+  halts `:no_player` when `ctx.npc_gid` is `nil` or doesn't resolve — there
+  is nowhere to spawn.
   """
   @spec summon_mob(Ctx.t(), keyword()) :: Ctx.t()
   def summon_mob(%Ctx{status: {:error, _}} = ctx, _opts), do: ctx
@@ -396,9 +400,9 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   @doc """
   Spawns a random monster from the catalog, like `summon_mob/2` with a rolled id.
 
-  `opts` accepts `:at` (defaults to the player's position), `:aggressive`, and
-  `:event` (see `summon_mob/2`). Halts with `:no_mobs` if the catalog is
-  empty. Detached-capable, same reasoning as `summon_mob/2`.
+  `opts` accepts `:at`, `:map`, `:amount`, `:aggressive`, and `:event` (see
+  `summon_mob/2`). Halts with `:no_mobs` if the catalog is empty.
+  Detached-capable, same reasoning as `summon_mob/2`.
   """
   @spec summon_random_mob(Ctx.t(), keyword()) :: Ctx.t()
   def summon_random_mob(%Ctx{status: {:error, _}} = ctx, _opts), do: ctx
@@ -1285,30 +1289,46 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     end
   end
 
-  defp spawn_mob_at(%Ctx{game_state: gs} = ctx, mob_id, opts) when not is_nil(gs) do
-    {x, y} = Keyword.get(opts, :at, {gs.x, gs.y})
-    do_summon(ctx, gs.map_name, x, y, mob_id, opts)
+  defp spawn_mob_at(%Ctx{} = ctx, mob_id, opts) do
+    case Keyword.get(opts, :map) do
+      nil -> spawn_mob_here(ctx, mob_id, opts)
+      map -> do_summon(ctx, map, Keyword.get(opts, :at, :random), mob_id, opts)
+    end
   end
 
-  defp spawn_mob_at(%Ctx{npc_gid: nil} = ctx, _mob_id, _opts), do: Ctx.halt(ctx, :no_player)
+  defp spawn_mob_here(%Ctx{game_state: gs} = ctx, mob_id, opts) when not is_nil(gs) do
+    do_summon(ctx, gs.map_name, Keyword.get(opts, :at, {gs.x, gs.y}), mob_id, opts)
+  end
 
-  defp spawn_mob_at(%Ctx{npc_gid: gid} = ctx, mob_id, opts) do
+  defp spawn_mob_here(%Ctx{npc_gid: nil} = ctx, _mob_id, _opts), do: Ctx.halt(ctx, :no_player)
+
+  defp spawn_mob_here(%Ctx{npc_gid: gid} = ctx, mob_id, opts) do
     case NpcRegistry.module_for_unit(gid) do
       {:ok, {_module, placement}} ->
-        {x, y} = Keyword.get(opts, :at, {placement.x, placement.y})
-        do_summon(ctx, placement.map, x, y, mob_id, opts)
+        at = Keyword.get(opts, :at, {placement.x, placement.y})
+        do_summon(ctx, placement.map, at, mob_id, opts)
 
       :error ->
         Ctx.halt(ctx, :no_player)
     end
   end
 
-  defp do_summon(ctx, map_name, x, y, mob_id, opts) do
-    case Coordinator.summon_mob(map_name, mob_id, x, y, summon_opts(opts)) do
-      {:ok, _instance_id} -> ctx
-      {:error, reason} -> Ctx.halt(ctx, reason)
-    end
+  defp do_summon(ctx, map_name, at, mob_id, opts) do
+    {x, y} = summon_coords(at)
+    amount = Keyword.get(opts, :amount, 1)
+
+    Enum.reduce_while(1..amount//1, ctx, fn _n, acc ->
+      case Coordinator.summon_mob(map_name, mob_id, x, y, summon_opts(opts)) do
+        {:ok, _instance_id} -> {:cont, acc}
+        {:error, reason} -> {:halt, Ctx.halt(acc, reason)}
+      end
+    end)
   end
+
+  # The coordinator reads a non-positive coordinate as "random walkable cell"
+  # (rAthena mob_once_spawn semantics), so :random encodes as {0, 0}.
+  defp summon_coords(:random), do: {0, 0}
+  defp summon_coords({x, y}), do: {x, y}
 
   defp summon_opts(opts) do
     [aggressive: aggressive?(opts)]

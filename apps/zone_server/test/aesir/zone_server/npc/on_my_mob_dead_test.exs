@@ -248,6 +248,29 @@ defmodule Aesir.ZoneServer.Npc.OnMyMobDeadTest do
       assert_received {:summoned, "prontera", _mob_id, {80, 80}}
     end
 
+    test "summon_mob/2 with :map spawns cross-map even without a resolvable gid" do
+      test_pid = self()
+
+      stub(Coordinator, :summon_mob, fn map, mob_id, x, y, _opts ->
+        send(test_pid, {:summoned, map, mob_id, {x, y}})
+        {:ok, 1}
+      end)
+
+      ctx = %Ctx{
+        char_id: nil,
+        account_id: nil,
+        connection_pid: nil,
+        game_state: nil,
+        source: {:npc, :test_npc},
+        npc_gid: nil
+      }
+
+      result = Dsl.summon_mob(ctx, mob_id: 1002, map: "gef_dun00", at: {5, 6})
+
+      assert result.status == :ok
+      assert_received {:summoned, "gef_dun00", 1002, {5, 6}}
+    end
+
     test "summon_mob/2 still halts :no_player when npc_gid is nil" do
       ctx = %Ctx{
         char_id: nil,

@@ -194,13 +194,24 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   registration), so the mob can be targeted, damaged and killed. Summoned mobs
   carry a respawn time of 0 and are not re-spawned on death.
 
-  Returns `{:ok, instance_id}` or `{:error, reason}`.
+  A non-positive `x` or `y` picks a random walkable cell, mirroring rAthena's
+  `mob_once_spawn` (script `monster "map",0,0,...`).
+
+  Returns `{:ok, instance_id}`, or `{:error, :map_not_found}` when no
+  coordinator runs for `map_name`, or `{:error, reason}` from the spawn.
   """
   @spec summon_mob(String.t(), integer(), integer(), integer(), keyword()) ::
           {:ok, integer()} | {:error, term()}
   def summon_mob(map_name, mob_id, x, y, opts \\ []) do
     clean_name = String.replace_suffix(map_name, ".gat", "")
-    GenServer.call(via_tuple(clean_name), {:summon_mob, mob_id, x, y, opts})
+
+    case Registry.lookup(Aesir.ZoneServer.MapRegistry, clean_name) do
+      [{_pid, _value}] ->
+        GenServer.call(via_tuple(clean_name), {:summon_mob, mob_id, x, y, opts})
+
+      [] ->
+        {:error, :map_not_found}
+    end
   end
 
   @doc """
@@ -335,7 +346,8 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   def handle_call({:summon_mob, mob_id, x, y, opts}, _from, state) do
     case MobManagement.get_mob_by_id(mob_id) do
       {:ok, mob_data} ->
-        {result, new_state} = place_mob(mob_data, {x, y}, opts, state)
+        position = summon_position({x, y}, state.map_data)
+        {result, new_state} = place_mob(mob_data, position, opts, state)
         {:reply, result, new_state}
 
       {:error, reason} ->
@@ -696,6 +708,11 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   defp calculate_spawn_position(spawn_area, map_data) do
     random_area_cell(spawn_area, map_data, @spawn_position_attempts)
   end
+
+  defp summon_position({x, y}, %MapData{} = map_data) when x <= 0 or y <= 0,
+    do: random_walkable_cell(map_data, @spawn_position_attempts)
+
+  defp summon_position({x, y}, _map_data), do: {max(x, 0), max(y, 0)}
 
   defp random_walkable_cell(%MapData{xs: width, ys: height} = map_data, attempts) do
     x = :rand.uniform(width) - 1

@@ -779,6 +779,28 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
   end
 
+  # `monster "<map>",<x>,<y>,"<display name>",<mob>,<amount>{,"<event>"{,<size>{,<ai>}}}`
+  # → summon_mob. The display name is cosmetic (the engine renders the db
+  # name) and the size/ai tail has no DSL equivalent; both are dropped.
+  # `"this"` targets the attached map (the DSL default) and non-positive
+  # literal coordinates mean a random walkable cell, both per rAthena.
+  defp emit_mapped(_name, %{shape: :monster}, [map, x, y, _display, mob, amount | rest], env) do
+    {pre, [map, x, y, mob, amount | rest]} =
+      hoist_all([map, x, y, mob, amount | Enum.take(rest, 1)], env)
+
+    parts =
+      [monster_mob(mob, env), monster_map(map, env), monster_at(x, y, env)] ++
+        monster_amount(amount, env) ++ monster_event(rest, env)
+
+    {pre ++ ["ctx = summon_mob(ctx, #{parts |> List.flatten() |> Enum.join(", ")})"], :cont}
+  end
+
+  defp emit_mapped(name, %{shape: :monster}, args, env) do
+    {pre, args} = hoist_all(args, env)
+    rendered = Enum.map_join(args, ", ", &render(&1, env))
+    {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
+  end
+
   # `savepoint "map",x,y{,rx,ry}` — the optional range args are dropped.
   defp emit_mapped(_name, %{shape: :savepoint}, args, env) do
     {pre, [map, x, y | _rest]} = hoist_all(args, env)
@@ -797,6 +819,32 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
     {pre ++ ["ctx = #{dsl}(ctx, #{Enum.join(rendered, ", ")})"], :cont}
   end
+
+  defp monster_mob({:int, id}, _env), do: "mob_id: #{id}"
+  defp monster_mob({:name, aegis}, _env), do: "mob_name: #{inspect(aegis)}"
+  defp monster_mob({:str, aegis}, _env), do: "mob_name: #{inspect(aegis)}"
+  defp monster_mob(expr, env), do: "mob_id: #{render(expr, env)}"
+
+  defp monster_map({:str, "this"}, _env), do: []
+  defp monster_map(map, env), do: "map: #{render_str(map, env)}"
+
+  defp monster_at(x, y, env) do
+    case {literal_coord(x), literal_coord(y)} do
+      {xi, yi} when is_integer(xi) and is_integer(yi) and (xi <= 0 or yi <= 0) -> "at: :random"
+      _ -> "at: {#{render(x, env)}, #{render(y, env)}}"
+    end
+  end
+
+  defp literal_coord({:int, n}), do: n
+  defp literal_coord({:neg, {:int, n}}), do: -n
+  defp literal_coord(_expr), do: nil
+
+  defp monster_amount({:int, 1}, _env), do: []
+  defp monster_amount(amount, env), do: ["amount: #{render(amount, env)}"]
+
+  defp monster_event([], _env), do: []
+  defp monster_event([{:str, ""}], _env), do: []
+  defp monster_event([event], env), do: ["event: #{render_str(event, env)}"]
 
   defp typed_arg({:int, n}, _type, _env), do: to_string(n)
 

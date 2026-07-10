@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.ZoneServer.Map.Coordinator
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -43,11 +44,35 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
       assert mob.map_name == "prontera"
     end
 
+    test "non-positive coordinates pick a random walkable cell (rAthena 0,0 semantics)" do
+      stub(MobSupervisor, :spawn_mob, fn _map, %MobState{}, _opts -> {:ok, self()} end)
+
+      state = %Coordinator{
+        map_name: "prontera",
+        map_data: MapData.new("prontera", 40, 40),
+        next_mob_id: 1
+      }
+
+      {:reply, {:ok, instance_id}, _new_state} =
+        Coordinator.handle_call({:summon_mob, @poring_id, 0, 0, []}, {self(), nil}, state)
+
+      assert {:ok, {MobState, %MobState{} = mob, _pid}} =
+               UnitRegistry.get_unit(:mob, instance_id)
+
+      assert mob.x in 0..39
+      assert mob.y in 0..39
+    end
+
     test "replies with the error when the mob id is unknown" do
       state = %Coordinator{map_name: "prontera", next_mob_id: 1}
 
       assert {:reply, {:error, :mob_not_found}, ^state} =
                Coordinator.handle_call({:summon_mob, 9_999_999, 10, 10, []}, {self(), nil}, state)
+    end
+
+    test "summon_mob/5 returns :map_not_found when no coordinator runs for the map" do
+      assert {:error, :map_not_found} =
+               Coordinator.summon_mob("no_such_map_registered", @poring_id, 10, 10)
     end
   end
 end
