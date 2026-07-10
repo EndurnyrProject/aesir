@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -215,6 +216,41 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
                  skill_level: @skill_level,
                  element: :holy
                )
+    end
+
+    test "allows a mob caster to damage a player target (mob skills are not PvP)" do
+      mob_caster = build_mob_state(@caster_id, 150, 150, {:neutral, 1})
+      target_player = spawn(fn -> Process.sleep(:infinity) end)
+      test_pid = self()
+
+      stub(UnitRegistry, :get_unit, fn :mob, @target_id -> {:error, :not_found} end)
+      stub(UnitRegistry, :get_player_pid, fn @target_id -> {:ok, target_player} end)
+
+      stub(PlayerSession, :get_current_stats, fn ^target_player -> build_caster().stats end)
+
+      stub(PlayerSession, :get_state, fn ^target_player ->
+        %{game_state: %{build_caster() | character_id: @target_id, x: 150, y: 150}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, _p -> :ok end)
+
+      stub(StatusInterpreter, :absorb_damage, fn :player, @target_id, damage, _hit_info ->
+        damage
+      end)
+
+      stub(PlayerSession, :apply_damage, fn ^target_player, damage, @caster_id ->
+        send(test_pid, {:damage, damage})
+        :ok
+      end)
+
+      assert :ok =
+               Combat.execute_magic_damage(mob_caster, @target_id, 100,
+                 skill_id: @skill_id,
+                 skill_level: @skill_level,
+                 element: :fire
+               )
+
+      assert_received {:damage, 100}
     end
   end
 end

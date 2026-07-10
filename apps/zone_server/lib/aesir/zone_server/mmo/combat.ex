@@ -231,7 +231,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- validate_attack_with_combatants(attacker, target),
-         :ok <- ensure_offensive_target(target_type) do
+         :ok <- ensure_offensive_target(attacker, target_type) do
       damage =
         amount
         |> DamageShared.apply_element(element, target)
@@ -364,7 +364,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- validate_attack_with_combatants(attacker, target),
-         :ok <- ensure_offensive_target(target_type) do
+         :ok <- ensure_offensive_target(attacker, target_type) do
       total = sum_magic_hits(attacker, target, element, skill_ratio, hits)
       {tx, ty} = target.position
 
@@ -507,7 +507,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     element = Keyword.get(opts, :element, :neutral)
 
     with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
-         :ok <- ensure_offensive_target(target_type),
+         :ok <- ensure_offensive_target(attacker, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
          {:ok, %{damage: damage}} <-
            MiscDamageCalculator.calculate_misc_damage(attacker, target,
@@ -631,7 +631,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- validate_attack_with_combatants(attacker, target),
-         :ok <- ensure_offensive_target(target_type) do
+         :ok <- ensure_offensive_target(attacker, target_type) do
       Enum.each(1..hits//1, fn _ ->
         apply_skill_damage(
           attacker,
@@ -779,8 +779,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     end
   end
 
-  defp ensure_offensive_target(:mob), do: :ok
-  defp ensure_offensive_target(:player), do: {:error, :pvp_not_implemented}
+  # PvP is the only forbidden pairing: a player attacking another player. Mob
+  # casters (mob skills) may target players.
+  defp ensure_offensive_target(_attacker, :mob), do: :ok
+  defp ensure_offensive_target(%{unit_type: :mob}, :player), do: :ok
+  defp ensure_offensive_target(_attacker, :player), do: {:error, :pvp_not_implemented}
 
   # Routes damage to the owning session by unit type, keeping the damage paths
   # free of concrete session-module knowledge. Player targets with positive damage

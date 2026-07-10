@@ -66,4 +66,6 @@ Mimic.copy(Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler)
 Mimic.copy(Aesir.ZoneServer.Unit.Storage.Persistence)
 Mimic.copy(Aesir.ZoneServer.Unit.Player.Handlers.RefineOps)
 
+Mimic.copy(Aesir.ZoneServer.Mmo.MobSkill.Db)
+
 ExUnit.start()

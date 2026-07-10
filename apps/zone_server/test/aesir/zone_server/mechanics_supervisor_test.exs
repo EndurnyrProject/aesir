@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.MechanicsSupervisorTest do
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
   alias Aesir.ZoneServer.Mmo.ItemManagement.CompiledItemScripts
   alias Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler
+  alias Aesir.ZoneServer.Mmo.MobSkill.Db, as: MobSkillDb
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Npc.Events, as: NpcEvents
@@ -29,6 +30,7 @@ defmodule Aesir.ZoneServer.MechanicsSupervisorTest do
     stub(Warps, :reload, fn -> :ok end)
     stub(Shops, :reload, fn -> :ok end)
     stub(Shops, :all, fn -> [] end)
+    stub(MobSkillDb, :reload, fn -> :ok end)
     stub(LevelPenalty, :reload, fn -> :ok end)
     stub(RefineDatabase, :reload, fn -> :ok end)
     stub(ShopVerifier, :verify!, fn _shops -> :ok end)

@@ -19,6 +19,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
+  alias Aesir.ZoneServer.Mmo.MobSkill.Db, as: MobSkillDb
+  alias Aesir.ZoneServer.Mmo.MobSkill.Executor, as: MobSkillExecutor
+  alias Aesir.ZoneServer.Mmo.MobSkill.Selector, as: MobSkillSelector
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -291,6 +294,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     # dormant; aggro toward players who left the map must not survive the nap.
     # Hibernating compacts the heap, so a dormant map costs no CPU and little
     # memory until a player shows up again.
+    # ponytail: a cast in flight is not cancelled here; its :cast_complete
+    # self-heals via the target-invalidation abort. Proper cast interruption
+    # lands with Phase 2b (mob-side statuses).
     updated_state =
       state
       |> MobState.stop_movement()
@@ -331,10 +337,38 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
         # A tick that raced a :sleep; drop it without rescheduling
         {:noreply, state}
 
+      state.casting != nil ->
+        # A casting mob is locked: no movement, no melee, no re-selection.
+        # Completion is driven by the separate :cast_complete timer.
+        {:noreply, schedule_ai_tick(state)}
+
       true ->
-        updated_state = state |> process_ai() |> schedule_ai_tick()
+        updated_state = state |> run_skill_or_ai() |> schedule_ai_tick()
         {:noreply, updated_state}
     end
+  end
+
+  @impl GenServer
+  def handle_info(:cast_complete, %{is_dead: true} = state), do: {:noreply, state}
+
+  def handle_info(:cast_complete, %{casting: nil} = state), do: {:noreply, state}
+
+  def handle_info(:cast_complete, %{casting: %{row: row}} = state) do
+    # Target invalidation surfaces as {:error, _} from the Executor - a clean
+    # abort with no packet. The cooldown is written either way so an aborted
+    # cast cannot be instantly re-rolled every tick.
+    MobSkillExecutor.execute(state, row)
+
+    now = System.system_time(:millisecond)
+
+    updated_state =
+      state
+      |> MobState.put_skill_cooldown(row.skill, now + row.delay)
+      |> MobState.clear_casting()
+
+    if updated_state.ai_timer_ref, do: Process.cancel_timer(updated_state.ai_timer_ref)
+
+    {:noreply, schedule_ai_tick(updated_state)}
   end
 
   @impl GenServer
@@ -483,6 +517,38 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   defp process_ai(state) do
     AIStateMachine.process_ai(state)
+  end
+
+  # Skill selection runs before the melee/movement state machine: a tick that
+  # picks a row either starts a cast (locking the mob until :cast_complete) or
+  # fires it instantly; only a nil selection falls through to the normal AI.
+  # The very first tick after spawn selects with the :spawn event so `onspawn`
+  # rows can fire. `now` is System.system_time(:millisecond), the same clock
+  # the melee path uses for last_attack_time, so cooldown expiry lines up.
+  defp run_skill_or_ai(state) do
+    now = System.system_time(:millisecond)
+    event = if state.spawn_tick_pending?, do: :spawn, else: :tick
+    state = %{state | spawn_tick_pending?: false}
+
+    case MobSkillSelector.select(state, MobSkillDb.rows_for(state.mob_id),
+           now: now,
+           event: event
+         ) do
+      {:cast, row} -> begin_cast(state, row, now)
+      nil -> process_ai(state)
+    end
+  end
+
+  defp begin_cast(state, %{cast_time: 0} = row, now) do
+    MobSkillExecutor.broadcast_casting(state, row)
+    MobSkillExecutor.execute(state, row)
+    MobState.put_skill_cooldown(state, row.skill, now + row.delay)
+  end
+
+  defp begin_cast(state, row, now) do
+    MobSkillExecutor.broadcast_casting(state, row)
+    Process.send_after(self(), :cast_complete, row.cast_time)
+    MobState.set_casting(state, %{row: row, complete_at: now + row.cast_time})
   end
 
   defp process_movement_tick(%{movement_state: :standing} = state) do

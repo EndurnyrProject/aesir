@@ -57,11 +57,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     field :rude_attacked?, boolean(), default: false
     # Per-skill cooldown gate: `skill_name => expires_at` in the same
     # millisecond timestamp domain as the melee `last_attack_time` delay. The
-    # `casting` map (`%{skill, target, complete_at}`) marks an in-progress cast;
+    # `casting` map (`%{row: row, complete_at: ms}`) marks an in-progress cast;
     # `master_id` links a summoned slave back to its summoner's instance id.
     field :skill_cooldowns, %{optional(String.t()) => integer()}, default: %{}
     field :casting, map() | nil, default: nil
     field :master_id, integer() | nil, default: nil
+    # True until the first AI tick after spawn has run skill selection; that
+    # tick selects with the `:spawn` event so `onspawn` rows can fire.
+    field :spawn_tick_pending?, boolean(), default: true
     field :last_ai_tick, integer() | nil, default: nil
     field :aggro_list, map(), default: %{}
     field :last_action_time, integer() | nil, default: nil
@@ -390,8 +393,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   end
 
   @doc """
-  Sets the in-progress cast descriptor (`%{skill, target, complete_at}`), or
-  `nil` to indicate no cast.
+  Sets the in-progress cast descriptor (`%{row: row, complete_at: ms}`), or
+  `nil` to indicate no cast. The target is not captured here; it is re-resolved
+  fresh at `:cast_complete` so a stale target aborts instead of firing.
   """
   @spec set_casting(t(), map() | nil) :: t()
   def set_casting(%__MODULE__{} = state, casting) do
