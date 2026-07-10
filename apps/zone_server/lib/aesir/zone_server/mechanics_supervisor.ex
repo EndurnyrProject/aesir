@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
   alias Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler
+  alias Aesir.ZoneServer.Mmo.MobSkill.Db, as: MobSkillDb
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Npc.Events, as: NpcEvents
@@ -21,6 +22,7 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
     :ok = NpcEvents.run_on_init()
     :ok = Warps.reload()
     :ok = Shops.reload()
+    :ok = MobSkillDb.reload()
     :ok = LevelPenalty.reload()
     :ok = RefineDatabase.reload()
     :ok = ShopVerifier.verify!(Shops.all())
