@@ -32,6 +32,8 @@ end
 defmodule Aesir.ZoneServer.Mmo.Skills.HtTrapIntegrationTest do
   use ExUnit.Case, async: false
 
+  @moduletag :integration
+
   import Aesir.TestEtsSetup
   import Mimic
 

@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Integration.WarpTest do
   stubbed.
   """
   use ExUnit.Case, async: true
+
+  @moduletag :integration
   import Mimic
 
   alias Aesir.Net.MapLoaded

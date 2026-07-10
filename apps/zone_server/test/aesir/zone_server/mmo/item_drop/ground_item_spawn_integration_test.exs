@@ -17,6 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItemSpawnIntegrationTest do
   use ExUnit.Case, async: false
   use Mimic
 
+  @moduletag :integration
+
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Character

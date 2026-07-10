@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSelfBuffIntegrationTest do
 
   use ExUnit.Case, async: true
 
+  @moduletag :integration
+
   import Aesir.TestEtsSetup
 
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition

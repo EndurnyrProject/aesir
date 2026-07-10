@@ -23,6 +23,8 @@ defmodule Aesir.ZoneServer.Npc.WarpIntegrationTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  @moduletag :integration
+
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Character

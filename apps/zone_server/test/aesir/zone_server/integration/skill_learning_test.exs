@@ -9,6 +9,8 @@ defmodule Aesir.ZoneServer.Integration.SkillLearningTest do
   sync) are stubbed.
   """
   use ExUnit.Case, async: true
+
+  @moduletag :integration
   import Mimic
 
   alias Aesir.Net.SkillList

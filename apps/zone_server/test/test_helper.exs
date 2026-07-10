@@ -73,4 +73,10 @@ Mimic.copy(Aesir.ZoneServer.Mmo.MobSkill.Db)
 Mimic.copy(Aesir.Commons.InterServer.PubSub)
 Mimic.copy(Aesir.ZoneServer.Announcement)
 
-ExUnit.start()
+# Integration tests (tagged `:integration`, mostly via `Aesir.ZoneServer.IntegrationCase`)
+# are excluded from the default run. Run them explicitly with:
+#   mix test --include integration      # unit + integration
+#   mix test --only integration         # integration only
+# Bump the default `assert_receive`/`refute_receive` timeout (100ms) to absorb
+# timing jitter in the full-stack integration tests (e.g. npc_events warp flakes).
+ExUnit.start(exclude: [:integration], assert_receive_timeout: 500)

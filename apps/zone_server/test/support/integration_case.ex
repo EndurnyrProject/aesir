@@ -19,6 +19,8 @@ defmodule Aesir.ZoneServer.IntegrationCase do
       use ExUnit.Case, async: false
       use Mimic
 
+      @moduletag :integration
+
       import Aesir.TestEtsSetup
       import Aesir.ZoneServer.IntegrationCase
       import Aesir.ZoneServer.PacketHelpers

@@ -7,7 +7,18 @@ defmodule Aesir.MixProject do
       version: "0.6.0",
       start_permanent: Mix.env() == :prod,
       dialyzer: dialyzer(),
-      deps: deps()
+      deps: deps(),
+      aliases: aliases()
+    ]
+  end
+
+  def cli do
+    [preferred_envs: ["test.integration": :test]]
+  end
+
+  defp aliases do
+    [
+      "test.integration": ["test --only integration"]
     ]
   end
 

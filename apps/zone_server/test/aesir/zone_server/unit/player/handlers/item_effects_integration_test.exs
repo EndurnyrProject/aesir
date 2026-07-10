@@ -8,6 +8,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemEffectsIntegrationTest do
   use ExUnit.Case, async: false
   use Mimic
 
+  @moduletag :integration
+
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.ItemRemoved

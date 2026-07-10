@@ -11,6 +11,8 @@ defmodule Aesir.ZoneServer.NpcTranspilerIntegrationTest do
   use ExUnit.Case, async: false
   use Mimic
 
+  @moduletag :integration
+
   @moduletag :capture_log
 
   alias Aesir.Commons.Models.Character

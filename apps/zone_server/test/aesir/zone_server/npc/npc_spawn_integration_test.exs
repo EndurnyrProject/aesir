@@ -16,6 +16,8 @@ defmodule Aesir.ZoneServer.Npc.NpcSpawnIntegrationTest do
   use ExUnit.Case, async: false
   use Mimic
 
+  @moduletag :integration
+
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Character
