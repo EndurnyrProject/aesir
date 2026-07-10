@@ -1,4 +1,5 @@
 Mimic.copy(Aesir.ZoneServer.Unit.MovementEngine)
+Mimic.copy(Aesir.ZoneServer.Unit.Movement)
 Mimic.copy(Aesir.ZoneServer.Unit.SpatialIndex)
 Mimic.copy(Aesir.ZoneServer.Unit.Player.Stats)
 Mimic.copy(Aesir.ZoneServer.Unit.Player.PlayerState)

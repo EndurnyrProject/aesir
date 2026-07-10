@@ -130,6 +130,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   @doc """
+  Instantly relocates the mob to a random walkable cell on its map and drops
+  its current target (`AL_TELEPORT` flee). Reuses the `:knocked_back` instant
+  position-set path; a no-op if no walkable cell is found.
+  """
+  @spec teleport(pid()) :: :ok
+  def teleport(pid) do
+    GenServer.cast(pid, {:mob_teleport})
+  end
+
+  @doc """
   Stops the mob session.
   """
   @spec stop(pid()) :: :ok
@@ -324,6 +334,33 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     Movement.set_position(:mob, updated_state.instance_id, updated_state, updated_state.map_name)
 
     {:noreply, updated_state}
+  end
+
+  @impl GenServer
+  def handle_cast({:mob_teleport}, state) do
+    # Instant flee reposition (AL_TELEPORT): reuse the :knocked_back position-set
+    # path (spatial-index update + delta-snapshot broadcast), not the walking
+    # move_to. A missing cache entry or a fully-blocked map is a benign no-op.
+    with {:ok, map_data} <- MapCache.get(state.map_name),
+         {:ok, {x, y}} <- MapData.random_walkable_cell(map_data) do
+      updated_state =
+        state
+        |> MobState.update_position(x, y)
+        |> MobState.stop_movement()
+        |> MobState.set_target(nil)
+        |> MobState.set_ai_state(:idle)
+
+      Movement.set_position(
+        :mob,
+        updated_state.instance_id,
+        updated_state,
+        updated_state.map_name
+      )
+
+      {:noreply, updated_state}
+    else
+      _ -> {:noreply, state}
+    end
   end
 
   @impl GenServer
