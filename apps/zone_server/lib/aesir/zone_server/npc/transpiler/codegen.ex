@@ -809,6 +809,15 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
        ["ctx = savepoint(ctx, #{render(map, env)}, #{render(x, env)}, #{render(y, env)})"], :cont}
   end
 
+  # `announce`/`mapannounce`/`areaannounce`/`broadcast`: keep the fixed
+  # text/flag prefix and an optional trailing color; rAthena's font tail
+  # (fontType/fontSize/fontAlign/fontY) has no DSL equivalent and is dropped.
+  defp emit_mapped(_name, %{shape: :announce, dsl: dsl, fixed: fixed}, args, env) do
+    {pre, kept} = args |> Enum.take(fixed + 1) |> hoist_all(env)
+    rendered = Enum.map_join(kept, ", ", &render(&1, env))
+    {pre ++ ["ctx = #{dsl}(ctx, #{rendered})"], :cont}
+  end
+
   defp emit_mapped(_name, %{dsl: dsl, args: types}, args, env) do
     {pre, args} = hoist_all(args, env)
 

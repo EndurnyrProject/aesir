@@ -484,6 +484,55 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ ~S|Todo.call!(:callfunc, ["F_Missing"])|
   end
 
+  test "broadcast buildins transpile to DSL calls, not todo stubs" do
+    src =
+      gen!("""
+      announce "hi", bc_all;
+      close;
+      """)
+
+    assert src =~ ~S|announce("hi", 0)|
+    refute src =~ "todo(ctx, :announce"
+  end
+
+  test "announce passes a combined flag and explicit color through" do
+    src =
+      gen!("""
+      announce "hi", bc_all|bc_blue, 0xABCDEF;
+      close;
+      """)
+
+    assert src =~ ~S|announce("hi", :erlang.bor(0, 16), 11_259_375)|
+  end
+
+  test "announce drops the rAthena font tail beyond the color arg" do
+    src =
+      gen!("""
+      announce "hi", bc_all, 0xFFFFFF, 0x190, 12, 0, 0;
+      close;
+      """)
+
+    assert src =~ ~S|announce("hi", 0, 16_777_215)|
+    refute src =~ "400"
+  end
+
+  test "mapannounce, areaannounce and broadcast transpile to their DSL calls" do
+    src =
+      gen!("""
+      mapannounce "prontera", "hi", bc_map;
+      areaannounce "prontera", 10, 10, 20, 20, "hi", bc_area;
+      broadcast "hi", bc_all;
+      close;
+      """)
+
+    assert src =~ ~S|mapannounce("prontera", "hi", 1)|
+    assert src =~ ~S|areaannounce("prontera", 10, 10, 20, 20, "hi", 2)|
+    assert src =~ ~S|broadcast("hi", 0)|
+    refute src =~ "todo(ctx, :mapannounce"
+    refute src =~ "todo(ctx, :areaannounce"
+    refute src =~ "todo(ctx, :broadcast"
+  end
+
   test "rathena semantics: truthiness, bool_int, concat, bitwise" do
     src =
       gen!("""

@@ -33,6 +33,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
   - `%{shape: :monster}` — `monster "map",x,y,"name",id,amount{,"event"...}`
     → `summon_mob(ctx, mob_id: _, map: _, at: _, ...)`; the display name and
     the size/ai tail are dropped.
+  - `%{shape: :announce, dsl: name, fixed: n}` — the broadcast buildins
+    (`announce`/`mapannounce`/`areaannounce`/`broadcast`): keep the `n` fixed
+    prefix args plus an optional trailing color; the rAthena font tail
+    (fontType/fontSize/fontAlign/fontY) has no DSL equivalent and is dropped.
 
   ## Reads
 
@@ -63,7 +67,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "hideoffnpc" => %{shape: :ref1, dsl: "hideoffnpc"},
     "initnpctimer" => %{shape: :timer, dsl: "initnpctimer"},
     "stopnpctimer" => %{shape: :timer, dsl: "stopnpctimer"},
-    "monster" => %{shape: :monster}
+    "monster" => %{shape: :monster},
+    "announce" => %{shape: :announce, dsl: "announce", fixed: 2},
+    "broadcast" => %{shape: :announce, dsl: "broadcast", fixed: 2},
+    "mapannounce" => %{shape: :announce, dsl: "mapannounce", fixed: 3},
+    "areaannounce" => %{shape: :announce, dsl: "areaannounce", fixed: 7}
   }
 
   # Global rAthena functions (`callfunc "Name"`) mapped onto DSL primitives.
