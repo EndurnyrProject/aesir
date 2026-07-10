@@ -15,6 +15,17 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   flush at the next dialog suspension point), and `session_ref`, the monitor
   the interaction holds on its session so a blocking primitive can exit cleanly
   if the session dies.
+
+  NPC event handlers (`OnInit`/`OnTimer`/`donpcevent`, rAthena semantics) run
+  with no player attached: `detached/2` builds a `Ctx` for that case, with
+  `session_pid`, `char_id`, `account_id`, `connection_pid`, and `game_state`
+  all `nil`. Every player-touching DSL effect guards on this — halting the ctx
+  with `{:error, :no_player}` (or, for `refine/4`, which returns a tagged
+  result rather than a `Ctx`, returning `{:error, :no_player}` directly) —
+  instead of touching a nonexistent session or dereferencing a nonexistent
+  game state. Pure reads raise `ArgumentError` instead, since they return bare
+  values and have no `status` to carry an error. `attached?/1` tells the two
+  shapes apart.
   """
 
   use TypedStruct
@@ -70,4 +81,46 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   def halt(%__MODULE__{} = ctx, reason) do
     %{ctx | status: {:error, reason}}
   end
+
+  @doc """
+  Builds a detached `Ctx` for an NPC event handler with no player attached
+  (rAthena `OnInit`/`OnTimer`/`donpcevent` semantics).
+
+  `module` is the NPC module the event fires on; `npc_gid` is the spawned
+  instance's synthetic unit id. `session_pid`, `char_id`, `account_id`,
+  `connection_pid`, and `game_state` are all `nil` — every player-touching DSL
+  primitive guards on this and halts with `{:error, :no_player}` instead of
+  running.
+  """
+  @spec detached(module(), non_neg_integer()) :: t()
+  def detached(module, npc_gid) do
+    %__MODULE__{
+      char_id: nil,
+      account_id: nil,
+      connection_pid: nil,
+      game_state: nil,
+      source: {:npc, module.npc_id()},
+      npc_gid: npc_gid
+    }
+  end
+
+  @doc """
+  Whether `ctx` has a player attached.
+
+  `false` for a `detached/2` context (no session, no `game_state`); `true` for
+  a `from_session/2` context.
+
+  Keys on `game_state`, not `session_pid` — the DSL's `apply_op` seam keys on
+  `session_pid` instead, and the two discriminators diverge on purpose for an
+  item-triggered ctx: `from_session/2` never sets `session_pid` (item scripts
+  run inline on the session, not through a cross-process call), so
+  `attached?/1` reports `true` there while an `apply_op`-routed effect
+  (`give_item`, `pay_zeny`, ...) still halts `:no_player` if called from an
+  item script. That is fine, and strictly better than the prior behavior: a
+  `nil` `session_pid` used to `exit(:noproc)` the whole `PlayerSession` on the
+  `GenServer.call`; halting the ctx leaves the session alive.
+  """
+  @spec attached?(t()) :: boolean()
+  def attached?(%__MODULE__{game_state: nil}), do: false
+  def attached?(%__MODULE__{}), do: true
 end

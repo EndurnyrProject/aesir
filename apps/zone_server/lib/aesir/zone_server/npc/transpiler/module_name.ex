@@ -22,6 +22,20 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ModuleName do
     |> hd()
   end
 
+  @doc """
+  The `::`-suffixed export/reference name (used for `donpcevent`-style
+  targeting), or `nil` when absent. A name that itself starts with `::` has
+  no separate export name (the whole thing is already an internal reference,
+  handled by `display_name/1`'s leading-colon trim).
+  """
+  @spec exname(String.t()) :: String.t() | nil
+  def exname(name) do
+    case String.split(name, "::", parts: 2) do
+      [prefix, suffix] when prefix != "" -> suffix
+      _ -> nil
+    end
+  end
+
   @doc "A filesystem/function-safe slug for an NPC or map name."
   @spec slug(String.t()) :: String.t()
   def slug(name) do

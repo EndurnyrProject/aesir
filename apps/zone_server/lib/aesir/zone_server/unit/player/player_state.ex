@@ -69,6 +69,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           visible_shops: MapSet.t(),
           visible_items: MapSet.t(),
           last_visibility_cell: {integer(), integer()} | nil,
+          inside_npc_areas: MapSet.t(),
           target_id: integer() | nil,
           combat_target_id: integer() | nil,
           combat_action_type: integer() | nil,
@@ -192,6 +193,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     vars: %{},
     temp_vars: %{},
 
+    # NPC touch-area (OnTouch) leave/re-enter hysteresis: MapSet of gids whose
+    # touch rect currently contains the player's cell. Populated on every cell
+    # change (never on standing still); cleared on warp/map change.
+    inside_npc_areas: MapSet.new(),
+
     # Inventory keyed by stable session index
     inventory: %{},
     # Catalyst-consumption deltas staged by a skill cast for the handler to
@@ -312,8 +318,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   Relocates the player to a new map and cell as part of a warp.
 
   Swaps `map_name`/`x`/`y`, drops the now-stale visibility sets (the player is
-  leaving every observer behind) and resets transient movement/combat state so
-  the player lands idle on the destination map.
+  leaving every observer behind), clears `inside_npc_areas` (the OnTouch
+  leave/re-enter hysteresis is per-map — a warp can't be a re-entry) and resets
+  transient movement/combat state so the player lands idle on the destination
+  map.
   """
   @spec relocate(t(), String.t(), non_neg_integer(), non_neg_integer()) :: t()
   def relocate(%__MODULE__{} = state, map_name, x, y) do
@@ -329,7 +337,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
         visible_npcs: MapSet.new(),
         visible_shops: MapSet.new(),
         visible_items: MapSet.new(),
-        last_visibility_cell: nil
+        last_visibility_cell: nil,
+        inside_npc_areas: MapSet.new()
     }
     |> stop_walking()
     |> clear_combat_intent()

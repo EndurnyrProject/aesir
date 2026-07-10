@@ -30,6 +30,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   and transpilation is a single-process mix task.
   """
 
+  require Logger
+
   alias Aesir.ZoneServer.Npc.Transpiler.Analyzer
   alias Aesir.ZoneServer.Npc.Transpiler.CommandMap
   alias Aesir.ZoneServer.Npc.Transpiler.ModuleName
@@ -91,8 +93,6 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
         _ -> on_talk_entry(main_body)
       end
 
-    events = for {:event, name, _} <- segments, do: name
-
     """
     defmodule #{opts.module} do
       @moduledoc \"\"\"
@@ -105,7 +105,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
       #{header(opts)}
       #{aliases()}
-      #{unwired_events(events)}
+      #{event_clauses(env)}
       #{entry}
       #{Enum.join(segment_defs, "\n\n")}
       #{Enum.join(deferred, "\n\n")}
@@ -121,8 +121,25 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   end
 
   defp render_spawn(s) do
-    ~s(%{map: #{inspect(s.map)}, x: #{s.x}, y: #{s.y}, dir: #{s.dir}, ) <>
-      ~s(sprite: #{s.sprite}, name: #{inspect(s.name)}})
+    fields =
+      [
+        "map: #{inspect(s.map)}",
+        "x: #{s.x}",
+        "y: #{s.y}",
+        "dir: #{s.dir}",
+        "sprite: #{s.sprite}",
+        "name: #{inspect(s.name)}"
+      ] ++ optional_spawn_fields(s)
+
+    "%{" <> Enum.join(fields, ", ") <> "}"
+  end
+
+  defp optional_spawn_fields(s) do
+    [
+      Map.has_key?(s, :unique_name) && "unique_name: #{inspect(s.unique_name)}",
+      Map.has_key?(s, :trigger) && "trigger: {#{elem(s.trigger, 0)}, #{elem(s.trigger, 1)}}"
+    ]
+    |> Enum.filter(& &1)
   end
 
   defp aliases do
@@ -134,13 +151,57 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     |> Enum.join("\n")
   end
 
-  defp unwired_events([]), do: ""
+  # `On*` labels wire straight to `on_event/2`; the macro derives `events/0`
+  # from the clause heads, so no explicit list is emitted. `OnTouch_` (the
+  # area-trigger variant) normalizes to the plain `"OnTouch"` head the engine
+  # actually dispatches — a script defining both collapses to one clause,
+  # keeping the first and warning.
+  defp event_clauses(env) do
+    case env.a.events |> Enum.map(&{normalized_event_head(&1), &1}) |> dedupe_event_heads() do
+      [] ->
+        ""
 
-  defp unwired_events(events) do
-    """
-    @doc "rAthena event labels present in the source but not wired to engine hooks yet."
-    def unwired_events, do: #{inspect(events)}
-    """
+      pairs ->
+        clauses =
+          Enum.map_join(pairs, "\n", fn {head, label} ->
+            "def on_event(#{inspect(head)}, ctx), do: #{event_call(env, label)}"
+          end)
+
+        "@impl true\n" <> clauses
+    end
+  end
+
+  defp normalized_event_head(label) do
+    if String.downcase(label) == "ontouch_", do: "OnTouch", else: label
+  end
+
+  defp dedupe_event_heads(pairs) do
+    {kept, _seen} =
+      Enum.reduce(pairs, {[], MapSet.new()}, fn {head, label}, {acc, seen} ->
+        if MapSet.member?(seen, head) do
+          Logger.warning(
+            "npc transpiler: duplicate on_event clause head #{inspect(head)} " <>
+              "(label #{inspect(label)}), keeping the first"
+          )
+
+          {acc, seen}
+        else
+          {[{head, label} | acc], MapSet.put(seen, head)}
+        end
+      end)
+
+    Enum.reverse(kept)
+  end
+
+  # A label that is also a `callsub` target compiles to a `(ctx, args)`
+  # subroutine returning `{ctx, value}`; unwrap it so the clause still
+  # returns ctx like every other on_event/on_talk entry point.
+  defp event_call(env, label) do
+    if MapSet.member?(env.a.callsub_targets, String.downcase(label)) do
+      "elem(#{fn_name(env, label)}(ctx, []), 0)"
+    else
+      "#{fn_name(env, label)}(ctx)"
+    end
   end
 
   defp on_talk_entry(body_lines) do
@@ -689,6 +750,57 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
   end
 
+  # A single-argument buildin (event ref, NPC name): any other arity is a
+  # form the DSL cannot express, so it stays a stub.
+  defp emit_mapped(_name, %{shape: :ref1, dsl: dsl}, [arg], env) do
+    {pre, [arg]} = hoist_all([arg], env)
+    {pre ++ ["ctx = #{dsl}(ctx, #{render(arg, env)})"], :cont}
+  end
+
+  defp emit_mapped(name, %{shape: :ref1}, args, env) do
+    {pre, args} = hoist_all(args, env)
+    rendered = Enum.map_join(args, ", ", &render(&1, env))
+    {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
+  end
+
+  # `initnpctimer`/`stopnpctimer`: no args targets the calling NPC, one arg
+  # targets a name; the attach-flag variants have no DSL equivalent yet.
+  defp emit_mapped(_name, %{shape: :timer, dsl: dsl}, [], _env),
+    do: {["ctx = #{dsl}(ctx)"], :cont}
+
+  defp emit_mapped(_name, %{shape: :timer, dsl: dsl}, [arg], env) do
+    {pre, [arg]} = hoist_all([arg], env)
+    {pre ++ ["ctx = #{dsl}(ctx, #{render(arg, env)})"], :cont}
+  end
+
+  defp emit_mapped(name, %{shape: :timer}, args, env) do
+    {pre, args} = hoist_all(args, env)
+    rendered = Enum.map_join(args, ", ", &render(&1, env))
+    {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
+  end
+
+  # `monster "<map>",<x>,<y>,"<display name>",<mob>,<amount>{,"<event>"{,<size>{,<ai>}}}`
+  # → summon_mob. The display name is cosmetic (the engine renders the db
+  # name) and the size/ai tail has no DSL equivalent; both are dropped.
+  # `"this"` targets the attached map (the DSL default) and non-positive
+  # literal coordinates mean a random walkable cell, both per rAthena.
+  defp emit_mapped(_name, %{shape: :monster}, [map, x, y, _display, mob, amount | rest], env) do
+    {pre, [map, x, y, mob, amount | rest]} =
+      hoist_all([map, x, y, mob, amount | Enum.take(rest, 1)], env)
+
+    parts =
+      [monster_mob(mob, env), monster_map(map, env), monster_at(x, y, env)] ++
+        monster_amount(amount, env) ++ monster_event(rest, env)
+
+    {pre ++ ["ctx = summon_mob(ctx, #{parts |> List.flatten() |> Enum.join(", ")})"], :cont}
+  end
+
+  defp emit_mapped(name, %{shape: :monster}, args, env) do
+    {pre, args} = hoist_all(args, env)
+    rendered = Enum.map_join(args, ", ", &render(&1, env))
+    {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
+  end
+
   # `savepoint "map",x,y{,rx,ry}` — the optional range args are dropped.
   defp emit_mapped(_name, %{shape: :savepoint}, args, env) do
     {pre, [map, x, y | _rest]} = hoist_all(args, env)
@@ -707,6 +819,32 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
     {pre ++ ["ctx = #{dsl}(ctx, #{Enum.join(rendered, ", ")})"], :cont}
   end
+
+  defp monster_mob({:int, id}, _env), do: "mob_id: #{id}"
+  defp monster_mob({:name, aegis}, _env), do: "mob_name: #{inspect(aegis)}"
+  defp monster_mob({:str, aegis}, _env), do: "mob_name: #{inspect(aegis)}"
+  defp monster_mob(expr, env), do: "mob_id: #{render(expr, env)}"
+
+  defp monster_map({:str, "this"}, _env), do: []
+  defp monster_map(map, env), do: "map: #{render_str(map, env)}"
+
+  defp monster_at(x, y, env) do
+    case {literal_coord(x), literal_coord(y)} do
+      {xi, yi} when is_integer(xi) and is_integer(yi) and (xi <= 0 or yi <= 0) -> "at: :random"
+      _ -> "at: {#{render(x, env)}, #{render(y, env)}}"
+    end
+  end
+
+  defp literal_coord({:int, n}), do: n
+  defp literal_coord({:neg, {:int, n}}), do: -n
+  defp literal_coord(_expr), do: nil
+
+  defp monster_amount({:int, 1}, _env), do: []
+  defp monster_amount(amount, env), do: ["amount: #{render(amount, env)}"]
+
+  defp monster_event([], _env), do: []
+  defp monster_event([{:str, ""}], _env), do: []
+  defp monster_event([event], env), do: ["event: #{render_str(event, env)}"]
 
   defp typed_arg({:int, n}, _type, _env), do: to_string(n)
 
@@ -1278,6 +1416,18 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   defp render({:call, "getarraysize", [array]}, env),
     do: "length(#{read_var(array, "[]", env)})"
+
+  # rAthena getnpctimer(type{,"name"}): only TYPE 0 (elapsed ms) is supported;
+  # types 1 (started?) and 2 (tick amount) have no DSL equivalent yet.
+  defp render({:call, "getnpctimer", [{:int, 0}]}, _env), do: "getnpctimer(ctx)"
+
+  defp render({:call, "getnpctimer", [{:int, 0}, {:str, name}]}, _env),
+    do: "getnpctimer(ctx, #{inspect(name)})"
+
+  defp render({:call, "getnpctimer", args}, env) do
+    flag(:todo_mod)
+    "Todo.call!(:getnpctimer, [#{Enum.map_join(args, ", ", &render(&1, env))}])"
+  end
 
   defp render({:call, name, args}, env) do
     case CommandMap.call_read(name) do

@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import ExUnit.CaptureLog
+
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.ParamChange
@@ -318,6 +320,60 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert_received {:summoned_at, {50, 50}}
     end
 
+    test ":map overrides the player's map and defaults :at to :random" do
+      test_pid = self()
+
+      expect(Coordinator, :summon_mob, fn map, _mob_id, x, y, _opts ->
+        send(test_pid, {:summoned, map, {x, y}})
+        {:ok, 12_345}
+      end)
+
+      ctx = Dsl.summon_mob(build_ctx(), mob_id: @poring_id, map: "gef_dun00")
+
+      assert ctx.status == :ok
+      assert_received {:summoned, "gef_dun00", {0, 0}}
+    end
+
+    test ":amount summons the mob once per count" do
+      test_pid = self()
+
+      expect(Coordinator, :summon_mob, 3, fn _map, mob_id, _x, _y, _opts ->
+        send(test_pid, {:summoned, mob_id})
+        {:ok, 12_345}
+      end)
+
+      ctx = Dsl.summon_mob(build_ctx(), mob_id: @poring_id, at: {10, 10}, amount: 3)
+
+      assert ctx.status == :ok
+      assert_received {:summoned, @poring_id}
+      assert_received {:summoned, @poring_id}
+      assert_received {:summoned, @poring_id}
+    end
+
+    test "at: :random passes the random-cell sentinel coords" do
+      test_pid = self()
+
+      expect(Coordinator, :summon_mob, fn _map, _mob_id, x, y, _opts ->
+        send(test_pid, {:summoned_at, {x, y}})
+        {:ok, 12_345}
+      end)
+
+      ctx = Dsl.summon_mob(build_ctx(), mob_id: @poring_id, at: :random)
+
+      assert ctx.status == :ok
+      assert_received {:summoned_at, {0, 0}}
+    end
+
+    test "halts :map_not_found when the target map has no coordinator" do
+      stub(Coordinator, :summon_mob, fn _map, _mob_id, _x, _y, _opts ->
+        {:error, :map_not_found}
+      end)
+
+      ctx = Dsl.summon_mob(build_ctx(), mob_id: @poring_id, map: "no_such_map")
+
+      assert ctx.status == {:error, :map_not_found}
+    end
+
     test "halts on an unknown mob id without summoning" do
       stub(Coordinator, :summon_mob, fn _map, _mob_id, _x, _y, _opts ->
         flunk("summon_mob should not be called for an unknown mob")
@@ -346,6 +402,42 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       ctx = Ctx.halt(build_ctx(), :already_dead)
 
       assert Dsl.summon_mob(ctx, mob_id: @poring_id, at: {10, 10}) == ctx
+    end
+
+    test "threads a well-formed :event ref into the coordinator opts" do
+      test_pid = self()
+
+      expect(Coordinator, :summon_mob, fn _map, _mob_id, _x, _y, opts ->
+        send(test_pid, {:summon_opts, opts})
+        {:ok, 12_345}
+      end)
+
+      ctx = Dsl.summon_mob(build_ctx(), mob_id: @poring_id, at: {10, 10}, event: "Guard::OnDead")
+
+      assert ctx.status == :ok
+      assert_received {:summon_opts, opts}
+      assert Keyword.get(opts, :event) == "Guard::OnDead"
+    end
+
+    test "a malformed :event ref logs a warning and spawns without it" do
+      test_pid = self()
+
+      expect(Coordinator, :summon_mob, fn _map, _mob_id, _x, _y, opts ->
+        send(test_pid, {:summon_opts, opts})
+        {:ok, 12_345}
+      end)
+
+      log =
+        capture_log(fn ->
+          ctx =
+            Dsl.summon_mob(build_ctx(), mob_id: @poring_id, at: {10, 10}, event: "NoSeparator")
+
+          assert ctx.status == :ok
+        end)
+
+      assert log =~ "malformed event ref"
+      assert_received {:summon_opts, opts}
+      refute Keyword.has_key?(opts, :event)
     end
   end
 

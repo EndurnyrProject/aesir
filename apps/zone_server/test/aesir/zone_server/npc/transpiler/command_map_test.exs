@@ -22,6 +22,31 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     refute CommandMap.supported?("getmapxy")
   end
 
+  test "event and session buildins map to ref1/timer shapes" do
+    assert {:ok, %{shape: :ref1, dsl: "donpcevent"}} = CommandMap.command("donpcevent")
+    assert {:ok, %{shape: :ref1, dsl: "doevent"}} = CommandMap.command("doevent")
+    assert {:ok, %{shape: :ref1, dsl: "npctalk"}} = CommandMap.command("npctalk")
+    assert {:ok, %{shape: :ref1, dsl: "enablenpc"}} = CommandMap.command("enablenpc")
+    assert {:ok, %{shape: :ref1, dsl: "disablenpc"}} = CommandMap.command("disablenpc")
+    assert {:ok, %{shape: :ref1, dsl: "hideonnpc"}} = CommandMap.command("hideonnpc")
+    assert {:ok, %{shape: :ref1, dsl: "hideoffnpc"}} = CommandMap.command("hideoffnpc")
+    assert {:ok, %{shape: :timer, dsl: "initnpctimer"}} = CommandMap.command("initnpctimer")
+    assert {:ok, %{shape: :timer, dsl: "stopnpctimer"}} = CommandMap.command("stopnpctimer")
+    assert CommandMap.supported?("hideoffnpc")
+  end
+
+  test "buildin lookups are case-insensitive like rAthena's engine" do
+    assert {:ok, %{shape: :timer, dsl: "initnpctimer"}} = CommandMap.command("Initnpctimer")
+    assert {:ok, %{dsl: "give_item"}} = CommandMap.command("GetItem")
+    assert {:ok, %{dsl: "count_item"}} = CommandMap.call_read("CountItem")
+    assert CommandMap.supported?("Monster")
+    refute CommandMap.supported?("GetMapXY")
+  end
+
+  test "monster maps to the monster shape" do
+    assert {:ok, %{shape: :monster}} = CommandMap.command("monster")
+  end
+
   test "warp special targets" do
     assert {:ok, ":random"} = CommandMap.warp_target("Random")
     assert {:ok, ":save_point"} = CommandMap.warp_target("SavePoint")

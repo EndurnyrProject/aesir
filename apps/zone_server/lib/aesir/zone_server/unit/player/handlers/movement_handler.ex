@@ -22,17 +22,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Npc.Events, as: NpcEvents
+  alias Aesir.ZoneServer.Npc.Packets, as: NpcPackets
   alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
+  alias Aesir.ZoneServer.Npc.Session, as: NpcSession
   alias Aesir.ZoneServer.Npc.Shop
   alias Aesir.ZoneServer.Npc.Shops
   alias Aesir.ZoneServer.Npc.Warp
   alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Pathfinding
+  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.MovementEngine
+  alias Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -132,14 +137,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         {:noreply, %{state | game_state: marked_state}}
 
       :no_warp ->
+        touched_state = maybe_trigger_touch(%{state | game_state: updated_game_state})
+
         # Schedule next movement tick with appropriate interval
         if remaining_path != [] do
           Process.send_after(self(), :movement_tick, interval)
-          {:noreply, %{state | game_state: updated_game_state}}
+          {:noreply, touched_state}
         else
           # Path completed: stop and broadcast the standing transition so the
           # client's last snapshot sample flips move_state back to idle.
-          game_state = PlayerState.stop_walking(updated_game_state)
+          game_state = PlayerState.stop_walking(touched_state.game_state)
 
           Movement.set_position(
             :player,
@@ -150,7 +157,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
           # Send completion message for PlayerSession to handle
           send(self(), :movement_completed)
-          {:noreply, %{state | game_state: game_state}}
+          {:noreply, %{touched_state | game_state: game_state}}
         end
     end
   end
@@ -190,6 +197,66 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
       nil ->
         :no_warp
+    end
+  end
+
+  # On-touch NPC trigger-area hook (rAthena `OnTouch`, cell-enter).
+  #
+  # Called only when the warp check above did not fire (a warp makes any
+  # touch area on the map being left moot). Computes the set of touch rects
+  # on the player's current map containing its (already updated) cell,
+  # skipping any NPC that `Npc.Session.visible?/1` reports disabled/hidden, and
+  # replaces `inside_npc_areas` with it — leaving a rect drops its gid so
+  # re-entering fires again, and standing still (this only runs on an actual
+  # step) never re-fires. Every gid newly present (not in the old set) fires:
+  # a busy player (an active `interaction_lock`) skips the fire but still
+  # counts the area as entered, matching rAthena's no-spam-while-busy rule.
+  @spec maybe_trigger_touch(map()) :: map()
+  defp maybe_trigger_touch(%{game_state: game_state} = state) do
+    containing =
+      game_state.map_name
+      |> NpcRegistry.touch_rects()
+      |> Enum.filter(fn {gid, xs, ys} ->
+        game_state.x in xs and game_state.y in ys and NpcSession.visible?(gid)
+      end)
+      |> MapSet.new(fn {gid, _xs, _ys} -> gid end)
+
+    entered = MapSet.difference(containing, game_state.inside_npc_areas)
+    marked_state = %{state | game_state: %{game_state | inside_npc_areas: containing}}
+
+    Enum.reduce(entered, marked_state, &fire_touch/2)
+  end
+
+  @spec fire_touch(non_neg_integer(), map()) :: map()
+  defp fire_touch(_gid, %{interaction_lock: lock} = state) when not is_nil(lock) do
+    state
+  end
+
+  defp fire_touch(gid, state) do
+    case NpcRegistry.module_for_unit(gid) do
+      {:ok, {module, _placement}} -> attach_or_fallback(gid, module, state)
+      :error -> state
+    end
+  end
+
+  # Starts the module's `OnTouch` handler as an attached interaction; when the
+  # module declares no `OnTouch` label, falls back to the click path's
+  # `on_talk/1` start (rAthena warper behavior).
+  @spec attach_or_fallback(non_neg_integer(), module(), map()) :: map()
+  defp attach_or_fallback(gid, module, state) do
+    base_ctx =
+      state
+      |> Ctx.from_session({:npc, module.npc_id()})
+      |> Map.put(:npc_gid, gid)
+
+    case NpcEvents.trigger_attached(gid, "OnTouch", base_ctx, self()) do
+      {:ok, pid} ->
+        ref = Process.monitor(pid)
+        %{state | interaction_lock: {pid, ref, gid}}
+
+      {:error, :no_handler} ->
+        {:noreply, new_state} = NpcInteractionHandler.talk_to_npc(gid, state.game_state, state)
+        new_state
     end
   end
 
@@ -506,12 +573,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
     # Handle static NPC visibility — same model as warps: registered placements
     # are held statically (in `Npc.Registry`), not spatial-indexed, and diffed
-    # against `visible_npcs` by Manhattan distance vs `view_range`.
+    # against `visible_npcs` by Manhattan distance vs `view_range`. A disabled
+    # or hidden NPC (`Npc.Session.visible?/1`) is filtered out here, so the
+    # diff never sends a spawn for one and drops it from `visible_npcs` (as a
+    # vanish, if the player already had it visible) the moment it stops
+    # qualifying — the flag flip itself is broadcast immediately by
+    # `Npc.Session`, so a player standing still doesn't have to wait for this
+    # diff to notice.
     npcs_in_range =
       Enum.filter(NpcRegistry.entries(), fn {_module, placement} ->
         placement.map == game_state.map_name and
           manhattan(game_state.x, game_state.y, placement.x, placement.y) <=
-            game_state.view_range
+            game_state.view_range and
+          NpcSession.visible?(NpcRegistry.entity_id(placement))
       end)
 
     npcs_by_id =
@@ -743,41 +817,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   defp send_npc_spawn_packet_to(to_char_id, %Placement{} = placement) do
     case UnitRegistry.get_player_pid(to_char_id) do
       {:ok, to_pid} ->
-        npc_entity_id = NpcRegistry.entity_id(placement)
-
-        packet = %UnitSpawn{
-          object_type: ObjectType.npc(),
-          aid: npc_entity_id,
-          gid: npc_entity_id,
-          speed: 0,
-          body_state: 0,
-          health_state: 0,
-          effect_state: 0,
-          job: placement.sprite,
-          head: 0,
-          weapon: 0,
-          shield: 0,
-          accessory: 0,
-          accessory2: 0,
-          accessory3: 0,
-          head_palette: 0,
-          body_palette: 0,
-          head_dir: 0,
-          robe: 0,
-          guild_id: 0,
-          sex: 0,
-          x: placement.x,
-          y: placement.y,
-          dir: placement.dir,
-          clevel: 0,
-          max_hp: 0,
-          hp: 0,
-          is_boss: false,
-          name: placement.name,
-          moving: false
-        }
-
-        GenServer.cast(to_pid, {:send_packet, packet})
+        GenServer.cast(to_pid, {:send_packet, NpcPackets.spawn_packet(placement)})
 
       {:error, :not_found} ->
         :ok
@@ -787,12 +827,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   defp send_npc_vanish_packet_to(to_char_id, npc_entity_id) do
     case UnitRegistry.get_player_pid(to_char_id) do
       {:ok, to_pid} ->
-        vanish_packet = %UnitDespawn{
-          gid: npc_entity_id,
-          reason: DespawnReason.out_of_sight()
-        }
-
-        GenServer.cast(to_pid, {:send_packet, vanish_packet})
+        GenServer.cast(to_pid, {:send_packet, NpcPackets.vanish_packet(npc_entity_id)})
 
       {:error, :not_found} ->
         :ok

@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Npc.Events, as: NpcEvents
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Shops
   alias Aesir.ZoneServer.Npc.ShopVerifier
@@ -17,24 +18,38 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
     :ok = Interpreter.init()
     :ok = ScriptCompiler.compile_all!()
     :ok = NpcVerifier.verify!(NpcRegistry.reload().entries)
+    :ok = NpcEvents.run_on_init()
     :ok = Warps.reload()
     :ok = Shops.reload()
     :ok = LevelPenalty.reload()
     :ok = RefineDatabase.reload()
     :ok = ShopVerifier.verify!(Shops.all())
 
-    children = [
-      Aesir.ZoneServer.Map.PartitionedSupervisor,
-      Aesir.ZoneServer.Map.MapManager,
-      Aesir.ZoneServer.Unit.Player.PlayerSupervisor,
-      Aesir.ZoneServer.Mmo.StatusTickManager,
-      Aesir.ZoneServer.Mmo.Skill.Unit.TickManager
-    ]
+    children =
+      [
+        Aesir.ZoneServer.Map.PartitionedSupervisor,
+        Aesir.ZoneServer.Map.MapManager,
+        Aesir.ZoneServer.Unit.Player.PlayerSupervisor,
+        Aesir.ZoneServer.Mmo.StatusTickManager,
+        Aesir.ZoneServer.Mmo.Skill.Unit.TickManager
+      ] ++ clock_scheduler_child()
 
     Supervisor.init(children, strategy: :one_for_one)
   end
 
   def start_link(init_arg) do
     Supervisor.start_link(__MODULE__, init_arg, name: __MODULE__)
+  end
+
+  # Excluded in test: dozens of tests swap the shared persistent_term NPC
+  # registry with fixture modules via `Npc.Registry.reload/1`; a real,
+  # permanently-running scheduler ticking against that shared state would be
+  # an untraceable once-a-minute flake risk the moment a fixture declares a
+  # clock-parseable label. `Npc.ClockScheduler` itself is still fully
+  # unit/integration tested via `start_supervised!/1`.
+  if Mix.env() == :test do
+    defp clock_scheduler_child, do: []
+  else
+    defp clock_scheduler_child, do: [Aesir.ZoneServer.Npc.ClockScheduler]
   end
 end

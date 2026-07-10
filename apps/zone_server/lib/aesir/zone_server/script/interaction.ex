@@ -40,11 +40,22 @@ defmodule Aesir.ZoneServer.Script.Interaction do
 
   `base_ctx` is the context the session built (player snapshot, connection,
   `npc_gid`); the spawned process fills in its own `interaction_pid` and the
-  `session_ref` monitoring `session_pid`, then runs `module.on_talk/1`.
+  `session_ref` monitoring `session_pid`, then runs `entry_fn.(ctx)`.
+
+  `entry_fn` defaults to `module.on_talk/1`, the click-driven entry point;
+  callers dispatching an attached event (`OnTouch`, `doevent`, ...) pass
+  `fn ctx -> module.on_event(label, ctx) end` instead.
   """
   @spec start(pid(), module(), Ctx.t()) :: {:ok, pid()} | {:error, term()}
   def start(session_pid, module, %Ctx{} = base_ctx) do
-    Task.Supervisor.start_child(@supervisor, fn -> run(base_ctx, module, session_pid) end)
+    start(session_pid, module, base_ctx, &module.on_talk/1)
+  end
+
+  @spec start(pid(), module(), Ctx.t(), (Ctx.t() -> any())) :: {:ok, pid()} | {:error, term()}
+  def start(session_pid, module, %Ctx{} = base_ctx, entry_fn) when is_function(entry_fn, 1) do
+    Task.Supervisor.start_child(@supervisor, fn ->
+      run(base_ctx, module, session_pid, entry_fn)
+    end)
   end
 
   @doc """
@@ -54,6 +65,11 @@ defmodule Aesir.ZoneServer.Script.Interaction do
   """
   @spec run(Ctx.t(), module(), pid()) :: no_return()
   def run(%Ctx{} = base_ctx, module, session_pid) do
+    run(base_ctx, module, session_pid, &module.on_talk/1)
+  end
+
+  @spec run(Ctx.t(), module(), pid(), (Ctx.t() -> any())) :: no_return()
+  def run(%Ctx{} = base_ctx, _module, session_pid, entry_fn) when is_function(entry_fn, 1) do
     session_ref = Process.monitor(session_pid)
 
     ctx = %{
@@ -63,7 +79,7 @@ defmodule Aesir.ZoneServer.Script.Interaction do
         session_ref: session_ref
     }
 
-    module.on_talk(ctx)
+    entry_fn.(ctx)
     |> auto_close()
 
     exit(:normal)

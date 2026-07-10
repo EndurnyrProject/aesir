@@ -10,8 +10,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
 
   Dialog primitives (`mes`, `next`, `close`, `close2`, `end`, `select`,
   `prompt`, `input`, `menu`) and the subroutine machinery (`callfunc`,
-  `callsub`, `getarg`, `rand`) are shaped directly by `Codegen`, not listed
-  here.
+  `callsub`, `getarg`, `rand`, `getnpctimer`) are shaped directly by
+  `Codegen`, not listed here.
+
+  Buildin lookups (`command/1`, `call_read/1`, `supported?/1`) are
+  case-insensitive, matching rAthena's script engine — the corpus spells
+  `Initnpctimer`, `Monster` and friends freely.
 
   ## Command rules
 
@@ -21,6 +25,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
   - `%{shape: :heal, dsl: name}` — `heal <hp>,<sp>` → `name(ctx, hp: _, sp: _)`.
   - `%{shape: :warp}` — `warp "map",x,y` with `"Random"`/`"SavePoint"`
     special targets.
+  - `%{shape: :ref1, dsl: name}` — a single-argument buildin (an event ref or
+    an NPC name) → `name(ctx, arg)`; any other arg count stays a stub.
+  - `%{shape: :timer, dsl: name}` — `initnpctimer`/`stopnpctimer`: zero args
+    (self) → `name(ctx)`, one name arg → `name(ctx, arg)`; attach-flag
+    variants stay a stub.
+  - `%{shape: :monster}` — `monster "map",x,y,"name",id,amount{,"event"...}`
+    → `summon_mob(ctx, mob_id: _, map: _, at: _, ...)`; the display name and
+    the size/ai tail are dropped.
 
   ## Reads
 
@@ -41,7 +53,17 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "warp" => %{shape: :warp},
     "savepoint" => %{shape: :savepoint},
     "jobchange" => %{dsl: "jobchange", args: [:int]},
-    "itemskill" => %{dsl: "itemskill", args: [:skill_opts]}
+    "itemskill" => %{dsl: "itemskill", args: [:skill_opts]},
+    "donpcevent" => %{shape: :ref1, dsl: "donpcevent"},
+    "doevent" => %{shape: :ref1, dsl: "doevent"},
+    "npctalk" => %{shape: :ref1, dsl: "npctalk"},
+    "enablenpc" => %{shape: :ref1, dsl: "enablenpc"},
+    "disablenpc" => %{shape: :ref1, dsl: "disablenpc"},
+    "hideonnpc" => %{shape: :ref1, dsl: "hideonnpc"},
+    "hideoffnpc" => %{shape: :ref1, dsl: "hideoffnpc"},
+    "initnpctimer" => %{shape: :timer, dsl: "initnpctimer"},
+    "stopnpctimer" => %{shape: :timer, dsl: "stopnpctimer"},
+    "monster" => %{shape: :monster}
   }
 
   # Global rAthena functions (`callfunc "Name"`) mapped onto DSL primitives.
@@ -78,13 +100,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
   }
 
   @spec command(String.t()) :: {:ok, rule()} | :error
-  def command(name) when is_binary(name), do: Map.fetch(@commands, name)
+  def command(name) when is_binary(name), do: Map.fetch(@commands, String.downcase(name))
 
   @spec read(String.t()) :: {:ok, String.t()} | :error
   def read(name) when is_binary(name), do: Map.fetch(@reads, name)
 
   @spec call_read(String.t()) :: {:ok, rule()} | :error
-  def call_read(name) when is_binary(name), do: Map.fetch(@call_reads, name)
+  def call_read(name) when is_binary(name), do: Map.fetch(@call_reads, String.downcase(name))
 
   @doc "A global `callfunc` name mapped onto a DSL primitive, or `:error`."
   @spec function(String.t()) :: {:ok, rule()} | :error
@@ -99,6 +121,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
 
   @doc "Every supported buildin name (commands + call reads), for the analyzer."
   @spec supported?(String.t()) :: boolean()
-  def supported?(name),
-    do: Map.has_key?(@commands, name) or Map.has_key?(@call_reads, name)
+  def supported?(name) when is_binary(name) do
+    key = String.downcase(name)
+    Map.has_key?(@commands, key) or Map.has_key?(@call_reads, key)
+  end
 end

@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore
   alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
+  alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
@@ -171,10 +172,18 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
   @doc """
   Notifies the coordinator that a mob has died.
+
+  `killer_char_id` is the killing blow's attacker unit id, whatever its unit
+  type -- a mob-vs-mob kill or a despawn passes `nil`. When the dying mob
+  carries an `owner_event` (rAthena OnMyMobDead) and the killer resolves to a
+  live player session, the event fires attached to that player; anything else
+  (no `owner_event`, no killer, a non-player killer, an offline killer) fires
+  nothing.
   """
-  def mob_died(map_name, instance_id) do
+  @spec mob_died(String.t(), integer(), integer() | nil) :: :ok
+  def mob_died(map_name, instance_id, killer_char_id \\ nil) do
     clean_name = String.replace_suffix(map_name, ".gat", "")
-    GenServer.cast(via_tuple(clean_name), {:mob_died, instance_id})
+    GenServer.cast(via_tuple(clean_name), {:mob_died, instance_id, killer_char_id})
   end
 
   @doc """
@@ -185,13 +194,24 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   registration), so the mob can be targeted, damaged and killed. Summoned mobs
   carry a respawn time of 0 and are not re-spawned on death.
 
-  Returns `{:ok, instance_id}` or `{:error, reason}`.
+  A non-positive `x` or `y` picks a random walkable cell, mirroring rAthena's
+  `mob_once_spawn` (script `monster "map",0,0,...`).
+
+  Returns `{:ok, instance_id}`, or `{:error, :map_not_found}` when no
+  coordinator runs for `map_name`, or `{:error, reason}` from the spawn.
   """
   @spec summon_mob(String.t(), integer(), integer(), integer(), keyword()) ::
           {:ok, integer()} | {:error, term()}
   def summon_mob(map_name, mob_id, x, y, opts \\ []) do
     clean_name = String.replace_suffix(map_name, ".gat", "")
-    GenServer.call(via_tuple(clean_name), {:summon_mob, mob_id, x, y, opts})
+
+    case Registry.lookup(Aesir.ZoneServer.MapRegistry, clean_name) do
+      [{_pid, _value}] ->
+        GenServer.call(via_tuple(clean_name), {:summon_mob, mob_id, x, y, opts})
+
+      [] ->
+        {:error, :map_not_found}
+    end
   end
 
   @doc """
@@ -252,7 +272,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   end
 
   @impl true
-  def handle_cast({:mob_died, instance_id}, state) do
+  def handle_cast({:mob_died, instance_id, killer_char_id}, state) do
     # Get mob data from UnitRegistry to find spawn config
     case UnitRegistry.get_unit(:mob, instance_id) do
       {:error, :not_found} ->
@@ -264,6 +284,8 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
         # Remove from spatial index
         SpatialIndex.remove_unit(:mob, instance_id)
+
+        dispatch_owner_event(mob.owner_event, killer_char_id)
 
         # Schedule respawn with spawn config
         spawn_config = mob.spawn_ref
@@ -324,7 +346,8 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   def handle_call({:summon_mob, mob_id, x, y, opts}, _from, state) do
     case MobManagement.get_mob_by_id(mob_id) do
       {:ok, mob_data} ->
-        {result, new_state} = place_mob(mob_data, {x, y}, opts, state)
+        position = summon_position({x, y}, state.map_data)
+        {result, new_state} = place_mob(mob_data, position, opts, state)
         {:reply, result, new_state}
 
       {:error, reason} ->
@@ -606,7 +629,11 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   defp place_mob(mob_data, {x, y}, opts, state) do
     instance_id = generate_mob_instance_id()
     spawn_ref = Keyword.get_lazy(opts, :spawn_ref, fn -> summon_spawn_ref(mob_data, x, y) end)
-    mob_state = MobState.new(instance_id, mob_data, spawn_ref, state.map_name, x, y)
+
+    mob_state =
+      instance_id
+      |> MobState.new(mob_data, spawn_ref, state.map_name, x, y)
+      |> MobState.set_owner_event(Keyword.get(opts, :event))
 
     # Respawns and summons on a currently-empty map start dormant; the
     # coordinator wakes them when a player next shows up.
@@ -618,6 +645,38 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
       {:error, reason} ->
         Logger.error("Failed to start mob session #{inspect(mob_data.id)}: #{inspect(reason)}")
         {{:error, reason}, state}
+    end
+  end
+
+  # Dispatches a dying mob's OnMyMobDead owner event (rAthena `mobkillevent`)
+  # when it carries one and the killing blow lands from a live player session
+  # -- a mob-vs-mob kill, a despawn, or an offline killer all fire nothing,
+  # matching rAthena's "must be killed by a player" semantics. The DSL already
+  # validated the ref's "Name::OnLabel" shape at spawn time, so a split
+  # failure here would only mean the field was set some other way; treated the
+  # same as no event rather than crashing the death path over it.
+  @spec dispatch_owner_event(String.t() | nil, integer() | nil) :: :ok
+  defp dispatch_owner_event(nil, _killer_char_id), do: :ok
+  defp dispatch_owner_event(_owner_event, nil), do: :ok
+
+  defp dispatch_owner_event(owner_event, killer_char_id) do
+    with [name, label] <- String.split(owner_event, "::", parts: 2),
+         {:ok, pid} <- UnitRegistry.get_player_pid(killer_char_id),
+         [{module, placement} | _rest] <- NpcRegistry.by_name(name) do
+      gid = NpcRegistry.entity_id(placement)
+      PlayerSession.run_attached_event(pid, module, gid, label)
+      :ok
+    else
+      {:error, :not_found} ->
+        :ok
+
+      [] ->
+        Logger.warning("npc owner event: unknown name in #{inspect(owner_event)}")
+        :ok
+
+      _malformed ->
+        Logger.warning("npc owner event: malformed ref #{inspect(owner_event)}")
+        :ok
     end
   end
 
@@ -649,6 +708,11 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   defp calculate_spawn_position(spawn_area, map_data) do
     random_area_cell(spawn_area, map_data, @spawn_position_attempts)
   end
+
+  defp summon_position({x, y}, %MapData{} = map_data) when x <= 0 or y <= 0,
+    do: random_walkable_cell(map_data, @spawn_position_attempts)
+
+  defp summon_position({x, y}, _map_data), do: {max(x, 0), max(y, 0)}
 
   defp random_walkable_cell(%MapData{xs: width, ys: height} = map_data, attempts) do
     x = :rand.uniform(width) - 1
