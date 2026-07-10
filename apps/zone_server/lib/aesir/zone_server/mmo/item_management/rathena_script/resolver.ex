@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   unresolvable symbol emits no `on_use`).
   """
 
+  alias Aesir.ZoneServer.Mmo.EffectId
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
 
@@ -114,6 +115,24 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
 
   @spec resolve_class(String.t()) :: {:ok, atom()} | error()
   def resolve_class(symbol) when is_binary(symbol), do: lookup(@classes, symbol)
+
+  @doc """
+  Resolves an rAthena `EF_*` special-effect constant to its readable `:ef_*`
+  atom (e.g. `"EF_HEAL2"` -> `:heal2`), the form the `specialeffect2` DSL op
+  expects. Delegates the atom -> id validity check to the generated `EffectId`
+  map so only effects the client actually knows resolve.
+  """
+  @spec resolve_effect(String.t()) :: {:ok, atom()} | error()
+  def resolve_effect("EF_" <> _ = symbol) do
+    with {:ok, atom} <- existing_atom(String.trim_leading(symbol, "EF_")),
+         id when is_integer(id) <- EffectId.id(atom) do
+      {:ok, atom}
+    else
+      _ -> unknown(symbol)
+    end
+  end
+
+  def resolve_effect(symbol) when is_binary(symbol), do: unknown(symbol)
 
   @spec resolve_skill(String.t() | integer()) :: {:ok, integer()} | error()
   def resolve_skill(id) when is_integer(id) do

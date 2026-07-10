@@ -100,6 +100,26 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.LexerTest do
              ]
     end
 
+    test "drops /* */ block comments, including unlexable content and multiple lines" do
+      script = """
+      /* +10 STR for 20 minutes
+         see rAthena item_db */
+      sc_start SC_BLESSING,60000,10; /* trailing */
+      """
+
+      assert {:ok, tokens} = Lexer.tokenize(script)
+
+      assert tokens == [
+               {:ident, "sc_start"},
+               {:ident, "SC_BLESSING"},
+               {:punct, :comma},
+               {:int, 60_000},
+               {:punct, :comma},
+               {:int, 10},
+               {:punct, :semicolon}
+             ]
+    end
+
     test "returns an error tuple on trailing garbage without raising" do
       assert {:error, _reason} = Lexer.tokenize("itemheal 45,0; @#$")
     end

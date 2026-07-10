@@ -1227,6 +1227,7 @@
   buy: 100
   id: 7037
   name: Coupon
+  on_use: ctx
   type: usable
 - aegis_name: Enchant_Stone_Box17
   id: 9510
@@ -1265,6 +1266,7 @@
 - aegis_name: Blue_Potion_B_10
   id: 9539
   name: '[Event] Blue Potion Box'
+  on_use: give_item(ctx, 11572, 10)
   type: healing
 - aegis_name: Gemstone_Of_Time
   id: 9550
@@ -1284,6 +1286,7 @@
 - aegis_name: Festival_Noodle
   id: 9569
   name: Festival Noodles
+  on_use: ctx
   type: healing
 - aegis_name: Wet_Sealed_Card
   id: 9581
@@ -1297,6 +1300,7 @@
 - aegis_name: Small_Spray_Of_Flowers
   id: 9585
   name: Small Flower Branches
+  on_use: ctx
   type: usable
   weight: 50
 - aegis_name: 2019_SStarR_Tbox
@@ -2136,12 +2140,20 @@
   buy: 20
   id: 11601
   name: Delicious Anchovy
+  on_use: |-
+    ctx = heal(ctx, hp: 30..46)
+    ctx = specialeffect2(ctx, :heal3)
+    ctx
   type: healing
   weight: 20
 - aegis_name: Nepeta_Cataria
   buy: 15
   id: 11602
   name: Catnip Fruit
+  on_use: |-
+    ctx = heal(ctx, hp: 36..40)
+    ctx = specialeffect2(ctx, :heal3)
+    ctx
   type: healing
   weight: 1
 - aegis_name: Fruit_Of_Mastela_
@@ -2157,11 +2169,13 @@
 - aegis_name: Cookies_Bat
   id: 11605
   name: Cookie Bat
+  on_use: 'heal(ctx, hp: 50..100)'
   type: healing
   weight: 30
 - aegis_name: Light_White_Pot_
   id: 11606
   name: '[Not for Sale] Light White Potion'
+  on_use: 'heal(ctx, hp: 325)'
   type: healing
   weight: 10
 - aegis_name: Crepe
@@ -2190,11 +2204,13 @@
 - aegis_name: Pop_Corn
   id: 11611
   name: Popcorn
+  on_use: 'heal(ctx, hp: 235)'
   type: healing
   weight: 30
 - aegis_name: Aromatic_Pop_Corn
   id: 11612
   name: Aromatic Popcorn
+  on_use: 'heal(ctx, hp: 800)'
   type: healing
   weight: 50
 - aegis_name: Harvest_Cookie
@@ -2271,6 +2287,7 @@
 - aegis_name: Gourmet_Popcorn
   id: 11625
   name: Gourmet Butter Popcorn
+  on_use: 'heal(ctx, sp: 20)'
   type: healing
   weight: 40
 - aegis_name: Kings_Melon_5
@@ -2283,12 +2300,14 @@
   equip_level_min: 60
   id: 11627
   name: High Quality Beef Jerky
+  on_use: 'heal(ctx, hp: 1500)'
   type: healing
   weight: 1
 - aegis_name: Fleshy_Larva
   equip_level_min: 60
   id: 11628
   name: Fleshy Larva
+  on_use: 'heal(ctx, sp: 140)'
   type: healing
   weight: 1
 - aegis_name: Acorn_Chocoball
@@ -2318,12 +2337,14 @@
   equip_level_min: 60
   id: 11633
   name: New Year Wind Rice Cake
+  on_use: 'heal(ctx, hp: 1500)'
   type: healing
   weight: 1
 - aegis_name: 2401_ev_Yugwa
   equip_level_min: 60
   id: 11634
   name: New Year Yugwa
+  on_use: 'heal(ctx, sp: 140)'
   type: healing
   weight: 1
 - aegis_name: 2401_ev_RedLin
@@ -2335,36 +2356,42 @@
   equip_level_min: 90
   id: 11636
   name: Lime Soda
+  on_use: 'heal(ctx, hp: 1800)'
   type: healing
   weight: 1
 - aegis_name: 24_S_Ev_Berry_Soda
   equip_level_min: 90
   id: 11637
   name: Berry Soda
+  on_use: 'heal(ctx, sp: 180)'
   type: healing
   weight: 1
 - aegis_name: 24_A_Ev_Choco_C
   equip_level_min: 100
   id: 11638
   name: Symposium Choco Egg Cookie
+  on_use: 'heal(ctx, hp: 2650)'
   type: healing
   weight: 1
 - aegis_name: 24_A_Ev_Egg_C
   equip_level_min: 100
   id: 11639
   name: Symposium Egg Cookie
+  on_use: 'heal(ctx, sp: 260)'
   type: healing
   weight: 1
 - aegis_name: E_Deli_BBQ
   equip_level_min: 70
   id: 11640
   name: Well Roasted Meat
+  on_use: 'heal(ctx, hp: 1750)'
   type: healing
   weight: 1
 - aegis_name: E_Leather_Bottle
   equip_level_min: 70
   id: 11641
   name: Leather Water Bottle
+  on_use: 'heal(ctx, sp: 160)'
   type: healing
   weight: 1
 - aegis_name: Girl_Bunch_Of_Flower
@@ -3249,6 +3276,7 @@
   buy: 2
   id: 12131
   name: Lucky Potion
+  on_use: ctx
   type: healing
   weight: 100
 - aegis_name: Red_Bag
@@ -4123,6 +4151,10 @@
 - aegis_name: Holy_Element_Scroll
   id: 12280
   name: Holy Elemental Scroll
+  on_use: |-
+    ctx = specialeffect2(ctx, :benedictio)
+    ctx = sc_start(ctx, :sc_benedictio, 300000, 1)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Tresure_Box_WoE
@@ -4285,6 +4317,7 @@
 - aegis_name: Protection_Of_Angel
   id: 12313
   name: Guardian Angel
+  on_use: ctx
   type: usable
 - aegis_name: Noive_Box
   id: 12314
@@ -6807,6 +6840,7 @@
   buy: 2
   id: 12755
   name: Chinese Fireworks
+  on_use: specialeffect2(ctx, :pok_jap)
   type: usable
   weight: 10
 - aegis_name: New_Gift_Envelope
@@ -7219,6 +7253,10 @@
   buy: 20
   id: 12830
   name: Ancient Tree Wooden Box
+  on_use: |-
+    ctx = give_item(ctx, 604, 50)
+    ctx = give_item(ctx, 12103, 2)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Potion_Box
@@ -17441,12 +17479,14 @@
   buy: 20
   id: 16555
   name: Pr Reset Stone Box
+  on_use: give_item(ctx, 6320, 1)
   type: usable
   weight: 10
 - aegis_name: FPr_Reset_Stone_Box
   buy: 20
   id: 16556
   name: Reset Stone Box
+  on_use: give_item(ctx, 6320, 1)
   type: usable
   weight: 10
 - aegis_name: CP_Helm_Scroll10
@@ -17921,6 +17961,7 @@
   buy: 20
   id: 16657
   name: Rapid Life Water Box10
+  on_use: give_item(ctx, 12578, 10)
   type: usable
   weight: 10
 - aegis_name: F_Rapid_Life_Water_Box2
@@ -23153,6 +23194,7 @@
 - aegis_name: Lucky_Bag_Of_New_Era
   id: 22563
   name: Lucky Bag Of New Era
+  on_use: ctx
   type: usable
 - aegis_name: Frost_Crystal
   buy: 10
@@ -23241,6 +23283,7 @@
 - aegis_name: Ghost_Summon_Scroll
   id: 22619
   name: Ghost Scroll
+  on_use: ctx
   type: usable
 - aegis_name: Memorial_Box
   id: 22620
@@ -23386,6 +23429,7 @@
 - aegis_name: Sealed_Letter
   id: 22660
   name: Sealed Envelope
+  on_use: ctx
   type: usable
   weight: 10
 - aegis_name: Guyak_Pudding_20_Box
@@ -23700,16 +23744,19 @@
   buy: 10
   id: 22760
   name: Argiope Transportin
+  on_use: ctx
   type: usable
 - aegis_name: LuciolaVespa_CaptureBox
   buy: 10
   id: 22761
   name: Luciola Vespa Transportin
+  on_use: ctx
   type: usable
 - aegis_name: Centipede_CaptureBox
   buy: 10
   id: 22762
   name: Centipede Transportin
+  on_use: ctx
   type: usable
 - aegis_name: PetTradeTicket_Box
   id: 22764
@@ -23720,6 +23767,7 @@
   buy: 10
   id: 22770
   name: Shark Skewer
+  on_use: ctx
   type: healing
   weight: 10
 - aegis_name: Tuna_Skewered
@@ -24042,6 +24090,7 @@
   buy: 10
   id: 22881
   name: Rope Gallows
+  on_use: ctx
   type: usable
 - aegis_name: Choco_Tteokguk
   buy: 10
@@ -24089,11 +24138,13 @@
   buy: 20
   id: 22895
   name: (Limited)2015 Status Initialization Volume
+  on_use: ctx
   type: usable
 - aegis_name: 2015LI_R_S_C_
   buy: 20
   id: 22896
   name: (Limited)Old Status Initialization Volume
+  on_use: ctx
   type: usable
 - aegis_name: DowntownMap
   buy: 20
@@ -24123,34 +24174,41 @@
 - aegis_name: Service30_M_01_Call
   id: 22907
   name: Edward Zonda Calling Bell
+  on_use: ctx
   type: usable
 - aegis_name: Service30_F_01_Call
   id: 22908
   name: Elysee Zonda Calling Bell
+  on_use: ctx
   type: usable
 - aegis_name: Weapon_5Up_Box
   id: 22909
   name: +5 Weapon Upgrade Certificate
+  on_use: give_item(ctx, 6456, 1)
   type: usable
   weight: 10
 - aegis_name: Weapon_6Up_Box
   id: 22910
   name: +6 Weapon Upgrade Certificate
+  on_use: give_item(ctx, 6231, 1)
   type: usable
   weight: 10
 - aegis_name: Weapon_7Up_Box
   id: 22911
   name: Weapon +7 Refine Ticket
+  on_use: give_item(ctx, 6230, 1)
   type: usable
   weight: 10
 - aegis_name: Weapon_8Up_Box
   id: 22912
   name: Weapon +8 Refine Ticket
+  on_use: give_item(ctx, 6229, 1)
   type: usable
   weight: 10
 - aegis_name: Weapon_9Up_Box
   id: 22913
   name: Weapon +9 Refine Ticket
+  on_use: give_item(ctx, 6228, 1)
   type: usable
   weight: 10
 - aegis_name: Bubble_Gum_24h
@@ -24160,71 +24218,85 @@
 - aegis_name: Weapon_11Up_Box
   id: 22915
   name: Weapon +11 Refine Ticket
+  on_use: give_item(ctx, 6238, 1)
   type: usable
   weight: 10
 - aegis_name: Weapon_12Up_Box
   id: 22916
   name: Weapon +12 Refine Ticket
+  on_use: give_item(ctx, 6584, 1)
   type: usable
   weight: 10
 - aegis_name: Weapon_13Up_Box
   id: 22917
   name: +13 Weapon Upgrade Certificate
+  on_use: give_item(ctx, 6870, 1)
   type: usable
   weight: 10
 - aegis_name: Weapon_14Up_Box
   id: 22918
   name: +14 Weapon Upgrade Certificate
+  on_use: give_item(ctx, 6871, 1)
   type: usable
   weight: 10
 - aegis_name: Weapon_15Up_Box
   id: 22919
   name: +15 Weapon Upgrade Certificate
+  on_use: give_item(ctx, 6872, 1)
   type: usable
   weight: 10
 - aegis_name: Weapon_16Up_Box
   id: 22920
   name: +16 Weapon Upgrade Certificate
+  on_use: give_item(ctx, 6873, 1)
   type: usable
   weight: 10
 - aegis_name: Weapon_17Up_Box
   id: 22921
   name: +17 Weapon Upgrade Certificate
+  on_use: give_item(ctx, 6874, 1)
   type: usable
   weight: 10
 - aegis_name: Weapon_18Up_Box
   id: 22922
   name: +18 Weapon Upgrade Certificate
+  on_use: give_item(ctx, 6875, 1)
   type: usable
   weight: 10
 - aegis_name: Weapon_19Up_Box
   id: 22923
   name: +19 Weapon Upgrade Certificate
+  on_use: give_item(ctx, 6864, 1)
   type: usable
   weight: 10
 - aegis_name: Armor_5Up_Box
   id: 22924
   name: +5 Armor Upgrade Certificate
+  on_use: give_item(ctx, 6457, 1)
   type: usable
   weight: 10
 - aegis_name: Armor_6Up_Box
   id: 22925
   name: +6 Armor Upgrade Certificate
+  on_use: give_item(ctx, 6235, 1)
   type: usable
   weight: 10
 - aegis_name: Armor_7Up_Box
   id: 22926
   name: Armor +7 Refine Ticket
+  on_use: give_item(ctx, 6234, 1)
   type: usable
   weight: 10
 - aegis_name: Armor_8Up_Box
   id: 22927
   name: Armor +8 Refine Ticket
+  on_use: give_item(ctx, 6233, 1)
   type: usable
   weight: 10
 - aegis_name: Armor_9Up_Box
   id: 22928
   name: Armor +9 Refine Ticket
+  on_use: give_item(ctx, 6232, 1)
   type: usable
   weight: 10
 - aegis_name: Job_Manual25_24h
@@ -24234,61 +24306,73 @@
 - aegis_name: Armor_11Up_Box
   id: 22930
   name: Armor +11 Refine Ticket
+  on_use: give_item(ctx, 6239, 1)
   type: usable
   weight: 10
 - aegis_name: Armor_12Up_Box
   id: 22931
   name: Armor +12 Refine Ticket
+  on_use: give_item(ctx, 6585, 1)
   type: usable
   weight: 10
 - aegis_name: Armor_13Up_Box
   id: 22932
   name: +13 Armor Upgrade Certificate
+  on_use: give_item(ctx, 6876, 1)
   type: usable
   weight: 10
 - aegis_name: Armor_14Up_Box
   id: 22933
   name: +14 Armor Upgrade Certificate
+  on_use: give_item(ctx, 6877, 1)
   type: usable
   weight: 10
 - aegis_name: Armor_15Up_Box
   id: 22934
   name: +15 Armor Upgrade Certificate
+  on_use: give_item(ctx, 6878, 1)
   type: usable
   weight: 10
 - aegis_name: Armor_16Up_Box
   id: 22935
   name: +16 Armor Upgrade Certificate
+  on_use: give_item(ctx, 6879, 1)
   type: usable
   weight: 10
 - aegis_name: Armor_17Up_Box
   id: 22936
   name: +17 Armor Upgrade Certificate
+  on_use: give_item(ctx, 6880, 1)
   type: usable
   weight: 10
 - aegis_name: Armor_18Up_Box
   id: 22937
   name: +18 Armor Upgrade Certificate
+  on_use: give_item(ctx, 6881, 1)
   type: usable
   weight: 10
 - aegis_name: Armor_19Up_Box
   id: 22938
   name: +19 Armor Upgrade Certificate
+  on_use: give_item(ctx, 6865, 1)
   type: usable
   weight: 10
 - aegis_name: Armor_10Up_Box
   id: 22943
   name: Armor +10 Refine Ticket
+  on_use: give_item(ctx, 6994, 1)
   type: usable
   weight: 10
 - aegis_name: Weapon_10Up_Box
   id: 22944
   name: Weapon +10 Refine Ticket
+  on_use: give_item(ctx, 6993, 1)
   type: usable
   weight: 10
 - aegis_name: Cherry_Blossom_Cake
   id: 22945
   name: Cherry Blossom Rice Cake
+  on_use: 'percent_heal(ctx, hp: 30, sp: 30)'
   type: usable
   weight: 30
 - aegis_name: Status_Decrease_Scroll
@@ -24384,10 +24468,12 @@
 - aegis_name: Service30P_M_01_Call
   id: 22982
   name: Edward Zonda Owner EX
+  on_use: ctx
   type: usable
 - aegis_name: Service30P_F_01_Call
   id: 22983
   name: Elysee Zonda Owner EX
+  on_use: ctx
   type: usable
 - aegis_name: Dr_Life_Potion_01
   buy: 6
@@ -24564,6 +24650,7 @@
 - aegis_name: Mastela_Fruit_Box_
   id: 23039
   name: '[NotForSale] Mastela Fruit Box'
+  on_use: give_item(ctx, 522, 200)
   type: usable
 - aegis_name: White_Potion_Box_
   id: 23040
@@ -24572,6 +24659,7 @@
 - aegis_name: Royal_Jelly_Box2_
   id: 23041
   name: '[NotForSale] Royal Jelly Box'
+  on_use: give_item(ctx, 526, 100)
   type: usable
 - aegis_name: Seed_Of_Yggdrasil_
   id: 23042
@@ -24638,18 +24726,21 @@
   buy: 20
   id: 23059
   name: Face Paint Box
+  on_use: give_item(ctx, 6120, 50)
   type: usable
   weight: 150
 - aegis_name: Surface_Paint_Box
   buy: 20
   id: 23060
   name: Surface Paint Box
+  on_use: give_item(ctx, 6123, 50)
   type: usable
   weight: 150
 - aegis_name: Incisive_Arrow_Cntr
   buy: 20
   id: 23061
   name: Sharp Arrow Quiver
+  on_use: give_item(ctx, 1764, 500)
   type: usable
   weight: 250
 - aegis_name: CokingOpenBox
@@ -24970,6 +25061,7 @@
 - aegis_name: Poison_Pack2
   id: 23159
   name: Poison Bottle Pack
+  on_use: give_item(ctx, 678, 10)
   type: usable
 - aegis_name: Shadow_Cube_Sak
   id: 23160
@@ -25149,6 +25241,7 @@
 - aegis_name: Premium_Box
   id: 23207
   name: '[30Day] Premium Subscription Box'
+  on_use: ctx
   type: usable
   weight: 10
 - aegis_name: Premium_Box_1d
@@ -25174,6 +25267,7 @@
 - aegis_name: Premium_Box_5d7
   id: 23213
   name: '[7Day] Premium Subscription Box'
+  on_use: ctx
   type: usable
   weight: 10
 - aegis_name: Premium_Box_8d
@@ -25239,6 +25333,7 @@
   buy: 768
   id: 23228
   name: Hazy Mooncake
+  on_use: ctx
   type: healing
   weight: 10
 - aegis_name: FallenAngelWing_Reset
@@ -25354,27 +25449,43 @@
   buy: 2500
   id: 23257
   name: Old Tree's Dew
+  on_use: ctx
   type: usable
   weight: 50
 - aegis_name: Foul_Rotten_Meat
   buy: 2500
   id: 23258
   name: Stinky Rotten Meat
+  on_use: ctx
   type: usable
   weight: 50
 - aegis_name: St_Cupcake
   id: 23259
   name: Strawberry Cream Cupcake
+  on_use: |-
+    ctx = percent_heal(ctx, sp: 5)
+    ctx = specialeffect2(ctx, :heal3)
+    ctx = sc_start(ctx, :sc_blessing, 240000, 5)
+    ctx
   type: usable
   weight: 100
 - aegis_name: Parfait
   id: 23260
   name: Fruit Parfait
+  on_use: |-
+    ctx = specialeffect2(ctx, :potion3)
+    ctx = percent_heal(ctx, hp: 20)
+    ctx
   type: usable
   weight: 100
 - aegis_name: Macaron
   id: 23261
   name: Chewy Macaron
+  on_use: |-
+    ctx = specialeffect2(ctx, :potion7)
+    ctx = percent_heal(ctx, hp: 5)
+    ctx = sc_start(ctx, :sc_angelus, 240000, 5)
+    ctx
   type: usable
   weight: 100
 - aegis_name: Hair_Bun_Box
@@ -25720,26 +25831,32 @@
 - aegis_name: Vend_Arbeit_1Lv
   id: 23348
   name: Consignment Merchant Voucher Lv1
+  on_use: ctx
   type: usable
 - aegis_name: Vend_Arbeit_2Lv
   id: 23349
   name: Consignment Merchant Voucher
+  on_use: ctx
   type: usable
 - aegis_name: Vend_Arbeit_3Lv
   id: 23350
   name: Consignment Merchant Voucher Lv3
+  on_use: ctx
   type: usable
 - aegis_name: Buy_Arbeit_1Lv
   id: 23351
   name: Personal Shopper Voucher Lv1
+  on_use: ctx
   type: usable
 - aegis_name: Buy_Arbeit_2Lv
   id: 23352
   name: Personal Shopper Voucher
+  on_use: ctx
   type: usable
 - aegis_name: Buy_Arbeit_3Lv
   id: 23353
   name: Personal Shopper Voucher Lv3
+  on_use: ctx
   type: usable
 - aegis_name: Vend_Arbeit3_1Lv
   id: 23354
@@ -25790,6 +25907,7 @@
 - aegis_name: Cryptura_Cookie
   id: 23364
   name: Critatura Pope Cookie
+  on_use: ctx
   type: usable
 - aegis_name: Cryptura_Giftbox
   id: 23365
@@ -26353,10 +26471,12 @@
 - aegis_name: Zero_Merchant_Bell
   id: 23647
   name: Tool Dealer Bell
+  on_use: ctx
   type: usable
 - aegis_name: Zero_Kafra_Bell
   id: 23648
   name: Kafra Storage Bell
+  on_use: ctx
   type: usable
 - aegis_name: Ice_Scroll
   id: 23650
@@ -28076,6 +28196,7 @@
 - aegis_name: Booster_Call
   id: 100337
   name: Booster Call
+  on_use: ctx
   type: usable
 - aegis_name: Booster_W_Up_1
   id: 100338
@@ -28121,6 +28242,7 @@
   equip_level_min: 10
   id: 100346
   name: Job Potion (Small)
+  on_use: ctx
   type: usable
 - aegis_name: 2020_Goal_Gift_Box
   id: 100347
@@ -32368,6 +32490,10 @@
 - aegis_name: 24_S_Ev_Ripe_Melon
   id: 103071
   name: Ripe Golden Melon
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 100, sp: 100)
+    ctx = specialeffect2(ctx, :potion4)
+    ctx
   type: usable
   weight: 50
 - aegis_name: CLB_SS_Box
@@ -32692,6 +32818,10 @@
 - aegis_name: 24_A_Ev_Cookie
   id: 103432
   name: Symposium Commemorative Cookie
+  on_use: |-
+    ctx = specialeffect2(ctx, :potion4)
+    ctx = percent_heal(ctx, hp: 100, sp: 100)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Rt_Ep18_Armor_A
@@ -35147,18 +35277,21 @@
   equip_level_min: 180
   id: 1100010
   name: Poring Kombucha
+  on_use: 'heal(ctx, sp: 350)'
   type: healing
   weight: 5
 - aegis_name: Monster_Bread
   equip_level_min: 180
   id: 1100011
   name: Monster Bread
+  on_use: 'heal(ctx, hp: 4500)'
   type: healing
   weight: 3
 - aegis_name: Monster_Bread_
   equip_level_min: 180
   id: 1100012
   name: Forbidden Monster Bread
+  on_use: 'heal(ctx, sp: 450)'
   type: healing
   weight: 3
 - aegis_name: South_Pork_Slice
@@ -35171,6 +35304,7 @@
   equip_level_min: 60
   id: 1100014
   name: Fire-grilled Fish
+  on_use: 'heal(ctx, sp: 40)'
   type: healing
   weight: 2
 - aegis_name: Grilled_Veg_Skewers_
@@ -35184,41 +35318,48 @@
   equip_level_min: 120
   id: 1100016
   name: Night Market Bingsu
+  on_use: 'heal(ctx, sp: 150)'
   type: healing
   weight: 3
 - aegis_name: Night_M_Ice_Cream
   equip_level_min: 120
   id: 1100017
   name: Night Market Ice Cream
+  on_use: 'heal(ctx, hp: 2500)'
   type: healing
   weight: 2
 - aegis_name: Night_M_Cotton_Candy
   equip_level_min: 120
   id: 1100018
   name: Night Market Cotton Candy
+  on_use: 'heal(ctx, sp: 250)'
   type: healing
   weight: 2
 - aegis_name: Grilled_Veg_Skewers
   equip_level_min: 60
   id: 1100019
   name: Fire-grilled Vegetable Skewers
+  on_use: 'heal(ctx, hp: 1200)'
   type: healing
   weight: 1
 - aegis_name: Grilled_Hm_Sausage
   equip_level_min: 60
   id: 1100020
   name: Fire-grilled Homemade Sausage
+  on_use: 'heal(ctx, sp: 120)'
   type: healing
   weight: 1
 - aegis_name: 2403_ev_Berry_Cup
   id: 1100021
   name: Strawberry Fresh Cream Cupcake
+  on_use: 'heal(ctx, sp: 200)'
   type: healing
   weight: 1
 - aegis_name: 2403_ev_Macaron
   equip_level_min: 60
   id: 1100022
   name: Moist Macaron
+  on_use: 'heal(ctx, hp: 2000)'
   type: healing
   weight: 1
 - aegis_name: 2501_ev_Matjalal
@@ -35228,40 +35369,47 @@
 - aegis_name: aegis_1100028
   id: 1100028
   name: Delicious Noodle
+  on_use: 'heal(ctx, sp: 300)'
   type: healing
   weight: 10
 - aegis_name: aegis_1100029
   id: 1100029
   name: Delicious Dumplings
+  on_use: 'heal(ctx, hp: 2500)'
   type: healing
   weight: 10
 - aegis_name: CLB_HM_3Cheese
   equip_level_min: 200
   id: 1100032
   name: Hanmac Triple Cheese Burger
+  on_use: 'heal(ctx, hp: 3250)'
   type: healing
   weight: 1
 - aegis_name: CLB_HM_Pizzalio
   equip_level_min: 100
   id: 1100033
   name: Hanmac Pizzario Burger
+  on_use: 'heal(ctx, hp: 650)'
   type: healing
   weight: 1
 - aegis_name: CLB_HM_PC_Yangnyeom
   equip_level_min: 200
   id: 1100034
   name: Pocket Chicken Seasoning
+  on_use: 'heal(ctx, sp: 420)'
   type: healing
   weight: 1
 - aegis_name: CLB_HM_PC_Hot_Fried
   equip_level_min: 100
   id: 1100035
   name: Pocket Chicken Hot Fries
+  on_use: 'heal(ctx, sp: 300)'
   type: healing
   weight: 1
 - aegis_name: aegis_1100036
   id: 1100036
   name: Sharing Fish
+  on_use: 'heal(ctx, hp: 2500)'
   type: healing
   weight: 1
 - aegis_name: 25_A_Ev_Cookie

@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
+  alias Aesir.ZoneServer.Unit.SpecialEffect
   alias Aesir.ZoneServer.Unit.Stats.CurrentState
   alias Aesir.ZoneServer.Unit.Stats.DerivedStats
 
@@ -38,6 +39,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     Mimic.copy(Coordinator)
     Mimic.copy(MapCache)
     Mimic.copy(MapData)
+    Mimic.copy(SpecialEffect)
 
     stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
     stub(StatusInterpreter, :apply_status, fn _, _, _, _ -> :ok end)
@@ -103,6 +105,27 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert_received {:applied, params}
       assert params[:val1] == 10
       assert params[:duration] == 60_000
+    end
+  end
+
+  describe "specialeffect2/2" do
+    test "plays the area effect on the player and returns ctx unchanged" do
+      test_pid = self()
+
+      expect(SpecialEffect, :play, fn {:player, 1}, :heal2, :area ->
+        send(test_pid, :played)
+        :ok
+      end)
+
+      ctx = build_ctx()
+
+      assert Dsl.specialeffect2(ctx, :heal2) == ctx
+      assert_received :played
+    end
+
+    test "is a no-op on a detached ctx" do
+      ctx = %{build_ctx() | game_state: nil}
+      assert Dsl.specialeffect2(ctx, :heal2) == ctx
     end
   end
 

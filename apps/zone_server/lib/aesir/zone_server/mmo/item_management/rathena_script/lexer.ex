@@ -6,8 +6,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Lexer do
   function with no symbol resolution: identifiers, numbers and constants are all
   emitted verbatim; mapping them to Aesir values is the resolver/codegen's job.
 
-  Whitespace and `//` line comments are discarded. Any character that cannot
-  start a token (trailing garbage) yields `{:error, _}` instead of raising.
+  Whitespace, `//` line comments and `/* … */` block comments are discarded. Any
+  character that cannot start a token (trailing garbage) yields `{:error, _}`
+  instead of raising.
   """
 
   import NimbleParsec
@@ -35,11 +36,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Lexer do
 
   whitespace = ascii_char([?\s, ?\t, ?\n, ?\r, ?\v, ?\f])
 
-  comment =
+  line_comment =
     string("//")
     |> repeat(lookahead_not(ascii_char([?\n])) |> ascii_char([]))
 
-  skip = ignore(repeat(choice([whitespace, comment])))
+  block_comment =
+    string("/*")
+    |> repeat(lookahead_not(string("*/")) |> ascii_char([]))
+    |> concat(string("*/"))
+
+  skip = ignore(repeat(choice([whitespace, line_comment, block_comment])))
 
   identifier =
     ascii_char([?a..?z, ?A..?Z, ?_])

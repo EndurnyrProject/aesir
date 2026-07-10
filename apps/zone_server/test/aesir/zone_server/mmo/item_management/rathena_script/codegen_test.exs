@@ -56,6 +56,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CodegenTest do
       ast = [{:call, "sc_start", [{:const, "SC_NOPE"}, 1, 1]}]
       assert {:error, {:unsupported, _}} = Codegen.generate(ast)
     end
+
+    test "specialeffect2 resolves an EF_ constant to its effect atom" do
+      ast = [{:call, "specialeffect2", [{:const, "EF_HEAL2"}]}]
+      assert {:ok, "specialeffect2(ctx, :heal2)"} = Codegen.generate(ast)
+    end
+
+    test "unknown special effect is unsupported" do
+      ast = [{:call, "specialeffect2", [{:const, "EF_NOPE"}]}]
+      assert {:error, {:unsupported, {:unknown_symbol, "EF_NOPE"}}} = Codegen.generate(ast)
+    end
   end
 
   describe "generate/1 control flow" do

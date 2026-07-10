@@ -48,6 +48,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Unit.Player.Handlers.RefineOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.StatusSync
+  alias Aesir.ZoneServer.Unit.SpecialEffect
 
   @typedoc "An HP/SP heal amount: a flat integer or a `lo..hi` range to roll within."
   @type amount :: integer() | Range.t()
@@ -287,6 +288,23 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   """
   @spec cure(Ctx.t(), atom()) :: Ctx.t()
   def cure(%Ctx{} = ctx, status), do: sc_end(ctx, status)
+
+  @doc """
+  Plays a one-shot `EF_*` visual effect on the player, shown to every player in
+  view range (rAthena `specialeffect2`).
+
+  Purely cosmetic, so the context is returned unchanged and a detached ctx (no
+  player to originate the effect from) is a silent no-op rather than a halt — a
+  missing sprite burst must never abort the surrounding script.
+  """
+  @spec specialeffect2(Ctx.t(), atom()) :: Ctx.t()
+  def specialeffect2(%Ctx{status: {:error, _}} = ctx, _effect), do: ctx
+  def specialeffect2(%Ctx{game_state: nil} = ctx, _effect), do: ctx
+
+  def specialeffect2(%Ctx{} = ctx, effect) do
+    SpecialEffect.play({:player, ctx.char_id}, effect, :area)
+    ctx
+  end
 
   @doc """
   Relocates the player.

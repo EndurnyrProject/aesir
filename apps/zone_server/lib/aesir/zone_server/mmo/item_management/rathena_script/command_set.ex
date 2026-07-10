@@ -14,7 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet do
   - `%{shape: :call, dsl: name, args: types}` — a positional DSL call
     `name(ctx, a0, a1, …)` where each `types` entry says how to render the
     matching positional argument (`:int` literal, `:string` literal, `:status`,
-    `:item`, `:skill` resolver lookups).
+    `:item`, `:skill`, `:effect` resolver lookups).
   - `%{shape: :heal, dsl: name}` — the `itemheal`/`heal`/`percentheal` shape:
     `name(ctx, hp: …, sp: …)`, zero amounts omitted, `rand` rendered as a range.
   - `%{shape: :itemskill, dsl: name}` — `itemskill(ctx, skill, level: lv)`.
@@ -39,7 +39,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet do
     "getitem" => %{shape: :call, dsl: "give_item", args: [:item, :int]},
     "delitem" => %{shape: :call, dsl: "delitem", args: [:item, :int]},
     "warp" => %{shape: :call, dsl: "warp", args: [:string, :int, :int]},
-    "itemskill" => %{shape: :itemskill, dsl: "itemskill"}
+    "itemskill" => %{shape: :itemskill, dsl: "itemskill"},
+    "specialeffect2" => %{shape: :call, dsl: "specialeffect2", args: [:effect]}
   }
 
   @warp_targets %{

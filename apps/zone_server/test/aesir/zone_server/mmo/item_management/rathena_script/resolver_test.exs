@@ -89,4 +89,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
       assert {:error, {:unknown_symbol, "Job_Nope"}} = Resolver.resolve_class("Job_Nope")
     end
   end
+
+  describe "resolve_effect/1" do
+    test "maps an EF_ constant to its effect atom" do
+      assert {:ok, :heal2} = Resolver.resolve_effect("EF_HEAL2")
+    end
+
+    test "an EF_ name absent from the effect table is an unknown_symbol error" do
+      assert {:error, {:unknown_symbol, "EF_NOPE"}} = Resolver.resolve_effect("EF_NOPE")
+    end
+
+    test "a non EF_ symbol is an unknown_symbol error" do
+      assert {:error, {:unknown_symbol, "SC_BLESSING"}} = Resolver.resolve_effect("SC_BLESSING")
+    end
+  end
 end

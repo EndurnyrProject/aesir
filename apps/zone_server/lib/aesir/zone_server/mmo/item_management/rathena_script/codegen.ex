@@ -140,6 +140,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   defp render_arg(:status, {:const, name}),
     do: resolved(Resolver.resolve_status(name), &inspect/1)
 
+  defp render_arg(:effect, {:const, name}),
+    do: resolved(Resolver.resolve_effect(name), &inspect/1)
+
   defp render_arg(:item, {:const, name}),
     do: resolved(Resolver.resolve_item(name), &Integer.to_string/1)
 
