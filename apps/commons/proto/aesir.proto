@@ -654,6 +654,8 @@ message InventoryItem {
   uint32 bind_on_equip = 11;
   bool favorite = 12;
   uint32 look = 13;
+  // Per-unit weight from the item database (multiply by amount for the stack).
+  uint32 weight = 14;
 }
 
 // Server -> client, the full inventory dump (collapses RO ZC_INVENTORY_START/
@@ -677,6 +679,8 @@ message ItemAdded {
   uint32 result = 10;
   uint64 expire_time = 11;
   uint32 look = 12;
+  // Per-unit weight from the item database.
+  uint32 weight = 13;
 }
 
 // Server -> client, an item was removed from the inventory (replaces RO ZC_DELETE_ITEM_FROM_BODY 0x07FA).
@@ -687,9 +691,14 @@ message ItemRemoved {
 }
 
 // Server -> client, the full cart dump (sent on mount/login). Mirrors InventoryList
-// but for the separate cart container.
+// but for the separate cart container. Carries the cart's own weight totals so the
+// client can render the cart-weight gauge (the cart cap is flat, not STR-derived).
 message CartInfo {
   repeated InventoryItem items = 1;
+  // Sum of every cart item's weight, at dump time.
+  uint32 current_weight = 2;
+  // Flat cart weight cap.
+  uint32 max_weight = 3;
 }
 
 // Server -> client, an item was added to the cart. Mirrors ItemAdded.
@@ -706,6 +715,8 @@ message CartItemAdded {
   uint32 result = 10;
   uint64 expire_time = 11;
   uint32 look = 12;
+  // Per-unit weight from the item database.
+  uint32 weight = 13;
 }
 
 // Server -> client, an item was removed from the cart. Mirrors ItemRemoved.
@@ -1132,6 +1143,8 @@ message StorageItemAdded {
   uint32 result = 10;
   uint64 expire_time = 11;
   uint32 look = 12;
+  // Per-unit weight from the item database.
+  uint32 weight = 13;
 }
 
 // Server -> client, an item was removed from storage. Mirrors CartItemRemoved.

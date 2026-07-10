@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ClientItemType
   alias Aesir.ZoneServer.Mmo.WeaponTypes
+  alias Aesir.ZoneServer.Unit.Cart.Weight, as: CartWeight
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Storage
 
@@ -44,7 +45,8 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
       type: client_type(item.nameid),
       result: 0,
       expire_time: encode_expire_time(item.expire_time),
-      look: item_view(item.nameid)
+      look: item_view(item.nameid),
+      weight: item_weight(item.nameid)
     }
   end
 
@@ -98,7 +100,11 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
       |> Enum.sort_by(fn {index, _item} -> index end)
       |> Enum.map(fn {index, item} -> to_inventory_item(index, item) end)
 
-    %CartInfo{items: items}
+    %CartInfo{
+      items: items,
+      current_weight: CartWeight.current_weight(cart),
+      max_weight: CartWeight.max_weight()
+    }
   end
 
   @doc """
@@ -118,7 +124,8 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
       type: client_type(item.nameid),
       result: 0,
       expire_time: encode_expire_time(item.expire_time),
-      look: item_view(item.nameid)
+      look: item_view(item.nameid),
+      weight: item_weight(item.nameid)
     }
   end
 
@@ -168,7 +175,8 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
       type: client_type(item.nameid),
       result: 0,
       expire_time: encode_expire_time(item.expire_time),
-      look: item_view(item.nameid)
+      look: item_view(item.nameid),
+      weight: item_weight(item.nameid)
     }
   end
 
@@ -200,8 +208,17 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
       expire_time: encode_expire_time(item.expire_time),
       bind_on_equip: item.bound,
       favorite: item.favorite == 1,
-      look: item_view(item.nameid)
+      look: item_view(item.nameid),
+      weight: item_weight(item.nameid)
     }
+  end
+
+  @spec item_weight(integer()) :: non_neg_integer()
+  defp item_weight(nameid) do
+    case ItemManagement.get_item_by_id(nameid) do
+      {:ok, %{weight: weight}} -> weight
+      {:error, :item_not_found} -> 0
+    end
   end
 
   @spec client_type(integer()) :: non_neg_integer()
