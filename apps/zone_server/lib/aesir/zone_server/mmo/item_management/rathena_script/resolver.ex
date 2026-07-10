@@ -62,7 +62,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "SC_FREEZE" => :sc_freeze,
     "SC_STONE" => :sc_stone,
     "SC_CONFUSION" => :sc_confusion,
-    "SC_BLEEDING" => :sc_bleeding
+    "SC_BLEEDING" => :sc_bleeding,
+    "SC_STRFOOD" => :sc_strfood,
+    "SC_AGIFOOD" => :sc_agifood,
+    "SC_VITFOOD" => :sc_vitfood,
+    "SC_INTFOOD" => :sc_intfood,
+    "SC_DEXFOOD" => :sc_dexfood,
+    "SC_LUKFOOD" => :sc_lukfood,
+    "SC_HITFOOD" => :sc_hitfood,
+    "SC_FLEEFOOD" => :sc_fleefood,
+    "SC_CRIFOOD" => :sc_crifood,
+    "SC_BATKFOOD" => :sc_batkfood,
+    "SC_MATKFOOD" => :sc_matkfood,
+    "SC_WATKFOOD" => :sc_watkfood
   }
 
   @elements %{

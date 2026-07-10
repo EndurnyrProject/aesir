@@ -10,10 +10,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects
 
   @modules [
+    Effects.AgiFood,
     Effects.Angelus,
     Effects.ArcaneCharge,
     Effects.Aspersio,
     Effects.Autoberserk,
+    Effects.BatkFood,
     Effects.Benedictio,
     Effects.Bleeding,
     Effects.Blessing,
@@ -21,20 +23,27 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects do
     Effects.Cloaking,
     Effects.Concentrate,
     Effects.Confusion,
+    Effects.CriFood,
     Effects.Curse,
     Effects.DeadlyPoison,
     Effects.DecreaseAgi,
+    Effects.DexFood,
     Effects.EnchantPoison,
     Effects.Endure,
     Effects.EnergyCoat,
+    Effects.FleeFood,
     Effects.Freeze,
     Effects.Gloria,
     Effects.Hiding,
+    Effects.HitFood,
     Effects.Impositio,
     Effects.IncreaseAgi,
+    Effects.IntFood,
     Effects.Kyrie,
     Effects.Loud,
+    Effects.LukFood,
     Effects.Magnificat,
+    Effects.MatkFood,
     Effects.Pneuma,
     Effects.PoemBragi,
     Effects.Poison,
@@ -50,11 +59,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects do
     Effects.Sleep,
     Effects.SlowPoison,
     Effects.Stone,
+    Effects.StrFood,
     Effects.Stun,
     Effects.Suffragium,
     Effects.TrickDead,
     Effects.TwoHandQuicken,
-    Effects.WatkElement
+    Effects.VitFood,
+    Effects.WatkElement,
+    Effects.WatkFood
   ]
 
   @doc """

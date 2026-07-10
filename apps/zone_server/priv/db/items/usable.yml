@@ -1860,21 +1860,37 @@
 - aegis_name: Savory_Herb_Salad
   id: 11551
   name: Savory Herb Salad
+  on_use: |-
+    ctx = heal(ctx, hp: 20..30)
+    ctx = sc_start(ctx, :sc_strfood, 180000, 1)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Apple_Carrot_Salad
   id: 11552
   name: Apple Carrot Salad
+  on_use: |-
+    ctx = heal(ctx, hp: 20..30)
+    ctx = sc_start(ctx, :sc_agifood, 180000, 1)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Casual_Stew
   id: 11553
   name: Casual Stew
+  on_use: |-
+    ctx = heal(ctx, hp: 20..30)
+    ctx = sc_start(ctx, :sc_vitfood, 180000, 1)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Golden_Roasted_Apple
   id: 11554
   name: Golden Roasted Apple
+  on_use: |-
+    ctx = heal(ctx, hp: 20..30)
+    ctx = sc_start(ctx, :sc_dexfood, 180000, 1)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Red_Potion_RG
@@ -2736,372 +2752,614 @@
   buy: 2000
   id: 12041
   name: Fried Grasshopper Legs
+  on_use: |-
+    ctx = sc_start(ctx, :sc_strfood, 1200000, 1)
+    ctx = percent_heal(ctx, hp: 5)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Str_Dish02
   buy: 4000
   id: 12042
   name: Seasoned Sticky Webfoot
+  on_use: |-
+    ctx = sc_start(ctx, :sc_strfood, 1200000, 2)
+    ctx = percent_heal(ctx, hp: 5)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Str_Dish03
   buy: 6000
   id: 12043
   name: Bomber Steak
+  on_use: |-
+    ctx = sc_start(ctx, :sc_strfood, 1200000, 3)
+    ctx = percent_heal(ctx, hp: 5)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Str_Dish04
   buy: 8000
   id: 12044
   name: Herb Marinade Beef
+  on_use: |-
+    ctx = sc_start(ctx, :sc_strfood, 1200000, 4)
+    ctx = percent_heal(ctx, hp: 5)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Str_Dish05
   buy: 10000
   id: 12045
   name: Lutie Lady's Pancake
+  on_use: |-
+    ctx = sc_start(ctx, :sc_strfood, 1200000, 5)
+    ctx = percent_heal(ctx, hp: 10)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Int_Dish01
   buy: 2000
   id: 12046
   name: Grape Juice Herbal Tea
+  on_use: |-
+    ctx = sc_start(ctx, :sc_intfood, 1200000, 1)
+    ctx = percent_heal(ctx, sp: 5)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Int_Dish02
   buy: 4000
   id: 12047
   name: Autumn Red Tea
+  on_use: |-
+    ctx = sc_start(ctx, :sc_intfood, 1200000, 2)
+    ctx = percent_heal(ctx, sp: 5)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Int_Dish03
   buy: 6000
   id: 12048
   name: Honey Herbal Tea
+  on_use: |-
+    ctx = sc_start(ctx, :sc_intfood, 1200000, 3)
+    ctx = percent_heal(ctx, sp: 5)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Int_Dish04
   buy: 8000
   id: 12049
   name: Morocc Fruit Wine
+  on_use: |-
+    ctx = sc_start(ctx, :sc_intfood, 1200000, 4)
+    ctx = percent_heal(ctx, sp: 5)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Int_Dish05
   buy: 10000
   id: 12050
   name: Mastela Fruit Wine
+  on_use: |-
+    ctx = sc_start(ctx, :sc_intfood, 1200000, 5)
+    ctx = percent_heal(ctx, sp: 10)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Vit_Dish01
   buy: 2000
   id: 12051
   name: Steamed Crab Nippers
+  on_use: |-
+    ctx = sc_start(ctx, :sc_vitfood, 1200000, 1)
+    ctx = percent_heal(ctx, hp: 5)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Vit_Dish02
   buy: 4000
   id: 12052
   name: Assorted Seafood
+  on_use: |-
+    ctx = sc_start(ctx, :sc_vitfood, 1200000, 2)
+    ctx = percent_heal(ctx, hp: 5)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Vit_Dish03
   buy: 6000
   id: 12053
   name: Clam Soup
+  on_use: |-
+    ctx = sc_start(ctx, :sc_vitfood, 1200000, 3)
+    ctx = percent_heal(ctx, hp: 5)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Vit_Dish04
   buy: 8000
   id: 12054
   name: Seasoned Jellyfish
+  on_use: |-
+    ctx = sc_start(ctx, :sc_vitfood, 1200000, 4)
+    ctx = percent_heal(ctx, hp: 5)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Vit_Dish05
   buy: 10000
   id: 12055
   name: Spicy Fried Bao
+  on_use: |-
+    ctx = sc_start(ctx, :sc_vitfood, 1200000, 5)
+    ctx = percent_heal(ctx, hp: 10)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Agi_Dish01
   buy: 2000
   id: 12056
   name: Frog Egg Squid Ink Soup
+  on_use: |-
+    ctx = sc_start(ctx, :sc_agifood, 1200000, 1)
+    ctx = percent_heal(ctx, hp: 3, sp: 1)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Agi_Dish02
   buy: 4000
   id: 12057
   name: Smooth Noodle
+  on_use: |-
+    ctx = sc_start(ctx, :sc_agifood, 1200000, 2)
+    ctx = percent_heal(ctx, hp: 3, sp: 1)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Agi_Dish03
   buy: 6000
   id: 12058
   name: Tentacle Cheese Gratin
+  on_use: |-
+    ctx = sc_start(ctx, :sc_agifood, 1200000, 3)
+    ctx = percent_heal(ctx, hp: 3, sp: 1)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Agi_Dish04
   buy: 8000
   id: 12059
   name: Lutie Cold Noodle
+  on_use: |-
+    ctx = sc_start(ctx, :sc_agifood, 1200000, 4)
+    ctx = percent_heal(ctx, hp: 3, sp: 1)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Agi_Dish05
   buy: 10000
   id: 12060
   name: Steamed Bat Wing in Pumpkin
+  on_use: |-
+    ctx = sc_start(ctx, :sc_agifood, 1200000, 5)
+    ctx = percent_heal(ctx, hp: 6, sp: 2)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Dex_Dish01
   buy: 2000
   id: 12061
   name: Honey Grape Juice
+  on_use: |-
+    ctx = sc_start(ctx, :sc_dexfood, 1200000, 1)
+    ctx = percent_heal(ctx, hp: 2, sp: 2)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Dex_Dish02
   buy: 4000
   id: 12062
   name: Chocolate Mousse Cake
+  on_use: |-
+    ctx = sc_start(ctx, :sc_dexfood, 1200000, 2)
+    ctx = percent_heal(ctx, hp: 2, sp: 2)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Dex_Dish03
   buy: 6000
   id: 12063
   name: Fruit Mix
+  on_use: |-
+    ctx = sc_start(ctx, :sc_dexfood, 1200000, 3)
+    ctx = percent_heal(ctx, hp: 2, sp: 2)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Dex_Dish04
   buy: 8000
   id: 12064
   name: Cream Sandwich
+  on_use: |-
+    ctx = sc_start(ctx, :sc_dexfood, 1200000, 4)
+    ctx = percent_heal(ctx, hp: 2, sp: 2)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Dex_Dish05
   buy: 10000
   id: 12065
   name: Green Salad
+  on_use: |-
+    ctx = sc_start(ctx, :sc_dexfood, 1200000, 5)
+    ctx = percent_heal(ctx, hp: 5, sp: 5)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Luk_Dish01
   buy: 2000
   id: 12066
   name: Fried Monkey Tails
+  on_use: |-
+    ctx = sc_start(ctx, :sc_lukfood, 1200000, 1)
+    ctx = percent_heal(ctx, hp: 3, sp: 2)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Luk_Dish02
   buy: 4000
   id: 12067
   name: Mixed Juice
+  on_use: |-
+    ctx = sc_start(ctx, :sc_lukfood, 1200000, 2)
+    ctx = percent_heal(ctx, hp: 3, sp: 2)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Luk_Dish03
   buy: 6000
   id: 12068
   name: Fried Sweet Potato
+  on_use: |-
+    ctx = sc_start(ctx, :sc_lukfood, 1200000, 3)
+    ctx = percent_heal(ctx, hp: 4, sp: 2)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Luk_Dish04
   buy: 8000
   id: 12069
   name: Steamed Ancient Lips
+  on_use: |-
+    ctx = sc_start(ctx, :sc_lukfood, 1200000, 4)
+    ctx = percent_heal(ctx, hp: 4, sp: 2)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Luk_Dish05
   buy: 10000
   id: 12070
   name: Fried Scorpion Tails
+  on_use: |-
+    ctx = sc_start(ctx, :sc_lukfood, 1200000, 5)
+    ctx = percent_heal(ctx, hp: 5, sp: 2)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Str_Dish06
   buy: 20000
   id: 12071
   name: Shiny Marinade Beef
+  on_use: |-
+    ctx = sc_start(ctx, :sc_strfood, 1200000, 6)
+    ctx = percent_heal(ctx, hp: 10, sp: 2)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Str_Dish07
   buy: 40000
   id: 12072
   name: Whole Roast
+  on_use: |-
+    ctx = sc_start(ctx, :sc_strfood, 1200000, 7)
+    ctx = percent_heal(ctx, hp: 10, sp: 4)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Str_Dish08
   buy: 60000
   id: 12073
   name: Bearfoot Special
+  on_use: |-
+    ctx = sc_start(ctx, :sc_strfood, 1200000, 8)
+    ctx = percent_heal(ctx, hp: 15, sp: 6)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Str_Dish09
   buy: 80000
   id: 12074
   name: Tendon Satay
+  on_use: |-
+    ctx = sc_start(ctx, :sc_strfood, 1200000, 9)
+    ctx = percent_heal(ctx, hp: 15, sp: 8)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Str_Dish10
   buy: 100000
   id: 12075
   name: Steamed Tongue
+  on_use: |-
+    ctx = sc_start(ctx, :sc_strfood, 1200000, 10)
+    ctx = percent_heal(ctx, hp: 20, sp: 20)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Int_Dish06
   buy: 20000
   id: 12076
   name: Red Mushroom Wine
+  on_use: |-
+    ctx = sc_start(ctx, :sc_intfood, 1200000, 6)
+    ctx = percent_heal(ctx, hp: 2, sp: 10)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Int_Dish07
   buy: 40000
   id: 12077
   name: Special Royal Jelly Herbal Tea
+  on_use: |-
+    ctx = sc_start(ctx, :sc_intfood, 1200000, 7)
+    ctx = percent_heal(ctx, hp: 4, sp: 10)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Int_Dish08
   buy: 60000
   id: 12078
   name: Royal Family Tea
+  on_use: |-
+    ctx = sc_start(ctx, :sc_intfood, 1200000, 8)
+    ctx = percent_heal(ctx, hp: 6, sp: 10)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Int_Dish09
   buy: 80000
   id: 12079
   name: Tristan XII
+  on_use: |-
+    ctx = sc_start(ctx, :sc_intfood, 1200000, 9)
+    ctx = percent_heal(ctx, hp: 8, sp: 15)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Int_Dish10
   buy: 100000
   id: 12080
   name: Dragon Breath Cocktail
+  on_use: |-
+    ctx = sc_start(ctx, :sc_intfood, 1200000, 10)
+    ctx = percent_heal(ctx, hp: 10, sp: 20)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Vit_Dish06
   buy: 20000
   id: 12081
   name: Awfully Bitter Bracer
+  on_use: |-
+    ctx = sc_start(ctx, :sc_vitfood, 1200000, 6)
+    ctx = percent_heal(ctx, hp: 13)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Vit_Dish07
   buy: 40000
   id: 12082
   name: Sumptuous Feast
+  on_use: |-
+    ctx = sc_start(ctx, :sc_vitfood, 1200000, 7)
+    ctx = percent_heal(ctx, hp: 16)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Vit_Dish08
   buy: 60000
   id: 12083
   name: Giant Burito
+  on_use: |-
+    ctx = sc_start(ctx, :sc_vitfood, 1200000, 8)
+    ctx = percent_heal(ctx, hp: 19)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Vit_Dish09
   buy: 80000
   id: 12084
   name: Ascending Dragon Soup
+  on_use: |-
+    ctx = sc_start(ctx, :sc_vitfood, 1200000, 9)
+    ctx = percent_heal(ctx, hp: 22)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Vit_Dish10
   buy: 100000
   id: 12085
   name: Immortal Stew
+  on_use: |-
+    ctx = sc_start(ctx, :sc_vitfood, 1200000, 10)
+    ctx = percent_heal(ctx, hp: 25)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Agi_Dish06
   buy: 20000
   id: 12086
   name: Chile Shrimp Gratin
+  on_use: |-
+    ctx = sc_start(ctx, :sc_agifood, 1200000, 6)
+    ctx = percent_heal(ctx, hp: 7, sp: 2)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Agi_Dish07
   buy: 40000
   id: 12087
   name: Steamed Alligator with Vegetable
+  on_use: |-
+    ctx = sc_start(ctx, :sc_agifood, 1200000, 7)
+    ctx = percent_heal(ctx, hp: 8, sp: 2)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Agi_Dish08
   buy: 60000
   id: 12088
   name: Incredibly Spicy Curry
+  on_use: |-
+    ctx = sc_start(ctx, :sc_agifood, 1200000, 8)
+    ctx = percent_heal(ctx, hp: 9, sp: 2)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Agi_Dish09
   buy: 80000
   id: 12089
   name: Special Meat Stew
+  on_use: |-
+    ctx = sc_start(ctx, :sc_agifood, 1200000, 9)
+    ctx = percent_heal(ctx, hp: 10, sp: 2)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Agi_Dish10
   buy: 100000
   id: 12090
   name: Steamed Desert Scorpions
+  on_use: |-
+    ctx = sc_start(ctx, :sc_agifood, 1200000, 10)
+    ctx = percent_heal(ctx, hp: 15, sp: 5)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Dex_Dish06
   buy: 20000
   id: 12091
   name: Peach Cake
+  on_use: |-
+    ctx = sc_start(ctx, :sc_dexfood, 1200000, 6)
+    ctx = percent_heal(ctx, hp: 5, sp: 6)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Dex_Dish07
   buy: 40000
   id: 12092
   name: Soul Haunted Bread
+  on_use: |-
+    ctx = sc_start(ctx, :sc_dexfood, 1200000, 7)
+    ctx = percent_heal(ctx, hp: 5, sp: 7)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Dex_Dish08
   buy: 60000
   id: 12093
   name: Special Toast
+  on_use: |-
+    ctx = sc_start(ctx, :sc_dexfood, 1200000, 8)
+    ctx = percent_heal(ctx, hp: 5, sp: 8)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Dex_Dish09
   buy: 80000
   id: 12094
   name: Heavenly Fruit Juice
+  on_use: |-
+    ctx = sc_start(ctx, :sc_dexfood, 1200000, 9)
+    ctx = percent_heal(ctx, hp: 5, sp: 9)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Dex_Dish10
   buy: 100000
   id: 12095
   name: Hwergelmir's Tonic
+  on_use: |-
+    ctx = sc_start(ctx, :sc_dexfood, 1200000, 10)
+    ctx = percent_heal(ctx, hp: 10, sp: 10)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Luk_Dish06
   buy: 20000
   id: 12096
   name: Lucky Soup
+  on_use: |-
+    ctx = sc_start(ctx, :sc_lukfood, 1200000, 6)
+    ctx = percent_heal(ctx, hp: 6, sp: 3)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Luk_Dish07
   buy: 40000
   id: 12097
   name: Assorted Shish Kebob
+  on_use: |-
+    ctx = sc_start(ctx, :sc_lukfood, 1200000, 7)
+    ctx = percent_heal(ctx, hp: 7, sp: 3)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Luk_Dish08
   buy: 60000
   id: 12098
   name: Strawberry Flavored Rice Ball
+  on_use: |-
+    ctx = sc_start(ctx, :sc_lukfood, 1200000, 8)
+    ctx = percent_heal(ctx, hp: 9, sp: 3)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Luk_Dish09
   buy: 80000
   id: 12099
   name: Blood Flavored Soda
+  on_use: |-
+    ctx = sc_start(ctx, :sc_lukfood, 1200000, 9)
+    ctx = percent_heal(ctx, hp: 10, sp: 4)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Luk_Dish10
   buy: 100000
   id: 12100
   name: Cooked Nine Tail's Tails
+  on_use: |-
+    ctx = sc_start(ctx, :sc_lukfood, 1200000, 10)
+    ctx = percent_heal(ctx, hp: 14, sp: 8)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Citron
   buy: 20
   id: 12101
   name: Citron
+  on_use: sc_start(ctx, :sc_fleefood, 180000, 30)
   type: healing
   weight: 300
 - aegis_name: Meat_Skewer
   buy: 20
   id: 12102
   name: Grilled Skewer
+  on_use: sc_start(ctx, :sc_hitfood, 180000, 30)
   type: healing
   weight: 300
 - aegis_name: Bloody_Dead_Branch
@@ -3222,18 +3480,24 @@
   buy: 2
   id: 12122
   name: Sesame Pastry
+  on_use: sc_start(ctx, :sc_hitfood, 180000, 30)
   type: usable
   weight: 70
 - aegis_name: Honey_Pastry
   buy: 2
   id: 12123
   name: Honey Pastry
+  on_use: sc_start(ctx, :sc_fleefood, 180000, 30)
   type: usable
   weight: 70
 - aegis_name: Rainbow_Cake
   buy: 2
   id: 12124
   name: Rainbow Cake
+  on_use: |-
+    ctx = sc_start(ctx, :sc_batkfood, 60000, 10)
+    ctx = sc_start(ctx, :sc_matkfood, 60000, 10)
+    ctx
   type: usable
   weight: 70
 - aegis_name: Outdoor_Cooking_Kits
@@ -3329,6 +3593,7 @@
 - aegis_name: Magic_Book
   id: 12142
   name: Book of Magic
+  on_use: sc_start(ctx, :sc_agifood, 1800000, 10)
   type: usable
   weight: 100
 - aegis_name: Red_Can
@@ -3986,31 +4251,55 @@
 - aegis_name: Str_Dish10_M
   id: 12250
   name: Steamed Tongue
+  on_use: |-
+    ctx = sc_start(ctx, :sc_strfood, 3600000, 10)
+    ctx = percent_heal(ctx, hp: 20, sp: 20)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Agi_Dish10_M
   id: 12251
   name: Steamed Desert Scorpions
+  on_use: |-
+    ctx = sc_start(ctx, :sc_agifood, 3600000, 10)
+    ctx = percent_heal(ctx, hp: 15, sp: 5)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Int_Dish10_M
   id: 12252
   name: Dragon Breath Cocktail
+  on_use: |-
+    ctx = sc_start(ctx, :sc_intfood, 3600000, 10)
+    ctx = percent_heal(ctx, hp: 10, sp: 20)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Dex_Dish10_M
   id: 12253
   name: Hwergelmir's Tonic
+  on_use: |-
+    ctx = sc_start(ctx, :sc_dexfood, 3600000, 10)
+    ctx = percent_heal(ctx, hp: 10, sp: 10)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Luk_Dish10_M
   id: 12254
   name: Cooked Nine Tail
+  on_use: |-
+    ctx = sc_start(ctx, :sc_lukfood, 3600000, 10)
+    ctx = percent_heal(ctx, hp: 14, sp: 8)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Vit_Dish10_M
   id: 12255
   name: Immortal Stew
+  on_use: |-
+    ctx = sc_start(ctx, :sc_vitfood, 3600000, 10)
+    ctx = percent_heal(ctx, hp: 25)
+    ctx
   type: usable
   weight: 10
 - aegis_name: PRO_Gift_Box
@@ -4070,12 +4359,14 @@
   buy: 2
   id: 12266
   name: Sesame Pastry
+  on_use: sc_start(ctx, :sc_hitfood, 180000, 30)
   type: usable
   weight: 70
 - aegis_name: Honey_Pastry_
   buy: 2
   id: 12267
   name: Honey Pastry
+  on_use: sc_start(ctx, :sc_fleefood, 180000, 30)
   type: usable
   weight: 70
 - aegis_name: Rainbow_Cake_
@@ -4107,12 +4398,14 @@
   buy: 2
   id: 12272
   name: Military Ration B
+  on_use: sc_start(ctx, :sc_hitfood, 600000, 33)
   type: usable
   weight: 70
 - aegis_name: Mre_C
   buy: 2
   id: 12273
   name: Military Ration C
+  on_use: sc_start(ctx, :sc_fleefood, 600000, 33)
   type: usable
   weight: 70
 - aegis_name: Gold_Pill_1
@@ -4303,6 +4596,7 @@
 - aegis_name: Spray_Of_Flowers
   id: 12310
   name: Spray Of Flowers
+  on_use: sc_start(ctx, :sc_fleefood, 300000, 10)
   type: usable
   weight: 50
 - aegis_name: Large_Spray_Of_Flowers
@@ -4352,6 +4646,10 @@
 - aegis_name: Pineapple_Juice
   id: 12320
   name: Schwarzwald Pine Jubilee
+  on_use: |-
+    ctx = sc_start(ctx, :sc_hitfood, 600000, 10)
+    ctx = sc_start(ctx, :sc_fleefood, 600000, 20)
+    ctx
   type: usable
   weight: 300
 - aegis_name: Spicy_Sandwich
@@ -5056,36 +5354,54 @@
   buy: 2
   id: 12445
   name: F Str Dish10
+  on_use: |-
+    ctx = sc_start(ctx, :sc_strfood, 1800000, 10)
+    ctx = percent_heal(ctx, hp: 20, sp: 10)
+    ctx
   type: usable
   weight: 10
 - aegis_name: F_Agi_Dish10_
   buy: 2
   id: 12446
   name: F Agi Dish10
+  on_use: |-
+    ctx = sc_start(ctx, :sc_agifood, 1800000, 10)
+    ctx = percent_heal(ctx, hp: 15, sp: 5)
+    ctx
   type: usable
   weight: 10
 - aegis_name: F_Int_Dish10_
   buy: 2
   id: 12447
   name: F Int Dish10
+  on_use: |-
+    ctx = sc_start(ctx, :sc_intfood, 1800000, 10)
+    ctx = percent_heal(ctx, hp: 10, sp: 20)
+    ctx
   type: usable
   weight: 10
 - aegis_name: F_Dex_Dish10_
   buy: 2
   id: 12448
   name: F Dex Dish10
+  on_use: |-
+    ctx = sc_start(ctx, :sc_dexfood, 1800000, 10)
+    ctx = percent_heal(ctx, hp: 10, sp: 10)
+    ctx
   type: usable
   weight: 10
 - aegis_name: F_Luk_Dish10_
   buy: 2
   id: 12449
   name: F Luk Dish10
+  on_use: sc_start(ctx, :sc_lukfood, 1800000, 10)
   type: usable
   weight: 10
 - aegis_name: F_Vit_Dish10_
   buy: 2
   id: 12450
   name: F Vit Dish10
+  on_use: sc_start(ctx, :sc_vitfood, 1800000, 10)
   type: usable
   weight: 10
 - aegis_name: F_WOB_Rune
@@ -5344,36 +5660,42 @@
   buy: 2
   id: 12501
   name: Steamed Tongue
+  on_use: sc_start(ctx, :sc_strfood, 1800000, 10)
   type: usable
   weight: 10
 - aegis_name: E_Agi_Dish10_
   buy: 2
   id: 12502
   name: Steamed Desert Scorpions
+  on_use: sc_start(ctx, :sc_agifood, 1800000, 10)
   type: usable
   weight: 10
 - aegis_name: E_Int_Dish10_
   buy: 2
   id: 12503
   name: Dragon Breath Cocktail
+  on_use: sc_start(ctx, :sc_intfood, 1800000, 10)
   type: usable
   weight: 10
 - aegis_name: E_Dex_Dish10_
   buy: 2
   id: 12504
   name: Hwergelmir's Tonic
+  on_use: sc_start(ctx, :sc_dexfood, 1800000, 10)
   type: usable
   weight: 10
 - aegis_name: E_Luk_Dish10_
   buy: 2
   id: 12505
   name: Cooked Nine Tail
+  on_use: sc_start(ctx, :sc_lukfood, 1800000, 10)
   type: usable
   weight: 10
 - aegis_name: E_Vit_Dish10_
   buy: 2
   id: 12506
   name: Immortal Stew
+  on_use: sc_start(ctx, :sc_vitfood, 1800000, 10)
   type: usable
   weight: 10
 - aegis_name: E_WOB_Rune
@@ -14265,11 +14587,13 @@
 - aegis_name: Flee_30_Scroll
   id: 14530
   name: Evasion Scroll
+  on_use: sc_start(ctx, :sc_fleefood, 1800000, 30)
   type: usable
   weight: 10
 - aegis_name: Accuracy_30_Scroll
   id: 14531
   name: Concentration Scroll
+  on_use: sc_start(ctx, :sc_hitfood, 1800000, 30)
   type: usable
   weight: 10
 - aegis_name: Battle_Manual25
@@ -14378,108 +14702,180 @@
   buy: 2
   id: 14551
   name: Fried Grasshopper Legs
+  on_use: |-
+    ctx = sc_start(ctx, :sc_strfood, 1200000, 1)
+    ctx = percent_heal(ctx, hp: 5)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Str_Dish02_
   buy: 2
   id: 14552
   name: Seasoned Sticky Webfoot
+  on_use: |-
+    ctx = sc_start(ctx, :sc_strfood, 1200000, 2)
+    ctx = percent_heal(ctx, hp: 5)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Str_Dish03_
   buy: 2
   id: 14553
   name: Bomber Steak
+  on_use: |-
+    ctx = sc_start(ctx, :sc_strfood, 1200000, 3)
+    ctx = percent_heal(ctx, hp: 5)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Int_Dish01_
   buy: 2
   id: 14554
   name: Grape Juice Herbal Tea
+  on_use: |-
+    ctx = sc_start(ctx, :sc_intfood, 1200000, 1)
+    ctx = percent_heal(ctx, sp: 5)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Int_Dish02_
   buy: 2
   id: 14555
   name: Autumn Red Tea
+  on_use: |-
+    ctx = sc_start(ctx, :sc_intfood, 1200000, 2)
+    ctx = percent_heal(ctx, sp: 5)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Int_Dish03_
   buy: 2
   id: 14556
   name: Honey Herbal Tea
+  on_use: |-
+    ctx = sc_start(ctx, :sc_intfood, 1200000, 3)
+    ctx = percent_heal(ctx, sp: 5)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Vit_Dish01_
   buy: 2
   id: 14557
   name: Steamed Crab Nippers
+  on_use: |-
+    ctx = sc_start(ctx, :sc_vitfood, 1200000, 1)
+    ctx = percent_heal(ctx, hp: 5)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Vit_Dish02_
   buy: 2
   id: 14558
   name: Assorted Seafood
+  on_use: |-
+    ctx = sc_start(ctx, :sc_vitfood, 1200000, 2)
+    ctx = percent_heal(ctx, hp: 5)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Vit_Dish03_
   buy: 2
   id: 14559
   name: Clam Soup
+  on_use: |-
+    ctx = sc_start(ctx, :sc_vitfood, 1200000, 3)
+    ctx = percent_heal(ctx, hp: 5)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Agi_Dish01_
   buy: 2
   id: 14560
   name: Frog Egg Squid Ink Soup
+  on_use: |-
+    ctx = sc_start(ctx, :sc_agifood, 1200000, 1)
+    ctx = percent_heal(ctx, hp: 3, sp: 1)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Agi_Dish02_
   buy: 2
   id: 14561
   name: Smooth Noodle
+  on_use: |-
+    ctx = sc_start(ctx, :sc_agifood, 1200000, 2)
+    ctx = percent_heal(ctx, hp: 3, sp: 1)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Agi_Dish03_
   buy: 2
   id: 14562
   name: Tentacle Cheese Gratin
+  on_use: |-
+    ctx = sc_start(ctx, :sc_agifood, 1200000, 3)
+    ctx = percent_heal(ctx, hp: 3, sp: 1)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Dex_Dish01_
   buy: 2
   id: 14563
   name: Honey Grape Juice
+  on_use: |-
+    ctx = sc_start(ctx, :sc_dexfood, 1200000, 1)
+    ctx = percent_heal(ctx, hp: 2, sp: 2)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Dex_Dish02_
   buy: 2
   id: 14564
   name: Chocolate Mousse Cake
+  on_use: |-
+    ctx = sc_start(ctx, :sc_dexfood, 1200000, 2)
+    ctx = percent_heal(ctx, hp: 2, sp: 2)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Dex_Dish03_
   buy: 2
   id: 14565
   name: Fruit Mix
+  on_use: |-
+    ctx = sc_start(ctx, :sc_dexfood, 1200000, 3)
+    ctx = percent_heal(ctx, hp: 2, sp: 2)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Luk_Dish01_
   buy: 2
   id: 14566
   name: Fried Monkey Tails
+  on_use: |-
+    ctx = sc_start(ctx, :sc_lukfood, 1200000, 1)
+    ctx = percent_heal(ctx, hp: 3, sp: 2)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Luk_Dish02_
   buy: 2
   id: 14567
   name: Mixed Juice
+  on_use: |-
+    ctx = sc_start(ctx, :sc_lukfood, 1200000, 2)
+    ctx = percent_heal(ctx, hp: 3, sp: 2)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Luk_Dish03_
   buy: 2
   id: 14568
   name: Fried Sweet Potato
+  on_use: |-
+    ctx = sc_start(ctx, :sc_lukfood, 1200000, 3)
+    ctx = percent_heal(ctx, hp: 4, sp: 2)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Knife_Goblin_Ring
@@ -14516,36 +14912,60 @@
   buy: 2
   id: 14575
   name: Lutie Lady's Pancake
+  on_use: |-
+    ctx = sc_start(ctx, :sc_strfood, 1200000, 5)
+    ctx = percent_heal(ctx, hp: 10)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Int_Dish05_
   buy: 2
   id: 14576
   name: Mastela Fruit Wine
+  on_use: |-
+    ctx = sc_start(ctx, :sc_intfood, 1200000, 5)
+    ctx = percent_heal(ctx, sp: 10)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Vit_Dish05_
   buy: 2
   id: 14577
   name: Spicy Fried Bao
+  on_use: |-
+    ctx = sc_start(ctx, :sc_vitfood, 1200000, 5)
+    ctx = percent_heal(ctx, hp: 10)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Agi_Dish05_
   buy: 2
   id: 14578
   name: Steamed Bat Wing in Pumpkin
+  on_use: |-
+    ctx = sc_start(ctx, :sc_agifood, 1200000, 5)
+    ctx = percent_heal(ctx, hp: 6, sp: 2)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Dex_Dish05_
   buy: 2
   id: 14579
   name: Green Salad
+  on_use: |-
+    ctx = sc_start(ctx, :sc_dexfood, 1200000, 5)
+    ctx = percent_heal(ctx, hp: 5, sp: 5)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Luk_Dish05_
   buy: 2
   id: 14580
   name: Fried Scorpion Tails
+  on_use: |-
+    ctx = sc_start(ctx, :sc_lukfood, 1200000, 5)
+    ctx = percent_heal(ctx, hp: 5, sp: 2)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Dun_Tele_Scroll2
@@ -15121,31 +15541,37 @@
 - aegis_name: DF_Vit_Dish10
   id: 14849
   name: '[Scroll] Vit Dish10'
+  on_use: sc_start(ctx, :sc_vitfood, 1800000, 10)
   type: usable
   weight: 10
 - aegis_name: DF_Luk_Dish10
   id: 14850
   name: '[Scroll] Luk Dish10'
+  on_use: sc_start(ctx, :sc_lukfood, 1800000, 10)
   type: usable
   weight: 10
 - aegis_name: DF_Dex_Dish10
   id: 14851
   name: '[Scroll] Dex Dish10'
+  on_use: sc_start(ctx, :sc_dexfood, 1800000, 10)
   type: usable
   weight: 10
 - aegis_name: DF_Int_Dish10
   id: 14852
   name: '[Scroll] Int Dish10'
+  on_use: sc_start(ctx, :sc_intfood, 1800000, 10)
   type: usable
   weight: 10
 - aegis_name: DF_Agi_Dish10
   id: 14853
   name: '[Scroll] Agi Dish10'
+  on_use: sc_start(ctx, :sc_agifood, 1800000, 10)
   type: usable
   weight: 10
 - aegis_name: DF_Str_Dish10
   id: 14854
   name: '[Scroll] Str Dish10'
+  on_use: sc_start(ctx, :sc_strfood, 1800000, 10)
   type: usable
   weight: 10
 - aegis_name: DF_GhostringS
@@ -23153,6 +23579,10 @@
   buy: 10
   id: 22553
   name: Rainbow Bread
+  on_use: |-
+    ctx = sc_start(ctx, :sc_batkfood, 60000, 10)
+    ctx = sc_start(ctx, :sc_matkfood, 60000, 10)
+    ctx
   type: usable
   weight: 70
 - aegis_name: First_Aid_Kit_B
@@ -23469,6 +23899,7 @@
   buy: 20
   id: 22675
   name: Mysterious Scroll
+  on_use: sc_start(ctx, :sc_intfood, 3600000, 30)
   type: usable
   weight: 10
 - aegis_name: HangulDay_Box
@@ -25722,6 +26153,10 @@
 - aegis_name: Melon_Juice
   id: 23320
   name: Melon Juice
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 10, sp: 10)
+    ctx = sc_start(ctx, :sc_hitfood, 180000, 30)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Sweet_Melon_Juice
@@ -26275,6 +26710,10 @@
 - aegis_name: Snow_Cookie
   id: 23549
   name: Snow Cookie
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 5)
+    ctx = sc_start(ctx, :sc_hitfood, 600000, 30)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Winter_Cookie
@@ -27589,31 +28028,85 @@
 - aegis_name: DishSet05
   id: 100075
   name: Level 5 Dishes
+  on_use: |-
+    ctx = sc_start(ctx, :sc_strfood, 600000, 5)
+    ctx = sc_start(ctx, :sc_agifood, 600000, 5)
+    ctx = sc_start(ctx, :sc_vitfood, 600000, 5)
+    ctx = sc_start(ctx, :sc_intfood, 600000, 5)
+    ctx = sc_start(ctx, :sc_dexfood, 600000, 5)
+    ctx = sc_start(ctx, :sc_lukfood, 600000, 5)
+    ctx = percent_heal(ctx, hp: 5, sp: 5)
+    ctx
   type: usable
   weight: 50
 - aegis_name: DishSet06
   id: 100076
   name: Level 6 Dishes
+  on_use: |-
+    ctx = sc_start(ctx, :sc_strfood, 600000, 6)
+    ctx = sc_start(ctx, :sc_agifood, 600000, 6)
+    ctx = sc_start(ctx, :sc_vitfood, 600000, 6)
+    ctx = sc_start(ctx, :sc_intfood, 600000, 6)
+    ctx = sc_start(ctx, :sc_dexfood, 600000, 6)
+    ctx = sc_start(ctx, :sc_lukfood, 600000, 6)
+    ctx = percent_heal(ctx, hp: 6, sp: 6)
+    ctx
   type: usable
   weight: 50
 - aegis_name: DishSet07
   id: 100077
   name: Level 7 Dishes
+  on_use: |-
+    ctx = sc_start(ctx, :sc_strfood, 600000, 7)
+    ctx = sc_start(ctx, :sc_agifood, 600000, 7)
+    ctx = sc_start(ctx, :sc_vitfood, 600000, 7)
+    ctx = sc_start(ctx, :sc_intfood, 600000, 7)
+    ctx = sc_start(ctx, :sc_dexfood, 600000, 7)
+    ctx = sc_start(ctx, :sc_lukfood, 600000, 7)
+    ctx = percent_heal(ctx, hp: 7, sp: 7)
+    ctx
   type: usable
   weight: 50
 - aegis_name: DishSet08
   id: 100078
   name: Level 8 Dishes
+  on_use: |-
+    ctx = sc_start(ctx, :sc_strfood, 600000, 8)
+    ctx = sc_start(ctx, :sc_agifood, 600000, 8)
+    ctx = sc_start(ctx, :sc_vitfood, 600000, 8)
+    ctx = sc_start(ctx, :sc_intfood, 600000, 8)
+    ctx = sc_start(ctx, :sc_dexfood, 600000, 8)
+    ctx = sc_start(ctx, :sc_lukfood, 600000, 8)
+    ctx = percent_heal(ctx, hp: 8, sp: 8)
+    ctx
   type: usable
   weight: 50
 - aegis_name: DishSet09
   id: 100079
   name: Level 9 Dishes
+  on_use: |-
+    ctx = sc_start(ctx, :sc_strfood, 600000, 9)
+    ctx = sc_start(ctx, :sc_agifood, 600000, 9)
+    ctx = sc_start(ctx, :sc_vitfood, 600000, 9)
+    ctx = sc_start(ctx, :sc_intfood, 600000, 9)
+    ctx = sc_start(ctx, :sc_dexfood, 600000, 9)
+    ctx = sc_start(ctx, :sc_lukfood, 600000, 9)
+    ctx = percent_heal(ctx, hp: 9, sp: 9)
+    ctx
   type: usable
   weight: 50
 - aegis_name: DishSet10
   id: 100080
   name: Level 10 Dishes
+  on_use: |-
+    ctx = sc_start(ctx, :sc_strfood, 600000, 10)
+    ctx = sc_start(ctx, :sc_agifood, 600000, 10)
+    ctx = sc_start(ctx, :sc_vitfood, 600000, 10)
+    ctx = sc_start(ctx, :sc_intfood, 600000, 10)
+    ctx = sc_start(ctx, :sc_dexfood, 600000, 10)
+    ctx = sc_start(ctx, :sc_lukfood, 600000, 10)
+    ctx = percent_heal(ctx, hp: 10, sp: 10)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Kr_B_Special01
