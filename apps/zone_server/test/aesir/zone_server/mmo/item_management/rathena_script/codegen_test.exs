@@ -191,6 +191,52 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CodegenTest do
     end
   end
 
+  describe "generate/1 announce broadcasts" do
+    test "announce with a single bc_ flag resolves it to its integer value" do
+      assert {:ok, "announce(ctx, \"hi\", 3)"} =
+               Codegen.generate([{:call, "announce", ["hi", {:const, "bc_self"}]}])
+    end
+
+    test "broadcast maps to the broadcast DSL call" do
+      assert {:ok, "broadcast(ctx, \"hi\", 0)"} =
+               Codegen.generate([{:call, "broadcast", ["hi", {:const, "bc_all"}]}])
+    end
+
+    test "mapannounce keeps the map and text before the flag" do
+      assert {:ok, "mapannounce(ctx, \"prontera\", \"hi\", 1)"} =
+               Codegen.generate([{:call, "mapannounce", ["prontera", "hi", {:const, "bc_map"}]}])
+    end
+
+    test "areaannounce keeps the rectangle, text and flag" do
+      ast = [{:call, "areaannounce", ["prontera", 10, 10, 20, 20, "hi", {:const, "bc_area"}]}]
+
+      assert {:ok, "areaannounce(ctx, \"prontera\", 10, 10, 20, 20, \"hi\", 2)"} =
+               Codegen.generate(ast)
+    end
+
+    test "announce passes a decimal color through after the flag" do
+      ast = [{:call, "announce", ["hi", {:const, "bc_all"}, 16_711_680]}]
+      assert {:ok, "announce(ctx, \"hi\", 0, 16711680)"} = Codegen.generate(ast)
+    end
+
+    test "announce drops the trailing font tail beyond the color" do
+      ast = [{:call, "announce", ["hi", {:const, "bc_all"}, 16_711_680, 400, 12, 0, 0]}]
+      assert {:ok, "announce(ctx, \"hi\", 0, 16711680)"} = Codegen.generate(ast)
+    end
+
+    test "an unresolvable flag const is unsupported, not a raise" do
+      assert {:error, {:unsupported, _}} =
+               Codegen.generate([{:call, "announce", ["hi", {:const, "bc_nope"}]}])
+    end
+
+    test "an announce item that used to fail all-or-nothing now compiles end to end" do
+      {:ok, tokens} = Lexer.tokenize(~s(announce "Hello", bc_all;))
+      {:ok, ast} = Parser.parse(tokens)
+
+      assert {:ok, "announce(ctx, \"Hello\", 0)"} = Codegen.generate(ast)
+    end
+  end
+
   describe "generate/1 unsupported" do
     test "an unknown command is unsupported with its name" do
       assert {:error, {:unsupported, "produce"}} =

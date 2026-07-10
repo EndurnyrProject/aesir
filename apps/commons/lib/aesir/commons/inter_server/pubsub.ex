@@ -137,6 +137,17 @@ defmodule Aesir.Commons.InterServer.PubSub do
   end
 
   @doc """
+  Publishes a fully-built broadcast packet for global fan-out. Every zone
+  `Coordinator` subscribes to this topic and delivers `packet` to the players
+  on its own map, reaching every online player exactly once without a central
+  roster scan.
+  """
+  @spec broadcast_announcement(term()) :: :ok
+  def broadcast_announcement(packet) do
+    Phoenix.PubSub.broadcast(@pubsub_name, @announce_topic, {:announcement, packet})
+  end
+
+  @doc """
   Subscribes the caller to server-wide announcements.
   """
   def subscribe_to_announcements do

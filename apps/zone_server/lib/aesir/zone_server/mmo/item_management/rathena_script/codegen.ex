@@ -57,6 +57,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   rAthena name as the atom key — matching the NPC transpiler's char-var convention.
   """
 
+  alias Aesir.ZoneServer.Announcement.Flags
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
 
@@ -162,7 +163,22 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
     end
   end
 
+  defp render_rule(%{shape: :announce, dsl: dsl, fixed: fixed}, args)
+       when length(args) >= fixed do
+    kept = Enum.take(args, fixed + 1)
+
+    with {:ok, rendered} <-
+           map_ok(Enum.with_index(kept), fn {arg, i} -> render_announce_arg(arg, i, fixed) end) do
+      {:ok, "#{dsl}(ctx, #{Enum.join(rendered, ", ")})"}
+    end
+  end
+
   defp render_rule(rule, args), do: unsupported({:arity, rule.dsl, args})
+
+  @spec render_announce_arg(term(), non_neg_integer(), pos_integer()) ::
+          {:ok, String.t()} | {:error, {:unsupported, detail()}}
+  defp render_announce_arg(arg, i, fixed) when i == fixed - 1, do: render_arg(:flag, arg)
+  defp render_announce_arg(arg, _i, _fixed), do: render_expr(arg)
 
   @spec heal_opt(String.t(), term()) ::
           {:ok, String.t() | nil} | {:error, {:unsupported, detail()}}
@@ -180,6 +196,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   @spec render_arg(atom(), term()) :: {:ok, String.t()} | {:error, {:unsupported, detail()}}
   defp render_arg(:int, n) when is_integer(n), do: {:ok, Integer.to_string(n)}
   defp render_arg(:int, other), do: unsupported({:expected_literal_int, other})
+
+  # NOTE: item-side bitwise (`bc_all|bc_blue`) and `0x` hex flags do not lex in
+  # the item transpiler (no `|` op, decimal-only ints) and are deferred; only a
+  # single `bc_*` const or a literal integer flag is accepted here.
+  defp render_arg(:flag, n) when is_integer(n), do: {:ok, Integer.to_string(n)}
+
+  defp render_arg(:flag, {:const, name} = expr) do
+    if String.starts_with?(String.downcase(name), "bc_"),
+      do: render_const(name),
+      else: unsupported({:expected_flag, expr})
+  end
+
+  defp render_arg(:flag, other), do: unsupported({:expected_flag, other})
   defp render_arg(:string, s) when is_binary(s), do: {:ok, inspect(s)}
   defp render_arg(:string, other), do: unsupported({:expected_string, other})
 
@@ -247,7 +276,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   defp render_const("SC_" <> _ = name), do: resolved(Resolver.resolve_status(name), &inspect/1)
   defp render_const("Ele_" <> _ = name), do: resolved(Resolver.resolve_element(name), &inspect/1)
   defp render_const("Job_" <> _ = name), do: resolved(Resolver.resolve_class(name), &inspect/1)
+  defp render_const("bc_" <> _ = name), do: render_flag(name)
   defp render_const(name), do: unsupported({:unknown_const, name})
+
+  @spec render_flag(String.t()) :: {:ok, String.t()} | {:error, {:unsupported, detail()}}
+  defp render_flag(name) do
+    case Flags.value(name) do
+      {:ok, value} -> {:ok, Integer.to_string(value)}
+      :error -> unsupported({:unknown_const, name})
+    end
+  end
 
   defp resolve_item_expr(id) when is_integer(id), do: Resolver.resolve_item(id)
   defp resolve_item_expr({:const, name}), do: Resolver.resolve_item(name)

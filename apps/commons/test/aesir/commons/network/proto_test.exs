@@ -2,6 +2,7 @@ defmodule Aesir.Commons.Network.ProtoTest do
   use ExUnit.Case, async: true
 
   alias Aesir.Net.ActionRequest
+  alias Aesir.Net.Announcement
   alias Aesir.Net.CartInfo
   alias Aesir.Net.CartItemAdded
   alias Aesir.Net.CartItemRemoved
@@ -2006,6 +2007,24 @@ defmodule Aesir.Commons.Network.ProtoTest do
       {:ok, iodata, _size} = Envelope.encode(env)
 
       assert {:ok, %Envelope{body: {:storage_result, %StorageResult{result: ^result}}}} =
+               Envelope.decode(IO.iodata_to_binary(iodata))
+    end
+  end
+
+  test "announcement round-trips every Style value through envelope oneof" do
+    for style <- [:TOP, :CENTER, :LOCAL] do
+      announcement = %Announcement{
+        text: "Server will restart soon",
+        color: 0xFF0000,
+        style: style,
+        source_name: "GM Odin"
+      }
+
+      env = %Envelope{seq: 1, body: {:announcement, announcement}}
+
+      {:ok, iodata, _size} = Envelope.encode(env)
+
+      assert {:ok, %Envelope{seq: 1, body: {:announcement, ^announcement}}} =
                Envelope.decode(IO.iodata_to_binary(iodata))
     end
   end

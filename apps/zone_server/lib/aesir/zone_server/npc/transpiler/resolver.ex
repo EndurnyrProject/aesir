@@ -14,24 +14,34 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
   raising `Todo.const!/1` and the report lists it.
   """
 
+  alias Aesir.ZoneServer.Announcement.Flags
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver, as: ItemResolver
 
   @doc """
   Resolves a bare constant to an Elixir literal source string: booleans to
-  `1`/`0` (rAthena semantics), job/status/element constants to their Aesir
-  atoms.
+  `1`/`0` (rAthena semantics), `bc_*` broadcast flags to their integer value,
+  job/status/element constants to their Aesir atoms.
   """
   @spec constant(String.t()) :: {:ok, String.t()} | :error
   def constant("true"), do: {:ok, "1"}
   def constant("false"), do: {:ok, "0"}
 
   def constant(symbol) do
-    [
-      &ItemResolver.resolve_class/1,
-      &ItemResolver.resolve_status/1,
-      &ItemResolver.resolve_element/1
-    ]
-    |> Enum.find_value(:error, &atom_constant(&1, symbol))
+    with :error <- flag_constant(symbol) do
+      [
+        &ItemResolver.resolve_class/1,
+        &ItemResolver.resolve_status/1,
+        &ItemResolver.resolve_element/1
+      ]
+      |> Enum.find_value(:error, &atom_constant(&1, symbol))
+    end
+  end
+
+  defp flag_constant(symbol) do
+    case Flags.value(symbol) do
+      {:ok, value} -> {:ok, Integer.to_string(value)}
+      :error -> :error
+    end
   end
 
   defp atom_constant(resolver, symbol) do

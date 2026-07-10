@@ -47,6 +47,21 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert {:ok, %{shape: :monster}} = CommandMap.command("monster")
   end
 
+  test "broadcast buildins map to the announce shape" do
+    assert {:ok, %{shape: :announce, dsl: "announce", fixed: 2}} = CommandMap.command("announce")
+
+    assert {:ok, %{shape: :announce, dsl: "broadcast", fixed: 2}} =
+             CommandMap.command("broadcast")
+
+    assert {:ok, %{shape: :announce, dsl: "mapannounce", fixed: 3}} =
+             CommandMap.command("mapannounce")
+
+    assert {:ok, %{shape: :announce, dsl: "areaannounce", fixed: 7}} =
+             CommandMap.command("areaannounce")
+
+    assert CommandMap.supported?("announce")
+  end
+
   test "warp special targets" do
     assert {:ok, ":random"} = CommandMap.warp_target("Random")
     assert {:ok, ":save_point"} = CommandMap.warp_target("SavePoint")
@@ -58,7 +73,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
       assert {:ok, "1"} = Resolver.constant("true")
       assert {:ok, ":thief"} = Resolver.constant("Job_Thief")
       assert {:ok, ":sc_blessing"} = Resolver.constant("SC_BLESSING")
-      assert :error = Resolver.constant("bc_self")
+    end
+
+    test "broadcast flag constants resolve to their integer value" do
+      assert {:ok, "3"} = Resolver.constant("bc_self")
+      assert {:ok, "0"} = Resolver.constant("bc_all")
+      assert {:ok, "16"} = Resolver.constant("bc_blue")
+      assert :error = Resolver.constant("bc_nope")
     end
 
     test "loads the sprite table from an e_job_types enum" do
