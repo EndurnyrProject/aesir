@@ -15,7 +15,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype do
       archetype needs (a target unit id, the caster itself, a ground cell, ...);
       an archetype never runs its own target selection.
     * `params` are the catalog's static params for the skill (e.g.
-      `%{element: :fire}` or `%{status: :sc_stun}`).
+      `%{element: :fire}` or `%{status: :sc_stun}`), merged by the Executor
+      with the row's `skill_id`, `skill` and `condition` (whose `val1..val5`
+      carry per-row data such as summon mob ids).
     * `level` is the row's skill level.
 
   Implementations reuse the caster-agnostic combat/status primitives and return

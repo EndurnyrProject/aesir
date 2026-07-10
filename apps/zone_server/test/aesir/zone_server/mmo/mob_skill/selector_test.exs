@@ -126,10 +126,15 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
       assert Selector.select(mob(%{target_id: nil}), [r], opts()) == nil
     end
 
-    test "slavele never fires (stubbed until P2-9)" do
+    test "slavele fires when the master's living-slave count is at or below the value" do
       r = row(%{condition: %{type: :slavele, value: 3}})
+      mob = mob(%{instance_id: 9001})
 
-      assert Selector.select(mob(), [r], opts()) == nil
+      counts = fn count -> opts(count_living_slaves: fn 9001 -> count end) end
+
+      assert Selector.select(mob, [r], counts.(3)) == {:cast, r}
+      assert Selector.select(mob, [r], counts.(0)) == {:cast, r}
+      assert Selector.select(mob, [r], counts.(4)) == nil
     end
 
     test "an unsupported condition type never fires" do

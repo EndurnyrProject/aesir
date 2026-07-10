@@ -130,7 +130,13 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
         module = Module.concat(@archetype_namespace, Macro.camelize(Atom.to_string(archetype)))
 
         if Code.ensure_loaded?(module) and function_exported?(module, :apply, 4) do
-          params = Map.merge(params, %{skill_id: row.skill_id, skill: row.skill})
+          params =
+            Map.merge(params, %{
+              skill_id: row.skill_id,
+              skill: row.skill,
+              condition: row.condition
+            })
+
           module.apply(state, target, params, row.level)
         else
           Logger.debug(

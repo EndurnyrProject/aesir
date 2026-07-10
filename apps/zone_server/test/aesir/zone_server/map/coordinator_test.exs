@@ -63,6 +63,34 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
       assert mob.y in 0..39
     end
 
+    test "threads a :master_id opt onto the spawned mob (slave link)" do
+      stub(MobSupervisor, :spawn_mob, fn _map, %MobState{}, _opts -> {:ok, self()} end)
+
+      state = %Coordinator{map_name: "prontera", next_mob_id: 1}
+
+      {:reply, {:ok, instance_id}, _new_state} =
+        Coordinator.handle_call(
+          {:summon_mob, @poring_id, 150, 100, [master_id: 777]},
+          {self(), nil},
+          state
+        )
+
+      assert {:ok, {MobState, %MobState{master_id: 777}, _pid}} =
+               UnitRegistry.get_unit(:mob, instance_id)
+    end
+
+    test "a summon without :master_id spawns masterless" do
+      stub(MobSupervisor, :spawn_mob, fn _map, %MobState{}, _opts -> {:ok, self()} end)
+
+      state = %Coordinator{map_name: "prontera", next_mob_id: 1}
+
+      {:reply, {:ok, instance_id}, _new_state} =
+        Coordinator.handle_call({:summon_mob, @poring_id, 150, 100, []}, {self(), nil}, state)
+
+      assert {:ok, {MobState, %MobState{master_id: nil}, _pid}} =
+               UnitRegistry.get_unit(:mob, instance_id)
+    end
+
     test "replies with the error when the mob id is unknown" do
       state = %Coordinator{map_name: "prontera", next_mob_id: 1}
 

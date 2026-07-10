@@ -634,6 +634,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
       instance_id
       |> MobState.new(mob_data, spawn_ref, state.map_name, x, y)
       |> MobState.set_owner_event(Keyword.get(opts, :event))
+      |> MobState.set_master(Keyword.get(opts, :master_id))
 
     # Respawns and summons on a currently-empty map start dormant; the
     # coordinator wakes them when a player next shows up.

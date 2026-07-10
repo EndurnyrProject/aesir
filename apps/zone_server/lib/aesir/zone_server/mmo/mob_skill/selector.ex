@@ -27,8 +27,14 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
       (default `&:rand.uniform/1`); injected so tests are deterministic.
     * `:event` - the AI event driving this selection (default `:tick`); set to
       `:spawn` on the spawn tick so `onspawn` rows can fire.
+    * `:count_living_slaves` - a 1-arg fun `(master instance id -> count)` for
+      the `slavele` gate (default `SummonSlave.count_living_slaves/1`). Like
+      `:rng`, this is the escape hatch keeping the module testable: the default
+      reads the unit registry (read-only, and only when a `slavele` row is
+      actually evaluated), tests inject a pure fun.
   """
 
+  alias Aesir.ZoneServer.Mmo.MobSkill.Archetype.SummonSlave
   alias Aesir.ZoneServer.Mmo.MobSkill.Catalog
   alias Aesir.ZoneServer.Unit.Mob.MobState
 
@@ -39,7 +45,12 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
   def select(%MobState{} = mob_state, rows, opts \\ []) when is_list(rows) do
     now = Keyword.get(opts, :now, System.system_time(:millisecond))
     rng = Keyword.get(opts, :rng, &:rand.uniform/1)
-    event = Keyword.get(opts, :event, :tick)
+
+    env = %{
+      event: Keyword.get(opts, :event, :tick),
+      count_living_slaves:
+        Keyword.get(opts, :count_living_slaves, &SummonSlave.count_living_slaves/1)
+    }
 
     eligible = eligible_states(mob_state)
 
@@ -47,7 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
     |> Enum.filter(&(&1.state in eligible))
     |> Enum.reject(&stub?/1)
     |> Enum.filter(fn row ->
-      condition_holds?(row, mob_state, event) and
+      condition_holds?(row, mob_state, env) and
         MobState.skill_ready?(mob_state, row.skill, now)
     end)
     |> Enum.find_value(fn row -> if rng.(10_000) <= row.rate, do: {:cast, row} end)
@@ -78,29 +89,31 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
   @spec stub?(row()) :: boolean()
   defp stub?(%{skill: skill}), do: Catalog.archetype_for(skill) == :stub
 
-  @spec condition_holds?(row(), MobState.t(), atom()) :: boolean()
-  defp condition_holds?(%{condition: condition}, mob_state, event) do
-    evaluate(condition.type, condition, mob_state, event)
+  @spec condition_holds?(row(), MobState.t(), map()) :: boolean()
+  defp condition_holds?(%{condition: condition}, mob_state, env) do
+    evaluate(condition.type, condition, mob_state, env)
   end
 
-  @spec evaluate(atom(), map(), MobState.t(), atom()) :: boolean()
-  defp evaluate(:always, _condition, _mob_state, _event), do: true
+  @spec evaluate(atom(), map(), MobState.t(), map()) :: boolean()
+  defp evaluate(:always, _condition, _mob_state, _env), do: true
 
-  defp evaluate(:myhpltmaxrate, %{value: value}, %MobState{hp: hp, max_hp: max_hp}, _event)
+  defp evaluate(:myhpltmaxrate, %{value: value}, %MobState{hp: hp, max_hp: max_hp}, _env)
        when is_integer(value) and max_hp > 0 do
     hp / max_hp * 100 <= value
   end
 
-  defp evaluate(:rudeattacked, _condition, %MobState{rude_attacked?: flag}, _event), do: flag
+  defp evaluate(:rudeattacked, _condition, %MobState{rude_attacked?: flag}, _env), do: flag
 
-  defp evaluate(:onspawn, _condition, _mob_state, event), do: event == :spawn
+  defp evaluate(:onspawn, _condition, _mob_state, env), do: env.event == :spawn
 
-  defp evaluate(:casttargeted, _condition, %MobState{target_id: target_id}, _event) do
+  defp evaluate(:casttargeted, _condition, %MobState{target_id: target_id}, _env) do
     target_id != nil
   end
 
-  # ponytail: stub until Task P2-9 wires the live slave count into the Selector.
-  defp evaluate(:slavele, _condition, _mob_state, _event), do: false
+  defp evaluate(:slavele, %{value: value}, %MobState{instance_id: instance_id}, env)
+       when is_integer(value) do
+    env.count_living_slaves.(instance_id) <= value
+  end
 
-  defp evaluate(_type, _condition, _mob_state, _event), do: false
+  defp evaluate(_type, _condition, _mob_state, _env), do: false
 end
