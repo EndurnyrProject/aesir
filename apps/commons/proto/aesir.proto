@@ -139,6 +139,9 @@ message Envelope {
     StorageResult storage_result = 123;
     // 124: broadcast messages (GM + script announce/mapannounce/areaannounce/broadcast)
     Announcement announcement = 124;
+    // 125-126: cart/vending results (server->client outcome of a gated intent)
+    CartMountResult cart_mount_result = 125;
+    VendingOpenResult vending_open_result = 126;
   }
 }
 
@@ -733,6 +736,19 @@ message CartMountRequest {
   bool mount = 1;
 }
 
+// Outcome of a cart mount attempt. Values are prefixed because proto3 enum
+// constants share the package namespace.
+enum CartMountResultCode {
+  CART_OK = 0;
+  CART_SKILL_NOT_LEARNED = 1;
+  CART_ALREADY_MOUNTED = 2;
+}
+
+// Server -> client, outcome of a cart mount attempt.
+message CartMountResult {
+  CartMountResultCode result = 1;
+}
+
 // Client -> server, move an inventory item into the cart.
 message MoveToCartRequest {
   uint32 inventory_index = 1;
@@ -757,6 +773,25 @@ message VendingEntry {
 message VendingOpenRequest {
   string title = 1;
   repeated VendingEntry entries = 2;
+}
+
+// Outcome of a vending open attempt. Values are prefixed because proto3 enum
+// constants share the package namespace.
+enum VendingOpenResultCode {
+  VEND_OK = 0;
+  VEND_NO_CART = 1;
+  VEND_SKILL_NOT_LEARNED = 2;
+  VEND_TOO_MANY_SLOTS = 3;
+  VEND_INVALID_AMOUNT = 4;
+  VEND_INVALID_PRICE = 5;
+  VEND_ITEM_NOT_IN_CART = 6;
+  VEND_INSUFFICIENT_STOCK = 7;
+  VEND_INVALID_STATE = 8;
+}
+
+// Server -> client, outcome of a vending open attempt.
+message VendingOpenResult {
+  VendingOpenResultCode result = 1;
 }
 
 // Client -> server, close the player's own vending shop.

@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   alias Aesir.Commons.Models.CartItem
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Net.CartMountResult
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.McPushcart
@@ -54,11 +55,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   @doc """
   Mounts the cart.
 
-  Requires `MC_PUSHCART` learned (else a no-op). When the player has no cart yet
-  it sets `cart_type` to the first tier, applies the permanent `SC_PUSHCART`
-  (`val1` = learned Pushcart level, `val2` = tier), persists `character.cart`,
-  broadcasts the cart sprite, and sends the owner the current `CartInfo`. A second
-  mount while already mounted is a no-op.
+  Requires `MC_PUSHCART` learned; without it the mount is rejected and the client
+  is told with `CartMountResult{ok: false, reason: 1}`. When the player has no
+  cart yet it sets `cart_type` to the first tier, applies the permanent
+  `SC_PUSHCART` (`val1` = learned Pushcart level, `val2` = tier), persists
+  `character.cart`, broadcasts the cart sprite, sends the owner the current
+  `CartInfo`, and confirms with `CartMountResult{ok: true}`. A second mount while
+  already mounted is rejected with `reason: 2`.
   """
   @spec mount(map()) :: {:noreply, map()}
   def mount(%{game_state: game_state} = state) do
@@ -68,10 +71,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
           "Cart mount rejected for #{game_state.character_id}: MC_PUSHCART not learned"
         )
 
-        {:noreply, state}
+        reject_mount(state, :CART_SKILL_NOT_LEARNED)
 
       game_state.cart_type > 0 ->
-        {:noreply, state}
+        reject_mount(state, :CART_ALREADY_MOUNTED)
 
       true ->
         do_mount(state)
@@ -259,6 +262,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
           InventoryView.cart_info(committed.game_state.cart)
         )
 
+        MessageRouter.send_to(committed.connection_pid, %CartMountResult{result: :CART_OK})
+
         {:noreply, committed}
 
       {:reply, {:error, reason}, unchanged} ->
@@ -297,6 +302,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
 
         loaded
     end
+  end
+
+  @spec reject_mount(map(), :CART_SKILL_NOT_LEARNED | :CART_ALREADY_MOUNTED) :: {:noreply, map()}
+  defp reject_mount(%{connection_pid: connection_pid} = state, code) do
+    MessageRouter.send_to(connection_pid, %CartMountResult{result: code})
+    {:noreply, state}
   end
 
   @spec ensure_mounted(map()) :: :ok | {:error, :no_cart}

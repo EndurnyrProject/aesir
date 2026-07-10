@@ -128,6 +128,39 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
       assert :error = Registry.get(@char_id)
       refute_received {:board, _}
     end
+  end
+
+  describe "handle_open/3" do
+    test "confirms a successful open with VendingOpenResult{ok: true}" do
+      mount_cart()
+      stub(UnitRegistry, :update_unit_state, fn :player, @char_id, _gs -> :ok end)
+      base = state(learned_skills: learned(@vending_level))
+
+      assert {:noreply, _} = VendingHandler.handle_open(base, "Cheap Pots", [{0, 5, 100}])
+
+      assert_received {:send, :gameplay,
+                       {:vending_open_result, %Aesir.Net.VendingOpenResult{result: :VEND_OK}}}
+    end
+
+    test "tells the client the rejection code when the skill is missing" do
+      mount_cart()
+      base = state(learned_skills: %{})
+
+      assert {:noreply, ^base} = VendingHandler.handle_open(base, "Shop", [{0, 5, 100}])
+
+      assert_received {:send, :gameplay,
+                       {:vending_open_result,
+                        %Aesir.Net.VendingOpenResult{result: :VEND_SKILL_NOT_LEARNED}}}
+    end
+
+    test "tells the client VEND_NO_CART when no cart is mounted" do
+      base = state(learned_skills: learned(@vending_level))
+
+      assert {:noreply, ^base} = VendingHandler.handle_open(base, "Shop", [{0, 5, 100}])
+
+      assert_received {:send, :gameplay,
+                       {:vending_open_result, %Aesir.Net.VendingOpenResult{result: :VEND_NO_CART}}}
+    end
 
     test "rejects opening more lines than max_slots for the learned level" do
       mount_cart()

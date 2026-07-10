@@ -159,9 +159,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandlerTest do
                        %UnitStateChange{unit_id: @char_id, effect_state: effect_state}}
 
       assert (effect_state &&& @cart1_bit) == @cart1_bit
+
+      assert_received {:send, :gameplay,
+                       {:cart_mount_result, %Aesir.Net.CartMountResult{result: :CART_OK}}}
     end
 
-    test "without MC_PUSHCART learned is rejected with no state change" do
+    test "without MC_PUSHCART learned is rejected and the client is told" do
       reject(&CharacterPersistence.update_character/3)
 
       base = state(learned_skills: %{})
@@ -169,6 +172,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandlerTest do
       assert {:noreply, ^base} = CartHandler.mount(base)
       refute StatusStorage.has_status?(:player, @char_id, :sc_push_cart)
       refute_received {:send, :bulk, {:cart_info, _}}
+
+      assert_received {:send, :gameplay,
+                       {:cart_mount_result,
+                        %Aesir.Net.CartMountResult{result: :CART_SKILL_NOT_LEARNED}}}
+    end
+
+    test "while already mounted is rejected as CART_ALREADY_MOUNTED" do
+      reject(&CharacterPersistence.update_character/3)
+
+      learned = %{Integer.to_string(catalog_pushcart_id()) => @pushcart_level}
+      base = put_in(state(learned_skills: learned).game_state.cart_type, 1)
+
+      assert {:noreply, ^base} = CartHandler.mount(base)
+
+      assert_received {:send, :gameplay,
+                       {:cart_mount_result,
+                        %Aesir.Net.CartMountResult{result: :CART_ALREADY_MOUNTED}}}
     end
   end
 

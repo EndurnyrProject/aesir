@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   alias Aesir.Net.VendingBoardRemoved
   alias Aesir.Net.VendingBoardShown
   alias Aesir.Net.VendingList
+  alias Aesir.Net.VendingOpenResult
   alias Aesir.Net.VendingSaleReport
   alias Aesir.Net.VendingShopItem
   alias Aesir.Repo
@@ -136,12 +137,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
 
   @doc """
   Session-facing wrapper for `open_shop/3`: commits the new game state to the
-  unit registry on success and logs-and-drops on failure.
+  unit registry and confirms with `VendingOpenResult{ok: true}` on success, or
+  logs the failure and tells the client with `VendingOpenResult{ok: false}`
+  carrying the rejection code.
   """
   @spec handle_open(state(), String.t(), [Vending.entry()]) :: {:noreply, state()}
   def handle_open(state, title, entries) do
     case open_shop(state, title, entries) do
       {:ok, new_state} ->
+        MessageRouter.send_to(state.connection_pid, %VendingOpenResult{result: :VEND_OK})
         {:noreply, sync_game_state(new_state)}
 
       {:error, reason} ->
@@ -149,9 +153,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
           "Vending open failed for #{state.game_state.character_id}: #{inspect(reason)}"
         )
 
+        MessageRouter.send_to(state.connection_pid, %VendingOpenResult{result: open_code(reason)})
+
         {:noreply, state}
     end
   end
+
+  @spec open_code(atom()) :: atom()
+  defp open_code(:no_cart), do: :VEND_NO_CART
+  defp open_code(:skill_not_learned), do: :VEND_SKILL_NOT_LEARNED
+  defp open_code(:too_many_slots), do: :VEND_TOO_MANY_SLOTS
+  defp open_code(:invalid_amount), do: :VEND_INVALID_AMOUNT
+  defp open_code(:invalid_price), do: :VEND_INVALID_PRICE
+  defp open_code(:item_not_in_cart), do: :VEND_ITEM_NOT_IN_CART
+  defp open_code(:insufficient_stock), do: :VEND_INSUFFICIENT_STOCK
+  defp open_code(_reason), do: :VEND_INVALID_STATE
 
   @doc """
   Session-facing wrapper for `close_shop/2` with the `:user_closed` reason.
