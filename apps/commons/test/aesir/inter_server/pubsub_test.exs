@@ -97,4 +97,19 @@ defmodule Aesir.Commons.InterServer.PubSubTest do
       refute_receive {:player_event, _event}, 200
     end
   end
+
+  describe "broadcast_announcement/1" do
+    setup do
+      PubSub.subscribe_to_announcements()
+      :ok
+    end
+
+    test "delivers the given packet as {:announcement, packet} to subscribers" do
+      packet = %{text: "server going down", color: 0, style: :TOP, source_name: ""}
+
+      assert :ok = PubSub.broadcast_announcement(packet)
+
+      assert_receive {:announcement, ^packet}, 1000
+    end
+  end
 end
