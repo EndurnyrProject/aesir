@@ -4,14 +4,15 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
   `MobDefinition`. Used by the one-time `mix aesir.import.mobs` task; not on any
   runtime path.
 
-  Mode/Class mapping is intentionally lossy: only `Class: Boss` (`:boss`) and
-  `Modes.Aggressive` (`:aggressive`) are reproduced - the rest of rAthena's mode
-  vocabulary has no consumer yet. `MvpDrops`, `RaceGroups`, resistances and
-  `DamageTaken` are dropped for the same reason.
+  Modes come from three sources, unioned and deduped: `Class: Boss` (`:boss`),
+  an explicit `Modes.Aggressive` flag (`:aggressive`), and the mode set derived
+  from the `Ai` value via `MobMode`. `MvpDrops`, `RaceGroups`, resistances and
+  `DamageTaken` are still dropped - they have no consumer yet.
   """
 
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
 
   @sizes %{"small" => :small, "medium" => :medium, "large" => :large}
 
@@ -149,7 +150,8 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
   defp parse_modes(entry) do
     boss = if boss_class?(Map.get(entry, "Class")), do: [:boss], else: []
     aggressive = if aggressive_mode?(Map.get(entry, "Modes")), do: [:aggressive], else: []
-    boss ++ aggressive
+    derived = MobMode.from_ai(Map.get(entry, "Ai"))
+    Enum.uniq(boss ++ aggressive ++ derived)
   end
 
   @spec boss_class?(term()) :: boolean()
