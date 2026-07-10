@@ -100,6 +100,23 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.CatalogTest do
     end
   end
 
+  describe "archetype_for/1 - self buffs" do
+    test "maps self-buffs with a matching status module to :self_buff" do
+      assert Catalog.archetype_for("NPC_AGIUP") ==
+               {:self_buff, %{status: :sc_increaseagi}}
+
+      assert Catalog.archetype_for("SM_ENDURE") ==
+               {:self_buff, %{status: :sc_endure}}
+    end
+
+    test "leaves self-buffs without a matching status module stubbed" do
+      assert Catalog.archetype_for("NPC_POWERUP") == :stub
+      assert Catalog.archetype_for("CR_AUTOGUARD") == :stub
+      assert Catalog.archetype_for("NPC_STONESKIN") == :stub
+      assert Catalog.archetype_for("NPC_DEFENDER") == :stub
+    end
+  end
+
   describe "archetype_for/1 - stubs" do
     test "neutral physical melee and cosmetic skills stub out" do
       assert Catalog.archetype_for("NPC_EMOTION") == :stub
@@ -148,7 +165,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.CatalogTest do
           :ground_nuke,
           :heal,
           :summon_slave,
-          :teleport
+          :teleport,
+          :self_buff
         ])
 
       for {_skill, {archetype, params}} <- Catalog.entries() do

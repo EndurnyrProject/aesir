@@ -16,6 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Catalog do
     * `:heal`           - `%{}`
     * `:summon_slave`   - `%{}`
     * `:teleport`       - `%{}`
+    * `:self_buff`      - `%{status: sc_atom}` where `status` equals the `id:`
+      declared by the matching module under `status_effect/effects/`
 
   Mapping is driven by a skill's *element* and *status*, not its rAthena
   damage `Type`: the archetypes deliberately flavor attacks by element (an
@@ -32,6 +34,10 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Catalog do
   "Weapon" element resolves to `:neutral` for these caster-less mob skills, and
   rAthena's "Dark" element is this project's `:shadow`
   (see `Combat.ElementModifiers`).
+
+  Self-buffs without a matching modifier-status module today (`NPC_POWERUP`,
+  `CR_AUTOGUARD`, `NPC_STONESKIN`, `NPC_DEFENDER`) stay `:stub`; adding those
+  status effect modules is a follow-up, not part of this scope.
   """
 
   @typedoc "Result of a catalog lookup: an archetype tuple or `:stub`."
@@ -73,7 +79,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Catalog do
     "NPC_ALLHEAL" => {:heal, %{}},
     "NPC_SUMMONSLAVE" => {:summon_slave, %{}},
     "NPC_CALLSLAVE" => {:summon_slave, %{}},
-    "AL_TELEPORT" => {:teleport, %{}}
+    "AL_TELEPORT" => {:teleport, %{}},
+    "NPC_AGIUP" => {:self_buff, %{status: :sc_increaseagi}},
+    "SM_ENDURE" => {:self_buff, %{status: :sc_endure}}
   }
 
   @doc """
