@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
 
   # 1 second tick rate
@@ -153,6 +154,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
       # Process each expired status for this unit
       Enum.each(statuses, fn {{^unit_type, ^unit_id, status_type}, %StatusEntry{} = _entry} ->
         Interpreter.remove_status(unit_type, unit_id, status_type)
+        notify_mob_session(unit_type, unit_id, status_type, :expired)
       end)
 
       # Notify the unit to recalculate stats after all expirations are processed
@@ -198,6 +200,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
 
         # Update the next tick time efficiently
         StatusStorage.update_next_tick(unit_type, unit_id, status_type, next_tick_at)
+
+        notify_mob_session(unit_type, unit_id, status_type, :tick)
       end)
 
       # Notify the unit to recalculate stats after processing all statuses
@@ -214,4 +218,22 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   defp notify_player_session(player_id) do
     PubSub.broadcast(Aesir.PubSub, "player:#{player_id}", :recalculate_stats)
   end
+
+  # Signals a mob's session that one of its statuses ticked or expired. Unlike
+  # players, mobs have no cached stats to recompute (combat numbers are folded
+  # live in MobState.to_combatant/1) and their display delta is already
+  # broadcast by the interpreter, so this is a per-status cast the MobSession
+  # hooks into (Task 5 consumes it for silence/stun cast interruption). A mob no
+  # longer in the registry simply has no session to notify.
+  defp notify_mob_session(:mob, instance_id, status_id, event) do
+    case UnitRegistry.get_unit(:mob, instance_id) do
+      {:ok, {_module, _state, pid}} when is_pid(pid) ->
+        GenServer.cast(pid, {:status_changed, status_id, event})
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp notify_mob_session(_unit_type, _unit_id, _status_id, _event), do: :ok
 end

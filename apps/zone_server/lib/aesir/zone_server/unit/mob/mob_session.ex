@@ -295,6 +295,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   @impl GenServer
+  def handle_cast({:status_changed, _status_id, _event}, state) do
+    # Fired by StatusTickManager when one of this mob's statuses ticks or expires.
+    # Combat stats are folded live on read (MobState.to_combatant/1) and the
+    # icon/opt display delta is already broadcast by the StatusEffect.Interpreter,
+    # so there is nothing to recompute here. This is the extension point Task 5
+    # (silence/stun cast interruption) consumes.
+    {:noreply, state}
+  end
+
+  @impl GenServer
   def handle_cast(:sleep, %{ai_awake: false} = state), do: {:noreply, state}
 
   def handle_cast(:sleep, state) do
