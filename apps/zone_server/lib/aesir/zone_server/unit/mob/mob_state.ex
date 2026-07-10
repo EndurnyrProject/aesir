@@ -50,6 +50,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     # target that has not hit it), false when acquired by taking damage. Reads
     # the `angry` vs `attack` skill-state distinction.
     field :initiated_by_self?, boolean(), default: false
+    # Cumulative count of hits taken from beyond chase_range, plus a transient
+    # per-reaction flag. Phase 2's `rudeattacked` skill condition consumes them;
+    # Phase 1 only records the signal (no teleport/flee).
+    field :rude_attack_count, integer(), default: 0
+    field :rude_attacked?, boolean(), default: false
     field :last_ai_tick, integer() | nil, default: nil
     field :aggro_list, map(), default: %{}
     field :last_action_time, integer() | nil, default: nil
@@ -334,6 +339,23 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   def set_initiated(%__MODULE__{} = state, initiated_by_self?)
       when is_boolean(initiated_by_self?) do
     %{state | initiated_by_self?: initiated_by_self?}
+  end
+
+  @doc """
+  Records a rude attack: a hit taken from beyond `chase_range`. Increments the
+  cumulative counter and raises the transient per-reaction flag.
+  """
+  @spec note_rude_attack(t()) :: t()
+  def note_rude_attack(%__MODULE__{rude_attack_count: count} = state) do
+    %{state | rude_attack_count: count + 1, rude_attacked?: true}
+  end
+
+  @doc """
+  Clears the transient rude-attack flag, leaving the cumulative count intact.
+  """
+  @spec clear_rude_attacked(t()) :: t()
+  def clear_rude_attacked(%__MODULE__{} = state) do
+    %{state | rude_attacked?: false}
   end
 
   @doc """

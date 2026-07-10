@@ -211,6 +211,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
       |> Map.put(:last_damage_time, current_time)
       |> maybe_add_aggro(attacker_id, damage)
       |> AIStateMachine.handle_damage_reaction(attacker_id)
+      |> maybe_note_rude_attack(attacker_id)
 
     # Send HP update packet to nearby players
     notify_hp_update(updated_mob)
@@ -392,6 +393,42 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   defp maybe_add_aggro(state, attacker_id, damage) do
     MobState.add_aggro(state, attacker_id, damage)
+  end
+
+  # Records a rude attack when the hit came from beyond the mob's chase range
+  # (an attacker it cannot path to). Phase 1 only counts the signal; Phase 2's
+  # `rudeattacked` condition consumes it. An attacker whose position can't be
+  # resolved is skipped silently.
+  defp maybe_note_rude_attack(state, attacker_id) when is_integer(attacker_id) do
+    case resolve_attacker_position(attacker_id) do
+      {:ok, {x, y}} ->
+        if Geometry.chebyshev_distance(x, y, state.x, state.y) >
+             MobState.get_chase_range(state) do
+          MobState.note_rude_attack(state)
+        else
+          state
+        end
+
+      :error ->
+        state
+    end
+  end
+
+  defp maybe_note_rude_attack(state, _attacker_id), do: state
+
+  # The attacker type isn't known here, so try :player then :mob (mirrors the
+  # combat action handler's target resolution).
+  defp resolve_attacker_position(attacker_id) do
+    case SpatialIndex.get_unit_position(:player, attacker_id) do
+      {:ok, {x, y, _map}} ->
+        {:ok, {x, y}}
+
+      {:error, :not_found} ->
+        case SpatialIndex.get_unit_position(:mob, attacker_id) do
+          {:ok, {x, y, _map}} -> {:ok, {x, y}}
+          {:error, :not_found} -> :error
+        end
+    end
   end
 
   defp handle_death(state, attacker_id) do

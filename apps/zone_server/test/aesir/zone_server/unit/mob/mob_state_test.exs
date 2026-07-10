@@ -71,6 +71,38 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     end
   end
 
+  describe "rude attacks" do
+    test "a freshly built mob state has no rude attacks recorded" do
+      state = build_mob_state()
+
+      assert state.rude_attack_count == 0
+      assert state.rude_attacked? == false
+    end
+
+    test "note_rude_attack/1 increments the count and raises the flag" do
+      state = build_mob_state()
+
+      updated = MobState.note_rude_attack(state)
+
+      assert updated.rude_attack_count == 1
+      assert updated.rude_attacked? == true
+
+      again = MobState.note_rude_attack(updated)
+
+      assert again.rude_attack_count == 2
+      assert again.rude_attacked? == true
+    end
+
+    test "clear_rude_attacked/1 clears the flag but preserves the count" do
+      state = build_mob_state() |> MobState.note_rude_attack()
+
+      cleared = MobState.clear_rude_attacked(state)
+
+      assert cleared.rude_attacked? == false
+      assert cleared.rude_attack_count == 1
+    end
+  end
+
   describe "to_combatant/1 magic stats" do
     test "carries matk, mdef and soft_mdef in combat_stats" do
       state = build_mob_state()
