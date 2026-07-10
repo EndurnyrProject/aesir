@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.TickManager do
   use GenServer
   require Logger
 
+  alias Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
@@ -59,8 +60,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.TickManager do
     :ok
   end
 
-  defp run_interval(%Group{skill_name: skill_name} = group, now) do
-    with {:ok, module} <- Catalog.ground_module_for(skill_name) do
+  defp run_interval(%Group{} = group, now) do
+    with {:ok, module} <- handler_for(group) do
       case dispatch_interval(module, group, now) do
         {:ok, updated} ->
           Storage.update(%{updated | next_tick_at: now + updated.interval})
@@ -86,11 +87,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.TickManager do
     end
   end
 
-  defp reap(%Group{skill_name: skill_name, group_id: group_id} = group) do
-    with {:ok, module} <- Catalog.ground_module_for(skill_name) do
+  defp reap(%Group{group_id: group_id} = group) do
+    with {:ok, module} <- handler_for(group) do
       module.on_expire(group)
     end
 
     Storage.delete(group_id)
   end
+
+  # Mob-cast groups are not in the player skill catalog: they all dispatch to
+  # the generic mob ground-nuke handler. Player groups resolve per-skill modules
+  # through the catalog as before.
+  defp handler_for(%Group{caster_type: :mob}), do: {:ok, GroundNuke}
+  defp handler_for(%Group{skill_name: skill_name}), do: Catalog.ground_module_for(skill_name)
 end
