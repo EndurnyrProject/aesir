@@ -68,36 +68,6 @@
   x: 22
   'y': 47
 - dir: 5
-  id: Tool Dealer#alde
-  items:
-    - id: 501
-      price:
-    - id: 502
-      price:
-    - id: 503
-      price:
-    - id: 504
-      price:
-    - id: 506
-      price:
-    - id: 645
-      price:
-    - id: 656
-      price:
-    - id: 601
-      price:
-    - id: 602
-      price:
-    - id: 611
-      price:
-    - id: 610
-      price:
-  map: aldeba_in
-  name: Tool Dealer
-  sprite: 83
-  x: 94
-  'y': 56
-- dir: 5
   id: Tool Dealer#Extended_Alde
   items:
     - id: 611

@@ -68,38 +68,6 @@
   x: 374
   'y': 230
 - dir: 5
-  id: Tool Dealer#ve
-  items:
-    - id: 501
-      price:
-    - id: 502
-      price:
-    - id: 503
-      price:
-    - id: 504
-      price:
-    - id: 506
-      price:
-    - id: 645
-      price:
-    - id: 656
-      price:
-    - id: 601
-      price:
-    - id: 602
-      price:
-    - id: 611
-      price:
-    - id: 1065
-      price:
-    - id: 610
-      price:
-  map: ve_in
-  name: Tool Dealer
-  sprite: 943
-  x: 243
-  'y': 303
-- dir: 5
   id: Fruit Gardener#ve
   items:
     - id: 512

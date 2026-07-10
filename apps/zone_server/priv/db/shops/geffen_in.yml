@@ -26,38 +26,6 @@
   x: 74
   'y': 144
 - dir: 0
-  id: Tool Dealer#gef
-  items:
-    - id: 1750
-      price:
-    - id: 611
-      price:
-    - id: 501
-      price:
-    - id: 502
-      price:
-    - id: 503
-      price:
-    - id: 504
-      price:
-    - id: 506
-      price:
-    - id: 645
-      price:
-    - id: 656
-      price:
-    - id: 601
-      price:
-    - id: 602
-      price:
-    - id: 2241
-      price:
-  map: geffen_in
-  name: Tool Dealer
-  sprite: 68
-  x: 77
-  'y': 167
-- dir: 0
   id: Magical Item Seller#gef
   items:
     - id: 717
@@ -81,18 +49,6 @@
   sprite: 64
   x: 77
   'y': 173
-- dir: 4
-  id: Tool Dealer#gef2
-  items:
-    - id: 1092
-      price:
-    - id: 1093
-      price:
-  map: geffen_in
-  name: Tool Dealer
-  sprite: 64
-  x: 171
-  'y': 123
 - dir: 0
   id: Tool Dealer#Extended_Gef
   items:

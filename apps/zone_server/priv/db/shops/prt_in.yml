@@ -18,40 +18,6 @@
   x: 211
   'y': 169
 - dir: 0
-  id: Tool Dealer#prt1
-  items:
-    - id: 611
-      price:
-    - id: 1750
-      price:
-    - id: 501
-      price:
-    - id: 502
-      price:
-    - id: 503
-      price:
-    - id: 504
-      price:
-    - id: 506
-      price:
-    - id: 645
-      price:
-    - id: 656
-      price:
-    - id: 601
-      price:
-    - id: 602
-      price:
-    - id: 1065
-      price:
-    - id: 2239
-      price:
-  map: prt_in
-  name: Tool Dealer
-  sprite: 53
-  x: 126
-  'y': 76
-- dir: 0
   id: Weapon Dealer#prt
   items:
     - id: 1750

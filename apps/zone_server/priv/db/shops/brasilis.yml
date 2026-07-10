@@ -1,27 +1,5 @@
 ---
 - dir: 3
-  id: Tool Dealer#bra
-  items:
-    - id: 645
-      price:
-    - id: 656
-      price:
-    - id: 601
-      price:
-    - id: 602
-      price:
-    - id: 611
-      price:
-    - id: 1065
-      price:
-    - id: 610
-      price:
-  map: brasilis
-  name: Tool Dealer
-  sprite: 478
-  x: 252
-  'y': 257
-- dir: 3
   id: Weapon Dealer#bra
   items:
     - id: 1407

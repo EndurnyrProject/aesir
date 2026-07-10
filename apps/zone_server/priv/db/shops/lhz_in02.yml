@@ -165,36 +165,6 @@
   sprite: 71
   x: 47
   'y': 148
-- dir: 4
-  id: Tool Dealer#lhz
-  items:
-    - id: 611
-      price:
-    - id: 503
-      price:
-    - id: 504
-      price:
-    - id: 506
-      price:
-    - id: 657
-      price:
-    - id: 656
-      price:
-    - id: 601
-      price:
-    - id: 602
-      price:
-    - id: 1065
-      price:
-    - id: 610
-      price:
-    - id: 1770
-      price:
-  map: lhz_in02
-  name: Tool Dealer
-  sprite: 90
-  x: 31
-  'y': 145
 - dir: 5
   id: Doll Supplier#lhz
   items:

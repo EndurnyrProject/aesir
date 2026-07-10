@@ -28,38 +28,6 @@
   x: 175
   'y': 364
 - dir: 3
-  id: Tool Dealer#ra
-  items:
-    - id: 501
-      price:
-    - id: 502
-      price:
-    - id: 503
-      price:
-    - id: 504
-      price:
-    - id: 506
-      price:
-    - id: 645
-      price:
-    - id: 656
-      price:
-    - id: 601
-      price:
-    - id: 602
-      price:
-    - id: 611
-      price:
-    - id: 1065
-      price:
-    - id: 610
-      price:
-  map: ra_in01
-  name: Tool Dealer
-  sprite: 919
-  x: 257
-  'y': 269
-- dir: 3
   id: Fruit Gardener#ra
   items:
     - id: 512
