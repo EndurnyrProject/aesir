@@ -75,6 +75,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CodegenTest do
       assert {:error, {:unsupported, _}} = Codegen.generate(ast)
     end
 
+    test "char var increment emits a set_char_var/get_char_var round-trip" do
+      ast = [{:incr, "RouletteGold", 1}]
+
+      assert {:ok, "set_char_var(ctx, :RouletteGold, get_char_var(ctx, :RouletteGold, 0) + 1)"} =
+               Codegen.generate(ast)
+    end
+
+    test "char var decrement emits a minus round-trip" do
+      ast = [{:incr, "RouletteGold", -1}]
+
+      assert {:ok, "set_char_var(ctx, :RouletteGold, get_char_var(ctx, :RouletteGold, 0) - 1)"} =
+               Codegen.generate(ast)
+    end
+
     test "specialeffect2 resolves an EF_ constant to its effect atom" do
       ast = [{:call, "specialeffect2", [{:const, "EF_HEAL2"}]}]
       assert {:ok, "specialeffect2(ctx, :heal2)"} = Codegen.generate(ast)

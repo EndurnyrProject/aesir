@@ -48,6 +48,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   call, and the `flag` bitmask is dropped (no sc-flag is modelled). A `rate` of
   `10000` (always) collapses back to the plain call. The six-arg GID-targeted form
   is unsupported.
+
+  ## Char variable increments
+
+  `Var++;` / `Var--;` on a bare permanent char variable (e.g. `RouletteGold++`,
+  the Roulette-coin currency) emit a `set_char_var`/`get_char_var` round-trip,
+  `set_char_var(ctx, :Var, get_char_var(ctx, :Var, 0) + 1)`, using the verbatim
+  rAthena name as the atom key — matching the NPC transpiler's char-var convention.
   """
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet
@@ -73,6 +80,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   @spec render_stmt(ast_stmt()) :: {:ok, String.t()} | {:error, {:unsupported, detail()}}
   defp render_stmt({:call, name, args}), do: render_command(name, args)
 
+  defp render_stmt({:incr, name, delta}) do
+    key = inspect(String.to_atom(name))
+    {:ok, "set_char_var(ctx, #{key}, get_char_var(ctx, #{key}, 0) #{incr_op(delta)})"}
+  end
+
   defp render_stmt({:if, cond_expr, then_stmts, else_stmts}) do
     with {:ok, cond_src} <- render_expr(cond_expr),
          {:ok, then_src} <- render_stmts(then_stmts),
@@ -82,6 +94,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   end
 
   defp render_stmt(other), do: unsupported({:statement, other})
+
+  @spec incr_op(1 | -1) :: String.t()
+  defp incr_op(1), do: "+ 1"
+  defp incr_op(-1), do: "- 1"
 
   @spec render_command(String.t(), [term()]) ::
           {:ok, String.t()} | {:error, {:unsupported, detail()}}

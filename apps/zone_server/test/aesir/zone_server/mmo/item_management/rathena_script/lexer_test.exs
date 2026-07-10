@@ -35,6 +35,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.LexerTest do
              ]
     end
 
+    test "tokenizes ++ and -- before + and -" do
+      assert {:ok, [{:ident, "RouletteGold"}, {:op, :++}, {:punct, :semicolon}]} =
+               Lexer.tokenize("RouletteGold++;")
+
+      assert {:ok, [{:op, :--}, {:op, :-}]} = Lexer.tokenize("-- -")
+    end
+
     test "tokenizes string literals including escaped quotes" do
       assert {:ok, [{:string, "prontera"}, {:punct, :comma}, {:int, 150}]} =
                Lexer.tokenize(~s("prontera",150))

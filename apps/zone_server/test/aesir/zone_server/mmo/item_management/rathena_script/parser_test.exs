@@ -43,6 +43,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ParserTest do
     end
   end
 
+  describe "char variable increments" do
+    test "parses a post-increment as an :incr statement" do
+      assert {:ok, [{:incr, "RouletteGold", 1}]} = parse!("RouletteGold++;")
+    end
+
+    test "parses a post-decrement as an :incr statement with delta -1" do
+      assert {:ok, [{:incr, "RouletteGold", -1}]} = parse!("RouletteGold--;")
+    end
+
+    test "requires the terminating semicolon" do
+      assert {:error, {:parse_error, _}} = parse!("RouletteGold++")
+    end
+  end
+
   describe "if / else" do
     test "parses if with else, both single-statement branches" do
       assert {:ok,

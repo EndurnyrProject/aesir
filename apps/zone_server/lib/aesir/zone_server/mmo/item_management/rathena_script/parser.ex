@@ -18,6 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Parser do
     `then_stmts`/`else_stmts` are statement lists. A missing `else` yields `[]`.
     A single-statement branch is a one-element list; a `{ … }` block is the
     block's statement list.
+  - `{:incr, name, delta}` — a post-increment/decrement on the permanent char
+    variable `name`, `delta` being `1` (`Var++;`) or `-1` (`Var--;`).
 
   ## Expression nodes
 
@@ -67,6 +69,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Parser do
   @type stmt ::
           {:call, String.t(), [expr()]}
           | {:if, expr(), [stmt()], [stmt()]}
+          | {:incr, String.t(), 1 | -1}
 
   @spec parse([Lexer.token()]) :: {:ok, [stmt()]} | {:error, {:parse_error, term()}}
   def parse(tokens) when is_list(tokens) do
@@ -99,6 +102,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Parser do
 
   defp parse_stmt([{:ident, "if"} | rest]), do: parse_if(rest)
 
+  defp parse_stmt([{:ident, name}, {:op, :++} | rest]), do: parse_incr(name, 1, rest)
+  defp parse_stmt([{:ident, name}, {:op, :--} | rest]), do: parse_incr(name, -1, rest)
+
   defp parse_stmt([{:ident, name} | rest]) do
     with {:ok, args, rest2} <- parse_call_args(rest),
          {:ok, rest3} <- expect(rest2, {:punct, :semicolon}) do
@@ -108,6 +114,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Parser do
 
   defp parse_stmt([tok | _]), do: {:error, {:unexpected_token, tok}}
   defp parse_stmt([]), do: {:error, :unexpected_eof}
+
+  @spec parse_incr(String.t(), 1 | -1, [Lexer.token()]) ::
+          {:ok, [stmt()], [Lexer.token()]} | {:error, term()}
+  defp parse_incr(name, delta, rest) do
+    with {:ok, rest2} <- expect(rest, {:punct, :semicolon}) do
+      {:ok, [{:incr, name, delta}], rest2}
+    end
+  end
 
   @spec parse_if([Lexer.token()]) :: {:ok, [stmt()], [Lexer.token()]} | {:error, term()}
   defp parse_if(toks) do

@@ -23,7 +23,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Lexer do
   - `{:string, value}` — double-quoted string literal with surrounding quotes
     stripped and `\\"` / `\\\\` escapes unescaped.
   - `{:op, op}` — operator, where `op` is one of
-    `:>`, `:<`, `:>=`, `:<=`, `:==`, `:!=`, `:&&`, `:||`, `:+`, `:-`, `:*`, `:/`.
+    `:>`, `:<`, `:>=`, `:<=`, `:==`, `:!=`, `:&&`, `:||`, `:++`, `:--`, `:+`,
+    `:-`, `:*`, `:/`. `:++` / `:--` are the post-increment/decrement operators and
+    must be matched before `:+` / `:-`.
   - `{:punct, punct}` — punctuation, where `punct` is one of
     `:comma`, `:semicolon`, `:lparen`, `:rparen`, `:lbrace`, `:rbrace`.
   """
@@ -78,6 +80,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Lexer do
       string("!=") |> replace({:op, :!=}),
       string("&&") |> replace({:op, :&&}),
       string("||") |> replace({:op, :||}),
+      string("++") |> replace({:op, :++}),
+      string("--") |> replace({:op, :--}),
       string(">") |> replace({:op, :>}),
       string("<") |> replace({:op, :<}),
       string("+") |> replace({:op, :+}),
