@@ -115,7 +115,27 @@ defmodule Aesir.ZoneServer.Npc.RegistryTest do
 
       assert_receive {:DOWN, ^ref, :process, ^pid, _reason}
       assert DynamicSupervisor.which_children(SessionDynamicSupervisor) == []
-      assert Elixir.Registry.lookup(Aesir.ZoneServer.Npc.SessionRegistry, gid) == []
+      # SessionRegistry unregisters via its own monitor of the dead process, which
+      # runs asynchronously after terminate_child returns, so wait for the entry
+      # to clear rather than reading it on the same tick as the termination.
+      assert wait_until_unregistered(gid)
+    end
+  end
+
+  defp wait_until_unregistered(gid, deadline \\ System.monotonic_time(:millisecond) + 500)
+
+  defp wait_until_unregistered(gid, deadline) do
+    case Elixir.Registry.lookup(Aesir.ZoneServer.Npc.SessionRegistry, gid) do
+      [] ->
+        true
+
+      _still_registered ->
+        if System.monotonic_time(:millisecond) < deadline do
+          Process.sleep(5)
+          wait_until_unregistered(gid, deadline)
+        else
+          false
+        end
     end
   end
 

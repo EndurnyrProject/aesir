@@ -241,6 +241,7 @@ defmodule Aesir.ZoneServer.Npc.SessionTest do
   end
 
   describe "a crashed session" do
+    @tag :capture_log
     test "restarts blank: timer stopped, flags reset" do
       gid = gid_for(TimerNpc)
       pid = start_via_dynamic_supervisor(gid)

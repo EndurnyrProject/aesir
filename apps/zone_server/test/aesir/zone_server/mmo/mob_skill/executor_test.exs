@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
+  alias Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -179,10 +180,20 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
       assert Executor.execute(mob(%{target_id: nil}), row()) == {:error, :no_target}
     end
 
-    test "skips an archetype whose module is not built yet" do
+    test "dispatches a ground-target skill to its archetype module" do
+      caster = mob()
+      test_pid = self()
       reject(&Combat.execute_magic_damage/4)
 
-      assert Executor.execute(mob(), row(%{skill: "WZ_METEOR", target: :around})) == :ok
+      expect(GroundNuke, :apply, fn passed_caster, {:ground, 100, 100, :around}, params, 3 ->
+        assert passed_caster.instance_id == caster.instance_id
+        assert params.skill == "WZ_METEOR"
+        send(test_pid, :dispatched)
+        :ok
+      end)
+
+      assert Executor.execute(caster, row(%{skill: "WZ_METEOR", target: :around})) == :ok
+      assert_received :dispatched
     end
 
     test "skips a stub skill as a no-op" do

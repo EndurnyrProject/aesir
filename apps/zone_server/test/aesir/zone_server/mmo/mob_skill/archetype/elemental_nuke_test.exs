@@ -10,6 +10,10 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.ElementalNukeTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  # The real combat resolve tries the mob registry before the player one, so a
+  # player target legitimately logs a "Mob <id> not found in registry" warning.
+  @moduletag :capture_log
+
   alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
