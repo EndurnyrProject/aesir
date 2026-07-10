@@ -71,5 +71,6 @@ Mimic.copy(Aesir.ZoneServer.Unit.Player.Handlers.RefineOps)
 
 Mimic.copy(Aesir.ZoneServer.Mmo.MobSkill.Db)
 Mimic.copy(Aesir.Commons.InterServer.PubSub)
+Mimic.copy(Aesir.ZoneServer.Announcement)
 
 ExUnit.start()

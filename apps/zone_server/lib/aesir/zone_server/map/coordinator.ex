@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   alias Aesir.Net.ItemVanished
   alias Aesir.Net.Snapshot, as: NetSnapshot
   alias Aesir.Net.SnapshotEntity
+  alias Aesir.ZoneServer.Announcement
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
@@ -110,13 +111,6 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   """
   def set_weather(map_name, weather_type) do
     GenServer.cast(via_tuple(map_name), {:set_weather, weather_type})
-  end
-
-  @doc """
-  Broadcasts an announcement to all players on the map.
-  """
-  def announce(map_name, message) do
-    GenServer.cast(via_tuple(map_name), {:announce, message})
   end
 
   @doc """
@@ -261,17 +255,6 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   end
 
   @impl true
-  def handle_cast({:announce, message}, state) do
-    PubSub.broadcast(
-      Aesir.PubSub,
-      "map:#{state.map_name}",
-      {:map_announcement, message}
-    )
-
-    {:noreply, state}
-  end
-
-  @impl true
   def handle_cast({:mob_died, instance_id, killer_char_id}, state) do
     # Get mob data from UnitRegistry to find spawn config
     case UnitRegistry.get_unit(:mob, instance_id) do
@@ -386,6 +369,12 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
       |> Enum.reject(&is_nil/1)
 
     {:reply, mob_info, state}
+  end
+
+  @impl true
+  def handle_info({:announcement, packet}, state) do
+    Announcement.deliver_local(packet, state.map_name)
+    {:noreply, state}
   end
 
   @impl true
