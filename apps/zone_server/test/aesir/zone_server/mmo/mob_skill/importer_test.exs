@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ImporterTest do
 
       assert fire == %{
                skill: "NPC_FIREATTACK",
+               skill_id: 186,
                state: :attack,
                level: 1,
                rate: 2000,
@@ -43,6 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ImporterTest do
              }
 
       assert poison.skill == "NPC_POISON"
+      assert poison.skill_id == 176
       assert poison.level == 3
       assert poison.rate == 500
       assert poison.cast_time == 800

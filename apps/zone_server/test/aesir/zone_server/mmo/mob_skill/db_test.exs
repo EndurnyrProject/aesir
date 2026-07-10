@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.DbTest do
       assert Enum.all?(rows, &is_atom(&1.state))
       assert Enum.all?(rows, &is_atom(&1.target))
       assert Enum.all?(rows, &is_atom(&1.condition.type))
+      assert Enum.all?(rows, &is_integer(&1.skill_id))
     end
 
     test "unknown mob id returns []" do

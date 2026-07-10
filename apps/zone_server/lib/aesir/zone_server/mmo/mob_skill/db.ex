@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Db do
   @typedoc "A coerced skill row (atom keys, atom state/target/condition-type)."
   @type row :: %{
           skill: String.t(),
+          skill_id: integer(),
           state: atom(),
           level: integer(),
           rate: integer(),
@@ -116,6 +117,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Db do
   defp coerce_row(row) do
     %{
       skill: row["skill"],
+      skill_id: row["skill_id"],
       state: String.to_atom(row["state"]),
       level: row["level"],
       rate: row["rate"],

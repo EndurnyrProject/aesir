@@ -9,7 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Importer do
       Delay, Cancelable, Target, ConditionType, ConditionValue,
       val1, val2, val3, val4, val5, Emotion, Chat
 
-  `SkillID` and `Chat` are dropped (the skill is keyed by name; chat is cosmetic).
+  `Chat` is dropped (cosmetic); `SkillID` is kept alongside the skill name since
+  the client needs the numeric id to render the skill animation.
   Rows are grouped by mob id: positive ids under their string key (`"1001"`),
   and the three global ids under reserved keys - `-1` -> `"global_boss"`,
   `-2` -> `"global_normal"`, `-3` -> `"global_all"` - to be expanded per-mob at
@@ -30,6 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Importer do
   @typedoc "A parsed skill row."
   @type row :: %{
           skill: String.t(),
+          skill_id: integer(),
           state: atom(),
           level: integer(),
           rate: integer(),
@@ -114,6 +116,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Importer do
            fetch_token(@conditions, Enum.at(fields, 10), :unknown_condition) do
       row = %{
         skill: skill_name(Enum.at(fields, 1)),
+        skill_id: to_int(Enum.at(fields, 3)),
         state: state,
         level: to_int(Enum.at(fields, 4)),
         rate: to_int(Enum.at(fields, 5)),
