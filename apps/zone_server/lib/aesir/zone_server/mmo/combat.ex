@@ -786,19 +786,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   defp ensure_offensive_target(_attacker, :player), do: {:error, :pvp_not_implemented}
 
   # Routes damage to the owning session by unit type, keeping the damage paths
-  # free of concrete session-module knowledge. Player targets with positive damage
+  # free of concrete session-module knowledge. Targets with positive damage
   # first run the hit through the pre-damage status absorption hook (Kyrie, Safety
-  # Wall, Energy Coat) so statuses can reduce or block it before HP is reduced.
+  # Wall, Energy Coat) so statuses can reduce or block it before HP is reduced,
+  # regardless of whether the defender is a player or a mob.
   defp apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, attacker_id) do
-    final_damage = absorb_player_damage(target_type, target_id, damage, hit_info)
+    final_damage = absorb_unit_damage(target_type, target_id, damage, hit_info)
     unit_session(target_type).apply_damage(target_pid, final_damage, attacker_id)
   end
 
-  defp absorb_player_damage(:player, target_id, damage, hit_info) when damage > 0 do
-    StatusInterpreter.absorb_damage(:player, target_id, damage, hit_info)
+  defp absorb_unit_damage(target_type, target_id, damage, hit_info) when damage > 0 do
+    StatusInterpreter.absorb_damage(target_type, target_id, damage, hit_info)
   end
 
-  defp absorb_player_damage(_target_type, _target_id, damage, _hit_info), do: damage
+  defp absorb_unit_damage(_target_type, _target_id, damage, _hit_info), do: damage
 
   defp unit_session(:mob), do: MobSession
   defp unit_session(:player), do: PlayerSession

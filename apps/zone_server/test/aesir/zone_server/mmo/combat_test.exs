@@ -203,11 +203,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       %{player_state: player_state, stats: attacker}
     end
 
-    # NOTE: the DamageDealt basic-attack packet carries no element field, and for a
-    # mob target hit_info is consumed only by the (identity) player-absorb path, so
-    # the element is not observable on the broadcast packet. This test exercises the
-    # hit_info construction that reads attacker_combatant.weapon.element, guarding the
-    # field access; functional element correctness is covered in damage_calculator_test.
+    # NOTE: the DamageDealt basic-attack packet carries no element field, and since
+    # this mob target has no active statuses, the pre-damage absorb hook is a no-op,
+    # so the element is not observable on the broadcast packet. This test exercises
+    # the hit_info construction that reads attacker_combatant.weapon.element, guarding
+    # the field access; functional element correctness is covered in damage_calculator_test.
     test "a non-neutral weapon element drives a successful basic attack",
          %{player_state: player_state, stats: stats} do
       test_pid = self()
