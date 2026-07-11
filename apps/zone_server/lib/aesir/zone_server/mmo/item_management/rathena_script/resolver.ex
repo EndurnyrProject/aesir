@@ -86,7 +86,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "SC_FOOD_VIT_CASH" => :sc_food_vit_cash,
     "SC_FOOD_INT_CASH" => :sc_food_int_cash,
     "SC_FOOD_DEX_CASH" => :sc_food_dex_cash,
-    "SC_FOOD_LUK_CASH" => :sc_food_luk_cash
+    "SC_FOOD_LUK_CASH" => :sc_food_luk_cash,
+    "SC_INCALLSTATUS" => :sc_incallstatus,
+    "SC_ALMIGHTY" => :sc_almighty,
+    "SC_ULTIMATECOOK" => :sc_ultimatecook,
+    "SC_INFINITY_DRINK" => :sc_infinity_drink
   }
 
   @elements %{

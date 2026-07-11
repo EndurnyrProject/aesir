@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects do
 
   @modules [
     Effects.AgiFood,
+    Effects.Almighty,
     Effects.Angelus,
     Effects.ArcaneCharge,
     Effects.Aspersio,
@@ -43,11 +44,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects do
     Effects.Hiding,
     Effects.HitFood,
     Effects.Impositio,
+    Effects.IncAllStatus,
     Effects.IncDex,
     Effects.IncInt,
     Effects.IncLuk,
     Effects.IncStr,
     Effects.IncreaseAgi,
+    Effects.InfinityDrink,
     Effects.IntFood,
     Effects.IntScroll,
     Effects.Kyrie,
@@ -77,6 +80,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects do
     Effects.Suffragium,
     Effects.TrickDead,
     Effects.TwoHandQuicken,
+    Effects.UltimateCook,
     Effects.VitFood,
     Effects.WatkElement,
     Effects.WatkFood
