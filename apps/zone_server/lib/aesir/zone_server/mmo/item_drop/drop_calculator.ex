@@ -3,13 +3,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   Pure drop-roll calculation for mob-death loot.
 
   Each drop slot rolls independently against its renewal rate: the LUK hook
-  (no-op today), the 90% drop-rate cap (only for items not already above it),
-  the renewal level-penalty modifier, and a floor at 1 (0.01%). Items that pass
-  are scattered onto walkable cells around the death position (death cell first,
-  then the rAthena SE -> W -> N cycle).
+  (no-op today), the caller-supplied `drop_bonus` (e.g. Bubble Gum's SC_ITEMBOOST),
+  the 90% drop-rate cap (only for items not already above it), the renewal
+  level-penalty modifier, and a floor at 1 (0.01%). Items that pass are scattered
+  onto walkable cells around the death position (death cell first, then the
+  rAthena SE -> W -> N cycle).
 
   Pure: only persistent_term/ETS-backed reads (`ItemManagement`, `MapCache`,
-  `LevelPenalty`); no process state, no side effects.
+  `LevelPenalty`); no process state, no side effects. The drop bonus arrives as a
+  plain integer percent, resolved by the caller from the killer's merged status
+  modifiers, so no status lookups happen here.
   """
 
   alias Aesir.ZoneServer.Map.MapCache
@@ -28,32 +31,50 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   Rolls a mob's drop table and returns the items that dropped, each scattered to
   a walkable cell around `{x, y}`.
   """
-  @spec roll([MobDrop.t()], integer(), integer(), integer(), String.t(), integer(), integer()) ::
-          [drop()]
-  def roll(drops, killer_luk, killer_base_level, mob_level, map_name, x, y) do
+  @spec roll(
+          [MobDrop.t()],
+          integer(),
+          integer(),
+          integer(),
+          integer(),
+          String.t(),
+          integer(),
+          integer()
+        ) :: [drop()]
+  def roll(drops, killer_luk, killer_base_level, mob_level, drop_bonus, map_name, x, y) do
     drops
-    |> Enum.flat_map(&roll_slot(&1, killer_luk, killer_base_level, mob_level))
+    |> Enum.flat_map(&roll_slot(&1, killer_luk, killer_base_level, mob_level, drop_bonus))
     |> scatter(map_name, x, y)
   end
 
   @doc """
   Computes the final drop rate (out of 10_000) for a slot after the LUK hook,
-  the 90% cap, the renewal level penalty, and the floor-at-1 clamp.
+  the caller-supplied drop bonus (applied before the cap, mirroring rAthena
+  `mob.cpp:2837-2862`), the 90% cap, the renewal level penalty, and the
+  floor-at-1 clamp.
   """
-  @spec drop_rate(integer(), integer(), integer(), integer()) :: integer()
-  def drop_rate(base, killer_luk, killer_base_level, mob_level) do
+  @spec drop_rate(integer(), integer(), integer(), integer(), integer()) :: integer()
+  def drop_rate(base, killer_luk, killer_base_level, mob_level, drop_bonus) do
     base
     |> apply_luk_bonus(killer_luk)
+    |> apply_rate(100 + drop_bonus)
     |> cap_rate(base)
     |> apply_rate(LevelPenalty.drop(mob_level, killer_base_level))
     |> clamp_rate()
   end
 
-  @spec roll_slot(MobDrop.t(), integer(), integer(), integer()) :: [{integer(), integer()}]
-  defp roll_slot(%MobDrop{item: aegis, rate: base}, killer_luk, killer_base_level, mob_level) do
+  @spec roll_slot(MobDrop.t(), integer(), integer(), integer(), integer()) ::
+          [{integer(), integer()}]
+  defp roll_slot(
+         %MobDrop{item: aegis, rate: base},
+         killer_luk,
+         killer_base_level,
+         mob_level,
+         drop_bonus
+       ) do
     case ItemManagement.get_item_by_aegis(aegis) do
       {:ok, %{id: nameid}} ->
-        rate = drop_rate(base, killer_luk, killer_base_level, mob_level)
+        rate = drop_rate(base, killer_luk, killer_base_level, mob_level, drop_bonus)
         if :rand.uniform(@max_rate) <= rate, do: [{nameid, 1}], else: []
 
       {:error, _reason} ->

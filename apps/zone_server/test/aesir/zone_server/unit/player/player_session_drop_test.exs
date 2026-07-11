@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -59,22 +60,34 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
     drops = [%MobDrop{item: "Red_Potion", rate: 10_000}]
     rolled = [{501, 1, 200, 90}]
 
-    expect(DropCalculator, :roll, fn ^drops, 7, 50, 50, "morocc", 200, 90 -> rolled end)
+    stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 -> %{} end)
+    expect(DropCalculator, :roll, fn ^drops, 7, 50, 50, 0, "morocc", 200, 90 -> rolled end)
     expect(Coordinator, :drop_items, fn "morocc", ^rolled, 200, 90 -> :ok end)
+
+    {:noreply, _state} = PlayerSession.handle_info({:mob_killed, payload(drops)}, state())
+  end
+
+  test "threads the killer's drop_rate bonus into the roll" do
+    drops = [%MobDrop{item: "Red_Potion", rate: 10_000}]
+
+    stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 -> %{drop_rate: 100} end)
+    expect(DropCalculator, :roll, fn ^drops, 7, 50, 50, 100, "morocc", 200, 90 -> [] end)
+    reject(&Coordinator.drop_items/4)
 
     {:noreply, _state} = PlayerSession.handle_info({:mob_killed, payload(drops)}, state())
   end
 
   test "an empty roll does not call the coordinator" do
     drops = [%MobDrop{item: "Red_Potion", rate: 1}]
-    expect(DropCalculator, :roll, fn ^drops, 7, 50, 50, "morocc", 200, 90 -> [] end)
+    stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 -> %{} end)
+    expect(DropCalculator, :roll, fn ^drops, 7, 50, 50, 0, "morocc", 200, 90 -> [] end)
     reject(&Coordinator.drop_items/4)
 
     {:noreply, _state} = PlayerSession.handle_info({:mob_killed, payload(drops)}, state())
   end
 
   test "a legacy payload without drops skips drop rolling" do
-    reject(&DropCalculator.roll/7)
+    reject(&DropCalculator.roll/8)
     reject(&Coordinator.drop_items/4)
 
     {:noreply, _state} =

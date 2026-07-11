@@ -77,6 +77,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects do
     Effects.InfinityDrink,
     Effects.IntFood,
     Effects.IntScroll,
+    Effects.ItemBoost,
     Effects.JexpBoost,
     Effects.Kyrie,
     Effects.LexAeterna,

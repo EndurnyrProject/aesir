@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Constants.ObjectType
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -840,8 +841,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     stats = state.game_state.stats
     luk = Stats.get_effective_stat(stats, :luk)
     base_level = stats.progression.base_level
+    char_id = state.game_state.character_id
 
-    case DropCalculator.roll(drops, luk, base_level, mob_level, map, x, y) do
+    drop_bonus =
+      :player |> ModifierCalculator.get_all_modifiers(char_id) |> Map.get(:drop_rate, 0)
+
+    case DropCalculator.roll(drops, luk, base_level, mob_level, drop_bonus, map, x, y) do
       [] -> :ok
       rolled -> Coordinator.drop_items(map, rolled, x, y)
     end

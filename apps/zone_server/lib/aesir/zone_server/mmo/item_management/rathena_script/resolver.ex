@@ -134,7 +134,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "SC_EXTRACT_WHITE_POTION_Z" => :sc_extract_white_potion_z,
     "SC_2011RWC_SCROLL" => :sc_2011rwc_scroll,
     "SC_EXPBOOST" => :sc_expboost,
-    "SC_JEXPBOOST" => :sc_jexpboost
+    "SC_JEXPBOOST" => :sc_jexpboost,
+    "SC_ITEMBOOST" => :sc_itemboost
   }
 
   @elements %{
