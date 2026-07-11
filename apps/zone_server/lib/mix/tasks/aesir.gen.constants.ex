@@ -43,7 +43,9 @@ defmodule Mix.Tasks.Aesir.Gen.Constants do
     {"Aesir.ZoneServer.Mmo.Option", "option.ex", "src/map/status.hpp", "e_option", "OPTION_",
      "e_option (OPTION_*) sprite effect-state bitmask ids."},
     {"Aesir.ZoneServer.Mmo.EffectId", "effect_id.ex", "src/map/script.hpp", "e_special_effects",
-     "EF_", "e_special_effects (EF_*) one-shot special-effect ids."}
+     "EF_", "e_special_effects (EF_*) one-shot special-effect ids."},
+    {"Aesir.ZoneServer.Mmo.Emotion", "emotion.ex", "src/map/clif.hpp", "emotion_type", "ET_",
+     "emotion_type (ET_*) emote/emoticon ids shown as a bubble over an entity."}
   ]
 
   @out_dir Path.join(~w(apps zone_server lib aesir zone_server mmo constants))

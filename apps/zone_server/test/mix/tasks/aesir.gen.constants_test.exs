@@ -3,6 +3,7 @@ defmodule Mix.Tasks.Aesir.Gen.ConstantsTest do
 
   alias Aesir.ZoneServer.Mmo.EffectId
   alias Aesir.ZoneServer.Mmo.Efst
+  alias Aesir.ZoneServer.Mmo.Emotion
   alias Aesir.ZoneServer.Mmo.Opt1
   alias Aesir.ZoneServer.Mmo.Opt2
   alias Aesir.ZoneServer.Mmo.Option
@@ -91,6 +92,7 @@ defmodule Mix.Tasks.Aesir.Gen.ConstantsTest do
       assert EffectId.id(:none) == -1
       assert Opt2.id(:poison) == 1
       assert Efst.id(:provoke) == 0
+      assert Emotion.id(:surprise) == 0
     end
 
     test "an unknown atom resolves to nil" do
