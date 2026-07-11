@@ -7,11 +7,9 @@ defmodule Aesir.ZoneServer.Gm.Commands.JobTest do
 
   @char_id 4242
 
-  defp ctx do
-    %{
-      game_state: %PlayerState{character_id: @char_id, character_name: "Gm"},
-      connection_pid: self()
-    }
+  defp ctx(overrides \\ []) do
+    game_state = struct(%PlayerState{character_id: @char_id, character_name: "Gm"}, overrides)
+    %{game_state: game_state, connection_pid: self()}
   end
 
   test "name and required_level" do
@@ -45,5 +43,14 @@ defmodule Aesir.ZoneServer.Gm.Commands.JobTest do
 
     assert {:ok, "Changed job to knight (7)"} = Job.execute(["Knight"], ctx())
     assert_receive {:change_job, 7}
+  end
+
+  test "is rejected with a message when a mounted cart would be dropped, broadcasting nothing" do
+    PubSub.subscribe(Aesir.PubSub, "player:#{@char_id}")
+
+    assert {:error, "Remove your cart before changing job"} =
+             Job.execute(["7"], ctx(cart_type: 1))
+
+    refute_receive {:change_job, 7}
   end
 end

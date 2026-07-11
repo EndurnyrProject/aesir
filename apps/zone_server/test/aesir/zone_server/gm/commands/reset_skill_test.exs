@@ -7,11 +7,9 @@ defmodule Aesir.ZoneServer.Gm.Commands.ResetSkillTest do
 
   @char_id 4343
 
-  defp ctx do
-    %{
-      game_state: %PlayerState{character_id: @char_id, character_name: "Gm"},
-      connection_pid: self()
-    }
+  defp ctx(overrides \\ []) do
+    game_state = struct(%PlayerState{character_id: @char_id, character_name: "Gm"}, overrides)
+    %{game_state: game_state, connection_pid: self()}
   end
 
   test "name and required_level" do
@@ -31,5 +29,14 @@ defmodule Aesir.ZoneServer.Gm.Commands.ResetSkillTest do
 
     assert {:ok, "Skills reset"} = ResetSkill.execute(["anything"], ctx())
     assert_receive {:reset_skills}
+  end
+
+  test "is rejected with a message while a cart is mounted, broadcasting nothing" do
+    PubSub.subscribe(Aesir.PubSub, "player:#{@char_id}")
+
+    assert {:error, "Remove your cart before resetting skills"} =
+             ResetSkill.execute([], ctx(cart_type: 1))
+
+    refute_receive {:reset_skills}
   end
 end

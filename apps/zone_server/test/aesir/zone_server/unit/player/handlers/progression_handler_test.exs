@@ -13,7 +13,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Unit.Broadcast
-  alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -27,6 +26,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   @novice_id novice_id
   {:ok, swordman_id} = AvailableJobs.job_name_to_id(:swordman)
   @swordman_id swordman_id
+  {:ok, merchant_id} = AvailableJobs.job_name_to_id(:merchant)
+  @merchant_id merchant_id
   @unknown_job_id 99_999
 
   setup do
@@ -178,37 +179,46 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
     end
   end
 
-  describe "apply_job_change/2 cart removal" do
-    test "unmounts the cart when MC_PUSHCART is dropped and a cart is mounted" do
-      test_pid = self()
-
-      stub(CartHandler, :unmount, fn %{game_state: gs} = st ->
-        send(test_pid, {:cart_unmounted, gs.character_id})
-        {:noreply, st}
-      end)
-
-      mc_pushcart = catalog_id(:mc_pushcart)
+  describe "apply_job_change/2 cart guard" do
+    test "blocks the change (empty cart) when it would drop MC_PUSHCART, mutating nothing" do
+      reject(&CharacterPersistence.update_character/3)
+      reject(&Broadcast.to_player/2)
 
       state =
         state_with_gs(
-          [job_id: @novice_id, learned_skills: %{mc_pushcart => 5}],
-          cart_type: 1
+          [job_id: @novice_id, learned_skills: %{catalog_id(:mc_pushcart) => 5}],
+          cart_type: 1,
+          cart: %{}
         )
 
-      ProgressionHandler.apply_job_change(@swordman_id, state)
-
-      assert_received {:cart_unmounted, 1000}
+      assert {:error, :cart_active} = ProgressionHandler.apply_job_change(@swordman_id, state)
+      refute_received {:send, :bulk, {:skill_list, _}}
     end
 
-    test "does not unmount when no cart is mounted" do
-      reject(&CartHandler.unmount/1)
+    test "blocks the change (loaded cart) when it would drop MC_PUSHCART" do
+      reject(&CharacterPersistence.update_character/3)
+
+      cart = %{0 => %InventoryItem{id: 9, nameid: 501, amount: 3}}
 
       state =
-        state_with_gs([job_id: @novice_id, learned_skills: %{catalog_id(:mc_pushcart) => 5}],
+        state_with_gs(
+          [job_id: @novice_id, learned_skills: %{catalog_id(:mc_pushcart) => 5}],
+          cart_type: 1,
+          cart: cart
+        )
+
+      assert {:error, :cart_active} = ProgressionHandler.apply_job_change(@swordman_id, state)
+    end
+
+    test "proceeds when no cart is mounted even though MC_PUSHCART is dropped" do
+      state =
+        state_with_gs(
+          [job_id: @novice_id, learned_skills: %{catalog_id(:mc_pushcart) => 5}],
           cart_type: 0
         )
 
-      ProgressionHandler.apply_job_change(@swordman_id, state)
+      assert {:ok, new_state} = ProgressionHandler.apply_job_change(@swordman_id, state)
+      assert new_state.game_state.stats.progression.learned_skills == %{}
     end
   end
 
@@ -280,6 +290,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
 
       aspd = StatusParams.aspd()
       assert_received {:send, _channel, {:param_change, %ParamChange{var_id: ^aspd}}}
+    end
+
+    test "is blocked while a cart is mounted, mutating nothing" do
+      reject(&CharacterPersistence.update_character/3)
+
+      state =
+        state_with_gs(
+          [job_id: @merchant_id, learned_skills: %{catalog_id(:mc_pushcart) => 5}],
+          cart_type: 1
+        )
+
+      assert {:error, :cart_active} = ProgressionHandler.reset_skills(state)
+      refute_received {:send, :bulk, {:skill_list, _}}
     end
   end
 

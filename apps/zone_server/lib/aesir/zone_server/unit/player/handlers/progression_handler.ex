@@ -7,9 +7,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   clamp to the job's caps, grant the matching status/skill points, and (for base
   levels) full-heal the character, matching `pc_baselevelup`. A job change follows
   rAthena's `pc_jobchange` cleanup (drop out-of-tree skills without refunding,
-  reset job level, remove the cart/vending/equipment the new job cannot keep, end
+  reset job level, close vending, unequip what the new job cannot wear, end
   statuses tied to dropped skills) and updates the class sprite for the player and
-  nearby observers. `reset_skills/1` implements the separate `resetskill` refund.
+  nearby observers. A change (or `reset_skills/1` refund) that would drop
+  `MC_PUSHCART` while a cart is mounted is rejected with `{:error, :cart_active}`
+  before any mutation, so the player unloads and removes the cart first.
+  `reset_skills/1` implements the separate `resetskill` refund.
   """
 
   alias Aesir.Commons.Models.InventoryItem
@@ -31,7 +34,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.LookType
-  alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.SkillListView
@@ -116,17 +118,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   Authoritative core for a job change (rAthena `pc_jobchange`): validates
   `job_id`, force-closes vending, drops learned skills outside the new job's tree
   (no skill-point refund, unspent points kept), resets job level/exp to `1`/`0`,
-  recomputes job-dependent stats, full-heals, removes the cart when `MC_PUSHCART`
-  is dropped, unequips items the new job cannot wear, ends statuses granted by
-  dropped skills, notifies the client (class sprite, refreshed skill list,
-  stat/param sync), persists `class`/`learned_skills`/job level, and updates the
-  `UnitRegistry`.
+  recomputes job-dependent stats, full-heals, unequips items the new job cannot
+  wear, ends statuses granted by dropped skills, notifies the client (class
+  sprite, refreshed skill list, stat/param sync), persists
+  `class`/`learned_skills`/job level, and updates the `UnitRegistry`.
 
   A change to the current job is a no-op returning `{:ok, state}` unchanged
   (rAthena rejects an unchanged job). Returns `{:error, :unknown_job}` without
-  mutating `state` when `job_id` does not resolve to a known job.
+  mutating `state` when `job_id` does not resolve to a known job. Returns
+  `{:error, :cart_active}` without mutating `state` when the change would drop
+  `MC_PUSHCART` (the new job's tree lacks it) while a cart is mounted — the
+  player must unload and remove the cart first.
   """
-  @spec apply_job_change(non_neg_integer(), map()) :: {:ok, map()} | {:error, :unknown_job}
+  @spec apply_job_change(non_neg_integer(), map()) ::
+          {:ok, map()} | {:error, :unknown_job | :cart_active}
   def apply_job_change(job_id, %{game_state: game_state} = state) do
     case AvailableJobs.job_id_to_name(job_id) do
       {:ok, _job_name} -> do_apply_job_change(job_id, state, game_state)
@@ -135,18 +140,47 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   end
 
   @doc """
+  Whether a change to `job_id` is blocked by a mounted cart: the player has an
+  active cart (`cart_type > 0`) and the new job's tree does not include
+  `MC_PUSHCART`, so the change would drop the cart-gating skill. Used by the core
+  and by `@job` to reject before any mutation.
+  """
+  @spec cart_blocks_job_change?(map(), non_neg_integer()) :: boolean()
+  def cart_blocks_job_change?(%{cart_type: cart_type}, job_id) do
+    cart_type > 0 and @mc_pushcart_id not in Map.keys(SkillTree.tree_for(job_id))
+  end
+
+  @doc """
+  Whether a skill reset is blocked by a mounted cart: a reset refunds
+  `MC_PUSHCART`, so any active cart (`cart_type > 0`) blocks it.
+  """
+  @spec cart_blocks_reset?(map()) :: boolean()
+  def cart_blocks_reset?(%{cart_type: cart_type}), do: cart_type > 0
+
+  @doc """
   Refunds the player's learned skills into `skill_point` (rAthena `resetskill` /
   `@resetskill`).
 
   Reduces `learned_skills` to the exempt set (`SkillTree.reset_skills/1`), ends
-  statuses granted by the refunded skills, removes the cart when `MC_PUSHCART` was
-  refunded, recomputes stats so passive bonuses from refunded skills drop (a final
-  recompute after all cleanup, since status removals bypass `game_state.stats`),
-  refreshes the client's skill window and full stat/param set, persists
-  `learned_skills`/`skill_point`/vitals, and updates the `UnitRegistry`.
+  statuses granted by the refunded skills, recomputes stats so passive bonuses
+  from refunded skills drop (a final recompute after all cleanup, since status
+  removals bypass `game_state.stats`), refreshes the client's skill window and
+  full stat/param set, persists `learned_skills`/`skill_point`/vitals, and updates
+  the `UnitRegistry`.
+
+  Returns `{:error, :cart_active}` without mutating `state` when a cart is mounted
+  (a reset refunds `MC_PUSHCART`) — the player must remove the cart first.
   """
-  @spec reset_skills(map()) :: {:ok, map()}
+  @spec reset_skills(map()) :: {:ok, map()} | {:error, :cart_active}
   def reset_skills(%{game_state: game_state} = state) do
+    if cart_blocks_reset?(game_state) do
+      {:error, :cart_active}
+    else
+      do_reset_skills(state, game_state)
+    end
+  end
+
+  defp do_reset_skills(state, game_state) do
     progression = game_state.stats.progression
     new_progression = SkillTree.reset_skills(progression)
     dropped_ids = Map.keys(progression.learned_skills) -- Map.keys(new_progression.learned_skills)
@@ -161,10 +195,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   end
 
   defp do_apply_job_change(job_id, state, game_state) do
-    if job_id == game_state.stats.progression.job_id do
-      {:ok, state}
-    else
-      change_to_job(job_id, state)
+    cond do
+      job_id == game_state.stats.progression.job_id ->
+        {:ok, state}
+
+      cart_blocks_job_change?(game_state, job_id) ->
+        {:error, :cart_active}
+
+      true ->
+        change_to_job(job_id, state)
     end
   end
 
@@ -206,26 +245,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     {kept, Map.keys(dropped)}
   end
 
-  # Cart removal + status cleanup shared by job change and skill reset. Ends only
-  # statuses granted by the dropped skills, and only on the player themselves.
-  defp cleanup_dropped_skills(state, dropped_ids) do
-    state = maybe_unmount_cart(state, dropped_ids)
-    end_dropped_statuses(state.game_state.character_id, dropped_ids)
+  # Ends the statuses granted by the dropped/refunded skills, on the player only,
+  # shared by job change and skill reset. Cart handling is not needed here: a
+  # change/reset that would drop MC_PUSHCART while a cart is mounted is rejected
+  # up front (see `cart_blocks_job_change?/2` / `cart_blocks_reset?/1`).
+  defp cleanup_dropped_skills(%{game_state: gs} = state, dropped_ids) do
+    end_dropped_statuses(gs.character_id, dropped_ids)
     state
-  end
-
-  defp maybe_unmount_cart(%{game_state: gs} = state, dropped_ids) do
-    if @mc_pushcart_id in dropped_ids and gs.cart_type > 0 do
-      # NOTE: CartHandler.unmount/1 refuses a non-empty cart to avoid stranding
-      # its items, so losing MC_PUSHCART with items still in the cart leaves the
-      # cart mounted rather than force-dropping it (rAthena drops it
-      # unconditionally). Faithful forced-drop + item migration is deferred; the
-      # empty-cart case unmounts as expected.
-      {:noreply, new_state} = CartHandler.unmount(state)
-      new_state
-    else
-      state
-    end
   end
 
   defp end_dropped_statuses(char_id, dropped_ids) do

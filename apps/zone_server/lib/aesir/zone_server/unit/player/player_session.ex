@@ -484,8 +484,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @impl true
   def handle_info({:reset_skills}, state) do
-    {:ok, new_state} = ProgressionHandler.reset_skills(state)
-    {:noreply, new_state}
+    case ProgressionHandler.reset_skills(state) do
+      {:ok, new_state} -> {:noreply, new_state}
+      {:error, _reason} -> {:noreply, state}
+    end
   end
 
   @impl true

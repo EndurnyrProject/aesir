@@ -8,8 +8,10 @@ defmodule Aesir.ZoneServer.Gm.Commands.Job do
 
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.JobManagement.JobChange
+  alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
 
   @usage "Usage: @job <job_id | job_name>"
+  @cart_active "Remove your cart before changing job"
 
   @impl true
   def name, do: "job"
@@ -19,9 +21,13 @@ defmodule Aesir.ZoneServer.Gm.Commands.Job do
 
   @impl true
   def execute([arg], ctx) do
-    with {:ok, job_id, job_name} <- resolve(arg) do
+    with {:ok, job_id, job_name} <- resolve(arg),
+         false <- ProgressionHandler.cart_blocks_job_change?(ctx.game_state, job_id) do
       JobChange.request(ctx.game_state.character_id, job_id)
       {:ok, "Changed job to #{job_name} (#{job_id})"}
+    else
+      true -> {:error, @cart_active}
+      {:error, reason} -> {:error, reason}
     end
   end
 

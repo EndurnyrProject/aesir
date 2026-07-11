@@ -128,8 +128,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   end
 
   def apply_op({:reset_skills}, state) do
-    {:ok, new_state} = ProgressionHandler.reset_skills(state)
-    {{:ok, new_state.game_state}, new_state}
+    case ProgressionHandler.reset_skills(state) do
+      {:ok, new_state} -> {{:ok, new_state.game_state}, new_state}
+      {:error, reason} -> {{:error, reason}, state}
+    end
   end
 
   def apply_op({:set_save_point, map, x, y}, %{game_state: gs} = state) do
