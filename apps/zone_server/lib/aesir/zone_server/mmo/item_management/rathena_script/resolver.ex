@@ -105,7 +105,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "SC_INCREASE_MAXSP" => :sc_increase_maxsp,
     "SC_MUSTLE_M" => :sc_mustle_m,
     "SC_LIFE_FORCE_F" => :sc_life_force_f,
-    "SC_FULL_SWING_K" => :sc_full_swing_k
+    "SC_FULL_SWING_K" => :sc_full_swing_k,
+    "SC_ASPDPOTION0" => :sc_aspdpotion0,
+    "SC_ASPDPOTION1" => :sc_aspdpotion1,
+    "SC_ASPDPOTION2" => :sc_aspdpotion2,
+    "SC_ASPDPOTION3" => :sc_aspdpotion3,
+    "SC_ATTHASTE_CASH" => :sc_atthaste_cash,
+    "SC_BOOST500" => :sc_boost500,
+    "SC_EXTRACT_SALAMINE_JUICE" => :sc_extract_salamine_juice,
+    "SC_SKF_ASPD" => :sc_skf_aspd,
+    "SC_SPEEDUP0" => :sc_speedup0,
+    "SC_SPEEDUP1" => :sc_speedup1,
+    "SC_SLOWDOWN" => :sc_slowdown
   }
 
   @elements %{
