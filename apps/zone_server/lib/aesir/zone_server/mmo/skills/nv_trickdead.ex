@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.NvTrickdead do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 143,
     name: :nv_trickdead,
+    status: :sc_trickdead,
     display_name: "Play Dead",
     max_level: 1,
     target_type: :self,

@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AcConcentration do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 45,
     name: :ac_concentration,
+    status: :sc_concentrate,
     display_name: "Improve Concentration",
     max_level: 10,
     target_type: :self,

@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.SmEndure do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 8,
     name: :sm_endure,
+    status: :sc_endure,
     display_name: "Endure",
     max_level: 10,
     target_type: :self,

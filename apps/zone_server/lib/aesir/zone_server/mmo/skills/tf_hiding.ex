@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.TfHiding do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 51,
     name: :tf_hiding,
+    status: :sc_hiding,
     display_name: "Hiding",
     max_level: 10,
     target_type: :self,

@@ -22,8 +22,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
-  alias Aesir.ZoneServer.Mmo.JobManagement.SkillStatuses
   alias Aesir.ZoneServer.Mmo.Leveling
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.McPushcart
   alias Aesir.ZoneServer.Mmo.SkillTree
@@ -254,10 +254,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     state
   end
 
+  # rAthena `skill_get_sc`: a skill's granted SC is a field on its skill_db
+  # record. For each dropped skill, look up its `Definition.status` in the catalog
+  # and end that status on the player if the skill grants one.
   defp end_dropped_statuses(char_id, dropped_ids) do
-    dropped_ids
-    |> SkillStatuses.statuses_for()
-    |> Enum.each(&StatusInterpreter.remove_status(:player, char_id, &1))
+    for skill_id <- dropped_ids,
+        {:ok, %{status: status}} when not is_nil(status) <- [Catalog.by_id(skill_id)] do
+      StatusInterpreter.remove_status(:player, char_id, status)
+    end
   end
 
   # Force-unequips every worn item the new job can no longer wear (job check only,

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlBlessing do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 34,
     name: :al_blessing,
+    status: :sc_blessing,
     display_name: "Blessing",
     max_level: 10,
     target_type: :target_ally,

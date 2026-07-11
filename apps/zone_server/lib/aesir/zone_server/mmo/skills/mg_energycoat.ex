@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.MgEnergycoat do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 157,
     name: :mg_energycoat,
+    status: :sc_energycoat,
     display_name: "Energy Coat",
     max_level: 1,
     target_type: :self,

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.SmAutoberserk do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 146,
     name: :sm_autoberserk,
+    status: :sc_autoberserk,
     display_name: "Auto Berserk",
     max_level: 1,
     target_type: :self,

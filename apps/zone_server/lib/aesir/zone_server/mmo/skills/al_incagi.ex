@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlIncagi do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 29,
     name: :al_incagi,
+    status: :sc_increaseagi,
     display_name: "Increase AGI",
     max_level: 10,
     target_type: :target_ally,

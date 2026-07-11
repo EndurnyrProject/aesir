@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlAngelus do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 33,
     name: :al_angelus,
+    status: :sc_angelus,
     display_name: "Angelus",
     max_level: 10,
     target_type: :self,

@@ -7,8 +7,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   every value a skill needs: the cross-cutting fields the interpreter reads
   uniformly (targeting, costs, timing) plus the combat columns mirroring
   rAthena's `skill_db` (`element`, `knockback`, `hit_count`, `splash_radius`,
-  `hit_interval`, `unit_duration`). A skill's behaviour callbacks read these from
-  `definition/0` instead of hardcoding module constants.
+  `hit_interval`, `unit_duration`) and the optional `status` SC the skill grants
+  its caster (mirroring rAthena's skill_db `Status:` / `skill_get_sc`), read by the
+  job-change/reset cleanup to end a dropped skill's lingering self-buff. A skill's
+  behaviour callbacks read these from `definition/0` instead of hardcoding module
+  constants.
 
   Use `build!/2` to construct a validated definition from `use` options.
   """
@@ -55,6 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     field :damage_kind, damage_kind(), default: :weapon
     field :item_cost, [item_cost_entry()], default: []
     field :requires_ammo, boolean(), default: false
+    field :status, atom() | nil, default: nil
   end
 
   @metadata_schema %{
@@ -80,7 +84,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     cooldown: {:list, :integer},
     damage_kind: {:enum, [:weapon, :magic, :misc]},
     item_cost: {:list, %{id: {:required, :integer}, amount: {:required, {:integer, {:gt, 0}}}}},
-    requires_ammo: :boolean
+    requires_ammo: :boolean,
+    status: :atom
   }
 
   @defaults %{
@@ -102,7 +107,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     cooldown: [],
     damage_kind: :weapon,
     item_cost: [],
-    requires_ammo: false
+    requires_ammo: false,
+    status: nil
   }
 
   @doc """

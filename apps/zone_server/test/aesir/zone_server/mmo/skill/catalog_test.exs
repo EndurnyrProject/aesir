@@ -81,6 +81,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
     assert defn.max_level == 1
   end
 
+  describe "granted status (skill_get_sc)" do
+    test "a self-buff skill exposes the SC it grants" do
+      assert {:ok, %Definition{status: :sc_endure}} = Catalog.by_id(8)
+      assert {:ok, %Definition{status: :sc_autoberserk}} = Catalog.by_name(:sm_autoberserk)
+      assert {:ok, %Definition{status: :sc_increaseagi}} = Catalog.by_name(:al_incagi)
+    end
+
+    test "a skill that grants no status has a nil status" do
+      assert {:ok, %Definition{status: nil}} = Catalog.by_name(:sm_bash)
+    end
+
+    test "status defaults to nil when the definition omits it" do
+      assert %Definition{status: nil} =
+               Definition.build!([id: 1, name: :x, display_name: "X", max_level: 1], __MODULE__)
+    end
+  end
+
   describe "capability indexes" do
     test "active_module_for/1 resolves an active skill" do
       assert {:ok, SmBash} = Catalog.active_module_for(:sm_bash)

@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.McLoud do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 155,
     name: :mc_loud,
+    status: :sc_loud,
     display_name: "Crazy Uproar",
     max_level: 1,
     target_type: :self,
