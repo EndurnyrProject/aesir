@@ -1075,4 +1075,82 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert Stats.shield_view(equipment) == 0
     end
   end
+
+  defp status_stats(status_effects, current \\ %{hp: 1, sp: 1}) do
+    %Stats{
+      base_stats: %{str: 10, agi: 30, vit: 25, int: 30, dex: 20, luk: 10},
+      progression: %{
+        base_level: 50,
+        job_level: 25,
+        base_exp: 0,
+        job_exp: 0,
+        job_id: 0,
+        learned_skills: %{}
+      },
+      current_state: current,
+      equipment: %Equipment{},
+      modifiers: %{equipment: %{}, status_effects: status_effects, job_bonuses: %{}}
+    }
+    |> Stats.calculate_stats()
+  end
+
+  describe "status ASPD modifiers" do
+    test "flat :aspd status raises ASPD by that amount" do
+      base = status_stats(%{}).derived_stats.aspd
+      boosted = status_stats(%{aspd: 10}).derived_stats.aspd
+
+      assert boosted == base + 10
+    end
+
+    test "flat :aspd is clamped at 193" do
+      assert status_stats(%{aspd: 500}).derived_stats.aspd == 193
+    end
+
+    test "aspd_rate status applies as a summable delta over 100" do
+      base = status_stats(%{}).derived_stats.aspd
+      boosted = status_stats(%{aspd_rate: 5}).derived_stats.aspd
+
+      assert boosted == min(trunc(base * 105 / 100), 193)
+      assert boosted > base
+    end
+
+    test "no aspd_rate status leaves ASPD at the 100 baseline" do
+      assert status_stats(%{aspd_rate: 0}).derived_stats.aspd ==
+               status_stats(%{}).derived_stats.aspd
+    end
+  end
+
+  describe "status max HP/SP rate modifiers" do
+    test "max_hp_rate/max_sp_rate scale the computed max" do
+      base = status_stats(%{})
+      boosted = status_stats(%{max_hp_rate: 50, max_sp_rate: 50})
+
+      assert boosted.derived_stats.max_hp == trunc(base.derived_stats.max_hp * 150 / 100)
+      assert boosted.derived_stats.max_sp == trunc(base.derived_stats.max_sp * 150 / 100)
+    end
+
+    test "max HP/SP floor at 1 for an extreme negative rate" do
+      reduced = status_stats(%{max_hp_rate: -100, max_sp_rate: -100})
+
+      assert reduced.derived_stats.max_hp == 1
+      assert reduced.derived_stats.max_sp == 1
+    end
+
+    test "negative rate clamps current HP/SP to the reduced max" do
+      base = status_stats(%{})
+      full = %{hp: base.derived_stats.max_hp, sp: base.derived_stats.max_sp}
+      reduced = status_stats(%{max_hp_rate: -50, max_sp_rate: -50}, full)
+
+      assert reduced.current_state.hp == reduced.derived_stats.max_hp
+      assert reduced.current_state.sp == reduced.derived_stats.max_sp
+      assert reduced.current_state.hp < base.derived_stats.max_hp
+    end
+
+    test "a non-negative rate leaves current HP/SP untouched even above the max" do
+      over = status_stats(%{max_hp_rate: 10}, %{hp: 99_999, sp: 99_999})
+
+      assert over.current_state.hp == 99_999
+      assert over.current_state.sp == 99_999
+    end
+  end
 end

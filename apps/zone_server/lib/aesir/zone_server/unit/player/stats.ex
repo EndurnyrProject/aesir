@@ -462,11 +462,37 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
         }
 
         %{stats | derived_stats: derived_stats}
+        |> clamp_current_to_max(
+          max_hp,
+          get_status_modifier(stats, :max_hp_rate),
+          max_sp,
+          get_status_modifier(stats, :max_sp_rate)
+        )
 
       err ->
         raise "Failed to get job name for derived stats: #{inspect(err)}"
     end
   end
+
+  # A max_hp_rate/max_sp_rate malus (Combat Pill -3%, 2011 RWC -10%) shrinks the
+  # max below the current pool, so clamp current HP/SP down to the reduced max.
+  # Only negative rates clamp; positive/zero rates never force current below its
+  # existing value.
+  defp clamp_current_to_max(
+         %__MODULE__{current_state: %{hp: hp, sp: sp} = current} = stats,
+         max_hp,
+         max_hp_rate,
+         max_sp,
+         max_sp_rate
+       )
+       when is_integer(hp) and is_integer(sp) do
+    new_hp = if max_hp_rate < 0, do: min(hp, max_hp), else: hp
+    new_sp = if max_sp_rate < 0, do: min(sp, max_sp), else: sp
+
+    %{stats | current_state: %{current | hp: new_hp, sp: new_sp}}
+  end
+
+  defp clamp_current_to_max(stats, _max_hp, _max_hp_rate, _max_sp, _max_sp_rate), do: stats
 
   @doc """
   Calculates combat-related stats (hit, flee, critical, atk, matk, def).
@@ -672,8 +698,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
         # ASPD = (2000 - amotion) / 10
         final_aspd = div(2000 - amotion, 10)
 
-        # Apply ASPD rate modifiers
+        # Apply ASPD rate modifiers, then the flat status ASPD bonus
         final_aspd = apply_aspd_rate_modifiers(final_aspd, stats)
+        final_aspd = final_aspd + get_status_modifier(stats, :aspd)
 
         # Cap ASPD between 0 and 193
         min(max(final_aspd, 0), 193)
@@ -714,7 +741,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     # Apply increases and bonuses
     total_hp = hp_with_factor + hp_increase + get_hp_bonus_flat(stats)
 
-    max(total_hp, 1)
+    total_hp
+    |> apply_max_rate(get_status_modifier(stats, :max_hp_rate))
+    |> max(1)
   end
 
   defp calculate_max_sp(base_sp, effective_int, sp_increase, stats) do
@@ -724,8 +753,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     # Apply increases and bonuses
     total_sp = sp_with_int + sp_increase + get_sp_bonus_flat(stats)
 
-    max(total_sp, 1)
+    total_sp
+    |> apply_max_rate(get_status_modifier(stats, :max_sp_rate))
+    |> max(1)
   end
+
+  @spec apply_max_rate(integer(), number()) :: integer()
+  defp apply_max_rate(value, rate), do: trunc(value * (100 + rate) / 100)
 
   defp get_weapon_aspd(job_name, weapon_atom) do
     case JobManagement.get_base_aspd(job_name, weapon_atom) do
@@ -757,7 +791,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   defp get_aspd_rate(%__MODULE__{modifiers: modifiers}) do
     equipment_rate = Map.get(modifiers.equipment, :aspd_rate, 100)
-    status_rate = Map.get(modifiers.status_effects, :aspd_rate, 100)
+    status_rate = 100 + Map.get(modifiers.status_effects, :aspd_rate, 0)
 
     # Multiplicative stacking
     trunc(equipment_rate * status_rate / 100)
