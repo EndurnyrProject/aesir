@@ -1366,6 +1366,7 @@
 - aegis_name: Comp_Job_Manual50
   id: 9862
   name: '[Not For Sale] JOB Battle Manual'
+  on_use: sc_start(ctx, :sc_jexpboost, 1800000, 50)
   type: usable
   weight: 10
 - aegis_name: DF_Adrenaline_Scroll
@@ -4085,18 +4086,21 @@
   buy: 2
   id: 12208
   name: Battle Manual
+  on_use: sc_start(ctx, :sc_expboost, 1800000, 50)
   type: usable
   weight: 10
 - aegis_name: Insurance
   buy: 2
   id: 12209
   name: Life Insurance
+  on_use: sc_start(ctx, :sc_lifeinsurance, 1800000, 0)
   type: usable
   weight: 10
 - aegis_name: Bubble_Gum
   buy: 2
   id: 12210
   name: Bubble Gum
+  on_use: sc_start(ctx, :sc_itemboost, 1800000, 100)
   type: usable
   weight: 10
 - aegis_name: Kafra_Card
@@ -4489,17 +4493,20 @@
   buy: 2
   id: 12263
   name: Field Manual
+  on_use: sc_start(ctx, :sc_expboost, 1800000, 50)
   type: usable
 - aegis_name: Comp_Bubble_Gum
   buy: 2
   id: 12264
   name: Bubble Gum
+  on_use: sc_start(ctx, :sc_itemboost, 1800000, 100)
   type: usable
   weight: 10
 - aegis_name: Comp_Insurance
   buy: 2
   id: 12265
   name: Life Insurrance
+  on_use: sc_start(ctx, :sc_lifeinsurance, 1800000, 0)
   type: usable
   weight: 10
 - aegis_name: Sesame_Pastry_
@@ -4772,6 +4779,7 @@
 - aegis_name: Thick_Manual50
   id: 12312
   name: Thick Battle Manual
+  on_use: sc_start(ctx, :sc_expboost, 3600000, 50)
   type: usable
 - aegis_name: Protection_Of_Angel
   id: 12313
@@ -5342,12 +5350,14 @@
   buy: 2
   id: 12411
   name: HE Battle Manual
+  on_use: sc_start(ctx, :sc_expboost, 900000, 200)
   type: usable
   weight: 10
 - aegis_name: HE_Bubble_Gum
   buy: 2
   id: 12412
   name: HE Bubble Gum
+  on_use: sc_start(ctx, :sc_itemboost, 900000, 200)
   type: usable
   weight: 10
 - aegis_name: PCBang_Coupon_Box2
@@ -5524,18 +5534,21 @@
   buy: 2
   id: 12439
   name: F Old Battle Manual
+  on_use: sc_start(ctx, :sc_expboost, 1800000, 50)
   type: usable
   weight: 10
 - aegis_name: F_Insurance
   buy: 2
   id: 12440
   name: F Insurance
+  on_use: sc_start(ctx, :sc_lifeinsurance, 1800000, 0)
   type: usable
   weight: 10
 - aegis_name: F_Bubble_Gum
   buy: 2
   id: 12441
   name: F Old Bubble Gum
+  on_use: sc_start(ctx, :sc_itemboost, 1800000, 100)
   type: usable
   weight: 10
 - aegis_name: F_Kafra_Card
@@ -5854,18 +5867,21 @@
   buy: 2
   id: 12495
   name: E Battle Manual
+  on_use: sc_start(ctx, :sc_expboost, 1800000, 50)
   type: usable
   weight: 10
 - aegis_name: E_Insurance
   buy: 2
   id: 12496
   name: E Insurance
+  on_use: sc_start(ctx, :sc_lifeinsurance, 1800000, 0)
   type: usable
   weight: 10
 - aegis_name: E_Bubble_Gum
   buy: 2
   id: 12497
   name: E Bubble Gum
+  on_use: sc_start(ctx, :sc_itemboost, 1800000, 100)
   type: usable
   weight: 10
 - aegis_name: E_Kafra_Card
@@ -6244,6 +6260,7 @@
   buy: 2
   id: 12562
   name: Bubble Gum Plus
+  on_use: sc_start(ctx, :sc_itemboost, 3600000, 100)
   type: usable
   weight: 10
 - aegis_name: BM75
@@ -7113,6 +7130,7 @@
   equip_level_min: 90
   id: 12705
   name: Noble Nameplate
+  on_use: sc_start(ctx, :sc_expboost, 1800000, 100)
   type: usable
   weight: 100
 - aegis_name: Lucky_Cookie01
@@ -7487,6 +7505,7 @@
 - aegis_name: Reward_Job_BM25
   id: 12766
   name: Reward Job BM25
+  on_use: sc_start(ctx, :sc_jexpboost, 1800000, 25)
   type: usable
 - aegis_name: Passion_FB_Hat_Box
   id: 12767
@@ -8033,6 +8052,7 @@
 - aegis_name: Battle_Manual_Limit
   id: 12872
   name: Battle Manual Limit
+  on_use: sc_start(ctx, :sc_expboost, 3600000, 60)
   type: usable
   weight: 10
 - aegis_name: TE_Potion_Box
@@ -14703,6 +14723,7 @@
   buy: 20
   id: 14500
   name: Life Insurrance Certificate
+  on_use: sc_start(ctx, :sc_lifeinsurance, 3600000, 0)
   type: usable
   weight: 10
 - aegis_name: Dun_1HR_Voucher
@@ -14896,12 +14917,14 @@
   buy: 2
   id: 14532
   name: Field Manual 25%
+  on_use: sc_start(ctx, :sc_expboost, 1800000, 25)
   type: usable
   weight: 10
 - aegis_name: Battle_Manual100
   buy: 2
   id: 14533
   name: Field Manual 100%
+  on_use: sc_start(ctx, :sc_expboost, 3600000, 100)
   type: usable
   weight: 10
 - aegis_name: Small_Life_Potion
@@ -14986,6 +15009,7 @@
 - aegis_name: Battle_Manual_X3
   id: 14545
   name: Field Manual 300%
+  on_use: sc_start(ctx, :sc_expboost, 1800000, 300)
   type: usable
   weight: 10
 - aegis_name: Fire_Cracker_Love
@@ -15353,6 +15377,7 @@
 - aegis_name: Job_Manual50
   id: 14592
   name: JOB Battle Manual
+  on_use: sc_start(ctx, :sc_jexpboost, 1800000, 50)
   type: usable
   weight: 10
 - aegis_name: Magic_Power_Scroll
@@ -15429,6 +15454,7 @@
 - aegis_name: Job_Manual25
   id: 14606
   name: JOB Battle Manual
+  on_use: sc_start(ctx, :sc_jexpboost, 1800000, 25)
   type: usable
   weight: 10
 - aegis_name: Luxurious_Dinner_W
@@ -15854,6 +15880,7 @@
   buy: 2
   id: 14843
   name: '[Scroll] Life Insurance'
+  on_use: sc_start(ctx, :sc_lifeinsurance, 1800000, 0)
   type: usable
   weight: 10
 - aegis_name: DF_Kafra_Card
@@ -24060,6 +24087,10 @@
   buy: 2
   id: 22614
   name: Premium Manual
+  on_use: |-
+    ctx = sc_start(ctx, :sc_expboost, 8640000, 50)
+    ctx = sc_start(ctx, :sc_itemboost, 8640000, 100)
+    ctx
   type: usable
 - aegis_name: ClearBox_S
   id: 22617
@@ -25281,6 +25312,10 @@
 - aegis_name: Comp_Battle_Bubble
   id: 22979
   name: '[Sale] Battle Manual and Bubble Gum'
+  on_use: |-
+    ctx = sc_start(ctx, :sc_expboost, 1800000, 50)
+    ctx = sc_start(ctx, :sc_itemboost, 1800000, 100)
+    ctx
   type: usable
 - aegis_name: InfinityD_ReturnScroll
   id: 22980
@@ -28597,6 +28632,7 @@
 - aegis_name: Kr_B_Special01
   id: 100081
   name: '[Not For Sale] Advanced Combat Manual'
+  on_use: sc_start(ctx, :sc_expboost, 3600000, 200)
   type: usable
 - aegis_name: BackSignon_Box_TW
   id: 100083
@@ -29243,11 +29279,16 @@
 - aegis_name: Core_Battle_Manual
   id: 100351
   name: Core Combat Manual
+  on_use: sc_start(ctx, :sc_expboost, 900000, 100)
   type: usable
   weight: 10
 - aegis_name: Real_Battle_Manual
   id: 100352
   name: Real Combat Manual
+  on_use: |-
+    ctx = sc_start(ctx, :sc_expboost, 3600000, 100)
+    ctx = sc_start(ctx, :sc_speedup0, 600000, 25)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Auto_Armor_Refine_Cube
@@ -31511,10 +31552,12 @@
 - aegis_name: Booster_B_M_1
   id: 101474
   name: Booster Combat Manual
+  on_use: sc_start(ctx, :sc_expboost, 3600000, 100)
   type: usable
 - aegis_name: Booster_B_M_2
   id: 101475
   name: Booster Advanced Combat Manual
+  on_use: sc_start(ctx, :sc_expboost, 3600000, 200)
   type: usable
 - aegis_name: Booster230_Gift
   id: 101476
@@ -32325,6 +32368,7 @@
 - aegis_name: A_Bubble_Gum
   id: 101947
   name: '[Achievement] Bubble Gum'
+  on_use: sc_start(ctx, :sc_itemboost, 1800000, 100)
   type: usable
 - aegis_name: A_Bubble_Gum_Box10
   id: 101948
