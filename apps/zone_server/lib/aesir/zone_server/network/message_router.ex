@@ -71,6 +71,7 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def route(%Aesir.Net.StatusChange{}), do: {:world, :status_change}
   def route(%Aesir.Net.UnitStateChange{}), do: {:world, :unit_state_change}
   def route(%Aesir.Net.SpecialEffect{}), do: {:world, :special_effect}
+  def route(%Aesir.Net.Emotion{}), do: {:world, :emotion}
   def route(%Aesir.Net.Announcement{}), do: {:world, :announcement}
   def route(%Aesir.Net.NpcDialog{}), do: {:world, :npc_dialog}
   def route(%Aesir.Net.VendingBoardShown{}), do: {:world, :vending_board_shown}
