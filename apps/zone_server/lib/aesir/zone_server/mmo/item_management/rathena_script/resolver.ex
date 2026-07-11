@@ -116,7 +116,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "SC_SKF_ASPD" => :sc_skf_aspd,
     "SC_SPEEDUP0" => :sc_speedup0,
     "SC_SPEEDUP1" => :sc_speedup1,
-    "SC_SLOWDOWN" => :sc_slowdown
+    "SC_SLOWDOWN" => :sc_slowdown,
+    "SC_SAVAGE_STEAK" => :sc_savage_steak,
+    "SC_MINOR_BBQ" => :sc_minor_bbq,
+    "SC_SIROMA_ICE_TEA" => :sc_siroma_ice_tea,
+    "SC_DROCERA_HERB_STEAMED" => :sc_drocera_herb_steamed,
+    "SC_PUTTI_TAILS_NOODLES" => :sc_putti_tails_noodles,
+    "SC_COCKTAIL_WARG_BLOOD" => :sc_cocktail_warg_blood,
+    "SC_CUP_OF_BOZA" => :sc_cup_of_boza,
+    "SC_PORK_RIB_STEW" => :sc_pork_rib_stew,
+    "SC_MYSTICPOWDER" => :sc_mysticpowder,
+    "SC_SPARKCANDY" => :sc_sparkcandy,
+    "SC_MAGICCANDY" => :sc_magiccandy,
+    "SC_COMBAT_PILL" => :sc_combat_pill,
+    "SC_COMBAT_PILL2" => :sc_combat_pill2,
+    "SC_VITALIZE_POTION" => :sc_vitalize_potion,
+    "SC_EXTRACT_WHITE_POTION_Z" => :sc_extract_white_potion_z,
+    "SC_2011RWC_SCROLL" => :sc_2011rwc_scroll
   }
 
   @elements %{
