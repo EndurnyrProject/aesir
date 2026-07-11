@@ -1395,6 +1395,10 @@
 - aegis_name: DF_Mental_Potion
   id: 9908
   name: '[Scroll] Mental Potion'
+  on_use: |-
+    ctx = sc_start(ctx, :sc_increase_maxsp, 1800000, 10)
+    ctx = sc_start(ctx, :sc_spcost_rate, 1800000, 10)
+    ctx
   type: usable
   weight: 10
 - aegis_name: DF_Ex_Def_Potion
@@ -4714,6 +4718,7 @@
 - aegis_name: SP_Potion
   id: 12298
   name: SP Consumption Reduction Potion
+  on_use: sc_start(ctx, :sc_spcost_rate, 3600000, 15)
   type: usable
   weight: 10
 - aegis_name: Mega_Resist_Potion
@@ -5677,6 +5682,10 @@
 - aegis_name: F_Regeneration_Potion
   id: 12461
   name: F Regeneration Potion
+  on_use: |-
+    ctx = specialeffect2(ctx, :lightsphere)
+    ctx = sc_start(ctx, :sc_inchealrate, 1800000, 20)
+    ctx
   type: usable
   weight: 10
 - aegis_name: F_B_Mdef_Potion
@@ -6003,6 +6012,10 @@
 - aegis_name: E_Regeneration_Potion
   id: 12517
   name: E Regeneration Potion
+  on_use: |-
+    ctx = specialeffect2(ctx, :lightsphere)
+    ctx = sc_start(ctx, :sc_inchealrate, 1800000, 20)
+    ctx
   type: usable
   weight: 10
 - aegis_name: E_B_Mdef_Potion
@@ -6909,6 +6922,10 @@
   buy: 20
   id: 12669
   name: Thai Perfume CAST
+  on_use: |-
+    ctx = specialeffect2(ctx, :magicalatthit)
+    ctx = sc_start(ctx, :sc_skf_cast, 600000, -5)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Beast_Powder
@@ -14949,6 +14966,10 @@
 - aegis_name: Regeneration_Potion
   id: 14537
   name: Regeneration Potion
+  on_use: |-
+    ctx = specialeffect2(ctx, :lightsphere)
+    ctx = sc_start(ctx, :sc_inchealrate, 1800000, 20)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Glass_Of_Illusion
@@ -15418,6 +15439,10 @@
 - aegis_name: Mental_Potion
   id: 14600
   name: Mental Potion
+  on_use: |-
+    ctx = specialeffect2(ctx, :spellbreaker)
+    ctx = sc_start(ctx, :sc_mental_potion, 1800000, 10)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Tyr's_Blessing
@@ -24241,6 +24266,10 @@
   buy: 20
   id: 22658
   name: Cow Steamed Ribs
+  on_use: |-
+    ctx = specialeffect2(ctx, :enhance)
+    ctx = sc_start(ctx, :sc_beef_rib_stew, 180000, 0)
+    ctx
   type: healing
   weight: 100
 - aegis_name: BraisedSpareribs
@@ -25563,6 +25592,10 @@
 - aegis_name: Comp_Regenerate_Potion
   id: 23048
   name: '[Sale] Resilience Enhancement Potion'
+  on_use: |-
+    ctx = specialeffect2(ctx, :lightsphere)
+    ctx = sc_start(ctx, :sc_inchealrate, 1800000, 20)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Comp_Spark_Candy
@@ -27366,6 +27399,10 @@
 - aegis_name: Mimir_Spring_Water
   id: 23611
   name: Mimir's Spring Water
+  on_use: |-
+    ctx = sc_start(ctx, :sc_increase_maxsp, 1800000, 10)
+    ctx = sc_start(ctx, :sc_spcost_rate, 1800000, 10)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Baldrs_Blessing
@@ -27595,6 +27632,10 @@
 - aegis_name: E_Mimir_Spring_W
   id: 23732
   name: "[Event] Mimir's Spring Water"
+  on_use: |-
+    ctx = sc_start(ctx, :sc_increase_maxsp, 1800000, 10)
+    ctx = sc_start(ctx, :sc_spcost_rate, 1800000, 10)
+    ctx
   type: usable
   weight: 10
 - aegis_name: E_Baldrs_Blessing
@@ -29136,6 +29177,11 @@
 - aegis_name: G_Mental_Potion
   id: 100317
   name: True Mental Potion
+  on_use: |-
+    ctx = specialeffect2(ctx, :spellbreaker)
+    ctx = sc_start(ctx, :sc_mental_potion, 3600000, 10)
+    ctx = sc_start(ctx, :sc_speedup0, 600000, 25)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Exotic_Bob_Box
