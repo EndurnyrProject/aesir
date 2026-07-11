@@ -15,16 +15,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
   2. S.MAtk: attacker's `smatk` combat stat added as a percentage of the
      rolled base MATK, before the skill ratio (`battle.cpp:6016`).
   3. Skill ratio + flat MATK bonus.
-  4. Element resistance (skill element vs defender element/level).
-  5. Generic status `damage_multiplier`.
-  6. MRes: defender's `mres` combat stat reduces damage on the same
+  4. Attacker status `matk_rate` (percent delta on magic damage).
+  5. Element resistance (skill element vs defender element/level).
+  6. Generic status `damage_multiplier`.
+  7. MRes: defender's `mres` combat stat reduces damage on the same
      soft-capped curve as physical Res, before MDEF (`battle.cpp:6067`).
-  7. Renewal MDEF reduction (`battle.cpp:6105`):
+  8. Renewal MDEF reduction (`battle.cpp:6105`), with the defender's status
+     `mdef_rate` scaling hard MDEF first:
      `dmg = matk * (1000 + hardMDEF) / (1000 + 10*hardMDEF) - softMDEF`.
-  8. Min-1 clamp.
+  9. Defender status `magic_damage_reduction` (percent of final magic damage
+     the target shrugs off, clamped 0..100).
+  10. Min-1 clamp.
 
-  Hard MDEF already folds the defender's status/equipment MDEF (players) or
-  the mob's flat MDEF, so status defense modifiers are not re-applied here.
+  Hard MDEF folds the defender's status/equipment MDEF (players) or the mob's
+  flat MDEF; the consumable `mdef_rate`/`magic_damage_reduction` status keys
+  are applied on top as noted above.
 
   S.MAtk applies only to this pipeline's `matk`/`matk_min`/`matk_max` roll.
   Healing (`AlHeal`) computes its value from the separate `heal_matk_min`/
@@ -97,8 +102,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
     base_matk = roll_matk(attacker.combat_stats)
     smatk = Map.get(attacker.combat_stats, :smatk, 0)
     base_matk = base_matk + div(base_matk * smatk, 100)
-    skilled = div(base_matk * skill_ratio, 100) + bonus_matk
-    modifiers = attacker_modifiers(attacker)
+    modifiers = combatant_modifiers(attacker)
+    # :matk_rate is an additive percent delta on magic damage (SC_INCMATKRATE,
+    # SC_COMBAT_PILL), applied to the skill-scaled MATK.
+    matk_rate = Map.get(modifiers, :matk_rate, 0)
+    skilled = div((div(base_matk * skill_ratio, 100) + bonus_matk) * (100 + matk_rate), 100)
+    defender_modifiers = combatant_modifiers(defender)
     mres = Map.get(defender.combat_stats, :mres, 0)
 
     damage =
@@ -106,24 +115,37 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
       |> DamageShared.apply_element(element, defender)
       |> DamageShared.apply_damage_multiplier(modifiers)
       |> DamageShared.res_reduction(mres)
-      |> apply_mdef_formula(defender)
+      |> apply_mdef_formula(defender, defender_modifiers)
+      |> apply_magic_damage_reduction(defender_modifiers)
       |> DamageShared.clamp_min_one()
 
     {:ok, %{damage: damage, is_critical: false}}
   end
 
-  @spec apply_mdef_formula(number(), map()) :: number()
-  defp apply_mdef_formula(damage, defender) do
-    hard = defender.combat_stats.mdef
+  @spec apply_mdef_formula(number(), map(), map()) :: number()
+  defp apply_mdef_formula(damage, defender, modifiers) do
+    # :mdef_rate is an additive percent delta on hard MDEF (Freeze's +25); the
+    # skill-status family scales the defender's eMDEF.
+    mdef_rate = Map.get(modifiers, :mdef_rate, 0)
+    hard = trunc(defender.combat_stats.mdef * (100 + mdef_rate) / 100)
     soft = defender.combat_stats.soft_mdef
     effective_hard = if hard == -100, do: -99, else: hard
 
     damage * (1000 + effective_hard) / (1000 + 10 * effective_hard) - soft
   end
 
-  @spec attacker_modifiers(map()) :: map()
-  defp attacker_modifiers(attacker) do
-    {unit_type, unit_id} = get_unit_type_and_id(attacker)
+  # :magic_damage_reduction is the percent of final magic damage the defender
+  # shrugs off (SC_MDEF_RATE consumable family, rAthena battle.cpp:932). Clamped
+  # to 0..100 before applying.
+  @spec apply_magic_damage_reduction(number(), map()) :: number()
+  defp apply_magic_damage_reduction(damage, modifiers) do
+    reduction = Map.get(modifiers, :magic_damage_reduction, 0) |> max(0) |> min(100)
+    damage * (100 - reduction) / 100
+  end
+
+  @spec combatant_modifiers(map()) :: map()
+  defp combatant_modifiers(combatant) do
+    {unit_type, unit_id} = get_unit_type_and_id(combatant)
     ModifierCalculator.get_all_modifiers(unit_type, unit_id)
   end
 

@@ -914,4 +914,88 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
                )
     end
   end
+
+  describe "status combat modifiers (atk_rate / def_rate / phys_damage_reduction)" do
+    setup do
+      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
+      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(RaceModifiers, :player_race, fn -> :human end)
+      :ok
+    end
+
+    test "atk_rate scales physical damage additively" do
+      # def 0 defender: the renewal formula is a no-op, so a +100% atk_rate on the
+      # attacker exactly doubles the final damage.
+      attacker = CombatTestHelper.create_player_combatant()
+      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001, def: 0)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+      :rand.seed(:exsss, {1, 2, 3})
+      {:ok, base} = DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :player, 1001 -> %{atk_rate: 100}
+        _, _ -> %{}
+      end)
+
+      :rand.seed(:exsss, {1, 2, 3})
+      {:ok, boosted} = DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
+
+      assert boosted.damage == base.damage * 2
+    end
+
+    test "def_rate lowers the defender's hard DEF and raises damage" do
+      # Freeze's def_rate: -50 halves eDEF, so damage through the renewal formula rises.
+      attacker = CombatTestHelper.create_player_combatant()
+      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001, def: 100)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+      :rand.seed(:exsss, {1, 2, 3})
+      {:ok, base} = DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :mob, 2001 -> %{def_rate: -50}
+        _, _ -> %{}
+      end)
+
+      :rand.seed(:exsss, {1, 2, 3})
+      {:ok, reduced_def} = DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
+
+      assert reduced_def.damage > base.damage
+    end
+
+    test "phys_damage_reduction shrugs off a percent of final damage and clamps at 100" do
+      attacker = CombatTestHelper.create_player_combatant()
+      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001, def: 0)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+      :rand.seed(:exsss, {1, 2, 3})
+      {:ok, base} = DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :mob, 2001 -> %{phys_damage_reduction: 50}
+        _, _ -> %{}
+      end)
+
+      :rand.seed(:exsss, {1, 2, 3})
+      {:ok, halved} = DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
+
+      assert halved.damage < base.damage
+
+      # A reduction over 100 clamps to 100, so all damage is shrugged off and the
+      # min-1 floor applies.
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :mob, 2001 -> %{phys_damage_reduction: 150}
+        _, _ -> %{}
+      end)
+
+      :rand.seed(:exsss, {1, 2, 3})
+
+      {:ok, fully_reduced} =
+        DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
+
+      assert fully_reduced.damage == 1
+    end
+  end
 end

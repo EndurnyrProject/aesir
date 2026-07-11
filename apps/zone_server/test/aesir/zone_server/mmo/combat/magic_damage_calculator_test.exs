@@ -175,4 +175,49 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
       end
     end
   end
+
+  describe "status magic modifiers (matk_rate / mdef_rate / magic_damage_reduction)" do
+    test "matk_rate scales the skill-scaled MATK additively" do
+      # matk_rate 50: skilled 100 -> 150; 150 * 1010 / 1100 - 5 = 132.727... -> 132
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :player, 1001 -> %{matk_rate: 50}
+        _, _ -> %{}
+      end)
+
+      assert {:ok, %{damage: 132, is_critical: false}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5))
+    end
+
+    test "mdef_rate raises the defender's hard MDEF and lowers damage" do
+      # mdef_rate 100: hard 10 -> 20; 100 * 1020 / 1200 - 5 = 85 - 5 = 80
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :mob, 2001 -> %{mdef_rate: 100}
+        _, _ -> %{}
+      end)
+
+      assert {:ok, %{damage: 80, is_critical: false}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5))
+    end
+
+    test "magic_damage_reduction shrugs off a percent of final magic damage" do
+      # reduction 50: 86.818... * 0.5 = 43.409... -> trunc 43
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :mob, 2001 -> %{magic_damage_reduction: 50}
+        _, _ -> %{}
+      end)
+
+      assert {:ok, %{damage: 43, is_critical: false}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5))
+    end
+
+    test "magic_damage_reduction clamps at 100 and floors damage at 1" do
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :mob, 2001 -> %{magic_damage_reduction: 150}
+        _, _ -> %{}
+      end)
+
+      assert {:ok, %{damage: 1, is_critical: false}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5))
+    end
+  end
 end

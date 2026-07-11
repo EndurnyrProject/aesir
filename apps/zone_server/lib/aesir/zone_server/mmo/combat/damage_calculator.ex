@@ -247,9 +247,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     hard_def = defender.combat_stats.def
     soft_def = calculate_soft_defense(defender) + divine_protection_bonus(attacker, defender)
 
+    {unit_type, unit_id} = get_unit_type_and_id(defender)
+    modifiers = ModifierCalculator.get_all_modifiers(unit_type, unit_id)
+
     # Apply status effect defense modifiers
     {modified_hard_def, modified_soft_def} =
-      apply_status_effect_defense_modifiers(hard_def, soft_def, defender)
+      apply_status_effect_defense_modifiers(hard_def, soft_def, modifiers)
 
     # Apply Renewal defense reduction formula
     # Handle edge case where hard_def = -400 (causes division by zero)
@@ -259,7 +262,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       total_atk * (4000 + effective_hard_def) / (4000 + 10 * effective_hard_def) -
         modified_soft_def
 
-    final_damage = DamageShared.clamp_min_one(base_damage)
+    final_damage =
+      base_damage
+      |> apply_phys_damage_reduction(modifiers)
+      |> DamageShared.clamp_min_one()
 
     Logger.debug(
       "Defense calculation: total_atk=#{trunc(total_atk)}, hard_def=#{modified_hard_def}, soft_def=#{modified_soft_def}, final_damage=#{final_damage}"
@@ -359,29 +365,42 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     # :watk is flat weapon ATK granted by statuses (SC_LOUD / Crazy Uproar, Impositio
     # Manus); it is added as flat ATK alongside :atk_bonus / :damage_bonus.
     weapon_atk = Map.get(modifiers, :watk, 0)
+    # :atk_rate is an additive percent delta on physical damage (SC_INCATKRATE,
+    # Curse's -25, Provoke). Applied after flat ATK, before the damage multiplier.
+    atk_rate = Map.get(modifiers, :atk_rate, 0)
 
     flat_atk = damage_bonus + atk_bonus + weapon_atk
+    scaled_atk = (damage + flat_atk) * (100 + atk_rate) / 100
 
-    DamageShared.apply_damage_multiplier(damage + flat_atk, modifiers)
+    DamageShared.apply_damage_multiplier(scaled_atk, modifiers)
   end
 
-  defp apply_status_effect_defense_modifiers(hard_def, soft_def, defender) do
-    {unit_type, unit_id} = get_unit_type_and_id(defender)
-
-    # Get all status effect modifiers
-    modifiers = ModifierCalculator.get_all_modifiers(unit_type, unit_id)
-
-    # Apply defense-related modifiers
+  defp apply_status_effect_defense_modifiers(hard_def, soft_def, modifiers) do
     hard_def_bonus = Map.get(modifiers, :def_bonus, 0)
     soft_def_bonus = Map.get(modifiers, :vit_bonus, 0)
+    # :def_rate is an additive percent delta on hard DEF (Freeze's -50, Provoke,
+    # SignumCrucis, DeadlyPoison); the skill-status family scales eDEF.
+    def_rate = Map.get(modifiers, :def_rate, 0)
 
     defense_multiplier = 1.0 + Map.get(modifiers, :defense_multiplier, 0.0)
 
-    modified_hard_def = trunc((hard_def + hard_def_bonus) * defense_multiplier)
+    modified_hard_def =
+      trunc((hard_def + hard_def_bonus) * defense_multiplier * (100 + def_rate) / 100)
+
     modified_soft_def = trunc((soft_def + soft_def_bonus) * defense_multiplier)
 
     {modified_hard_def, modified_soft_def}
   end
+
+  # :phys_damage_reduction is the percent of final physical damage the defender
+  # shrugs off (SC_DEF_RATE consumable family, rAthena battle.cpp:1151). Clamped
+  # to 0..100 before applying.
+  defp apply_phys_damage_reduction(damage, modifiers) do
+    reduction = clamp_reduction(Map.get(modifiers, :phys_damage_reduction, 0))
+    damage * (100 - reduction) / 100
+  end
+
+  defp clamp_reduction(value), do: value |> max(0) |> min(100)
 
   defp get_unit_type_and_id(combatant) do
     case combatant.unit_type do
