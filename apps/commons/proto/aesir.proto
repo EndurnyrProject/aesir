@@ -142,6 +142,9 @@ message Envelope {
     // 125-126: cart/vending results (server->client outcome of a gated intent)
     CartMountResult cart_mount_result = 125;
     VendingOpenResult vending_open_result = 126;
+    // 127-128: emotes (client intent + server->client display)
+    EmoteRequest emote_request = 127;
+    Emotion emotion = 128;
   }
 }
 
@@ -463,6 +466,18 @@ message ChatRequest {
 message ChatMessage {
   uint32 gid = 1;
   string message = 2;
+}
+
+// Client -> server, emote/emoticon request (replaces RO CZ_REQ_EMOTION 0x00bf).
+message EmoteRequest {
+  uint32 type = 1;
+}
+
+// Server -> client, an entity's emote/emoticon display (replaces RO ZC_EMOTION 0x00c0,
+// which carries <gid>.L <type>.B).
+message Emotion {
+  uint32 gid = 1;
+  uint32 type = 2;
 }
 
 // One entity's position/state within a Snapshot.
