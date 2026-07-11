@@ -78,6 +78,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           last_attack_timestamp: integer(),
           act_delay_until: integer(),
           last_warp_at: integer() | nil,
+          last_emote_at: integer() | nil,
           continuous_attack_timer: reference() | nil,
           skill_cooldowns: %{integer() => integer()},
           regen_accumulators: %{atom() => non_neg_integer()},
@@ -227,6 +228,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     last_attack_timestamp: 0,
     act_delay_until: 0,
     last_warp_at: nil,
+    # Flood-control timestamp for emotes (monotonic ms); nil until the first emote.
+    last_emote_at: nil,
     regen_accumulators: %{hp_acc: 0, sp_acc: 0, skill_hp_acc: 0, skill_sp_acc: 0},
     # Party membership (0 = none), sourced from the Character at spawn and
     # kept current by Party.Manager pushes (`characters.party_id` is the

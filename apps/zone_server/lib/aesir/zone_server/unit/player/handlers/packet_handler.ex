@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.ActionRequest
   alias Aesir.Net.CartMountRequest
   alias Aesir.Net.ChatRequest
+  alias Aesir.Net.EmoteRequest
   alias Aesir.Net.EquipItem
   alias Aesir.Net.GroundSkillCast
   alias Aesir.Net.LearnSkill
@@ -52,6 +53,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ChatHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.EmoteHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler
@@ -253,6 +255,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   # CZ_REQUEST_CHAT 0x008C).
   def handle_message(%ChatRequest{message: raw_message}, state) do
     ChatHandler.handle_chat(raw_message, state)
+  end
+
+  # EmoteRequest - Player fires an emote bubble (protobuf analogue of
+  # CZ_REQ_EMOTION 0x00BF).
+  def handle_message(%EmoteRequest{type: type}, state) do
+    EmoteHandler.handle_emote(type, state)
   end
 
   # NameRequest - Client requests an entity's name (protobuf analogue of
