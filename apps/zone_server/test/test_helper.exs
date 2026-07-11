@@ -74,6 +74,8 @@ Mimic.copy(Aesir.ZoneServer.Unit.Player.Handlers.RefineOps)
 Mimic.copy(Aesir.ZoneServer.Mmo.MobSkill.Db)
 Mimic.copy(Aesir.Commons.InterServer.PubSub)
 Mimic.copy(Aesir.ZoneServer.Announcement)
+Mimic.copy(Aesir.ZoneServer.Mmo.Leveling)
+Mimic.copy(Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator)
 
 # Integration tests (tagged `:integration`, mostly via `Aesir.ZoneServer.IntegrationCase`)
 # are excluded from the default run. Run them explicitly with:

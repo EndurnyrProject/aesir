@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.StatPoint
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
@@ -25,6 +26,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
   def handle_gain_exp(base_amount, job_amount, %{game_state: game_state} = state) do
     char_id = game_state.character_id
     old_base_level = game_state.stats.progression.base_level
+
+    modifiers = ModifierCalculator.get_all_modifiers(:player, char_id)
+    exp_rate = Map.get(modifiers, :exp_rate, 0)
+    job_exp_rate = Map.get(modifiers, :job_exp_rate, 0)
+
+    base_amount = boost_exp(base_amount, 100 + exp_rate)
+    job_amount = boost_exp(job_amount, 100 + exp_rate + job_exp_rate)
 
     {progression, base_gained, job_gained} =
       Leveling.apply_exp(game_state.stats.progression, base_amount, job_amount)
@@ -63,6 +71,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
   end
 
   defp push_base_level(_game_state, _base_gained), do: :ok
+
+  defp boost_exp(amount, _pct) when amount <= 0, do: amount
+  defp boost_exp(amount, pct), do: max(1, div(amount * pct, 100))
 
   defp maybe_full_heal(stats, 0), do: stats
 
