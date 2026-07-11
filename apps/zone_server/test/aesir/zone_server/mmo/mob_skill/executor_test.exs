@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
   alias Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Emote
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -198,6 +199,34 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
 
     test "skips a stub skill as a no-op" do
       assert Executor.execute(mob(), row(%{skill: "NPC_EMOTION", target: :self})) == :ok
+    end
+
+    test "fires the mob emote on a successfully-resolved cast when the row has one" do
+      caster = mob()
+
+      stub(Combat, :execute_magic_damage, fn _caster, _target, _amount, _opts -> :ok end)
+
+      expect(Emote, :show, fn {:mob, instance_id}, 3 ->
+        assert instance_id == caster.instance_id
+        :ok
+      end)
+
+      assert Executor.execute(caster, row(%{emotion: 3})) == :ok
+    end
+
+    test "does not fire an emote when the row has none" do
+      reject(&Emote.show/2)
+
+      stub(Combat, :execute_magic_damage, fn _caster, _target, _amount, _opts -> :ok end)
+
+      assert Executor.execute(mob(), row(%{emotion: nil})) == :ok
+    end
+
+    test "does not fire an emote when target resolution fails" do
+      reject(&Emote.show/2)
+      reject(&Combat.execute_magic_damage/4)
+
+      assert Executor.execute(mob(%{target_id: nil}), row(%{emotion: 3})) == {:error, :no_target}
     end
   end
 

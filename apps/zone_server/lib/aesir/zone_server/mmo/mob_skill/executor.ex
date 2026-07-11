@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.MobSkill.Catalog
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Emote
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -95,6 +96,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   @spec execute(MobState.t(), map()) :: :ok | {:error, term()}
   def execute(%MobState{} = state, row) do
     with {:ok, target} <- resolve_target(state, row) do
+      maybe_emote(state, row)
       dispatch(state, target, row)
     end
   end
@@ -120,6 +122,11 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
 
     Broadcast.to_in_range(state.map_name, state.x, state.y, Config.view_range(), packet)
   end
+
+  defp maybe_emote(_state, %{emotion: nil}), do: :ok
+
+  defp maybe_emote(%MobState{instance_id: instance_id}, %{emotion: emotion}),
+    do: Emote.show({:mob, instance_id}, emotion)
 
   defp dispatch(state, target, row) do
     case Catalog.archetype_for(row.skill) do
