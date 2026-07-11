@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -36,6 +37,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
 
     stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
     stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+
+    # These fixtures build partial Stats structs (no modifiers, no status ETS),
+    # so the real post-script stat recalc would crash on them. The recalc math
+    # is covered by StatusManagerTest; here it is an identity pass-through so the
+    # item-use assertions stay focused on the script/consume path.
+    stub(StatusManager, :recalculate_after_status_change, fn state -> state end)
 
     :ok
   end
@@ -65,6 +72,35 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
       assert_received {:send, :gameplay,
                        {:item_use_result,
                         %ItemUseResult{index: @red_potion_client_index, ok: true, reason: 0}}}
+    end
+  end
+
+  describe "handle_use_item/2 stat recalculation" do
+    test "recalculates from the post-script state and commits the recalced snapshot" do
+      ScriptCompiler.compile_all!([item_def(@red_potion_id, "heal(ctx, hp: 50)")])
+
+      state = state_with_potion()
+      definition = usable_definition(@red_potion_id, "heal(ctx, hp: 50)")
+
+      stub(Items, :by_id, fn @red_potion_id -> {:ok, definition} end)
+
+      expect(InventoryOps, :remove, fn 1000, inventory, @red_potion_slot, 1 ->
+        {:ok, %{@red_potion_slot => %{inventory[@red_potion_slot] | amount: 4}},
+         {:reduced, @red_potion_slot, 4}}
+      end)
+
+      recalced_stats = %{state.game_state.stats | derived_stats: %{aspd: 193}}
+
+      expect(StatusManager, :recalculate_after_status_change, fn recalc_state ->
+        assert recalc_state.game_state.stats.current_state.hp == 150
+        assert recalc_state.game_state.inventory[@red_potion_slot].amount == 4
+        put_in(recalc_state.game_state.stats, recalced_stats)
+      end)
+
+      assert {:noreply, committed} =
+               ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      assert committed.game_state.stats == recalced_stats
     end
   end
 

@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemEffectsIntegrationTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -45,6 +46,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemEffectsIntegrationTest do
 
     stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
     stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+
+    # These fixtures build partial Stats structs, so the real post-script stat
+    # recalc would crash on them; the recalc math is covered by StatusManagerTest.
+    stub(StatusManager, :recalculate_after_status_change, fn state -> state end)
 
     # A sibling async:false test may have replaced the boot-compiled
     # CompiledItemScripts with a single-item set; recompile the real catalog so

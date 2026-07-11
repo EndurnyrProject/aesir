@@ -84,11 +84,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
     {:reply, has_status, state}
   end
 
-  # Recomputes the player's stats and walk speed from the now-current set of
-  # active statuses and pushes any change to the client. Shared by both the
-  # apply and remove paths so the recalc logic lives in one place.
+  @doc """
+  Recomputes the player's stats and walk speed from the now-current set of
+  active statuses and pushes any change to the client. Shared by the apply and
+  remove paths, and by `ItemHandler` after an item-use script whose effect
+  started or ended a status, so the recalc logic lives in one place.
+  """
   @spec recalculate_after_status_change(map()) :: map()
-  defp recalculate_after_status_change(%{game_state: game_state} = state) do
+  def recalculate_after_status_change(%{game_state: game_state} = state) do
     updated_stats = Stats.calculate_stats(game_state.stats, game_state.character_id)
     updated_walk_speed = walk_speed_for(updated_stats)
 

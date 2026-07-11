@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
+  alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -62,7 +63,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
     case InventoryOps.remove(char_id, ctx.game_state.inventory, server_index, 1) do
       {:ok, new_inventory, _change} ->
         final_gs = %{ctx.game_state | inventory: new_inventory}
-        committed = StatsManager.update_game_state(state, final_gs)
+
+        recalced =
+          StatusManager.recalculate_after_status_change(%{state | game_state: final_gs})
+
+        committed = StatsManager.update_game_state(recalced, recalced.game_state)
 
         MessageRouter.send_to(state.connection_pid, InventoryView.item_removed(server_index, 1))
 
