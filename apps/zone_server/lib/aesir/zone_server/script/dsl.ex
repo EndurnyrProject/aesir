@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Npc.Events, as: NpcEvents
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
@@ -1450,7 +1451,8 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     max_hp = stats.derived_stats.max_hp
     max_sp = stats.derived_stats.max_sp
 
-    new_hp = clamp(hp_fun.(current.hp, max_hp), max_hp)
+    hp_delta = scale_received_heal(hp_fun.(current.hp, max_hp) - current.hp, ctx.char_id)
+    new_hp = clamp(current.hp + hp_delta, max_hp)
     new_sp = clamp(sp_fun.(current.sp, max_sp), max_sp)
 
     new_state = %{current | hp: new_hp, sp: new_sp}
@@ -1460,6 +1462,20 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     sync_sp(ctx, current.sp, new_sp)
 
     %{ctx | game_state: game_state}
+  end
+
+  # Scales the healed HP delta (never SP) by the target's `received_heal_rate`
+  # (SC_INCHEALRATE) before it is applied (rAthena `pc.cpp:10719-10720`). Only
+  # positive deltas are scaled; item/script heals never subtract HP here.
+  defp scale_received_heal(delta, _char_id) when delta <= 0, do: delta
+
+  defp scale_received_heal(delta, char_id) do
+    rate =
+      :player
+      |> ModifierCalculator.get_all_modifiers(char_id)
+      |> Map.get(:received_heal_rate, 0)
+
+    div(delta * (100 + rate), 100)
   end
 
   defp sync_hp(_ctx, same, same), do: :ok

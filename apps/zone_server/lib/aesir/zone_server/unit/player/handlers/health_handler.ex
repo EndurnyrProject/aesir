@@ -95,8 +95,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   def apply_heal(amount, _source_id, state) when amount > 0 do
     stats = state.game_state.stats
     max_hp = stats.derived_stats.max_hp
-    new_hp = min(stats.current_state.hp + amount, max_hp)
     char_id = state.game_state.character_id
+    scaled = scale_received_heal(amount, char_id)
+    new_hp = min(stats.current_state.hp + scaled, max_hp)
 
     updated_stats = %{stats | current_state: %{stats.current_state | hp: new_hp}}
     game_state = %{state.game_state | stats: updated_stats}
@@ -109,6 +110,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   end
 
   def apply_heal(_amount, _source_id, state), do: {:noreply, state}
+
+  # Scales a heal by the target's `received_heal_rate` (SC_INCHEALRATE) percent
+  # delta before it is applied (rAthena `skill.cpp:671-675`). Natural regen is
+  # not routed here, so it never double-dips this bonus.
+  defp scale_received_heal(amount, char_id) do
+    rate =
+      :player
+      |> ModifierCalculator.get_all_modifiers(char_id)
+      |> Map.get(:received_heal_rate, 0)
+
+    div(amount * (100 + rate), 100)
+  end
 
   @doc """
   Drains SP from the player, clamping at zero, then syncs and persists it.

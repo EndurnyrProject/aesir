@@ -136,7 +136,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "SC_EXPBOOST" => :sc_expboost,
     "SC_JEXPBOOST" => :sc_jexpboost,
     "SC_ITEMBOOST" => :sc_itemboost,
-    "SC_LIFEINSURANCE" => :sc_lifeinsurance
+    "SC_LIFEINSURANCE" => :sc_lifeinsurance,
+    "SC_INCHEALRATE" => :sc_inchealrate
   }
 
   @elements %{

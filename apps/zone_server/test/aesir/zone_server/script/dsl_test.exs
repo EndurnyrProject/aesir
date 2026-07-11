@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
   alias Aesir.ZoneServer.Unit.Emote
@@ -42,10 +43,12 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     Mimic.copy(MapData)
     Mimic.copy(SpecialEffect)
     Mimic.copy(Emote)
+    Mimic.copy(ModifierCalculator)
 
     stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
     stub(StatusInterpreter, :apply_status, fn _, _, _, _ -> :ok end)
     stub(StatusInterpreter, :remove_status, fn _, _, _ -> :ok end)
+    stub(ModifierCalculator, :get_all_modifiers, fn :player, _ -> %{} end)
 
     :ok
   end
@@ -80,6 +83,22 @@ defmodule Aesir.ZoneServer.Script.DslTest do
 
       assert ctx.game_state.stats.current_state.sp == 30
       assert_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_sp, value: 30}}}
+    end
+
+    test "scales the healed HP delta by received_heal_rate (once)" do
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, _ -> %{received_heal_rate: 50} end)
+
+      ctx = Dsl.heal(build_ctx(hp: 100), hp: 100)
+
+      assert ctx.game_state.stats.current_state.hp == 250
+    end
+
+    test "received_heal_rate does not scale SP heals" do
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, _ -> %{received_heal_rate: 50} end)
+
+      ctx = Dsl.heal(build_ctx(sp: 10), sp: 20)
+
+      assert ctx.game_state.stats.current_state.sp == 30
     end
   end
 

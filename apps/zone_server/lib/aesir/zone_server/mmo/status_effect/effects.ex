@@ -68,6 +68,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects do
     Effects.IncCri,
     Effects.IncDex,
     Effects.IncFlee2,
+    Effects.IncHealRate,
     Effects.IncInt,
     Effects.IncLuk,
     Effects.IncMatkRate,

@@ -24,8 +24,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHeal do
   not the combat `matk_min`/`matk_max`. With no MATK weapon the band collapses
   and the heal is deterministic, equal to `base + base_matk`.
 
-  Deferred: heal-rate bonuses (Meditatio, SC_INCHEALRATE, item scripts). All stat
-  modifiers other than the base formula are out of scope for this task.
+  The cast computes the base heal amount only. The recipient's `received_heal_rate`
+  bonus (SC_INCHEALRATE) is applied downstream on the generic `HealthHandler.apply_heal`
+  path that every `Combat.apply_heal` flows through. Still deferred here: Meditatio's
+  caster-side heal-power bonus.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 28,

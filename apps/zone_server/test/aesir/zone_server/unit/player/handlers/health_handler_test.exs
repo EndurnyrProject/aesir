@@ -170,6 +170,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       assert game_state.stats.current_state.hp == 70
     end
 
+    test "scales the heal by the target's received_heal_rate (once)" do
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 ->
+        %{received_heal_rate: 50}
+      end)
+
+      {:noreply, %{game_state: game_state}} =
+        HealthHandler.apply_heal(20, nil, build_state(50, :idle))
+
+      assert game_state.stats.current_state.hp == 80
+    end
+
+    test "leaves the heal unchanged with no received_heal_rate" do
+      {:noreply, %{game_state: game_state}} =
+        HealthHandler.apply_heal(20, nil, build_state(50, :idle))
+
+      assert game_state.stats.current_state.hp == 70
+    end
+
     test "persists the updated HP asynchronously" do
       expect(CharacterPersistence, :update_stats, fn 1, %{hp: 90}, [async: true] ->
         {:ok, %Character{}}
