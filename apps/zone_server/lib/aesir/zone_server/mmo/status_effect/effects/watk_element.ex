@@ -10,7 +10,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WatkElement do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_watk_element,
-    properties: [:buff]
+    properties: [:buff],
+    no_save: true
 
   @elements %{
     0 => :neutral,

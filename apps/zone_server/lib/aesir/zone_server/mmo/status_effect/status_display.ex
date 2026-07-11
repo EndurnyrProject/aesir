@@ -104,18 +104,28 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay do
   """
   @spec broadcast_state(Unit.unit_type(), integer()) :: :ok
   def broadcast_state(unit_type, unit_id) do
+    broadcast_area(unit_type, unit_id, state_packet(unit_type, unit_id))
+  end
+
+  @doc """
+  Builds the unit's current sprite-state aggregate as a `UnitStateChange`
+  packet, for owner-directed sends (the map-load self sync). The broadcast
+  flows only ever carry a unit's state to *other* observers, so without this
+  the owner never learns about state restored while they were not yet in the
+  spatial index (a cart re-mounted on spawn, persisted statuses).
+  """
+  @spec state_packet(Unit.unit_type(), integer()) :: UnitStateChange.t()
+  def state_packet(unit_type, unit_id) do
     %{body_state: b, health_state: h, effect_state: e, virtue: v} =
       aggregate(unit_type, unit_id)
 
-    packet = %UnitStateChange{
+    %UnitStateChange{
       unit_id: unit_id,
       body_state: b,
       health_state: h,
       effect_state: e,
       virtue: v
     }
-
-    broadcast_area(unit_type, unit_id, packet)
   end
 
   @doc """

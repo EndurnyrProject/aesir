@@ -8,7 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Pneuma do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_pneuma,
-    properties: [:buff]
+    properties: [:buff],
+    no_save: true
 
   @impl true
   def absorb_damage(_target, instance, %{is_short: false, dmg_type: :physical}, _context),

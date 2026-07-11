@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Quagmire do
     ],
     conflicts_with: [:sc_speedup1],
     prevented_by: [:sc_refresh, :sc_inspiration],
+    no_save: true,
     icon: :quagmire
 
   @impl true

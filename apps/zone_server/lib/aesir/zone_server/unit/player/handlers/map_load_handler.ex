@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
   alias Aesir.Commons.StatusParams
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.StatPoint
+  alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Npc.Warp
   alias Aesir.ZoneServer.Npc.Warps
@@ -69,6 +70,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
     StatusSync.send_stat_updates(connection_pid, game_state.stats)
     MessageRouter.send_to(connection_pid, InventoryView.inventory_list(game_state.inventory))
     maybe_send_cart_info(connection_pid, game_state)
+    send_own_status_sync(connection_pid, game_state.character_id)
 
     skill_list = SkillListView.build(game_state.stats.progression)
     MessageRouter.send_to(connection_pid, skill_list)
@@ -102,6 +104,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
       nil ->
         :ok
     end
+  end
+
+  # The spawn/visibility flows only carry a unit's sprite state and status
+  # icons to *other* observers, and the on-apply broadcasts during `init` fire
+  # before the player is in the spatial index — so nothing tells the owner
+  # about state restored at login (the cart re-mounted by `load_on_spawn`,
+  # persisted statuses). Mirrors rAthena's login self-sync in `pc_authok`
+  # (own options + EFST icons).
+  defp send_own_status_sync(connection_pid, char_id) do
+    MessageRouter.send_to(connection_pid, StatusDisplay.state_packet(:player, char_id))
+
+    :player
+    |> StatusDisplay.active_icons(char_id)
+    |> Enum.each(&MessageRouter.send_to(connection_pid, &1))
   end
 
   # Sends the cart dump on map load only for a mounted player; an unmounted

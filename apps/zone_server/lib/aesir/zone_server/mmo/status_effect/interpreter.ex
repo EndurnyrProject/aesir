@@ -43,6 +43,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   Returns `:ok` on success (including when the effect's `on_apply` consumed
   the application), or `{:error, reason}` when the status is unknown or the
   target is immune, protected or resisted it.
+
+  Passing `loaded: true` (rAthena `SCFLAG_LOADED`) marks the application as
+  the restore of a persisted status: it already passed every gate when first
+  applied, so immunity, prevention, conflict and resistance checks are
+  skipped and the given `duration` is used as-is.
   """
   @spec apply_status(unit_type(), integer(), atom(), StatusEntry.status_params()) ::
           :ok | {:error, atom()}
@@ -53,17 +58,31 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
         {:error, :unknown_status}
 
       definition ->
-        entity_info = get_entity_info(unit_type, unit_id)
-        duration_override = Keyword.get(status_params, :duration)
-
-        with :ok <- check_immunity(entity_info, definition),
-             :ok <- check_prevented(unit_type, unit_id, definition),
-             :ok <- check_conflicts(unit_type, unit_id, definition),
-             {:ok, duration} <- roll_resistance(definition, entity_info, duration_override) do
-          end_replaced_statuses(unit_type, unit_id, definition)
-          create_and_store(unit_type, unit_id, status_id, status_params, definition, duration)
+        if Keyword.get(status_params, :loaded, false) do
+          apply_loaded_status(unit_type, unit_id, status_id, status_params, definition)
+        else
+          apply_new_status(unit_type, unit_id, status_id, status_params, definition)
         end
     end
+  end
+
+  defp apply_new_status(unit_type, unit_id, status_id, status_params, definition) do
+    entity_info = get_entity_info(unit_type, unit_id)
+    duration_override = Keyword.get(status_params, :duration)
+
+    with :ok <- check_immunity(entity_info, definition),
+         :ok <- check_prevented(unit_type, unit_id, definition),
+         :ok <- check_conflicts(unit_type, unit_id, definition),
+         {:ok, duration} <- roll_resistance(definition, entity_info, duration_override) do
+      end_replaced_statuses(unit_type, unit_id, definition)
+      create_and_store(unit_type, unit_id, status_id, status_params, definition, duration)
+    end
+  end
+
+  defp apply_loaded_status(unit_type, unit_id, status_id, status_params, definition) do
+    duration = if definition.permanent, do: nil, else: Keyword.get(status_params, :duration)
+    end_replaced_statuses(unit_type, unit_id, definition)
+    create_and_store(unit_type, unit_id, status_id, status_params, definition, duration)
   end
 
   @doc """
@@ -333,7 +352,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       state: state,
       phase: phase || definition.initial_phase,
       started_at: System.system_time(:millisecond),
-      next_tick_at: now_ms + if(tick > 0, do: tick, else: 1000),
+      next_tick_at: if(tick > 0, do: now_ms + tick, else: nil),
       tick_count: 0,
       expires_at: nil
     }

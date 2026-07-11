@@ -27,6 +27,22 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Registry do
   end
 
   @doc """
+  Gets a status effect definition by the string form of its ID.
+
+  For data that crosses the VM boundary (persisted statuses), where converting
+  an arbitrary string to an atom would be unsafe. Returns the metadata map or
+  nil for unknown names.
+  """
+  @spec get_definition_by_name(String.t()) :: map() | nil
+  def get_definition_by_name(name) do
+    table_for(:status_effect_definitions)
+    |> :ets.tab2list()
+    |> Enum.find_value(fn {status_id, definition} ->
+      if Atom.to_string(status_id) == name, do: definition
+    end)
+  end
+
+  @doc """
   Loads all status effect definitions into the ETS table.
   """
   @spec load_definitions() :: :ok

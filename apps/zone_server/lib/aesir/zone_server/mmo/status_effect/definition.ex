@@ -45,6 +45,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     - `:tick_interval` - default tick interval in milliseconds
     - `:duration` - base duration in milliseconds
     - `:permanent` - when true, the status never auto-expires (ignores duration)
+    - `:no_save` - when true, the status is not persisted across logout (mirrors
+      rAthena's `NoSave` status flag); use it for session-bound statuses that are
+      rebuilt from other state or tied to live world objects
     - `:icon` - `:efst` id atom for the buff/debuff icon bar (resolved via `Mmo.Efst`)
     - `:opt1` - sprite body state, e.g. `:stone | :freeze` (`Mmo.Opt1`, single-valued)
     - `:opt2` - sprite health state, e.g. `:poison | :curse` (`Mmo.Opt2`, bitmask)
@@ -148,6 +151,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     tick_interval: nil,
     duration: nil,
     permanent: false,
+    no_save: false,
     icon: nil,
     opt1: nil,
     opt2: nil,
@@ -173,6 +177,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     tick_interval: {:integer, {:gt, 0}},
     duration: {:integer, {:gt, 0}},
     permanent: :boolean,
+    no_save: :boolean,
     icon: :atom,
     opt1: :atom,
     opt2: :atom,

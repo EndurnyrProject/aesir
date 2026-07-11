@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Benedictio do
     properties: [:buff],
     calc_flags: [:def_ele],
     prevented_by: [:sc_refresh, :sc_inspiration],
+    no_save: true,
     icon: :benedictio
 
   @impl true

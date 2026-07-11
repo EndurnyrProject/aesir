@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Stone do
     flags: [:no_move, :no_attack, :no_skill, :no_magic],
     prevented_by: [:sc_refresh, :sc_inspiration, :sc_protection],
     initial_phase: :wait,
+    tick_interval: 1_000,
     opt1: :stone
 
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers

@@ -33,4 +33,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorageTest do
       assert StatusStorage.get_status(:player, 3, :poison) == nil
     end
   end
+
+  describe "get_due_statuses/1" do
+    test "excludes tickless statuses from the due set" do
+      :ok = StatusStorage.apply_status(:player, 4, :sc_blessing, duration: 30_000)
+      :ok = StatusStorage.apply_status(:player, 4, :poison, tick: 1000, duration: 30_000)
+
+      due = StatusStorage.get_due_statuses(System.monotonic_time(:millisecond) + 2_000)
+
+      assert [{{:player, 4, :poison}, %StatusEntry{}}] = due
+      assert %StatusEntry{next_tick_at: nil} = StatusStorage.get_status(:player, 4, :sc_blessing)
+    end
+  end
 end

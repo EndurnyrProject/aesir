@@ -26,6 +26,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   Creates a new status effect entry and stores it in the ETS table.
   If a status with the same type already exists for the unit, it will be replaced.
 
+  A status with no tick interval (`tick <= 0`) gets a `nil` next_tick_at and is
+  never picked up by `get_due_statuses/1`; only statuses with periodic behavior
+  enter the tick loop.
+
   ## Parameters
   - unit_type: Type of unit (:player, :mob, :npc, etc.)
   - unit_id: The ID of the unit receiving the status
@@ -43,7 +47,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
 
     # Create status instance as a struct
     now_ms = System.monotonic_time(:millisecond)
-    tick_interval = if tick > 0, do: tick, else: 1000
 
     # Calculate expiration time
     expires_at =
@@ -67,7 +70,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
       phase: phase,
       started_at: System.system_time(:millisecond),
       expires_at: expires_at,
-      next_tick_at: now_ms + tick_interval,
+      next_tick_at: if(tick > 0, do: now_ms + tick, else: nil),
       tick_count: 0
     }
 
@@ -226,7 +229,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   """
   @spec get_due_statuses(integer()) :: list({{unit_type(), integer(), atom()}, StatusEntry.t()})
   def get_due_statuses(now_ms) do
-    # Match spec to find all entries where next_tick_at <= now_ms
+    # Match spec to find all entries where next_tick_at <= now_ms. A nil
+    # next_tick_at (tickless status) compares greater than any integer in
+    # Erlang term order, so those entries never match.
     match_spec = [
       {
         {:"$1", :"$2"},

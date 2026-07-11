@@ -22,6 +22,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
   - `source_id`: Alias for caster_id for backward compatibility (defaults to nil)
   - `state`: Custom state data for complex statuses (defaults to empty map)
   - `phase`: Current phase for multi-phase status effects (defaults to nil)
+  - `loaded`: Marks the restore of a persisted status, skipping the apply
+    gates (defaults to false)
   """
   @type status_params :: [
           val1: integer(),
@@ -34,7 +36,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
           duration: integer() | nil,
           source_id: integer() | nil,
           state: map(),
-          phase: atom() | nil
+          phase: atom() | nil,
+          loaded: boolean()
         ]
 
   @type t :: %__MODULE__{
@@ -50,7 +53,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
           phase: atom() | nil,
           started_at: integer(),
           expires_at: integer() | nil,
-          next_tick_at: integer(),
+          next_tick_at: integer() | nil,
           tick_count: non_neg_integer()
         }
 
@@ -79,7 +82,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
     :started_at,
     # When the status expires (or nil if permanent)
     :expires_at,
-    # When the next tick should process
+    # When the next tick should process (or nil for tickless statuses)
     :next_tick_at,
     # Number of ticks processed so far
     :tick_count
@@ -116,7 +119,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
         phase \\ nil
       ) do
     now_ms = System.monotonic_time(:millisecond)
-    tick_interval = if tick > 0, do: tick, else: 1000
 
     expires_at =
       if duration && duration > 0 do
@@ -138,7 +140,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
       phase: phase,
       started_at: System.system_time(:millisecond),
       expires_at: expires_at,
-      next_tick_at: now_ms + tick_interval,
+      next_tick_at: if(tick > 0, do: now_ms + tick, else: nil),
       tick_count: 0
     }
   end
@@ -156,8 +158,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
   """
   @spec schedule_next_tick(t(), integer()) :: t()
   def schedule_next_tick(%__MODULE__{} = entry, now_ms) do
-    tick_interval = if entry.tick > 0, do: entry.tick, else: 1000
-    %{entry | next_tick_at: now_ms + tick_interval}
+    %{entry | next_tick_at: if(entry.tick > 0, do: now_ms + entry.tick, else: nil)}
   end
 
   @doc """
@@ -176,9 +177,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
   def expired?(%__MODULE__{expires_at: expires_at}, now_ms), do: expires_at <= now_ms
 
   @doc """
-  Checks if a status is due for a tick update.
+  Checks if a status is due for a tick update. Tickless statuses never are.
   """
   @spec tick_due?(t(), integer()) :: boolean()
+  def tick_due?(%__MODULE__{next_tick_at: nil}, _now_ms), do: false
   def tick_due?(%__MODULE__{next_tick_at: next_tick_at}, now_ms), do: next_tick_at <= now_ms
 
   @doc """

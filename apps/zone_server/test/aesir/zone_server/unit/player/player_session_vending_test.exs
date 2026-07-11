@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionVendingTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.StatusPersistence
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Aesir.ZoneServer.Unit.Vending.Registry, as: VendingRegistry
 
@@ -107,10 +108,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionVendingTest do
     setup do
       Mimic.copy(CharacterPersistence)
       Mimic.copy(WarpHandler)
+      Mimic.copy(StatusPersistence)
 
       stub(CharacterPersistence, :update_position, fn _id, _x, _y, _map -> {:ok, %Character{}} end)
 
       stub(WarpHandler, :leave_current_map, fn _gs, _reason -> :ok end)
+
+      stub(StatusPersistence, :save_statuses, fn _char_id -> :ok end)
 
       test_pid = self()
 

@@ -123,6 +123,45 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     end
   end
 
+  describe "apply_status/4 loaded (persisted restore)" do
+    test "skips the resistance roll and stores the duration as-is" do
+      target_id = 20
+
+      setup_player_mock(target_id)
+      stub(Aesir.ZoneServer.Mmo.StatusEffect.Resistance, :roll_success, fn _ -> false end)
+
+      assert {:error, :resisted} =
+               Interpreter.apply_status(:player, target_id, :sc_provoke, val1: 10)
+
+      before_ms = System.monotonic_time(:millisecond)
+
+      assert :ok =
+               Interpreter.apply_status(:player, target_id, :sc_provoke,
+                 val1: 10,
+                 duration: 12_000,
+                 loaded: true
+               )
+
+      assert %{expires_at: expires_at} =
+               StatusStorage.get_status(:player, target_id, :sc_provoke)
+
+      assert expires_at >= before_ms + 12_000
+    end
+
+    test "restores a permanent status without an expiry" do
+      target_id = 21
+
+      setup_player_mock(target_id)
+      Registry.register_module(PermanentStatus)
+
+      assert :ok =
+               Interpreter.apply_status(:player, target_id, :sc_test_permanent, loaded: true)
+
+      assert %{expires_at: nil} =
+               StatusStorage.get_status(:player, target_id, :sc_test_permanent)
+    end
+  end
+
   describe "remove_status/2" do
     test "removes a status from a target" do
       target_id = 1

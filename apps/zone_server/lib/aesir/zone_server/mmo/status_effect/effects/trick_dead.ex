@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.TrickDead do
     properties: [:prevents_movement, :prevents_skills, :prevents_attack, :untargetable],
     flags: [:no_move, :no_attack, :no_skill],
     permanent: true,
+    no_save: true,
     icon: :trickdead,
     # NV_TRICKDEAD (143) is the only skill usable while feigning death: recasting
     # it toggles SC_TRICKDEAD off so the player stands back up.

@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Ruwach do
     properties: [:buff],
     duration: 10_000,
     tick_interval: 500,
+    no_save: true,
     option: :ruwach
 
   alias Aesir.ZoneServer.Mmo.Combat

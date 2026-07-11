@@ -50,13 +50,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntryTest do
       assert is_integer(entry.started_at)
     end
 
-    test "handles zero tick value by defaulting to 1000ms" do
+    test "a zero tick value marks the status tickless" do
       entry = StatusEntry.new(:poison, 10, 20, 30, 40, 0, 1)
-      now = System.monotonic_time(:millisecond)
 
       assert entry.tick == 0
-      assert entry.next_tick_at >= now + 990
-      assert entry.next_tick_at <= now + 1010
+      assert entry.next_tick_at == nil
+      refute StatusEntry.tick_due?(entry, System.monotonic_time(:millisecond))
     end
   end
 
@@ -109,13 +108,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntryTest do
       assert updated.next_tick_at == now + 2000
     end
 
-    test "uses default 1000ms if tick value is 0" do
+    test "keeps a tickless status out of the tick loop" do
       entry = StatusEntry.new(:poison, 10, 20, 30, 40, 0, 1)
       now = System.monotonic_time(:millisecond)
 
       updated = StatusEntry.schedule_next_tick(entry, now)
 
-      assert updated.next_tick_at == now + 1000
+      assert updated.next_tick_at == nil
     end
   end
 

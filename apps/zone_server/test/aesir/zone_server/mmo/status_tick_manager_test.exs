@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
   setup do
     stub(Interpreter, :process_tick, fn _type, _id, _status -> :ok end)
     stub(Interpreter, :remove_status, fn _type, _id, _status -> :ok end)
+    stub(UnitRegistry, :unit_exists?, fn _type, _id -> true end)
     :ok
   end
 
@@ -72,6 +73,48 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
       :ok = StatusStorage.update_status(:mob, @mob_id, @status, &%{&1 | expires_at: past()})
 
       assert tick() == :ok
+    end
+  end
+
+  describe "orphaned statuses" do
+    test "a due status of a unit missing from the registry is cleared, not processed" do
+      stub(UnitRegistry, :unit_exists?, fn :player, @player_id -> false end)
+      reject(&Interpreter.process_tick/3)
+
+      :ok = StatusStorage.apply_status(:player, @player_id, @status)
+      :ok = StatusStorage.update_next_tick(:player, @player_id, @status, past())
+
+      tick()
+
+      assert StatusStorage.get_unit_statuses(:player, @player_id) == []
+    end
+
+    test "an expired status of a unit missing from the registry is cleared, not processed" do
+      stub(UnitRegistry, :unit_exists?, fn :player, @player_id -> false end)
+      reject(&Interpreter.remove_status/3)
+
+      :ok = StatusStorage.apply_status(:player, @player_id, @status)
+      :ok = StatusStorage.update_status(:player, @player_id, @status, &%{&1 | expires_at: past()})
+
+      tick()
+
+      assert StatusStorage.get_unit_statuses(:player, @player_id) == []
+    end
+
+    test "the tick manager keeps processing other units after clearing an orphan" do
+      test_pid = self()
+      stub(UnitRegistry, :unit_exists?, fn _type, id -> id == @mob_id end)
+      stub(UnitRegistry, :get_unit, fn :mob, @mob_id -> {:ok, {MobState, %{}, test_pid}} end)
+
+      :ok = StatusStorage.apply_status(:player, @player_id, @status)
+      :ok = StatusStorage.update_next_tick(:player, @player_id, @status, past())
+      :ok = StatusStorage.apply_status(:mob, @mob_id, @status)
+      :ok = StatusStorage.update_next_tick(:mob, @mob_id, @status, past())
+
+      tick()
+
+      assert StatusStorage.get_unit_statuses(:player, @player_id) == []
+      assert_receive {:"$gen_cast", {:status_changed, @status, :tick}}
     end
   end
 

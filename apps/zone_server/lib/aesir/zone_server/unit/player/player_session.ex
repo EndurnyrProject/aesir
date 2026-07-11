@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.State, as: PartyState
@@ -52,6 +53,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.StatusPersistence
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Aesir.ZoneServer.Unit.Vending.Registry, as: VendingRegistry
@@ -264,6 +266,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # walk-speed penalty is recomputed. Runs after registration so the
     # status apply can resolve the unit's entity info.
     state = CartHandler.load_on_spawn(character, state)
+
+    # Restore the statuses persisted at logout (rAthena sc_data), consuming
+    # the saved rows. Runs after registration for the same reason as the cart.
+    state = StatusPersistence.restore_on_spawn(state)
 
     # Subscribe to this player's event topic. Kill rewards and other
     # player-directed domain events arrive here, keeping emitters
@@ -813,6 +819,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     end
 
     WarpHandler.leave_current_map(game_state, DespawnReason.logged_out())
+
+    # Persist the survivable statuses, then drop them all from StatusStorage:
+    # leaving entries behind for an unregistered unit would orphan them and
+    # the tick manager would have to garbage-collect them.
+    StatusPersistence.save_statuses(game_state.character_id)
+    StatusStorage.clear_unit_statuses(:player, game_state.character_id)
 
     # Clean up player data (only if this process still owns the registry entry)
     UnitRegistry.unregister_player(game_state.character_id, self())

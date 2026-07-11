@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sight do
     id: :sc_sight,
     properties: [:buff],
     duration: 10_000,
+    no_save: true,
     option: :sight
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers

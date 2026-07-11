@@ -149,20 +149,26 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
         {unit_type, unit_id}
       end)
 
-    # Process each unit's expired statuses
     Enum.each(unit_expirations, fn {{unit_type, unit_id}, statuses} ->
-      # Process each expired status for this unit
-      Enum.each(statuses, fn {{^unit_type, ^unit_id, status_type}, %StatusEntry{} = _entry} ->
-        Interpreter.remove_status(unit_type, unit_id, status_type)
-        notify_mob_session(unit_type, unit_id, status_type, :expired)
-      end)
-
-      # Notify the unit to recalculate stats after all expirations are processed
-      # For now, only notify player sessions
-      if unit_type == :player do
-        notify_player_session(unit_id)
+      if UnitRegistry.unit_exists?(unit_type, unit_id) do
+        process_unit_expirations(unit_type, unit_id, statuses)
+      else
+        clear_orphaned_statuses(unit_type, unit_id, statuses)
       end
     end)
+  end
+
+  defp process_unit_expirations(unit_type, unit_id, statuses) do
+    Enum.each(statuses, fn {{^unit_type, ^unit_id, status_type}, %StatusEntry{} = _entry} ->
+      Interpreter.remove_status(unit_type, unit_id, status_type)
+      notify_mob_session(unit_type, unit_id, status_type, :expired)
+    end)
+
+    # Notify the unit to recalculate stats after all expirations are processed
+    # For now, only notify player sessions
+    if unit_type == :player do
+      notify_player_session(unit_id)
+    end
   end
 
   defp process_tick_effects(now_ms) do
@@ -177,7 +183,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
     length(due_statuses)
   end
 
-  # credo:disable-for-next-line Credo.Check.Refactor.Nesting
   defp process_tick_batch(batch, now_ms) do
     # Group status ticks by unit for efficiency
     unit_ticks =
@@ -185,31 +190,46 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
         {unit_type, unit_id}
       end)
 
-    # Process each unit's status ticks
     Enum.each(unit_ticks, fn {{unit_type, unit_id}, statuses} ->
-      # Process each status tick for this unit
-      Enum.each(statuses, fn {{^unit_type, ^unit_id, status_type}, %StatusEntry{} = entry} ->
-        # Process the tick effect using the Interpreter
-        Interpreter.process_tick(unit_type, unit_id, status_type)
-
-        # Schedule next tick based on the status's tick value
-        # Default to 1000ms (1 second) if no tick value is specified
-        # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-        tick_interval = if entry.tick > 0, do: entry.tick, else: 1000
-        next_tick_at = now_ms + tick_interval
-
-        # Update the next tick time efficiently
-        StatusStorage.update_next_tick(unit_type, unit_id, status_type, next_tick_at)
-
-        notify_mob_session(unit_type, unit_id, status_type, :tick)
-      end)
-
-      # Notify the unit to recalculate stats after processing all statuses
-      # For now, only notify player sessions
-      if unit_type == :player do
-        notify_player_session(unit_id)
+      if UnitRegistry.unit_exists?(unit_type, unit_id) do
+        process_unit_ticks(unit_type, unit_id, statuses, now_ms)
+      else
+        clear_orphaned_statuses(unit_type, unit_id, statuses)
       end
     end)
+  end
+
+  defp process_unit_ticks(unit_type, unit_id, statuses, now_ms) do
+    Enum.each(statuses, fn {{^unit_type, ^unit_id, status_type}, %StatusEntry{} = entry} ->
+      # Process the tick effect using the Interpreter
+      Interpreter.process_tick(unit_type, unit_id, status_type)
+
+      # Schedule next tick based on the status's tick value; only statuses
+      # with a positive tick interval ever enter the due set
+      tick_interval = if entry.tick > 0, do: entry.tick, else: 1000
+
+      # Update the next tick time efficiently
+      StatusStorage.update_next_tick(unit_type, unit_id, status_type, now_ms + tick_interval)
+
+      notify_mob_session(unit_type, unit_id, status_type, :tick)
+    end)
+
+    # Notify the unit to recalculate stats after processing all statuses
+    # For now, only notify player sessions
+    if unit_type == :player do
+      notify_player_session(unit_id)
+    end
+  end
+
+  # A unit can vanish without running its cleanup (killed session, node
+  # restart), leaving its statuses behind in StatusStorage. Processing them
+  # would crash on the missing unit, so drop them and keep ticking.
+  defp clear_orphaned_statuses(unit_type, unit_id, statuses) do
+    Logger.warning(
+      "Clearing #{length(statuses)} orphaned status(es) for missing #{unit_type} #{unit_id}"
+    )
+
+    StatusStorage.clear_unit_statuses(unit_type, unit_id)
   end
 
   # Notifies a player session to recalculate stats after status changes.

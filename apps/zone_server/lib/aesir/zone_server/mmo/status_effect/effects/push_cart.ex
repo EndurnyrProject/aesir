@@ -24,7 +24,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PushCart do
     id: :sc_push_cart,
     properties: [:buff],
     calc_flags: [:speed],
-    permanent: true
+    permanent: true,
+    no_save: true
 
   alias Aesir.ZoneServer.Mmo.StatusEntry
 
