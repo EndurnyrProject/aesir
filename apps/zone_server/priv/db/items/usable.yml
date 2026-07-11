@@ -954,6 +954,7 @@
   buy: 1200
   id: 645
   name: Concentration Potion
+  on_use: sc_start(ctx, :sc_aspdpotion0, 1800000, 4)
   type: usable
   weight: 100
 - aegis_name: Awakening_Potion
@@ -988,6 +989,7 @@
     - thief
     - wizard
   name: Awakening Potion
+  on_use: sc_start(ctx, :sc_aspdpotion1, 1800000, 6)
   type: usable
   weight: 150
 - aegis_name: Berserk_Potion
@@ -1010,6 +1012,7 @@
     - taekwon
     - wizard
   name: Berserk Potion
+  on_use: sc_start(ctx, :sc_aspdpotion2, 1800000, 9)
   type: usable
   weight: 200
 - aegis_name: Union_Of_Tribe
@@ -1040,6 +1043,7 @@
   buy: 1450
   id: 662
   name: Authoritative Badge
+  on_use: sc_start(ctx, :sc_speedup0, 180000, 25)
   type: usable
   weight: 30
 - aegis_name: Korea_Rice_Cake
@@ -1088,16 +1092,19 @@
 - aegis_name: Gold_Coin
   id: 671
   name: Gold Coin
+  on_use: set_char_var(ctx, :RouletteGold, get_char_var(ctx, :RouletteGold, 0) + 1)
   type: usable
 - aegis_name: Copper_Coin
   buy: 100
   id: 673
   name: Bronze Coin
+  on_use: set_char_var(ctx, :RouletteBronze, get_char_var(ctx, :RouletteBronze, 0) + 1)
   type: usable
   weight: 40
 - aegis_name: Silver_Coin
   id: 675
   name: Silver Coin
+  on_use: set_char_var(ctx, :RouletteSilver, get_char_var(ctx, :RouletteSilver, 0) + 1)
   type: usable
 - aegis_name: Poison_Bottle
   buy: 5000
@@ -1130,17 +1137,23 @@
 - aegis_name: Realgar_Wine
   id: 682
   name: Distilled Fighting Spirit
+  on_use: sc_start(ctx, :sc_atkpotion, 60000, 30)
   type: usable
   weight: 100
 - aegis_name: Exorcize_Herb
   id: 683
   name: Herb of Incantation
+  on_use: sc_start(ctx, :sc_matkpotion, 60000, 30)
   type: usable
   weight: 50
 - aegis_name: Durian
   buy: 15000
   id: 684
   name: Durian
+  on_use: |-
+    ctx = sc_start(ctx, :sc_atkpotion, 60000, 10)
+    ctx = sc_start(ctx, :sc_matkpotion, 60000, 10)
+    ctx
   type: usable
   weight: 300
 - aegis_name: RAMADAN
@@ -1387,6 +1400,11 @@
   buy: 2
   id: 9909
   name: '[Scroll] Ex Def Potion'
+  on_use: |-
+    ctx = specialeffect2(ctx, :guard)
+    ctx = sc_start(ctx, :sc_def_rate, 1800000, 3)
+    ctx = sc_start(ctx, :sc_mdef_rate, 1800000, 3)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Royal_Secret_Box
@@ -2626,12 +2644,14 @@
   buy: 2
   id: 12016
   name: Speed Potion
+  on_use: sc_start(ctx, :sc_speedup1, 5000, 50)
   type: usable
   weight: 100
 - aegis_name: Slow_Down_Potion
   buy: 2
   id: 12017
   name: Slow Potion
+  on_use: sc_start(ctx, :sc_slowdown, 5000, 100)
   type: usable
   weight: 100
 - aegis_name: Fire_Cracker
@@ -2700,6 +2720,7 @@
   buy: 1000
   id: 12028
   name: Box of Thunder
+  on_use: sc_start(ctx, :sc_speedup0, 20000, 25)
   type: usable
   weight: 200
 - aegis_name: Gloomy_Box
@@ -2712,12 +2733,14 @@
   buy: 1000
   id: 12030
   name: Box of Resentment
+  on_use: sc_start(ctx, :sc_atkpotion, 60000, 20)
   type: usable
   weight: 200
 - aegis_name: Sleepy_Box
   buy: 1000
   id: 12031
   name: Box of Drowsiness
+  on_use: sc_start(ctx, :sc_matkpotion, 60000, 20)
   type: usable
   weight: 200
 - aegis_name: Box_Of_Storm
@@ -3921,12 +3944,17 @@
   buy: 2
   id: 12190
   name: Moon Cake
+  on_use: sc_start(ctx, :sc_speedup0, 180000, 25)
   type: usable
   weight: 300
 - aegis_name: Special_Moon_Cake
   buy: 2
   id: 12191
   name: Special Moon Cake
+  on_use: |-
+    ctx = sc_start(ctx, :sc_aspdpotion0, 600000, 4)
+    ctx = sc_start(ctx, :sc_speedup0, 600000, 25)
+    ctx
   type: usable
   weight: 300
 - aegis_name: Pumpkin_Pie
@@ -3974,6 +4002,7 @@
   buy: 20
   id: 12198
   name: Lucky Rice Cake
+  on_use: sc_start(ctx, :sc_incluk, 1200000, 21)
   type: usable
   weight: 100
 - aegis_name: Rice_Scroll
@@ -3996,36 +4025,60 @@
   buy: 2
   id: 12202
   name: Steamed Tongue
+  on_use: |-
+    ctx = sc_start(ctx, :sc_food_str_cash, 1800000, 10)
+    ctx = percent_heal(ctx, hp: 15, sp: 5)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Agi_Dish10_
   buy: 2
   id: 12203
   name: Steamed Scorpion
+  on_use: |-
+    ctx = sc_start(ctx, :sc_food_agi_cash, 1800000, 10)
+    ctx = percent_heal(ctx, hp: 15, sp: 5)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Int_Dish10_
   buy: 2
   id: 12204
   name: Dragon Breath Cocktail
+  on_use: |-
+    ctx = sc_start(ctx, :sc_food_int_cash, 1800000, 10)
+    ctx = percent_heal(ctx, hp: 15, sp: 5)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Dex_Dish10_
   buy: 2
   id: 12205
   name: Hwergelmir's Tonic
+  on_use: |-
+    ctx = sc_start(ctx, :sc_food_dex_cash, 1800000, 10)
+    ctx = percent_heal(ctx, hp: 15, sp: 5)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Luk_Dish10_
   buy: 2
   id: 12206
   name: Cooked Nine Tail's Tails
+  on_use: |-
+    ctx = sc_start(ctx, :sc_food_luk_cash, 1800000, 10)
+    ctx = percent_heal(ctx, hp: 15, sp: 5)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Vit_Dish10_
   buy: 2
   id: 12207
   name: Stew Of Immortality
+  on_use: |-
+    ctx = sc_start(ctx, :sc_food_vit_cash, 1800000, 10)
+    ctx = percent_heal(ctx, hp: 15, sp: 5)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Battle_Manual
@@ -4129,42 +4182,97 @@
   buy: 20
   id: 12226
   name: Examination 1
+  on_use: |-
+    ctx = sc_start(ctx, :sc_speedup0, 5400000, 25)
+    ctx = percent_heal(ctx, hp: 100, sp: 100)
+    ctx = sc_start(ctx, :sc_strfood, 5400000, 10)
+    ctx = sc_start(ctx, :sc_dexfood, 5400000, 5)
+    ctx = sc_start(ctx, :sc_atkpotion, 5400000, 22)
+    ctx = sc_start(ctx, :sc_matkfood, 5400000, 15)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Examination2
   buy: 20
   id: 12227
   name: Examination 2
+  on_use: |-
+    ctx = sc_start(ctx, :sc_speedup0, 5400000, 25)
+    ctx = percent_heal(ctx, hp: 100, sp: 100)
+    ctx = sc_start(ctx, :sc_intfood, 5400000, 8)
+    ctx = sc_start(ctx, :sc_vitfood, 5400000, 7)
+    ctx = sc_start(ctx, :sc_lukfood, 5400000, 7)
+    ctx = sc_start(ctx, :sc_atkpotion, 5400000, 10)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Examination3
   buy: 20
   id: 12228
   name: Examination 3
+  on_use: |-
+    ctx = sc_start(ctx, :sc_speedup0, 5400000, 25)
+    ctx = percent_heal(ctx, hp: 100, sp: 100)
+    ctx = sc_start(ctx, :sc_agifood, 5400000, 15)
+    ctx = sc_start(ctx, :sc_atkpotion, 5400000, 52)
+    ctx = sc_start(ctx, :sc_matkfood, 5400000, 10)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Examination4
   buy: 20
   id: 12229
   name: Examination 4
+  on_use: |-
+    ctx = sc_start(ctx, :sc_speedup0, 5400000, 25)
+    ctx = percent_heal(ctx, hp: 100, sp: 100)
+    ctx = sc_start(ctx, :sc_strfood, 5400000, 3)
+    ctx = sc_start(ctx, :sc_agifood, 5400000, 5)
+    ctx = sc_start(ctx, :sc_vitfood, 5400000, 10)
+    ctx = sc_start(ctx, :sc_matkfood, 5400000, 52)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Examination5
   buy: 20
   id: 12230
   name: Examination 5
+  on_use: |-
+    ctx = sc_start(ctx, :sc_speedup0, 5400000, 25)
+    ctx = percent_heal(ctx, hp: 100, sp: 100)
+    ctx = sc_start(ctx, :sc_intfood, 5400000, 3)
+    ctx = sc_start(ctx, :sc_dexfood, 5400000, 12)
+    ctx = sc_start(ctx, :sc_atkpotion, 5400000, 20)
+    ctx = sc_start(ctx, :sc_matkfood, 5400000, 20)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Examination6
   buy: 20
   id: 12231
   name: Examination 6
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 100, sp: 100)
+    ctx = sc_start(ctx, :sc_speedup0, 5400000, 25)
+    ctx = sc_start(ctx, :sc_strfood, 5400000, 6)
+    ctx = sc_start(ctx, :sc_dexfood, 5400000, 6)
+    ctx = sc_start(ctx, :sc_agifood, 5400000, 6)
+    ctx = sc_start(ctx, :sc_intfood, 5400000, 6)
+    ctx = sc_start(ctx, :sc_vitfood, 5400000, 6)
+    ctx = sc_start(ctx, :sc_lukfood, 5400000, 6)
+    ctx = sc_start(ctx, :sc_atkpotion, 5400000, 24)
+    ctx = sc_start(ctx, :sc_matkfood, 5400000, 24)
+    ctx
   type: healing
   weight: 50
 - aegis_name: Gingerbread
   buy: 20
   id: 12232
   name: Ginger Bread
+  on_use: |-
+    ctx = sc_start(ctx, :sc_aspdpotion1, 900000, 0)
+    ctx = sc_start(ctx, :sc_speedup0, 900000, 25)
+    ctx
   type: usable
   weight: 150
 - aegis_name: Kvass
@@ -4271,6 +4379,7 @@
   equip_level_min: 20
   id: 12247
   name: Halo-Halo
+  on_use: sc_start(ctx, :sc_incallstatus, 600000, 3)
   type: usable
   weight: 100
 - aegis_name: Masquerade_Ball_Box
@@ -4373,6 +4482,7 @@
 - aegis_name: Inspector_Certificate_
   id: 12262
   name: Authoritative Badge
+  on_use: sc_start(ctx, :sc_speedup0, 540000, 25)
   type: usable
   weight: 10
 - aegis_name: Comp_Battle_Manual
@@ -4410,18 +4520,24 @@
   buy: 2
   id: 12268
   name: Rainbow Cake
+  on_use: |-
+    ctx = sc_start(ctx, :sc_atkpotion, 60000, 10)
+    ctx = sc_start(ctx, :sc_matkfood, 60000, 10)
+    ctx
   type: usable
   weight: 70
 - aegis_name: Tasty_Colonel
   buy: 2
   id: 12269
   name: Tasty Pink Ration
+  on_use: sc_start(ctx, :sc_atkpotion, 600000, 15)
   type: usable
   weight: 70
 - aegis_name: Tasty_Major
   buy: 2
   id: 12270
   name: Tasty White Ration
+  on_use: sc_start(ctx, :sc_matkpotion, 600000, 15)
   type: usable
   weight: 70
 - aegis_name: Mre_A
@@ -4496,6 +4612,11 @@
 - aegis_name: Internet_Cafe1
   id: 12282
   name: Internet Cafe1
+  on_use: |-
+    ctx = sc_start(ctx, :sc_incallstatus, 5400000, 3)
+    ctx = sc_start(ctx, :sc_atkpotion, 5400000, 15)
+    ctx = sc_start(ctx, :sc_matkpotion, 5400000, 15)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Internet_Cafe2
@@ -4511,6 +4632,13 @@
 - aegis_name: Internet_Cafe4
   id: 12285
   name: Internet Cafe4
+  on_use: |-
+    ctx = sc_start(ctx, :sc_incdex, 5400000, 8)
+    ctx = sc_start(ctx, :sc_incluk, 5400000, 4)
+    ctx = sc_start(ctx, :sc_increaseagi, 5400000, 6)
+    ctx = sc_start(ctx, :sc_atkpotion, 5400000, 24)
+    ctx = sc_start(ctx, :sc_matkpotion, 5400000, 24)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Masquerade_Ball_Box2
@@ -4678,6 +4806,10 @@
 - aegis_name: Strawberry_Cake
   id: 12319
   name: Rune Strawberry Cake
+  on_use: |-
+    ctx = sc_start(ctx, :sc_atkpotion, 600000, 5)
+    ctx = sc_start(ctx, :sc_matkpotion, 600000, 5)
+    ctx
   type: usable
   weight: 300
 - aegis_name: Pineapple_Juice
@@ -4692,6 +4824,7 @@
 - aegis_name: Spicy_Sandwich
   id: 12321
   name: Arunafeltz Desert Sandwich
+  on_use: sc_start(ctx, :sc_inccri, 600000, 7)
   type: usable
   weight: 300
 - aegis_name: Chocolate_Pie
@@ -4722,12 +4855,14 @@
   buy: 1000
   id: 12327
   name: Charm Of Luck
+  on_use: sc_start(ctx, :sc_incluk, 3600000, 20)
   type: usable
   weight: 50
 - aegis_name: Charm_Of_Happiness
   buy: 1800
   id: 12328
   name: Charm Of Happiness
+  on_use: sc_start(ctx, :sc_incallstatus, 20000, 10)
   type: usable
   weight: 100
 - aegis_name: Recall_MaleGM
@@ -4787,6 +4922,11 @@
   buy: 100
   id: 12338
   name: Grilled Corn
+  on_use: |-
+    ctx = sc_start(ctx, :sc_incstr, 180000, 2)
+    ctx = sc_start(ctx, :sc_incint, 180000, 2)
+    ctx = sc_start(ctx, :sc_increaseagi, 180000, 2)
+    ctx
   type: usable
   weight: 100
 - aegis_name: Cherish_Box_Ori
@@ -5146,6 +5286,7 @@
 - aegis_name: Rune_Kn_Test_Int
   id: 12401
   name: Rune Kn Test Int
+  on_use: sc_start(ctx, :sc_incint, 300000, 40)
   type: usable
 - aegis_name: 29Fruit
   id: 12402
@@ -5162,6 +5303,10 @@
   buy: 20
   id: 12404
   name: Acti Potion
+  on_use: |-
+    ctx = specialeffect2(ctx, :steal)
+    ctx = sc_start(ctx, :sc_vitalize_potion, 120000, 2)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Underripe_Yggseed
@@ -5232,30 +5377,41 @@
   buy: 100
   id: 12417
   name: Boost500
+  on_use: sc_start(ctx, :sc_boost500, 500000, 10)
   type: usable
   weight: 50
 - aegis_name: Full_SwingK
   buy: 100
   id: 12418
   name: Full SwingK
+  on_use: |-
+    ctx = specialeffect2(ctx, :bash3d)
+    ctx = sc_start(ctx, :sc_full_swing_k, 500000, 50)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Mana_Plus
   buy: 100
   id: 12419
   name: Mana Plus
+  on_use: |-
+    ctx = specialeffect2(ctx, :bash3d)
+    ctx = sc_start(ctx, :sc_mana_plus, 500000, 50)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Stamina_Up_M
   buy: 100
   id: 12420
   name: Stamina Up M
+  on_use: sc_start(ctx, :sc_mustle_m, 500000, 5)
   type: usable
   weight: 50
 - aegis_name: Digestive_F
   buy: 10
   id: 12421
   name: Falmons F
+  on_use: sc_start(ctx, :sc_life_force_f, 500000, 5)
   type: usable
   weight: 10
 - aegis_name: HP_Increase_PotionS
@@ -5298,36 +5454,46 @@
   buy: 10
   id: 12428
   name: Concentrated White Potion Z
+  on_use: |-
+    ctx = sc_start(ctx, :sc_extract_white_potion_z, 500000, 20)
+    ctx = heal(ctx, hp: 1000)
+    ctx
   type: healing
   weight: 70
 - aegis_name: Savage_BBQ
   id: 12429
   name: Savage Full Roast
+  on_use: sc_start(ctx, :sc_savage_steak, 300000, 20)
   type: usable
   weight: 50
 - aegis_name: Wug_Blood_Cocktail
   id: 12430
   name: Cocktail Warg Blood
+  on_use: sc_start(ctx, :sc_cocktail_warg_blood, 300000, 20)
   type: usable
   weight: 50
 - aegis_name: Minor_Brisket
   id: 12431
   name: Minor Stew
+  on_use: sc_start(ctx, :sc_minor_bbq, 300000, 20)
   type: usable
   weight: 50
 - aegis_name: Siroma_Icetea
   id: 12432
   name: Siroma Iced Tea
+  on_use: sc_start(ctx, :sc_siroma_ice_tea, 300000, 20)
   type: usable
   weight: 50
 - aegis_name: Drocera_Herb_Stew
   id: 12433
   name: Drosera Herb Salad
+  on_use: sc_start(ctx, :sc_drocera_herb_steamed, 300000, 20)
   type: usable
   weight: 50
 - aegis_name: Petti_Tail_Noodle
   id: 12434
   name: Petite Tail Noodles
+  on_use: sc_start(ctx, :sc_putti_tails_noodles, 300000, 20)
   type: usable
   weight: 50
 - aegis_name: Black_Thing
@@ -5345,6 +5511,7 @@
   buy: 10
   id: 12437
   name: Concentrated Ceromain Soup
+  on_use: sc_start(ctx, :sc_extract_salamine_juice, 500000, 10)
   type: usable
   weight: 50
 - aegis_name: F_Giant_Fly_Wing
@@ -5469,11 +5636,19 @@
 - aegis_name: F_Glass_Of_Illusion
   id: 12457
   name: F Glass Of Illusion
+  on_use: |-
+    ctx = specialeffect2(ctx, :steal)
+    ctx = sc_start(ctx, :sc_incflee2, 60000, 20)
+    ctx
   type: usable
   weight: 10
 - aegis_name: F_Abrasive
   id: 12458
   name: F Abrasive
+  on_use: |-
+    ctx = specialeffect2(ctx, :magicalatthit)
+    ctx = sc_start(ctx, :sc_inccri, 300000, 30)
+    ctx
   type: usable
   weight: 10
 - aegis_name: F_Med_Life_Potion
@@ -5494,18 +5669,34 @@
 - aegis_name: F_B_Mdef_Potion
   id: 12462
   name: F B Mdef Potion
+  on_use: |-
+    ctx = specialeffect2(ctx, :spellbreaker)
+    ctx = sc_start(ctx, :sc_mdef_rate, 180000, 3)
+    ctx
   type: usable
 - aegis_name: F_S_Mdef_Potion
   id: 12463
   name: F S Mdef Potion
+  on_use: |-
+    ctx = specialeffect2(ctx, :spellbreaker)
+    ctx = sc_start(ctx, :sc_mdef_rate, 60000, 3)
+    ctx
   type: usable
 - aegis_name: F_B_Def_Potion
   id: 12464
   name: F B Def Potion
+  on_use: |-
+    ctx = specialeffect2(ctx, :guard)
+    ctx = sc_start(ctx, :sc_def_rate, 180000, 3)
+    ctx
   type: usable
 - aegis_name: F_S_Def_Potion
   id: 12465
   name: F S Def Potion
+  on_use: |-
+    ctx = specialeffect2(ctx, :guard)
+    ctx = sc_start(ctx, :sc_def_rate, 60000, 3)
+    ctx
   type: usable
 - aegis_name: F_Blessing_10_Scroll
   buy: 2
@@ -5768,11 +5959,19 @@
 - aegis_name: E_Glass_Of_Illusion
   id: 12513
   name: E Glass Of Illusion
+  on_use: |-
+    ctx = specialeffect2(ctx, :steal)
+    ctx = sc_start(ctx, :sc_incflee2, 60000, 20)
+    ctx
   type: usable
   weight: 10
 - aegis_name: E_Abrasive
   id: 12514
   name: E Abrasive
+  on_use: |-
+    ctx = specialeffect2(ctx, :magicalatthit)
+    ctx = sc_start(ctx, :sc_inccri, 300000, 30)
+    ctx
   type: usable
   weight: 10
 - aegis_name: E_Med_Life_Potion
@@ -6230,6 +6429,10 @@
 - aegis_name: Magic_Candy
   id: 12596
   name: Magic Candy
+  on_use: |-
+    ctx = specialeffect2(ctx, :hasteup)
+    ctx = sc_start(ctx, :sc_magiccandy, 60000, 0)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Opor_Ayam
@@ -6514,6 +6717,12 @@
   buy: 20
   id: 12646
   name: Fried Octopus Legs
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 5, sp: 5)
+    ctx = sc_start(ctx, :sc_lukfood, 600000, 9)
+    ctx = sc_start(ctx, :sc_atkpotion, 600000, 20)
+    ctx = sc_start(ctx, :sc_matkpotion, 600000, 20)
+    ctx
   type: usable
   weight: 30
 - aegis_name: Ink_Ball
@@ -6673,6 +6882,10 @@
   buy: 20
   id: 12668
   name: Thai Perfume ASPD
+  on_use: |-
+    ctx = specialeffect2(ctx, :magicalatthit)
+    ctx = sc_start(ctx, :sc_skf_aspd, 600000, 3)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Thai_Perfume_CAST
@@ -6780,6 +6993,7 @@
 - aegis_name: ASPD_Potion
   id: 12684
   name: ASPD Potion
+  on_use: sc_start(ctx, :sc_atthaste_cash, 900000, 3)
   type: usable
   weight: 10
 - aegis_name: Gryphon_Egg_Scroll
@@ -6925,6 +7139,7 @@
 - aegis_name: Guyak_Pudding
   id: 12710
   name: Guyak Pudding
+  on_use: sc_start(ctx, :sc_speedup1, 300000, 50)
   type: usable
   weight: 200
 - aegis_name: Pretzel
@@ -7114,11 +7329,19 @@
   buy: 1
   id: 12740
   name: Amplification Scroll
+  on_use: |-
+    ctx = specialeffect2(ctx, :potion_berserk)
+    ctx = sc_start(ctx, :sc_str_scroll, 60000, 20)
+    ctx
   type: usable
 - aegis_name: Inc_Int_Scroll
   buy: 1
   id: 12741
   name: Intellect Amplification Scroll
+  on_use: |-
+    ctx = specialeffect2(ctx, :spellbreaker)
+    ctx = sc_start(ctx, :sc_int_scroll, 60000, 20)
+    ctx
   type: usable
 - aegis_name: Valentine_Gift_Box1
   id: 12742
@@ -7227,18 +7450,21 @@
   buy: 20
   id: 12760
   name: Bubble Gum Green
+  on_use: sc_start(ctx, :sc_incstr, 1200000, 10)
   type: usable
   weight: 10
 - aegis_name: Bubble_Gum_Yellow
   buy: 20
   id: 12761
   name: Bubble Gum Yellow
+  on_use: sc_start(ctx, :sc_incint, 1200000, 10)
   type: usable
   weight: 10
 - aegis_name: Bubble_Gum_Orange
   buy: 20
   id: 12762
   name: Bubble Gum Orange
+  on_use: sc_start(ctx, :sc_incdex, 1200000, 10)
   type: usable
   weight: 10
 - aegis_name: Bubble_Gum_Red
@@ -7351,6 +7577,7 @@
 - aegis_name: Change_Slot_Card
   id: 12786
   name: Character Position Change Coupon
+  on_use: set_char_var(ctx, :CharMoves, get_char_var(ctx, :CharMoves, 0) + 1)
   type: usable
 - aegis_name: Diabolic_Scroll
   buy: 20
@@ -7373,17 +7600,26 @@
 - aegis_name: Change_Name_Card
   id: 12790
   name: Character Name Change Coupon
+  on_use: set_char_var(ctx, :CharRename, get_char_var(ctx, :CharRename, 0) + 1)
   type: usable
 - aegis_name: Combat_Pill
   buy: 20
   id: 12791
   name: Combat Pill
+  on_use: |-
+    ctx = specialeffect2(ctx, :potion_berserk)
+    ctx = sc_start(ctx, :sc_combat_pill, 600000, 5)
+    ctx
   type: usable
   weight: 150
 - aegis_name: P_Combat_Pill
   buy: 20
   id: 12792
   name: P Combat Pill
+  on_use: |-
+    ctx = specialeffect2(ctx, :potion_berserk)
+    ctx = sc_start(ctx, :sc_combat_pill2, 600000, 10)
+    ctx
   type: usable
   weight: 150
 - aegis_name: Combat_Pill_Box10
@@ -7408,6 +7644,10 @@
   buy: 20
   id: 12796
   name: Red Booster
+  on_use: |-
+    ctx = specialeffect2(ctx, :potion_berserk)
+    ctx = sc_start(ctx, :sc_2011rwc_scroll, 600000, 0)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Wish_Maiden_Scroll
@@ -7458,6 +7698,10 @@
   buy: 20
   id: 12805
   name: Mystic Powder
+  on_use: |-
+    ctx = specialeffect2(ctx, :wind)
+    ctx = sc_start(ctx, :sc_mysticpowder, 300000, 0)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Scaraba_Scroll
@@ -7845,6 +8089,16 @@
   buy: 20
   id: 12883
   name: Almighty
+  on_use: |-
+    ctx = specialeffect2(ctx, :bash3d)
+    ctx = sc_start(ctx, :sc_almighty, 1800000, 30)
+    ctx = sc_start(ctx, :sc_food_str_cash, 1800000, 10)
+    ctx = sc_start(ctx, :sc_food_agi_cash, 1800000, 10)
+    ctx = sc_start(ctx, :sc_food_int_cash, 1800000, 10)
+    ctx = sc_start(ctx, :sc_food_dex_cash, 1800000, 10)
+    ctx = sc_start(ctx, :sc_food_luk_cash, 1800000, 10)
+    ctx = sc_start(ctx, :sc_food_vit_cash, 1800000, 10)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Infinite_Center_Potion
@@ -14469,6 +14723,7 @@
   buy: 800
   id: 14509
   name: Light Concentration Potion
+  on_use: sc_start(ctx, :sc_aspdpotion0, 1800000, 4)
   type: usable
   weight: 20
 - aegis_name: Light_Awakening_Pot
@@ -14503,6 +14758,7 @@
     - thief
     - wizard
   name: Light Awakening Potion
+  on_use: sc_start(ctx, :sc_aspdpotion1, 1800000, 6)
   type: usable
   weight: 20
 - aegis_name: Light_Berserk_Pot
@@ -14525,6 +14781,7 @@
     - taekwon
     - wizard
   name: Light Berserk Potion
+  on_use: sc_start(ctx, :sc_aspdpotion2, 1800000, 9)
   type: usable
   weight: 20
 - aegis_name: Meteor_10_Scroll
@@ -14598,11 +14855,13 @@
 - aegis_name: Chewy_Ricecake
   id: 14525
   name: Chewy Ricecake
+  on_use: sc_start(ctx, :sc_atkpotion, 1800000, 10)
   type: usable
   weight: 10
 - aegis_name: Oriental_Pastry
   id: 14526
   name: Oriental Pastry
+  on_use: sc_start(ctx, :sc_matkpotion, 1800000, 10)
   type: usable
   weight: 10
 - aegis_name: Dun_Tele_Scroll1
@@ -14658,6 +14917,10 @@
 - aegis_name: Abrasive
   id: 14536
   name: Abrasive
+  on_use: |-
+    ctx = specialeffect2(ctx, :magicalatthit)
+    ctx = sc_start(ctx, :sc_inccri, 300000, 30)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Regeneration_Potion
@@ -14668,6 +14931,10 @@
 - aegis_name: Glass_Of_Illusion
   id: 14538
   name: Glass of Illusion
+  on_use: |-
+    ctx = specialeffect2(ctx, :steal)
+    ctx = sc_start(ctx, :sc_incflee2, 60000, 20)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Shadow_Armor_S
@@ -14683,21 +14950,37 @@
 - aegis_name: S_Def_Potion
   id: 14541
   name: Small Defense Potion
+  on_use: |-
+    ctx = specialeffect2(ctx, :guard)
+    ctx = sc_start(ctx, :sc_def_rate, 60000, 3)
+    ctx
   type: usable
   weight: 10
 - aegis_name: B_Def_Potion
   id: 14542
   name: Big Defense Potion
+  on_use: |-
+    ctx = specialeffect2(ctx, :guard)
+    ctx = sc_start(ctx, :sc_def_rate, 180000, 3)
+    ctx
   type: usable
   weight: 10
 - aegis_name: S_Mdef_Potion
   id: 14543
   name: Small Magic Defense Potion
+  on_use: |-
+    ctx = specialeffect2(ctx, :spellbreaker)
+    ctx = sc_start(ctx, :sc_mdef_rate, 60000, 3)
+    ctx
   type: usable
   weight: 10
 - aegis_name: B_Mdef_Potion
   id: 14544
   name: Big Magic Defense Potion
+  on_use: |-
+    ctx = specialeffect2(ctx, :spellbreaker)
+    ctx = sc_start(ctx, :sc_mdef_rate, 180000, 3)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Battle_Manual_X3
@@ -15033,6 +15316,10 @@
 - aegis_name: Spark_Candy
   id: 14586
   name: Jumping Candy
+  on_use: |-
+    ctx = specialeffect2(ctx, :hasteup)
+    ctx = sc_start(ctx, :sc_sparkcandy, 60000, 0)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Repair_Scroll_
@@ -15111,6 +15398,12 @@
 - aegis_name: Tyr's_Blessing
   id: 14601
   name: Tyr's Blessing
+  on_use: |-
+    ctx = sc_start(ctx, :sc_fleefood, 300000, 30)
+    ctx = sc_start(ctx, :sc_hitfood, 300000, 30)
+    ctx = sc_start(ctx, :sc_atkpotion, 300000, 20)
+    ctx = sc_start(ctx, :sc_matkpotion, 300000, 20)
+    ctx
   type: usable
   weight: 10
 - aegis_name: TaogunkaS
@@ -15142,12 +15435,14 @@
   buy: 10000
   id: 14607
   name: Luxurious Western Food
+  on_use: sc_start(ctx, :sc_incallstatus, 3600000, 3)
   type: usable
   weight: 600
 - aegis_name: Luxurious_Dinner_E
   buy: 20000
   id: 14608
   name: Manchu-Han Imperial Feast
+  on_use: sc_start(ctx, :sc_incallstatus, 3600000, 6)
   type: usable
   weight: 1200
 - aegis_name: Spoiled_Cuisine
@@ -15176,6 +15471,11 @@
 - aegis_name: Ex_Def_Potion
   id: 14614
   name: Ex Def Potion
+  on_use: |-
+    ctx = specialeffect2(ctx, :guard)
+    ctx = sc_start(ctx, :sc_def_rate, 1800000, 3)
+    ctx = sc_start(ctx, :sc_mdef_rate, 1800000, 3)
+    ctx
   type: usable
   weight: 10
 - aegis_name: STR_Biscuit_Stick
@@ -15266,6 +15566,10 @@
 - aegis_name: Orleans_Full_Course
   id: 14646
   name: Orleans Full Course
+  on_use: |-
+    ctx = specialeffect2(ctx, :bash3d)
+    ctx = sc_start(ctx, :sc_almighty, 1800000, 30)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Sealed_D_Lord_Scroll
@@ -15310,6 +15614,7 @@
   buy: 20
   id: 14674
   name: Cup Of Boza
+  on_use: sc_start(ctx, :sc_cup_of_boza, 120000, 0)
   type: usable
   weight: 10
 - aegis_name: Shadow_Box2
@@ -15621,6 +15926,12 @@
   buy: 2
   id: 14862
   name: "[Scroll] Tyr's Blessing"
+  on_use: |-
+    ctx = sc_start(ctx, :sc_fleefood, 300000, 30)
+    ctx = sc_start(ctx, :sc_hitfood, 300000, 30)
+    ctx = sc_start(ctx, :sc_atkpotion, 300000, 20)
+    ctx = sc_start(ctx, :sc_matkpotion, 300000, 20)
+    ctx
   type: usable
   weight: 10
 - aegis_name: DF_Holy_Armor_S
@@ -15643,11 +15954,19 @@
 - aegis_name: UltimateCook_S
   id: 14886
   name: '[Scroll] Ultimate Cook'
+  on_use: |-
+    ctx = specialeffect2(ctx, :bash3d)
+    ctx = sc_start(ctx, :sc_ultimatecook, 1800000, 10)
+    ctx
   type: usable
   weight: 10
 - aegis_name: EF_UltimateCook
   id: 14887
   name: '[Not For Sale] Ultimate Cook'
+  on_use: |-
+    ctx = specialeffect2(ctx, :bash3d)
+    ctx = sc_start(ctx, :sc_ultimatecook, 1800000, 10)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Korea_Rice_Cake_B
@@ -23511,6 +23830,7 @@
 - aegis_name: Center_Potion_B
   id: 22542
   name: '[Not For Sale] Concentration Potion'
+  on_use: sc_start(ctx, :sc_aspdpotion0, 1800000, 4)
   type: usable
   weight: 100
 - aegis_name: Berserk_Potion_B
@@ -23532,6 +23852,7 @@
     - taekwon
     - wizard
   name: '[Not For Sale] Berserk Potion'
+  on_use: sc_start(ctx, :sc_aspdpotion2, 1800000, 9)
   type: usable
   weight: 200
 - aegis_name: Awakening_Potion_B
@@ -23565,18 +23886,21 @@
     - thief
     - wizard
   name: '[Not For Sale] Awakening Potion'
+  on_use: sc_start(ctx, :sc_aspdpotion1, 1800000, 6)
   type: usable
   weight: 150
 - aegis_name: Speed_Up_Potion_B
   buy: 10
   id: 22545
   name: Speed Potion
+  on_use: sc_start(ctx, :sc_speedup1, 5000, 50)
   type: usable
   weight: 100
 - aegis_name: Slow_Down_Potion_B
   buy: 10
   id: 22546
   name: Slow Potion
+  on_use: sc_start(ctx, :sc_slowdown, 5000, 100)
   type: usable
   weight: 100
 - aegis_name: Anodyne_B
@@ -23892,6 +24216,10 @@
   buy: 20
   id: 22659
   name: Pig Steamed Ribs
+  on_use: |-
+    ctx = specialeffect2(ctx, :enhance)
+    ctx = sc_start(ctx, :sc_pork_rib_stew, 180000, 0)
+    ctx
   type: healing
   weight: 100
 - aegis_name: Sealed_Letter
@@ -24243,36 +24571,42 @@
   buy: 10
   id: 22771
   name: Bluefin Tuna Skewer
+  on_use: sc_start(ctx, :sc_incatkrate, 5000, 30)
   type: healing
   weight: 10
 - aegis_name: Snapper_Skwered
   buy: 10
   id: 22772
   name: Sea Bream Skewer
+  on_use: sc_start(ctx, :sc_incmatkrate, 5000, 30)
   type: healing
   weight: 10
 - aegis_name: Piranha_Skewered
   buy: 10
   id: 22773
   name: Piranha Skewer
+  on_use: sc_start(ctx, :sc_aspdpotion0, 5000, 5)
   type: healing
   weight: 10
 - aegis_name: Salmon_Skewered
   buy: 10
   id: 22774
   name: Salmon Skewer
+  on_use: sc_start(ctx, :sc_speedup0, 5000, 25)
   type: healing
   weight: 10
 - aegis_name: Eel_Skewered
   buy: 10
   id: 22775
   name: Eels Skewer
+  on_use: sc_start(ctx, :sc_def_rate, 5000, 30)
   type: healing
   weight: 10
 - aegis_name: Carp_Skewered
   buy: 10
   id: 22776
   name: Carp Skewer
+  on_use: sc_start(ctx, :sc_mdef_rate, 5000, 30)
   type: healing
   weight: 10
 - aegis_name: BuffGiftBox
@@ -24348,16 +24682,36 @@
 - aegis_name: G_Almighty
   id: 22819
   name: True Almighty
+  on_use: |-
+    ctx = specialeffect2(ctx, :bash3d)
+    ctx = sc_start(ctx, :sc_almighty, 3600000, 30)
+    ctx = sc_start(ctx, :sc_food_str_cash, 3600000, 10)
+    ctx = sc_start(ctx, :sc_food_agi_cash, 3600000, 10)
+    ctx = sc_start(ctx, :sc_food_int_cash, 3600000, 10)
+    ctx = sc_start(ctx, :sc_food_dex_cash, 3600000, 10)
+    ctx = sc_start(ctx, :sc_food_luk_cash, 3600000, 10)
+    ctx = sc_start(ctx, :sc_food_vit_cash, 3600000, 10)
+    ctx = sc_start(ctx, :sc_speedup0, 600000, 25)
+    ctx
   type: usable
   weight: 10
 - aegis_name: G_ASPD_Potion
   id: 22820
   name: True Enhanced ASPD Potion
+  on_use: |-
+    ctx = sc_start(ctx, :sc_atthaste_cash, 3600000, 3)
+    ctx = sc_start(ctx, :sc_speedup0, 600000, 25)
+    ctx
   type: usable
   weight: 10
 - aegis_name: G_Red_Booster
   id: 22821
   name: True Red Booster
+  on_use: |-
+    ctx = specialeffect2(ctx, :potion_berserk)
+    ctx = sc_start(ctx, :sc_2011rwc_scroll, 3600000, 0)
+    ctx = sc_start(ctx, :sc_speedup0, 600000, 25)
+    ctx
   type: usable
   weight: 10
 - aegis_name: SW_Wear2014
@@ -25154,11 +25508,21 @@
 - aegis_name: Comp_Mystic_Powder
   id: 23046
   name: '[Sale] Mystic Powder'
+  on_use: |-
+    ctx = specialeffect2(ctx, :wind)
+    ctx = sc_start(ctx, :sc_mysticpowder, 300000, 0)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Comp_Tyr's_Blessing
   id: 23047
   name: '[Sale] Blessing of Tyr'
+  on_use: |-
+    ctx = sc_start(ctx, :sc_fleefood, 300000, 30)
+    ctx = sc_start(ctx, :sc_hitfood, 300000, 30)
+    ctx = sc_start(ctx, :sc_atkpotion, 300000, 20)
+    ctx = sc_start(ctx, :sc_matkpotion, 300000, 20)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Comp_Regenerate_Potion
@@ -25169,11 +25533,19 @@
 - aegis_name: Comp_Spark_Candy
   id: 23049
   name: '[Not For Sale] Sparkling Candy'
+  on_use: |-
+    ctx = specialeffect2(ctx, :hasteup)
+    ctx = sc_start(ctx, :sc_sparkcandy, 60000, 0)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Comp_Magic_Candy
   id: 23050
   name: '[Not For Sale] Magic Candy'
+  on_use: |-
+    ctx = specialeffect2(ctx, :hasteup)
+    ctx = sc_start(ctx, :sc_magiccandy, 60000, 0)
+    ctx
   type: usable
   weight: 10
 - aegis_name: New_Hat_Scroll
@@ -25325,6 +25697,10 @@
 - aegis_name: Comp_Glass_Of_Illusion
   id: 23094
   name: '[Not For Sale] Glass of Illusion'
+  on_use: |-
+    ctx = specialeffect2(ctx, :steal)
+    ctx = sc_start(ctx, :sc_incflee2, 60000, 20)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Poring_Scroll
@@ -26475,6 +26851,10 @@
 - aegis_name: Infinity_Drink
   id: 23475
   name: Infinity Drink
+  on_use: |-
+    ctx = specialeffect2(ctx, :potion_berserk)
+    ctx = sc_start(ctx, :sc_infinity_drink, 1800000, 0)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Firstaid_Box_5
@@ -26761,16 +27141,28 @@
 - aegis_name: Winter_Cookie
   id: 23550
   name: Winter Cookie
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 5)
+    ctx = sc_start(ctx, :sc_atkpotion, 600000, 3)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Festi_Cookie
   id: 23551
   name: Festi Cookie
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 5)
+    ctx = sc_start(ctx, :sc_aspdpotion0, 600000, 10)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Flora_Cookie
   id: 23552
   name: Flora Cookie
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 5)
+    ctx = sc_start(ctx, :sc_matkpotion, 600000, 3)
+    ctx
   type: usable
   weight: 50
 - aegis_name: Snow_Festa_Box
@@ -26907,6 +27299,10 @@
 - aegis_name: Main_Dish_Course
   id: 23604
   name: Main Dish Course
+  on_use: |-
+    ctx = specialeffect2(ctx, :bash3d)
+    ctx = sc_start(ctx, :sc_almighty, 1800000, 30)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Challenge_Drink
@@ -26917,11 +27313,19 @@
 - aegis_name: Power_Drink
   id: 23606
   name: Power Drink
+  on_use: |-
+    ctx = specialeffect2(ctx, :potion_berserk)
+    ctx = sc_start(ctx, :sc_2011rwc_scroll, 1800000, 0)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Unlimited_Drink
   id: 23607
   name: Unlimited Drink
+  on_use: |-
+    ctx = specialeffect2(ctx, :potion_berserk)
+    ctx = sc_start(ctx, :sc_infinity_drink, 1800000, 0)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Mimir_Spring_Water
@@ -26932,6 +27336,12 @@
 - aegis_name: Baldrs_Blessing
   id: 23612
   name: Baldur's Blessing
+  on_use: |-
+    ctx = sc_start(ctx, :sc_fleefood, 300000, 30)
+    ctx = sc_start(ctx, :sc_hitfood, 300000, 30)
+    ctx = sc_start(ctx, :sc_atkpotion, 300000, 20)
+    ctx = sc_start(ctx, :sc_matkpotion, 300000, 20)
+    ctx
   type: usable
   weight: 10
 - aegis_name: 2017_Special_Scroll
@@ -27118,6 +27528,10 @@
 - aegis_name: E_Main_Dish_C
   id: 23725
   name: '[Event] Main Dish Course'
+  on_use: |-
+    ctx = specialeffect2(ctx, :bash3d)
+    ctx = sc_start(ctx, :sc_almighty, 1800000, 30)
+    ctx
   type: usable
   weight: 10
 - aegis_name: E_Challenge_Drink
@@ -27128,11 +27542,19 @@
 - aegis_name: E_Unlimited_Drink
   id: 23727
   name: '[Event] Unlimited Drink'
+  on_use: |-
+    ctx = specialeffect2(ctx, :potion_berserk)
+    ctx = sc_start(ctx, :sc_infinity_drink, 1800000, 0)
+    ctx
   type: usable
   weight: 10
 - aegis_name: E_Power_Drink
   id: 23728
   name: '[Event] Power Drink'
+  on_use: |-
+    ctx = specialeffect2(ctx, :potion_berserk)
+    ctx = sc_start(ctx, :sc_2011rwc_scroll, 1800000, 0)
+    ctx
   type: usable
   weight: 10
 - aegis_name: E_Mimir_Spring_W
@@ -27143,6 +27565,12 @@
 - aegis_name: E_Baldrs_Blessing
   id: 23733
   name: "[Event] Baldur's Blessing"
+  on_use: |-
+    ctx = sc_start(ctx, :sc_fleefood, 300000, 30)
+    ctx = sc_start(ctx, :sc_hitfood, 300000, 30)
+    ctx = sc_start(ctx, :sc_atkpotion, 300000, 20)
+    ctx = sc_start(ctx, :sc_matkpotion, 300000, 20)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Noodle_Festa_Can
@@ -27687,6 +28115,16 @@
 - aegis_name: Comp_Almighty
   id: 23899
   name: '[Not For Sale] Almighty'
+  on_use: |-
+    ctx = specialeffect2(ctx, :bash3d)
+    ctx = sc_start(ctx, :sc_almighty, 1800000, 30)
+    ctx = sc_start(ctx, :sc_food_str_cash, 1800000, 10)
+    ctx = sc_start(ctx, :sc_food_agi_cash, 1800000, 10)
+    ctx = sc_start(ctx, :sc_food_int_cash, 1800000, 10)
+    ctx = sc_start(ctx, :sc_food_dex_cash, 1800000, 10)
+    ctx = sc_start(ctx, :sc_food_luk_cash, 1800000, 10)
+    ctx = sc_start(ctx, :sc_food_vit_cash, 1800000, 10)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Time_Overload_Box
@@ -27838,6 +28276,11 @@
 - aegis_name: G_Infinity_Drink
   id: 100008
   name: True Infinity Drink
+  on_use: |-
+    ctx = specialeffect2(ctx, :potion_berserk)
+    ctx = sc_start(ctx, :sc_infinity_drink, 3600000, 0)
+    ctx = sc_start(ctx, :sc_speedup0, 600000, 25)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Joy_Of_Victory
@@ -28167,6 +28610,7 @@
 - aegis_name: RTC_EnergyDrink_TW
   id: 100098
   name: Vitality Stimulant
+  on_use: sc_start(ctx, :sc_incallstatus, 300000, 20)
   type: usable
   weight: 10
 - aegis_name: Temporal_Manteau_Box
@@ -28563,12 +29007,14 @@
   buy: 10
   id: 100232
   name: Red Herb Activator
+  on_use: sc_start(ctx, :sc_add_atk_damage, 500000, 15)
   type: healing
   weight: 30
 - aegis_name: Add_Matk_Potion
   buy: 10
   id: 100233
   name: Blue Herb Activator
+  on_use: sc_start(ctx, :sc_add_matk_damage, 500000, 15)
   type: healing
   weight: 30
 - aegis_name: Illu_Enhance_Cube
@@ -28642,6 +29088,13 @@
 - aegis_name: G_Tyrs_Blessing
   id: 100316
   name: True Tyr's Blessing
+  on_use: |-
+    ctx = sc_start(ctx, :sc_fleefood, 3600000, 30)
+    ctx = sc_start(ctx, :sc_hitfood, 3600000, 30)
+    ctx = sc_start(ctx, :sc_atkpotion, 3600000, 20)
+    ctx = sc_start(ctx, :sc_matkpotion, 3600000, 20)
+    ctx = sc_start(ctx, :sc_speedup0, 600000, 25)
+    ctx
   type: usable
   weight: 10
 - aegis_name: G_Mental_Potion
@@ -28716,6 +29169,10 @@
 - aegis_name: E_Infinity_Drink
   id: 100333
   name: '[Not For Sale] Infinity Drink'
+  on_use: |-
+    ctx = specialeffect2(ctx, :potion_berserk)
+    ctx = sc_start(ctx, :sc_infinity_drink, 1800000, 0)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Booster_Pack_190
@@ -30437,6 +30894,10 @@
 - aegis_name: DF_Infinity_Drink
   id: 101097
   name: '[Scroll] Unlimited Drink'
+  on_use: |-
+    ctx = specialeffect2(ctx, :potion_berserk)
+    ctx = sc_start(ctx, :sc_infinity_drink, 1800000, 0)
+    ctx
   type: usable
   weight: 10
 - aegis_name: ClockTower_Regulator
