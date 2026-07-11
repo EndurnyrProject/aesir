@@ -90,7 +90,22 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "SC_INCALLSTATUS" => :sc_incallstatus,
     "SC_ALMIGHTY" => :sc_almighty,
     "SC_ULTIMATECOOK" => :sc_ultimatecook,
-    "SC_INFINITY_DRINK" => :sc_infinity_drink
+    "SC_INFINITY_DRINK" => :sc_infinity_drink,
+    "SC_ATKPOTION" => :sc_atkpotion,
+    "SC_MATKPOTION" => :sc_matkpotion,
+    "SC_INCCRI" => :sc_inccri,
+    "SC_INCFLEE2" => :sc_incflee2,
+    "SC_INCATKRATE" => :sc_incatkrate,
+    "SC_INCMATKRATE" => :sc_incmatkrate,
+    "SC_ADD_ATK_DAMAGE" => :sc_add_atk_damage,
+    "SC_ADD_MATK_DAMAGE" => :sc_add_matk_damage,
+    "SC_DEF_RATE" => :sc_def_rate,
+    "SC_MDEF_RATE" => :sc_mdef_rate,
+    "SC_MANA_PLUS" => :sc_mana_plus,
+    "SC_INCREASE_MAXSP" => :sc_increase_maxsp,
+    "SC_MUSTLE_M" => :sc_mustle_m,
+    "SC_LIFE_FORCE_F" => :sc_life_force_f,
+    "SC_FULL_SWING_K" => :sc_full_swing_k
   }
 
   @elements %{
