@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
   """
 
   alias Aesir.ZoneServer.Announcement.Flags
+  alias Aesir.ZoneServer.Mmo.Emotion
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver, as: ItemResolver
 
   @doc """
@@ -67,6 +68,26 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
     end
   end
 
+  @doc """
+  Resolves an `emotion` buildin argument. An `ET_*` token maps to its
+  `Mmo.Emotion` atom key (`ET_MONEY` -> `:money`), validated against
+  `Emotion.id/1`. A bare integer passes through unchanged, matching the
+  `emotion` DSL op's `atom() | non_neg_integer()` argument.
+  """
+  @spec emote(String.t() | integer()) :: {:ok, atom() | integer()} | :error
+  def emote(value) when is_integer(value), do: {:ok, value}
+
+  def emote("ET_" <> _ = symbol) do
+    with {:ok, atom} <- existing_atom(String.trim_leading(symbol, "ET_")),
+         id when is_integer(id) <- Emotion.id(atom) do
+      {:ok, atom}
+    else
+      _ -> :error
+    end
+  end
+
+  def emote(symbol) when is_binary(symbol), do: :error
+
   # -- sprites -----------------------------------------------------------------
 
   @doc """
@@ -112,4 +133,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
 
   defp put_sprite(acc, "JT_" <> name, value), do: Map.put(acc, name, value)
   defp put_sprite(acc, _other, _value), do: acc
+
+  @spec existing_atom(String.t()) :: {:ok, atom()} | :error
+  defp existing_atom(symbol) do
+    {:ok, String.to_existing_atom(String.downcase(symbol))}
+  rescue
+    ArgumentError -> :error
+  end
 end

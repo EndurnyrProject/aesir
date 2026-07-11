@@ -20,8 +20,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
   ## Command rules
 
   - `%{dsl: name, args: types}` — positional DSL call `name(ctx, a0, …)`;
-    each type (`:int`, `:string`, `:item`, `:status`) tells the codegen how
-    to render/resolve the argument.
+    each type (`:int`, `:string`, `:item`, `:status`, `:emote`) tells the
+    codegen how to render/resolve the argument. A call with more arguments
+    than declared types is truncated to the declared arity (trailing/optional
+    buildin args, e.g. `emotion`'s target, are dropped).
   - `%{shape: :heal, dsl: name}` — `heal <hp>,<sp>` → `name(ctx, hp: _, sp: _)`.
   - `%{shape: :warp}` — `warp "map",x,y` with `"Random"`/`"SavePoint"`
     special targets.
@@ -54,6 +56,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "percentheal" => %{shape: :heal, dsl: "percent_heal"},
     "sc_start" => %{dsl: "sc_start", args: [:status, :int, :int]},
     "sc_end" => %{dsl: "sc_end", args: [:status]},
+    "emotion" => %{dsl: "emotion", args: [:emote]},
     "warp" => %{shape: :warp},
     "savepoint" => %{shape: :savepoint},
     "jobchange" => %{dsl: "jobchange", args: [:int]},

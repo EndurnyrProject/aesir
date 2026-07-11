@@ -47,6 +47,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert {:ok, %{shape: :monster}} = CommandMap.command("monster")
   end
 
+  test "emotion maps to the emotion DSL op with an emote arg" do
+    assert {:ok, %{dsl: "emotion", args: [:emote]}} = CommandMap.command("emotion")
+  end
+
   test "broadcast buildins map to the announce shape" do
     assert {:ok, %{shape: :announce, dsl: "announce", fixed: 2}} = CommandMap.command("announce")
 
@@ -73,6 +77,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
       assert {:ok, "1"} = Resolver.constant("true")
       assert {:ok, ":thief"} = Resolver.constant("Job_Thief")
       assert {:ok, ":sc_blessing"} = Resolver.constant("SC_BLESSING")
+    end
+
+    test "emote resolves ET_* tokens to Mmo.Emotion atoms, ints pass through" do
+      assert {:ok, :money} = Resolver.emote("ET_MONEY")
+      assert :error = Resolver.emote("ET_NOPE")
+      assert {:ok, 42} = Resolver.emote(42)
     end
 
     test "broadcast flag constants resolve to their integer value" do

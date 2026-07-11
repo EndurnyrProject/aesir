@@ -467,6 +467,28 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ ~S|Todo.call!(:callfunc, ["Job_Change"|
   end
 
+  test "emotion maps to the self-form DSL op; a target arg is dropped" do
+    src =
+      gen!("""
+      emotion ET_MONEY;
+      emotion ET_MONEY, getcharid(3);
+      close;
+      """)
+
+    assert Regex.scan(~r/emotion\(:money\)/, src) |> length() == 2
+    refute src =~ "todo(ctx, :emotion"
+  end
+
+  test "an unresolvable ET_* token becomes a const todo" do
+    src =
+      gen!("""
+      emotion ET_NOPE;
+      close;
+      """)
+
+    assert src =~ "emotion(Todo.const!(:ET_NOPE))"
+  end
+
   test "callfunc resolves through the functions map or stubs" do
     functions = %{"F_Check" => "Aesir.ZoneServer.Content.Npc.Functions.FCheck"}
 

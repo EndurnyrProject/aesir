@@ -818,12 +818,16 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["ctx = #{dsl}(ctx, #{rendered})"], :cont}
   end
 
+  # Trailing/optional buildin args beyond the declared arity (e.g. `emotion`'s
+  # target) are dropped, not padded onto the DSL call; all args are still
+  # hoisted first so any side effect in a dropped arg is preserved.
   defp emit_mapped(_name, %{dsl: dsl, args: types}, args, env) do
     {pre, args} = hoist_all(args, env)
 
     rendered =
       args
-      |> Enum.zip(types ++ List.duplicate(:int, max(length(args) - length(types), 0)))
+      |> Enum.take(length(types))
+      |> Enum.zip(types)
       |> Enum.map(fn {arg, type} -> typed_arg(arg, type, env) end)
 
     {pre ++ ["ctx = #{dsl}(ctx, #{Enum.join(rendered, ", ")})"], :cont}
@@ -867,6 +871,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   defp typed_arg({:name, s}, :status, _env) do
     case Resolver.status(s) do
+      {:ok, atom} -> inspect(atom)
+      :error -> const_todo(s)
+    end
+  end
+
+  defp typed_arg({:name, s}, :emote, _env) do
+    case Resolver.emote(s) do
       {:ok, atom} -> inspect(atom)
       :error -> const_todo(s)
     end
