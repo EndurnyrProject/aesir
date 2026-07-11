@@ -91,5 +91,47 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTimeTest do
       assert CastTime.compute(definition([1_000]), 1, %{dex: 0, int: 0}) ==
                %{fixed: 200, variable: 800, total: 1_000}
     end
+
+    test "negative varcast_rate shortens the variable cast additively" do
+      # base 1000, dex/int 0 -> variable 800; -5% -> 800 * 95 / 100 = 760
+      assert CastTime.compute(definition([1_000]), 1, %{dex: 0, int: 0, varcast_rate: -5}) ==
+               %{fixed: 200, variable: 760, total: 960}
+    end
+
+    test "positive varcast_rate lengthens the variable cast" do
+      # variable 800; +25% -> 800 * 125 / 100 = 1000
+      assert CastTime.compute(definition([1_000]), 1, %{dex: 0, int: 0, varcast_rate: 25}) ==
+               %{fixed: 200, variable: 1_000, total: 1_200}
+    end
+
+    test "varcast_rate floors the variable cast at 0, never inverting it" do
+      # -150% would go negative; the 100 + rate factor floors at 0
+      assert CastTime.compute(definition([1_000]), 1, %{dex: 0, int: 0, varcast_rate: -150}) ==
+               %{fixed: 200, variable: 0, total: 200}
+    end
+
+    test "varcast_rate applies after the multiplicative varcast_reductions factor" do
+      # variable 800; 50% reduction -> 400; then -50% additive -> 400 * 50/100 = 200
+      assert CastTime.compute(definition([1_000]), 1, %{
+               dex: 0,
+               int: 0,
+               varcast_reductions: [50],
+               varcast_rate: -50
+             }) == %{fixed: 200, variable: 200, total: 400}
+    end
+
+    test "varcast_rate never touches the fixed cast" do
+      assert %{fixed: 350} =
+               CastTime.compute(definition([1_000], [350]), 1, %{
+                 dex: 0,
+                 int: 0,
+                 varcast_rate: -150
+               })
+    end
+
+    test "varcast_rate defaults to 0 when absent" do
+      assert CastTime.compute(definition([1_000]), 1, %{dex: 0, int: 0}) ==
+               %{fixed: 200, variable: 800, total: 1_000}
+    end
   end
 end

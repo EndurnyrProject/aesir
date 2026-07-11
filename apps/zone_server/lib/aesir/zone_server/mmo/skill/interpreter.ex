@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Learned
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Inventory
@@ -90,7 +91,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         CastTime.compute(definition, level, %{
           dex: base_stats.dex,
           int: base_stats.int,
-          varcast_reductions: status_reductions(game_state.character_id, :cast_time_reduction)
+          varcast_reductions: status_reductions(game_state.character_id, :cast_time_reduction),
+          varcast_rate: merged_modifier(game_state.character_id, :varcast_rate)
         })
 
       schedule(timing, game_state, skill_id, level, target, definition)
@@ -143,7 +145,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          {:ok, module} <- fetch_active_module(definition),
          :ok <- check_target(game_state, target, definition),
          :ok <- check_range(game_state, target, definition),
-         cost = Enum.at(definition.sp_cost, level - 1),
+         cost = skill_sp_cost(game_state, definition, level),
          :ok <- check_sp(game_state, cost),
          zeny = Enum.at(definition.zeny_cost, level - 1, 0),
          :ok <- check_zeny(game_state, zeny),
@@ -175,7 +177,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_cooldown(game_state, skill_id, now),
          :ok <- check_act_delay(game_state, now),
          :ok <- module.validate(game_state, target, level, definition),
-         cost = Enum.at(definition.sp_cost, level - 1),
+         cost = skill_sp_cost(game_state, definition, level),
          :ok <- check_sp(game_state, cost),
          zeny = Enum.at(definition.zeny_cost, level - 1, 0),
          :ok <- check_zeny(game_state, zeny) do
@@ -364,6 +366,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   defp check_sp(game_state, cost) do
     if game_state.stats.current_state.sp >= cost, do: :ok, else: {:error, :insufficient_sp}
+  end
+
+  # SP cost after the caster's summed `sp_cost_rate` delta (rAthena `dsprate`,
+  # negative = cheaper). The rate floors the multiplier at 0 so a stacked
+  # over-100% reduction cannot invert the cost. Computed once per cast site so
+  # check_sp/deduct_sp both see the same reduced value (single application).
+  @spec skill_sp_cost(PlayerState.t(), Definition.t(), pos_integer()) :: non_neg_integer()
+  defp skill_sp_cost(game_state, definition, level) do
+    cost = Enum.at(definition.sp_cost, level - 1)
+    rate = merged_modifier(game_state.character_id, :sp_cost_rate)
+    div(cost * max(0, 100 + rate), 100)
+  end
+
+  # Reads a single summed key from the caster's merged status modifiers,
+  # defaulting to 0 when no active status contributes it.
+  @spec merged_modifier(integer(), atom()) :: integer()
+  defp merged_modifier(character_id, key) do
+    :player
+    |> ModifierCalculator.get_all_modifiers(character_id)
+    |> Map.get(key, 0)
   end
 
   # A zero cost is always allowed without reading game_state.zeny: every skill

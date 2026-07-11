@@ -137,7 +137,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "SC_JEXPBOOST" => :sc_jexpboost,
     "SC_ITEMBOOST" => :sc_itemboost,
     "SC_LIFEINSURANCE" => :sc_lifeinsurance,
-    "SC_INCHEALRATE" => :sc_inchealrate
+    "SC_INCHEALRATE" => :sc_inchealrate,
+    "SC_SKF_CAST" => :sc_skf_cast,
+    "SC_SPCOST_RATE" => :sc_spcost_rate,
+    "SC_MENTAL_POTION" => :sc_mental_potion,
+    "SC_BEEF_RIB_STEW" => :sc_beef_rib_stew
   }
 
   @elements %{

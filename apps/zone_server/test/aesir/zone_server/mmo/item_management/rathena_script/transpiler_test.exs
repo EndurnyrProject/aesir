@@ -74,6 +74,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.TranspilerTest do
 
       assert {:ok, ^expected} = Transpiler.transpile(script)
     end
+
+    test "an SKF food passes a negative val1 through unchanged" do
+      assert {:ok, "sc_start(ctx, :sc_skf_cast, 600000, -5)"} =
+               Transpiler.transpile("sc_start SC_SKF_CAST,600000,-5;")
+    end
   end
 
   describe "end-to-end through ScriptCompiler" do

@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skills.SmProvoke
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
@@ -425,6 +426,72 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       # 30 + 15 = 45% (0.55) would, and never more than either factor alone
       assert reduced_variable == round(unreduced_variable * 0.7 * 0.85)
       assert reduced_variable > round(unreduced_variable * 0.55)
+    end
+  end
+
+  describe "sp_cost_rate" do
+    test "a negative sp_cost_rate reduces the SP deducted at castend" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, instant_definition()} end)
+      stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 ->
+        %{sp_cost_rate: -50}
+      end)
+
+      gs = game_state(100, %{6 => 1})
+
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+      # base cost 9, -50% -> div(9 * 50, 100) = 4; single application
+      assert updated.stats.current_state.sp == 100 - 4
+    end
+
+    test "floors the SP cost multiplier at 0 when the reduction exceeds 100%" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, instant_definition()} end)
+      stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 ->
+        %{sp_cost_rate: -150}
+      end)
+
+      gs = game_state(100, %{6 => 1})
+
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+      assert updated.stats.current_state.sp == 100
+    end
+
+    test "the reduced cost gates check_sp at validate time (not the raw cost)" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, instant_definition()} end)
+      stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 ->
+        %{sp_cost_rate: -50}
+      end)
+
+      # 5 SP is below the raw cost 9 but at/above the reduced cost 4
+      gs = game_state(5, %{6 => 1})
+
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+      assert updated.stats.current_state.sp == 5 - 4
+    end
+  end
+
+  describe "varcast_rate" do
+    test "a negative varcast_rate shortens the timed cast" do
+      reject(&StatusInterpreter.apply_status/4)
+      gs = game_state(100, %{29 => 1})
+
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{} end)
+      assert {:casting, _gs, baseline} = Interpreter.begin_cast(gs, 29, 1, :self)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 ->
+        %{varcast_rate: -50}
+      end)
+
+      assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
+
+      assert reduced.fixed == baseline.fixed
+      assert reduced.total - reduced.fixed == round((baseline.total - baseline.fixed) * 0.5)
+      assert reduced.total < baseline.total
     end
   end
 
