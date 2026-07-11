@@ -2,11 +2,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   use ExUnit.Case, async: true
   import Mimic
 
+  alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Commons.StatusParams
+  alias Aesir.Net.ParamChange
   alias Aesir.Net.SkillList
   alias Aesir.Net.SpriteChange
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -15,6 +23,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
 
   {:ok, knight_id} = AvailableJobs.job_name_to_id(:knight)
   @knight_id knight_id
+  {:ok, novice_id} = AvailableJobs.job_name_to_id(:novice)
+  @novice_id novice_id
+  {:ok, swordman_id} = AvailableJobs.job_name_to_id(:swordman)
+  @swordman_id swordman_id
   @unknown_job_id 99_999
 
   setup do
@@ -29,6 +41,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   defp state do
     base = PlayerState.new(character())
     %{connection_pid: self(), game_state: base}
+  end
+
+  defp state_with(progression_overrides) do
+    base = PlayerState.new(character())
+    progression = struct(base.stats.progression, progression_overrides)
+    game_state = %{base | stats: %{base.stats | progression: progression}}
+    %{connection_pid: self(), game_state: game_state}
+  end
+
+  defp state_with_gs(progression_overrides, gs_overrides) do
+    base = PlayerState.new(character())
+    progression = struct(base.stats.progression, progression_overrides)
+    game_state = struct(%{base | stats: %{base.stats | progression: progression}}, gs_overrides)
+    %{connection_pid: self(), game_state: game_state}
+  end
+
+  defp catalog_id(name) do
+    {:ok, definition} = Catalog.by_name(name)
+    definition.id
   end
 
   defp character do
@@ -100,6 +131,155 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
       ProgressionHandler.apply_job_change(@unknown_job_id, state())
 
       refute_received {:send, :bulk, {:skill_list, _}}
+    end
+  end
+
+  describe "apply_job_change/2 rAthena cleanup" do
+    test "prunes out-of-tree skills without refunding, keeps in-tree skills" do
+      sm_bash = catalog_id(:sm_bash)
+      tf_steal = catalog_id(:tf_steal)
+
+      state =
+        state_with(
+          job_id: @novice_id,
+          learned_skills: %{sm_bash => 3, tf_steal => 5},
+          skill_point: 2,
+          job_level: 40,
+          job_exp: 500
+        )
+
+      assert {:ok, new_state} = ProgressionHandler.apply_job_change(@swordman_id, state)
+      progression = new_state.game_state.stats.progression
+
+      assert progression.learned_skills == %{sm_bash => 3}
+      assert progression.skill_point == 2
+    end
+
+    test "resets job level to 1 and job exp to 0" do
+      state = state_with(job_id: @novice_id, job_level: 40, job_exp: 500)
+
+      assert {:ok, new_state} = ProgressionHandler.apply_job_change(@swordman_id, state)
+      progression = new_state.game_state.stats.progression
+
+      assert progression.job_level == 1
+      assert progression.job_exp == 0
+    end
+
+    test "a change to the current job is a no-op returning state unchanged" do
+      state =
+        state_with(
+          job_id: @novice_id,
+          job_level: 40,
+          learned_skills: %{catalog_id(:nv_basic) => 9}
+        )
+
+      assert {:ok, ^state} = ProgressionHandler.apply_job_change(@novice_id, state)
+      refute_received {:send, :bulk, {:skill_list, _}}
+    end
+  end
+
+  describe "apply_job_change/2 cart removal" do
+    test "unmounts the cart when MC_PUSHCART is dropped and a cart is mounted" do
+      test_pid = self()
+
+      stub(CartHandler, :unmount, fn %{game_state: gs} = st ->
+        send(test_pid, {:cart_unmounted, gs.character_id})
+        {:noreply, st}
+      end)
+
+      mc_pushcart = catalog_id(:mc_pushcart)
+
+      state =
+        state_with_gs(
+          [job_id: @novice_id, learned_skills: %{mc_pushcart => 5}],
+          cart_type: 1
+        )
+
+      ProgressionHandler.apply_job_change(@swordman_id, state)
+
+      assert_received {:cart_unmounted, 1000}
+    end
+
+    test "does not unmount when no cart is mounted" do
+      reject(&CartHandler.unmount/1)
+
+      state =
+        state_with_gs([job_id: @novice_id, learned_skills: %{catalog_id(:mc_pushcart) => 5}],
+          cart_type: 0
+        )
+
+      ProgressionHandler.apply_job_change(@swordman_id, state)
+    end
+  end
+
+  describe "apply_job_change/2 equipment re-check" do
+    test "force-unequips items the new job cannot wear, keeps wearable ones" do
+      test_pid = self()
+
+      stub(ItemManagement, :get_item_by_id, fn
+        1101 ->
+          {:ok,
+           %ItemDefinition{
+             id: 1101,
+             aegis_name: "Restricted",
+             name: "Restricted",
+             jobs: [:acolyte]
+           }}
+
+        1201 ->
+          {:ok, %ItemDefinition{id: 1201, aegis_name: "Wearable", name: "Wearable", jobs: []}}
+
+        _ ->
+          {:error, :not_found}
+      end)
+
+      stub(EquipmentHandler, :handle_unequip, fn index, st ->
+        send(test_pid, {:unequipped, index})
+        {:noreply, st}
+      end)
+
+      inventory = %{
+        0 => %InventoryItem{id: 1, nameid: 1101, amount: 1, equip: 16},
+        1 => %InventoryItem{id: 2, nameid: 1201, amount: 1, equip: 32}
+      }
+
+      state = state_with_gs([job_id: @novice_id], inventory: inventory)
+
+      ProgressionHandler.apply_job_change(@swordman_id, state)
+
+      assert_received {:unequipped, 0}
+      refute_received {:unequipped, 1}
+    end
+  end
+
+  describe "reset_skills/1" do
+    test "refunds learned levels into skill points and clears them" do
+      sm_bash = catalog_id(:sm_bash)
+
+      state = state_with(job_id: @swordman_id, learned_skills: %{sm_bash => 4}, skill_point: 1)
+
+      assert {:ok, new_state} = ProgressionHandler.reset_skills(state)
+      progression = new_state.game_state.stats.progression
+
+      assert progression.learned_skills == %{}
+      assert progression.skill_point == 5
+    end
+
+    test "re-sends the skill list" do
+      state = state_with(job_id: @swordman_id, learned_skills: %{catalog_id(:sm_bash) => 2})
+
+      ProgressionHandler.reset_skills(state)
+
+      assert_received {:send, :bulk, {:skill_list, %SkillList{}}}
+    end
+
+    test "syncs recalculated stats to the client (not just the skill list)" do
+      state = state_with(job_id: @swordman_id, learned_skills: %{catalog_id(:sm_bash) => 2})
+
+      ProgressionHandler.reset_skills(state)
+
+      aspd = StatusParams.aspd()
+      assert_received {:send, _channel, {:param_change, %ParamChange{var_id: ^aspd}}}
     end
   end
 

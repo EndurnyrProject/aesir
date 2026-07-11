@@ -299,4 +299,51 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
       assert log =~ "WE_CALLBABY"
     end
   end
+
+  describe "reset_skills/1" do
+    test "refunds the sum of learned levels into skill_point and clears them" do
+      progression =
+        swordman_progression(
+          skill_point: 2,
+          learned_skills: %{catalog_id(:sm_bash) => 5, catalog_id(:sm_endure) => 3}
+        )
+
+      reset = SkillTree.reset_skills(progression)
+
+      assert reset.skill_point == 2 + 5 + 3
+      assert reset.learned_skills == %{}
+    end
+
+    test "keeps NV_BASIC (not refunded) for a non-Novice player" do
+      nv_basic = catalog_id(:nv_basic)
+
+      progression =
+        swordman_progression(
+          skill_point: 0,
+          learned_skills: %{nv_basic => 9, catalog_id(:sm_bash) => 4}
+        )
+
+      reset = SkillTree.reset_skills(progression)
+
+      assert reset.skill_point == 4
+      assert reset.learned_skills == %{nv_basic => 9}
+    end
+
+    test "refunds NV_BASIC too for a Novice player" do
+      {:ok, novice_id} = AvailableJobs.job_name_to_id(:novice)
+      nv_basic = catalog_id(:nv_basic)
+
+      progression =
+        swordman_progression(
+          job_id: novice_id,
+          skill_point: 1,
+          learned_skills: %{nv_basic => 9}
+        )
+
+      reset = SkillTree.reset_skills(progression)
+
+      assert reset.skill_point == 1 + 9
+      assert reset.learned_skills == %{}
+    end
+  end
 end

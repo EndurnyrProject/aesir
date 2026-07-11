@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:set_char_var, atom(), term()}
           | {:set_temp_var, atom(), term()}
           | {:change_job, non_neg_integer()}
+          | {:reset_skills}
           | {:set_save_point, String.t(), non_neg_integer(), non_neg_integer()}
           | {:openstorage}
           | {:refine, non_neg_integer(), integer(), RefineDatabase.cost_type(), boolean()}
@@ -124,6 +125,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
       {:ok, new_state} -> {{:ok, new_state.game_state}, new_state}
       {:error, reason} -> {{:error, reason}, state}
     end
+  end
+
+  def apply_op({:reset_skills}, state) do
+    {:ok, new_state} = ProgressionHandler.reset_skills(state)
+    {{:ok, new_state.game_state}, new_state}
   end
 
   def apply_op({:set_save_point, map, x, y}, %{game_state: gs} = state) do

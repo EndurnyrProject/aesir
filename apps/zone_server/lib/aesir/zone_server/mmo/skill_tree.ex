@@ -167,6 +167,37 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
     end)
   end
 
+  @doc """
+  Refunds a player's learned skills into `skill_point` (rAthena `resetskill`).
+
+  Sums the levels of every non-exempt learned skill back into `skill_point` and
+  reduces `learned_skills` to the exempt set. `NV_BASIC` is exempt (kept, not
+  refunded) unless the player is a Novice, in which case it is refunded like any
+  other skill. The job id is unchanged.
+  """
+  @spec reset_skills(PlayerProgression.t()) :: PlayerProgression.t()
+  def reset_skills(%PlayerProgression{} = progression) do
+    {kept, refundable} = Map.split(progression.learned_skills, exempt_skills(progression))
+    refund = refundable |> Map.values() |> Enum.sum()
+
+    %{progression | learned_skills: kept, skill_point: progression.skill_point + refund}
+  end
+
+  @spec exempt_skills(PlayerProgression.t()) :: [non_neg_integer()]
+  defp exempt_skills(%PlayerProgression{job_id: job_id}) do
+    if novice?(job_id) do
+      []
+    else
+      case Catalog.by_name(:nv_basic) do
+        {:ok, %{id: id}} -> [id]
+        :error -> []
+      end
+    end
+  end
+
+  @spec novice?(non_neg_integer()) :: boolean()
+  defp novice?(job_id), do: match?({:ok, :novice}, AvailableJobs.job_id_to_name(job_id))
+
   @spec requirements_met?(Learned.t(), [{non_neg_integer(), pos_integer()}]) :: boolean()
   defp requirements_met?(learned, requires) do
     Enum.all?(requires, fn {req_id, req_lv} ->

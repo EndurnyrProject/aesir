@@ -23,11 +23,16 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobChangeIntegrationTest do
   alias Aesir.Net.NpcTalk
   alias Aesir.Net.SkillList
   alias Aesir.Repo
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
 
   @novice_class 0
   @knight_class 7
+  @swordman_class 1
+  @acolyte_class 4
 
   defmodule ValidJobMasterNpc do
     use Aesir.ZoneServer.Npc,
@@ -63,9 +68,44 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobChangeIntegrationTest do
     end
   end
 
+  defmodule SwordmanJobMasterNpc do
+    use Aesir.ZoneServer.Npc,
+      spawn: [%{map: "prontera", x: 162, y: 160, dir: 0, sprite: 58, name: "Swordman Master"}]
+
+    @target_job 1
+
+    @impl true
+    def on_talk(ctx) do
+      ctx
+      |> jobchange(@target_job)
+      |> mes("Done")
+      |> close()
+    end
+  end
+
+  defmodule SkillResetNpc do
+    use Aesir.ZoneServer.Npc,
+      spawn: [%{map: "prontera", x: 163, y: 160, dir: 0, sprite: 58, name: "Skill Reset"}]
+
+    @impl true
+    def on_talk(ctx) do
+      ctx
+      |> reset_skills()
+      |> mes("Skills reset")
+      |> close()
+    end
+  end
+
   setup do
     on_exit(fn -> :persistent_term.erase(NpcRegistry) end)
-    NpcRegistry.reload([ValidJobMasterNpc, BrokenJobMasterNpc])
+
+    NpcRegistry.reload([
+      ValidJobMasterNpc,
+      BrokenJobMasterNpc,
+      SwordmanJobMasterNpc,
+      SkillResetNpc
+    ])
+
     :ok
   end
 
@@ -117,7 +157,103 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobChangeIntegrationTest do
     end
   end
 
-  defp insert_novice do
+  describe "rAthena cleanup via NPC dialog" do
+    test "prunes out-of-tree learned skills on job change and persists the result" do
+      sm_bash = catalog_id(:sm_bash)
+      tf_steal = catalog_id(:tf_steal)
+
+      character =
+        insert_novice(%{
+          learned_skills: %{Integer.to_string(sm_bash) => 3, Integer.to_string(tf_steal) => 5}
+        })
+
+      session =
+        start_player_session(character: character, map_name: "prontera", position: {162, 160})
+
+      on_exit(fn -> end_player_session(session) end)
+      flush_packets()
+
+      gid = NpcRegistry.entity_id(%Placement{map: "prontera", x: 162, y: 160, sprite: 58})
+      simulate_incoming_message(session.pid, %NpcTalk{npc_id: gid})
+
+      assert_receive {:packet_sent, %NpcDialog{expect: :CLOSE}, _}, 1_000
+      assert_receive {:packet_sent, %SkillList{}, _}, 1_000
+
+      state = get_player_state(session.pid)
+      assert state.stats.progression.job_id == @swordman_class
+      assert state.stats.progression.learned_skills == %{sm_bash => 3}
+
+      persisted = Repo.get(Character, character.id)
+      assert persisted.learned_skills == %{Integer.to_string(sm_bash) => 3}
+    end
+
+    test "reset_skills refunds learned levels into skill points and persists" do
+      sm_bash = catalog_id(:sm_bash)
+
+      character =
+        insert_novice(%{
+          class: @swordman_class,
+          skill_point: 1,
+          learned_skills: %{Integer.to_string(sm_bash) => 4}
+        })
+
+      session =
+        start_player_session(character: character, map_name: "prontera", position: {163, 160})
+
+      on_exit(fn -> end_player_session(session) end)
+      flush_packets()
+
+      gid = NpcRegistry.entity_id(%Placement{map: "prontera", x: 163, y: 160, sprite: 58})
+      simulate_incoming_message(session.pid, %NpcTalk{npc_id: gid})
+
+      assert_receive {:packet_sent, %NpcDialog{expect: :CLOSE}, _}, 1_000
+      assert_receive {:packet_sent, %SkillList{}, _}, 1_000
+
+      state = get_player_state(session.pid)
+      assert state.stats.progression.learned_skills == %{}
+      assert state.stats.progression.skill_point == 5
+
+      persisted = Repo.get(Character, character.id)
+      assert persisted.learned_skills == %{}
+      assert persisted.skill_point == 5
+    end
+
+    test "ends a dropped-skill status and recomputes stats without its modifiers" do
+      al_incagi = catalog_id(:al_incagi)
+
+      character =
+        insert_novice(%{
+          class: @acolyte_class,
+          learned_skills: %{Integer.to_string(al_incagi) => 10}
+        })
+
+      session =
+        start_player_session(character: character, map_name: "prontera", position: {162, 160})
+
+      on_exit(fn -> end_player_session(session) end)
+
+      StatusInterpreter.apply_status(:player, character.id, :sc_increaseagi,
+        val1: 5,
+        val2: 12,
+        duration: 600_000
+      )
+
+      assert StatusStorage.has_status?(:player, character.id, :sc_increaseagi)
+      flush_packets()
+
+      gid = NpcRegistry.entity_id(%Placement{map: "prontera", x: 162, y: 160, sprite: 58})
+      simulate_incoming_message(session.pid, %NpcTalk{npc_id: gid})
+
+      assert_receive {:packet_sent, %NpcDialog{expect: :CLOSE}, _}, 1_000
+
+      state = get_player_state(session.pid)
+      assert state.stats.progression.job_id == @swordman_class
+      refute StatusStorage.has_status?(:player, character.id, :sc_increaseagi)
+      assert state.stats.modifiers.status_effects == %{}
+    end
+  end
+
+  defp insert_novice(overrides \\ %{}) do
     uniq = System.unique_integer([:positive])
 
     {:ok, account} =
@@ -130,30 +266,41 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobChangeIntegrationTest do
       })
       |> Repo.insert()
 
+    attrs =
+      Map.merge(
+        %{
+          account_id: account.id,
+          char_num: 0,
+          name: "Novice#{uniq}",
+          class: @novice_class,
+          base_level: 50,
+          job_level: 10,
+          str: 10,
+          agi: 10,
+          vit: 10,
+          int: 10,
+          dex: 10,
+          luk: 10,
+          last_map: "prontera",
+          last_x: 160,
+          last_y: 160,
+          save_map: "prontera",
+          save_x: 160,
+          save_y: 160
+        },
+        overrides
+      )
+
     {:ok, character} =
       %Character{}
-      |> Character.changeset(%{
-        account_id: account.id,
-        char_num: 0,
-        name: "Novice#{uniq}",
-        class: @novice_class,
-        base_level: 50,
-        job_level: 10,
-        str: 10,
-        agi: 10,
-        vit: 10,
-        int: 10,
-        dex: 10,
-        luk: 10,
-        last_map: "prontera",
-        last_x: 160,
-        last_y: 160,
-        save_map: "prontera",
-        save_x: 160,
-        save_y: 160
-      })
+      |> Character.changeset(attrs)
       |> Repo.insert()
 
     character
+  end
+
+  defp catalog_id(name) do
+    {:ok, definition} = Catalog.by_name(name)
+    definition.id
   end
 end

@@ -5,25 +5,41 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
 
   These mirror rAthena's `@baselvlup`/`@joblvlup`/`@job` commands. Level gains
   clamp to the job's caps, grant the matching status/skill points, and (for base
-  levels) full-heal the character, matching `pc_baselevelup`. A job change updates
-  the class sprite for the player and nearby observers and recomputes
-  job-dependent stats.
+  levels) full-heal the character, matching `pc_baselevelup`. A job change follows
+  rAthena's `pc_jobchange` cleanup (drop out-of-tree skills without refunding,
+  reset job level, remove the cart/vending/equipment the new job cannot keep, end
+  statuses tied to dropped skills) and updates the class sprite for the player and
+  nearby observers. `reset_skills/1` implements the separate `resetskill` refund.
   """
 
+  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.SpriteChange
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
+  alias Aesir.ZoneServer.Mmo.JobManagement.SkillStatuses
   alias Aesir.ZoneServer.Mmo.Leveling
+  alias Aesir.ZoneServer.Mmo.Skill.Learned
+  alias Aesir.ZoneServer.Mmo.Skills.McPushcart
+  alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Mmo.StatPoint
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.LookType
+  alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.SkillListView
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  @mc_pushcart_id McPushcart.definition().id
 
   @doc """
   Adds `amount` base levels, clamped to the job's `max_base_level`. Grants the
@@ -97,13 +113,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   end
 
   @doc """
-  Authoritative core for a job change: validates `job_id`, updates
-  `progression.job_id`, recomputes job-dependent stats, full-heals, notifies
-  the client (class sprite, refreshed skill list, stat/param sync), persists
-  `class:`, and updates the `UnitRegistry`.
+  Authoritative core for a job change (rAthena `pc_jobchange`): validates
+  `job_id`, force-closes vending, drops learned skills outside the new job's tree
+  (no skill-point refund, unspent points kept), resets job level/exp to `1`/`0`,
+  recomputes job-dependent stats, full-heals, removes the cart when `MC_PUSHCART`
+  is dropped, unequips items the new job cannot wear, ends statuses granted by
+  dropped skills, notifies the client (class sprite, refreshed skill list,
+  stat/param sync), persists `class`/`learned_skills`/job level, and updates the
+  `UnitRegistry`.
 
-  Returns `{:error, :unknown_job}` without mutating `state` when `job_id`
-  does not resolve to a known job.
+  A change to the current job is a no-op returning `{:ok, state}` unchanged
+  (rAthena rejects an unchanged job). Returns `{:error, :unknown_job}` without
+  mutating `state` when `job_id` does not resolve to a known job.
   """
   @spec apply_job_change(non_neg_integer(), map()) :: {:ok, map()} | {:error, :unknown_job}
   def apply_job_change(job_id, %{game_state: game_state} = state) do
@@ -113,16 +134,179 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     end
   end
 
-  defp do_apply_job_change(job_id, state, game_state) do
-    progression = %{game_state.stats.progression | job_id: job_id}
+  @doc """
+  Refunds the player's learned skills into `skill_point` (rAthena `resetskill` /
+  `@resetskill`).
+
+  Reduces `learned_skills` to the exempt set (`SkillTree.reset_skills/1`), ends
+  statuses granted by the refunded skills, removes the cart when `MC_PUSHCART` was
+  refunded, recomputes stats so passive bonuses from refunded skills drop (a final
+  recompute after all cleanup, since status removals bypass `game_state.stats`),
+  refreshes the client's skill window and full stat/param set, persists
+  `learned_skills`/`skill_point`/vitals, and updates the `UnitRegistry`.
+  """
+  @spec reset_skills(map()) :: {:ok, map()}
+  def reset_skills(%{game_state: game_state} = state) do
+    progression = game_state.stats.progression
+    new_progression = SkillTree.reset_skills(progression)
+    dropped_ids = Map.keys(progression.learned_skills) -- Map.keys(new_progression.learned_skills)
 
     stats =
-      %{game_state.stats | progression: progression}
+      %{game_state.stats | progression: new_progression}
+      |> Stats.calculate_stats(game_state.character_id)
+
+    %{state | game_state: %{game_state | stats: stats}}
+    |> cleanup_dropped_skills(dropped_ids)
+    |> finish_reset_skills()
+  end
+
+  defp do_apply_job_change(job_id, state, game_state) do
+    if job_id == game_state.stats.progression.job_id do
+      {:ok, state}
+    else
+      change_to_job(job_id, state)
+    end
+  end
+
+  # rAthena `pc_jobchange` order: force-close vending, drop skills outside the new
+  # tree (no refund, unspent points kept), reset job level, recompute stats (so
+  # passives from dropped skills stop applying) BEFORE the cart/equipment/status
+  # cleanup, then notify and persist.
+  defp change_to_job(job_id, state) do
+    {:ok, closed_state} = VendingHandler.close_shop(state, :job_change)
+    game_state = closed_state.game_state
+    progression = game_state.stats.progression
+
+    {kept_skills, dropped_ids} = prune_skills(progression.learned_skills, job_id)
+
+    new_progression = %{
+      progression
+      | job_id: job_id,
+        learned_skills: kept_skills,
+        job_level: 1,
+        job_exp: 0
+    }
+
+    stats =
+      Stats.calculate_stats(
+        %{game_state.stats | progression: new_progression},
+        game_state.character_id
+      )
+
+    %{closed_state | game_state: %{game_state | stats: stats}}
+    |> cleanup_dropped_skills(dropped_ids)
+    |> recheck_equipment(job_id)
+    |> finish_job_change(job_id)
+  end
+
+  @spec prune_skills(Learned.t(), non_neg_integer()) :: {Learned.t(), [non_neg_integer()]}
+  defp prune_skills(learned_skills, job_id) do
+    tree_ids = job_id |> SkillTree.tree_for() |> Map.keys()
+    {kept, dropped} = Map.split(learned_skills, tree_ids)
+    {kept, Map.keys(dropped)}
+  end
+
+  # Cart removal + status cleanup shared by job change and skill reset. Ends only
+  # statuses granted by the dropped skills, and only on the player themselves.
+  defp cleanup_dropped_skills(state, dropped_ids) do
+    state = maybe_unmount_cart(state, dropped_ids)
+    end_dropped_statuses(state.game_state.character_id, dropped_ids)
+    state
+  end
+
+  defp maybe_unmount_cart(%{game_state: gs} = state, dropped_ids) do
+    if @mc_pushcart_id in dropped_ids and gs.cart_type > 0 do
+      # NOTE: CartHandler.unmount/1 refuses a non-empty cart to avoid stranding
+      # its items, so losing MC_PUSHCART with items still in the cart leaves the
+      # cart mounted rather than force-dropping it (rAthena drops it
+      # unconditionally). Faithful forced-drop + item migration is deferred; the
+      # empty-cart case unmounts as expected.
+      {:noreply, new_state} = CartHandler.unmount(state)
+      new_state
+    else
+      state
+    end
+  end
+
+  defp end_dropped_statuses(char_id, dropped_ids) do
+    dropped_ids
+    |> SkillStatuses.statuses_for()
+    |> Enum.each(&StatusInterpreter.remove_status(:player, char_id, &1))
+  end
+
+  # Force-unequips every worn item the new job can no longer wear (job check only,
+  # not level or other requirements), routing each through the equipment handler's
+  # persist + client sync path.
+  defp recheck_equipment(%{game_state: game_state} = state, job_id) do
+    game_state.inventory
+    |> Inventory.equipped_items()
+    |> Map.keys()
+    |> Enum.reduce(state, fn index, acc -> maybe_unequip(acc, index, job_id) end)
+  end
+
+  defp maybe_unequip(%{game_state: gs} = state, index, job_id) do
+    with %InventoryItem{nameid: nameid} <- Map.get(gs.inventory, index),
+         {:ok, item_def} <- ItemManagement.get_item_by_id(nameid),
+         {:error, :requirement_unmet} <- Inventory.validate_job(item_def, job_id) do
+      {:noreply, new_state} = EquipmentHandler.handle_unequip(index, state)
+      new_state
+    else
+      _ -> state
+    end
+  end
+
+  # Unconditionally recomputes stats against the final state (after cart,
+  # equipment and status cleanup) before healing/persisting: status removals go
+  # straight to StatusStorage without touching `game_state.stats`, so the modifier
+  # snapshot is only correct after this recompute. Then full-heals so the
+  # deliberate job-change heal reflects the new max HP/SP.
+  defp finish_job_change(%{game_state: game_state} = state, job_id) do
+    stats =
+      game_state.stats
       |> Stats.calculate_stats(game_state.character_id)
       |> full_heal()
 
     game_state = %{game_state | stats: stats}
+    progression = stats.progression
 
+    StatusSync.send_param(state.connection_pid, StatusParams.job_level(), progression.job_level)
+    broadcast_sprite(game_state, job_id)
+    MessageRouter.send_to(state.connection_pid, SkillListView.build(progression))
+
+    {:noreply, new_state} =
+      commit(state, game_state, progression,
+        class: job_id,
+        learned_skills: Learned.dump(progression.learned_skills)
+      )
+
+    {:ok, new_state}
+  end
+
+  # Same unconditional final recompute as the job-change path (dropped-skill
+  # status removals bypass `game_state.stats`). No full heal on a reset, but the
+  # vitals are clamped in case a removed buff (e.g. Angelus) lowered max HP/SP
+  # below the current values, then the recomputed stats are synced to the client
+  # and persisted through the shared `commit/4` path.
+  defp finish_reset_skills(%{game_state: game_state} = state) do
+    stats =
+      game_state.stats
+      |> Stats.calculate_stats(game_state.character_id)
+      |> clamp_vitals()
+
+    game_state = %{game_state | stats: stats}
+    progression = stats.progression
+
+    MessageRouter.send_to(state.connection_pid, SkillListView.build(progression))
+
+    {:noreply, new_state} =
+      commit(state, game_state, progression,
+        learned_skills: Learned.dump(progression.learned_skills)
+      )
+
+    {:ok, new_state}
+  end
+
+  defp broadcast_sprite(game_state, job_id) do
     sprite = %SpriteChange{
       gid: game_state.character_id,
       type: LookType.base(),
@@ -130,15 +314,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
       val2: 0
     }
 
-    StatusSync.send_param(state.connection_pid, StatusParams.job_level(), progression.job_level)
     Broadcast.to_player(game_state.character_id, sprite)
     Broadcast.to_visible_players(game_state, sprite, exclude_id: game_state.character_id)
-
-    skill_list = SkillListView.build(progression)
-    MessageRouter.send_to(state.connection_pid, skill_list)
-
-    {:noreply, new_state} = commit(state, game_state, progression, class: job_id)
-    {:ok, new_state}
   end
 
   defp commit(state, game_state, progression, extra_persist \\ []) do
@@ -161,14 +338,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     %{stats | current_state: current}
   end
 
+  # Caps current HP/SP at the (possibly reduced) maxima without healing, for the
+  # skill-reset path where a removed buff can lower max HP/SP below the current
+  # value.
+  defp clamp_vitals(stats) do
+    current = %{
+      stats.current_state
+      | hp: min(stats.current_state.hp, stats.derived_stats.max_hp),
+        sp: min(stats.current_state.sp, stats.derived_stats.max_sp)
+    }
+
+    %{stats | current_state: current}
+  end
+
   defp sync_client(state, progression) do
-    StatusSync.send_stat_updates(state.connection_pid, state.game_state.stats)
+    game_state = state.game_state
+    StatusSync.send_stat_updates(state.connection_pid, game_state.stats)
 
     StatusSync.send_params(state.connection_pid, %{
       StatusParams.next_base_exp() => Leveling.next_base_exp(progression),
       StatusParams.next_job_exp() => Leveling.next_job_exp(progression),
       StatusParams.skill_point() => progression.skill_point,
-      StatusParams.status_point() => progression.status_point
+      StatusParams.status_point() => progression.status_point,
+      StatusParams.weight() => Weight.current_weight(game_state.inventory),
+      StatusParams.max_weight() => Weight.max_weight(game_state.stats)
     })
   end
 

@@ -222,9 +222,15 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
     end
   end
 
-  defp validate_job(%ItemDefinition{jobs: []}, _job_id), do: :ok
+  @doc """
+  Whether `job_id` may wear `item_def` (the job requirement only, no level or
+  broken checks). An item with no job restriction (`jobs: []`) is wearable by
+  every job.
+  """
+  @spec validate_job(ItemDefinition.t(), integer()) :: :ok | {:error, :requirement_unmet}
+  def validate_job(%ItemDefinition{jobs: []}, _job_id), do: :ok
 
-  defp validate_job(%ItemDefinition{jobs: jobs}, job_id) do
+  def validate_job(%ItemDefinition{jobs: jobs}, job_id) do
     with {:ok, job_name} <- AvailableJobs.job_id_to_name(job_id),
          true <- job_name in jobs do
       :ok

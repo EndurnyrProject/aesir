@@ -900,6 +900,16 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   end
 
   @doc """
+  Refunds the player's learned skills into skill points through the session seam
+  (rAthena `resetskill`), recomputing stats, refreshing the skill window, and
+  persisting. `NV_BASIC` is kept (not refunded) unless the player is a Novice.
+  Never fails.
+  """
+  @spec reset_skills(Ctx.t()) :: Ctx.t()
+  def reset_skills(%Ctx{status: {:error, _}} = ctx), do: ctx
+  def reset_skills(%Ctx{} = ctx), do: apply_op(ctx, {:reset_skills})
+
+  @doc """
   Opens the account storage window through the session seam (rAthena
   `openstorage`). Never halts: a gate failure (missing `NV_BASIC`) is reported
   to the client as a `StorageResult`, not a script error.
