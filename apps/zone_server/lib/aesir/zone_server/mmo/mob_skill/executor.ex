@@ -123,10 +123,12 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
     Broadcast.to_in_range(state.map_name, state.x, state.y, Config.view_range(), packet)
   end
 
-  defp maybe_emote(_state, %{emotion: nil}), do: :ok
-
-  defp maybe_emote(%MobState{instance_id: instance_id}, %{emotion: emotion}),
-    do: Emote.show({:mob, instance_id}, emotion)
+  defp maybe_emote(%MobState{instance_id: instance_id}, row) do
+    case Map.get(row, :emotion) do
+      nil -> :ok
+      emotion -> Emote.show({:mob, instance_id}, emotion)
+    end
+  end
 
   defp dispatch(state, target, row) do
     case Catalog.archetype_for(row.skill) do
