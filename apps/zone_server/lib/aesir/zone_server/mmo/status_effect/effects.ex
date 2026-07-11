@@ -82,6 +82,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects do
     Effects.Kyrie,
     Effects.LexAeterna,
     Effects.LifeForceF,
+    Effects.LifeInsurance,
     Effects.Loud,
     Effects.LukFood,
     Effects.MagicCandy,

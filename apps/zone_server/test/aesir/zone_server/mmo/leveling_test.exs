@@ -75,4 +75,54 @@ defmodule Aesir.ZoneServer.Mmo.LevelingTest do
     assert Leveling.next_job_exp(novice()) == job_req
     assert Leveling.next_base_exp(novice(%{base_level: 99})) == 0
   end
+
+  describe "death_penalty/3" do
+    test "loses the configured percent of the next-level exp when exp allows" do
+      {:ok, base_req} = JobManagement.get_base_exp(:novice, 1)
+      {:ok, job_req} = JobManagement.get_job_exp(:novice, 1)
+
+      prog = novice(%{base_exp: base_req, job_exp: job_req})
+
+      assert {div(base_req, 100), div(job_req, 100)} == Leveling.death_penalty(prog, 1, 1)
+    end
+
+    test "never de-levels: caps at the current exp into the level" do
+      {:ok, base_req} = JobManagement.get_base_exp(:novice, 1)
+
+      prog = novice(%{base_exp: 5, job_exp: 3})
+      {base_loss, job_loss} = Leveling.death_penalty(prog, 1, 1)
+
+      assert base_loss <= 5
+      assert job_loss <= 3
+      assert base_loss == min(5, div(base_req, 100))
+    end
+
+    test "a fresh level with zero exp loses nothing" do
+      assert {0, 0} == Leveling.death_penalty(novice(), 1, 1)
+    end
+
+    test "at the level cap there is no next-level exp so no loss" do
+      prog = novice(%{base_level: 99, job_level: 10, base_exp: 0, job_exp: 0})
+
+      assert {0, 0} == Leveling.death_penalty(prog, 1, 1)
+    end
+
+    test "a zero rate yields no loss on that track" do
+      {:ok, base_req} = JobManagement.get_base_exp(:novice, 1)
+      {:ok, job_req} = JobManagement.get_job_exp(:novice, 1)
+      prog = novice(%{base_exp: base_req, job_exp: job_req})
+
+      assert {0, div(job_req, 100)} == Leveling.death_penalty(prog, 0, 1)
+      assert {div(base_req, 100), 0} == Leveling.death_penalty(prog, 1, 0)
+      assert {0, 0} == Leveling.death_penalty(prog, 0, 0)
+    end
+
+    test "the loss is never negative" do
+      prog = novice(%{base_exp: 0, job_exp: 0})
+      {base_loss, job_loss} = Leveling.death_penalty(prog, 5, 5)
+
+      assert base_loss >= 0
+      assert job_loss >= 0
+    end
+  end
 end

@@ -9,20 +9,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   alias Aesir.Net.ParamChange
   alias Aesir.Net.Resurrect
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.Stats.CurrentState
   alias Aesir.ZoneServer.Unit.Stats.DerivedStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
-  # SP_HP / SP_SP / SP_MAXHP / SP_MAXSP param ids
+  # SP_HP param id / SP_BASE_EXP / SP_JOB_EXP
   @sp_hp 5
+  @sp_base_exp 1
+  @sp_job_exp 2
 
   setup :set_mimic_from_context
 
@@ -30,10 +36,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     Mimic.copy(CharacterPersistence)
     Mimic.copy(MovementHandler)
     Mimic.copy(StatusInterpreter)
+    Mimic.copy(ModifierCalculator)
+    Mimic.copy(Config)
+    Mimic.copy(Leveling)
 
     stub(StatusInterpreter, :on_damage, fn _, _, _ -> :ok end)
     stub(UnitRegistry, :update_unit_state, fn _, _, _ -> :ok end)
+    stub(ModifierCalculator, :get_all_modifiers, fn :player, _ -> %{} end)
     stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
+    stub(CharacterPersistence, :update_character, fn _, _, _ -> {:ok, %Character{}} end)
     stub(SpatialIndex, :remove_player, fn _ -> :ok end)
     stub(SpatialIndex, :clear_visibility, fn _ -> :ok end)
     stub(SpatialIndex, :add_player, fn _, _, _, _ -> :ok end)
@@ -168,6 +179,89 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     end
   end
 
+  describe "death EXP penalty" do
+    test "subtracts the computed base/job loss, pushes the exp params and persists" do
+      stub(Leveling, :death_penalty, fn _prog, 1, 1 -> {10, 5} end)
+
+      {:noreply, %{game_state: game_state}} =
+        HealthHandler.apply_damage(
+          150,
+          2001,
+          build_state(100, :idle, %{base_exp: 100, job_exp: 40})
+        )
+
+      assert game_state.action_state == :dead
+      assert game_state.stats.progression.base_exp == 90
+      assert game_state.stats.progression.job_exp == 35
+      assert_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_base_exp, value: 90}}}
+      assert_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_job_exp, value: 35}}}
+    end
+
+    test "persists the reduced exp to the character row" do
+      stub(Leveling, :death_penalty, fn _prog, _b, _j -> {10, 5} end)
+
+      expect(CharacterPersistence, :update_character, fn 1,
+                                                         %{base_exp: 90, job_exp: 35},
+                                                         [async: true] ->
+        {:ok, %Character{}}
+      end)
+
+      HealthHandler.apply_damage(
+        150,
+        2001,
+        build_state(100, :idle, %{base_exp: 100, job_exp: 40})
+      )
+    end
+
+    test "skips entirely when the config rate is 0" do
+      stub(Config, :death_penalty_base, fn -> 0 end)
+      stub(Config, :death_penalty_job, fn -> 0 end)
+      reject(&Leveling.death_penalty/3)
+      reject(&CharacterPersistence.update_character/3)
+
+      {:noreply, %{game_state: game_state}} =
+        HealthHandler.apply_damage(
+          150,
+          2001,
+          build_state(100, :idle, %{base_exp: 100, job_exp: 40})
+        )
+
+      assert game_state.stats.progression.base_exp == 100
+      assert game_state.stats.progression.job_exp == 40
+    end
+
+    test "skips when the dying player carries no_death_penalty" do
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, _ -> %{no_death_penalty: 1} end)
+      reject(&Leveling.death_penalty/3)
+      reject(&CharacterPersistence.update_character/3)
+
+      {:noreply, %{game_state: game_state}} =
+        HealthHandler.apply_damage(
+          150,
+          2001,
+          build_state(100, :idle, %{base_exp: 100, job_exp: 40})
+        )
+
+      assert game_state.stats.progression.base_exp == 100
+      assert game_state.stats.progression.job_exp == 40
+    end
+
+    test "does not persist when the computed loss is zero" do
+      stub(Leveling, :death_penalty, fn _prog, _b, _j -> {0, 0} end)
+      reject(&CharacterPersistence.update_character/3)
+
+      {:noreply, %{game_state: game_state}} =
+        HealthHandler.apply_damage(
+          150,
+          2001,
+          build_state(100, :idle, %{base_exp: 100, job_exp: 40})
+        )
+
+      assert game_state.stats.progression.base_exp == 100
+      assert game_state.stats.progression.job_exp == 40
+    end
+  end
+
   describe "handle_restart/2" do
     test "revives a dead player at full HP/SP and warps them to their save point" do
       stub(WarpHandler, :warp, fn warp_state, save_map, save_x, save_y ->
@@ -236,10 +330,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     %{state | game_state: casting}
   end
 
-  defp build_state(hp, action_state) do
+  defp build_state(hp, action_state, progression_attrs \\ %{}) do
+    progression =
+      struct(
+        PlayerProgression,
+        Map.merge(
+          %{base_level: 1, job_level: 1, base_exp: 0, job_exp: 0, job_id: 0},
+          progression_attrs
+        )
+      )
+
     stats = %Stats{
       current_state: %CurrentState{hp: hp, sp: 10},
-      derived_stats: %DerivedStats{max_hp: 100, max_sp: 50, aspd: 150}
+      derived_stats: %DerivedStats{max_hp: 100, max_sp: 50, aspd: 150},
+      progression: progression
     }
 
     game_state = %PlayerState{

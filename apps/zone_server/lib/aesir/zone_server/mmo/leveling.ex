@@ -59,6 +59,23 @@ defmodule Aesir.ZoneServer.Mmo.Leveling do
     threshold(level, max_job, JobManagement.get_job_exp(job_name, level))
   end
 
+  @doc """
+  Base/job experience to subtract on death, as a percentage of the exp required
+  to reach the next level.
+
+  Each track loses `min(current_exp_into_level, next_level_exp * pct / 100)`, so
+  the penalty never de-levels the character and never goes negative. At the level
+  cap (`next_*_exp/1` returns 0) or on a fresh level (0 exp into it) the loss is 0.
+  """
+  @spec death_penalty(Progression.t(), non_neg_integer(), non_neg_integer()) ::
+          {non_neg_integer(), non_neg_integer()}
+  def death_penalty(%Progression{} = progression, base_pct, job_pct)
+      when base_pct >= 0 and job_pct >= 0 do
+    base_loss = min(progression.base_exp, div(next_base_exp(progression) * base_pct, 100))
+    job_loss = min(progression.job_exp, div(next_job_exp(progression) * job_pct, 100))
+    {base_loss, job_loss}
+  end
+
   defp level_up(progression, level_key, exp_key, threshold_fun, max_level) do
     do_level_up(progression, level_key, exp_key, threshold_fun, max_level, 0)
   end

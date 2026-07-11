@@ -19,8 +19,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.Net.Resurrect
   alias Aesir.Net.UnitDespawn
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Constants.DespawnReason
+  alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
@@ -158,7 +161,59 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     SpatialIndex.remove_player(game_state.character_id)
     SpatialIndex.clear_visibility(game_state.character_id)
 
-    {:noreply, state}
+    {:noreply, apply_death_penalty(state)}
+  end
+
+  # Renewal death EXP penalty (rAthena exp.conf death_penalty_base/job). Skipped
+  # when both config rates are 0 or the dying player carries `no_death_penalty`
+  # (SC_LIFEINSURANCE). The penalty never de-levels — see `Leveling.death_penalty/3`.
+  defp apply_death_penalty(%{game_state: game_state} = state) do
+    base_pct = Config.death_penalty_base()
+    job_pct = Config.death_penalty_job()
+
+    cond do
+      base_pct == 0 and job_pct == 0 ->
+        state
+
+      ModifierCalculator.get_all_modifiers(:player, game_state.character_id)
+      |> Map.get(:no_death_penalty, 0) > 0 ->
+        state
+
+      true ->
+        subtract_death_exp(state, base_pct, job_pct)
+    end
+  end
+
+  defp subtract_death_exp(%{game_state: game_state} = state, base_pct, job_pct) do
+    progression = game_state.stats.progression
+    {base_loss, job_loss} = Leveling.death_penalty(progression, base_pct, job_pct)
+
+    if base_loss == 0 and job_loss == 0 do
+      state
+    else
+      progression = %{
+        progression
+        | base_exp: progression.base_exp - base_loss,
+          job_exp: progression.job_exp - job_loss
+      }
+
+      stats = %{game_state.stats | progression: progression}
+      game_state = %{game_state | stats: stats}
+      state = StatsManager.update_game_state(state, game_state)
+
+      StatusSync.send_params(state.connection_pid, %{
+        StatusParams.base_exp() => progression.base_exp,
+        StatusParams.job_exp() => progression.job_exp
+      })
+
+      CharacterPersistence.update_character(
+        game_state.character_id,
+        %{base_exp: progression.base_exp, job_exp: progression.job_exp},
+        async: true
+      )
+
+      state
+    end
   end
 
   defp respawn(%{game_state: game_state} = state) do

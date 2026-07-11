@@ -12,6 +12,8 @@ defmodule Aesir.ZoneServer.Config do
   @default_party_even_share_bonus 0
   @default_exp_bonus_attacker 25
   @default_exp_bonus_max_attacker 12
+  @default_death_penalty_base 1
+  @default_death_penalty_job 1
 
   @doc """
   Player view range (rAthena `AREA_SIZE`): the cell radius a client is told about.
@@ -65,4 +67,22 @@ defmodule Aesir.ZoneServer.Config do
         :exp_bonus_max_attacker,
         @default_exp_bonus_max_attacker
       )
+
+  @doc """
+  Death EXP penalty applied to the base track, as a percentage of the exp needed
+  to reach the next base level (rAthena `exp.conf death_penalty_base`, renewal
+  default 1%). Set to 0 to disable the base-track penalty.
+  """
+  @spec death_penalty_base() :: non_neg_integer()
+  def death_penalty_base,
+    do: Application.get_env(:zone_server, :death_penalty_base, @default_death_penalty_base)
+
+  @doc """
+  Death EXP penalty applied to the job track, as a percentage of the exp needed
+  to reach the next job level (rAthena `exp.conf death_penalty_job`, renewal
+  default 1%). Set to 0 to disable the job-track penalty.
+  """
+  @spec death_penalty_job() :: non_neg_integer()
+  def death_penalty_job,
+    do: Application.get_env(:zone_server, :death_penalty_job, @default_death_penalty_job)
 end
