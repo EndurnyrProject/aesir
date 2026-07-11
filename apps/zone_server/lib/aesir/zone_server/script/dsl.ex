@@ -45,6 +45,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Todo
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Emote
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.Handlers.RefineOps
@@ -305,6 +306,23 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
   def specialeffect2(%Ctx{} = ctx, effect) do
     SpecialEffect.play({:player, ctx.char_id}, effect, :area)
+    ctx
+  end
+
+  @doc """
+  Shows an emote bubble over the NPC running the script (rAthena `emotion`,
+  self-anchored form — the targeted second-`gid` form is deferred).
+
+  Purely cosmetic, so the context is returned unchanged and a detached ctx (no
+  `npc_gid` to originate the emote from) is a silent no-op rather than a halt —
+  a missing emote bubble must never abort the surrounding script.
+  """
+  @spec emotion(Ctx.t(), atom() | non_neg_integer()) :: Ctx.t()
+  def emotion(%Ctx{status: {:error, _}} = ctx, _emote), do: ctx
+  def emotion(%Ctx{npc_gid: nil} = ctx, _emote), do: ctx
+
+  def emotion(%Ctx{npc_gid: gid} = ctx, emote) do
+    Emote.show({:npc, gid}, emote)
     ctx
   end
 

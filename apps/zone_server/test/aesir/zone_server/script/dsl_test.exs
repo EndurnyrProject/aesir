@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
+  alias Aesir.ZoneServer.Unit.Emote
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -40,6 +41,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     Mimic.copy(MapCache)
     Mimic.copy(MapData)
     Mimic.copy(SpecialEffect)
+    Mimic.copy(Emote)
 
     stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
     stub(StatusInterpreter, :apply_status, fn _, _, _, _ -> :ok end)
@@ -126,6 +128,33 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     test "is a no-op on a detached ctx" do
       ctx = %{build_ctx() | game_state: nil}
       assert Dsl.specialeffect2(ctx, :heal2) == ctx
+    end
+  end
+
+  describe "emotion/2" do
+    test "shows the emote over the npc and returns ctx unchanged" do
+      test_pid = self()
+
+      expect(Emote, :show, fn {:npc, 42}, :money ->
+        send(test_pid, :shown)
+        :ok
+      end)
+
+      ctx = %{build_ctx() | npc_gid: 42}
+
+      assert Dsl.emotion(ctx, :money) == ctx
+      assert_received :shown
+    end
+
+    test "is a no-op when npc_gid is nil" do
+      ctx = build_ctx()
+      assert ctx.npc_gid == nil
+      assert Dsl.emotion(ctx, :money) == ctx
+    end
+
+    test "is a no-op on an errored ctx" do
+      ctx = %{build_ctx() | npc_gid: 42, status: {:error, :boom}}
+      assert Dsl.emotion(ctx, :money) == ctx
     end
   end
 
