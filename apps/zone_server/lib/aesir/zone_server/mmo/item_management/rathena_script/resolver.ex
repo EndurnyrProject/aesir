@@ -74,7 +74,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "SC_CRIFOOD" => :sc_crifood,
     "SC_BATKFOOD" => :sc_batkfood,
     "SC_MATKFOOD" => :sc_matkfood,
-    "SC_WATKFOOD" => :sc_watkfood
+    "SC_WATKFOOD" => :sc_watkfood,
+    "SC_INCSTR" => :sc_incstr,
+    "SC_INCINT" => :sc_incint,
+    "SC_INCDEX" => :sc_incdex,
+    "SC_INCLUK" => :sc_incluk,
+    "SC_STR_SCROLL" => :sc_str_scroll,
+    "SC_INT_SCROLL" => :sc_int_scroll,
+    "SC_FOOD_STR_CASH" => :sc_food_str_cash,
+    "SC_FOOD_AGI_CASH" => :sc_food_agi_cash,
+    "SC_FOOD_VIT_CASH" => :sc_food_vit_cash,
+    "SC_FOOD_INT_CASH" => :sc_food_int_cash,
+    "SC_FOOD_DEX_CASH" => :sc_food_dex_cash,
+    "SC_FOOD_LUK_CASH" => :sc_food_luk_cash
   }
 
   @elements %{
@@ -121,6 +133,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
 
   @spec resolve_status(String.t()) :: {:ok, atom()} | error()
   def resolve_status(symbol) when is_binary(symbol), do: lookup(@statuses, symbol)
+
+  @doc """
+  Returns the full rAthena-symbol-to-status-atom map. Used by the
+  resolver-completeness test to assert every resolved status has a registered
+  `StatusEffect.Registry` definition (the same-commit rule guard).
+  """
+  @spec statuses() :: %{String.t() => atom()}
+  def statuses, do: @statuses
 
   @spec resolve_element(String.t()) :: {:ok, atom()} | error()
   def resolve_element(symbol) when is_binary(symbol), do: lookup(@elements, symbol)

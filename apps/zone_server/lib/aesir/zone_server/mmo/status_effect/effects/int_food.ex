@@ -9,7 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IntFood do
     id: :sc_intfood,
     properties: [:buff],
     calc_flags: [:int],
-    icon: :food_int
+    icon: :food_int,
+    end_on_start: [:sc_food_int_cash]
 
   @impl true
   def modifiers(instance, _context), do: %{int: instance.val1}

@@ -9,7 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DexFood do
     id: :sc_dexfood,
     properties: [:buff],
     calc_flags: [:dex],
-    icon: :food_dex
+    icon: :food_dex,
+    end_on_start: [:sc_food_dex_cash]
 
   @impl true
   def modifiers(instance, _context), do: %{dex: instance.val1}

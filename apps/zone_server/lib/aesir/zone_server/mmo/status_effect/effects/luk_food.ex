@@ -9,7 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.LukFood do
     id: :sc_lukfood,
     properties: [:buff],
     calc_flags: [:luk],
-    icon: :food_luk
+    icon: :food_luk,
+    end_on_start: [:sc_food_luk_cash]
 
   @impl true
   def modifiers(instance, _context), do: %{luk: instance.val1}

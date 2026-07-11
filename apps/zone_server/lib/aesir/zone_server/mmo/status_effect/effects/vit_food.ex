@@ -9,7 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.VitFood do
     id: :sc_vitfood,
     properties: [:buff],
     calc_flags: [:vit],
-    icon: :food_vit
+    icon: :food_vit,
+    end_on_start: [:sc_food_vit_cash]
 
   @impl true
   def modifiers(instance, _context), do: %{vit: instance.val1}

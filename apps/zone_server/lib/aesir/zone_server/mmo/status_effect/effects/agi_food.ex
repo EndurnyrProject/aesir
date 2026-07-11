@@ -10,7 +10,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AgiFood do
     id: :sc_agifood,
     properties: [:buff],
     calc_flags: [:agi],
-    icon: :food_agi
+    icon: :food_agi,
+    end_on_start: [:sc_food_agi_cash]
 
   @impl true
   def modifiers(instance, _context), do: %{agi: instance.val1}
