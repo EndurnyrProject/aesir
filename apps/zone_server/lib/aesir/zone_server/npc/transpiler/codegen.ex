@@ -883,6 +883,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     end
   end
 
+  defp typed_arg({:name, s}, :effect, _env) do
+    case Resolver.effect(s) do
+      {:ok, atom} when is_atom(atom) -> inspect(atom)
+      {:ok, id} -> to_string(id)
+      :error -> const_todo(s)
+    end
+  end
+
   defp typed_arg({:name, s}, :quest_mode, _env) do
     case Resolver.quest_mode(s) do
       {:ok, atom} -> inspect(atom)
@@ -1454,6 +1462,55 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp render({:call, "getnpctimer", args}, env) do
     flag(:todo_mod)
     "Todo.call!(:getnpctimer, [#{Enum.map_join(args, ", ", &render(&1, env))}])"
+  end
+
+  # rAthena getnpcid(type{,"name"}): only TYPE 0 (the NPC's own unit id, or a
+  # named NPC's) is supported; other types have no DSL equivalent yet.
+  defp render({:call, "getnpcid", [{:int, 0}]}, _env), do: "getnpcid(ctx)"
+
+  defp render({:call, "getnpcid", [{:int, 0}, name]}, env),
+    do: "getnpcid(ctx, #{render_str(name, env)})"
+
+  defp render({:call, "getnpcid", args}, env) do
+    flag(:todo_mod)
+    "Todo.call!(:getnpcid, [#{Enum.map_join(args, ", ", &render(&1, env))}])"
+  end
+
+  defp render({:call, "playerattached", []}, _env), do: "playerattached(ctx)"
+
+  defp render({:call, "playerattached", args}, env) do
+    flag(:todo_mod)
+    "Todo.call!(:playerattached, [#{Enum.map_join(args, ", ", &render(&1, env))}])"
+  end
+
+  # rAthena strnpcinfo(type{,"name"}): the self form maps to strnpcinfo(ctx,
+  # type); the named-NPC form has no DSL equivalent yet.
+  defp render({:call, "strnpcinfo", [type]}, env),
+    do: "strnpcinfo(ctx, #{typed_arg(type, :int, env)})"
+
+  defp render({:call, "strnpcinfo", args}, env) do
+    flag(:todo_mod)
+    "Todo.call!(:strnpcinfo, [#{Enum.map_join(args, ", ", &render(&1, env))}])"
+  end
+
+  # rAthena checkweight(id,amt{,id,amt...}): consecutive item-id/amount pairs
+  # become a list of `{id, amount}` tuples. checkweight2 (paired arrays) is a
+  # different shape and stays a stub.
+  defp render({:call, "checkweight", args}, env)
+       when args != [] and rem(length(args), 2) == 0 do
+    pairs =
+      args
+      |> Enum.chunk_every(2)
+      |> Enum.map_join(", ", fn [id, amt] ->
+        "{#{typed_arg(id, :item, env)}, #{typed_arg(amt, :int, env)}}"
+      end)
+
+    "checkweight(ctx, [#{pairs}])"
+  end
+
+  defp render({:call, "checkweight", args}, env) do
+    flag(:todo_mod)
+    "Todo.call!(:checkweight, [#{Enum.map_join(args, ", ", &render(&1, env))}])"
   end
 
   defp render({:call, name, args}, env) do

@@ -30,7 +30,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Analyzer do
 
   # Statements and expression calls the codegen shapes directly.
   @native_cmds ~w(mes next close close2 end select prompt input menu setarray
-                  callsub callfunc getarg rand getnpctimer)
+                  callsub callfunc getarg rand getnpctimer getnpcid
+                  playerattached strnpcinfo checkweight)
 
   @type analysis :: %{
           labels: [String.t()],

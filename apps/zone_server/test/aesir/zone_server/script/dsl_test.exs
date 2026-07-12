@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
@@ -19,6 +20,8 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
   alias Aesir.ZoneServer.Unit.Emote
+  alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -44,6 +47,9 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     Mimic.copy(SpecialEffect)
     Mimic.copy(Emote)
     Mimic.copy(ModifierCalculator)
+    Mimic.copy(Weight)
+    Mimic.copy(Inventory)
+    Mimic.copy(ItemManagement)
 
     stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
     stub(StatusInterpreter, :apply_status, fn _, _, _, _ -> :ok end)
@@ -57,7 +63,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     test "raises hp by a rolled amount within the range, clamps at max, syncs and persists" do
       test_pid = self()
 
-      expect(CharacterPersistence, :update_stats, fn 1, %{hp: hp}, async: true ->
+      expect(CharacterPersistence, :update_stats, fn 1, %{hp: hp}, [async: true] ->
         send(test_pid, {:persisted, hp})
         {:ok, %Character{}}
       end)
@@ -147,6 +153,93 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     test "is a no-op on a detached ctx" do
       ctx = %{build_ctx() | game_state: nil}
       assert Dsl.specialeffect2(ctx, :heal2) == ctx
+    end
+
+    test "passes a raw numeric effect id straight through" do
+      test_pid = self()
+
+      expect(SpecialEffect, :play, fn {:player, 1}, 42, :area ->
+        send(test_pid, :played)
+        :ok
+      end)
+
+      assert Dsl.specialeffect2(build_ctx(), 42) == build_ctx()
+      assert_received :played
+    end
+  end
+
+  describe "specialeffect/2" do
+    test "plays the area effect anchored on the running NPC and returns ctx unchanged" do
+      test_pid = self()
+
+      expect(SpecialEffect, :play, fn {:npc, 42}, :hit1, :area ->
+        send(test_pid, :played)
+        :ok
+      end)
+
+      ctx = %{build_ctx() | npc_gid: 42}
+
+      assert Dsl.specialeffect(ctx, :hit1) == ctx
+      assert_received :played
+    end
+
+    test "is a no-op when npc_gid is nil" do
+      ctx = build_ctx()
+      assert ctx.npc_gid == nil
+      assert Dsl.specialeffect(ctx, :hit1) == ctx
+    end
+
+    test "short-circuits on an already-halted ctx" do
+      ctx = Ctx.halt(%{build_ctx() | npc_gid: 42}, :boom)
+      assert Dsl.specialeffect(ctx, :hit1) == ctx
+    end
+  end
+
+  describe "getnpcid/1" do
+    test "returns the running NPC's gid" do
+      ctx = %{build_ctx() | npc_gid: 7777}
+      assert Dsl.getnpcid(ctx) == 7777
+    end
+
+    test "returns 0 when there is no npc_gid" do
+      assert Dsl.getnpcid(build_ctx()) == 0
+    end
+  end
+
+  describe "playerattached/1" do
+    test "returns the attached player's account id" do
+      assert Dsl.playerattached(build_ctx()) == 100
+    end
+
+    test "returns 0 on a detached ctx" do
+      ctx = %{build_ctx() | account_id: nil}
+      assert Dsl.playerattached(ctx) == 0
+    end
+  end
+
+  describe "checkweight/2" do
+    setup do
+      stub(ItemManagement, :get_item_by_id, fn _ -> {:error, :item_not_found} end)
+      :ok
+    end
+
+    test "returns 1 when the items fit under weight and there is a free slot" do
+      stub(Weight, :would_exceed?, fn _inv, _stats, _added -> false end)
+
+      assert Dsl.checkweight(build_ctx(), [{501, 5}]) == 1
+    end
+
+    test "returns 0 when the combined weight would exceed the limit" do
+      stub(Weight, :would_exceed?, fn _inv, _stats, _added -> true end)
+
+      assert Dsl.checkweight(build_ctx(), [{501, 5}]) == 0
+    end
+
+    test "returns 0 when there are not enough free inventory slots" do
+      stub(Weight, :would_exceed?, fn _inv, _stats, _added -> false end)
+      stub(Inventory, :capacity, fn -> 0 end)
+
+      assert Dsl.checkweight(build_ctx(), [{501, 1}]) == 0
     end
   end
 

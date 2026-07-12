@@ -88,6 +88,22 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
 
   def emote(symbol) when is_binary(symbol), do: :error
 
+  @doc """
+  Resolves a `specialeffect`/`specialeffect2` effect argument. An `EF_*` token
+  maps to its readable `:ef_*` atom (delegating the id-validity check to
+  `ItemResolver.resolve_effect/1`); a bare integer passes through unchanged,
+  matching the effect DSL ops' `atom() | non_neg_integer()` argument.
+  """
+  @spec effect(String.t() | integer()) :: {:ok, atom() | integer()} | :error
+  def effect(value) when is_integer(value), do: {:ok, value}
+
+  def effect(symbol) when is_binary(symbol) do
+    case ItemResolver.resolve_effect(symbol) do
+      {:ok, atom} -> {:ok, atom}
+      {:error, _} -> :error
+    end
+  end
+
   @quest_modes %{
     "HAVEQUEST" => :havequest,
     "PLAYTIME" => :playtime,

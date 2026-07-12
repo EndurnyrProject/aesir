@@ -31,21 +31,23 @@ defmodule Aesir.ZoneServer.Unit.SpecialEffect do
   @doc """
   Plays a one-shot `EF_*` effect originating from `source_unit`.
 
-  `source_unit` is a `{unit_type, unit_id}` tuple. `effect_atom` is a readable
-  `:ef_*` atom (e.g. `:hit1`); if it does not resolve through `EffectId.id/1`,
-  the call logs a warning and sends nothing.
+  `source_unit` is a `{unit_type, unit_id}` tuple. `effect` is a readable
+  `:ef_*` atom (e.g. `:hit1`), resolved through `EffectId.id/1`, or a raw
+  numeric effect id which is sent verbatim (rAthena scripts pass effect ids
+  either as `EF_*` constants or bare integers). An atom that does not resolve
+  logs a warning and sends nothing.
 
   `target`:
     - `:area` (default) — broadcasts to every player in view range of the unit.
     - `:self` — sends only to the source unit (treated as a player char id).
   """
-  @spec play(source_unit(), atom(), target()) :: :ok
-  def play(source_unit, effect_atom, target \\ :area)
+  @spec play(source_unit(), atom() | integer(), target()) :: :ok
+  def play(source_unit, effect, target \\ :area)
 
-  def play({_unit_type, unit_id} = source_unit, effect_atom, target) do
-    case EffectId.id(effect_atom) do
+  def play({_unit_type, unit_id} = source_unit, effect, target) do
+    case resolve_effect_id(effect) do
       nil ->
-        Logger.warning("SpecialEffect: unknown effect atom #{inspect(effect_atom)}, skipping")
+        Logger.warning("SpecialEffect: unknown effect #{inspect(effect)}, skipping")
         :ok
 
       effect_id ->
@@ -53,6 +55,10 @@ defmodule Aesir.ZoneServer.Unit.SpecialEffect do
         dispatch(source_unit, packet, target)
     end
   end
+
+  @spec resolve_effect_id(atom() | integer()) :: integer() | nil
+  defp resolve_effect_id(effect_id) when is_integer(effect_id), do: effect_id
+  defp resolve_effect_id(effect_atom) when is_atom(effect_atom), do: EffectId.id(effect_atom)
 
   defp dispatch({:player, unit_id}, packet, :self) do
     Broadcast.to_player(unit_id, packet)

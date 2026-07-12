@@ -298,16 +298,38 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   Plays a one-shot `EF_*` visual effect on the player, shown to every player in
   view range (rAthena `specialeffect2`).
 
-  Purely cosmetic, so the context is returned unchanged and a detached ctx (no
-  player to originate the effect from) is a silent no-op rather than a halt — a
-  missing sprite burst must never abort the surrounding script.
+  `effect` is an `:ef_*` atom or a raw numeric effect id. Purely cosmetic, so
+  the context is returned unchanged and a detached ctx (no player to originate
+  the effect from) is a silent no-op rather than a halt — a missing sprite
+  burst must never abort the surrounding script.
   """
-  @spec specialeffect2(Ctx.t(), atom()) :: Ctx.t()
+  @spec specialeffect2(Ctx.t(), atom() | non_neg_integer()) :: Ctx.t()
   def specialeffect2(%Ctx{status: {:error, _}} = ctx, _effect), do: ctx
   def specialeffect2(%Ctx{game_state: nil} = ctx, _effect), do: ctx
 
   def specialeffect2(%Ctx{} = ctx, effect) do
     SpecialEffect.play({:player, ctx.char_id}, effect, :area)
+    ctx
+  end
+
+  @doc """
+  Plays a one-shot `EF_*` visual effect anchored on the NPC running the script,
+  shown to every player in view range of the NPC's placement (rAthena
+  `specialeffect`, self-anchored form — the trailing send-target and named-NPC
+  arguments are dropped).
+
+  `effect` is an `:ef_*` atom or a raw numeric effect id. Purely cosmetic, so
+  the context is returned unchanged and a detached ctx (no `npc_gid` to
+  originate the effect from) is a silent no-op rather than a halt — a missing
+  sprite burst must never abort the surrounding script. Resolves the NPC's
+  position through `SpatialIndex`, the same anchor `emotion/2` uses.
+  """
+  @spec specialeffect(Ctx.t(), atom() | non_neg_integer()) :: Ctx.t()
+  def specialeffect(%Ctx{status: {:error, _}} = ctx, _effect), do: ctx
+  def specialeffect(%Ctx{npc_gid: nil} = ctx, _effect), do: ctx
+
+  def specialeffect(%Ctx{npc_gid: gid} = ctx, effect) do
+    SpecialEffect.play({:npc, gid}, effect, :area)
     ctx
   end
 
@@ -1521,6 +1543,100 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     gs.inventory
     |> Inventory.equipped_items()
     |> Enum.any?(fn {_index, %InventoryItem{nameid: nameid}} -> nameid == item_id end)
+  end
+
+  @doc """
+  The unit id (gid) of the NPC running the script (rAthena `getnpcid`, type-0
+  form). A pure read that does not raise on a detached ctx — the NPC identity
+  is not player state — and returns `0` when there is no `npc_gid` (e.g. an
+  item script), matching rAthena's "no NPC attached" result.
+  """
+  @spec getnpcid(Ctx.t()) :: non_neg_integer()
+  def getnpcid(%Ctx{npc_gid: nil}), do: 0
+  def getnpcid(%Ctx{npc_gid: gid}), do: gid
+
+  @doc """
+  The unit id (gid) of the first NPC registered under `name`
+  (rAthena `getnpcid(0,"name")`), or `0` when the name resolves to no
+  placement.
+  """
+  @spec getnpcid(Ctx.t(), String.t()) :: non_neg_integer()
+  def getnpcid(%Ctx{}, name) do
+    case NpcRegistry.by_name(name) do
+      [{_module, placement} | _rest] -> NpcRegistry.entity_id(placement)
+      [] -> 0
+    end
+  end
+
+  @doc """
+  The account id of the player attached to the script, or `0` when none is
+  (rAthena `playerattached`). A pure read that does not raise on a detached
+  ctx — its whole purpose is to test for attachment, so an event/timer ctx
+  returns `0` rather than crashing.
+  """
+  @spec playerattached(Ctx.t()) :: non_neg_integer()
+  def playerattached(%Ctx{account_id: nil}), do: 0
+  def playerattached(%Ctx{account_id: account_id}), do: account_id
+
+  @doc """
+  A field of the running NPC's info as a string (rAthena `strnpcinfo`):
+  `0`/`1` the visible name, `3` the unique name, `4` the map name; the
+  hidden `#`-fragment (`2`) and file path (`5`) are not modelled and return
+  an empty string. A pure read that does not raise on a detached ctx; an
+  absent or unresolvable `npc_gid` returns an empty string, matching
+  rAthena's "no NPC" result.
+  """
+  @spec strnpcinfo(Ctx.t(), integer()) :: String.t()
+  def strnpcinfo(%Ctx{npc_gid: nil}, _type), do: ""
+
+  def strnpcinfo(%Ctx{npc_gid: gid}, type) do
+    case NpcRegistry.module_for_unit(gid) do
+      {:ok, {_module, placement}} -> npc_info(placement, type)
+      :error -> ""
+    end
+  end
+
+  defp npc_info(%{name: name}, type) when type in [0, 1], do: name
+  defp npc_info(%{unique_name: unique_name}, 3), do: unique_name
+  defp npc_info(%{map: map}, 4), do: map
+  defp npc_info(_placement, _type), do: ""
+
+  @doc """
+  Whether the player can carry every `{item_id, amount}` in `items` at once
+  (rAthena `checkweight`): `1` when the combined weight fits under the carry
+  limit and there are enough free inventory slots for the new item types,
+  else `0`.
+
+  The slot check is an approximation — it reserves one slot per distinct item
+  type not already held — rather than rAthena's exact per-stack accounting;
+  the weight check is exact. Pure read over the ctx snapshot.
+  """
+  @spec checkweight(Ctx.t(), [{integer(), non_neg_integer()}]) :: 0 | 1
+  def checkweight(%Ctx{game_state: nil}, _items), do: no_player!("checkweight/2")
+
+  def checkweight(%Ctx{game_state: gs}, items) do
+    added_weight =
+      Enum.reduce(items, 0, fn {item_id, amount}, acc -> acc + item_weight(item_id) * amount end)
+
+    weight_ok? = not Weight.would_exceed?(gs.inventory, gs.stats, added_weight)
+
+    new_types =
+      items
+      |> Enum.map(&elem(&1, 0))
+      |> Enum.uniq()
+      |> Enum.count(fn item_id -> Inventory.held_amount(gs.inventory, item_id) == 0 end)
+
+    slots_ok? = Inventory.capacity() - map_size(gs.inventory) >= new_types
+
+    if weight_ok? and slots_ok?, do: 1, else: 0
+  end
+
+  @spec item_weight(integer()) :: non_neg_integer()
+  defp item_weight(item_id) do
+    case ItemManagement.get_item_by_id(item_id) do
+      {:ok, %ItemDefinition{weight: weight}} -> weight
+      {:error, _reason} -> 0
+    end
   end
 
   defp apply_heal(%Ctx{} = ctx, hp_fun, sp_fun) do

@@ -134,12 +134,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     src =
       gen!("""
       showscript "hi";
-      if (checkweight(501, 1) == 0) close;
+      if (getcharid(0) == 0) close;
       close;
       """)
 
     assert src =~ ~S|ctx = todo(ctx, :showscript, ["hi"])|
-    assert src =~ "Todo.call!(:checkweight, [501, 1]) == 0"
+    assert src =~ "Todo.call!(:getcharid, [0]) == 0"
     assert src =~ "alias Aesir.ZoneServer.Script.Todo"
   end
 
@@ -625,5 +625,81 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
 
     assert src =~ "checkquest(ctx, 7393, :havequest)"
     assert src =~ "isbegin_quest(ctx, 7393)"
+  end
+
+  test "specialeffect and specialeffect2 map to their DSL ops, resolving EF_* and raw ids" do
+    src =
+      gen!("""
+      specialeffect EF_HIT1;
+      specialeffect2 EF_HEAL2;
+      specialeffect 42;
+      close;
+      """)
+
+    assert src =~ "|> specialeffect(:hit1)"
+    assert src =~ "|> specialeffect2(:heal2)"
+    assert src =~ "|> specialeffect(42)"
+    refute src =~ "Todo.call!(:specialeffect"
+  end
+
+  test "specialeffect drops the trailing send-target and named-NPC arguments" do
+    src =
+      gen!("""
+      specialeffect EF_HIT1, AREA, "Some NPC";
+      close;
+      """)
+
+    assert src =~ "|> specialeffect(:hit1)"
+    refute src =~ "Some NPC"
+  end
+
+  test "getnpcid reads the running NPC's gid and a named NPC's gid" do
+    src =
+      gen!("""
+      .@self = getnpcid(0);
+      .@other = getnpcid(0, "Kafra Employee");
+      close;
+      """)
+
+    assert src =~ "getnpcid(ctx)"
+    assert src =~ ~S|getnpcid(ctx, "Kafra Employee")|
+    refute src =~ "Todo.call!(:getnpcid"
+  end
+
+  test "playerattached reads as a zero-arg attachment check" do
+    src =
+      gen!("""
+      if (!playerattached()) end;
+      close;
+      """)
+
+    assert src =~ "playerattached(ctx)"
+    refute src =~ "Todo.call!(:playerattached"
+  end
+
+  test "strnpcinfo reads an NPC info field by type" do
+    src =
+      gen!("""
+      mes strnpcinfo(0);
+      mes strnpcinfo(4);
+      close;
+      """)
+
+    assert src =~ "strnpcinfo(ctx, 0)"
+    assert src =~ "strnpcinfo(ctx, 4)"
+    refute src =~ "Todo.call!(:strnpcinfo"
+  end
+
+  test "checkweight pairs item ids and amounts into a tuple list" do
+    src =
+      gen!("""
+      if (checkweight(501, 5) == 0) close;
+      if (checkweight(501, 1, 502, 2) == 0) close;
+      close;
+      """)
+
+    assert src =~ "checkweight(ctx, [{501, 5}])"
+    assert src =~ "checkweight(ctx, [{501, 1}, {502, 2}])"
+    refute src =~ "Todo.call!(:checkweight"
   end
 end

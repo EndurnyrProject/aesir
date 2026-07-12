@@ -51,6 +51,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert {:ok, %{dsl: "emotion", args: [:emote]}} = CommandMap.command("emotion")
   end
 
+  test "specialeffect buildins map to their DSL ops with an effect arg" do
+    assert {:ok, %{dsl: "specialeffect", args: [:effect]}} = CommandMap.command("specialeffect")
+    assert {:ok, %{dsl: "specialeffect2", args: [:effect]}} = CommandMap.command("specialeffect2")
+    assert CommandMap.supported?("specialeffect")
+    assert CommandMap.supported?("SpecialEffect2")
+  end
+
   test "broadcast buildins map to the announce shape" do
     assert {:ok, %{shape: :announce, dsl: "announce", fixed: 2}} = CommandMap.command("announce")
 
@@ -108,6 +115,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
       assert {:ok, :money} = Resolver.emote("ET_MONEY")
       assert :error = Resolver.emote("ET_NOPE")
       assert {:ok, 42} = Resolver.emote(42)
+    end
+
+    test "effect resolves EF_* tokens to :ef_* atoms, ints pass through" do
+      assert {:ok, :hit1} = Resolver.effect("EF_HIT1")
+      assert :error = Resolver.effect("EF_NOPE")
+      assert :error = Resolver.effect("NOT_AN_EFFECT")
+      assert {:ok, 42} = Resolver.effect(42)
     end
 
     test "quest_mode resolves the HAVEQUEST/PLAYTIME/HUNTING constants" do
