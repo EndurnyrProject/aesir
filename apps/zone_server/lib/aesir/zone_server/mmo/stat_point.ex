@@ -10,9 +10,10 @@ defmodule Aesir.ZoneServer.Mmo.StatPoint do
   """
 
   alias Aesir.ZoneServer.Mmo.DataLoader
+  alias Aesir.ZoneServer.Mmo.JobManagement.TraitJobs
 
   @pt_key __MODULE__
-  @cache_file "statpoint.etf"
+  @cache_file "statpoint_v2.etf"
 
   @doc """
   Cumulative status points granted from base level 1 up to `level`, clamped to
@@ -20,8 +21,18 @@ defmodule Aesir.ZoneServer.Mmo.StatPoint do
   """
   @spec points_at(pos_integer()) :: non_neg_integer()
   def points_at(level) when level >= 1 do
-    table = table()
-    Map.fetch!(table, min(level, map_size(table)))
+    {points, _trait_points} = at(level)
+    points
+  end
+
+  @doc """
+  Cumulative trait points granted from base level 1 up to `level`, clamped to
+  the table's maximum level. 0 through level 200.
+  """
+  @spec trait_points_at(pos_integer()) :: non_neg_integer()
+  def trait_points_at(level) when level >= 1 do
+    {_points, trait_points} = at(level)
+    trait_points
   end
 
   @doc """
@@ -29,6 +40,13 @@ defmodule Aesir.ZoneServer.Mmo.StatPoint do
   """
   @spec gain(pos_integer(), pos_integer()) :: non_neg_integer()
   def gain(from_level, to_level), do: points_at(to_level) - points_at(from_level)
+
+  @doc """
+  Trait points granted by leveling from `from_level` to `to_level`.
+  """
+  @spec trait_gain(pos_integer(), pos_integer()) :: non_neg_integer()
+  def trait_gain(from_level, to_level),
+    do: trait_points_at(to_level) - trait_points_at(from_level)
 
   @doc """
   Renewal status-point cost to raise a stat by one from its current `value`.
@@ -59,10 +77,22 @@ defmodule Aesir.ZoneServer.Mmo.StatPoint do
   end
 
   @doc """
-  Maximum value a primary stat can reach for the given job.
+  Maximum value a primary (classic) stat can reach for the given job: 135 on
+  trait (4th) jobs, 99 otherwise.
   """
   @spec max_parameter(non_neg_integer()) :: pos_integer()
-  def max_parameter(_job_id), do: 99
+  def max_parameter(job_id) do
+    if TraitJobs.trait_job?(job_id), do: 135, else: 99
+  end
+
+  @doc """
+  Maximum value a trait stat can reach for the given job: 100 on trait (4th)
+  jobs, 0 otherwise (only trait jobs may allocate trait stats).
+  """
+  @spec max_trait_parameter(non_neg_integer()) :: non_neg_integer()
+  def max_trait_parameter(job_id) do
+    if TraitJobs.trait_job?(job_id), do: 100, else: 0
+  end
 
   @doc """
   Rebuilds the cached table after editing the data file in a running session.
@@ -84,7 +114,13 @@ defmodule Aesir.ZoneServer.Mmo.StatPoint do
     if result > base, do: result - base, else: 0
   end
 
-  @spec table() :: %{pos_integer() => non_neg_integer()}
+  @spec at(pos_integer()) :: {non_neg_integer(), non_neg_integer()}
+  defp at(level) do
+    table = table()
+    Map.fetch!(table, min(level, map_size(table)))
+  end
+
+  @spec table() :: %{pos_integer() => {non_neg_integer(), non_neg_integer()}}
   defp table do
     case :persistent_term.get(@pt_key, nil) do
       nil ->
@@ -97,17 +133,19 @@ defmodule Aesir.ZoneServer.Mmo.StatPoint do
     end
   end
 
-  @spec load() :: %{pos_integer() => non_neg_integer()}
+  @spec load() :: %{pos_integer() => {non_neg_integer(), non_neg_integer()}}
   defp load do
     DataLoader.load(data_dir(), @cache_file, &build/1)
   end
 
-  @spec build([Path.t()]) :: %{pos_integer() => non_neg_integer()}
+  @spec build([Path.t()]) :: %{pos_integer() => {non_neg_integer(), non_neg_integer()}}
   defp build(sources) do
     sources
     |> Enum.flat_map(&DataLoader.parse_file/1)
     |> Enum.with_index(1)
-    |> Map.new(fn {points, level} -> {level, points} end)
+    |> Map.new(fn {%{"points" => points, "trait_points" => trait_points}, level} ->
+      {level, {points, trait_points}}
+    end)
   end
 
   @spec data_dir() :: Path.t()

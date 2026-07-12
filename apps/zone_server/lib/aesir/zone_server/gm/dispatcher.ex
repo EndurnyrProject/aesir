@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Gm.Dispatcher do
     "baselevelup" => Aesir.ZoneServer.Gm.Commands.BaseLevel,
     "joblevelup" => Aesir.ZoneServer.Gm.Commands.JobLevel,
     "resetskill" => Aesir.ZoneServer.Gm.Commands.ResetSkill,
+    "resetstat" => Aesir.ZoneServer.Gm.Commands.ResetStat,
     "broadcast" => Aesir.ZoneServer.Gm.Commands.Broadcast
   }
 

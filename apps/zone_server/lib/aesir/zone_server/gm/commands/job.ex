@@ -8,10 +8,12 @@ defmodule Aesir.ZoneServer.Gm.Commands.Job do
 
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.JobManagement.JobChange
+  alias Aesir.ZoneServer.Mmo.JobManagement.TraitJobs
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
 
   @usage "Usage: @job <job_id | job_name>"
   @cart_active "Remove your cart before changing job"
+  @requirements_not_met "You do not meet the requirements for that job"
 
   @impl true
   def name, do: "job"
@@ -22,11 +24,13 @@ defmodule Aesir.ZoneServer.Gm.Commands.Job do
   @impl true
   def execute([arg], ctx) do
     with {:ok, job_id, job_name} <- resolve(arg),
+         :ok <- TraitJobs.change_allowed?(ctx.game_state.stats.progression, job_id),
          false <- ProgressionHandler.cart_blocks_job_change?(ctx.game_state, job_id) do
       JobChange.request(ctx.game_state.character_id, job_id)
       {:ok, "Changed job to #{job_name} (#{job_id})"}
     else
       true -> {:error, @cart_active}
+      {:error, :requirements_not_met} -> {:error, @requirements_not_met}
       {:error, reason} -> {:error, reason}
     end
   end

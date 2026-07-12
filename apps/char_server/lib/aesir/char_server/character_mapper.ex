@@ -63,7 +63,16 @@ defmodule Aesir.CharServer.CharacterMapper do
       karma: c.karma,
       manner: c.manner,
       rename: c.rename,
-      delete_date: delete_date(c.delete_date)
+      delete_date: delete_date(c.delete_date),
+      pow: c.pow,
+      sta: c.sta,
+      wis: c.wis,
+      spl: c.spl,
+      con: c.con,
+      crt: c.crt,
+      trait_point: c.trait_point,
+      ap: c.ap,
+      max_ap: c.max_ap
     }
   end
 

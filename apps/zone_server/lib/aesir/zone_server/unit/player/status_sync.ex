@@ -71,7 +71,28 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusSync do
       StatusParams.base_level() => stats.progression.base_level,
       StatusParams.job_level() => stats.progression.job_level,
       StatusParams.base_exp() => stats.progression.base_exp,
-      StatusParams.job_exp() => stats.progression.job_exp
+      StatusParams.job_exp() => stats.progression.job_exp,
+
+      # Trait base stats
+      StatusParams.pow() => stats.base_stats.pow,
+      StatusParams.sta() => stats.base_stats.sta,
+      StatusParams.wis() => stats.base_stats.wis,
+      StatusParams.spl() => stats.base_stats.spl,
+      StatusParams.con() => stats.base_stats.con,
+      StatusParams.crt() => stats.base_stats.crt,
+
+      # Derived combat stats
+      StatusParams.patk() => stats.combat_stats.patk,
+      StatusParams.smatk() => stats.combat_stats.smatk,
+      StatusParams.res() => stats.combat_stats.res,
+      StatusParams.mres() => stats.combat_stats.mres,
+      StatusParams.hplus() => stats.combat_stats.hplus,
+      StatusParams.crate() => stats.combat_stats.crate,
+
+      # Trait progression / AP
+      StatusParams.trait_point() => stats.progression.trait_point,
+      StatusParams.ap() => stats.current_state.ap,
+      StatusParams.max_ap() => stats.derived_stats.max_ap
     })
   end
 end

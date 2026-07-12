@@ -154,4 +154,45 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHealTest do
       AlHeal.cast(@caster, :self, 5, definition)
     end
   end
+
+  describe "hplus heal boost (row 14: heal + div(heal * hplus, 100))" do
+    setup do
+      stub(Combat, :resolve_combatant, fn _id -> {:ok, %{race: :demi_human}} end)
+      {:ok, definition} = Catalog.by_id(28)
+      {:ok, definition: definition}
+    end
+
+    test "hplus 10 boosts a 350 base heal to 385", %{definition: definition} do
+      stub(PlayerState, :get_stats, fn _ ->
+        %{base_level: 50, int: 50, matk: 50, hplus: 10}
+      end)
+
+      # base heal is 350 (see the lv5 @ base_level=50 vector above);
+      # 350 + div(350 * 10, 100) = 350 + 35 = 385
+      expect(Combat, :apply_heal, fn 1000, 385, 1000 -> :ok end)
+      AlHeal.cast(@caster, :self, 5, definition)
+    end
+
+    test "hplus 0 leaves the heal unchanged", %{definition: definition} do
+      stub(PlayerState, :get_stats, fn _ ->
+        %{base_level: 50, int: 50, matk: 50, hplus: 0}
+      end)
+
+      expect(Combat, :apply_heal, fn 1000, 350, 1000 -> :ok end)
+      AlHeal.cast(@caster, :self, 5, definition)
+    end
+
+    test "SPL still raises the heal via the MATK band (row 2 -> calculate_base_matk)",
+         %{definition: definition} do
+      # SPL flows into caster stats as a higher matk (calculate_base_matk, Task 8);
+      # a higher matk band raises the heal even with hplus at 0.
+      stub(PlayerState, :get_stats, fn _ ->
+        %{base_level: 50, int: 50, matk: 150, hplus: 0}
+      end)
+
+      # div(div(100,5)*30*5, 10) + 150 = 300 + 150 = 450
+      expect(Combat, :apply_heal, fn 1000, 450, 1000 -> :ok end)
+      AlHeal.cast(@caster, :self, 5, definition)
+    end
+  end
 end

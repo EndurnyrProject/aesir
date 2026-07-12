@@ -18,6 +18,12 @@ defmodule Aesir.ZoneServer.Unit.Stats do
     field :int, non_neg_integer()
     field :dex, non_neg_integer()
     field :luk, non_neg_integer()
+    field :pow, non_neg_integer(), default: 0
+    field :sta, non_neg_integer(), default: 0
+    field :wis, non_neg_integer(), default: 0
+    field :spl, non_neg_integer(), default: 0
+    field :con, non_neg_integer(), default: 0
+    field :crt, non_neg_integer(), default: 0
   end
 
   typedstruct module: DerivedStats do
@@ -25,6 +31,7 @@ defmodule Aesir.ZoneServer.Unit.Stats do
     field :max_hp, non_neg_integer()
     field :max_sp, non_neg_integer()
     field :aspd, non_neg_integer()
+    field :max_ap, non_neg_integer(), default: 0
   end
 
   typedstruct module: CombatStats do
@@ -56,6 +63,7 @@ defmodule Aesir.ZoneServer.Unit.Stats do
     @typedoc "Current HP/SP values"
     field :hp, non_neg_integer()
     field :sp, non_neg_integer()
+    field :ap, non_neg_integer(), default: 0
   end
 
   typedstruct module: Progression do

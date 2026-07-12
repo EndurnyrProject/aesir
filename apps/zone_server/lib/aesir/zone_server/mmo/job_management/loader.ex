@@ -17,7 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.Loader do
           by_name: %{atom() => Job.t()}
         }
 
-  @cache_file "jobs.etf"
+  @cache_file "jobs_v2.etf"
 
   @field_names Job
                |> struct(%{})
@@ -26,6 +26,8 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.Loader do
                |> Map.new(&{Atom.to_string(&1), &1})
 
   @level_tables [:base_hp, :base_sp, :base_ap, :base_exp, :job_exp]
+
+  @bonus_stat_fields [:str, :agi, :vit, :int, :dex, :luk, :pow, :sta, :wis, :spl, :con, :crt]
 
   @spec load(Path.t()) :: index()
   def load(dir), do: dir |> DataLoader.load(@cache_file, &build/1) |> index()
@@ -52,13 +54,13 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.Loader do
         {key, convert(key, v)}
       end)
 
-    struct!(Job, attrs)
+    struct!(Job, densify_bonus_stats(attrs))
   end
 
   @spec convert(atom(), term()) :: term()
   defp convert(:name, v), do: String.to_atom(v)
   defp convert(key, v) when key in @level_tables, do: to_level_map(v)
-  defp convert(:bonus_stats, v), do: Map.new(v, &{&1["level"], to_bonus(&1)})
+  defp convert(:bonus_stats, v), do: accumulate_bonus_stats(v)
   defp convert(:base_aspd, v), do: struct!(Job.BaseAspd, atomize_keys(v))
   defp convert(_key, v), do: v
 
@@ -66,6 +68,40 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.Loader do
   defp to_level_map(list) do
     list |> Enum.with_index(1) |> Map.new(fn {value, level} -> {level, value} end)
   end
+
+  @spec accumulate_bonus_stats([map()]) :: %{non_neg_integer() => Job.BonusStats.t()}
+  defp accumulate_bonus_stats(entries) do
+    entries
+    |> Enum.sort_by(& &1["level"])
+    |> Enum.reduce({%{}, %Job.BonusStats{}}, fn entry, {acc, running} ->
+      cumulative = accumulate(running, to_bonus(entry))
+      {Map.put(acc, entry["level"], cumulative), cumulative}
+    end)
+    |> elem(0)
+  end
+
+  @spec accumulate(Job.BonusStats.t(), Job.BonusStats.t()) :: Job.BonusStats.t()
+  defp accumulate(running, grant) do
+    Enum.reduce(@bonus_stat_fields, %{running | level: grant.level}, fn field, acc ->
+      Map.update!(acc, field, &(&1 + Map.fetch!(grant, field)))
+    end)
+  end
+
+  @spec densify_bonus_stats(map()) :: map()
+  defp densify_bonus_stats(%{bonus_stats: sparse} = attrs) when map_size(sparse) > 0 do
+    last_grant = sparse |> Map.keys() |> Enum.max()
+    ceiling = max(last_grant, Map.get(attrs, :max_job_level, last_grant))
+
+    {dense, _last} =
+      Enum.reduce(1..ceiling, {%{}, %Job.BonusStats{}}, fn level, {acc, prev} ->
+        cumulative = Map.get(sparse, level, %{prev | level: level})
+        {Map.put(acc, level, cumulative), cumulative}
+      end)
+
+    %{attrs | bonus_stats: dense}
+  end
+
+  defp densify_bonus_stats(attrs), do: attrs
 
   @spec to_bonus(map()) :: Job.BonusStats.t()
   defp to_bonus(entry), do: struct!(Job.BonusStats, atomize_keys(entry))

@@ -1,276 +1,551 @@
-# Cumulative status points by base level (rAthena db/re/statpoint.yml, Points column)
-- 48
-- 51
-- 54
-- 57
-- 60
-- 64
-- 68
-- 72
-- 76
-- 80
-- 85
-- 90
-- 95
-- 100
-- 105
-- 111
-- 117
-- 123
-- 129
-- 135
-- 142
-- 149
-- 156
-- 163
-- 170
-- 178
-- 186
-- 194
-- 202
-- 210
-- 219
-- 228
-- 237
-- 246
-- 255
-- 265
-- 275
-- 285
-- 295
-- 305
-- 316
-- 327
-- 338
-- 349
-- 360
-- 372
-- 384
-- 396
-- 408
-- 420
-- 433
-- 446
-- 459
-- 472
-- 485
-- 499
-- 513
-- 527
-- 541
-- 555
-- 570
-- 585
-- 600
-- 615
-- 630
-- 646
-- 662
-- 678
-- 694
-- 710
-- 727
-- 744
-- 761
-- 778
-- 795
-- 813
-- 831
-- 849
-- 867
-- 885
-- 904
-- 923
-- 942
-- 961
-- 980
-- 1000
-- 1020
-- 1040
-- 1060
-- 1080
-- 1101
-- 1122
-- 1143
-- 1164
-- 1185
-- 1207
-- 1229
-- 1251
-- 1273
-- 1295
-- 1318
-- 1341
-- 1364
-- 1387
-- 1410
-- 1433
-- 1456
-- 1479
-- 1502
-- 1525
-- 1549
-- 1573
-- 1597
-- 1621
-- 1645
-- 1669
-- 1693
-- 1717
-- 1741
-- 1765
-- 1790
-- 1815
-- 1840
-- 1865
-- 1890
-- 1915
-- 1940
-- 1965
-- 1990
-- 2015
-- 2041
-- 2067
-- 2093
-- 2119
-- 2145
-- 2171
-- 2197
-- 2223
-- 2249
-- 2275
-- 2302
-- 2329
-- 2356
-- 2383
-- 2410
-- 2437
-- 2464
-- 2491
-- 2518
-- 2545
-- 2573
-- 2601
-- 2629
-- 2657
-- 2685
-- 2713
-- 2741
-- 2770
-- 2799
-- 2828
-- 2857
-- 2886
-- 2915
-- 2944
-- 2974
-- 3004
-- 3034
-- 3064
-- 3094
-- 3124
-- 3154
-- 3185
-- 3216
-- 3247
-- 3278
-- 3309
-- 3340
-- 3371
-- 3403
-- 3435
-- 3467
-- 3499
-- 3531
-- 3563
-- 3595
-- 3628
-- 3661
-- 3694
-- 3727
-- 3760
-- 3793
-- 3826
-- 3860
-- 3894
-- 3928
-- 3962
-- 3996
-- 4030
-- 4064
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
-- 4099
+---
+- points: 48
+  trait_points: 0
+- points: 51
+  trait_points: 0
+- points: 54
+  trait_points: 0
+- points: 57
+  trait_points: 0
+- points: 60
+  trait_points: 0
+- points: 64
+  trait_points: 0
+- points: 68
+  trait_points: 0
+- points: 72
+  trait_points: 0
+- points: 76
+  trait_points: 0
+- points: 80
+  trait_points: 0
+- points: 85
+  trait_points: 0
+- points: 90
+  trait_points: 0
+- points: 95
+  trait_points: 0
+- points: 100
+  trait_points: 0
+- points: 105
+  trait_points: 0
+- points: 111
+  trait_points: 0
+- points: 117
+  trait_points: 0
+- points: 123
+  trait_points: 0
+- points: 129
+  trait_points: 0
+- points: 135
+  trait_points: 0
+- points: 142
+  trait_points: 0
+- points: 149
+  trait_points: 0
+- points: 156
+  trait_points: 0
+- points: 163
+  trait_points: 0
+- points: 170
+  trait_points: 0
+- points: 178
+  trait_points: 0
+- points: 186
+  trait_points: 0
+- points: 194
+  trait_points: 0
+- points: 202
+  trait_points: 0
+- points: 210
+  trait_points: 0
+- points: 219
+  trait_points: 0
+- points: 228
+  trait_points: 0
+- points: 237
+  trait_points: 0
+- points: 246
+  trait_points: 0
+- points: 255
+  trait_points: 0
+- points: 265
+  trait_points: 0
+- points: 275
+  trait_points: 0
+- points: 285
+  trait_points: 0
+- points: 295
+  trait_points: 0
+- points: 305
+  trait_points: 0
+- points: 316
+  trait_points: 0
+- points: 327
+  trait_points: 0
+- points: 338
+  trait_points: 0
+- points: 349
+  trait_points: 0
+- points: 360
+  trait_points: 0
+- points: 372
+  trait_points: 0
+- points: 384
+  trait_points: 0
+- points: 396
+  trait_points: 0
+- points: 408
+  trait_points: 0
+- points: 420
+  trait_points: 0
+- points: 433
+  trait_points: 0
+- points: 446
+  trait_points: 0
+- points: 459
+  trait_points: 0
+- points: 472
+  trait_points: 0
+- points: 485
+  trait_points: 0
+- points: 499
+  trait_points: 0
+- points: 513
+  trait_points: 0
+- points: 527
+  trait_points: 0
+- points: 541
+  trait_points: 0
+- points: 555
+  trait_points: 0
+- points: 570
+  trait_points: 0
+- points: 585
+  trait_points: 0
+- points: 600
+  trait_points: 0
+- points: 615
+  trait_points: 0
+- points: 630
+  trait_points: 0
+- points: 646
+  trait_points: 0
+- points: 662
+  trait_points: 0
+- points: 678
+  trait_points: 0
+- points: 694
+  trait_points: 0
+- points: 710
+  trait_points: 0
+- points: 727
+  trait_points: 0
+- points: 744
+  trait_points: 0
+- points: 761
+  trait_points: 0
+- points: 778
+  trait_points: 0
+- points: 795
+  trait_points: 0
+- points: 813
+  trait_points: 0
+- points: 831
+  trait_points: 0
+- points: 849
+  trait_points: 0
+- points: 867
+  trait_points: 0
+- points: 885
+  trait_points: 0
+- points: 904
+  trait_points: 0
+- points: 923
+  trait_points: 0
+- points: 942
+  trait_points: 0
+- points: 961
+  trait_points: 0
+- points: 980
+  trait_points: 0
+- points: 1000
+  trait_points: 0
+- points: 1020
+  trait_points: 0
+- points: 1040
+  trait_points: 0
+- points: 1060
+  trait_points: 0
+- points: 1080
+  trait_points: 0
+- points: 1101
+  trait_points: 0
+- points: 1122
+  trait_points: 0
+- points: 1143
+  trait_points: 0
+- points: 1164
+  trait_points: 0
+- points: 1185
+  trait_points: 0
+- points: 1207
+  trait_points: 0
+- points: 1229
+  trait_points: 0
+- points: 1251
+  trait_points: 0
+- points: 1273
+  trait_points: 0
+- points: 1295
+  trait_points: 0
+- points: 1318
+  trait_points: 0
+- points: 1341
+  trait_points: 0
+- points: 1364
+  trait_points: 0
+- points: 1387
+  trait_points: 0
+- points: 1410
+  trait_points: 0
+- points: 1433
+  trait_points: 0
+- points: 1456
+  trait_points: 0
+- points: 1479
+  trait_points: 0
+- points: 1502
+  trait_points: 0
+- points: 1525
+  trait_points: 0
+- points: 1549
+  trait_points: 0
+- points: 1573
+  trait_points: 0
+- points: 1597
+  trait_points: 0
+- points: 1621
+  trait_points: 0
+- points: 1645
+  trait_points: 0
+- points: 1669
+  trait_points: 0
+- points: 1693
+  trait_points: 0
+- points: 1717
+  trait_points: 0
+- points: 1741
+  trait_points: 0
+- points: 1765
+  trait_points: 0
+- points: 1790
+  trait_points: 0
+- points: 1815
+  trait_points: 0
+- points: 1840
+  trait_points: 0
+- points: 1865
+  trait_points: 0
+- points: 1890
+  trait_points: 0
+- points: 1915
+  trait_points: 0
+- points: 1940
+  trait_points: 0
+- points: 1965
+  trait_points: 0
+- points: 1990
+  trait_points: 0
+- points: 2015
+  trait_points: 0
+- points: 2041
+  trait_points: 0
+- points: 2067
+  trait_points: 0
+- points: 2093
+  trait_points: 0
+- points: 2119
+  trait_points: 0
+- points: 2145
+  trait_points: 0
+- points: 2171
+  trait_points: 0
+- points: 2197
+  trait_points: 0
+- points: 2223
+  trait_points: 0
+- points: 2249
+  trait_points: 0
+- points: 2275
+  trait_points: 0
+- points: 2302
+  trait_points: 0
+- points: 2329
+  trait_points: 0
+- points: 2356
+  trait_points: 0
+- points: 2383
+  trait_points: 0
+- points: 2410
+  trait_points: 0
+- points: 2437
+  trait_points: 0
+- points: 2464
+  trait_points: 0
+- points: 2491
+  trait_points: 0
+- points: 2518
+  trait_points: 0
+- points: 2545
+  trait_points: 0
+- points: 2573
+  trait_points: 0
+- points: 2601
+  trait_points: 0
+- points: 2629
+  trait_points: 0
+- points: 2657
+  trait_points: 0
+- points: 2685
+  trait_points: 0
+- points: 2713
+  trait_points: 0
+- points: 2741
+  trait_points: 0
+- points: 2770
+  trait_points: 0
+- points: 2799
+  trait_points: 0
+- points: 2828
+  trait_points: 0
+- points: 2857
+  trait_points: 0
+- points: 2886
+  trait_points: 0
+- points: 2915
+  trait_points: 0
+- points: 2944
+  trait_points: 0
+- points: 2974
+  trait_points: 0
+- points: 3004
+  trait_points: 0
+- points: 3034
+  trait_points: 0
+- points: 3064
+  trait_points: 0
+- points: 3094
+  trait_points: 0
+- points: 3124
+  trait_points: 0
+- points: 3154
+  trait_points: 0
+- points: 3185
+  trait_points: 0
+- points: 3216
+  trait_points: 0
+- points: 3247
+  trait_points: 0
+- points: 3278
+  trait_points: 0
+- points: 3309
+  trait_points: 0
+- points: 3340
+  trait_points: 0
+- points: 3371
+  trait_points: 0
+- points: 3403
+  trait_points: 0
+- points: 3435
+  trait_points: 0
+- points: 3467
+  trait_points: 0
+- points: 3499
+  trait_points: 0
+- points: 3531
+  trait_points: 0
+- points: 3563
+  trait_points: 0
+- points: 3595
+  trait_points: 0
+- points: 3628
+  trait_points: 0
+- points: 3661
+  trait_points: 0
+- points: 3694
+  trait_points: 0
+- points: 3727
+  trait_points: 0
+- points: 3760
+  trait_points: 0
+- points: 3793
+  trait_points: 0
+- points: 3826
+  trait_points: 0
+- points: 3860
+  trait_points: 0
+- points: 3894
+  trait_points: 0
+- points: 3928
+  trait_points: 0
+- points: 3962
+  trait_points: 0
+- points: 3996
+  trait_points: 0
+- points: 4030
+  trait_points: 0
+- points: 4064
+  trait_points: 0
+- points: 4099
+  trait_points: 0
+- points: 4099
+  trait_points: 3
+- points: 4099
+  trait_points: 6
+- points: 4099
+  trait_points: 9
+- points: 4099
+  trait_points: 12
+- points: 4099
+  trait_points: 19
+- points: 4099
+  trait_points: 22
+- points: 4099
+  trait_points: 25
+- points: 4099
+  trait_points: 28
+- points: 4099
+  trait_points: 31
+- points: 4099
+  trait_points: 38
+- points: 4099
+  trait_points: 41
+- points: 4099
+  trait_points: 44
+- points: 4099
+  trait_points: 47
+- points: 4099
+  trait_points: 50
+- points: 4099
+  trait_points: 57
+- points: 4099
+  trait_points: 60
+- points: 4099
+  trait_points: 63
+- points: 4099
+  trait_points: 66
+- points: 4099
+  trait_points: 69
+- points: 4099
+  trait_points: 76
+- points: 4099
+  trait_points: 79
+- points: 4099
+  trait_points: 82
+- points: 4099
+  trait_points: 85
+- points: 4099
+  trait_points: 88
+- points: 4099
+  trait_points: 95
+- points: 4099
+  trait_points: 98
+- points: 4099
+  trait_points: 101
+- points: 4099
+  trait_points: 104
+- points: 4099
+  trait_points: 107
+- points: 4099
+  trait_points: 114
+- points: 4099
+  trait_points: 117
+- points: 4099
+  trait_points: 120
+- points: 4099
+  trait_points: 123
+- points: 4099
+  trait_points: 126
+- points: 4099
+  trait_points: 133
+- points: 4099
+  trait_points: 136
+- points: 4099
+  trait_points: 139
+- points: 4099
+  trait_points: 142
+- points: 4099
+  trait_points: 145
+- points: 4099
+  trait_points: 152
+- points: 4099
+  trait_points: 155
+- points: 4099
+  trait_points: 158
+- points: 4099
+  trait_points: 161
+- points: 4099
+  trait_points: 164
+- points: 4099
+  trait_points: 171
+- points: 4099
+  trait_points: 174
+- points: 4099
+  trait_points: 177
+- points: 4099
+  trait_points: 180
+- points: 4099
+  trait_points: 183
+- points: 4099
+  trait_points: 190
+- points: 4099
+  trait_points: 193
+- points: 4099
+  trait_points: 196
+- points: 4099
+  trait_points: 199
+- points: 4099
+  trait_points: 202
+- points: 4099
+  trait_points: 209
+- points: 4099
+  trait_points: 212
+- points: 4099
+  trait_points: 215
+- points: 4099
+  trait_points: 218
+- points: 4099
+  trait_points: 221
+- points: 4099
+  trait_points: 228
+- points: 4099
+  trait_points: 231
+- points: 4099
+  trait_points: 234
+- points: 4099
+  trait_points: 237
+- points: 4099
+  trait_points: 240
+- points: 4099
+  trait_points: 247
+- points: 4099
+  trait_points: 250
+- points: 4099
+  trait_points: 253
+- points: 4099
+  trait_points: 256
+- points: 4099
+  trait_points: 259
+- points: 4099
+  trait_points: 266
+- points: 4099
+  trait_points: 269
+- points: 4099
+  trait_points: 272
+- points: 4099
+  trait_points: 275
+- points: 4099
+  trait_points: 278
+- points: 4099
+  trait_points: 285

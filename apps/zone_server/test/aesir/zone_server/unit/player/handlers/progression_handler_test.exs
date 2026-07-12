@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.StatPoint
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
@@ -28,6 +29,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   @swordman_id swordman_id
   {:ok, merchant_id} = AvailableJobs.job_name_to_id(:merchant)
   @merchant_id merchant_id
+  {:ok, dragon_knight_id} = AvailableJobs.job_name_to_id(:dragon_knight)
+  @dragon_knight_id dragon_knight_id
+  {:ok, dragon_knight2_id} = AvailableJobs.job_name_to_id(:dragon_knight2)
+  @dragon_knight2_id dragon_knight2_id
+  {:ok, rune_knight_id} = AvailableJobs.job_name_to_id(:rune_knight)
+  @rune_knight_id rune_knight_id
   @unknown_job_id 99_999
 
   setup do
@@ -88,6 +95,67 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
       job_level: 50,
       class: 1
     }
+  end
+
+  describe "handle_add_base_level/2 trait-point grant" do
+    test "leveling 200 -> 201 grants +3 trait points" do
+      state = state_with(job_id: @dragon_knight_id, base_level: 200)
+
+      {:noreply, new_state} = ProgressionHandler.handle_add_base_level(1, state)
+
+      assert new_state.game_state.stats.progression.trait_point == 3
+    end
+
+    test "leveling 204 -> 205 grants +7 trait points" do
+      state = state_with(job_id: @dragon_knight_id, base_level: 204)
+
+      {:noreply, new_state} = ProgressionHandler.handle_add_base_level(1, state)
+
+      assert new_state.game_state.stats.progression.trait_point == 7
+    end
+
+    test "leveling below 201 grants 0 trait points" do
+      state = state_with(job_id: @swordman_id, base_level: 50)
+
+      {:noreply, new_state} = ProgressionHandler.handle_add_base_level(1, state)
+
+      assert new_state.game_state.stats.progression.trait_point == 0
+    end
+
+    test "a non-4th-job character gains 0 trait points across a level-up" do
+      state = state_with(job_id: @swordman_id, base_level: 90)
+
+      {:noreply, new_state} = ProgressionHandler.handle_add_base_level(20, state)
+
+      assert new_state.game_state.stats.progression.base_level == 99
+      assert new_state.game_state.stats.progression.trait_point == 0
+    end
+
+    test "trait_point is persisted" do
+      test_pid = self()
+
+      stub(CharacterPersistence, :update_character, fn 1000, attrs, async: true ->
+        send(test_pid, {:persisted, attrs})
+        {:ok, %{}}
+      end)
+
+      state = state_with(job_id: @dragon_knight_id, base_level: 200)
+
+      ProgressionHandler.handle_add_base_level(1, state)
+
+      assert_received {:persisted, %{trait_point: 3}}
+    end
+
+    test "trait_point is synced as a ParamChange" do
+      state = state_with(job_id: @dragon_knight_id, base_level: 200)
+
+      ProgressionHandler.handle_add_base_level(1, state)
+
+      trait_point = StatusParams.trait_point()
+
+      assert_received {:send, _channel,
+                       {:param_change, %ParamChange{var_id: ^trait_point, value: 3}}}
+    end
   end
 
   describe "apply_job_change/2 with a valid job id" do
@@ -303,6 +371,192 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
 
       assert {:error, :cart_active} = ProgressionHandler.reset_skills(state)
       refute_received {:send, :bulk, {:skill_list, _}}
+    end
+  end
+
+  describe "apply_job_change/2 4th-job gating" do
+    test "rejects a wrong-parent char with requirements_not_met, mutating nothing" do
+      reject(&CharacterPersistence.update_character/3)
+      reject(&Broadcast.to_player/2)
+
+      state = state_with(job_id: @swordman_id, base_level: 200, job_level: 70)
+
+      assert {:error, :requirements_not_met} =
+               ProgressionHandler.apply_job_change(@dragon_knight_id, state)
+
+      refute_received {:send, :bulk, {:skill_list, _}}
+    end
+
+    test "rejects when base level is below 200" do
+      state = state_with(job_id: @rune_knight_id, base_level: 199, job_level: 70)
+
+      assert {:error, :requirements_not_met} =
+               ProgressionHandler.apply_job_change(@dragon_knight_id, state)
+    end
+
+    test "rejects when job level is below the parent's max job level" do
+      state = state_with(job_id: @rune_knight_id, base_level: 200, job_level: 69)
+
+      assert {:error, :requirements_not_met} =
+               ProgressionHandler.apply_job_change(@dragon_knight_id, state)
+    end
+
+    test "allows an eligible rune_knight (base 200, job 70) to become dragon_knight" do
+      state = state_with(job_id: @rune_knight_id, base_level: 200, job_level: 70)
+
+      assert {:ok, new_state} = ProgressionHandler.apply_job_change(@dragon_knight_id, state)
+      assert new_state.game_state.stats.progression.job_id == @dragon_knight_id
+    end
+  end
+
+  describe "apply_job_change/2 trait-point grant and zeroing" do
+    test "entering a trait job from a non-trait job grants +7 trait points" do
+      state = state_with(job_id: @rune_knight_id, base_level: 200, job_level: 70, trait_point: 0)
+
+      assert {:ok, new_state} = ProgressionHandler.apply_job_change(@dragon_knight_id, state)
+      assert new_state.game_state.stats.progression.trait_point == 7
+    end
+
+    test "changing into an alt-variant trait id is rejected and grants nothing" do
+      reject(&CharacterPersistence.update_character/3)
+
+      state = state_with(job_id: @novice_id, base_level: 200, job_level: 50, trait_point: 0)
+
+      assert {:error, :requirements_not_met} =
+               ProgressionHandler.apply_job_change(@dragon_knight2_id, state)
+    end
+
+    test "on a successful 4th-job change, ap == max_ap and max_ap > 0" do
+      state = state_with(job_id: @rune_knight_id, base_level: 200, job_level: 70)
+
+      assert {:ok, new_state} = ProgressionHandler.apply_job_change(@dragon_knight_id, state)
+      max_ap = new_state.game_state.stats.derived_stats.max_ap
+
+      assert max_ap > 0
+      assert new_state.game_state.stats.current_state.ap == max_ap
+    end
+
+    test "leaving a trait job for a non-trait job zeroes the six trait stats and trait_point" do
+      test_pid = self()
+
+      stub(CharacterPersistence, :update_character, fn 1000, attrs, async: true ->
+        send(test_pid, {:persisted, attrs})
+        {:ok, %{}}
+      end)
+
+      base = PlayerState.new(character())
+
+      progression =
+        struct(base.stats.progression,
+          job_id: @dragon_knight_id,
+          base_level: 200,
+          trait_point: 20
+        )
+
+      base_stats =
+        struct(base.stats.base_stats, pow: 15, sta: 12, wis: 8, spl: 6, con: 4, crt: 3)
+
+      stats = %{base.stats | progression: progression, base_stats: base_stats}
+      state = %{connection_pid: self(), game_state: %{base | stats: stats}}
+
+      assert {:ok, new_state} = ProgressionHandler.apply_job_change(@swordman_id, state)
+      result = new_state.game_state.stats
+
+      assert result.progression.trait_point == 0
+      assert result.base_stats.pow == 0
+      assert result.base_stats.sta == 0
+      assert result.base_stats.wis == 0
+      assert result.base_stats.spl == 0
+      assert result.base_stats.con == 0
+      assert result.base_stats.crt == 0
+
+      assert_received {:persisted,
+                       %{
+                         trait_point: 0,
+                         pow: 0,
+                         sta: 0,
+                         wis: 0,
+                         spl: 0,
+                         con: 0,
+                         crt: 0
+                       }}
+    end
+  end
+
+  describe "reset_stats/1" do
+    test "on a level-210 dragon_knight resets classic to 1, trait to 0, restores pools with +7" do
+      state = state_with(job_id: @dragon_knight_id, base_level: 210)
+
+      assert {:ok, new_state} = ProgressionHandler.reset_stats(state)
+      stats = new_state.game_state.stats
+
+      assert stats.base_stats.str == 1
+      assert stats.base_stats.agi == 1
+      assert stats.base_stats.vit == 1
+      assert stats.base_stats.int == 1
+      assert stats.base_stats.dex == 1
+      assert stats.base_stats.luk == 1
+
+      assert stats.base_stats.pow == 0
+      assert stats.base_stats.sta == 0
+      assert stats.base_stats.wis == 0
+      assert stats.base_stats.spl == 0
+      assert stats.base_stats.con == 0
+      assert stats.base_stats.crt == 0
+
+      assert stats.progression.status_point == StatPoint.points_at(210)
+      assert stats.progression.trait_point == StatPoint.trait_points_at(210) + 7
+    end
+
+    test "on a non-trait job restores classic points and no +7 trait bonus" do
+      state = state_with(job_id: @swordman_id, base_level: 90)
+
+      assert {:ok, new_state} = ProgressionHandler.reset_stats(state)
+      stats = new_state.game_state.stats
+
+      assert stats.base_stats.str == 1
+      assert stats.progression.status_point == StatPoint.points_at(90)
+      assert stats.progression.trait_point == StatPoint.trait_points_at(90)
+    end
+
+    test "persists all twelve stat columns and both pools" do
+      test_pid = self()
+
+      stub(CharacterPersistence, :update_character, fn 1000, attrs, async: true ->
+        send(test_pid, {:persisted, attrs})
+        {:ok, %{}}
+      end)
+
+      state = state_with(job_id: @dragon_knight_id, base_level: 210)
+
+      ProgressionHandler.reset_stats(state)
+
+      assert_received {:persisted,
+                       %{
+                         str: 1,
+                         agi: 1,
+                         vit: 1,
+                         int: 1,
+                         dex: 1,
+                         luk: 1,
+                         pow: 0,
+                         sta: 0,
+                         wis: 0,
+                         spl: 0,
+                         con: 0,
+                         crt: 0,
+                         status_point: _,
+                         trait_point: _
+                       }}
+    end
+
+    test "syncs the recalculated classic stats to the client" do
+      state = state_with(job_id: @dragon_knight_id, base_level: 210)
+
+      ProgressionHandler.reset_stats(state)
+
+      str = StatusParams.str()
+      assert_received {:send, _channel, {:param_change, %ParamChange{var_id: ^str, value: 1}}}
     end
   end
 

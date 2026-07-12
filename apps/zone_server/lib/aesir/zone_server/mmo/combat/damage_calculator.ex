@@ -171,7 +171,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       stats.str * 2 +
         div(stats.dex, 5) +
         div(stats.luk, 3) +
-        div(progression.base_level, 4)
+        div(progression.base_level, 4) +
+        5 * Map.get(stats, :pow, 0)
 
     weapon_atk = calculate_weapon_attack(attacker)
     mastery_bonus = calculate_mastery_bonus(attacker)
@@ -279,7 +280,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   """
   @spec apply_critical_hit(integer(), combatant()) :: {:ok, CriticalHits.critical_result()}
   def apply_critical_hit(base_damage, attacker) do
-    attacker_for_crit = %{luk: attacker.base_stats.luk}
+    # Carry combat_stats so CriticalHits can read `crate` (renewal crit-damage
+    # scaling). Non-player attackers lack a crate key -> CriticalHits defaults
+    # it to 0, landing on the x1.4 non-player branch.
+    attacker_for_crit = %{luk: attacker.base_stats.luk, combat_stats: attacker.combat_stats}
     critical_result = CriticalHits.calculate_critical_hit(attacker_for_crit, base_damage)
 
     Logger.debug(

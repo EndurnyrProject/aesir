@@ -17,6 +17,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHeal do
     base = div(div(base_level + int, 5) * 30 * level, 10)
     heal = base + DamageShared.roll(heal_matk_min, heal_matk_max)
 
+  Line 771-772 (HPlus heal boost, applied as the final step):
+    if (status_get_hplus(src) > 0) hp += hp * status_get_hplus(src) / 100;
+
+  Elixir equivalent:
+    heal + div(heal * hplus, 100)
+
   Verified vs rAthena skill.cpp:705-729: the heal MATK band is
   `status_base_matk_min/max + weapon MATK variance` ONLY - it does NOT include
   flat item/status MATK (ematk, matk_rate). So heal rolls over the dedicated
@@ -87,6 +93,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHeal do
     base = div(div(base_level + int_val, 5) * 30 * level, 10)
     matk_min = Map.get(stats, :heal_matk_min, stats.matk)
     matk_max = Map.get(stats, :heal_matk_max, stats.matk)
-    base + DamageShared.roll(matk_min, matk_max)
+    heal = base + DamageShared.roll(matk_min, matk_max)
+    hplus = Map.get(stats, :hplus, 0)
+    heal + div(heal * hplus, 100)
   end
 end

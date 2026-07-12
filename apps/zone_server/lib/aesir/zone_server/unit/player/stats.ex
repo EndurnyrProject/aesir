@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
+  alias Aesir.ZoneServer.Mmo.JobManagement.TraitJobs
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Passives
@@ -37,6 +38,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     field :job_id, non_neg_integer()
     field :skill_point, non_neg_integer()
     field :status_point, non_neg_integer()
+    field :trait_point, non_neg_integer(), default: 0
     field :learned_skills, %{integer() => non_neg_integer()}, default: %{}
   end
 
@@ -99,7 +101,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       vit: character.vit,
       int: character.int,
       dex: character.dex,
-      luk: character.luk
+      luk: character.luk,
+      pow: character.pow,
+      sta: character.sta,
+      wis: character.wis,
+      spl: character.spl,
+      con: character.con,
+      crt: character.crt
     }
 
     progression = %PlayerProgression{
@@ -110,12 +118,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       job_id: character.class || 0,
       skill_point: character.skill_point,
       status_point: character.status_point,
+      trait_point: character.trait_point,
       learned_skills: Learned.from_character(character.learned_skills)
     }
 
     current_state = %Stats.CurrentState{
       hp: character.hp,
-      sp: character.sp
+      sp: character.sp,
+      ap: character.ap
     }
 
     stats = %__MODULE__{
@@ -147,6 +157,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       int: stats.base_stats.int,
       dex: stats.base_stats.dex,
       luk: stats.base_stats.luk,
+      # Trait stats
+      pow: stats.base_stats.pow,
+      sta: stats.base_stats.sta,
+      wis: stats.base_stats.wis,
+      spl: stats.base_stats.spl,
+      con: stats.base_stats.con,
+      crt: stats.base_stats.crt,
       # HP/SP
       max_hp: stats.derived_stats.max_hp,
       max_sp: stats.derived_stats.max_sp,
@@ -168,6 +185,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       hit: stats.combat_stats.hit,
       flee: stats.combat_stats.flee,
       critical: stats.combat_stats.critical,
+      hplus: stats.combat_stats.hplus,
       aspd: stats.derived_stats.aspd
     }
   end
@@ -230,7 +248,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
           vit: bonus_stats.vit,
           int: bonus_stats.int,
           dex: bonus_stats.dex,
-          luk: bonus_stats.luk
+          luk: bonus_stats.luk,
+          pow: bonus_stats.pow,
+          sta: bonus_stats.sta,
+          wis: bonus_stats.wis,
+          spl: bonus_stats.spl,
+          con: bonus_stats.con,
+          crt: bonus_stats.crt
         }
       else
         {:error, :level_out_of_range} ->
@@ -455,10 +479,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
         # Calculate ASPD
         aspd = calculate_aspd(stats)
 
+        max_ap = calculate_max_ap(stats.progression.job_id, job_name, base_level)
+
         derived_stats = %Stats.DerivedStats{
           max_hp: max_hp,
           max_sp: max_sp,
-          aspd: aspd
+          aspd: aspd,
+          max_ap: max_ap
         }
 
         %{stats | derived_stats: derived_stats}
@@ -468,6 +495,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
           max_sp,
           get_status_modifier(stats, :max_sp_rate)
         )
+        |> clamp_ap(max_ap)
 
       err ->
         raise "Failed to get job name for derived stats: #{inspect(err)}"
@@ -494,6 +522,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   defp clamp_current_to_max(stats, _max_hp, _max_hp_rate, _max_sp, _max_sp_rate), do: stats
 
+  # MaxAP (formula row 26): trait jobs read the imported base_ap table at the
+  # character's base level; a missing row is data corruption and fails loudly
+  # rather than silently becoming 0. Non-trait jobs have no AP pool -> a real 0.
+  defp calculate_max_ap(job_id, job_name, base_level) do
+    if TraitJobs.trait_job?(job_id) do
+      case JobManagement.get_base_ap(job_name, base_level) do
+        {:ok, ap} ->
+          ap
+
+        {:error, reason} ->
+          raise "Missing base AP for trait job #{job_name} at level #{base_level}: #{inspect(reason)}"
+      end
+    else
+      0
+    end
+  end
+
+  defp clamp_ap(%__MODULE__{current_state: %{ap: ap} = current} = stats, max_ap)
+       when is_integer(ap) do
+    %{stats | current_state: %{current | ap: min(ap, max_ap)}}
+  end
+
+  defp clamp_ap(stats, _max_ap), do: stats
+
   @doc """
   Calculates combat-related stats (hit, flee, critical, atk, matk, def).
   Uses the new CombatCalculations behavior for consistent calculations.
@@ -507,6 +559,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     base_matk = calculate_base_matk(stats)
     base_def = calculate_base_def(stats)
     passive_atk = Passives.atk_bonus(stats)
+
+    # Effective trait stats feed the six SP-A combat slots (rows 5-10).
+    pow_eff = get_effective_stat(stats, :pow)
+    sta_eff = get_effective_stat(stats, :sta)
+    wis_eff = get_effective_stat(stats, :wis)
+    spl_eff = get_effective_stat(stats, :spl)
+    con_eff = get_effective_stat(stats, :con)
+    crt_eff = get_effective_stat(stats, :crt)
 
     flat_matk = get_status_modifier(stats, :matk) + get_equipment_modifier(stats, :matk)
     wmatk_min = Map.get(stats.modifiers.equipment, :wmatk_min, 0)
@@ -536,12 +596,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       mdef: get_status_modifier(stats, :mdef) + get_equipment_modifier(stats, :mdef),
       soft_mdef: calculate_soft_mdef(stats),
       passive_atk: passive_atk,
-      patk: combat_modifier(stats, :patk),
-      smatk: combat_modifier(stats, :smatk),
-      res: combat_modifier(stats, :res),
-      mres: combat_modifier(stats, :mres),
-      hplus: combat_modifier(stats, :hplus),
-      crate: combat_modifier(stats, :crate),
+      patk: combat_modifier(stats, :patk, div(pow_eff, 3) + div(con_eff, 5)),
+      smatk: combat_modifier(stats, :smatk, div(spl_eff, 3) + div(con_eff, 5)),
+      res: combat_modifier(stats, :res, sta_eff + div(sta_eff, 3) * 5),
+      mres: combat_modifier(stats, :mres, wis_eff + div(wis_eff, 3) * 5),
+      hplus: combat_modifier(stats, :hplus, crt_eff),
+      crate: combat_modifier(stats, :crate, div(crt_eff, 3)),
       overrefine_band: get_equipment_modifier(stats, :overrefine_band)
     }
 
@@ -557,10 +617,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   defp calculate_base_atk(%__MODULE__{} = stats) do
     effective_str = get_effective_stat(stats, :str)
+    effective_pow = get_effective_stat(stats, :pow)
 
-    # Basic formula: atk = STR + base level / 4
+    # Basic formula: atk = STR + base level / 4 (+ 5 * POW, row 1)
     base_level = stats.progression.base_level
-    trunc(effective_str + base_level / 4)
+    trunc(effective_str + base_level / 4) + 5 * effective_pow
   end
 
   defp calculate_base_def(%__MODULE__{} = stats) do
@@ -572,17 +633,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   end
 
   # Verified vs rAthena status_base_matk_min/max for BL_PC (status.cpp:2571/2590):
-  # INT + INT/2 + DEX/5 + LUK/3 + level/4 (+ 5*SPL). PC min == max (no inherent
-  # spread). The 5*SPL 4th-job trait term is omitted (SPL is 0 today); add it
-  # when the SPL stat exists.
+  # INT + INT/2 + DEX/5 + LUK/3 + level/4 + 5*SPL (row 2). PC min == max (no
+  # inherent spread).
   defp calculate_base_matk(%__MODULE__{} = stats) do
     effective_int = get_effective_stat(stats, :int)
     effective_dex = get_effective_stat(stats, :dex)
     effective_luk = get_effective_stat(stats, :luk)
+    effective_spl = get_effective_stat(stats, :spl)
     base_level = stats.progression.base_level
 
     effective_int + div(effective_int, 2) + div(effective_dex, 5) + div(effective_luk, 3) +
-      div(base_level, 4)
+      div(base_level, 4) + 5 * effective_spl
   end
 
   defp calculate_soft_mdef(%__MODULE__{} = stats) do
@@ -599,7 +660,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   """
   @spec get_effective_stat(t(), atom()) :: integer()
   def get_effective_stat(%__MODULE__{} = stats, stat_name)
-      when stat_name in [:str, :agi, :vit, :int, :dex, :luk] do
+      when stat_name in [
+             :str,
+             :agi,
+             :vit,
+             :int,
+             :dex,
+             :luk,
+             :pow,
+             :sta,
+             :wis,
+             :spl,
+             :con,
+             :crt
+           ] do
     base_value = Map.get(stats.base_stats, stat_name, 0)
 
     job_bonus = Map.get(stats.modifiers.job_bonuses, stat_name, 0)
@@ -635,8 +709,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     Map.get(stats.modifiers.equipment, modifier_key, 0)
   end
 
-  defp combat_modifier(%__MODULE__{} = stats, modifier_key) do
-    (get_status_modifier(stats, modifier_key) + get_equipment_modifier(stats, modifier_key))
+  # The trait derivation term is summed with the status/equipment modifiers
+  # BEFORE the 0..SHRT_MAX clamp, matching rAthena's cap_value over the full
+  # sum (status.cpp:2668/2672/2676/2680/2684/2688).
+  defp combat_modifier(%__MODULE__{} = stats, modifier_key, trait_term) do
+    (get_status_modifier(stats, modifier_key) + get_equipment_modifier(stats, modifier_key) +
+       trait_term)
     |> clamp(0, 32_767)
   end
 

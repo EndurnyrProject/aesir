@@ -27,6 +27,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler do
     StatusParams.luk() => {:luk, StatusParams.uluk()}
   }
 
+  # Trait (4th-job) stats: spent from the separate trait-point pool at a flat
+  # 1-point cost, capped by `max_trait_parameter` (100 on trait jobs, 0 else).
+  @trait_stats %{
+    StatusParams.pow() => {:pow, StatusParams.upow()},
+    StatusParams.sta() => {:sta, StatusParams.usta()},
+    StatusParams.wis() => {:wis, StatusParams.uwis()},
+    StatusParams.spl() => {:spl, StatusParams.uspl()},
+    StatusParams.con() => {:con, StatusParams.ucon()},
+    StatusParams.crt() => {:crt, StatusParams.ucrt()}
+  }
+
   @doc """
   Processes a stat-raise request for the player session.
   """
@@ -37,7 +48,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler do
         apply_status_up(status_id, stat, u_param, amount, state, game_state)
 
       :error ->
-        reject(status_id, 0, state)
+        case Map.fetch(@trait_stats, status_id) do
+          {:ok, {stat, u_param}} ->
+            apply_trait_status_up(status_id, stat, u_param, amount, state, game_state)
+
+          :error ->
+            reject(status_id, 0, state)
+        end
     end
   end
 
@@ -77,6 +94,42 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler do
     {:noreply, new_state}
   end
 
+  defp apply_trait_status_up(status_id, stat, u_param, amount, state, game_state) do
+    stats = game_state.stats
+    current = Map.fetch!(stats.base_stats, stat)
+    available = stats.progression.trait_point
+    max = StatPoint.max_trait_parameter(stats.progression.job_id)
+    increase = min(amount, min(max - current, available))
+
+    if increase <= 0 do
+      reject(status_id, current, state)
+    else
+      commit_trait(status_id, stat, u_param, current, increase, available, state, game_state)
+    end
+  end
+
+  defp commit_trait(status_id, stat, u_param, current, increase, available, state, game_state) do
+    char_id = game_state.character_id
+    new_value = current + increase
+    needed = increase
+
+    progression = %{game_state.stats.progression | trait_point: available - needed}
+    base_stats = Map.put(game_state.stats.base_stats, stat, new_value)
+
+    stats =
+      %{game_state.stats | base_stats: base_stats, progression: progression}
+      |> Stats.calculate_stats(char_id)
+
+    new_game_state = %{game_state | stats: stats}
+    new_state = %{state | game_state: new_game_state}
+
+    UnitRegistry.update_unit_state(:player, char_id, new_game_state)
+    persist_trait(char_id, stat, new_value, stats)
+    sync_trait(state.connection_pid, status_id, u_param, new_value, stats)
+
+    {:noreply, new_state}
+  end
+
   defp reject(status_id, value, %{connection_pid: connection_pid} = state) do
     MessageRouter.send_to(connection_pid, %StatUpResult{
       stat_id: status_id,
@@ -108,6 +161,34 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler do
       %{
         stat => new_value,
         status_point: stats.progression.status_point,
+        max_hp: stats.derived_stats.max_hp,
+        max_sp: stats.derived_stats.max_sp
+      },
+      async: true
+    )
+  end
+
+  defp sync_trait(connection_pid, status_id, u_param, new_value, stats) do
+    MessageRouter.send_to(connection_pid, %StatUpResult{
+      stat_id: status_id,
+      ok: true,
+      value: min(new_value, 255)
+    })
+
+    StatusSync.send_params(connection_pid, %{
+      StatusParams.trait_point() => stats.progression.trait_point,
+      u_param => 1
+    })
+
+    StatusSync.send_stat_updates(connection_pid, stats)
+  end
+
+  defp persist_trait(char_id, stat, new_value, stats) do
+    CharacterPersistence.update_character(
+      char_id,
+      %{
+        stat => new_value,
+        trait_point: stats.progression.trait_point,
         max_hp: stats.derived_stats.max_hp,
         max_sp: stats.derived_stats.max_sp
       },

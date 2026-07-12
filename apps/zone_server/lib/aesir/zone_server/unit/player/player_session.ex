@@ -498,6 +498,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
+  def handle_info({:reset_stats}, state) do
+    {:ok, new_state} = ProgressionHandler.reset_stats(state)
+    {:noreply, new_state}
+  end
+
+  @impl true
   def handle_info({:mob_despawned, mob_instance_id}, state) do
     # Only clear combat if this player was targeting this specific mob
     if state.game_state.combat_target_id == mob_instance_id do

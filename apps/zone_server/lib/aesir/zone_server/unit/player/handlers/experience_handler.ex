@@ -38,11 +38,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
       Leveling.apply_exp(game_state.stats.progression, base_amount, job_amount)
 
     status_gained = StatPoint.gain(old_base_level, progression.base_level)
+    trait_gained = StatPoint.trait_gain(old_base_level, progression.base_level)
 
     progression = %{
       progression
       | skill_point: progression.skill_point + job_gained,
-        status_point: progression.status_point + status_gained
+        status_point: progression.status_point + status_gained,
+        trait_point: progression.trait_point + trait_gained
     }
 
     stats =
@@ -94,7 +96,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
       StatusParams.next_base_exp() => Leveling.next_base_exp(progression),
       StatusParams.next_job_exp() => Leveling.next_job_exp(progression),
       StatusParams.skill_point() => progression.skill_point,
-      StatusParams.status_point() => progression.status_point
+      StatusParams.status_point() => progression.status_point,
+      StatusParams.trait_point() => progression.trait_point
     })
   end
 
@@ -111,7 +114,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
         max_hp: stats.derived_stats.max_hp,
         max_sp: stats.derived_stats.max_sp,
         skill_point: stats.progression.skill_point,
-        status_point: stats.progression.status_point
+        status_point: stats.progression.status_point,
+        trait_point: stats.progression.trait_point
       },
       async: true
     )

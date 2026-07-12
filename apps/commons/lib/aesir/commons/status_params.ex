@@ -80,7 +80,36 @@ defmodule Aesir.Commons.StatusParams do
     char_rename: 125,
     char_font: 126,
     bank_vault: 127,
-    roulette_bronze: 128
+    roulette_bronze: 128,
+
+    # Trait base stats (219-224)
+    pow: 219,
+    sta: 220,
+    wis: 221,
+    spl: 222,
+    con: 223,
+    crt: 224,
+
+    # Derived combat stats (225-230)
+    patk: 225,
+    smatk: 226,
+    res: 227,
+    mres: 228,
+    hplus: 229,
+    crate: 230,
+
+    # Trait point and AP (231-233)
+    trait_point: 231,
+    ap: 232,
+    max_ap: 233,
+
+    # Upper trait stats (247-252)
+    upow: 247,
+    usta: 248,
+    uwis: 249,
+    uspl: 250,
+    ucon: 251,
+    ucrt: 252
   ]
 
   for {name, value} <- @status_params do

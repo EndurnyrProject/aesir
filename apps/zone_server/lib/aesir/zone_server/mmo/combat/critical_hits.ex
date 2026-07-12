@@ -5,7 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHits do
   Implements the Renewal hit formula where:
   - Critical rate = LUK * 10/3 (in tenths of percent, 0-1000 scale)
   - Critical hit chance = rand(1000) < critical_rate
-  - Critical damage = base_damage * 2.0
+  - Critical damage = base_damage * (1.4 + 0.01 * CRate)
   """
 
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
@@ -44,7 +44,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHits do
   def calculate_critical_hit(attacker_stats, base_damage) when is_integer(base_damage) do
     critical_rate = calculate_critical_rate(attacker_stats)
     is_critical = is_critical_hit?(critical_rate)
-    final_damage = if is_critical, do: apply_critical_damage(base_damage), else: base_damage
+
+    final_damage =
+      if is_critical, do: apply_critical_damage(base_damage, attacker_stats), else: base_damage
 
     %{
       is_critical: is_critical,
@@ -111,27 +113,37 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHits do
   end
 
   @doc """
-  Applies critical damage multiplier to base damage.
+  Applies the Renewal critical damage multiplier to base damage.
 
-  In authentic Ragnarok Online, critical hits deal exactly 2x damage.
-  This is applied after all other damage calculations but before
-  defense reductions.
+  Renewal critical damage is `1.4 + 0.01 * CRate` of base damage, where CRate
+  is the attacker's `combat_stats.crate` slot. Attackers without a `crate`
+  slot (e.g. mobs) default to 0, landing exactly on rAthena's non-player
+  `x1.4` branch.
 
   ## Parameters
   - base_damage: Base damage before critical multiplier
+  - attacker: Stats map or struct; `combat_stats.crate` supplies CRate (default 0)
 
   ## Returns
-  Damage multiplied by 2 for critical hits
+  Damage multiplied by the Renewal critical factor, truncated to an integer
 
   ## Examples
-      iex> CriticalHits.apply_critical_damage(100)
-      200
-      iex> CriticalHits.apply_critical_damage(0)
-      0
+      iex> CriticalHits.apply_critical_damage(1000, %{})
+      1400
+      iex> CriticalHits.apply_critical_damage(1000, %{combat_stats: %{crate: 30}})
+      1700
   """
-  @spec apply_critical_damage(integer()) :: integer()
-  def apply_critical_damage(base_damage) when is_integer(base_damage) do
-    base_damage * 2
+  @spec apply_critical_damage(integer(), map() | PlayerStats.t()) :: integer()
+  def apply_critical_damage(base_damage, attacker) when is_integer(base_damage) do
+    crate = crate_from(attacker)
+    trunc(base_damage * (1.4 + 0.01 * crate))
+  end
+
+  defp crate_from(attacker) do
+    case Map.get(attacker, :combat_stats) do
+      %{crate: crate} when is_integer(crate) -> crate
+      _ -> 0
+    end
   end
 
   @doc """

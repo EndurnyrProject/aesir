@@ -115,6 +115,21 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobsTest do
                JobManagement.get_bonus_stats(:novice, 8)
     end
 
+    test "bonus stats accumulate every prior grant into the running total" do
+      assert {:ok, %Job.BonusStats{level: 10, str: 1, vit: 1, dex: 1, agi: 0, int: 0, luk: 0}} =
+               JobManagement.get_bonus_stats(:swordman, 10)
+    end
+
+    test "bonus stats resolve gap levels to the running total, not an error" do
+      assert {:ok, %Job.BonusStats{level: 7, str: 1, vit: 1, dex: 0}} =
+               JobManagement.get_bonus_stats(:swordman, 7)
+    end
+
+    test "trait job bonus stats sum pow/sta/... up to the max job level" do
+      assert {:ok, %Job.BonusStats{level: 60, pow: 10, sta: 7, wis: 3, spl: 5, con: 7, crt: 8}} =
+               JobManagement.get_bonus_stats(:dragon_knight, 60)
+    end
+
     test "validates base and job levels against the job maxima" do
       assert JobManagement.is_valid_base_level?(:novice, 1)
       refute JobManagement.is_valid_base_level?(:novice, 0)

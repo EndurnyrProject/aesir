@@ -34,6 +34,28 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.LoaderTest do
       one_handed_sword: 47
   """
 
+  @cumulative_yaml """
+  - id: 5
+    name: cumulative_job
+    max_weight: 1000
+    max_base_level: 10
+    max_job_level: 12
+    base_hp: [100]
+    base_sp: [10]
+    base_exp: [500]
+    job_exp: [9]
+    bonus_stats:
+      - level: 2
+        str: 1
+      - level: 6
+        vit: 1
+      - level: 10
+        dex: 1
+        str: 1
+    base_aspd:
+      fist: 40
+  """
+
   defp write_yaml(dir, contents) do
     path = Path.join(dir, "jobs.yml")
     File.write!(path, contents)
@@ -74,6 +96,39 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.LoaderTest do
     end
 
     @tag :tmp_dir
+    test "accumulates sparse bonus_stats into a dense per-level running total", %{tmp_dir: dir} do
+      write_yaml(dir, @cumulative_yaml)
+
+      %{by_id: %{5 => %Job{bonus_stats: bonus_stats}}} = Loader.load(dir)
+
+      assert %Job.BonusStats{level: 1, str: 0, vit: 0, dex: 0} = bonus_stats[1]
+      assert %Job.BonusStats{level: 2, str: 1, vit: 0, dex: 0} = bonus_stats[2]
+      assert %Job.BonusStats{level: 6, str: 1, vit: 1, dex: 0} = bonus_stats[6]
+      assert %Job.BonusStats{level: 10, str: 2, vit: 1, dex: 1} = bonus_stats[10]
+    end
+
+    @tag :tmp_dir
+    test "fills gap levels with the running total instead of leaving them missing",
+         %{tmp_dir: dir} do
+      write_yaml(dir, @cumulative_yaml)
+
+      %{by_id: %{5 => %Job{bonus_stats: bonus_stats}}} = Loader.load(dir)
+
+      assert %Job.BonusStats{level: 7, str: 1, vit: 1, dex: 0} = bonus_stats[7]
+    end
+
+    @tag :tmp_dir
+    test "extends the running total up to max_job_level beyond the last grant",
+         %{tmp_dir: dir} do
+      write_yaml(dir, @cumulative_yaml)
+
+      %{by_id: %{5 => %Job{bonus_stats: bonus_stats}}} = Loader.load(dir)
+
+      assert %Job.BonusStats{level: 12, str: 2, vit: 1, dex: 1} = bonus_stats[12]
+      refute Map.has_key?(bonus_stats, 13)
+    end
+
+    @tag :tmp_dir
     test "rehydrates base_aspd into a struct with unused weapons left nil", %{tmp_dir: dir} do
       write_yaml(dir, @jobs_yaml)
 
@@ -86,7 +141,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.LoaderTest do
       write_yaml(dir, @jobs_yaml)
       Loader.load(dir)
 
-      assert File.exists?(Path.join([dir, ".cache", "jobs.etf"]))
+      assert File.exists?(Path.join([dir, ".cache", "jobs_v2.etf"]))
     end
 
     @tag :tmp_dir
@@ -94,7 +149,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.LoaderTest do
       yaml = write_yaml(dir, @jobs_yaml)
       Loader.load(dir)
 
-      cache = Path.join([dir, ".cache", "jobs.etf"])
+      cache = Path.join([dir, ".cache", "jobs_v2.etf"])
       File.write!(yaml, String.replace(@jobs_yaml, "max_weight: 20000", "max_weight: 99999"))
       File.touch!(cache, 1_000_000)
       File.touch!(yaml, 2_000_000)

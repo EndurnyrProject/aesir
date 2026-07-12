@@ -12,7 +12,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   nearby observers. A change (or `reset_skills/1` refund) that would drop
   `MC_PUSHCART` while a cart is mounted is rejected with `{:error, :cart_active}`
   before any mutation, so the player unloads and removes the cart first.
-  `reset_skills/1` implements the separate `resetskill` refund.
+  `reset_skills/1` implements the separate `resetskill` refund and `reset_stats/1`
+  the separate `resetstate` stat reset.
   """
 
   alias Aesir.Commons.Models.InventoryItem
@@ -22,6 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
+  alias Aesir.ZoneServer.Mmo.JobManagement.TraitJobs
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Learned
@@ -39,6 +41,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   alias Aesir.ZoneServer.Unit.Player.SkillListView
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
+  alias Aesir.ZoneServer.Unit.Stats, as: UnitStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @mc_pushcart_id McPushcart.definition().id
@@ -54,12 +57,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     old_level = progression.base_level
     new_level = min(old_level + amount, job.max_base_level)
     status_gained = StatPoint.gain(old_level, new_level)
+    trait_gained = StatPoint.trait_gain(old_level, new_level)
 
     progression = %{
       progression
       | base_level: new_level,
         base_exp: 0,
-        status_point: progression.status_point + status_gained
+        status_point: progression.status_point + status_gained,
+        trait_point: progression.trait_point + trait_gained
     }
 
     stats =
@@ -131,7 +136,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   player must unload and remove the cart first.
   """
   @spec apply_job_change(non_neg_integer(), map()) ::
-          {:ok, map()} | {:error, :unknown_job | :cart_active}
+          {:ok, map()} | {:error, :unknown_job | :cart_active | :requirements_not_met}
   def apply_job_change(job_id, %{game_state: game_state} = state) do
     case AvailableJobs.job_id_to_name(job_id) do
       {:ok, _job_name} -> do_apply_job_change(job_id, state, game_state)
@@ -180,6 +185,57 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     end
   end
 
+  @doc """
+  Resets the player's stat allocation (rAthena `resetstate` / `@resetstat`):
+  classic stats (STR..LUK) drop to `1` and `status_point` is restored to
+  `StatPoint.points_at(base_level)`; trait stats (POW..CRT) drop to `0` and
+  `trait_point` is restored to `StatPoint.trait_points_at(base_level)` plus the
+  flat `+7` trait-job grant when the character currently holds a trait job.
+  Recomputes stats, clamps vitals (a lower VIT/INT can drop max HP/SP below the
+  current value), then syncs and persists all twelve stat columns and both pools
+  through the shared `commit/4` path.
+  """
+  @spec reset_stats(map()) :: {:ok, map()}
+  def reset_stats(%{game_state: game_state} = state) do
+    progression = game_state.stats.progression
+    base_level = progression.base_level
+    job_id = progression.job_id
+
+    new_progression = %{
+      progression
+      | status_point: StatPoint.points_at(base_level),
+        trait_point: StatPoint.trait_points_at(base_level) + trait_reset_bonus(job_id)
+    }
+
+    base_stats = %{
+      game_state.stats.base_stats
+      | str: 1,
+        agi: 1,
+        vit: 1,
+        int: 1,
+        dex: 1,
+        luk: 1,
+        pow: 0,
+        sta: 0,
+        wis: 0,
+        spl: 0,
+        con: 0,
+        crt: 0
+    }
+
+    stats =
+      %{game_state.stats | progression: new_progression, base_stats: base_stats}
+      |> Stats.calculate_stats(game_state.character_id)
+      |> clamp_vitals()
+
+    {:noreply, new_state} = commit(state, %{game_state | stats: stats}, new_progression)
+    {:ok, new_state}
+  end
+
+  defp trait_reset_bonus(job_id) do
+    if TraitJobs.trait_job?(job_id), do: 7, else: 0
+  end
+
   defp do_reset_skills(state, game_state) do
     progression = game_state.stats.progression
     new_progression = SkillTree.reset_skills(progression)
@@ -195,9 +251,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   end
 
   defp do_apply_job_change(job_id, state, game_state) do
+    progression = game_state.stats.progression
+
     cond do
-      job_id == game_state.stats.progression.job_id ->
+      job_id == progression.job_id ->
         {:ok, state}
+
+      TraitJobs.change_allowed?(progression, job_id) != :ok ->
+        {:error, :requirements_not_met}
 
       cart_blocks_job_change?(game_state, job_id) ->
         {:error, :cart_active}
@@ -217,18 +278,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     progression = game_state.stats.progression
 
     {kept_skills, dropped_ids} = prune_skills(progression.learned_skills, job_id)
+    old_job_id = progression.job_id
 
     new_progression = %{
       progression
       | job_id: job_id,
         learned_skills: kept_skills,
         job_level: 1,
-        job_exp: 0
+        job_exp: 0,
+        trait_point: adjust_trait_point(progression.trait_point, old_job_id, job_id)
     }
+
+    base_stats = adjust_trait_base_stats(game_state.stats.base_stats, old_job_id, job_id)
 
     stats =
       Stats.calculate_stats(
-        %{game_state.stats | progression: new_progression},
+        %{game_state.stats | progression: new_progression, base_stats: base_stats},
         game_state.character_id
       )
 
@@ -243,6 +308,39 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     tree_ids = job_id |> SkillTree.tree_for() |> Map.keys()
     {kept, dropped} = Map.split(learned_skills, tree_ids)
     {kept, Map.keys(dropped)}
+  end
+
+  # Grant +7 on entering a trait job from a non-trait job (row 24); zero the pool
+  # when leaving a trait job for a non-trait job. Trait->trait (alt-variant) and
+  # non-trait->non-trait leave the pool untouched.
+  @spec adjust_trait_point(non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
+          non_neg_integer()
+  defp adjust_trait_point(trait_point, old_job_id, new_job_id) do
+    cond do
+      TraitJobs.trait_job?(new_job_id) and not TraitJobs.trait_job?(old_job_id) ->
+        trait_point + 7
+
+      TraitJobs.trait_job?(old_job_id) and not TraitJobs.trait_job?(new_job_id) ->
+        0
+
+      true ->
+        trait_point
+    end
+  end
+
+  # Leaving a trait job for a non-trait job zeroes the six trait base stats
+  # (deliberate simplification of rAthena's forced resetstate, Section 5.7).
+  @spec adjust_trait_base_stats(
+          UnitStats.BaseStats.t(),
+          non_neg_integer(),
+          non_neg_integer()
+        ) :: UnitStats.BaseStats.t()
+  defp adjust_trait_base_stats(base_stats, old_job_id, new_job_id) do
+    if TraitJobs.trait_job?(old_job_id) and not TraitJobs.trait_job?(new_job_id) do
+      %{base_stats | pow: 0, sta: 0, wis: 0, spl: 0, con: 0, crt: 0}
+    else
+      base_stats
+    end
   end
 
   # Ends the statuses granted by the dropped/refunded skills, on the player only,
@@ -295,11 +393,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
       game_state.stats
       |> Stats.calculate_stats(game_state.character_id)
       |> full_heal()
+      |> fill_ap()
 
     game_state = %{game_state | stats: stats}
     progression = stats.progression
 
     StatusSync.send_param(state.connection_pid, StatusParams.job_level(), progression.job_level)
+    push_ap_params(state.connection_pid, stats)
     broadcast_sprite(game_state, job_id)
     MessageRouter.send_to(state.connection_pid, SkillListView.build(progression))
 
@@ -368,6 +468,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     %{stats | current_state: current}
   end
 
+  # A job change starts AP full at the recomputed max (spec: AP starts full).
+  # Non-trait jobs have max_ap 0, so this clears any stale AP on leaving.
+  defp fill_ap(stats) do
+    %{stats | current_state: %{stats.current_state | ap: stats.derived_stats.max_ap}}
+  end
+
+  # Pushes the AP pool and the flat trait-stat raise-cost indicators (upow..ucrt = 1)
+  # after a job change; trait_point itself already flows through sync_client.
+  defp push_ap_params(connection_pid, stats) do
+    StatusSync.send_params(connection_pid, %{
+      StatusParams.ap() => stats.current_state.ap,
+      StatusParams.max_ap() => stats.derived_stats.max_ap,
+      StatusParams.upow() => 1,
+      StatusParams.usta() => 1,
+      StatusParams.uwis() => 1,
+      StatusParams.uspl() => 1,
+      StatusParams.ucon() => 1,
+      StatusParams.ucrt() => 1
+    })
+  end
+
   # Caps current HP/SP at the (possibly reduced) maxima without healing, for the
   # skill-reset path where a removed buff can lower max HP/SP below the current
   # value.
@@ -390,6 +511,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
       StatusParams.next_job_exp() => Leveling.next_job_exp(progression),
       StatusParams.skill_point() => progression.skill_point,
       StatusParams.status_point() => progression.status_point,
+      StatusParams.trait_point() => progression.trait_point,
       StatusParams.weight() => Weight.current_weight(game_state.inventory),
       StatusParams.max_weight() => Weight.max_weight(game_state.stats)
     })
@@ -409,7 +531,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
         max_hp: stats.derived_stats.max_hp,
         max_sp: stats.derived_stats.max_sp,
         skill_point: stats.progression.skill_point,
-        status_point: stats.progression.status_point
+        status_point: stats.progression.status_point,
+        trait_point: stats.progression.trait_point,
+        str: stats.base_stats.str,
+        agi: stats.base_stats.agi,
+        vit: stats.base_stats.vit,
+        int: stats.base_stats.int,
+        dex: stats.base_stats.dex,
+        luk: stats.base_stats.luk,
+        ap: stats.current_state.ap,
+        max_ap: stats.derived_stats.max_ap,
+        pow: stats.base_stats.pow,
+        sta: stats.base_stats.sta,
+        wis: stats.base_stats.wis,
+        spl: stats.base_stats.spl,
+        con: stats.base_stats.con,
+        crt: stats.base_stats.crt
       }
       |> Map.merge(Map.new(extra))
 

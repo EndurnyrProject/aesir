@@ -46,7 +46,16 @@ defmodule Aesir.CharServer.CharacterMapperTest do
       last_map: "prontera.gat",
       rename: 0,
       sex: "M",
-      delete_date: nil
+      delete_date: nil,
+      pow: 30,
+      sta: 20,
+      wis: 15,
+      spl: 25,
+      con: 10,
+      crt: 12,
+      trait_point: 12,
+      ap: 5,
+      max_ap: 40
     }
 
     struct(base, overrides)
@@ -92,6 +101,33 @@ defmodule Aesir.CharServer.CharacterMapperTest do
       assert proto.karma == 7
       assert proto.manner == 13
       assert proto.rename == 0
+      assert proto.pow == 30
+      assert proto.sta == 20
+      assert proto.wis == 15
+      assert proto.spl == 25
+      assert proto.con == 10
+      assert proto.crt == 12
+      assert proto.trait_point == 12
+      assert proto.ap == 5
+      assert proto.max_ap == 40
+    end
+
+    test "trait stats and AP round-trip through Character.encode/decode" do
+      character = build_character()
+      proto = CharacterMapper.to_proto(character)
+
+      {:ok, iodata, _size} = Aesir.Net.Character.encode(proto)
+      {:ok, decoded} = Aesir.Net.Character.decode(IO.iodata_to_binary(iodata))
+
+      assert decoded.pow == 30
+      assert decoded.sta == 20
+      assert decoded.wis == 15
+      assert decoded.spl == 25
+      assert decoded.con == 10
+      assert decoded.crt == 12
+      assert decoded.trait_point == 12
+      assert decoded.ap == 5
+      assert decoded.max_ap == 40
     end
 
     test "maps sex 'M' to 1" do

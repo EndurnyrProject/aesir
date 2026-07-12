@@ -114,13 +114,143 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert stats.progression.status_point == 25
     end
 
+    test "loads trait stats, trait_point, and ap into runtime state" do
+      # Dragon Knight (trait job) at base level 200 so the recomputed max_ap
+      # (base_ap table = 200) is high enough that the loaded ap survives the clamp.
+      character = %Character{
+        base_level: 200,
+        job_level: 1,
+        base_exp: 0,
+        job_exp: 0,
+        class: 4252,
+        str: 1,
+        agi: 1,
+        vit: 1,
+        int: 1,
+        dex: 1,
+        luk: 1,
+        hp: 40,
+        sp: 11,
+        pow: 30,
+        sta: 4,
+        wis: 5,
+        spl: 6,
+        con: 7,
+        crt: 8,
+        trait_point: 12,
+        ap: 5,
+        max_ap: 200
+      }
+
+      stats = Stats.from_character(character)
+
+      assert stats.base_stats.pow == 30
+      assert stats.base_stats.sta == 4
+      assert stats.base_stats.wis == 5
+      assert stats.base_stats.spl == 6
+      assert stats.base_stats.con == 7
+      assert stats.base_stats.crt == 8
+      assert stats.progression.trait_point == 12
+      assert stats.current_state.ap == 5
+    end
+
+    test "row 26: a trait job's max_ap equals the base_ap table value at its level" do
+      character = %Character{
+        base_level: 200,
+        job_level: 1,
+        class: 4252,
+        str: 1,
+        agi: 1,
+        vit: 1,
+        int: 1,
+        dex: 1,
+        luk: 1,
+        hp: 40,
+        sp: 11
+      }
+
+      stats = Stats.from_character(character)
+
+      assert stats.derived_stats.max_ap == 200
+    end
+
+    test "row 26: a non-trait job's max_ap is 0" do
+      character = %Character{
+        base_level: 99,
+        job_level: 50,
+        class: 0,
+        str: 1,
+        agi: 1,
+        vit: 1,
+        int: 1,
+        dex: 1,
+        luk: 1,
+        hp: 40,
+        sp: 11
+      }
+
+      stats = Stats.from_character(character)
+
+      assert stats.derived_stats.max_ap == 0
+    end
+
+    test "ap is clamped down to max_ap (trait job over cap, non-trait job to 0)" do
+      over_cap = %Character{
+        base_level: 200,
+        job_level: 1,
+        class: 4252,
+        str: 1,
+        agi: 1,
+        vit: 1,
+        int: 1,
+        dex: 1,
+        luk: 1,
+        hp: 40,
+        sp: 11,
+        ap: 9999
+      }
+
+      non_trait = %Character{
+        base_level: 99,
+        job_level: 50,
+        class: 0,
+        str: 1,
+        agi: 1,
+        vit: 1,
+        int: 1,
+        dex: 1,
+        luk: 1,
+        hp: 40,
+        sp: 11,
+        ap: 5
+      }
+
+      assert Stats.from_character(over_cap).current_state.ap == 200
+      assert Stats.from_character(non_trait).current_state.ap == 0
+    end
+
     test "initializes empty modifiers" do
       character = %Character{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1, class: 0}
       stats = Stats.from_character(character)
 
       assert stats.modifiers.equipment == %{}
       assert stats.modifiers.status_effects == %{}
-      assert stats.modifiers.job_bonuses == %{}
+
+      assert stats.modifiers.job_bonuses ==
+               %{
+                 str: 0,
+                 agi: 0,
+                 vit: 0,
+                 int: 0,
+                 dex: 0,
+                 luk: 0,
+                 pow: 0,
+                 sta: 0,
+                 wis: 0,
+                 spl: 0,
+                 con: 0,
+                 crt: 0
+               }
     end
   end
 
@@ -238,6 +368,40 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert Stats.get_effective_stat(stats, :dex) == 17
       # A stat with no passive contribution is unaffected
       assert Stats.get_effective_stat(stats, :str) == 10
+    end
+
+    test "aggregates trait stats (base + job bonus) like classic stats" do
+      stats = %Stats{
+        base_stats: %{
+          str: 1,
+          agi: 1,
+          vit: 1,
+          int: 1,
+          dex: 1,
+          luk: 1,
+          pow: 30,
+          sta: 4,
+          wis: 5,
+          spl: 6,
+          con: 7,
+          crt: 8
+        },
+        modifiers: %{
+          equipment: %{},
+          status_effects: %{},
+          job_bonuses: %{pow: 5}
+        },
+        equipment: %Equipment{}
+      }
+
+      # POW: 30 (base) + 5 (job bonus)
+      assert Stats.get_effective_stat(stats, :pow) == 35
+      # No job bonus -> equals base
+      assert Stats.get_effective_stat(stats, :sta) == 4
+      assert Stats.get_effective_stat(stats, :wis) == 5
+      assert Stats.get_effective_stat(stats, :spl) == 6
+      assert Stats.get_effective_stat(stats, :con) == 7
+      assert Stats.get_effective_stat(stats, :crt) == 8
     end
 
     test "handles missing modifiers gracefully" do
@@ -392,7 +556,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   end
 
   describe "modifier system" do
-    test "job bonuses remain unchanged (placeholder)" do
+    test "job bonuses resolve to the cumulative running total for the job level" do
       stats = %Stats{
         base_stats: %{str: 10, agi: 10, vit: 10, int: 10, dex: 10, luk: 10},
         progression: %{
@@ -408,7 +572,22 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       }
 
       result = Stats.apply_job_bonuses(stats)
-      assert result.modifiers.job_bonuses == %{}
+
+      assert result.modifiers.job_bonuses ==
+               %{
+                 str: 0,
+                 agi: 0,
+                 vit: 0,
+                 int: 0,
+                 dex: 0,
+                 luk: 0,
+                 pow: 0,
+                 sta: 0,
+                 wis: 0,
+                 spl: 0,
+                 con: 0,
+                 crt: 0
+               }
     end
 
     test "equipment modifiers remain unchanged (placeholder)" do
@@ -670,6 +849,77 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       result = Stats.calculate_combat_stats(stats)
 
       assert result.combat_stats.mres == 0
+    end
+  end
+
+  describe "trait-stat derivation (SP-B, formula rows 1-11)" do
+    defp trait_stats(base_stats) do
+      %Stats{
+        base_stats: base_stats,
+        progression: %{base_level: 0, job_level: 0, learned_skills: %{}},
+        derived_stats: %{max_hp: 1, max_sp: 1},
+        equipment: %Equipment{},
+        modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}, passive: %{}}
+      }
+    end
+
+    @zero %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0}
+
+    test "row 1: POW 10 raises base ATK by 50 and P.Atk by 3" do
+      result = @zero |> Map.put(:pow, 10) |> trait_stats() |> Stats.calculate_combat_stats()
+
+      assert result.combat_stats.atk == 50
+      assert result.combat_stats.patk == 3
+    end
+
+    test "row 2: SPL 7 raises base MATK by 35 and S.MAtk by 2" do
+      result = @zero |> Map.put(:spl, 7) |> trait_stats() |> Stats.calculate_combat_stats()
+
+      assert result.combat_stats.matk == 35
+      assert result.combat_stats.smatk == 2
+    end
+
+    test "rows 3-6: CON 7 raises P.Atk/S.MAtk by 1 and HIT/FLEE by 14" do
+      result = @zero |> Map.put(:con, 7) |> trait_stats() |> Stats.calculate_combat_stats()
+
+      assert result.combat_stats.patk == 1
+      assert result.combat_stats.smatk == 1
+      assert result.combat_stats.hit == 14
+      assert result.combat_stats.flee == 14
+    end
+
+    test "row 7: STA 10 gives Res 25 (div truncates before *5)" do
+      result = @zero |> Map.put(:sta, 10) |> trait_stats() |> Stats.calculate_combat_stats()
+
+      assert result.combat_stats.res == 25
+    end
+
+    test "row 7: STA 12 gives Res 32" do
+      result = @zero |> Map.put(:sta, 12) |> trait_stats() |> Stats.calculate_combat_stats()
+
+      assert result.combat_stats.res == 32
+    end
+
+    test "row 8: WIS 10 gives MRes 25" do
+      result = @zero |> Map.put(:wis, 10) |> trait_stats() |> Stats.calculate_combat_stats()
+
+      assert result.combat_stats.mres == 25
+    end
+
+    test "rows 9-10: CRT 10 gives HPlus 10 and CRate 3" do
+      result = @zero |> Map.put(:crt, 10) |> trait_stats() |> Stats.calculate_combat_stats()
+
+      assert result.combat_stats.hplus == 10
+      assert result.combat_stats.crate == 3
+    end
+
+    test "row 11: CRT never feeds the classic critical stat" do
+      base = %{@zero | luk: 30}
+      no_crt = base |> trait_stats() |> Stats.calculate_combat_stats()
+      high_crt = base |> Map.put(:crt, 100) |> trait_stats() |> Stats.calculate_combat_stats()
+
+      assert no_crt.combat_stats.critical == 10
+      assert high_crt.combat_stats.critical == no_crt.combat_stats.critical
     end
   end
 

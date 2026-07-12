@@ -62,4 +62,37 @@ defmodule Aesir.ZoneServer.Mmo.StatPointTest do
       assert StatPoint.max_parameter(0) == 99
     end
   end
+
+  describe "trait_points_at/1 and trait_gain/2" do
+    test "trait points are 0 through level 200" do
+      assert StatPoint.trait_points_at(200) == 0
+    end
+
+    test "trait points are cumulative from level 201" do
+      assert StatPoint.trait_points_at(201) == 3
+      assert StatPoint.trait_points_at(205) == 19
+      assert StatPoint.trait_points_at(275) == 285
+    end
+
+    test "trait_gain is the cumulative table delta" do
+      assert StatPoint.trait_gain(200, 201) == 3
+      assert StatPoint.trait_gain(204, 205) == 7
+    end
+
+    test "trait_gain is 0 below level 201" do
+      assert StatPoint.trait_gain(1, 200) == 0
+    end
+  end
+
+  describe "job-aware caps" do
+    test "max_parameter is 135 for trait jobs and 99 otherwise" do
+      assert StatPoint.max_parameter(4252) == 135
+      assert StatPoint.max_parameter(4054) == 99
+    end
+
+    test "max_trait_parameter is 100 for trait jobs and 0 otherwise" do
+      assert StatPoint.max_trait_parameter(4252) == 100
+      assert StatPoint.max_trait_parameter(4054) == 0
+    end
+  end
 end

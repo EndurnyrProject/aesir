@@ -89,6 +89,32 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert result.damage > 0
     end
 
+    test "CRate reaches the crit path: a player with crate>0 crits harder (real CriticalHits)" do
+      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
+      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(RaceModifiers, :player_race, fn -> :human end)
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+
+      defender = CombatTestHelper.create_mob_combatant()
+
+      # LUK 300 -> crit rate capped at 1000/1000, so both attackers always crit
+      # regardless of the RNG seed, isolating the crate factor (1.4 vs 1.4+0.01*50).
+      base = CombatTestHelper.create_player_combatant(luk: 300, str: 60, base_level: 90)
+      no_crate = %{base | combat_stats: Map.put(base.combat_stats, :crate, 0)}
+      high_crate = %{base | combat_stats: Map.put(base.combat_stats, :crate, 50)}
+
+      :rand.seed(:exsss, {7, 8, 9})
+      {:ok, low} = DamageCalculator.calculate_damage(no_crate, defender)
+
+      :rand.seed(:exsss, {7, 8, 9})
+      {:ok, high} = DamageCalculator.calculate_damage(high_crate, defender)
+
+      assert low.is_critical
+      assert high.is_critical
+      assert high.damage > low.damage
+    end
+
     test "applies element modifiers" do
       stub(ElementModifiers, :get_modifier, fn
         # Fire strong vs Earth

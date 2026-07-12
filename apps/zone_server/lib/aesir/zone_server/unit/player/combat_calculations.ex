@@ -30,10 +30,11 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculations do
   def calculate_hit(%Stats{} = stats) do
     effective_dex = Stats.get_effective_stat(stats, :dex)
     effective_luk = Stats.get_effective_stat(stats, :luk)
+    effective_con = Stats.get_effective_stat(stats, :con)
     base_level = stats.progression.base_level
 
-    # Base hit calculation
-    base_hit = trunc(effective_dex + effective_luk / 3 + base_level / 4)
+    # Base hit calculation (+ 2 * CON, row 3)
+    base_hit = trunc(effective_dex + effective_luk / 3 + base_level / 4) + 2 * effective_con
 
     passive_hit = stats.modifiers |> Map.get(:passive, %{}) |> Map.get(:hit, 0)
 
@@ -53,10 +54,11 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculations do
   def calculate_flee(%Stats{} = stats) do
     effective_agi = Stats.get_effective_stat(stats, :agi)
     effective_luk = Stats.get_effective_stat(stats, :luk)
+    effective_con = Stats.get_effective_stat(stats, :con)
     base_level = stats.progression.base_level
 
-    # Base flee calculation
-    base_flee = trunc(effective_agi + effective_luk / 5 + base_level / 4)
+    # Base flee calculation (+ 2 * CON, row 4)
+    base_flee = trunc(effective_agi + effective_luk / 5 + base_level / 4) + 2 * effective_con
 
     # Add modifiers from status effects, equipment, and passive skills
     base_flee + Stats.get_status_modifier(stats, :flee) + Passives.flee_bonus(stats)

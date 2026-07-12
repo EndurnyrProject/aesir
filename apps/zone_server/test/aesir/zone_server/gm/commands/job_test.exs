@@ -2,13 +2,28 @@ defmodule Aesir.ZoneServer.Gm.Commands.JobTest do
   use ExUnit.Case, async: true
 
   alias Aesir.ZoneServer.Gm.Commands.Job
+  alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
+  alias Aesir.ZoneServer.Unit.Stats
   alias Phoenix.PubSub
 
   @char_id 4242
 
-  defp ctx(overrides \\ []) do
-    game_state = struct(%PlayerState{character_id: @char_id, character_name: "Gm"}, overrides)
+  {:ok, rune_knight_id} = AvailableJobs.job_name_to_id(:rune_knight)
+  @rune_knight_id rune_knight_id
+  {:ok, dragon_knight_id} = AvailableJobs.job_name_to_id(:dragon_knight)
+  @dragon_knight_id dragon_knight_id
+
+  defp ctx(overrides \\ [], progression_overrides \\ []) do
+    progression =
+      struct(%PlayerProgression{job_id: 0, base_level: 1, job_level: 1}, progression_overrides)
+
+    stats = %Stats{progression: progression}
+
+    game_state =
+      struct(%PlayerState{character_id: @char_id, character_name: "Gm", stats: stats}, overrides)
+
     %{game_state: game_state, connection_pid: self()}
   end
 
@@ -52,5 +67,25 @@ defmodule Aesir.ZoneServer.Gm.Commands.JobTest do
              Job.execute(["7"], ctx(cart_type: 1))
 
     refute_receive {:change_job, 7}
+  end
+
+  test "is rejected with a message when 4th-job requirements are not met, broadcasting nothing" do
+    PubSub.subscribe(Aesir.PubSub, "player:#{@char_id}")
+
+    ineligible = ctx([], job_id: @rune_knight_id, base_level: 100, job_level: 50)
+
+    assert {:error, "You do not meet the requirements for that job"} =
+             Job.execute([to_string(@dragon_knight_id)], ineligible)
+
+    refute_receive {:change_job, _}
+  end
+
+  test "allows an eligible 4th-job change, broadcasting {:change_job, id}" do
+    PubSub.subscribe(Aesir.PubSub, "player:#{@char_id}")
+
+    eligible = ctx([], job_id: @rune_knight_id, base_level: 200, job_level: 70)
+
+    assert {:ok, _} = Job.execute([to_string(@dragon_knight_id)], eligible)
+    assert_receive {:change_job, @dragon_knight_id}
   end
 end

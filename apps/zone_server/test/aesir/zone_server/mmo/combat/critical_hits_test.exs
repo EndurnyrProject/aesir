@@ -109,23 +109,32 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHitsTest do
     end
   end
 
-  describe "apply_critical_damage/1" do
-    test "doubles damage for critical hits" do
-      assert CriticalHits.apply_critical_damage(100) == 200
-      assert CriticalHits.apply_critical_damage(1) == 2
-      assert CriticalHits.apply_critical_damage(999) == 1998
+  describe "apply_critical_damage/2" do
+    test "applies the renewal 1.4x factor with crate 0" do
+      assert CriticalHits.apply_critical_damage(1000, %{combat_stats: %{crate: 0}}) == 1400
+      assert CriticalHits.apply_critical_damage(100, %{combat_stats: %{crate: 0}}) == 140
+      assert CriticalHits.apply_critical_damage(999, %{combat_stats: %{crate: 0}}) == 1398
+    end
+
+    test "scales the factor with crate" do
+      assert CriticalHits.apply_critical_damage(1000, %{combat_stats: %{crate: 30}}) == 1700
+    end
+
+    test "defaults crate to 0 when the attacker has no crate slot (non-player/mob)" do
+      assert CriticalHits.apply_critical_damage(1000, %{}) == 1400
+      assert CriticalHits.apply_critical_damage(1000, %{combat_stats: %{}}) == 1400
     end
 
     test "handles edge cases" do
-      assert CriticalHits.apply_critical_damage(0) == 0
-      assert CriticalHits.apply_critical_damage(-10) == -20
+      assert CriticalHits.apply_critical_damage(0, %{}) == 0
+      assert CriticalHits.apply_critical_damage(-10, %{}) == -14
     end
 
     test "maintains integer precision" do
       damage = 150
-      critical_damage = CriticalHits.apply_critical_damage(damage)
+      critical_damage = CriticalHits.apply_critical_damage(damage, %{})
       assert is_integer(critical_damage)
-      assert critical_damage == 300
+      assert critical_damage == 210
     end
   end
 
@@ -145,12 +154,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHitsTest do
       # Critical rate should be correct
       assert result.critical_rate == 100
 
-      # Damage should be either base or doubled
-      assert result.damage == base_damage or result.damage == base_damage * 2
+      critical_damage = CriticalHits.apply_critical_damage(base_damage, stats)
+
+      # Damage should be either base or the renewal critical factor
+      assert result.damage == base_damage or result.damage == critical_damage
 
       # is_critical should match damage multiplier
       if result.is_critical do
-        assert result.damage == base_damage * 2
+        assert result.damage == critical_damage
       else
         assert result.damage == base_damage
       end
@@ -174,8 +185,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHitsTest do
 
       # With 100% critical rate, should always be critical
       assert result.is_critical == true
-      # 200 * 2
-      assert result.damage == 400
+      # 200 * 1.4 (renewal factor, crate defaults to 0)
+      assert result.damage == 280
       assert result.critical_rate == 1000
     end
 
@@ -191,9 +202,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHitsTest do
       critical_rates = Enum.map(results, & &1.critical_rate)
       assert Enum.all?(critical_rates, &(&1 == 166))
 
-      # All damages should be either 100 or 200
+      # All damages should be either base or the renewal critical factor (100 * 1.4 = 140)
       damages = Enum.map(results, & &1.damage)
-      assert Enum.all?(damages, &(&1 == 100 or &1 == 200))
+      assert Enum.all?(damages, &(&1 == 100 or &1 == 140))
     end
   end
 
@@ -285,14 +296,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHitsTest do
       end
     end
 
-    test "critical damage matches rAthena 2x multiplier" do
-      # rAthena always applies 2x damage for critical hits
+    test "critical damage matches rAthena renewal 1.4x non-player branch" do
+      # Non-player attackers (no crate slot) land on rAthena's x1.4 branch (battle.cpp:5652)
       damages = [1, 50, 100, 999, 1500]
 
       for damage <- damages do
-        critical_damage = CriticalHits.apply_critical_damage(damage)
-        assert critical_damage == damage * 2
+        critical_damage = CriticalHits.apply_critical_damage(damage, %{})
+        assert critical_damage == trunc(damage * 1.4)
       end
+    end
+
+    test "critical damage matches rAthena renewal crate-scaled player branch" do
+      # battle.cpp:5648 — wd.damage * (1.4 + 0.01 * sstatus->crate)
+      assert CriticalHits.apply_critical_damage(1000, %{combat_stats: %{crate: 0}}) == 1400
+      assert CriticalHits.apply_critical_damage(1000, %{combat_stats: %{crate: 30}}) == 1700
     end
 
     test "random distribution uses correct range" do

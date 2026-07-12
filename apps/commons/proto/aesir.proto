@@ -246,6 +246,15 @@ message Character {
   uint32 manner = 35;
   uint32 rename = 36;
   uint64 delete_date = 37;
+  uint32 pow = 38;
+  uint32 sta = 39;
+  uint32 wis = 40;
+  uint32 spl = 41;
+  uint32 con = 42;
+  uint32 crt = 43;
+  uint32 trait_point = 44;
+  uint32 ap = 45;
+  uint32 max_ap = 46;
 }
 
 // Server -> client, full character list response (replaces the legacy multi-packet char-list).

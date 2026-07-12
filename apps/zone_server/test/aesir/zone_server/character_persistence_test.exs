@@ -97,6 +97,22 @@ defmodule Aesir.ZoneServer.CharacterPersistenceTest do
       assert updated.hp == 50
       assert updated.sp == original_sp
     end
+
+    test "persists trait-stat fields (pow/trait_point/max_ap)", %{character: character} do
+      assert {:ok, updated} =
+               CharacterPersistence.update_character(character.id, %{
+                 pow: 30,
+                 trait_point: 12,
+                 max_ap: 50
+               })
+
+      assert updated.pow == 30
+      assert updated.trait_point == 12
+      assert updated.max_ap == 50
+
+      assert %Character{pow: 30, trait_point: 12, max_ap: 50} =
+               Repo.get!(Character, character.id)
+    end
   end
 
   describe "update_position/5" do

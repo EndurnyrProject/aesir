@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandlerTest do
   use ExUnit.Case, async: true
   import Mimic
 
+  alias Aesir.Commons.StatusParams
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
@@ -49,6 +50,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandlerTest do
     %{connection_pid: self(), game_state: game_state}
   end
 
+  defp state_with(progression_overrides) do
+    base = PlayerState.new(character())
+    progression = struct(base.stats.progression, progression_overrides)
+    game_state = %{base | character_id: 1000, stats: %{base.stats | progression: progression}}
+    %{connection_pid: self(), game_state: game_state}
+  end
+
   defp character do
     %Aesir.Commons.Models.Character{
       id: 1000,
@@ -89,6 +97,73 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandlerTest do
 
     test "a positive grant never floors to zero under a full reduction" do
       assert {1, 1} == capture_grant(%{exp_rate: -100})
+    end
+  end
+
+  describe "handle_gain_exp/3 trait-point grant" do
+    defp stub_level_up(from_level, to_level) do
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{} end)
+
+      stub(Leveling, :apply_exp, fn progression, _base, _job ->
+        {%{progression | base_level: to_level}, to_level - from_level, 0}
+      end)
+
+      state_with(base_level: from_level)
+    end
+
+    test "leveling 200 -> 201 grants +3 trait points" do
+      {:noreply, new_state} =
+        ExperienceHandler.handle_gain_exp(100, 0, stub_level_up(200, 201))
+
+      assert new_state.game_state.stats.progression.trait_point == 3
+    end
+
+    test "leveling 204 -> 205 grants +7 trait points" do
+      {:noreply, new_state} =
+        ExperienceHandler.handle_gain_exp(100, 0, stub_level_up(204, 205))
+
+      assert new_state.game_state.stats.progression.trait_point == 0 + 7
+    end
+
+    test "leveling below 201 grants 0 trait points" do
+      {:noreply, new_state} =
+        ExperienceHandler.handle_gain_exp(100, 0, stub_level_up(50, 51))
+
+      assert new_state.game_state.stats.progression.trait_point == 0
+    end
+
+    test "a non-4th-job character gains 0 trait points across a level-up" do
+      {:noreply, new_state} =
+        ExperienceHandler.handle_gain_exp(100, 0, stub_level_up(90, 99))
+
+      assert new_state.game_state.stats.progression.trait_point == 0
+    end
+
+    test "trait_point is persisted" do
+      test_pid = self()
+
+      stub(CharacterPersistence, :update_character, fn 1000, attrs, async: true ->
+        send(test_pid, {:persisted, attrs})
+        {:ok, %{}}
+      end)
+
+      ExperienceHandler.handle_gain_exp(100, 0, stub_level_up(200, 201))
+
+      assert_received {:persisted, %{trait_point: 3}}
+    end
+
+    test "trait_point is synced" do
+      test_pid = self()
+
+      stub(StatusSync, :send_params, fn _pid, params ->
+        send(test_pid, {:synced, params})
+        :ok
+      end)
+
+      ExperienceHandler.handle_gain_exp(100, 0, stub_level_up(200, 201))
+
+      trait_point = StatusParams.trait_point()
+      assert_received {:synced, %{^trait_point => 3}}
     end
   end
 

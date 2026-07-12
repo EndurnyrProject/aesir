@@ -77,6 +77,15 @@ defmodule Aesir.Commons.Models.Character do
           last_login: NaiveDateTime.t() | nil,
           title_id: integer(),
           show_equip: integer(),
+          pow: integer(),
+          sta: integer(),
+          wis: integer(),
+          spl: integer(),
+          con: integer(),
+          crt: integer(),
+          trait_point: integer(),
+          ap: integer(),
+          max_ap: integer(),
           inserted_at: NaiveDateTime.t(),
           updated_at: NaiveDateTime.t()
         }
@@ -150,6 +159,15 @@ defmodule Aesir.Commons.Models.Character do
     field :last_login, :naive_datetime
     field :title_id, :integer, default: 0
     field :show_equip, :integer, default: 0
+    field :pow, :integer, default: 0
+    field :sta, :integer, default: 0
+    field :wis, :integer, default: 0
+    field :spl, :integer, default: 0
+    field :con, :integer, default: 0
+    field :crt, :integer, default: 0
+    field :trait_point, :integer, default: 0
+    field :ap, :integer, default: 0
+    field :max_ap, :integer, default: 0
 
     timestamps()
   end
@@ -222,7 +240,16 @@ defmodule Aesir.Commons.Models.Character do
       :clan_id,
       :last_login,
       :title_id,
-      :show_equip
+      :show_equip,
+      :pow,
+      :sta,
+      :wis,
+      :spl,
+      :con,
+      :crt,
+      :trait_point,
+      :ap,
+      :max_ap
     ])
     |> validate_required([:account_id, :char_num, :name, :class])
     |> validate_length(:name, min: 4, max: 23)
