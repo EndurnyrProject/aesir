@@ -6,6 +6,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PushCartTest do
 
   defp entry(overrides), do: struct(%StatusEntry{type: :sc_push_cart, state: %{}}, overrides)
 
+  describe "metadata" do
+    test "declares the EFST icon so mount/unmount broadcasts the status-icon bar entry" do
+      assert PushCart.metadata().icon == :on_push_cart
+    end
+  end
+
   describe "modifiers/2 movement_speed penalty (rAthena 50 - 5 * pushcart_level)" do
     test "level 0 (unlearned) applies the full +50% slowdown" do
       assert %{movement_speed: 50} = PushCart.modifiers(entry(val1: 0), %{})
