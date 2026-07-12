@@ -72,6 +72,29 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert :error = CommandMap.warp_target("prontera")
   end
 
+  test "quest buildins map to their DSL ops" do
+    assert {:ok, %{dsl: "setquest", args: [:int]}} = CommandMap.command("setquest")
+    assert {:ok, %{dsl: "erasequest", args: [:int]}} = CommandMap.command("erasequest")
+    assert {:ok, %{dsl: "completequest", args: [:int]}} = CommandMap.command("completequest")
+
+    assert {:ok, %{dsl: "changequest", args: [:int, :int]}} =
+             CommandMap.command("changequest")
+
+    assert {:ok, %{dsl: "isbegin_quest", args: [:int]}} = CommandMap.call_read("isbegin_quest")
+
+    assert {:ok, %{shape: :quest_check, dsl: "checkquest"}} =
+             CommandMap.call_read("checkquest")
+
+    assert {:ok, %{shape: :quest_check, dsl: "questprogress"}} =
+             CommandMap.call_read("questprogress")
+
+    for name <-
+          ~w(setquest erasequest completequest changequest isbegin_quest checkquest questprogress) do
+      assert CommandMap.supported?(name)
+      assert CommandMap.supported?(String.upcase(name))
+    end
+  end
+
   describe "Resolver" do
     test "constants resolve booleans and curated symbol maps" do
       assert {:ok, "1"} = Resolver.constant("true")
@@ -83,6 +106,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
       assert {:ok, :money} = Resolver.emote("ET_MONEY")
       assert :error = Resolver.emote("ET_NOPE")
       assert {:ok, 42} = Resolver.emote(42)
+    end
+
+    test "quest_mode resolves the HAVEQUEST/PLAYTIME/HUNTING constants" do
+      assert {:ok, :havequest} = Resolver.quest_mode("HAVEQUEST")
+      assert {:ok, :playtime} = Resolver.quest_mode("PLAYTIME")
+      assert {:ok, :hunting} = Resolver.quest_mode("HUNTING")
+      assert :error = Resolver.quest_mode("havequest")
+      assert :error = Resolver.quest_mode("NOPE")
     end
 
     test "broadcast flag constants resolve to their integer value" do

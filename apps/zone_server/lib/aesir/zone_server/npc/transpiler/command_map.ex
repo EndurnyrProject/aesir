@@ -44,7 +44,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
 
   `@reads` maps bare parameter names (`BaseLevel`, `Zeny`, …) to DSL read
   functions; `@call_reads` maps call-style reads (`countitem(id)`) the same
-  way.
+  way, plus one dedicated shape:
+
+  - `%{shape: :quest_check, dsl: name}` — `checkquest(id)` /
+    `checkquest(id, HUNTING)` (and `questprogress`, the same core aliased):
+    the default args-truncation rule (above) would silently drop the
+    optional mode argument, so this shape keeps both the 1- and 2-arg forms.
+    The mode constant (`HAVEQUEST`/`PLAYTIME`/`HUNTING`) resolves via the
+    `:quest_mode` typed arg to `:havequest`/`:playtime`/`:hunting`.
   """
 
   @type rule :: map()
@@ -74,7 +81,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "announce" => %{shape: :announce, dsl: "announce", fixed: 2},
     "broadcast" => %{shape: :announce, dsl: "broadcast", fixed: 2},
     "mapannounce" => %{shape: :announce, dsl: "mapannounce", fixed: 3},
-    "areaannounce" => %{shape: :announce, dsl: "areaannounce", fixed: 7}
+    "areaannounce" => %{shape: :announce, dsl: "areaannounce", fixed: 7},
+    "setquest" => %{dsl: "setquest", args: [:int]},
+    "erasequest" => %{dsl: "erasequest", args: [:int]},
+    "completequest" => %{dsl: "completequest", args: [:int]},
+    "changequest" => %{dsl: "changequest", args: [:int, :int]}
   }
 
   # Global rAthena functions (`callfunc "Name"`) mapped onto DSL primitives.
@@ -107,7 +118,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "countitem" => %{dsl: "count_item", args: [:item]},
     "isequipped" => %{dsl: "is_equipped", args: [:item]},
     "strcharinfo" => %{dsl: "char_name", args: [:int]},
-    "jobname" => %{dsl: "job_name", args: [:int]}
+    "jobname" => %{dsl: "job_name", args: [:int]},
+    "isbegin_quest" => %{dsl: "isbegin_quest", args: [:int]},
+    "checkquest" => %{shape: :quest_check, dsl: "checkquest"},
+    "questprogress" => %{shape: :quest_check, dsl: "questprogress"}
   }
 
   @spec command(String.t()) :: {:ok, rule()} | :error

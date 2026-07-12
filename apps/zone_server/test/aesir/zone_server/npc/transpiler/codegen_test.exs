@@ -568,4 +568,59 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ "Rathena.bool_int(base_level(ctx) > 10)"
     assert src =~ ~S|Rathena.concat("lv ", base_level(ctx))|
   end
+
+  test "quest commands transpile to their DSL calls and the module compiles" do
+    src =
+      gen!(
+        """
+        setquest 7393;
+        erasequest 7393;
+        completequest 7393;
+        changequest 7393,7394;
+        close;
+        """,
+        module: "Aesir.ZoneServer.Content.Npc.Payon.TestNpcQuestCommands"
+      )
+
+    assert src =~ "setquest(7393)"
+    assert src =~ "erasequest(7393)"
+    assert src =~ "completequest(7393)"
+    assert src =~ "changequest(7393, 7394)"
+    refute src =~ "todo(ctx, :setquest"
+    refute src =~ "todo(ctx, :erasequest"
+    refute src =~ "todo(ctx, :completequest"
+    refute src =~ "todo(ctx, :changequest"
+
+    assert [{_module, _}] = Code.compile_string(src)
+  end
+
+  test "checkquest and questprogress keep the optional mode argument" do
+    src =
+      gen!("""
+      .@a = checkquest(7393);
+      .@b = checkquest(7393, HUNTING);
+      .@c = questprogress(7393);
+      .@d = questprogress(7393, PLAYTIME);
+      close;
+      """)
+
+    assert src =~ "checkquest(ctx, 7393)"
+    assert src =~ "checkquest(ctx, 7393, :hunting)"
+    assert src =~ "questprogress(ctx, 7393)"
+    assert src =~ "questprogress(ctx, 7393, :playtime)"
+    refute src =~ "Todo.call!(:checkquest"
+    refute src =~ "Todo.call!(:questprogress"
+  end
+
+  test "checkquest resolves HAVEQUEST explicitly and isbegin_quest reads in expression position" do
+    src =
+      gen!("""
+      .@a = checkquest(7393, HAVEQUEST);
+      .@b = isbegin_quest(7393);
+      close;
+      """)
+
+    assert src =~ "checkquest(ctx, 7393, :havequest)"
+    assert src =~ "isbegin_quest(ctx, 7393)"
+  end
 end

@@ -883,6 +883,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     end
   end
 
+  defp typed_arg({:name, s}, :quest_mode, _env) do
+    case Resolver.quest_mode(s) do
+      {:ok, atom} -> inspect(atom)
+      :error -> const_todo(s)
+    end
+  end
+
   defp typed_arg(arg, :skill_opts, env), do: render(arg, env)
   defp typed_arg(arg, _type, env), do: render(arg, env)
 
@@ -1451,6 +1458,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   defp render({:call, name, args}, env) do
     case CommandMap.call_read(name) do
+      {:ok, %{shape: :quest_check, dsl: dsl}} ->
+        quest_check_call(dsl, name, args, env)
+
       {:ok, %{dsl: dsl, args: types}} ->
         rendered =
           args
@@ -1470,6 +1480,20 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp render(other, _env) do
     flag(:todo_mod)
     "Todo.call!(:expr, [#{inspect(inspect(other))}])"
+  end
+
+  # `checkquest`/`questprogress`: 1-arg form defaults the DSL's own
+  # `:havequest` mode; the 2-arg form resolves the mode constant. Any other
+  # arity is a form the buildin doesn't have, so it stays a stub.
+  defp quest_check_call(dsl, _name, [id], env),
+    do: "#{dsl}(ctx, #{typed_arg(id, :int, env)})"
+
+  defp quest_check_call(dsl, _name, [id, mode], env),
+    do: "#{dsl}(ctx, #{typed_arg(id, :int, env)}, #{typed_arg(mode, :quest_mode, env)})"
+
+  defp quest_check_call(_dsl, name, args, env) do
+    flag(:todo_mod)
+    "Todo.call!(#{atom_lit(name)}, [#{Enum.map_join(args, ", ", &render(&1, env))}])"
   end
 
   defp read_name(name) do

@@ -88,6 +88,20 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
 
   def emote(symbol) when is_binary(symbol), do: :error
 
+  @quest_modes %{
+    "HAVEQUEST" => :havequest,
+    "PLAYTIME" => :playtime,
+    "HUNTING" => :hunting
+  }
+
+  @doc """
+  Resolves a `checkquest`/`questprogress` mode constant (`HAVEQUEST`,
+  `PLAYTIME`, `HUNTING`) to the `QuestLog.check/3` mode atom. rAthena spells
+  these uppercase; unlike buildin names they are not case-insensitive.
+  """
+  @spec quest_mode(String.t()) :: {:ok, :havequest | :playtime | :hunting} | :error
+  def quest_mode(symbol) when is_binary(symbol), do: Map.fetch(@quest_modes, symbol)
+
   # -- sprites -----------------------------------------------------------------
 
   @doc """
