@@ -195,20 +195,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
     end
 
     @tag :tmp_dir
-    test "decodes an on_equip program via EquipScript.decode!/1", %{tmp_dir: dir} do
+    test "parses an on_equip DSL source via EquipScript.parse!/1", %{tmp_dir: dir} do
       write_yaml(dir, """
       - id: 490160
         aegis_name: ST_Orleans_Glove
         name: Orleans's Glove
         type: armor
-        on_equip:
-          - - bonus
-            - smatk
-            - 3
+        on_equip: |-
+          ctx = bonus(ctx, :smatk, 3)
+          ctx = bonus(ctx, :spl, 2)
+          ctx
       """)
 
-      assert %{by_id: %{490_160 => %ItemDefinition{on_equip: [{:bonus, :smatk, 3}]}}} =
-               Loader.load(dir)
+      assert %{
+               by_id: %{
+                 490_160 => %ItemDefinition{on_equip: [{:bonus, :smatk, 3}, {:bonus, :spl, 2}]}
+               }
+             } = Loader.load(dir)
     end
 
     @tag :tmp_dir

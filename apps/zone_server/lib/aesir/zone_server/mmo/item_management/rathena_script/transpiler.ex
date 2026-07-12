@@ -1,7 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Transpiler do
   @moduledoc """
   Entry point of the rAthena item-script transpiler, with two independent
-  targets sharing the same `Lexer` -> `Parser` front end:
+  targets sharing the NPC transpiler's front end
+  (`Aesir.ZoneServer.Npc.Transpiler.Parser.parse_body/1` — item scripts are the
+  same language as NPC script bodies, so there is exactly one rAthena
+  lexer/parser in the project):
 
   - `transpile/1` — a raw rAthena usable-item `Script` string -> an Aesir
     `on_use` DSL **source string**, via `Codegen`. The `on_use` corpus is small
@@ -13,32 +16,38 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Transpiler do
     recompute time instead of generated code — the same BEAM clause-count
     ceiling that is fine for `on_use` would not be for `on_equip`.
 
-  Lexer errors, `{:error, {:parse_error, _}}` and `{:error, {:unsupported, _}}`
-  are surfaced unchanged from both entry points so the importer can record them
-  in its coverage report; nothing is raised for a malformed or unsupported
-  script. No randomness happens at transpile time, so the same script always
-  yields the same result.
+  Front-end failures (lexer or parser) are wrapped as
+  `{:error, {:parse_error, reason}}`; `{:error, {:unsupported, _}}` codegen
+  rejections are surfaced unchanged. Both are recorded by the importer in its
+  coverage report; nothing is raised for a malformed or unsupported script. No
+  randomness happens at transpile time, so the same script always yields the
+  same result.
   """
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen
-  alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Lexer
-  alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Parser
+  alias Aesir.ZoneServer.Npc.Transpiler.Parser
 
   @spec transpile(String.t()) :: {:ok, String.t()} | {:error, term()}
   def transpile(script) when is_binary(script) do
-    with {:ok, tokens} <- Lexer.tokenize(script),
-         {:ok, ast} <- Parser.parse(tokens) do
+    with {:ok, ast} <- parse(script) do
       Codegen.generate(ast)
     end
   end
 
   @spec transpile_equip(String.t()) :: {:ok, EquipScript.program()} | {:error, term()}
   def transpile_equip(script) when is_binary(script) do
-    with {:ok, tokens} <- Lexer.tokenize(script),
-         {:ok, ast} <- Parser.parse(tokens) do
+    with {:ok, ast} <- parse(script) do
       EquipCodegen.generate(ast)
+    end
+  end
+
+  @spec parse(String.t()) :: {:ok, [tuple()]} | {:error, {:parse_error, term()}}
+  defp parse(script) do
+    case Parser.parse_body(script) do
+      {:ok, ast} -> {:ok, ast}
+      {:error, reason} -> {:error, {:parse_error, reason}}
     end
   end
 end

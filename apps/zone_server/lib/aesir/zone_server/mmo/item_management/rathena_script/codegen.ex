@@ -1,13 +1,15 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   @moduledoc """
-  Final stage of the rAthena item-script transpiler: AST -> Aesir `on_use`
-  DSL source string.
+  Final stage of the rAthena item-script transpiler: NPC-transpiler AST ->
+  Aesir `on_use` DSL source string.
 
-  Walks the `Parser` AST, consulting `CommandSet` (supported commands/reads) and
-  `Resolver` (rAthena constants -> Aesir values), and emits a single Elixir
-  expression that `ScriptCompiler` compiles unchanged. The emit is all-or-nothing:
-  the moment any command, read, or construct falls outside the supported subset it
-  returns `{:error, {:unsupported, detail}}` and produces no source.
+  Walks the statement list produced by `Aesir.ZoneServer.Npc.Transpiler.Parser`
+  (the shared rAthena front end), consulting `CommandSet` (supported
+  commands/reads) and `Resolver` (rAthena constants -> Aesir values), and emits
+  a single Elixir expression that `ScriptCompiler` compiles unchanged. The emit
+  is all-or-nothing: the moment any command, read, or construct falls outside
+  the supported subset it returns `{:error, {:unsupported, detail}}` and
+  produces no source.
 
   ## ctx threading
 
@@ -52,9 +54,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   ## Char variable increments
 
   `Var++;` / `Var--;` on a bare permanent char variable (e.g. `RouletteGold++`,
-  the Roulette-coin currency) emit a `set_char_var`/`get_char_var` round-trip,
+  the Roulette-coin currency) arrive desugared by the parser as the
+  self-referencing assignment `{:assign, {:name, v}, {:bin, op, {:name, v},
+  {:int, 1}}}` and emit a `set_char_var`/`get_char_var` round-trip,
   `set_char_var(ctx, :Var, get_char_var(ctx, :Var, 0) + 1)`, using the verbatim
-  rAthena name as the atom key — matching the NPC transpiler's char-var convention.
+  rAthena name as the atom key — matching the NPC transpiler's char-var
+  convention.
+
+  ## Announce flags
+
+  A `bc_*` broadcast-flag argument may be a single constant, an integer literal
+  (decimal or hex), or a `|` union (`bc_all|bc_blue`); unions are folded to
+  their integer value at transpile time via `Flags`.
   """
 
   alias Aesir.ZoneServer.Announcement.Flags
@@ -64,26 +75,39 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   @type ast_stmt :: tuple()
   @type detail :: term()
 
+  @binary_ops [:+, :-, :*, :/, :>, :<, :>=, :<=, :==, :!=]
+  @logic_ops [:&&, :||]
+
   @spec generate([ast_stmt()]) :: {:ok, String.t()} | {:error, {:unsupported, detail()}}
   def generate(stmts) when is_list(stmts), do: render_stmts(stmts)
 
   @spec render_stmts([ast_stmt()]) :: {:ok, String.t()} | {:error, {:unsupported, detail()}}
-  defp render_stmts([]), do: {:ok, "ctx"}
-  defp render_stmts([stmt]), do: render_stmt(stmt)
-
   defp render_stmts(stmts) do
+    case Enum.flat_map(stmts, &unblock/1) do
+      [] -> {:ok, "ctx"}
+      [stmt] -> render_stmt(stmt)
+      flat -> render_block(flat)
+    end
+  end
+
+  defp render_block(stmts) do
     with {:ok, exprs} <- map_ok(stmts, &render_stmt/1) do
       body = exprs |> Enum.map(&"ctx = #{&1}") |> Kernel.++(["ctx"]) |> Enum.join("\n")
       {:ok, body}
     end
   end
 
-  @spec render_stmt(ast_stmt()) :: {:ok, String.t()} | {:error, {:unsupported, detail()}}
-  defp render_stmt({:call, name, args}), do: render_command(name, args)
+  @spec unblock(ast_stmt()) :: [ast_stmt()]
+  defp unblock({:block, stmts}), do: Enum.flat_map(stmts, &unblock/1)
+  defp unblock(stmt), do: [stmt]
 
-  defp render_stmt({:incr, name, delta}) do
+  @spec render_stmt(ast_stmt()) :: {:ok, String.t()} | {:error, {:unsupported, detail()}}
+  defp render_stmt({:cmd, name, args}), do: render_command(name, args)
+
+  defp render_stmt({:assign, {:name, name}, {:bin, op, {:name, name}, {:int, 1}}})
+       when op in [:+, :-] do
     key = inspect(String.to_atom(name))
-    {:ok, "set_char_var(ctx, #{key}, get_char_var(ctx, #{key}, 0) #{incr_op(delta)})"}
+    {:ok, "set_char_var(ctx, #{key}, get_char_var(ctx, #{key}, 0) #{op} 1)"}
   end
 
   defp render_stmt({:if, cond_expr, then_stmts, else_stmts}) do
@@ -96,13 +120,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
 
   defp render_stmt(other), do: unsupported({:statement, other})
 
-  @spec incr_op(1 | -1) :: String.t()
-  defp incr_op(1), do: "+ 1"
-  defp incr_op(-1), do: "- 1"
-
   @spec render_command(String.t(), [term()]) ::
           {:ok, String.t()} | {:error, {:unsupported, detail()}}
-  defp render_command("warp", [target, _x, _y] = args) when is_binary(target) do
+  defp render_command("warp", [{:str, target}, _x, _y] = args) do
     case CommandSet.warp_target(target) do
       {:ok, dsl_atom} -> {:ok, "warp(ctx, #{dsl_atom})"}
       :error -> render_known_command("warp", args)
@@ -182,91 +202,111 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
 
   @spec heal_opt(String.t(), term()) ::
           {:ok, String.t() | nil} | {:error, {:unsupported, detail()}}
-  defp heal_opt(_label, 0), do: {:ok, nil}
-  defp heal_opt(label, n) when is_integer(n), do: {:ok, "#{label}: #{n}"}
+  defp heal_opt(_label, {:int, 0}), do: {:ok, nil}
+  defp heal_opt(label, {:int, n}), do: {:ok, "#{label}: #{n}"}
+  defp heal_opt(label, {:neg, {:int, n}}), do: {:ok, "#{label}: #{-n}"}
 
-  defp heal_opt(label, {:call_expr, "rand", [a, b]}) when is_integer(a) and is_integer(b),
+  defp heal_opt(label, {:call, "rand", [{:int, a}, {:int, b}]}),
     do: {:ok, "#{label}: #{a}..#{b}"}
 
-  defp heal_opt(label, {:call_expr, "rand", [n]}) when is_integer(n),
+  defp heal_opt(label, {:call, "rand", [{:int, n}]}),
     do: {:ok, "#{label}: 0..#{n - 1}"}
 
   defp heal_opt(_label, other), do: unsupported({:heal_amount, other})
 
   @spec render_arg(atom(), term()) :: {:ok, String.t()} | {:error, {:unsupported, detail()}}
-  defp render_arg(:int, n) when is_integer(n), do: {:ok, Integer.to_string(n)}
+  defp render_arg(:int, {:int, n}), do: {:ok, Integer.to_string(n)}
+  defp render_arg(:int, {:neg, {:int, n}}), do: {:ok, Integer.to_string(-n)}
   defp render_arg(:int, other), do: unsupported({:expected_literal_int, other})
 
-  # NOTE: item-side bitwise (`bc_all|bc_blue`) and `0x` hex flags do not lex in
-  # the item transpiler (no `|` op, decimal-only ints) and are deferred; only a
-  # single `bc_*` const or a literal integer flag is accepted here.
-  defp render_arg(:flag, n) when is_integer(n), do: {:ok, Integer.to_string(n)}
-
-  defp render_arg(:flag, {:const, name} = expr) do
-    if String.starts_with?(String.downcase(name), "bc_"),
-      do: render_const(name),
-      else: unsupported({:expected_flag, expr})
+  defp render_arg(:flag, expr) do
+    with {:ok, value} <- flag_value(expr), do: {:ok, Integer.to_string(value)}
   end
 
-  defp render_arg(:flag, other), do: unsupported({:expected_flag, other})
-  defp render_arg(:string, s) when is_binary(s), do: {:ok, inspect(s)}
+  defp render_arg(:string, {:str, s}), do: {:ok, inspect(s)}
   defp render_arg(:string, other), do: unsupported({:expected_string, other})
 
-  defp render_arg(:status, {:const, name}),
+  defp render_arg(:status, {:name, name}),
     do: resolved(Resolver.resolve_status(name), &inspect/1)
 
-  defp render_arg(:effect, {:const, name}),
+  defp render_arg(:effect, {:name, name}),
     do: resolved(Resolver.resolve_effect(name), &inspect/1)
 
-  defp render_arg(:item, {:const, name}),
+  defp render_arg(:item, {:name, name}),
     do: resolved(Resolver.resolve_item(name), &Integer.to_string/1)
 
-  defp render_arg(:item, id) when is_integer(id),
+  defp render_arg(:item, {:int, id}),
     do: resolved(Resolver.resolve_item(id), &Integer.to_string/1)
 
-  defp render_arg(:skill, {:const, name}),
+  defp render_arg(:skill, {:name, name}),
     do: resolved(Resolver.resolve_skill(name), &Integer.to_string/1)
 
-  defp render_arg(:skill, id) when is_integer(id),
+  defp render_arg(:skill, {:int, id}),
     do: resolved(Resolver.resolve_skill(id), &Integer.to_string/1)
 
   defp render_arg(type, other), do: unsupported({type, other})
 
-  @spec render_expr(term()) :: {:ok, String.t()} | {:error, {:unsupported, detail()}}
-  defp render_expr(n) when is_integer(n), do: {:ok, Integer.to_string(n)}
-  defp render_expr(s) when is_binary(s), do: {:ok, inspect(s)}
+  @spec flag_value(term()) :: {:ok, integer()} | {:error, {:unsupported, detail()}}
+  defp flag_value({:int, n}), do: {:ok, n}
 
-  defp render_expr({:read, name}) do
-    case CommandSet.read(name) do
-      {:ok, dsl} -> {:ok, "#{dsl}(ctx)"}
-      :error -> unsupported({:unknown_read, name})
+  defp flag_value({:name, name} = expr) do
+    if String.starts_with?(String.downcase(name), "bc_") do
+      case Flags.value(name) do
+        {:ok, value} -> {:ok, value}
+        :error -> unsupported({:unknown_const, name})
+      end
+    else
+      unsupported({:expected_flag, expr})
     end
   end
 
-  defp render_expr({:const, name}), do: render_const(name)
+  defp flag_value({:bin, :|, lhs, rhs}) do
+    with {:ok, l} <- flag_value(lhs),
+         {:ok, r} <- flag_value(rhs) do
+      {:ok, Bitwise.bor(l, r)}
+    end
+  end
 
-  defp render_expr({:call_expr, "rand", [a, b]}) do
+  defp flag_value(other), do: unsupported({:expected_flag, other})
+
+  @spec render_expr(term()) :: {:ok, String.t()} | {:error, {:unsupported, detail()}}
+  defp render_expr({:int, n}), do: {:ok, Integer.to_string(n)}
+  defp render_expr({:str, s}), do: {:ok, inspect(s)}
+  defp render_expr({:neg, {:int, n}}), do: {:ok, Integer.to_string(-n)}
+
+  defp render_expr({:neg, expr}) do
+    with {:ok, src} <- render_expr(expr), do: {:ok, "(0 - #{src})"}
+  end
+
+  defp render_expr({:name, name}) do
+    case CommandSet.read(name) do
+      {:ok, dsl} -> {:ok, "#{dsl}(ctx)"}
+      :error -> render_const(name)
+    end
+  end
+
+  defp render_expr({:call, "rand", [a, b]}) do
     with {:ok, lo} <- render_expr(a), {:ok, hi} <- render_expr(b) do
       {:ok, "Enum.random(#{lo}..#{hi})"}
     end
   end
 
-  defp render_expr({:call_expr, "rand", [n]}) do
+  defp render_expr({:call, "rand", [n]}) do
     with {:ok, src} <- render_expr(n), do: {:ok, "Enum.random(0..(#{src} - 1))"}
   end
 
-  defp render_expr({:call_expr, "countitem", [id]}),
+  defp render_expr({:call, "countitem", [id]}),
     do: resolved(resolve_item_expr(id), &"count_item(ctx, #{&1})")
 
-  defp render_expr({:call_expr, name, _args}), do: unsupported({:unknown_call, name})
+  defp render_expr({:call, name, _args}), do: unsupported({:unknown_call, name})
 
-  defp render_expr({:binop, op, lhs, rhs}) do
+  defp render_expr({:bin, op, lhs, rhs}) when op in @binary_ops do
     with {:ok, l} <- render_expr(lhs), {:ok, r} <- render_expr(rhs), do: {:ok, binop(op, l, r)}
   end
 
-  defp render_expr({:logic, op, lhs, rhs}) do
+  defp render_expr({:bin, op, lhs, rhs}) when op in @logic_ops do
     with {:ok, l} <- render_expr(lhs), {:ok, r} <- render_expr(rhs) do
-      {:ok, "(#{l} #{logic_op(op)} #{r})"}
+      {:ok, "(#{l} #{op} #{r})"}
     end
   end
 
@@ -276,37 +316,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   defp render_const("SC_" <> _ = name), do: resolved(Resolver.resolve_status(name), &inspect/1)
   defp render_const("Ele_" <> _ = name), do: resolved(Resolver.resolve_element(name), &inspect/1)
   defp render_const("Job_" <> _ = name), do: resolved(Resolver.resolve_class(name), &inspect/1)
-  defp render_const("bc_" <> _ = name), do: render_flag(name)
-  defp render_const(name), do: unsupported({:unknown_const, name})
 
-  @spec render_flag(String.t()) :: {:ok, String.t()} | {:error, {:unsupported, detail()}}
-  defp render_flag(name) do
-    case Flags.value(name) do
-      {:ok, value} -> {:ok, Integer.to_string(value)}
-      :error -> unsupported({:unknown_const, name})
-    end
+  defp render_const("bc_" <> _ = name) do
+    with {:ok, value} <- flag_value({:name, name}), do: {:ok, Integer.to_string(value)}
   end
 
-  defp resolve_item_expr(id) when is_integer(id), do: Resolver.resolve_item(id)
-  defp resolve_item_expr({:const, name}), do: Resolver.resolve_item(name)
+  defp render_const(name), do: unsupported({:unknown_const, name})
+
+  defp resolve_item_expr({:int, id}), do: Resolver.resolve_item(id)
+  defp resolve_item_expr({:name, name}), do: Resolver.resolve_item(name)
   defp resolve_item_expr(other), do: {:error, {:unknown_symbol, inspect(other)}}
 
   @spec binop(atom(), String.t(), String.t()) :: String.t()
   defp binop(:/, l, r), do: "div(#{l}, #{r})"
-  defp binop(op, l, r), do: "(#{l} #{arith_op(op)} #{r})"
-
-  defp arith_op(:+), do: "+"
-  defp arith_op(:-), do: "-"
-  defp arith_op(:*), do: "*"
-  defp arith_op(:>), do: ">"
-  defp arith_op(:<), do: "<"
-  defp arith_op(:>=), do: ">="
-  defp arith_op(:<=), do: "<="
-  defp arith_op(:==), do: "=="
-  defp arith_op(:!=), do: "!="
-
-  defp logic_op(:&&), do: "&&"
-  defp logic_op(:||), do: "||"
+  defp binop(op, l, r), do: "(#{l} #{op} #{r})"
 
   @spec resolved(
           {:ok, term()} | {:error, {:unknown_symbol, String.t()}},

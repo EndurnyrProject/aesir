@@ -10,7 +10,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Lexer do
   Pure and resolution-free: bare identifiers (commands, constants, permanent
   char vars, labels) are all emitted as `{:ident, name}`; classifying them is
   the analyzer's job. Bodies from `FileParser` arrive comment-stripped, but
-  `//` line comments are tolerated anyway.
+  `//` line and `/* … */` block comments are tolerated anyway — item `Script`
+  bodies (which share this front end) arrive raw and do contain both.
   """
 
   import NimbleParsec
@@ -42,7 +43,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Lexer do
     string("//")
     |> repeat(lookahead_not(ascii_char([?\n])) |> ascii_char([]))
 
-  skip = ignore(repeat(choice([whitespace, comment])))
+  block_comment =
+    string("/*")
+    |> repeat(lookahead_not(string("*/")) |> ascii_char([]))
+    |> concat(string("*/"))
+
+  skip = ignore(repeat(choice([whitespace, comment, block_comment])))
 
   name =
     ascii_char([?a..?z, ?A..?Z, ?_])

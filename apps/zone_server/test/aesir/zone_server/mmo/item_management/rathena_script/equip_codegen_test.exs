@@ -2,12 +2,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
   use ExUnit.Case, async: true
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen
-  alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Lexer
-  alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Parser
+  alias Aesir.ZoneServer.Npc.Transpiler.Parser
 
   defp compile(script) do
-    with {:ok, tokens} <- Lexer.tokenize(script),
-         {:ok, stmts} <- Parser.parse(tokens) do
+    with {:ok, stmts} <- Parser.parse_body(script) do
       EquipCodegen.generate(stmts)
     end
   end
@@ -83,7 +81,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     end
 
     test "non-refine conditional read is rejected" do
-      assert {:error, {:unsupported, {:expression, {:read, "BaseLevel"}}}} =
+      assert {:error, {:unsupported, {:expression, {:name, "BaseLevel"}}}} =
                compile("if (BaseLevel>90) bonus bStr,10;")
     end
 

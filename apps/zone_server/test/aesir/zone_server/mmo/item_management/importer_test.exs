@@ -1,7 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.ItemManagement.Importer
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Loader
@@ -281,14 +280,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       refute Map.has_key?(map, "armor_level")
     end
 
-    test "encodes on_equip via EquipScript.encode/1 and omits it when nil" do
+    test "encodes on_equip as DSL source via EquipScript.to_source/1 and omits it when nil" do
       program = [{:bonus, :smatk, 3}]
 
       with_program = %ItemDefinition{id: 490_160, aegis_name: "X", name: "X", on_equip: program}
       without_program = %ItemDefinition{id: 1750, aegis_name: "Arrow", name: "Arrow"}
 
-      assert %{"on_equip" => encoded} = Importer.to_yaml_map(with_program)
-      assert encoded == EquipScript.encode(program)
+      assert %{"on_equip" => source} = Importer.to_yaml_map(with_program)
+      assert source == "bonus(ctx, :smatk, 3)"
       refute Map.has_key?(Importer.to_yaml_map(without_program), "on_equip")
     end
 

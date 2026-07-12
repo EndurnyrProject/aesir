@@ -85,6 +85,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Loader do
   defp convert(:attack_element, v) when is_binary(v), do: String.to_atom(v)
   defp convert(:jobs, v), do: Enum.map(v, &String.to_atom/1)
   defp convert(:locations, v), do: Enum.map(v, &String.to_atom/1)
-  defp convert(:on_equip, v), do: EquipScript.decode!(v)
+  defp convert(:on_equip, v), do: EquipScript.parse!(v)
   defp convert(_key, v), do: v
 end

@@ -216,7 +216,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
     Enum.map(value, &Atom.to_string/1)
   end
 
-  defp encode_value(:on_equip, value), do: EquipScript.encode(value)
+  defp encode_value(:on_equip, value), do: EquipScript.to_source(value)
 
   defp encode_value(_field, value), do: value
 
