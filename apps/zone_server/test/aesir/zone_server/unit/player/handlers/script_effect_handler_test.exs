@@ -14,19 +14,34 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
   alias Aesir.Net.ItemAdded
   alias Aesir.Net.ItemRemoved
   alias Aesir.Net.ParamChange
+  alias Aesir.Net.QuestAdded
+  alias Aesir.Net.QuestRemoved
+  alias Aesir.Net.QuestStateChanged
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
+  alias Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition
+  alias Aesir.ZoneServer.Mmo.QuestManagement.Quests
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.QuestLog.Entry
+  alias Aesir.ZoneServer.Unit.Player.QuestPersistence
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @sphmask_id 7114
   @zeny_param 20
+
+  @hunt %QuestDefinition{
+    id: 7393,
+    title: "Shiny Silver Blade",
+    targets: [%{mob_id: 2314, count: 10}]
+  }
+
+  @other_hunt %QuestDefinition{id: 8000, title: "Twin Objective", targets: []}
 
   setup :set_mimic_private
   setup :verify_on_exit!
@@ -38,11 +53,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
     Mimic.copy(Broadcast)
     Mimic.copy(UnitRegistry)
     Mimic.copy(StorageHandler)
+    Mimic.copy(QuestPersistence)
 
     stub(CharacterPersistence, :update_character, fn _, _, _ -> {:ok, %Character{}} end)
     stub(Broadcast, :to_player, fn _char_id, _packet -> :ok end)
     stub(Broadcast, :to_visible_players, fn _game_state, _packet, _opts -> :ok end)
     stub(UnitRegistry, :update_unit_state, fn :player, _char_id, _game_state -> :ok end)
+
+    defs = [@hunt, @other_hunt]
+    index = %{all: defs, by_id: Map.new(defs, &{&1.id, &1})}
+    :persistent_term.put(Quests, index)
+    on_exit(fn -> :persistent_term.erase(Quests) end)
+
     :ok
   end
 
@@ -252,6 +274,157 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
     end
   end
 
+  describe "{:setquest, quest_id}" do
+    test "adds the quest active with zeroed counters, upserts, pushes QuestAdded" do
+      test_pid = self()
+
+      expect(QuestPersistence, :upsert, fn 1000, {7393, entry} ->
+        send(test_pid, {:upserted, entry})
+        :ok
+      end)
+
+      {reply, new_state} = ScriptEffectHandler.apply_op({:setquest, 7393}, base_state())
+
+      assert {:ok, game_state} = reply
+      assert %Entry{state: :active, counts: [0]} = game_state.quest_log[7393]
+      assert new_state.game_state.quest_log == game_state.quest_log
+
+      assert_received {:send, _ch,
+                       {:quest_added, %QuestAdded{quest: %{quest_id: 7393, state: 1}}}}
+
+      assert_received {:upserted, %Entry{state: :active, counts: [0]}}
+    end
+
+    test "rejects :already_started and mutates nothing" do
+      reject(&QuestPersistence.upsert/2)
+
+      state = base_state(quest_log: %{7393 => %Entry{state: :active, counts: [0]}})
+      {reply, new_state} = ScriptEffectHandler.apply_op({:setquest, 7393}, state)
+
+      assert reply == {:error, :already_started}
+      assert new_state == state
+      refute_received {:send, _ch, {:quest_added, _}}
+    end
+
+    test "rejects :unknown_quest for an id absent from quest_db" do
+      reject(&QuestPersistence.upsert/2)
+
+      state = base_state()
+      {reply, new_state} = ScriptEffectHandler.apply_op({:setquest, 99_999}, state)
+
+      assert reply == {:error, :unknown_quest}
+      assert new_state == state
+    end
+  end
+
+  describe "{:erasequest, quest_id}" do
+    test "removes the quest, deletes the persisted row, pushes QuestRemoved" do
+      test_pid = self()
+
+      expect(QuestPersistence, :delete, fn 1000, 7393 ->
+        send(test_pid, :deleted)
+        :ok
+      end)
+
+      state = base_state(quest_log: %{7393 => %Entry{state: :active, counts: [3]}})
+      {reply, new_state} = ScriptEffectHandler.apply_op({:erasequest, 7393}, state)
+
+      assert {:ok, game_state} = reply
+      assert game_state.quest_log == %{}
+      assert new_state.game_state.quest_log == %{}
+      assert_received {:send, _ch, {:quest_removed, %QuestRemoved{quest_id: 7393}}}
+      assert_received :deleted
+    end
+
+    test "rejects :not_started and mutates nothing" do
+      reject(&QuestPersistence.delete/2)
+
+      state = base_state()
+      {reply, new_state} = ScriptEffectHandler.apply_op({:erasequest, 7393}, state)
+
+      assert reply == {:error, :not_started}
+      assert new_state == state
+      refute_received {:send, _ch, {:quest_removed, _}}
+    end
+  end
+
+  describe "{:completequest, quest_id}" do
+    test "marks the quest complete keeping counters, upserts, pushes QuestStateChanged" do
+      test_pid = self()
+
+      expect(QuestPersistence, :upsert, fn 1000, {7393, entry} ->
+        send(test_pid, {:upserted, entry})
+        :ok
+      end)
+
+      state = base_state(quest_log: %{7393 => %Entry{state: :active, counts: [10]}})
+      {reply, new_state} = ScriptEffectHandler.apply_op({:completequest, 7393}, state)
+
+      assert {:ok, game_state} = reply
+      assert %Entry{state: :complete, counts: [10]} = game_state.quest_log[7393]
+      assert new_state.game_state.quest_log == game_state.quest_log
+
+      assert_received {:send, _ch,
+                       {:quest_state_changed, %QuestStateChanged{quest_id: 7393, state: 2}}}
+
+      assert_received {:upserted, %Entry{state: :complete, counts: [10]}}
+    end
+
+    test "rejects :not_started for an absent quest, mutating nothing" do
+      reject(&QuestPersistence.upsert/2)
+
+      state = base_state()
+      {reply, new_state} = ScriptEffectHandler.apply_op({:completequest, 7393}, state)
+
+      assert reply == {:error, :not_started}
+      assert new_state == state
+      refute_received {:send, _ch, {:quest_state_changed, _}}
+    end
+  end
+
+  describe "{:changequest, old_id, new_id}" do
+    test "swaps the quest, deletes the old row, upserts the new row, pushes both deltas" do
+      test_pid = self()
+
+      expect(QuestPersistence, :delete, fn 1000, 7393 ->
+        send(test_pid, :deleted)
+        :ok
+      end)
+
+      expect(QuestPersistence, :upsert, fn 1000, {8000, entry} ->
+        send(test_pid, {:upserted, entry})
+        :ok
+      end)
+
+      state = base_state(quest_log: %{7393 => %Entry{state: :active, counts: [4]}})
+      {reply, new_state} = ScriptEffectHandler.apply_op({:changequest, 7393, 8000}, state)
+
+      assert {:ok, game_state} = reply
+      refute Map.has_key?(game_state.quest_log, 7393)
+      assert %Entry{state: :active, counts: []} = game_state.quest_log[8000]
+      assert new_state.game_state.quest_log == game_state.quest_log
+
+      assert_received {:send, _ch, {:quest_removed, %QuestRemoved{quest_id: 7393}}}
+
+      assert_received {:send, _ch,
+                       {:quest_added, %QuestAdded{quest: %{quest_id: 8000, state: 1}}}}
+
+      assert_received :deleted
+      assert_received {:upserted, %Entry{state: :active, counts: []}}
+    end
+
+    test "rejects :not_started for an old quest that isn't held, mutating nothing" do
+      reject(&QuestPersistence.delete/2)
+      reject(&QuestPersistence.upsert/2)
+
+      state = base_state()
+      {reply, new_state} = ScriptEffectHandler.apply_op({:changequest, 7393, 8000}, state)
+
+      assert reply == {:error, :not_started}
+      assert new_state == state
+    end
+  end
+
   defp job_change_state do
     character = %Character{
       id: 1000,
@@ -291,6 +464,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
         vars: Keyword.get(opts, :vars, %{}),
         temp_vars: %{},
         inventory: Keyword.get(opts, :inventory, %{}),
+        quest_log: Keyword.get(opts, :quest_log, %{}),
         stats: stats()
       }
     }

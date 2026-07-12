@@ -4,7 +4,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
   An NPC interaction runs in its own process and holds only a read snapshot of
   the player's `PlayerState`. Every state mutation it needs (`pay_zeny`,
-  `give_item`, `delitem`, `set_char_var`, `set_temp_var`, `jobchange`) is routed here as a
+  `give_item`, `delitem`, `set_char_var`, `set_temp_var`, `jobchange`,
+  `setquest`, `erasequest`, `completequest`, `changequest`) is routed here as a
   `{:script_apply, op}` `GenServer.call` so the player session stays the sole
   writer of its own state. This module applies the op to the authoritative
   state, persists the change, pushes the relevant proto to the client, and
@@ -27,6 +28,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.QuestLog
+  alias Aesir.ZoneServer.Unit.Player.QuestPersistence
+  alias Aesir.ZoneServer.Unit.Player.QuestView
   alias Aesir.ZoneServer.Unit.Player.StatusSync
 
   @type op ::
@@ -41,6 +45,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:set_save_point, String.t(), non_neg_integer(), non_neg_integer()}
           | {:openstorage}
           | {:refine, non_neg_integer(), integer(), RefineDatabase.cost_type(), boolean()}
+          | {:setquest, QuestLog.quest_id()}
+          | {:erasequest, QuestLog.quest_id()}
+          | {:completequest, QuestLog.quest_id()}
+          | {:changequest, QuestLog.quest_id(), QuestLog.quest_id()}
 
   @max_zeny 1_000_000_000
 
@@ -162,6 +170,62 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     {new_gs, result} = RefineOps.apply(gs, index, nameid, cost_type, use_blessing?)
     push_refine_view(state.connection_pid, new_gs, index, result)
     {result, %{state | game_state: new_gs}}
+  end
+
+  def apply_op({:setquest, quest_id}, %{game_state: gs} = state) do
+    case QuestLog.add(gs.quest_log, quest_id) do
+      {:ok, quest_log, entry} ->
+        QuestPersistence.upsert(gs.character_id, {quest_id, entry})
+        MessageRouter.send_to(state.connection_pid, QuestView.quest_added(quest_id, entry))
+        commit(state, %{gs | quest_log: quest_log})
+
+      {:error, reason} ->
+        {{:error, reason}, state}
+    end
+  end
+
+  def apply_op({:erasequest, quest_id}, %{game_state: gs} = state) do
+    case QuestLog.delete(gs.quest_log, quest_id) do
+      {:ok, quest_log} ->
+        QuestPersistence.delete(gs.character_id, quest_id)
+        MessageRouter.send_to(state.connection_pid, QuestView.quest_removed(quest_id))
+        commit(state, %{gs | quest_log: quest_log})
+
+      {:error, reason} ->
+        {{:error, reason}, state}
+    end
+  end
+
+  def apply_op({:completequest, quest_id}, %{game_state: gs} = state) do
+    case QuestLog.complete(gs.quest_log, quest_id) do
+      {:ok, quest_log} ->
+        entry = Map.fetch!(quest_log, quest_id)
+        QuestPersistence.upsert(gs.character_id, {quest_id, entry})
+
+        MessageRouter.send_to(
+          state.connection_pid,
+          QuestView.quest_state_changed(quest_id, entry.state)
+        )
+
+        commit(state, %{gs | quest_log: quest_log})
+
+      {:error, reason} ->
+        {{:error, reason}, state}
+    end
+  end
+
+  def apply_op({:changequest, old_id, new_id}, %{game_state: gs} = state) do
+    case QuestLog.change(gs.quest_log, old_id, new_id) do
+      {:ok, quest_log, entry} ->
+        QuestPersistence.delete(gs.character_id, old_id)
+        QuestPersistence.upsert(gs.character_id, {new_id, entry})
+        MessageRouter.send_to(state.connection_pid, QuestView.quest_removed(old_id))
+        MessageRouter.send_to(state.connection_pid, QuestView.quest_added(new_id, entry))
+        commit(state, %{gs | quest_log: quest_log})
+
+      {:error, reason} ->
+        {{:error, reason}, state}
+    end
   end
 
   @spec commit(state(), PlayerState.t()) :: {reply(), state()}

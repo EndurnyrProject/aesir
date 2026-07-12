@@ -60,6 +60,9 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def route(%Aesir.Net.StorageItemAdded{}), do: {:gameplay, :storage_item_added}
   def route(%Aesir.Net.StorageItemRemoved{}), do: {:gameplay, :storage_item_removed}
   def route(%Aesir.Net.StorageResult{}), do: {:gameplay, :storage_result}
+  def route(%Aesir.Net.QuestAdded{}), do: {:gameplay, :quest_added}
+  def route(%Aesir.Net.QuestRemoved{}), do: {:gameplay, :quest_removed}
+  def route(%Aesir.Net.QuestStateChanged{}), do: {:gameplay, :quest_state_changed}
 
   def route(%Aesir.Net.UnitSpawn{}), do: {:world, :unit_spawn}
   def route(%Aesir.Net.UnitDespawn{}), do: {:world, :unit_despawn}
