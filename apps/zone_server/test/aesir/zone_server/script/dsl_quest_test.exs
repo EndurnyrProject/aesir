@@ -138,6 +138,17 @@ defmodule Aesir.ZoneServer.Script.DslQuestTest do
     end
   end
 
+  describe "getexp/3" do
+    test "routes {:getexp, base, job} and folds the returned game_state" do
+      ctx = build_ctx(session: ok_session(build_game_state()))
+
+      result = Dsl.getexp(ctx, 300_000, 100_000)
+
+      assert result.status == :ok
+      assert_received {:script_apply, {:getexp, 300_000, 100_000}}
+    end
+  end
+
   describe "short-circuit on a halted ctx" do
     test "every quest mutation returns a halted ctx unchanged without touching the session" do
       ctx = Ctx.halt(build_ctx(session: flunking_session()), :already_halted)
@@ -146,6 +157,7 @@ defmodule Aesir.ZoneServer.Script.DslQuestTest do
       assert Dsl.erasequest(ctx, 7393) == ctx
       assert Dsl.completequest(ctx, 7393) == ctx
       assert Dsl.changequest(ctx, 7393, 7394) == ctx
+      assert Dsl.getexp(ctx, 300_000, 100_000) == ctx
 
       refute_received {:script_apply, _}
     end

@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
   An NPC interaction runs in its own process and holds only a read snapshot of
   the player's `PlayerState`. Every state mutation it needs (`pay_zeny`,
-  `give_item`, `delitem`, `set_char_var`, `set_temp_var`, `jobchange`,
+  `give_item`, `delitem`, `getexp`, `set_char_var`, `set_temp_var`, `jobchange`,
   `setquest`, `erasequest`, `completequest`, `changequest`) is routed here as a
   `{:script_apply, op}` `GenServer.call` so the player session stays the sole
   writer of its own state. This module applies the op to the authoritative
@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.RefineOps
@@ -38,6 +39,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:credit_zeny, non_neg_integer()}
           | {:give_item, integer(), pos_integer()}
           | {:delitem, integer(), pos_integer()}
+          | {:getexp, non_neg_integer(), non_neg_integer()}
           | {:set_char_var, atom(), term()}
           | {:set_temp_var, atom(), term()}
           | {:change_job, non_neg_integer()}
@@ -114,6 +116,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
       {:error, reason} -> {{:error, reason}, state}
       nil -> {{:error, :not_enough_items}, state}
     end
+  end
+
+  def apply_op({:getexp, base_exp, job_exp}, state) do
+    {:noreply, new_state} = ExperienceHandler.handle_gain_exp(base_exp, job_exp, state)
+    {{:ok, new_state.game_state}, new_state}
   end
 
   def apply_op({:set_char_var, key, value}, %{game_state: gs} = state) do

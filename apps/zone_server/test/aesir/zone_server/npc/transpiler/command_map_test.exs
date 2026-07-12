@@ -80,6 +80,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert {:ok, %{dsl: "changequest", args: [:int, :int]}} =
              CommandMap.command("changequest")
 
+    assert {:ok, %{dsl: "getexp", args: [:int, :int]}} = CommandMap.command("getexp")
+
     assert {:ok, %{dsl: "isbegin_quest", args: [:int]}} = CommandMap.call_read("isbegin_quest")
 
     assert {:ok, %{shape: :quest_check, dsl: "checkquest"}} =

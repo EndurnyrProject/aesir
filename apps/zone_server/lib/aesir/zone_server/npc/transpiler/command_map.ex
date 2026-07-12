@@ -59,6 +59,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
   @commands %{
     "getitem" => %{dsl: "give_item", args: [:item, :int]},
     "delitem" => %{dsl: "delitem", args: [:item, :int]},
+    "getexp" => %{dsl: "getexp", args: [:int, :int]},
     "heal" => %{shape: :heal, dsl: "heal"},
     "percentheal" => %{shape: :heal, dsl: "percent_heal"},
     "sc_start" => %{dsl: "sc_start", args: [:status, :int, :int]},

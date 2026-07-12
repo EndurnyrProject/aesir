@@ -656,6 +656,15 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   def delitem(%Ctx{} = ctx, item_id, qty), do: apply_op(ctx, {:delitem, item_id, qty})
 
   @doc """
+  Grants `base_exp` base experience and `job_exp` job experience through the
+  session seam (rAthena `getexp`), leveling the player as the gain warrants and
+  pushing the refreshed experience/stat state to the client.
+  """
+  @spec getexp(Ctx.t(), non_neg_integer(), non_neg_integer()) :: Ctx.t()
+  def getexp(%Ctx{status: {:error, _}} = ctx, _base_exp, _job_exp), do: ctx
+  def getexp(%Ctx{} = ctx, base_exp, job_exp), do: apply_op(ctx, {:getexp, base_exp, job_exp})
+
+  @doc """
   Total quantity of item `item_id` the player holds. Pure read over the snapshot.
   """
   @spec count_item(Ctx.t(), integer()) :: non_neg_integer()

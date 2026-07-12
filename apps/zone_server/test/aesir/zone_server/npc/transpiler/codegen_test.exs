@@ -577,6 +577,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
         erasequest 7393;
         completequest 7393;
         changequest 7393,7394;
+        getexp 300000,100000;
         close;
         """,
         module: "Aesir.ZoneServer.Content.Npc.Payon.TestNpcQuestCommands"
@@ -586,10 +587,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ "erasequest(7393)"
     assert src =~ "completequest(7393)"
     assert src =~ "changequest(7393, 7394)"
+    assert src =~ "getexp(300_000, 100_000)"
     refute src =~ "todo(ctx, :setquest"
     refute src =~ "todo(ctx, :erasequest"
     refute src =~ "todo(ctx, :completequest"
     refute src =~ "todo(ctx, :changequest"
+    refute src =~ "todo(ctx, :getexp"
 
     assert [{_module, _}] = Code.compile_string(src)
   end
