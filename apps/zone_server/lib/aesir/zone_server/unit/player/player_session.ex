@@ -53,6 +53,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.QuestPersistence
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusPersistence
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -271,6 +272,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # Restore the statuses persisted at logout (rAthena sc_data), consuming
     # the saved rows. Runs after registration for the same reason as the cart.
     state = StatusPersistence.restore_on_spawn(state)
+
+    # Load the quest log (rAthena quest table). Non-consuming: the rows stay
+    # the durable source of truth and are write-through updated on mutation.
+    state = QuestPersistence.load_on_spawn(state)
 
     # Subscribe to this player's event topic. Kill rewards and other
     # player-directed domain events arrive here, keeping emitters

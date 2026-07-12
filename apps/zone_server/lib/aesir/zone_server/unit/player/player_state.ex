@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.ItemContainer
+  alias Aesir.ZoneServer.Unit.Player.QuestLog
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @type direction :: 0..7
@@ -86,6 +87,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           vars: %{String.t() => term()},
           temp_vars: %{String.t() => term()},
           zeny: integer(),
+          quest_log: %{non_neg_integer() => QuestLog.Entry.t()},
           inventory: %{non_neg_integer() => InventoryItem.t()},
           pending_inventory_persist: [
             {%{non_neg_integer() => InventoryItem.t()}, %{non_neg_integer() => InventoryItem.t()},
@@ -193,6 +195,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     :zeny,
     vars: %{},
     temp_vars: %{},
+    # Quest log keyed by quest id, restored from character_quests on spawn
+    # (QuestPersistence.load_on_spawn/1) and never nil.
+    quest_log: %{},
 
     # NPC touch-area (OnTouch) leave/re-enter hysteresis: MapSet of gids whose
     # touch rect currently contains the player's cell. Populated on every cell

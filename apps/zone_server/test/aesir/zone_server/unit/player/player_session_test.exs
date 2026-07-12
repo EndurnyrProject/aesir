@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.QuestPersistence
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusPersistence
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -40,10 +41,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   setup do
     Mimic.copy(Persistence)
     Mimic.copy(StatusPersistence)
+    Mimic.copy(QuestPersistence)
 
     stub(Persistence, :load_inventory, fn _char_id -> [] end)
     stub(StatusPersistence, :restore_on_spawn, fn state -> state end)
     stub(StatusPersistence, :save_statuses, fn _char_id -> :ok end)
+    stub(QuestPersistence, :load_on_spawn, fn state -> state end)
 
     character = %Character{
       id: 1,
