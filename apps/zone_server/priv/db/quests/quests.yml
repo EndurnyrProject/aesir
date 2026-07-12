@@ -1,0 +1,26 @@
+# Bootstrap fixture, hand-written from rAthena db/re/quest_db.yml pending the
+# aesir.import.quests task (Task 3), which will regenerate this file in full.
+- id: 1000
+  title: Transcend
+- id: 7393
+  title: Shiny Silver Blade
+  targets:
+    - mob_id: 2314
+      count: 10
+    - mob_id: 2311
+      count: 10
+- id: 7406
+  title: Agree to Collecting Bones!
+  drops:
+    - mob_id: 2309
+      item_id: 6507
+      count: 1
+      rate: 5000
+    - mob_id: 2313
+      item_id: 6507
+      count: 1
+      rate: 5000
+    - mob_id: 2314
+      item_id: 6507
+      count: 1
+      rate: 5000
