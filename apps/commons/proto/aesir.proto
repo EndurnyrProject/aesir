@@ -145,6 +145,12 @@ message Envelope {
     // 127-128: emotes (client intent + server->client display)
     EmoteRequest emote_request = 127;
     Emotion emotion = 128;
+    // 129-133: quest log (server->client dump + deltas)
+    QuestList quest_list = 129;
+    QuestAdded quest_added = 130;
+    QuestRemoved quest_removed = 131;
+    QuestStateChanged quest_state_changed = 132;
+    QuestHuntProgress quest_hunt_progress = 133;
   }
 }
 
@@ -1248,4 +1254,55 @@ message Announcement {
   uint32 color = 2;
   Style style = 3;
   string source_name = 4;
+}
+
+// One hunt objective within a QuestEntry, joining the persisted counter with
+// the quest definition's target so the client needs no quest database of its
+// own. `needed` is copied from the quest definition; `current` is clamped
+// by the server.
+message QuestObjective {
+  uint32 mob_id = 1;
+  uint32 needed = 2;
+  uint32 current = 3;
+}
+
+// One quest-log row within a QuestList/QuestAdded. `state` mirrors rAthena's
+// e_quest_state: 0 = inactive, 1 = active, 2 = complete. `objectives` is empty
+// for a quest with no hunt targets, or whose definition no longer resolves.
+message QuestEntry {
+  uint32 quest_id = 1;
+  uint32 state = 2;
+  repeated QuestObjective objectives = 3;
+}
+
+// Server -> client, the full quest log dump (sent on map load, mirrors InventoryList).
+message QuestList {
+  repeated QuestEntry quests = 1;
+}
+
+// Server -> client, a quest entered the log (setquest, or the new side of changequest).
+message QuestAdded {
+  QuestEntry quest = 1;
+}
+
+// Server -> client, a quest left the log (erasequest, or the old side of changequest).
+message QuestRemoved {
+  uint32 quest_id = 1;
+}
+
+// Server -> client, a quest's state changed in place, objectives unaffected
+// (completequest). See QuestEntry.state for the value meaning.
+message QuestStateChanged {
+  uint32 quest_id = 1;
+  uint32 state = 2;
+}
+
+// Server -> client, one hunt objective's counter advanced
+// (quest_update_objective). `objective_index` is positional within the
+// quest's targets; `count`/`needed` are the new (clamped) current and cap.
+message QuestHuntProgress {
+  uint32 quest_id = 1;
+  uint32 objective_index = 2;
+  uint32 count = 3;
+  uint32 needed = 4;
 }
