@@ -1042,9 +1042,11 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert bare.combat_stats.matk_min == bare.combat_stats.matk_max
 
       # rAthena status.cpp:6306: variance = matk * wlv / 10 = 200 * 3 / 10 = 60;
-      # min += matk - variance = 140, max += matk + variance = 260
-      assert staffed.combat_stats.matk_min == bare.combat_stats.matk_min + 140
-      assert staffed.combat_stats.matk_max == bare.combat_stats.matk_max + 260
+      # weapon band contributes min += matk - variance = 140, max += matk +
+      # variance = 260. Soul Staff's `on_equip` (bonus bInt,5) additionally lifts
+      # base MATK by 7 (INT + INT/2 delta), shifting both ends equally.
+      assert staffed.combat_stats.matk_min == bare.combat_stats.matk_min + 147
+      assert staffed.combat_stats.matk_max == bare.combat_stats.matk_max + 267
       assert staffed.combat_stats.matk_min < staffed.combat_stats.matk_max
       assert staffed.combat_stats.matk == staffed.combat_stats.matk_max
     end
@@ -1054,20 +1056,24 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         id: 90_001,
         aegis_name: "test_derived_a",
         name: "Test A",
-        patk: 5,
-        smatk: 2,
-        res: 4,
-        mres: 1
+        on_equip: [
+          {:bonus, :patk, 5},
+          {:bonus, :smatk, 2},
+          {:bonus, :res, 4},
+          {:bonus, :mres, 1}
+        ]
       }
 
       item_b = %ItemDefinition{
         id: 90_002,
         aegis_name: "test_derived_b",
         name: "Test B",
-        patk: 3,
-        smatk: 6,
-        res: 9,
-        mres: 7
+        on_equip: [
+          {:bonus, :patk, 3},
+          {:bonus, :smatk, 6},
+          {:bonus, :res, 9},
+          {:bonus, :mres, 7}
+        ]
       }
 
       stub(ItemManagement, :get_item_by_id, fn
@@ -1271,6 +1277,74 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       assert result.combat_stats.atk == 10
       assert result.combat_stats.overrefine_band == 0
+    end
+  end
+
+  describe "on_equip script bonuses" do
+    defp scripted_item(id, fields) do
+      Map.merge(
+        %ItemDefinition{id: id, aegis_name: "scripted_#{id}", name: "Scripted #{id}"},
+        Map.new(fields)
+      )
+    end
+
+    test "folds an on_equip program alongside the flat attack column, no double-count" do
+      item = scripted_item(90_201, attack: 10, on_equip: [{:bonus, :atk, 5}])
+      stub(ItemManagement, :get_item_by_id, fn 90_201 -> {:ok, item} end)
+
+      result = with_equipped(equipped(90_201, @right_hand))
+
+      # flat attack 10 + script atk 5, summed once into the same :atk slot
+      assert result.modifiers.equipment.atk == 15
+      assert result.combat_stats.atk == 15
+    end
+
+    test "a script-only key not pre-seeded in the accumulator still lands" do
+      item = scripted_item(90_205, on_equip: [{:bonus, :str, 3}])
+      stub(ItemManagement, :get_item_by_id, fn 90_205 -> {:ok, item} end)
+
+      result = with_equipped(equipped(90_205, @armor_pos))
+
+      assert result.modifiers.equipment.str == 3
+      # and it feeds every STR-derived stat: base ATK = STR + level/4 = 3
+      assert result.combat_stats.atk == 3
+    end
+
+    test "equipment :hit/:flee/:critical from on_equip reach combat_stats" do
+      item =
+        scripted_item(90_202,
+          on_equip: [{:bonus, :hit, 7}, {:bonus, :flee, 5}, {:bonus, :critical, 4}]
+        )
+
+      stub(ItemManagement, :get_item_by_id, fn 90_202 -> {:ok, item} end)
+
+      result = with_equipped(equipped(90_202, @armor_pos))
+
+      assert result.combat_stats.hit == 7
+      assert result.combat_stats.flee == 5
+      assert result.combat_stats.critical == 4
+    end
+
+    test "an on_equip :pow bonus raises patk and base ATK via the SP-B derivation" do
+      item = scripted_item(90_203, on_equip: [{:bonus, :pow, 3}])
+      stub(ItemManagement, :get_item_by_id, fn 90_203 -> {:ok, item} end)
+
+      result = with_equipped(equipped(90_203, @armor_pos))
+
+      # POW 3 -> base ATK 5*3 = 15; patk = div(pow_eff, 3) = div(3, 3) = 1
+      assert result.combat_stats.atk == 15
+      assert result.combat_stats.patk == 1
+    end
+
+    test "a refine-scaled on_equip program evaluates against the item's refine" do
+      item = scripted_item(90_204, on_equip: [{:bonus, :critical, :refine}])
+      stub(ItemManagement, :get_item_by_id, fn 90_204 -> {:ok, item} end)
+
+      unrefined = with_equipped(refined(90_204, @armor_pos, 0))
+      refined_7 = with_equipped(refined(90_204, @armor_pos, 7))
+
+      assert unrefined.combat_stats.critical == 0
+      assert refined_7.combat_stats.critical == 7
     end
   end
 

@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
+  alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
@@ -582,7 +583,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     combat_stats = %Stats.CombatStats{
       hit: PlayerCombatCalc.calculate_hit(stats),
       flee: PlayerCombatCalc.calculate_flee(stats),
-      critical: base_critical + get_status_modifier(stats, :critical),
+      critical:
+        base_critical + get_status_modifier(stats, :critical) +
+          get_equipment_modifier(stats, :critical),
       perfect_dodge: PlayerCombatCalc.calculate_perfect_dodge(stats),
       atk:
         base_atk + get_status_modifier(stats, :atk) + get_equipment_modifier(stats, :atk) +
@@ -919,7 +922,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
         fn item, acc ->
           case ItemManagement.get_item_by_id(item.nameid) do
             {:ok, %ItemDefinition{} = item_def} ->
-              accumulate_item_bonus(acc, item_def, item.refine)
+              acc
+              |> accumulate_item_bonus(item_def, item.refine)
+              |> apply_equip_script(item_def.on_equip, item.refine)
 
             _ ->
               acc
@@ -930,6 +935,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     bonuses
     |> Map.update!(:def, &(&1 + div(bonuses.refine_def + 50, 100)))
     |> Map.delete(:refine_def)
+  end
+
+  # Folds an item's `on_equip` bonus program (evaluated against the item's
+  # refine) into the equipment accumulator. Script keys (`:str`, `:hit`,
+  # `:critical`, ...) are not pre-seeded in the accumulator, so each bonus is
+  # merged with `Map.update/4` rather than a struct-style update; downstream
+  # readers all use `Map.get(..., 0)`.
+  defp apply_equip_script(acc, nil, _refine), do: acc
+
+  defp apply_equip_script(acc, program, refine) do
+    program
+    |> EquipScript.eval(refine)
+    |> Enum.reduce(acc, fn {key, amount}, acc ->
+      Map.update(acc, key, amount, &(&1 + amount))
+    end)
   end
 
   # Weapon MATK variance, verified vs rAthena status.cpp:6306-6316:
@@ -948,11 +968,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       | atk: acc.atk + item.attack,
         def: acc.def + item.defense,
         wmatk_min: acc.wmatk_min + (matk - variance),
-        wmatk_max: acc.wmatk_max + (matk + variance),
-        patk: acc.patk + item.patk,
-        smatk: acc.smatk + item.smatk,
-        res: acc.res + item.res,
-        mres: acc.mres + item.mres
+        wmatk_max: acc.wmatk_max + (matk + variance)
     }
 
     apply_refine_bonus(acc, item, refine)
@@ -963,11 +979,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       acc
       | atk: acc.atk + item.attack,
         def: acc.def + item.defense,
-        matk: acc.matk + item.magic_attack,
-        patk: acc.patk + item.patk,
-        smatk: acc.smatk + item.smatk,
-        res: acc.res + item.res,
-        mres: acc.mres + item.mres
+        matk: acc.matk + item.magic_attack
     }
 
     apply_refine_bonus(acc, item, refine)

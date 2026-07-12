@@ -599,6 +599,10 @@
   locations:
     - right_hand
   name: Haedonggum
+  on_equip:
+    - - bonus
+      - int
+      - 3
   range: 1
   refineable: true
   slots: 1
@@ -725,6 +729,10 @@
   locations:
     - right_hand
   name: Haedonggum
+  on_equip:
+    - - bonus
+      - int
+      - 3
   range: 1
   refineable: true
   slots: 2
@@ -1419,6 +1427,13 @@
   locations:
     - both_hand
   name: Balmung
+  on_equip:
+    - - bonus
+      - int
+      - 20
+    - - bonus
+      - luk
+      - 20
   range: 1
   refineable: true
   subtype: two_handed_sword
@@ -1583,6 +1598,13 @@
   locations:
     - both_hand
   name: Katzbalger
+  on_equip:
+    - - bonus
+      - vit
+      - 5
+    - - bonus
+      - def
+      - 10
   range: 1
   refineable: true
   subtype: two_handed_sword
@@ -3468,6 +3490,10 @@
   locations:
     - right_hand
   name: Dagger of Counter
+  on_equip:
+    - - bonus
+      - critical
+      - 90
   range: 1
   refineable: true
   subtype: dagger
@@ -3698,6 +3724,10 @@
   locations:
     - both_hand
   name: Katar
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   range: 1
   refineable: true
   slots: 1
@@ -3715,6 +3745,10 @@
   locations:
     - both_hand
   name: Katar
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   range: 1
   refineable: true
   slots: 2
@@ -4441,6 +4475,10 @@
   locations:
     - both_hand
   name: Shiver Katar
+  on_equip:
+    - - bonus
+      - critical
+      - refine
   range: 1
   refineable: true
   slots: 2
@@ -4614,6 +4652,13 @@
   locations:
     - right_hand
   name: War Axe
+  on_equip:
+    - - bonus
+      - dex
+      - 2
+    - - bonus
+      - luk
+      - 2
   range: 1
   refineable: true
   slots: 1
@@ -4768,6 +4813,10 @@
   locations:
     - right_hand
   name: Tourist Axe
+  on_equip:
+    - - bonus
+      - str
+      - 2
   range: 1
   subtype: one_handed_axe
   type: weapon
@@ -4907,6 +4956,29 @@
     - right_hand
   magic_attack: 110
   name: Diva Axe
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
   range: 1
   refineable: true
   slots: 1
@@ -4949,6 +5021,13 @@
   locations:
     - right_hand
   name: Ru Blue Axe
+  on_equip:
+    - - bonus
+      - str
+      - 5
+    - - bonus
+      - int
+      - 5
   range: 1
   refineable: true
   slots: 1
@@ -4965,6 +5044,13 @@
   locations:
     - right_hand
   name: Ru Gold Axe
+  on_equip:
+    - - bonus
+      - str
+      - 8
+    - - bonus
+      - int
+      - 8
   range: 1
   refineable: true
   slots: 2
@@ -4983,6 +5069,13 @@
   locations:
     - right_hand
   name: War Axe
+  on_equip:
+    - - bonus
+      - dex
+      - 2
+    - - bonus
+      - luk
+      - 2
   range: 1
   refineable: true
   slots: 3
@@ -5005,6 +5098,29 @@
     - right_hand
   magic_attack: 110
   name: Mirage Axe
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
   range: 5
   refineable: true
   slots: 1
@@ -5288,7 +5404,6 @@
   locations:
     - right_hand
   name: Destruction Axe
-  patk: 20
   range: 1
   refineable: true
   slots: 2
@@ -6647,6 +6762,16 @@
   locations:
     - right_hand
   name: Pole Axe
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - int
+      - 2
+    - - bonus
+      - dex
+      - 1
   range: 3
   refineable: true
   slots: 1
@@ -6686,6 +6811,16 @@
   locations:
     - right_hand
   name: Pole Axe
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - int
+      - 2
+    - - bonus
+      - dex
+      - 1
   range: 3
   subtype: one_handed_spear
   type: weapon
@@ -6895,6 +7030,16 @@
   locations:
     - right_hand
   name: Pole Axe
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - int
+      - 2
+    - - bonus
+      - dex
+      - 1
   range: 3
   subtype: one_handed_spear
   type: weapon
@@ -6912,6 +7057,16 @@
   locations:
     - right_hand
   name: Pole Axe
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - int
+      - 2
+    - - bonus
+      - dex
+      - 1
   range: 3
   subtype: one_handed_spear
   type: weapon
@@ -7067,6 +7222,13 @@
   locations:
     - right_hand
   name: Ru Blue Spear
+  on_equip:
+    - - bonus
+      - str
+      - 5
+    - - bonus
+      - agi
+      - 5
   range: 3
   refineable: true
   slots: 1
@@ -7083,6 +7245,13 @@
   locations:
     - right_hand
   name: Ru Gold Spear
+  on_equip:
+    - - bonus
+      - str
+      - 8
+    - - bonus
+      - agi
+      - 8
   range: 3
   refineable: true
   slots: 2
@@ -7533,6 +7702,13 @@
   locations:
     - both_hand
   name: Crescent Scythe
+  on_equip:
+    - - bonus
+      - critical
+      - 30
+    - - bonus
+      - hit
+      - 10
   range: 3
   refineable: true
   subtype: two_handed_spear
@@ -7647,6 +7823,13 @@
     - both_hand
   magic_attack: 200
   name: Soul Staff
+  on_equip:
+    - - bonus
+      - int
+      - 5
+    - - bonus
+      - agi
+      - 2
   range: 1
   refineable: true
   subtype: two_handed_staff
@@ -7667,6 +7850,13 @@
     - both_hand
   magic_attack: 200
   name: Wizardry Staff
+  on_equip:
+    - - bonus
+      - int
+      - 6
+    - - bonus
+      - dex
+      - 2
   range: 1
   refineable: true
   subtype: two_handed_staff
@@ -7721,6 +7911,13 @@
   locations:
     - both_hand
   name: Crescent Scythe
+  on_equip:
+    - - bonus
+      - critical
+      - 30
+    - - bonus
+      - hit
+      - 10
   range: 3
   refineable: true
   slots: 1
@@ -9253,6 +9450,10 @@
   locations:
     - right_hand
   name: Bible
+  on_equip:
+    - - bonus
+      - int
+      - 2
   range: 1
   refineable: true
   slots: 2
@@ -9443,6 +9644,13 @@
   locations:
     - right_hand
   name: Hardcover Book
+  on_equip:
+    - - bonus
+      - str
+      - 3
+    - - bonus
+      - dex
+      - 2
   range: 1
   refineable: true
   slots: 1
@@ -9554,6 +9762,13 @@
     - right_hand
   magic_attack: 100
   name: Refined Hardcover Book
+  on_equip:
+    - - bonus
+      - str
+      - 5
+    - - bonus
+      - dex
+      - 2
   range: 1
   subtype: book
   type: weapon
@@ -10277,6 +10492,10 @@
     - right_hand
   magic_attack: 45
   name: Wand
+  on_equip:
+    - - bonus
+      - int
+      - 1
   range: 1
   refineable: true
   slots: 2
@@ -10303,6 +10522,10 @@
     - right_hand
   magic_attack: 45
   name: Wand
+  on_equip:
+    - - bonus
+      - int
+      - 1
   range: 1
   refineable: true
   slots: 3
@@ -10329,6 +10552,10 @@
     - right_hand
   magic_attack: 45
   name: Wand
+  on_equip:
+    - - bonus
+      - int
+      - 1
   range: 1
   refineable: true
   subtype: staff
@@ -10352,6 +10579,10 @@
     - right_hand
   magic_attack: 70
   name: Staff
+  on_equip:
+    - - bonus
+      - int
+      - 2
   range: 1
   refineable: true
   slots: 2
@@ -10376,6 +10607,10 @@
     - right_hand
   magic_attack: 70
   name: Staff
+  on_equip:
+    - - bonus
+      - int
+      - 2
   range: 1
   refineable: true
   slots: 3
@@ -10400,6 +10635,10 @@
     - right_hand
   magic_attack: 70
   name: Staff
+  on_equip:
+    - - bonus
+      - int
+      - 2
   range: 1
   refineable: true
   subtype: staff
@@ -10423,6 +10662,10 @@
     - right_hand
   magic_attack: 95
   name: Arc Wand
+  on_equip:
+    - - bonus
+      - int
+      - 3
   range: 1
   refineable: true
   slots: 1
@@ -10447,6 +10690,10 @@
     - right_hand
   magic_attack: 95
   name: Arc Wand
+  on_equip:
+    - - bonus
+      - int
+      - 3
   range: 1
   refineable: true
   slots: 2
@@ -10471,6 +10718,10 @@
     - right_hand
   magic_attack: 95
   name: Arc Wand
+  on_equip:
+    - - bonus
+      - int
+      - 3
   range: 1
   refineable: true
   subtype: staff
@@ -10517,6 +10768,10 @@
     - right_hand
   magic_attack: 105
   name: Wand of Occult
+  on_equip:
+    - - bonus
+      - int
+      - 3
   range: 1
   refineable: true
   subtype: staff
@@ -10674,6 +10929,10 @@
     - right_hand
   magic_attack: 120
   name: Hypnotist's Staff
+  on_equip:
+    - - bonus
+      - int
+      - 1
   range: 1
   refineable: true
   slots: 1
@@ -10693,6 +10952,10 @@
     - right_hand
   magic_attack: 120
   name: Hypnotist's Staff
+  on_equip:
+    - - bonus
+      - int
+      - 1
   range: 1
   refineable: true
   slots: 2
@@ -10803,6 +11066,10 @@
     - right_hand
   magic_attack: 120
   name: Staffy
+  on_equip:
+    - - bonus
+      - int
+      - 4
   range: 1
   subtype: staff
   type: weapon
@@ -10844,6 +11111,10 @@
     - right_hand
   magic_attack: 125
   name: Gentleman's Staff
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   range: 1
   refineable: true
   slots: 1
@@ -11295,6 +11566,10 @@
     - right_hand
   magic_attack: 125
   name: Eden Staff I
+  on_equip:
+    - - bonus
+      - int
+      - 2
   range: 1
   subtype: staff
   type: weapon
@@ -11315,6 +11590,10 @@
     - right_hand
   magic_attack: 150
   name: Eden Staff II
+  on_equip:
+    - - bonus
+      - int
+      - 3
   range: 1
   subtype: staff
   type: weapon
@@ -11447,6 +11726,10 @@
     - right_hand
   magic_attack: 170
   name: Eden Staff III
+  on_equip:
+    - - bonus
+      - int
+      - 4
   range: 1
   subtype: staff
   type: weapon
@@ -11810,6 +12093,10 @@
     - right_hand
   magic_attack: 125
   name: Gentleman's Staff
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   range: 1
   refineable: true
   slots: 3
@@ -11854,6 +12141,13 @@
     - right_hand
   magic_attack: 200
   name: Ru Blue Wand
+  on_equip:
+    - - bonus
+      - dex
+      - 5
+    - - bonus
+      - int
+      - 5
   range: 1
   refineable: true
   slots: 1
@@ -11870,6 +12164,13 @@
     - right_hand
   magic_attack: 170
   name: Ru Gold Wand
+  on_equip:
+    - - bonus
+      - dex
+      - 8
+    - - bonus
+      - int
+      - 8
   range: 1
   refineable: true
   slots: 2
@@ -12549,6 +12850,10 @@
   locations:
     - both_hand
   name: Arbalest
+  on_equip:
+    - - bonus
+      - dex
+      - 2
   range: 5
   refineable: true
   slots: 1
@@ -12591,6 +12896,10 @@
   locations:
     - both_hand
   name: Arbalest
+  on_equip:
+    - - bonus
+      - dex
+      - 2
   range: 5
   refineable: true
   slots: 2
@@ -13145,6 +13454,10 @@
   locations:
     - both_hand
   name: Elven Bow
+  on_equip:
+    - - bonus
+      - dex
+      - 2
   range: 5
   refineable: true
   slots: 1
@@ -13199,6 +13512,10 @@
   locations:
     - both_hand
   name: Tourist Bow
+  on_equip:
+    - - bonus
+      - dex
+      - 2
   range: 5
   subtype: bow
   type: weapon
@@ -13376,6 +13693,10 @@
   locations:
     - right_hand
   name: Claw
+  on_equip:
+    - - bonus
+      - str
+      - 2
   range: 1
   refineable: true
   slots: 1
@@ -13394,6 +13715,10 @@
   locations:
     - right_hand
   name: Claw
+  on_equip:
+    - - bonus
+      - str
+      - 2
   range: 1
   refineable: true
   slots: 2
@@ -13937,6 +14262,29 @@
     - right_hand
   magic_attack: 100
   name: Diva Claw
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
   range: 1
   refineable: true
   slots: 1
@@ -13955,6 +14303,29 @@
     - right_hand
   magic_attack: 100
   name: Mirage Claw
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
   range: 5
   refineable: true
   slots: 1
@@ -14453,6 +14824,10 @@
   locations:
     - right_hand
   name: Harp
+  on_equip:
+    - - bonus
+      - int
+      - 2
   range: 1
   refineable: true
   slots: 1
@@ -14470,6 +14845,10 @@
   locations:
     - right_hand
   name: Harp
+  on_equip:
+    - - bonus
+      - int
+      - 2
   range: 1
   refineable: true
   slots: 2
@@ -14886,6 +15265,13 @@
   locations:
     - right_hand
   name: Ru Blue Violin
+  on_equip:
+    - - bonus
+      - dex
+      - 5
+    - - bonus
+      - vit
+      - 5
   range: 2
   refineable: true
   slots: 1
@@ -14902,6 +15288,13 @@
   locations:
     - right_hand
   name: Ru Gold Violin
+  on_equip:
+    - - bonus
+      - dex
+      - 8
+    - - bonus
+      - vit
+      - 8
   range: 1
   refineable: true
   slots: 2
@@ -15254,6 +15647,10 @@
   locations:
     - right_hand
   name: Tail Whip
+  on_equip:
+    - - bonus
+      - luk
+      - 3
   range: 2
   refineable: true
   slots: 1
@@ -15271,6 +15668,10 @@
   locations:
     - right_hand
   name: Tail Whip
+  on_equip:
+    - - bonus
+      - luk
+      - 3
   range: 2
   refineable: true
   slots: 2
@@ -15322,6 +15723,13 @@
   locations:
     - right_hand
   name: Lariat Whip
+  on_equip:
+    - - bonus
+      - dex
+      - 5
+    - - bonus
+      - agi
+      - 1
   range: 2
   refineable: true
   subtype: whip
@@ -15422,6 +15830,10 @@
   locations:
     - right_hand
   name: Skipping Rope
+  on_equip:
+    - - bonus
+      - critical
+      - 20
   range: 2
   refineable: true
   subtype: whip
@@ -15788,6 +16200,13 @@
   locations:
     - right_hand
   name: Ru Blue Whip
+  on_equip:
+    - - bonus
+      - dex
+      - 5
+    - - bonus
+      - vit
+      - 5
   range: 2
   refineable: true
   slots: 1
@@ -15804,6 +16223,13 @@
   locations:
     - right_hand
   name: Ru Gold Whip
+  on_equip:
+    - - bonus
+      - dex
+      - 8
+    - - bonus
+      - vit
+      - 8
   range: 2
   refineable: true
   slots: 2
@@ -16377,6 +16803,10 @@
     - both_hand
   magic_attack: 300
   name: Staff of Geffen
+  on_equip:
+    - - bonus
+      - int
+      - 20
   range: 1
   refineable: true
   slots: 1
@@ -17315,6 +17745,10 @@
   locations:
     - left_hand
   name: Mirror Shield
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
   refineable: true
   type: armor
   view: 4
@@ -17332,6 +17766,10 @@
   locations:
     - left_hand
   name: Mirror Shield
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
   refineable: true
   slots: 1
   type: armor
@@ -17350,6 +17788,13 @@
   locations:
     - left_hand
   name: Memory Book
+  on_equip:
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - mdef
+      - 2
   refineable: true
   type: armor
   view: 5
@@ -17365,6 +17810,13 @@
   locations:
     - left_hand
   name: Holy Guard
+  on_equip:
+    - - bonus
+      - vit
+      - 2
+    - - bonus
+      - mdef
+      - 2
   type: armor
   view: 4
   weight: 1400
@@ -17503,6 +17955,10 @@
   locations:
     - left_hand
   name: Advanced Arm Guard
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
   refineable: true
   type: armor
   view: 1
@@ -17519,6 +17975,10 @@
   locations:
     - left_hand
   name: Advanced Arm Guard
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
   refineable: true
   slots: 1
   type: armor
@@ -17537,6 +17997,13 @@
   locations:
     - left_hand
   name: Memory Book
+  on_equip:
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - mdef
+      - 2
   refineable: true
   slots: 1
   type: armor
@@ -17635,6 +18102,10 @@
   locations:
     - left_hand
   name: Thorny Buckler
+  on_equip:
+    - - bonus
+      - mdef
+      - 2
   refineable: true
   slots: 1
   type: armor
@@ -18379,6 +18850,10 @@
   locations:
     - left_hand
   name: Fox Wrist Guard
+  on_equip:
+    - - bonus
+      - flee
+      - 5
   refineable: true
   slots: 1
   type: armor
@@ -18802,6 +19277,18 @@
   locations:
     - left_hand
   name: Lapine Shield
+  on_equip:
+    - - bonus
+      - mdef
+      - 10
+    - - if
+      - - '>'
+        - refine
+        - 7
+      - - - bonus
+          - matk
+          - 20
+      - []
   refineable: true
   slots: 1
   type: armor
@@ -18878,6 +19365,10 @@
   locations:
     - head_top
   name: Wedding Veil
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
   refineable: true
   type: armor
   view: 44
@@ -18900,6 +19391,10 @@
   locations:
     - head_top
   name: Ribbon
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   type: armor
   view: 17
@@ -18912,6 +19407,10 @@
   locations:
     - head_top
   name: Ribbon
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   slots: 1
   type: armor
@@ -18970,6 +19469,10 @@
   locations:
     - head_top
   name: Bunny Band
+  on_equip:
+    - - bonus
+      - luk
+      - 2
   refineable: true
   type: armor
   view: 15
@@ -19244,6 +19747,10 @@
   locations:
     - head_top
   name: Gemmed Sallet
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   type: armor
   weight: 500
@@ -19265,6 +19772,10 @@
   locations:
     - head_top
   name: Gemmed Sallet
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   slots: 1
   type: armor
@@ -19285,6 +19796,10 @@
   locations:
     - head_top
   name: Circlet
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   type: armor
   view: 18
@@ -19305,6 +19820,10 @@
   locations:
     - head_top
   name: Circlet
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   slots: 1
   type: armor
@@ -19319,6 +19838,10 @@
   locations:
     - head_top
   name: Tiara
+  on_equip:
+    - - bonus
+      - int
+      - 2
   refineable: true
   type: armor
   view: 19
@@ -19332,6 +19855,10 @@
   locations:
     - head_top
   name: Crown
+  on_equip:
+    - - bonus
+      - int
+      - 2
   refineable: true
   type: armor
   view: 45
@@ -19344,6 +19871,13 @@
   locations:
     - head_top
   name: Santa Hat
+  on_equip:
+    - - bonus
+      - mdef
+      - 1
+    - - bonus
+      - luk
+      - 1
   refineable: true
   type: armor
   view: 20
@@ -19428,6 +19962,10 @@
   locations:
     - head_top
   name: Big Ribbon
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   type: armor
   view: 28
@@ -19489,6 +20027,10 @@
   locations:
     - head_top
   name: Coronet
+  on_equip:
+    - - bonus
+      - int
+      - 1
   refineable: true
   type: armor
   view: 33
@@ -19516,6 +20058,10 @@
   locations:
     - head_top
   name: Monk Hat
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   type: armor
   view: 35
@@ -19589,6 +20135,10 @@
   locations:
     - head_top
   name: Majestic Goat
+  on_equip:
+    - - bonus
+      - str
+      - 1
   refineable: true
   type: armor
   view: 41
@@ -19808,6 +20358,10 @@
   locations:
     - head_top
   name: Doctor Band
+  on_equip:
+    - - bonus
+      - int
+      - 1
   refineable: true
   type: armor
   view: 60
@@ -19858,6 +20412,10 @@
   locations:
     - head_top
   name: Nurse Cap
+  on_equip:
+    - - bonus
+      - int
+      - 1
   refineable: true
   type: armor
   view: 64
@@ -19893,6 +20451,10 @@
   locations:
     - head_top
   name: Sakkat
+  on_equip:
+    - - bonus
+      - agi
+      - 1
   refineable: true
   type: armor
   view: 67
@@ -19952,6 +20514,10 @@
   locations:
     - head_top
   name: Apple of Archer
+  on_equip:
+    - - bonus
+      - dex
+      - 3
   refineable: true
   type: armor
   view: 72
@@ -19975,6 +20541,10 @@
   locations:
     - head_top
   name: Pirate Bandana
+  on_equip:
+    - - bonus
+      - str
+      - 1
   refineable: true
   type: armor
   view: 74
@@ -20085,6 +20655,10 @@
   locations:
     - head_mid
   name: Binoculars
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   type: armor
   view: 83
   weight: 100
@@ -20393,6 +20967,13 @@
   locations:
     - armor
   name: Lord's Clothes
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
+    - - bonus
+      - int
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -20444,6 +21025,10 @@
   locations:
     - armor
   name: Silk Robe
+  on_equip:
+    - - bonus
+      - mdef
+      - 10
   refineable: true
   type: armor
   weight: 400
@@ -20469,6 +21054,10 @@
   locations:
     - armor
   name: Silk Robe
+  on_equip:
+    - - bonus
+      - mdef
+      - 10
   refineable: true
   slots: 1
   type: armor
@@ -20519,6 +21108,10 @@
   locations:
     - armor
   name: Saint's Robe
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
   refineable: true
   type: armor
   weight: 600
@@ -20537,6 +21130,10 @@
   locations:
     - armor
   name: Saint's Robe
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
   refineable: true
   slots: 1
   type: armor
@@ -20607,6 +21204,10 @@
   locations:
     - armor
   name: Tights
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   refineable: true
   type: armor
   weight: 500
@@ -20623,6 +21224,10 @@
   locations:
     - armor
   name: Tights
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -20674,6 +21279,13 @@
   locations:
     - armor
   name: Mage Coat
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
+    - - bonus
+      - int
+      - 1
   refineable: true
   type: armor
   weight: 600
@@ -20691,6 +21303,10 @@
   locations:
     - armor
   name: Thief Clothes
+  on_equip:
+    - - bonus
+      - agi
+      - 1
   refineable: true
   type: armor
   weight: 100
@@ -20708,6 +21324,10 @@
   locations:
     - armor
   name: Thief Clothes
+  on_equip:
+    - - bonus
+      - agi
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -20727,6 +21347,13 @@
   locations:
     - armor
   name: Ninja Suit
+  on_equip:
+    - - bonus
+      - agi
+      - 1
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   type: armor
   weight: 1500
@@ -20738,6 +21365,10 @@
   locations:
     - armor
   name: Wedding Dress
+  on_equip:
+    - - bonus
+      - mdef
+      - 15
   refineable: true
   type: armor
   weight: 500
@@ -20991,6 +21622,10 @@
   locations:
     - armor
   name: Angelic Protection
+  on_equip:
+    - - bonus
+      - mdef
+      - 20
   refineable: true
   slots: 1
   type: armor
@@ -21050,6 +21685,10 @@
   locations:
     - armor
   name: Angel's Dress
+  on_equip:
+    - - bonus
+      - luk
+      - 4
   type: armor
   weight: 1000
 - aegis_name: Ninja_Suit_
@@ -21067,6 +21706,13 @@
   locations:
     - armor
   name: Ninja Suit
+  on_equip:
+    - - bonus
+      - agi
+      - 1
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   slots: 1
   type: armor
@@ -21231,6 +21877,10 @@
   locations:
     - armor
   name: Golden Armor
+  on_equip:
+    - - bonus
+      - mdef
+      - 4
   type: armor
   weight: 2000
 - aegis_name: Freyja_Overcoat
@@ -21276,6 +21926,13 @@
   locations:
     - armor
   name: Mage Coat
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
+    - - bonus
+      - int
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -21719,6 +22376,10 @@
   locations:
     - armor
   name: Dragon Vest
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   slots: 1
   type: armor
@@ -21845,6 +22506,13 @@
   locations:
     - shoes
   name: Crystal Pumps
+  on_equip:
+    - - bonus
+      - mdef
+      - 10
+    - - bonus
+      - luk
+      - 5
   refineable: true
   type: armor
   weight: 100
@@ -21867,6 +22535,10 @@
   locations:
     - shoes
   name: High Heels
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
   refineable: true
   type: armor
   weight: 600
@@ -21949,6 +22621,13 @@
   locations:
     - shoes
   name: Bunny Slipper
+  on_equip:
+    - - bonus
+      - luk
+      - 3
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   slots: 1
   type: armor
@@ -22069,6 +22748,10 @@
   locations:
     - shoes
   name: High Fashion Sandals
+  on_equip:
+    - - bonus
+      - mdef
+      - 10
   refineable: true
   slots: 1
   type: armor
@@ -22205,6 +22888,10 @@
   locations:
     - shoes
   name: Golden Shoes
+  on_equip:
+    - - bonus
+      - mdef
+      - 4
   type: armor
   weight: 300
 - aegis_name: Freyja_Boots
@@ -22266,6 +22953,10 @@
   locations:
     - shoes
   name: High Heels
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
   refineable: true
   slots: 1
   type: armor
@@ -22511,6 +23202,10 @@
   locations:
     - shoes
   name: Air Boss
+  on_equip:
+    - - bonus
+      - agi
+      - 1
   refineable: true
   type: armor
   weight: 500
@@ -22741,6 +23436,16 @@
   locations:
     - shoes
   name: No Fear Shoes
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - dex
+      - 1
   type: armor
 - aegis_name: Dance_Shoes
   armor_level: 1
@@ -22871,6 +23576,10 @@
   locations:
     - shoes
   name: Lehmannza Shoes
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   slots: 1
   type: armor
@@ -22931,6 +23640,13 @@
   locations:
     - shoes
   name: Nab Shoes
+  on_equip:
+    - - bonus
+      - flee
+      - 3
+    - - bonus
+      - int
+      - 2
   refineable: true
   slots: 1
   type: armor
@@ -23118,6 +23834,13 @@
   locations:
     - shoes
   name: Vital Tree Shoes
+  on_equip:
+    - - bonus
+      - vit
+      - 2
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   slots: 1
   type: armor
@@ -23207,6 +23930,13 @@
   locations:
     - shoes
   name: Crystal Pumps
+  on_equip:
+    - - bonus
+      - mdef
+      - 10
+    - - bonus
+      - luk
+      - 5
   refineable: true
   slots: 1
   type: armor
@@ -23385,6 +24115,10 @@
   locations:
     - garment
   name: Ancient Cape
+  on_equip:
+    - - bonus
+      - agi
+      - 1
   refineable: true
   type: armor
   weight: 600
@@ -23413,6 +24147,13 @@
   locations:
     - garment
   name: Survivor's Manteau
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
+    - - bonus
+      - vit
+      - 10
   refineable: true
   type: armor
   weight: 550
@@ -23438,6 +24179,25 @@
   locations:
     - garment
   name: Skeleton Manteau
+  on_equip:
+    - - bonus
+      - str
+      - 2
+    - - bonus
+      - int
+      - -3
+    - - bonus
+      - dex
+      - 2
+    - - bonus
+      - vit
+      - -3
+    - - bonus
+      - luk
+      - 2
+    - - bonus
+      - agi
+      - -4
   refineable: true
   type: armor
   weight: 700
@@ -23595,6 +24355,10 @@
   locations:
     - garment
   name: Undershirt
+  on_equip:
+    - - bonus
+      - mdef
+      - 1
   refineable: true
   type: armor
   weight: 150
@@ -23606,6 +24370,10 @@
   locations:
     - garment
   name: Undershirt
+  on_equip:
+    - - bonus
+      - mdef
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -23649,6 +24417,10 @@
   locations:
     - garment
   name: Ancient Cape
+  on_equip:
+    - - bonus
+      - agi
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -23725,6 +24497,10 @@
   locations:
     - garment
   name: Wool Scarf
+  on_equip:
+    - - bonus
+      - mdef
+      - 4
   refineable: true
   slots: 1
   type: armor
@@ -23757,6 +24533,10 @@
   locations:
     - garment
   name: Rider Insignia
+  on_equip:
+    - - bonus
+      - agi
+      - 2
   refineable: true
   type: armor
   weight: 500
@@ -23788,6 +24568,10 @@
   locations:
     - garment
   name: Rider Insignia
+  on_equip:
+    - - bonus
+      - agi
+      - 2
   refineable: true
   slots: 1
   type: armor
@@ -23869,6 +24653,13 @@
   locations:
     - garment
   name: Cloak Of Survival
+  on_equip:
+    - - bonus
+      - vit
+      - 10
+    - - bonus
+      - mdef
+      - 10
   type: armor
 - aegis_name: Skin_Of_Ventus
   armor_level: 1
@@ -24161,6 +24952,10 @@
   locations:
     - garment
   name: Crest of the Rider
+  on_equip:
+    - - bonus
+      - agi
+      - 2
   refineable: true
   slots: 1
   type: armor
@@ -24215,6 +25010,13 @@
   locations:
     - garment
   name: Dragon Manteau
+  on_equip:
+    - - bonus
+      - agi
+      - 1
+    - - bonus
+      - mdef
+      - 5
   refineable: true
   slots: 1
   type: armor
@@ -24502,6 +25304,13 @@
   locations:
     - garment
   name: Peuz's Manteau
+  on_equip:
+    - - bonus
+      - flee
+      - 10
+    - - bonus
+      - critical
+      - 10
   refineable: true
   type: armor
   weight: 600
@@ -24542,6 +25351,17 @@
   locations:
     - garment
   name: Nab Hood
+  on_equip:
+    - - bonus
+      - flee
+      - - mul
+        - refine
+        - 2
+    - - bonus
+      - atk
+      - - mul
+        - refine
+        - 2
   refineable: true
   type: armor
   weight: 100
@@ -24609,6 +25429,13 @@
   locations:
     - garment
   name: Holy Cape
+  on_equip:
+    - - bonus
+      - dex
+      - -5
+    - - bonus
+      - mdef
+      - 5
   refineable: true
   slots: 1
   type: armor
@@ -24668,6 +25495,10 @@
   locations:
     - garment
   name: Ragamuffin Cape
+  on_equip:
+    - - bonus
+      - mdef
+      - 10
   refineable: true
   slots: 1
   type: armor
@@ -24817,6 +25648,10 @@
   locations:
     - both_accessory
   name: Ring
+  on_equip:
+    - - bonus
+      - str
+      - 2
   type: armor
   weight: 100
 - aegis_name: Earring
@@ -24827,6 +25662,10 @@
   locations:
     - both_accessory
   name: Earring
+  on_equip:
+    - - bonus
+      - int
+      - 2
   type: armor
   weight: 100
 - aegis_name: Necklace
@@ -24837,6 +25676,10 @@
   locations:
     - both_accessory
   name: Necklace
+  on_equip:
+    - - bonus
+      - vit
+      - 2
   type: armor
   weight: 100
 - aegis_name: Glove
@@ -24847,6 +25690,10 @@
   locations:
     - both_accessory
   name: Glove
+  on_equip:
+    - - bonus
+      - dex
+      - 2
   type: armor
   weight: 100
 - aegis_name: Brooch
@@ -24857,6 +25704,10 @@
   locations:
     - both_accessory
   name: Brooch
+  on_equip:
+    - - bonus
+      - agi
+      - 2
   type: armor
   weight: 100
 - aegis_name: Whike_Black_Tail_L
@@ -24885,6 +25736,13 @@
   locations:
     - both_accessory
   name: Rosary
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
+    - - bonus
+      - luk
+      - 2
   type: armor
   weight: 100
 - aegis_name: Skul_Ring
@@ -24950,6 +25808,10 @@
   locations:
     - both_accessory
   name: Safety Ring
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
   type: armor
   weight: 100
 - aegis_name: Critical_Ring
@@ -24960,6 +25822,10 @@
   locations:
     - both_accessory
   name: Critical Ring
+  on_equip:
+    - - bonus
+      - critical
+      - 5
   type: armor
   weight: 100
 - aegis_name: Mitten_Of_Presbyter
@@ -24971,6 +25837,10 @@
   locations:
     - both_accessory
   name: Celebrant's Mitten
+  on_equip:
+    - - bonus
+      - int
+      - 1
   type: armor
   weight: 100
 - aegis_name: Matyr's_Flea_Guard
@@ -24982,6 +25852,10 @@
   locations:
     - both_accessory
   name: Matyr's Leash
+  on_equip:
+    - - bonus
+      - agi
+      - 1
   type: armor
   weight: 100
 - aegis_name: Thimble_Of_Archer
@@ -25022,6 +25896,10 @@
   locations:
     - both_accessory
   name: Ring
+  on_equip:
+    - - bonus
+      - str
+      - 1
   slots: 1
   type: armor
   weight: 200
@@ -25033,6 +25911,10 @@
   locations:
     - both_accessory
   name: Earring
+  on_equip:
+    - - bonus
+      - int
+      - 1
   slots: 1
   type: armor
   weight: 200
@@ -25044,6 +25926,10 @@
   locations:
     - both_accessory
   name: Necklace
+  on_equip:
+    - - bonus
+      - vit
+      - 1
   slots: 1
   type: armor
   weight: 200
@@ -25055,6 +25941,10 @@
   locations:
     - both_accessory
   name: Glove
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   slots: 1
   type: armor
   weight: 200
@@ -25066,6 +25956,10 @@
   locations:
     - both_accessory
   name: Brooch
+  on_equip:
+    - - bonus
+      - agi
+      - 1
   slots: 1
   type: armor
   weight: 200
@@ -25077,6 +25971,13 @@
   locations:
     - both_accessory
   name: Rosary
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
+    - - bonus
+      - luk
+      - 1
   slots: 1
   type: armor
   weight: 200
@@ -25144,6 +26045,16 @@
   locations:
     - both_accessory
   name: Korean Trinket
+  on_equip:
+    - - bonus
+      - vit
+      - 1
+    - - bonus
+      - dex
+      - 1
+    - - bonus
+      - luk
+      - 1
   type: armor
   weight: 100
 - aegis_name: Jade_Ring
@@ -25154,6 +26065,13 @@
   locations:
     - both_accessory
   name: Jade Ring
+  on_equip:
+    - - bonus
+      - str
+      - 2
+    - - bonus
+      - int
+      - 1
   type: armor
   weight: 100
 - aegis_name: Bridegroom_Ring
@@ -25177,6 +26095,10 @@
   locations:
     - both_accessory
   name: Gold Christmas Ring
+  on_equip:
+    - - bonus
+      - luk
+      - 1
   type: armor
   weight: 100
 - aegis_name: Silver_Ring_
@@ -25186,6 +26108,10 @@
   locations:
     - both_accessory
   name: Silver Christmas Ring
+  on_equip:
+    - - bonus
+      - luk
+      - 1
   type: armor
   weight: 100
 - aegis_name: Exorcize_Sachet
@@ -25195,6 +26121,13 @@
   locations:
     - both_accessory
   name: Sacred Incense
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - luk
+      - 1
   type: armor
   weight: 100
 - aegis_name: Purification_Sachet
@@ -25204,6 +26137,13 @@
   locations:
     - both_accessory
   name: Occult Incense
+  on_equip:
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - agi
+      - 1
   type: armor
   weight: 100
 - aegis_name: Kafra_Ring
@@ -25214,6 +26154,22 @@
   locations:
     - both_accessory
   name: Kafra Ring
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - agi
+      - 1
+    - - bonus
+      - luk
+      - 1
+    - - bonus
+      - mdef
+      - 1
   type: armor
   weight: 200
 - aegis_name: Fashionable_Sack
@@ -25228,6 +26184,10 @@
   locations:
     - both_accessory
   name: Fashion Hip Sack
+  on_equip:
+    - - bonus
+      - str
+      - 2
   type: armor
   weight: 700
 - aegis_name: Serin's_Gold_Ring
@@ -25318,6 +26278,13 @@
   locations:
     - both_accessory
   name: Morrigane's Belt
+  on_equip:
+    - - bonus
+      - atk
+      - 5
+    - - bonus
+      - critical
+      - 3
   type: armor
   weight: 200
 - aegis_name: Morrigane's_Pendant
@@ -25328,6 +26295,13 @@
   locations:
     - both_accessory
   name: Morrigane's Pendant
+  on_equip:
+    - - bonus
+      - str
+      - 2
+    - - bonus
+      - critical
+      - 3
   type: armor
   weight: 200
 - aegis_name: Cursed_Lucky_Brooch
@@ -25365,6 +26339,16 @@
   locations:
     - both_accessory
   name: Shinobi Sash
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - agi
+      - 1
+    - - bonus
+      - mdef
+      - 1
   type: armor
   weight: 300
 - aegis_name: Bloody_Iron_Ball
@@ -25463,6 +26447,16 @@
   locations:
     - both_accessory
   name: Vesper Core 02
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
+    - - bonus
+      - str
+      - 3
+    - - bonus
+      - atk
+      - 10
   type: armor
   weight: 100
 - aegis_name: Vesper_Core03
@@ -25487,6 +26481,16 @@
   locations:
     - both_accessory
   name: Vesper Core 03
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
+    - - bonus
+      - agi
+      - 3
+    - - bonus
+      - flee
+      - 5
   type: armor
   weight: 100
 - aegis_name: Vesper_Core04
@@ -25511,6 +26515,16 @@
   locations:
     - both_accessory
   name: Vesper Core 04
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
+    - - bonus
+      - dex
+      - 3
+    - - bonus
+      - hit
+      - 10
   type: armor
   weight: 100
 - aegis_name: Gauntlet_Of_Accuracy
@@ -25521,6 +26535,13 @@
   locations:
     - both_accessory
   name: Gauntlet of Hit
+  on_equip:
+    - - bonus
+      - hit
+      - 15
+    - - bonus
+      - str
+      - 1
   type: armor
   weight: 900
 - aegis_name: Scarf_Belt
@@ -25531,6 +26552,13 @@
   locations:
     - both_accessory
   name: Belcarf
+  on_equip:
+    - - bonus
+      - dex
+      - 2
+    - - bonus
+      - int
+      - 1
   type: armor
   weight: 200
 - aegis_name: Ring_Of_Exorcism
@@ -25565,6 +26593,16 @@
   locations:
     - both_accessory
   name: Renown Archer's Gloves
+  on_equip:
+    - - bonus
+      - hit
+      - 5
+    - - bonus
+      - critical
+      - 5
+    - - bonus
+      - dex
+      - 1
   type: armor
   weight: 300
 - aegis_name: Women's_Glory
@@ -25596,6 +26634,10 @@
   locations:
     - both_accessory
   name: Ring of Longing
+  on_equip:
+    - - bonus
+      - flee
+      - 5
   type: armor
   weight: 100
 - aegis_name: Thimble_Of_Archer_
@@ -25667,6 +26709,13 @@
   locations:
     - both_accessory
   name: Spiritual Ring
+  on_equip:
+    - - bonus
+      - int
+      - 2
+    - - bonus
+      - dex
+      - 1
   type: armor
   weight: 100
 - aegis_name: Ring_Of_Flame_Lord
@@ -25785,6 +26834,10 @@
   locations:
     - head_mid
   name: Elven Ears
+  on_equip:
+    - - bonus
+      - int
+      - 1
   type: armor
   view: 73
 - aegis_name: Steel_Flower_C
@@ -25809,6 +26862,10 @@
   locations:
     - both_accessory
   name: Critical Ring
+  on_equip:
+    - - bonus
+      - critical
+      - 10
   type: armor
 - aegis_name: Earring_C
   armor_level: 1
@@ -25818,6 +26875,10 @@
   locations:
     - both_accessory
   name: Earring
+  on_equip:
+    - - bonus
+      - int
+      - 3
   type: armor
 - aegis_name: Ring_C
   armor_level: 1
@@ -25827,6 +26888,10 @@
   locations:
     - both_accessory
   name: Ring
+  on_equip:
+    - - bonus
+      - str
+      - 4
   type: armor
 - aegis_name: Necklace_C
   armor_level: 1
@@ -25836,6 +26901,10 @@
   locations:
     - both_accessory
   name: Necklace
+  on_equip:
+    - - bonus
+      - vit
+      - 4
   type: armor
 - aegis_name: Glove_C
   armor_level: 1
@@ -25845,6 +26914,10 @@
   locations:
     - both_accessory
   name: Glove
+  on_equip:
+    - - bonus
+      - dex
+      - 4
   type: armor
 - aegis_name: Brooch_C
   armor_level: 1
@@ -25863,6 +26936,13 @@
   locations:
     - both_accessory
   name: Rosary
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
+    - - bonus
+      - luk
+      - 4
   type: armor
 - aegis_name: Safety_Ring_C
   armor_level: 1
@@ -25893,6 +26973,16 @@
   locations:
     - both_accessory
   name: Vesper Core 02
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
+    - - bonus
+      - str
+      - 3
+    - - bonus
+      - atk
+      - 10
   type: armor
 - aegis_name: Vesper_Core03_C
   armor_level: 1
@@ -25903,6 +26993,16 @@
   locations:
     - both_accessory
   name: Vesper Core 03
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
+    - - bonus
+      - agi
+      - 3
+    - - bonus
+      - flee
+      - 5
   type: armor
 - aegis_name: Vesper_Core04_C
   armor_level: 1
@@ -25913,6 +27013,16 @@
   locations:
     - both_accessory
   name: Vesper Core 04
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
+    - - bonus
+      - dex
+      - 3
+    - - bonus
+      - hit
+      - 10
   type: armor
 - aegis_name: Red_Silk_Seal
   armor_level: 1
@@ -25985,6 +27095,10 @@
   locations:
     - both_accessory
   name: Bison Horn
+  on_equip:
+    - - bonus
+      - agi
+      - 2
   slots: 1
   type: armor
   weight: 100
@@ -26026,6 +27140,10 @@
   locations:
     - both_accessory
   name: Golden Accessories
+  on_equip:
+    - - bonus
+      - mdef
+      - 4
   type: armor
   weight: 100
 - aegis_name: Golden_Accessory2
@@ -26084,6 +27202,13 @@
   locations:
     - both_accessory
   name: Spiritual Ring
+  on_equip:
+    - - bonus
+      - int
+      - 2
+    - - bonus
+      - dex
+      - 2
   type: armor
 - aegis_name: Ragnarok_Limited_Ed
   armor_level: 1
@@ -26092,6 +27217,16 @@
   locations:
     - both_accessory
   name: Ragnarok Limited Edition
+  on_equip:
+    - - bonus
+      - vit
+      - 3
+    - - bonus
+      - agi
+      - 3
+    - - bonus
+      - luk
+      - 3
   type: armor
   weight: 300
 - aegis_name: Certificate_TW
@@ -26360,6 +27495,10 @@
   locations:
     - both_accessory
   name: Death Loop
+  on_equip:
+    - - bonus
+      - critical
+      - 5
   slots: 1
   type: armor
   weight: 50
@@ -26404,6 +27543,16 @@
   locations:
     - both_accessory
   name: Navel Ring
+  on_equip:
+    - - bonus
+      - dex
+      - 3
+    - - bonus
+      - luk
+      - 3
+    - - bonus
+      - mdef
+      - 2
   type: armor
   weight: 100
 - aegis_name: Foot_Ring
@@ -26533,6 +27682,10 @@
   locations:
     - both_accessory
   name: Cold Heart
+  on_equip:
+    - - bonus
+      - agi
+      - 3
   type: armor
   weight: 100
 - aegis_name: Black_Cat
@@ -26546,6 +27699,10 @@
   locations:
     - both_accessory
   name: Black Cat
+  on_equip:
+    - - bonus
+      - dex
+      - 3
   type: armor
   weight: 100
 - aegis_name: Cursed_Star
@@ -26584,6 +27741,16 @@
   locations:
     - both_accessory
   name: Linen Glove
+  on_equip:
+    - - bonus
+      - mdef
+      - 1
+    - - bonus
+      - agi
+      - 2
+    - - bonus
+      - dex
+      - 1
   slots: 1
   type: armor
   weight: 120
@@ -26831,6 +27998,10 @@
   locations:
     - both_accessory
   name: Shaman Earrings
+  on_equip:
+    - - bonus
+      - int
+      - 2
   type: armor
   weight: 100
 - aegis_name: Dark_Knight_Belt
@@ -26842,6 +28013,13 @@
   locations:
     - both_accessory
   name: Dark Knight Belt
+  on_equip:
+    - - bonus
+      - str
+      - 2
+    - - bonus
+      - agi
+      - 1
   type: armor
   weight: 500
 - aegis_name: Dark_Knight_Glove
@@ -26933,6 +28111,13 @@
   locations:
     - both_accessory
   name: Spiritual Ring
+  on_equip:
+    - - bonus
+      - int
+      - 2
+    - - bonus
+      - dex
+      - 1
   type: armor
   weight: 100
 - aegis_name: Waterdrop_Brooch
@@ -26991,6 +28176,16 @@
   locations:
     - both_accessory
   name: Bradium Earring
+  on_equip:
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - dex
+      - 1
+    - - bonus
+      - matk
+      - 5
   slots: 1
   type: armor
   weight: 200
@@ -27020,6 +28215,16 @@
   locations:
     - both_accessory
   name: Bradium Ring
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - vit
+      - 1
+    - - bonus
+      - atk
+      - 5
   slots: 1
   type: armor
   weight: 200
@@ -27060,6 +28265,10 @@
   locations:
     - both_accessory
   name: Fresh Fish
+  on_equip:
+    - - bonus
+      - hit
+      - 3
   slots: 1
   type: armor
   weight: 500
@@ -27113,6 +28322,10 @@
   locations:
     - both_accessory
   name: Magic Stone Ring
+  on_equip:
+    - - bonus
+      - str
+      - 2
   slots: 1
   type: armor
 - aegis_name: Green_Apple_Ring
@@ -27195,6 +28408,10 @@
   locations:
     - both_accessory
   name: Accelerator
+  on_equip:
+    - - bonus
+      - agi
+      - 2
   slots: 1
   type: armor
   weight: 100
@@ -27208,6 +28425,10 @@
   locations:
     - both_accessory
   name: Hovering Booster
+  on_equip:
+    - - bonus
+      - agi
+      - 1
   slots: 1
   type: armor
   weight: 2000
@@ -27234,6 +28455,10 @@
   locations:
     - both_accessory
   name: Shape Shifter
+  on_equip:
+    - - bonus
+      - int
+      - 3
   slots: 1
   type: armor
   weight: 500
@@ -27247,6 +28472,10 @@
   locations:
     - both_accessory
   name: Cooling Device
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   slots: 1
   type: armor
   weight: 2500
@@ -27260,6 +28489,10 @@
   locations:
     - both_accessory
   name: Magnetic Field Generator
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   slots: 1
   type: armor
   weight: 6000
@@ -27274,6 +28507,10 @@
   locations:
     - both_accessory
   name: Barrier Builder
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   slots: 1
   type: armor
   weight: 8000
@@ -27300,6 +28537,10 @@
   locations:
     - both_accessory
   name: Camouflague Generator
+  on_equip:
+    - - bonus
+      - agi
+      - 3
   slots: 1
   type: armor
   weight: 1000
@@ -27313,6 +28554,10 @@
   locations:
     - both_accessory
   name: High Quality Cooler
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   slots: 1
   type: armor
   weight: 2500
@@ -27326,6 +28571,10 @@
   locations:
     - both_accessory
   name: Special Cooler
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   slots: 1
   type: armor
   weight: 2500
@@ -27489,6 +28738,10 @@
   locations:
     - both_accessory
   name: Shaman Earrings
+  on_equip:
+    - - bonus
+      - int
+      - 2
   type: armor
   weight: 100
 - aegis_name: Dark_Knight_BeltB
@@ -27500,6 +28753,13 @@
   locations:
     - both_accessory
   name: Dark Knight Belt
+  on_equip:
+    - - bonus
+      - dex
+      - 2
+    - - bonus
+      - agi
+      - 1
   type: armor
   weight: 500
 - aegis_name: Dark_Knight_GloveB
@@ -27541,6 +28801,13 @@
   locations:
     - both_accessory
   name: Megingjard
+  on_equip:
+    - - bonus
+      - str
+      - 40
+    - - bonus
+      - mdef
+      - 7
   type: armor
 - aegis_name: Brysinggamen_C
   armor_level: 1
@@ -27551,6 +28818,25 @@
   locations:
     - both_accessory
   name: Brisingamen
+  on_equip:
+    - - bonus
+      - str
+      - 6
+    - - bonus
+      - int
+      - 6
+    - - bonus
+      - vit
+      - 6
+    - - bonus
+      - agi
+      - 6
+    - - bonus
+      - luk
+      - 10
+    - - bonus
+      - mdef
+      - 5
   type: armor
 - aegis_name: Freyja_Ring
   armor_level: 1
@@ -27585,6 +28871,10 @@
   locations:
     - both_accessory
   name: Critical Ring
+  on_equip:
+    - - bonus
+      - critical
+      - 10
   type: armor
 - aegis_name: F_Glove_C
   armor_level: 1
@@ -27594,6 +28884,10 @@
   locations:
     - both_accessory
   name: Glove
+  on_equip:
+    - - bonus
+      - dex
+      - 4
   type: armor
 - aegis_name: F_Safety_Ring_C
   armor_level: 1
@@ -27604,6 +28898,10 @@
   locations:
     - both_accessory
   name: Safety Ring
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
   type: armor
 - aegis_name: F_Necklace_C
   armor_level: 1
@@ -27613,6 +28911,10 @@
   locations:
     - both_accessory
   name: Necklace
+  on_equip:
+    - - bonus
+      - vit
+      - 4
   type: armor
 - aegis_name: F_Ring_C
   armor_level: 1
@@ -27622,6 +28924,10 @@
   locations:
     - both_accessory
   name: Ring
+  on_equip:
+    - - bonus
+      - str
+      - 4
   type: armor
 - aegis_name: F_Rosary_C
   armor_level: 1
@@ -27631,6 +28937,13 @@
   locations:
     - both_accessory
   name: Rosary
+  on_equip:
+    - - bonus
+      - luk
+      - 4
+    - - bonus
+      - mdef
+      - 5
   type: armor
 - aegis_name: Caracas_Ring
   armor_level: 1
@@ -27653,6 +28966,10 @@
   locations:
     - both_accessory
   name: Earring
+  on_equip:
+    - - bonus
+      - int
+      - 3
   type: armor
 - aegis_name: Gold_Trickle
   armor_level: 1
@@ -27681,6 +28998,10 @@
   locations:
     - both_accessory
   name: No Fear Belt
+  on_equip:
+    - - bonus
+      - mdef
+      - 2
   type: armor
 - aegis_name: E_All_In_One_Ring
   armor_level: 1
@@ -27698,6 +29019,10 @@
   locations:
     - both_accessory
   name: Critical Ring
+  on_equip:
+    - - bonus
+      - critical
+      - 10
   type: armor
 - aegis_name: E_Glove_C
   armor_level: 1
@@ -27707,6 +29032,10 @@
   locations:
     - both_accessory
   name: Glove
+  on_equip:
+    - - bonus
+      - dex
+      - 4
   type: armor
 - aegis_name: E_Safety_Ring_C
   armor_level: 1
@@ -27717,6 +29046,10 @@
   locations:
     - both_accessory
   name: Safety Ring
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
   type: armor
 - aegis_name: E_Ring_C
   armor_level: 1
@@ -27726,6 +29059,10 @@
   locations:
     - both_accessory
   name: Ring
+  on_equip:
+    - - bonus
+      - vit
+      - 4
   type: armor
 - aegis_name: E_Necklace_C
   armor_level: 1
@@ -27735,6 +29072,10 @@
   locations:
     - both_accessory
   name: Necklace
+  on_equip:
+    - - bonus
+      - str
+      - 4
   type: armor
 - aegis_name: E_Rosary_C
   armor_level: 1
@@ -27744,6 +29085,13 @@
   locations:
     - both_accessory
   name: Rosary
+  on_equip:
+    - - bonus
+      - luk
+      - 4
+    - - bonus
+      - mdef
+      - 5
   type: armor
 - aegis_name: Telekinetic_Orb
   armor_level: 1
@@ -27934,6 +29282,10 @@
   locations:
     - both_accessory
   name: Broken Bamboo Piece
+  on_equip:
+    - - bonus
+      - mdef
+      - 2
   type: armor
   weight: 100
 - aegis_name: Green_Batik
@@ -27945,6 +29297,19 @@
   locations:
     - both_accessory
   name: Green Batik
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - dex
+      - 1
+    - - bonus
+      - mdef
+      - 1
   type: armor
   weight: 100
 - aegis_name: Colorful_Ketupat
@@ -27955,6 +29320,16 @@
   locations:
     - both_accessory
   name: Colorful Ketupat
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - dex
+      - 1
   type: armor
   weight: 100
 - aegis_name: Tw_8th_Anni_Ring
@@ -27992,6 +29367,19 @@
   locations:
     - both_accessory
   name: Cat Hand Glove
+  on_equip:
+    - - bonus
+      - agi
+      - 1
+    - - bonus
+      - vit
+      - 1
+    - - bonus
+      - dex
+      - 1
+    - - bonus
+      - luk
+      - 1
   slots: 1
   type: armor
   weight: 100
@@ -28025,6 +29413,10 @@
   locations:
     - both_accessory
   name: Necklace Spica
+  on_equip:
+    - - bonus
+      - mdef
+      - 1
   type: armor
   weight: 200
 - aegis_name: Glove_Sabik
@@ -28036,6 +29428,10 @@
   locations:
     - both_accessory
   name: Glove Sabik
+  on_equip:
+    - - bonus
+      - mdef
+      - 1
   type: armor
   weight: 200
 - aegis_name: Bracelet_Arunairi
@@ -28047,6 +29443,10 @@
   locations:
     - both_accessory
   name: Bracelet Arunairi
+  on_equip:
+    - - bonus
+      - mdef
+      - 1
   type: armor
   weight: 200
 - aegis_name: Badge_Giorredart
@@ -28058,6 +29458,10 @@
   locations:
     - both_accessory
   name: Badge Giorredart
+  on_equip:
+    - - bonus
+      - mdef
+      - 1
   type: armor
   weight: 200
 - aegis_name: Ring_Lupak
@@ -28069,6 +29473,10 @@
   locations:
     - both_accessory
   name: Ring Lupak
+  on_equip:
+    - - bonus
+      - mdef
+      - 1
   type: armor
   weight: 200
 - aegis_name: Orleans_Necklace
@@ -28078,6 +29486,13 @@
   locations:
     - both_accessory
   name: Orleans Necklace
+  on_equip:
+    - - bonus
+      - dex
+      - 2
+    - - bonus
+      - matk
+      - 20
   slots: 1
   type: armor
   weight: 100
@@ -28088,6 +29503,13 @@
   locations:
     - both_accessory
   name: Ecoro Cardslip
+  on_equip:
+    - - bonus
+      - vit
+      - 1
+    - - bonus
+      - luk
+      - 1
   slots: 1
   type: armor
   weight: 100
@@ -28149,6 +29571,13 @@
   locations:
     - both_accessory
   name: Nab Ring
+  on_equip:
+    - - bonus
+      - atk
+      - 10
+    - - bonus
+      - matk
+      - 20
   type: armor
   weight: 100
 - aegis_name: School_Bag
@@ -28267,6 +29696,10 @@
   locations:
     - both_accessory
   name: Dark Rosary
+  on_equip:
+    - - bonus
+      - mdef
+      - 15
   slots: 1
   type: armor
   weight: 100
@@ -28303,6 +29736,10 @@
   locations:
     - both_accessory
   name: Morrigane's Pendant
+  on_equip:
+    - - bonus
+      - str
+      - 2
   slots: 1
   type: armor
   weight: 200
@@ -28314,6 +29751,10 @@
   locations:
     - both_accessory
   name: Morpheus's Ring
+  on_equip:
+    - - bonus
+      - int
+      - 1
   slots: 1
   type: armor
   weight: 100
@@ -28325,6 +29766,10 @@
   locations:
     - both_accessory
   name: Morpheus's Armlet
+  on_equip:
+    - - bonus
+      - int
+      - 1
   slots: 1
   type: armor
   weight: 100
@@ -28352,6 +29797,10 @@
   locations:
     - both_accessory
   name: Happy Gauntlet
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   slots: 1
   type: armor
   weight: 1000
@@ -28423,6 +29872,10 @@
   locations:
     - both_accessory
   name: Thief Handcuff
+  on_equip:
+    - - bonus
+      - atk
+      - 5
   slots: 1
   type: armor
   weight: 2400
@@ -28460,6 +29913,10 @@
   locations:
     - both_accessory
   name: Ettlang Keepsake
+  on_equip:
+    - - bonus
+      - mdef
+      - 10
   type: armor
   weight: 50
 - aegis_name: Fairy_Wing
@@ -28753,6 +30210,10 @@
   locations:
     - both_accessory
   name: Critical Ring
+  on_equip:
+    - - bonus
+      - critical
+      - 5
   slots: 1
   type: armor
   weight: 100
@@ -28787,6 +30248,10 @@
   locations:
     - both_accessory
   name: Spring Afternoon Memory
+  on_equip:
+    - - bonus
+      - mdef
+      - 2
   type: armor
 - aegis_name: Demon_Wing
   armor_level: 1
@@ -28796,6 +30261,10 @@
   locations:
     - both_accessory
   name: Demon Wing
+  on_equip:
+    - - bonus
+      - flee
+      - 5
   slots: 1
   type: armor
   weight: 100
@@ -29214,6 +30683,13 @@
   locations:
     - both_accessory
   name: Snake Ring
+  on_equip:
+    - - bonus
+      - dex
+      - 3
+    - - bonus
+      - mdef
+      - 2
   slots: 1
   type: armor
   weight: 100
@@ -29225,6 +30701,16 @@
   locations:
     - both_accessory
   name: Snake Pendant
+  on_equip:
+    - - bonus
+      - agi
+      - 3
+    - - bonus
+      - luk
+      - 2
+    - - bonus
+      - mdef
+      - 3
   slots: 1
   type: armor
   weight: 100
@@ -29376,6 +30862,13 @@
   locations:
     - both_accessory
   name: RWC Gold Brooch
+  on_equip:
+    - - bonus
+      - matk
+      - 20
+    - - bonus
+      - atk
+      - 20
   slots: 1
   type: armor
   weight: 200
@@ -29430,6 +30923,16 @@
   locations:
     - head_top
   name: Jewel Crown
+  on_equip:
+    - - bonus
+      - int
+      - 2
+    - - bonus
+      - luk
+      - 1
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   type: armor
   view: 88
@@ -29442,6 +30945,13 @@
   locations:
     - head_top
   name: Joker Jester
+  on_equip:
+    - - bonus
+      - luk
+      - 2
+    - - bonus
+      - mdef
+      - 5
   refineable: true
   type: armor
   view: 89
@@ -29488,6 +30998,19 @@
   locations:
     - head_top
   name: Grand Circlet
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - luk
+      - 1
+    - - bonus
+      - mdef
+      - 4
   refineable: true
   type: armor
   view: 93
@@ -29634,6 +31157,10 @@
   locations:
     - head_top
   name: Feather Bonnet
+  on_equip:
+    - - bonus
+      - agi
+      - 1
   refineable: true
   type: armor
   view: 104
@@ -29646,6 +31173,10 @@
   locations:
     - head_top
   name: Corsair
+  on_equip:
+    - - bonus
+      - vit
+      - 1
   refineable: true
   type: armor
   view: 105
@@ -29658,6 +31189,10 @@
   locations:
     - head_top
   name: Kafra Band
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   type: armor
   view: 106
@@ -29675,6 +31210,13 @@
   locations:
     - head_top
   name: Grief for Greed
+  on_equip:
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - dex
+      - 1
   refineable: true
   type: armor
   view: 107
@@ -29703,6 +31245,13 @@
     - head_mid
     - head_top
   name: Hat of the Sun God
+  on_equip:
+    - - bonus
+      - str
+      - 3
+    - - bonus
+      - int
+      - 2
   refineable: true
   type: armor
   view: 138
@@ -29758,6 +31307,16 @@
   locations:
     - head_top
   name: Helm of Angel
+  on_equip:
+    - - bonus
+      - agi
+      - 1
+    - - bonus
+      - luk
+      - 1
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   type: armor
   view: 110
@@ -29771,6 +31330,10 @@
   locations:
     - head_top
   name: Chef Hat
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   refineable: true
   type: armor
   view: 111
@@ -29851,6 +31414,10 @@
   locations:
     - head_top
   name: Mine Hat
+  on_equip:
+    - - bonus
+      - dex
+      - 2
   refineable: true
   type: armor
   view: 116
@@ -29938,6 +31505,13 @@
   locations:
     - head_top
   name: Deviruchi Hat
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - int
+      - 1
   refineable: true
   type: armor
   view: 123
@@ -30008,6 +31582,10 @@
   locations:
     - head_top
   name: Evil Wing Ears
+  on_equip:
+    - - bonus
+      - vit
+      - 1
   refineable: true
   type: armor
   view: 129
@@ -30127,6 +31705,10 @@
     - head_low
     - head_top
   name: Sphinx Hat
+  on_equip:
+    - - bonus
+      - str
+      - 2
   type: armor
   view: 137
   weight: 3000
@@ -30214,6 +31796,10 @@
   locations:
     - head_top
   name: Party Hat
+  on_equip:
+    - - bonus
+      - luk
+      - 1
   refineable: true
   type: armor
   view: 144
@@ -30239,6 +31825,10 @@
   locations:
     - head_top
   name: Straw Hat
+  on_equip:
+    - - bonus
+      - agi
+      - 1
   refineable: true
   type: armor
   view: 146
@@ -30289,6 +31879,13 @@
   locations:
     - head_top
   name: Succubus Horn
+  on_equip:
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - mdef
+      - 10
   refineable: true
   type: armor
   view: 150
@@ -30301,6 +31898,10 @@
   locations:
     - head_top
   name: Sombrero
+  on_equip:
+    - - bonus
+      - agi
+      - 1
   refineable: true
   type: armor
   view: 151
@@ -30314,6 +31915,10 @@
   locations:
     - head_mid
   name: Evil Wing Ears
+  on_equip:
+    - - bonus
+      - str
+      - 1
   type: armor
   view: 152
   weight: 100
@@ -30325,6 +31930,13 @@
   locations:
     - head_top
   name: Kitsune Mask
+  on_equip:
+    - - bonus
+      - agi
+      - 1
+    - - bonus
+      - luk
+      - 1
   refineable: true
   type: armor
   view: 153
@@ -30337,6 +31949,10 @@
   locations:
     - head_top
   name: Hot-blooded Headband
+  on_equip:
+    - - bonus
+      - str
+      - 2
   refineable: true
   type: armor
   view: 154
@@ -30349,6 +31965,10 @@
   locations:
     - head_top
   name: Indian Headband
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   refineable: true
   type: armor
   view: 155
@@ -30362,6 +31982,13 @@
   locations:
     - head_top
   name: Incubus Horn
+  on_equip:
+    - - bonus
+      - agi
+      - 1
+    - - bonus
+      - mdef
+      - 10
   refineable: true
   type: armor
   view: 156
@@ -30374,6 +32001,10 @@
   locations:
     - head_top
   name: Model Training Hat
+  on_equip:
+    - - bonus
+      - dex
+      - 2
   refineable: true
   type: armor
   view: 157
@@ -30387,6 +32018,10 @@
   locations:
     - head_mid
   name: Angel Wing Ears
+  on_equip:
+    - - bonus
+      - str
+      - 1
   type: armor
   view: 158
   weight: 100
@@ -30410,6 +32045,10 @@
   locations:
     - head_top
   name: Beanie
+  on_equip:
+    - - bonus
+      - luk
+      - 1
   refineable: true
   type: armor
   view: 160
@@ -30435,6 +32074,10 @@
   locations:
     - head_top
   name: Sea-Otter Hat
+  on_equip:
+    - - bonus
+      - vit
+      - 1
   refineable: true
   type: armor
   view: 162
@@ -30498,6 +32141,10 @@
   locations:
     - head_top
   name: Red Ribbon
+  on_equip:
+    - - bonus
+      - mdef
+      - 10
   refineable: true
   type: armor
   view: 167
@@ -30645,6 +32292,13 @@
     - head_mid
     - head_top
   name: Helmet of Orc Hero
+  on_equip:
+    - - bonus
+      - str
+      - 2
+    - - bonus
+      - vit
+      - 1
   refineable: true
   type: armor
   view: 178
@@ -30659,6 +32313,13 @@
     - head_mid
     - head_top
   name: Helmet of Orc Hero
+  on_equip:
+    - - bonus
+      - str
+      - 2
+    - - bonus
+      - vit
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -30722,6 +32383,16 @@
   locations:
     - head_top
   name: Sales Banner
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - agi
+      - 1
+    - - bonus
+      - luk
+      - 1
   refineable: true
   type: armor
   view: 183
@@ -30733,6 +32404,13 @@
   locations:
     - head_mid
   name: Takius's Blindfold
+  on_equip:
+    - - bonus
+      - int
+      - 2
+    - - bonus
+      - def
+      - 1
   type: armor
   view: 184
   weight: 100
@@ -30755,6 +32433,13 @@
   locations:
     - head_top
   name: Sunflower Hairpin
+  on_equip:
+    - - bonus
+      - agi
+      - 2
+    - - bonus
+      - critical
+      - 5
   type: armor
   view: 186
   weight: 600
@@ -30989,6 +32674,10 @@
   locations:
     - head_top
   name: Magni's Cap
+  on_equip:
+    - - bonus
+      - str
+      - 2
   refineable: true
   type: armor
   view: 250
@@ -31002,6 +32691,13 @@
   locations:
     - head_top
   name: Ulle's Cap
+  on_equip:
+    - - bonus
+      - dex
+      - 2
+    - - bonus
+      - agi
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -31046,6 +32742,10 @@
   locations:
     - head_top
   name: Morpheus's Hood
+  on_equip:
+    - - bonus
+      - int
+      - 2
   refineable: true
   type: armor
   view: 256
@@ -31059,6 +32759,13 @@
   locations:
     - head_top
   name: Morrigane's Helm
+  on_equip:
+    - - bonus
+      - luk
+      - 2
+    - - bonus
+      - atk
+      - 3
   refineable: true
   type: armor
   view: 257
@@ -31072,6 +32779,13 @@
   locations:
     - head_top
   name: Goibne's Helm
+  on_equip:
+    - - bonus
+      - vit
+      - 3
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   type: armor
   view: 258
@@ -31235,6 +32949,16 @@
   locations:
     - head_top
   name: Hibiscus
+  on_equip:
+    - - bonus
+      - dex
+      - 1
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - mdef
+      - 5
   type: armor
   view: 210
   weight: 200
@@ -31261,6 +32985,10 @@
   locations:
     - head_top
   name: Marionette Doll
+  on_equip:
+    - - bonus
+      - str
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -31312,6 +33040,10 @@
   locations:
     - head_top
   name: Gambler Hat
+  on_equip:
+    - - bonus
+      - luk
+      - 5
   refineable: true
   type: armor
   view: 16
@@ -31355,6 +33087,10 @@
   locations:
     - head_top
   name: Phrygian Cap
+  on_equip:
+    - - bonus
+      - int
+      - 2
   refineable: true
   type: armor
   view: 217
@@ -31365,6 +33101,10 @@
   locations:
     - head_top
   name: Silver Tiara
+  on_equip:
+    - - bonus
+      - int
+      - 2
   refineable: true
   type: armor
   view: 218
@@ -31416,6 +33156,10 @@
   locations:
     - head_top
   name: Angeling Hairpin
+  on_equip:
+    - - bonus
+      - flee
+      - 5
   refineable: true
   type: armor
   view: 222
@@ -31438,6 +33182,10 @@
   locations:
     - head_low
   name: Father's White Moustache
+  on_equip:
+    - - bonus
+      - atk
+      - 20
   type: armor
   view: 25
   weight: 100
@@ -31486,6 +33234,10 @@
   locations:
     - head_top
   name: Monk Hat
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   slots: 1
   type: armor
@@ -31522,6 +33274,10 @@
   locations:
     - head_top
   name: Majestic Goat
+  on_equip:
+    - - bonus
+      - str
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -31585,6 +33341,10 @@
   locations:
     - head_top
   name: Corsair
+  on_equip:
+    - - bonus
+      - vit
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -31599,6 +33359,10 @@
   locations:
     - head_top
   name: Tiara
+  on_equip:
+    - - bonus
+      - int
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -31613,6 +33377,10 @@
   locations:
     - head_top
   name: Crown
+  on_equip:
+    - - bonus
+      - int
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -31632,6 +33400,10 @@
     - head_low
     - head_top
   name: Sphinx Hat
+  on_equip:
+    - - bonus
+      - str
+      - 2
   slots: 1
   type: armor
   view: 137
@@ -31718,6 +33490,10 @@
   locations:
     - head_top
   name: Valkyrie Helm
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
   refineable: true
   slots: 1
   type: armor
@@ -31816,6 +33592,10 @@
   locations:
     - head_top
   name: Golden Tiara
+  on_equip:
+    - - bonus
+      - int
+      - 2
   refineable: true
   type: armor
   view: 232
@@ -31828,6 +33608,10 @@
   locations:
     - head_top
   name: France Holiday Hat
+  on_equip:
+    - - bonus
+      - vit
+      - 1
   refineable: true
   type: armor
   view: 217
@@ -31852,6 +33636,10 @@
     - head_mid
     - head_top
   name: Helm of Darkness
+  on_equip:
+    - - bonus
+      - str
+      - 2
   refineable: true
   slots: 1
   type: armor
@@ -31944,6 +33732,13 @@
   locations:
     - head_top
   name: Wandering Minstrel Hat
+  on_equip:
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - dex
+      - 1
   refineable: true
   type: armor
   view: 240
@@ -31980,6 +33775,13 @@
   locations:
     - head_top
   name: Black Ribbon
+  on_equip:
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   type: armor
   view: 242
@@ -31992,6 +33794,10 @@
   locations:
     - head_top
   name: Yellow Ribbon
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   type: armor
   view: 243
@@ -32004,6 +33810,10 @@
   locations:
     - head_top
   name: Green Ribbon
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   type: armor
   view: 244
@@ -32016,6 +33826,10 @@
   locations:
     - head_top
   name: Pink Ribbon
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   type: armor
   view: 245
@@ -32028,6 +33842,10 @@
   locations:
     - head_top
   name: Red Ribbon
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   type: armor
   view: 246
@@ -32040,6 +33858,10 @@
   locations:
     - head_top
   name: Orange Ribbon
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   type: armor
   view: 247
@@ -32052,6 +33874,10 @@
   locations:
     - head_top
   name: White Ribbon
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   type: armor
   view: 248
@@ -32064,6 +33890,13 @@
   locations:
     - head_top
   name: Drooping Bunny
+  on_equip:
+    - - bonus
+      - dex
+      - 1
+    - - bonus
+      - flee
+      - 2
   refineable: true
   type: armor
   view: 249
@@ -32299,6 +34132,10 @@
   locations:
     - head_top
   name: Evolved Majestic Goat
+  on_equip:
+    - - bonus
+      - str
+      - 2
   refineable: true
   type: armor
   view: 41
@@ -32311,6 +34148,10 @@
   locations:
     - head_top
   name: Evolved Bunny Band
+  on_equip:
+    - - bonus
+      - int
+      - 2
   refineable: true
   type: armor
   view: 15
@@ -32323,6 +34164,13 @@
   locations:
     - head_top
   name: Evolved Drooping Cat
+  on_equip:
+    - - bonus
+      - mdef
+      - 18
+    - - bonus
+      - flee
+      - 3
   refineable: true
   type: armor
   view: 142
@@ -32346,6 +34194,10 @@
   locations:
     - head_mid
   name: Evolved Pair of Red Ribbon
+  on_equip:
+    - - bonus
+      - flee
+      - 5
   type: armor
   view: 169
   weight: 100
@@ -32372,6 +34224,10 @@
     - head_mid
     - head_top
   name: Evolved Big Golden Bell
+  on_equip:
+    - - bonus
+      - agi
+      - 2
   refineable: true
   type: armor
   view: 175
@@ -32425,6 +34281,13 @@
   locations:
     - head_top
   name: Red Deviruchi Hat
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - int
+      - 1
   refineable: true
   type: armor
   view: 271
@@ -32438,6 +34301,13 @@
   locations:
     - head_top
   name: Gray Deviruchi Hat
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - int
+      - 1
   refineable: true
   type: armor
   view: 272
@@ -32451,6 +34321,13 @@
   locations:
     - head_top
   name: Brown Deviruchi Hat
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - int
+      - 1
   refineable: true
   type: armor
   view: 273
@@ -32523,6 +34400,10 @@
   locations:
     - head_top
   name: Brown Beanie
+  on_equip:
+    - - bonus
+      - luk
+      - 1
   refineable: true
   type: armor
   view: 279
@@ -32535,6 +34416,10 @@
   locations:
     - head_top
   name: Blue Beanie
+  on_equip:
+    - - bonus
+      - luk
+      - 1
   refineable: true
   type: armor
   view: 280
@@ -32547,6 +34432,10 @@
   locations:
     - head_top
   name: Pink Beanie
+  on_equip:
+    - - bonus
+      - luk
+      - 1
   refineable: true
   type: armor
   view: 281
@@ -32760,6 +34649,18 @@
   locations:
     - head_top
   name: Lif Doll Hat
+  on_equip:
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - mdef
+      - refine
+    - - bonus
+      - def
+      - - sub
+        - 0
+        - refine
   refineable: true
   slots: 1
   type: armor
@@ -32916,6 +34817,10 @@
   locations:
     - head_top
   name: Apple of Archer
+  on_equip:
+    - - bonus
+      - dex
+      - 4
   type: armor
   view: 72
 - aegis_name: Bunny_Band_C
@@ -32937,6 +34842,10 @@
   locations:
     - head_top
   name: Sakkat
+  on_equip:
+    - - bonus
+      - agi
+      - 3
   type: armor
   view: 67
 - aegis_name: Lord_Circlet_C
@@ -32948,6 +34857,19 @@
   locations:
     - head_top
   name: Grand Circlet
+  on_equip:
+    - - bonus
+      - str
+      - 3
+    - - bonus
+      - int
+      - 3
+    - - bonus
+      - luk
+      - 3
+    - - bonus
+      - mdef
+      - 4
   type: armor
   view: 93
 - aegis_name: Flying_Angel_
@@ -33098,6 +35020,10 @@
   locations:
     - head_top
   name: Baphomet Horns
+  on_equip:
+    - - bonus
+      - str
+      - 1
   type: armor
   view: 41
 - aegis_name: Deviruchi_Cap_C
@@ -33108,6 +35034,13 @@
   locations:
     - head_top
   name: Refined Deviruchi Hat
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - int
+      - 1
   type: armor
   view: 123
 - aegis_name: euRO_Baseball_Cap
@@ -33155,6 +35088,10 @@
   locations:
     - head_top
   name: Vane Hairpin
+  on_equip:
+    - - bonus
+      - agi
+      - 2
   slots: 1
   type: armor
   view: 313
@@ -33179,6 +35116,10 @@
   locations:
     - head_top
   name: Vacation Hat
+  on_equip:
+    - - bonus
+      - vit
+      - 1
   slots: 1
   type: armor
   view: 315
@@ -33191,6 +35132,10 @@
   locations:
     - head_mid
   name: Red Glasses
+  on_equip:
+    - - bonus
+      - int
+      - 1
   type: armor
   view: 316
 - aegis_name: Vanilmirth_Hat
@@ -33212,6 +35157,13 @@
   locations:
     - head_top
   name: Drooping Bunny
+  on_equip:
+    - - bonus
+      - dex
+      - 1
+    - - bonus
+      - flee
+      - 2
   refineable: true
   type: armor
   view: 249
@@ -33272,6 +35224,10 @@
     - head_mid
     - head_top
   name: Golden Bandana
+  on_equip:
+    - - bonus
+      - mdef
+      - 4
   type: armor
   view: 138
   weight: 2400
@@ -33283,6 +35239,13 @@
   locations:
     - head_top
   name: Drooping Nine Tail
+  on_equip:
+    - - bonus
+      - agi
+      - 1
+    - - bonus
+      - critical
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -33400,6 +35363,10 @@
   locations:
     - head_low
   name: Pirate Dagger
+  on_equip:
+    - - bonus
+      - atk
+      - 5
   type: armor
   view: 327
   weight: 100
@@ -33474,6 +35441,10 @@
   locations:
     - head_top
   name: Large Hisbiscus
+  on_equip:
+    - - bonus
+      - mdef
+      - 15
   refineable: true
   slots: 1
   type: armor
@@ -33564,6 +35535,10 @@
   locations:
     - head_top
   name: Poring Party Hat
+  on_equip:
+    - - bonus
+      - flee
+      - 6
   refineable: true
   type: armor
   view: 340
@@ -33614,6 +35589,13 @@
   locations:
     - head_top
   name: Kerchief
+  on_equip:
+    - - bonus
+      - mdef
+      - 2
+    - - bonus
+      - flee
+      - 5
   refineable: true
   type: armor
   view: 343
@@ -33682,6 +35664,10 @@
   locations:
     - head_mid
   name: Evil Wing Ears C
+  on_equip:
+    - - bonus
+      - str
+      - 1
   type: armor
   view: 152
 - aegis_name: Dark_Blindfold_C
@@ -33712,6 +35698,13 @@
   locations:
     - head_top
   name: Corsair C
+  on_equip:
+    - - bonus
+      - vit
+      - 3
+    - - bonus
+      - int
+      - 3
   type: armor
   view: 105
 - aegis_name: Loki_Mask
@@ -33746,6 +35739,13 @@
   locations:
     - head_top
   name: Flapping Angeling
+  on_equip:
+    - - bonus
+      - luk
+      - 2
+    - - bonus
+      - dex
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -33909,6 +35909,10 @@
   locations:
     - head_top
   name: Big Ribbon
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   slots: 1
   type: armor
@@ -33935,6 +35939,10 @@
   locations:
     - head_top
   name: Pirate Bandana
+  on_equip:
+    - - bonus
+      - str
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -33989,6 +35997,13 @@
     - head_mid
     - head_top
   name: Hat of the Sun God
+  on_equip:
+    - - bonus
+      - str
+      - 3
+    - - bonus
+      - int
+      - 2
   refineable: true
   slots: 1
   type: armor
@@ -34207,6 +36222,10 @@
   locations:
     - head_top
   name: Orchid Hairband
+  on_equip:
+    - - bonus
+      - int
+      - 1
   refineable: true
   type: armor
   view: 376
@@ -34245,6 +36264,13 @@
     - head_mid
     - head_top
   name: Dark Randgris Helm
+  on_equip:
+    - - bonus
+      - dex
+      - 3
+    - - bonus
+      - mdef
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -34447,6 +36473,13 @@
   locations:
     - head_mid
   name: Angel Spirit
+  on_equip:
+    - - bonus
+      - str
+      - 2
+    - - bonus
+      - hit
+      - 15
   type: armor
   view: 394
   weight: 200
@@ -34480,6 +36513,10 @@
   locations:
     - head_top
   name: Luoyang NewYear Hat
+  on_equip:
+    - - bonus
+      - luk
+      - 2
   refineable: true
   slots: 1
   type: armor
@@ -34597,6 +36634,10 @@
     - head_mid
     - head_top
   name: Fox Hat
+  on_equip:
+    - - bonus
+      - luk
+      - 1
   type: armor
   view: 403
   weight: 200
@@ -34726,6 +36767,10 @@
   locations:
     - head_top
   name: White Snake Hat
+  on_equip:
+    - - bonus
+      - dex
+      - 2
   refineable: true
   type: armor
   view: 413
@@ -34856,6 +36901,13 @@
   locations:
     - head_top
   name: Linguistic Book Hat
+  on_equip:
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - mdef
+      - 2
   refineable: true
   type: armor
   view: 423
@@ -34905,6 +36957,10 @@
   locations:
     - head_top
   name: Karada Meguricha Hat
+  on_equip:
+    - - bonus
+      - luk
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -34918,6 +36974,10 @@
   locations:
     - head_top
   name: Black Tea Kochakaden Hat
+  on_equip:
+    - - bonus
+      - agi
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -35028,6 +37088,13 @@
   locations:
     - head_top
   name: Bride's Corolla
+  on_equip:
+    - - bonus
+      - luk
+      - 3
+    - - bonus
+      - mdef
+      - 2
   refineable: true
   type: armor
   view: 437
@@ -35124,6 +37191,10 @@
   locations:
     - head_top
   name: Hair Brush
+  on_equip:
+    - - bonus
+      - critical
+      - 6
   refineable: true
   type: armor
   view: 445
@@ -35312,6 +37383,13 @@
   locations:
     - head_top
   name: Drooping Bunny
+  on_equip:
+    - - bonus
+      - dex
+      - 1
+    - - bonus
+      - flee
+      - 2
   refineable: true
   type: armor
   view: 249
@@ -35386,6 +37464,23 @@
   locations:
     - head_top
   name: Hat Of Fortune
+  on_equip:
+    - - bonus
+      - luk
+      - 2
+    - - bonus
+      - mdef
+      - 5
+    - - if
+      - - '>'
+        - refine
+        - 4
+      - - - bonus
+          - luk
+          - - sub
+            - refine
+            - 4
+      - []
   refineable: true
   slots: 1
   type: armor
@@ -35609,6 +37704,10 @@
     - head_mid
     - head_top
   name: Dark Knight Mask
+  on_equip:
+    - - bonus
+      - str
+      - 3
   refineable: true
   type: armor
   view: 479
@@ -35672,6 +37771,10 @@
   locations:
     - head_top
   name: Poring Cake Hat
+  on_equip:
+    - - bonus
+      - luk
+      - 2
   refineable: true
   type: armor
   view: 417
@@ -35684,6 +37787,13 @@
   locations:
     - head_top
   name: Twin Santa Hat
+  on_equip:
+    - - bonus
+      - luk
+      - 1
+    - - bonus
+      - mdef
+      - 1
   refineable: true
   type: armor
   view: 390
@@ -35695,6 +37805,10 @@
   locations:
     - head_top
   name: Love Daddy Hat
+  on_equip:
+    - - bonus
+      - dex
+      - 2
   refineable: true
   type: armor
   view: 484
@@ -35739,6 +37853,13 @@
   locations:
     - head_top
   name: Ulle's Cap
+  on_equip:
+    - - bonus
+      - dex
+      - 2
+    - - bonus
+      - agi
+      - 1
   type: armor
   view: 254
 - aegis_name: Spinx_Helm_I
@@ -35753,6 +37874,10 @@
     - head_low
     - head_top
   name: Sphinx Hat
+  on_equip:
+    - - bonus
+      - str
+      - 5
   type: armor
   view: 137
 - aegis_name: Power_Of_Thor
@@ -35777,6 +37902,10 @@
   locations:
     - head_top
   name: Dice Hat
+  on_equip:
+    - - bonus
+      - luk
+      - 4
   type: armor
   view: 494
   weight: 300
@@ -35878,6 +38007,10 @@
     - head_mid
     - head_top
   name: Wedding Weil
+  on_equip:
+    - - bonus
+      - mdef
+      - 10
   refineable: true
   type: armor
   view: 489
@@ -36042,6 +38175,10 @@
   locations:
     - head_mid
   name: Hawk Eyes
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   type: armor
   view: 23
   weight: 1000
@@ -36067,6 +38204,10 @@
   locations:
     - head_top
   name: Peacock Feather
+  on_equip:
+    - - bonus
+      - int
+      - 2
   refineable: true
   slots: 1
   type: armor
@@ -36114,6 +38255,10 @@
   locations:
     - head_top
   name: Sakura Mist Hat
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -36127,6 +38272,10 @@
   locations:
     - head_top
   name: Sakura Milk Tea Hat
+  on_equip:
+    - - bonus
+      - vit
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -36179,6 +38328,10 @@
   locations:
     - head_top
   name: Frog King Hat
+  on_equip:
+    - - bonus
+      - agi
+      - 1
   slots: 1
   type: armor
   view: 522
@@ -36193,6 +38346,22 @@
     - head_mid
     - head_top
   name: Satanic Bone Helm
+  on_equip:
+    - - bonus
+      - atk
+      - refine
+    - - bonus
+      - matk
+      - refine
+    - - bonus
+      - mdef
+      - 2
+    - - bonus
+      - str
+      - 2
+    - - bonus
+      - int
+      - 2
   refineable: true
   slots: 1
   type: armor
@@ -36309,6 +38478,13 @@
     - head_mid
     - head_top
   name: Tucan Hat
+  on_equip:
+    - - bonus
+      - dex
+      - 3
+    - - bonus
+      - critical
+      - 5
   slots: 1
   type: armor
   view: 528
@@ -36338,6 +38514,16 @@
   locations:
     - head_top
   name: Freyja SCirclet7
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - dex
+      - 1
   type: armor
   view: 18
   weight: 700
@@ -36350,6 +38536,16 @@
   locations:
     - head_top
   name: Freyja SCirclet30
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - dex
+      - 1
   type: armor
   view: 18
   weight: 700
@@ -36362,6 +38558,16 @@
   locations:
     - head_top
   name: Freyja SCirclet60
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - dex
+      - 1
   type: armor
   view: 18
   weight: 700
@@ -36374,6 +38580,16 @@
   locations:
     - head_top
   name: Freyja SCirclet90
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - dex
+      - 1
   type: armor
   view: 18
   weight: 700
@@ -36485,6 +38701,16 @@
   locations:
     - head_top
   name: Festival Grand Circlet
+  on_equip:
+    - - bonus
+      - str
+      - 3
+    - - bonus
+      - int
+      - 3
+    - - bonus
+      - mdef
+      - 3
   type: armor
   view: 93
 - aegis_name: Fest_Bunny_Band
@@ -36543,6 +38769,10 @@
   locations:
     - head_top
   name: Wild Rose Hat
+  on_equip:
+    - - bonus
+      - agi
+      - 3
   refineable: true
   slots: 1
   type: armor
@@ -36759,6 +38989,10 @@
   locations:
     - head_low
   name: Well-Chewed Pencil
+  on_equip:
+    - - bonus
+      - hit
+      - 3
   type: armor
   view: 555
   weight: 100
@@ -36796,6 +39030,10 @@
     - head_mid
     - head_top
   name: Dark Knight Mask
+  on_equip:
+    - - bonus
+      - dex
+      - 3
   refineable: true
   type: armor
   view: 479
@@ -36808,6 +39046,10 @@
   locations:
     - head_top
   name: Voyage Hat
+  on_equip:
+    - - bonus
+      - agi
+      - 2
   refineable: true
   type: armor
   view: 236
@@ -37235,6 +39477,10 @@
   locations:
     - head_top
   name: F Blue Drooping Kitty
+  on_equip:
+    - - bonus
+      - mdef
+      - 15
   refineable: true
   type: armor
   view: 277
@@ -37248,6 +39494,13 @@
   locations:
     - head_top
   name: F Flying Angel
+  on_equip:
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - agi
+      - 1
   refineable: true
   type: armor
   view: 264
@@ -37271,6 +39524,10 @@
   locations:
     - head_mid
   name: F Pair Of Red Ribbon
+  on_equip:
+    - - bonus
+      - flee
+      - 5
   type: armor
   view: 169
   weight: 100
@@ -37295,6 +39552,16 @@
   locations:
     - head_top
   name: F Hibiscus
+  on_equip:
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - dex
+      - 1
+    - - bonus
+      - mdef
+      - 5
   type: armor
   view: 210
   weight: 200
@@ -37318,6 +39585,10 @@
   locations:
     - head_top
   name: F Bunny Band
+  on_equip:
+    - - bonus
+      - int
+      - 2
   refineable: true
   type: armor
   view: 15
@@ -37339,6 +39610,10 @@
   locations:
     - head_top
   name: F Magestic Goat TW
+  on_equip:
+    - - bonus
+      - str
+      - 2
   refineable: true
   type: armor
   view: 41
@@ -37390,6 +39665,10 @@
   locations:
     - head_mid
   name: F Red Glasses
+  on_equip:
+    - - bonus
+      - int
+      - 1
   type: armor
   view: 316
 - aegis_name: F_Chick_Hat
@@ -37413,6 +39692,13 @@
   locations:
     - head_top
   name: F White Deviruchi Cap
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - int
+      - 1
   refineable: true
   type: armor
   view: 272
@@ -37426,6 +39712,10 @@
   locations:
     - head_top
   name: F Vane Hairpin
+  on_equip:
+    - - bonus
+      - agi
+      - 2
   slots: 1
   type: armor
   view: 313
@@ -37449,6 +39739,10 @@
   locations:
     - head_top
   name: F Vacation Hat
+  on_equip:
+    - - bonus
+      - vit
+      - 1
   slots: 1
   type: armor
   view: 315
@@ -37498,6 +39792,13 @@
   locations:
     - head_top
   name: F Drooping Bunny
+  on_equip:
+    - - bonus
+      - dex
+      - 1
+    - - bonus
+      - flee
+      - 2
   refineable: true
   type: armor
   view: 249
@@ -37546,6 +39847,10 @@
   locations:
     - head_top
   name: F Pink Fur Hat
+  on_equip:
+    - - bonus
+      - luk
+      - 1
   refineable: true
   type: armor
   view: 281
@@ -37587,6 +39892,10 @@
   locations:
     - head_top
   name: F Jumping Poring
+  on_equip:
+    - - bonus
+      - luk
+      - 1
   type: armor
   view: 349
   weight: 300
@@ -37708,6 +40017,10 @@
   locations:
     - head_top
   name: F Apple Of Archer C
+  on_equip:
+    - - bonus
+      - dex
+      - 4
   type: armor
   view: 72
 - aegis_name: F_Elven_Ears_C
@@ -37719,6 +40032,10 @@
   locations:
     - head_mid
   name: F Elven Ears C
+  on_equip:
+    - - bonus
+      - int
+      - 1
   type: armor
   view: 73
 - aegis_name: F_Brooch_C
@@ -37729,6 +40046,10 @@
   locations:
     - both_accessory
   name: F Brooch C
+  on_equip:
+    - - bonus
+      - agi
+      - 4
   type: armor
 - aegis_name: F_Magestic_Goat_C
   armor_level: 1
@@ -37738,6 +40059,10 @@
   locations:
     - head_top
   name: F Magestic Goat C
+  on_equip:
+    - - bonus
+      - str
+      - 1
   type: armor
   view: 41
 - aegis_name: Darkness_Helm_J
@@ -37998,6 +40323,10 @@
   locations:
     - head_top
   name: Southern Cross
+  on_equip:
+    - - bonus
+      - int
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -38062,6 +40391,21 @@
   locations:
     - head_top
   name: Scorpio Diadem
+  on_equip:
+    - - bonus
+      - dex
+      - 2
+    - - if
+      - - '>'
+        - refine
+        - 6
+      - - - bonus
+          - dex
+          - 1
+        - - bonus
+          - atk
+          - 5
+      - []
   refineable: true
   slots: 1
   type: armor
@@ -38113,6 +40457,10 @@
   locations:
     - head_top
   name: Green Ribbon
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   type: armor
   view: 244
@@ -38205,6 +40553,10 @@
   locations:
     - head_top
   name: 2009 Love Dad
+  on_equip:
+    - - bonus
+      - vit
+      - 2
   refineable: true
   type: armor
   view: 611
@@ -38290,6 +40642,10 @@
   locations:
     - head_top
   name: E Blue Drooping Kitty
+  on_equip:
+    - - bonus
+      - mdef
+      - 15
   refineable: true
   type: armor
   view: 277
@@ -38303,6 +40659,13 @@
   locations:
     - head_top
   name: E Flying Angel
+  on_equip:
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - agi
+      - 1
   refineable: true
   type: armor
   view: 264
@@ -38314,6 +40677,10 @@
   locations:
     - head_low
   name: E Smoking Pipe
+  on_equip:
+    - - bonus
+      - vit
+      - 1
   type: armor
   view: 55
   weight: 100
@@ -38338,6 +40705,13 @@
   locations:
     - head_top
   name: E Fish On Head
+  on_equip:
+    - - bonus
+      - dex
+      - 1
+    - - bonus
+      - agi
+      - 1
   refineable: true
   type: armor
   view: 149
@@ -38350,6 +40724,16 @@
   locations:
     - head_top
   name: E Hibiscus
+  on_equip:
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - dex
+      - 1
+    - - bonus
+      - mdef
+      - 5
   type: armor
   view: 210
   weight: 200
@@ -38361,6 +40745,13 @@
   locations:
     - head_top
   name: E Cat Hat
+  on_equip:
+    - - bonus
+      - luk
+      - 2
+    - - bonus
+      - mdef
+      - 10
   refineable: true
   type: armor
   view: 182
@@ -38373,6 +40764,10 @@
   locations:
     - head_top
   name: E Bunny Band
+  on_equip:
+    - - bonus
+      - int
+      - 2
   refineable: true
   type: armor
   view: 15
@@ -38394,6 +40789,10 @@
   locations:
     - head_top
   name: E Magestic Goat TW
+  on_equip:
+    - - bonus
+      - str
+      - 2
   refineable: true
   type: armor
   view: 41
@@ -38421,6 +40820,13 @@
   locations:
     - head_top
   name: E Mini Propeller
+  on_equip:
+    - - bonus
+      - dex
+      - 1
+    - - bonus
+      - agi
+      - 2
   refineable: true
   type: armor
   view: 270
@@ -38433,6 +40839,10 @@
   locations:
     - head_top
   name: E Alice Doll
+  on_equip:
+    - - bonus
+      - str
+      - 1
   slots: 1
   type: armor
   view: 208
@@ -38445,6 +40855,10 @@
   locations:
     - head_mid
   name: E Red Glasses
+  on_equip:
+    - - bonus
+      - int
+      - 1
   type: armor
   view: 316
 - aegis_name: E_Chick_Hat
@@ -38456,6 +40870,10 @@
   locations:
     - head_top
   name: E Chick Hat
+  on_equip:
+    - - bonus
+      - luk
+      - 2
   type: armor
   view: 311
   weight: 100
@@ -38468,6 +40886,13 @@
   locations:
     - head_top
   name: E White Deviruchi Cap
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - int
+      - 1
   refineable: true
   type: armor
   view: 272
@@ -38481,6 +40906,10 @@
   locations:
     - head_top
   name: E Vane Hairpin
+  on_equip:
+    - - bonus
+      - agi
+      - 2
   slots: 1
   type: armor
   view: 313
@@ -38504,6 +40933,10 @@
   locations:
     - head_top
   name: E Vacation Hat
+  on_equip:
+    - - bonus
+      - vit
+      - 1
   slots: 1
   type: armor
   view: 315
@@ -38530,6 +40963,16 @@
   locations:
     - head_top
   name: E Water Lily Crown
+  on_equip:
+    - - bonus
+      - dex
+      - 1
+    - - bonus
+      - agi
+      - 1
+    - - bonus
+      - mdef
+      - 3
   slots: 1
   type: armor
   view: 312
@@ -38542,6 +40985,10 @@
   locations:
     - head_top
   name: E Vanilmirth Hat
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
   type: armor
   view: 317
   weight: 1000
@@ -38553,6 +41000,10 @@
   locations:
     - head_top
   name: E Drooping Bunny
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   refineable: true
   type: armor
   view: 249
@@ -38591,6 +41042,10 @@
   locations:
     - head_top
   name: E Ramen Hat
+  on_equip:
+    - - bonus
+      - dex
+      - 4
   type: armor
   view: 320
 - aegis_name: E_Pink_Fur_Hat
@@ -38601,6 +41056,10 @@
   locations:
     - head_top
   name: E Pink Fur Hat
+  on_equip:
+    - - bonus
+      - luk
+      - 1
   refineable: true
   type: armor
   view: 281
@@ -38614,6 +41073,10 @@
   locations:
     - head_top
   name: E Puppy Hat
+  on_equip:
+    - - bonus
+      - agi
+      - 1
   type: armor
   view: 234
   weight: 500
@@ -38631,6 +41094,10 @@
   locations:
     - head_top
   name: E Magic Eyes
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
   refineable: true
   type: armor
   view: 209
@@ -38642,6 +41109,10 @@
   locations:
     - head_top
   name: E Jumping Poring
+  on_equip:
+    - - bonus
+      - luk
+      - 1
   type: armor
   view: 349
   weight: 300
@@ -38654,6 +41125,10 @@
   locations:
     - head_mid
   name: E Robo Eye
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   type: armor
   view: 345
   weight: 200
@@ -38670,6 +41145,10 @@
   locations:
     - head_top
   name: E Yellow Wizardry Hat
+  on_equip:
+    - - bonus
+      - int
+      - 2
   refineable: true
   type: armor
   view: 286
@@ -38691,6 +41170,10 @@
     - head_mid
     - head_top
   name: E Crescent Helm
+  on_equip:
+    - - bonus
+      - vit
+      - 1
   refineable: true
   type: armor
   view: 213
@@ -38705,6 +41188,10 @@
     - head_mid
     - head_top
   name: E Tiger Mask
+  on_equip:
+    - - bonus
+      - str
+      - 3
   type: armor
   view: 181
   weight: 400
@@ -38730,6 +41217,10 @@
   locations:
     - head_top
   name: E Bunny Band C
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
   type: armor
   view: 15
 - aegis_name: E_Centimental_Flower_C
@@ -38752,6 +41243,10 @@
   locations:
     - head_top
   name: E Apple OE Archer C
+  on_equip:
+    - - bonus
+      - dex
+      - 4
   type: armor
   view: 72
 - aegis_name: E_Elven_Ears_C
@@ -38763,6 +41258,10 @@
   locations:
     - head_mid
   name: E Elven Ears C
+  on_equip:
+    - - bonus
+      - int
+      - 1
   type: armor
   view: 73
 - aegis_name: E_Brooch_C
@@ -38773,6 +41272,10 @@
   locations:
     - both_accessory
   name: E Brooch C
+  on_equip:
+    - - bonus
+      - agi
+      - 4
   type: armor
 - aegis_name: E_Magestic_Goat_C
   armor_level: 1
@@ -38782,6 +41285,10 @@
   locations:
     - head_top
   name: E Magestic Goat C
+  on_equip:
+    - - bonus
+      - str
+      - 1
   type: armor
   view: 41
 - aegis_name: E_Ribbon_Green
@@ -38792,6 +41299,10 @@
   locations:
     - head_top
   name: Green Ribbon
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   type: armor
   view: 244
@@ -38894,6 +41405,10 @@
   locations:
     - head_top
   name: Orange Stem Hat
+  on_equip:
+    - - bonus
+      - luk
+      - 3
   type: armor
   view: 620
   weight: 100
@@ -39142,6 +41657,10 @@
   locations:
     - head_top
   name: Noah Hat
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   slots: 1
   type: armor
@@ -39198,6 +41717,13 @@
   locations:
     - head_top
   name: Red Bunny Band
+  on_equip:
+    - - bonus
+      - agi
+      - 2
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   type: armor
   view: 640
@@ -39457,6 +41983,16 @@
   locations:
     - head_top
   name: YellowBunny Hairband
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - dex
+      - 2
   refineable: true
   type: armor
   view: 662
@@ -39469,6 +42005,16 @@
   locations:
     - head_top
   name: PinkBunny Hairband
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - int
+      - 2
+    - - bonus
+      - dex
+      - 1
   refineable: true
   type: armor
   view: 663
@@ -39481,6 +42027,16 @@
   locations:
     - head_top
   name: Green Bunny Hairband
+  on_equip:
+    - - bonus
+      - str
+      - 2
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - dex
+      - 1
   refineable: true
   type: armor
   view: 664
@@ -39506,6 +42062,10 @@
     - head_low
     - head_mid
   name: Thanatos's Maero Mask
+  on_equip:
+    - - bonus
+      - mdef
+      - 2
   type: armor
   view: 666
   weight: 100
@@ -39531,6 +42091,10 @@
     - head_low
     - head_mid
   name: Thanatos Mal Mask
+  on_equip:
+    - - bonus
+      - vit
+      - 1
   type: armor
   view: 667
   weight: 100
@@ -39557,6 +42121,13 @@
   locations:
     - head_top
   name: Tenkaippin Ramen
+  on_equip:
+    - - bonus
+      - int
+      - -1
+    - - bonus
+      - dex
+      - 4
   type: armor
   view: 668
   weight: 500
@@ -39603,6 +42174,14 @@
   locations:
     - head_top
   name: Bright Red Dress Hat
+  on_equip:
+    - - bonus
+      - mdef
+      - - add
+        - 7
+        - - div
+          - refine
+          - 2
   refineable: true
   slots: 1
   type: armor
@@ -39781,6 +42360,16 @@
   locations:
     - head_top
   name: Ph.D Hat V
+  on_equip:
+    - - bonus
+      - int
+      - 5
+    - - bonus
+      - vit
+      - 3
+    - - bonus
+      - dex
+      - 3
   refineable: true
   type: armor
   view: 98
@@ -39848,6 +42437,13 @@
   locations:
     - head_top
   name: Purple Cowboy Hat
+  on_equip:
+    - - bonus
+      - atk
+      - 15
+    - - bonus
+      - flee
+      - -5
   refineable: true
   type: armor
   view: 411
@@ -39924,6 +42520,13 @@
   locations:
     - both_accessory
   name: Arrow of Love
+  on_equip:
+    - - bonus
+      - dex
+      - 5
+    - - bonus
+      - agi
+      - 5
   type: armor
   weight: 100
 - aegis_name: Fools_Day_Hat
@@ -40175,6 +42778,10 @@
   locations:
     - head_low
   name: Buzzy Ball Gum
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
   type: armor
   view: 572
   weight: 100
@@ -40185,6 +42792,13 @@
   locations:
     - head_top
   name: Fools Day Helmet
+  on_equip:
+    - - bonus
+      - int
+      - 5
+    - - bonus
+      - vit
+      - -3
   type: armor
   view: 647
 - aegis_name: Robin_Eyepatch
@@ -40407,6 +43021,13 @@
   locations:
     - head_top
   name: Picky Egg Shell
+  on_equip:
+    - - bonus
+      - vit
+      - 3
+    - - bonus
+      - mdef
+      - 2
   refineable: true
   type: armor
   view: 1001
@@ -40621,6 +43242,10 @@
   locations:
     - head_top
   name: Wedding Veil
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
   refineable: true
   slots: 1
   type: armor
@@ -40718,6 +43343,16 @@
   locations:
     - head_top
   name: Egg Tart Hat
+  on_equip:
+    - - bonus
+      - dex
+      - 2
+    - - bonus
+      - luk
+      - 1
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   type: armor
   view: 1114
@@ -42463,6 +45098,10 @@
   locations:
     - right_hand
   name: Cowardice Blade
+  on_equip:
+    - - bonus
+      - def
+      - 5
   range: 1
   refineable: true
   slots: 1
@@ -42484,6 +45123,10 @@
   locations:
     - right_hand
   name: Cowardice Blade
+  on_equip:
+    - - bonus
+      - def
+      - 5
   range: 1
   refineable: true
   slots: 2
@@ -43733,6 +46376,10 @@
   locations:
     - right_hand
   name: Tourist Dagger
+  on_equip:
+    - - bonus
+      - agi
+      - 2
   range: 1
   subtype: dagger
   type: weapon
@@ -43827,6 +46474,10 @@
   locations:
     - right_hand
   name: Counter Dagger
+  on_equip:
+    - - bonus
+      - critical
+      - 90
   range: 1
   subtype: dagger
   type: weapon
@@ -44260,6 +46911,10 @@
   locations:
     - right_hand
   name: Counter Dagger
+  on_equip:
+    - - bonus
+      - critical
+      - 90
   range: 1
   refineable: true
   slots: 1
@@ -44292,6 +46947,10 @@
   locations:
     - right_hand
   name: Kurenai
+  on_equip:
+    - - bonus
+      - int
+      - 3
   range: 1
   refineable: true
   subtype: dagger
@@ -44310,6 +46969,10 @@
     - right_hand
   magic_attack: 100
   name: Nachal Sword
+  on_equip:
+    - - bonus
+      - int
+      - 3
   range: 1
   refineable: true
   slots: 1
@@ -44448,6 +47111,10 @@
   locations:
     - right_hand
   name: Octopus Knife
+  on_equip:
+    - - bonus
+      - hit
+      - refine
   refineable: true
   slots: 3
   subtype: dagger
@@ -44679,6 +47346,31 @@
     - right_hand
   magic_attack: 50
   name: Krishnagar
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 5
+      - - - bonus
+          - matk
+          - 30
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - matk
+          - 40
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - matk
+          - 50
+      - []
   refineable: true
   slots: 1
   subtype: dagger
@@ -44790,6 +47482,13 @@
     - right_hand
   magic_attack: 90
   name: Owl's Dagger
+  on_equip:
+    - - bonus
+      - int
+      - refine
+    - - bonus
+      - luk
+      - refine
   refineable: true
   slots: 1
   subtype: dagger
@@ -44940,6 +47639,13 @@
   locations:
     - right_hand
   name: Blue Dagger
+  on_equip:
+    - - bonus
+      - str
+      - 5
+    - - bonus
+      - int
+      - 5
   range: 1
   refineable: true
   slots: 1
@@ -44976,6 +47682,13 @@
   locations:
     - right_hand
   name: Blue Knife
+  on_equip:
+    - - bonus
+      - vit
+      - 5
+    - - bonus
+      - int
+      - 5
   range: 1
   refineable: true
   slots: 1
@@ -44994,6 +47707,10 @@
   locations:
     - both_hand
   name: Six Shooter
+  on_equip:
+    - - bonus
+      - hit
+      - -10
   range: 7
   refineable: true
   slots: 1
@@ -45012,6 +47729,10 @@
   locations:
     - both_hand
   name: Six Shooter
+  on_equip:
+    - - bonus
+      - hit
+      - -10
   range: 7
   refineable: true
   slots: 2
@@ -45030,6 +47751,10 @@
   locations:
     - both_hand
   name: Crimson Bolt
+  on_equip:
+    - - bonus
+      - hit
+      - -10
   range: 7
   refineable: true
   slots: 1
@@ -45048,6 +47773,10 @@
   locations:
     - both_hand
   name: Crimson Bolt
+  on_equip:
+    - - bonus
+      - hit
+      - -10
   range: 7
   refineable: true
   slots: 2
@@ -45066,6 +47795,10 @@
   locations:
     - both_hand
   name: Garrison
+  on_equip:
+    - - bonus
+      - hit
+      - -10
   range: 7
   refineable: true
   slots: 1
@@ -45084,6 +47817,10 @@
   locations:
     - both_hand
   name: Garrison
+  on_equip:
+    - - bonus
+      - hit
+      - -10
   range: 7
   refineable: true
   slots: 2
@@ -45196,6 +47933,10 @@
   locations:
     - both_hand
   name: Eden Revlover I
+  on_equip:
+    - - bonus
+      - hit
+      - -5
   range: 7
   subtype: revolver
   type: weapon
@@ -45210,6 +47951,10 @@
   locations:
     - both_hand
   name: Eden Revlover II
+  on_equip:
+    - - bonus
+      - hit
+      - -5
   range: 7
   subtype: revolver
   type: weapon
@@ -45224,6 +47969,10 @@
   locations:
     - both_hand
   name: Eden Revolver III
+  on_equip:
+    - - bonus
+      - hit
+      - -5
   range: 7
   subtype: revolver
   type: weapon
@@ -45256,6 +48005,10 @@
   locations:
     - both_hand
   name: Novice Revolver
+  on_equip:
+    - - bonus
+      - hit
+      - -5
   range: 7
   subtype: revolver
   type: weapon
@@ -45632,6 +48385,29 @@
   locations:
     - both_hand
   name: Diva Handgun
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
   range: 7
   refineable: true
   slots: 1
@@ -45750,6 +48526,13 @@
   locations:
     - both_hand
   name: Cyclone
+  on_equip:
+    - - bonus
+      - hit
+      - 10
+    - - bonus
+      - critical
+      - 10
   range: 9
   refineable: true
   slots: 1
@@ -45768,6 +48551,13 @@
   locations:
     - both_hand
   name: Cyclone
+  on_equip:
+    - - bonus
+      - hit
+      - 10
+    - - bonus
+      - critical
+      - 10
   range: 9
   refineable: true
   slots: 2
@@ -45786,6 +48576,13 @@
   locations:
     - both_hand
   name: Dusk
+  on_equip:
+    - - bonus
+      - hit
+      - 10
+    - - bonus
+      - critical
+      - 10
   range: 9
   refineable: true
   slots: 1
@@ -46360,6 +49157,13 @@
   locations:
     - both_hand
   name: Color Scope
+  on_equip:
+    - - bonus
+      - critical
+      - 30
+    - - bonus
+      - hit
+      - 20
   range: 9
   refineable: true
   slots: 2
@@ -46484,6 +49288,13 @@
   locations:
     - both_hand
   name: Mini Mei
+  on_equip:
+    - - bonus
+      - critical
+      - 5
+    - - bonus
+      - hit
+      - -5
   range: 9
   refineable: true
   slots: 2
@@ -46719,6 +49530,10 @@
   locations:
     - both_hand
   name: Sword Huuma Shuriken
+  on_equip:
+    - - bonus
+      - str
+      - 3
   range: 1
   refineable: true
   subtype: huuma
@@ -46983,6 +49798,29 @@
     - both_hand
   magic_attack: 160
   name: Diva Huuma
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
   range: 3
   refineable: true
   slots: 1
@@ -47001,6 +49839,29 @@
     - both_hand
   magic_attack: 160
   name: Mirage Huuma
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
   range: 5
   refineable: true
   slots: 1
@@ -47309,6 +50170,10 @@
   locations:
     - right_hand
   name: Platinum Shotel
+  on_equip:
+    - - bonus
+      - critical
+      - 50
   range: 1
   refineable: true
   slots: 1
@@ -47795,6 +50660,13 @@
   locations:
     - right_hand
   name: Tourist Sword
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - dex
+      - 1
   range: 1
   subtype: one_handed_sword
   type: weapon
@@ -48367,6 +51239,13 @@
   locations:
     - right_hand
   name: Ru Blue Sword
+  on_equip:
+    - - bonus
+      - str
+      - 5
+    - - bonus
+      - agi
+      - 5
   range: 1
   refineable: true
   slots: 1
@@ -48383,6 +51262,13 @@
   locations:
     - right_hand
   name: Ru Gold Sword
+  on_equip:
+    - - bonus
+      - str
+      - 8
+    - - bonus
+      - agi
+      - 8
   range: 1
   refineable: true
   slots: 2
@@ -48628,6 +51514,29 @@
     - both_hand
   magic_attack: 130
   name: Diva Blade
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
   range: 1
   refineable: true
   slots: 1
@@ -48648,6 +51557,29 @@
     - both_hand
   magic_attack: 130
   name: Mirage Blade
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
   range: 5
   refineable: true
   slots: 1
@@ -49776,6 +52708,16 @@
   locations:
     - armor
   name: Peuz's Plate
+  on_equip:
+    - - bonus
+      - mdef
+      - 10
+    - - bonus
+      - atk
+      - 20
+    - - bonus
+      - flee
+      - 17
   refineable: true
   type: armor
   weight: 3000
@@ -49805,6 +52747,13 @@
   locations:
     - armor
   name: Nab's Cloth
+  on_equip:
+    - - bonus
+      - str
+      - 2
+    - - bonus
+      - int
+      - 2
   refineable: true
   slots: 1
   type: armor
@@ -49818,6 +52767,13 @@
   locations:
     - armor
   name: Prison Uniform
+  on_equip:
+    - - bonus
+      - hit
+      - refine
+    - - bonus
+      - flee
+      - refine
   refineable: true
   type: armor
   weight: 1500
@@ -49860,6 +52816,15 @@
   locations:
     - armor
   name: Black Wing Suits
+  on_equip:
+    - - bonus
+      - int
+      - 2
+    - - bonus
+      - atk
+      - - mul
+        - refine
+        - 3
   refineable: true
   slots: 1
   type: armor
@@ -50020,6 +52985,14 @@
   locations:
     - armor
   name: Special Ninja Suit
+  on_equip:
+    - - bonus
+      - agi
+      - - add
+        - 1
+        - - div
+          - refine
+          - 3
   refineable: true
   type: armor
   weight: 1200
@@ -50067,6 +53040,14 @@
   locations:
     - armor
   name: Special Ninja Suit
+  on_equip:
+    - - bonus
+      - agi
+      - - add
+        - 1
+        - - div
+          - refine
+          - 3
   refineable: true
   slots: 1
   type: armor
@@ -50111,6 +53092,14 @@
   locations:
     - armor
   name: Rider Suit
+  on_equip:
+    - - bonus
+      - agi
+      - - add
+        - 1
+        - - div
+          - refine
+          - 2
   refineable: true
   slots: 1
   type: armor
@@ -50221,6 +53210,10 @@
   locations:
     - armor
   name: Engraved Plate Armor
+  on_equip:
+    - - bonus
+      - mdef
+      - 25
   refineable: true
   slots: 1
   type: armor
@@ -50247,6 +53240,10 @@
   locations:
     - armor
   name: Advanced Angelic Protection
+  on_equip:
+    - - bonus
+      - mdef
+      - 30
   refineable: true
   slots: 1
   type: armor
@@ -50271,6 +53268,13 @@
   locations:
     - armor
   name: Happy Clothes
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
+    - - bonus
+      - luk
+      - refine
   refineable: true
   slots: 1
   type: armor
@@ -50923,6 +53927,10 @@
   locations:
     - armor
   name: Wedding Dress
+  on_equip:
+    - - bonus
+      - mdef
+      - 15
   refineable: true
   type: armor
   weight: 500
@@ -51591,6 +54599,24 @@
   locations:
     - armor
   name: Mine Worker's Vest
+  on_equip:
+    - - bonus
+      - flee
+      - - add
+        - 10
+        - - mul
+          - 4
+          - - div
+            - refine
+            - 2
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - critical
+          - 5
+      - []
   refineable: true
   type: armor
   weight: 1500
@@ -51866,6 +54892,10 @@
   locations:
     - armor
   name: IA Dress
+  on_equip:
+    - - bonus
+      - mdef
+      - 12
   refineable: true
   type: armor
   weight: 800
@@ -52544,6 +55574,10 @@
   locations:
     - armor
   name: Silk Robe
+  on_equip:
+    - - bonus
+      - mdef
+      - 10
   refineable: true
   slots: 1
   type: armor
@@ -52577,6 +55611,10 @@
   locations:
     - armor
   name: Saint's Robe
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
   refineable: true
   slots: 1
   type: armor
@@ -52611,6 +55649,10 @@
   locations:
     - armor
   name: Tights
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -52644,6 +55686,10 @@
   locations:
     - armor
   name: Thief Clothes
+  on_equip:
+    - - bonus
+      - agi
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -52856,7 +55902,6 @@
     - armor
   name: Rabbit Pattern Shirt
   refineable: true
-  res: 15
   slots: 1
   type: armor
   weight: 500
@@ -53062,6 +56107,10 @@
   locations:
     - head_top
   name: Futuristic Tiara
+  on_equip:
+    - - bonus
+      - str
+      - 5
   refineable: true
   type: armor
   view: 1477
@@ -53134,6 +56183,26 @@
   locations:
     - armor
   name: Lava Leather Armor
+  on_equip:
+    - - bonus
+      - atk
+      - 100
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - def
+          - 100
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - def
+          - 50
+      - []
   refineable: true
   slots: 1
   type: armor
@@ -53160,6 +56229,26 @@
   locations:
     - armor
   name: Lava Leather Robe
+  on_equip:
+    - - bonus
+      - matk
+      - 100
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - matk
+          - 50
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - matk
+          - 25
+      - []
   refineable: true
   slots: 1
   type: armor
@@ -54450,6 +57539,21 @@
   locations:
     - head_top
   name: Shang Tsung's Rainbow (OSM)
+  on_equip:
+    - - bonus
+      - int
+      - 3
+    - - bonus
+      - agi
+      - 3
+    - - bonus
+      - mdef
+      - 10
+    - - bonus
+      - matk
+      - - mul
+        - 2
+        - refine
   refineable: true
   slots: 1
   type: armor
@@ -55316,6 +58420,13 @@
   locations:
     - right_hand
   name: Tourist Mace
+  on_equip:
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - agi
+      - 1
   range: 1
   subtype: mace
   type: weapon
@@ -55837,6 +58948,12 @@
   locations:
     - right_hand
   name: Pile Bunker P
+  on_equip:
+    - - bonus
+      - atk
+      - - mul
+        - refine
+        - 5
   range: 1
   refineable: true
   subtype: mace
@@ -55938,6 +59055,13 @@
   locations:
     - right_hand
   name: Blue Mace
+  on_equip:
+    - - bonus
+      - vit
+      - 5
+    - - bonus
+      - int
+      - 5
   range: 1
   refineable: true
   slots: 1
@@ -55954,6 +59078,13 @@
   locations:
     - right_hand
   name: Ru Gold Mace
+  on_equip:
+    - - bonus
+      - vit
+      - 8
+    - - bonus
+      - int
+      - 8
   range: 1
   refineable: true
   slots: 2
@@ -56340,6 +59471,29 @@
     - right_hand
   magic_attack: 110
   name: Diva Mace
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
   range: 1
   refineable: true
   slots: 1
@@ -56363,6 +59517,29 @@
     - right_hand
   magic_attack: 110
   name: Mirage Mace
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
   range: 5
   refineable: true
   slots: 1
@@ -57233,6 +60410,13 @@
   locations:
     - both_hand
   name: Blue Bow
+  on_equip:
+    - - bonus
+      - agi
+      - 5
+    - - bonus
+      - dex
+      - 5
   range: 5
   refineable: true
   slots: 1
@@ -57249,6 +60433,13 @@
   locations:
     - both_hand
   name: Ru Gold Bow
+  on_equip:
+    - - bonus
+      - agi
+      - 8
+    - - bonus
+      - dex
+      - 8
   range: 5
   refineable: true
   slots: 2
@@ -57543,6 +60734,29 @@
     - both_hand
   magic_attack: 170
   name: Diva Wing
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
   range: 5
   refineable: true
   slots: 1
@@ -58465,6 +61679,10 @@
   locations:
     - head_mid
   name: Angel Wing Ears
+  on_equip:
+    - - bonus
+      - str
+      - 1
   slots: 1
   type: armor
   view: 158
@@ -58478,6 +61696,10 @@
   locations:
     - head_mid
   name: Evil Wing Ears
+  on_equip:
+    - - bonus
+      - str
+      - 1
   slots: 1
   type: armor
   view: 152
@@ -58541,6 +61763,10 @@
     - head_low
     - head_mid
   name: Dokkebi Mask
+  on_equip:
+    - - bonus
+      - str
+      - 2
   type: armor
   view: 689
   weight: 700
@@ -58644,6 +61870,10 @@
   locations:
     - head_top
   name: Heart Ribbon Hairband
+  on_equip:
+    - - bonus
+      - int
+      - 2
   refineable: true
   slots: 1
   type: armor
@@ -58707,6 +61937,10 @@
   locations:
     - head_top
   name: Malangdo Hat
+  on_equip:
+    - - bonus
+      - flee
+      - 6
   refineable: true
   slots: 1
   type: armor
@@ -58847,6 +62081,13 @@
   locations:
     - head_top
   name: Tiny Hat
+  on_equip:
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - agi
+      - 1
   refineable: true
   type: armor
   view: 722
@@ -58901,6 +62142,10 @@
   locations:
     - head_top
   name: Proba Angel Blessing
+  on_equip:
+    - - bonus
+      - luk
+      - 2
   refineable: true
   slots: 1
   type: armor
@@ -58991,6 +62236,10 @@
   locations:
     - head_low
   name: Fafnir Mask
+  on_equip:
+    - - bonus
+      - critical
+      - 2
   type: armor
   view: 180
   weight: 300
@@ -59017,6 +62266,10 @@
   locations:
     - head_top
   name: Bone Hat
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   slots: 1
   type: armor
@@ -59068,6 +62321,13 @@
   locations:
     - head_low
   name: Nut Donut In Mouth
+  on_equip:
+    - - bonus
+      - atk
+      - 5
+    - - bonus
+      - matk
+      - 5
   type: armor
   view: 736
 - aegis_name: Stretched_Nose
@@ -59089,6 +62349,10 @@
   locations:
     - head_top
   name: Humming Bird
+  on_equip:
+    - - bonus
+      - mdef
+      - 6
   type: armor
   view: 702
   weight: 100
@@ -59236,6 +62500,10 @@
   locations:
     - head_top
   name: 9th Anni Hat
+  on_equip:
+    - - bonus
+      - mdef
+      - 9
   refineable: true
   type: armor
   view: 745
@@ -59277,6 +62545,10 @@
     - head_mid
     - head_top
   name: Blue Tiger Mask
+  on_equip:
+    - - bonus
+      - str
+      - 3
   type: armor
   view: 748
   weight: 400
@@ -59288,6 +62560,10 @@
   locations:
     - head_top
   name: Navy Drooping Kitty
+  on_equip:
+    - - bonus
+      - mdef
+      - 15
   refineable: true
   type: armor
   view: 749
@@ -59300,6 +62576,10 @@
   locations:
     - head_top
   name: Brown Drooping Kitty
+  on_equip:
+    - - bonus
+      - mdef
+      - 15
   refineable: true
   type: armor
   view: 750
@@ -59374,6 +62654,10 @@
   locations:
     - head_top
   name: Gemma Hairband
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   slots: 1
   type: armor
@@ -59399,6 +62683,10 @@
   locations:
     - head_top
   name: Nestea Hat
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
   refineable: true
   type: armor
   view: 756
@@ -59425,6 +62713,10 @@
   locations:
     - head_top
   name: Magni Cap
+  on_equip:
+    - - bonus
+      - str
+      - 2
   refineable: true
   slots: 1
   type: armor
@@ -59478,6 +62770,10 @@
   locations:
     - head_top
   name: Mini Tree J
+  on_equip:
+    - - bonus
+      - mdef
+      - 20
   slots: 1
   type: armor
   view: 727
@@ -59560,6 +62856,10 @@
   locations:
     - head_top
   name: Dark Age
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   slots: 1
   type: armor
@@ -59633,6 +62933,13 @@
   locations:
     - head_mid
   name: Black Glasses
+  on_equip:
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - mdef
+      - 2
   slots: 1
   type: armor
   view: 404
@@ -59672,6 +62979,10 @@
   locations:
     - head_top
   name: Grim Reaper Hat
+  on_equip:
+    - - bonus
+      - flee
+      - 3
   refineable: true
   slots: 1
   type: armor
@@ -60039,6 +63350,10 @@
   locations:
     - head_low
   name: Scissorhand Model
+  on_equip:
+    - - bonus
+      - agi
+      - 1
   type: armor
   view: 795
   weight: 200
@@ -60050,6 +63365,10 @@
   locations:
     - head_low
   name: Rockhand Model
+  on_equip:
+    - - bonus
+      - str
+      - 1
   type: armor
   view: 796
   weight: 200
@@ -60174,6 +63493,10 @@
   locations:
     - head_top
   name: Deviruchi Headphone
+  on_equip:
+    - - bonus
+      - mdef
+      - 4
   refineable: true
   slots: 1
   type: armor
@@ -60187,6 +63510,10 @@
   locations:
     - head_mid
   name: Goedo Monocle
+  on_equip:
+    - - bonus
+      - agi
+      - 2
   type: armor
   view: 807
   weight: 100
@@ -60248,6 +63575,10 @@
   locations:
     - head_top
   name: Indian Feather Headband
+  on_equip:
+    - - bonus
+      - agi
+      - 2
   refineable: true
   slots: 1
   type: armor
@@ -60262,6 +63593,10 @@
   locations:
     - head_top
   name: Trident Helm
+  on_equip:
+    - - bonus
+      - str
+      - 2
   refineable: true
   slots: 1
   type: armor
@@ -60276,6 +63611,10 @@
   locations:
     - head_top
   name: Antler Fedora
+  on_equip:
+    - - bonus
+      - int
+      - 3
   refineable: true
   type: armor
   view: 811
@@ -60289,6 +63628,10 @@
   locations:
     - head_top
   name: Sunglasses Baseball Hat
+  on_equip:
+    - - bonus
+      - int
+      - 3
   refineable: true
   slots: 1
   type: armor
@@ -60337,6 +63680,10 @@
   locations:
     - head_top
   name: Cat Lace Hairband
+  on_equip:
+    - - bonus
+      - dex
+      - 3
   slots: 1
   type: armor
   view: 816
@@ -60441,6 +63788,13 @@
   locations:
     - head_top
   name: Green Apple Hat
+  on_equip:
+    - - bonus
+      - dex
+      - 2
+    - - bonus
+      - hit
+      - 5
   refineable: true
   slots: 1
   type: armor
@@ -60648,6 +64002,13 @@
   locations:
     - head_top
   name: Mike Hat
+  on_equip:
+    - - bonus
+      - dex
+      - 2
+    - - bonus
+      - luk
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -60676,6 +64037,10 @@
   locations:
     - head_top
   name: Red Hood
+  on_equip:
+    - - bonus
+      - critical
+      - 10
   refineable: true
   slots: 1
   type: armor
@@ -60690,6 +64055,10 @@
   locations:
     - head_top
   name: Phoenix Crown
+  on_equip:
+    - - bonus
+      - int
+      - 2
   refineable: true
   slots: 1
   type: armor
@@ -60750,6 +64119,10 @@
   locations:
     - head_top
   name: Rabbit Ribbon
+  on_equip:
+    - - bonus
+      - int
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -60826,6 +64199,10 @@
   locations:
     - head_top
   name: Can Hat
+  on_equip:
+    - - bonus
+      - luk
+      - 3
   refineable: true
   type: armor
   view: 851
@@ -60839,6 +64216,10 @@
   locations:
     - head_top
   name: Maneater Flower Hat
+  on_equip:
+    - - bonus
+      - flee
+      - 20
   refineable: true
   type: armor
   view: 852
@@ -60912,6 +64293,16 @@
   locations:
     - head_top
   name: Monkey On Fur Hat
+  on_equip:
+    - - bonus
+      - dex
+      - 1
+    - - bonus
+      - agi
+      - 1
+    - - bonus
+      - flee
+      - 10
   refineable: true
   slots: 1
   type: armor
@@ -61186,6 +64577,10 @@
   locations:
     - head_top
   name: Carnation Hairband
+  on_equip:
+    - - bonus
+      - luk
+      - 1
   refineable: true
   type: armor
   view: 878
@@ -61255,6 +64650,10 @@
   locations:
     - head_low
   name: Chilly Breath
+  on_equip:
+    - - bonus
+      - int
+      - 1
   type: armor
   view: 885
   weight: 100
@@ -61278,6 +64677,13 @@
   locations:
     - head_top
   name: Gold Ingot Poring Hat
+  on_equip:
+    - - bonus
+      - dex
+      - 2
+    - - bonus
+      - luk
+      - 2
   refineable: true
   slots: 1
   type: armor
@@ -61497,6 +64903,18 @@
   locations:
     - head_top
   name: Improved Bunny Band
+  on_equip:
+    - - bonus
+      - luk
+      - 2
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - critical
+          - 5
+      - []
   refineable: true
   slots: 1
   type: armor
@@ -61639,6 +65057,13 @@
   locations:
     - head_mid
   name: Improved Opera Phantom Mask
+  on_equip:
+    - - bonus
+      - atk
+      - 5
+    - - bonus
+      - matk
+      - 5
   type: armor
   view: 128
   weight: 200
@@ -61730,6 +65155,10 @@
   locations:
     - head_top
   name: Aladdin Lamp
+  on_equip:
+    - - bonus
+      - luk
+      - 10
   refineable: true
   slots: 1
   type: armor
@@ -61743,6 +65172,10 @@
   locations:
     - head_top
   name: Rabbit Hairband (Peach)
+  on_equip:
+    - - bonus
+      - luk
+      - 2
   refineable: true
   type: armor
   view: 898
@@ -61833,6 +65266,28 @@
   locations:
     - head_top
   name: King Poring Hat
+  on_equip:
+    - - bonus
+      - dex
+      - 1
+    - - bonus
+      - luk
+      - 1
+    - - if
+      - - '>='
+        - refine
+        - 3
+      - - - bonus
+          - dex
+          - - sub
+            - refine
+            - 4
+        - - bonus
+          - luk
+          - - sub
+            - refine
+            - 4
+      - []
   refineable: true
   slots: 1
   type: armor
@@ -62048,6 +65503,13 @@
   locations:
     - head_top
   name: Eclipse Hat
+  on_equip:
+    - - bonus
+      - luk
+      - 3
+    - - bonus
+      - mdef
+      - 5
   refineable: true
   type: armor
   view: 922
@@ -62086,6 +65548,10 @@
   locations:
     - head_mid
   name: Wing Style Spectacle
+  on_equip:
+    - - bonus
+      - agi
+      - 1
   type: armor
   view: 925
   weight: 100
@@ -62096,6 +65562,10 @@
   locations:
     - head_top
   name: Bandana 8th Anniversary
+  on_equip:
+    - - bonus
+      - mdef
+      - 4
   refineable: true
   type: armor
   view: 778
@@ -62157,6 +65627,13 @@
   locations:
     - head_top
   name: Angel School Cap
+  on_equip:
+    - - bonus
+      - int
+      - 2
+    - - bonus
+      - vit
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -62170,6 +65647,13 @@
   locations:
     - head_top
   name: Devil School Cap
+  on_equip:
+    - - bonus
+      - str
+      - 2
+    - - bonus
+      - vit
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -62183,6 +65667,16 @@
   locations:
     - head_top
   name: Evoked Angel School Cap
+  on_equip:
+    - - bonus
+      - int
+      - 2
+    - - bonus
+      - vit
+      - 2
+    - - bonus
+      - luk
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -62196,6 +65690,16 @@
   locations:
     - head_top
   name: Evoked Devil School Cap
+  on_equip:
+    - - bonus
+      - str
+      - 2
+    - - bonus
+      - vit
+      - 2
+    - - bonus
+      - luk
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -62306,6 +65810,13 @@
   locations:
     - head_top
   name: Grief for Greed
+  on_equip:
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - dex
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -62434,6 +65945,10 @@
   locations:
     - head_mid
   name: Poring Sunglasses
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   slots: 1
   type: armor
   view: 954
@@ -62787,6 +66302,10 @@
     - head_low
     - head_mid
   name: Assassin's Skull Mask
+  on_equip:
+    - - bonus
+      - critical
+      - 5
   type: armor
   view: 984
   weight: 500
@@ -62896,6 +66415,10 @@
   locations:
     - head_top
   name: Angry Scorpion Hat
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
   refineable: true
   type: armor
   view: 995
@@ -63331,6 +66854,10 @@
   locations:
     - head_low
   name: Jack Castle Bat
+  on_equip:
+    - - bonus
+      - flee
+      - 5
   type: armor
   view: 1041
   weight: 200
@@ -63352,6 +66879,10 @@
   locations:
     - costume_head_top
   name: 'Costume: Tarnished Lamp'
+  on_equip:
+    - - bonus
+      - luk
+      - 10
   type: armor
   view: 897
   weight: 200
@@ -63388,6 +66919,26 @@
   locations:
     - head_top
   name: Gentleman Fez
+  on_equip:
+    - - bonus
+      - dex
+      - 2
+    - - if
+      - - '>='
+        - refine
+        - 8
+      - - - bonus
+          - dex
+          - 1
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 10
+      - - - bonus
+          - dex
+          - 2
+      - []
   refineable: true
   slots: 1
   type: armor
@@ -63682,6 +67233,16 @@
   locations:
     - head_low
   name: Chocolate Bomb
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - luk
+      - 1
   type: armor
   view: 1110
   weight: 100
@@ -64076,6 +67637,13 @@
   locations:
     - head_mid
   name: Ear of Victory
+  on_equip:
+    - - bonus
+      - vit
+      - 1
+    - - bonus
+      - int
+      - 1
   slots: 1
   type: armor
   view: 1185
@@ -64224,6 +67792,10 @@
   locations:
     - head_top
   name: Aegir Helm
+  on_equip:
+    - - bonus
+      - vit
+      - 3
   refineable: true
   slots: 1
   type: armor
@@ -64393,6 +67965,13 @@
   locations:
     - head_top
   name: Goibne's Helm
+  on_equip:
+    - - bonus
+      - vit
+      - 3
+    - - bonus
+      - mdef
+      - 3
   refineable: true
   slots: 1
   type: armor
@@ -64407,6 +67986,13 @@
   locations:
     - head_top
   name: Morrigane's Helm
+  on_equip:
+    - - bonus
+      - luk
+      - 2
+    - - bonus
+      - atk
+      - 3
   refineable: true
   slots: 1
   type: armor
@@ -64619,6 +68205,13 @@
   locations:
     - head_mid
   name: Angel Spirit
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - hit
+      - 8
   slots: 1
   type: armor
   view: 394
@@ -64636,6 +68229,10 @@
   locations:
     - head_mid
   name: Binoculars
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   slots: 1
   type: armor
   view: 83
@@ -64743,6 +68340,13 @@
   locations:
     - head_low
   name: Piamette Ribbon
+  on_equip:
+    - - bonus
+      - mdef
+      - 1
+    - - bonus
+      - vit
+      - 1
   type: armor
   view: 1403
   weight: 100
@@ -65373,6 +68977,18 @@
   locations:
     - head_top
   name: Lunar Rainbow
+  on_equip:
+    - - bonus
+      - agi
+      - 3
+    - - bonus
+      - mdef
+      - 10
+    - - bonus
+      - matk
+      - - mul
+        - 10
+        - refine
   refineable: true
   slots: 1
   type: armor
@@ -65423,6 +69039,13 @@
   locations:
     - head_mid
   name: Scuba Mask
+  on_equip:
+    - - bonus
+      - atk
+      - 5
+    - - bonus
+      - matk
+      - 5
   slots: 1
   type: armor
   view: 400
@@ -65957,6 +69580,14 @@
   locations:
     - head_top
   name: Illusion Apple of Archer
+  on_equip:
+    - - bonus
+      - dex
+      - - add
+        - 3
+        - - div
+          - refine
+          - 2
   refineable: true
   slots: 1
   type: armor
@@ -66804,6 +70435,13 @@
   locations:
     - head_top
   name: Clover Silk Hat
+  on_equip:
+    - - bonus
+      - hit
+      - 3
+    - - bonus
+      - agi
+      - 2
   refineable: true
   slots: 1
   type: armor
@@ -68019,6 +71657,10 @@
     - costume_head_low
     - costume_head_mid
   name: T Mr Smile
+  on_equip:
+    - - bonus
+      - str
+      - 2
   type: armor
   view: 65
 - aegis_name: T_Spinx_Helm
@@ -68380,6 +72022,13 @@
     - costume_head_mid
     - costume_head_top
   name: Costume Rabbit Earplugs
+  on_equip:
+    - - bonus
+      - agi
+      - 1
+    - - bonus
+      - flee
+      - 2
   type: armor
   view: 515
 - aegis_name: C_Romantic_White_Flower
@@ -68542,6 +72191,10 @@
     - costume_head_mid
     - costume_head_top
   name: Costume Crescent Moon Helm
+  on_equip:
+    - - bonus
+      - vit
+      - 1
   type: armor
   view: 213
 - aegis_name: C_Kabuki_Mask
@@ -68553,6 +72206,10 @@
     - costume_head_mid
     - costume_head_top
   name: Costume Kabuki Mask
+  on_equip:
+    - - bonus
+      - int
+      - 1
   type: armor
   view: 214
 - aegis_name: C_Ayothaya_Hat
@@ -68562,6 +72219,10 @@
   locations:
     - costume_head_top
   name: Costume Ayothaya Hat
+  on_equip:
+    - - bonus
+      - str
+      - 1
   type: armor
   view: 334
 - aegis_name: C_Raven_Cap
@@ -68571,6 +72232,10 @@
   locations:
     - costume_head_top
   name: Costume Crow Hat
+  on_equip:
+    - - bonus
+      - vit
+      - 1
   type: armor
   view: 524
 - aegis_name: C_B_Dragon_Hat
@@ -68580,6 +72245,10 @@
   locations:
     - costume_head_top
   name: Costume Baby Dragon Hat
+  on_equip:
+    - - bonus
+      - agi
+      - 1
   type: armor
   view: 525
 - aegis_name: C_Quati_Hat
@@ -68589,6 +72258,10 @@
   locations:
     - costume_head_top
   name: Costume Coati Hat
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   type: armor
   view: 527
 - aegis_name: C_Tucan_Hat
@@ -68599,6 +72272,10 @@
     - costume_head_mid
     - costume_head_top
   name: Costume Tucan Hat
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   type: armor
   view: 528
 - aegis_name: C_Jaguar_Hat
@@ -68610,6 +72287,10 @@
     - costume_head_mid
     - costume_head_top
   name: Costume Jaguar Hat
+  on_equip:
+    - - bonus
+      - str
+      - 1
   type: armor
   view: 530
 - aegis_name: C_Dragon_Arhat_Mask
@@ -68639,6 +72320,10 @@
   locations:
     - costume_head_top
   name: Costume Chung Hairpin
+  on_equip:
+    - - bonus
+      - int
+      - 1
   type: armor
   view: 583
 - aegis_name: C_Samurai_Mask
@@ -68659,6 +72344,10 @@
     - costume_head_mid
     - costume_head_top
   name: Costume Hatta Black
+  on_equip:
+    - - bonus
+      - vit
+      - 1
   type: armor
   view: 676
 - aegis_name: C_Horn_Of_Ancient
@@ -68668,6 +72357,10 @@
   locations:
     - costume_head_top
   name: Costume Ancient Horns
+  on_equip:
+    - - bonus
+      - str
+      - 1
   type: armor
   view: 757
 - aegis_name: C_Sprout_Hat
@@ -68677,6 +72370,10 @@
   locations:
     - costume_head_top
   name: Costume Sprout Hat
+  on_equip:
+    - - bonus
+      - int
+      - 1
   type: armor
   view: 758
 - aegis_name: C_Mercury_Helm
@@ -68686,6 +72383,10 @@
   locations:
     - costume_head_top
   name: Costume Mercury Riser
+  on_equip:
+    - - bonus
+      - luk
+      - 1
   type: armor
   view: 759
 - aegis_name: C_White_Musang_Hat
@@ -68695,6 +72396,10 @@
   locations:
     - costume_head_top
   name: Costume White Musang Hat
+  on_equip:
+    - - bonus
+      - str
+      - 1
   type: armor
   view: 770
 - aegis_name: C_Black_Musang_Hat
@@ -68704,6 +72409,10 @@
   locations:
     - costume_head_top
   name: Costume Black Musang Hat
+  on_equip:
+    - - bonus
+      - int
+      - 1
   type: armor
   view: 771
 - aegis_name: C_Heart_Wing_Hairband
@@ -69137,6 +72846,10 @@
   locations:
     - costume_head_top
   name: Costume Corsair
+  on_equip:
+    - - bonus
+      - vit
+      - 1
   type: armor
   view: 105
 - aegis_name: C_Detective_Hat
@@ -71985,6 +75698,10 @@
     - costume_head_mid
     - costume_head_top
   name: Costume Evolved Whisper Mask
+  on_equip:
+    - - bonus
+      - flee
+      - 20
   type: armor
   view: 458
 - aegis_name: C_Drooping_Wild_Rose
@@ -78525,6 +82242,19 @@
   locations:
     - garment
   name: Assassin's Muffler
+  on_equip:
+    - - if
+      - - '>'
+        - refine
+        - 5
+      - - - bonus
+          - agi
+          - - mul
+            - - sub
+              - refine
+              - 5
+            - 2
+      - []
   refineable: true
   slots: 1
   type: armor
@@ -78583,6 +82313,10 @@
   locations:
     - garment
   name: Gigant Snake Skin
+  on_equip:
+    - - bonus
+      - mdef
+      - 10
   refineable: true
   type: armor
   weight: 400
@@ -78595,6 +82329,10 @@
   locations:
     - garment
   name: Gigant Snake Skin
+  on_equip:
+    - - bonus
+      - mdef
+      - 10
   refineable: true
   slots: 1
   type: armor
@@ -78726,6 +82464,16 @@
   locations:
     - garment
   name: Ribbon Piamat
+  on_equip:
+    - - bonus
+      - matk
+      - 10
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - dex
+      - 1
   refineable: true
   slots: 1
   type: armor
@@ -79528,6 +83276,13 @@
   locations:
     - garment
   name: Survivor's Manteau
+  on_equip:
+    - - bonus
+      - mdef
+      - 5
+    - - bonus
+      - vit
+      - 10
   refineable: true
   slots: 1
   type: armor
@@ -79602,6 +83357,15 @@
   locations:
     - garment
   name: Oxygen Tank
+  on_equip:
+    - - bonus
+      - flee
+      - - add
+        - 12
+        - refine
+    - - bonus
+      - hit
+      - refine
   refineable: true
   slots: 1
   type: armor
@@ -79747,6 +83511,16 @@
   locations:
     - garment
   name: Fallen Angel Wing
+  on_equip:
+    - - bonus
+      - atk
+      - 10
+    - - bonus
+      - matk
+      - 10
+    - - bonus
+      - mdef
+      - 10
   refineable: true
   slots: 1
   type: armor
@@ -79917,6 +83691,10 @@
   locations:
     - garment
   name: Illusion Survivor Manteau
+  on_equip:
+    - - bonus
+      - vit
+      - 15
   refineable: true
   slots: 1
   type: armor
@@ -80794,6 +84572,10 @@
   locations:
     - garment
   name: High Adventurer Hood
+  on_equip:
+    - - bonus
+      - hit
+      - 10
   slots: 1
   type: armor
 - aegis_name: Cancer_Manteau_J
@@ -81228,6 +85010,10 @@
   locations:
     - both_hand
   name: Heavy Greatsword
+  on_equip:
+    - - bonus
+      - str
+      - 20
   range: 1
   refineable: true
   slots: 1
@@ -81479,6 +85265,29 @@
     - both_hand
   magic_attack: 230
   name: Diva Claymore
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
   range: 1
   refineable: true
   slots: 1
@@ -81497,6 +85306,29 @@
     - both_hand
   magic_attack: 230
   name: Mirage Claymore
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
   range: 5
   refineable: true
   slots: 1
@@ -84317,6 +88149,12 @@
   locations:
     - shoes
   name: Fire Thunder Great Boots
+  on_equip:
+    - - bonus
+      - matk
+      - - mul
+        - 5
+        - refine
   refineable: true
   slots: 1
   type: armor
@@ -84598,6 +88436,13 @@
   locations:
     - shoes
   name: High Adventurer Sandals
+  on_equip:
+    - - bonus
+      - matk
+      - 15
+    - - bonus
+      - atk
+      - 15
   slots: 1
   type: armor
 - aegis_name: Cancer_Shoes_J
@@ -84861,6 +88706,16 @@
   locations:
     - shadow_weapon
   name: Shadow Gauntlets (Tier 1)
+  on_equip:
+    - - bonus
+      - atk
+      - refine
+    - - bonus
+      - matk
+      - refine
+    - - bonus
+      - dex
+      - 1
   refineable: true
   type: shadow_gear
 - aegis_name: T_Luk1_Shield_S
@@ -84909,6 +88764,16 @@
   locations:
     - shadow_weapon
   name: Shadow Gauntlets (Tier 2)
+  on_equip:
+    - - bonus
+      - atk
+      - refine
+    - - bonus
+      - matk
+      - refine
+    - - bonus
+      - dex
+      - 2
   refineable: true
   type: shadow_gear
 - aegis_name: T_Luk2_Shield_S
@@ -84949,6 +88814,16 @@
   locations:
     - shadow_weapon
   name: Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - refine
+    - - bonus
+      - matk
+      - refine
+    - - bonus
+      - dex
+      - 1
   refineable: true
   type: shadow_gear
 - aegis_name: S_Promotion_Armor
@@ -85125,6 +89000,32 @@
   locations:
     - shadow_weapon
   name: Lucky Shadow Weapon
+  on_equip:
+    - - bonus
+      - luk
+      - 1
+    - - bonus
+      - atk
+      - refine
+    - - bonus
+      - matk
+      - refine
+    - - if
+      - - '>'
+        - refine
+        - 6
+      - - - bonus
+          - luk
+          - 1
+      - []
+    - - if
+      - - '>'
+        - refine
+        - 8
+      - - - bonus
+          - luk
+          - 1
+      - []
   refineable: true
   type: shadow_gear
 - aegis_name: S_Power_Earring
@@ -85197,6 +89098,19 @@
   locations:
     - shadow_weapon
   name: Dexterous Shadow Weapon
+  on_equip:
+    - - bonus
+      - dex
+      - 1
+    - - bonus
+      - atk
+      - refine
+    - - bonus
+      - matk
+      - refine
+    - - bonus
+      - hit
+      - refine
   refineable: true
   type: shadow_gear
 - aegis_name: S_Vital_Shield
@@ -85550,6 +89464,20 @@
   locations:
     - shadow_weapon
   name: Gemstone Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - refine
+    - - bonus
+      - matk
+      - refine
+    - - bonus
+      - hit
+      - - add
+        - 5
+        - - div
+          - refine
+          - 2
   refineable: true
   type: shadow_gear
 - aegis_name: S_Gemstone_Earring
@@ -86075,6 +90003,19 @@
   locations:
     - shadow_weapon
   name: Solid Shadow Weapon
+  on_equip:
+    - - bonus
+      - matk
+      - refine
+    - - bonus
+      - atk
+      - - add
+        - - add
+          - refine
+          - 5
+        - - div
+          - refine
+          - 2
   refineable: true
   type: shadow_gear
 - aegis_name: S_Solid_Earring
@@ -88162,6 +92103,16 @@
   locations:
     - shadow_weapon
   name: Beginner's Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - refine
+    - - bonus
+      - matk
+      - refine
+    - - bonus
+      - str
+      - 2
   refineable: true
   type: shadow_gear
 - aegis_name: Rebeginer_Earring_S
@@ -90067,6 +94018,13 @@
   locations:
     - shadow_weapon
   name: Rune Knight's Booster Shadow Weapon
+  on_equip:
+    - - bonus
+      - matk
+      - 10
+    - - bonus
+      - atk
+      - 10
   type: shadow_gear
 - aegis_name: S_LG_B_Weapon
   equip_level_min: 100
@@ -90076,6 +94034,13 @@
   locations:
     - shadow_weapon
   name: Royal Guard's Booster Shadow Weapon
+  on_equip:
+    - - bonus
+      - matk
+      - 10
+    - - bonus
+      - atk
+      - 10
   type: shadow_gear
 - aegis_name: S_NC_B_Weapon
   equip_level_min: 100
@@ -90085,6 +94050,13 @@
   locations:
     - shadow_weapon
   name: Mechanic's Booster Shadow Weapon
+  on_equip:
+    - - bonus
+      - matk
+      - 10
+    - - bonus
+      - atk
+      - 10
   type: shadow_gear
 - aegis_name: S_GN_B_Weapon
   equip_level_min: 100
@@ -90094,6 +94066,13 @@
   locations:
     - shadow_weapon
   name: Genetic's Booster Shadow Weapon
+  on_equip:
+    - - bonus
+      - matk
+      - 10
+    - - bonus
+      - atk
+      - 10
   type: shadow_gear
 - aegis_name: S_GC_B_Weapon
   equip_level_min: 100
@@ -90103,6 +94082,13 @@
   locations:
     - shadow_weapon
   name: Guillotine Cross' Booster Shadow Weapon
+  on_equip:
+    - - bonus
+      - matk
+      - 10
+    - - bonus
+      - atk
+      - 10
   type: shadow_gear
 - aegis_name: S_SC_B_Weapon
   equip_level_min: 100
@@ -90112,6 +94098,13 @@
   locations:
     - shadow_weapon
   name: Shadow Chaser's Booster Shadow Weapon
+  on_equip:
+    - - bonus
+      - matk
+      - 10
+    - - bonus
+      - atk
+      - 10
   type: shadow_gear
 - aegis_name: S_WL_B_Weapon
   equip_level_min: 100
@@ -90121,6 +94114,13 @@
   locations:
     - shadow_weapon
   name: Warlock's Booster Shadow Weapon
+  on_equip:
+    - - bonus
+      - matk
+      - 10
+    - - bonus
+      - atk
+      - 10
   type: shadow_gear
 - aegis_name: S_SO_B_Weapon
   equip_level_min: 100
@@ -90130,6 +94130,13 @@
   locations:
     - shadow_weapon
   name: Sorcerer's Booster Shadow Weapon
+  on_equip:
+    - - bonus
+      - matk
+      - 10
+    - - bonus
+      - atk
+      - 10
   type: shadow_gear
 - aegis_name: S_AB_B_Weapon
   equip_level_min: 100
@@ -90139,6 +94146,13 @@
   locations:
     - shadow_weapon
   name: Archbishop's Booster Shadow Weapon
+  on_equip:
+    - - bonus
+      - matk
+      - 10
+    - - bonus
+      - atk
+      - 10
   type: shadow_gear
 - aegis_name: S_SR_B_Weapon
   equip_level_min: 100
@@ -90148,6 +94162,13 @@
   locations:
     - shadow_weapon
   name: Sura's Booster Shadow Weapon
+  on_equip:
+    - - bonus
+      - matk
+      - 10
+    - - bonus
+      - atk
+      - 10
   type: shadow_gear
 - aegis_name: S_RA_B_Weapon
   equip_level_min: 100
@@ -90157,6 +94178,13 @@
   locations:
     - shadow_weapon
   name: Ranger's Booster Shadow Weapon
+  on_equip:
+    - - bonus
+      - matk
+      - 10
+    - - bonus
+      - atk
+      - 10
   type: shadow_gear
 - aegis_name: S_WM_B_Weapon
   equip_level_min: 100
@@ -90166,6 +94194,13 @@
   locations:
     - shadow_weapon
   name: Minstrel&Wanderer's Booster Shadow Weapon
+  on_equip:
+    - - bonus
+      - matk
+      - 10
+    - - bonus
+      - atk
+      - 10
   type: shadow_gear
 - aegis_name: S_Tail_Dragon_Weapon
   equip_level_min: 99
@@ -90981,6 +95016,13 @@
   locations:
     - shadow_weapon
   name: Super Novice Booster Shadow Weapon
+  on_equip:
+    - - bonus
+      - matk
+      - 10
+    - - bonus
+      - atk
+      - 10
   type: shadow_gear
 - aegis_name: S_Absorb_Shield
   id: 24685
@@ -91075,6 +95117,13 @@
   locations:
     - shadow_weapon
   name: Rune Knight Advanced Paradise Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - 10
+    - - bonus
+      - matk
+      - 10
   type: shadow_gear
 - aegis_name: S_2Para_LG_Weapon
   equip_level_min: 100
@@ -91084,6 +95133,13 @@
   locations:
     - shadow_weapon
   name: Royal Guard Advanced Paradise Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - 10
+    - - bonus
+      - matk
+      - 10
   type: shadow_gear
 - aegis_name: S_2Para_NC_Weapon
   equip_level_min: 100
@@ -91093,6 +95149,13 @@
   locations:
     - shadow_weapon
   name: Mechanic Advanced Paradise Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - 10
+    - - bonus
+      - matk
+      - 10
   type: shadow_gear
 - aegis_name: S_2Para_GN_Weapon
   equip_level_min: 100
@@ -91102,6 +95165,13 @@
   locations:
     - shadow_weapon
   name: Genetic Advanced Paradise Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - 10
+    - - bonus
+      - matk
+      - 10
   type: shadow_gear
 - aegis_name: S_2Para_GC_Weapon
   equip_level_min: 100
@@ -91111,6 +95181,13 @@
   locations:
     - shadow_weapon
   name: Guillotine Cross Advanced Paradise Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - 10
+    - - bonus
+      - matk
+      - 10
   type: shadow_gear
 - aegis_name: S_2Para_SC_Weapon
   equip_level_min: 100
@@ -91120,6 +95197,13 @@
   locations:
     - shadow_weapon
   name: Shadow Chaser Advanced Paradise Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - 10
+    - - bonus
+      - matk
+      - 10
   type: shadow_gear
 - aegis_name: S_2Para_WL_Weapon
   equip_level_min: 100
@@ -91129,6 +95213,13 @@
   locations:
     - shadow_weapon
   name: Warlock Advanced Paradise Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - 10
+    - - bonus
+      - matk
+      - 10
   type: shadow_gear
 - aegis_name: S_2Para_SO_Weapon
   equip_level_min: 100
@@ -91138,6 +95229,13 @@
   locations:
     - shadow_weapon
   name: Sorcerer Advanced Paradise Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - 10
+    - - bonus
+      - matk
+      - 10
   type: shadow_gear
 - aegis_name: S_2Para_AB_Weapon
   equip_level_min: 100
@@ -91147,6 +95245,13 @@
   locations:
     - shadow_weapon
   name: Arch Bishop Advanced Paradise Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - 10
+    - - bonus
+      - matk
+      - 10
   type: shadow_gear
 - aegis_name: S_2Para_SR_Weapon
   equip_level_min: 100
@@ -91156,6 +95261,13 @@
   locations:
     - shadow_weapon
   name: Sura Advanced Paradise Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - 10
+    - - bonus
+      - matk
+      - 10
   type: shadow_gear
 - aegis_name: S_2Para_RA_Weapon
   equip_level_min: 100
@@ -91165,6 +95277,13 @@
   locations:
     - shadow_weapon
   name: Ranger Advanced Paradise Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - 10
+    - - bonus
+      - matk
+      - 10
   type: shadow_gear
 - aegis_name: S_2Para_WM_Weapon
   equip_level_min: 100
@@ -91174,6 +95293,13 @@
   locations:
     - shadow_weapon
   name: Minstrel & Wanderer Adva
+  on_equip:
+    - - bonus
+      - atk
+      - 10
+    - - bonus
+      - matk
+      - 10
   type: shadow_gear
 - aegis_name: S_2Para_KO_Weapon
   equip_level_min: 100
@@ -91184,6 +95310,13 @@
   locations:
     - shadow_weapon
   name: Kagerou & Oboro Advanced Paradise Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - 10
+    - - bonus
+      - matk
+      - 10
   type: shadow_gear
 - aegis_name: S_2Para_RL_Weapon
   equip_level_min: 100
@@ -91194,6 +95327,13 @@
   locations:
     - shadow_weapon
   name: Rebellion Advanced Paradise Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - 10
+    - - bonus
+      - matk
+      - 10
   type: shadow_gear
 - aegis_name: S_2Para_SJ_Weapon
   equip_level_min: 100
@@ -91203,6 +95343,13 @@
   locations:
     - shadow_weapon
   name: Star Emperor Advanced Paradise Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - 10
+    - - bonus
+      - matk
+      - 10
   type: shadow_gear
 - aegis_name: S_2Para_SP_Weapon
   equip_level_min: 100
@@ -91212,6 +95359,13 @@
   locations:
     - shadow_weapon
   name: Soul Reaper Advanced Paradise Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - 10
+    - - bonus
+      - matk
+      - 10
   type: shadow_gear
 - aegis_name: S_2Para_SU_Weapon
   equip_level_min: 100
@@ -91222,6 +95376,13 @@
   locations:
     - shadow_weapon
   name: Doram Advanced Paradise Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - 10
+    - - bonus
+      - matk
+      - 10
   type: shadow_gear
 - aegis_name: S_2Para_NV_Weapon
   equip_level_min: 100
@@ -91232,6 +95393,13 @@
   locations:
     - shadow_weapon
   name: Super Novice Advanced Paradise Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - 10
+    - - bonus
+      - matk
+      - 10
   type: shadow_gear
 - aegis_name: S_AutoSpell_Shield
   id: 24722
@@ -91365,6 +95533,13 @@
   locations:
     - shadow_weapon
   name: Summoner Booster Shadow Weapon
+  on_equip:
+    - - bonus
+      - matk
+      - 10
+    - - bonus
+      - atk
+      - 10
   type: shadow_gear
 - aegis_name: S_SJ_Weapon
   equip_level_min: 100
@@ -91374,6 +95549,13 @@
   locations:
     - shadow_weapon
   name: Star Emperor Booster Shadow Weapon
+  on_equip:
+    - - bonus
+      - matk
+      - 10
+    - - bonus
+      - atk
+      - 10
   type: shadow_gear
 - aegis_name: S_KO_Weapon
   equip_level_min: 100
@@ -91384,6 +95566,13 @@
   locations:
     - shadow_weapon
   name: Kagerou & Oboro Booster Shadow Weapon
+  on_equip:
+    - - bonus
+      - matk
+      - 10
+    - - bonus
+      - atk
+      - 10
   type: shadow_gear
 - aegis_name: S_RL_Weapon
   equip_level_min: 100
@@ -91394,6 +95583,13 @@
   locations:
     - shadow_weapon
   name: Rebellion Booster Shadow Weapon
+  on_equip:
+    - - bonus
+      - matk
+      - 10
+    - - bonus
+      - atk
+      - 10
   type: shadow_gear
 - aegis_name: S_SP_Weapon
   equip_level_min: 100
@@ -91403,6 +95599,13 @@
   locations:
     - shadow_weapon
   name: Soul Reaper Booster Shadow Weapon
+  on_equip:
+    - - bonus
+      - matk
+      - 10
+    - - bonus
+      - atk
+      - 10
   type: shadow_gear
 - aegis_name: S_NV_Weapon
   equip_level_min: 100
@@ -91461,6 +95664,34 @@
   locations:
     - shadow_weapon
   name: Physical Power Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - refine
+    - - bonus
+      - matk
+      - refine
+    - - bonus
+      - pow
+      - - div
+        - refine
+        - 2
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - patk
+          - 3
+        - - if
+          - - '>='
+            - refine
+            - 9
+          - - - bonus
+              - patk
+              - 3
+          - []
+      - []
   refineable: true
   type: shadow_gear
 - aegis_name: S_P_Power_Shield
@@ -91475,6 +95706,34 @@
   locations:
     - shadow_weapon
   name: Magical Spell Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - refine
+    - - bonus
+      - matk
+      - refine
+    - - bonus
+      - spl
+      - - div
+        - refine
+        - 2
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - smatk
+          - 3
+        - - if
+          - - '>='
+            - refine
+            - 9
+          - - - bonus
+              - smatk
+              - 3
+          - []
+      - []
   refineable: true
   type: shadow_gear
 - aegis_name: S_M_Spell_Shield
@@ -91489,6 +95748,38 @@
   locations:
     - shadow_weapon
   name: Concentration Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - refine
+    - - bonus
+      - matk
+      - refine
+    - - bonus
+      - con
+      - refine
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - patk
+          - 2
+        - - bonus
+          - smatk
+          - 2
+        - - if
+          - - '>='
+            - refine
+            - 9
+          - - - bonus
+              - patk
+              - 2
+            - - bonus
+              - smatk
+              - 2
+          - []
+      - []
   refineable: true
   type: shadow_gear
 - aegis_name: S_Concentration_Shield
@@ -91503,6 +95794,32 @@
   locations:
     - shadow_weapon
   name: Wisdom Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - refine
+    - - bonus
+      - matk
+      - refine
+    - - bonus
+      - wis
+      - refine
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - mres
+          - 30
+        - - if
+          - - '>='
+            - refine
+            - 9
+          - - - bonus
+              - mres
+              - 30
+          - []
+      - []
   refineable: true
   type: shadow_gear
 - aegis_name: S_Wisdom_Shield
@@ -91517,6 +95834,32 @@
   locations:
     - shadow_weapon
   name: Stamina Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - refine
+    - - bonus
+      - matk
+      - refine
+    - - bonus
+      - sta
+      - refine
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - res
+          - 30
+        - - if
+          - - '>='
+            - refine
+            - 9
+          - - - bonus
+              - res
+              - 30
+          - []
+      - []
   refineable: true
   type: shadow_gear
 - aegis_name: S_Stamina_Shield
@@ -91601,6 +95944,13 @@
   locations:
     - shadow_weapon
   name: 1Lv Shadow Weapon
+  on_equip:
+    - - bonus
+      - atk
+      - refine
+    - - bonus
+      - matk
+      - refine
   refineable: true
   type: shadow_gear
 - aegis_name: 1LvShieldS
@@ -93322,6 +97672,29 @@
     - both_hand
   magic_attack: 230
   name: Diva Lance
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
   range: 3
   refineable: true
   slots: 1
@@ -93340,6 +97713,29 @@
     - both_hand
   magic_attack: 230
   name: Mirage Lance
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
   range: 5
   refineable: true
   slots: 1
@@ -94872,6 +99268,13 @@
   locations:
     - both_hand
   name: Blue Katar
+  on_equip:
+    - - bonus
+      - agi
+      - 5
+    - - bonus
+      - str
+      - 5
   range: 1
   refineable: true
   slots: 1
@@ -94888,6 +99291,13 @@
   locations:
     - both_hand
   name: Ru Gold Katar
+  on_equip:
+    - - bonus
+      - agi
+      - 8
+    - - bonus
+      - str
+      - 8
   range: 1
   refineable: true
   slots: 2
@@ -95006,6 +99416,29 @@
     - both_hand
   magic_attack: 250
   name: Diva Katar
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
   range: 1
   refineable: true
   slots: 1
@@ -95023,6 +99456,29 @@
     - both_hand
   magic_attack: 250
   name: Mirage Katar
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
   range: 5
   refineable: true
   slots: 1
@@ -95449,6 +99905,13 @@
   locations:
     - both_hand
   name: Blue Twohand Axe
+  on_equip:
+    - - bonus
+      - str
+      - 5
+    - - bonus
+      - vit
+      - 5
   range: 1
   refineable: true
   slots: 1
@@ -95465,6 +99928,13 @@
   locations:
     - both_hand
   name: Ru Gold Axe M
+  on_equip:
+    - - bonus
+      - str
+      - 8
+    - - bonus
+      - vit
+      - 8
   range: 1
   refineable: true
   slots: 2
@@ -95629,6 +100099,29 @@
     - both_hand
   magic_attack: 200
   name: Diva Twohand Axe
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
   range: 1
   refineable: true
   slots: 1
@@ -95649,6 +100142,29 @@
     - both_hand
   magic_attack: 200
   name: Mirage Twohand Axe
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
   range: 5
   refineable: true
   slots: 1
@@ -96706,6 +101222,16 @@
   locations:
     - both_accessory
   name: Shinobi Short Sword
+  on_equip:
+    - - bonus
+      - vit
+      - 1
+    - - bonus
+      - luk
+      - 1
+    - - bonus
+      - mdef
+      - 1
   type: armor
   weight: 600
 - aegis_name: Ball_Of_Huuma
@@ -96719,6 +101245,16 @@
   locations:
     - both_accessory
   name: Fuma's Jewel
+  on_equip:
+    - - bonus
+      - int
+      - 1
+    - - bonus
+      - dex
+      - 1
+    - - bonus
+      - mdef
+      - 1
   type: armor
   weight: 600
 - aegis_name: Vesper_Core01_
@@ -96772,6 +101308,16 @@
   locations:
     - both_accessory
   name: Vesper Core 02
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
+    - - bonus
+      - str
+      - 3
+    - - bonus
+      - atk
+      - 10
   slots: 1
   type: armor
   weight: 500
@@ -96799,6 +101345,16 @@
   locations:
     - both_accessory
   name: Vesper Core 03
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
+    - - bonus
+      - agi
+      - 3
+    - - bonus
+      - flee
+      - 5
   slots: 1
   type: armor
   weight: 500
@@ -96826,6 +101382,16 @@
   locations:
     - both_accessory
   name: Vesper Core 04
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
+    - - bonus
+      - dex
+      - 3
+    - - bonus
+      - hit
+      - 10
   slots: 1
   type: armor
   weight: 500
@@ -96867,6 +101433,13 @@
   locations:
     - both_accessory
   name: Platinum Ring
+  on_equip:
+    - - bonus
+      - luk
+      - 2
+    - - bonus
+      - mdef
+      - 3
   slots: 1
   type: armor
   weight: 200
@@ -96887,6 +101460,10 @@
   locations:
     - both_accessory
   name: Glorious Hand
+  on_equip:
+    - - bonus
+      - hit
+      - 10
   slots: 1
   type: armor
   weight: 50
@@ -97006,6 +101583,10 @@
   locations:
     - both_accessory
   name: Broken Chips 01
+  on_equip:
+    - - bonus
+      - str
+      - 4
   slots: 1
   type: armor
   weight: 100
@@ -97017,6 +101598,10 @@
   locations:
     - both_accessory
   name: Broken Chips 02
+  on_equip:
+    - - bonus
+      - int
+      - 4
   slots: 1
   type: armor
   weight: 100
@@ -97068,6 +101653,13 @@
   locations:
     - both_accessory
   name: Critical Anklet
+  on_equip:
+    - - bonus
+      - critical
+      - 5
+    - - bonus
+      - mdef
+      - 3
   slots: 1
   type: armor
   weight: 200
@@ -97132,6 +101724,16 @@
   locations:
     - both_accessory
   name: Shinobi Sash
+  on_equip:
+    - - bonus
+      - str
+      - 1
+    - - bonus
+      - agi
+      - 1
+    - - bonus
+      - mdef
+      - 1
   slots: 1
   type: armor
   weight: 300
@@ -97207,6 +101809,13 @@
   locations:
     - both_accessory
   name: Vesper Gear 03
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
+    - - bonus
+      - flee
+      - 10
   slots: 1
   type: armor
   weight: 100
@@ -97229,6 +101838,13 @@
   locations:
     - both_accessory
   name: Vesper Gear 04
+  on_equip:
+    - - bonus
+      - mdef
+      - 3
+    - - bonus
+      - hit
+      - 10
   slots: 1
   type: armor
   weight: 100
@@ -97255,6 +101871,13 @@
   locations:
     - both_accessory
   name: Guardian Barrel
+  on_equip:
+    - - bonus
+      - agi
+      - 2
+    - - bonus
+      - dex
+      - 5
   slots: 1
   type: armor
   weight: 500
@@ -97459,6 +102082,10 @@
   locations:
     - both_accessory
   name: Lesser Mackerel Talisman
+  on_equip:
+    - - bonus
+      - vit
+      - 1
   slots: 1
   type: armor
   weight: 100
@@ -97473,6 +102100,10 @@
   locations:
     - both_accessory
   name: Intermediate Mackerel Talisman
+  on_equip:
+    - - bonus
+      - vit
+      - 2
   slots: 1
   type: armor
   weight: 100
@@ -97487,6 +102118,10 @@
   locations:
     - both_accessory
   name: Greater Mackerel Talisman
+  on_equip:
+    - - bonus
+      - vit
+      - 3
   slots: 1
   type: armor
   weight: 100
@@ -97501,6 +102136,10 @@
   locations:
     - both_accessory
   name: Lesser Leaf Talisman
+  on_equip:
+    - - bonus
+      - int
+      - 1
   slots: 1
   type: armor
   weight: 100
@@ -97515,6 +102154,10 @@
   locations:
     - both_accessory
   name: Intermediate Leaf Talisman
+  on_equip:
+    - - bonus
+      - int
+      - 2
   slots: 1
   type: armor
   weight: 100
@@ -97529,6 +102172,10 @@
   locations:
     - both_accessory
   name: Greater Leaf Talisman
+  on_equip:
+    - - bonus
+      - int
+      - 3
   slots: 1
   type: armor
   weight: 100
@@ -97543,6 +102190,10 @@
   locations:
     - both_accessory
   name: Lesser Rabbit Talisman
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   slots: 1
   type: armor
   weight: 100
@@ -97557,6 +102208,10 @@
   locations:
     - both_accessory
   name: Intermediate Rabbit Talisman
+  on_equip:
+    - - bonus
+      - dex
+      - 2
   slots: 1
   type: armor
   weight: 100
@@ -97571,6 +102226,10 @@
   locations:
     - both_accessory
   name: Greater Rabbit Talisman
+  on_equip:
+    - - bonus
+      - dex
+      - 3
   slots: 1
   type: armor
   weight: 100
@@ -97706,6 +102365,13 @@
   locations:
     - both_accessory
   name: Spiritual Ring
+  on_equip:
+    - - bonus
+      - int
+      - 2
+    - - bonus
+      - dex
+      - 1
   slots: 1
   type: armor
   weight: 100
@@ -97817,6 +102483,13 @@
   locations:
     - both_accessory
   name: Hippie Feather
+  on_equip:
+    - - bonus
+      - critical
+      - 5
+    - - bonus
+      - flee
+      - 5
   type: armor
   weight: 200
 - aegis_name: Para_Team_Ring100A
@@ -97834,6 +102507,10 @@
   locations:
     - both_accessory
   name: Awakened Eden Group Necklace of Strength I
+  on_equip:
+    - - bonus
+      - str
+      - 1
   type: armor
 - aegis_name: Para_Team_Ring115A
   armor_level: 1
@@ -97850,6 +102527,10 @@
   locations:
     - both_accessory
   name: Awakened Eden Group Necklace of Strength II
+  on_equip:
+    - - bonus
+      - str
+      - 2
   type: armor
 - aegis_name: Para_Team_Ring130A
   armor_level: 1
@@ -97866,6 +102547,10 @@
   locations:
     - both_accessory
   name: Awakened Eden Group Necklace of Strength III
+  on_equip:
+    - - bonus
+      - str
+      - 3
   type: armor
 - aegis_name: Para_Team_Ring145A
   armor_level: 1
@@ -97882,6 +102567,10 @@
   locations:
     - both_accessory
   name: Awakened Eden Group Necklace of Strength IV
+  on_equip:
+    - - bonus
+      - str
+      - 4
   type: armor
 - aegis_name: Para_Team_Ring160A
   armor_level: 1
@@ -97914,6 +102603,10 @@
   locations:
     - both_accessory
   name: Awakened Eden Group Necklace of Magic I
+  on_equip:
+    - - bonus
+      - int
+      - 1
   type: armor
 - aegis_name: Para_Team_Ring115B
   armor_level: 1
@@ -97930,6 +102623,10 @@
   locations:
     - both_accessory
   name: Awakened Eden Group Necklace of Magic II
+  on_equip:
+    - - bonus
+      - int
+      - 2
   type: armor
 - aegis_name: Para_Team_Ring130B
   armor_level: 1
@@ -97946,6 +102643,10 @@
   locations:
     - both_accessory
   name: Awakened Eden Group Necklace of Magic III
+  on_equip:
+    - - bonus
+      - int
+      - 3
   type: armor
 - aegis_name: Para_Team_Ring145B
   armor_level: 1
@@ -97962,6 +102663,10 @@
   locations:
     - both_accessory
   name: Awakened Eden Group Necklace of Magic IV
+  on_equip:
+    - - bonus
+      - int
+      - 4
   type: armor
 - aegis_name: Para_Team_Ring160B
   armor_level: 1
@@ -97994,6 +102699,10 @@
   locations:
     - both_accessory
   name: Awakened Eden Group Necklace of Agility I
+  on_equip:
+    - - bonus
+      - dex
+      - 1
   type: armor
 - aegis_name: Para_Team_Ring115C
   armor_level: 1
@@ -98010,6 +102719,10 @@
   locations:
     - both_accessory
   name: Awakened Eden Group Necklace of Agility II
+  on_equip:
+    - - bonus
+      - dex
+      - 2
   type: armor
 - aegis_name: Para_Team_Ring130C
   armor_level: 1
@@ -98026,6 +102739,10 @@
   locations:
     - both_accessory
   name: Awakened Eden Group Necklace of Agility III
+  on_equip:
+    - - bonus
+      - dex
+      - 3
   type: armor
 - aegis_name: Para_Team_Ring145C
   armor_level: 1
@@ -98042,6 +102759,10 @@
   locations:
     - both_accessory
   name: Awakened Eden Group Necklace of Agility IV
+  on_equip:
+    - - bonus
+      - dex
+      - 4
   type: armor
 - aegis_name: Para_Team_Ring160C
   armor_level: 1
@@ -98074,6 +102795,10 @@
   locations:
     - both_accessory
   name: Eden Group Necklace of Recovery I
+  on_equip:
+    - - bonus
+      - vit
+      - 1
   type: armor
 - aegis_name: Para_Team_Ring115D
   armor_level: 1
@@ -98090,6 +102815,10 @@
   locations:
     - both_accessory
   name: Eden Group Necklace of Recovery II
+  on_equip:
+    - - bonus
+      - vit
+      - 2
   type: armor
 - aegis_name: Para_Team_Ring130D
   armor_level: 1
@@ -98106,6 +102835,10 @@
   locations:
     - both_accessory
   name: Eden Group Necklace of Recovery III
+  on_equip:
+    - - bonus
+      - vit
+      - 3
   type: armor
 - aegis_name: Para_Team_Ring145D
   armor_level: 1
@@ -98122,6 +102855,10 @@
   locations:
     - both_accessory
   name: Eden Group Necklace of Recovery IV
+  on_equip:
+    - - bonus
+      - vit
+      - 4
   type: armor
 - aegis_name: Para_Team_Ring160D
   armor_level: 1
@@ -98534,6 +103271,13 @@
   locations:
     - both_accessory
   name: Subjugation Team's Ring
+  on_equip:
+    - - bonus
+      - str
+      - 2
+    - - bonus
+      - int
+      - 2
   slots: 1
   type: armor
   weight: 100
@@ -98544,6 +103288,10 @@
   locations:
     - both_accessory
   name: Expedition's Ring
+  on_equip:
+    - - bonus
+      - str
+      - 3
   slots: 1
   type: armor
   weight: 100
@@ -98554,6 +103302,10 @@
   locations:
     - both_accessory
   name: Expedition's Magic Ring
+  on_equip:
+    - - bonus
+      - int
+      - 3
   slots: 1
   type: armor
   weight: 100
@@ -98564,6 +103316,13 @@
   locations:
     - both_accessory
   name: Contingent Ring
+  on_equip:
+    - - bonus
+      - str
+      - 3
+    - - bonus
+      - agi
+      - 1
   slots: 1
   type: armor
   weight: 100
@@ -98574,6 +103333,13 @@
   locations:
     - both_accessory
   name: Contingent Glove
+  on_equip:
+    - - bonus
+      - dex
+      - 3
+    - - bonus
+      - agi
+      - 1
   slots: 1
   type: armor
   weight: 100
@@ -98584,6 +103350,13 @@
   locations:
     - both_accessory
   name: Contingent Magic Ring
+  on_equip:
+    - - bonus
+      - int
+      - 3
+    - - bonus
+      - dex
+      - 1
   slots: 1
   type: armor
   weight: 100
@@ -98594,6 +103367,13 @@
   locations:
     - both_accessory
   name: Contingent Necklace
+  on_equip:
+    - - bonus
+      - int
+      - 3
+    - - bonus
+      - vit
+      - 1
   slots: 1
   type: armor
 - aegis_name: 90Lv_Aring
@@ -98603,6 +103383,13 @@
   locations:
     - both_accessory
   name: Conqueror's Ring
+  on_equip:
+    - - bonus
+      - str
+      - 3
+    - - bonus
+      - agi
+      - 2
   slots: 1
   type: armor
   weight: 100
@@ -98613,6 +103400,13 @@
   locations:
     - both_accessory
   name: Conqueror's Glove
+  on_equip:
+    - - bonus
+      - dex
+      - 3
+    - - bonus
+      - agi
+      - 2
   slots: 1
   type: armor
   weight: 100
@@ -98623,6 +103417,13 @@
   locations:
     - both_accessory
   name: Conqueror's Magic Ring
+  on_equip:
+    - - bonus
+      - int
+      - 3
+    - - bonus
+      - dex
+      - 2
   slots: 1
   type: armor
   weight: 100
@@ -98633,6 +103434,13 @@
   locations:
     - both_accessory
   name: Conqueror's Necklace
+  on_equip:
+    - - bonus
+      - int
+      - 3
+    - - bonus
+      - vit
+      - 2
   slots: 1
   type: armor
   weight: 100
@@ -99054,6 +103862,13 @@
   locations:
     - right_hand
   name: Blue Book
+  on_equip:
+    - - bonus
+      - agi
+      - 5
+    - - bonus
+      - dex
+      - 5
   range: 1
   refineable: true
   slots: 1
@@ -99070,6 +103885,13 @@
   locations:
     - right_hand
   name: Ru Gold Book
+  on_equip:
+    - - bonus
+      - vit
+      - 8
+    - - bonus
+      - int
+      - 8
   range: 1
   refineable: true
   slots: 2
@@ -99662,6 +104484,13 @@
   locations:
     - right_hand
   name: Ru Gold Dagger
+  on_equip:
+    - - bonus
+      - str
+      - 8
+    - - bonus
+      - int
+      - 8
   range: 1
   refineable: true
   slots: 2
@@ -99678,6 +104507,13 @@
   locations:
     - right_hand
   name: Ru Gold Knife
+  on_equip:
+    - - bonus
+      - vit
+      - 8
+    - - bonus
+      - int
+      - 8
   range: 1
   refineable: true
   slots: 2
@@ -100182,6 +105018,29 @@
     - right_hand
   magic_attack: 120
   name: Diva Dagger
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
   range: 1
   refineable: true
   slots: 1
@@ -100218,6 +105077,29 @@
     - right_hand
   magic_attack: 120
   name: Mirage Dagger
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
   range: 5
   refineable: true
   slots: 1
@@ -101355,6 +106237,10 @@
   locations:
     - left_hand
   name: Happy Shield
+  on_equip:
+    - - bonus
+      - mdef
+      - 10
   refineable: true
   slots: 1
   type: armor
@@ -110208,6 +115094,29 @@
     - right_hand
   magic_attack: 110
   name: Diva Spear
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
   range: 3
   refineable: true
   slots: 1
@@ -110226,6 +115135,29 @@
     - right_hand
   magic_attack: 110
   name: Mirage Spear
+  on_equip:
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
+    - - if
+      - - '>='
+        - refine
+        - 9
+      - - - bonus
+          - atk
+          - 30
+        - - bonus
+          - hit
+          - 5
+      - []
   range: 5
   refineable: true
   slots: 1
@@ -111092,6 +116024,13 @@
   locations:
     - both_accessory
   name: Main Memory
+  on_equip:
+    - - bonus
+      - int
+      - 3
+    - - bonus
+      - dex
+      - 3
   slots: 1
   type: armor
   weight: 100
@@ -119334,6 +124273,13 @@
   locations:
     - head_mid
   name: Battle Processor
+  on_equip:
+    - - bonus
+      - matk
+      - 20
+    - - bonus
+      - atk
+      - 20
   type: armor
   view: 1552
 - aegis_name: Battle_Processor_
@@ -119342,6 +124288,13 @@
   locations:
     - head_mid
   name: Battle Processor
+  on_equip:
+    - - bonus
+      - matk
+      - 10
+    - - bonus
+      - atk
+      - 10
   slots: 1
   type: armor
   view: 1552
@@ -122458,6 +127411,16 @@
   locations:
     - head_low
   name: Isabella Carrot
+  on_equip:
+    - - bonus
+      - vit
+      - 1
+    - - bonus
+      - dex
+      - 1
+    - - bonus
+      - int
+      - 1
   type: armor
   view: 829
   weight: 100
@@ -123546,6 +128509,16 @@
   locations:
     - head_low
   name: '[Not For Sale] Isabella Carrot'
+  on_equip:
+    - - bonus
+      - vit
+      - 1
+    - - bonus
+      - dex
+      - 1
+    - - bonus
+      - int
+      - 1
   type: armor
   view: 829
   weight: 100
@@ -135332,6 +140305,18 @@
   locations:
     - garment
   name: Guardian Manteau
+  on_equip:
+    - - bonus
+      - def
+      - 5
+    - - if
+      - - '>='
+        - refine
+        - 5
+      - - - bonus
+          - mdef
+          - 5
+      - []
   refineable: true
   slots: 1
   type: armor
@@ -137400,6 +142385,10 @@
   locations:
     - garment
   name: Giant God Snake Skin
+  on_equip:
+    - - bonus
+      - mdef
+      - 10
   refineable: true
   type: armor
   weight: 400
@@ -137411,6 +142400,10 @@
   locations:
     - garment
   name: Giant God Snake Skin
+  on_equip:
+    - - bonus
+      - mdef
+      - 10
   refineable: true
   slots: 1
   type: armor
@@ -139149,6 +144142,13 @@
   locations:
     - left_accessory
   name: Illusion Morrigane's Pendant
+  on_equip:
+    - - bonus
+      - critical
+      - 5
+    - - bonus
+      - atk
+      - 20
   slots: 1
   type: armor
   weight: 200
@@ -139878,6 +144878,16 @@
   locations:
     - both_accessory
   name: Engraved Orlean's Glove
+  on_equip:
+    - - bonus
+      - smatk
+      - 3
+    - - bonus
+      - spl
+      - 2
+    - - bonus
+      - crt
+      - 2
   slots: 1
   type: armor
   weight: 100
@@ -140255,6 +145265,10 @@
   locations:
     - both_accessory
   name: Guardian Ring
+  on_equip:
+    - - bonus
+      - vit
+      - 2
   slots: 1
   type: armor
   weight: 100
@@ -140265,6 +145279,41 @@
   locations:
     - right_accessory
   name: Origin of Fire
+  on_equip:
+    - - bonus
+      - critical
+      - 2
+    - - bonus
+      - atk
+      - 5
+    - - if
+      - - '>='
+        - refine
+        - 7
+      - - - bonus
+          - atk
+          - 3
+        - - bonus
+          - hit
+          - 2
+        - - bonus
+          - critical
+          - 3
+        - - if
+          - - '>='
+            - refine
+            - 9
+          - - - bonus
+              - atk
+              - 5
+            - - bonus
+              - hit
+              - 3
+            - - bonus
+              - critical
+              - 1
+          - []
+      - []
   refineable: true
   slots: 1
   type: armor
@@ -159408,6 +164457,10 @@
   locations:
     - both_hand
   name: Glacier Bow
+  on_equip:
+    - - bonus
+      - matk
+      - 220
   range: 5
   refineable: true
   subtype: bow
@@ -159491,6 +164544,10 @@
   locations:
     - both_hand
   name: Dim Glacier Bow
+  on_equip:
+    - - bonus
+      - matk
+      - 220
   range: 5
   refineable: true
   slots: 1
@@ -159635,6 +164692,10 @@
   locations:
     - both_hand
   name: 1Lv Bow
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 5
   refineable: true
   slots: 4
@@ -159653,6 +164714,10 @@
   locations:
     - both_hand
   name: 2Lv Bow
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 5
   refineable: true
   slots: 4
@@ -159671,6 +164736,10 @@
   locations:
     - both_hand
   name: 3Lv Bow
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 5
   refineable: true
   slots: 4
@@ -159689,6 +164758,10 @@
   locations:
     - both_hand
   name: 4Lv Bow
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 5
   refineable: true
   slots: 4
@@ -159707,6 +164780,10 @@
   locations:
     - both_hand
   name: 5Lv Bow
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 5
   refineable: true
   slots: 4
@@ -159949,6 +165026,10 @@
   locations:
     - both_hand
   name: IDTest gun
+  on_equip:
+    - - bonus
+      - dex
+      - 2
   range: 7
   slots: 1
   subtype: revolver
@@ -160153,6 +165234,10 @@
   locations:
     - both_hand
   name: Glacier Revolver
+  on_equip:
+    - - bonus
+      - matk
+      - 230
   range: 7
   refineable: true
   subtype: revolver
@@ -160168,6 +165253,10 @@
   locations:
     - both_hand
   name: Dim Glacier Pistol
+  on_equip:
+    - - bonus
+      - matk
+      - 230
   range: 7
   refineable: true
   slots: 1
@@ -160248,6 +165337,10 @@
   locations:
     - both_hand
   name: 1Lv Revolver
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 7
   refineable: true
   slots: 4
@@ -160263,6 +165356,10 @@
   locations:
     - both_hand
   name: 2Lv Revolver
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 7
   refineable: true
   slots: 4
@@ -160278,6 +165375,10 @@
   locations:
     - both_hand
   name: 3Lv Revolver
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 7
   refineable: true
   slots: 4
@@ -160293,6 +165394,10 @@
   locations:
     - both_hand
   name: 4Lv Revolver
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 7
   refineable: true
   slots: 4
@@ -160308,6 +165413,10 @@
   locations:
     - both_hand
   name: Level 5 Revolver
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 7
   refineable: true
   slots: 4
@@ -160550,6 +165659,10 @@
   locations:
     - both_hand
   name: Glacier Rifle
+  on_equip:
+    - - bonus
+      - matk
+      - 230
   range: 9
   refineable: true
   subtype: rifle
@@ -160582,6 +165695,10 @@
   locations:
     - both_hand
   name: Dim Glacier Rifle
+  on_equip:
+    - - bonus
+      - matk
+      - 230
   range: 9
   refineable: true
   slots: 1
@@ -160646,6 +165763,10 @@
   locations:
     - both_hand
   name: 1Lv Rifle
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 9
   refineable: true
   slots: 4
@@ -160661,6 +165782,10 @@
   locations:
     - both_hand
   name: 2Lv Rifle
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 9
   refineable: true
   slots: 4
@@ -160676,6 +165801,10 @@
   locations:
     - both_hand
   name: 3Lv Rifle
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 9
   refineable: true
   slots: 4
@@ -160691,6 +165820,10 @@
   locations:
     - both_hand
   name: 4Lv Rifle
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 9
   refineable: true
   slots: 4
@@ -160706,6 +165839,10 @@
   locations:
     - both_hand
   name: 5Lv Rifle
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 9
   refineable: true
   slots: 4
@@ -161375,6 +166512,10 @@
   locations:
     - both_hand
   name: Glacier Gatling
+  on_equip:
+    - - bonus
+      - matk
+      - 200
   range: 9
   refineable: true
   subtype: gatling
@@ -161406,6 +166547,10 @@
   locations:
     - both_hand
   name: Dim Glacier Gatling Gun
+  on_equip:
+    - - bonus
+      - matk
+      - 200
   range: 9
   refineable: true
   slots: 1
@@ -161470,6 +166615,10 @@
   locations:
     - both_hand
   name: 1Lv Gatling Gun
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 9
   refineable: true
   slots: 4
@@ -161485,6 +166634,10 @@
   locations:
     - both_hand
   name: 2Lv Gatling Gun
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 9
   refineable: true
   slots: 4
@@ -161500,6 +166653,10 @@
   locations:
     - both_hand
   name: 3Lv Gatling Gun
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 9
   refineable: true
   slots: 4
@@ -161515,6 +166672,10 @@
   locations:
     - both_hand
   name: 4Lv Gatling Gun
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 9
   refineable: true
   slots: 4
@@ -161530,6 +166691,10 @@
   locations:
     - both_hand
   name: Level 5 Gatling Gun
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 9
   refineable: true
   slots: 4
@@ -161757,6 +166922,10 @@
   locations:
     - both_hand
   name: Glacier Launcher
+  on_equip:
+    - - bonus
+      - matk
+      - 200
   range: 9
   refineable: true
   subtype: grenade
@@ -161772,6 +166941,10 @@
   locations:
     - both_hand
   name: Dim Glacier Grenade Launcher
+  on_equip:
+    - - bonus
+      - matk
+      - 200
   range: 9
   refineable: true
   slots: 1
@@ -161836,6 +167009,10 @@
   locations:
     - both_hand
   name: 1Lv Grenade Launcher
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 9
   refineable: true
   slots: 4
@@ -161851,6 +167028,10 @@
   locations:
     - both_hand
   name: 2Lv Grenade Launcher
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 9
   refineable: true
   slots: 4
@@ -161866,6 +167047,10 @@
   locations:
     - both_hand
   name: 3Lv Grenade Launcher
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 9
   refineable: true
   slots: 4
@@ -161881,6 +167066,10 @@
   locations:
     - both_hand
   name: 4Lv Grenade Launcher
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 9
   refineable: true
   slots: 4
@@ -161896,6 +167085,10 @@
   locations:
     - both_hand
   name: 5Lv Grenade Launcher
+  on_equip:
+    - - bonus
+      - matk
+      - 10
   range: 9
   refineable: true
   slots: 4

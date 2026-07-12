@@ -81,6 +81,21 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.TranspilerTest do
     end
   end
 
+  describe "transpile_equip/1" do
+    test "a flat bonus becomes a bonus program" do
+      assert {:ok, [{:bonus, :patk, 20}]} = Transpiler.transpile_equip("bonus bPAtk,20;")
+    end
+
+    test "an unsupported bonus2 statement surfaces the codegen error unchanged" do
+      assert {:error, {:unsupported, {:unsupported_command, "bonus2"}}} =
+               Transpiler.transpile_equip("bonus2 bAddRace,RC_Brute,10;")
+    end
+
+    test "a truncated script surfaces the parse error unchanged" do
+      assert {:error, {:parse_error, _}} = Transpiler.transpile_equip("bonus bPAtk,")
+    end
+  end
+
   describe "end-to-end through ScriptCompiler" do
     test "a transpiled heal script raises hp at runtime" do
       assert {:ok, on_use} = Transpiler.transpile("itemheal 50,0;")

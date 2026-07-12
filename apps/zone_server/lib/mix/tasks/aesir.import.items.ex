@@ -16,7 +16,8 @@ defmodule Mix.Tasks.Aesir.Import.Items do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Transpiler
 
-  @type failure :: {integer(), String.t(), term()}
+  @equip_types [:armor, :weapon, :shadow_gear, :ammo]
+  @usable_types [:usable, :healing]
 
   @sources ~w(usable equip etc)
   @out_dir Path.join(~w(apps zone_server priv db items))
@@ -27,68 +28,99 @@ defmodule Mix.Tasks.Aesir.Import.Items do
     re_dir = Path.join([rathena, "db", "re"])
     File.mkdir_p!(@out_dir)
 
-    results = Enum.map(@sources, &import_source(&1, re_dir))
-    transpiled = results |> Enum.map(&elem(&1, 0)) |> Enum.sum()
-    failures = Enum.flat_map(results, &elem(&1, 1))
+    entries = Enum.flat_map(@sources, &import_source(&1, re_dir))
+    summary = summarize(entries)
 
     report_path = Path.join(@out_dir, "_transpile_report.md")
-    File.write!(report_path, build_report(failures))
+    File.write!(report_path, Importer.build_report(summary))
 
-    Mix.shell().info(
-      "transpiled #{transpiled}/#{transpiled + length(failures)} scripts, " <>
-        "#{length(failures)} unsupported -> #{report_path}"
-    )
+    Mix.shell().info(summary_line(summary, report_path))
   end
 
   defp import_source(kind, re_dir) do
     src = Path.join(re_dir, "item_db_#{kind}.yml")
-    results = src |> read_body!() |> Enum.map(&transpile_entry/1)
-    definitions = Enum.map(results, &elem(&1, 0))
-    failures = results |> Enum.map(&elem(&1, 1)) |> Enum.reject(&is_nil/1)
-    transpiled = Enum.count(definitions, &(&1.on_use != nil))
+    entries = src |> read_body!() |> Enum.map(&transpile_entry/1)
+    definitions = Enum.map(entries, &elem(&1, 0))
     yaml = definitions |> Enum.map(&Importer.to_yaml_map/1) |> Ymlr.document!()
     out = Path.join(@out_dir, "#{kind}.yml")
     File.write!(out, yaml)
     Mix.shell().info("#{kind}: #{length(definitions)} items -> #{out}")
-    {transpiled, failures}
+    entries
   end
 
   defp transpile_entry(entry) do
-    apply_transpile(to_definition!(entry), Map.get(entry, "Script"))
+    script = Map.get(entry, "Script")
+    {definition, failure} = apply_transpile(to_definition!(entry), script)
+    {definition, script, failure}
   end
 
   @doc false
   @spec apply_transpile(ItemDefinition.t(), String.t() | nil) ::
-          {ItemDefinition.t(), failure() | nil}
+          {ItemDefinition.t(), Importer.failure() | nil}
   def apply_transpile(%ItemDefinition{type: type} = definition, script)
-      when type in [:usable, :healing] and is_binary(script) do
+      when type in @usable_types and is_binary(script) do
     case Transpiler.transpile(script) do
       {:ok, dsl} -> {%{definition | on_use: dsl}, nil}
-      {:error, reason} -> {definition, {definition.id, definition.name, reason}}
+      {:error, reason} -> {definition, {:on_use, definition.id, definition.name, reason}}
+    end
+  end
+
+  def apply_transpile(%ItemDefinition{type: type} = definition, script)
+      when type in @equip_types and is_binary(script) do
+    case Transpiler.transpile_equip(script) do
+      {:ok, []} -> {definition, nil}
+      {:ok, program} -> {%{definition | on_equip: program}, nil}
+      {:error, reason} -> {definition, {:on_equip, definition.id, definition.name, reason}}
     end
   end
 
   def apply_transpile(%ItemDefinition{} = definition, _script), do: {definition, nil}
 
-  @doc false
-  @spec build_report([failure()]) :: String.t()
-  def build_report([]) do
-    "# Transpile report\n\nAll usable item scripts transpiled.\n"
+  @spec summarize([{ItemDefinition.t(), String.t() | nil, Importer.failure() | nil}]) ::
+          Importer.report()
+  defp summarize(entries) do
+    base = %{on_use: blank_hook(), on_equip: blank_hook()}
+    stats = Enum.reduce(entries, base, &tally/2)
+    failures = entries |> Enum.map(&elem(&1, 2)) |> Enum.reject(&is_nil/1)
+    Map.put(stats, :failures, failures)
   end
 
-  def build_report(failures) do
-    rows =
-      Enum.map_join(failures, "\n", fn {id, name, reason} ->
-        "| #{id} | #{name} | #{inspect(reason)} |"
-      end)
+  defp blank_hook, do: %{considered: 0, with_script: 0, transpiled: 0}
 
-    """
-    # Transpile report
+  defp tally({%ItemDefinition{type: type} = definition, script, _failure}, acc) do
+    case hook_for_type(type) do
+      nil ->
+        acc
 
-    | id | name | reason |
-    | --- | --- | --- |
-    #{rows}
-    """
+      hook ->
+        Map.update!(acc, hook, fn stats ->
+          %{
+            considered: stats.considered + 1,
+            with_script: stats.with_script + count_if(is_binary(script)),
+            transpiled: stats.transpiled + count_if(transpiled?(definition, hook))
+          }
+        end)
+    end
+  end
+
+  defp hook_for_type(type) when type in @usable_types, do: :on_use
+  defp hook_for_type(type) when type in @equip_types, do: :on_equip
+  defp hook_for_type(_type), do: nil
+
+  defp transpiled?(%ItemDefinition{on_use: on_use}, :on_use), do: on_use != nil
+  defp transpiled?(%ItemDefinition{on_equip: on_equip}, :on_equip), do: on_equip != nil
+
+  defp count_if(true), do: 1
+  defp count_if(false), do: 0
+
+  defp summary_line(%{on_use: on_use, on_equip: on_equip, failures: failures}, report_path) do
+    {on_use_failures, on_equip_failures} =
+      Enum.split_with(failures, fn {hook, _id, _name, _reason} -> hook == :on_use end)
+
+    "on_use #{on_use.transpiled}/#{on_use.with_script} transpiled " <>
+      "(#{length(on_use_failures)} unsupported), " <>
+      "on_equip #{on_equip.transpiled}/#{on_equip.with_script} transpiled " <>
+      "(#{length(on_equip_failures)} unsupported) -> #{report_path}"
   end
 
   defp read_body!(path) do

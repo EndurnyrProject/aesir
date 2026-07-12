@@ -130,5 +130,35 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.LexerTest do
     test "returns an error tuple on trailing garbage without raising" do
       assert {:error, _reason} = Lexer.tokenize("itemheal 45,0; @#$")
     end
+
+    test "tokenizes a .@name scoped variable" do
+      assert {:ok, [{:scoped_var, "r"}]} = Lexer.tokenize(".@r")
+
+      assert {:ok, [{:scoped_var, "my_var2"}]} = Lexer.tokenize(".@my_var2")
+    end
+
+    test "lexes = as the assignment op while == stays a two-char token" do
+      assert {:ok, [{:op, :=}]} = Lexer.tokenize("=")
+
+      assert {:ok, [{:op, :==}, {:op, :=}]} = Lexer.tokenize("== =")
+    end
+
+    test "keeps >= <= != winning over the bare = assignment op" do
+      assert {:ok, [{:op, :>=}, {:op, :<=}, {:op, :!=}, {:op, :=}]} =
+               Lexer.tokenize(">= <= != =")
+    end
+
+    test "tokenizes the .@r = getrefine(); idiom" do
+      assert {:ok, tokens} = Lexer.tokenize(".@r = getrefine();")
+
+      assert tokens == [
+               {:scoped_var, "r"},
+               {:op, :=},
+               {:ident, "getrefine"},
+               {:punct, :lparen},
+               {:punct, :rparen},
+               {:punct, :semicolon}
+             ]
+    end
   end
 end

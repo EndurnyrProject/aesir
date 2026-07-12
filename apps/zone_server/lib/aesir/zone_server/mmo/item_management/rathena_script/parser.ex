@@ -20,6 +20,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Parser do
     block's statement list.
   - `{:incr, name, delta}` — a post-increment/decrement on the permanent char
     variable `name`, `delta` being `1` (`Var++;`) or `-1` (`Var--;`).
+  - `{:assign, name, expr}` — an assignment to the `.@`-scoped variable `name`,
+    e.g. `{:assign, "r", {:call_expr, "getrefine", []}}` from `.@r = getrefine();`.
 
   ## Expression nodes
 
@@ -29,6 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Parser do
     `Sex`, `Hp`, `MaxHp`, `Sp`, `MaxSp`, `Weight`, `Zeny`).
   - `{:const, name}` — any other bare identifier (rAthena constant such as
     `SC_BLESSING`, `Ele_Fire`, `Job_Knight`); the resolver classifies it later.
+  - `{:var, name}` — a `.@`-scoped variable reference, e.g. `{:var, "r"}` from `.@r`.
   - `{:call_expr, name, args}` — an identifier immediately followed by `(`,
     e.g. `{:call_expr, "rand", [45, 65]}`.
   - `{:binop, op, lhs, rhs}` — arithmetic (`:+ :- :* :/`) and comparison
@@ -62,6 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Parser do
           | String.t()
           | {:read, String.t()}
           | {:const, String.t()}
+          | {:var, String.t()}
           | {:call_expr, String.t(), [expr()]}
           | {:binop, atom(), expr(), expr()}
           | {:logic, atom(), expr(), expr()}
@@ -70,6 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Parser do
           {:call, String.t(), [expr()]}
           | {:if, expr(), [stmt()], [stmt()]}
           | {:incr, String.t(), 1 | -1}
+          | {:assign, String.t(), expr()}
 
   @spec parse([Lexer.token()]) :: {:ok, [stmt()]} | {:error, {:parse_error, term()}}
   def parse(tokens) when is_list(tokens) do
@@ -104,6 +109,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Parser do
 
   defp parse_stmt([{:ident, name}, {:op, :++} | rest]), do: parse_incr(name, 1, rest)
   defp parse_stmt([{:ident, name}, {:op, :--} | rest]), do: parse_incr(name, -1, rest)
+
+  defp parse_stmt([{:scoped_var, name}, {:op, :=} | rest]) do
+    with {:ok, expr, rest2} <- parse_expr(rest),
+         {:ok, rest3} <- expect(rest2, {:punct, :semicolon}) do
+      {:ok, [{:assign, name, expr}], rest3}
+    end
+  end
 
   defp parse_stmt([{:ident, name} | rest]) do
     with {:ok, args, rest2} <- parse_call_args(rest),
@@ -221,6 +233,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Parser do
       {:ok, {:call_expr, name, args}, rest3}
     end
   end
+
+  defp parse_primary([{:scoped_var, name} | rest]), do: {:ok, {:var, name}, rest}
 
   defp parse_primary([{:ident, name} | rest]), do: {:ok, classify_ident(name), rest}
   defp parse_primary([tok | _]), do: {:error, {:unexpected_token, tok}}

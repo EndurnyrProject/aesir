@@ -96,6 +96,26 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ParserTest do
     end
   end
 
+  describe "scoped variables and assignment" do
+    test "parses a .@name = expr; assignment statement" do
+      assert {:ok, [{:assign, "r", {:call_expr, "getrefine", []}}]} =
+               parse!(".@r = getrefine();")
+    end
+
+    test "parses a scoped variable as a :var expression leaf" do
+      assert {:ok,
+              [
+                {:call, "bonus",
+                 [{:const, "bSMatk"}, {:binop, :+, 1, {:binop, :/, {:var, "r"}, 2}}]}
+              ]} =
+               parse!("bonus bSMatk,1 + (.@r / 2);")
+    end
+
+    test "requires the terminating semicolon on an assignment" do
+      assert {:error, {:parse_error, _}} = parse!(".@r = getrefine()")
+    end
+  end
+
   describe "errors" do
     test "missing terminating semicolon returns a parse_error" do
       assert {:error, {:parse_error, _}} = parse!("itemheal 45,0")

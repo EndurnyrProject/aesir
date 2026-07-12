@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
   use ExUnit.Case, async: true
 
+  alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.ItemManagement.Importer
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Loader
@@ -158,6 +159,79 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
     end
   end
 
+  describe "build_report/1" do
+    defp report(failures) do
+      %{
+        on_use: %{considered: 10, with_script: 6, transpiled: 5},
+        on_equip: %{considered: 20, with_script: 12, transpiled: 3},
+        failures: failures
+      }
+    end
+
+    test "renders a per-hook summary table with derived unsupported counts" do
+      failures = [
+        {:on_use, 501, "Red Potion", {:unsupported, "produce"}},
+        {:on_equip, 1140, "Fireblend", {:unsupported, {:unknown_bonus_key, "bAtkEle"}}},
+        {:on_equip, 2000, "X", {:unsupported, {:unknown_bonus_key, "bMaxHP"}}}
+      ]
+
+      out = Importer.build_report(report(failures))
+
+      assert out =~ "| hook | items | with script | transpiled | unsupported |"
+      assert out =~ "| on_use | 10 | 6 | 5 | 1 |"
+      assert out =~ "| on_equip | 20 | 12 | 3 | 2 |"
+    end
+
+    test "renders the on_equip rejection-reason histogram sorted descending" do
+      failures =
+        [
+          {:on_equip, 1, "a", {:unsupported, {:unknown_bonus_key, "bMaxHP"}}},
+          {:on_equip, 2, "b", {:unsupported, {:unknown_bonus_key, "bMaxHP"}}},
+          {:on_equip, 3, "c", {:unsupported, {:unknown_bonus_key, "bMaxHP"}}},
+          {:on_equip, 4, "d", {:unsupported, {:unsupported_command, "bonus2"}}},
+          {:on_equip, 5, "e", {:unsupported, {:conditional_assignment, "x"}}}
+        ]
+
+      out = Importer.build_report(report(failures))
+
+      assert out =~ "## on_equip rejection reasons"
+      assert out =~ "| unknown_bonus_key bMaxHP | 3 |"
+      assert out =~ "| unsupported_command bonus2 | 1 |"
+      assert out =~ "| conditional_assignment | 1 |"
+
+      max_pos = position(out, "unknown_bonus_key bMaxHP")
+      bonus2_pos = position(out, "unsupported_command bonus2")
+      assert max_pos < bonus2_pos
+    end
+
+    test "renders both hooks' full failure tables" do
+      failures = [
+        {:on_use, 501, "Red Potion", {:unsupported, "produce"}},
+        {:on_equip, 2198, "Lapine Shield", {:unsupported, {:unknown_bonus_key, "bMaxHP"}}}
+      ]
+
+      out = Importer.build_report(report(failures))
+
+      assert out =~ "## on_use failures"
+      assert out =~ "| 501 | Red Potion | {:unsupported, \"produce\"} |"
+      assert out =~ "## on_equip failures"
+      assert out =~ "| 2198 | Lapine Shield | {:unsupported, {:unknown_bonus_key, \"bMaxHP\"}} |"
+    end
+
+    test "renders placeholders when a hook has no failures" do
+      out = Importer.build_report(report([]))
+
+      assert out =~ "## on_equip rejection reasons\n\n_none_"
+      assert out =~ "## on_use failures\n\n_none_"
+      assert out =~ "## on_equip failures\n\n_none_"
+    end
+
+    defp position(haystack, needle) do
+      {index, _} = :binary.match(haystack, needle)
+      index
+    end
+  end
+
   describe "to_yaml_map/1" do
     test "encodes attack_element as a string and omits nil" do
       elemental = %ItemDefinition{
@@ -205,6 +279,33 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       refute Map.has_key?(map, "magic_attack")
       refute Map.has_key?(map, "sell")
       refute Map.has_key?(map, "armor_level")
+    end
+
+    test "encodes on_equip via EquipScript.encode/1 and omits it when nil" do
+      program = [{:bonus, :smatk, 3}]
+
+      with_program = %ItemDefinition{id: 490_160, aegis_name: "X", name: "X", on_equip: program}
+      without_program = %ItemDefinition{id: 1750, aegis_name: "Arrow", name: "Arrow"}
+
+      assert %{"on_equip" => encoded} = Importer.to_yaml_map(with_program)
+      assert encoded == EquipScript.encode(program)
+      refute Map.has_key?(Importer.to_yaml_map(without_program), "on_equip")
+    end
+
+    @tag :tmp_dir
+    test "round-trips an on_equip program back through the Loader", %{tmp_dir: dir} do
+      definition = %ItemDefinition{
+        id: 490_160,
+        aegis_name: "ST_Orleans_Glove",
+        name: "Orleans's Glove",
+        type: :armor,
+        on_equip: [{:bonus, :smatk, 3}, {:bonus, :spl, 2}]
+      }
+
+      yaml = Ymlr.document!([Importer.to_yaml_map(definition)])
+      File.write!(Path.join(dir, "items.yml"), yaml)
+
+      assert %{by_id: %{490_160 => ^definition}} = Loader.load(dir)
     end
 
     @tag :tmp_dir

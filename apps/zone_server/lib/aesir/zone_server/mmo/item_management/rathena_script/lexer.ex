@@ -18,19 +18,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Lexer do
 
   - `{:ident, name}` — identifier or rAthena constant, e.g. `{:ident, "itemheal"}`,
     `{:ident, "SC_BLESSING"}`. The lexer does not distinguish keywords or constants.
+  - `{:scoped_var, name}` — a `.@`-prefixed scoped variable, e.g. `{:scoped_var, "r"}`
+    from `.@r`. The `.@` prefix is stripped; `name` follows the identifier charset.
   - `{:int, value}` — unsigned integer literal, e.g. `{:int, 45}`. A leading `-`
     is lexed as the `{:op, :-}` operator, not part of the number.
   - `{:string, value}` — double-quoted string literal with surrounding quotes
     stripped and `\\"` / `\\\\` escapes unescaped.
   - `{:op, op}` — operator, where `op` is one of
     `:>`, `:<`, `:>=`, `:<=`, `:==`, `:!=`, `:&&`, `:||`, `:++`, `:--`, `:+`,
-    `:-`, `:*`, `:/`. `:++` / `:--` are the post-increment/decrement operators and
-    must be matched before `:+` / `:-`.
+    `:-`, `:*`, `:/`, `:=`. `:++` / `:--` are the post-increment/decrement operators
+    and must be matched before `:+` / `:-`; the two-char comparison operators
+    (`:==` etc.) must be matched before the `:=` assignment operator.
   - `{:punct, punct}` — punctuation, where `punct` is one of
     `:comma`, `:semicolon`, `:lparen`, `:rparen`, `:lbrace`, `:rbrace`.
   """
   @type token ::
           {:ident, String.t()}
+          | {:scoped_var, String.t()}
           | {:int, integer()}
           | {:string, String.t()}
           | {:op, atom()}
@@ -55,6 +59,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Lexer do
     |> reduce({List, :to_string, []})
     |> unwrap_and_tag(:ident)
 
+  scoped_var =
+    ignore(string(".@"))
+    |> ascii_char([?a..?z, ?A..?Z, ?_])
+    |> repeat(ascii_char([?a..?z, ?A..?Z, ?0..?9, ?_]))
+    |> reduce({List, :to_string, []})
+    |> unwrap_and_tag(:scoped_var)
+
   integer_token =
     integer(min: 1)
     |> unwrap_and_tag(:int)
@@ -78,6 +89,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Lexer do
       string("<=") |> replace({:op, :<=}),
       string("==") |> replace({:op, :==}),
       string("!=") |> replace({:op, :!=}),
+      string("=") |> replace({:op, :=}),
       string("&&") |> replace({:op, :&&}),
       string("||") |> replace({:op, :||}),
       string("++") |> replace({:op, :++}),
@@ -102,6 +114,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Lexer do
 
   token =
     choice([
+      scoped_var,
       identifier,
       integer_token,
       string_literal,

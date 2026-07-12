@@ -8,6 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
   """
   use TypedStruct
 
+  alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
+
   @typedoc "Broad item category (rAthena `Type`)."
   @type item_type ::
           :healing
@@ -35,10 +37,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
     field :attack, integer(), default: 0
     field :magic_attack, integer(), default: 0
     field :defense, integer(), default: 0
-    field :patk, integer(), default: 0
-    field :smatk, integer(), default: 0
-    field :res, integer(), default: 0
-    field :mres, integer(), default: 0
     field :range, integer(), default: 0
     field :slots, integer(), default: 0
     field :view, integer(), default: 0
@@ -50,6 +48,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
     field :equip_level_max, integer(), default: 0
     field :refineable, boolean(), default: false
     field :on_use, String.t() | nil, default: nil
+    field :on_equip, EquipScript.program() | nil, default: nil
     field :attack_element, atom(), default: nil
   end
 

@@ -1,12 +1,27 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.TraitStatsIntegrationTest do
   @moduledoc """
-  End-to-end coverage for the renewal P.Atk/Res combat stats.
+  End-to-end coverage for script-driven equip bonuses feeding the renewal
+  combat stats.
 
-  Drives the real production path (no synthetic `CombatStats`/`Combatant`
-  construction for the player side): sample gear in `equip.yml` ->
-  `ItemDefinition` -> `accumulate_item_bonus/2` -> `calculate_combat_stats/1`
-  (via the real `PlayerSession.init/1` spawn path) -> `PlayerState.to_combatant/1`
-  -> `DamageCalculator.calculate_damage/3`.
+  Drives the real production path (no synthetic `CombatStats` construction):
+  a clean-script item in `equip.yml` -> `ItemDefinition.on_equip` program ->
+  `EquipScript.eval/2` against the item's refine -> `modifiers.equipment` ->
+  `calculate_combat_stats/1` (via the real `PlayerSession.init/1` spawn path).
+
+  Anchored on three real corpus items, each exercising a different slice of the
+  engine:
+
+    * `490160` Engraved Orlean's Glove (`bonus bSMatk,3; bonus bSpl,2; bonus
+      bCrt,2;`) - a flat combat-trait key (`smatk`) and a base-trait key (`spl`,
+      which feeds MATK) proving both trait families reach the derivation.
+    * `1298` Shiver Katar (`bonus bCritical,getrefine();`) - refine-scaled amount
+      plus the `:critical` equipment wiring.
+    * `2198` Lapine Shield (`bonus bMdef,10; if (getrefine()>7) bonus bMatk,20;`)
+      - an unconditional bonus plus a refine-gated conditional (boundary 7 vs 8).
+
+  Unequip reverts by construction of the recompute model (stats are re-evaluated
+  from the equipped set); each scenario asserts the equipped delta and that
+  recomputing with no equipment returns to the bare baseline.
   """
 
   use Aesir.DataCase, async: true
@@ -18,50 +33,30 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TraitStatsIntegrationTest do
 
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
-  alias Aesir.ZoneServer.CombatTestHelper
-  alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
-  alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
-  alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
-  alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
-  alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
-  alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
 
-  # Destruction Axe (equip.yml, weapon_level 5): carries `patk: 20`.
-  @weapon_id 1341
-  @weapon_patk 20
-  @right_hand 0x000002
+  # Engraved Orlean's Glove (accessory): bonus bSMatk,3; bonus bSpl,2; bonus bCrt,2
+  @glove_id 490_160
+  @accessory_slot 0x000008
 
-  # Rabbit Pattern Shirt (equip.yml, armor_level 2): carries `res: 15`.
-  @armor_id 15_282
-  @armor_res 15
-  @armor_slot 0x000010
+  # Shiver Katar (two-handed weapon): bonus bCritical,getrefine()
+  @katar_id 1298
+  @both_hand 0x000022
+
+  # Lapine Shield (left hand): bonus bMdef,10; if (getrefine()>7) bonus bMatk,20
+  @shield_id 2198
+  @left_hand 0x000020
 
   setup :verify_on_exit!
   setup :set_mimic_from_context
   setup :setup_ets_tables
 
   setup do
-    Mimic.copy(ElementModifiers)
-    Mimic.copy(SizeModifiers)
-    Mimic.copy(RaceModifiers)
-    Mimic.copy(CriticalHits)
     Mimic.copy(ModifierCalculator)
-
-    stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
-    stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
-    stub(SizeModifiers, :player_size, fn -> :medium end)
-    stub(RaceModifiers, :player_race, fn -> :human end)
-
-    stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
-      %{damage: damage, is_critical: false}
-    end)
-
     stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
-
     :ok
   end
 
@@ -79,117 +74,93 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TraitStatsIntegrationTest do
     %{account: account}
   end
 
-  test "the sample gear carries the new fields and loads into ItemDefinition" do
-    assert {:ok, %{patk: @weapon_patk}} = ItemManagement.get_item_by_id(@weapon_id)
-    assert {:ok, %{res: @armor_res}} = ItemManagement.get_item_by_id(@armor_id)
-  end
-
-  describe "equip -> CombatStats" do
-    test "equipping the patk weapon raises combat_stats.patk by the item's value", %{
-      account: account
-    } do
-      bare = account |> spawn_character("BareAtk", 0) |> spawn_state()
+  describe "flat trait bonuses (glove 490160)" do
+    test "equipping raises smatk by the flat bonus and spl-derived matk", %{account: account} do
+      bare = account |> spawn_character("BareGlove", 0) |> spawn_state()
 
       geared =
         account
-        |> spawn_character("GearedAtk", 1)
-        |> equip(@weapon_id, @right_hand)
+        |> spawn_character("GearedGlove", 1)
+        |> equip(@glove_id, @accessory_slot)
         |> spawn_state()
 
-      assert geared.game_state.stats.combat_stats.patk ==
-               bare.game_state.stats.combat_stats.patk + @weapon_patk
-    end
+      equipment = geared.game_state.stats.modifiers.equipment
+      assert equipment.smatk == 3
+      assert equipment.spl == 2
+      assert equipment.crt == 2
 
-    test "equipping the res armor raises combat_stats.res by the item's value", %{
-      account: account
-    } do
-      bare = account |> spawn_character("BareDef", 2) |> spawn_state()
+      # Combat-trait family: smatk +3 (base spl/con are 0, so the derivation term
+      # is unchanged). Base-trait family: spl +2 feeds base MATK by 5*SPL = +10.
+      assert combat(geared).smatk == combat(bare).smatk + 3
+      assert combat(geared).matk_min == combat(bare).matk_min + 10
 
-      geared =
-        account
-        |> spawn_character("GearedDef", 3)
-        |> equip(@armor_id, @armor_slot)
-        |> spawn_state()
-
-      assert geared.game_state.stats.combat_stats.res ==
-               bare.game_state.stats.combat_stats.res + @armor_res
+      reverted = unequipped(geared)
+      assert reverted.combat_stats.smatk == combat(bare).smatk
+      assert reverted.combat_stats.matk_min == combat(bare).matk_min
     end
   end
 
-  describe "CombatStats -> DamageCalculator" do
-    test "equipping the patk weapon increases melee damage against the same defender", %{
-      account: account
-    } do
-      defender = CombatTestHelper.create_mob_combatant()
+  describe "refine-scaled bonus (katar 1298)" do
+    test "critical is unchanged at refine 0 and rises with refine", %{account: account} do
+      # Katar is an assassin (class 12) weapon; a swordman has no katar ASPD row.
+      bare = account |> spawn_character("BareKatar", 2, 12) |> spawn_state()
 
-      bare_attacker =
-        account |> spawn_character("BareAttacker", 4) |> spawn_state() |> to_combatant()
-
-      geared_attacker =
+      unrefined =
         account
-        |> spawn_character("GearedAttacker", 5)
-        |> equip(@weapon_id, @right_hand)
+        |> spawn_character("KatarR0", 3, 12)
+        |> equip(@katar_id, @both_hand, 0)
         |> spawn_state()
-        |> to_combatant()
 
-      assert geared_attacker.combat_stats.patk == bare_attacker.combat_stats.patk + @weapon_patk
-
-      # Seed identically before each call so the weapon-ATK variance band (renewal 80-120%)
-      # is the same for both, isolating the P.Atk difference under test.
-      :rand.seed(:exsss, {1, 2, 3})
-
-      {:ok, bare_result} =
-        DamageCalculator.calculate_damage(bare_attacker, defender, skip_crit: true)
-
-      :rand.seed(:exsss, {1, 2, 3})
-
-      {:ok, geared_result} =
-        DamageCalculator.calculate_damage(geared_attacker, defender, skip_crit: true)
-
-      assert geared_result.damage > bare_result.damage
-    end
-
-    test "equipping the res armor reduces incoming melee damage from the same attacker", %{
-      account: account
-    } do
-      attacker = CombatTestHelper.create_player_combatant(str: 60, base_level: 90)
-
-      bare_defender =
-        account |> spawn_character("BareDefender", 6) |> spawn_state() |> to_combatant()
-
-      geared_defender =
+      refined =
         account
-        |> spawn_character("GearedDefender", 7)
-        |> equip(@armor_id, @armor_slot)
+        |> spawn_character("KatarR7", 4, 12)
+        |> equip(@katar_id, @both_hand, 7)
         |> spawn_state()
-        |> to_combatant()
 
-      assert geared_defender.combat_stats.res == bare_defender.combat_stats.res + @armor_res
+      assert combat(unrefined).critical == combat(bare).critical
+      assert combat(refined).critical == combat(bare).critical + 7
 
-      # Seed identically before each call so the attacker's weapon-ATK variance is the same
-      # for both, isolating the defender Res reduction under test.
-      :rand.seed(:exsss, {1, 2, 3})
-
-      {:ok, bare_result} =
-        DamageCalculator.calculate_damage(attacker, bare_defender, skip_crit: true)
-
-      :rand.seed(:exsss, {1, 2, 3})
-
-      {:ok, geared_result} =
-        DamageCalculator.calculate_damage(attacker, geared_defender, skip_crit: true)
-
-      assert geared_result.damage < bare_result.damage
+      assert unequipped(refined).combat_stats.critical == combat(bare).critical
     end
   end
 
-  defp spawn_character(account, name, char_num) do
+  describe "refine-gated conditional (shield 2198)" do
+    test "mdef is unconditional and matk gates at refine 8", %{account: account} do
+      bare = account |> spawn_character("BareShield", 5) |> spawn_state()
+
+      below =
+        account
+        |> spawn_character("ShieldR7", 6)
+        |> equip(@shield_id, @left_hand, 7)
+        |> spawn_state()
+
+      above =
+        account
+        |> spawn_character("ShieldR8", 7)
+        |> equip(@shield_id, @left_hand, 8)
+        |> spawn_state()
+
+      assert combat(below).mdef == combat(bare).mdef + 10
+      assert combat(above).mdef == combat(bare).mdef + 10
+
+      # The matk gate `getrefine() > 7` is closed at refine 7, open at refine 8.
+      assert combat(below).matk == combat(bare).matk
+      assert combat(above).matk == combat(bare).matk + 20
+
+      reverted = unequipped(above)
+      assert reverted.combat_stats.mdef == combat(bare).mdef
+      assert reverted.combat_stats.matk == combat(bare).matk
+    end
+  end
+
+  defp spawn_character(account, name, char_num, class \\ 1) do
     {:ok, character} =
       %Character{}
       |> Character.changeset(%{
         account_id: account.id,
         char_num: char_num,
         name: name,
-        class: 1,
+        class: class,
         base_level: 50,
         last_map: "prontera",
         last_x: 50,
@@ -206,9 +177,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TraitStatsIntegrationTest do
     character
   end
 
-  defp equip(character, nameid, equip_bitmask) do
+  defp equip(character, nameid, equip_bitmask, refine \\ 0) do
     {:ok, _item} =
-      Persistence.insert_item(character.id, %{nameid: nameid, amount: 1, equip: equip_bitmask})
+      Persistence.insert_item(character.id, %{
+        nameid: nameid,
+        amount: 1,
+        equip: equip_bitmask,
+        refine: refine
+      })
 
     character
   end
@@ -218,5 +194,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TraitStatsIntegrationTest do
     state
   end
 
-  defp to_combatant(%{game_state: game_state}), do: PlayerState.to_combatant(game_state)
+  defp combat(%{game_state: game_state}), do: game_state.stats.combat_stats
+
+  # Simulates unequip via the recompute model: the same base stats recalculated
+  # with no equipped items must return every combat stat to the bare baseline.
+  defp unequipped(%{game_state: game_state}) do
+    Stats.calculate_stats(game_state.stats, nil, [])
+  end
 end

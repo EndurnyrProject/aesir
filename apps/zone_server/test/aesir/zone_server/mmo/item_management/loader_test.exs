@@ -56,7 +56,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
       write_yaml(dir, @items_yaml)
       Loader.load(dir)
 
-      assert File.exists?(Path.join([dir, ".cache", "items.etf"]))
+      assert File.exists?(Path.join([dir, ".cache", "items_v2.etf"]))
     end
 
     @tag :tmp_dir
@@ -64,7 +64,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
       yaml = write_yaml(dir, @items_yaml)
       Loader.load(dir)
 
-      cache = Path.join([dir, ".cache", "items.etf"])
+      cache = Path.join([dir, ".cache", "items_v2.etf"])
       File.write!(yaml, String.replace(@items_yaml, "weight: 70", "weight: 99"))
       File.touch!(yaml, 1_000_000)
       File.touch!(cache, 2_000_000)
@@ -77,7 +77,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
       yaml = write_yaml(dir, @items_yaml)
       Loader.load(dir)
 
-      cache = Path.join([dir, ".cache", "items.etf"])
+      cache = Path.join([dir, ".cache", "items_v2.etf"])
       File.write!(yaml, String.replace(@items_yaml, "weight: 70", "weight: 99"))
       File.touch!(cache, 1_000_000)
       File.touch!(yaml, 2_000_000)
@@ -179,19 +179,43 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
     end
 
     @tag :tmp_dir
-    test "touching script_overrides.yml invalidates the items.etf cache", %{tmp_dir: dir} do
+    test "touching script_overrides.yml invalidates the items_v2.etf cache", %{tmp_dir: dir} do
       items = write_yaml(dir, @items_yaml)
       overrides = Path.join(dir, "script_overrides.yml")
       File.write!(overrides, "- id: 501\n  on_use: \"heal(ctx, hp: 1)\"\n")
       Loader.load(dir)
 
-      cache = Path.join([dir, ".cache", "items.etf"])
+      cache = Path.join([dir, ".cache", "items_v2.etf"])
       File.write!(overrides, "- id: 501\n  on_use: \"heal(ctx, hp: 2)\"\n")
       File.touch!(items, 1_000_000)
       File.touch!(cache, 2_000_000)
       File.touch!(overrides, 3_000_000)
 
       assert %{by_id: %{501 => %ItemDefinition{on_use: "heal(ctx, hp: 2)"}}} = Loader.load(dir)
+    end
+
+    @tag :tmp_dir
+    test "decodes an on_equip program via EquipScript.decode!/1", %{tmp_dir: dir} do
+      write_yaml(dir, """
+      - id: 490160
+        aegis_name: ST_Orleans_Glove
+        name: Orleans's Glove
+        type: armor
+        on_equip:
+          - - bonus
+            - smatk
+            - 3
+      """)
+
+      assert %{by_id: %{490_160 => %ItemDefinition{on_equip: [{:bonus, :smatk, 3}]}}} =
+               Loader.load(dir)
+    end
+
+    @tag :tmp_dir
+    test "on_equip defaults to nil when not present", %{tmp_dir: dir} do
+      write_yaml(dir, @items_yaml)
+
+      assert %{by_id: %{501 => %ItemDefinition{on_equip: nil}}} = Loader.load(dir)
     end
 
     @tag :tmp_dir
