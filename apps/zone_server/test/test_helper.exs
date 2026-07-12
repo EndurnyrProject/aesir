@@ -70,6 +70,7 @@ Mimic.copy(Aesir.ZoneServer.Unit.Player.Handlers.StorageOps)
 Mimic.copy(Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler)
 Mimic.copy(Aesir.ZoneServer.Unit.Storage.Persistence)
 Mimic.copy(Aesir.ZoneServer.Unit.Player.Handlers.RefineOps)
+Mimic.copy(Aesir.ZoneServer.Unit.Player.QuestPersistence)
 
 Mimic.copy(Aesir.ZoneServer.Mmo.MobSkill.Db)
 Mimic.copy(Aesir.Commons.InterServer.PubSub)

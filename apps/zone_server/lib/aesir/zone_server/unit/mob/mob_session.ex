@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.KillExp
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Mob.QuestHuntCredit
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.MovementEngine
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -565,6 +566,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
       mob_data.level,
       state.map_name
     )
+
+    QuestHuntCredit.credit(attacker_id, mob_data.id, state.map_name, {state.x, state.y})
 
     PubSub.broadcast(
       Aesir.PubSub,

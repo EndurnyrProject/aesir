@@ -53,7 +53,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.QuestLog
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
+  alias Aesir.ZoneServer.Unit.Player.QuestView
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusPersistence
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -423,6 +425,24 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   def handle_info({:mob_killed, payload}, state) do
     maybe_drop_items(payload, state)
     {:noreply, state}
+  end
+
+  # Credits a mob kill against this session's hunting quests
+  # (`Unit.Mob.QuestHuntCredit`): the pure `QuestLog.tick_kill/2` clamps the
+  # matching objectives, we write each moved quest through to
+  # `character_quests`, and push one `QuestHuntProgress` per moved objective.
+  # A kill matching no active quest leaves the log untouched and no-ops.
+  @impl true
+  def handle_info({:quest_kill, mob_id}, %{game_state: game_state} = state) do
+    case QuestLog.tick_kill(game_state.quest_log, mob_id) do
+      {_quest_log, []} ->
+        {:noreply, state}
+
+      {quest_log, changes} ->
+        persist_quest_changes(game_state.character_id, quest_log, changes)
+        push_quest_progress(state.connection_pid, changes)
+        {:noreply, update_game_state(state, %{game_state | quest_log: quest_log})}
+    end
   end
 
   # A contributing attacker's final damage-based EXP grant for a mob kill
@@ -864,6 +884,21 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   defp maybe_drop_items(_payload, _state), do: :ok
+
+  defp persist_quest_changes(char_id, quest_log, changes) do
+    changes
+    |> Enum.map(& &1.quest_id)
+    |> Enum.uniq()
+    |> Enum.each(fn quest_id ->
+      QuestPersistence.upsert(char_id, {quest_id, Map.fetch!(quest_log, quest_id)})
+    end)
+  end
+
+  defp push_quest_progress(connection_pid, changes) do
+    Enum.each(changes, fn change ->
+      MessageRouter.send_to(connection_pid, QuestView.quest_hunt_progress(change))
+    end)
+  end
 
   defp update_game_state(state, new_game_state) do
     UnitRegistry.update_unit_state(:player, new_game_state.character_id, new_game_state)
