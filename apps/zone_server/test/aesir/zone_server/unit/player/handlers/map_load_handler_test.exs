@@ -12,6 +12,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandlerTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.Net.QuestEntry
+  alias Aesir.Net.QuestList
   alias Aesir.Net.StatusChange
   alias Aesir.Net.UnitStateChange
   alias Aesir.ZoneServer.Mmo.Option
@@ -19,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandlerTest do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.QuestLog
 
   setup :verify_on_exit!
   setup :set_mimic_from_context
@@ -89,5 +92,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandlerTest do
                      {:unit_state_change, %UnitStateChange{unit_id: @char_id, effect_state: 0}}}
 
     refute_received {:send, _channel, {:status_change, _}}
+  end
+
+  test "the initial load sends the owner their loaded quest log" do
+    state = session_state()
+
+    quest_log = %{7393 => %QuestLog.Entry{state: :active, counts: [], deadline: nil}}
+    game_state = %{state.game_state | quest_log: quest_log}
+
+    {:noreply, _state} = MapLoadHandler.handle_map_loaded(%{state | game_state: game_state})
+
+    assert_received {:send, _channel,
+                     {:quest_list, %QuestList{quests: [%QuestEntry{quest_id: 7393, state: 1}]}}}
+  end
+
+  test "a quest-less character gets an empty quest list" do
+    {:noreply, _state} = MapLoadHandler.handle_map_loaded(session_state())
+
+    assert_received {:send, _channel, {:quest_list, %QuestList{quests: []}}}
   end
 end

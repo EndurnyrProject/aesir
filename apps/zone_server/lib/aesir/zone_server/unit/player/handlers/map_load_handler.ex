@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.QuestView
   alias Aesir.ZoneServer.Unit.Player.SkillListView
   alias Aesir.ZoneServer.Unit.Player.StatusSync
 
@@ -69,6 +70,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
 
     StatusSync.send_stat_updates(connection_pid, game_state.stats)
     MessageRouter.send_to(connection_pid, InventoryView.inventory_list(game_state.inventory))
+    MessageRouter.send_to(connection_pid, QuestView.quest_list(game_state.quest_log))
     maybe_send_cart_info(connection_pid, game_state)
     send_own_status_sync(connection_pid, game_state.character_id)
 

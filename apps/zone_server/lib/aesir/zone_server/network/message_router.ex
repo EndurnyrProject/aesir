@@ -85,6 +85,7 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def route(%Aesir.Net.CartInfo{}), do: {:bulk, :cart_info}
   def route(%Aesir.Net.VendingList{}), do: {:bulk, :vending_list}
   def route(%Aesir.Net.StorageOpened{}), do: {:bulk, :storage_opened}
+  def route(%Aesir.Net.QuestList{}), do: {:bulk, :quest_list}
 
   def route(%Aesir.Net.Snapshot{}), do: {:snapshots, :snapshot}
 
