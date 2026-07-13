@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.EtsTable do
     skill_unit_tables(seed)
     vending_registry_tables(seed)
     ground_item_tables(seed)
+    script_var_tables(seed)
 
     :ok
   end
@@ -135,6 +136,22 @@ defmodule Aesir.ZoneServer.EtsTable do
         {:read_concurrency, true},
         {:write_concurrency, true}
       ]
+    )
+  end
+
+  defp script_var_tables(seed) do
+    # Server temp globals (rAthena $@var): {name, value}. Node-local, cleared
+    # on restart. Permanent $ and #/## vars are Postgres-backed, not here.
+    :ets.new(
+      table_for(:server_temp_vars, seed),
+      [:set, :public, :named_table, read_concurrency: true, write_concurrency: true]
+    )
+
+    # NPC-scope globals (rAthena .var): {{npc_source, name}, value}. Shared
+    # across every placement of an NPC script for the server's lifetime.
+    :ets.new(
+      table_for(:npc_vars, seed),
+      [:set, :public, :named_table, read_concurrency: true, write_concurrency: true]
     )
   end
 

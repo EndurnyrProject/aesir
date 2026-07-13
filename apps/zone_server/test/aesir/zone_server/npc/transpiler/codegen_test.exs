@@ -260,7 +260,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ "Enum.at(get_local(ctx, :list, []), 1, 0)"
   end
 
-  test "unsupported variable scopes stub out" do
+  test "server and account scopes route to their store DSL ops" do
     src =
       gen!("""
       $server_var = 1;
@@ -268,8 +268,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       close;
       """)
 
-    assert src =~ ~S{|> todo(:set_var, ["$server_var", 1])}
-    assert src =~ ~S|Todo.call!(:get_var, ["#account_var"])|
+    assert src =~ ~S{set_server_var(ctx, "server_var", 1)}
+    assert src =~ ~S{get_account_var(ctx, "#account_var", 0)}
+    refute src =~ "todo(:set_var"
+    refute src =~ ~S{Todo.call!(:get_var}
   end
 
   test "On* labels wire to on_event/2 clauses; the macro derives events/0" do
@@ -814,5 +816,39 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "Todo.call!(:checkre"
     refute src =~ "Todo.call!(:vip_status"
     refute src =~ "Todo.const!(:VIP_STATUS_ACTIVE)"
+  end
+
+  test "scoped variables route to their store DSL ops instead of stubs" do
+    src =
+      gen!("""
+      set $rachel_donate, $rachel_donate + 100;
+      set $@stage, 3;
+      set #points, 5;
+      set ##global_points, 5;
+      set .counter, .counter + 1;
+      set $event_name$, "spring";
+      close;
+      """)
+
+    assert src =~
+             ~S{set_server_var("rachel_donate", get_server_var(ctx, "rachel_donate", 0) + 100)}
+
+    assert src =~ ~S{set_server_temp_var("stage", 3)}
+    assert src =~ ~S{set_account_var("#points", 5)}
+    assert src =~ ~S{set_account_var("##global_points", 5)}
+    assert src =~ ~S{set_npc_var("counter", get_npc_var(ctx, "counter", 0) + 1)}
+    assert src =~ ~S{set_server_var("event_name$", "spring")}
+    refute src =~ "Todo.call!(:get_var"
+    refute src =~ ":set_var"
+  end
+
+  test "instance-scope variables stay stubbed (no instance system yet)" do
+    src =
+      gen!("""
+      set 'progress, 1;
+      close;
+      """)
+
+    assert src =~ ~S{todo(:set_var, ["'progress", 1])}
   end
 end

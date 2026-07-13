@@ -1225,9 +1225,25 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp set_var({:var, :session, name, type}, value, _env),
     do: "ctx = set_temp_var(ctx, #{var_key(name, type)}, #{value})"
 
-  defp set_var({:var, scope, name, _type}, value, _env) do
+  defp set_var({:var, :server, name, type}, value, _env),
+    do: "ctx = set_server_var(ctx, #{scope_var_key(name, type)}, #{value})"
+
+  defp set_var({:var, :server_temp, name, type}, value, _env),
+    do: "ctx = set_server_temp_var(ctx, #{scope_var_key(name, type)}, #{value})"
+
+  defp set_var({:var, :account, name, type}, value, _env),
+    do: "ctx = set_account_var(ctx, #{scope_var_key("#" <> name, type)}, #{value})"
+
+  defp set_var({:var, :account_global, name, type}, value, _env),
+    do: "ctx = set_account_var(ctx, #{scope_var_key("##" <> name, type)}, #{value})"
+
+  defp set_var({:var, :npc, name, type}, value, _env),
+    do: "ctx = set_npc_var(ctx, #{scope_var_key(name, type)}, #{value})"
+
+  # Instance scope (') has no store yet: no instance system exists.
+  defp set_var({:var, :instance, name, type}, value, _env) do
     flag(:todo_fun)
-    "ctx = todo(ctx, :set_var, [#{inspect(scope_prefix(scope) <> name)}, #{value}])"
+    "ctx = todo(ctx, :set_var, [#{scope_var_key("'" <> name, type)}, #{value}])"
   end
 
   defp set_var({:name, name}, value, _env),
@@ -1242,9 +1258,25 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp read_var({:var, :session, name, type}, default, _env),
     do: "get_temp_var(ctx, #{var_key(name, type)}, #{default})"
 
-  defp read_var({:var, scope, name, _type}, _default, _env) do
+  defp read_var({:var, :server, name, type}, default, _env),
+    do: "get_server_var(ctx, #{scope_var_key(name, type)}, #{default})"
+
+  defp read_var({:var, :server_temp, name, type}, default, _env),
+    do: "get_server_temp_var(ctx, #{scope_var_key(name, type)}, #{default})"
+
+  defp read_var({:var, :account, name, type}, default, _env),
+    do: "get_account_var(ctx, #{scope_var_key("#" <> name, type)}, #{default})"
+
+  defp read_var({:var, :account_global, name, type}, default, _env),
+    do: "get_account_var(ctx, #{scope_var_key("##" <> name, type)}, #{default})"
+
+  defp read_var({:var, :npc, name, type}, default, _env),
+    do: "get_npc_var(ctx, #{scope_var_key(name, type)}, #{default})"
+
+  # Instance scope (') has no store yet: no instance system exists.
+  defp read_var({:var, :instance, name, type}, _default, _env) do
     flag(:todo_mod)
-    "Todo.call!(:get_var, [#{inspect(scope_prefix(scope) <> name)}])"
+    "Todo.call!(:get_var, [#{scope_var_key("'" <> name, type)}])"
   end
 
   defp read_var({:name, name}, default, _env),
@@ -1259,12 +1291,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp var_key(name, :str), do: inspect(String.to_atom(name <> "$"))
   defp var_key(name, _), do: inspect(String.to_atom(name))
 
-  defp scope_prefix(:server), do: "$"
-  defp scope_prefix(:server_temp), do: "$@"
-  defp scope_prefix(:account), do: "#"
-  defp scope_prefix(:account_global), do: "##"
-  defp scope_prefix(:npc), do: "."
-  defp scope_prefix(:instance), do: "'"
+  # String key literal for the shared scopes ($, $@, #/##, .), which store
+  # string-keyed values rather than atoms. rAthena's trailing `$` marks a
+  # string var, keeping `$foo` (int) and `$foo$` (string) distinct.
+  defp scope_var_key(name, :str), do: inspect(name <> "$")
+  defp scope_var_key(name, _), do: inspect(name)
 
   defp pad_default({:var, _, _, :str}), do: ~s("")
   defp pad_default({:name, name}), do: if(String.ends_with?(name, "$"), do: ~s(""), else: "0")

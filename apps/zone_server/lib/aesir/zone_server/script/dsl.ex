@@ -50,6 +50,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Npc.Session, as: NpcSession
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Todo
+  alias Aesir.ZoneServer.Script.Vars
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Emote
   alias Aesir.ZoneServer.Unit.Inventory
@@ -1105,6 +1106,86 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   @spec set_temp_var(Ctx.t(), atom(), term()) :: Ctx.t()
   def set_temp_var(%Ctx{status: {:error, _}} = ctx, _key, _value), do: ctx
   def set_temp_var(%Ctx{} = ctx, key, value), do: apply_op(ctx, {:set_temp_var, key, value})
+
+  @doc """
+  Reads the `$` server permanent variable `name` (server-wide, Postgres-backed),
+  defaulting an unset var to `default` (`0` matching rAthena).
+  """
+  @spec get_server_var(Ctx.t(), String.t(), term()) :: term()
+  def get_server_var(ctx, name, default \\ 0)
+  def get_server_var(%Ctx{}, name, default), do: Vars.get_server(name, default)
+
+  @doc """
+  Sets the `$` server permanent variable `name` to `value`, persisted
+  write-through and visible to every server sharing the database. Never fails.
+  """
+  @spec set_server_var(Ctx.t(), String.t(), term()) :: Ctx.t()
+  def set_server_var(%Ctx{status: {:error, _}} = ctx, _name, _value), do: ctx
+
+  def set_server_var(%Ctx{} = ctx, name, value) do
+    Vars.put_server(name, value)
+    ctx
+  end
+
+  @doc """
+  Reads the `$@` server temp variable `name` (server-wide, in-memory), defaulting
+  an unset var to `default`. Cleared on server restart.
+  """
+  @spec get_server_temp_var(Ctx.t(), String.t(), term()) :: term()
+  def get_server_temp_var(ctx, name, default \\ 0)
+  def get_server_temp_var(%Ctx{}, name, default), do: Vars.get_server_temp(name, default)
+
+  @doc "Sets the `$@` server temp variable `name` to `value`. Never persists."
+  @spec set_server_temp_var(Ctx.t(), String.t(), term()) :: Ctx.t()
+  def set_server_temp_var(%Ctx{status: {:error, _}} = ctx, _name, _value), do: ctx
+
+  def set_server_temp_var(%Ctx{} = ctx, name, value) do
+    Vars.put_server_temp(name, value)
+    ctx
+  end
+
+  @doc """
+  Reads the account variable `name` (rAthena `#`/`##`, keyed by the attached
+  account), defaulting an unset var — or a player-less context — to `default`.
+  The `name` carries its scope sigil so `#foo` and `##foo` stay distinct.
+  """
+  @spec get_account_var(Ctx.t(), String.t(), term()) :: term()
+  def get_account_var(ctx, name, default \\ 0)
+  def get_account_var(%Ctx{account_id: nil}, _name, default), do: default
+
+  def get_account_var(%Ctx{account_id: account_id}, name, default),
+    do: Vars.get_account(account_id, name, default)
+
+  @doc """
+  Sets the account variable `name` to `value`, persisted write-through against
+  the attached account. A no-op (never fails) when no player is attached.
+  """
+  @spec set_account_var(Ctx.t(), String.t(), term()) :: Ctx.t()
+  def set_account_var(%Ctx{status: {:error, _}} = ctx, _name, _value), do: ctx
+  def set_account_var(%Ctx{account_id: nil} = ctx, _name, _value), do: ctx
+
+  def set_account_var(%Ctx{account_id: account_id} = ctx, name, value) do
+    Vars.put_account(account_id, name, value)
+    ctx
+  end
+
+  @doc """
+  Reads the `.` NPC variable `name` (shared across every placement of the
+  running NPC script, server-lifetime, in-memory), defaulting an unset var to
+  `default`.
+  """
+  @spec get_npc_var(Ctx.t(), String.t(), term()) :: term()
+  def get_npc_var(ctx, name, default \\ 0)
+  def get_npc_var(%Ctx{source: source}, name, default), do: Vars.get_npc(source, name, default)
+
+  @doc "Sets the `.` NPC variable `name` to `value`. Never persists."
+  @spec set_npc_var(Ctx.t(), String.t(), term()) :: Ctx.t()
+  def set_npc_var(%Ctx{status: {:error, _}} = ctx, _name, _value), do: ctx
+
+  def set_npc_var(%Ctx{source: source} = ctx, name, value) do
+    Vars.put_npc(source, name, value)
+    ctx
+  end
 
   @doc """
   Sets the script-local variable `key` (rAthena `.@var`). Pure Ctx update; the
