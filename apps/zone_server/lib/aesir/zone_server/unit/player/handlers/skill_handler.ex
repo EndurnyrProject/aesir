@@ -33,10 +33,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @spec handle_use_skill(map(), integer(), pos_integer(), integer()) :: {:noreply, map()}
   def handle_use_skill(%{game_state: game_state} = state, skill_id, level, target_id) do
@@ -465,8 +465,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
     new_game_state = %{new_game_state | stats: updated_stats}
 
-    UnitRegistry.update_unit_state(:player, new_game_state.character_id, new_game_state)
-
     CharacterPersistence.update_character(
       new_game_state.character_id,
       %{
@@ -482,7 +480,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
     maybe_send_postdelay(connection_pid, skill_id, level)
 
-    %{state | game_state: new_game_state}
+    StateCommit.commit(state, new_game_state)
     |> drain_warp()
     |> drain_interaction()
   end

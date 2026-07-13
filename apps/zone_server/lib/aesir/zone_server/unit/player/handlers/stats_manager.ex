@@ -4,9 +4,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
   Extracted from PlayerSession to improve modularity and maintainability.
   """
 
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
   Handles sending a single status update to the client.
@@ -81,7 +81,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
     updated_stats = %{stats | base_stats: updated_base_stats}
     updated_stats = Stats.calculate_stats(updated_stats, game_state.character_id)
     updated_game_state = %{state.game_state | stats: updated_stats}
-    updated_state = %{state | game_state: updated_game_state}
+    updated_state = update_game_state(state, updated_game_state)
 
     StatusSync.send_stat_updates(state.connection_pid, updated_stats)
 
@@ -100,7 +100,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
   def handle_sync_recalculate_stats(%{game_state: game_state} = state) do
     updated_stats = Stats.calculate_stats(game_state.stats, game_state.character_id)
     updated_game_state = %{state.game_state | stats: updated_stats}
-    updated_state = %{state | game_state: updated_game_state}
+    updated_state = update_game_state(state, updated_game_state)
 
     StatusSync.send_stat_updates(state.connection_pid, updated_stats)
 
@@ -121,8 +121,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
   end
 
   def update_game_state(state, new_game_state) do
-    UnitRegistry.update_unit_state(:player, new_game_state.character_id, new_game_state)
-
-    %{state | game_state: new_game_state}
+    StateCommit.commit(state, new_game_state)
   end
 end

@@ -7,10 +7,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Party.Manager
+  alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.Stats.CurrentState
+  alias Aesir.ZoneServer.Unit.Stats.DerivedStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
@@ -29,6 +35,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
       movement_intent: :combat,
       walk_path: [{151, 151}, {152, 152}],
       combat_target_id: 42,
+      stats: %Stats{
+        progression: %PlayerProgression{job_id: 0, base_level: 1},
+        current_state: %CurrentState{hp: 100, sp: 50, ap: 0},
+        derived_stats: %DerivedStats{max_hp: 100, max_sp: 50, max_ap: 0}
+      },
       visible_players: MapSet.new([2001]),
       visible_mobs: MapSet.new([9001]),
       last_visibility_cell: {18, 18}
@@ -169,6 +180,42 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
       assert gs.visible_players == MapSet.new()
       assert gs.visible_mobs == MapSet.new()
       assert gs.last_visibility_cell == nil
+    end
+
+    test "publishes one complete party member delta for the destination map" do
+      stub(Broadcast, :to_players, fn _visible, _packet, _opts -> :ok end)
+      reject(&Manager.push_map_change/3)
+
+      stats = %Stats{
+        progression: %PlayerProgression{job_id: 4054, base_level: 175},
+        current_state: %CurrentState{hp: 8_000, sp: 900, ap: 120},
+        derived_stats: %DerivedStats{max_hp: 9_000, max_sp: 1_200, max_ap: 200}
+      }
+
+      state = state()
+      game_state = %{state.game_state | party_id: 7, stats: stats}
+
+      expect(Manager, :sync_member, fn 7, 1000, member ->
+        assert member == %Member{
+                 char_id: 1000,
+                 name: "Gm",
+                 job_id: 4054,
+                 base_level: 175,
+                 hp: 8_000,
+                 max_hp: 9_000,
+                 sp: 900,
+                 max_sp: 1_200,
+                 ap: 120,
+                 max_ap: 200,
+                 online: true,
+                 map_name: "geffen"
+               }
+
+        {:ok, %{}}
+      end)
+
+      assert {:ok, %{game_state: %{map_name: "geffen"}}} =
+               WarpHandler.warp(%{state | game_state: game_state}, "geffen", 100, 120)
     end
 
     test "swaps the per-map mob-despawn subscription" do

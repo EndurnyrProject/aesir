@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   alias Aesir.ZoneServer.Unit.Player.Appearance
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
 
@@ -93,7 +94,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
         sync_after_change(updated_game_state, state)
         notify_appearance(state, old_equipment, updated_game_state)
 
-        {:noreply, %{state | game_state: updated_game_state}}
+        {:noreply, StateCommit.commit(state, updated_game_state)}
 
       {:error, reason} ->
         Logger.warning("Equip persist failed for #{game_state.character_id}: #{inspect(reason)}")
@@ -120,7 +121,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
         sync_after_change(updated_game_state, state)
         notify_appearance(state, old_equipment, updated_game_state)
 
-        {:noreply, %{state | game_state: updated_game_state}}
+        {:noreply, StateCommit.commit(state, updated_game_state)}
 
       {:error, reason} ->
         Logger.warning(

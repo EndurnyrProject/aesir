@@ -7,7 +7,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManagerTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.ParamChange
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
+  alias Aesir.ZoneServer.Party.Manager
+  alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -37,6 +40,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManagerTest do
     end)
 
     character = %Character{
+      id: player_id,
+      account_id: 100,
+      name: "Status Tester",
+      last_map: "prontera",
+      last_x: 100,
+      last_y: 100,
+      sex: "M",
       str: 10,
       agi: 10,
       vit: 10,
@@ -50,14 +60,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManagerTest do
       class: 0
     }
 
-    state = %{
-      connection_pid: self(),
-      game_state: %{
-        character_id: player_id,
-        stats: Stats.from_character(character),
-        walk_speed: 150
-      }
-    }
+    game_state = PlayerState.new(character)
+    state = %{connection_pid: self(), game_state: %{game_state | walk_speed: 150}}
 
     {:ok, state: state}
   end
@@ -112,5 +116,48 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManagerTest do
       assert applied.game_state.walk_speed == 150
       refute_receive {:send, :gameplay, {:param_change, %ParamChange{var_id: 0}}}
     end
+  end
+
+  test "publishes status-driven maxima and clamped current resources", %{state: state} do
+    game_state = %{state.game_state | party_id: 7}
+
+    recalculated =
+      game_state.stats
+      |> put_in([Access.key!(:current_state), Access.key!(:hp)], 700)
+      |> put_in([Access.key!(:current_state), Access.key!(:sp)], 250)
+      |> put_in([Access.key!(:current_state), Access.key!(:ap)], 20)
+      |> put_in([Access.key!(:derived_stats), Access.key!(:max_hp)], 700)
+      |> put_in([Access.key!(:derived_stats), Access.key!(:max_sp)], 250)
+      |> put_in([Access.key!(:derived_stats), Access.key!(:max_ap)], 20)
+
+    expect(Stats, :calculate_stats, fn _stats, id when id == game_state.character_id ->
+      recalculated
+    end)
+
+    stub(UnitRegistry, :update_unit_state, fn :player, _id, _game_state -> :ok end)
+
+    expect(Manager, :sync_member, fn 7, char_id, member ->
+      assert char_id == game_state.character_id
+
+      assert member == %Member{
+               char_id: game_state.character_id,
+               name: "Status Tester",
+               job_id: recalculated.progression.job_id,
+               base_level: recalculated.progression.base_level,
+               hp: 700,
+               max_hp: 700,
+               sp: 250,
+               max_sp: 250,
+               ap: 20,
+               max_ap: 20,
+               online: true,
+               map_name: "prontera"
+             }
+
+      {:ok, %{}}
+    end)
+
+    assert %{game_state: %{stats: ^recalculated}} =
+             StatusManager.recalculate_after_status_change(%{state | game_state: game_state})
   end
 end

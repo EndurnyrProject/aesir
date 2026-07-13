@@ -13,6 +13,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Party.Manager
+  alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
@@ -61,6 +63,33 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   end
 
   describe "apply_damage/3" do
+    test "publishes the complete party-visible resource snapshot" do
+      state = build_state(100, :idle)
+      game_state = %{state.game_state | party_id: 7, character_name: "Aesir"}
+
+      expect(Manager, :sync_member, fn 7, 1, member ->
+        assert member == %Member{
+                 char_id: 1,
+                 name: "Aesir",
+                 job_id: 0,
+                 base_level: 1,
+                 hp: 70,
+                 max_hp: 100,
+                 sp: 10,
+                 max_sp: 50,
+                 ap: 0,
+                 max_ap: 0,
+                 online: true,
+                 map_name: "prontera"
+               }
+
+        {:ok, %{}}
+      end)
+
+      assert {:noreply, %{game_state: %{stats: %{current_state: %{hp: 70}}}}} =
+               HealthHandler.apply_damage(30, 2001, %{state | game_state: game_state})
+    end
+
     test "reduces HP and pushes an SP_HP update when the player survives" do
       {:noreply, %{game_state: game_state}} =
         HealthHandler.apply_damage(30, 2001, build_state(100, :idle))
@@ -132,6 +161,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   end
 
   describe "apply_heal/3" do
+    test "publishes healed HP with the unchanged SP/AP maxima" do
+      state = build_state(70, :idle)
+      game_state = %{state.game_state | party_id: 7, character_name: "Aesir"}
+
+      expect(Manager, :sync_member, fn 7, 1, member ->
+        assert %Member{
+                 hp: 90,
+                 max_hp: 100,
+                 sp: 10,
+                 max_sp: 50,
+                 ap: 0,
+                 max_ap: 0
+               } = member
+
+        {:ok, %{}}
+      end)
+
+      assert {:noreply, %{game_state: %{stats: %{current_state: %{hp: 90}}}}} =
+               HealthHandler.apply_heal(20, nil, %{state | game_state: game_state})
+    end
+
     test "raises HP and pushes an SP_HP update" do
       {:noreply, %{game_state: game_state}} =
         HealthHandler.apply_heal(20, nil, build_state(70, :idle))
@@ -194,6 +244,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       end)
 
       HealthHandler.apply_heal(20, nil, build_state(70, :idle))
+    end
+  end
+
+  describe "consume_sp/2" do
+    test "publishes consumed SP with the complete resource projection" do
+      state = build_state(100, :idle)
+      game_state = %{state.game_state | party_id: 7, character_name: "Aesir"}
+
+      expect(Manager, :sync_member, fn 7, 1, member ->
+        assert %Member{
+                 hp: 100,
+                 max_hp: 100,
+                 sp: 6,
+                 max_sp: 50,
+                 ap: 0,
+                 max_ap: 0
+               } = member
+
+        {:ok, %{}}
+      end)
+
+      assert {:noreply, %{game_state: %{stats: %{current_state: %{sp: 6}}}}} =
+               HealthHandler.consume_sp(4, %{state | game_state: game_state})
     end
   end
 
@@ -281,6 +354,31 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   end
 
   describe "handle_restart/2" do
+    test "publishes full restored HP/SP before the save-point warp" do
+      stub(WarpHandler, :warp, fn warp_state, _save_map, _save_x, _save_y ->
+        {:ok, warp_state}
+      end)
+
+      state = build_state(0, :dead)
+      game_state = %{state.game_state | party_id: 7, character_name: "Aesir"}
+
+      expect(Manager, :sync_member, fn 7, 1, member ->
+        assert %Member{
+                 hp: 100,
+                 max_hp: 100,
+                 sp: 50,
+                 max_sp: 50,
+                 ap: 0,
+                 max_ap: 0
+               } = member
+
+        {:ok, %{}}
+      end)
+
+      assert {:noreply, %{game_state: %{stats: %{current_state: %{hp: 100, sp: 50}}}}} =
+               HealthHandler.handle_restart(0, %{state | game_state: game_state})
+    end
+
     test "revives a dead player at full HP/SP and warps them to their save point" do
       stub(WarpHandler, :warp, fn warp_state, save_map, save_x, save_y ->
         send(self(), {:warp_called, save_map, save_x, save_y})

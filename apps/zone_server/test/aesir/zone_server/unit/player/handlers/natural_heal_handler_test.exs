@@ -7,9 +7,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Party.Manager
+  alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.Stats.BaseStats
   alias Aesir.ZoneServer.Unit.Stats.CurrentState
   alias Aesir.ZoneServer.Unit.Stats.DerivedStats
@@ -38,6 +41,46 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
   end
 
   describe "handle_tick/2" do
+    test "publishes regenerated HP/SP as one complete resource snapshot" do
+      state = build_state(hp: 100, sp: 50, action: :idle, movement: :standing)
+
+      game_state = %{
+        state.game_state
+        | party_id: 7,
+          character_name: "Aesir",
+          map_name: "prontera"
+      }
+
+      test_pid = self()
+
+      stub(Manager, :sync_member, fn 7, 1, member ->
+        send(test_pid, {:party_member, member})
+        {:ok, %{}}
+      end)
+
+      assert {:noreply, updated} =
+               NaturalHealHandler.handle_tick(%{state | game_state: game_state}, 10_000)
+
+      assert_receive {:party_member, member}
+
+      assert member == %Member{
+               char_id: 1,
+               name: "Aesir",
+               job_id: updated.game_state.stats.progression.job_id,
+               base_level: updated.game_state.stats.progression.base_level,
+               hp: updated.game_state.stats.current_state.hp,
+               max_hp: 500,
+               sp: updated.game_state.stats.current_state.sp,
+               max_sp: 500,
+               ap: updated.game_state.stats.current_state.ap,
+               max_ap: updated.game_state.stats.derived_stats.max_ap,
+               online: true,
+               map_name: "prontera"
+             }
+
+      refute_receive {:party_member, _member}
+    end
+
     test "regenerates HP for a damaged idle player and clamps at max" do
       # A single 500ms tick is sub-interval; HP rises once enough ticks
       # accumulate past the base HP interval (the accumulator carries progress).
@@ -154,8 +197,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
   defp build_state(opts) do
     stats = %Stats{
       base_stats: %BaseStats{str: 10, agi: 10, vit: 50, int: 50, dex: 10, luk: 10},
-      derived_stats: %DerivedStats{max_hp: 500, max_sp: 500, aspd: 150},
-      current_state: %CurrentState{hp: opts[:hp], sp: opts[:sp]}
+      derived_stats: %DerivedStats{max_hp: 500, max_sp: 500, max_ap: 0, aspd: 150},
+      current_state: %CurrentState{hp: opts[:hp], sp: opts[:sp], ap: 0},
+      progression: %PlayerProgression{job_id: 0, base_level: 1}
     }
 
     game_state = %PlayerState{

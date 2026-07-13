@@ -19,11 +19,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Network.MessageRouter
-  alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @type session_state :: %{
           required(:game_state) => PlayerState.t(),
@@ -66,22 +65,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
         |> Map.put(:pending_map_load, :warp)
         |> close_storage_on_cross_map(same_map?)
 
-      UnitRegistry.update_unit_state(:player, new_game_state.character_id, new_game_state)
+      state = StateCommit.commit(state, new_game_state)
       MessageRouter.send_to(connection_pid, %MapMove{map_name: dest_map, x: fx, y: fy})
-
-      if new_game_state.party_id > 0 do
-        PartyManager.push_map_change(
-          new_game_state.party_id,
-          new_game_state.character_id,
-          dest_map
-        )
-      end
 
       Logger.debug(
         "Player #{game_state.character_id} warping #{game_state.map_name} -> #{dest_map} (#{fx}, #{fy})"
       )
 
-      {:ok, %{state | game_state: new_game_state}}
+      {:ok, state}
     end
   end
 

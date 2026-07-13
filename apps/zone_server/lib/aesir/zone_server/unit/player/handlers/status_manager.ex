@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
   alias Aesir.Commons.StatusParams
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
 
@@ -103,7 +104,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
       StatusSync.send_param(state.connection_pid, StatusParams.speed(), updated_walk_speed)
     end
 
-    %{state | game_state: %{game_state | stats: updated_stats, walk_speed: updated_walk_speed}}
+    updated_game_state = %{game_state | stats: updated_stats, walk_speed: updated_walk_speed}
+    StateCommit.commit(state, updated_game_state)
   end
 
   # Mirrors rAthena `status_calc_speed`: the aggregated `:movement_speed`

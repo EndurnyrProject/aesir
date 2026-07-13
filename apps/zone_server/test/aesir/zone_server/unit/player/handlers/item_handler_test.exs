@@ -89,7 +89,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
          {:reduced, @red_potion_slot, 4}}
       end)
 
-      recalced_stats = %{state.game_state.stats | derived_stats: %{aspd: 193}}
+      recalced_derived = %{state.game_state.stats.derived_stats | aspd: 193}
+      recalced_stats = %{state.game_state.stats | derived_stats: recalced_derived}
 
       expect(StatusManager, :recalculate_after_status_change, fn recalc_state ->
         assert recalc_state.game_state.stats.current_state.hp == 150

@@ -20,6 +20,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Party.Manager
+  alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
@@ -84,36 +86,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     end
   end
 
-  # Plain-map game state used for the instant path, where Catalog is stubbed
-  # with a definition that has no cast time.
   defp instant_state(sp) do
-    %{
-      connection_pid: self(),
-      interaction_lock: nil,
-      game_state: %{
-        character_id: 1000,
-        map_name: "prontera",
-        x: 150,
-        y: 150,
-        skill_cooldowns: %{},
-        act_delay_until: 0,
-        action_state: :idle,
-        combat_target_id: nil,
-        state_context: %{},
-        inventory: %{},
-        pending_inventory_persist: [],
-        pending_inventory_notify: [],
-        pending_warp: nil,
-        pending_interaction: nil,
-        zeny: 0,
-        stats: %{
-          base_stats: %{dex: 1, int: 1},
-          current_state: %{sp: sp, hp: 100},
-          derived_stats: %{max_sp: 200, max_hp: 100},
-          progression: %{learned_skills: %{29 => 1}}
-        }
-      }
-    }
+    state = casting_state(sp)
+
+    stats =
+      state.game_state.stats
+      |> put_in([Access.key!(:current_state), Access.key!(:hp)], 100)
+      |> put_in([Access.key!(:derived_stats), Access.key!(:max_sp)], 200)
+      |> put_in([Access.key!(:derived_stats), Access.key!(:max_hp)], 100)
+      |> put_in([Access.key!(:progression), Access.key!(:learned_skills)], %{29 => 1})
+
+    state
+    |> Map.put(:interaction_lock, nil)
+    |> Map.put(:game_state, %{state.game_state | stats: stats})
   end
 
   # Real PlayerState used for the timed-cast path, where transition_to needs a
@@ -174,6 +159,41 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   end
 
   describe "instant cast" do
+    test "publishes the final resource projection after consuming SP" do
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
+      stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)
+      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+
+      state = casting_state(45)
+      game_state = %{state.game_state | party_id: 7}
+      stats = game_state.stats
+
+      expect(Manager, :sync_member, fn 7, 1000, member ->
+        assert member == %Member{
+                 char_id: 1000,
+                 name: "Caster",
+                 job_id: stats.progression.job_id,
+                 base_level: stats.progression.base_level,
+                 hp: stats.current_state.hp,
+                 max_hp: stats.derived_stats.max_hp,
+                 sp: 27,
+                 max_sp: stats.derived_stats.max_sp,
+                 ap: stats.current_state.ap,
+                 max_ap: stats.derived_stats.max_ap,
+                 online: true,
+                 map_name: "prontera"
+               }
+
+        {:ok, %{}}
+      end)
+
+      assert {:noreply, %{game_state: %{stats: %{current_state: %{sp: 27}}}}} =
+               SkillHandler.handle_use_skill(%{state | game_state: game_state}, 29, 1, 1000)
+    end
+
     test "a staged pending_interaction starts a dialog and takes the lock" do
       stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
