@@ -38,8 +38,11 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
   alias Aesir.Net.PartyInviteNotify
   alias Aesir.Net.PartyInviteRequest
   alias Aesir.Net.PartyInviteResponse
+  alias Aesir.Net.PartyMemberUpdate
   alias Aesir.Net.PartyOptionsRequest
   alias Aesir.Repo
+  alias Aesir.ZoneServer.Mmo.JobManagement
+  alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Unit.Mob.KillExp
 
   # rAthena `level_penalty.yml` `Type: Exp` breakpoint: diff -31 -> 10%.
@@ -139,6 +142,85 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
     end
   end
 
+  describe "cross-map member state" do
+    test "job changes reach every member and survive disconnect and runtime reconstruction" do
+      {:ok, parent_job} = JobManagement.get_job_by_id(4054)
+
+      %{sessions: [leader, changer], party_id: party_id} =
+        form_party(
+          [
+            {"RemoteLeader", 200, "prontera"},
+            {"RemoteChanger", 200, "geffen"}
+          ],
+          observe_party_updates: true,
+          character_attrs: %{class: 4054, job_level: parent_job.max_job_level}
+        )
+
+      flush_packets()
+      flush_observed_party_updates()
+
+      send(changer.pid, {:change_job, 4252})
+
+      changer_id = changer.character.id
+
+      assert_receive {:party_update, "RemoteLeader",
+                      %PartyMemberUpdate{
+                        party_id: ^party_id,
+                        member: %{char_id: ^changer_id, job_id: 4252} = leader_member
+                      }},
+                     2_000
+
+      assert_receive {:party_update, "RemoteChanger",
+                      %PartyMemberUpdate{
+                        party_id: ^party_id,
+                        member: %{char_id: ^changer_id, job_id: 4252} = own_member
+                      }},
+                     2_000
+
+      assert leader_member == own_member
+
+      changed_state = get_player_state(changer.pid)
+      assert changed_state.map_name == "geffen"
+      assert leader_member.base_level == changed_state.stats.progression.base_level
+      assert leader_member.hp == changed_state.stats.current_state.hp
+      assert leader_member.max_hp == changed_state.stats.derived_stats.max_hp
+      assert leader_member.sp == changed_state.stats.current_state.sp
+      assert leader_member.max_sp == changed_state.stats.derived_stats.max_sp
+      assert leader_member.ap == changed_state.stats.current_state.ap
+      assert leader_member.max_ap == changed_state.stats.derived_stats.max_ap
+      assert leader_member.ap > 0
+      assert leader_member.online
+      assert leader_member.map == "geffen"
+
+      PlayerSession.disconnect(changer.pid)
+
+      assert_receive {:party_update, "RemoteLeader",
+                      %PartyMemberUpdate{
+                        party_id: ^party_id,
+                        member: %{char_id: ^changer_id, online: false} = offline_member
+                      }},
+                     2_000
+
+      assert %{leader_member | online: false} == offline_member
+
+      ClusterTestHelper.clear_all()
+      assert {:ok, rebuilt} = PartyManager.ensure_started(party_id)
+
+      rebuilt_member = Map.fetch!(rebuilt.members, changer_id)
+      refute rebuilt_member.online
+      assert rebuilt_member.job_id == offline_member.job_id
+      assert rebuilt_member.base_level == offline_member.base_level
+      assert rebuilt_member.hp == offline_member.hp
+      assert rebuilt_member.max_hp == offline_member.max_hp
+      assert rebuilt_member.sp == offline_member.sp
+      assert rebuilt_member.max_sp == offline_member.max_sp
+      assert rebuilt_member.ap == offline_member.ap
+      assert rebuilt_member.max_ap == offline_member.max_ap
+      assert rebuilt_member.map_name == offline_member.map
+      assert Process.alive?(leader.pid)
+    end
+  end
+
   defp kill_mob(killer_pid) do
     %{character_id: char_id, map_name: map_name} = get_player_state(killer_pid)
     KillExp.distribute(%{char_id => 1}, @base_exp, @job_exp, @mob_level, map_name)
@@ -154,17 +236,21 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
   # `{name, base_level, map_name}` member spec; each session's live party
   # wiring (game_state.party_id, subscription, snapshot) is attached inline
   # by `PartyHandler` as it happens -- no relog needed (see moduledoc).
-  defp form_party([{leader_name, leader_level, leader_map} | member_specs]) do
+  defp form_party([{leader_name, leader_level, leader_map} | member_specs], opts \\ []) do
     leader_char =
-      character_fixture(leader_name, %{
-        base_level: leader_level,
-        last_map: leader_map,
-        last_x: 150,
-        last_y: 150
-      })
+      character_fixture(
+        leader_name,
+        %{
+          base_level: leader_level,
+          last_map: leader_map,
+          last_x: 150,
+          last_y: 150
+        }
+        |> Map.merge(Keyword.get(opts, :character_attrs, %{}))
+      )
 
     leader_session =
-      start_player_session(character: leader_char, map_name: leader_map, position: {150, 150})
+      start_party_session(leader_char, leader_map, leader_name, opts)
 
     simulate_incoming_message(leader_session.pid, %PartyCreateRequest{name: "Vanguard"})
 
@@ -174,23 +260,28 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
 
     assert get_player_state(leader_session.pid).party_id == party_id
 
-    member_sessions = Enum.map(member_specs, &invite_and_accept(leader_session, party_id, &1))
+    member_sessions =
+      Enum.map(member_specs, &invite_and_accept(leader_session, party_id, &1, opts))
+
     flush_packets()
 
     %{sessions: [leader_session | member_sessions], party_id: party_id}
   end
 
-  defp invite_and_accept(leader_session, party_id, {name, level, map_name}) do
+  defp invite_and_accept(leader_session, party_id, {name, level, map_name}, opts) do
     member_char =
-      character_fixture(name, %{
-        base_level: level,
-        last_map: map_name,
-        last_x: 150,
-        last_y: 150
-      })
+      character_fixture(
+        name,
+        %{
+          base_level: level,
+          last_map: map_name,
+          last_x: 150,
+          last_y: 150
+        }
+        |> Map.merge(Keyword.get(opts, :character_attrs, %{}))
+      )
 
-    session =
-      start_player_session(character: member_char, map_name: map_name, position: {150, 150})
+    session = start_party_session(member_char, map_name, name, opts)
 
     simulate_incoming_message(leader_session.pid, %PartyInviteRequest{
       target_char_id: member_char.id,
@@ -209,6 +300,49 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
     assert get_player_state(session.pid).party_id == party_id
 
     session
+  end
+
+  defp start_party_session(character, map_name, name, opts) do
+    session_opts = [character: character, map_name: map_name, position: {150, 150}]
+
+    session_opts =
+      if Keyword.get(opts, :observe_party_updates, false) do
+        Keyword.put(session_opts, :connection_pid, start_party_connection_probe(name))
+      else
+        session_opts
+      end
+
+    start_player_session(session_opts)
+  end
+
+  defp start_party_connection_probe(name) do
+    test_pid = self()
+
+    spawn_link(fn -> party_connection_probe(test_pid, name) end)
+  end
+
+  defp party_connection_probe(test_pid, name) do
+    receive do
+      {:send, channel, {_tag, message}} ->
+        send(test_pid, {:packet_sent, message, channel})
+
+        if match?(%PartyMemberUpdate{}, message) do
+          send(test_pid, {:party_update, name, message})
+        end
+
+        party_connection_probe(test_pid, name)
+
+      _other ->
+        party_connection_probe(test_pid, name)
+    end
+  end
+
+  defp flush_observed_party_updates do
+    receive do
+      {:party_update, _, _} -> flush_observed_party_updates()
+    after
+      0 -> :ok
+    end
   end
 
   defp account_fixture(userid) do
