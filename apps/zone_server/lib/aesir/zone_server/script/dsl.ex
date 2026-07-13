@@ -829,6 +829,25 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   def nude(%Ctx{} = ctx), do: apply_op(ctx, {:nude})
 
   @doc """
+  Clears the broken flag on the equipment at inventory `index` through the
+  session seam (rAthena `repair`), re-syncing the now-normal row to the client.
+  Idempotent: a missing or already-normal row is a no-op success. Never
+  re-equips the item - the player re-wears it manually.
+  """
+  @spec repair(Ctx.t(), non_neg_integer()) :: Ctx.t()
+  def repair(%Ctx{status: {:error, _}} = ctx, _index), do: ctx
+  def repair(%Ctx{} = ctx, index), do: apply_op(ctx, {:repair, index})
+
+  @doc """
+  Clears the broken flag on every broken equipment through the session seam
+  (rAthena `repairall`), re-syncing each repaired row to the client. Idempotent
+  when nothing is broken. Never re-equips.
+  """
+  @spec repairall(Ctx.t()) :: Ctx.t()
+  def repairall(%Ctx{status: {:error, _}} = ctx), do: ctx
+  def repairall(%Ctx{} = ctx), do: apply_op(ctx, {:repairall})
+
+  @doc """
   Kills every mob on `map` that was summoned with the event label `event`
   (rAthena `killmonster`); the special label `"All"` kills every
   script-summoned mob on the map (spawn-table mobs are spared). Killed mobs are

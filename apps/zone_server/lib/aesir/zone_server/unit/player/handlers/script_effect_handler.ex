@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.Player.Handlers.BreakOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
@@ -51,6 +52,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:openstorage}
           | {:setcart, non_neg_integer()}
           | {:refine, non_neg_integer(), integer(), RefineDatabase.cost_type(), boolean()}
+          | {:repair, non_neg_integer()}
+          | {:repairall}
           | {:setquest, QuestLog.quest_id()}
           | {:erasequest, QuestLog.quest_id()}
           | {:completequest, QuestLog.quest_id()}
@@ -218,6 +221,32 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     {result, %{state | game_state: new_gs}}
   end
 
+  def apply_op({:repair, index}, %{game_state: gs} = state) do
+    was_broken? = match?(%InventoryItem{attribute: 1}, Map.get(gs.inventory, index))
+
+    case BreakOps.repair(gs, index) do
+      {:ok, new_gs} ->
+        if was_broken?, do: push_item_view(state.connection_pid, new_gs, index)
+        commit(state, new_gs)
+
+      {:error, reason} ->
+        {{:error, reason}, state}
+    end
+  end
+
+  def apply_op({:repairall}, %{game_state: gs} = state) do
+    broken_indices = for {index, %InventoryItem{attribute: 1}} <- gs.inventory, do: index
+
+    case BreakOps.repair_all(gs) do
+      {:ok, new_gs} ->
+        Enum.each(broken_indices, &push_item_view(state.connection_pid, new_gs, &1))
+        commit(state, new_gs)
+
+      {:error, reason} ->
+        {{:error, reason}, state}
+    end
+  end
+
   def apply_op({:setquest, quest_id}, %{game_state: gs} = state) do
     case QuestLog.add(gs.quest_log, quest_id) do
       {:ok, quest_log, entry} ->
@@ -297,10 +326,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   # plain/blessing-protected fail or a rejected attempt (nothing changed).
   @spec push_refine_view(pid(), PlayerState.t(), non_neg_integer(), RefineOps.result()) :: :ok
   defp push_refine_view(connection_pid, new_gs, index, {:ok, :success, _new_level}),
-    do: push_refined_item(connection_pid, new_gs, index)
+    do: push_item_view(connection_pid, new_gs, index)
 
   defp push_refine_view(connection_pid, new_gs, index, {:ok, :downgrade, _new_level}),
-    do: push_refined_item(connection_pid, new_gs, index)
+    do: push_item_view(connection_pid, new_gs, index)
 
   defp push_refine_view(connection_pid, _new_gs, index, {:ok, :broke}),
     do: MessageRouter.send_to(connection_pid, InventoryView.item_removed(index, 1))
@@ -308,8 +337,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   defp push_refine_view(_connection_pid, _new_gs, _index, {:ok, :fail}), do: :ok
   defp push_refine_view(_connection_pid, _new_gs, _index, {:error, _reason}), do: :ok
 
-  @spec push_refined_item(pid(), PlayerState.t(), non_neg_integer()) :: :ok
-  defp push_refined_item(connection_pid, new_gs, index) do
+  # Re-sends the owner's item view for a mutated row (e.g. a refine downgrade or
+  # a repair clearing the broken flag). No-op if the index no longer holds a row.
+  @spec push_item_view(pid(), PlayerState.t(), non_neg_integer()) :: :ok
+  defp push_item_view(connection_pid, new_gs, index) do
     case Map.get(new_gs.inventory, index) do
       %InventoryItem{} = item ->
         MessageRouter.send_to(connection_pid, InventoryView.item_added(item, index))
