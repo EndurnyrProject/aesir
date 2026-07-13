@@ -137,6 +137,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "checkquest" => %{shape: :quest_check, dsl: "checkquest"},
     "questprogress" => %{shape: :quest_check, dsl: "questprogress"},
     "getpartnerid" => %{dsl: "getpartnerid", args: []},
+    "gettimetick" => %{dsl: "gettimetick", args: [:int]},
     "checkre" => %{dsl: "checkre", args: [:int]},
     "vip_status" => %{dsl: "vip_status", args: [:int]}
   }

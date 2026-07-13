@@ -1,8 +1,8 @@
 defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
   @moduledoc """
-  Covers the renewal/VIP/marriage reads (`checkre/2`, `vip_status/2`,
-  `getpartnerid/1`) and the client-packet effect ops (`cutin/3`,
-  `soundeffect/3`) short-circuiting on a detached or errored ctx.
+  Covers the renewal/VIP/marriage/time reads (`checkre/2`, `vip_status/2`,
+  `getpartnerid/1`, `gettimetick/2`) and the client-packet effect ops
+  (`cutin/3`, `soundeffect/3`) short-circuiting on a detached or errored ctx.
   """
 
   use ExUnit.Case, async: true
@@ -52,6 +52,34 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
 
     test "ignores the ctx (works detached)" do
       assert Dsl.vip_status(%{ctx() | game_state: nil}, 1) == 0
+    end
+  end
+
+  describe "gettimetick/2" do
+    test "type 2 is the Unix epoch timestamp in seconds" do
+      assert_in_delta Dsl.gettimetick(ctx(), 2), System.os_time(:second), 2
+    end
+
+    test "type 1 is the seconds elapsed since local midnight" do
+      %NaiveDateTime{hour: hour, minute: minute, second: second} = NaiveDateTime.local_now()
+      expected = hour * 3600 + minute * 60 + second
+
+      tick = Dsl.gettimetick(ctx(), 1)
+
+      assert tick in 0..86_399
+      assert abs(tick - expected) <= 2 or abs(tick - expected) >= 86_397
+    end
+
+    test "type 0 (and unknown types) is a non-negative monotonic millisecond tick" do
+      first = Dsl.gettimetick(ctx(), 0)
+      second = Dsl.gettimetick(ctx(), 7)
+
+      assert first >= 0
+      assert second >= first
+    end
+
+    test "ignores the ctx (works detached)" do
+      assert is_integer(Dsl.gettimetick(%{ctx() | game_state: nil}, 2))
     end
   end
 

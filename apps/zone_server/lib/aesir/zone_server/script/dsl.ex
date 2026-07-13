@@ -1864,6 +1864,27 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   def vip_status(%Ctx{}, _type), do: 0
 
   @doc """
+  The current time as an integer tick (rAthena `gettimetick`), by `type`:
+  `2` the Unix epoch timestamp in seconds, `1` the seconds elapsed since
+  local midnight (`0..86_399`, server local time as everywhere else),
+  `0` (and any other type, matching rAthena's default case) the system
+  tick — milliseconds since the VM started, monotonic, meant only for
+  elapsed-time math. Pure read; the ctx is ignored.
+  """
+  @spec gettimetick(Ctx.t(), integer()) :: integer()
+  def gettimetick(%Ctx{}, 2), do: System.os_time(:second)
+
+  def gettimetick(%Ctx{}, 1) do
+    %NaiveDateTime{hour: hour, minute: minute, second: second} = NaiveDateTime.local_now()
+    hour * 3600 + minute * 60 + second
+  end
+
+  def gettimetick(%Ctx{}, _type) do
+    vm_start = System.convert_time_unit(:erlang.system_info(:start_time), :native, :millisecond)
+    System.monotonic_time(:millisecond) - vm_start
+  end
+
+  @doc """
   The unit id (gid) of the NPC running the script (rAthena `getnpcid`, type-0
   form). A pure read that does not raise on a detached ctx — the NPC identity
   is not player state — and returns `0` when there is no `npc_gid` (e.g. an

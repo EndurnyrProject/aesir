@@ -862,6 +862,18 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "Todo.call!(:getpartnerid"
   end
 
+  test "gettimetick maps to its read in both statement and expression position" do
+    src =
+      gen!("""
+      set @cd_marketshop, gettimetick(2);
+      if (@cd_marketshop + 60 > gettimetick(2)) close;
+      close;
+      """)
+
+    assert src =~ "gettimetick(ctx, 2)"
+    refute src =~ "Todo.call!(:gettimetick"
+  end
+
   test "checkre and vip_status map to their reads, resolving VIP_STATUS_* constants" do
     src =
       gen!("""
