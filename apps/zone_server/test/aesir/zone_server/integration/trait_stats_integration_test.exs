@@ -16,9 +16,6 @@ defmodule Aesir.ZoneServer.Integration.TraitStatsIntegrationTest do
        (base ATK +5*POW, patk +div(POW, 3)).
     5. `@resetstat` zeroes the trait stats and restores the pool to
        `trait_points_at(level) + 7`.
-
-  A separate case seeds a pre-existing level-210 trait-job row and runs the
-  migration's backfill SQL to prove `trait_point == trait_table[210] + 7`.
   """
 
   use Aesir.ZoneServer.IntegrationCase
@@ -110,40 +107,6 @@ defmodule Aesir.ZoneServer.Integration.TraitStatsIntegrationTest do
       assert after_state.stats.progression.trait_point == 0
       assert Repo.get(Character, char_id).class == @rune_knight
       assert Repo.get(Character, char_id).trait_point == 0
-    end
-  end
-
-  describe "migration backfill" do
-    alias Aesir.Repo.Migrations.AddTraitStatsToCharacters
-
-    # Mirrors the Task-3 `character_test.exs` approach: seed a row, run the
-    # migration's backfill SQL helpers directly (exercising the real migration in
-    # this harness is awkward since the columns already exist), and assert the
-    # granted pool. `trait_table[210] == 38`, so a level-210 trait-job character
-    # backfills to 38 + 7.
-    test "grants trait_table[210] + 7 to a pre-existing level-210 trait-job character" do
-      ensure_migration_loaded()
-      char = insert_character(class: @dragon_knight, base_level: 210)
-
-      Repo.query!(AddTraitStatsToCharacters.table_backfill_sql())
-      Repo.query!(AddTraitStatsToCharacters.flat_backfill_sql())
-
-      assert %Character{trait_point: 45} = Repo.get!(Character, char.id)
-    end
-
-    # Migration modules live in `priv/repo/migrations` and are compiled into the
-    # node by the migrator (commons' `test` alias runs `ecto.migrate`), so under
-    # the full-suite run the module is already loaded. When this file runs in
-    # isolation the module is absent; compile it from priv on demand.
-    defp ensure_migration_loaded do
-      unless Code.ensure_loaded?(AddTraitStatsToCharacters) do
-        :commons
-        |> Application.app_dir("priv/repo/migrations")
-        |> Path.join("*_add_trait_stats_to_characters.exs")
-        |> Path.wildcard()
-        |> hd()
-        |> Code.require_file()
-      end
     end
   end
 

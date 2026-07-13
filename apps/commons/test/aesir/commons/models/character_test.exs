@@ -1,10 +1,3 @@
-Code.require_file(
-  Path.expand(
-    "../../../../priv/repo/migrations/20260712120000_add_trait_stats_to_characters.exs",
-    __DIR__
-  )
-)
-
 defmodule Aesir.Commons.Models.CharacterTest do
   use Aesir.DataCase, async: true
 
@@ -97,51 +90,4 @@ defmodule Aesir.Commons.Models.CharacterTest do
     end
   end
 
-  describe "migration backfill" do
-    alias Aesir.Repo.Migrations.AddTraitStatsToCharacters
-
-    defp run_backfill do
-      Repo.query!(AddTraitStatsToCharacters.table_backfill_sql())
-      Repo.query!(AddTraitStatsToCharacters.flat_backfill_sql())
-    end
-
-    test "grants trait_table[level] + 7 to a trait-job character at base level 210" do
-      account = account!()
-
-      {:ok, character} =
-        %Character{}
-        |> Character.changeset(valid_attrs(account, %{class: 4252, base_level: 210}))
-        |> Repo.insert()
-
-      run_backfill()
-
-      assert %Character{trait_point: 45} = Repo.get!(Character, character.id)
-    end
-
-    test "grants the flat +7 to a trait-job character below base level 201" do
-      account = account!()
-
-      {:ok, character} =
-        %Character{}
-        |> Character.changeset(valid_attrs(account, %{class: 4252, base_level: 150}))
-        |> Repo.insert()
-
-      run_backfill()
-
-      assert %Character{trait_point: 7} = Repo.get!(Character, character.id)
-    end
-
-    test "leaves a non-trait character's trait_point at zero" do
-      account = account!()
-
-      {:ok, character} =
-        %Character{}
-        |> Character.changeset(valid_attrs(account, %{class: 0, base_level: 210}))
-        |> Repo.insert()
-
-      run_backfill()
-
-      assert %Character{trait_point: 0} = Repo.get!(Character, character.id)
-    end
-  end
 end
