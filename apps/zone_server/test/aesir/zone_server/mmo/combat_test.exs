@@ -7,13 +7,23 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
+  alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
+
+  # Equipment breaks are resolved on every confirmed player weapon hit. Default
+  # every test to "nothing breaks" so the existing attack assertions are
+  # unaffected; the break describe below overrides this with real decisions.
+  setup do
+    stub(EquipBreak, :resolve, fn _attacker, _target -> [] end)
+    :ok
+  end
 
   defmodule FakeUnit do
     @moduledoc false
@@ -252,6 +262,134 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       reject(&MobSession.apply_damage/3)
 
       assert {:error, :different_map} = Combat.execute_attack(stats, player_state, 2001)
+    end
+  end
+
+  describe "execute_attack/3 equipment breaks" do
+    setup do
+      attacker = combatant(1001, :player)
+      target = combatant(2001, :mob)
+
+      player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
+      target_state = %FakeUnit{combatant: target, x: 150, y: 150}
+
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
+      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
+
+      stub(DamageCalculator, :calculate_damage, fn _a, _d ->
+        {:ok, %{damage: 50, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      stub(Passives, :attack_procs, fn _player -> %{} end)
+      stub(MobSession, :apply_damage, fn _pid, _damage, _attacker_id -> :ok end)
+
+      %{player_state: player_state, stats: attacker, target_state: target_state}
+    end
+
+    test "a {:self, :weapon} decision casts {:break_equip, :right_hand} to the attacker session",
+         %{player_state: player_state, stats: stats} do
+      stub(EquipBreak, :resolve, fn _attacker, _target -> [{:self, :weapon}] end)
+
+      capture_log(fn ->
+        assert Combat.execute_attack(stats, player_state, 2001) == :ok
+      end)
+
+      assert_received {:"$gen_cast", {:break_equip, :right_hand}}
+      refute_received {:"$gen_cast", {:break_equip, _}}
+    end
+
+    test "the break roll fires once per attack even on a multi-hit swing",
+         %{player_state: player_state, stats: stats} do
+      test_pid = self()
+
+      stub(Passives, :attack_procs, fn _player -> %{multi_hit: 2} end)
+      stub(EquipBreak, :resolve, fn _attacker, _target -> [{:self, :weapon}] end)
+
+      expect(MobSession, :apply_damage, 2, fn _pid, damage, _attacker_id ->
+        send(test_pid, {:damage_applied, damage})
+        :ok
+      end)
+
+      capture_log(fn ->
+        assert Combat.execute_attack(stats, player_state, 2001) == :ok
+      end)
+
+      assert_received {:damage_applied, 50}
+      assert_received {:damage_applied, 50}
+      assert_received {:"$gen_cast", {:break_equip, :right_hand}}
+      refute_received {:"$gen_cast", {:break_equip, _}}
+    end
+
+    test "resolve gets a {:mob, target_state} tuple and no decisions means no cast",
+         %{player_state: player_state, stats: stats, target_state: target_state} do
+      test_pid = self()
+
+      stub(EquipBreak, :resolve, fn _attacker, target ->
+        send(test_pid, {:resolve_target, target})
+        []
+      end)
+
+      capture_log(fn ->
+        assert Combat.execute_attack(stats, player_state, 2001) == :ok
+      end)
+
+      assert_received {:resolve_target, {:mob, ^target_state}}
+      refute_received {:"$gen_cast", {:break_equip, _}}
+    end
+
+    test "a {:target, :armor} decision casts {:break_equip, :armor} to the target session, not self",
+         %{player_state: player_state, stats: stats, target_state: target_state} do
+      test_pid = self()
+      target_pid = spawn(fn -> relay_once(test_pid) end)
+
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 ->
+        {:ok, {FakeUnit, target_state, target_pid}}
+      end)
+
+      stub(EquipBreak, :resolve, fn _attacker, _target -> [{:target, :armor}] end)
+
+      capture_log(fn ->
+        assert Combat.execute_attack(stats, player_state, 2001) == :ok
+      end)
+
+      assert_receive {:relayed, {:"$gen_cast", {:break_equip, :armor}}}
+      refute_received {:"$gen_cast", {:break_equip, _}}
+    end
+
+    # PvP damage is a no-op today (handle_player_attack_hit returns
+    # {:error, :pvp_not_implemented} and applies nothing), so the break roll must
+    # be skipped for player targets: resolve is never called and no cast fires.
+    test "a player target is not rolled for breaks while PvP is unimplemented",
+         %{player_state: player_state, stats: stats} do
+      test_pid = self()
+      target = combatant(3001, :player)
+      target_state = %FakeUnit{combatant: target, x: 150, y: 150}
+
+      stub(UnitRegistry, :get_unit, fn :mob, 3001 -> {:error, :not_found} end)
+      stub(UnitRegistry, :get_player_pid, fn 3001 -> {:ok, self()} end)
+      stub(PlayerSession, :get_current_stats, fn _pid -> stats end)
+      stub(PlayerSession, :get_state, fn _pid -> %{game_state: target_state} end)
+
+      stub(EquipBreak, :resolve, fn _attacker, resolved_target ->
+        send(test_pid, {:resolve_called, resolved_target})
+        []
+      end)
+
+      capture_log(fn ->
+        assert Combat.execute_attack(stats, player_state, 3001) == :ok
+      end)
+
+      refute_received {:resolve_called, _}
+      refute_received {:"$gen_cast", {:break_equip, _}}
+    end
+  end
+
+  # Forwards a single received message back to the test process so a cast sent to
+  # a distinct target pid can be asserted without the test process being the sink.
+  defp relay_once(test_pid) do
+    receive do
+      msg -> send(test_pid, {:relayed, msg})
     end
   end
 

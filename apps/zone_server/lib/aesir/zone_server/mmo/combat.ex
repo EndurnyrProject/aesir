@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
+  alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
@@ -95,11 +96,52 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
             target_id,
             attack_hits(player_state)
           )
+
+          roll_equipment_breaks(player_state, target_state, target_type, target_pid)
       end
 
       :ok
     end
   end
+
+  # Rolls equipment breaks once per confirmed weapon hit (never once per
+  # multi-hit) and dispatches each decision to the owning session. `execute_attack`
+  # runs inside the attacker's `PlayerSession`, so a `:self` break is a cast to
+  # `self()`; a `:target` break goes to `target_pid`. The resolver only emits
+  # `:target` decisions for player victims (mob "equipment" never breaks in
+  # Renewal), so mob targets receive nothing.
+  #
+  defp roll_equipment_breaks(player_state, target_state, target_type, target_pid) do
+    target_type
+    |> break_target(target_state)
+    |> maybe_roll(player_state, target_pid)
+  end
+
+  defp break_target(:player, target_state), do: {:player, target_state.stats}
+  defp break_target(target_type, target_state), do: {target_type, target_state}
+
+  # NOTE: player victims are skipped entirely: `handle_player_attack_hit/7`
+  # returns `{:error, :pvp_not_implemented}` and applies no damage, so rolling a
+  # break here would silently destroy another player's gear with no hit dealt.
+  # The enemy-break wiring (the `{:player, ...}` tuple above and the `:target`
+  # dispatch below) stays built but unreachable; whoever implements PvP removes
+  # the damage stub in `handle_player_attack_hit/7` AND this gate together.
+  defp maybe_roll({:player, _victim_stats}, _player_state, _target_pid), do: :ok
+
+  defp maybe_roll(target, player_state, target_pid) do
+    player_state.stats
+    |> EquipBreak.resolve(target)
+    |> Enum.each(&dispatch_break(&1, target_pid))
+  end
+
+  defp dispatch_break({:self, slot}, _target_pid),
+    do: GenServer.cast(self(), {:break_equip, break_slot(slot)})
+
+  defp dispatch_break({:target, slot}, target_pid),
+    do: GenServer.cast(target_pid, {:break_equip, break_slot(slot)})
+
+  defp break_slot(:weapon), do: :right_hand
+  defp break_slot(:armor), do: :armor
 
   # The number of basic-attack hits to deliver, driven by passive procs (e.g.
   # Double Attack's `%{multi_hit: 2, chance: 7 * level}`). The proc's `:chance`
@@ -970,6 +1012,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
 
     broadcast_to_nearby_players(target_combatant, attack_packet)
 
+    # NOTE: no equipment-break roll on the mob path — mob attackers carry no break
+    # bonuses and natural break is player-only; this is the future hook for
+    # mob-skill-driven breaks (rAthena `skill_break_equip`) once those exist.
     PlayerSession.apply_damage(target_pid, damage, attacker_combatant.unit_id)
   end
 
