@@ -262,7 +262,7 @@ defmodule Aesir.ZoneServer.Content.Npc.AldebaIn.KafraEmployee do
                   |> mes("the lottery machine?")
                   |> mes("You can spin it 1 to 5 times.")
                   |> next()
-                  |> todo(:loop_with_blocking_condition, [])
+                  |> loop_1()
                   |> set_local(:choose_prize, Enum.random(1..20))
                   |> loop_2()
                   |> mes("[Kafra Employee]")
@@ -429,6 +429,24 @@ defmodule Aesir.ZoneServer.Content.Npc.AldebaIn.KafraEmployee do
     |> close()
 
     exit(:normal)
+  end
+
+  defp loop_1(ctx) do
+    {ctx, v4} = input(ctx, :int)
+    {v5, v6} = Rathena.input_int(v4, 1, 5)
+    ctx = set_local(ctx, :input, v6)
+
+    if v5 != 0 do
+      ctx
+      |> mes("[Kafra Employee]")
+      |> mes("Excuse me...?")
+      |> mes("Please choose")
+      |> mes("a number from 1 to 5.")
+      |> next()
+      |> loop_1()
+    else
+      ctx
+    end
   end
 
   defp loop_2(ctx) do

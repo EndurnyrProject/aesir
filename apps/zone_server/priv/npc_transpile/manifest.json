@@ -1,6 +1,6 @@
 {
   "airports/airships.txt|function|applegamble|-": {
-    "output_hash": "2a3b781cd11fe4b6932d4e2eb4c9b8ec789dbac62635668f0e370aa31ca20e66",
+    "output_hash": "62dcf9ca3d9dba345eadb6adfc10158675bc5b2530bc785ec80db97dd6c0e376",
     "output_path": "lib/aesir/zone_server/content/npc/functions/applegamble.ex",
     "source_hash": "01ffd1d893ee56eaeb7bbb55e823328151bba0a2723beaa7340ae200a3c1072a"
   },
@@ -250,7 +250,7 @@
     "source_hash": "4b2f7a461a6ba2ce835c88c9c1e05e943260a6a7f58704ddda37f344a1cc8071"
   },
   "cities/aldebaran.txt|function|F_ClockTowerGate|-": {
-    "output_hash": "8c94721e32a4863f1822bff90dc841195c464a237d74ff6f92c808146b2457ab",
+    "output_hash": "9388b379fefad681dd9d3c9391def41e81615dde8365a296d03e74fa364a1d35",
     "output_path": "lib/aesir/zone_server/content/npc/functions/f_clocktowergate.ex",
     "source_hash": "521db4c3b0c030e9b20c6713d40b9b066d0e91090da8bd3aefe73c30bba7e73c"
   },
@@ -320,7 +320,7 @@
     "source_hash": "9449cff586827ec17133045275c399236eb99ee463ffe76a446339e50f450685"
   },
   "cities/aldebaran.txt|script|Kafra Employee#reserve1|aldeba_in:79:161": {
-    "output_hash": "90124ca201f34ba1e702d59f8e72d4ba2388a070a6c2e06af8b79181caa332aa",
+    "output_hash": "7df2c716a0fb4f0eb67b6acf10a0b332871878b93f7b039ca1254b73fe6aabd5",
     "output_path": "lib/aesir/zone_server/content/npc/aldeba_in/kafra_employee.ex",
     "source_hash": "a7601fc2ef17dabb35487d98fee709c791abe6e8954886a6c38de9dfb1f5587b"
   },
@@ -3344,6 +3344,516 @@
     "output_path": "lib/aesir/zone_server/content/npc/yuno/juno_sage.ex",
     "source_hash": "ef44d5f9a2ea74114e09711602ce0ef59bb9559c1a20a55b6ebc1ced5eafae14"
   },
+  "kafras/cool_event_corp.txt|function|F_CoolEventCorp|-": {
+    "output_hash": "f4672b0a9ce57107bc8d205f79dc23cfc532469f057c8ffe76323aba2e2b7264",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_cooleventcorp.ex",
+    "source_hash": "03de8f3f0890bd19e0eb36b6e5b3737973c74c4d495c0af3e1e13d5b1ac7177a"
+  },
+  "kafras/cool_event_corp.txt|script|Cool Event Corp Staff::CoolEventCorpStaffLighthalzen|lighthalzen:94:248": {
+    "output_hash": "7e1ae3a48330f52c31086b07f271bb7fc289d44713f38e1a2c180364bed5f01a",
+    "output_path": "lib/aesir/zone_server/content/npc/lighthalzen/cool_event_corp_staff_cooleventcorpstafflighthalzen.ex",
+    "source_hash": "533c91093a7267f8de1e958bf229f722ca3f1ed97b954aa7c6c9029774147b55"
+  },
+  "kafras/cool_event_corp.txt|script|Cool Event Corp. Staff::CoolEventCorpStaffHugel|hugel:88:168": {
+    "output_hash": "50aba7ddf4b07b64e77bf08d1879997ee6a1081bb3ca299c0bddd27c4ace2eb8",
+    "output_path": "lib/aesir/zone_server/content/npc/hugel/cool_event_corp_staff_cooleventcorpstaffhugel.ex",
+    "source_hash": "2363216e32bde65943d3e2cfab8f5df0cd34f93f89243d542455db8d6f455978"
+  },
+  "kafras/cool_event_corp.txt|script|Cool Event Corp. Staff::CoolEventCorpStaffRachel|rachel:109:138": {
+    "output_hash": "d87347620db88d36ae5a6f56002cc063166ee760fd5a7416f048eec8db582c2b",
+    "output_path": "lib/aesir/zone_server/content/npc/rachel/cool_event_corp_staff_cooleventcorpstaffrachel.ex",
+    "source_hash": "44f10a4a07868888fa2a202907837444a07a8241ec4d2dc46b67ee9744ec60e1"
+  },
+  "kafras/cool_event_corp.txt|script|Cool Event Corp. Staff::CoolEventCorpStaffVeins|veins:208:128": {
+    "output_hash": "2f0d08fa082001794c262f21d2cc806d923e167eea5d8f72148395e34ba5cf19",
+    "output_path": "lib/aesir/zone_server/content/npc/veins/cool_event_corp_staff_cooleventcorpstaffveins.ex",
+    "source_hash": "53e89cd36c034bf160eb2946941f093773083c52178c3d1d3302a6fe1c502d49"
+  },
+  "kafras/dts_warper.txt|floating|Cool Event Staff::VotingStaffCCE|-": {
+    "output_hash": "992e2d4a66ea1a2c83e8eaeab46841b9152956d1df530001cd66926c8aa9b33d",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/cool_event_staff_votingstaffcce.ex",
+    "source_hash": "67bd391d359a91927bd26196d5206b61efab0b3705134d0a41dd885815d2e94d"
+  },
+  "kafras/dts_warper.txt|function|F_VoteKafra|-": {
+    "output_hash": "d59764fee0bd38572253b672f5523c0633ddff4fce28c747889c66d5143ef59d",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_votekafra.ex",
+    "source_hash": "8e58f700e9fb36c7b5b2e72d391087d3d65184858a0087d78c785e9c5db7f269"
+  },
+  "kafras/dts_warper.txt|script|Kafra Voting Staff#alb|alberta:119:70": {
+    "output_hash": "452acb349bef3ec1e4fd50b62c1f0c12fb013815a57ed240c5dd913e074e2ba3",
+    "output_path": "lib/aesir/zone_server/content/npc/alberta/kafra_voting_staff.ex",
+    "source_hash": "f8fd9d5fda322f255f4215f4a9ce765537315ed0c9cf07ce6925e3dd307b06b9"
+  },
+  "kafras/dts_warper.txt|script|Kafra Voting Staff#alde|aldebaran:145:102": {
+    "output_hash": "af051cec543f329373baf23a855842835b6ab7719009b5d14e4027585c32ed35",
+    "output_path": "lib/aesir/zone_server/content/npc/aldebaran/kafra_voting_staff.ex",
+    "source_hash": "a571ea7baa40020be9de710e86c67bbadb295b6e7c13e9144d823bfb115b9432"
+  },
+  "kafras/dts_warper.txt|script|Kafra Voting Staff#gef|geffen:122:37": {
+    "output_hash": "d01338c51052bb2255fcb9530ed134d9999324a90f61edfc9010eb6bc9c1aebf",
+    "output_path": "lib/aesir/zone_server/content/npc/geffen/kafra_voting_staff.ex",
+    "source_hash": "4300600e216dd1f11657f6429e6583b30634edab538181dd4165cfa612236f04"
+  },
+  "kafras/dts_warper.txt|script|Kafra Voting Staff#lght|lighthalzen:163:60": {
+    "output_hash": "d046b88a8c8d74afdaf9223f4ce73f2f67c1dec98d8eeae41d0e7d8905f7b558",
+    "output_path": "lib/aesir/zone_server/content/npc/lighthalzen/kafra_voting_staff.ex",
+    "source_hash": "850370988b785dfd265d6fff127084a817ef905cf5ecc840b183513f09d244ac"
+  },
+  "kafras/dts_warper.txt|script|Kafra Voting Staff#moc|moc_ruins:104:133": {
+    "output_hash": "9236609891c1104850258a942f66dc5a10728952dee83dc6ed7ec16283a1f8c7",
+    "output_path": "lib/aesir/zone_server/content/npc/moc_ruins/kafra_voting_staff.ex",
+    "source_hash": "9ab3aabaab2fbe4193f90a230ca7ec160cd8829524ebc784303b07003a6f69c3"
+  },
+  "kafras/dts_warper.txt|script|Kafra Voting Staff#pay|payon:158:182": {
+    "output_hash": "d991234f51b3b2d7a3f794e0329731e5abc951ff9741743f01eccb0e124de961",
+    "output_path": "lib/aesir/zone_server/content/npc/payon/kafra_voting_staff.ex",
+    "source_hash": "28003236249d4bec61f66caeb83a16125f526f84cb138a09194f0157b70a488e"
+  },
+  "kafras/dts_warper.txt|script|Kafra Voting Staff#prt|prontera:164:125": {
+    "output_hash": "40c916e6482af0214f91cd72d6f1fdf15b4c02430b193d2f8ed441e183fdd4c8",
+    "output_path": "lib/aesir/zone_server/content/npc/prontera/kafra_voting_staff.ex",
+    "source_hash": "3d297b603638c9fe7931066423dd010999ec937d23792685b828065537eadf1b"
+  },
+  "kafras/dts_warper.txt|script|Kafra Voting Staff#yuno|yuno:162:191": {
+    "output_hash": "688d5b0a25430218b61abd7c048b282051ea5f312c75f801c34cfe3ac37d2992",
+    "output_path": "lib/aesir/zone_server/content/npc/yuno/kafra_voting_staff.ex",
+    "source_hash": "be1d5a6fdf6c724621658556af5aad37fbaf0aec0d58d79b43c7b08620e9ccc0"
+  },
+  "kafras/dts_warper.txt|script|Scrutiny Association#5|yuno:103:225": {
+    "output_hash": "1387fe885e65f33cade9a0ca742cc86f1836bf88d8e32a01cc8430a7700db14e",
+    "output_path": "lib/aesir/zone_server/content/npc/yuno/scrutiny_association.ex",
+    "source_hash": "42ca629284a7933135b8aed600159f34b16d12991ad8b05c92e5787a313a53d0"
+  },
+  "kafras/dts_warper.txt|script|Scrutiny Association#6|einbroch:248:71": {
+    "output_hash": "7fbab0313ef4033cdcbdc0b8036c72b8cfb1afb7b3de82fffb92eb7b1407b788",
+    "output_path": "lib/aesir/zone_server/content/npc/einbroch/scrutiny_association.ex",
+    "source_hash": "74ce8a5addafa22cc5fcd6d1addf857a710a181edd0ec76ab7db891194328a92"
+  },
+  "kafras/dts_warper.txt|script|Scrutiny Association#7|einbroch:249:71": {
+    "output_hash": "493cfe9fee62f803d0942de03b02290dabea763580353a4c2b40746dcdded643",
+    "output_path": "lib/aesir/zone_server/content/npc/einbroch/scrutiny_association_249_71.ex",
+    "source_hash": "d9762f62b34b6ae8ee66506cb5ef79e3e1ffb12f169067897b338cfd0b9a23bf"
+  },
+  "kafras/dts_warper.txt|script|Vote Timer#ein|einbroch:246:70": {
+    "output_hash": "1307f960a3180c9e776300d7775a9aecf126b1a2b26e1e0fff32efdd2f62fa10",
+    "output_path": "lib/aesir/zone_server/content/npc/einbroch/vote_timer.ex",
+    "source_hash": "33e6082ad22f881916995bcb807580ab8207249bc919bf11d1934b71ea40cf60"
+  },
+  "kafras/dts_warper.txt|script|Vote Timer2#ein|einbroch:245:71": {
+    "output_hash": "c7bf51b91a230a2c506605276df9a287419ac582e5c796679fbaeb64ffacd7da",
+    "output_path": "lib/aesir/zone_server/content/npc/einbroch/vote_timer2.ex",
+    "source_hash": "0848095bf489ff10df333914698ad9b2ed758b4dea983bbaaf1e870e82f528ad"
+  },
+  "kafras/dts_warper.txt|script|Vote Timer3#ein|einbroch:246:71": {
+    "output_hash": "873c76bc3ffe8d87d0950e1ed1909b158c6be62b2131763a96394995900a3323",
+    "output_path": "lib/aesir/zone_server/content/npc/einbroch/vote_timer3.ex",
+    "source_hash": "b9a2c20cbc85dc7668c7bd719891029500751b9995a895b1e3c27e3e97f00661"
+  },
+  "kafras/dts_warper.txt|script|Vote Timer4#ein|einbroch:247:71": {
+    "output_hash": "6f13b613bce7173a96b357ce03f7a72afb02379be59f53a5c626936a4c269d5a",
+    "output_path": "lib/aesir/zone_server/content/npc/einbroch/vote_timer4.ex",
+    "source_hash": "126754db56579b6dd7b7f8fa9f519bb96a30bab5c8e4c167b60aecba2a77ffcf"
+  },
+  "kafras/functions_kafras.txt|function|F_CheckKafCode|-": {
+    "output_hash": "4b0337ff7fdf669230b15d2d35ea15b5826712a8677e13a379f75637e868cd59",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_checkkafcode.ex",
+    "source_hash": "74e1b0a00a17f1b9478ea62da62d73ff3b7b3ea62486051acb8f4fe36575bc69"
+  },
+  "kafras/functions_kafras.txt|function|F_EntKafCode|-": {
+    "output_hash": "3298f4bd07e5d98680fc37303733a29a12ba51e3aa2bc96d737418d364f3e216",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_entkafcode.ex",
+    "source_hash": "9328aab47acc66dd9330de236a767fc6f73a9084e71d6534e17fbd4cb392af6a"
+  },
+  "kafras/functions_kafras.txt|function|F_KafCart|-": {
+    "output_hash": "706604b882162ff52c0e5957d1ea922e3ff50cc244057bade709e7fcafb3d134",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_kafcart.ex",
+    "source_hash": "9df158112b5650ac15c28130a56b2ddcfe78baf6d117ccf30ef916ca5f23707b"
+  },
+  "kafras/functions_kafras.txt|function|F_KafEnd|-": {
+    "output_hash": "50dd77f6dacf46df8c6f7e6ece36e3f56d6233f89e4323a7ae1e1cec634a9a62",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_kafend.ex",
+    "source_hash": "1d6d2ffda23ec77d150ad3fcd1f794e9eb544194b581afa2544b2b7478ddd4d6"
+  },
+  "kafras/functions_kafras.txt|function|F_KafInfo|-": {
+    "output_hash": "c85be22bfb7b227cf8d2427290aa7876771eb71df2e381c6791e8731d986bb5b",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_kafinfo.ex",
+    "source_hash": "ea683895392a7aa052dc7559d24e748d1a3523bac006d6f93ad4a8455cbd0274"
+  },
+  "kafras/functions_kafras.txt|function|F_KafSet|-": {
+    "output_hash": "00f624c2d4e531c12f3b87f5bb9fdb2896cdddd5eedeab09da9e0a9a3c3df1ab",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_kafset.ex",
+    "source_hash": "448beaac889eac9c2613b41d3be79bb9c1950d555dcaf7e1f6824b7fbfefa54d"
+  },
+  "kafras/functions_kafras.txt|function|F_KafStor|-": {
+    "output_hash": "12568c27c0dcc4b7f745cc493c0b1412a34e29c55ed6403e09ce551a572befce",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_kafstor.ex",
+    "source_hash": "3575d1e046574ba51be71409711d8ba7abd38a38079f647e56abe22e52cb9cad"
+  },
+  "kafras/functions_kafras.txt|function|F_KafTele|-": {
+    "output_hash": "af9eed71eb0af0b4e45de33566a9e922694a3ced96aac138a02418d60bcd6c84",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_kaftele.ex",
+    "source_hash": "a9046a69e5e873f3229f3722420ef073dc26ab5f83b2718c474b6cabaf3c87e2"
+  },
+  "kafras/functions_kafras.txt|function|F_Kafra|-": {
+    "output_hash": "00940f5da1287520bfa96742363fe639bae15d9b04188b909529ad538c3bf712",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_kafra.ex",
+    "source_hash": "8ff6278d859eb27dcb58931a589d9b2d193a93b1f823787dba2d00ec6abf0277"
+  },
+  "kafras/functions_kafras.txt|function|F_SetKafCode|-": {
+    "output_hash": "46b77cdecd0baf521039db217ddc40d0c3cad26f473cbff5ab97dacf3df523f8",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_setkafcode.ex",
+    "source_hash": "5b74a98835bd9be953623d663d0cf0c2ba49a5a072b4b255a1203fedb2f1a74e"
+  },
+  "kafras/kafras.txt|floating|::kaf_izlude|-": {
+    "output_hash": "17cf9c497e4794eb3e3a0f3246a2f16453eab88fff554ede07c2bf9c564646b5",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/kaf_izlude.ex",
+    "source_hash": "9ce01710f03d7e9e29d26c007ecfc85d1c8439dc486195b7c302a53518bbb572"
+  },
+  "kafras/kafras.txt|script|Kafra Employee#ein1::kaf_einbroch2|einbroch:59:203": {
+    "output_hash": "1fc079061248055d847a301ec7b01b7b101221964b907ce2925a0c9c64944ed5",
+    "output_path": "lib/aesir/zone_server/content/npc/einbroch/kafra_employee_59_203.ex",
+    "source_hash": "5633058cbf7b04d95f32fe2a3ba141fdb1dd5ba5aa30aad40ab1b9db0bdd351c"
+  },
+  "kafras/kafras.txt|script|Kafra Employee#ein2::kaf_einbroch|einbroch:242:205": {
+    "output_hash": "5bca17ae433d2770b92fd8c7d072de832df0adf783d01fad406e3b07de65c110",
+    "output_path": "lib/aesir/zone_server/content/npc/einbroch/kafra_employee.ex",
+    "source_hash": "180e9a62da40281dd88e3c7827f503d07f24a20932d16f9ebe464811654a71db"
+  },
+  "kafras/kafras.txt|script|Kafra Employee#ein3::kaf_einbech|einbech:181:132": {
+    "output_hash": "29d57fb47ae746aede4de29518f1e15c547d0cc2f034043a4b92734c638c4a13",
+    "output_path": "lib/aesir/zone_server/content/npc/einbech/kafra_employee.ex",
+    "source_hash": "102ab33650157a5e9212944ad3a0d0ba1895d9c67329b052d26bd57581065a0b"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::geffen2|geffen:203:123": {
+    "output_hash": "287fc91695e13d40396e02f0319c7c1ac768acbfa37d380db4067f206af0aab5",
+    "output_path": "lib/aesir/zone_server/content/npc/geffen/kafra_employee_geffen2.ex",
+    "source_hash": "4346f982592a63b61d04554af5e77136ffa31032926cdf7b99dcf423e856a2d0"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_alb2trea|alb2trea:59:69": {
+    "output_hash": "32ebd9e4d089e46dd1f437196e67493e468aeb3303b5a186a0a707c472db4879",
+    "output_path": "lib/aesir/zone_server/content/npc/alb2trea/kafra_employee_kaf_alb2trea.ex",
+    "source_hash": "eb02a214ad6213728b3279dddfc205491da88379afe10c5a2871ed4b6804e3dd"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_alberta2|alberta:113:60": {
+    "output_hash": "11a91c0f547f4ed6079b9434159964d69f66eb5b72d1a779b0d801f4c417741e",
+    "output_path": "lib/aesir/zone_server/content/npc/alberta/kafra_employee_kaf_alberta2.ex",
+    "source_hash": "ce85b5dc2c194c5e9c63f527aa54e60f313d6a52eaf65bc0ac14de336d3d8768"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_alberta|alberta:28:229": {
+    "output_hash": "3a1f2add8c00a2c7a868faa4a52e5832f5234dfa90eaab8b1cc8c5d48451ff46",
+    "output_path": "lib/aesir/zone_server/content/npc/alberta/kafra_employee_kaf_alberta.ex",
+    "source_hash": "2f2ee72f1a06ab95883a666a54c11ca0bfb4283a1e7bcf32163f8671c8e876b2"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_aldebaran|aldebaran:143:119": {
+    "output_hash": "4bc0ed95fa5dc838c6e300ed50d2d8923f3bdef302876d656236142d8bc4e9fd",
+    "output_path": "lib/aesir/zone_server/content/npc/aldebaran/kafra_employee_kaf_aldebaran.ex",
+    "source_hash": "bc55c6b95cb0c206144d9f20e5c5ef8bad3d19ad6aa223b484fdc1bc74b3f442"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_amatsu|amatsu:102:149": {
+    "output_hash": "5faf6d0fbfbd6e38d9c7d1c220889ea7f35f3a402b3e49925c52765610bd8db9",
+    "output_path": "lib/aesir/zone_server/content/npc/amatsu/kafra_employee_kaf_amatsu.ex",
+    "source_hash": "114c781880365d35aed70509e2d7f14a4887e3651fe4bda8fa108bf199ecf31d"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_ayothaya|ayothaya:212:169": {
+    "output_hash": "7fd91216ce2771d27c17d65cfe7c89a6727ca8865ba0a1d8bde0c8f84b2d9c42",
+    "output_path": "lib/aesir/zone_server/content/npc/ayothaya/kafra_employee_kaf_ayothaya.ex",
+    "source_hash": "102ea25fbd9e9f62c0a45e6f4231096533f2b28681297ebd70404b4e3c2f7d0e"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_bra|brasilis:197:221": {
+    "output_hash": "0f6203e0426ebc0a5d3f3e54b2fad50c781c3d07b462af76e241e3898638e119",
+    "output_path": "lib/aesir/zone_server/content/npc/brasilis/kafra_employee_kaf_bra.ex",
+    "source_hash": "fdcdd123f0b12be744177cb7c0f71fcb144ed86602c50a36b89d7da1f0d27d32"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_cmd_fild07|cmd_fild07:136:134": {
+    "output_hash": "dd3449618cf71fca46e06daad8fdfaeb40270b0c871d44ced7570df84711c457",
+    "output_path": "lib/aesir/zone_server/content/npc/cmd_fild07/kafra_employee_kaf_cmd_fild07.ex",
+    "source_hash": "bd47eb4b85a7680a982ca10ef4d655d619c64720cd64d22bdf2e7fcf09057bb6"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_comodo|comodo:195:150": {
+    "output_hash": "d735f5982ef88b92c6803c8b29e3bfdfc938afa99b1a7eb80c7766573601a040",
+    "output_path": "lib/aesir/zone_server/content/npc/comodo/kafra_employee_kaf_comodo.ex",
+    "source_hash": "569422ac9b0a4eeaea726e30dae7a0a4385f638f1551aaadf8e8ee6e97204baa"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_gef_fild10|gef_fild10:73:340": {
+    "output_hash": "234f7bb2f56e6912dc5179d12de71c740733ee208a84ca54e7bca849eb1b6c0d",
+    "output_path": "lib/aesir/zone_server/content/npc/gef_fild10/kafra_employee_kaf_gef_fild10.ex",
+    "source_hash": "acafd2a4a172848a285750a88baca1756cdb43885a72d2a1313b6ff4d4a0f518"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_geffen|geffen:120:62": {
+    "output_hash": "c65b5192529abab6a0f028267355a8e6ae4822a86e5123011e046d767a38af2b",
+    "output_path": "lib/aesir/zone_server/content/npc/geffen/kafra_employee_kaf_geffen.ex",
+    "source_hash": "314b0eeb6c36946eaf1be9c0c30977ee5d205ad168e3048bae28e372860dc463"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_gonryun|gonryun:159:122": {
+    "output_hash": "aa2d94bc9f295dcdc8e3c4a91135185eb6fd3d4d8cb28ef83d9b36c886c9d395",
+    "output_path": "lib/aesir/zone_server/content/npc/gonryun/kafra_employee_kaf_gonryun.ex",
+    "source_hash": "7b881820878951f13fa203ab69c2c67950d8fe782c47d478e6938ab8337452e1"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_izlu2dun|izlu2dun:106:58": {
+    "output_hash": "e82bae457f8d9f4664308ca298294a866c50a886351668138177e260ec413afb",
+    "output_path": "lib/aesir/zone_server/content/npc/izlu2dun/kafra_employee_kaf_izlu2dun.ex",
+    "source_hash": "ec8adfba758662e8480561b419bd5988813254f9e94a652ced75f932bf306d4b"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_lhz_in02|lhz_in02:237:284": {
+    "output_hash": "208aeacc14ca30d66f439b661c4f11b0bc4160244a5efa9648454286e45fe163",
+    "output_path": "lib/aesir/zone_server/content/npc/lhz_in02/kafra_employee_kaf_lhz_in02.ex",
+    "source_hash": "ebe4593e654e656776a9394c1de4e0244cdd38e935ac9e4660ecba34458d02cd"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_lighthalzen2|lighthalzen:191:320": {
+    "output_hash": "7e11ca1a4fc758a85b6623129987322ffd53e8f9acda1de39dd7977a997682a5",
+    "output_path": "lib/aesir/zone_server/content/npc/lighthalzen/kafra_employee_kaf_lighthalzen2.ex",
+    "source_hash": "c5dd45b1ff92cbfdb8a9091a1806f6b10c423399b69b636ace51166a0a3f92d1"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_lighthalzen|lighthalzen:164:100": {
+    "output_hash": "dad1a7d55ebad2f6cbd555c0244261f8a2e595a0693a4430eefd85e6b78b0ae0",
+    "output_path": "lib/aesir/zone_server/content/npc/lighthalzen/kafra_employee_kaf_lighthalzen.ex",
+    "source_hash": "db394d7a091b9286055bd5700f6be93aeeb1f84155b3e35151584d46df0ebe26"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_louyang|louyang:210:104": {
+    "output_hash": "82d73d1ad62082978393b0b63add61e6337cb7f56541b8b562d4bfe749970830",
+    "output_path": "lib/aesir/zone_server/content/npc/louyang/kafra_employee_kaf_louyang.ex",
+    "source_hash": "73e2118c9d7deb41f1d77aed8c9ec8e2d63a0467949ca59779e5dc00519b4df8"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_mjolnir_02|mjolnir_02:83:362": {
+    "output_hash": "d6b355a375022fa5e6a1b973024ffe978096a892ce8e0a09df7045179c09e934",
+    "output_path": "lib/aesir/zone_server/content/npc/mjolnir_02/kafra_employee_kaf_mjolnir_02.ex",
+    "source_hash": "e77208ba8b801478204d4bb72dd5197d60a3641083d0b9844b44660696ee7afd"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_morocc|morocc:156:97": {
+    "output_hash": "2ad8d70b74fd8a620705d52c65518cb6454ad996ecd8e6ea80a28f8ef565f911",
+    "output_path": "lib/aesir/zone_server/content/npc/morocc/kafra_employee_kaf_morocc.ex",
+    "source_hash": "b7e0e5851749a91b900cead6afa2c3e11afce293459cdfa67b629a74bcab2943"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_mosk|moscovia:223:191": {
+    "output_hash": "4ccfa846ffdd4202234596966133a92dca789e9dfdc973b3a4994174979f297d",
+    "output_path": "lib/aesir/zone_server/content/npc/moscovia/kafra_employee_kaf_mosk.ex",
+    "source_hash": "2dd3db2135fe8e3256c14c5b4dd4badf70d8cc10d46f1d242a94e18971e1a957"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_niflheim|niflheim:202:180": {
+    "output_hash": "71b1c766168ffed558bb7af0c799ea1c9f4be03b7daf1434c8e6c0999332efa7",
+    "output_path": "lib/aesir/zone_server/content/npc/niflheim/kafra_employee_kaf_niflheim.ex",
+    "source_hash": "b986171ddb6ebf4d67a3b837acce7800a6aa203ee512eb68bb9537c26a741984"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_payon2|payon:175:226": {
+    "output_hash": "fe7e42545762f6a39f84162814ddc9ee384f557c720fe786e080dc880bc9e077",
+    "output_path": "lib/aesir/zone_server/content/npc/payon/kafra_employee_kaf_payon2.ex",
+    "source_hash": "1df19558224e46720a47fd6071ac5a67730a7d9153042a1dc7d21e1114b8d5b3"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_payon3|pay_arche:55:123": {
+    "output_hash": "cccfbd64f4aac06e89229e214ba10b44ec59a35b7bf199666d36a891a34d1f06",
+    "output_path": "lib/aesir/zone_server/content/npc/pay_arche/kafra_employee_kaf_payon3.ex",
+    "source_hash": "1cc625106183460d1d88e17ff38ca2befeb5034f83359758647ac6af5a5aab6c"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_payon|payon:181:104": {
+    "output_hash": "6b91c7101fa30f5b602ce38e08fdb85b35c251d435b0af45d232edef33e67c73",
+    "output_path": "lib/aesir/zone_server/content/npc/payon/kafra_employee_kaf_payon.ex",
+    "source_hash": "e05fa282534342bbca29e320269886a42f9a0e997c8aee7f27e0c3e3b742c13a"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_prontera2|prontera:151:29": {
+    "output_hash": "8138abc9349fa0df26ccccf788b8d5010e9fc188efbfda124a6bcc1c60a7c2c1",
+    "output_path": "lib/aesir/zone_server/content/npc/prontera/kafra_employee_kaf_prontera2.ex",
+    "source_hash": "9e06e64c1b9e5a43eb227ac3a04af190d75918f6aeff32a5655a2dcf21e9750d"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_prontera3|prontera:29:207": {
+    "output_hash": "5a7ae824d63d1419ab467d96dfaec514be709d5e048d54c8acff93f1725ab640",
+    "output_path": "lib/aesir/zone_server/content/npc/prontera/kafra_employee_kaf_prontera3.ex",
+    "source_hash": "78ed43f130ddc42c0044690549e901370d3cfe44b1e3a3f42671e21ef8075ce7"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_prontera4|prontera:282:200": {
+    "output_hash": "dcb9fb1bba5b8433d3b86fea1dae9c3d619a65af36d62cf38607becc774b3ddf",
+    "output_path": "lib/aesir/zone_server/content/npc/prontera/kafra_employee_kaf_prontera4.ex",
+    "source_hash": "926311a5a0f88dbf3d36be2a3146fcee82ea549305d7627343c01541c1efa4c8"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_prontera5|prontera:146:89": {
+    "output_hash": "efc8f477552f90b71dfbd49aba1431c1db0d1ba995b4ed417d57426a33a0aa9b",
+    "output_path": "lib/aesir/zone_server/content/npc/prontera/kafra_employee_kaf_prontera5.ex",
+    "source_hash": "0e8fbfd324bfd6c4932f809f8516c8dcb2f4094443a3ccbd0e501b4c61352171"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_prontera|prontera:152:326": {
+    "output_hash": "b384e15587b4aea21d0c646dea48186d90266b35bc4a2b30e5a5da278b045028",
+    "output_path": "lib/aesir/zone_server/content/npc/prontera/kafra_employee_kaf_prontera.ex",
+    "source_hash": "2c1e0bd46371b948725ed9a78bcd59df98de78176cee03ef3cf5f7a9a6143f89"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_umbala|umbala:87:160": {
+    "output_hash": "15852ec9908f461435cacaa9ce0dd787084b8d509cf2e4ac751457ea8109906c",
+    "output_path": "lib/aesir/zone_server/content/npc/umbala/kafra_employee_kaf_umbala.ex",
+    "source_hash": "eb1d3f620cc437159f51946b63975ab1a7b0e487fb8fbe83fa8805d9751ee50d"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_yuno2|yuno:327:108": {
+    "output_hash": "8da2f6d263721fec3236925ed588d2f92f83b22e74447c99798f9f7027a497d9",
+    "output_path": "lib/aesir/zone_server/content/npc/yuno/kafra_employee_kaf_yuno2.ex",
+    "source_hash": "486fbd59d0f3d4ae6ce72658e89a43edaaac9f612b69f4025bb1ab886d68dee7"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_yuno3|yuno:277:221": {
+    "output_hash": "0a1177c1dc032c214722b04ca32081a3b1cb68d9bad9ef61eea7c2a54c282380",
+    "output_path": "lib/aesir/zone_server/content/npc/yuno/kafra_employee_kaf_yuno3.ex",
+    "source_hash": "77662d850bd8db4c75a90e063f7c27a739859a00741d59adf18d3b4bb8eba747"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::kaf_yuno|yuno:152:187": {
+    "output_hash": "4361e230c941a0d5bdcc56c900c644eeea7231715ec69266c4450ec382560d04",
+    "output_path": "lib/aesir/zone_server/content/npc/yuno/kafra_employee_kaf_yuno.ex",
+    "source_hash": "adac8ca510a4cb0d3f283bbddd5b37db56666ed58d06c7facbb3379dcca9d746"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::moc_ruins|moc_ruins:59:157": {
+    "output_hash": "165d90240961860cb9a11764e074d7f4f48180aec898576226bfa8626548a017",
+    "output_path": "lib/aesir/zone_server/content/npc/moc_ruins/kafra_employee_moc_ruins.ex",
+    "source_hash": "20797a8dcbea30eec2b0895a4a19c0431e5e9c1637986c27edf105c744ef521b"
+  },
+  "kafras/kafras.txt|script|Kafra Employee::prt_fild05|prt_fild05:290:224": {
+    "output_hash": "7fa494aba8e4474034854466d40f26f43dde48d04ef63464be8a78b1a63a234a",
+    "output_path": "lib/aesir/zone_server/content/npc/prt_fild05/kafra_employee_prt_fild05.ex",
+    "source_hash": "33895ed6864907d22fb0e0256dc53b48e2d3635cd82d31619c6c9193ed1f5ac1"
+  },
+  "kafras/kafras.txt|script|Kafra Service|aldeba_in:96:181": {
+    "output_hash": "16a5275f3ec66d2b65bcc83bf695e8db02c94013b94e4e60247e7008565f69b2",
+    "output_path": "lib/aesir/zone_server/content/npc/aldeba_in/kafra_service_96_181.ex",
+    "source_hash": "9afa721f67193331f53fed8819c3f56f09fcaaa33d57de85cdfeffd0af02b504"
+  },
+  "kafras/kafras.txt|script|Kafra::kaf_morocc2|morocc:160:258": {
+    "output_hash": "4edcd78824ed6629b16e534dc2ecd5b2a562c692902b5f4ed77dad738d739322",
+    "output_path": "lib/aesir/zone_server/content/npc/morocc/kafra_kaf_morocc2.ex",
+    "source_hash": "35690662ca542c804ebab841c7133ab9853cbae277cf542f74457b1c22d4e684"
+  },
+  "other/Global_Functions.txt|function|F_Bye|-": {
+    "output_hash": "768924cf8f390b3ba971b916b0ee9ab46b05581a254b4112db37fdfc4b63a9d3",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_bye.ex",
+    "source_hash": "2b29bd2b06c33e5ea320171fac9be3c293a8742b8ca2501029ed8cc7801bb203"
+  },
+  "other/Global_Functions.txt|function|F_CanChangeJob|-": {
+    "output_hash": "4b6c95297345b254daaec0e466810c3b1dba78c642bc3d8736322719abcafb4d",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_canchangejob.ex",
+    "source_hash": "dcebac37d51065cf15d4760e31c95448f452afb5b329d9dd0ead9d73cb851021"
+  },
+  "other/Global_Functions.txt|function|F_CanOpenStorage|-": {
+    "output_hash": "01aebe4e790dfe774d01b316f4207fbd6fe79f965bb3ba8273ccf5b7b366bb36",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_canopenstorage.ex",
+    "source_hash": "beffe3135f4ca829c41c14b09facd9d28e4e42b237991045ed3822c4e1f562dd"
+  },
+  "other/Global_Functions.txt|function|F_ClearGarbage|-": {
+    "output_hash": "edecfcbe70ee5ddcbabf50a50d59288bdc143b4b68defdc2ecae73e74e4ebefb",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_cleargarbage.ex",
+    "source_hash": "3be9ccd8b033e55254ac45c6a85b58a42a6c6b5850c854baad14a63b770102e2"
+  },
+  "other/Global_Functions.txt|function|F_ClearJobVar|-": {
+    "output_hash": "3f5c5ed4ca9ea4d4bfe1cadb342348a2552421d16c7e258a133d8842b1d7191a",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_clearjobvar.ex",
+    "source_hash": "97c0e0b36d6dbc309bad844e3b8e32be1dc37350ed6aae904772660e74f71490"
+  },
+  "other/Global_Functions.txt|function|F_GetArmorType|-": {
+    "output_hash": "32bdc7ac0f781b94e51d1a13cfb922fdff81aa573748eb5d0fbb8a99cbf70d78",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_getarmortype.ex",
+    "source_hash": "1ea6916a61e1f6aa952239bc97d8acf0024e93cc7abf7a698b46e0a752a43055"
+  },
+  "other/Global_Functions.txt|function|F_GetArticle|-": {
+    "output_hash": "288b0454617a396932eb2d103c05e0ad843ca86ddc257dd1d7f10d14004b7608",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_getarticle.ex",
+    "source_hash": "a5b3b04d190efd6a1eca43e824b8ab235c2290d577c65560c295af639e7b2804"
+  },
+  "other/Global_Functions.txt|function|F_GetNumSuffix|-": {
+    "output_hash": "c3d73e29c5a3996e1b2b864604329e4f351227f17816dd703e2d83458c0d513d",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_getnumsuffix.ex",
+    "source_hash": "4bae7275a289b99a0b6372a52fdcd54821a07c47fa7ee084f56d6f1dc839d0ec"
+  },
+  "other/Global_Functions.txt|function|F_GetPlatinumSkills|-": {
+    "output_hash": "3621b346096ae68c66ff810cb5629e2d762abedbce8969cc188f44dc2819b6a4",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_getplatinumskills.ex",
+    "source_hash": "c86dd8fab87f49d7ed6e0b7dbeaa1e5037c54bcd7518edc1378c3e304f559136"
+  },
+  "other/Global_Functions.txt|function|F_GetPlural|-": {
+    "output_hash": "656d2540ee9e92b7be90484b45c4bacc0db94762ec87b04e4f31dbd8f89b6476",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_getplural.ex",
+    "source_hash": "c3a294c6c206f0b5c821cf08e48e12d68c9d588714a66b490c5a1fc4d634eb67"
+  },
+  "other/Global_Functions.txt|function|F_GetWeaponType|-": {
+    "output_hash": "1b45be903fd33b67e3ee420ccdf4a52baf50d08266abd510467ed6bfa6f9d625",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_getweapontype.ex",
+    "source_hash": "6084e38141c5253d8f67c25f0de57cbb67003023f9dc0b6a019ba1a1430e3ac1"
+  },
+  "other/Global_Functions.txt|function|F_Hi|-": {
+    "output_hash": "4f138a4973a8bd10ff5d701f0b9c16dc9ff3b1fd109dd4f04e35c7f08c63a213",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_hi.ex",
+    "source_hash": "b5b6f8287194e430016ce23309d705b4fecbb05db172d478203e5c30bf11cb52"
+  },
+  "other/Global_Functions.txt|function|F_InsertArticle|-": {
+    "output_hash": "28e9204387eaca146430b830ce959c42edc1bf70dcb340885da2e02a84b95c64",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_insertarticle.ex",
+    "source_hash": "ced8b3064ce7d0ae0ebd0da2d97ae761d133a06741800d064e56587024e7e046"
+  },
+  "other/Global_Functions.txt|function|F_InsertComma|-": {
+    "output_hash": "523dc5463788d2fdb577c7e6be249bb7f2d46fc3205173ad99eab032ba84cf31",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_insertcomma.ex",
+    "source_hash": "b4d9bd7862f81f17f077255692e3a28d671b619ad8f9055b724df710f2f2cfc3"
+  },
+  "other/Global_Functions.txt|function|F_InsertPlural|-": {
+    "output_hash": "424f95f237f28776ecc14e1da7861a8cef6b9090f86416f1829dcb1c3e7e0311",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_insertplural.ex",
+    "source_hash": "cac6bd9ac8e9b30e5dcf2f3e0a0ec7a76f82d10ffb9c5d32f30549e37a93e73b"
+  },
+  "other/Global_Functions.txt|function|F_IsCharm|-": {
+    "output_hash": "666452bbc004014e954d3aee6364884c0729d406febfa96535ed9fbaa3ad4bfc",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_ischarm.ex",
+    "source_hash": "08b91a8b46759d1febb5d2b23a48460be56138114fd476d722e441fb0ae4ce35"
+  },
+  "other/Global_Functions.txt|function|F_IsEquipCardHack|-": {
+    "output_hash": "03887bbe13008c099d6b44c74671f14d63bb83b6d72a1885d019977f175156f5",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_isequipcardhack.ex",
+    "source_hash": "bf2db8a40c348c1365ab434dfa411586c2c1d2fee2133da4a10edb2dd0639989"
+  },
+  "other/Global_Functions.txt|function|F_IsEquipIDHack|-": {
+    "output_hash": "f25eda35e3c81589a7df4beaf1b0a65cba9d1decf01a0ce72774cd1b81196e97",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_isequipidhack.ex",
+    "source_hash": "e4819ab48b6401277115d8d712a59306cf78bb7d08c80657153f8911a9e32638"
+  },
+  "other/Global_Functions.txt|function|F_IsEquipRefineHack|-": {
+    "output_hash": "5f5b90d9b3f24e1c89123e2b062f6de989811bc3a86d15732f99bb65d4a81550",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_isequiprefinehack.ex",
+    "source_hash": "16c02763ee1004d63a3e68faf4b15c00620d2c6b799de4d1127a9c6c1498bd9f"
+  },
+  "other/Global_Functions.txt|function|F_ItemName|-": {
+    "output_hash": "76a9e1d156a8b709cae50b180003cecf3556d65ac02cf0580693048b74414446",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_itemname.ex",
+    "source_hash": "95b01648f1c2d9b4ce763f95cf2c77dc332d420affeb06db9ed459954a57b6b3"
+  },
+  "other/Global_Functions.txt|function|F_Load1Skills|-": {
+    "output_hash": "c21b59c776e1d6d6903a1886ae21d96948932a09393b3baa021541251441260c",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_load1skills.ex",
+    "source_hash": "7a4f5c0103e9a980b9094a1af647dc196d54d49fbaac2b023a7b4d2a94dfe7a4"
+  },
+  "other/Global_Functions.txt|function|F_Load2Skills|-": {
+    "output_hash": "819d50d920e3c5b9e3474200fd7006970a77dc0ed323d73aa5e6e00b81c57e42",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_load2skills.ex",
+    "source_hash": "eb56c48619d5b604946987a87a73eb3f011ebd35751e6591998a636312c37de0"
+  },
+  "other/Global_Functions.txt|function|F_Rand|-": {
+    "output_hash": "2d0db60ae369d11178972b7076c2227e6aa9e7b60ccce449fffe517e5f8f44ca",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_rand.ex",
+    "source_hash": "72d8c9eb516057e50c5cf0350c85161765db72dc5a2458ea9de69f6d77cc8318"
+  },
+  "other/Global_Functions.txt|function|F_SaveQuestSkills|-": {
+    "output_hash": "b647ff8a73c373acd096e11a4d224d2cbb5afc97df2c82fb67368f3c7bf35e93",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_savequestskills.ex",
+    "source_hash": "bdacefa7dd0b6b48a27cd104298d1366ee5124daf56517ebd764d8b9914b3ed5"
+  },
+  "other/Global_Functions.txt|function|F_SexMes|-": {
+    "output_hash": "5b556957da6decb33667b002ef96a3ce76a8e5921feb9abb627d2159f269b910",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_sexmes.ex",
+    "source_hash": "88183711319a761fb850a9f3f89f27d0abeacacdf007974788f1d5e5e1bfeba4"
+  },
+  "other/Global_Functions.txt|function|F_getpositionname|-": {
+    "output_hash": "61996c52d1b97dcce052bb62272358eb4468f383fd9c41c702257df28431919a",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_getpositionname.ex",
+    "source_hash": "2f346af362761d69d71374511d10139db3846d987c53db289726033538d3d930"
+  },
+  "other/Global_Functions.txt|function|Job_Change|-": {
+    "output_hash": "5eeb323be2ccd36e77e0b4d22e2b96c3b9743de05f297999f0c3a90cb5d0c957",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/job_change.ex",
+    "source_hash": "6561a1d60cf26fc514e6f53b4d49198d7778d0d43919a761193eee141555343f"
+  },
+  "other/Global_Functions.txt|function|Time2Str|-": {
+    "output_hash": "41e371b7157fd7521ad70dfb6dcb30dd5f3ce2b2d13f8ffff1a47b07911c8bb2",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/time2str.ex",
+    "source_hash": "0172cc8d8318240a27b7fcefe862dbc33756b390817687ee74ad2b8f9f11a3b0"
+  },
   "re/jobs/1-1/acolyte.txt|script|Ascetic#2aco|moc_fild07:41:355": {
     "output_hash": "d2711459cc4087411e7ea3daeaef1330bf4035424193e8067f4094dc07ce3151",
     "output_path": "lib/aesir/zone_server/content/npc/moc_fild07/ascetic.ex",
@@ -3393,5 +3903,120 @@
     "output_hash": "ad5997e435d820a0fff5edd4e087389fe875b440dc45fcd71a6d96b1cc850dd3",
     "output_path": "lib/aesir/zone_server/content/npc/moc_prydb1/thief_guildsman.ex",
     "source_hash": "71a20efe540cdefb3685ab9ff30b1fcc6583916ba351702d43b007f1261e54d9"
+  },
+  "re/kafras/Kafra_Teleportation_Services.txt|function|F_KafTeleDoram|-": {
+    "output_hash": "06d7528dfa9ea7d8d91da809ea5d0177b2426af57e3092ec97b55e3a79a47ba7",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_kafteledoram.ex",
+    "source_hash": "06d76ca7c8dffae998eb4c768c4a0323441c8d97bbbab292b48eebfba8f50909"
+  },
+  "re/kafras/Kafra_Teleportation_Services.txt|script|Kafra Teleportation#alberta|alberta:33:239": {
+    "output_hash": "d5ef579bc816fc8831d6623bd5e014a5dd1dfc268e70ecb4810489340e1a3645",
+    "output_path": "lib/aesir/zone_server/content/npc/alberta/kafra_teleportation.ex",
+    "source_hash": "49b22090228b27d45122acc7a00691e4e145815fdb093a48e5f870e5efcd0c41"
+  },
+  "re/kafras/Kafra_Teleportation_Services.txt|script|Kafra Teleportation#aldebaran|aldebaran:136:122": {
+    "output_hash": "5625469bf0931a944ede4d06976cec9e2a7ef82c16a29ce5c446b34c828b2013",
+    "output_path": "lib/aesir/zone_server/content/npc/aldebaran/kafra_teleportation.ex",
+    "source_hash": "07e44429cad86e6ba4fe21f8b4940f764eb378ae63f3e06737f54cc80661d391"
+  },
+  "re/kafras/Kafra_Teleportation_Services.txt|script|Kafra Teleportation#eden|moc_para01:35:23": {
+    "output_hash": "e6fd9ad2c0fd5086d7657f403e153e8fdbdc5d99232fba4653e0a601c664a944",
+    "output_path": "lib/aesir/zone_server/content/npc/moc_para01/kafra_teleportation.ex",
+    "source_hash": "3998cd34eb14aea6b31456be11831db2ba81fd6ecfee744094cc56b7e6a6df26"
+  },
+  "re/kafras/Kafra_Teleportation_Services.txt|script|Kafra Teleportation#einbroch|einbroch:246:205": {
+    "output_hash": "0a6570ff0ca68f7aa9c71bf72b5065022d01b80361353fa216b45577860e72de",
+    "output_path": "lib/aesir/zone_server/content/npc/einbroch/kafra_teleportation.ex",
+    "source_hash": "52bd05546fdb7355fe5d2fda8780e1f8c5f3ca9810bff75f698888020e7b7c15"
+  },
+  "re/kafras/Kafra_Teleportation_Services.txt|script|Kafra Teleportation#geffen|geffen:115:66": {
+    "output_hash": "f13232c46535a1059463afffd41127fa4b6bce521f44055ddd4f96794c045760",
+    "output_path": "lib/aesir/zone_server/content/npc/geffen/kafra_teleportation.ex",
+    "source_hash": "eabfbd9cbcda493be5976cbf27f4895aa9718c912d40371b6724905c0460aaba"
+  },
+  "re/kafras/Kafra_Teleportation_Services.txt|script|Kafra Teleportation#lighthalzen|lighthalzen:167:103": {
+    "output_hash": "52f675f5c22b6ff0399c32fd19f41589edb68c2924e48ab70ab73eb2c0faad90",
+    "output_path": "lib/aesir/zone_server/content/npc/lighthalzen/kafra_teleportation.ex",
+    "source_hash": "679d96828bcda924833957c155fae6dda2eafd55da06fc6b9b9caafee49a331f"
+  },
+  "re/kafras/Kafra_Teleportation_Services.txt|script|Kafra Teleportation#morocc|morocc:155:257": {
+    "output_hash": "686639649cf88ae7f4bbe66dd2a9e09f86bea44b8ae7492cb8d0c5e770155ec9",
+    "output_path": "lib/aesir/zone_server/content/npc/morocc/kafra_teleportation.ex",
+    "source_hash": "856129c598d235a5bf43f30665e0d50d89c39b48109adb4c175aa384cb237a6b"
+  },
+  "re/kafras/Kafra_Teleportation_Services.txt|script|Kafra Teleportation#payon|payon:176:104": {
+    "output_hash": "f5497afe2ada917d3cc5066c88e9edccf0eb07c919a290aa5be38e5545d87ed6",
+    "output_path": "lib/aesir/zone_server/content/npc/payon/kafra_teleportation.ex",
+    "source_hash": "daf7e149631ae717bfd4a9828d16d68189c1f4319642bc87c18a6609a4943fd1"
+  },
+  "re/kafras/Kafra_Teleportation_Services.txt|script|Kafra Teleportation#prontera|prontera:143:87": {
+    "output_hash": "8f250374c08008ea6425b4525c2dfa51d7fb94d0fb1d9b5b148c034be58461a9",
+    "output_path": "lib/aesir/zone_server/content/npc/prontera/kafra_teleportation.ex",
+    "source_hash": "7a787dd44e327083d10f7f9b82420beff9b6a536d7a035aa3e081c21bd469271"
+  },
+  "re/kafras/Kafra_Teleportation_Services.txt|script|Kafra Teleportation#rachel|rachel:116:139": {
+    "output_hash": "069184e3cfb5a8e1ed42255d378ffac9c3a64c1969eb4d47a8b3f29c41189769",
+    "output_path": "lib/aesir/zone_server/content/npc/rachel/kafra_teleportation.ex",
+    "source_hash": "4edc45ed51beacc702d6b3263096d1f5df33da2186220f9ae53f68df1fb45ec9"
+  },
+  "re/kafras/Kafra_Teleportation_Services.txt|script|Kafra Teleportation#veins|veins:196:133": {
+    "output_hash": "55c12467b825e09957436ff762ddbcbf28abede38ce85d1f29a8ac9f96875a15",
+    "output_path": "lib/aesir/zone_server/content/npc/veins/kafra_teleportation.ex",
+    "source_hash": "84e1cac99bccdcac2fb428e969b9c8d99435cd76cabd80c4f9f61408ba656872"
+  },
+  "re/kafras/Kafra_Teleportation_Services.txt|script|Kafra Teleportation#yuno|yuno:143:184": {
+    "output_hash": "b8c3bb884e3aa5cf65c1ac94f67a6900f5fd8b5aa1449fed3d78a1963c6078ae",
+    "output_path": "lib/aesir/zone_server/content/npc/yuno/kafra_teleportation.ex",
+    "source_hash": "c0c0bc4bef531a882af919c1b729982b2c54e77dedefb34cb260540d708ed4a3"
+  },
+  "re/kafras/Zonda_Teleportation_Services.txt|floating|ZondaTeleportationServices|-": {
+    "output_hash": "c8647ae39629d889913de5994900025a6daffc8ebf406f09a37b0ba4fb404860",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/zondateleportationservices.ex",
+    "source_hash": "df39bf4c87fff911ab12aca70b0227c93f6cb739cf286e6f3f8160fded9748c2"
+  },
+  "re/kafras/cool_event_corp.txt|script|Cool Event Corp Staff::CoolEventCorpStaffVerus|verus04:121:243": {
+    "output_hash": "0181a59ca06d0652284f206c959b6293f29386be91055cffedbd5630326c93d5",
+    "output_path": "lib/aesir/zone_server/content/npc/verus04/cool_event_corp_staff_cooleventcorpstaffverus.ex",
+    "source_hash": "8277bc46483faa2b3b81bb66f1db43454bc8ceb6e5bf4db4aebdf81c521a05e5"
+  },
+  "re/kafras/kafras.txt|script|Kafra Employee::kaf_dewata|dewata:202:184": {
+    "output_hash": "abaf564647253ab871e0daba83dca1abcff63b522799c417abcd0324e0e7a8e8",
+    "output_path": "lib/aesir/zone_server/content/npc/dewata/kafra_employee_kaf_dewata.ex",
+    "source_hash": "adfd3d4abc0822511072cd3cb40570e955fc81ed355e0acd1cb049414ffe0f0e"
+  },
+  "re/kafras/kafras.txt|script|Kafra Employee::kaf_eden|moc_para01:10:185": {
+    "output_hash": "dafed27211471d7d0fa4b2bc75c9c4a52ea5ea0c9992672cd5a55e9b86849f7f",
+    "output_path": "lib/aesir/zone_server/content/npc/moc_para01/kafra_employee_kaf_eden.ex",
+    "source_hash": "caccaf0fb6a7fc02347ace3127027887f265a30eca6e67b7ae6f285e140a1842"
+  },
+  "re/kafras/kafras.txt|script|Kafra Employee::kaf_glast|glast_01:200:275": {
+    "output_hash": "2c252d03db9e014512ee01e667c9f72e7d5f968836ff6bfc103ed7a479b3d31b",
+    "output_path": "lib/aesir/zone_server/content/npc/glast_01/kafra_employee_kaf_glast.ex",
+    "source_hash": "1a7f92033408b00251ac2eb7d40021fabdb573e05c6e7e898135795c6ba62419"
+  },
+  "re/kafras/kafras.txt|script|Kafra Employee::kaf_malaya1|malaya:71:79": {
+    "output_hash": "d90dce5ea1ae59d4a6681150a060b52611065c799381ce521fc755f31f28b11a",
+    "output_path": "lib/aesir/zone_server/content/npc/malaya/kafra_employee_kaf_malaya1.ex",
+    "source_hash": "f4ee2b46ecaf5ce13af48880c11c68cc981c07e2973cf4012d04d3a36c5b6359"
+  },
+  "re/kafras/kafras.txt|script|Kafra Employee::kaf_malaya2|malaya:234:204": {
+    "output_hash": "b5cb1f3ba2969cec96703e024eebfbc1121ef5715dc536f0ba61bea6f15aa3cf",
+    "output_path": "lib/aesir/zone_server/content/npc/malaya/kafra_employee_kaf_malaya2.ex",
+    "source_hash": "129821dc4e099de800da4ca9f6dae5a638f149a0bdd3fdadb833c844b65f9cdc"
+  },
+  "re/kafras/kafras.txt|script|Kafra Employee::kaf_rock|harboro1:291:207": {
+    "output_hash": "5784ae55bd9b64abd5635cd59c84cd4609ca9de54772f929638e8b317ee859f3",
+    "output_path": "lib/aesir/zone_server/content/npc/harboro1/kafra_employee_kaf_rock.ex",
+    "source_hash": "dbfcb36e7f09154719a3dd045909a3021c395487c9f6bd6f6eb379b153a88c98"
+  },
+  "re/kafras/kafras.txt|script|Kafra Employee::kaf_rune|job3_rune01:92:62": {
+    "output_hash": "366e3ced09d13c60934a5eea01f12eec0921fe9a9cf285099c74f25d625e9eea",
+    "output_path": "lib/aesir/zone_server/content/npc/job3_rune01/kafra_employee_kaf_rune.ex",
+    "source_hash": "f277db71f24978eeac0ea43540800f24d29fa0385f1ba6bdd13a626513fd11a4"
+  },
+  "re/kafras/kafras.txt|script|Kafra Employee::kaf_xmas|xmas:148:134": {
+    "output_hash": "498766ab5c6edcb232a13f07b089a979b05edab724e042fba20f5ec36350cae4",
+    "output_path": "lib/aesir/zone_server/content/npc/xmas/kafra_employee_kaf_xmas.ex",
+    "source_hash": "9c4a2dc106c037d61f4c2b3ef8bb3a2d97e0063488a75fbf7ee466d807d48e97"
   }
 }

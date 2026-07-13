@@ -7,7 +7,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FClocktowergate do
   of overwriting them.
   """
 
-  import Aesir.ZoneServer.Script.Dsl
+  import Aesir.ZoneServer.Script.Dsl, warn: false
   alias Aesir.ZoneServer.Script.Rathena
 
   @doc "Callable rAthena global function; returns `{ctx, return_value}`."
