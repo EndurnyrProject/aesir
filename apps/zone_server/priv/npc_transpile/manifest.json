@@ -1,4 +1,199 @@
 {
+  "airports/airships.txt|function|applegamble|-": {
+    "output_hash": "2a3b781cd11fe4b6932d4e2eb4c9b8ec789dbac62635668f0e370aa31ca20e66",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/applegamble.ex",
+    "source_hash": "01ffd1d893ee56eaeb7bbb55e823328151bba0a2723beaa7340ae200a3c1072a"
+  },
+  "airports/airships.txt|script|#AirshipWarp-1|airplane:243:73": {
+    "output_hash": "64be395234cdf392ca5fb3a28e34ab2e4594ad37925e1f41c4f8bf46c820d05d",
+    "output_path": "lib/aesir/zone_server/content/npc/airplane/npc.ex",
+    "source_hash": "387752d9df42e692c1a74c1955d370bc6cc044ff21439487bcca2b95cb7c74ce"
+  },
+  "airports/airships.txt|script|#AirshipWarp-3|airplane_01:243:73": {
+    "output_hash": "02425ab3620b47db9bba9a1daae1b8d5553359ee469369cc4eadfbdcfdc1fd67",
+    "output_path": "lib/aesir/zone_server/content/npc/airplane_01/npc.ex",
+    "source_hash": "30e309fd8c24ce969c5b8be58825874c5b6d77454beaae03b20fbf6e851054fd"
+  },
+  "airports/airships.txt|script|Aanos#01airplane|airplane:72:34": {
+    "output_hash": "8cc7e7b7c891310f3ceb4f78aedb3a177576e95f38b93c556f372ec990c95272",
+    "output_path": "lib/aesir/zone_server/content/npc/airplane/aanos.ex",
+    "source_hash": "ce4e7c72e48243c553a03da4c2445a3f3398c1fbea8b715c32631622c6e2f396"
+  },
+  "airports/airships.txt|script|Airship Crew#ein-1|airplane:100:69": {
+    "output_hash": "213a80439a12b02825be516b633dc9179f824387f61bd4e22c6851b921131d28",
+    "output_path": "lib/aesir/zone_server/content/npc/airplane/airship_crew.ex",
+    "source_hash": "971ab182699abf5f1ad91dbb8fc8e7b97746b540620dfe29b0a4bb2e058102df"
+  },
+  "airports/airships.txt|script|Airship Staff#airplane01|airplane_01:250:58": {
+    "output_hash": "8d29d57ffb06e2c6f92f80a923585b4ec14e4eeebf4d068b5ff7a726d6519a17",
+    "output_path": "lib/aesir/zone_server/content/npc/airplane_01/airship_staff.ex",
+    "source_hash": "a599e25213ae4918ba3f47c7a342ff502b049a94847ffd116f8cfb4916028fed"
+  },
+  "airports/airships.txt|script|Airship Staff#airplane|airplane:250:58": {
+    "output_hash": "8b500a123ab516a22cda16fb3cf5a5c6df8831edfcab2d31947daac033dd16be",
+    "output_path": "lib/aesir/zone_server/content/npc/airplane/airship_staff.ex",
+    "source_hash": "d30c0bc1adf88287153282ce6fa2a097c1f567897c266b715934dab9d28ee6eb"
+  },
+  "airports/airships.txt|script|Apple Merchant#air01|airplane_01:50:66": {
+    "output_hash": "7d4c686aed4bdc51e90ef8cc36cb1e7033ae15cf6c99a9ccf8c7b52b1b213238",
+    "output_path": "lib/aesir/zone_server/content/npc/airplane_01/apple_merchant.ex",
+    "source_hash": "03c8900cf11dce734c202dae306f13f18f52a57df90496c8c489ea1e935d3001"
+  },
+  "airports/airships.txt|script|Apple Merchant#airplane|airplane:50:66": {
+    "output_hash": "5437dd3b9b02152dfede8a0c178699742f228b8fdfe719af6e6b371cd52b4499",
+    "output_path": "lib/aesir/zone_server/content/npc/airplane/apple_merchant.ex",
+    "source_hash": "9fea6474bf8bfc9fc521028386fe31e8ee758609b4042bc6863ebc85a36c0a04"
+  },
+  "airports/airships.txt|script|Clarice|airplane_01:33:68": {
+    "output_hash": "666ed6df3b0919f2d963d0334f911445218c619fe401223c54ed7e375d4476c8",
+    "output_path": "lib/aesir/zone_server/content/npc/airplane_01/clarice.ex",
+    "source_hash": "3fc50cead55504e8292443de42f660d8aacf4b2bc6f772168d6aad01f1a934bb"
+  },
+  "airports/airships.txt|script|Dianne#01airplane_01|airplane_01:83:61": {
+    "output_hash": "2cc7edf883e9d6a1ad7e45e1b6a6a75cd09b6bd97116e565d0da011e6002e42a",
+    "output_path": "lib/aesir/zone_server/content/npc/airplane_01/dianne.ex",
+    "source_hash": "289446770454b357082a8b2dd238ffc0b4c7487f7e78532572e91fc0717ac1ff"
+  },
+  "airports/airships.txt|script|Domestic_Airship|airplane:1:1": {
+    "output_hash": "613acd4092134f68c3268f89293d944f2d24b38d0f3857792423fbfd3bcb73ff",
+    "output_path": "lib/aesir/zone_server/content/npc/airplane/domestic_airship.ex",
+    "source_hash": "2b5033e61b4a0b6ec0dfa997c0313fed8f197566fd16e62e4618b17d5f5021db"
+  },
+  "airports/airships.txt|script|Exit#airplane1a::ExitAirplane|airplane:240:64": {
+    "output_hash": "2494b4c16a01e6521748599f376fa702a2e251aa7b8329fa79b6d685ec2e7d1e",
+    "output_path": "lib/aesir/zone_server/content/npc/airplane/exit.ex",
+    "source_hash": "1f8855a8f0c4fd8ed3ae66b86c182afa0e0aa4c7393c6fc629a6863e34581245"
+  },
+  "airports/airships.txt|script|Exit#airplane_011a::ExitAirplane01|airplane_01:240:64": {
+    "output_hash": "9c468f3b68a9ce7f118449b6fb8843f20c87446460e339d2172c04b3f8735fd8",
+    "output_path": "lib/aesir/zone_server/content/npc/airplane_01/exit.ex",
+    "source_hash": "b7eca60c97cfb52260c9faa9c1c862d1543149a323ad628ed34b978ef2d9e143"
+  },
+  "airports/airships.txt|script|International_Airship|airplane_01:1:1": {
+    "output_hash": "ba6186cdd2a039f8ba8f32214c3dc335d70254b9271769dd3e74cead0234f180",
+    "output_path": "lib/aesir/zone_server/content/npc/airplane_01/international_airship.ex",
+    "source_hash": "415cf6fbefab134447c8d394976cc8e16f0e049ce7e4a41824cb4657a957aa5d"
+  },
+  "airports/airships.txt|script|Maelin#01airplane|airplane:65:63": {
+    "output_hash": "7d77e73a60833fbfb54f01287f1a0e6d63c6b8f82f46a7f71266d146821ad42f",
+    "output_path": "lib/aesir/zone_server/content/npc/airplane/maelin.ex",
+    "source_hash": "b74794f955b4abec9c18317785e4dc73f86f6e77c00f4e4fcc84ee6f0c51af66"
+  },
+  "airports/airships.txt|script|Mendel#01airplane_01|airplane_01:69:63": {
+    "output_hash": "1f217ccc33209f796ead90e7aee021f08ad6e998d9a2c8addead684e6a6467ca",
+    "output_path": "lib/aesir/zone_server/content/npc/airplane_01/mendel.ex",
+    "source_hash": "f95da0dad6bb9cb5fb4223ca4166a4f051d564a9c3d34256b7fb85fe8114b3d9"
+  },
+  "airports/airships.txt|script|Nils#ein|airplane_01:32:61": {
+    "output_hash": "ce9af5efd0475c1848cdac44d9d08fcf12a4bab24a9d89ea3f9ef81e3b5cb714",
+    "output_path": "lib/aesir/zone_server/content/npc/airplane_01/nils.ex",
+    "source_hash": "80584b23aed91c81e690e466d1bfc28f4d0c8ba458e1dbbf43582e79ec233852"
+  },
+  "airports/airships.txt|script|Pilot#airplane_01|airplane_01:221:158": {
+    "output_hash": "2c0301d6041060bfc0ebf980176a6a05cabbffcbccd0b62445ca2c79718ed87d",
+    "output_path": "lib/aesir/zone_server/content/npc/airplane_01/pilot.ex",
+    "source_hash": "9b17eadcf8ab193ef3e7b590b7242aad59411fc5f2b4d7726d1a5e0c9a8a7da0"
+  },
+  "airports/airships.txt|script|Pilot#airplane|airplane:221:158": {
+    "output_hash": "e99e660b96f62f8648d8866db88203e036f30f556df397c7d186efc9b98f091d",
+    "output_path": "lib/aesir/zone_server/content/npc/airplane/pilot.ex",
+    "source_hash": "526e85798f375d16135c509194b3b5ce21c3c5dc8b64f988fe5c1f2ebb736107"
+  },
+  "airports/airships.txt|script|Swordsman Shimizu#air_01|airplane_01:71:31": {
+    "output_hash": "856e24d208cf9db93315442eee550a782846568e9cde918334cbec9a74e651be",
+    "output_path": "lib/aesir/zone_server/content/npc/airplane_01/swordsman_shimizu.ex",
+    "source_hash": "3ba1ae16ab4a80ce6e67886c245b78320267b11e78495ff75bfb1cb851d1d29d"
+  },
+  "airports/airships.txt|script|Umbala Kid#ein_p|airplane:64:94": {
+    "output_hash": "cb4cddbf6f2b062367f12305d1985723a1fee6c531f0553ad8a50469498299a6",
+    "output_path": "lib/aesir/zone_server/content/npc/airplane/umbala_kid.ex",
+    "source_hash": "82052ba94b26d02972a6e1098ec0c6f6a6e59a5987024d4d0d6532c61b6aabbf"
+  },
+  "airports/airships.txt|script|Umbala Lady#ein_p|airplane:66:93": {
+    "output_hash": "9532f9b748cc1af7c6effcc5fe269d3809fda44f6cd9a51642b6111a4b71fcbb",
+    "output_path": "lib/aesir/zone_server/content/npc/airplane/umbala_lady.ex",
+    "source_hash": "93ee19a63644f9930c973908d0fae76d844319b732cd17b8a1842a857e64ad0b"
+  },
+  "airports/airships.txt|script|Umbala Man#ein_p|airplane:71:91": {
+    "output_hash": "fa61ecfaf01e1a86764b45e6460a866a3cdb217f7932a2a53d2590262e2ee942",
+    "output_path": "lib/aesir/zone_server/content/npc/airplane/umbala_man.ex",
+    "source_hash": "83dd38a6d232445b420d4611d098f67235e23eba03193025acbe867730e5ba34"
+  },
+  "airports/airships.txt|script|Zerta#01airplane|airplane:80:71": {
+    "output_hash": "c9a0de05f610298df10c68c15626a2b3c971c7a1548899c10b3a91402294aef5",
+    "output_path": "lib/aesir/zone_server/content/npc/airplane/zerta.ex",
+    "source_hash": "dd944e865f175296f79354f86638ddad6ddc71fee76b18d106ea23ed227e765f"
+  },
+  "airports/einbroch.txt|script|Airport Staff#airport1a::airport1|airport:143:43": {
+    "output_hash": "206cccd41ed7efa069916c60f737b666baf48a28a413292bda5b908f58b0700c",
+    "output_path": "lib/aesir/zone_server/content/npc/airport/airport_staff.ex",
+    "source_hash": "3322e13480ab26420ca2dc4dc94846cee8ecfef75abdb80c268aaf69d2e6148c"
+  },
+  "airports/einbroch.txt|script|Airship Staff#ein01|einbroch:94:267": {
+    "output_hash": "162b1df94da377b6f9a06d47bf6135685ab71a15911e225eaa444f172846682e",
+    "output_path": "lib/aesir/zone_server/content/npc/einbroch/airship_staff.ex",
+    "source_hash": "6fe7000cfc26bc40bbd5095fe040908add9373671b348d5b4c7ee02ad00390ef"
+  },
+  "airports/einbroch.txt|script|Arrival Staff#airport2a::airport2|airport:143:49": {
+    "output_hash": "5598cdd47f2b17f7b399ddf1ac77cb0c12169429741c00b004f6e4efdd502745",
+    "output_path": "lib/aesir/zone_server/content/npc/airport/arrival_staff.ex",
+    "source_hash": "bd78a38ef9615079dbfd6f400e94dab65c52e170ec0fb2cb8a1774841a3baacb"
+  },
+  "airports/hugel.txt|script|toairplane#hugel|hugel:178:142": {
+    "output_hash": "ab407f979d81d147da30d537a8028f42e95328ce49401bfc86caf2881e1bc0f5",
+    "output_path": "lib/aesir/zone_server/content/npc/hugel/toairplane.ex",
+    "source_hash": "4349825b75e233c2c8d120d3ce490e0991243a8cc097b4302ce17f160fcd70d0"
+  },
+  "airports/izlude.txt|floating|::Airship_Staff_izlude|-": {
+    "output_hash": "6bd26f7f0225d2b31b49f58f298ae203009e10a125cdcafcee3636bf98a15dc1",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/airship_staff_izlude.ex",
+    "source_hash": "52d33a35564ad48eb1243ecef5d8cd861b1787197b895f49480e76790f888941"
+  },
+  "airports/lighthalzen.txt|script|Airport Staff#lhz_air1a::lhz_airport1|lhz_airport:143:43": {
+    "output_hash": "87eb34d27d123a5fede14e156723d31452a6038644d07e6477716492d2843263",
+    "output_path": "lib/aesir/zone_server/content/npc/lhz_airport/airport_staff.ex",
+    "source_hash": "f5dcc2186651ceb12549bd09f0a1304782a62368f0c2c6514894265b507c4fea"
+  },
+  "airports/lighthalzen.txt|script|Arrival Staff#lhz_air2a::lhz_airport2|lhz_airport:143:49": {
+    "output_hash": "9dfc0fc0b7d97e46a986ebde1ad9f7b92a2e7b8ce0babab4773e663ffc5fbfa5",
+    "output_path": "lib/aesir/zone_server/content/npc/lhz_airport/arrival_staff.ex",
+    "source_hash": "31e1c005529d927866c8fa7b533095e0188b760bc7a343a120dbf340edbbb097"
+  },
+  "airports/rachel.txt|script|toairplane#rachel|ra_fild12:295:208": {
+    "output_hash": "969ab450c9f12f58c2145a1f22aa5c4b238e7960b894e4f905fee399635a72c9",
+    "output_path": "lib/aesir/zone_server/content/npc/ra_fild12/toairplane.ex",
+    "source_hash": "14354c56a3a82b3b7fe4ed12e3f4ae24cb9d0cc5aa1ba4eb2ecf9e8eb02bd720"
+  },
+  "airports/yuno.txt|script|Airport Staff#y_air1a::y_airport1|y_airport:143:43": {
+    "output_hash": "9bea50ae8bc0b1892db105ba1c0a98792e5f84fbd1d5a373b46420da2a0efd13",
+    "output_path": "lib/aesir/zone_server/content/npc/y_airport/airport_staff.ex",
+    "source_hash": "ae5cc8f86092cecc360bddc1d8b8456fb31c9d42e4668edafc5c930471951f71"
+  },
+  "airports/yuno.txt|script|Airship Staff#yuno01|yuno:14:262": {
+    "output_hash": "2a766445c18d2cde2b1ad7dd6265e7e476fe135c5d17e06712a66e55fbd2a1a7",
+    "output_path": "lib/aesir/zone_server/content/npc/yuno/airship_staff.ex",
+    "source_hash": "3a37d75d55445b771e53d78351e38fe0cb70856c9ba48b543903d6ec34f5c581"
+  },
+  "airports/yuno.txt|script|Airship Staff#yuno02|yuno:88:263": {
+    "output_hash": "62540fb32d7bad44842238a14de9692cd5b27ea34601713e02f2be4e6eae269d",
+    "output_path": "lib/aesir/zone_server/content/npc/yuno/airship_staff_88_263.ex",
+    "source_hash": "dd96ada14cf9b6807c9a9e6c9d99d91227e05cd2c1ef2de97f7978515cf49d3f"
+  },
+  "airports/yuno.txt|script|Arrival Staff#y_air2a::y_airport2|y_airport:143:49": {
+    "output_hash": "7d3ebad53425989a970e5a416e0a56fff909ed6a19f2a978282b438997dd28bb",
+    "output_path": "lib/aesir/zone_server/content/npc/y_airport/arrival_staff.ex",
+    "source_hash": "f8651e82c403932e0143f6232e1c614ef86959540cf713386e010c6250154e27"
+  },
+  "airports/yuno.txt|script|Domestic Boarding|y_airport:145:63": {
+    "output_hash": "8d0bbc78f47b2bdeee7a4975d058b10f34cc0c73cfa70109db432d0ab30fcbd2",
+    "output_path": "lib/aesir/zone_server/content/npc/y_airport/domestic_boarding.ex",
+    "source_hash": "be6ecd97db39b16d4574a31d94a4723aa39f84993c336d274493ee7c992d9f7f"
+  },
+  "airports/yuno.txt|script|International Boarding|y_airport:140:63": {
+    "output_hash": "27087234c90222fd036bd6241bb1df887f03cb6b7178e3492933e46d2322b424",
+    "output_path": "lib/aesir/zone_server/content/npc/y_airport/international_boarding.ex",
+    "source_hash": "d8a2df839fa8a77df4304a7674e098d48d9189a0821338d38ff7d4be97a450a6"
+  },
   "cities/alberta.txt|script|Chad|alberta_in:20:183": {
     "output_hash": "e69788938098abdace82ea56e73e6932268950ac169aca24de49d95eb2c53a8f",
     "output_path": "lib/aesir/zone_server/content/npc/alberta_in/chad.ex",
