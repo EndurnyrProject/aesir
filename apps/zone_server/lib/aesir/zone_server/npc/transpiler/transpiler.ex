@@ -248,11 +248,20 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
           sprite: sprite,
           name: ModuleName.display_name(placement.name)
         }
-        |> maybe_put(:unique_name, ModuleName.exname(placement.name))
+        |> maybe_put(:unique_name, unique_name(placement.name))
         |> maybe_put(:trigger, placement[:touch])
 
       {spawn, unresolved}
     end)
+  end
+
+  # rAthena's exname — what `donpcevent`/`strnpcinfo` target: the part after
+  # `::` when present, else the full name including the `#hidden` fragment.
+  # Omitted when it equals the display name (the Placement fallback).
+  defp unique_name(name) do
+    unique = ModuleName.exname(name) || String.trim_leading(name, ":")
+
+    if unique == ModuleName.display_name(name), do: nil, else: unique
   end
 
   defp maybe_put(map, _key, nil), do: map

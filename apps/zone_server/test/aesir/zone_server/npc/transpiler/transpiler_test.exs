@@ -66,6 +66,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.TranspilerTest do
     source = File.read!(Path.join(out_root, bank))
     assert source =~ "x: 150"
     assert source =~ "x: 160"
+    assert source =~ ~S|unique_name: "BankClerk"|
+    assert source =~ ~S|unique_name: "Bank Clerk#2"|
 
     guard = Enum.find(result.written, &(&1 =~ "guard"))
     guard_source = File.read!(Path.join(out_root, guard))

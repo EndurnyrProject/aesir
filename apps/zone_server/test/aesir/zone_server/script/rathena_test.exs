@@ -8,6 +8,25 @@ defmodule Aesir.ZoneServer.Script.RathenaTest do
 
   alias Aesir.ZoneServer.Script.Rathena
 
+  describe "atoi/1" do
+    test "parses the leading integer of a string" do
+      assert Rathena.atoi("01") == 1
+      assert Rathena.atoi("42abc") == 42
+      assert Rathena.atoi("  -7") == -7
+      assert Rathena.atoi("+3") == 3
+    end
+
+    test "returns 0 when there are no leading digits" do
+      assert Rathena.atoi("") == 0
+      assert Rathena.atoi("abc") == 0
+      assert Rathena.atoi(nil) == 0
+    end
+
+    test "passes integers through unchanged" do
+      assert Rathena.atoi(5) == 5
+    end
+  end
+
   describe "input_int/3" do
     test "returns {0, value} when in range" do
       assert Rathena.input_int(3, 1, 5) == {0, 3}

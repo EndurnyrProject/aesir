@@ -8,7 +8,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Malaya.PortGuard do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "malaya", x: 270, y: 59, dir: 4, sprite: 570, name: "Port Guard"}]
+    spawn: [
+      %{
+        map: "malaya",
+        x: 270,
+        y: 59,
+        dir: 4,
+        sprite: 570,
+        name: "Port Guard",
+        unique_name: "Port Guard#ma03"
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Rathena
   alias Aesir.ZoneServer.Script.Todo

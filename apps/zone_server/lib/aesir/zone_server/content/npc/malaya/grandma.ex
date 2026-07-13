@@ -8,7 +8,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Malaya.Grandma do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "malaya", x: 227, y: 311, dir: 4, sprite: 575, name: "Grandma"}]
+    spawn: [
+      %{
+        map: "malaya",
+        x: 227,
+        y: 311,
+        dir: 4,
+        sprite: 575,
+        name: "Grandma",
+        unique_name: "Grandma#ma01"
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Rathena
   alias Aesir.ZoneServer.Script.Todo

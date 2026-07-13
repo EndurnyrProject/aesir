@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.UnidentifiedCreature do
         dir: 6,
         sprite: 572,
         name: "Unidentified Creature",
+        unique_name: "Unidentified Creature#01",
         trigger: {2, 2}
       },
       %{
@@ -25,6 +26,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.UnidentifiedCreature do
         dir: 4,
         sprite: 572,
         name: "Unidentified Creature",
+        unique_name: "Unidentified Creature#05",
         trigger: {2, 2}
       },
       %{
@@ -34,12 +36,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.UnidentifiedCreature do
         dir: 4,
         sprite: 572,
         name: "Unidentified Creature",
+        unique_name: "Unidentified Creature#09",
         trigger: {2, 2}
       }
     ]
 
   alias Aesir.ZoneServer.Script.Rathena
-  alias Aesir.ZoneServer.Script.Todo
   @impl true
   def on_event("OnInit", ctx) do
     ev_oninit(ctx)
@@ -79,7 +81,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.UnidentifiedCreature do
   end
 
   def ev_oninit(ctx) do
-    v1 = Todo.call!(:atoi, [strnpcinfo(ctx, 2)])
+    v1 = Rathena.atoi(strnpcinfo(ctx, 2))
 
     ctx =
       case v1 do
@@ -105,15 +107,15 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.UnidentifiedCreature do
   end
 
   def ev_onenable(ctx) do
-    todo(ctx, :enablenpc, [])
+    enablenpc(ctx)
   end
 
   def ev_ondisable(ctx) do
-    todo(ctx, :disablenpc, [])
+    disablenpc(ctx)
   end
 
   def ev_onbingx2(ctx) do
-    v2 = Todo.call!(:atoi, [strnpcinfo(ctx, 2)])
+    v2 = Rathena.atoi(strnpcinfo(ctx, 2))
 
     ctx =
       case v2 do
@@ -164,7 +166,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.UnidentifiedCreature do
 
         ctx =
           if Rathena.truthy?(rem(Enum.random(1..5), 2)) do
-            v3 = Todo.call!(:atoi, [strnpcinfo(ctx, 2)])
+            v3 = Rathena.atoi(strnpcinfo(ctx, 2))
 
             ctx =
               case v3 do

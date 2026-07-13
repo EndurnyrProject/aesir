@@ -8,7 +8,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Malaya.DrummingYoungMan do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "malaya", x: 189, y: 263, dir: 4, sprite: 578, name: "Drumming Young Man"}]
+    spawn: [
+      %{
+        map: "malaya",
+        x: 189,
+        y: 263,
+        dir: 4,
+        sprite: 578,
+        name: "Drumming Young Man",
+        unique_name: "Drumming Young Man#ma02"
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Rathena
   alias Aesir.ZoneServer.Script.Todo

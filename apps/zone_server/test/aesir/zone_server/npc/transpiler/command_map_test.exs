@@ -22,14 +22,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     refute CommandMap.supported?("getmapxy")
   end
 
-  test "event and session buildins map to ref1/timer shapes" do
+  test "event and session buildins map to ref1/opt1/timer shapes" do
     assert {:ok, %{shape: :ref1, dsl: "donpcevent"}} = CommandMap.command("donpcevent")
     assert {:ok, %{shape: :ref1, dsl: "doevent"}} = CommandMap.command("doevent")
     assert {:ok, %{shape: :ref1, dsl: "npctalk"}} = CommandMap.command("npctalk")
-    assert {:ok, %{shape: :ref1, dsl: "enablenpc"}} = CommandMap.command("enablenpc")
-    assert {:ok, %{shape: :ref1, dsl: "disablenpc"}} = CommandMap.command("disablenpc")
-    assert {:ok, %{shape: :ref1, dsl: "hideonnpc"}} = CommandMap.command("hideonnpc")
-    assert {:ok, %{shape: :ref1, dsl: "hideoffnpc"}} = CommandMap.command("hideoffnpc")
+    assert {:ok, %{shape: :opt1, dsl: "enablenpc"}} = CommandMap.command("enablenpc")
+    assert {:ok, %{shape: :opt1, dsl: "disablenpc"}} = CommandMap.command("disablenpc")
+    assert {:ok, %{shape: :opt1, dsl: "hideonnpc"}} = CommandMap.command("hideonnpc")
+    assert {:ok, %{shape: :opt1, dsl: "hideoffnpc"}} = CommandMap.command("hideoffnpc")
     assert {:ok, %{shape: :timer, dsl: "initnpctimer"}} = CommandMap.command("initnpctimer")
     assert {:ok, %{shape: :timer, dsl: "stopnpctimer"}} = CommandMap.command("stopnpctimer")
     assert CommandMap.supported?("hideoffnpc")

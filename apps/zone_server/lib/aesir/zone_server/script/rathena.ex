@@ -28,6 +28,23 @@ defmodule Aesir.ZoneServer.Script.Rathena do
   def concat(a, b), do: to_string(a) <> to_string(b)
 
   @doc """
+  rAthena `atoi`: C-style leading-integer parse of a string — skips leading
+  whitespace, accepts an optional sign, and returns `0` when no digits follow.
+  Integers pass through unchanged.
+  """
+  @spec atoi(term()) :: integer()
+  def atoi(value) when is_integer(value), do: value
+
+  def atoi(value) when is_binary(value) do
+    case Integer.parse(String.trim_leading(value)) do
+      {int, _rest} -> int
+      :error -> 0
+    end
+  end
+
+  def atoi(_value), do: 0
+
+  @doc """
   Writes `value` at `index` of a script array, padding the gap with `pad`
   (rAthena arrays are sparse with implicit defaults).
   """

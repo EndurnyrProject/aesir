@@ -8,7 +8,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Malaya.JeepneyDriver25758 do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "malaya", x: 257, y: 58, dir: 6, sprite: 582, name: "Jeepney Driver"}]
+    spawn: [
+      %{
+        map: "malaya",
+        x: 257,
+        y: 58,
+        dir: 6,
+        sprite: 582,
+        name: "Jeepney Driver",
+        unique_name: "Jeepney Driver#09"
+      }
+    ]
 
   @impl true
   def on_talk(ctx) do

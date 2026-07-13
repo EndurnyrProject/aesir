@@ -8,7 +8,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Malaya.OptamaraCrew do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "malaya", x: 276, y: 55, dir: 4, sprite: 100, name: "Optamara Crew"}]
+    spawn: [
+      %{
+        map: "malaya",
+        x: 276,
+        y: 55,
+        dir: 4,
+        sprite: 100,
+        name: "Optamara Crew",
+        unique_name: "Optamara Crew#malaya"
+      }
+    ]
 
   @impl true
   def on_talk(ctx) do

@@ -35,8 +35,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     (self) → `name(ctx)`, one name arg → `name(ctx, arg)`; attach-flag
     variants stay a stub.
   - `%{shape: :opt1, dsl: name}` — an effect with one optional argument
-    (`setcart {<type>}`): zero args → `name(ctx)` (the DSL default), one arg
-    → `name(ctx, arg)`; any longer form stays a stub.
+    (`setcart {<type>}`, `enablenpc {"name"}`): zero args → `name(ctx)` (the
+    DSL default/self form), one arg → `name(ctx, arg)`; any longer form stays
+    a stub.
   - `%{shape: :monster}` — `monster "map",x,y,"name",id,amount{,"event"...}`
     → `summon_mob(ctx, mob_id: _, map: _, at: _, ...)`; the display name and
     the size/ai tail are dropped.
@@ -86,10 +87,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "donpcevent" => %{shape: :ref1, dsl: "donpcevent"},
     "doevent" => %{shape: :ref1, dsl: "doevent"},
     "npctalk" => %{shape: :ref1, dsl: "npctalk"},
-    "enablenpc" => %{shape: :ref1, dsl: "enablenpc"},
-    "disablenpc" => %{shape: :ref1, dsl: "disablenpc"},
-    "hideonnpc" => %{shape: :ref1, dsl: "hideonnpc"},
-    "hideoffnpc" => %{shape: :ref1, dsl: "hideoffnpc"},
+    "enablenpc" => %{shape: :opt1, dsl: "enablenpc"},
+    "disablenpc" => %{shape: :opt1, dsl: "disablenpc"},
+    "hideonnpc" => %{shape: :opt1, dsl: "hideonnpc"},
+    "hideoffnpc" => %{shape: :opt1, dsl: "hideoffnpc"},
     "initnpctimer" => %{shape: :timer, dsl: "initnpctimer"},
     "stopnpctimer" => %{shape: :timer, dsl: "stopnpctimer"},
     "monster" => %{shape: :monster},

@@ -1710,6 +1710,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp render({:call, "getarraysize", [array]}, env),
     do: "length(#{read_var(array, "[]", env)})"
 
+  # rAthena atoi: C-style leading-integer parse, 0 when there are no digits.
+  defp render({:call, "atoi", [value]}, env) do
+    flag(:rathena)
+    "Rathena.atoi(#{render(value, env)})"
+  end
+
   # rAthena implode(<array>{,<glue>}): joins a string array, with no
   # separator when the glue is omitted.
   defp render({:call, "implode", [array]}, env),

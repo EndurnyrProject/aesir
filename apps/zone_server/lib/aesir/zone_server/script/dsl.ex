@@ -2058,11 +2058,14 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
   @doc """
   A field of the running NPC's info as a string (rAthena `strnpcinfo`):
-  `0`/`1` the visible name, `3` the unique name, `4` the map name; the
-  hidden `#`-fragment (`2`) and file path (`5`) are not modelled and return
-  an empty string. A pure read that does not raise on a detached ctx; an
-  absent or unresolvable `npc_gid` returns an empty string, matching
-  rAthena's "no NPC" result.
+  `0` the full name including the hidden `#`-fragment, `1` the visible name,
+  `2` the hidden fragment, `3` the unique name, `4` the map name; the file
+  path (`5`) is not modelled and returns an empty string. The hidden fragment
+  exists only when the placement's `unique_name` is the rAthena full-name form
+  `<visible>#<hidden>` (what the transpiler emits for duplicates); otherwise
+  `0` falls back to the visible name and `2` is empty. A pure read that does
+  not raise on a detached ctx; an absent or unresolvable `npc_gid` returns an
+  empty string, matching rAthena's "no NPC" result.
   """
   @spec strnpcinfo(Ctx.t(), integer()) :: String.t()
   def strnpcinfo(%Ctx{npc_gid: nil}, _type), do: ""
@@ -2074,10 +2077,25 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     end
   end
 
-  defp npc_info(%{name: name}, type) when type in [0, 1], do: name
+  defp npc_info(%{name: name} = placement, 0) do
+    case npc_hidden_fragment(placement) do
+      "" -> name
+      hidden -> name <> "#" <> hidden
+    end
+  end
+
+  defp npc_info(%{name: name}, 1), do: name
+  defp npc_info(%{} = placement, 2), do: npc_hidden_fragment(placement)
   defp npc_info(%{unique_name: unique_name}, 3), do: unique_name
   defp npc_info(%{map: map}, 4), do: map
   defp npc_info(_placement, _type), do: ""
+
+  defp npc_hidden_fragment(%{name: name, unique_name: unique_name}) do
+    case String.split(unique_name, "#", parts: 2) do
+      [^name, hidden] -> hidden
+      _other -> ""
+    end
+  end
 
   @doc """
   Whether the player can carry every `{item_id, amount}` in `items` at once

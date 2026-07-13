@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.UnidentifiedCreature0 do
         dir: 4,
         sprite: 572,
         name: "Unidentified Creature",
+        unique_name: "Unidentified Creature#02",
         trigger: {2, 2}
       },
       %{
@@ -25,6 +26,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.UnidentifiedCreature0 do
         dir: 6,
         sprite: 572,
         name: "Unidentified Creature",
+        unique_name: "Unidentified Creature#03",
         trigger: {2, 2}
       },
       %{
@@ -34,6 +36,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.UnidentifiedCreature0 do
         dir: 6,
         sprite: 572,
         name: "Unidentified Creature",
+        unique_name: "Unidentified Creature#04",
         trigger: {2, 2}
       },
       %{
@@ -43,6 +46,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.UnidentifiedCreature0 do
         dir: 4,
         sprite: 572,
         name: "Unidentified Creature",
+        unique_name: "Unidentified Creature#06",
         trigger: {2, 2}
       },
       %{
@@ -52,6 +56,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.UnidentifiedCreature0 do
         dir: 6,
         sprite: 572,
         name: "Unidentified Creature",
+        unique_name: "Unidentified Creature#07",
         trigger: {2, 2}
       },
       %{
@@ -61,6 +66,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.UnidentifiedCreature0 do
         dir: 4,
         sprite: 572,
         name: "Unidentified Creature",
+        unique_name: "Unidentified Creature#08",
         trigger: {2, 2}
       },
       %{
@@ -70,6 +76,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.UnidentifiedCreature0 do
         dir: 4,
         sprite: 572,
         name: "Unidentified Creature",
+        unique_name: "Unidentified Creature#10",
         trigger: {2, 2}
       },
       %{
@@ -79,6 +86,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.UnidentifiedCreature0 do
         dir: 6,
         sprite: 572,
         name: "Unidentified Creature",
+        unique_name: "Unidentified Creature#11",
         trigger: {2, 2}
       }
     ]
@@ -118,15 +126,15 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.UnidentifiedCreature0 do
   end
 
   def ev_onenable(ctx) do
-    todo(ctx, :enablenpc, [])
+    enablenpc(ctx)
   end
 
   def ev_ondisable(ctx) do
-    todo(ctx, :disablenpc, [])
+    disablenpc(ctx)
   end
 
   def ev_onbingx2(ctx) do
-    v1 = Todo.call!(:atoi, [strnpcinfo(ctx, 2)])
+    v1 = Rathena.atoi(strnpcinfo(ctx, 2))
 
     ctx =
       case v1 do
@@ -171,7 +179,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.UnidentifiedCreature0 do
   end
 
   def ev_ontouch(ctx) do
-    ctx = set_local(ctx, :i, Todo.call!(:atoi, [strnpcinfo(ctx, 2)]))
+    ctx = set_local(ctx, :i, Rathena.atoi(strnpcinfo(ctx, 2)))
 
     ctx =
       if rem(get_local(ctx, :i, 0), 4) == 2 do

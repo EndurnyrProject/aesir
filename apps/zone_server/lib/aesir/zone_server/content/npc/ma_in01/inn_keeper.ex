@@ -8,7 +8,17 @@ defmodule Aesir.ZoneServer.Content.Npc.MaIn01.InnKeeper do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "ma_in01", x: 30, y: 94, dir: 4, sprite: 583, name: "Inn Keeper"}]
+    spawn: [
+      %{
+        map: "ma_in01",
+        x: 30,
+        y: 94,
+        dir: 4,
+        sprite: 583,
+        name: "Inn Keeper",
+        unique_name: "Inn Keeper#ma"
+      }
+    ]
 
   @impl true
   def on_talk(ctx) do

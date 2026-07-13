@@ -32,7 +32,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Analyzer do
   @native_cmds ~w(mes next close close2 close3 end select prompt input menu
                   setarray deletearray callsub callfunc getarg rand getnpctimer
                   getnpcid playerattached strnpcinfo checkweight getarraysize
-                  implode)
+                  implode atoi)
 
   @type analysis :: %{
           labels: [String.t()],

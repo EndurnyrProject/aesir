@@ -4395,14 +4395,14 @@
     "source_hash": "8d71588827840a0831cdee37f50cbc801442780a3ca774f8742cc8cf12c1b5bf"
   },
   "re/cities/malaya.txt|floating|Unidentified Creature#i|-": {
-    "output_hash": "bfac9d560dc791043c445f598f36c549ad0e96a94003f5e84fe6f783f17d149c",
+    "output_hash": "6f7b929be158eacd252b8bca43c9537749be1e9cfd05f5ee19c39f1f944768d0",
     "output_path": "lib/aesir/zone_server/content/npc/floating/unidentified_creature.ex",
-    "source_hash": "c9cdf4c913de6d43fe405cb28b67022dbc90cc8fc460d81d633a3d438644b2c5"
+    "source_hash": "09f4548c472d6ce6a07a58d5a109b0d1a34e4540e7c9c8155547221a7d8255c1"
   },
   "re/cities/malaya.txt|floating|Unidentified Creature#j|-": {
-    "output_hash": "ae77775083ae6d5df12cae78b32498340c999fa7eba72ba5d9bb6c674344cdcf",
+    "output_hash": "60dccd52121f523fe8f71438a27cd665a3f97380ea31c34b3c23b99aa4183767",
     "output_path": "lib/aesir/zone_server/content/npc/floating/unidentified_creature_0.ex",
-    "source_hash": "19823ae526ead74ce546c34731d9f7a8246fefc7f403a39705f152b73aace915"
+    "source_hash": "b6bcd93e552d2e851ef61ac1618239f49412fd1bc336814617d8917428241c2e"
   },
   "re/cities/malaya.txt|function|F_Malaya_Jeepney|-": {
     "output_hash": "316ae5dae245945133e1587615a69c1d7541e9d153258b5446148a283f5fb57f",
@@ -4410,104 +4410,104 @@
     "source_hash": "1473a3b01a8b6d50fbd122603077fd1536aab62142027e75b1919d2cc6127724"
   },
   "re/cities/malaya.txt|script|Drumming Young Man#ma02|malaya:189:263": {
-    "output_hash": "47fc91c06599cde5ca3329994939eea5f9360164f602406aaf02d832f15f4386",
+    "output_hash": "581fd7268851425a5ae99a4a74a32c5bf62dacf4c6d7b0853d8cd414a7b05e73",
     "output_path": "lib/aesir/zone_server/content/npc/malaya/drumming_young_man.ex",
-    "source_hash": "c8b2cbf22cc2ed61b640df0baa95e0b50c7829bd73fc62ded56e58f3682ee0f9"
+    "source_hash": "36611f722fda70ed080429f92814266493f4e2537821ae4eb0766689af000a36"
   },
   "re/cities/malaya.txt|script|Grandma#ma01|malaya:227:311": {
-    "output_hash": "5fd08827803547154658f2bb5bcd073fab52689dd46e7fc8cae75bb04bb327a5",
+    "output_hash": "40bac771c0c1ebcda50badf7de5764cdece735017036a9fb5e679e46a9341c90",
     "output_path": "lib/aesir/zone_server/content/npc/malaya/grandma.ex",
-    "source_hash": "64c742caace499461244726c1df1469d307a537091c4383930bd2f43f425659c"
+    "source_hash": "d73d65ebcffad40decbc5a1a887f9e7cb536940d6668aef4e5d60216c0170fa5"
   },
   "re/cities/malaya.txt|script|Inn Keeper#ma|ma_in01:30:94": {
-    "output_hash": "4f6a83e24c408511b9ae4da9ccb028dc0ed90840641f5c41b5e2f070fa8175dd",
+    "output_hash": "cbaa7c659ca4bd3446d29ba36ba7db489b8ace25197961d38fcb215c4c8fdad9",
     "output_path": "lib/aesir/zone_server/content/npc/ma_in01/inn_keeper.ex",
-    "source_hash": "1cc8f3450e63d784bb0d7a2bbecbd6adb50f8c5d6a94882010c163935a645896"
+    "source_hash": "c0f13e08181d682910b735c6493d286787a266f08193ff247597d2db6c2a20e2"
   },
   "re/cities/malaya.txt|script|Jeepney Driver#01|malaya:237:240": {
-    "output_hash": "4d28ab4253e04585649e0bac00cac64729c134b6c1d8cefc95cd0faf36861455",
+    "output_hash": "77d40f80b641158b4659012efad6b24d86eb8fb35bc0afcc7fe323daa4a7bc57",
     "output_path": "lib/aesir/zone_server/content/npc/malaya/jeepney_driver.ex",
-    "source_hash": "9fcb299b98f9841c698431546f27a2499817fe7cb78c9bfecabcc81f13037adf"
+    "source_hash": "1980aeac340403c3f1da3a5566461e2041a95298d983b5e95f6a42a31276671f"
   },
   "re/cities/malaya.txt|script|Jeepney Driver#02|malaya:67:44": {
-    "output_hash": "899ffa47f1edb35aba8fe9878a86b724408dbebf19080128f601e4b11ca5f050",
+    "output_hash": "454e863984da8d0250d5f96863e4e6e0f7b66b253805f39c16b38fb58cbdc164",
     "output_path": "lib/aesir/zone_server/content/npc/malaya/jeepney_driver_67_44.ex",
-    "source_hash": "f7e0f723167d8023df45a2642d1f42c29304267d640943417c7a692348386ba6"
+    "source_hash": "b75d78c50d3b5a4dbfdf4e5b952cfe165b58572890981095af77a338a3a4a1c5"
   },
   "re/cities/malaya.txt|script|Jeepney Driver#03|malaya:282:129": {
-    "output_hash": "6688aa23a376938ccab2d53dd65031be6213fd98b8450560c220df1136691a8a",
+    "output_hash": "92ed0d34da007923f2859c6c39697829f11d264e81487d49c60b67d7b968bfac",
     "output_path": "lib/aesir/zone_server/content/npc/malaya/jeepney_driver_282_129.ex",
-    "source_hash": "7ebee84d9a1086f56bafe6f39ce96902b9fe86f334dd14e6c278b74e955ac53b"
+    "source_hash": "ed7103641e8953aa33b4625bf844b9c0452d124a857f18aa8eb71717b777e252"
   },
   "re/cities/malaya.txt|script|Jeepney Driver#04|malaya:134:250": {
-    "output_hash": "cdfb1ed197222c34d5ac5141819adebb3f00b0192e079e417b94da95dc3a8f09",
+    "output_hash": "8612a61c1b8afccf9799e21b69619a0945016948676b6672736eef553591e7f9",
     "output_path": "lib/aesir/zone_server/content/npc/malaya/jeepney_driver_134_250.ex",
-    "source_hash": "74611467cefcd887d496f9e31ee591f960783fdea7fb0bd6eaad87649a4ce5ce"
+    "source_hash": "ae335ae58c69ff92f43aaf4ccc11d628787c35adb156beca5b8da7b3ce2300ae"
   },
   "re/cities/malaya.txt|script|Jeepney Driver#05|malaya:341:153": {
-    "output_hash": "736431a0bd642c955084cbc2ff8b8f709d7664a13f04a5ec04336f6e481acf03",
+    "output_hash": "c218769d6754e02336a42426e6a508041ab357a69d9ba6c3d62d866e809644c4",
     "output_path": "lib/aesir/zone_server/content/npc/malaya/jeepney_driver_341_153.ex",
-    "source_hash": "c47cdb2307cdcefcb6d2278b821156edfd6b4963b581228849532a3cf399ec38"
+    "source_hash": "59f0e7b095c8b99bcd878ad4cf0a464acb6cb56afff210b5a4da5d59185330fa"
   },
   "re/cities/malaya.txt|script|Jeepney Driver#06|malaya:293:290": {
-    "output_hash": "c297e17e237d89e0f6605b65bc1bc1d5e0c45fe6bcf2eac9be7360af4314b62e",
+    "output_hash": "1e3537008ffba0389c587e7bbe5be0752c96ad6b137c89615f3e0808f6e9dc16",
     "output_path": "lib/aesir/zone_server/content/npc/malaya/jeepney_driver_293_290.ex",
-    "source_hash": "6ae6757e0d966746b7f452aab560972bd026cf51ad5ed18916c3624d146b113a"
+    "source_hash": "fc6aa6974b8babf9151f1c9ebf9073ee5a6d83f3a763085d79da0008a9708540"
   },
   "re/cities/malaya.txt|script|Jeepney Driver#07|malaya:242:221": {
-    "output_hash": "80394a64d2fb15eb067715d1718d763a89ff813e2e60927a65653ffcbbfd969c",
+    "output_hash": "6df128e0a1b9979aef6741c6e2b1b988e3249ecfa3a59e8c800b404bc871ebff",
     "output_path": "lib/aesir/zone_server/content/npc/malaya/jeepney_driver_242_221.ex",
-    "source_hash": "ca2092b23b2397d04c1993f4c01842821b9b630635f8cdff42b8a76c3543cd01"
+    "source_hash": "6cf00a93f005c28286f6f0f17727f33618493a291b1a8090681fac195e9d6b8f"
   },
   "re/cities/malaya.txt|script|Jeepney Driver#08|malaya:62:245": {
-    "output_hash": "809069a0bd1c266d6ed6c537942346905b4bdb6bd550dc4855bcaaf86dcf9faa",
+    "output_hash": "2568449ccf3ae1ab45da140995c65956216a5e7bd0965936d2dfc252939af2fc",
     "output_path": "lib/aesir/zone_server/content/npc/malaya/jeepney_driver_62_245.ex",
-    "source_hash": "34bf05abc2600081f220542295f74584a6a6c49d8c4f36a76231bf40e335ad42"
+    "source_hash": "b37a2d2620fdf33884674a505dc6d7cb99e858afd021bd5137c5535917ae5851"
   },
   "re/cities/malaya.txt|script|Jeepney Driver#09|malaya:257:58": {
-    "output_hash": "d06d7e8108cee9cfb2801934243bce62eb123fb2f8356f1e166061cd12b03da1",
+    "output_hash": "295e5d8eedb81db53071a0569c3db063e6cb1a111efe021b862a34a3ec0a9767",
     "output_path": "lib/aesir/zone_server/content/npc/malaya/jeepney_driver_257_58.ex",
-    "source_hash": "80e64016425ebe0d93d93abd82a09242d8833eab759e4128db6c796f5150a0e2"
+    "source_hash": "5ae7bad44643822fe6f7c9c3340983e29038ea22af6d8c3f65559280642fbd78"
   },
   "re/cities/malaya.txt|script|Little Girl#ma04|malaya:88:252": {
-    "output_hash": "9ad50a2c35e03057674b92a83712e206960e69b1b891715bf27600c858b9b4b7",
+    "output_hash": "2026ac36aa5d31c8379ac2075b9523e9d93e80ec8a13ee469576666db8e2e520",
     "output_path": "lib/aesir/zone_server/content/npc/malaya/little_girl.ex",
-    "source_hash": "ffaa3f1e304d4aba72fdbd16e27aea031fa69c72a606a1aa9cf2a3d7ae8ca210"
+    "source_hash": "3ec1e75381cfcea74d3a5a82c4750beae8feca4cec3b3423cec831310fbcf93e"
   },
   "re/cities/malaya.txt|script|Little Kid#ma05|malaya:219:92": {
-    "output_hash": "ab1dc66f83043b52098b8141e42ed42db4647538d63b4eacfacf587867c0109d",
+    "output_hash": "962cc69b8f1ce07207ca9e1ec0adaf428f83a2448554322be291e39bf0653688",
     "output_path": "lib/aesir/zone_server/content/npc/malaya/little_kid.ex",
-    "source_hash": "6790480b152b03ac36d5d7ff08f418beeda7ac575dd4843a37632a1fde0bcfa8"
+    "source_hash": "fdeb918d5a7582226eebce10b275837a9bc076554beda5151c391e1f4d50ae59"
   },
   "re/cities/malaya.txt|script|Local#ma06|malaya:363:283": {
-    "output_hash": "6727568ba060e5e1c842e07e6b630a583a83073b7aff14ab0b345c8e0e747956",
+    "output_hash": "e6fbef9fa787479e9408194c1af2a6c478e07381ab6bc02420cf756c99870c1f",
     "output_path": "lib/aesir/zone_server/content/npc/malaya/local.ex",
-    "source_hash": "5ad1f8f903557b4753e388dedb5337d4f9b0a5f0cf2e804e132afef63c5acf77"
+    "source_hash": "409482bdf4466645bcaebe73da70e0f425f7cd4be4ea30416111edf7efa1ceb0"
   },
   "re/cities/malaya.txt|script|Old Man #ma07|malaya:41:127": {
-    "output_hash": "f8c06135484de87da6fa787ad26791571565ae61f004427d66b6afbea11b627e",
+    "output_hash": "e26bd43557621b6821093c005058ede490b5408529e008b84f2cc2a80277f9f6",
     "output_path": "lib/aesir/zone_server/content/npc/malaya/old_man.ex",
-    "source_hash": "d804679be110ff895bf5152b9c84f7dee3fb5133bf2ba969e6ebb7cbbe2c4309"
+    "source_hash": "95f99fec9af7c2ba363314e34b17a5617dc0d8dd995495e1eb31d4088e03ebb4"
   },
   "re/cities/malaya.txt|script|Optamara Crew#alberta|alberta:196:202": {
-    "output_hash": "af957edda40222d3887119bcf7f5492480f381eb1a1d81384a883604200a0850",
+    "output_hash": "7e6b7a85a45d10818d821fefb267bbf5f161c8927238c737d36448f48913fa60",
     "output_path": "lib/aesir/zone_server/content/npc/alberta/optamara_crew.ex",
-    "source_hash": "8b62ce796a58be80b2ea1bcc5ec7872bab8cbef4edef9af313b6e0f8f164c2c3"
+    "source_hash": "aeda1b41499f1d8b200a6aa286398666860718372d4093c2eae9c9b1da6afdb0"
   },
   "re/cities/malaya.txt|script|Optamara Crew#malaya|malaya:276:55": {
-    "output_hash": "c4e57b0dc2c3441f00ac331ed29121af9ba8e8793851470fb735f15b1a8a35f4",
+    "output_hash": "d04394531a211d6debfed882ce607b139e8914be32a1737129a0132aab0a4377",
     "output_path": "lib/aesir/zone_server/content/npc/malaya/optamara_crew.ex",
-    "source_hash": "e22a95b1fc5e00310f292fbc7ec89d4ab16d4fefcacf5f9b89530c741112f1ef"
+    "source_hash": "5eaed3b6bf46ac6d7b88511b3317db025939ebe195ce8f45cb7d757c732c7e48"
   },
   "re/cities/malaya.txt|script|Port Guard#ma03|malaya:270:59": {
-    "output_hash": "cca11173edc1b63d8ccb27f62068e893623d0790aa102780aedce53cf07ed80a",
+    "output_hash": "e66d2e28e391e2efcb1330010373d25a35e2f9ebf5f2d89b34643ad6787c863f",
     "output_path": "lib/aesir/zone_server/content/npc/malaya/port_guard.ex",
-    "source_hash": "9935d68e3711effc8ebac1672b1516466f2a92f01298a854d0f1f1e4ec6b34a9"
+    "source_hash": "56d3a8c0479b19c968bf01385e9d31824a9a3677d33efa0c3ffa1d6e5d4d5560"
   },
   "re/cities/malaya.txt|script|Woman#ma08|malaya:63:185": {
-    "output_hash": "36b3626ee4075ef615696a1ffc721a2006e06dfe9764b82456bca30c5d7cda43",
+    "output_hash": "b41802f8bd73b5340f06fb3021e71ba40532635b3b4d057dd7456726118593d7",
     "output_path": "lib/aesir/zone_server/content/npc/malaya/woman.ex",
-    "source_hash": "f62a370bb92912e9ca754380f399eb02211e64d8e4b5689132b662f6f074ba88"
+    "source_hash": "ae718d7d28366c5ae214a5820041622f78c5d8ac46712d922cffbff3bcf44114"
   },
   "re/cities/mora.txt|floating|#mora_traveler|-": {
     "output_hash": "393e96a0331df9f1e8b48277cf9a10cc2ceb3ecbf743fc4aa94c9e2c8860dd3f",

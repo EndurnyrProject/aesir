@@ -453,6 +453,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       disablenpc "Boss";
       hideonnpc "Boss";
       hideoffnpc "Boss";
+      enablenpc();
+      disablenpc();
       close;
       """)
 
@@ -467,6 +469,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ ~S{|> disablenpc("Boss")}
     assert src =~ ~S{|> hideonnpc("Boss")}
     assert src =~ ~S{|> hideoffnpc("Boss")}
+    assert src =~ "|> enablenpc()"
+    assert src =~ "|> disablenpc()"
     assert src =~ "|> close()"
   end
 
@@ -920,6 +924,19 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ "strnpcinfo(ctx, 0)"
     assert src =~ "strnpcinfo(ctx, 4)"
     refute src =~ "Todo.call!(:strnpcinfo"
+  end
+
+  test "atoi renders as the Rathena leading-integer parse" do
+    src =
+      gen!("""
+      switch(atoi(strnpcinfo(2))) {
+        case 1: mes "one"; break;
+      }
+      close;
+      """)
+
+    assert src =~ "Rathena.atoi(strnpcinfo(ctx, 2))"
+    refute src =~ "Todo.call!(:atoi"
   end
 
   test "checkweight pairs item ids and amounts into a tuple list" do
