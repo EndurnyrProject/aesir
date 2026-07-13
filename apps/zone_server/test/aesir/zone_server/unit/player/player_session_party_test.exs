@@ -5,9 +5,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionPartyTest do
   `{:party_updated, _}`/`{:party_disbanded, _, _}` relaying, presence pushes on
   disconnect, and the base-level push on level-up (Task 9).
 
-  `PlayerSession.init/1`/`terminate/2` are called directly in the test process
-  (mirroring `player_session_test.exs`), so PubSub subscriptions made inside
-  land in this process's mailbox and can be asserted on directly.
+  Most lifecycle callbacks are called directly in the test process (mirroring
+  `player_session_test.exs`). The ordering test starts a real session and uses
+  a separate connection probe to observe party packets exactly as sent.
   """
   use Aesir.DataCase, async: false
 
@@ -18,7 +18,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionPartyTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.PartyDisbanded
   alias Aesir.Net.PartyInfo
+  alias Aesir.Net.PartyMemberUpdate
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
+  alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -80,11 +82,71 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionPartyTest do
     {leader, party_state}
   end
 
+  defp start_connection_probe(test_pid) do
+    spawn(fn -> connection_probe(test_pid, Process.monitor(test_pid), 0) end)
+  end
+
+  defp connection_probe(test_pid, test_ref, party_message_count) do
+    receive do
+      {:send, :gameplay, {tag, _message} = party_message}
+      when tag in [:party_info, :party_member_update] ->
+        next_count = party_message_count + 1
+        send(test_pid, {:party_outbound, next_count, party_message})
+        connection_probe(test_pid, test_ref, next_count)
+
+      {:DOWN, ^test_ref, :process, ^test_pid, _reason} ->
+        :ok
+
+      _other ->
+        connection_probe(test_pid, test_ref, party_message_count)
+    end
+  end
+
   describe "init/1 with a live party" do
+    test "sends the enriched roster before processing the queued reconnect delta" do
+      {_leader, party} = party_fixture("OrderedLeader")
+      member = character_fixture("OrderedMember", %{})
+      {:ok, _joined} = PartyManager.add_member(party.party_id, member)
+      {:ok, _offline} = PartyManager.set_online(party.party_id, member.id, false)
+      member = Repo.get(Character, member.id)
+      connection_pid = start_connection_probe(self())
+
+      session_pid =
+        start_supervised!({
+          PlayerSession,
+          %{character: member, connection_pid: connection_pid}
+        })
+
+      assert_receive {:party_outbound, 1,
+                      {:party_info, %PartyInfo{party_id: party_id, members: members}}}
+
+      assert party_id == party.party_id
+      roster_member = Enum.find(members, &(&1.char_id == member.id))
+      game_state = PlayerSession.get_state(session_pid).game_state
+      assert roster_member.online
+      assert roster_member.job_id == game_state.stats.progression.job_id
+      assert roster_member.base_level == game_state.stats.progression.base_level
+      assert roster_member.hp == game_state.stats.current_state.hp
+      assert roster_member.max_hp == game_state.stats.derived_stats.max_hp
+      assert roster_member.sp == game_state.stats.current_state.sp
+      assert roster_member.max_sp == game_state.stats.derived_stats.max_sp
+      assert roster_member.ap == game_state.stats.current_state.ap
+      assert roster_member.max_ap == game_state.stats.derived_stats.max_ap
+      assert roster_member.map == game_state.map_name
+
+      assert_receive {:party_outbound, 2,
+                      {:party_member_update,
+                       %PartyMemberUpdate{party_id: ^party_id, member: updated_member}}}
+
+      assert updated_member == roster_member
+      assert game_state.party_id == party.party_id
+    end
+
     test "subscribes to the party topic and sends the initial PartyInfo snapshot" do
       {_leader, party} = party_fixture("Alice")
       member = character_fixture("Bobby", %{})
       {:ok, _joined} = PartyManager.add_member(party.party_id, member)
+      {:ok, _offline} = PartyManager.set_online(party.party_id, member.id, false)
       member = Repo.get(Character, member.id)
 
       assert {:ok, state} =
@@ -97,10 +159,25 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionPartyTest do
 
       assert party_id == party.party_id
       assert name == party.name
-      assert Enum.any?(members, &(&1.char_id == member.id))
+      wire_member = Enum.find(members, &(&1.char_id == member.id))
+      assert wire_member.job_id == state.game_state.stats.progression.job_id
+      assert wire_member.base_level == state.game_state.stats.progression.base_level
+      assert wire_member.hp == state.game_state.stats.current_state.hp
+      assert wire_member.max_hp == state.game_state.stats.derived_stats.max_hp
+      assert wire_member.sp == state.game_state.stats.current_state.sp
+      assert wire_member.max_sp == state.game_state.stats.derived_stats.max_sp
+      assert wire_member.ap == state.game_state.stats.current_state.ap
+      assert wire_member.max_ap == state.game_state.stats.derived_stats.max_ap
+      assert wire_member.online
+      assert wire_member.map == state.game_state.map_name
 
       assert {:ok, live} = PartyManager.get(party.party_id)
-      assert Map.fetch!(live.members, member.id).online == true
+
+      assert Map.fetch!(live.members, member.id).max_hp ==
+               state.game_state.stats.derived_stats.max_hp
+
+      assert_receive {:party_member_updated, ^party_id, updated_member}
+      assert updated_member.char_id == member.id
 
       PubSub.broadcast(Aesir.PubSub, "party:#{party.party_id}", :probe)
       assert_receive :probe
@@ -141,8 +218,22 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionPartyTest do
       {:ok, joined} = PartyManager.add_member(party.party_id, member)
       assert Map.fetch!(joined.members, member.id).online == true
 
+      game_state = PlayerState.new(Repo.get(Character, member.id))
+
+      stats = %{
+        game_state.stats
+        | progression: %{game_state.stats.progression | job_id: 9, base_level: 44},
+          current_state: %{game_state.stats.current_state | hp: 321, sp: 123, ap: 22},
+          derived_stats: %{
+            game_state.stats.derived_stats
+            | max_hp: 987,
+              max_sp: 456,
+              max_ap: 88
+          }
+      }
+
       state = %{
-        game_state: PlayerState.new(Repo.get(Character, member.id)),
+        game_state: %{game_state | map_name: "aldebaran", stats: stats},
         connection_pid: self(),
         connection_monitor_ref: make_ref()
       }
@@ -152,7 +243,17 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionPartyTest do
       assert :ok = PlayerSession.terminate(:normal, state)
 
       assert {:ok, after_state} = PartyManager.get(party.party_id)
-      assert Map.fetch!(after_state.members, member.id).online == false
+      offline_member = Map.fetch!(after_state.members, member.id)
+      refute offline_member.online
+      assert offline_member.job_id == 9
+      assert offline_member.base_level == 44
+      assert offline_member.hp == 321
+      assert offline_member.max_hp == 987
+      assert offline_member.sp == 123
+      assert offline_member.max_sp == 456
+      assert offline_member.ap == 22
+      assert offline_member.max_ap == 88
+      assert offline_member.map_name == "aldebaran"
       assert Map.fetch!(after_state.members, leader.id).online == true
     end
   end
@@ -194,6 +295,78 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionPartyTest do
 
       PubSub.broadcast(Aesir.PubSub, "party:#{party.party_id}", :probe)
       refute_receive :probe
+
+      stale_member = Map.fetch!(party.members, party.leader_char_id)
+
+      assert {:noreply, ^new_state} =
+               PlayerSession.handle_info(
+                 {:party_member_updated, party.party_id, stale_member},
+                 new_state
+               )
+
+      refute_received {:send, :gameplay, {:party_member_update, _}}
+    end
+  end
+
+  describe "handle_info({:party_member_updated, _, _})" do
+    test "relays a complete member update for the current party" do
+      member = %Member{
+        char_id: 42,
+        name: "Remote",
+        job_id: 7,
+        base_level: 88,
+        hp: 1_234,
+        max_hp: 4_321,
+        sp: 222,
+        max_sp: 555,
+        ap: 30,
+        max_ap: 100,
+        online: true,
+        map_name: "geffen"
+      }
+
+      state = %{
+        game_state: %PlayerState{party_id: 77},
+        connection_pid: self()
+      }
+
+      assert {:noreply, ^state} =
+               PlayerSession.handle_info({:party_member_updated, 77, member}, state)
+
+      assert_received {:send, :gameplay,
+                       {:party_member_update,
+                        %PartyMemberUpdate{party_id: 77, member: wire_member}}}
+
+      assert wire_member.char_id == 42
+      assert wire_member.job_id == 7
+      assert wire_member.base_level == 88
+      assert wire_member.hp == 1_234
+      assert wire_member.max_hp == 4_321
+      assert wire_member.sp == 222
+      assert wire_member.max_sp == 555
+      assert wire_member.ap == 30
+      assert wire_member.max_ap == 100
+      assert wire_member.online
+      assert wire_member.map == "geffen"
+    end
+
+    test "ignores an update for another party" do
+      state = %{
+        game_state: %PlayerState{party_id: 77},
+        connection_pid: self()
+      }
+
+      member = %Member{
+        char_id: 42,
+        name: "Remote",
+        base_level: 1,
+        online: true
+      }
+
+      assert {:noreply, ^state} =
+               PlayerSession.handle_info({:party_member_updated, 88, member}, state)
+
+      refute_received {:send, :gameplay, {:party_member_update, _}}
     end
   end
 

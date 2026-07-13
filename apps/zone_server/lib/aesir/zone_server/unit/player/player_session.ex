@@ -16,8 +16,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.ItemVanished
   alias Aesir.Net.PartyDisbanded
-  alias Aesir.Net.PartyInfo
-  alias Aesir.Net.PartyMember
   alias Aesir.Net.UnitDespawn
   alias Aesir.Net.UnitSpawn
   alias Aesir.Net.VendingBoardShown
@@ -33,7 +31,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
+  alias Aesir.ZoneServer.Party.Member, as: PartyMember
   alias Aesir.ZoneServer.Party.State, as: PartyState
+  alias Aesir.ZoneServer.Party.View, as: PartyView
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.Appearance
@@ -57,10 +57,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.InventoryView
+  alias Aesir.ZoneServer.Unit.Player.PartySync
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.QuestLog
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
   alias Aesir.ZoneServer.Unit.Player.QuestView
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusPersistence
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -238,15 +240,24 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   mid-session, updates `game_state.party_id`, and sends the initial
   `PartyInfo` snapshot. Must run inside the owning `PlayerSession` process
   (e.g. from `PartyHandler`, which executes inline during packet dispatch).
-  Mirrors what `subscribe_party/1` does for a party already recorded at
-  login -- `ensure_started`/`set_online` aren't needed here since the caller
-  already holds a freshly-created/joined, already-online `Party.State`.
+  Mirrors login attachment by subscribing before publishing the player's
+  complete online snapshot, so the full roster reaches the client before the
+  queued self-update is handled.
   """
   @spec attach_to_party(map(), PartyState.t()) :: map()
   def attach_to_party(%{game_state: game_state} = state, %PartyState{} = party_state) do
     PubSub.subscribe(Aesir.PubSub, "party:#{party_state.party_id}")
-    MessageRouter.send_to(state.connection_pid, build_party_info(party_state))
-    update_game_state(state, %{game_state | party_id: party_state.party_id})
+
+    state = update_game_state(state, %{game_state | party_id: party_state.party_id})
+
+    case sync_and_send_party(state, party_state.party_id) do
+      {:ok, state} ->
+        state
+
+      {:error, _reason} ->
+        PubSub.unsubscribe(Aesir.PubSub, "party:#{party_state.party_id}")
+        reconcile_missing_party(state)
+    end
   end
 
   @impl true
@@ -470,7 +481,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         %{game_state: %{party_id: party_id, character_id: char_id} = game_state} = state
       ) do
     if Map.has_key?(party_state.members, char_id) do
-      MessageRouter.send_to(state.connection_pid, build_party_info(party_state))
+      MessageRouter.send_to(state.connection_pid, PartyView.party_info(party_state))
       {:noreply, state}
     else
       PubSub.unsubscribe(Aesir.PubSub, "party:#{party_id}")
@@ -481,6 +492,19 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   # A stale broadcast for a party we've already left/switched away from.
   @impl true
   def handle_info({:party_updated, %PartyState{}}, state), do: {:noreply, state}
+
+  @impl true
+  def handle_info(
+        {:party_member_updated, party_id, %PartyMember{} = member},
+        %{game_state: %{party_id: party_id}} = state
+      ) do
+    MessageRouter.send_to(state.connection_pid, PartyView.member_update(party_id, member))
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:party_member_updated, _party_id, %PartyMember{}}, state),
+    do: {:noreply, state}
 
   @impl true
   def handle_info(
@@ -886,7 +910,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     )
 
     if game_state.party_id > 0 do
-      PartyManager.set_online(game_state.party_id, game_state.character_id, false)
+      PartySync.sync(game_state, online: false)
     end
 
     WarpHandler.leave_current_map(game_state, DespawnReason.logged_out())
@@ -963,9 +987,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   defp update_game_state(state, new_game_state) do
-    UnitRegistry.update_unit_state(:player, new_game_state.character_id, new_game_state)
-
-    %{state | game_state: new_game_state}
+    StateCommit.commit(state, new_game_state)
   end
 
   defp register_player(%PlayerState{} = game_state),
@@ -973,14 +995,43 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   defp subscribe_party(%{game_state: %{party_id: 0}} = state), do: state
 
-  defp subscribe_party(%{game_state: %{party_id: party_id, character_id: char_id}} = state) do
+  defp subscribe_party(%{game_state: %{party_id: party_id}} = state) do
     with {:ok, _party_state} <- PartyManager.ensure_started(party_id),
-         {:ok, party_state} <- PartyManager.set_online(party_id, char_id, true) do
-      PubSub.subscribe(Aesir.PubSub, "party:#{party_id}")
-      MessageRouter.send_to(state.connection_pid, build_party_info(party_state))
+         :ok <- PubSub.subscribe(Aesir.PubSub, "party:#{party_id}"),
+         {:ok, state} <- sync_and_send_party(state, party_id) do
       state
     else
-      {:error, _reason} -> reconcile_missing_party(state)
+      {:error, _reason} ->
+        PubSub.unsubscribe(Aesir.PubSub, "party:#{party_id}")
+        reconcile_missing_party(state)
+    end
+  end
+
+  defp sync_and_send_party(%{game_state: game_state} = state, party_id) do
+    case PartySync.sync(game_state, online: true) do
+      :ok ->
+        send_current_party(state, party_id)
+
+      {:error, reason} when reason in [:not_member, :not_found] ->
+        {:error, reason}
+
+      {:error, reason} ->
+        Logger.warning(
+          "Failed to synchronize party state for character #{game_state.character_id}: #{inspect(reason)}"
+        )
+
+        send_current_party(state, party_id)
+    end
+  end
+
+  defp send_current_party(state, party_id) do
+    case PartyManager.get(party_id) do
+      {:ok, party_state} ->
+        MessageRouter.send_to(state.connection_pid, PartyView.party_info(party_state))
+        {:ok, state}
+
+      {:error, _reason} = error ->
+        error
     end
   end
 
@@ -990,25 +1041,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   defp reconcile_missing_party(%{game_state: game_state} = state) do
     CharacterPersistence.update_character(game_state.character_id, %{party_id: 0}, async: true)
     update_game_state(state, %{game_state | party_id: 0})
-  end
-
-  defp build_party_info(%PartyState{} = party_state) do
-    %PartyInfo{
-      party_id: party_state.party_id,
-      name: party_state.name,
-      leader_char_id: party_state.leader_char_id,
-      exp_share: party_state.exp_share,
-      members:
-        Enum.map(party_state.members, fn {_char_id, member} ->
-          %PartyMember{
-            char_id: member.char_id,
-            name: member.name,
-            base_level: member.base_level,
-            online: member.online,
-            map: member.map_name || ""
-          }
-        end)
-    }
   end
 
   defp sex_to_int("F"), do: 0

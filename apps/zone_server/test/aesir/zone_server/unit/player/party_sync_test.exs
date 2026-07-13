@@ -58,6 +58,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PartySyncTest do
     assert :ok = PartySync.sync(previous, current)
   end
 
+  test "does not inspect missing stats for a partial player without a party" do
+    previous = %PlayerState{party_id: 0}
+    current = %PlayerState{party_id: 0}
+
+    reject(&Manager.sync_member/3)
+
+    assert :ok = PartySync.sync(previous, current)
+  end
+
   test "can force an offline snapshot without clearing last-known values" do
     current = player_state(hp: 35)
 

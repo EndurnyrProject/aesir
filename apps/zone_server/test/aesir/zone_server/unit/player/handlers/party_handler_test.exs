@@ -101,17 +101,51 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandlerTest do
 
     test "a valid name attaches the requester's own session to the new party" do
       leader = character_fixture("Alice2", %{})
+      state = state_for(leader)
+
+      stats = %{
+        state.game_state.stats
+        | progression: %{state.game_state.stats.progression | job_id: 12, base_level: 33},
+          current_state: %{state.game_state.stats.current_state | hp: 333, sp: 222, ap: 11},
+          derived_stats: %{
+            state.game_state.stats.derived_stats
+            | max_hp: 999,
+              max_sp: 777,
+              max_ap: 55
+          }
+      }
+
+      state = %{state | game_state: %{state.game_state | map_name: "payon", stats: stats}}
 
       assert {:noreply, new_state} =
                PartyHandler.handle_create_request(
                  %PartyCreateRequest{name: "Vanguard2"},
-                 state_for(leader)
+                 state
                )
 
       party_id = Repo.get(Character, leader.id).party_id
       assert new_state.game_state.party_id == party_id
 
-      assert_received {:send, :gameplay, {:party_info, %PartyInfo{party_id: ^party_id}}}
+      assert_receive {:send, :gameplay,
+                      {:party_info, %PartyInfo{party_id: ^party_id, members: members}}}
+
+      wire_member = Enum.find(members, &(&1.char_id == leader.id))
+      assert wire_member.job_id == 12
+      assert wire_member.base_level == 33
+      assert wire_member.hp == 333
+      assert wire_member.max_hp == 999
+      assert wire_member.sp == 222
+      assert wire_member.max_sp == 777
+      assert wire_member.ap == 11
+      assert wire_member.max_ap == 55
+      assert wire_member.online
+      assert wire_member.map == "payon"
+
+      assert_receive {:send, :gameplay,
+                      {:party_action_result, %PartyActionResult{action: "create", success: true}}}
+
+      assert {:ok, live} = PartyManager.get(party_id)
+      assert Map.fetch!(live.members, leader.id).max_hp == 999
 
       PubSub.broadcast(Aesir.PubSub, "party:#{party_id}", :probe)
       assert_receive :probe
@@ -348,9 +382,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandlerTest do
 
       assert new_state.game_state.party_id == party.party_id
 
-      assert_received {:send, :gameplay, {:party_info, %PartyInfo{party_id: party_id}}}
+      assert_received {:send, :gameplay,
+                       {:party_info, %PartyInfo{party_id: party_id, members: members}}}
 
       assert party_id == party.party_id
+
+      wire_member = Enum.find(members, &(&1.char_id == invitee.id))
+      assert wire_member.job_id == new_state.game_state.stats.progression.job_id
+      assert wire_member.base_level == new_state.game_state.stats.progression.base_level
+      assert wire_member.hp == new_state.game_state.stats.current_state.hp
+      assert wire_member.max_hp == new_state.game_state.stats.derived_stats.max_hp
+      assert wire_member.sp == new_state.game_state.stats.current_state.sp
+      assert wire_member.max_sp == new_state.game_state.stats.derived_stats.max_sp
+      assert wire_member.ap == new_state.game_state.stats.current_state.ap
+      assert wire_member.max_ap == new_state.game_state.stats.derived_stats.max_ap
+      assert wire_member.online
+      assert wire_member.map == new_state.game_state.map_name
 
       PubSub.broadcast(Aesir.PubSub, "party:#{party.party_id}", :probe)
       assert_receive :probe

@@ -17,12 +17,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PartySync do
   session attach and disconnect boundaries.
   """
   @spec sync(PlayerState.t(), PlayerState.t() | [{:online, boolean()}]) :: result()
+  def sync(%PlayerState{}, %PlayerState{party_id: 0}), do: :ok
+
   def sync(%PlayerState{} = previous, %PlayerState{} = current) do
     previous_member = member(previous, true)
     current_member = member(current, true)
 
-    if current.party_id == 0 or
-         (previous.party_id == current.party_id and previous_member == current_member) do
+    if previous.party_id == current.party_id and previous_member == current_member do
       :ok
     else
       synchronize(current.party_id, current.character_id, current_member)
