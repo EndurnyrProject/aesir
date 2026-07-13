@@ -60,7 +60,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
 
     Manifest.save(state.manifest, manifest_path)
 
-    orphans = Map.keys(dup_index) -- Enum.map(scripts, & &1.name)
+    orphans = Map.keys(dup_index) -- Enum.map(scripts, &ref_name/1)
 
     %{
       written: Enum.reverse(state.written),
@@ -144,7 +144,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
       kind = if entry.kind == :script, do: :script, else: :floating
       map = entry[:map]
 
-      {spawns, unresolved} = build_spawns(entry, Map.get(dup_index, entry.name, []), sprites)
+      {spawns, unresolved} = build_spawns(entry, Map.get(dup_index, ref_name(entry), []), sprites)
 
       %{
         entry: entry,
@@ -177,6 +177,16 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
 
   defp coord_slug(%{x: x, y: y}, base), do: "#{base}_#{x}_#{y}"
   defp coord_slug(_entry, _base), do: nil
+
+  # `duplicate(X)` references the source NPC's export name: the part after
+  # `::` (even with an empty display prefix, as in `::Guard_izlude`);
+  # scripts without one are referenced by their full name.
+  defp ref_name(entry) do
+    case String.split(entry.name, "::", parts: 2) do
+      [_prefix, exname] -> exname
+      _ -> entry.name
+    end
+  end
 
   defp build_spawns(entry, duplicates, sprites) do
     placements =
