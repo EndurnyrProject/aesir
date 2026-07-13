@@ -42,14 +42,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
 
     case Repo.transaction(multi) do
       {:ok, %{party: party}} ->
-        leader_member =
-          Member.new(
-            leader_character.id,
-            leader_character.name,
-            leader_character.base_level,
-            true,
-            leader_character.last_map
-          )
+        leader_member = Member.from_character(leader_character, true)
 
         finish_create(party, [leader_member])
 
@@ -101,7 +94,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
           party_id
           |> characters_query()
           |> Repo.all()
-          |> Enum.map(&Member.new(&1.id, &1.name, &1.base_level, false))
+          |> Enum.map(&Member.from_character/1)
 
         finish_create(party, members)
     end
@@ -228,8 +221,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
   end
 
   defp put_member(%State{} = state, character) do
-    member =
-      Member.new(character.id, character.name, character.base_level, true, character.last_map)
+    member = Member.from_character(character, true)
 
     %State{state | members: Map.put(state.members, character.id, member)}
   end

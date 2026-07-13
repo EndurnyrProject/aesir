@@ -53,6 +53,30 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
   end
 
   describe "create/2" do
+    test "maps the leader's persisted job and resources into the member snapshot" do
+      leader =
+        leader_fixture("CreateStats", %{
+          class: 7,
+          hp: 500,
+          max_hp: 1_000,
+          sp: 60,
+          max_sp: 120,
+          ap: 0,
+          max_ap: 0
+        })
+
+      assert {:ok, state} = Manager.create("CreateSnapshot", leader)
+
+      member = Map.fetch!(state.members, leader.id)
+      assert member.job_id == 7
+      assert member.hp == 500
+      assert member.max_hp == 1_000
+      assert member.sp == 60
+      assert member.max_sp == 120
+      assert member.ap == 0
+      assert member.max_ap == 0
+    end
+
     test "persists a parties row, sets the leader's party_id, and starts a running entry" do
       leader = leader_fixture("Alice")
 
@@ -88,6 +112,41 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
   end
 
   describe "ensure_started/1" do
+    test "rebuilds an offline member with the persisted character snapshot" do
+      leader =
+        leader_fixture("Snapshot", %{
+          class: 42,
+          base_level: 73,
+          hp: 1_234,
+          max_hp: 4_321,
+          sp: 234,
+          max_sp: 432,
+          ap: 12,
+          max_ap: 34,
+          last_map: "geffen"
+        })
+
+      {:ok, created} = Manager.create("PersistedSnapshot", leader)
+
+      ClusterTestHelper.clear_all()
+
+      assert {:ok, rebuilt} = Manager.ensure_started(created.party_id)
+
+      member = Map.fetch!(rebuilt.members, leader.id)
+      assert member.char_id == leader.id
+      assert member.name == "Snapshot"
+      assert member.job_id == 42
+      assert member.base_level == 73
+      assert member.hp == 1_234
+      assert member.max_hp == 4_321
+      assert member.sp == 234
+      assert member.max_sp == 432
+      assert member.ap == 12
+      assert member.max_ap == 34
+      assert member.map_name == "geffen"
+      assert member.online == false
+    end
+
     test "rebuilds an entry from DB when none is running" do
       leader = leader_fixture("Dave")
       {:ok, created} = Manager.create("Rebuildable", leader)
@@ -168,6 +227,32 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
   end
 
   describe "add_member/2" do
+    test "maps the joining character's persisted job and resources into the member snapshot" do
+      {_leader, created} = party_fixture("JoinLeader")
+
+      joiner =
+        leader_fixture("JoinStats", %{
+          class: 14,
+          hp: 750,
+          max_hp: 1_500,
+          sp: 80,
+          max_sp: 160,
+          ap: 25,
+          max_ap: 50
+        })
+
+      assert {:ok, state} = Manager.add_member(created.party_id, joiner)
+
+      member = Map.fetch!(state.members, joiner.id)
+      assert member.job_id == 14
+      assert member.hp == 750
+      assert member.max_hp == 1_500
+      assert member.sp == 80
+      assert member.max_sp == 160
+      assert member.ap == 25
+      assert member.max_ap == 50
+    end
+
     test "adds the member, persists party_id, and broadcasts {:party_updated, state}" do
       {_leader, created} = party_fixture("Ivan")
       joiner = leader_fixture("Judy")
