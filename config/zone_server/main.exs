@@ -22,6 +22,12 @@ config :zone_server, party_even_share_bonus: 0
 config :zone_server, death_penalty_base: 1
 config :zone_server, death_penalty_job: 1
 
+# Natural equipment-break rate rolled on a confirmed hit, in 1/10000 units
+# (rAthena battle.conf equip_natural_break_rate; 100 = 1%). Default 0 disables
+# natural breaking. Collapses rAthena's equip_self_break_rate/equip_skill_break_rate
+# multipliers into this single knob.
+config :zone_server, natural_break_rate: 0
+
 # Require a valid single-use zone-entry token (issued by the char server on
 # character selection) in SessionAuth before admitting a client to the zone.
 # Set to false only during a client rollout that does not yet echo the token;

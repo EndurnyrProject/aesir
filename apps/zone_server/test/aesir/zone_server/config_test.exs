@@ -32,4 +32,10 @@ defmodule Aesir.ZoneServer.ConfigTest do
       assert Config.exp_bonus_max_attacker() == 12
     end
   end
+
+  describe "natural_break_rate/0" do
+    test "returns the configured default when unset" do
+      assert Config.natural_break_rate() == 0
+    end
+  end
 end

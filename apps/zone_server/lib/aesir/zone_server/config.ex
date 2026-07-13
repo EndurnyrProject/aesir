@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Config do
   @default_exp_bonus_max_attacker 12
   @default_death_penalty_base 1
   @default_death_penalty_job 1
+  @default_natural_break_rate 0
 
   @doc """
   Player view range (rAthena `AREA_SIZE`): the cell radius a client is told about.
@@ -85,4 +86,14 @@ defmodule Aesir.ZoneServer.Config do
   @spec death_penalty_job() :: non_neg_integer()
   def death_penalty_job,
     do: Application.get_env(:zone_server, :death_penalty_job, @default_death_penalty_job)
+
+  @doc """
+  Natural equipment-break rate rolled on a confirmed hit, in 1/10000 units
+  (rAthena `battle.conf equip_natural_break_rate`; 100 = 1%). Default 0 disables
+  natural breaking entirely. Collapses rAthena's `equip_self_break_rate` /
+  `equip_skill_break_rate` multipliers into a single knob.
+  """
+  @spec natural_break_rate() :: non_neg_integer()
+  def natural_break_rate,
+    do: Application.get_env(:zone_server, :natural_break_rate, @default_natural_break_rate)
 end
