@@ -70,6 +70,7 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.PartyLeaderRequest
   alias Aesir.Net.PartyLeaveRequest
   alias Aesir.Net.PartyMember
+  alias Aesir.Net.PartyMemberUpdate
   alias Aesir.Net.PartyOptionsRequest
   alias Aesir.Net.PickupItemRequest
   alias Aesir.Net.PickupResult
@@ -1821,6 +1822,51 @@ defmodule Aesir.Commons.Network.ProtoTest do
                    %PartyActionResult{action: "create", success: false, error: ^error}}
               }} = Envelope.decode(IO.iodata_to_binary(iodata))
     end
+  end
+
+  test "party_member round-trips exact state values" do
+    member = %PartyMember{
+      char_id: 10_001,
+      name: "Sigrid",
+      base_level: 99,
+      online: true,
+      map: "prontera",
+      job_id: 4_012,
+      hp: 4_000_000_000,
+      max_hp: 5_000_000_000,
+      sp: 6_000_000_000,
+      max_sp: 7_000_000_000,
+      ap: 150,
+      max_ap: 200
+    }
+
+    {:ok, iodata, _size} = PartyMember.encode(member)
+
+    assert {:ok, ^member} = PartyMember.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "party_member_update round-trips a complete member" do
+    update = %PartyMemberUpdate{
+      party_id: 42,
+      member: %PartyMember{char_id: 10_001, name: "Sigrid", hp: 999, max_hp: 1_000}
+    }
+
+    {:ok, iodata, _size} = PartyMemberUpdate.encode(update)
+
+    assert {:ok, ^update} = PartyMemberUpdate.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "party_member_update round-trips through envelope oneof" do
+    update = %PartyMemberUpdate{
+      party_id: 42,
+      member: %PartyMember{char_id: 10_001, name: "Sigrid", hp: 999, max_hp: 1_000}
+    }
+
+    env = %Envelope{seq: 7, body: {:party_member_update, update}}
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok, %Envelope{seq: 7, body: {:party_member_update, ^update}}} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
   end
 
   test "party_info with nested members round-trips through envelope oneof" do

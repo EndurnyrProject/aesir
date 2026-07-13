@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Network.MessageRouterTest do
     {%Aesir.Net.ItemUseResult{}, {:gameplay, :item_use_result}},
     {%Aesir.Net.ParamChange{}, {:gameplay, :param_change}},
     {%Aesir.Net.Resurrect{}, {:gameplay, :resurrect}},
+    {%Aesir.Net.PartyMemberUpdate{}, {:gameplay, :party_member_update}},
     {%Aesir.Net.QuestAdded{}, {:gameplay, :quest_added}},
     {%Aesir.Net.QuestRemoved{}, {:gameplay, :quest_removed}},
     {%Aesir.Net.QuestStateChanged{}, {:gameplay, :quest_state_changed}},

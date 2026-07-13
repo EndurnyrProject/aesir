@@ -56,6 +56,7 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def route(%Aesir.Net.PartyActionResult{}), do: {:gameplay, :party_action_result}
   def route(%Aesir.Net.PartyInviteNotify{}), do: {:gameplay, :party_invite_notify}
   def route(%Aesir.Net.PartyInfo{}), do: {:gameplay, :party_info}
+  def route(%Aesir.Net.PartyMemberUpdate{}), do: {:gameplay, :party_member_update}
   def route(%Aesir.Net.PartyDisbanded{}), do: {:gameplay, :party_disbanded}
   def route(%Aesir.Net.StorageItemAdded{}), do: {:gameplay, :storage_item_added}
   def route(%Aesir.Net.StorageItemRemoved{}), do: {:gameplay, :storage_item_removed}
