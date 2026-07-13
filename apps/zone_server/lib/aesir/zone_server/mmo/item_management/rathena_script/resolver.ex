@@ -211,6 +211,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   """
   @spec resolve_effect(String.t()) :: {:ok, atom()} | error()
   def resolve_effect("EF_" <> _ = symbol) do
+    Code.ensure_loaded(EffectId)
+
     with {:ok, atom} <- existing_atom(String.trim_leading(symbol, "EF_")),
          id when is_integer(id) <- EffectId.id(atom) do
       {:ok, atom}

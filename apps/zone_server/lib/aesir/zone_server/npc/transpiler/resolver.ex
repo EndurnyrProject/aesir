@@ -82,6 +82,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
   def emote(value) when is_integer(value), do: {:ok, value}
 
   def emote("ET_" <> _ = symbol) do
+    Code.ensure_loaded(Emotion)
+
     with {:ok, atom} <- existing_atom(String.trim_leading(symbol, "ET_")),
          id when is_integer(id) <- Emotion.id(atom) do
       {:ok, atom}
