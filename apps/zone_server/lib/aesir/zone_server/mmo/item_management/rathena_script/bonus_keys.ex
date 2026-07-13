@@ -37,7 +37,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bpatk" => :patk,
     "bsmatk" => :smatk,
     "bres" => :res,
-    "bmres" => :mres
+    "bmres" => :mres,
+    "bbreakweaponrate" => :break_weapon_rate,
+    "bbreakarmorrate" => :break_armor_rate,
+    "bunbreakable" => :unbreakable,
+    "bunbreakableweapon" => :unbreakable_weapon,
+    "bunbreakablearmor" => :unbreakable_armor,
+    "bunbreakablehelm" => :unbreakable_helm,
+    "bunbreakableshield" => :unbreakable_shield,
+    "bunbreakablegarment" => :unbreakable_garment,
+    "bunbreakableshoes" => :unbreakable_shoes
   }
 
   @doc """

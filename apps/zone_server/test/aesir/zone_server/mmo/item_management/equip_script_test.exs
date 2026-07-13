@@ -92,6 +92,22 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
     end
   end
 
+  describe "break/unbreakable bonus keys" do
+    test "parses and evaluates a break-rate bonus" do
+      program = EquipScript.parse!("bonus(ctx, :break_weapon_rate, 50)")
+
+      assert program == [{:bonus, :break_weapon_rate, 50}]
+      assert EquipScript.eval(program, 0) == %{break_weapon_rate: 50}
+    end
+
+    test "parses and evaluates an unbreakable bonus" do
+      program = EquipScript.parse!("bonus(ctx, :unbreakable_weapon, 1)")
+
+      assert program == [{:bonus, :unbreakable_weapon, 1}]
+      assert EquipScript.eval(program, 0) == %{unbreakable_weapon: 1}
+    end
+  end
+
   describe "parse!/1 strictness" do
     test "raises on a call outside the vocabulary" do
       assert_raise ArgumentError, fn ->
