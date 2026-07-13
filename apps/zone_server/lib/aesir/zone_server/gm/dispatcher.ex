@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Gm.Dispatcher do
     "joblevelup" => Aesir.ZoneServer.Gm.Commands.JobLevel,
     "resetskill" => Aesir.ZoneServer.Gm.Commands.ResetSkill,
     "resetstat" => Aesir.ZoneServer.Gm.Commands.ResetStat,
-    "broadcast" => Aesir.ZoneServer.Gm.Commands.Broadcast
+    "broadcast" => Aesir.ZoneServer.Gm.Commands.Broadcast,
+    "repairall" => Aesir.ZoneServer.Gm.Commands.RepairAll
   }
 
   @spec dispatch(String.t(), Aesir.ZoneServer.Gm.Command.ctx()) :: :ok
