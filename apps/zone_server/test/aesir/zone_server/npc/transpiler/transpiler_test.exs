@@ -94,4 +94,41 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.TranspilerTest do
     refute source =~ "trigger:"
     refute source =~ "unique_name:"
   end
+
+  @tag :tmp_dir
+  test "a cross-run name collision takes a coordinate suffix instead of conflicting", %{
+    tmp_dir: tmp_dir
+  } do
+    npc_dir = Path.join(tmp_dir, "npc")
+    File.mkdir_p!(npc_dir)
+
+    File.write!(Path.join(npc_dir, "a.txt"), """
+    prontera,150,150,4\tscript\tKafra Service#a\t113,{
+    mes "A";
+    close;
+    }
+    """)
+
+    out_root = Path.join(tmp_dir, "out")
+    first = Transpiler.run(tmp_dir, out_root: out_root)
+    assert ["lib/aesir/zone_server/content/npc/prontera/kafra_service.ex" = owned] = first.written
+
+    File.write!(Path.join(npc_dir, "b.txt"), """
+    prontera,160,160,4\tscript\tKafra Service\t113,{
+    mes "B";
+    close;
+    }
+    """)
+
+    second = Transpiler.run(tmp_dir, out_root: out_root)
+
+    assert second.conflicts == []
+    assert second.skipped == 1
+
+    assert second.written == [
+             "lib/aesir/zone_server/content/npc/prontera/kafra_service_160_160.ex"
+           ]
+
+    refute File.read!(Path.join(out_root, owned)) =~ ~S{mes("B")}
+  end
 end

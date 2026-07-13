@@ -43,14 +43,15 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
     {functions, scripts, duplicates, skipped, file_errors} = partition(entries)
 
     dup_index = Enum.group_by(duplicates, & &1.source)
-    {fn_modules, fn_units} = function_units(functions)
-    script_units = script_units(scripts, dup_index, sprites)
+    owners = Map.new(manifest, fn {key, rec} -> {rec.output_path, key} end)
+    {fn_modules, fn_units} = function_units(functions, owners)
+    script_units = script_units(scripts, dup_index, sprites, owners)
 
     state = %{
       manifest: manifest,
       out_root: out_root,
       force: Keyword.get(opts, :force, false),
-      functions: fn_modules,
+      functions: Map.merge(manifest_functions(manifest), fn_modules),
       written: [],
       skipped: 0,
       conflicts: [],
@@ -125,10 +126,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
 
   # -- unit building -----------------------------------------------------------
 
-  defp function_units(functions) do
+  defp function_units(functions, owners) do
+    path_fun = fn _entry, slug -> ModuleName.path(:function, nil, slug) end
+
     units =
-      functions
-      |> dedupe_slugs(fn entry, slug ->
+      dedupe_slugs(functions, owners, path_fun, fn entry, slug ->
         %{
           entry: entry,
           kind: :function,
@@ -142,9 +144,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
     {modules, units}
   end
 
-  defp script_units(scripts, dup_index, sprites) do
-    dedupe_slugs(scripts, fn entry, slug ->
-      kind = if entry.kind == :script, do: :script, else: :floating
+  defp script_units(scripts, dup_index, sprites, owners) do
+    path_fun = fn entry, slug ->
+      ModuleName.path(unit_kind(entry), entry[:map], slug)
+    end
+
+    dedupe_slugs(scripts, owners, path_fun, fn entry, slug ->
+      kind = unit_kind(entry)
       map = entry[:map]
 
       {spawns, unresolved} = build_spawns(entry, Map.get(dup_index, ref_name(entry), []), sprites)
@@ -160,22 +166,51 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
     end)
   end
 
+  defp unit_kind(entry), do: if(entry.kind == :script, do: :script, else: :floating)
+
+  # Global functions transpiled by earlier runs, recovered from the manifest
+  # (key `file|function|Name|-`, module from the output slug), so a `callfunc`
+  # into another import batch resolves to its module instead of a stub.
+  defp manifest_functions(manifest) do
+    manifest
+    |> Enum.flat_map(fn {key, rec} ->
+      case String.split(key, "|") do
+        [_file, "function", name | _rest] ->
+          [{name, ModuleName.module(:function, nil, Path.basename(rec.output_path, ".ex"))}]
+
+        _other ->
+          []
+      end
+    end)
+    |> Map.new()
+  end
+
   # Slugs collide (same display name on one map, or across files); append the
-  # placement coordinates, then an index, deterministically.
-  defp dedupe_slugs(entries, build) do
+  # placement coordinates, then an index, deterministically. A candidate is
+  # also rejected when its output path is already owned by a *different*
+  # manifest entry — a cross-run collision (e.g. kafras.txt "Kafra Service"
+  # vs the imported cities "Kafra Service#alde" on the same map), which would
+  # otherwise land in `_conflicts/` despite being two distinct NPCs.
+  defp dedupe_slugs(entries, owners, path_fun, build) do
     entries
     |> Enum.reduce({[], MapSet.new()}, fn entry, {units, seen} ->
       base = ModuleName.slug(ModuleName.display_name(entry.name))
 
       slug =
-        [base, coord_slug(entry, base), "#{base}_#{MapSet.size(seen)}"]
+        [base, coord_slug(entry, base)]
         |> Enum.reject(&is_nil/1)
-        |> Enum.find(&(not MapSet.member?(seen, {entry[:map], &1})))
+        |> Stream.concat(Stream.map(0..1_000_000//1, &"#{base}_#{&1}"))
+        |> Enum.find(&slug_free?(&1, entry, seen, owners, path_fun))
 
       {[build.(entry, slug) | units], MapSet.put(seen, {entry[:map], slug})}
     end)
     |> elem(0)
     |> Enum.reverse()
+  end
+
+  defp slug_free?(slug, entry, seen, owners, path_fun) do
+    not MapSet.member?(seen, {entry[:map], slug}) and
+      Map.get(owners, path_fun.(entry, slug), :free) in [:free, Manifest.key(entry)]
   end
 
   defp coord_slug(%{x: x, y: y}, base), do: "#{base}_#{x}_#{y}"

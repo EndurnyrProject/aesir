@@ -113,7 +113,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     """
   end
 
-  defp header(%{kind: :function}), do: "import Aesir.ZoneServer.Script.Dsl"
+  # `warn: false`: a transpiled function whose body happens to touch no DSL
+  # primitive (a pure string helper) must not fail warnings-as-errors builds.
+  defp header(%{kind: :function}), do: "import Aesir.ZoneServer.Script.Dsl, warn: false"
 
   defp header(opts) do
     spawns = Enum.map_join(opts.spawns, ",\n", &render_spawn/1)
@@ -720,23 +722,23 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["{ctx, _} = #{fn_name(env, label)}(ctx, [#{rendered}])"], :cont}
   end
 
+  # A CommandMap-mapped function (hand-curated DSL primitive) wins over a
+  # transpiled function module of the same name; anything else resolves to
+  # the module transpiled in this or an earlier import run.
   defp emit_stmt({:cmd, "callfunc", [{:str, fname} | args]}, env) do
     {pre, args} = hoist_all(args, env)
     rendered = Enum.map_join(args, ", ", &render(&1, env))
 
-    case Map.fetch(env.fns, fname) do
-      {:ok, module} ->
+    case {CommandMap.function(fname), Map.fetch(env.fns, fname)} do
+      {{:ok, %{kind: :command, dsl: dsl}}, _fns} ->
+        {pre ++ ["ctx = #{dsl}(ctx, #{rendered})"], :cont}
+
+      {_command_map, {:ok, module}} ->
         {pre ++ ["{ctx, _} = #{module}.call(ctx, [#{rendered}])"], :cont}
 
-      :error ->
-        case CommandMap.function(fname) do
-          {:ok, %{kind: :command, dsl: dsl}} ->
-            {pre ++ ["ctx = #{dsl}(ctx, #{rendered})"], :cont}
-
-          _ ->
-            flag(:todo_fun)
-            {pre ++ ["ctx = todo(ctx, :callfunc, [#{inspect(fname)}, #{rendered}])"], :cont}
-        end
+      _neither ->
+        flag(:todo_fun)
+        {pre ++ ["ctx = todo(ctx, :callfunc, [#{inspect(fname)}, #{rendered}])"], :cont}
     end
   end
 
@@ -928,10 +930,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     end
   end
 
+  # A skill name the catalog doesn't know (an unimplemented skill) falls back
+  # to its atom form rather than a raising const stub: the DSL answers `0`
+  # for an unknown skill atom, which is exactly its level on this server.
   defp typed_arg(arg, :skill, env) do
     case arg do
-      {:str, s} -> resolve_or_const(&Resolver.skill/1, s)
-      {:name, s} -> resolve_or_const(&Resolver.skill/1, s)
+      {:str, s} -> skill_arg(s)
+      {:name, s} -> skill_arg(s)
       other -> render(other, env)
     end
   end
@@ -983,6 +988,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     end
   end
 
+  defp skill_arg(symbol) do
+    case Resolver.skill(symbol) do
+      {:ok, id} -> to_string(id)
+      :error -> inspect(String.to_atom(String.downcase(symbol)))
+    end
+  end
+
   defp const_todo(symbol) do
     flag(:todo_mod)
     "Todo.const!(#{inspect(String.to_atom(symbol))})"
@@ -993,7 +1005,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp emit_switch(expr, clauses, env) do
     {pre, expr} = hoist(expr, env)
     id = next_id()
-    effective = clauses |> effective_clauses(env) |> default_last()
+
+    {value_pre, effective} =
+      clauses |> effective_clauses(env) |> default_last() |> bind_clause_values(env)
+
     nested_break? = Enum.any?(effective, fn {_, stmts} -> nested_break?(stmts) end)
 
     clause_env =
@@ -1021,7 +1036,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     case_lines = ["case #{tmp} do"] ++ List.flatten(clause_lines) ++ catch_all ++ ["end"]
     terminal = if Enum.all?(terminals, &(&1 == :stop)) and default?, do: :stop, else: :cont
 
-    {pre ++ bindings ++ switch_body(case_lines, nested_break?, terminal, id), terminal}
+    {pre ++ value_pre ++ bindings ++ switch_body(case_lines, nested_break?, terminal, id),
+     terminal}
   end
 
   # An all-stop switch (every clause exits, default present) yields no value
@@ -1041,6 +1057,40 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {defaults, rest} = Enum.split_with(clauses, fn {values, _} -> :default in values end)
     rest ++ defaults
   end
+
+  # A switch clause value that renders as a call (`case EQI_ACC_L:` where the
+  # name is a var read, not a resolvable constant) cannot appear inside a case
+  # guard; bind each one to a temp above the case and guard against the temp.
+  # Literal ints/strings and resolvable constants stay inline.
+  defp bind_clause_values(clauses, env) do
+    {clauses, pre} =
+      Enum.map_reduce(clauses, [], fn {values, stmts}, pre ->
+        {values, pre} = Enum.map_reduce(values, pre, &bind_clause_value(&1, &2, env))
+        {{values, stmts}, pre}
+      end)
+
+    {pre, clauses}
+  end
+
+  defp bind_clause_value(value, pre, env) do
+    if value == :default or guard_safe_value?(value) do
+      {value, pre}
+    else
+      {vpre, value} = hoist(value, env)
+      tmp = tmp_var()
+      {{:temp, tmp}, pre ++ vpre ++ ["#{tmp} = #{render(value, env)}"]}
+    end
+  end
+
+  defp guard_safe_value?({:int, _}), do: true
+  defp guard_safe_value?({:neg, {:int, _}}), do: true
+  defp guard_safe_value?({:str, _}), do: true
+  defp guard_safe_value?({:temp, _}), do: true
+
+  defp guard_safe_value?({:name, name}),
+    do: read_name(name) == :error and match?({:ok, _}, Resolver.constant(name))
+
+  defp guard_safe_value?(_value), do: false
 
   # C fall-through: a clause body that does not end the flow continues into
   # the next clause's body; materialize that by appending it.
@@ -1132,41 +1182,39 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
     {body_lines, terminal} = emit_block(body, loop_env)
     {step_lines, :cont} = emit_block(step, env)
+
+    # A blocking call in the condition (`while(input(...))`, `while(select(...))`)
+    # hoists into `cond_pre`, placed where the condition evaluates — the loop
+    # function's head for `while`, the after-body check for `do_while` — so it
+    # re-runs on every iteration.
     {cond_pre, cond_expr} = hoist(cond_expr, env)
+    cond_s = cond_str(cond_expr, env)
 
-    if cond_pre != [] do
-      # A blocking call in a loop condition (e.g. `while(select(...))`) would
-      # need re-hoisting per iteration; punt to a stub rather than mistranslate.
-      {["ctx = todo(ctx, :loop_with_blocking_condition, [])"], :cont}
-    else
-      cond_s = cond_str(cond_expr, env)
+    # What runs when an iteration completes: while loops step and recurse
+    # (the condition guards the body); do-while recurses conditionally.
+    recurse = "#{fname}(ctx#{helper_call(env)})"
 
-      # What runs when an iteration completes: while loops step and recurse
-      # (the condition guards the body); do-while recurses conditionally.
-      recurse = "#{fname}(ctx#{helper_call(env)})"
-
-      on_next =
-        case kind do
-          :while -> step_lines ++ [recurse]
-          :do_while -> ["if #{cond_s} do", recurse, "else", "ctx", "end"]
-        end
-
-      body = loop_body(body_lines, terminal, on_next, needs_try, id)
-
-      inner =
-        case kind do
-          :while -> ["if #{cond_s} do"] ++ body ++ ["else", "ctx", "end"]
-          :do_while -> body
-        end
-
-      defer("""
-      defp #{fname}(#{helper_params(inner, env)}) do
-        #{join_body(inner)}
+    on_next =
+      case kind do
+        :while -> step_lines ++ [recurse]
+        :do_while -> cond_pre ++ ["if #{cond_s} do", recurse, "else", "ctx", "end"]
       end
-      """)
 
-      {["ctx = #{fname}(ctx#{helper_call(env)})"], :cont}
+    body = loop_body(body_lines, terminal, on_next, needs_try, id)
+
+    inner =
+      case kind do
+        :while -> cond_pre ++ ["if #{cond_s} do"] ++ body ++ ["else", "ctx", "end"]
+        :do_while -> body
+      end
+
+    defer("""
+    defp #{fname}(#{helper_params(inner, env)}) do
+      #{join_body(inner)}
     end
+    """)
+
+    {["ctx = #{fname}(ctx#{helper_call(env)})"], :cont}
   end
 
   defp loop_body(body_lines, terminal, on_next, false = _needs_try, _id) do
@@ -1401,26 +1449,24 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {{:temp, tmp}, ["{ctx, #{tmp}} = select(ctx, #{options(args, env)})" | pre]}
   end
 
+  # Same resolution order as the statement form: a CommandMap-mapped read
+  # wins over a transpiled function module of the same name.
   defp hoist_walk({:call, "callfunc", [{:str, fname} | args]}, env, pre) do
     {args, pre} = hoist_list(args, env, pre)
     rendered = Enum.map_join(args, ", ", &render(&1, env))
     tmp = tmp_var()
 
-    case Map.fetch(env.fns, fname) do
-      {:ok, module} ->
+    case {CommandMap.function(fname), Map.fetch(env.fns, fname)} do
+      {{:ok, %{kind: :read, dsl: dsl}}, _fns} ->
+        {{:temp, tmp}, ["#{tmp} = #{read_fn_call(dsl, args, rendered)}" | pre]}
+
+      {_command_map, {:ok, module}} ->
         {{:temp, tmp}, ["{ctx, #{tmp}} = #{module}.call(ctx, [#{rendered}])" | pre]}
 
-      :error ->
-        case CommandMap.function(fname) do
-          {:ok, %{kind: :read, dsl: dsl}} ->
-            {{:temp, tmp}, ["#{tmp} = #{read_fn_call(dsl, args, rendered)}" | pre]}
+      _neither ->
+        flag(:todo_mod)
 
-          _ ->
-            flag(:todo_mod)
-
-            {{:temp, tmp},
-             ["#{tmp} = Todo.call!(:callfunc, [#{inspect(fname)}, #{rendered}])" | pre]}
-        end
+        {{:temp, tmp}, ["#{tmp} = Todo.call!(:callfunc, [#{inspect(fname)}, #{rendered}])" | pre]}
     end
   end
 

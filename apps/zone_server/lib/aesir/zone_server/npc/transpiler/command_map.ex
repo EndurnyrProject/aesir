@@ -148,6 +148,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "checkre" => %{dsl: "checkre", args: [:int]},
     "vip_status" => %{dsl: "vip_status", args: [:int]},
     "checkcart" => %{dsl: "checkcart", args: []},
+    "basicskillcheck" => %{dsl: "basicskillcheck", args: []},
     "getskilllv" => %{dsl: "getskilllv", args: [:skill]},
     "getcharid" => %{dsl: "getcharid", args: [:int]}
   }

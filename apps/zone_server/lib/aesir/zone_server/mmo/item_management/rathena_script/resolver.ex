@@ -255,6 +255,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
 
   @spec resolve_skill_name(String.t()) :: {:ok, integer()} | error()
   defp resolve_skill_name(symbol) do
+    # Building the catalog creates the skill-name atoms; without it
+    # `existing_atom` fails for any skill no loaded module happens to
+    # mention (mix-task context, where modules load lazily).
+    _ = Catalog.all()
+
     with {:ok, name} <- existing_atom(symbol),
          {:ok, %{id: id}} <- Catalog.by_name(name) do
       {:ok, id}

@@ -1287,6 +1287,15 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   def checkcart(%Ctx{game_state: gs}), do: if(gs.cart_type > 0, do: 1, else: 0)
 
   @doc """
+  Whether the server enforces Basic Skill requirements (rAthena
+  `basicskillcheck`, the `basic_skill_check` battle flag). Aesir always
+  enforces them (the storage gate requires `NV_BASIC`), so this is always
+  `1`. Pure read; the ctx is ignored.
+  """
+  @spec basicskillcheck(Ctx.t()) :: 1
+  def basicskillcheck(%Ctx{}), do: 1
+
+  @doc """
   Fires `"Name::OnLabel"` as a detached, fire-and-forget event (rAthena
   `donpcevent`). Delegates to `Npc.Events.trigger/1`: an unresolved name or
   undeclared label logs a warning and no-ops. Returns `ctx` unchanged; valid

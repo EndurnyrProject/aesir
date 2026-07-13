@@ -249,6 +249,31 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert thrown =~ ":throw, {:brk_1, ctx} -> {:done, ctx}"
   end
 
+  test "a blocking loop condition re-evaluates inside the loop function" do
+    looped =
+      gen!("""
+      while (select("Again:Stop") == 1) {
+        mes "again";
+      }
+      close;
+      """)
+
+    assert looped =~ ~r/defp loop_1\(ctx\) do\s+\{ctx, v1\} = select\(ctx, \["Again", "Stop"\]\)/
+    refute looped =~ "loop_with_blocking_condition"
+
+    do_while =
+      gen!("""
+      do {
+        mes "again";
+      } while (select("Again:Stop") == 1);
+      close;
+      """)
+
+    assert do_while =~ ~r/\{ctx, v1\} = .*select\(.*\["Again", "Stop"\]\)/
+    assert do_while =~ "if v1 == 1 do"
+    refute do_while =~ "loop_with_blocking_condition"
+  end
+
   test "for loop runs init before and step on iteration" do
     src =
       gen!("""
