@@ -965,20 +965,18 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
       end
 
     case_lines = ["case #{tmp} do"] ++ List.flatten(clause_lines) ++ catch_all ++ ["end"]
-
-    lines =
-      if nested_break? do
-        pre ++
-          bindings ++
-          ["ctx =", "try do"] ++
-          case_lines ++ ["catch", ":throw, {:brk_#{id}, ctx} -> ctx", "end"]
-      else
-        pre ++ bindings ++ ["ctx ="] ++ case_lines
-      end
-
     terminal = if Enum.all?(terminals, &(&1 == :stop)) and default?, do: :stop, else: :cont
-    {lines, terminal}
+
+    {pre ++ bindings ++ switch_body(case_lines, nested_break?, terminal, id), terminal}
   end
+
+  # An all-stop switch (every clause exits, default present) yields no value
+  # anything could read; binding it would leave a dead `ctx =`.
+  defp switch_body(case_lines, true, _terminal, id),
+    do: ["ctx =", "try do"] ++ case_lines ++ ["catch", ":throw, {:brk_#{id}, ctx} -> ctx", "end"]
+
+  defp switch_body(case_lines, false, :stop, _id), do: case_lines
+  defp switch_body(case_lines, false, :cont, _id), do: ["ctx ="] ++ case_lines
 
   # C fall-through: a clause body that does not end the flow continues into
   # the next clause's body; materialize that by appending it.

@@ -27,6 +27,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
 
   Options:
   - `:only` — glob (relative to `npc`) limiting the source files
+  - `:force` — regenerate even when the source is unchanged (codegen changed);
+    hand-edited outputs still divert to `_conflicts/`
   - `:out_root` — zone_server app root the output paths hang off
     (default `apps/zone_server`)
   """
@@ -47,6 +49,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
     state = %{
       manifest: manifest,
       out_root: out_root,
+      force: Keyword.get(opts, :force, false),
       functions: fn_modules,
       written: [],
       skipped: 0,
@@ -246,7 +249,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
     key = Manifest.key(entry)
     out_path = Path.join(state.out_root, unit.rel_path)
 
-    case Manifest.decide(state.manifest[key], source_hash, output_state(out_path)) do
+    case Manifest.decide(record(state, key), source_hash, output_state(out_path)) do
       :skip ->
         %{state | skipped: state.skipped + 1}
 
@@ -257,6 +260,17 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
         write_conflict(unit, state)
     end
   end
+
+  # Under `:force` the manifest record is presented as source-changed so the
+  # skip short-circuit never fires; the output-hash policy still applies.
+  defp record(%{force: true} = state, key) do
+    case state.manifest[key] do
+      nil -> nil
+      rec -> %{rec | source_hash: :forced}
+    end
+  end
+
+  defp record(state, key), do: state.manifest[key]
 
   defp output_state(path) do
     case File.read(path) do

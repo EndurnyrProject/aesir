@@ -4,10 +4,13 @@ defmodule Mix.Tasks.Aesir.Import.Npcs do
   Transpiles rAthena's renewal NPC scripts (`npc/re/**/*.txt`) into Elixir NPC
   modules under `apps/zone_server/lib/aesir/zone_server/content/npc/`.
 
-      mix aesir.import.npcs [<rathena_root>] [--only <glob>]
+      mix aesir.import.npcs [<rathena_root>] [--only <glob>] [--force]
 
   `<rathena_root>` defaults to `../rathena`. `--only` limits the run to source
   files matching the glob relative to `npc/re/` (e.g. `--only "cities/*"`).
+  `--force` regenerates matching entries even when their source is unchanged
+  (use after transpiler/codegen changes); hand-edited outputs still divert to
+  `_conflicts/`.
 
   Re-runs are incremental and safe: a manifest
   (`apps/zone_server/priv/npc_transpile/manifest.json`) records the source and
@@ -26,14 +29,14 @@ defmodule Mix.Tasks.Aesir.Import.Npcs do
   @impl Mix.Task
   def run(args) do
     Mix.Task.run("app.config")
-    {opts, rest, _} = OptionParser.parse(args, strict: [only: :string])
+    {opts, rest, _} = OptionParser.parse(args, strict: [only: :string, force: :boolean])
     rathena = List.first(rest) || "../rathena"
 
     unless File.dir?(Path.join(rathena, "npc")) do
       Mix.raise("rAthena root not found at #{rathena} (no npc/ directory)")
     end
 
-    result = Transpiler.run(rathena, only: opts[:only])
+    result = Transpiler.run(rathena, only: opts[:only], force: Keyword.get(opts, :force, false))
 
     File.mkdir_p!(Path.dirname(@report_path))
     File.write!(@report_path, report(result))

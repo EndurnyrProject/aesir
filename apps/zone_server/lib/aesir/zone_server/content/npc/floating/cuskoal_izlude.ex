@@ -14,43 +14,42 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CuskoalIzlude do
     ctx = mes(ctx, "[Cuskoal]")
     v1 = :rand.uniform(2) - 1
 
-    ctx =
-      case v1 do
-        1 ->
-          ctx
-          |> mes(
-            "The Arena here is THE place for capable young people from all over the Rune-Midgarts Kingdom to challenge themselves and test their skills."
-          )
-          |> next()
-          |> mes("[Cuskoal]")
-          |> mes(
-            "You can battle with monsters of differing levels. So, the number of stages you survive will be a testament to your battle prowess."
-          )
-          |> next()
-          |> mes("[Cuskoal]")
-          |> mes("So, whaddya say?")
-          |> close()
+    case v1 do
+      1 ->
+        ctx
+        |> mes(
+          "The Arena here is THE place for capable young people from all over the Rune-Midgarts Kingdom to challenge themselves and test their skills."
+        )
+        |> next()
+        |> mes("[Cuskoal]")
+        |> mes(
+          "You can battle with monsters of differing levels. So, the number of stages you survive will be a testament to your battle prowess."
+        )
+        |> next()
+        |> mes("[Cuskoal]")
+        |> mes("So, whaddya say?")
+        |> close()
 
-          exit(:normal)
+        exit(:normal)
 
-        _ ->
-          ctx
-          |> mes(
-            "The pubs in Prontera are always full of people from local areas and from out-of-town. It can get pretty busy."
-          )
-          |> next()
-          |> mes("[Cuskoal]")
-          |> mes(
-            "It's a pretty good place to stop by for general information and to listen to rumors."
-          )
-          |> next()
-          |> mes("[Cuskoal]")
-          |> mes(
-            "So if you listen carefully, you just might get lucky and learn some very useful information for yourself."
-          )
-          |> close()
+      _ ->
+        ctx
+        |> mes(
+          "The pubs in Prontera are always full of people from local areas and from out-of-town. It can get pretty busy."
+        )
+        |> next()
+        |> mes("[Cuskoal]")
+        |> mes(
+          "It's a pretty good place to stop by for general information and to listen to rumors."
+        )
+        |> next()
+        |> mes("[Cuskoal]")
+        |> mes(
+          "So if you listen carefully, you just might get lucky and learn some very useful information for yourself."
+        )
+        |> close()
 
-          exit(:normal)
-      end
+        exit(:normal)
+    end
   end
 end

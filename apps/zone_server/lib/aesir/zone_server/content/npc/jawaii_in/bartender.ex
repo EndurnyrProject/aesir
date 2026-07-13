@@ -239,41 +239,68 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.Bartender do
                   |> next()
 
                 3 ->
-                  ctx =
-                    ctx
-                    |> mes("[Bartender]")
-                    |> mes("So...")
-                    |> mes("How about this..?")
-                    |> next()
-                    |> mes("[Bartender]")
-                    |> mes("Why don't you try")
-                    |> mes("a '^0000FFKiss of Fire")
-                    |> mes("the Spinbird Kick^000000?'")
-                    |> next()
-                    |> mes("[Bartender]")
-                    |> mes(
-                      "Don't be fooled by its sweet scent or beautiful red color. This is one of the strongest drinks around."
-                    )
-                    |> next()
-                    |> mes(
-                      "^3355FFYou receive a crystal cocktail glass with a little bit of sugar sprinkled around the rim. It has"
-                    )
-                    |> mes(
-                      "a sweet fragrance that makes your mouth water. However, you can also feel that it is a dangerously strong cocktail."
-                    )
-                    |> next()
-                    |> mes("[Bartender]")
-                    |> mes(
-                      "Lick the sugar before taking a sip. That will make it taste a little sweeter and will soften the taste."
-                    )
-                    |> next()
-                    |> mes("^3355FFYou carefully took a sip.^000000")
-                    |> specialeffect2(:decagility)
-                    |> percent_heal(hp: -20, sp: 0)
-                    |> next()
+                  ctx
+                  |> mes("[Bartender]")
+                  |> mes("So...")
+                  |> mes("How about this..?")
+                  |> next()
+                  |> mes("[Bartender]")
+                  |> mes("Why don't you try")
+                  |> mes("a '^0000FFKiss of Fire")
+                  |> mes("the Spinbird Kick^000000?'")
+                  |> next()
+                  |> mes("[Bartender]")
+                  |> mes(
+                    "Don't be fooled by its sweet scent or beautiful red color. This is one of the strongest drinks around."
+                  )
+                  |> next()
+                  |> mes(
+                    "^3355FFYou receive a crystal cocktail glass with a little bit of sugar sprinkled around the rim. It has"
+                  )
+                  |> mes(
+                    "a sweet fragrance that makes your mouth water. However, you can also feel that it is a dangerously strong cocktail."
+                  )
+                  |> next()
+                  |> mes("[Bartender]")
+                  |> mes(
+                    "Lick the sugar before taking a sip. That will make it taste a little sweeter and will soften the taste."
+                  )
+                  |> next()
+                  |> mes("^3355FFYou carefully took a sip.^000000")
+                  |> specialeffect2(:decagility)
+                  |> percent_heal(hp: -20, sp: 0)
+                  |> next()
 
                 _ ->
                   ctx
+                  |> mes("[Bartender]")
+                  |> mes("I see...")
+                  |> mes("Let me think")
+                  |> mes("of something")
+                  |> mes("you might like.")
+                  |> next()
+                  |> mes("[Bartender]")
+                  |> mes("Okay, how about")
+                  |> mes("a '^0000FFWhite Margarita'^000000?'")
+                  |> next()
+                  |> mes("[Bartender]")
+                  |> mes(
+                    "You will smell a sourish lemon scent which makes your mouth water. As you taste it, you will be filled with a pleasant, comforting warmth that spreads throughout your body."
+                  )
+                  |> next()
+                  |> mes(
+                    "^3355FFYou receive a fancy cocktail glass with salt and lemon juice sprinkled on the rim. Its sour scent does make your mouth water. How could something so appetizing be dangerous?"
+                  )
+                  |> next()
+                  |> mes("[Bartender]")
+                  |> mes("It has a sweet and sour taste so it's favored by female customers")
+                  |> mes("as well. I guarantee that you will enjoy its flavor.")
+                  |> next()
+                  |> mes("^3355FFYou gulp the delicious")
+                  |> mes("Margarita down in one sip.^000000")
+                  |> specialeffect2(:magnumbreak)
+                  |> percent_heal(hp: -20, sp: 0)
+                  |> next()
               end
 
             ctx

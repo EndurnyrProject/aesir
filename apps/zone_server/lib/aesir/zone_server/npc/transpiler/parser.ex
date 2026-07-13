@@ -63,13 +63,17 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Parser do
   # -- statements --------------------------------------------------------------
 
   defp statements(tokens, acc) do
-    case tokens do
-      [] -> {:ok, Enum.reverse(acc), []}
-      [{:punct, :rbrace} | _] -> {:ok, Enum.reverse(acc), tokens}
-      [{:ident, kw} | _] when kw in ~w(case default) -> {:ok, Enum.reverse(acc), tokens}
-      _ -> with {:ok, stmt, rest} <- statement(tokens), do: statements(rest, add(stmt, acc))
+    cond do
+      tokens == [] -> {:ok, Enum.reverse(acc), []}
+      match?([{:punct, :rbrace} | _], tokens) -> {:ok, Enum.reverse(acc), tokens}
+      switch_kw?(tokens) -> {:ok, Enum.reverse(acc), tokens}
+      true -> with {:ok, stmt, rest} <- statement(tokens), do: statements(rest, add(stmt, acc))
     end
   end
+
+  # rAthena keywords are case-insensitive; the corpus spells `Default:` etc.
+  defp switch_kw?([{:ident, kw} | _]), do: String.downcase(kw) in ~w(case default)
+  defp switch_kw?(_tokens), do: false
 
   defp add(:empty, acc), do: acc
   defp add(stmt, acc), do: [stmt | acc]
@@ -443,12 +447,17 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Parser do
 
   # Statements before the first `case` are dead code rAthena tolerates
   # (they exist in the corpus); parse and drop them.
-  defp switch_clauses([token | _] = tokens, [] = acc)
-       when token != {:ident, "case"} and token != {:ident, "default"} do
-    with {:ok, _dead, rest} <- statements(tokens, []), do: switch_clauses(rest, acc)
+  defp switch_clauses([_ | _] = tokens, [] = acc) do
+    if switch_kw?(tokens) do
+      switch_clause(tokens, acc)
+    else
+      with {:ok, _dead, rest} <- statements(tokens, []), do: switch_clauses(rest, acc)
+    end
   end
 
-  defp switch_clauses(tokens, acc) do
+  defp switch_clauses(tokens, acc), do: switch_clause(tokens, acc)
+
+  defp switch_clause(tokens, acc) do
     with {:ok, values, rest} <- case_values(tokens, []),
          {:ok, stmts, rest} <- statements(rest, []) do
       switch_clauses(rest, [{values, stmts} | acc])
@@ -456,15 +465,25 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Parser do
   end
 
   # Collects consecutive `case v:` labels (and `default:`) sharing one body.
-  defp case_values([{:ident, "case"} | rest], acc) do
-    with {:ok, value, rest} <- expression(rest),
-         {:ok, rest} <- expect(rest, {:punct, :colon}) do
-      case_values(rest, [value | acc])
+  defp case_values([{:ident, kw} | rest] = tokens, acc) do
+    cond do
+      String.downcase(kw) == "case" ->
+        with {:ok, value, rest} <- expression(rest),
+             {:ok, rest} <- expect(rest, {:punct, :colon}) do
+          case_values(rest, [value | acc])
+        end
+
+      String.downcase(kw) == "default" and match?([{:punct, :colon} | _], rest) ->
+        [_colon | rest] = rest
+        case_values(rest, [:default | acc])
+
+      acc == [] ->
+        {:error, unexpected(tokens)}
+
+      true ->
+        {:ok, Enum.reverse(acc), tokens}
     end
   end
-
-  defp case_values([{:ident, "default"}, {:punct, :colon} | rest], acc),
-    do: case_values(rest, [:default | acc])
 
   defp case_values(tokens, []), do: {:error, unexpected(tokens)}
   defp case_values(tokens, acc), do: {:ok, Enum.reverse(acc), tokens}

@@ -14,177 +14,176 @@ defmodule Aesir.ZoneServer.Content.Npc.XmasIn.LenientAunt do
   def on_talk(ctx) do
     v1 = get_char_var(ctx, :xmas_npc, 0)
 
-    ctx =
-      case v1 do
-        5 ->
-          ctx
-          |> mes("[Thachentze]")
-          |> mes("Hmm? The Hairy guy")
-          |> mes("spoke well of me,")
-          |> mes("did he? Well well...")
-          |> next()
-          |> mes("[Thachentze]")
-          |> mes(
-            "I know what he thinks... Ho ho ho~! He intends to make me feel happy so that I'll give him some free jars of pickles! Oh well~!"
-          )
-          |> next()
-          |> mes("[Thachentze]")
-          |> mes(
-            "He knows me too well. I almost can't stop from giving that man some pickles. Yes, even I know my pickles are the best in town!"
-          )
-          |> next()
-          |> mes("[Thachentze]")
-          |> mes("Hmmm~?")
-          |> mes("You want to know")
-          |> mes("about ^3355FFSnowysnow^000000?")
-          |> mes("Oh. Yes, yes, I see...")
-          |> next()
-          |> mes("[Thachentze]")
-          |> mes(
-            "Well, I can't just let anyone know something so important about Snowysnow. Hmmm..."
-          )
-          |> next()
-          |> mes("[Thachentze]")
-          |> mes(
-            "Snowysnow has been holding something for me as a favor, the ^3355FFroughest salt in the world^000000 which I use to pickle cabbages."
-          )
-          |> next()
-          |> mes("[Thachentze]")
-          |> mes(
-            "I suppose if you're really Snowysnow's friend, he will trust you enough to give it to you so you can deliver it to me. And in any case, I'll need more of it soon."
-          )
-          |> next()
-          |> mes("[Thachentze]")
-          |> mes("Now be a dear")
-          |> mes("and hurry up.")
-          |> mes("Come back quickly~")
-          |> set_char_var(:xmas_npc, 6)
-          |> close()
+    case v1 do
+      5 ->
+        ctx
+        |> mes("[Thachentze]")
+        |> mes("Hmm? The Hairy guy")
+        |> mes("spoke well of me,")
+        |> mes("did he? Well well...")
+        |> next()
+        |> mes("[Thachentze]")
+        |> mes(
+          "I know what he thinks... Ho ho ho~! He intends to make me feel happy so that I'll give him some free jars of pickles! Oh well~!"
+        )
+        |> next()
+        |> mes("[Thachentze]")
+        |> mes(
+          "He knows me too well. I almost can't stop from giving that man some pickles. Yes, even I know my pickles are the best in town!"
+        )
+        |> next()
+        |> mes("[Thachentze]")
+        |> mes("Hmmm~?")
+        |> mes("You want to know")
+        |> mes("about ^3355FFSnowysnow^000000?")
+        |> mes("Oh. Yes, yes, I see...")
+        |> next()
+        |> mes("[Thachentze]")
+        |> mes(
+          "Well, I can't just let anyone know something so important about Snowysnow. Hmmm..."
+        )
+        |> next()
+        |> mes("[Thachentze]")
+        |> mes(
+          "Snowysnow has been holding something for me as a favor, the ^3355FFroughest salt in the world^000000 which I use to pickle cabbages."
+        )
+        |> next()
+        |> mes("[Thachentze]")
+        |> mes(
+          "I suppose if you're really Snowysnow's friend, he will trust you enough to give it to you so you can deliver it to me. And in any case, I'll need more of it soon."
+        )
+        |> next()
+        |> mes("[Thachentze]")
+        |> mes("Now be a dear")
+        |> mes("and hurry up.")
+        |> mes("Come back quickly~")
+        |> set_char_var(:xmas_npc, 6)
+        |> close()
 
-          exit(:normal)
+        exit(:normal)
 
-        6 ->
-          ctx
-          |> mes("[Thachentze]")
-          |> mes("Hohohoho~")
-          |> mes("You're back!")
-          |> next()
-          |> mes("[Thachentze]")
-          |> mes("Did you bring it?")
-          |> mes("Oh goodness...!")
-          |> mes("My cabbages will")
-          |> mes("get sour soon!")
-          |> next()
-          |> mes("[Thachentze]")
-          |> mes("You...")
-          |> mes("Don't have it?")
-          |> next()
-          |> mes("[Thachentze]")
-          |> mes("*Sigh*")
-          |> mes(
-            "You are really a scatter-brained person, my dear. Now hurry over to Snowysnow and bring me the ^3355FFroughest salt in the world^000000."
-          )
-          |> next()
-          |> mes("[Thachentze]")
-          |> mes("Hurry now, dear,")
-          |> mes("Chop Chop~!")
-          |> close()
+      6 ->
+        ctx
+        |> mes("[Thachentze]")
+        |> mes("Hohohoho~")
+        |> mes("You're back!")
+        |> next()
+        |> mes("[Thachentze]")
+        |> mes("Did you bring it?")
+        |> mes("Oh goodness...!")
+        |> mes("My cabbages will")
+        |> mes("get sour soon!")
+        |> next()
+        |> mes("[Thachentze]")
+        |> mes("You...")
+        |> mes("Don't have it?")
+        |> next()
+        |> mes("[Thachentze]")
+        |> mes("*Sigh*")
+        |> mes(
+          "You are really a scatter-brained person, my dear. Now hurry over to Snowysnow and bring me the ^3355FFroughest salt in the world^000000."
+        )
+        |> next()
+        |> mes("[Thachentze]")
+        |> mes("Hurry now, dear,")
+        |> mes("Chop Chop~!")
+        |> close()
 
-          exit(:normal)
+        exit(:normal)
 
-        7 ->
-          ctx
-          |> mes("[Thachentze]")
-          |> mes("Hohohohoh hohohohoho !")
-          |> mes("Let's see, let's see...")
-          |> mes("Thank you dear,Thank you.")
-          |> next()
-          |> set_char_var(:xmas_npc, 8)
-          |> mes("^3355FFYou gave her the")
-          |> mes("roughest salt in the world.^000000")
-          |> next()
-          |> mes("[Thachentze]")
-          |> mes("Now I am able to pickle my cabbages properly. Thank you, my dear. Thank you...")
-          |> next()
-          |> mes("...")
-          |> next()
-          |> mes("...")
-          |> mes("......")
-          |> next()
-          |> mes("[Thachentze]")
-          |> mes(
-            "Oh yes, I'm sorry. I almost forgot what I promised you. You asked me about Snowysnow's magical gift bag, didn't you?"
-          )
-          |> next()
-          |> mes("[Thachentze]")
-          |> mes(
-            "If you already met Uncle Cantata, you must know by now that Snowysnow has been made out of some mysterious snow that covered a thick field of magical flowers."
-          )
-          |> next()
-          |> mes("[Thachentze]")
-          |> mes(
-            "I can't tell you how, but when Snowysnow was revived, there was a reaction between the Alchemist's materials and the energies of Snowysnow's snow."
-          )
-          |> next()
-          |> mes("[Thachentze]")
-          |> mes(
-            "For some reason, Snowysnow's gift bag can now create as many presents as Snowysnow wants, just like Santa Claus."
-          )
-          |> next()
-          |> mes("[Thachentze]")
-          |> mes(
-            "Of course, if this power were to fall into the hands of evil, we would all be in trouble."
-          )
-          |> next()
-          |> mes("[Thachentze]")
-          |> mes(
-            "However, everyone knows that Snowysnow is kind and loving towards others. So we're never worried about Snowysnow's powers."
-          )
-          |> next()
-          |> mes("[Thachentze]")
-          |> mes(
-            "Oh, and I've just heard some shocking news from ^3355FFHashokii^000000 the clown. It's quite an interesting story, actually. Why don't you ask him more about it?"
-          )
-          |> close()
+      7 ->
+        ctx
+        |> mes("[Thachentze]")
+        |> mes("Hohohohoh hohohohoho !")
+        |> mes("Let's see, let's see...")
+        |> mes("Thank you dear,Thank you.")
+        |> next()
+        |> set_char_var(:xmas_npc, 8)
+        |> mes("^3355FFYou gave her the")
+        |> mes("roughest salt in the world.^000000")
+        |> next()
+        |> mes("[Thachentze]")
+        |> mes("Now I am able to pickle my cabbages properly. Thank you, my dear. Thank you...")
+        |> next()
+        |> mes("...")
+        |> next()
+        |> mes("...")
+        |> mes("......")
+        |> next()
+        |> mes("[Thachentze]")
+        |> mes(
+          "Oh yes, I'm sorry. I almost forgot what I promised you. You asked me about Snowysnow's magical gift bag, didn't you?"
+        )
+        |> next()
+        |> mes("[Thachentze]")
+        |> mes(
+          "If you already met Uncle Cantata, you must know by now that Snowysnow has been made out of some mysterious snow that covered a thick field of magical flowers."
+        )
+        |> next()
+        |> mes("[Thachentze]")
+        |> mes(
+          "I can't tell you how, but when Snowysnow was revived, there was a reaction between the Alchemist's materials and the energies of Snowysnow's snow."
+        )
+        |> next()
+        |> mes("[Thachentze]")
+        |> mes(
+          "For some reason, Snowysnow's gift bag can now create as many presents as Snowysnow wants, just like Santa Claus."
+        )
+        |> next()
+        |> mes("[Thachentze]")
+        |> mes(
+          "Of course, if this power were to fall into the hands of evil, we would all be in trouble."
+        )
+        |> next()
+        |> mes("[Thachentze]")
+        |> mes(
+          "However, everyone knows that Snowysnow is kind and loving towards others. So we're never worried about Snowysnow's powers."
+        )
+        |> next()
+        |> mes("[Thachentze]")
+        |> mes(
+          "Oh, and I've just heard some shocking news from ^3355FFHashokii^000000 the clown. It's quite an interesting story, actually. Why don't you ask him more about it?"
+        )
+        |> close()
 
-          exit(:normal)
+        exit(:normal)
 
-        _ ->
-          ctx
-          |> mes("[Thachentze]")
-          |> mes("Merry Christmas~")
-          |> mes("Ho! Ho! Ho!")
-          |> next()
-          |> mes("[Thachentze]")
-          |> mes(
-            "I can feel the Christmas spirit all around me! It's even in the eyes of the young travelers who've come out here all the way to Lutie. Hoho, I wish you a Merry Christmas!"
-          )
-          |> next()
-          |> mes("[Thachentze]")
-          |> mes("We have a dungeon named")
-          |> mes(
-            "'Christmas dungeon' around here. Well, I guess I don't need to tell you much if you've heard about it already."
-          )
-          |> mes("Oh well...")
-          |> next()
-          |> mes("[Thachentze]")
-          |> mes(
-            "I figured something out a few days ago. In the Christmas dungeon, you'll run into creatures that are similar to those outside of town."
-          )
-          |> next()
-          |> mes("[Thachentze]")
-          |> mes(
-            "I'm guessing that monsters wandered here from outside of town, and were changed by the cold weather here. So monsters adapted to live in this environment."
-          )
-          |> next()
-          |> mes("[Thachentze]")
-          |> mes("...")
-          |> mes(
-            "Okay, now I think I better be ready to pickle some cabbages. If you didn't know already, I make the best pickles around! Why don't you visit me later and try some?"
-          )
-          |> close()
+      _ ->
+        ctx
+        |> mes("[Thachentze]")
+        |> mes("Merry Christmas~")
+        |> mes("Ho! Ho! Ho!")
+        |> next()
+        |> mes("[Thachentze]")
+        |> mes(
+          "I can feel the Christmas spirit all around me! It's even in the eyes of the young travelers who've come out here all the way to Lutie. Hoho, I wish you a Merry Christmas!"
+        )
+        |> next()
+        |> mes("[Thachentze]")
+        |> mes("We have a dungeon named")
+        |> mes(
+          "'Christmas dungeon' around here. Well, I guess I don't need to tell you much if you've heard about it already."
+        )
+        |> mes("Oh well...")
+        |> next()
+        |> mes("[Thachentze]")
+        |> mes(
+          "I figured something out a few days ago. In the Christmas dungeon, you'll run into creatures that are similar to those outside of town."
+        )
+        |> next()
+        |> mes("[Thachentze]")
+        |> mes(
+          "I'm guessing that monsters wandered here from outside of town, and were changed by the cold weather here. So monsters adapted to live in this environment."
+        )
+        |> next()
+        |> mes("[Thachentze]")
+        |> mes("...")
+        |> mes(
+          "Okay, now I think I better be ready to pickle some cabbages. If you didn't know already, I make the best pickles around! Why don't you visit me later and try some?"
+        )
+        |> close()
 
-          exit(:normal)
-      end
+        exit(:normal)
+    end
   end
 end

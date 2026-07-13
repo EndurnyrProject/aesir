@@ -89,5 +89,4 @@ defmodule Aesir.Commons.Models.CharacterTest do
                Repo.get!(Character, character.id)
     end
   end
-
 end

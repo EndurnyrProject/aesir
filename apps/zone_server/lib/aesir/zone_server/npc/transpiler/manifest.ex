@@ -49,6 +49,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Manifest do
     json =
       manifest
       |> Enum.sort_by(&elem(&1, 0))
+      |> Enum.map(fn {key, rec} ->
+        {key,
+         Jason.OrderedObject.new(
+           output_hash: rec.output_hash,
+           output_path: rec.output_path,
+           source_hash: rec.source_hash
+         )}
+      end)
       |> Jason.OrderedObject.new()
       |> Jason.encode!(pretty: true)
 
