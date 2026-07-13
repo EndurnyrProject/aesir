@@ -103,7 +103,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "setquest" => %{dsl: "setquest", args: [:int]},
     "erasequest" => %{dsl: "erasequest", args: [:int]},
     "completequest" => %{dsl: "completequest", args: [:int]},
-    "changequest" => %{dsl: "changequest", args: [:int, :int]}
+    "changequest" => %{dsl: "changequest", args: [:int, :int]},
+    "repair" => %{dsl: "repair", args: [:int]},
+    "repairall" => %{shape: :nullary, dsl: "repairall"}
   }
 
   # Global rAthena functions (`callfunc "Name"`) mapped onto DSL primitives.

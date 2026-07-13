@@ -127,6 +127,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     end
   end
 
+  test "repair/repairall map to their DSL ops" do
+    assert {:ok, %{dsl: "repair", args: [:int]}} = CommandMap.command("repair")
+    assert {:ok, %{shape: :nullary, dsl: "repairall"}} = CommandMap.command("repairall")
+    assert CommandMap.supported?("repair")
+    assert CommandMap.supported?("RepairAll")
+  end
+
   describe "Resolver" do
     test "constants resolve booleans and curated symbol maps" do
       assert {:ok, "1"} = Resolver.constant("true")

@@ -958,6 +958,19 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "todo(ctx, :nude"
   end
 
+  test "repair/repairall map to their DSL ops" do
+    src =
+      gen!("""
+      repair 2;
+      repairall;
+      close;
+      """)
+
+    assert src =~ "|> repair(2)"
+    assert src =~ "|> repairall()"
+    refute src =~ "todo(ctx, :repair"
+  end
+
   test "getequipid resolves EQI_* slots to their ordinal and passes ints through" do
     src =
       gen!("""
