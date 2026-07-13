@@ -508,6 +508,34 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ ~S|Todo.call!(:callfunc, ["F_Missing"])|
   end
 
+  test "a callfunc binding right before end drops the dead {ctx, _} binding" do
+    functions = %{"F_Check" => "Aesir.ZoneServer.Content.Npc.Functions.FCheck"}
+
+    piped =
+      gen!(
+        """
+        mes "hi";
+        callfunc "F_Check", 1;
+        end;
+        """,
+        functions: functions
+      )
+
+    bare =
+      gen!(
+        """
+        callfunc "F_Check", 1;
+        end;
+        """,
+        functions: functions
+      )
+
+    assert piped =~ ~S{ctx |> mes("hi") |> Aesir.ZoneServer.Content.Npc.Functions.FCheck.call([1])}
+    assert bare =~ "_ = Aesir.ZoneServer.Content.Npc.Functions.FCheck.call(ctx, [1])"
+    refute piped =~ "{ctx, _}"
+    refute bare =~ "{ctx, _}"
+  end
+
   test "broadcast buildins transpile to DSL calls, not todo stubs" do
     src =
       gen!("""

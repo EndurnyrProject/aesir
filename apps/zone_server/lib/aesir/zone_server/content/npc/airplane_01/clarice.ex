@@ -12,15 +12,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.Clarice do
 
   @impl true
   def on_talk(ctx) do
-    {ctx, _} =
-      ctx
-      |> mes("[Clarice]")
-      |> mes("Hi, I'm Clarice~")
-      |> mes("How would you like")
-      |> mes("to wager some Apples")
-      |> mes("in a friendly game of Dice?")
-      |> next()
-      |> Aesir.ZoneServer.Content.Npc.Functions.Applegamble.call(["Clarice"])
+    ctx
+    |> mes("[Clarice]")
+    |> mes("Hi, I'm Clarice~")
+    |> mes("How would you like")
+    |> mes("to wager some Apples")
+    |> mes("in a friendly game of Dice?")
+    |> next()
+    |> Aesir.ZoneServer.Content.Npc.Functions.Applegamble.call(["Clarice"])
 
     exit(:normal)
   end

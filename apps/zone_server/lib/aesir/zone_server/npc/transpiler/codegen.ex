@@ -234,6 +234,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp tidy([<<"ctx = ", expr::binary>>, "exit(:normal)" | rest]),
     do: [unbound(expr), "exit(:normal)" | tidy(rest)]
 
+  defp tidy([<<"{ctx, _} = ", expr::binary>>, "exit(:normal)" | rest]),
+    do: [unbound(expr), "exit(:normal)" | tidy(rest)]
+
   defp tidy([line | rest]), do: [line | tidy(rest)]
   defp tidy([]), do: []
 
