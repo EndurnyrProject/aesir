@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
   alias Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition
   alias Aesir.ZoneServer.Mmo.QuestManagement.Quests
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler
@@ -233,6 +234,47 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
       assert reply == {:error, :not_enough_items}
       assert new_state == state
       refute_received {:send, _ch, {:item_removed, _}}
+    end
+  end
+
+  describe "{:nude}" do
+    test "unequips every worn slot by folding the single-item unequip, skipping bare items" do
+      test_pid = self()
+
+      state =
+        base_state(
+          inventory: %{
+            0 => %InventoryItem{nameid: 1201, equip: 2},
+            1 => %InventoryItem{nameid: 2301, equip: 16},
+            2 => %InventoryItem{nameid: 909, equip: 0}
+          }
+        )
+
+      Mimic.copy(EquipmentHandler)
+
+      expect(EquipmentHandler, :handle_unequip, 2, fn index, st ->
+        send(test_pid, {:unequipped, index})
+        {:noreply, st}
+      end)
+
+      {reply, _new_state} = ScriptEffectHandler.apply_op({:nude}, state)
+
+      assert {:ok, _game_state} = reply
+      assert_received {:unequipped, 0}
+      assert_received {:unequipped, 1}
+      refute_received {:unequipped, 2}
+    end
+
+    test "is a no-op when nothing is equipped" do
+      state = base_state(inventory: %{0 => %InventoryItem{nameid: 909, equip: 0}})
+
+      Mimic.copy(EquipmentHandler)
+      reject(&EquipmentHandler.handle_unequip/2)
+
+      {reply, new_state} = ScriptEffectHandler.apply_op({:nude}, state)
+
+      assert reply == {:ok, state.game_state}
+      assert new_state == state
     end
   end
 

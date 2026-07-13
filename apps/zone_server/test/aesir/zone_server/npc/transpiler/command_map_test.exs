@@ -58,6 +58,29 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert CommandMap.supported?("SpecialEffect2")
   end
 
+  test "consumeitem/nude/viewpoint/killmonster map to their DSL ops" do
+    assert {:ok, %{dsl: "consumeitem", args: [:item]}} = CommandMap.command("consumeitem")
+    assert {:ok, %{shape: :nullary, dsl: "nude"}} = CommandMap.command("nude")
+
+    assert {:ok, %{dsl: "viewpoint", args: [:int, :int, :int, :int, :int]}} =
+             CommandMap.command("viewpoint")
+
+    assert {:ok, %{dsl: "killmonster", args: [:string, :string]}} =
+             CommandMap.command("killmonster")
+
+    assert CommandMap.supported?("consumeitem")
+    assert CommandMap.supported?("Nude")
+  end
+
+  test "getequipid maps to a read with an equip-slot arg" do
+    assert {:ok, %{dsl: "getequipid", args: [:equip_slot]}} = CommandMap.call_read("getequipid")
+    assert CommandMap.supported?("getequipid")
+  end
+
+  test "F_GetNumSuffix maps to the num_suffix read function" do
+    assert {:ok, %{kind: :read, dsl: "num_suffix"}} = CommandMap.function("F_GetNumSuffix")
+  end
+
   test "broadcast buildins map to the announce shape" do
     assert {:ok, %{shape: :announce, dsl: "announce", fixed: 2}} = CommandMap.command("announce")
 
@@ -130,6 +153,15 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
       assert {:ok, :hunting} = Resolver.quest_mode("HUNTING")
       assert :error = Resolver.quest_mode("havequest")
       assert :error = Resolver.quest_mode("NOPE")
+    end
+
+    test "equip_slot resolves EQI_* tokens to their ordinal, ints pass through" do
+      assert {:ok, 0} = Resolver.equip_slot("EQI_ACC_L")
+      assert {:ok, 6} = Resolver.equip_slot("EQI_HEAD_TOP")
+      assert {:ok, 9} = Resolver.equip_slot("EQI_HAND_R")
+      assert {:ok, 20} = Resolver.equip_slot("EQI_SHADOW_ACC_L")
+      assert :error = Resolver.equip_slot("EQI_NOPE")
+      assert {:ok, 3} = Resolver.equip_slot(3)
     end
 
     test "broadcast flag constants resolve to their integer value" do

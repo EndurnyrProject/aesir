@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.Net.ChatMessage
   alias Aesir.Net.NpcDialog
   alias Aesir.Net.NpcInteract
+  alias Aesir.Net.Viewpoint
   alias Aesir.ZoneServer.Announcement
   alias Aesir.ZoneServer.Announcement.Flags
   alias Aesir.ZoneServer.CharacterPersistence
@@ -29,6 +30,8 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.CompiledItemScripts
+  alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
@@ -49,11 +52,16 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Unit.Emote
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight
+  alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
   alias Aesir.ZoneServer.Unit.Player.Handlers.RefineOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.QuestLog
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.SpecialEffect
+
+  # CompiledItemScripts is created at runtime by ScriptCompiler.compile_all!/1
+  # (it does not exist at compile time); `consumeitem/2` dispatches into it.
+  @compile {:no_warn_undefined, CompiledItemScripts}
 
   @typedoc "An HP/SP heal amount: a flat integer or a `lo..hi` range to roll within."
   @type amount :: integer() | Range.t()
@@ -330,6 +338,34 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
   def specialeffect(%Ctx{npc_gid: gid} = ctx, effect) do
     SpecialEffect.play({:npc, gid}, effect, :area)
+    ctx
+  end
+
+  @doc """
+  Places a marker on the invoking player's minimap (rAthena `viewpoint`,
+  packet `ZC_COMPASS`). `type` is the action (`0` remove / `1` display /
+  `2` display and clear other markers), `x`/`y` the cell, `id` the marker
+  slot, and `color` a `0xRRGGBB` value.
+
+  Sent only to the invoking player, so a detached ctx (no player to send to)
+  is a silent no-op rather than a halt — a missing marker must never abort the
+  surrounding script. The marker is anchored on the running NPC (`npc_gid`), or
+  `0` when the script has none (an item/floating context).
+  """
+  @spec viewpoint(Ctx.t(), integer(), integer(), integer(), integer(), integer()) :: Ctx.t()
+  def viewpoint(%Ctx{status: {:error, _}} = ctx, _type, _x, _y, _id, _color), do: ctx
+  def viewpoint(%Ctx{char_id: nil} = ctx, _type, _x, _y, _id, _color), do: ctx
+
+  def viewpoint(%Ctx{char_id: char_id, npc_gid: gid} = ctx, type, x, y, id, color) do
+    Broadcast.to_player(char_id, %Viewpoint{
+      npc_id: gid || 0,
+      type: type,
+      x: x,
+      y: y,
+      id: id,
+      color: color
+    })
+
     ctx
   end
 
@@ -676,6 +712,51 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   @spec delitem(Ctx.t(), integer(), pos_integer()) :: Ctx.t()
   def delitem(%Ctx{status: {:error, _}} = ctx, _item_id, _qty), do: ctx
   def delitem(%Ctx{} = ctx, item_id, qty), do: apply_op(ctx, {:delitem, item_id, qty})
+
+  @doc """
+  Runs item `item_id`'s use script on the invoking player (rAthena
+  `consumeitem`). The player need not possess the item and nothing is removed
+  from inventory — only the item's `on_use` effect runs (inns use this to feed
+  stat-food buffs). Delegates to the same compiled item scripts the item-use
+  path runs, so the effect (`sc_start`, `heal`, …) applies through the normal
+  DSL seams; an item with no `on_use` is a no-op.
+  """
+  @spec consumeitem(Ctx.t(), integer()) :: Ctx.t()
+  def consumeitem(%Ctx{status: {:error, _}} = ctx, _item_id), do: ctx
+  def consumeitem(%Ctx{} = ctx, item_id), do: CompiledItemScripts.on_use(item_id, ctx)
+
+  @doc """
+  Unequips every item the invoking player has equipped (rAthena `nude`) through
+  the session seam, sending each takeoff ack, recomputing stats, and
+  broadcasting the appearance changes. Returns the context unchanged when
+  nothing is equipped. Halts `:no_player` on a detached ctx.
+  """
+  @spec nude(Ctx.t()) :: Ctx.t()
+  def nude(%Ctx{status: {:error, _}} = ctx), do: ctx
+  def nude(%Ctx{} = ctx), do: apply_op(ctx, {:nude})
+
+  @doc """
+  Kills every mob on `map` that was summoned with the event label `event`
+  (rAthena `killmonster`); the special label `"All"` kills every
+  script-summoned mob on the map (spawn-table mobs are spared). Killed mobs are
+  removed without firing their death event or scheduling a respawn.
+
+  A map-management effect that does not touch player state: the context is
+  returned unchanged, and it runs even on a detached ctx. An unloaded map is a
+  no-op, matching rAthena.
+  """
+  @spec killmonster(Ctx.t(), String.t(), String.t()) :: Ctx.t()
+  def killmonster(%Ctx{status: {:error, _}} = ctx, _map, _event), do: ctx
+
+  def killmonster(%Ctx{} = ctx, map, "All") do
+    MobSupervisor.kill_by_event(map, :all)
+    ctx
+  end
+
+  def killmonster(%Ctx{} = ctx, map, event) do
+    MobSupervisor.kill_by_event(map, event)
+    ctx
+  end
 
   @doc """
   Grants `base_exp` base experience and `job_exp` job experience through the
@@ -1544,6 +1625,72 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     |> Inventory.equipped_items()
     |> Enum.any?(fn {_index, %InventoryItem{nameid: nameid}} -> nameid == item_id end)
   end
+
+  # rAthena `enum equip_index` ordinal -> Aesir equip location. The transpiler
+  # resolves `EQI_*` constants to these indices; variables/ints pass through as
+  # the same index at runtime.
+  @equip_slot_locations %{
+    0 => :left_accessory,
+    1 => :right_accessory,
+    2 => :shoes,
+    3 => :garment,
+    4 => :head_low,
+    5 => :head_mid,
+    6 => :head_top,
+    7 => :armor,
+    8 => :left_hand,
+    9 => :right_hand,
+    10 => :costume_head_top,
+    11 => :costume_head_mid,
+    12 => :costume_head_low,
+    13 => :costume_garment,
+    14 => :ammo,
+    15 => :shadow_armor,
+    16 => :shadow_weapon,
+    17 => :shadow_shield,
+    18 => :shadow_shoes,
+    19 => :shadow_right_accessory,
+    20 => :shadow_left_accessory
+  }
+
+  @doc """
+  The item id worn in equip slot `slot` (rAthena `getequipid`), or `-1` when
+  the slot is empty or `slot` is not a known `EQI_*` index. `slot` is the
+  rAthena `equip_index` ordinal. Pure read over the inventory snapshot.
+  """
+  @spec getequipid(Ctx.t(), integer()) :: integer()
+  def getequipid(%Ctx{game_state: nil}, _slot), do: no_player!("getequipid/2")
+
+  def getequipid(%Ctx{game_state: gs}, slot) do
+    with location when not is_nil(location) <- Map.get(@equip_slot_locations, slot),
+         %InventoryItem{nameid: nameid} <- equipped_in_slot(gs.inventory, location) do
+      nameid
+    else
+      _ -> -1
+    end
+  end
+
+  @spec equipped_in_slot(Inventory.t(), atom()) :: InventoryItem.t() | nil
+  defp equipped_in_slot(inventory, location) do
+    inventory
+    |> Inventory.equipped_items()
+    |> Enum.find_value(fn {_index, %InventoryItem{equip: equip} = item} ->
+      if location in EquipLocation.bitmask_to_location_atoms(equip), do: item
+    end)
+  end
+
+  @doc """
+  The number `n` with its English ordinal suffix (rAthena `F_GetNumSuffix`):
+  `1` -> `"1st"`, `2` -> `"2nd"`, `3` -> `"3rd"`, `4`/`11`/`12`/`13` -> `"th"`.
+  A pure helper; the ctx is ignored.
+  """
+  @spec num_suffix(Ctx.t(), integer()) :: String.t()
+  def num_suffix(%Ctx{}, n) when is_integer(n), do: "#{n}#{ordinal_suffix(n)}"
+
+  defp ordinal_suffix(n) when rem(n, 10) == 1 and n != 11, do: "st"
+  defp ordinal_suffix(n) when rem(n, 10) == 2 and n != 12, do: "nd"
+  defp ordinal_suffix(n) when rem(n, 10) == 3 and n != 13, do: "rd"
+  defp ordinal_suffix(_n), do: "th"
 
   @doc """
   The unit id (gid) of the NPC running the script (rAthena `getnpcid`, type-0

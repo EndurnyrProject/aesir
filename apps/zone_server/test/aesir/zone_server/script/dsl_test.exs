@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.ParamChange
+  alias Aesir.Net.Viewpoint
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapCache
@@ -19,9 +20,11 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Emote
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight
+  alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -50,6 +53,8 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     Mimic.copy(Weight)
     Mimic.copy(Inventory)
     Mimic.copy(ItemManagement)
+    Mimic.copy(Broadcast)
+    Mimic.copy(MobSupervisor)
 
     stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
     stub(StatusInterpreter, :apply_status, fn _, _, _, _ -> :ok end)
@@ -192,6 +197,103 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     test "short-circuits on an already-halted ctx" do
       ctx = Ctx.halt(%{build_ctx() | npc_gid: 42}, :boom)
       assert Dsl.specialeffect(ctx, :hit1) == ctx
+    end
+  end
+
+  describe "viewpoint/6" do
+    test "sends a Viewpoint marker to the invoking player, anchored on the NPC" do
+      test_pid = self()
+
+      expect(Broadcast, :to_player, fn 1, %Viewpoint{} = packet ->
+        send(test_pid, {:viewpoint, packet})
+        :ok
+      end)
+
+      ctx = %{build_ctx() | npc_gid: 42}
+
+      assert Dsl.viewpoint(ctx, 1, 85, 131, 2, 65_280) == ctx
+
+      assert_received {:viewpoint,
+                       %Viewpoint{npc_id: 42, type: 1, x: 85, y: 131, id: 2, color: 65_280}}
+    end
+
+    test "defaults npc_id to 0 when the script has no npc_gid" do
+      test_pid = self()
+
+      expect(Broadcast, :to_player, fn 1, packet ->
+        send(test_pid, {:viewpoint, packet})
+        :ok
+      end)
+
+      assert %Ctx{} = Dsl.viewpoint(build_ctx(), 1, 10, 20, 1, 0)
+      assert_received {:viewpoint, %Viewpoint{npc_id: 0}}
+    end
+
+    test "is a no-op on a detached ctx (no player to send to)" do
+      reject(&Broadcast.to_player/2)
+      ctx = %{build_ctx() | char_id: nil}
+      assert Dsl.viewpoint(ctx, 1, 10, 20, 1, 0) == ctx
+    end
+
+    test "short-circuits on an already-halted ctx" do
+      reject(&Broadcast.to_player/2)
+      ctx = Ctx.halt(build_ctx(), :boom)
+      assert Dsl.viewpoint(ctx, 1, 10, 20, 1, 0) == ctx
+    end
+  end
+
+  describe "consumeitem/2" do
+    # Red Potion (501) carries `on_use: "heal(ctx, hp: 45..65)"`, so consuming
+    # it runs that heal through the same compiled item script the use path runs.
+    test "runs the item's use script, applying its effect to the player" do
+      result = Dsl.consumeitem(build_ctx(hp: 100), 501)
+
+      assert result.status == :ok
+      assert result.game_state.stats.current_state.hp in 145..165
+    end
+
+    test "an item with no use script is a no-op returning the ctx unchanged" do
+      ctx = build_ctx()
+      assert Dsl.consumeitem(ctx, 0) == ctx
+    end
+
+    test "short-circuits on an already-halted ctx without running any script" do
+      ctx = Ctx.halt(build_ctx(), :boom)
+      assert Dsl.consumeitem(ctx, 501) == ctx
+    end
+  end
+
+  describe "killmonster/3" do
+    test "kills mobs on the map by event label" do
+      test_pid = self()
+
+      expect(MobSupervisor, :kill_by_event, fn "moro_vol", "#f_boss_c::OnMobDead0" ->
+        send(test_pid, :killed)
+        :ok
+      end)
+
+      ctx = build_ctx()
+      assert Dsl.killmonster(ctx, "moro_vol", "#f_boss_c::OnMobDead0") == ctx
+      assert_received :killed
+    end
+
+    test "the \"All\" label kills every script-summoned mob" do
+      test_pid = self()
+
+      expect(MobSupervisor, :kill_by_event, fn "prontera", :all ->
+        send(test_pid, :killed_all)
+        :ok
+      end)
+
+      ctx = build_ctx()
+      assert Dsl.killmonster(ctx, "prontera", "All") == ctx
+      assert_received :killed_all
+    end
+
+    test "short-circuits on an already-halted ctx" do
+      reject(&MobSupervisor.kill_by_event/2)
+      ctx = Ctx.halt(build_ctx(), :boom)
+      assert Dsl.killmonster(ctx, "prontera", "All") == ctx
     end
   end
 
@@ -453,6 +555,42 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       ctx = build_ctx(inventory: %{0 => %InventoryItem{nameid: 1201, equip: 0}})
 
       refute Dsl.is_equipped(ctx, 1201)
+    end
+
+    test "getequipid/2 returns the item id worn in the given EQI slot" do
+      ctx =
+        build_ctx(
+          inventory: %{
+            0 => %InventoryItem{nameid: 2301, equip: 0x10},
+            1 => %InventoryItem{nameid: 5170, equip: 0x100},
+            2 => %InventoryItem{nameid: 1201, equip: 0}
+          }
+        )
+
+      assert Dsl.getequipid(ctx, 7) == 2301
+      assert Dsl.getequipid(ctx, 6) == 5170
+    end
+
+    test "getequipid/2 returns -1 for an empty slot or an unknown slot index" do
+      ctx = build_ctx(inventory: %{0 => %InventoryItem{nameid: 2301, equip: 0x10}})
+
+      assert Dsl.getequipid(ctx, 6) == -1
+      assert Dsl.getequipid(ctx, 99) == -1
+    end
+
+    test "num_suffix/2 appends the English ordinal suffix (matching rAthena)" do
+      ctx = build_ctx()
+
+      assert Dsl.num_suffix(ctx, 1) == "1st"
+      assert Dsl.num_suffix(ctx, 2) == "2nd"
+      assert Dsl.num_suffix(ctx, 3) == "3rd"
+      assert Dsl.num_suffix(ctx, 4) == "4th"
+      assert Dsl.num_suffix(ctx, 11) == "11th"
+      assert Dsl.num_suffix(ctx, 12) == "12th"
+      assert Dsl.num_suffix(ctx, 13) == "13th"
+      assert Dsl.num_suffix(ctx, 21) == "21st"
+      assert Dsl.num_suffix(ctx, 22) == "22nd"
+      assert Dsl.num_suffix(ctx, 23) == "23rd"
     end
   end
 

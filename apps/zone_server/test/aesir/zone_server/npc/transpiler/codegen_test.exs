@@ -702,4 +702,75 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ "checkweight(ctx, [{501, 1}, {502, 2}])"
     refute src =~ "Todo.call!(:checkweight"
   end
+
+  test "consumeitem maps to its DSL op with a resolved item id" do
+    src =
+      gen!("""
+      consumeitem 12043;
+      close;
+      """)
+
+    assert src =~ "consumeitem(12043)"
+    refute src =~ "todo(ctx, :consumeitem"
+  end
+
+  test "nude maps to its no-argument DSL op, dropping the optional char id" do
+    src =
+      gen!("""
+      nude;
+      nude getcharid(3);
+      close;
+      """)
+
+    assert src =~ "|> nude()"
+    refute src =~ "todo(ctx, :nude"
+  end
+
+  test "getequipid resolves EQI_* slots to their ordinal and passes ints through" do
+    src =
+      gen!("""
+      .@top = getequipid(EQI_HEAD_TOP);
+      .@dyn = getequipid(.@slot);
+      close;
+      """)
+
+    assert src =~ "getequipid(ctx, 6)"
+    assert src =~ "getequipid(ctx, get_local(ctx, :slot, 0))"
+    refute src =~ "Todo.call!(:getequipid"
+  end
+
+  test "killmonster maps map and event to its DSL op, dropping the type flag" do
+    src =
+      gen!("""
+      killmonster "moro_vol", "#f_boss_c::OnMobDead0";
+      killmonster "prontera", "All", 1;
+      close;
+      """)
+
+    assert src =~ ~S|killmonster("moro_vol", "#f_boss_c::OnMobDead0")|
+    assert src =~ ~S|killmonster("prontera", "All")|
+    refute src =~ "todo(ctx, :killmonster"
+  end
+
+  test "viewpoint maps to its DSL op with numeric args (color included)" do
+    src =
+      gen!("""
+      viewpoint 1,85,131,1,0x00FF00;
+      close;
+      """)
+
+    assert src =~ "viewpoint(1, 85, 131, 1, 65280)"
+    refute src =~ "todo(ctx, :viewpoint"
+  end
+
+  test "F_GetNumSuffix callfunc maps to the num_suffix read with its argument" do
+    src =
+      gen!("""
+      mes callfunc("F_GetNumSuffix", .@n);
+      close;
+      """)
+
+    assert src =~ "num_suffix(ctx, get_local(ctx, :n, 0))"
+    refute src =~ "Todo.call!(:callfunc"
+  end
 end

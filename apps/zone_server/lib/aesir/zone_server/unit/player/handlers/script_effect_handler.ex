@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
@@ -39,6 +40,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:credit_zeny, non_neg_integer()}
           | {:give_item, integer(), pos_integer()}
           | {:delitem, integer(), pos_integer()}
+          | {:nude}
           | {:getexp, non_neg_integer(), non_neg_integer()}
           | {:set_char_var, atom(), term()}
           | {:set_temp_var, atom(), term()}
@@ -120,6 +122,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
   def apply_op({:getexp, base_exp, job_exp}, state) do
     {:noreply, new_state} = ExperienceHandler.handle_gain_exp(base_exp, job_exp, state)
+    {{:ok, new_state.game_state}, new_state}
+  end
+
+  # Unequips every equipped slot (rAthena `nude`) by folding the single-item
+  # unequip over the currently-worn indices; each takeoff persists, acks, and
+  # broadcasts its own appearance change. A no-op when nothing is equipped.
+  def apply_op({:nude}, %{game_state: gs} = state) do
+    new_state =
+      gs.inventory
+      |> Inventory.equipped_items()
+      |> Map.keys()
+      |> Enum.reduce(state, fn index, acc ->
+        {:noreply, next} = EquipmentHandler.handle_unequip(index, acc)
+        next
+      end)
+
     {{:ok, new_state.game_state}, new_state}
   end
 

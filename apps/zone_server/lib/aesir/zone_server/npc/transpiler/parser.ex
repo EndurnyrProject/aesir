@@ -162,8 +162,20 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Parser do
   defp assign_or_command([{:ident, name} | rest] = tokens) do
     case skip_index(rest) do
       {:ok, [{:op, op} | _]} when op in @assign_ops -> assignment(tokens)
-      _ -> command(name, rest)
+      _ -> command(canonical_cmd(name), rest)
     end
+  end
+
+  # rAthena's script engine matches buildin names case-insensitively; the
+  # codegen shapes its native primitives by their canonical lowercase spelling,
+  # so a command/call identifier that names one is normalized to it (e.g. the
+  # jA-compat `Select` -> `select`). Everything else — buildins routed through
+  # the case-insensitive `CommandMap` and case-sensitive local functions —
+  # passes through untouched.
+  @native_aliases ~w(select prompt)
+  defp canonical_cmd(name) do
+    down = String.downcase(name)
+    if down in @native_aliases, do: down, else: name
   end
 
   # Skips a `[...]` index (balanced brackets) after a variable name.
@@ -546,7 +558,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Parser do
     do: maybe_index({:var, scope, name, type}, rest)
 
   defp primary([{:ident, name}, {:punct, :lparen} | rest]),
-    do: call_expression(name, [{:punct, :lparen} | rest])
+    do: call_expression(canonical_cmd(name), [{:punct, :lparen} | rest])
 
   defp primary([{:ident, name} | rest]), do: maybe_index({:name, name}, rest)
 

@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
 
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
   Starts the mob supervisor for a specific map.
@@ -108,6 +109,43 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
     Logger.info("Terminated all mobs on #{map_name}")
     :ok
   end
+
+  @doc """
+  Kills every mob on `map_name` matching `filter` (rAthena `killmonster`):
+  `:all` kills every script-summoned mob (a `respawn_time`-0 spawn ref), and a
+  binary event label kills mobs summoned with that owner event. Matching mobs
+  are removed without firing their death event or scheduling a respawn — the
+  registry entry is cleared and the process terminated (its `terminate/2`
+  drops the spatial index entry and notifies nearby players).
+
+  Runs in the caller's process; a mob that dies concurrently is skipped.
+  """
+  @spec kill_by_event(String.t(), :all | String.t()) :: :ok
+  def kill_by_event(map_name, filter) do
+    map_name
+    |> get_mob_processes()
+    |> Enum.each(fn pid ->
+      try do
+        mob = MobSession.get_state(pid)
+
+        if kill_match?(mob, filter) do
+          UnitRegistry.unregister_unit(:mob, mob.instance_id)
+          terminate_mob(map_name, pid)
+        end
+      catch
+        :exit, _ -> :ok
+      end
+    end)
+
+    :ok
+  end
+
+  # `:all` spares spawn-table mobs (rAthena `!md->spawn`), approximated by the
+  # never-respawning ref a script summon carries.
+  defp kill_match?(%MobState{spawn_ref: %{respawn_time: 0}}, :all), do: true
+  defp kill_match?(%MobState{}, :all), do: false
+  defp kill_match?(%MobState{owner_event: event}, event) when is_binary(event), do: true
+  defp kill_match?(%MobState{}, _filter), do: false
 
   @doc """
   Gets supervisor info for debugging.

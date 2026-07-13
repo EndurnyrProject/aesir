@@ -20,10 +20,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
   ## Command rules
 
   - `%{dsl: name, args: types}` — positional DSL call `name(ctx, a0, …)`;
-    each type (`:int`, `:string`, `:item`, `:status`, `:emote`, `:effect`) tells the
-    codegen how to render/resolve the argument. A call with more arguments
-    than declared types is truncated to the declared arity (trailing/optional
-    buildin args, e.g. `emotion`'s target, are dropped).
+    each type (`:int`, `:string`, `:item`, `:status`, `:emote`, `:effect`,
+    `:equip_slot`) tells the codegen how to render/resolve the argument. A call
+    with more arguments than declared types is truncated to the declared arity
+    (trailing/optional buildin args, e.g. `emotion`'s target, are dropped).
+  - `%{shape: :nullary, dsl: name}` — a no-argument effect (`nude`) → `name(ctx)`;
+    any trailing rAthena arg (e.g. the optional char id) is dropped.
   - `%{shape: :heal, dsl: name}` — `heal <hp>,<sp>` → `name(ctx, hp: _, sp: _)`.
   - `%{shape: :warp}` — `warp "map",x,y` with `"Random"`/`"SavePoint"`
     special targets.
@@ -67,6 +69,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "emotion" => %{dsl: "emotion", args: [:emote]},
     "specialeffect" => %{dsl: "specialeffect", args: [:effect]},
     "specialeffect2" => %{dsl: "specialeffect2", args: [:effect]},
+    "consumeitem" => %{dsl: "consumeitem", args: [:item]},
+    "nude" => %{shape: :nullary, dsl: "nude"},
+    "viewpoint" => %{dsl: "viewpoint", args: [:int, :int, :int, :int, :int]},
+    "killmonster" => %{dsl: "killmonster", args: [:string, :string]},
     "warp" => %{shape: :warp},
     "savepoint" => %{shape: :savepoint},
     "jobchange" => %{dsl: "jobchange", args: [:int]},
@@ -96,7 +102,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
   # `dsl(ctx)` in expression position.
   @functions %{
     "Job_Change" => %{kind: :command, dsl: "jobchange"},
-    "F_CanChangeJob" => %{kind: :read, dsl: "can_change_job?"}
+    "F_CanChangeJob" => %{kind: :read, dsl: "can_change_job?"},
+    "F_GetNumSuffix" => %{kind: :read, dsl: "num_suffix"}
   }
 
   @warp_targets %{
@@ -120,6 +127,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
   @call_reads %{
     "countitem" => %{dsl: "count_item", args: [:item]},
     "isequipped" => %{dsl: "is_equipped", args: [:item]},
+    "getequipid" => %{dsl: "getequipid", args: [:equip_slot]},
     "strcharinfo" => %{dsl: "char_name", args: [:int]},
     "jobname" => %{dsl: "job_name", args: [:int]},
     "isbegin_quest" => %{dsl: "isbegin_quest", args: [:int]},

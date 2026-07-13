@@ -14,6 +14,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ParserTest do
                Parser.parse_body(~s{callfunc("F_X", 1); close;})
     end
 
+    test "the jA-compat Select alias normalizes to the select primitive" do
+      assert {:ok, [{:cmd, "select", [{:str, "A:B:C"}]}]} =
+               Parser.parse_body(~s{Select("A:B:C");})
+
+      assert {:ok, [{:assign, _target, {:call, "select", [{:str, "A"}, {:str, "B"}]}}]} =
+               Parser.parse_body(~s{.@i = Select("A", "B");})
+    end
+
     test "set and operator assignments desugar to plain assigns" do
       assert {:ok,
               [

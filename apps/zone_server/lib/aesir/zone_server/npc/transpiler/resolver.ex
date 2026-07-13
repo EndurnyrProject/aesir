@@ -104,6 +104,42 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
     end
   end
 
+  # rAthena `enum equip_index` (`src/map/pc.hpp`): the ordinal slot index a
+  # `getequipid` argument names. The DSL maps the index back to an Aesir equip
+  # location, so only the index travels through the transpiler.
+  @equip_slots %{
+    "EQI_ACC_L" => 0,
+    "EQI_ACC_R" => 1,
+    "EQI_SHOES" => 2,
+    "EQI_GARMENT" => 3,
+    "EQI_HEAD_LOW" => 4,
+    "EQI_HEAD_MID" => 5,
+    "EQI_HEAD_TOP" => 6,
+    "EQI_ARMOR" => 7,
+    "EQI_HAND_L" => 8,
+    "EQI_HAND_R" => 9,
+    "EQI_COSTUME_HEAD_TOP" => 10,
+    "EQI_COSTUME_HEAD_MID" => 11,
+    "EQI_COSTUME_HEAD_LOW" => 12,
+    "EQI_COSTUME_GARMENT" => 13,
+    "EQI_AMMO" => 14,
+    "EQI_SHADOW_ARMOR" => 15,
+    "EQI_SHADOW_WEAPON" => 16,
+    "EQI_SHADOW_SHIELD" => 17,
+    "EQI_SHADOW_SHOES" => 18,
+    "EQI_SHADOW_ACC_R" => 19,
+    "EQI_SHADOW_ACC_L" => 20
+  }
+
+  @doc """
+  Resolves a `getequipid` equip-slot argument. An `EQI_*` token maps to its
+  rAthena `equip_index` ordinal; a bare integer passes through unchanged
+  (scripts also index equipment slots with plain variables/ints).
+  """
+  @spec equip_slot(String.t() | integer()) :: {:ok, integer()} | :error
+  def equip_slot(value) when is_integer(value), do: {:ok, value}
+  def equip_slot(symbol) when is_binary(symbol), do: Map.fetch(@equip_slots, symbol)
+
   @quest_modes %{
     "HAVEQUEST" => :havequest,
     "PLAYTIME" => :playtime,

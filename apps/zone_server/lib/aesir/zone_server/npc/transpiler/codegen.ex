@@ -818,6 +818,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["ctx = #{dsl}(ctx, #{rendered})"], :cont}
   end
 
+  # A no-argument effect (`nude`): any trailing rAthena arg (the optional char
+  # id) is still hoisted so a side effect in it is preserved, then dropped.
+  defp emit_mapped(_name, %{shape: :nullary, dsl: dsl}, args, env) do
+    {pre, _args} = hoist_all(args, env)
+    {pre ++ ["ctx = #{dsl}(ctx)"], :cont}
+  end
+
   # Trailing/optional buildin args beyond the declared arity (e.g. `emotion`'s
   # target) are dropped, not padded onto the DSL call; all args are still
   # hoisted first so any side effect in a dropped arg is preserved.
@@ -898,6 +905,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     end
   end
 
+  defp typed_arg({:name, s}, :equip_slot, _env) do
+    case Resolver.equip_slot(s) do
+      {:ok, idx} -> to_string(idx)
+      :error -> const_todo(s)
+    end
+  end
+
+  defp typed_arg(arg, :string, env), do: render_str(arg, env)
   defp typed_arg(arg, :skill_opts, env), do: render(arg, env)
   defp typed_arg(arg, _type, env), do: render(arg, env)
 
@@ -1299,7 +1314,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
       :error ->
         case CommandMap.function(fname) do
           {:ok, %{kind: :read, dsl: dsl}} ->
-            {{:temp, tmp}, ["#{tmp} = #{dsl}(ctx)" | pre]}
+            {{:temp, tmp}, ["#{tmp} = #{read_fn_call(dsl, args, rendered)}" | pre]}
 
           _ ->
             flag(:todo_mod)
@@ -1367,6 +1382,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   end
 
   defp hoist_walk(leaf, _env, pre), do: {leaf, pre}
+
+  # A global read function (`F_CanChangeJob`, `F_GetNumSuffix`) as an expression:
+  # the zero-arg form calls `dsl(ctx)`, an arg-bearing one `dsl(ctx, args…)`.
+  defp read_fn_call(dsl, [], _rendered), do: "#{dsl}(ctx)"
+  defp read_fn_call(dsl, _args, rendered), do: "#{dsl}(ctx, #{rendered})"
 
   defp hoist_list(exprs, env, pre) do
     Enum.reduce(exprs, {[], pre}, fn expr, {acc, pre} ->
