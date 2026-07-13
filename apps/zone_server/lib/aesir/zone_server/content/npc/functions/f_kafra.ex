@@ -13,144 +13,153 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafra do
 
   @doc "Callable rAthena global function; returns `{ctx, return_value}`."
   def call(ctx, args) do
-    {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FCleargarbage.call(ctx, [])
+    try do
+      {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FCleargarbage.call(ctx, [])
 
-    ctx =
-      ctx |> set_local(:welcome, Enum.at(args, 0, 0)) |> set_local(:menu_num, Enum.at(args, 1, 0))
-
-    v1 = get_local(ctx, :welcome, 0)
-
-    ctx =
-      case v1 do
-        1 ->
-          ctx
-          |> mes("[Kafra Employee]")
-          |> mes("^666666W-weeeelc-c-come")
-          |> mes("to th-the K-kaaafrrrra")
-          |> mes("C-coorpoor-r-ratioooonn...^000000")
-
-        2 ->
-          ctx = mes(ctx, "[Kafra Employee]")
-
-          ctx
-          |> mes(
-            Rathena.concat(
-              Rathena.concat("Welcome. ^ff0000", Todo.call!(:getguildname, [getcharid(ctx, 2)])),
-              "^000000 Member."
-            )
-          )
-          |> mes("The Kafra Coporation will stay with you wherever you go.")
-
-        3 ->
-          ctx
-          |> mes("[Kafra Employee]")
-          |> mes(
-            "So, have you come from a faraway land to study our culture, or are you just sightseeing?"
-          )
-          |> mes("In either case, why not stay awhile?")
-          |> mes("The air is eternally heavy with the")
-          |> mes("scent of pleasant wildflowers.")
-
-        4 ->
-          ctx
-          |> mes("[Kafra Employee]")
-          |> mes("With our many Kafra")
-          |> mes("service locations, you're never")
-          |> mes("far from home.")
-
-        5 ->
-          ctx
-
-        _ ->
-          ctx
-          |> mes("[Kafra Employee]")
-          |> mes("Welcome to the")
-          |> mes("Kafra Corporation.")
-          |> mes("The Kafra services")
-          |> mes("are always on your side.")
-          |> mes("How may I assist you?")
-      end
-
-    ctx = next(ctx)
-
-    ctx =
-      if get_local(ctx, :welcome, 0) == 2 do
-        set_local(ctx, :"K_Menu0$", [
-          "Use Storage",
-          "Use Guild Storage",
-          "Rent a Pushcart",
-          "Use Teleport Service",
-          "Cancel"
-        ])
-      else
-        v2 = get_local(ctx, :menu_num, 0)
-
-        ctx =
-          case v2 do
-            1 ->
-              set_local(ctx, :"K_Menu0$", ["Save", "Use Storage", "Cancel"])
-
-            2 ->
-              set_local(ctx, :"K_Menu0$", ["Use Storage", "Cancel"])
-
-            3 ->
-              set_local(ctx, :"K_Menu0$", [
-                "Save",
-                "Use Storage",
-                "Rent a Pushcart",
-                "Check Other Information",
-                "Cancel"
-              ])
-
-            5 ->
-              set_local(ctx, :"K_Menu0$", [
-                "Use Storage",
-                "Rent a Pushcart",
-                "Check Other Information",
-                "Cancel"
-              ])
-
-            6 ->
-              set_local(ctx, :"K_Menu0$", ["Use Storage", "Check Other Information", "Cancel"])
-
-            7 ->
-              set_local(ctx, :"K_Menu0$", ["Save", "Use Storage", "Rent a Pushcart", "Cancel"])
-
-            8 ->
-              set_local(ctx, :"K_Menu0$", [
-                "Save",
-                "Use Storage",
-                "Check Other Information",
-                "Cancel"
-              ])
-
-            9 ->
-              set_local(ctx, :"K_Menu0$", [
-                "Use Storage",
-                "Rent a Pushcart",
-                "Use Teleport Service",
-                "Check Other Information",
-                "Cancel"
-              ])
-
-            10 ->
-              set_local(ctx, :"K_Menu0$", ["Use Storage", "Save", "Rent a Pushcart", "Cancel"])
-
-            _ ->
-              set_local(ctx, :"K_Menu0$", [
-                "Save",
-                "Use Storage",
-                "Use Teleport Service",
-                "Rent a Pushcart",
-                "Check Other Information",
-                "Cancel"
-              ])
-          end
-
+      ctx =
         ctx
-      end
+        |> set_local(:welcome, Enum.at(args, 0, 0))
+        |> set_local(:menu_num, Enum.at(args, 1, 0))
 
-    ctx |> set_local(:"menu$", Enum.join(get_local(ctx, :"K_Menu0$", []), ":")) |> loop_3(args)
+      v1 = get_local(ctx, :welcome, 0)
+
+      ctx =
+        case v1 do
+          1 ->
+            ctx
+            |> mes("[Kafra Employee]")
+            |> mes("^666666W-weeeelc-c-come")
+            |> mes("to th-the K-kaaafrrrra")
+            |> mes("C-coorpoor-r-ratioooonn...^000000")
+
+          2 ->
+            ctx = mes(ctx, "[Kafra Employee]")
+
+            ctx
+            |> mes(
+              Rathena.concat(
+                Rathena.concat(
+                  "Welcome. ^ff0000",
+                  Todo.call!(:getguildname, [getcharid(ctx, 2)])
+                ),
+                "^000000 Member."
+              )
+            )
+            |> mes("The Kafra Coporation will stay with you wherever you go.")
+
+          3 ->
+            ctx
+            |> mes("[Kafra Employee]")
+            |> mes(
+              "So, have you come from a faraway land to study our culture, or are you just sightseeing?"
+            )
+            |> mes("In either case, why not stay awhile?")
+            |> mes("The air is eternally heavy with the")
+            |> mes("scent of pleasant wildflowers.")
+
+          4 ->
+            ctx
+            |> mes("[Kafra Employee]")
+            |> mes("With our many Kafra")
+            |> mes("service locations, you're never")
+            |> mes("far from home.")
+
+          5 ->
+            ctx
+
+          _ ->
+            ctx
+            |> mes("[Kafra Employee]")
+            |> mes("Welcome to the")
+            |> mes("Kafra Corporation.")
+            |> mes("The Kafra services")
+            |> mes("are always on your side.")
+            |> mes("How may I assist you?")
+        end
+
+      ctx = next(ctx)
+
+      ctx =
+        if get_local(ctx, :welcome, 0) == 2 do
+          set_local(ctx, :"K_Menu0$", [
+            "Use Storage",
+            "Use Guild Storage",
+            "Rent a Pushcart",
+            "Use Teleport Service",
+            "Cancel"
+          ])
+        else
+          v2 = get_local(ctx, :menu_num, 0)
+
+          ctx =
+            case v2 do
+              1 ->
+                set_local(ctx, :"K_Menu0$", ["Save", "Use Storage", "Cancel"])
+
+              2 ->
+                set_local(ctx, :"K_Menu0$", ["Use Storage", "Cancel"])
+
+              3 ->
+                set_local(ctx, :"K_Menu0$", [
+                  "Save",
+                  "Use Storage",
+                  "Rent a Pushcart",
+                  "Check Other Information",
+                  "Cancel"
+                ])
+
+              5 ->
+                set_local(ctx, :"K_Menu0$", [
+                  "Use Storage",
+                  "Rent a Pushcart",
+                  "Check Other Information",
+                  "Cancel"
+                ])
+
+              6 ->
+                set_local(ctx, :"K_Menu0$", ["Use Storage", "Check Other Information", "Cancel"])
+
+              7 ->
+                set_local(ctx, :"K_Menu0$", ["Save", "Use Storage", "Rent a Pushcart", "Cancel"])
+
+              8 ->
+                set_local(ctx, :"K_Menu0$", [
+                  "Save",
+                  "Use Storage",
+                  "Check Other Information",
+                  "Cancel"
+                ])
+
+              9 ->
+                set_local(ctx, :"K_Menu0$", [
+                  "Use Storage",
+                  "Rent a Pushcart",
+                  "Use Teleport Service",
+                  "Check Other Information",
+                  "Cancel"
+                ])
+
+              10 ->
+                set_local(ctx, :"K_Menu0$", ["Use Storage", "Save", "Rent a Pushcart", "Cancel"])
+
+              _ ->
+                set_local(ctx, :"K_Menu0$", [
+                  "Save",
+                  "Use Storage",
+                  "Use Teleport Service",
+                  "Rent a Pushcart",
+                  "Check Other Information",
+                  "Cancel"
+                ])
+            end
+
+          ctx
+        end
+
+      ctx |> set_local(:"menu$", Enum.join(get_local(ctx, :"K_Menu0$", []), ":")) |> loop_3(args)
+    catch
+      :throw, {:script_return, result} -> result
+    end
   end
 
   defp loop_3(ctx, args) do
@@ -160,7 +169,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafra do
 
       ctx =
         if Enum.at(get_local(ctx, :"K_Menu0$", []), get_local(ctx, :j, 0), "") == "Save" do
-          {ctx, nil}
+          throw({:script_return, {ctx, nil}})
         else
           ctx =
             if Enum.at(get_local(ctx, :"K_Menu0$", []), get_local(ctx, :j, 0), "") ==

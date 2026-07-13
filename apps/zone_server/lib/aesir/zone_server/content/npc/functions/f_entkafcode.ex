@@ -12,41 +12,45 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FEntkafcode do
 
   @doc "Callable rAthena global function; returns `{ctx, return_value}`."
   def call(ctx, _args) do
-    ctx = mes(ctx, "Enter a number 1000~10000000:")
-    ctx = set_temp_var(ctx, :kafcode_try, get_temp_var(ctx, :kafcode_try, 0) + 1)
+    try do
+      ctx = mes(ctx, "Enter a number 1000~10000000:")
+      ctx = set_temp_var(ctx, :kafcode_try, get_temp_var(ctx, :kafcode_try, 0) + 1)
 
-    ctx =
-      if get_temp_var(ctx, :kafcode_try, 0) > 10 do
-        ctx =
+      ctx =
+        if get_temp_var(ctx, :kafcode_try, 0) > 10 do
+          ctx =
+            ctx
+            |> set_temp_var(:kafcode_try, 0)
+            |> todo(:logmes, ["Tried to fit storage password."])
+
+          throw({:script_return, {ctx, 0}})
+        else
           ctx
-          |> set_temp_var(:kafcode_try, 0)
-          |> todo(:logmes, ["Tried to fit storage password."])
+        end
 
-        {ctx, 0}
-      else
-        ctx
-      end
+      {ctx, v1} = input(ctx, :int)
+      {v2, v3} = Rathena.input_int(v1, 0, 2_147_483_647)
+      ctx = set_local(ctx, :code_, v3)
 
-    {ctx, v1} = input(ctx, :int)
-    {v2, v3} = Rathena.input_int(v1, 0, 2_147_483_647)
-    ctx = set_local(ctx, :code_, v3)
+      ctx =
+        if v2 == 1 do
+          ctx = mes(ctx, "You can't use such big password.")
+          throw({:script_return, {ctx, 0}})
+        else
+          ctx
+        end
 
-    ctx =
-      if v2 == 1 do
-        ctx = mes(ctx, "You can't use such big password.")
-        {ctx, 0}
-      else
-        ctx
-      end
+      ctx =
+        if get_local(ctx, :code_, 0) < 1000 do
+          ctx = mes(ctx, "You shouldn't use such short password.")
+          throw({:script_return, {ctx, 0}})
+        else
+          ctx
+        end
 
-    ctx =
-      if get_local(ctx, :code_, 0) < 1000 do
-        ctx = mes(ctx, "You shouldn't use such short password.")
-        {ctx, 0}
-      else
-        ctx
-      end
-
-    {ctx, get_local(ctx, :code_, 0)}
+      throw({:script_return, {ctx, get_local(ctx, :code_, 0)}})
+    catch
+      :throw, {:script_return, result} -> result
+    end
   end
 end

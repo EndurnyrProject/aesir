@@ -12,24 +12,28 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FCheckkafcode do
 
   @doc "Callable rAthena global function; returns `{ctx, return_value}`."
   def call(ctx, _args) do
-    ctx =
-      if not Rathena.truthy?(get_account_var(ctx, "#kafra_code", 0)) do
-        {ctx, nil}
-      else
-        ctx
-      end
+    try do
+      ctx =
+        if not Rathena.truthy?(get_account_var(ctx, "#kafra_code", 0)) do
+          throw({:script_return, {ctx, nil}})
+        else
+          ctx
+        end
 
-    {ctx, v1} = ctx |> mes("Enter your storage password:") |> input(:int)
-    ctx = set_local(ctx, :code_, v1)
+      {ctx, v1} = ctx |> mes("Enter your storage password:") |> input(:int)
+      ctx = set_local(ctx, :code_, v1)
 
-    ctx =
-      if get_local(ctx, :code_, 0) != get_account_var(ctx, "#kafra_code", 0) do
-        ctx |> dispbottom("Wrong storage password.") |> close() |> cutin("", 255)
-      else
-        ctx
-      end
+      ctx =
+        if get_local(ctx, :code_, 0) != get_account_var(ctx, "#kafra_code", 0) do
+          ctx |> dispbottom("Wrong storage password.") |> close() |> cutin("", 255)
+        else
+          ctx
+        end
 
-    ctx = set_temp_var(ctx, :kafcode_try, 0)
-    {ctx, nil}
+      ctx = set_temp_var(ctx, :kafcode_try, 0)
+      throw({:script_return, {ctx, nil}})
+    catch
+      :throw, {:script_return, result} -> result
+    end
   end
 end

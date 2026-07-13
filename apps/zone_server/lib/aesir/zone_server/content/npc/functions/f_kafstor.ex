@@ -13,145 +13,149 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafstor do
 
   @doc "Callable rAthena global function; returns `{ctx, return_value}`."
   def call(ctx, args) do
-    ctx = ctx |> set_local(:type, Enum.at(args, 0, 0)) |> set_local(:fee, Enum.at(args, 1, 0))
+    try do
+      ctx = ctx |> set_local(:type, Enum.at(args, 0, 0)) |> set_local(:fee, Enum.at(args, 1, 0))
 
-    ctx =
-      if get_local(ctx, :type, 0) == 1 do
-        ctx =
-          if Rathena.truthy?(Todo.call!(:guildopenstorage, [])) do
-            ctx
-            |> mes("[Kafra Employee]")
-            |> mes("I'm sorry but another guild member is using the guild storage")
-            |> mes("right now.  Please wait until that person is finished.")
-            |> close()
-            |> cutin("", 255)
-          else
-            ctx
-          end
-
-        ctx |> cutin("", 255) |> close()
-        exit(:normal)
-      else
-        ctx
-      end
-
-    {ctx, v1} = Aesir.ZoneServer.Content.Npc.Functions.FCanopenstorage.call(ctx, [])
-
-    ctx =
-      if not Rathena.truthy?(v1) do
-        ctx = mes(ctx, "[Kafra Employee]")
-
-        ctx =
-          if Enum.at(args, 2, 0) == 1 do
-            ctx =
+      ctx =
+        if get_local(ctx, :type, 0) == 1 do
+          ctx =
+            if Rathena.truthy?(Todo.call!(:guildopenstorage, [])) do
               ctx
-              |> mes("^666666S-s-ssoooorry,")
-              |> mes("y-you're a-a-aaaa")
-              |> mes("Nooviiice... N-neeeds")
-              |> mes("B-basic sssskill l-level 6...^000000")
+              |> mes("[Kafra Employee]")
+              |> mes("I'm sorry but another guild member is using the guild storage")
+              |> mes("right now.  Please wait until that person is finished.")
+              |> close()
+              |> cutin("", 255)
+            else
+              ctx
+            end
 
-            {ctx, nil}
-          else
-            ctx
-          end
-
-        ctx =
+          ctx |> cutin("", 255) |> close()
+          exit(:normal)
+        else
           ctx
-          |> mes("I'm sorry, but you")
-          |> mes("need the Novice's")
-          |> mes("Basic Skill Level 6 to")
-          |> mes("use the Storage Service.")
+        end
 
-        {ctx, nil}
-      else
-        ctx
-      end
+      {ctx, v1} = Aesir.ZoneServer.Content.Npc.Functions.FCanopenstorage.call(ctx, [])
 
-    ctx =
-      if get_local(ctx, :type, 0) != 2 do
-        ctx =
-          if Rathena.truthy?(count_item(ctx, 7059)) do
-            delitem(ctx, 7059, 1)
-          else
-            ctx =
-              if zeny(ctx) < get_local(ctx, :fee, 0) do
-                ctx = mes(ctx, "[Kafra Employee]")
+      ctx =
+        if not Rathena.truthy?(v1) do
+          ctx = mes(ctx, "[Kafra Employee]")
 
-                ctx =
-                  if Enum.at(args, 2, 0) == 1 do
-                    ctx =
-                      ctx
-                      |> percent_heal(hp: -50, sp: -50)
-                      |> mes("^666666Zeeeeeny...")
-                      |> mes("M-more z-zeny...!")
-                      |> mes("N-neeed 150... zeny...")
-                      |> mes("Ergh! T-taking bl-blood~!^000000")
-
-                    {ctx, nil}
-                  else
-                    ctx
-                  end
-
-                ctx =
-                  ctx
-                  |> mes("I'm sorry, but you don't")
-                  |> mes("have enough zeny to use")
-                  |> mes("the Storage Service. Our")
-
-                ctx =
-                  mes(
-                    ctx,
-                    Rathena.concat(
-                      Rathena.concat("Storage access fee is ", get_local(ctx, :fee, 0)),
-                      " zeny."
-                    )
-                  )
-
-                {ctx, nil}
-              else
+          ctx =
+            if Enum.at(args, 2, 0) == 1 do
+              ctx =
                 ctx
-              end
+                |> mes("^666666S-s-ssoooorry,")
+                |> mes("y-you're a-a-aaaa")
+                |> mes("Nooviiice... N-neeeds")
+                |> mes("B-basic sssskill l-level 6...^000000")
 
-            ctx = pay_zeny(ctx, get_local(ctx, :fee, 0))
+              throw({:script_return, {ctx, nil}})
+            else
+              ctx
+            end
 
-            set_char_var(
-              ctx,
-              :RESRVPTS,
-              get_char_var(ctx, :RESRVPTS, 0) + div(get_local(ctx, :fee, 0), 5)
-            )
-          end
-
-        ctx
-      else
-        ctx
-      end
-
-    ctx =
-      if get_local(ctx, :type, 0) != 2 do
-        ctx =
-          if Enum.at(args, 2, 0) == 1 do
+          ctx =
             ctx
-            |> percent_heal(hp: 0, sp: -10)
-            |> mes("[Kafra Employee]")
-            |> set_local(:i, 0)
-            |> loop_1(args)
-          else
-            ctx
-            |> mes("[Kafra Employee]")
-            |> mes("Here, let me open")
-            |> mes("your Storage for you.")
-            |> mes("Thank you for using")
-            |> mes("the Kafra Service.")
-          end
+            |> mes("I'm sorry, but you")
+            |> mes("need the Novice's")
+            |> mes("Basic Skill Level 6 to")
+            |> mes("use the Storage Service.")
 
-        ctx
-      else
-        ctx
-      end
+          throw({:script_return, {ctx, nil}})
+        else
+          ctx
+        end
 
-    {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FCheckkafcode.call(ctx, [])
-    ctx |> close() |> openstorage() |> cutin("", 255)
-    exit(:normal)
+      ctx =
+        if get_local(ctx, :type, 0) != 2 do
+          ctx =
+            if Rathena.truthy?(count_item(ctx, 7059)) do
+              delitem(ctx, 7059, 1)
+            else
+              ctx =
+                if zeny(ctx) < get_local(ctx, :fee, 0) do
+                  ctx = mes(ctx, "[Kafra Employee]")
+
+                  ctx =
+                    if Enum.at(args, 2, 0) == 1 do
+                      ctx =
+                        ctx
+                        |> percent_heal(hp: -50, sp: -50)
+                        |> mes("^666666Zeeeeeny...")
+                        |> mes("M-more z-zeny...!")
+                        |> mes("N-neeed 150... zeny...")
+                        |> mes("Ergh! T-taking bl-blood~!^000000")
+
+                      throw({:script_return, {ctx, nil}})
+                    else
+                      ctx
+                    end
+
+                  ctx =
+                    ctx
+                    |> mes("I'm sorry, but you don't")
+                    |> mes("have enough zeny to use")
+                    |> mes("the Storage Service. Our")
+
+                  ctx =
+                    mes(
+                      ctx,
+                      Rathena.concat(
+                        Rathena.concat("Storage access fee is ", get_local(ctx, :fee, 0)),
+                        " zeny."
+                      )
+                    )
+
+                  throw({:script_return, {ctx, nil}})
+                else
+                  ctx
+                end
+
+              ctx = pay_zeny(ctx, get_local(ctx, :fee, 0))
+
+              set_char_var(
+                ctx,
+                :RESRVPTS,
+                get_char_var(ctx, :RESRVPTS, 0) + div(get_local(ctx, :fee, 0), 5)
+              )
+            end
+
+          ctx
+        else
+          ctx
+        end
+
+      ctx =
+        if get_local(ctx, :type, 0) != 2 do
+          ctx =
+            if Enum.at(args, 2, 0) == 1 do
+              ctx
+              |> percent_heal(hp: 0, sp: -10)
+              |> mes("[Kafra Employee]")
+              |> set_local(:i, 0)
+              |> loop_1(args)
+            else
+              ctx
+              |> mes("[Kafra Employee]")
+              |> mes("Here, let me open")
+              |> mes("your Storage for you.")
+              |> mes("Thank you for using")
+              |> mes("the Kafra Service.")
+            end
+
+          ctx
+        else
+          ctx
+        end
+
+      {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FCheckkafcode.call(ctx, [])
+      ctx |> close() |> openstorage() |> cutin("", 255)
+      exit(:normal)
+    catch
+      :throw, {:script_return, result} -> result
+    end
   end
 
   defp loop_1(ctx, args) do

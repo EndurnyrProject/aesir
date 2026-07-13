@@ -67,7 +67,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
         labels: label_fns(analysis),
         sub: opts.kind == :function,
         break: nil,
-        loop: nil
+        loop: nil,
+        catch_return: false
       }
 
       source = build_module(ast, env, opts)
@@ -81,7 +82,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   defp build_module(ast, env, opts) do
     {main, segments} = segment(ast, env)
-    {main_lines, main_terminal} = emit_block(main, env)
+    catch_return? = env.sub and needs_return_catch?(main)
+    main_env = %{env | catch_return: catch_return?}
+    {main_lines, main_terminal} = emit_block(main, main_env)
     main_body = main_lines ++ fall_through(main_terminal, segments, env)
 
     segment_defs = emit_segments(segments, env)
@@ -89,7 +92,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
     entry =
       case opts.kind do
-        :function -> function_entry(main_body)
+        :function -> function_entry(main_body, catch_return?)
         _ -> on_talk_entry(main_body)
       end
 
@@ -215,14 +218,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     """
   end
 
-  defp function_entry(body_lines) do
+  defp function_entry(body_lines, catch_return?) do
     body = join_body(body_lines)
     args = if String.contains?(body, "args"), do: "args", else: "_args"
 
     """
     @doc "Callable rAthena global function; returns `{ctx, return_value}`."
     def call(#{param(body_lines)}, #{args}) do
-      #{body}
+      #{wrap_return_catch(body, catch_return?)}
     end
     """
   end
@@ -442,13 +445,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   end
 
   defp emit_segment(:sub, name, stmts, _next, env) do
-    {lines, terminal} = emit_block(stmts, %{env | sub: true})
+    catch_return? = needs_return_catch?(stmts)
+    {lines, terminal} = emit_block(stmts, %{env | sub: true, catch_return: catch_return?})
     lines = lines ++ if terminal == :cont, do: ["{ctx, nil}"], else: []
     args = if Enum.any?(lines, &String.contains?(&1, "args")), do: "args", else: "_args"
 
     """
     defp #{fn_name(env, name)}(#{param(lines)}, #{args}) do
-      #{join_body(lines)}
+      #{wrap_return_catch(join_body(lines), catch_return?)}
     end
     """
   end
@@ -531,13 +535,17 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   end
 
   defp emit_stmt({:function, name, stmts}, env) do
-    {lines, terminal} = emit_block(stmts, %{env | sub: true, break: nil, loop: nil})
+    catch_return? = needs_return_catch?(stmts)
+
+    {lines, terminal} =
+      emit_block(stmts, %{env | sub: true, break: nil, loop: nil, catch_return: catch_return?})
+
     lines = lines ++ if terminal == :cont, do: ["{ctx, nil}"], else: []
     args = if Enum.any?(lines, &String.contains?(&1, "args")), do: "args", else: "_args"
 
     defer("""
     defp #{local_fn_name(name)}(#{param(lines)}, #{args}) do
-      #{join_body(lines)}
+      #{wrap_return_catch(join_body(lines), catch_return?)}
     end
     """)
 
@@ -575,6 +583,18 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
         ["case choice do"] ++ clauses ++ ["_ -> ctx", "end"]
 
     {lines, :stop}
+  end
+
+  # A `return` nested below the function's top level (inside an if/switch/loop
+  # that also has a continuing path) can't compile to a plain `{ctx, value}`
+  # tail expression — that would bind the tuple back into `ctx`. It throws to
+  # the try/catch the enclosing function body is wrapped in (see
+  # `wrap_return_catch`/`needs_return_catch?`), short-circuiting like rAthena's
+  # `return` regardless of nesting or loop-helper boundaries.
+  defp emit_stmt({:return, expr}, %{sub: true, catch_return: true} = env) do
+    {pre, expr} = hoist(expr, env)
+    value = if expr, do: render(expr, env), else: "nil"
+    {pre ++ ["throw({:script_return, {ctx, #{value}}})"], :stop}
   end
 
   defp emit_stmt({:return, expr}, %{sub: true} = env) do
@@ -1855,6 +1875,46 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   defp merge_terminal(:stop, :stop), do: :stop
   defp merge_terminal(_, _), do: :cont
+
+  # A subroutine/function body that early-returns from below its top level
+  # (see `emit_stmt({:return, ...}, %{catch_return: true})`) is wrapped so the
+  # `throw` lands on the catch and produces the function's `{ctx, value}`.
+  defp wrap_return_catch(body, false), do: body
+
+  defp wrap_return_catch(body, true) do
+    """
+    try do
+    #{body}
+    catch
+    :throw, {:script_return, result} -> result
+    end
+    """
+  end
+
+  # Does this statement list contain a `return` nested inside a control-flow
+  # construct (so a continuing sibling path can follow it)? Such a return can't
+  # be a plain tail `{ctx, value}` and must throw to a wrapping catch. A bare
+  # top-level `return` stays a tail expression, so it is not counted here.
+  defp needs_return_catch?(stmts), do: Enum.any?(stmts, &nested_return?/1)
+
+  defp nested_return?({:if, _, then_stmts, else_stmts}),
+    do: any_return?(then_stmts) or any_return?(else_stmts)
+
+  defp nested_return?({:switch, _, clauses}),
+    do: Enum.any?(clauses, fn {_values, stmts} -> any_return?(stmts) end)
+
+  defp nested_return?({:while, _, body}), do: any_return?(body)
+  defp nested_return?({:do_while, body, _}), do: any_return?(body)
+  defp nested_return?({:for, _, _, _, body}), do: any_return?(body)
+  defp nested_return?({:block, stmts}), do: any_return?(stmts)
+  defp nested_return?(_), do: false
+
+  defp any_return?(stmts) do
+    Enum.any?(stmts, fn
+      {:return, _} -> true
+      other -> nested_return?(other)
+    end)
+  end
 
   defp local_fn_name(name), do: "fn_" <> ModuleName.slug(name)
 

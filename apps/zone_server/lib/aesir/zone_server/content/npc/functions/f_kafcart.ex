@@ -12,114 +12,118 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafcart do
 
   @doc "Callable rAthena global function; returns `{ctx, return_value}`."
   def call(ctx, args) do
-    ctx =
-      if get_char_var(ctx, :BaseClass, 0) != :merchant do
-        ctx =
-          ctx
-          |> mes("[Kafra Employee]")
-          |> mes("I'm sorry, but the")
-          |> mes("Pushcart rental service")
-
-        ctx =
-          if checkre(ctx, 0) == 1 do
-            mes(ctx, "is only available to Merchant classes.")
-          else
+    try do
+      ctx =
+        if get_char_var(ctx, :BaseClass, 0) != :merchant do
+          ctx =
             ctx
-            |> mes("is only available to Merchants,")
-            |> mes("Blacksmiths, Master Smiths,")
-            |> mes("Alchemists and Biochemists.")
-          end
+            |> mes("[Kafra Employee]")
+            |> mes("I'm sorry, but the")
+            |> mes("Pushcart rental service")
 
-        {ctx, 1}
-      else
-        ctx =
-          if checkcart(ctx) == 1 do
-            ctx =
+          ctx =
+            if checkre(ctx, 0) == 1 do
+              mes(ctx, "is only available to Merchant classes.")
+            else
               ctx
-              |> mes("[Kafra Employee]")
-              |> mes("You already have")
-              |> mes("a Pushcart equipped.")
-              |> mes("Unfortunately, we can't")
-              |> mes("rent more than one to")
-              |> mes("each customer at a time.")
+              |> mes("is only available to Merchants,")
+              |> mes("Blacksmiths, Master Smiths,")
+              |> mes("Alchemists and Biochemists.")
+            end
 
-            {ctx, 1}
-          else
-            ctx =
-              if getskilllv(ctx, 39) == 0 do
-                ctx =
-                  ctx
-                  |> mes("[Kafra Employee]")
-                  |> mes("You can only rent a cart after learning the \"Push Cart\" skill.")
-
-                {ctx, 1}
-              else
+          throw({:script_return, {ctx, 1}})
+        else
+          ctx =
+            if checkcart(ctx) == 1 do
+              ctx =
                 ctx
-              end
+                |> mes("[Kafra Employee]")
+                |> mes("You already have")
+                |> mes("a Pushcart equipped.")
+                |> mes("Unfortunately, we can't")
+                |> mes("rent more than one to")
+                |> mes("each customer at a time.")
 
-            ctx
-          end
+              throw({:script_return, {ctx, 1}})
+            else
+              ctx =
+                if getskilllv(ctx, 39) == 0 do
+                  ctx =
+                    ctx
+                    |> mes("[Kafra Employee]")
+                    |> mes("You can only rent a cart after learning the \"Push Cart\" skill.")
 
-        ctx
-      end
+                  throw({:script_return, {ctx, 1}})
+                else
+                  ctx
+                end
 
-    ctx =
-      if count_item(ctx, 7061) > 0 and Enum.at(args, 0, 0) != 2 do
-        delitem(ctx, 7061, 1)
-      else
-        ctx =
-          ctx
-          |> set_local(:rental_fee, Enum.at(args, 1, 0))
-          |> mes("[Kafra Employee]")
-          |> mes("The Pushcart rental")
-
-        {ctx, v1} =
-          ctx
-          |> mes(
-            Rathena.concat(
-              Rathena.concat("fee is ", get_local(ctx, :rental_fee, 0)),
-              " zeny. Would"
-            )
-          )
-          |> mes("you like to rent a Pushcart?")
-          |> next()
-          |> select(["Rent a Pushcart.", "Cancel"])
-
-        ctx =
-          if v1 == 2 do
-            {ctx, 0}
-          else
-            ctx
-          end
-
-        ctx =
-          if zeny(ctx) < get_local(ctx, :rental_fee, 0) do
-            ctx =
               ctx
-              |> mes("[Kafra Employee]")
-              |> mes("I'm sorry, but you")
-              |> mes("don't have enough")
-              |> mes("zeny to pay the Pushcart")
+            end
 
-            ctx =
-              mes(
-                ctx,
-                Rathena.concat(
-                  Rathena.concat("rental fee of ", get_local(ctx, :rental_fee, 0)),
-                  " zeny."
-                )
-              )
+          ctx
+        end
 
-            {ctx, 1}
-          else
+      ctx =
+        if count_item(ctx, 7061) > 0 and Enum.at(args, 0, 0) != 2 do
+          delitem(ctx, 7061, 1)
+        else
+          ctx =
             ctx
-          end
+            |> set_local(:rental_fee, Enum.at(args, 1, 0))
+            |> mes("[Kafra Employee]")
+            |> mes("The Pushcart rental")
 
-        ctx = pay_zeny(ctx, get_local(ctx, :rental_fee, 0))
-        set_char_var(ctx, :RESRVPTS, get_char_var(ctx, :RESRVPTS, 0) + 48)
-      end
+          {ctx, v1} =
+            ctx
+            |> mes(
+              Rathena.concat(
+                Rathena.concat("fee is ", get_local(ctx, :rental_fee, 0)),
+                " zeny. Would"
+              )
+            )
+            |> mes("you like to rent a Pushcart?")
+            |> next()
+            |> select(["Rent a Pushcart.", "Cancel"])
 
-    ctx = setcart(ctx)
-    {ctx, 1}
+          ctx =
+            if v1 == 2 do
+              throw({:script_return, {ctx, 0}})
+            else
+              ctx
+            end
+
+          ctx =
+            if zeny(ctx) < get_local(ctx, :rental_fee, 0) do
+              ctx =
+                ctx
+                |> mes("[Kafra Employee]")
+                |> mes("I'm sorry, but you")
+                |> mes("don't have enough")
+                |> mes("zeny to pay the Pushcart")
+
+              ctx =
+                mes(
+                  ctx,
+                  Rathena.concat(
+                    Rathena.concat("rental fee of ", get_local(ctx, :rental_fee, 0)),
+                    " zeny."
+                  )
+                )
+
+              throw({:script_return, {ctx, 1}})
+            else
+              ctx
+            end
+
+          ctx = pay_zeny(ctx, get_local(ctx, :rental_fee, 0))
+          set_char_var(ctx, :RESRVPTS, get_char_var(ctx, :RESRVPTS, 0) + 48)
+        end
+
+      ctx = setcart(ctx)
+      throw({:script_return, {ctx, 1}})
+    catch
+      :throw, {:script_return, result} -> result
+    end
   end
 end

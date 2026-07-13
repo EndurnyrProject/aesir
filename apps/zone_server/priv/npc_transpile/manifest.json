@@ -3455,17 +3455,17 @@
     "source_hash": "126754db56579b6dd7b7f8fa9f519bb96a30bab5c8e4c167b60aecba2a77ffcf"
   },
   "kafras/functions_kafras.txt|function|F_CheckKafCode|-": {
-    "output_hash": "4b0337ff7fdf669230b15d2d35ea15b5826712a8677e13a379f75637e868cd59",
+    "output_hash": "9dc860d56755a37f0dae880067171f7472870e03e3fa9b09483266bd9379d0e1",
     "output_path": "lib/aesir/zone_server/content/npc/functions/f_checkkafcode.ex",
     "source_hash": "74e1b0a00a17f1b9478ea62da62d73ff3b7b3ea62486051acb8f4fe36575bc69"
   },
   "kafras/functions_kafras.txt|function|F_EntKafCode|-": {
-    "output_hash": "3298f4bd07e5d98680fc37303733a29a12ba51e3aa2bc96d737418d364f3e216",
+    "output_hash": "e7b09221828e77656c6bf6508759eb6496a9e60db22045576f595c56f4bd1dee",
     "output_path": "lib/aesir/zone_server/content/npc/functions/f_entkafcode.ex",
     "source_hash": "9328aab47acc66dd9330de236a767fc6f73a9084e71d6534e17fbd4cb392af6a"
   },
   "kafras/functions_kafras.txt|function|F_KafCart|-": {
-    "output_hash": "706604b882162ff52c0e5957d1ea922e3ff50cc244057bade709e7fcafb3d134",
+    "output_hash": "7eb20c2980e419e5d52ed67288769fba9e65c97e216719a98283148d3c6e8775",
     "output_path": "lib/aesir/zone_server/content/npc/functions/f_kafcart.ex",
     "source_hash": "9df158112b5650ac15c28130a56b2ddcfe78baf6d117ccf30ef916ca5f23707b"
   },
@@ -3475,7 +3475,7 @@
     "source_hash": "1d6d2ffda23ec77d150ad3fcd1f794e9eb544194b581afa2544b2b7478ddd4d6"
   },
   "kafras/functions_kafras.txt|function|F_KafInfo|-": {
-    "output_hash": "c85be22bfb7b227cf8d2427290aa7876771eb71df2e381c6791e8731d986bb5b",
+    "output_hash": "fa7e46f02cee18b5cad6f00738abf4db93a53beb7b3e6214edf57342411bd801",
     "output_path": "lib/aesir/zone_server/content/npc/functions/f_kafinfo.ex",
     "source_hash": "ea683895392a7aa052dc7559d24e748d1a3523bac006d6f93ad4a8455cbd0274"
   },
@@ -3485,22 +3485,22 @@
     "source_hash": "448beaac889eac9c2613b41d3be79bb9c1950d555dcaf7e1f6824b7fbfefa54d"
   },
   "kafras/functions_kafras.txt|function|F_KafStor|-": {
-    "output_hash": "12568c27c0dcc4b7f745cc493c0b1412a34e29c55ed6403e09ce551a572befce",
+    "output_hash": "3718c4846c1566242a2a2a84172ed003a04539c3618b62499230fbbe76bb9d39",
     "output_path": "lib/aesir/zone_server/content/npc/functions/f_kafstor.ex",
     "source_hash": "3575d1e046574ba51be71409711d8ba7abd38a38079f647e56abe22e52cb9cad"
   },
   "kafras/functions_kafras.txt|function|F_KafTele|-": {
-    "output_hash": "af9eed71eb0af0b4e45de33566a9e922694a3ced96aac138a02418d60bcd6c84",
+    "output_hash": "68232b69b5a574430f0081d4b20229ec92529df62f63bf2b1996bf2099e12d88",
     "output_path": "lib/aesir/zone_server/content/npc/functions/f_kaftele.ex",
     "source_hash": "a9046a69e5e873f3229f3722420ef073dc26ab5f83b2718c474b6cabaf3c87e2"
   },
   "kafras/functions_kafras.txt|function|F_Kafra|-": {
-    "output_hash": "00940f5da1287520bfa96742363fe639bae15d9b04188b909529ad538c3bf712",
+    "output_hash": "0c271858b7b0d25fc3ffc4d584809904e4836da5c81e8f72ab9b9efe79579553",
     "output_path": "lib/aesir/zone_server/content/npc/functions/f_kafra.ex",
     "source_hash": "8ff6278d859eb27dcb58931a589d9b2d193a93b1f823787dba2d00ec6abf0277"
   },
   "kafras/functions_kafras.txt|function|F_SetKafCode|-": {
-    "output_hash": "46b77cdecd0baf521039db217ddc40d0c3cad26f473cbff5ab97dacf3df523f8",
+    "output_hash": "ac2f4f6af9d85cde86a9fa57136c53a5afeef64de8f573cf230959d5c57ac2c9",
     "output_path": "lib/aesir/zone_server/content/npc/functions/f_setkafcode.ex",
     "source_hash": "5b74a98835bd9be953623d663d0cf0c2ba49a5a072b4b255a1203fedb2f1a74e"
   },

@@ -561,6 +561,27 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "use Aesir.ZoneServer.Npc"
   end
 
+  test "an early return nested in a conditional throws instead of binding a tuple to ctx" do
+    src =
+      gen!(
+        """
+        if (getarg(0) == 0) return;
+        mes "still here";
+        return 1;
+        """,
+        kind: :function,
+        module: "Aesir.ZoneServer.Content.Npc.Functions.FEarly",
+        spawns: []
+      )
+
+    assert src =~ "try do"
+    assert src =~ "throw({:script_return, {ctx, nil}})"
+    assert src =~ "throw({:script_return, {ctx, 1}})"
+    assert src =~ ":throw, {:script_return, result} -> result"
+    refute src =~ "ctx =\n          {ctx,"
+    refute src =~ "if getarg(0) == 0 do\n          {ctx, nil}"
+  end
+
   test "first-job buildins and global functions map to DSL primitives" do
     src =
       gen!("""

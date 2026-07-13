@@ -153,55 +153,59 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FSetkafcode do
   end
 
   defp s_s_set(ctx, args) do
-    ctx =
-      ctx
-      |> set_local(:"npc_name$", Enum.at(args, 0, 0))
-      |> set_local(:"comp_name$", Enum.at(args, 1, 0))
-
-    {ctx, v5} =
-      ctx
-      |> mes(get_local(ctx, :"npc_name$", ""))
-      |> mes("Now enter your ^FF0000new password^000000 to protect your storage from thieves.")
-      |> Aesir.ZoneServer.Content.Npc.Functions.FEntkafcode.call([])
-
-    ctx = set_local(ctx, :code, v5)
-
-    ctx =
-      if not Rathena.truthy?(get_local(ctx, :code, 0)) do
-        ctx = ctx |> mes("The password hasn't been changed.") |> emotion(:scratch)
-        {ctx, nil}
-      else
+    try do
+      ctx =
         ctx
-      end
+        |> set_local(:"npc_name$", Enum.at(args, 0, 0))
+        |> set_local(:"comp_name$", Enum.at(args, 1, 0))
 
-    ctx = next(ctx)
-    ctx = mes(ctx, get_local(ctx, :"npc_name$", ""))
-
-    ctx =
-      if zeny(ctx) < 5000 do
-        ctx = ctx |> mes("You don't have enough zeny.") |> emotion(:money)
-        {ctx, nil}
-      else
+      {ctx, v5} =
         ctx
-      end
+        |> mes(get_local(ctx, :"npc_name$", ""))
+        |> mes("Now enter your ^FF0000new password^000000 to protect your storage from thieves.")
+        |> Aesir.ZoneServer.Content.Npc.Functions.FEntkafcode.call([])
 
-    ctx = pay_zeny(ctx, 5000)
+      ctx = set_local(ctx, :code, v5)
 
-    ctx =
-      ctx
-      |> set_account_var("#kafra_code", get_local(ctx, :code, 0))
-      |> mes("You've protected your storage with a secret password.")
+      ctx =
+        if not Rathena.truthy?(get_local(ctx, :code, 0)) do
+          ctx = ctx |> mes("The password hasn't been changed.") |> emotion(:scratch)
+          throw({:script_return, {ctx, nil}})
+        else
+          ctx
+        end
 
-    ctx =
-      ctx
-      |> mes(
-        Rathena.concat(
-          Rathena.concat("Thank you for using ", get_local(ctx, :"comp_name$", "")),
-          "."
+      ctx = next(ctx)
+      ctx = mes(ctx, get_local(ctx, :"npc_name$", ""))
+
+      ctx =
+        if zeny(ctx) < 5000 do
+          ctx = ctx |> mes("You don't have enough zeny.") |> emotion(:money)
+          throw({:script_return, {ctx, nil}})
+        else
+          ctx
+        end
+
+      ctx = pay_zeny(ctx, 5000)
+
+      ctx =
+        ctx
+        |> set_account_var("#kafra_code", get_local(ctx, :code, 0))
+        |> mes("You've protected your storage with a secret password.")
+
+      ctx =
+        ctx
+        |> mes(
+          Rathena.concat(
+            Rathena.concat("Thank you for using ", get_local(ctx, :"comp_name$", "")),
+            "."
+          )
         )
-      )
-      |> emotion(:thanks)
+        |> emotion(:thanks)
 
-    {ctx, nil}
+      throw({:script_return, {ctx, nil}})
+    catch
+      :throw, {:script_return, result} -> result
+    end
   end
 end

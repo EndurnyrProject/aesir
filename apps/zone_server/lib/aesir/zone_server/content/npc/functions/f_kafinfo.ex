@@ -12,31 +12,37 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafinfo do
 
   @doc "Callable rAthena global function; returns `{ctx, return_value}`."
   def call(ctx, args) do
-    ctx =
-      if Enum.at(args, 0, 0) == 2 do
-        set_local(ctx, :"menu$", ["Check Special Reserve Points.", "", "", "Cancel"])
-      else
-        ctx =
-          if Rathena.truthy?(get_local(ctx, :block, 0)) do
-            set_local(ctx, :"menu$", [
-              "Check Special Reserve Points.",
-              "",
-              "Kafra Employee Locations",
-              "Cancel"
-            ])
-          else
-            set_local(ctx, :"menu$", [
-              "Check Special Reserve Points.",
-              "Storage Password Service",
-              "Kafra Employee Locations",
-              "Cancel"
-            ])
-          end
+    try do
+      ctx =
+        if Enum.at(args, 0, 0) == 2 do
+          set_local(ctx, :"menu$", ["Check Special Reserve Points.", "", "", "Cancel"])
+        else
+          ctx =
+            if Rathena.truthy?(get_local(ctx, :block, 0)) do
+              set_local(ctx, :"menu$", [
+                "Check Special Reserve Points.",
+                "",
+                "Kafra Employee Locations",
+                "Cancel"
+              ])
+            else
+              set_local(ctx, :"menu$", [
+                "Check Special Reserve Points.",
+                "Storage Password Service",
+                "Kafra Employee Locations",
+                "Cancel"
+              ])
+            end
 
-        ctx
-      end
+          ctx
+        end
 
-    ctx |> set_local(:"menu_list$", Enum.join(get_local(ctx, :"menu$", []), ":")) |> loop_1(args)
+      ctx
+      |> set_local(:"menu_list$", Enum.join(get_local(ctx, :"menu$", []), ":"))
+      |> loop_1(args)
+    catch
+      :throw, {:script_return, result} -> result
+    end
   end
 
   defp loop_3(ctx, args) do
@@ -144,7 +150,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafinfo do
 
             ctx =
               if Enum.at(args, 0, 0) == 1 do
-                {ctx, nil}
+                throw({:script_return, {ctx, nil}})
               else
                 ctx
               end
@@ -164,7 +170,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafinfo do
             ctx |> set_local(:i, 0) |> loop_5(args) |> next() |> set_local(:i, 0) |> loop_6(args)
 
           _ ->
-            {ctx, nil}
+            throw({:script_return, {ctx, nil}})
         end
 
       loop_1(ctx, args)
