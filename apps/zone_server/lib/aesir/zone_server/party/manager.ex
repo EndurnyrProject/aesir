@@ -430,6 +430,84 @@ defmodule Aesir.ZoneServer.Party.Manager do
     end)
   end
 
+  @doc """
+  Replaces one member's complete runtime snapshot in the live party entry.
+
+  Changed snapshots emit `{:party_member_updated, party_id, member}`; identical
+  snapshots are a no-op. Only a base-level change that invalidates EXP sharing
+  writes party persistence, disabling the option and emitting the existing
+  `{:party_updated, state}` event as well.
+  """
+  @spec sync_member(non_neg_integer(), non_neg_integer(), Member.t()) ::
+          {:ok, State.t()} | {:error, :not_member | :not_found | term()}
+  def sync_member(party_id, char_id, %Member{} = member) do
+    case lookup_pid({:party, party_id}) do
+      {:ok, pid} ->
+        try do
+          case Entry.get_and_update(pid, &replace_member_reply(&1, char_id, member)) do
+            {:ok, :updated, state} ->
+              broadcast(party_id, {:party_member_updated, party_id, member})
+              {:ok, state}
+
+            {:ok, :updated_party, state} ->
+              broadcast(party_id, {:party_member_updated, party_id, member})
+              broadcast(party_id, {:party_updated, state})
+              {:ok, state}
+
+            {:ok, :unchanged, state} ->
+              {:ok, state}
+
+            {:error, _reason} = error ->
+              error
+          end
+        catch
+          :exit, _ -> {:error, :not_found}
+        end
+
+      :error ->
+        {:error, :not_found}
+    end
+  end
+
+  defp replace_member_reply(%State{} = state, char_id, member) do
+    if member.char_id == char_id do
+      replace_member(state, char_id, member)
+    else
+      {{:error, :not_member}, state}
+    end
+  end
+
+  defp replace_member(%State{} = state, char_id, member) do
+    case Map.fetch(state.members, char_id) do
+      :error ->
+        {{:error, :not_member}, state}
+
+      {:ok, ^member} ->
+        {{:ok, :unchanged, state}, state}
+
+      {:ok, old_member} ->
+        new_state = %State{state | members: Map.put(state.members, char_id, member)}
+
+        new_state =
+          if old_member.base_level == member.base_level,
+            do: new_state,
+            else: maybe_disable_share(new_state)
+
+        sync_member_result(state, new_state)
+    end
+  end
+
+  defp sync_member_result(%State{exp_share: exp_share}, %State{exp_share: exp_share} = new_state) do
+    {{:ok, :updated, new_state}, new_state}
+  end
+
+  defp sync_member_result(old_state, %State{} = new_state) do
+    case persist_party(new_state.party_id, %{exp_share: new_state.exp_share}) do
+      :ok -> {{:ok, :updated_party, new_state}, new_state}
+      {:error, reason} -> {{:error, reason}, old_state}
+    end
+  end
+
   defp update_member(%State{} = state, char_id, member_fun, check_spread?: check_spread?) do
     case Map.fetch(state.members, char_id) do
       :error ->

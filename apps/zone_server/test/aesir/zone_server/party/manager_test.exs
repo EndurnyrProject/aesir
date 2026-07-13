@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
   alias Aesir.Repo
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Party.Manager
+  alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Party.State
 
   setup do
@@ -661,6 +662,232 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
 
     test "returns {:error, :not_found} when no party entry is running" do
       assert {:error, :not_found} = Manager.set_online(999_999, 1, false)
+    end
+  end
+
+  describe "sync_member/3" do
+    test "returns {:error, :not_found} when no party entry is running" do
+      member = Member.new(1, "Missing", 1, true)
+
+      assert {:error, :not_found} = Manager.sync_member(999_999, 1, member)
+    end
+
+    test "missing party takes precedence over a mismatched snapshot identity" do
+      member = Member.new(2, "Missing", 1, true)
+
+      assert {:error, :not_found} = Manager.sync_member(999_999, 1, member)
+    end
+
+    test "returns {:error, :not_member} without changing the party" do
+      {_leader, created} = party_fixture("SyncMissing")
+      member = Member.new(999_999, "Missing", 1, true)
+
+      assert {:error, :not_member} =
+               Manager.sync_member(created.party_id, member.char_id, member)
+
+      assert {:ok, ^created} = Manager.get(created.party_id)
+    end
+
+    test "rejects a snapshot whose identity differs from the member key" do
+      {leader, created} = party_fixture("SyncIdentity")
+      %Member{} = old_member = Map.fetch!(created.members, leader.id)
+      member = %Member{old_member | char_id: leader.id + 1}
+
+      Phoenix.PubSub.subscribe(Aesir.PubSub, "party:#{created.party_id}")
+
+      assert {:error, :not_member} = Manager.sync_member(created.party_id, leader.id, member)
+      assert {:ok, ^created} = Manager.get(created.party_id)
+      refute_receive {:party_member_updated, _party_id, _member}
+      refute_receive {:party_updated, _state}
+    end
+
+    test "replaces the complete snapshot and broadcasts only the member event" do
+      {leader, created} = party_fixture("SyncChanged")
+      %Member{} = old_member = Map.fetch!(created.members, leader.id)
+
+      member = %Member{
+        old_member
+        | job_id: 7,
+          hp: 500,
+          max_hp: 1_000,
+          sp: 60,
+          max_sp: 120,
+          ap: 10,
+          max_ap: 20,
+          map_name: "geffen"
+      }
+
+      Phoenix.PubSub.subscribe(Aesir.PubSub, "party:#{created.party_id}")
+
+      assert {:ok, state} = Manager.sync_member(created.party_id, leader.id, member)
+      assert Map.fetch!(state.members, leader.id) == member
+      assert_receive {:party_member_updated, party_id, ^member}
+      assert party_id == created.party_id
+      refute_receive {:party_member_updated, _party_id, _member}
+      refute_receive {:party_updated, _state}
+    end
+
+    test "identical snapshots are a no-op" do
+      {leader, created} = party_fixture("SyncNoop")
+      member = Map.fetch!(created.members, leader.id)
+
+      Phoenix.PubSub.subscribe(Aesir.PubSub, "party:#{created.party_id}")
+
+      assert {:ok, ^created} = Manager.sync_member(created.party_id, leader.id, member)
+      refute_receive {:party_member_updated, _party_id, _member}
+      refute_receive {:party_updated, _state}
+    end
+
+    test "base-level changes disable invalid EXP share and emit both updates" do
+      {leader, created} = party_fixture("SyncLevelLeader")
+      target = leader_fixture("SyncLevelTarget")
+      {:ok, joined} = Manager.add_member(created.party_id, target)
+      {:ok, shared} = Manager.set_options(joined.party_id, leader.id, true)
+      %Member{} = old_member = Map.fetch!(shared.members, target.id)
+
+      member = %Member{
+        old_member
+        | base_level: leader.base_level + Config.party_share_level() + 1
+      }
+
+      Phoenix.PubSub.subscribe(Aesir.PubSub, "party:#{shared.party_id}")
+
+      assert {:ok, state} = Manager.sync_member(shared.party_id, target.id, member)
+      assert state.exp_share == false
+      assert Repo.get(Party, shared.party_id).exp_share == false
+      assert_receive {:party_member_updated, party_id, ^member}
+      assert party_id == shared.party_id
+      assert_receive {:party_updated, ^state}
+    end
+
+    test "online-only changes stay runtime-only when EXP share is enabled" do
+      {leader, created} = party_fixture("SyncOnlineLeader")
+
+      target =
+        leader_fixture("SyncOnlineTarget", %{
+          base_level: leader.base_level + Config.party_share_level() + 1
+        })
+
+      {:ok, joined} = Manager.add_member(created.party_id, target)
+      {:ok, offline} = Manager.set_online(joined.party_id, target.id, false)
+      {:ok, shared} = Manager.set_options(offline.party_id, leader.id, true)
+      %Member{} = old_member = Map.fetch!(shared.members, target.id)
+      member = %Member{old_member | online: true}
+
+      shared.party_id
+      |> then(&Repo.get!(Party, &1))
+      |> Repo.delete!()
+
+      Phoenix.PubSub.subscribe(Aesir.PubSub, "party:#{shared.party_id}")
+
+      assert {:ok, state} = Manager.sync_member(shared.party_id, target.id, member)
+      assert state.exp_share == true
+      assert_receive {:party_member_updated, party_id, ^member}
+      assert party_id == shared.party_id
+      refute_receive {:party_updated, _state}
+    end
+
+    test "valid-spread base-level changes stay runtime-only" do
+      {leader, created} = party_fixture("SyncValidLevelLeader")
+      target = leader_fixture("SyncValidLevelTarget")
+      {:ok, joined} = Manager.add_member(created.party_id, target)
+      {:ok, shared} = Manager.set_options(joined.party_id, leader.id, true)
+      %Member{} = old_member = Map.fetch!(shared.members, target.id)
+
+      member = %Member{
+        old_member
+        | base_level: leader.base_level + Config.party_share_level()
+      }
+
+      shared.party_id
+      |> then(&Repo.get!(Party, &1))
+      |> Repo.delete!()
+
+      Phoenix.PubSub.subscribe(Aesir.PubSub, "party:#{shared.party_id}")
+
+      assert {:ok, state} = Manager.sync_member(shared.party_id, target.id, member)
+      assert state.exp_share == true
+      assert_receive {:party_member_updated, party_id, ^member}
+      assert party_id == shared.party_id
+      refute_receive {:party_updated, _state}
+    end
+
+    test "persistence failure rolls back the entry and emits no updates" do
+      {leader, created} = party_fixture("SyncRollbackLeader")
+      target = leader_fixture("SyncRollbackTarget")
+      {:ok, joined} = Manager.add_member(created.party_id, target)
+      {:ok, shared} = Manager.set_options(joined.party_id, leader.id, true)
+      %Member{} = old_member = Map.fetch!(shared.members, target.id)
+
+      member = %Member{
+        old_member
+        | base_level: leader.base_level + Config.party_share_level() + 1
+      }
+
+      shared.party_id
+      |> then(&Repo.get!(Party, &1))
+      |> Repo.delete!()
+
+      Phoenix.PubSub.subscribe(Aesir.PubSub, "party:#{shared.party_id}")
+
+      assert {:error, :not_found} = Manager.sync_member(shared.party_id, target.id, member)
+      assert {:ok, ^shared} = Manager.get(shared.party_id)
+      refute_receive {:party_member_updated, _party_id, _member}
+      refute_receive {:party_updated, _state}
+    end
+
+    test "ordinary snapshot changes stay runtime-only" do
+      {leader, created} = party_fixture("SyncRuntimeOnly")
+      %Member{} = old_member = Map.fetch!(created.members, leader.id)
+
+      member = %Member{
+        old_member
+        | job_id: 14,
+          hp: 750,
+          max_hp: 1_500,
+          sp: 80,
+          max_sp: 160,
+          ap: 25,
+          max_ap: 50,
+          online: false,
+          map_name: "prontera"
+      }
+
+      created.party_id
+      |> then(&Repo.get!(Party, &1))
+      |> Repo.delete!()
+
+      assert {:ok, state} = Manager.sync_member(created.party_id, leader.id, member)
+      assert Map.fetch!(state.members, leader.id) == member
+      assert Repo.get(Character, leader.id).hp == leader.hp
+    end
+
+    test "concurrent updates to different members retain both snapshots" do
+      {leader, created} = party_fixture("SyncConcurrentLeader")
+      target = leader_fixture("SyncConcurrentTarget")
+      {:ok, joined} = Manager.add_member(created.party_id, target)
+      %Member{} = current_leader = Map.fetch!(joined.members, leader.id)
+      %Member{} = current_target = Map.fetch!(joined.members, target.id)
+
+      leader_member = %Member{current_leader | hp: 111}
+      target_member = %Member{current_target | sp: 222}
+
+      [leader_result, target_result] =
+        [
+          Task.async(fn ->
+            Manager.sync_member(joined.party_id, leader.id, leader_member)
+          end),
+          Task.async(fn ->
+            Manager.sync_member(joined.party_id, target.id, target_member)
+          end)
+        ]
+        |> Task.await_many()
+
+      assert {:ok, _state} = leader_result
+      assert {:ok, _state} = target_result
+      assert {:ok, state} = Manager.get(joined.party_id)
+      assert Map.fetch!(state.members, leader.id) == leader_member
+      assert Map.fetch!(state.members, target.id) == target_member
     end
   end
 end
