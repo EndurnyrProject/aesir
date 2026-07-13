@@ -50,7 +50,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Rachel.FreyaSFollower do
     |> mes("out the teachings of our")
     |> mes("beloved goddess Freya.")
     |> close()
-
-    exit(:normal)
   end
 end

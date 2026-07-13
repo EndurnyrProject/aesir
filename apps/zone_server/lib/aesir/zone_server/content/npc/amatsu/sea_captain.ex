@@ -34,14 +34,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Amatsu.SeaCaptain do
           |> mes("right? All aboard now.")
           |> close()
 
-        _ =
+        ctx =
           if Rathena.truthy?(checkre(ctx, 0)) do
             warp(ctx, "alberta", 245, 87)
           else
             warp(ctx, "alberta", 243, 91)
           end
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -52,7 +52,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Amatsu.SeaCaptain do
     |> mes("The ship to Alberta is")
     |> mes("always ready to depart...")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

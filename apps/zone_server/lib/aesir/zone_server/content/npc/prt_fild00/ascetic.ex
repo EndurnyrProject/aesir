@@ -20,16 +20,17 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtFild00.Ascetic do
       if get_char_var(ctx, :BaseJob, 0) == :novice do
         ctx =
           if get_char_var(ctx, :job_acolyte_q, 0) == 8 do
-            ctx
-            |> mes("What?")
-            |> next()
-            |> mes("[Father Yosuke]")
-            |> mes(
-              "Have you any more business with me?! You don't! Go back to the Sanctuary now!"
-            )
-            |> close()
+            ctx =
+              ctx
+              |> mes("What?")
+              |> next()
+              |> mes("[Father Yosuke]")
+              |> mes(
+                "Have you any more business with me?! You don't! Go back to the Sanctuary now!"
+              )
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
@@ -56,24 +57,25 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtFild00.Ascetic do
               |> next()
               |> mes("[Father Yosuke]")
 
-            ctx
-            |> mes(
-              Rathena.concat(
+            ctx =
+              ctx
+              |> mes(
                 Rathena.concat(
-                  "Okay. I'll send a message to the Sanctuary that you, ",
-                  char_name(ctx, 0)
-                ),
-                ", came to visit me."
+                  Rathena.concat(
+                    "Okay. I'll send a message to the Sanctuary that you, ",
+                    char_name(ctx, 0)
+                  ),
+                  ", came to visit me."
+                )
               )
-            )
-            |> next()
-            |> mes("[Father Yosuke]")
-            |> mes("Now go back to the Santuary and finish becoming an Acolyte, kid.")
-            |> close()
-            |> savepoint("prt_fild00", 206, 230)
-            |> set_char_var(:job_acolyte_q, 8)
+              |> next()
+              |> mes("[Father Yosuke]")
+              |> mes("Now go back to the Santuary and finish becoming an Acolyte, kid.")
+              |> close()
+              |> savepoint("prt_fild00", 206, 230)
+              |> set_char_var(:job_acolyte_q, 8)
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx =
               ctx
@@ -87,31 +89,33 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtFild00.Ascetic do
               |> next()
               |> mes("[Father Yosuke]")
 
-            ctx
-            |> mes(
-              Rathena.concat(
-                Rathena.concat("", char_name(ctx, 0)),
-                ", huh? Why isn't your name on my list?"
+            ctx =
+              ctx
+              |> mes(
+                Rathena.concat(
+                  Rathena.concat("", char_name(ctx, 0)),
+                  ", huh? Why isn't your name on my list?"
+                )
               )
-            )
-            |> next()
-            |> mes("[Father Yosuke]")
-            |> mes(
-              "You probably made a mistake. Go back to the Santuary, and check with the Bishop."
-            )
-            |> close()
+              |> next()
+              |> mes("[Father Yosuke]")
+              |> mes(
+                "You probably made a mistake. Go back to the Santuary, and check with the Bishop."
+              )
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           end
         else
-          ctx
-          |> mes("You...")
-          |> mes("Novice.")
-          |> mes("There something")
-          |> mes("you wanna tell me?")
-          |> close()
+          ctx =
+            ctx
+            |> mes("You...")
+            |> mes("Novice.")
+            |> mes("There something")
+            |> mes("you wanna tell me?")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
         end
       else
         ctx =
@@ -119,23 +123,25 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtFild00.Ascetic do
             todo(ctx, :callfunc, ["F_FatherYos"])
           else
             if get_char_var(ctx, :BaseJob, 0) == :priest do
-              ctx
-              |> mes("Hey...")
-              |> next()
-              |> mes("[Father Yosuke]")
-              |> mes(
-                "If you like, come sit here with me and meditate the great truths. God's majesty is truly inspiring..."
-              )
-              |> close()
+              ctx =
+                ctx
+                |> mes("Hey...")
+                |> next()
+                |> mes("[Father Yosuke]")
+                |> mes(
+                  "If you like, come sit here with me and meditate the great truths. God's majesty is truly inspiring..."
+                )
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
-              ctx
-              |> mes("Do you have anything to say? Because unfortunately for you,")
-              |> mes("I don't any replies.")
-              |> close()
+              ctx =
+                ctx
+                |> mes("Do you have anything to say? Because unfortunately for you,")
+                |> mes("I don't any replies.")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             end
           end
 
@@ -143,5 +149,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtFild00.Ascetic do
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

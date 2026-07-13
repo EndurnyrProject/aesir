@@ -26,7 +26,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Alberta.Steiner do
     |> mes("[Steiner]")
     |> mes("If I buy a lot of them in bulk, and then resell them here for a higher price...")
     |> close()
-
-    exit(:normal)
   end
 end

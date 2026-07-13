@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.Towner171256 do
     |> mes("and suspicious. How can it")
     |> mes("be a place of worship?")
     |> close()
-
-    exit(:normal)
   end
 end

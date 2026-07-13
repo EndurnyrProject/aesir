@@ -27,6 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Alb2trea.Fisk do
       end
 
     close(ctx)
-    exit(:normal)
   end
 end

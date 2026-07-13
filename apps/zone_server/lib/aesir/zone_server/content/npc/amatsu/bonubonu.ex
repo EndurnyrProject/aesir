@@ -11,7 +11,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Amatsu.Bonubonu do
     spawn: [%{map: "amatsu", x: 283, y: 203, dir: 1, sprite: 1323, name: "Bonubonu"}]
 
   @impl true
-  def on_talk(_ctx) do
-    exit(:normal)
+  def on_talk(ctx) do
+    ctx
   end
 end

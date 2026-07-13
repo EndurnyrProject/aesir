@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.MocRuins.LittleGirl do
     |> mes("[Little Girl]")
     |> mes("No! No... Mommy... Daddy....")
     |> close()
-
-    exit(:normal)
   end
 end

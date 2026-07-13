@@ -14,10 +14,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Beggar do
 
   alias Aesir.ZoneServer.Script.Rathena
   @impl true
-  def on_event("OnTouch", ctx), do: ev_ontouch(ctx)
+  def on_event("OnTouch", ctx) do
+    ev_ontouch(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
   @impl true
-  def on_talk(_ctx) do
-    exit(:normal)
+  def on_talk(ctx) do
+    ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   def ev_ontouch(ctx) do
@@ -35,17 +42,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Beggar do
       if v1 == 1 do
         ctx =
           if zeny(ctx) < 50 do
-            ctx
-            |> mes("[Beggar]")
-            |> mes("I appreciate your")
-            |> mes("kindness, but it also")
-            |> mes("looks like you're in need")
-            |> mes("of zeny, too. Would you")
-            |> mes("like to join me?")
-            |> emotion(:smile)
-            |> close()
+            ctx =
+              ctx
+              |> mes("[Beggar]")
+              |> mes("I appreciate your")
+              |> mes("kindness, but it also")
+              |> mes("looks like you're in need")
+              |> mes("of zeny, too. Would you")
+              |> mes("like to join me?")
+              |> emotion(:smile)
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
@@ -112,20 +120,21 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Beggar do
                 |> mes(". . . . . . . . . . . .")
                 |> next()
 
-              ctx
-              |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
-              |> emotion(:think)
-              |> mes(". . . . . . . . . . . .")
-              |> mes(". . . . . . . . . . . .")
-              |> mes(". . . . . . . . . . . .")
-              |> next()
-              |> mes("[Beggar]")
-              |> emotion(:question)
-              |> mes("Hmm...?")
-              |> mes("You seem surprised~")
-              |> close()
+              ctx =
+                ctx
+                |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
+                |> emotion(:think)
+                |> mes(". . . . . . . . . . . .")
+                |> mes(". . . . . . . . . . . .")
+                |> mes(". . . . . . . . . . . .")
+                |> next()
+                |> mes("[Beggar]")
+                |> emotion(:question)
+                |> mes("Hmm...?")
+                |> mes("You seem surprised~")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
 
             2 ->
               ctx =
@@ -176,22 +185,23 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Beggar do
                 |> mes(". . . . . . . . . . . .")
                 |> next()
 
-              ctx
-              |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
-              |> emotion(:think)
-              |> mes(". . . . . . . . . . . .")
-              |> mes(". . . . . . . . . . . .")
-              |> mes(". . . . . . . . . . . .")
-              |> next()
-              |> mes("[Beggar]")
-              |> emotion(:question)
-              |> mes("Don't believe me?")
-              |> mes("Well, you'll see for")
-              |> mes("yourself, youngster.")
-              |> mes("There's much good in you.")
-              |> close()
+              ctx =
+                ctx
+                |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
+                |> emotion(:think)
+                |> mes(". . . . . . . . . . . .")
+                |> mes(". . . . . . . . . . . .")
+                |> mes(". . . . . . . . . . . .")
+                |> next()
+                |> mes("[Beggar]")
+                |> emotion(:question)
+                |> mes("Don't believe me?")
+                |> mes("Well, you'll see for")
+                |> mes("yourself, youngster.")
+                |> mes("There's much good in you.")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
 
             3 ->
               ctx =
@@ -257,21 +267,22 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Beggar do
                 |> mes(". . . . . . . . . . . .")
                 |> next()
 
-              ctx
-              |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
-              |> emotion(:think)
-              |> mes(". . . . . . . . . . . .")
-              |> mes(". . . . . . . . . . . .")
-              |> mes(". . . . . . . . . . . .")
-              |> next()
-              |> mes("[Beggar]")
-              |> emotion(:question)
-              |> mes("What's wrong?")
-              |> mes("It might be a lot")
-              |> mes("to take in, I know.")
-              |> close()
+              ctx =
+                ctx
+                |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
+                |> emotion(:think)
+                |> mes(". . . . . . . . . . . .")
+                |> mes(". . . . . . . . . . . .")
+                |> mes(". . . . . . . . . . . .")
+                |> next()
+                |> mes("[Beggar]")
+                |> emotion(:question)
+                |> mes("What's wrong?")
+                |> mes("It might be a lot")
+                |> mes("to take in, I know.")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
 
             _ ->
               ctx
@@ -287,7 +298,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Beggar do
     |> mes("...")
     |> mes("......")
     |> close()
-
-    exit(:normal)
   end
 end

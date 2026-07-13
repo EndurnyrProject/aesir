@@ -22,7 +22,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Morocc.VolunteerMorocc268287 do
       "I wish I knew how bad the damage is, but we can't even estimate it. It's like shovelling sand against the tide.."
     )
     |> close()
-
-    exit(:normal)
   end
 end

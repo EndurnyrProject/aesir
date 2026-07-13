@@ -26,61 +26,62 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.KunlunEnvoyGonryun do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Wa Bai Hu]")
-          |> mes("Kunlun is a beautiful place,")
-          |> mes("rich with history, and its")
-          |> mes("own traditions. I also think")
-          |> mes("Kunlun is the best place for")
-          |> mes("sightseeing.")
-          |> next()
-          |> mes("[Wa Bai Hu]")
-          |> mes("When you arrive at the harbor of")
-          |> mes("Kunlun, you'll be able to see")
-          |> mes("miniature replicas of")
-          |> mes("buildings found in Alberta")
-          |> mes("and Prontera.")
-          |> next()
-          |> mes("[Wa Bai Hu]")
-          |> mes("After enjoying a nice, leisurely")
-          |> mes("stroll, step into the beautiful")
-          |> mes("column of light that will take")
-          |> mes("you up into the clouds to")
-          |> mes("Kunlun Village.")
-          |> next()
-          |> mes("[Wa Bai Hu]")
-          |> mes("I've heard that on the")
-          |> mes("Rune-Midgarts continent,")
-          |> mes("there is another city that is")
-          |> mes("is kept aloft in the sky by")
-          |> mes("an ancient, mysterious power...")
-          |> next()
-          |> mes("[Wa Bai Hu]")
-          |> mes("Well, my Kunlun also floats")
-          |> mes("in the air, but without any")
-          |> mes("so called technology or")
-          |> mes("power supply. We consider")
-          |> mes("our land especially blessed...")
-          |> next()
-          |> mes("[Wa Bai Hu]")
-          |> mes("When you're in Kunlun, don't")
-          |> mes("forget to try our specialties")
-          |> mes("such as the giant dumpling or the heaven peach.")
-          |> next()
-          |> mes("[Wa Bai Hu]")
-          |> mes("You'd better prepare yourself")
-          |> mes("if you are planning to visit")
-          |> mes("the Kunlun dungeon. I must")
-          |> mes("say, that is not a safe place to go for fun.")
-          |> next()
-          |> mes("[Wa Bai Hu]")
-          |> mes("If you are interested in visiting")
-          |> mes("Kunlun, do not hesitate to let")
-          |> mes("me know. It's my great pleasure")
-          |> mes("to serve you, honorable guest.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Wa Bai Hu]")
+            |> mes("Kunlun is a beautiful place,")
+            |> mes("rich with history, and its")
+            |> mes("own traditions. I also think")
+            |> mes("Kunlun is the best place for")
+            |> mes("sightseeing.")
+            |> next()
+            |> mes("[Wa Bai Hu]")
+            |> mes("When you arrive at the harbor of")
+            |> mes("Kunlun, you'll be able to see")
+            |> mes("miniature replicas of")
+            |> mes("buildings found in Alberta")
+            |> mes("and Prontera.")
+            |> next()
+            |> mes("[Wa Bai Hu]")
+            |> mes("After enjoying a nice, leisurely")
+            |> mes("stroll, step into the beautiful")
+            |> mes("column of light that will take")
+            |> mes("you up into the clouds to")
+            |> mes("Kunlun Village.")
+            |> next()
+            |> mes("[Wa Bai Hu]")
+            |> mes("I've heard that on the")
+            |> mes("Rune-Midgarts continent,")
+            |> mes("there is another city that is")
+            |> mes("is kept aloft in the sky by")
+            |> mes("an ancient, mysterious power...")
+            |> next()
+            |> mes("[Wa Bai Hu]")
+            |> mes("Well, my Kunlun also floats")
+            |> mes("in the air, but without any")
+            |> mes("so called technology or")
+            |> mes("power supply. We consider")
+            |> mes("our land especially blessed...")
+            |> next()
+            |> mes("[Wa Bai Hu]")
+            |> mes("When you're in Kunlun, don't")
+            |> mes("forget to try our specialties")
+            |> mes("such as the giant dumpling or the heaven peach.")
+            |> next()
+            |> mes("[Wa Bai Hu]")
+            |> mes("You'd better prepare yourself")
+            |> mes("if you are planning to visit")
+            |> mes("the Kunlun dungeon. I must")
+            |> mes("say, that is not a safe place to go for fun.")
+            |> next()
+            |> mes("[Wa Bai Hu]")
+            |> mes("If you are interested in visiting")
+            |> mes("Kunlun, do not hesitate to let")
+            |> mes("me know. It's my great pleasure")
+            |> mes("to serve you, honorable guest.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
           {ctx, v2} =
@@ -107,57 +108,63 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.KunlunEnvoyGonryun do
             if v2 == 1 do
               ctx =
                 if zeny(ctx) > 9999 do
-                  ctx
-                  |> mes("[Wa Bai Hu]")
-                  |> mes("Thank you, let me guide you there immediately.")
-                  |> close()
-                  |> pay_zeny(10000)
-                  |> warp("gon_fild01", 258, 82)
+                  ctx =
+                    ctx
+                    |> mes("[Wa Bai Hu]")
+                    |> mes("Thank you, let me guide you there immediately.")
+                    |> close()
+                    |> pay_zeny(10000)
+                    |> warp("gon_fild01", 258, 82)
 
-                  exit(:normal)
+                  throw({:script_end, ctx})
                 else
                   ctx
                 end
 
-              ctx
-              |> mes("[Wa Bai Hu]")
-              |> mes("I am sorry, but you must have")
-              |> mes("10,000 zeny to travel to Kunlun.")
-              |> mes("Please make sure you have enough")
-              |> mes("zeny with you. Thank you, and")
-              |> mes("please come again.")
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Wa Bai Hu]")
+                |> mes("I am sorry, but you must have")
+                |> mes("10,000 zeny to travel to Kunlun.")
+                |> mes("Please make sure you have enough")
+                |> mes("zeny with you. Thank you, and")
+                |> mes("please come again.")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
               ctx
             end
 
-          ctx
-          |> mes("[Wa Bai Hu]")
-          |> mes("I see. However, whenever you")
-          |> mes("change your mind, please let")
-          |> mes("me know. It would be a great")
-          |> mes("please to serve you, most")
-          |> mes("honorable guest.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Wa Bai Hu]")
+            |> mes("I see. However, whenever you")
+            |> mes("change your mind, please let")
+            |> mes("me know. It would be a great")
+            |> mes("please to serve you, most")
+            |> mes("honorable guest.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx
-          |> mes("[Wa Bai Hu]")
-          |> mes("I see. However, whenever you")
-          |> mes("change your mind, please let me")
-          |> mes("know. It would be a great pleasure to serve you, most honorable guest.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Wa Bai Hu]")
+            |> mes("I see. However, whenever you")
+            |> mes("change your mind, please let me")
+            |> mes("know. It would be a great pleasure to serve you, most honorable guest.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

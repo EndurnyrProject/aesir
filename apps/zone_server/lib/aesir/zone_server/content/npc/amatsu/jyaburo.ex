@@ -53,7 +53,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Amatsu.Jyaburo do
     |> mes("sadness.")
     |> mes("...Always be happy.")
     |> close()
-
-    exit(:normal)
   end
 end

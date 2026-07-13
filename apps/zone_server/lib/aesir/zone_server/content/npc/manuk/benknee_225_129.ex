@@ -13,25 +13,29 @@ defmodule Aesir.ZoneServer.Content.Npc.Manuk.Benknee225129 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Benknee]")
-      |> mes("Huh? Who?? Who are you??")
-      |> mes("Oh, you are not a fairy.")
-      |> mes("I thought you were a fairy thing.")
-      |> mes("Anyway, who are you? Can you speak?")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Benknee]")
+        |> mes("Huh? Who?? Who are you??")
+        |> mes("Oh, you are not a fairy.")
+        |> mes("I thought you were a fairy thing.")
+        |> mes("Anyway, who are you? Can you speak?")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Benknee]")
-      |> mes("Bao j pj a sd")
-      |> mes("Gi oh as d")
-      |> mes("Ya sd Yrt sd ad")
-      |> mes("Bq we ojj jd")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Benknee]")
+        |> mes("Bao j pj a sd")
+        |> mes("Gi oh as d")
+        |> mes("Ya sd Yrt sd ad")
+        |> mes("Bq we ojj jd")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

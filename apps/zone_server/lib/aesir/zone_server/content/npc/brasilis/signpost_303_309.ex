@@ -13,6 +13,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Brasilis.Signpost303309 do
   @impl true
   def on_talk(ctx) do
     ctx |> mes(":: Jungle Cable ::") |> mes("- Not for the faint of heart -") |> close()
-    exit(:normal)
   end
 end

@@ -43,7 +43,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Geffen.Meera do
       "Nothing can compare to the luscious flavor of Royal Jelly. And I think it's even better for you than ordinary Honey!"
     )
     |> close()
-
-    exit(:normal)
   end
 end

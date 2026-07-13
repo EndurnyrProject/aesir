@@ -33,14 +33,14 @@ defmodule Aesir.ZoneServer.Content.Npc.LouFild01.Girl do
           |> mes("Bye bye!")
           |> close()
 
-        _ =
+        ctx =
           if Rathena.truthy?(checkre(ctx, 0)) do
             warp(ctx, "alberta", 245, 87)
           else
             warp(ctx, "alberta", 235, 45)
           end
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -62,6 +62,7 @@ defmodule Aesir.ZoneServer.Content.Npc.LouFild01.Girl do
       end
 
     close(ctx)
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

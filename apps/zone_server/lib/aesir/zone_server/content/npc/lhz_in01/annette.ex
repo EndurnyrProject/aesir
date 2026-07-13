@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Annette do
     |> mes("want to make mine the most")
     |> mes("memorable experience.")
     |> close()
-
-    exit(:normal)
   end
 end

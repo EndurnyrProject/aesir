@@ -20,7 +20,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.Togii do
     |> mes("^333333*Hiccup*^000000 Whoa, this stuff")
     |> mes("really works fast! Heh heh~")
     |> close()
-
-    exit(:normal)
   end
 end

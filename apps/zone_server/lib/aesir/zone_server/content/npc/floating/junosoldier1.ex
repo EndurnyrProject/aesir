@@ -30,7 +30,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Junosoldier1 do
       "You'd better be careful when you encounter this monster. It will damage armor and weapons in the twinkling of an eye."
     )
     |> close()
-
-    exit(:normal)
   end
 end

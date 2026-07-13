@@ -39,7 +39,5 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtIn.AnOldMan2631 do
       "I've never seen a Thief Bug shining with light before! Man, just when you think you've seen it all..."
     )
     |> close()
-
-    exit(:normal)
   end
 end

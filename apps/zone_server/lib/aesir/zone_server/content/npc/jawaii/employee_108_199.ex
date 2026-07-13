@@ -49,30 +49,32 @@ defmodule Aesir.ZoneServer.Content.Npc.Jawaii.Employee108199 do
 
         ctx =
           if zeny(ctx) > 999 do
-            ctx
-            |> mes("Thank you")
-            |> mes("for using")
-            |> mes("our services.")
-            |> mes("Please...")
-            |> mes("Make yourself")
-            |> mes("comfortable.")
-            |> close()
-            |> pay_zeny(1000)
-            |> warp("jawaii_in", 129, 110)
+            ctx =
+              ctx
+              |> mes("Thank you")
+              |> mes("for using")
+              |> mes("our services.")
+              |> mes("Please...")
+              |> mes("Make yourself")
+              |> mes("comfortable.")
+              |> close()
+              |> pay_zeny(1000)
+              |> warp("jawaii_in", 129, 110)
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
 
-        ctx
-        |> mes(
-          "I am sorry, but you don't seem to have enough money. If it's alright, why don't you check your current funds and see what you can do"
-        )
-        |> mes("about this situation?")
-        |> close()
+        ctx =
+          ctx
+          |> mes(
+            "I am sorry, but you don't seem to have enough money. If it's alright, why don't you check your current funds and see what you can do"
+          )
+          |> mes("about this situation?")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -84,7 +86,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jawaii.Employee108199 do
     |> mes("There should be no rush")
     |> mes("when it comes to leisure.")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

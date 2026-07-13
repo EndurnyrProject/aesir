@@ -23,7 +23,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Morocc.VolunteerMorocc do
       "As important as it seems, everyone's being careful but there are always some that really don't realize the situation, don't you think?"
     )
     |> close()
-
-    exit(:normal)
   end
 end

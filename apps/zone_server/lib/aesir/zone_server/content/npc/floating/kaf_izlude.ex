@@ -36,5 +36,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.KafIzlude do
       Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 1, "in the city of Izlude"])
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

@@ -45,61 +45,67 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbroch.TrainStationStaff do
       case v1 do
         1 ->
           if zeny(ctx) > 199 do
-            ctx
-            |> mes("[Staff]")
-            |> mes("Thank you")
-            |> mes("very much.")
-            |> mes("Have a safe trip.")
-            |> mes("^333333*Ahem*^000000 All aboard!")
-            |> close()
-            |> pay_zeny(200)
-            |> warp("einbech", 43, 215)
+            ctx =
+              ctx
+              |> mes("[Staff]")
+              |> mes("Thank you")
+              |> mes("very much.")
+              |> mes("Have a safe trip.")
+              |> mes("^333333*Ahem*^000000 All aboard!")
+              |> close()
+              |> pay_zeny(200)
+              |> warp("einbech", 43, 215)
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
-            ctx
-            |> mes("[Staff]")
-            |> mes("I'm sorry, but this")
-            |> mes("isn't enough zeny")
-            |> mes("to pay the train fare.")
-            |> close()
+            ctx =
+              ctx
+              |> mes("[Staff]")
+              |> mes("I'm sorry, but this")
+              |> mes("isn't enough zeny")
+              |> mes("to pay the train fare.")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           end
 
         2 ->
-          ctx
-          |> mes("[Staff]")
-          |> mes("Very well, then.")
-          |> mes("Please enjoy your")
-          |> mes("stay in Einbroch.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Staff]")
+            |> mes("Very well, then.")
+            |> mes("Please enjoy your")
+            |> mes("stay in Einbroch.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx
-          |> mes("[Staff]")
-          |> mes("Einbroch is infamous for")
-          |> mes("its air pollution, no doubt")
-          |> mes("caused by the industrial")
-          |> mes("facilities located here.")
-          |> mes("It's really horrible...")
-          |> next()
-          |> mes("[Staff]")
-          |> mes("Sometimes the air pollution")
-          |> mes("gets so bad that it becomes")
-          |> mes("hard to breathe. If you hear")
-          |> mes("the Einbroch Smog Alert, you")
-          |> mes("should find shelter immediately!")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Staff]")
+            |> mes("Einbroch is infamous for")
+            |> mes("its air pollution, no doubt")
+            |> mes("caused by the industrial")
+            |> mes("facilities located here.")
+            |> mes("It's really horrible...")
+            |> next()
+            |> mes("[Staff]")
+            |> mes("Sometimes the air pollution")
+            |> mes("gets so bad that it becomes")
+            |> mes("hard to breathe. If you hear")
+            |> mes("the Einbroch Smog Alert, you")
+            |> mes("should find shelter immediately!")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

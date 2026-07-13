@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Leekal do
     |> mes("should read this ''Anybody")
     |> mes("Can Be Rich'' book.")
     |> close()
-
-    exit(:normal)
   end
 end

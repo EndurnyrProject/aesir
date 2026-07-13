@@ -35,25 +35,26 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.Waitress do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Elenore]")
-        |> mes("Well...")
-        |> mes(
-          "If you're looking for alcohol, King Tristram III outlawed it a while ago. Now I hear they only serve it in certain places."
-        )
-        |> next()
-        |> mes("[Elenore]")
-        |> mes(
-          "Still, people manage to get drunk off the imitation drinks that we serve here. I guess it's all psychological."
-        )
-        |> next()
-        |> mes("[Elenore]")
-        |> mes(
-          "I reeeeally want to be able to visit that place where they serve real drinks. I hear it's just like paradise!"
-        )
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Elenore]")
+          |> mes("Well...")
+          |> mes(
+            "If you're looking for alcohol, King Tristram III outlawed it a while ago. Now I hear they only serve it in certain places."
+          )
+          |> next()
+          |> mes("[Elenore]")
+          |> mes(
+            "Still, people manage to get drunk off the imitation drinks that we serve here. I guess it's all psychological."
+          )
+          |> next()
+          |> mes("[Elenore]")
+          |> mes(
+            "I reeeeally want to be able to visit that place where they serve real drinks. I hear it's just like paradise!"
+          )
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -237,6 +238,7 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.Waitress do
       end
 
     close(ctx)
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

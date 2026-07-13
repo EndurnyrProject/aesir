@@ -28,42 +28,47 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbech.TrainStationStaff do
       case v1 do
         1 ->
           if zeny(ctx) > 199 do
-            ctx
-            |> mes("[Staff]")
-            |> mes("Thank you and")
-            |> mes("we hope you enjoy")
-            |> mes("the ride. All aboard!")
-            |> close()
-            |> pay_zeny(200)
-            |> warp("einbroch", 226, 276)
+            ctx =
+              ctx
+              |> mes("[Staff]")
+              |> mes("Thank you and")
+              |> mes("we hope you enjoy")
+              |> mes("the ride. All aboard!")
+              |> close()
+              |> pay_zeny(200)
+              |> warp("einbroch", 226, 276)
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
-            ctx
-            |> mes("[Staff]")
-            |> mes("I'm sorry,")
-            |> mes("but you don't")
-            |> mes("have enough zeny")
-            |> mes("to pay the train fare.")
-            |> close()
+            ctx =
+              ctx
+              |> mes("[Staff]")
+              |> mes("I'm sorry,")
+              |> mes("but you don't")
+              |> mes("have enough zeny")
+              |> mes("to pay the train fare.")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           end
 
         2 ->
-          ctx
-          |> mes("[Staff]")
-          |> mes("Please enjoy")
-          |> mes("your stay here")
-          |> mes("in Einbech.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Staff]")
+            |> mes("Please enjoy")
+            |> mes("your stay here")
+            |> mes("in Einbech.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

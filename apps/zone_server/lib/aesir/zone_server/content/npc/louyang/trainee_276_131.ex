@@ -18,7 +18,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Louyang.Trainee276131 do
     |> mes("Taaaaaah~~!!")
     |> mes("Schwooooooo~")
     |> close()
-
-    exit(:normal)
   end
 end

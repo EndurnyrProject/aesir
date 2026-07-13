@@ -22,5 +22,7 @@ defmodule Aesir.ZoneServer.Content.Npc.AldeDun03.Gatekeeper do
       ])
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

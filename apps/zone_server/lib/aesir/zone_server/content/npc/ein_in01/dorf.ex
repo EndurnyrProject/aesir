@@ -33,7 +33,5 @@ defmodule Aesir.ZoneServer.Content.Npc.EinIn01.Dorf do
     |> mes("thing keeps working the")
     |> mes("way I want it to!")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -20,7 +20,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.Helen do
     |> mes("really nice job, don't you")
     |> mes("think? It's laid back and posh...")
     |> close()
-
-    exit(:normal)
   end
 end

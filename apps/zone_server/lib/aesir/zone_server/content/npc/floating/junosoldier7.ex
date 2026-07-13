@@ -23,7 +23,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Junosoldier7 do
       "It's a long and narrow shield with an angel wing engraved in the center of the front side. Against Devil and Undead monsters, it is especially powerful."
     )
     |> close()
-
-    exit(:normal)
   end
 end

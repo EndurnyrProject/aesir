@@ -20,7 +20,5 @@ defmodule Aesir.ZoneServer.Content.Npc.RaTemple.ChildFollower77114 do
     |> mes("Ack! Get away, get away!")
     |> mes("Can't let them find me!")
     |> close()
-
-    exit(:normal)
   end
 end

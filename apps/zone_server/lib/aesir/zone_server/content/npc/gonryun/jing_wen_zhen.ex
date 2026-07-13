@@ -26,7 +26,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Gonryun.JingWenZhen do
     |> mes("or not my son will be able to")
     |> mes("find me a daughter in law.")
     |> close()
-
-    exit(:normal)
   end
 end

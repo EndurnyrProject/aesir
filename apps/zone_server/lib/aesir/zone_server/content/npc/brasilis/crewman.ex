@@ -26,27 +26,30 @@ defmodule Aesir.ZoneServer.Content.Npc.Brasilis.Crewman do
         1 ->
           ctx = ctx |> mes("[Crewman]") |> mes("I sure do miss home.") |> close()
 
-          _ =
+          ctx =
             if Rathena.truthy?(checkre(ctx, 0)) do
               warp(ctx, "alberta", 245, 87)
             else
               warp(ctx, "alberta", 244, 115)
             end
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Crewman]")
-          |> mes("Ok, suit yourself. We'll see you when we get back then.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Crewman]")
+            |> mes("Ok, suit yourself. We'll see you when we get back then.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

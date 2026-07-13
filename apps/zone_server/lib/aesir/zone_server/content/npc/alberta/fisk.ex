@@ -28,51 +28,55 @@ defmodule Aesir.ZoneServer.Content.Npc.Alberta.Fisk do
         1 ->
           ctx =
             if zeny(ctx) < 250 do
-              ctx
-              |> mes("[Fisk]")
-              |> mes("Hey now, don't try to cheat me! I said 250 zeny!")
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Fisk]")
+                |> mes("Hey now, don't try to cheat me! I said 250 zeny!")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
               ctx
             end
 
-          ctx |> pay_zeny(250) |> warp("alb2trea", 43, 53)
-          exit(:normal)
+          ctx = ctx |> pay_zeny(250) |> warp("alb2trea", 43, 53)
+          throw({:script_end, ctx})
 
         2 ->
           ctx =
             if zeny(ctx) < 500 do
-              ctx
-              |> mes("[Fisk]")
-              |> mes("Ain't no way yer getting there without the 500 zeny first!")
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Fisk]")
+                |> mes("Ain't no way yer getting there without the 500 zeny first!")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
               ctx
             end
 
           ctx = pay_zeny(ctx, 500)
 
-          _ =
+          ctx =
             if Rathena.truthy?(checkre(ctx, 0)) do
               warp(ctx, "izlude", 195, 212)
             else
               warp(ctx, "izlude", 176, 182)
             end
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx |> mes("[Fisk]") |> mes("Alright...") |> mes("Landlubber.") |> close()
-          exit(:normal)
+          ctx = ctx |> mes("[Fisk]") |> mes("Alright...") |> mes("Landlubber.") |> close()
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

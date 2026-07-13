@@ -23,7 +23,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Ayothaya.YoungMan214142 do
       "Why don't you learn our martial arts? I guarantee that it will help you greatly in your travels."
     )
     |> close()
-
-    exit(:normal)
   end
 end

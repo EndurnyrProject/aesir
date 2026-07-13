@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.Towner11251 do
     |> mes("I'm just happy so long")
     |> mes("as he's with me~ Hoho~")
     |> close()
-
-    exit(:normal)
   end
 end

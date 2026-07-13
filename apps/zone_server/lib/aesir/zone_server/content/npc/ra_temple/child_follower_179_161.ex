@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.RaTemple.ChildFollower179161 do
     |> mes("Maybe it's because I always")
     |> mes("use the same hiding place...")
     |> close()
-
-    exit(:normal)
   end
 end

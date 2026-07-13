@@ -35,7 +35,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.OldMan16163 do
     |> mes("but the spirit is willing...!")
     |> mes("must be... Cheshrumnir Temple.")
     |> close()
-
-    exit(:normal)
   end
 end

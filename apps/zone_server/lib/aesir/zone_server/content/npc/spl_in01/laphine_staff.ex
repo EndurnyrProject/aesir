@@ -13,33 +13,37 @@ defmodule Aesir.ZoneServer.Content.Npc.SplIn01.LaphineStaff do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) > 0 and get_char_var(ctx, :ep13_2_rhea, 0) > 99 do
-      ctx
-      |> mes("[Laphine Staff]")
-      |> mes("Hm, what's up?")
-      |> mes("I'm sorry, but we don't sell food to strangers.")
-      |> next()
-      |> mes("[Laphine Staff]")
-      |> mes("You guys also need to be careful of food here.")
-      |> mes("Food is scarce here.")
-      |> next()
-      |> mes("[Laphine Staff]")
-      |> mes("You're going to have to find food somewhere else.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Laphine Staff]")
+        |> mes("Hm, what's up?")
+        |> mes("I'm sorry, but we don't sell food to strangers.")
+        |> next()
+        |> mes("[Laphine Staff]")
+        |> mes("You guys also need to be careful of food here.")
+        |> mes("Food is scarce here.")
+        |> next()
+        |> mes("[Laphine Staff]")
+        |> mes("You're going to have to find food somewhere else.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Laphine Staff]")
-      |> mes("VeldAnoWeh Or ")
-      |> mes("TurWos")
-      |> mes("......ah...")
-      |> next()
-      |> mes(
-        "- You just grin and smile. It's frustrating not to be able to understand their language. -"
-      )
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Laphine Staff]")
+        |> mes("VeldAnoWeh Or ")
+        |> mes("TurWos")
+        |> mes("......ah...")
+        |> next()
+        |> mes(
+          "- You just grin and smile. It's frustrating not to be able to understand their language. -"
+        )
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

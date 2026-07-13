@@ -26,76 +26,81 @@ defmodule Aesir.ZoneServer.Content.Npc.MocFild12.Serutero do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Serutero]")
-          |> mes("So you're really going")
-          |> mes("to go to Sandaruman")
-          |> mes("Fortress. Alright then,")
-          |> mes("good luck, and be careful!")
-          |> close()
-          |> warp("cmd_fild08", 331, 319)
+          ctx =
+            ctx
+            |> mes("[Serutero]")
+            |> mes("So you're really going")
+            |> mes("to go to Sandaruman")
+            |> mes("Fortress. Alright then,")
+            |> mes("good luck, and be careful!")
+            |> close()
+            |> warp("cmd_fild08", 331, 319)
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Serutero]")
-          |> mes("Although Sandaruman")
-          |> mes("Fortress is infested with")
-          |> mes("monsters now, it used to be")
-          |> mes("a province where people lived.")
-          |> mes("However, they were always")
-          |> mes("invaded and pillaged...")
-          |> next()
-          |> mes("[Serutero]")
-          |> mes("Sandaruman's inhabitants")
-          |> mes("eventually adapted to the")
-          |> mes("invasions, developing smoke")
-          |> mes("signals and fortifications to")
-          |> mes("withstand the ravages of war.")
-          |> mes("Then, Comodo was built...")
-          |> next()
-          |> mes("[Serutero]")
-          |> mes("Comodo grew in power and")
-          |> mes("influence and eventually annexed Sandaruman. More and more people")
-          |> mes("moved from the fortress to Comodo until Sandaruman fortress was")
-          |> mes("essentially abandoned.")
-          |> next()
-          |> mes("[Serutero]")
-          |> mes("There were a few people")
-          |> mes("remaining in Sandaruman,")
-          |> mes("but they revolted and some")
-          |> mes("fledging government came into")
-          |> mes("power there. The monsters took")
-          |> mes("the chance to take over...")
-          |> next()
-          |> mes("[Serutero]")
-          |> mes("There's nothing around")
-          |> mes("Sandaruman now. Well, nothing")
-          |> mes("except maybe Paros Lighthouse,")
-          |> mes("which is southwest of here. That place might be of interest to")
-          |> mes("aspiring Rogues, I hear...")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Serutero]")
+            |> mes("Although Sandaruman")
+            |> mes("Fortress is infested with")
+            |> mes("monsters now, it used to be")
+            |> mes("a province where people lived.")
+            |> mes("However, they were always")
+            |> mes("invaded and pillaged...")
+            |> next()
+            |> mes("[Serutero]")
+            |> mes("Sandaruman's inhabitants")
+            |> mes("eventually adapted to the")
+            |> mes("invasions, developing smoke")
+            |> mes("signals and fortifications to")
+            |> mes("withstand the ravages of war.")
+            |> mes("Then, Comodo was built...")
+            |> next()
+            |> mes("[Serutero]")
+            |> mes("Comodo grew in power and")
+            |> mes("influence and eventually annexed Sandaruman. More and more people")
+            |> mes("moved from the fortress to Comodo until Sandaruman fortress was")
+            |> mes("essentially abandoned.")
+            |> next()
+            |> mes("[Serutero]")
+            |> mes("There were a few people")
+            |> mes("remaining in Sandaruman,")
+            |> mes("but they revolted and some")
+            |> mes("fledging government came into")
+            |> mes("power there. The monsters took")
+            |> mes("the chance to take over...")
+            |> next()
+            |> mes("[Serutero]")
+            |> mes("There's nothing around")
+            |> mes("Sandaruman now. Well, nothing")
+            |> mes("except maybe Paros Lighthouse,")
+            |> mes("which is southwest of here. That place might be of interest to")
+            |> mes("aspiring Rogues, I hear...")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx
-          |> mes("[Serutero]")
-          |> mes("You know, if you're")
-          |> mes("tired of traveling, you")
-          |> mes("can rest in ^3355FFComodo^000000. That")
-          |> mes("place is a pretty popular")
-          |> mes("tourist attraction, especially")
-          |> mes("for you adventurer types.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Serutero]")
+            |> mes("You know, if you're")
+            |> mes("tired of traveling, you")
+            |> mes("can rest in ^3355FFComodo^000000. That")
+            |> mes("place is a pretty popular")
+            |> mes("tourist attraction, especially")
+            |> mes("for you adventurer types.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

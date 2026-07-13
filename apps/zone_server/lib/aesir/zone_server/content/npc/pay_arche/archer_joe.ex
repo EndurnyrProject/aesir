@@ -116,8 +116,8 @@ defmodule Aesir.ZoneServer.Content.Npc.PayArche.ArcherJoe do
               ctx
             end
 
-          close(ctx)
-          exit(:normal)
+          ctx = close(ctx)
+          throw({:script_end, ctx})
 
         2 ->
           ctx
@@ -149,6 +149,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PayArche.ArcherJoe do
       end
 
     close(ctx)
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

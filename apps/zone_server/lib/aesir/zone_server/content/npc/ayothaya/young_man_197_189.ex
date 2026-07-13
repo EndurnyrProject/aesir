@@ -42,7 +42,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Ayothaya.YoungMan197189 do
       "Well, anyway, it's still a really good idea to stay away from that place. I hope you enjoy visiting Ayothaya, and that you keep safe~"
     )
     |> close()
-
-    exit(:normal)
   end
 end

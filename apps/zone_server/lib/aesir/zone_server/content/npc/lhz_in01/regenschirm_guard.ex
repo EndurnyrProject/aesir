@@ -28,25 +28,27 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.RegenschirmGuard do
 
         ctx =
           if v1 == 1 do
-            ctx
-            |> mes("[Regenschirm Guard]")
-            |> mes("Thank you and")
-            |> mes("have a nice day.")
-            |> close()
-            |> warp("lhz_dun01", 149, 285)
+            ctx =
+              ctx
+              |> mes("[Regenschirm Guard]")
+              |> mes("Thank you and")
+              |> mes("have a nice day.")
+              |> close()
+              |> warp("lhz_dun01", 149, 285)
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
 
-        ctx
-        |> mes("[Regenschirm Guard]")
-        |> mes("Thank you and")
-        |> mes("have a nice day.")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Regenschirm Guard]")
+          |> mes("Thank you and")
+          |> mes("have a nice day.")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -58,7 +60,7 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.RegenschirmGuard do
     |> mes("have a Laboratory Permit.")
     |> mes("Thank you for your cooperation.")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

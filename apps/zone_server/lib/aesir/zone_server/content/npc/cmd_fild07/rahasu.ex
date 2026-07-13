@@ -25,25 +25,26 @@ defmodule Aesir.ZoneServer.Content.Npc.CmdFild07.Rahasu do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Rahasu]")
-        |> mes("For many years, this")
-        |> mes("lighthouse guided many")
-        |> mes("ships to shore. That was")
-        |> mes("a long time ago: now this")
-        |> mes("lighthouse sits quietly,")
-        |> mes("unused, but never unloved.")
-        |> next()
-        |> mes("[Rahasu]")
-        |> mes("Although this place")
-        |> mes("isn't the center of")
-        |> mes("trade and commerce that")
-        |> mes("it used to be, plenty of")
-        |> mes("people still wander to this")
-        |> mes("area. I wonder why, exactly...")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Rahasu]")
+          |> mes("For many years, this")
+          |> mes("lighthouse guided many")
+          |> mes("ships to shore. That was")
+          |> mes("a long time ago: now this")
+          |> mes("lighthouse sits quietly,")
+          |> mes("unused, but never unloved.")
+          |> next()
+          |> mes("[Rahasu]")
+          |> mes("Although this place")
+          |> mes("isn't the center of")
+          |> mes("trade and commerce that")
+          |> mes("it used to be, plenty of")
+          |> mes("people still wander to this")
+          |> mes("area. I wonder why, exactly...")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -55,7 +56,7 @@ defmodule Aesir.ZoneServer.Content.Npc.CmdFild07.Rahasu do
     |> mes("the view from the lighthouse.")
     |> mes("It's... It's breathtaking...")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

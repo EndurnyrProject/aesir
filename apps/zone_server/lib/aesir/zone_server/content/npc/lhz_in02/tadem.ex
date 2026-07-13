@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.Tadem do
     |> mes("and modern elements. Would")
     |> mes("you not agree? Fascinating...")
     |> close()
-
-    exit(:normal)
   end
 end

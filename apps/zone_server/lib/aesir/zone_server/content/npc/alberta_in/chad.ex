@@ -29,7 +29,5 @@ defmodule Aesir.ZoneServer.Content.Npc.AlbertaIn.Chad do
     |> mes("is possibly")
     |> mes("true...")
     |> close()
-
-    exit(:normal)
   end
 end

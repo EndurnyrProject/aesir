@@ -19,7 +19,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.DanSong do
     |> mes("like glimmering pools")
     |> mes("of light. So, so beautiful...")
     |> close()
-
-    exit(:normal)
   end
 end

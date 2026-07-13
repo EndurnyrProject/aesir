@@ -149,7 +149,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FSetkafcode do
       end
 
     {ctx, _} = ctx |> close() |> cutin("", 255) |> s_s_set([])
-    ctx
+    {ctx, nil}
   end
 
   defp s_s_set(ctx, args) do

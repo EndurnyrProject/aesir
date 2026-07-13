@@ -12,43 +12,55 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.Employee25100 do
 
   alias Aesir.ZoneServer.Script.Rathena
   @impl true
-  def on_event("OnWelcome", ctx), do: ev_onwelcome(ctx)
-  def on_event("OnSolo", ctx), do: ev_onsolo(ctx)
+  def on_event("OnWelcome", ctx) do
+    ev_onwelcome(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  def on_event("OnSolo", ctx) do
+    ev_onsolo(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
   @impl true
   def on_talk(ctx) do
     ctx = ctx |> mes("[Employee Itere]") |> mes("Welcome to") |> mes("Jawaii Tavern~")
 
     ctx =
       if Rathena.truthy?(getpartnerid(ctx)) do
-        ctx
-        |> next()
-        |> mes("[Employee Itere]")
-        |> mes("Oh~")
-        |> mes("You look so happy")
-        |> mes("to be here with your")
-        |> mes("partner! How precious~")
-        |> close()
+        ctx =
+          ctx
+          |> next()
+          |> mes("[Employee Itere]")
+          |> mes("Oh~")
+          |> mes("You look so happy")
+          |> mes("to be here with your")
+          |> mes("partner! How precious~")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx =
           if not Rathena.truthy?(getpartnerid(ctx)) do
-            ctx
-            |> mes("I hope you")
-            |> mes("enjoy your st--")
-            |> mes("Wait a minute...!")
-            |> next()
-            |> mes("[Employee Itere]")
-            |> mes("You're...")
-            |> mes("You better not be part of")
-            |> mes("the Invincible Single Army!")
-            |> next()
-            |> mes("[Employee Itere]")
-            |> mes("Well, whatever you do, don't despair, get drunk and then")
-            |> mes("bother the married couples!")
-            |> close()
+            ctx =
+              ctx
+              |> mes("I hope you")
+              |> mes("enjoy your st--")
+              |> mes("Wait a minute...!")
+              |> next()
+              |> mes("[Employee Itere]")
+              |> mes("You're...")
+              |> mes("You better not be part of")
+              |> mes("the Invincible Single Army!")
+              |> next()
+              |> mes("[Employee Itere]")
+              |> mes("Well, whatever you do, don't despair, get drunk and then")
+              |> mes("bother the married couples!")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
@@ -57,16 +69,15 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.Employee25100 do
       end
 
     ctx |> mes("I hope you will have a good time.") |> close()
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   def ev_onwelcome(ctx) do
-    _ = emotion(ctx, :chup)
-    exit(:normal)
+    emotion(ctx, :chup)
   end
 
   def ev_onsolo(ctx) do
-    _ = emotion(ctx, :huk)
-    exit(:normal)
+    emotion(ctx, :huk)
   end
 end

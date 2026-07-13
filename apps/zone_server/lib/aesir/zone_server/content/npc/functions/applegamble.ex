@@ -20,16 +20,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.Applegamble do
     ctx =
       case v1 do
         3 ->
-          ctx
-          |> mes(Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]"))
-          |> mes("I'm up for a game of")
-          |> mes("dice whenever you feel")
-          |> mes("like it. Just talk to me if")
-          |> mes("you ever get hit with the")
-          |> mes("sudden urge to gamble, kay?")
-          |> close()
+          ctx =
+            ctx
+            |> mes(Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]"))
+            |> mes("I'm up for a game of")
+            |> mes("dice whenever you feel")
+            |> mes("like it. Just talk to me if")
+            |> mes("you ever get hit with the")
+            |> mes("sudden urge to gamble, kay?")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
           ctx =
@@ -85,17 +86,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.Applegamble do
             |> mes("roll my third die... Or maybe not.")
             |> next()
 
-          ctx
-          |> mes(Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]"))
-          |> mes("When you win, you'll")
-          |> mes("receive twice as many")
-          |> mes("Apples as you wagered.")
-          |> mes("But if we happen to tie, you")
-          |> mes("get the Apples that you bet")
-          |> mes("returned to you. Fair, right?")
-          |> close()
+          ctx =
+            ctx
+            |> mes(Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]"))
+            |> mes("When you win, you'll")
+            |> mes("receive twice as many")
+            |> mes("Apples as you wagered.")
+            |> mes("But if we happen to tie, you")
+            |> mes("get the Apples that you bet")
+            |> mes("returned to you. Fair, right?")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         1 ->
           ctx
@@ -324,53 +326,55 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.Applegamble do
 
           ctx =
             if get_local(ctx, :playertotal, 0) > 12 do
-              ctx
-              |> mes(
-                Rathena.concat(
+              ctx =
+                ctx
+                |> mes(
                   Rathena.concat(
                     Rathena.concat(
                       Rathena.concat(
                         Rathena.concat(
-                          Rathena.concat("^FF0000", char_name(ctx, 0)),
-                          "^000000, you got ^FF0000"
+                          Rathena.concat(
+                            Rathena.concat("^FF0000", char_name(ctx, 0)),
+                            "^000000, you got ^FF0000"
+                          ),
+                          get_local(ctx, :player3, 0)
                         ),
-                        get_local(ctx, :player3, 0)
+                        "^000000 and the total is now ^FF0000"
                       ),
-                      "^000000 and the total is now ^FF0000"
+                      get_local(ctx, :playertotal, 0)
                     ),
-                    get_local(ctx, :playertotal, 0)
-                  ),
-                  "^000000. You lost this game. I am sorry but please try again."
+                    "^000000. You lost this game. I am sorry but please try again."
+                  )
                 )
-              )
-              |> close()
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
               ctx =
                 if get_local(ctx, :playertotal, 0) < get_local(ctx, :tablesub, 0) do
-                  ctx
-                  |> mes(
-                    Rathena.concat(
+                  ctx =
+                    ctx
+                    |> mes(
                       Rathena.concat(
                         Rathena.concat(
                           Rathena.concat(
                             Rathena.concat(
-                              Rathena.concat("^FF0000", char_name(ctx, 0)),
-                              "^000000, you got ^FF0000"
+                              Rathena.concat(
+                                Rathena.concat("^FF0000", char_name(ctx, 0)),
+                                "^000000, you got ^FF0000"
+                              ),
+                              get_local(ctx, :player3, 0)
                             ),
-                            get_local(ctx, :player3, 0)
+                            "^000000 and the total is now ^FF0000"
                           ),
-                          "^000000 and the total is now ^FF0000"
+                          get_local(ctx, :playertotal, 0)
                         ),
-                        get_local(ctx, :playertotal, 0)
-                      ),
-                      "^000000. Even though you casted dice again, still your total is smaller than mine. You lost the game. I am sorry and please try again."
+                        "^000000. Even though you casted dice again, still your total is smaller than mine. You lost the game. I am sorry and please try again."
+                      )
                     )
-                  )
-                  |> close()
+                    |> close()
 
-                  exit(:normal)
+                  throw({:script_end, ctx})
                 else
                   ctx =
                     if get_local(ctx, :playertotal, 0) == get_local(ctx, :tablesub, 0) do
@@ -398,8 +402,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.Applegamble do
                             )
                             |> close()
 
-                          _ = give_item(ctx, 512, get_local(ctx, :amount, 0))
-                          exit(:normal)
+                          ctx = give_item(ctx, 512, get_local(ctx, :amount, 0))
+                          throw({:script_end, ctx})
                         else
                           ctx
                         end
@@ -457,22 +461,23 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.Applegamble do
                         )
                         |> close()
 
-                      _ = give_item(ctx, 512, get_local(ctx, :amount, 0))
-                      exit(:normal)
+                      ctx = give_item(ctx, 512, get_local(ctx, :amount, 0))
+                      throw({:script_end, ctx})
                     else
                       ctx
                     end
 
                   ctx |> mes("Alright.") |> mes("Let me cast the dice again.")
                 else
-                  ctx
-                  |> mes("It couldn't hurt to try.")
-                  |> mes("Well, I win this time.")
-                  |> mes("I'm sorry, let's try play")
-                  |> mes("again sometime.")
-                  |> close()
+                  ctx =
+                    ctx
+                    |> mes("It couldn't hurt to try.")
+                    |> mes("Well, I win this time.")
+                    |> mes("I'm sorry, let's try play")
+                    |> mes("again sometime.")
+                    |> close()
 
-                  exit(:normal)
+                  throw({:script_end, ctx})
                 end
 
               ctx
@@ -515,8 +520,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.Applegamble do
           )
           |> close()
 
-        _ = give_item(ctx, 512, get_local(ctx, :giveapple, 0))
-        exit(:normal)
+        ctx = give_item(ctx, 512, get_local(ctx, :giveapple, 0))
+        throw({:script_end, ctx})
       else
         ctx =
           if get_local(ctx, :playertotal, 0) > get_local(ctx, :tabletotal, 0) do
@@ -548,8 +553,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.Applegamble do
               )
               |> close()
 
-            _ = give_item(ctx, 512, get_local(ctx, :giveapple, 0))
-            exit(:normal)
+            ctx = give_item(ctx, 512, get_local(ctx, :giveapple, 0))
+            throw({:script_end, ctx})
           else
             ctx =
               if get_local(ctx, :playertotal, 0) == get_local(ctx, :tabletotal, 0) do
@@ -581,39 +586,40 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.Applegamble do
                   )
                   |> close()
 
-                _ = give_item(ctx, 512, get_local(ctx, :amount, 0))
-                exit(:normal)
+                ctx = give_item(ctx, 512, get_local(ctx, :amount, 0))
+                throw({:script_end, ctx})
               else
                 ctx =
                   if get_local(ctx, :playertotal, 0) < get_local(ctx, :tabletotal, 0) do
-                    ctx
-                    |> mes(
-                      Rathena.concat(
+                    ctx =
+                      ctx
+                      |> mes(
                         Rathena.concat(
                           Rathena.concat(
                             Rathena.concat(
                               Rathena.concat(
                                 Rathena.concat(
                                   Rathena.concat(
-                                    Rathena.concat("I got ^0000FF", get_local(ctx, :table3, 0)),
-                                    "^000000 and the total is now ^0000FF"
+                                    Rathena.concat(
+                                      Rathena.concat("I got ^0000FF", get_local(ctx, :table3, 0)),
+                                      "^000000 and the total is now ^0000FF"
+                                    ),
+                                    get_local(ctx, :tabletotal, 0)
                                   ),
-                                  get_local(ctx, :tabletotal, 0)
+                                  "^000000. With total ^FF0000"
                                 ),
-                                "^000000. With total ^FF0000"
+                                get_local(ctx, :playertotal, 0)
                               ),
-                              get_local(ctx, :playertotal, 0)
+                              "^000000 you lost this game, ^FF0000"
                             ),
-                            "^000000 you lost this game, ^FF0000"
+                            char_name(ctx, 0)
                           ),
-                          char_name(ctx, 0)
-                        ),
-                        "^000000. I am sorry but please try again."
+                          "^000000. I am sorry but please try again."
+                        )
                       )
-                    )
-                    |> close()
+                      |> close()
 
-                    exit(:normal)
+                    throw({:script_end, ctx})
                   else
                     ctx
                   end
@@ -627,18 +633,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.Applegamble do
         ctx
       end
 
-    ctx
+    {ctx, nil}
   end
 
   defp loop_2(ctx, args) do
-    if true do
-      result =
-        try do
-          {ctx, v2} = input(ctx, :int)
-          ctx = set_local(ctx, :amount, v2)
+    result =
+      try do
+        {ctx, v2} = input(ctx, :int)
+        ctx = set_local(ctx, :amount, v2)
 
-          ctx =
-            if get_local(ctx, :amount, 0) == 0 do
+        ctx =
+          if get_local(ctx, :amount, 0) == 0 do
+            ctx =
               ctx
               |> mes(Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]"))
               |> mes("Changed your mind?")
@@ -646,100 +652,97 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.Applegamble do
               |> mes("I hope we can play sometime.")
               |> close()
 
-              exit(:normal)
-            else
-              ctx =
-                if get_local(ctx, :amount, 0) < 1 or get_local(ctx, :amount, 0) > 50 do
-                  ctx =
-                    ctx
-                    |> mes(
-                      Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]")
-                    )
-                    |> mes("You can't bet more than")
-                    |> mes("50 Apples. Remember, we")
-                    |> mes("need to keep these stakes")
-                    |> mes("reasonable. Please enter")
-                    |> mes("a value no greater than 50.")
-                    |> next()
-
-                  throw({:cont_2, ctx})
-                else
+            throw({:script_end, ctx})
+          else
+            ctx =
+              if get_local(ctx, :amount, 0) < 1 or get_local(ctx, :amount, 0) > 50 do
+                ctx =
                   ctx
-                end
+                  |> mes(
+                    Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]")
+                  )
+                  |> mes("You can't bet more than")
+                  |> mes("50 Apples. Remember, we")
+                  |> mes("need to keep these stakes")
+                  |> mes("reasonable. Please enter")
+                  |> mes("a value no greater than 50.")
+                  |> next()
 
-              ctx
-            end
+                throw({:cont_2, ctx})
+              else
+                ctx
+              end
 
-          ctx =
             ctx
-            |> mes(Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]"))
-            |> mes("So you'll be")
+          end
 
-          {ctx, v3} =
-            ctx
-            |> mes(
-              Rathena.concat(
-                Rathena.concat("betting ^FF0000", get_local(ctx, :amount, 0)),
-                "^000000 Apples."
-              )
+        ctx =
+          ctx
+          |> mes(Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]"))
+          |> mes("So you'll be")
+
+        {ctx, v3} =
+          ctx
+          |> mes(
+            Rathena.concat(
+              Rathena.concat("betting ^FF0000", get_local(ctx, :amount, 0)),
+              "^000000 Apples."
             )
-            |> mes("Is that right?")
-            |> next()
-            |> select(["Yes", "No"])
+          )
+          |> mes("Is that right?")
+          |> next()
+          |> select(["Yes", "No"])
 
-          ctx =
-            if v3 == 2 do
-              ctx =
-                ctx
-                |> mes(Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]"))
-                |> mes("Mm, made a mistake?")
-                |> mes("Alright, please enter the")
-                |> mes("number of Apples you")
-                |> mes("wish to place in this bet")
-                |> next()
-
-              throw({:cont_2, ctx})
-            else
+        ctx =
+          if v3 == 2 do
+            ctx =
               ctx
-            end
+              |> mes(Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]"))
+              |> mes("Mm, made a mistake?")
+              |> mes("Alright, please enter the")
+              |> mes("number of Apples you")
+              |> mes("wish to place in this bet")
+              |> next()
 
-          ctx =
-            if count_item(ctx, 512) < get_local(ctx, :amount, 0) do
-              ctx =
-                ctx
-                |> mes("I'm sorry, but you")
-                |> mes("don't seem to have")
-                |> mes("enough Apples for this")
-                |> mes("bet... You can't gamble")
-                |> mes("if you can't play, you know.")
-                |> next()
-
-              throw({:cont_2, ctx})
-            else
-              ctx
-            end
-
-          ctx = delitem(ctx, 512, get_local(ctx, :amount, 0))
-
-          ctx =
+            throw({:cont_2, ctx})
+          else
             ctx
-            |> mes(Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]"))
-            |> mes("Good!")
-            |> mes("Now we can start")
-            |> mes("this game! I'll roll first~")
+          end
 
-          throw({:brk_2, ctx})
-        catch
-          :throw, {:brk_2, ctx} -> {:done, ctx}
-          :throw, {:cont_2, ctx} -> {:next, ctx}
-        end
+        ctx =
+          if count_item(ctx, 512) < get_local(ctx, :amount, 0) do
+            ctx =
+              ctx
+              |> mes("I'm sorry, but you")
+              |> mes("don't seem to have")
+              |> mes("enough Apples for this")
+              |> mes("bet... You can't gamble")
+              |> mes("if you can't play, you know.")
+              |> next()
 
-      case result do
-        {:next, ctx} -> loop_2(ctx, args)
-        {:done, ctx} -> ctx
+            throw({:cont_2, ctx})
+          else
+            ctx
+          end
+
+        ctx = delitem(ctx, 512, get_local(ctx, :amount, 0))
+
+        ctx =
+          ctx
+          |> mes(Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]"))
+          |> mes("Good!")
+          |> mes("Now we can start")
+          |> mes("this game! I'll roll first~")
+
+        throw({:brk_2, ctx})
+      catch
+        :throw, {:brk_2, ctx} -> {:done, ctx}
+        :throw, {:cont_2, ctx} -> {:next, ctx}
       end
-    else
-      ctx
+
+    case result do
+      {:next, ctx} -> loop_2(ctx, args)
+      {:done, ctx} -> ctx
     end
   end
 end

@@ -36,7 +36,5 @@ defmodule Aesir.ZoneServer.Content.Npc.NifIn.UndeadChicken do
     |> mes("Being a zombie is great!")
     |> mes("*Cackles*")
     |> close()
-
-    exit(:normal)
   end
 end

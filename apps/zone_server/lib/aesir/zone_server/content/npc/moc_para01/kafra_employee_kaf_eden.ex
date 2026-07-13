@@ -32,5 +32,7 @@ defmodule Aesir.ZoneServer.Content.Npc.MocPara01.KafraEmployeeKafEden do
       |> Aesir.ZoneServer.Content.Npc.Functions.FKafra.call([5, 2, 0, 80, 0])
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

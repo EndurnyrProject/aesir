@@ -37,7 +37,5 @@ defmodule Aesir.ZoneServer.Content.Npc.EinIn01.Lowe do
     |> mes("of reaction's an old")
     |> mes("habit for me, adventurer.")
     |> close()
-
-    exit(:normal)
   end
 end

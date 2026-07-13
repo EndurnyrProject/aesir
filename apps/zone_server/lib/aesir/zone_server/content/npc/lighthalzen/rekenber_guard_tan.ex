@@ -34,7 +34,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.RekenberGuardTan do
     |> mes("the glasses chick? Dude...")
     |> mes("Dude. She's my favorite too!")
     |> close()
-
-    exit(:normal)
   end
 end

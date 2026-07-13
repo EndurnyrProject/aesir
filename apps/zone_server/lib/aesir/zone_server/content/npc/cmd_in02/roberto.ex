@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.CmdIn02.Roberto do
     |> mes("even come up with that great")
     |> mes("of a lie, and he gave it to me!")
     |> close()
-
-    exit(:normal)
   end
 end

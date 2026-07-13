@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.VeIn.Towner239135 do
     |> mes("Seeing their drunken smiles")
     |> mes("really makes my day~")
     |> close()
-
-    exit(:normal)
   end
 end

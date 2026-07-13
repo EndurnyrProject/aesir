@@ -16,15 +16,16 @@ defmodule Aesir.ZoneServer.Content.Npc.AldebaIn.KafraEmployee do
   def on_talk(ctx) do
     ctx =
       if checkweight(ctx, [{1201, 1}]) == 0 do
-        ctx
-        |> mes("^3355FFWait a minute! Right now,")
-        |> mes("you're carrying too many items")
-        |> mes("in your inventory. Please come")
-        |> mes("back after storing some of")
-        |> mes("your things in Kafra Storage.")
-        |> close()
+        ctx =
+          ctx
+          |> mes("^3355FFWait a minute! Right now,")
+          |> mes("you're carrying too many items")
+          |> mes("in your inventory. Please come")
+          |> mes("back after storing some of")
+          |> mes("your things in Kafra Storage.")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -50,24 +51,25 @@ defmodule Aesir.ZoneServer.Content.Npc.AldebaIn.KafraEmployee do
 
     ctx =
       if get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 11000 do
-        ctx
-        |> mes("Um, but I don't think")
-        |> mes("you're able to carry")
-        |> mes("very much right now.")
-        |> mes("It looks like you have")
-        |> mes("too much stuff inside")
-        |> mes("your inventory.")
-        |> next()
-        |> mes("[Kafra Employee]")
-        |> mes("Please put some of")
-        |> mes("your things into Kafra")
-        |> mes("Storage. To use this")
-        |> mes("service, we ask that you")
-        |> mes("have about ^FF00001,100^000000 free units")
-        |> mes("of weight in your inventory.")
-        |> close()
+        ctx =
+          ctx
+          |> mes("Um, but I don't think")
+          |> mes("you're able to carry")
+          |> mes("very much right now.")
+          |> mes("It looks like you have")
+          |> mes("too much stuff inside")
+          |> mes("your inventory.")
+          |> next()
+          |> mes("[Kafra Employee]")
+          |> mes("Please put some of")
+          |> mes("your things into Kafra")
+          |> mes("Storage. To use this")
+          |> mes("service, we ask that you")
+          |> mes("have about ^FF00001,100^000000 free units")
+          |> mes("of weight in your inventory.")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -182,16 +184,17 @@ defmodule Aesir.ZoneServer.Content.Npc.AldebaIn.KafraEmployee do
               |> mes("Points to exchange for this")
               |> mes("reward. You need at least")
 
-            ctx
-            |> mes(
-              Rathena.concat(
-                Rathena.concat("^0000FF", get_local(ctx, :points, 0)),
-                "^000000 more points."
+            ctx =
+              ctx
+              |> mes(
+                Rathena.concat(
+                  Rathena.concat("^0000FF", get_local(ctx, :points, 0)),
+                  "^000000 more points."
+                )
               )
-            )
-            |> close()
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
@@ -427,8 +430,8 @@ defmodule Aesir.ZoneServer.Content.Npc.AldebaIn.KafraEmployee do
     |> mes("for even better rewards.")
     |> mes("Thank you for your patronage.")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   defp loop_1(ctx) do

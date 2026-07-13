@@ -13,15 +13,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Manuk.ManukGaltun122354 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Manuk Galtun]")
-      |> mes("Here is Manuk where the Sapha who is descendant of Hwergelmir lives.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Manuk Galtun]")
+        |> mes("Here is Manuk where the Sapha who is descendant of Hwergelmir lives.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx |> mes("[Manuk Galtun]") |> mes("To osn dia fg gh gh") |> close()
-      exit(:normal)
+      ctx = ctx |> mes("[Manuk Galtun]") |> mes("To osn dia fg gh gh") |> close()
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

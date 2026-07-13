@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.Harp do
     |> mes("looking at her makes me feel")
     |> mes("so happy! Praise be to Kafra!")
     |> close()
-
-    exit(:normal)
   end
 end

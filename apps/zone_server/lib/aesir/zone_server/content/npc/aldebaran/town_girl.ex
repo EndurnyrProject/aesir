@@ -26,24 +26,25 @@ defmodule Aesir.ZoneServer.Content.Npc.Aldebaran.TownGirl do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Nastasia]")
-        |> mes(
-          "Although Assassins benefit from being very quick and having lots of AGI, they should still have some DEX."
-        )
-        |> next()
-        |> mes("[Nastasia]")
-        |> mes(
-          "DEX is especially important if you want to hit monsters with wings. Those monsters are quick moving and fast in attacking."
-        )
-        |> next()
-        |> mes("[Nastasia]")
-        |> mes(
-          "In general, if you want to hit monsters that are as fast, or even faster, than you are, you're going to need some DEX."
-        )
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Nastasia]")
+          |> mes(
+            "Although Assassins benefit from being very quick and having lots of AGI, they should still have some DEX."
+          )
+          |> next()
+          |> mes("[Nastasia]")
+          |> mes(
+            "DEX is especially important if you want to hit monsters with wings. Those monsters are quick moving and fast in attacking."
+          )
+          |> next()
+          |> mes("[Nastasia]")
+          |> mes(
+            "In general, if you want to hit monsters that are as fast, or even faster, than you are, you're going to need some DEX."
+          )
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -54,7 +55,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Aldebaran.TownGirl do
       "It's usually said that in this world, nothing is free. Still, if you don't have to pay money to learn to be an Assassin..."
     )
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

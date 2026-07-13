@@ -35,7 +35,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Sung do
     |> mes("will be even more awesome.")
     |> mes("Yeah. Yeah, good idea, Sung...")
     |> close()
-
-    exit(:normal)
   end
 end

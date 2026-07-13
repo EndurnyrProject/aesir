@@ -29,7 +29,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbroch.AirshipStaff do
     |> mes("you to the main terminal. Thank")
     |> mes("you, and enjoy your travels.")
     |> close()
-
-    exit(:normal)
   end
 end

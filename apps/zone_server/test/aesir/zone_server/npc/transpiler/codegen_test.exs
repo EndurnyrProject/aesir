@@ -43,7 +43,6 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
              @impl true
              def on_talk(ctx) do
                ctx |> mes("Hello!") |> close()
-               exit(:normal)
              end
            end
            """
@@ -247,6 +246,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
 
     assert thrown =~ "throw({:brk_1, ctx})"
     assert thrown =~ ":throw, {:brk_1, ctx} -> {:done, ctx}"
+    # `while (1)` has a constant-true guard: no dead `if true do … else ctx end`.
+    refute thrown =~ "if true do"
   end
 
   test "a blocking loop condition re-evaluates inside the loop function" do
@@ -405,6 +406,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
 
     assert src =~ ~S|def on_event("OnInit", ctx), do: ev_oninit(ctx)|
     assert src =~ ~S|def on_event("OnTimer1000", ctx), do: ev_ontimer1000(ctx)|
+    # Event handlers return `ctx` (their task wrapper does the exit), so the
+    # dispatcher is not a `no_return` — no exit(:normal) in the handler tail.
+    refute src =~ ~r/def ev_oninit\(ctx\) do\n\s*exit\(:normal\)/
+    assert src =~ ~r/def ev_oninit\(ctx\) do\n\s*ctx\n\s*end/
     refute src =~ "unwired_events"
 
     [{module, _}] = Code.compile_string(src)
@@ -561,6 +566,44 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "use Aesir.ZoneServer.Npc"
   end
 
+  test "a global function ending in close/end throws so the calling script ends too" do
+    close_fn =
+      gen!("mes \"hi\";\nclose;\n",
+        kind: :function,
+        module: "Aesir.ZoneServer.Content.Npc.Functions.FClose",
+        spawns: []
+      )
+
+    # rAthena's `close`/`end` inside a callfunc'd function terminates the whole
+    # script; the throw unwinds through the caller to its entry-point catch, so
+    # `call/2` must not soften it into a `{ctx, nil}` return.
+    assert close_fn =~ "ctx = ctx |> mes(\"hi\") |> close()"
+    assert close_fn =~ "throw({:script_end, ctx})"
+    refute close_fn =~ "{ctx, nil}"
+
+    end_fn =
+      gen!("mes \"bye\";\nend;\n",
+        kind: :function,
+        module: "Aesir.ZoneServer.Content.Npc.Functions.FEndTail",
+        spawns: []
+      )
+
+    assert end_fn =~ "throw({:script_end, ctx})"
+    refute end_fn =~ "{ctx, nil}"
+  end
+
+  test "input as a statement binds the discarded range status to _" do
+    src =
+      gen!("""
+      input .@n, 0, 100;
+      mes "" + .@n;
+      close;
+      """)
+
+    assert src =~ ~r/\{_, v\d+\} = Rathena\.input_int/
+    refute src =~ ~r/\{v\d+, v\d+\} = Rathena\.input_int/
+  end
+
   test "an early return nested in a conditional throws instead of binding a tuple to ctx" do
     src =
       gen!(
@@ -580,6 +623,25 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ ":throw, {:script_return, result} -> result"
     refute src =~ "ctx =\n          {ctx,"
     refute src =~ "if getarg(0) == 0 do\n          {ctx, nil}"
+  end
+
+  test "a global function that runs off its end returns {ctx, nil}, not a bare ctx" do
+    src =
+      gen!(
+        """
+        mes "bye";
+        close3;
+        """,
+        kind: :function,
+        module: "Aesir.ZoneServer.Content.Npc.Functions.FEnd",
+        spawns: []
+      )
+
+    assert src =~ "def call(ctx, _args) do"
+    # Callers bind `{ctx, _} = FEnd.call(...)`, so the tail must be a tuple even
+    # when the function has no explicit `return`.
+    assert src =~ ~r/\{ctx, nil\}\n\s*end/
+    refute src =~ ~r/cutin\("", 255\)\n\s*end/
   end
 
   test "first-job buildins and global functions map to DSL primitives" do
@@ -642,7 +704,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ ~S|Todo.call!(:callfunc, ["F_Missing"])|
   end
 
-  test "a callfunc binding right before end drops the dead {ctx, _} binding" do
+  test "a callfunc before end keeps its live binding and the entry catches script_end" do
     functions = %{"F_Check" => "Aesir.ZoneServer.Content.Npc.Functions.FCheck"}
 
     piped =
@@ -665,11 +727,15 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       )
 
     assert piped =~
-             ~S{ctx |> mes("hi") |> Aesir.ZoneServer.Content.Npc.Functions.FCheck.call([1])}
+             "{ctx, _} = ctx |> mes(\"hi\") |> Aesir.ZoneServer.Content.Npc.Functions.FCheck.call([1])"
 
-    assert bare =~ "_ = Aesir.ZoneServer.Content.Npc.Functions.FCheck.call(ctx, [1])"
-    refute piped =~ "{ctx, _}"
-    refute bare =~ "{ctx, _}"
+    assert bare =~ "{ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FCheck.call(ctx, [1])"
+
+    # The called function may throw {:script_end, ctx}; the entry catches it.
+    for src <- [piped, bare] do
+      assert src =~ "catch\n    :throw, {:script_end, ctx} -> ctx"
+      refute src =~ "exit(:normal)"
+    end
   end
 
   test "broadcast buildins transpile to DSL calls, not todo stubs" do

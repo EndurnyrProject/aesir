@@ -35,7 +35,5 @@ defmodule Aesir.ZoneServer.Content.Npc.CmdIn02.Martine do
     |> mes("jackpot! You see, you see?")
     |> mes("I'm playing the freakin' odds.")
     |> close()
-
-    exit(:normal)
   end
 end

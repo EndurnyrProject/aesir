@@ -29,7 +29,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Alberta.Fabian do
     |> mes("[Fabian]")
     |> mes("Seriously...")
     |> close()
-
-    exit(:normal)
   end
 end

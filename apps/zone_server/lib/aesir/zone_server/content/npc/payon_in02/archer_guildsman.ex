@@ -37,18 +37,19 @@ defmodule Aesir.ZoneServer.Content.Npc.PayonIn02.ArcherGuildsman do
 
           ctx =
             if not Rathena.truthy?(v1) do
-              ctx
-              |> mes("[Archer Guildsman]")
-              |> mes("Err...")
-              |> mes(
-                "You'd better learn all the Basic Skills first before you can become an Archer."
-              )
-              |> next()
-              |> mes("[Archer Guildsman]")
-              |> mes("Alright, see you later.")
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Archer Guildsman]")
+                |> mes("Err...")
+                |> mes(
+                  "You'd better learn all the Basic Skills first before you can become an Archer."
+                )
+                |> next()
+                |> mes("[Archer Guildsman]")
+                |> mes("Alright, see you later.")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
               ctx
             end
@@ -65,29 +66,31 @@ defmodule Aesir.ZoneServer.Content.Npc.PayonIn02.ArcherGuildsman do
           ctx = jobchange(ctx, get_char_var(ctx, :Job_Archer_high, 0))
           ctx = todo(ctx, :skill, ["AC_MAKINGARROW", 1, get_char_var(ctx, :SKILL_PERM, 0)])
 
-          ctx
-          |> todo(:skill, ["AC_CHARGEARROW", 1, get_char_var(ctx, :SKILL_PERM, 0)])
-          |> mes("[Archer Guildsman]")
-          |> mes("Although there's no special")
-          |> mes("reward for you this time, I hope you understand. Take care of yourself.")
-          |> close()
+          ctx =
+            ctx
+            |> todo(:skill, ["AC_CHARGEARROW", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+            |> mes("[Archer Guildsman]")
+            |> mes("Although there's no special")
+            |> mes("reward for you this time, I hope you understand. Take care of yourself.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
         else
-          ctx
-          |> mes("[Archer Guildsman]")
-          |> mes("Oh...?")
-          |> mes("Hey, what are")
-          |> mes("you doing here...?")
-          |> next()
-          |> mes("[Archer Guildsman]")
-          |> mes(
-            "I can tell that you're not cut out to be an Archer. It sort of feels like you're meant to do"
-          )
-          |> mes("something else...")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Archer Guildsman]")
+            |> mes("Oh...?")
+            |> mes("Hey, what are")
+            |> mes("you doing here...?")
+            |> next()
+            |> mes("[Archer Guildsman]")
+            |> mes(
+              "I can tell that you're not cut out to be an Archer. It sort of feels like you're meant to do"
+            )
+            |> mes("something else...")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
         end
       else
         ctx
@@ -119,8 +122,8 @@ defmodule Aesir.ZoneServer.Content.Npc.PayonIn02.ArcherGuildsman do
                 |> mes("You already have your own decent job, don't you?")
               end
 
-            close(ctx)
-            exit(:normal)
+            ctx = close(ctx)
+            throw({:script_end, ctx})
           else
             ctx =
               ctx
@@ -131,92 +134,100 @@ defmodule Aesir.ZoneServer.Content.Npc.PayonIn02.ArcherGuildsman do
 
             ctx =
               if not Rathena.truthy?(v3) do
-                ctx
-                |> mes("[Archer Guildsman]")
-                |> mes("Well, you're not at the right skill level.")
-                |> mes(
-                  "Your job level must be at least ^4A4AFF10^000000 and your Basic Skill level should reach ^4A4AFFlevel 9"
-                )
-                |> next()
-                |> mes("[Archer Guildsman]")
-                |> mes(
-                  "Because an Archer needs extremely high concentration, so we do not accept those who have little patience."
-                )
-                |> close()
+                ctx =
+                  ctx
+                  |> mes("[Archer Guildsman]")
+                  |> mes("Well, you're not at the right skill level.")
+                  |> mes(
+                    "Your job level must be at least ^4A4AFF10^000000 and your Basic Skill level should reach ^4A4AFFlevel 9"
+                  )
+                  |> next()
+                  |> mes("[Archer Guildsman]")
+                  |> mes(
+                    "Because an Archer needs extremely high concentration, so we do not accept those who have little patience."
+                  )
+                  |> close()
 
-                exit(:normal)
+                throw({:script_end, ctx})
               else
                 ctx
               end
 
-            ctx
-            |> mes("[Archer Guildsman]")
-            |> mes("Your Basic Skill is now enough..")
-            |> mes(
-              "....Hm~~ so you are now ready to be an Archer. I will take the step right away."
-            )
-            |> next()
-            |> mes("[Archer Guildsman]")
-            |> mes(
-              "Congratulations! You are now an Archer! Also, we hope that you actively participate in many programs for the revival of the Archer Guild."
-            )
-            |> mes(
-              "Ah, items have arrived from the Production Department. Here, take these! These are all yours!"
-            )
-            |> jobchange(:archer)
-            |> give_item(1742, 1)
-            |> give_item(12004, 1)
-            |> give_item(12009, 1)
-            |> give_item(12008, 1)
-            |> next()
-            |> mes("[Archer Guildsman]")
-            |> mes("Having a bow and arrows, now you became a real Archer.")
-            |> mes(
-              "If you open the arrow container, there are arrows in it and then you can equip them."
-            )
-            |> mes("Well, I expect to hear better news from you. It's time to say goodbye.")
-            |> mes("Bye.")
-            |> close()
+            ctx =
+              ctx
+              |> mes("[Archer Guildsman]")
+              |> mes("Your Basic Skill is now enough..")
+              |> mes(
+                "....Hm~~ so you are now ready to be an Archer. I will take the step right away."
+              )
+              |> next()
+              |> mes("[Archer Guildsman]")
+              |> mes(
+                "Congratulations! You are now an Archer! Also, we hope that you actively participate in many programs for the revival of the Archer Guild."
+              )
+              |> mes(
+                "Ah, items have arrived from the Production Department. Here, take these! These are all yours!"
+              )
+              |> jobchange(:archer)
+              |> give_item(1742, 1)
+              |> give_item(12004, 1)
+              |> give_item(12009, 1)
+              |> give_item(12008, 1)
+              |> next()
+              |> mes("[Archer Guildsman]")
+              |> mes("Having a bow and arrows, now you became a real Archer.")
+              |> mes(
+                "If you open the arrow container, there are arrows in it and then you can equip them."
+              )
+              |> mes("Well, I expect to hear better news from you. It's time to say goodbye.")
+              |> mes("Bye.")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           end
 
         2 ->
-          ctx
-          |> mes("[Archer Guildsman]")
-          |> mes("An Archer has skills using a bow and has various talents.")
-          |> mes("The greatest ability of an Archer is attacking enemies from a long distance.")
-          |> next()
-          |> mes("[Archer Guildsman]")
-          |> mes("Although an Archer has weaker HP, he or she can shoot enemies at a long range,")
-          |> mes("so an Archer is safer in a real battle.")
-          |> next()
-          |> mes("[Archer Guildsman]")
-          |> mes(
-            "Although an Archer in Ragnarok has lower HP, he or she has high accuracy and attack rate so that the archer can kill monsters before they get close to an Archer."
-          )
-          |> next()
-          |> mes("[Archer Guildsman]")
-          |> mes("^8C2121An Archer can change jobs to a Hunter.^000000")
-          |> mes(
-            "^8C2121Other than Hunter, if you are a man, you can change your job to Bard and if you are a woman, you can change your job to Dancer.^000000"
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Archer Guildsman]")
+            |> mes("An Archer has skills using a bow and has various talents.")
+            |> mes("The greatest ability of an Archer is attacking enemies from a long distance.")
+            |> next()
+            |> mes("[Archer Guildsman]")
+            |> mes(
+              "Although an Archer has weaker HP, he or she can shoot enemies at a long range,"
+            )
+            |> mes("so an Archer is safer in a real battle.")
+            |> next()
+            |> mes("[Archer Guildsman]")
+            |> mes(
+              "Although an Archer in Ragnarok has lower HP, he or she has high accuracy and attack rate so that the archer can kill monsters before they get close to an Archer."
+            )
+            |> next()
+            |> mes("[Archer Guildsman]")
+            |> mes("^8C2121An Archer can change jobs to a Hunter.^000000")
+            |> mes(
+              "^8C2121Other than Hunter, if you are a man, you can change your job to Bard and if you are a woman, you can change your job to Dancer.^000000"
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx
-          |> mes("[Archer Guildsman]")
-          |> mes("If you have any questions, feel free to come and ask me.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Archer Guildsman]")
+            |> mes("If you have any questions, feel free to come and ask me.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.VeIn.Towner222122 do
     |> mes("backbone if he wants")
     |> mes("to impress me. Hmmm...")
     |> close()
-
-    exit(:normal)
   end
 end

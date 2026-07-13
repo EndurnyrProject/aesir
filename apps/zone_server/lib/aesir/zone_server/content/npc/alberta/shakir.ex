@@ -53,6 +53,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Alberta.Shakir do
       end
 
     close(ctx)
-    exit(:normal)
   end
 end

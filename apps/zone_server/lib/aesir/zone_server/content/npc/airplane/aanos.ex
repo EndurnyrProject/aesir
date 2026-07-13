@@ -19,7 +19,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.Aanos do
     |> mes("so different and")
     |> mes("pretty from up there!")
     |> close()
-
-    exit(:normal)
   end
 end

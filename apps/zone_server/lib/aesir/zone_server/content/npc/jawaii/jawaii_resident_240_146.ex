@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Jawaii.JawaiiResident240146 do
       "Well, there are a few monsters around, but you'll be okay as long as you don't attack them first. Think of them as the original residents of this island, another sight to enjoy."
     )
     |> close()
-
-    exit(:normal)
   end
 end

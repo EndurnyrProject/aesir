@@ -61,7 +61,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Ayothaya.OldMan do
     )
     |> mes("at least once.")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Rachel.Kinos do
     |> mes("this door... But it's")
     |> mes("almost impossible..")
     |> close()
-
-    exit(:normal)
   end
 end

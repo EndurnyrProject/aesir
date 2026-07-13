@@ -16,53 +16,57 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CharfriIzlude do
 
     case v1 do
       1 ->
-        ctx
-        |> mes(
-          "Some people may think Izlude is just a satellite city of Prontera, and not really that important..."
-        )
-        |> next()
-        |> mes("[Charfri]")
-        |> mes(
-          "But Izlude is a beautiful town right next to the ocean, as well as beautiful Byalan Island."
-        )
-        |> next()
-        |> mes("[Charfri]")
-        |> mes(
-          "You'll have to board on a ship at the port to get to Byalan Island. There are dangerous dungeons on that island, so don't go snooping around just anywhere."
-        )
-        |> close()
+        ctx =
+          ctx
+          |> mes(
+            "Some people may think Izlude is just a satellite city of Prontera, and not really that important..."
+          )
+          |> next()
+          |> mes("[Charfri]")
+          |> mes(
+            "But Izlude is a beautiful town right next to the ocean, as well as beautiful Byalan Island."
+          )
+          |> next()
+          |> mes("[Charfri]")
+          |> mes(
+            "You'll have to board on a ship at the port to get to Byalan Island. There are dangerous dungeons on that island, so don't go snooping around just anywhere."
+          )
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
 
       _ ->
-        ctx
-        |> mes(
-          "Though it is very beautiful, Byalan Island has a mysterious dungeon that extends deep under the sea."
-        )
-        |> next()
-        |> mes("[Charfri]")
-        |> mes(
-          "People who've actually been there have said that if you go deep enough, the dungeon actually descends underwater."
-        )
-        |> next()
-        |> mes("[Charfri]")
-        |> mes(
-          "Surprisingly, once you're underwater, you can breathe just like a fish. Maybe some kind of supernatural force is in effect."
-        )
-        |> next()
-        |> mes("[Charfri]")
-        |> mes("Ah...")
-        |> mes(
-          "The people who've seen the underwater view say it is so fantastic that they've kept dreaming of it ever since."
-        )
-        |> next()
-        |> mes("[Charfri]")
-        |> mes(
-          "But unfortunately, the monsters are too strong for ordinary people to merely go sightseeing there. Still, just once, I'd like to go down there..."
-        )
-        |> close()
+        ctx =
+          ctx
+          |> mes(
+            "Though it is very beautiful, Byalan Island has a mysterious dungeon that extends deep under the sea."
+          )
+          |> next()
+          |> mes("[Charfri]")
+          |> mes(
+            "People who've actually been there have said that if you go deep enough, the dungeon actually descends underwater."
+          )
+          |> next()
+          |> mes("[Charfri]")
+          |> mes(
+            "Surprisingly, once you're underwater, you can breathe just like a fish. Maybe some kind of supernatural force is in effect."
+          )
+          |> next()
+          |> mes("[Charfri]")
+          |> mes("Ah...")
+          |> mes(
+            "The people who've seen the underwater view say it is so fantastic that they've kept dreaming of it ever since."
+          )
+          |> next()
+          |> mes("[Charfri]")
+          |> mes(
+            "But unfortunately, the monsters are too strong for ordinary people to merely go sightseeing there. Still, just once, I'd like to go down there..."
+          )
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

@@ -13,53 +13,57 @@ defmodule Aesir.ZoneServer.Content.Npc.Xmas.LittleBoy do
   @impl true
   def on_talk(ctx) do
     if get_char_var(ctx, :xmas_npc, 0) == 9 do
-      ctx
-      |> mes("[Charu Charu]")
-      |> mes("Errrm?")
-      |> mes("Snowysnow?")
-      |> next()
-      |> mes("[Charu Charu]")
-      |> mes("Hmmm, well...")
-      |> mes("He's a nice snowman!")
-      |> mes("You want to know more about Snowysnow? Ummm, I'm not that smart! Ask Marcell!")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Charu Charu]")
+        |> mes("Errrm?")
+        |> mes("Snowysnow?")
+        |> next()
+        |> mes("[Charu Charu]")
+        |> mes("Hmmm, well...")
+        |> mes("He's a nice snowman!")
+        |> mes("You want to know more about Snowysnow? Ummm, I'm not that smart! Ask Marcell!")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Charu Charu]")
-      |> mes("Merry Merry Christmas!")
-      |> mes("Heheheheheh~!")
-      |> next()
-      |> mes("[Charu Charu]")
-      |> mes("Did you talk to that clown guy over there? Isn't he soooooo booooring? (-.-)")
-      |> next()
-      |> mes("[Charu Charu]")
-      |> mes("When Marcell and I watch his show, we feel like we're getting dumber and dumber~")
-      |> next()
-      |> mes("[Marcell]")
-      |> mes(
-        "Charu Charu!! Watch your mouth! How dare you say that about poor Hashokii?! He's always trying hard to make us happy!"
-      )
-      |> next()
-      |> mes("[Charu Charu]")
-      |> mes("Yeah, yeah.")
-      |> mes("Whatever~")
-      |> mes("I already know that!")
-      |> mes("But he's not funny at all!")
-      |> mes("I'd rather stay with ^3355FFSnowysnow^000000~")
-      |> next()
-      |> mes("[Charu Charu]")
-      |> mes(
-        "Oh well, if you didn't visit Snowysnow yet, you should see him at least once. He's funny!"
-      )
-      |> next()
-      |> mes("[Charu Charu]")
-      |> mes("Merry Christmas!")
-      |> mes("Enjoy your Holiday in Lutie~!")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Charu Charu]")
+        |> mes("Merry Merry Christmas!")
+        |> mes("Heheheheheh~!")
+        |> next()
+        |> mes("[Charu Charu]")
+        |> mes("Did you talk to that clown guy over there? Isn't he soooooo booooring? (-.-)")
+        |> next()
+        |> mes("[Charu Charu]")
+        |> mes("When Marcell and I watch his show, we feel like we're getting dumber and dumber~")
+        |> next()
+        |> mes("[Marcell]")
+        |> mes(
+          "Charu Charu!! Watch your mouth! How dare you say that about poor Hashokii?! He's always trying hard to make us happy!"
+        )
+        |> next()
+        |> mes("[Charu Charu]")
+        |> mes("Yeah, yeah.")
+        |> mes("Whatever~")
+        |> mes("I already know that!")
+        |> mes("But he's not funny at all!")
+        |> mes("I'd rather stay with ^3355FFSnowysnow^000000~")
+        |> next()
+        |> mes("[Charu Charu]")
+        |> mes(
+          "Oh well, if you didn't visit Snowysnow yet, you should see him at least once. He's funny!"
+        )
+        |> next()
+        |> mes("[Charu Charu]")
+        |> mes("Merry Christmas!")
+        |> mes("Enjoy your Holiday in Lutie~!")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

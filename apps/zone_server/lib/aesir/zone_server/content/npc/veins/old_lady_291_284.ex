@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.OldLady291284 do
     |> mes("when I leave this world.")
     |> mes("My days here are numbered...")
     |> close()
-
-    exit(:normal)
   end
 end

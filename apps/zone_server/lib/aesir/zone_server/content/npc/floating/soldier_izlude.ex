@@ -33,86 +33,89 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SoldierIzlude do
 
         ctx =
           if v2 == 1 do
-            ctx
-            |> mes("[Soldier]")
-            |> mes(
-              "HaHa~ In fact, that was actually part of our job. But there were more and more hunters who came to us in order to get paid and it became too much to handle."
-            )
-            |> next()
-            |> mes("[Soldier]")
-            |> mes(
-              "We had to work overtime every day. Ah, it was a nightmare...! Anyway, the government eventually made a wise decision in creating the Registration System."
-            )
-            |> next()
-            |> mes("[Soldier]")
-            |> mes(
-              "The Office of Prize Compensation only pays those who have the Registration. Of course, you'd have to be a merchant and stay in the same place all day long."
-            )
-            |> next()
-            |> mes("[Soldier]")
-            |> mes(
-              "The Office gives away the registration to any merchant who fulfills those requirements. So nowadays, the hunters sell their goods to the registered merchants."
-            )
-            |> next()
-            |> mes("[Soldier]")
-            |> mes(
-              "So nowadays, the hunters sell their goods to the registered merchants.  Not too many people come to us for that anymore."
-            )
-            |> next()
-            |> mes("[Soldier]")
-            |> mes(
-              "I mean we are still busy, but that's nothing compared to how it was before. People who have felt suffering know how to appreciate even the slightest comfort."
-            )
-            |> close()
+            ctx =
+              ctx
+              |> mes("[Soldier]")
+              |> mes(
+                "HaHa~ In fact, that was actually part of our job. But there were more and more hunters who came to us in order to get paid and it became too much to handle."
+              )
+              |> next()
+              |> mes("[Soldier]")
+              |> mes(
+                "We had to work overtime every day. Ah, it was a nightmare...! Anyway, the government eventually made a wise decision in creating the Registration System."
+              )
+              |> next()
+              |> mes("[Soldier]")
+              |> mes(
+                "The Office of Prize Compensation only pays those who have the Registration. Of course, you'd have to be a merchant and stay in the same place all day long."
+              )
+              |> next()
+              |> mes("[Soldier]")
+              |> mes(
+                "The Office gives away the registration to any merchant who fulfills those requirements. So nowadays, the hunters sell their goods to the registered merchants."
+              )
+              |> next()
+              |> mes("[Soldier]")
+              |> mes(
+                "So nowadays, the hunters sell their goods to the registered merchants.  Not too many people come to us for that anymore."
+              )
+              |> next()
+              |> mes("[Soldier]")
+              |> mes(
+                "I mean we are still busy, but that's nothing compared to how it was before. People who have felt suffering know how to appreciate even the slightest comfort."
+              )
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
 
-        ctx
-        |> mes("[Soldier]")
-        |> mes(
-          "What?! What do you mean you didn't know?! Well, you know you can get items by killing monsters. If you bring and sell those to a merchant, you can make some money. "
-        )
-        |> next()
-        |> mes("[Soldier]")
-        |> mes(
-          "HaHa, in fact, that used to be part of our job. But there were more and more hunters who come in order to get paid, so it became too much to handle."
-        )
-        |> next()
-        |> mes("[Soldier]")
-        |> mes(
-          "We had to work overtime every day. Ah, it was a nightmare...! Anyway, the government eventually made a wise decision in creating the Registration System."
-        )
-        |> next()
-        |> mes("[Soldier]")
-        |> mes(
-          "The Office of Prize Compensation only pays those who have the Registration. Of course, you'd have to be a merchant and stay in the same place all day long."
-        )
-        |> next()
-        |> mes("[Soldier]")
-        |> mes(
-          "The Office gives away the registration to any merchant who fulfills those requirements. So nowadays, the hunters sell their goods to the registered merchants."
-        )
-        |> next()
-        |> mes("[Soldier]")
-        |> mes(
-          "So nowadays, the hunters sell their goods to the registered merchants.  Not too many people come to us for that anymore."
-        )
-        |> next()
-        |> mes("[Soldier]")
-        |> mes(
-          "I mean we are still busy, but that's nothing compared to how it was before. People who have felt suffering know how to appreciate even the slightest comfort."
-        )
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Soldier]")
+          |> mes(
+            "What?! What do you mean you didn't know?! Well, you know you can get items by killing monsters. If you bring and sell those to a merchant, you can make some money. "
+          )
+          |> next()
+          |> mes("[Soldier]")
+          |> mes(
+            "HaHa, in fact, that used to be part of our job. But there were more and more hunters who come in order to get paid, so it became too much to handle."
+          )
+          |> next()
+          |> mes("[Soldier]")
+          |> mes(
+            "We had to work overtime every day. Ah, it was a nightmare...! Anyway, the government eventually made a wise decision in creating the Registration System."
+          )
+          |> next()
+          |> mes("[Soldier]")
+          |> mes(
+            "The Office of Prize Compensation only pays those who have the Registration. Of course, you'd have to be a merchant and stay in the same place all day long."
+          )
+          |> next()
+          |> mes("[Soldier]")
+          |> mes(
+            "The Office gives away the registration to any merchant who fulfills those requirements. So nowadays, the hunters sell their goods to the registered merchants."
+          )
+          |> next()
+          |> mes("[Soldier]")
+          |> mes(
+            "So nowadays, the hunters sell their goods to the registered merchants.  Not too many people come to us for that anymore."
+          )
+          |> next()
+          |> mes("[Soldier]")
+          |> mes(
+            "I mean we are still busy, but that's nothing compared to how it was before. People who have felt suffering know how to appreciate even the slightest comfort."
+          )
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
 
     ctx |> mes("[Soldier]") |> mes("Okay Good Bye~~") |> close()
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

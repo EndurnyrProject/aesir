@@ -15,23 +15,27 @@ defmodule Aesir.ZoneServer.Content.Npc.Splendide.MiddleRankedLaphine do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Middle-Ranked Laphine]")
-      |> mes("Haap-!")
-      |> mes("See? Same as a streetlight, right?")
-      |> specialeffect(:level99_4)
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Middle-Ranked Laphine]")
+        |> mes("Haap-!")
+        |> mes("See? Same as a streetlight, right?")
+        |> specialeffect(:level99_4)
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Middle-Ranked Laphine]")
-      |> mes("sehrVa")
-      |> mes("IyazAnman Di TurHirCya")
-      |> specialeffect(:level99_4)
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Middle-Ranked Laphine]")
+        |> mes("sehrVa")
+        |> mes("IyazAnman Di TurHirCya")
+        |> specialeffect(:level99_4)
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.VeIn.Ward do
     |> mes("here?! This place isn't")
     |> mes("safe for you! Leave!")
     |> close()
-
-    exit(:normal)
   end
 end

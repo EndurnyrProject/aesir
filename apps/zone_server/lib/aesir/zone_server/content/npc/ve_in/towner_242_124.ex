@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.VeIn.Towner242124 do
     |> mes("[Towner]")
     |> mes("^333333*Hiccup*^000000")
     |> close()
-
-    exit(:normal)
   end
 end

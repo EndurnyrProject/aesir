@@ -17,7 +17,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Niflheim.Keedz do
     |> mes("I don't allow any living person")
     |> mes("to come in this place!")
     |> close()
-
-    exit(:normal)
   end
 end

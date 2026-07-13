@@ -102,6 +102,5 @@ defmodule Aesir.ZoneServer.Content.Npc.AldebaIn.KafraJasmine do
       end
 
     ctx |> close() |> cutin("", 255)
-    exit(:normal)
   end
 end

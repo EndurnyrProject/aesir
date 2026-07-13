@@ -20,7 +20,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.ChristopherMichael do
     |> mes("Don't want to get up.")
     |> mes("Ever again. OoOoooh...")
     |> close()
-
-    exit(:normal)
   end
 end

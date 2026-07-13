@@ -12,36 +12,48 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.Employee do
 
   alias Aesir.ZoneServer.Script.Rathena
   @impl true
-  def on_event("OnWelcome", ctx), do: ev_onwelcome(ctx)
-  def on_event("OnSolo", ctx), do: ev_onsolo(ctx)
+  def on_event("OnWelcome", ctx) do
+    ev_onwelcome(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  def on_event("OnSolo", ctx) do
+    ev_onsolo(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
   @impl true
   def on_talk(ctx) do
     ctx = ctx |> mes("[Employee Tryteh]") |> mes("Welcome to Jawaii Tavern~")
 
     ctx =
       if Rathena.truthy?(getpartnerid(ctx)) do
-        ctx
-        |> mes(
-          "Anyway, I am so glad that you two have gotten married. I hope you both will live happily ever after~"
-        )
-        |> next()
-        |> mes("[Employee Tryteh]")
-        |> mes("Try to be a little careful if you bump into any rude customers.")
-        |> mes("They might be drunk and do something stupid. You know")
-        |> mes("how it is...")
-        |> close()
+        ctx =
+          ctx
+          |> mes(
+            "Anyway, I am so glad that you two have gotten married. I hope you both will live happily ever after~"
+          )
+          |> next()
+          |> mes("[Employee Tryteh]")
+          |> mes("Try to be a little careful if you bump into any rude customers.")
+          |> mes("They might be drunk and do something stupid. You know")
+          |> mes("how it is...")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx =
           if not Rathena.truthy?(getpartnerid(ctx)) do
-            ctx
-            |> mes("I hope you enjoy your stay")
-            |> mes("over here. But try not")
-            |> mes("to drink too much~")
-            |> close()
+            ctx =
+              ctx
+              |> mes("I hope you enjoy your stay")
+              |> mes("over here. But try not")
+              |> mes("to drink too much~")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
@@ -50,16 +62,15 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.Employee do
       end
 
     ctx |> mes("I hope you will have a good time.") |> close()
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   def ev_onwelcome(ctx) do
-    _ = emotion(ctx, :chup)
-    exit(:normal)
+    emotion(ctx, :chup)
   end
 
   def ev_onsolo(ctx) do
-    _ = emotion(ctx, :huk)
-    exit(:normal)
+    emotion(ctx, :huk)
   end
 end

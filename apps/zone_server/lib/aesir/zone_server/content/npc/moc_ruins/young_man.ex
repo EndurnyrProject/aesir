@@ -38,7 +38,5 @@ defmodule Aesir.ZoneServer.Content.Npc.MocRuins.YoungMan do
       "Those monsters in the Pyramid would be very, very sensitive to sweet flash smell of people...."
     )
     |> close()
-
-    exit(:normal)
   end
 end

@@ -13,6 +13,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Guide73188 do
   @impl true
   def on_talk(ctx) do
     ctx |> mes("[Bonnie]") |> mes("Oh no...") |> mes("Where did I put it?") |> close()
-    exit(:normal)
   end
 end

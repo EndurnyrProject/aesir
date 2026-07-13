@@ -17,7 +17,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbroch.BulletinBoard104202 do
     |> mes("East - Weapon Shop,Hotel")
     |> mes("South - Airship Repair Shop, Laboratory")
     |> close()
-
-    exit(:normal)
   end
 end

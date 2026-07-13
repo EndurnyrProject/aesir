@@ -118,7 +118,8 @@ defmodule Aesir.ZoneServer.Content.Npc.AldebaIn.KafraService96181 do
           ctx
       end
 
-    _ = cutin(ctx, "", 255)
-    exit(:normal)
+    cutin(ctx, "", 255)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

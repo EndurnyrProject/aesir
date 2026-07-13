@@ -61,7 +61,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Umbala.Pasto do
     |> mes("So very lonely...*Sob*")
     |> emotion(:cry)
     |> close()
-
-    exit(:normal)
   end
 end

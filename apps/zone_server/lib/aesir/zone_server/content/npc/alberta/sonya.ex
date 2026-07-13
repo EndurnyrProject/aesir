@@ -18,67 +18,74 @@ defmodule Aesir.ZoneServer.Content.Npc.Alberta.Sonya do
     ctx =
       case v1 do
         0 ->
-          ctx
-          |> mes(
-            "Hey, you know, this one time I was walking through the forest and I saw this little green stem moving around."
-          )
-          |> next()
-          |> mes("[Sonya]")
-          |> mes(
-            "I went to see what it was and when I went to touch it. The stem actually slapped my hand!"
-          )
-          |> next()
-          |> mes("[Sonya]")
-          |> mes(
-            "It startled me, so I jumped back a bit and then I realized it wasn't a stem, but a very small animal."
-          )
-          |> next()
-          |> mes("[Sonya]")
-          |> mes(
-            "I was lucky I didn't upset it. Even the smallest animal can be dangerous if angered."
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes(
+              "Hey, you know, this one time I was walking through the forest and I saw this little green stem moving around."
+            )
+            |> next()
+            |> mes("[Sonya]")
+            |> mes(
+              "I went to see what it was and when I went to touch it. The stem actually slapped my hand!"
+            )
+            |> next()
+            |> mes("[Sonya]")
+            |> mes(
+              "It startled me, so I jumped back a bit and then I realized it wasn't a stem, but a very small animal."
+            )
+            |> next()
+            |> mes("[Sonya]")
+            |> mes(
+              "I was lucky I didn't upset it. Even the smallest animal can be dangerous if angered."
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         1 ->
-          ctx
-          |> mes("You know those lazy looking bears that live in the forest on the way to Payon?")
-          |> next()
-          |> mes("[Sonya]")
-          |> mes(
-            "Just for fun, I threw a rock at it and all of sudden it rushed at me! I was sooooo scared, I started to run away, then BAM!!!"
-          )
-          |> next()
-          |> mes("[Sonya]")
-          |> mes(
-            "It ran into a low tree branch and knocked itself out! I swear, I'll never provoke an animal for fun again!"
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes(
+              "You know those lazy looking bears that live in the forest on the way to Payon?"
+            )
+            |> next()
+            |> mes("[Sonya]")
+            |> mes(
+              "Just for fun, I threw a rock at it and all of sudden it rushed at me! I was sooooo scared, I started to run away, then BAM!!!"
+            )
+            |> next()
+            |> mes("[Sonya]")
+            |> mes(
+              "It ran into a low tree branch and knocked itself out! I swear, I'll never provoke an animal for fun again!"
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("I once saw a pack of wolves take on one of those huge, lazy bears!")
-          |> next()
-          |> mes("[Sonya]")
-          |> mes(
-            "Wolves are much more cooperative than they may seem. If one of them is attacked, then any nearby wolves will run to help."
-          )
-          |> next()
-          |> mes("[Sonya]")
-          |> mes(
-            "I'd think twice if you ever want to fight one when others of its kind are around. Be careful: don't get ganged up on!"
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("I once saw a pack of wolves take on one of those huge, lazy bears!")
+            |> next()
+            |> mes("[Sonya]")
+            |> mes(
+              "Wolves are much more cooperative than they may seem. If one of them is attacked, then any nearby wolves will run to help."
+            )
+            |> next()
+            |> mes("[Sonya]")
+            |> mes(
+              "I'd think twice if you ever want to fight one when others of its kind are around. Be careful: don't get ganged up on!"
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

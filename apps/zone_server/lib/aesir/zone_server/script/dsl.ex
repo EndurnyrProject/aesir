@@ -444,11 +444,12 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   @spec announce(Ctx.t(), String.t(), non_neg_integer()) :: Ctx.t()
   def announce(%Ctx{} = ctx, text, flag), do: announce(ctx, text, flag, 0)
 
-  @spec announce(Ctx.t(), String.t(), non_neg_integer(), non_neg_integer()) :: Ctx.t()
+  @spec announce(Ctx.t(), String.t(), non_neg_integer(), non_neg_integer() | String.t()) ::
+          Ctx.t()
   def announce(%Ctx{status: {:error, _}} = ctx, _text, _flag, _color), do: ctx
 
   def announce(%Ctx{} = ctx, text, flag, color) do
-    %{scope: scope, color: resolved_color, source: source} = Flags.decode(flag, color)
+    %{scope: scope, color: resolved_color, source: source} = Flags.decode(flag, to_color(color))
     opts = build_opts(text, resolved_color, scope)
     dispatch_announce(ctx, scope, source, opts)
     ctx
@@ -464,12 +465,18 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   @spec mapannounce(Ctx.t(), String.t(), String.t(), non_neg_integer()) :: Ctx.t()
   def mapannounce(%Ctx{} = ctx, map, text, flag), do: mapannounce(ctx, map, text, flag, 0)
 
-  @spec mapannounce(Ctx.t(), String.t(), String.t(), non_neg_integer(), non_neg_integer()) ::
+  @spec mapannounce(
+          Ctx.t(),
+          String.t(),
+          String.t(),
+          non_neg_integer(),
+          non_neg_integer() | String.t()
+        ) ::
           Ctx.t()
   def mapannounce(%Ctx{status: {:error, _}} = ctx, _map, _text, _flag, _color), do: ctx
 
   def mapannounce(%Ctx{} = ctx, map, text, flag, color) do
-    %{color: resolved_color} = Flags.decode(flag, color)
+    %{color: resolved_color} = Flags.decode(flag, to_color(color))
     Announcement.to_map(map, build_opts(text, resolved_color, :map))
     ctx
   end
@@ -505,7 +512,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
           integer(),
           String.t(),
           non_neg_integer(),
-          non_neg_integer()
+          non_neg_integer() | String.t()
         ) :: Ctx.t()
   # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
   def areaannounce(
@@ -524,7 +531,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
   # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
   def areaannounce(%Ctx{} = ctx, map, x0, y0, x1, y1, text, flag, color) do
-    %{color: resolved_color} = Flags.decode(flag, color)
+    %{color: resolved_color} = Flags.decode(flag, to_color(color))
     Announcement.to_area(map, {x0, y0, x1, y1}, build_opts(text, resolved_color, :area))
     ctx
   end
@@ -536,11 +543,12 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   @spec broadcast(Ctx.t(), String.t(), non_neg_integer()) :: Ctx.t()
   def broadcast(%Ctx{} = ctx, text, flag), do: broadcast(ctx, text, flag, 0)
 
-  @spec broadcast(Ctx.t(), String.t(), non_neg_integer(), non_neg_integer()) :: Ctx.t()
+  @spec broadcast(Ctx.t(), String.t(), non_neg_integer(), non_neg_integer() | String.t()) ::
+          Ctx.t()
   def broadcast(%Ctx{status: {:error, _}} = ctx, _text, _flag, _color), do: ctx
 
   def broadcast(%Ctx{} = ctx, text, flag, color) do
-    %{color: resolved_color} = Flags.decode(flag, color)
+    %{color: resolved_color} = Flags.decode(flag, to_color(color))
     Announcement.to_all(build_opts(text, resolved_color, :all))
     ctx
   end
@@ -555,14 +563,37 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   chat-box arm of the broadcast packet. Purely cosmetic, so a detached ctx
   (no player to message) is a silent no-op rather than a halt.
   """
-  @spec dispbottom(Ctx.t(), String.t(), non_neg_integer()) :: Ctx.t()
+  @spec dispbottom(Ctx.t(), String.t(), non_neg_integer() | String.t()) :: Ctx.t()
   def dispbottom(ctx, text, color \\ @dispbottom_color)
   def dispbottom(%Ctx{status: {:error, _}} = ctx, _text, _color), do: ctx
   def dispbottom(%Ctx{char_id: nil} = ctx, _text, _color), do: ctx
 
   def dispbottom(%Ctx{char_id: char_id} = ctx, text, color) do
-    Announcement.to_self(char_id, %{text: text, color: color, style: :LOCAL, source_name: ""})
+    Announcement.to_self(char_id, %{
+      text: text,
+      color: to_color(color),
+      style: :LOCAL,
+      source_name: ""
+    })
+
     ctx
+  end
+
+  # rAthena announce/broadcast colors arrive either as an integer or, in the
+  # airship/event scripts, as a `"0xRRGGBB"` hex string; `Flags.decode/2` and the
+  # broadcast packet both want an integer, so normalize here. An unparseable
+  # value falls back to `0` (derive the color from the flag bits).
+  @spec to_color(non_neg_integer() | String.t()) :: non_neg_integer()
+  defp to_color(color) when is_integer(color), do: color
+  defp to_color("0x" <> hex), do: parse_color_base(hex, 16)
+  defp to_color("0X" <> hex), do: parse_color_base(hex, 16)
+  defp to_color(color) when is_binary(color), do: parse_color_base(color, 10)
+
+  defp parse_color_base(digits, base) do
+    case Integer.parse(digits, base) do
+      {n, ""} when n >= 0 -> n
+      _ -> 0
+    end
   end
 
   defp build_opts(text, color, scope) do
@@ -1774,10 +1805,11 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     name |> to_string() |> String.split("_") |> Enum.map_join(" ", &String.capitalize/1)
   end
 
-  @doc "The player's sex."
-  @spec sex(Ctx.t()) :: String.t()
+  @doc "The player's sex as rAthena's `Sex`: `1` male, `0` female."
+  @spec sex(Ctx.t()) :: 0 | 1
   def sex(%Ctx{game_state: nil}), do: no_player!("sex/1")
-  def sex(%Ctx{game_state: gs}), do: gs.sex
+  def sex(%Ctx{game_state: %{sex: "M"}}), do: 1
+  def sex(%Ctx{game_state: %{}}), do: 0
 
   @doc "The player's current HP."
   @spec hp(Ctx.t()) :: non_neg_integer()
@@ -1804,16 +1836,23 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   def position(%Ctx{game_state: nil}), do: no_player!("position/1")
   def position(%Ctx{game_state: gs}), do: {gs.x, gs.y, gs.map_name}
 
-  @doc "Whether the player has an item with `item_id` equipped."
-  @spec is_equipped(Ctx.t(), integer()) :: boolean()
+  @doc """
+  Whether the player has an item with `item_id` equipped, as rAthena's
+  `isequipped`: `1` when equipped, `0` otherwise (so transpiled `== 1`/`> 0`
+  comparisons work).
+  """
+  @spec is_equipped(Ctx.t(), integer()) :: 0 | 1
   # credo:disable-for-next-line Credo.Check.Readability.PredicateFunctionNames
   def is_equipped(%Ctx{game_state: nil}, _item_id), do: no_player!("is_equipped/2")
 
   # credo:disable-for-next-line Credo.Check.Readability.PredicateFunctionNames
   def is_equipped(%Ctx{game_state: gs}, item_id) do
-    gs.inventory
-    |> Inventory.equipped_items()
-    |> Enum.any?(fn {_index, %InventoryItem{nameid: nameid}} -> nameid == item_id end)
+    equipped? =
+      gs.inventory
+      |> Inventory.equipped_items()
+      |> Enum.any?(fn {_index, %InventoryItem{nameid: nameid}} -> nameid == item_id end)
+
+    if equipped?, do: 1, else: 0
   end
 
   # rAthena `enum equip_index` ordinal -> Aesir equip location. The transpiler

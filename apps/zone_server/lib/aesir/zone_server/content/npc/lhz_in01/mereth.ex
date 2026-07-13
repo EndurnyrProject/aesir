@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Mereth do
     |> mes("then began to dance a lively,")
     |> mes("creepily jovial jig.^000000")
     |> close()
-
-    exit(:normal)
   end
 end

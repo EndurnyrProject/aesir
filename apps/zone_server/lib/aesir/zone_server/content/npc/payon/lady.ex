@@ -44,7 +44,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Payon.Lady do
     |> mes("may be spooky, but their story")
     |> mes("is also kind of tragic.")
     |> close()
-
-    exit(:normal)
   end
 end

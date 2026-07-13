@@ -20,7 +20,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Hugel.YoungMan do
     |> mes("Would filling my tummy")
     |> mes("with air work the same way?")
     |> close()
-
-    exit(:normal)
   end
 end

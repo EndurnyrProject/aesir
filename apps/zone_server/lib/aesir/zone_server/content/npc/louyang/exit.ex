@@ -24,7 +24,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Louyang.Exit do
 
     ctx =
       if v1 == 1 do
-        _ =
+        ctx =
           if Enum.random(1..100) == 34 do
             ctx = ctx |> percent_heal(hp: -99, sp: 0) |> warp("louyang", 86, 269)
 
@@ -41,12 +41,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Louyang.Exit do
             warp(ctx, "lou_in01", 10, 18)
           end
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
 
     close(ctx)
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

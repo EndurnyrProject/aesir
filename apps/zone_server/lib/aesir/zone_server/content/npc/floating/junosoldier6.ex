@@ -23,7 +23,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Junosoldier6 do
       "Its use is limited to the Sage class, and it increases the chance of inflicting critical attacks. So, for Sages, that dagger can be very useful, as well as make them look stylish in battle."
     )
     |> close()
-
-    exit(:normal)
   end
 end

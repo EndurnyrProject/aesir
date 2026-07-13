@@ -36,17 +36,18 @@ defmodule Aesir.ZoneServer.Content.Npc.IzludeIn.Swordman do
 
           ctx =
             if not Rathena.truthy?(v1) do
-              ctx
-              |> mes("[Swordman]")
-              |> mes(
-                "Hmm? Ah, you must first master the Basic Skills before you are ready to become a Swordman."
-              )
-              |> next()
-              |> mes("[Swordman]")
-              |> mes("Come back to me when you have finished learning the Basic Novice Skills.")
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Swordman]")
+                |> mes(
+                  "Hmm? Ah, you must first master the Basic Skills before you are ready to become a Swordman."
+                )
+                |> next()
+                |> mes("[Swordman]")
+                |> mes("Come back to me when you have finished learning the Basic Novice Skills.")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
               ctx
             end
@@ -62,32 +63,34 @@ defmodule Aesir.ZoneServer.Content.Npc.IzludeIn.Swordman do
           ctx = todo(ctx, :skill, ["SM_MOVINGRECOVERY", 1, get_char_var(ctx, :SKILL_PERM, 0)])
           ctx = todo(ctx, :skill, ["SM_FATALBLOW", 1, get_char_var(ctx, :SKILL_PERM, 0)])
 
-          ctx
-          |> todo(:skill, ["SM_AUTOBERSERK", 1, get_char_var(ctx, :SKILL_PERM, 0)])
-          |> mes("[Swordman]")
-          |> mes(
-            "Hmm... You look like a well-experienced Swordman. Still, I'm sure that you must train to improve your skills and gain strength!"
-          )
-          |> close()
+          ctx =
+            ctx
+            |> todo(:skill, ["SM_AUTOBERSERK", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+            |> mes("[Swordman]")
+            |> mes(
+              "Hmm... You look like a well-experienced Swordman. Still, I'm sure that you must train to improve your skills and gain strength!"
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
         else
-          ctx
-          |> mes("[Swordman]")
-          |> mes("Hm...?")
-          |> mes("You're a reborn")
-          |> mes("warrior, aren't you?")
-          |> next()
-          |> mes("[Swordman]")
-          |> mes("Hmmm...")
-          |> mes("It seems that being")
-          |> mes("a Swordman is not part")
-          |> mes("of your destiny. I'm sorry,")
-          |> mes("but it seems there is nothing")
-          |> mes("I can do for you.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Swordman]")
+            |> mes("Hm...?")
+            |> mes("You're a reborn")
+            |> mes("warrior, aren't you?")
+            |> next()
+            |> mes("[Swordman]")
+            |> mes("Hmmm...")
+            |> mes("It seems that being")
+            |> mes("a Swordman is not part")
+            |> mes("of your destiny. I'm sorry,")
+            |> mes("but it seems there is nothing")
+            |> mes("I can do for you.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
         end
       else
         ctx
@@ -104,31 +107,34 @@ defmodule Aesir.ZoneServer.Content.Npc.IzludeIn.Swordman do
     ctx =
       case v2 do
         1 ->
-          ctx
-          |> mes("[Swordman Guildsman]")
-          |> mes("So you wish to know more about the mighty Swordman? Okay!")
-          |> next()
-          |> mes("[Swordman Guildsman]")
-          |> mes(
-            "The most distinctive feature of the Swordman is that the Swordman can show us his/her real abilities in close combat."
-          )
-          |> mes("There are three reasons!")
-          |> next()
-          |> mes("[Swordman Guildsman]")
-          |> mes("First, Swordman has higher HP than other jobs.")
-          |> mes(
-            "Second, except for Bows and Rods, Swordman can use all other weapons so they can fight at their optimal ability."
-          )
-          |> mes("And third, most of the skills of the Swordman give powerful physical attacks.")
-          |> next()
-          |> mes("[Swordman Guildsman]")
-          |> mes(
-            "Though I gave you a simple explanation, I believe you understand the core meaning of what it is to be a Swordman."
-          )
-          |> mes("In my opinion, Swordman is the best job ever!")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Swordman Guildsman]")
+            |> mes("So you wish to know more about the mighty Swordman? Okay!")
+            |> next()
+            |> mes("[Swordman Guildsman]")
+            |> mes(
+              "The most distinctive feature of the Swordman is that the Swordman can show us his/her real abilities in close combat."
+            )
+            |> mes("There are three reasons!")
+            |> next()
+            |> mes("[Swordman Guildsman]")
+            |> mes("First, Swordman has higher HP than other jobs.")
+            |> mes(
+              "Second, except for Bows and Rods, Swordman can use all other weapons so they can fight at their optimal ability."
+            )
+            |> mes(
+              "And third, most of the skills of the Swordman give powerful physical attacks."
+            )
+            |> next()
+            |> mes("[Swordman Guildsman]")
+            |> mes(
+              "Though I gave you a simple explanation, I believe you understand the core meaning of what it is to be a Swordman."
+            )
+            |> mes("In my opinion, Swordman is the best job ever!")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
           ctx = mes(ctx, "[Swordman Guildsman]")
@@ -145,25 +151,26 @@ defmodule Aesir.ZoneServer.Content.Npc.IzludeIn.Swordman do
                 |> mes("You've gone too far with that joke.")
               end
 
-            close(ctx)
-            exit(:normal)
+            ctx = close(ctx)
+            throw({:script_end, ctx})
           else
             v3 = can_change_job?(ctx)
 
             ctx =
               if not Rathena.truthy?(v3) do
-                ctx
-                |> mes(
-                  "I'm sorry to tell you this but to be a Swordman, you must reach at least ^4A4AFFJob Level 10^000000."
-                )
-                |> mes("and ^4A4AFFBasic Skill Level 9^000000.")
-                |> next()
-                |> mes("[Swordman Guildsman]")
-                |> mes("Want to be a Swordman without having the minimum requirement?")
-                |> mes("Do you think being a Swordman is that easy?")
-                |> close()
+                ctx =
+                  ctx
+                  |> mes(
+                    "I'm sorry to tell you this but to be a Swordman, you must reach at least ^4A4AFFJob Level 10^000000."
+                  )
+                  |> mes("and ^4A4AFFBasic Skill Level 9^000000.")
+                  |> next()
+                  |> mes("[Swordman Guildsman]")
+                  |> mes("Want to be a Swordman without having the minimum requirement?")
+                  |> mes("Do you think being a Swordman is that easy?")
+                  |> close()
 
-                exit(:normal)
+                throw({:script_end, ctx})
               else
                 ctx
               end
@@ -177,43 +184,47 @@ defmodule Aesir.ZoneServer.Content.Npc.IzludeIn.Swordman do
 
             ctx =
               if v4 == 2 do
-                ctx
-                |> mes("[Swordman Guildsman]")
-                |> mes("Yeah. Prudent decision is needed for choosing a job.")
-                |> mes(
-                  "But I feel sorry... that you consider it again after overcoming all the hardships...."
-                )
-                |> close()
+                ctx =
+                  ctx
+                  |> mes("[Swordman Guildsman]")
+                  |> mes("Yeah. Prudent decision is needed for choosing a job.")
+                  |> mes(
+                    "But I feel sorry... that you consider it again after overcoming all the hardships...."
+                  )
+                  |> close()
 
-                exit(:normal)
+                throw({:script_end, ctx})
               else
                 ctx
               end
 
-            ctx
-            |> mes("[Swordman Guildsman]")
-            |> mes("Congratulations! From now on, you are going to live a Swordman's life!")
-            |> mes("Let's do it right now!")
-            |> next()
-            |> mes("[Swordman Guildsman]")
-            |> mes(
-              "Congratulations again for being a Swordman and I hope that you participate in many activities for the revival of our guild."
-            )
-            |> jobchange(:swordman)
-            |> give_item(13415, 1)
-            |> close()
+            ctx =
+              ctx
+              |> mes("[Swordman Guildsman]")
+              |> mes("Congratulations! From now on, you are going to live a Swordman's life!")
+              |> mes("Let's do it right now!")
+              |> next()
+              |> mes("[Swordman Guildsman]")
+              |> mes(
+                "Congratulations again for being a Swordman and I hope that you participate in many activities for the revival of our guild."
+              )
+              |> jobchange(:swordman)
+              |> give_item(13415, 1)
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           end
 
         3 ->
-          close(ctx)
-          exit(:normal)
+          ctx = close(ctx)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

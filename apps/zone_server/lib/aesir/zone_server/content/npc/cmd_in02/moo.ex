@@ -16,16 +16,17 @@ defmodule Aesir.ZoneServer.Content.Npc.CmdIn02.Moo do
 
     ctx =
       if Enum.random(1..10) == 1 do
-        ctx
-        |> mes("Those cheating punks!")
-        |> mes("They'll never show their")
-        |> mes("faces here again: otherwise")
-        |> mes("they're gonna hafta get new")
-        |> mes("ones! Oh--Sorry, I didn't")
-        |> mes("see you there~ Hahahaha~")
-        |> close()
+        ctx =
+          ctx
+          |> mes("Those cheating punks!")
+          |> mes("They'll never show their")
+          |> mes("faces here again: otherwise")
+          |> mes("they're gonna hafta get new")
+          |> mes("ones! Oh--Sorry, I didn't")
+          |> mes("see you there~ Hahahaha~")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -51,7 +52,7 @@ defmodule Aesir.ZoneServer.Content.Npc.CmdIn02.Moo do
     |> mes("your experience here in")
     |> mes("the Comodo Casino.")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

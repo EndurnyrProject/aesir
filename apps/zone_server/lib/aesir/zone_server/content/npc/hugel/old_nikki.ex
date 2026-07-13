@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Hugel.OldNikki do
     |> mes("as old as us. Well, have")
     |> mes("a nice day, adventurer~")
     |> close()
-
-    exit(:normal)
   end
 end

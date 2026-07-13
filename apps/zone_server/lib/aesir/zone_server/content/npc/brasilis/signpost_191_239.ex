@@ -13,6 +13,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Brasilis.Signpost191239 do
   @impl true
   def on_talk(ctx) do
     ctx |> mes(":: Verass Monument ::") |> close()
-    exit(:normal)
   end
 end

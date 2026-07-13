@@ -14,53 +14,55 @@ defmodule Aesir.ZoneServer.Content.Npc.Gonryun.Soldier do
   def on_talk(ctx) do
     ctx =
       if get_char_var(ctx, :b_sword, 0) < 7 do
-        ctx
-        |> mes("[Wa Qiu Wu]")
-        |> mes("Let me tell you something")
-        |> mes("interesting about this place~")
-        |> mes("Long ago, this entire area used to be a shrine.")
-        |> next()
-        |> mes("[Wa Qiu Wu]")
-        |> mes("In those days, Taoist hermits")
-        |> mes("used to gather here in order to")
-        |> mes("reach the Sky Kingdom. However,")
-        |> mes("they failed miserably...slowly the monsters began to come...")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Wa Qiu Wu]")
+          |> mes("Let me tell you something")
+          |> mes("interesting about this place~")
+          |> mes("Long ago, this entire area used to be a shrine.")
+          |> next()
+          |> mes("[Wa Qiu Wu]")
+          |> mes("In those days, Taoist hermits")
+          |> mes("used to gather here in order to")
+          |> mes("reach the Sky Kingdom. However,")
+          |> mes("they failed miserably...slowly the monsters began to come...")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx =
           if get_char_var(ctx, :b_sword, 0) > 6 and get_char_var(ctx, :b_sword, 0) < 10 do
-            ctx
-            |> mes("[Wa Qiu Wu]")
-            |> mes("Don't you think it was quite noisy")
-            |> mes("last night? It was all because")
-            |> mes("of that thief. He made quite")
-            |> mes("a scene...It was so loud that")
-            |> mes("I couldn't sleep at all...")
-            |> next()
-            |> mes("[Wa Qiu Wu]")
-            |> mes("Ahh~~~~!")
-            |> mes("In the middle of all that")
-            |> mes("commotion, I saw")
-            |> mes("something running straight")
-            |> mes("into the shrine.")
-            |> next()
-            |> mes("[Wa Qiu Wu]")
-            |> mes("It was moving so fast that")
-            |> mes("I couldn't even tell what it was.")
-            |> mes("From what I could recognize, it")
-            |> mes("looked human. I wonder")
-            |> mes("what it was...")
-            |> next()
-            |> mes("[Wa Qiu Wu]")
-            |> mes("It might have been the")
-            |> mes("thief, but it moved")
-            |> mes("so fast, it seemed like")
-            |> mes("just a blur.")
-            |> close()
+            ctx =
+              ctx
+              |> mes("[Wa Qiu Wu]")
+              |> mes("Don't you think it was quite noisy")
+              |> mes("last night? It was all because")
+              |> mes("of that thief. He made quite")
+              |> mes("a scene...It was so loud that")
+              |> mes("I couldn't sleep at all...")
+              |> next()
+              |> mes("[Wa Qiu Wu]")
+              |> mes("Ahh~~~~!")
+              |> mes("In the middle of all that")
+              |> mes("commotion, I saw")
+              |> mes("something running straight")
+              |> mes("into the shrine.")
+              |> next()
+              |> mes("[Wa Qiu Wu]")
+              |> mes("It was moving so fast that")
+              |> mes("I couldn't even tell what it was.")
+              |> mes("From what I could recognize, it")
+              |> mes("looked human. I wonder")
+              |> mes("what it was...")
+              |> next()
+              |> mes("[Wa Qiu Wu]")
+              |> mes("It might have been the")
+              |> mes("thief, but it moved")
+              |> mes("so fast, it seemed like")
+              |> mes("just a blur.")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
@@ -85,7 +87,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Gonryun.Soldier do
     |> mes("Festival, but something is delaying")
     |> mes("it. This has never happened before...")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

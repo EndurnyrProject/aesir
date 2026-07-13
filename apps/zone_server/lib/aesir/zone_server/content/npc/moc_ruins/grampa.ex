@@ -23,7 +23,5 @@ defmodule Aesir.ZoneServer.Content.Npc.MocRuins.Grampa do
       "I'm sure that the largest pyramid contains the tomb of the ancient king, Osiris! I'm willing to stake my life on it!"
     )
     |> close()
-
-    exit(:normal)
   end
 end

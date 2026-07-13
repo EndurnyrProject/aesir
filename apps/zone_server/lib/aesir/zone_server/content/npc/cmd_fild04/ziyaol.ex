@@ -37,7 +37,5 @@ defmodule Aesir.ZoneServer.Content.Npc.CmdFild04.Ziyaol do
     |> mes("that girl? Well, I can't really")
     |> mes("stop her from dreaming...")
     |> close()
-
-    exit(:normal)
   end
 end

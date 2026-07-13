@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.CmdFild04.Zyosegirl do
     |> mes("to the city. I'm still young, you know, and I've got dreams")
     |> mes("that I want to fulfill~")
     |> close()
-
-    exit(:normal)
   end
 end

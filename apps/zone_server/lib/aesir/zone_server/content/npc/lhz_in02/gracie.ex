@@ -29,7 +29,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.Gracie do
     |> mes("my mind if you can find a place")
     |> mes("that's even more comfortable.")
     |> close()
-
-    exit(:normal)
   end
 end

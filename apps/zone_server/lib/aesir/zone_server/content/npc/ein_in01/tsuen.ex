@@ -43,7 +43,5 @@ defmodule Aesir.ZoneServer.Content.Npc.EinIn01.Tsuen do
     |> mes("world and greet you as")
     |> mes("a fellow adventurer.")
     |> close()
-
-    exit(:normal)
   end
 end

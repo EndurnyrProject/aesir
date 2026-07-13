@@ -12,41 +12,53 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.Employee3098 do
 
   alias Aesir.ZoneServer.Script.Rathena
   @impl true
-  def on_event("OnWelcome", ctx), do: ev_onwelcome(ctx)
-  def on_event("OnSolo", ctx), do: ev_onsolo(ctx)
+  def on_event("OnWelcome", ctx) do
+    ev_onwelcome(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  def on_event("OnSolo", ctx) do
+    ev_onsolo(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
   @impl true
   def on_talk(ctx) do
     ctx = ctx |> mes("[Employee Amy]") |> mes("Welcome to Jawaii Tavern~")
 
     ctx =
       if Rathena.truthy?(getpartnerid(ctx)) do
-        ctx
-        |> mes("Oh! You and your partner look perfect for each other. Like, um,")
-        |> mes("a gun and a bullet! No...?")
-        |> next()
-        |> mes("[Employee Amy]")
-        |> mes("How about...")
-        |> mes("Milk and cookies?")
-        |> mes("Gin and tonic?")
-        |> mes("Jackie Tucker")
-        |> mes("and Chris Chan...?")
-        |> mes("Ummmm....")
-        |> close()
+        ctx =
+          ctx
+          |> mes("Oh! You and your partner look perfect for each other. Like, um,")
+          |> mes("a gun and a bullet! No...?")
+          |> next()
+          |> mes("[Employee Amy]")
+          |> mes("How about...")
+          |> mes("Milk and cookies?")
+          |> mes("Gin and tonic?")
+          |> mes("Jackie Tucker")
+          |> mes("and Chris Chan...?")
+          |> mes("Ummmm....")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx =
           if not Rathena.truthy?(getpartnerid(ctx)) do
-            ctx
-            |> next()
-            |> mes("[Employee Amy]")
-            |> mes(
-              "Hmm, I don't think this place is for you. But, I see no problem in letting you drink and have a good time, so long as you don't"
-            )
-            |> mes("make a fuss.")
-            |> close()
+            ctx =
+              ctx
+              |> next()
+              |> mes("[Employee Amy]")
+              |> mes(
+                "Hmm, I don't think this place is for you. But, I see no problem in letting you drink and have a good time, so long as you don't"
+              )
+              |> mes("make a fuss.")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
@@ -55,16 +67,15 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.Employee3098 do
       end
 
     ctx |> mes("I hope you will have a good time.") |> close()
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   def ev_onwelcome(ctx) do
-    _ = emotion(ctx, :chup)
-    exit(:normal)
+    emotion(ctx, :chup)
   end
 
   def ev_onsolo(ctx) do
-    _ = emotion(ctx, :huk)
-    exit(:normal)
+    emotion(ctx, :huk)
   end
 end

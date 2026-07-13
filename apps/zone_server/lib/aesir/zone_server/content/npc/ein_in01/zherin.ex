@@ -34,7 +34,5 @@ defmodule Aesir.ZoneServer.Content.Npc.EinIn01.Zherin do
     |> mes("to the furnace. It won't do if")
     |> mes("you get burned on accident!")
     |> close()
-
-    exit(:normal)
   end
 end

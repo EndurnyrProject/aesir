@@ -24,60 +24,67 @@ defmodule Aesir.ZoneServer.Content.Npc.Aldebaran.ForestGuy do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Isenberg]")
-          |> mes(
-            "To arrive here from Prontera or Geffen, you've got to cross the Mjolnir Mountains."
-          )
-          |> next()
-          |> mes("[Isenberg]")
-          |> mes("If you've made it here by foot without using the Kafra Teleportation service,")
-          |> mes("then good job!")
-          |> next()
-          |> mes("[Isenberg]")
-          |> mes(
-            "The Mjolnir Mountains are really steep, and it's full of aggressive and hostile monsters. So it's always a risk to travel through there alone."
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Isenberg]")
+            |> mes(
+              "To arrive here from Prontera or Geffen, you've got to cross the Mjolnir Mountains."
+            )
+            |> next()
+            |> mes("[Isenberg]")
+            |> mes(
+              "If you've made it here by foot without using the Kafra Teleportation service,"
+            )
+            |> mes("then good job!")
+            |> next()
+            |> mes("[Isenberg]")
+            |> mes(
+              "The Mjolnir Mountains are really steep, and it's full of aggressive and hostile monsters. So it's always a risk to travel through there alone."
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Isenberg]")
-          |> mes(
-            "If you wish to visit Alberta or the city of Payon, you must first travel through the Payon Forest."
-          )
-          |> next()
-          |> mes("[Isenberg]")
-          |> mes(
-            "The Payon Forest is a winding, intricate maze where it's easy to get lost. Unless you concentrate and keep track of your path, you might be stuck wandering in that dangerous place."
-          )
-          |> next()
-          |> mes("[Isenberg]")
-          |> mes(
-            "Payon, the Archer Village, was built deep inside this steep and rugged forest so that it may be protected from outside invaders. So I guess that a good decision on their part."
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Isenberg]")
+            |> mes(
+              "If you wish to visit Alberta or the city of Payon, you must first travel through the Payon Forest."
+            )
+            |> next()
+            |> mes("[Isenberg]")
+            |> mes(
+              "The Payon Forest is a winding, intricate maze where it's easy to get lost. Unless you concentrate and keep track of your path, you might be stuck wandering in that dangerous place."
+            )
+            |> next()
+            |> mes("[Isenberg]")
+            |> mes(
+              "Payon, the Archer Village, was built deep inside this steep and rugged forest so that it may be protected from outside invaders. So I guess that a good decision on their part."
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx
-          |> mes("[Isenberg]")
-          |> mes("The huge mountains surrounding this town")
-          |> mes("blocks people from outside to come into this town.")
-          |> mes("That may be a part of the reason how we have been able to")
-          |> mes("keep this beautiful canal and mysterious alchemy")
-          |> mes("without any influence from outside.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Isenberg]")
+            |> mes("The huge mountains surrounding this town")
+            |> mes("blocks people from outside to come into this town.")
+            |> mes("That may be a part of the reason how we have been able to")
+            |> mes("keep this beautiful canal and mysterious alchemy")
+            |> mes("without any influence from outside.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

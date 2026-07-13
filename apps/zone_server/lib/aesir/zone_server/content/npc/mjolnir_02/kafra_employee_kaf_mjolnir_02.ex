@@ -39,5 +39,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Mjolnir02.KafraEmployeeKafMjolnir02 do
       |> Aesir.ZoneServer.Content.Npc.Functions.FKafend.call([0, 1, "at Mjolnir Dead Pit"])
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

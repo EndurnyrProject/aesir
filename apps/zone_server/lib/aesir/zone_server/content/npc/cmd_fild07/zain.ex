@@ -41,8 +41,8 @@ defmodule Aesir.ZoneServer.Content.Npc.CmdFild07.Zain do
                 ctx
               end
 
-            ctx |> pay_zeny(600) |> warp("alberta", 192, 169)
-            exit(:normal)
+            ctx = ctx |> pay_zeny(600) |> warp("alberta", 192, 169)
+            throw({:script_end, ctx})
 
           2 ->
             ctx =
@@ -54,26 +54,27 @@ defmodule Aesir.ZoneServer.Content.Npc.CmdFild07.Zain do
 
             ctx = pay_zeny(ctx, 800)
 
-            _ =
+            ctx =
               if Rathena.truthy?(checkre(ctx, 0)) do
                 warp(ctx, "izlude", 195, 212)
               else
                 warp(ctx, "izlude", 176, 182)
               end
 
-            exit(:normal)
+            throw({:script_end, ctx})
 
           3 ->
-            ctx
-            |> mes(get_local(ctx, :"n$", ""))
-            |> mes("Travel by ship is")
-            |> mes("still one of the safest and")
-            |> mes("dependable methods of")
-            |> mes("transportation. I invite you")
-            |> mes("to try Reudelus travel soon~")
-            |> close()
+            ctx =
+              ctx
+              |> mes(get_local(ctx, :"n$", ""))
+              |> mes("Travel by ship is")
+              |> mes("still one of the safest and")
+              |> mes("dependable methods of")
+              |> mes("transportation. I invite you")
+              |> mes("to try Reudelus travel soon~")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
 
           _ ->
             ctx
@@ -88,7 +89,7 @@ defmodule Aesir.ZoneServer.Content.Npc.CmdFild07.Zain do
     |> mes("don't have enough")
     |> mes("zeny for the boarding fare.")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

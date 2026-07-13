@@ -361,12 +361,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FVotekafra do
                       1 ->
                         ctx =
                           if zeny(ctx) >= 4000 do
-                            ctx
-                            |> cutin("", 255)
-                            |> pay_zeny(4000)
-                            |> warp("xmas_dun02", 130, 123)
+                            ctx =
+                              ctx
+                              |> cutin("", 255)
+                              |> pay_zeny(4000)
+                              |> warp("xmas_dun02", 130, 123)
 
-                            exit(:normal)
+                            throw({:script_end, ctx})
                           else
                             ctx
                             |> mes("[Kafra Voting Staff]")
@@ -410,12 +411,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FVotekafra do
                           1 ->
                             ctx =
                               if zeny(ctx) >= 4000 do
-                                ctx
-                                |> pay_zeny(4000)
-                                |> cutin("kafra_09", 255)
-                                |> warp("xmas_dun02", 130, 123)
+                                ctx =
+                                  ctx
+                                  |> pay_zeny(4000)
+                                  |> cutin("kafra_09", 255)
+                                  |> warp("xmas_dun02", 130, 123)
 
-                                exit(:normal)
+                                throw({:script_end, ctx})
                               else
                                 ctx
                                 |> mes("[Kafra Voting Staff]")
@@ -431,12 +433,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FVotekafra do
                           2 ->
                             ctx =
                               if zeny(ctx) >= 4000 do
-                                ctx
-                                |> pay_zeny(4000)
-                                |> cutin("kafra_09", 255)
-                                |> warp("alde_dun03", 265, 22)
+                                ctx =
+                                  ctx
+                                  |> pay_zeny(4000)
+                                  |> cutin("kafra_09", 255)
+                                  |> warp("alde_dun03", 265, 22)
 
-                                exit(:normal)
+                                throw({:script_end, ctx})
                               else
                                 ctx
                                 |> mes("[Kafra Voting Staff]")
@@ -479,12 +482,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FVotekafra do
                           1 ->
                             ctx =
                               if zeny(ctx) >= 4000 do
-                                ctx
-                                |> pay_zeny(4000)
-                                |> cutin("kafra_09", 255)
-                                |> warp("xmas_dun02", 130, 123)
+                                ctx =
+                                  ctx
+                                  |> pay_zeny(4000)
+                                  |> cutin("kafra_09", 255)
+                                  |> warp("xmas_dun02", 130, 123)
 
-                                exit(:normal)
+                                throw({:script_end, ctx})
                               else
                                 ctx
                                 |> mes("[Kafra Voting Staff]")
@@ -500,12 +504,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FVotekafra do
                           2 ->
                             ctx =
                               if zeny(ctx) >= 4000 do
-                                ctx
-                                |> pay_zeny(4000)
-                                |> cutin("kafra_09", 255)
-                                |> warp("alde_dun03", 265, 22)
+                                ctx =
+                                  ctx
+                                  |> pay_zeny(4000)
+                                  |> cutin("kafra_09", 255)
+                                  |> warp("alde_dun03", 265, 22)
 
-                                exit(:normal)
+                                throw({:script_end, ctx})
                               else
                                 ctx
                                 |> mes("[Kafra Voting Staff]")
@@ -521,12 +526,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FVotekafra do
                           3 ->
                             ctx =
                               if zeny(ctx) >= 4000 do
-                                ctx
-                                |> pay_zeny(4000)
-                                |> cutin("kafra_09", 255)
-                                |> warp("mag_dun02", 47, 40)
+                                ctx =
+                                  ctx
+                                  |> pay_zeny(4000)
+                                  |> cutin("kafra_09", 255)
+                                  |> warp("mag_dun02", 47, 40)
 
-                                exit(:normal)
+                                throw({:script_end, ctx})
                               else
                                 ctx
                                 |> mes("[Kafra Voting Staff]")
@@ -602,7 +608,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FVotekafra do
           ctx
       end
 
-    ctx |> close() |> cutin("", 255)
-    exit(:normal)
+    ctx = ctx |> close() |> cutin("", 255)
+    throw({:script_end, ctx})
   end
 end

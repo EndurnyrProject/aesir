@@ -19,7 +19,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.Kid do
     |> mes("playing hide and go seek?!")
     |> mes("Move before they find me!")
     |> close()
-
-    exit(:normal)
   end
 end

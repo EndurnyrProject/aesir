@@ -39,5 +39,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Alb2trea.KafraEmployeeKafAlb2trea do
       |> Aesir.ZoneServer.Content.Npc.Functions.FKafend.call([0, 1, "at Sunken Ship"])
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

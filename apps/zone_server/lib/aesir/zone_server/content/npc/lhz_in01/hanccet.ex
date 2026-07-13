@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Hanccet do
     |> mes("I think I would not look for")
     |> mes("me? Of course...! The sewers!")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -30,35 +30,39 @@ defmodule Aesir.ZoneServer.Content.Npc.HuIn01.PartySuppliesShop do
         1 ->
           ctx =
             if zeny(ctx) < 500 do
-              ctx
-              |> mes("[Shopkeeper]")
-              |> mes("I am sorry, but you don't have")
-              |> mes("enough money~")
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Shopkeeper]")
+                |> mes("I am sorry, but you don't have")
+                |> mes("enough money~")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
               ctx
             end
 
-          ctx
-          |> pay_zeny(500)
-          |> give_item(12018, 5)
-          |> mes("[Shopkeeper]")
-          |> mes("Here you go!")
-          |> mes("Have fun with them!")
-          |> close()
+          ctx =
+            ctx
+            |> pay_zeny(500)
+            |> give_item(12018, 5)
+            |> mes("[Shopkeeper]")
+            |> mes("Here you go!")
+            |> mes("Have fun with them!")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx |> mes("[Shopkeeper]") |> mes("Thank you, please come again.") |> close()
-          exit(:normal)
+          ctx = ctx |> mes("[Shopkeeper]") |> mes("Thank you, please come again.") |> close()
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

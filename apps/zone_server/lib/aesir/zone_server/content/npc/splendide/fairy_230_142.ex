@@ -13,11 +13,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Splendide.Fairy230142 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx |> mes("[Fairy]") |> mes("Ah-Ha, I am so stunning.") |> close()
-      exit(:normal)
+      ctx = ctx |> mes("[Fairy]") |> mes("Ah-Ha, I am so stunning.") |> close()
+      throw({:script_end, ctx})
     else
-      ctx |> mes("[Fairy]") |> mes("AgolWhaNe O LoRini") |> close()
-      exit(:normal)
+      ctx = ctx |> mes("[Fairy]") |> mes("AgolWhaNe O LoRini") |> close()
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

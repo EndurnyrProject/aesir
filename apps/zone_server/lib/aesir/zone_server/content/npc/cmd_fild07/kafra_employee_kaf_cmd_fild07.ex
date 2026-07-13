@@ -41,5 +41,7 @@ defmodule Aesir.ZoneServer.Content.Npc.CmdFild07.KafraEmployeeKafCmdFild07 do
       |> Aesir.ZoneServer.Content.Npc.Functions.FKafend.call([0, 1, "in Pyros Lighthouse"])
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

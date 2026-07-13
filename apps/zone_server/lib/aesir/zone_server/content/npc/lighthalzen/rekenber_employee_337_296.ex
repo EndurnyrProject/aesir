@@ -14,29 +14,32 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.RekenberEmployee337296 do
   def on_talk(ctx) do
     ctx =
       if get_char_var(ctx, :hg_tre, 0) > 54 do
-        ctx
-        |> mes("[Rekenber Employee]")
-        |> mes("Greetings. As part of our")
-        |> mes("effort to relieve the poor,")
-        |> mes("Rekenber is providing job")
-        |> mes("opportunities targeted for")
-        |> mes("citizens of the slum areas.")
-        |> next()
-        |> mes("[Rekenber Employee]")
-        |> mes("You can choose to work")
-        |> mes("from home, or undergo a")
-        |> mes("little bit of training for more")
-        |> mes("professional positions. This")
-        |> mes("is a great chance to make a")
-        |> mes("difference... and some money~")
-        |> emotion(:best)
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Rekenber Employee]")
+          |> mes("Greetings. As part of our")
+          |> mes("effort to relieve the poor,")
+          |> mes("Rekenber is providing job")
+          |> mes("opportunities targeted for")
+          |> mes("citizens of the slum areas.")
+          |> next()
+          |> mes("[Rekenber Employee]")
+          |> mes("You can choose to work")
+          |> mes("from home, or undergo a")
+          |> mes("little bit of training for more")
+          |> mes("professional positions. This")
+          |> mes("is a great chance to make a")
+          |> mes("difference... and some money~")
+          |> emotion(:best)
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

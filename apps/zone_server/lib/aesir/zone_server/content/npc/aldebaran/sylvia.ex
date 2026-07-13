@@ -33,25 +33,26 @@ defmodule Aesir.ZoneServer.Content.Npc.Aldebaran.Sylvia do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Sylvia]")
-        |> mes("Equipment that is dropped by monsters can't be equipped right away.")
-        |> next()
-        |> mes("[Sylvia]")
-        |> mes(
-          "If you right-click the equippable item in the Item Inventory, you'll see that it is Unidentified and that Appraisal is needed. What to do?"
-        )
-        |> next()
-        |> mes("[Sylvia]")
-        |> mes("Well, in that case, you've gotta use ^3355FF Magnifier^000000!")
-        |> next()
-        |> mes("[Sylvia]")
-        |> mes(
-          "Even without a Blacksmith, Alchemist or Merchant in your party, you can appraise your equipment! Of course, a Magnifier is consumed each time you use one..."
-        )
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Sylvia]")
+          |> mes("Equipment that is dropped by monsters can't be equipped right away.")
+          |> next()
+          |> mes("[Sylvia]")
+          |> mes(
+            "If you right-click the equippable item in the Item Inventory, you'll see that it is Unidentified and that Appraisal is needed. What to do?"
+          )
+          |> next()
+          |> mes("[Sylvia]")
+          |> mes("Well, in that case, you've gotta use ^3355FF Magnifier^000000!")
+          |> next()
+          |> mes("[Sylvia]")
+          |> mes(
+            "Even without a Blacksmith, Alchemist or Merchant in your party, you can appraise your equipment! Of course, a Magnifier is consumed each time you use one..."
+          )
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -61,7 +62,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Aldebaran.Sylvia do
     |> mes("Hey...")
     |> mes("Was that a hint of sarcasm in your voice when you said that?")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

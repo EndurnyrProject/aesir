@@ -27,77 +27,84 @@ defmodule Aesir.ZoneServer.Content.Npc.MocRuins.AssassinBoy do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Slayer Kid]")
-          |> mes("I hear Assassins practice killing people, quietly and stealthfully..")
-          |> next()
-          |> mes("[Slayer Kid]")
-          |> mes(
-            "I left home three years ago, and have been searching for their secret base ever since..."
-          )
-          |> mes("Are they really that invisible?!")
-          |> next()
-          |> mes("[Slayer Kid]")
-          |> mes("Well.. Maybe it'd too late now..")
-          |> mes("Now that the whole town's destroyed... I don't even care what happens next...")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Slayer Kid]")
+            |> mes("I hear Assassins practice killing people, quietly and stealthfully..")
+            |> next()
+            |> mes("[Slayer Kid]")
+            |> mes(
+              "I left home three years ago, and have been searching for their secret base ever since..."
+            )
+            |> mes("Are they really that invisible?!")
+            |> next()
+            |> mes("[Slayer Kid]")
+            |> mes("Well.. Maybe it'd too late now..")
+            |> mes(
+              "Now that the whole town's destroyed... I don't even care what happens next..."
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Slayer Kid]")
-          |> mes("You know what...")
-          |> mes("It seemed to be impossible to find.")
-          |> next()
-          |> mes("[Slayer Kid]")
-          |> mes(
-            "Well, I hear that if you leave this town and go 2 maps east, and then 2 maps South, you should be able to find it.."
-          )
-          |> next()
-          |> mes("[Slayer Kid]")
-          |> mes(
-            "The 'Mirage Tower,' the head building of Sograt Desert, is supposed to appear in this awesome sandstorm! But, I still haven't found it."
-          )
-          |> next()
-          |> mes("[Slayer Kid]")
-          |> mes(
-            "If you find them, and the clan master thinks you're qualified, you can become an Assassin! Or, at least, I think.."
-          )
-          |> next()
-          |> mes("[Slayer Kid]")
-          |> mes(
-            "And I hear the coolest Assassin of them all is the Assassin Cross! But, that's even a bigger mystery~ You won't be able to see them unless you're a great thief!"
-          )
-          |> next()
-          |> mes("[Slayer Kid]")
-          |> mes("But then... What the hell were they doing when Morocc was destroyed?!!!")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Slayer Kid]")
+            |> mes("You know what...")
+            |> mes("It seemed to be impossible to find.")
+            |> next()
+            |> mes("[Slayer Kid]")
+            |> mes(
+              "Well, I hear that if you leave this town and go 2 maps east, and then 2 maps South, you should be able to find it.."
+            )
+            |> next()
+            |> mes("[Slayer Kid]")
+            |> mes(
+              "The 'Mirage Tower,' the head building of Sograt Desert, is supposed to appear in this awesome sandstorm! But, I still haven't found it."
+            )
+            |> next()
+            |> mes("[Slayer Kid]")
+            |> mes(
+              "If you find them, and the clan master thinks you're qualified, you can become an Assassin! Or, at least, I think.."
+            )
+            |> next()
+            |> mes("[Slayer Kid]")
+            |> mes(
+              "And I hear the coolest Assassin of them all is the Assassin Cross! But, that's even a bigger mystery~ You won't be able to see them unless you're a great thief!"
+            )
+            |> next()
+            |> mes("[Slayer Kid]")
+            |> mes("But then... What the hell were they doing when Morocc was destroyed?!!!")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx
-          |> mes("[Slayer Kid]")
-          |> mes(
-            "Assassin is one of the advanced jobs for Thief, and specializes in fighting with Neutral and Poison property attacks."
-          )
-          |> next()
-          |> mes("[Slayer Kid]")
-          |> mes(
-            "They're also very sneaky! I hear that they're able to cloak so that no one can see them!"
-          )
-          |> next()
-          |> mes("[Slayer Kid]")
-          |> mes("But then... What the hell were they doing when Morocc was destroyed?!!!")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Slayer Kid]")
+            |> mes(
+              "Assassin is one of the advanced jobs for Thief, and specializes in fighting with Neutral and Poison property attacks."
+            )
+            |> next()
+            |> mes("[Slayer Kid]")
+            |> mes(
+              "They're also very sneaky! I hear that they're able to cloak so that no one can see them!"
+            )
+            |> next()
+            |> mes("[Slayer Kid]")
+            |> mes("But then... What the hell were they doing when Morocc was destroyed?!!!")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

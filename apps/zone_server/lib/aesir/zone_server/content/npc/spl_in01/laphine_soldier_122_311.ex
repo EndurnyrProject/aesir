@@ -13,34 +13,38 @@ defmodule Aesir.ZoneServer.Content.Npc.SplIn01.LaphineSoldier122311 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) > 0 and get_char_var(ctx, :ep13_2_rhea, 0) > 99 do
-      ctx
-      |> mes("[Laphine Soldier]")
-      |> mes("Are you a stranger?")
-      |> mes("Have you come here to see the Laphine's military storage?")
-      |> next()
-      |> mes("[High-Ranked Soldier]")
-      |> mes("Nevermind. These are useless to them...")
-      |> mes("How can this delicate sword be used by those brutes...?")
-      |> next()
-      |> mes("[Laphine Soldier]")
-      |> mes("O")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Laphine Soldier]")
+        |> mes("Are you a stranger?")
+        |> mes("Have you come here to see the Laphine's military storage?")
+        |> next()
+        |> mes("[High-Ranked Soldier]")
+        |> mes("Nevermind. These are useless to them...")
+        |> mes("How can this delicate sword be used by those brutes...?")
+        |> next()
+        |> mes("[Laphine Soldier]")
+        |> mes("O")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[High-Ranked Soldier]")
-      |> mes("NorVerNuff Ee Re....")
-      |> next()
-      |> mes("[Laphine Soldier]")
-      |> mes("FusVerAlah Di ")
-      |> mes("ModNorNor U DimVohlWeh O DimAmannea An WosAnoNoh An AnduMeOdes So TalAdor.")
-      |> next()
-      |> mes("[High-Ranked Soldier]")
-      |> mes("DurNohHir Ha UorVaThus Di AshNuffLon U mahNuffThus U RuAmanAgol Ir NohHir...?")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[High-Ranked Soldier]")
+        |> mes("NorVerNuff Ee Re....")
+        |> next()
+        |> mes("[Laphine Soldier]")
+        |> mes("FusVerAlah Di ")
+        |> mes("ModNorNor U DimVohlWeh O DimAmannea An WosAnoNoh An AnduMeOdes So TalAdor.")
+        |> next()
+        |> mes("[High-Ranked Soldier]")
+        |> mes("DurNohHir Ha UorVaThus Di AshNuffLon U mahNuffThus U RuAmanAgol Ir NohHir...?")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

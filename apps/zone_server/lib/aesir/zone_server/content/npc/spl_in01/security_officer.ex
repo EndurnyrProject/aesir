@@ -13,27 +13,33 @@ defmodule Aesir.ZoneServer.Content.Npc.SplIn01.SecurityOfficer do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Security Officer]")
-      |> mes("This is the underground prison of Splendide.")
-      |> mes("Those who are guilty and prisoners are detained here.")
-      |> next()
-      |> mes("[Security Officer]")
-      |> mes(
-        "If you do something suspicious, you must be detained here too, so you'd better to be careful!"
-      )
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Security Officer]")
+        |> mes("This is the underground prison of Splendide.")
+        |> mes("Those who are guilty and prisoners are detained here.")
+        |> next()
+        |> mes("[Security Officer]")
+        |> mes(
+          "If you do something suspicious, you must be detained here too, so you'd better to be careful!"
+        )
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Security Officer]")
-      |> mes("GothremuAman Ha DimDielNuff")
-      |> mes("GothAnAsh er NohVaAgol Yee CyaOsaDor U Aman U ")
-      |> mes("TurOdesVrum Ir TalDathOsa Ie WosAgolVrum Ha neaNudHir Ha SeAnVil Di narAlahLars Yu")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Security Officer]")
+        |> mes("GothremuAman Ha DimDielNuff")
+        |> mes("GothAnAsh er NohVaAgol Yee CyaOsaDor U Aman U ")
+        |> mes(
+          "TurOdesVrum Ir TalDathOsa Ie WosAgolVrum Ha neaNudHir Ha SeAnVil Di narAlahLars Yu"
+        )
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

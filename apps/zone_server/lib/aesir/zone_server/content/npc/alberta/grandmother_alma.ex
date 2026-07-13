@@ -39,7 +39,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Alberta.GrandmotherAlma do
       "So it might be a good experience for a young person like yourself to be a recruit. But, it's still not worth risking your life if you're not strong enough."
     )
     |> close()
-
-    exit(:normal)
   end
 end

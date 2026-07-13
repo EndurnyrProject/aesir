@@ -34,7 +34,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbech.Hander do
     |> mes("far away and we don't have")
     |> mes("any food to eat! Why...?!")
     |> close()
-
-    exit(:normal)
   end
 end

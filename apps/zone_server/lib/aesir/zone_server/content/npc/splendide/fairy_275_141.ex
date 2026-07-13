@@ -13,29 +13,33 @@ defmodule Aesir.ZoneServer.Content.Npc.Splendide.Fairy275141 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Fairy]")
-      |> mes("Don't talk to me. What do you want?")
-      |> mes("I know you will blame something on me right?")
-      |> next()
-      |> mes("[Fairy]")
-      |> mes("I don't want to listen to other people...")
-      |> mes("I am perfect as I am!")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Fairy]")
+        |> mes("Don't talk to me. What do you want?")
+        |> mes("I know you will blame something on me right?")
+        |> next()
+        |> mes("[Fairy]")
+        |> mes("I don't want to listen to other people...")
+        |> mes("I am perfect as I am!")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Fairy]")
-      |> mes("narnahNoh Di WehRiniLars Yee ModAnu")
-      |> mes("LuAlahNe Or FarAnduOsa No AgolKo")
-      |> next()
-      |> mes("[Fairy]")
-      |> mes("LarsVilDim No WhaVilFus Ha Ash")
-      |> mes("ReLarsShar Mu AnduLoLon Ie Nufftas")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Fairy]")
+        |> mes("narnahNoh Di WehRiniLars Yee ModAnu")
+        |> mes("LuAlahNe Or FarAnduOsa No AgolKo")
+        |> next()
+        |> mes("[Fairy]")
+        |> mes("LarsVilDim No WhaVilFus Ha Ash")
+        |> mes("ReLarsShar Mu AnduLoLon Ie Nufftas")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

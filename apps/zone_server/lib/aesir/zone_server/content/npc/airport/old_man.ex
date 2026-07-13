@@ -42,7 +42,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Airport.OldMan do
       "way. So don't worry about having too much stuff. Sooner or later, it might be useful to someone."
     )
     |> close()
-
-    exit(:normal)
   end
 end

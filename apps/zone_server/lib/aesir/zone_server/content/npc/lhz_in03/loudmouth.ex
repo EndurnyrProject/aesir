@@ -25,7 +25,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn03.Loudmouth do
     |> mes("look for? What, you")
     |> mes("don't believe me?!")
     |> close()
-
-    exit(:normal)
   end
 end

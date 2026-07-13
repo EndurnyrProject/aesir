@@ -16,14 +16,15 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.RekenberGuard do
   def on_talk(ctx) do
     ctx =
       if Rathena.truthy?(is_equipped(ctx, 2241)) and Rathena.truthy?(is_equipped(ctx, 2243)) do
-        ctx
-        |> mes("[Rekenber Guard]")
-        |> mes("^3355FF(Whoa, it's a member")
-        |> mes("of the staff!)^000000 Good day!")
-        |> close()
-        |> warp("lhz_in01", 37, 225)
+        ctx =
+          ctx
+          |> mes("[Rekenber Guard]")
+          |> mes("^3355FF(Whoa, it's a member")
+          |> mes("of the staff!)^000000 Good day!")
+          |> close()
+          |> warp("lhz_in01", 37, 225)
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -39,15 +40,16 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.RekenberGuard do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Rekenber Guard]")
-        |> mes("I don't know how you")
-        |> mes("adventurers do things in")
-        |> mes("Rune-Midgarts, but over here")
-        |> mes("we have laws about trespassing!")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Rekenber Guard]")
+          |> mes("I don't know how you")
+          |> mes("adventurers do things in")
+          |> mes("Rune-Midgarts, but over here")
+          |> mes("we have laws about trespassing!")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -59,7 +61,7 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.RekenberGuard do
     |> mes("allowed into the Underground")
     |> mes("Laboratory for security reasons.")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

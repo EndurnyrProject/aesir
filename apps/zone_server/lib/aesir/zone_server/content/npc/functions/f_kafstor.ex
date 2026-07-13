@@ -30,8 +30,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafstor do
               ctx
             end
 
-          ctx |> cutin("", 255) |> close()
-          exit(:normal)
+          ctx = ctx |> cutin("", 255) |> close()
+          throw({:script_end, ctx})
         else
           ctx
         end
@@ -151,8 +151,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafstor do
         end
 
       {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FCheckkafcode.call(ctx, [])
-      ctx |> close() |> openstorage() |> cutin("", 255)
-      exit(:normal)
+      ctx = ctx |> close() |> openstorage() |> cutin("", 255)
+      throw({:script_end, ctx})
     catch
       :throw, {:script_return, result} -> result
     end

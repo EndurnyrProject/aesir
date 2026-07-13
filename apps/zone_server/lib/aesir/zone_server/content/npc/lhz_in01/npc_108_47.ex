@@ -20,7 +20,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Npc10847 do
     |> mes("time. You take a moment to")
     |> mes("fully marvel at its tidiness.^000000")
     |> close()
-
-    exit(:normal)
   end
 end

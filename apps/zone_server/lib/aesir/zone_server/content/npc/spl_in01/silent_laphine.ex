@@ -17,7 +17,5 @@ defmodule Aesir.ZoneServer.Content.Npc.SplIn01.SilentLaphine do
       "- He is almost sleeping but he is still managing to hold a cup with a drink in it. He must be really tired-"
     )
     |> close()
-
-    exit(:normal)
   end
 end

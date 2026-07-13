@@ -34,7 +34,5 @@ defmodule Aesir.ZoneServer.Content.Npc.VeIn.Towner190215 do
     |> mes("by its cover, but")
     |> mes("by its contents.")
     |> close()
-
-    exit(:normal)
   end
 end

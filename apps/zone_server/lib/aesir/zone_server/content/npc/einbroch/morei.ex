@@ -47,46 +47,50 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbroch.Morei do
           ctx =
             case v2 do
               1 ->
-                _ = warp(ctx, "einbroch", 170, 229)
-                exit(:normal)
+                ctx = warp(ctx, "einbroch", 170, 229)
+                throw({:script_end, ctx})
 
               2 ->
-                _ = warp(ctx, "einbroch", 216, 188)
-                exit(:normal)
+                ctx = warp(ctx, "einbroch", 216, 188)
+                throw({:script_end, ctx})
 
               3 ->
-                _ = warp(ctx, "einbroch", 178, 167)
-                exit(:normal)
+                ctx = warp(ctx, "einbroch", 178, 167)
+                throw({:script_end, ctx})
 
               _ ->
                 ctx
             end
 
-          ctx
-          |> mes("[Morei]")
-          |> mes("I see.")
-          |> mes("I hope you")
-          |> mes("enjoy your time")
-          |> mes("in Einbroch Tower.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Morei]")
+            |> mes("I see.")
+            |> mes("I hope you")
+            |> mes("enjoy your time")
+            |> mes("in Einbroch Tower.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Morei]")
-          |> mes("I see.")
-          |> mes("I hope you")
-          |> mes("enjoy your time")
-          |> mes("in Einbroch Tower.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Morei]")
+            |> mes("I see.")
+            |> mes("I hope you")
+            |> mes("enjoy your time")
+            |> mes("in Einbroch Tower.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

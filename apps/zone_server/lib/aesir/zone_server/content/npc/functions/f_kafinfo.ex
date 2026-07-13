@@ -37,9 +37,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafinfo do
           ctx
         end
 
-      ctx
-      |> set_local(:"menu_list$", Enum.join(get_local(ctx, :"menu$", []), ":"))
-      |> loop_1(args)
+      ctx =
+        ctx
+        |> set_local(:"menu_list$", Enum.join(get_local(ctx, :"menu$", []), ":"))
+        |> loop_1(args)
+
+      {ctx, nil}
     catch
       :throw, {:script_return, result} -> result
     end

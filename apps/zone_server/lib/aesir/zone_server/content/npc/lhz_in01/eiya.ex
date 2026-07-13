@@ -26,7 +26,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Eiya do
     |> mes("doll collection? I love")
     |> mes("collecting cute dolls!")
     |> close()
-
-    exit(:normal)
   end
 end

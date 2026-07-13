@@ -34,7 +34,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.Towner do
     |> mes("wonderful and enchanting")
     |> mes("as I do. It's a pity, really.")
     |> close()
-
-    exit(:normal)
   end
 end

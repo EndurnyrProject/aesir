@@ -23,31 +23,32 @@ defmodule Aesir.ZoneServer.Content.Npc.Amatsu.DrunkenMan do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Kosake]")
-        |> mes("What?! Do you want me to get")
-        |> mes("hit by my wife's big fist?")
-        |> mes("That's right! I said 'big fist!'")
-        |> next()
-        |> mes("[Kosake]")
-        |> mes("Sad to say, I married a woman")
-        |> mes("with man hands...")
-        |> mes("Big, strong hands that can kill a tiger.")
-        |> next()
-        |> mes("[Druken Man]")
-        |> mes("It was in Ko...Koko-something")
-        |> mes("town. She hit me because I")
-        |> mes("lost some money...*Hiccup*")
-        |> next()
-        |> mes("[Druken Man]")
-        |> mes("Life~~ is~~ nothing~~~")
-        |> mes("What is zeny~~~~ ")
-        |> mes("*Hiccup*...... *Hiccup*.......")
-        |> mes(".......................")
-        |> mes("........Z.z..z...zzz...")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Kosake]")
+          |> mes("What?! Do you want me to get")
+          |> mes("hit by my wife's big fist?")
+          |> mes("That's right! I said 'big fist!'")
+          |> next()
+          |> mes("[Kosake]")
+          |> mes("Sad to say, I married a woman")
+          |> mes("with man hands...")
+          |> mes("Big, strong hands that can kill a tiger.")
+          |> next()
+          |> mes("[Druken Man]")
+          |> mes("It was in Ko...Koko-something")
+          |> mes("town. She hit me because I")
+          |> mes("lost some money...*Hiccup*")
+          |> next()
+          |> mes("[Druken Man]")
+          |> mes("Life~~ is~~ nothing~~~")
+          |> mes("What is zeny~~~~ ")
+          |> mes("*Hiccup*...... *Hiccup*.......")
+          |> mes(".......................")
+          |> mes("........Z.z..z...zzz...")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -61,7 +62,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Amatsu.DrunkenMan do
     |> mes("[Kosake]")
     |> mes("If you buy me a drink, I will think about it...Hehehe...*Hiccup*..")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

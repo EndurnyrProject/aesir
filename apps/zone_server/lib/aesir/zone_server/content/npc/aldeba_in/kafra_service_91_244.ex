@@ -30,14 +30,15 @@ defmodule Aesir.ZoneServer.Content.Npc.AldebaIn.KafraService91244 do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Kafra Curly Sue]")
-        |> mes("Waaaaaaah~!")
-        |> mes("I'm not a kid!")
-        |> close()
-        |> cutin("", 255)
+        ctx =
+          ctx
+          |> mes("[Kafra Curly Sue]")
+          |> mes("Waaaaaaah~!")
+          |> mes("I'm not a kid!")
+          |> close()
+          |> cutin("", 255)
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -49,7 +50,7 @@ defmodule Aesir.ZoneServer.Content.Npc.AldebaIn.KafraService91244 do
     )
     |> close()
     |> cutin("", 255)
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

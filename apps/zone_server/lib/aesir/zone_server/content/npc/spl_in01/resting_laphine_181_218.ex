@@ -13,26 +13,30 @@ defmodule Aesir.ZoneServer.Content.Npc.SplIn01.RestingLaphine181218 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) > 0 and get_char_var(ctx, :ep13_2_rhea, 0) > 99 do
-      ctx
-      |> mes("- He is nodding his head to the sound of the music -")
-      |> next()
-      |> mes("[Resting Laphine]")
-      |> mes("Do you know how to play a similar sound?")
-      |> mes("This tone is unbelievable.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("- He is nodding his head to the sound of the music -")
+        |> next()
+        |> mes("[Resting Laphine]")
+        |> mes("Do you know how to play a similar sound?")
+        |> mes("This tone is unbelievable.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("- He is nodding his head to the sound of the music -")
-      |> next()
-      |> mes("[Resting Laphine]")
-      |> mes("GothTingNoth Di~ nar..")
-      |> mes("DiebIyazNud Yu FarAn")
-      |> mes("nesFarDor U ~")
-      |> close()
+      ctx =
+        ctx
+        |> mes("- He is nodding his head to the sound of the music -")
+        |> next()
+        |> mes("[Resting Laphine]")
+        |> mes("GothTingNoth Di~ nar..")
+        |> mes("DiebIyazNud Yu FarAn")
+        |> mes("nesFarDor U ~")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

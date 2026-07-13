@@ -328,12 +328,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CoolEventStaffVotingstaffcce do
                       1 ->
                         ctx =
                           if zeny(ctx) >= 4000 do
-                            ctx
-                            |> pay_zeny(4000)
-                            |> cutin("zonda_01", 255)
-                            |> warp("iz_dun02", 234, 206)
+                            ctx =
+                              ctx
+                              |> pay_zeny(4000)
+                              |> cutin("zonda_01", 255)
+                              |> warp("iz_dun02", 234, 206)
 
-                            exit(:normal)
+                            throw({:script_end, ctx})
                           else
                             ctx
                             |> mes("[Cool Event Corp. Voting Staff]")
@@ -378,12 +379,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CoolEventStaffVotingstaffcce do
                           1 ->
                             ctx =
                               if zeny(ctx) >= 4000 do
-                                ctx
-                                |> pay_zeny(4000)
-                                |> cutin("zonda_01", 255)
-                                |> warp("iz_dun02", 234, 206)
+                                ctx =
+                                  ctx
+                                  |> pay_zeny(4000)
+                                  |> cutin("zonda_01", 255)
+                                  |> warp("iz_dun02", 234, 206)
 
-                                exit(:normal)
+                                throw({:script_end, ctx})
                               else
                                 ctx
                                 |> mes("[Cool Event Corp. Voting Staff]")
@@ -398,12 +400,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CoolEventStaffVotingstaffcce do
                           2 ->
                             ctx =
                               if zeny(ctx) >= 4000 do
-                                ctx
-                                |> pay_zeny(4000)
-                                |> cutin("zonda_01", 255)
-                                |> warp("c_tower3", 64, 143)
+                                ctx =
+                                  ctx
+                                  |> pay_zeny(4000)
+                                  |> cutin("zonda_01", 255)
+                                  |> warp("c_tower3", 64, 143)
 
-                                exit(:normal)
+                                throw({:script_end, ctx})
                               else
                                 ctx
                                 |> mes("[Cool Event Corp. Voting Staff]")
@@ -455,12 +458,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CoolEventStaffVotingstaffcce do
                           1 ->
                             ctx =
                               if zeny(ctx) >= 4000 do
-                                ctx
-                                |> pay_zeny(4000)
-                                |> cutin("zonda_01", 255)
-                                |> warp("iz_dun02", 234, 206)
+                                ctx =
+                                  ctx
+                                  |> pay_zeny(4000)
+                                  |> cutin("zonda_01", 255)
+                                  |> warp("iz_dun02", 234, 206)
 
-                                exit(:normal)
+                                throw({:script_end, ctx})
                               else
                                 ctx
                                 |> mes("[Cool Event Corp. Voting Staff]")
@@ -475,12 +479,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CoolEventStaffVotingstaffcce do
                           2 ->
                             ctx =
                               if zeny(ctx) >= 4000 do
-                                ctx
-                                |> pay_zeny(4000)
-                                |> cutin("zonda_01", 255)
-                                |> warp("c_tower3", 64, 143)
+                                ctx =
+                                  ctx
+                                  |> pay_zeny(4000)
+                                  |> cutin("zonda_01", 255)
+                                  |> warp("c_tower3", 64, 143)
 
-                                exit(:normal)
+                                throw({:script_end, ctx})
                               else
                                 ctx
                                 |> mes("[Cool Event Corp. Voting Staff]")
@@ -495,12 +500,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CoolEventStaffVotingstaffcce do
                           3 ->
                             ctx =
                               if zeny(ctx) >= 4000 do
-                                ctx
-                                |> pay_zeny(4000)
-                                |> cutin("zonda_01", 255)
-                                |> warp("glast_01", 368, 303)
+                                ctx =
+                                  ctx
+                                  |> pay_zeny(4000)
+                                  |> cutin("zonda_01", 255)
+                                  |> warp("glast_01", 368, 303)
 
-                                exit(:normal)
+                                throw({:script_end, ctx})
                               else
                                 ctx
                                 |> mes("[Cool Event Corp. Voting Staff]")
@@ -580,6 +586,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CoolEventStaffVotingstaffcce do
       end
 
     ctx |> close() |> cutin("zonda_01", 255)
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

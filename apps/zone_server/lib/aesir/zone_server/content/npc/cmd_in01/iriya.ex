@@ -30,7 +30,5 @@ defmodule Aesir.ZoneServer.Content.Npc.CmdIn01.Iriya do
     |> mes("can't help but wonder...")
     |> mes("Where has he gone?")
     |> close()
-
-    exit(:normal)
   end
 end

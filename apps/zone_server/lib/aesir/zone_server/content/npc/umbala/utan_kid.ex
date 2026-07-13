@@ -70,33 +70,35 @@ defmodule Aesir.ZoneServer.Content.Npc.Umbala.UtanKid do
 
               emotion(ctx, :profusely_sweat)
             else
-              ctx
-              |> next()
-              |> mes("[Haatan]")
-              |> mes("Uh...")
-              |> mes("It looks like...")
-              |> mes("You don't have much")
-              |> mes("yourself...")
-              |> emotion(:hng)
-              |> close()
+              ctx =
+                ctx
+                |> next()
+                |> mes("[Haatan]")
+                |> mes("Uh...")
+                |> mes("It looks like...")
+                |> mes("You don't have much")
+                |> mes("yourself...")
+                |> emotion(:hng)
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             end
 
-          ctx
-          |> next()
-          |> mes("[Haatan]")
-          |> mes("Thank you so much!")
-          |> emotion(:smile)
-          |> close()
+          ctx =
+            ctx
+            |> next()
+            |> mes("[Haatan]")
+            |> mes("Thank you so much!")
+            |> emotion(:smile)
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
         else
           ctx
         end
 
-      ctx |> mes("[Haatan]") |> mes(".............*Sob*...") |> emotion(:cry) |> close()
-      exit(:normal)
+      ctx = ctx |> mes("[Haatan]") |> mes(".............*Sob*...") |> emotion(:cry) |> close()
+      throw({:script_end, ctx})
     else
       {ctx, v2} =
         ctx
@@ -151,24 +153,34 @@ defmodule Aesir.ZoneServer.Content.Npc.Umbala.UtanKid do
 
               emotion(ctx, :profusely_sweat)
             else
-              ctx
-              |> next()
-              |> mes("[Haatan]")
-              |> mes("...umbah? Umbahumbah!! Umbaum!")
-              |> emotion(:hng)
-              |> close()
+              ctx =
+                ctx
+                |> next()
+                |> mes("[Haatan]")
+                |> mes("...umbah? Umbahumbah!! Umbaum!")
+                |> emotion(:hng)
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             end
 
-          ctx |> next() |> mes("[Haatan]") |> mes("Umba umba umbaum.") |> emotion(:cry) |> close()
-          exit(:normal)
+          ctx =
+            ctx
+            |> next()
+            |> mes("[Haatan]")
+            |> mes("Umba umba umbaum.")
+            |> emotion(:cry)
+            |> close()
+
+          throw({:script_end, ctx})
         else
           ctx
         end
 
-      ctx |> mes("[Haatan]") |> mes("........umbah..") |> emotion(:smile) |> close()
-      exit(:normal)
+      ctx = ctx |> mes("[Haatan]") |> mes("........umbah..") |> emotion(:smile) |> close()
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

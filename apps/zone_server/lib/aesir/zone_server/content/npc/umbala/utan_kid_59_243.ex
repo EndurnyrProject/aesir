@@ -66,37 +66,39 @@ defmodule Aesir.ZoneServer.Content.Npc.Umbala.UtanKid59243 do
                   ctx |> give_item(909, 2) |> give_item(914, 2) |> give_item(705, 2)
                 end
 
-              ctx |> emotion(:scissor) |> close()
-              exit(:normal)
+              ctx = ctx |> emotion(:scissor) |> close()
+              throw({:script_end, ctx})
             else
               ctx
             end
 
-          ctx
-          |> mes("[Kotan]")
-          |> mes("Hah! You don't have Meat,")
-          |> mes("but pretend that you do?!")
-          |> mes("I hate people who lie")
-          |> mes("to me!!")
-          |> percent_heal(hp: -20, sp: 0)
-          |> emotion(:fret)
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Kotan]")
+            |> mes("Hah! You don't have Meat,")
+            |> mes("but pretend that you do?!")
+            |> mes("I hate people who lie")
+            |> mes("to me!!")
+            |> percent_heal(hp: -20, sp: 0)
+            |> emotion(:fret)
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
         else
           ctx
         end
 
-      ctx
-      |> mes("[Kotan]")
-      |> mes(".........")
-      |> mes(".....hungwee.")
-      |> mes(".....I want Meat.")
-      |> percent_heal(hp: -1, sp: 0)
-      |> emotion(:cry)
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Kotan]")
+        |> mes(".........")
+        |> mes(".....hungwee.")
+        |> mes(".....I want Meat.")
+        |> percent_heal(hp: -1, sp: 0)
+        |> emotion(:cry)
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
       {ctx, v3} =
         ctx
@@ -148,35 +150,39 @@ defmodule Aesir.ZoneServer.Content.Npc.Umbala.UtanKid59243 do
                   ctx |> give_item(909, 2) |> give_item(914, 2) |> give_item(705, 2)
                 end
 
-              ctx |> emotion(:scissor) |> close()
-              exit(:normal)
+              ctx = ctx |> emotion(:scissor) |> close()
+              throw({:script_end, ctx})
             else
               ctx
             end
 
-          ctx
-          |> mes("[???]")
-          |> mes("Umbahumumhumbubabababah!!")
-          |> mes("Umbahumbababah umbahumboo!")
-          |> percent_heal(hp: -20, sp: 0)
-          |> emotion(:fret)
-          |> close()
+          ctx =
+            ctx
+            |> mes("[???]")
+            |> mes("Umbahumumhumbubabababah!!")
+            |> mes("Umbahumbababah umbahumboo!")
+            |> percent_heal(hp: -20, sp: 0)
+            |> emotion(:fret)
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
         else
           ctx
         end
 
-      ctx
-      |> mes("[???]")
-      |> mes("...........")
-      |> mes("......woong bah.")
-      |> mes("....umbabababah.")
-      |> emotion(:cry)
-      |> percent_heal(hp: -1, sp: 0)
-      |> close()
+      ctx =
+        ctx
+        |> mes("[???]")
+        |> mes("...........")
+        |> mes("......woong bah.")
+        |> mes("....umbabababah.")
+        |> emotion(:cry)
+        |> percent_heal(hp: -1, sp: 0)
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

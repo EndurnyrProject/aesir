@@ -21,24 +21,25 @@ defmodule Aesir.ZoneServer.Content.Npc.Aldebaran.SmithingGuy do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Quatro]")
-        |> mes(
-          "From what I've heard, he's one of those Blacksmiths that can upgrade your weapons and armor. When you upgrade a weapon, its attack strength is increased."
-        )
-        |> next()
-        |> mes("[Quatro]")
-        |> mes(
-          "For each upgrade level, attack strength increases by 2 for level 1 weapons. On level 2 weapons, 3 attack strength is added."
-        )
-        |> next()
-        |> mes("[Quatro]")
-        |> mes(
-          "On level 3 weapons, 5 attack strength is added for each level, and for level 4 weapons, 7 attack strength is added for each level."
-        )
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Quatro]")
+          |> mes(
+            "From what I've heard, he's one of those Blacksmiths that can upgrade your weapons and armor. When you upgrade a weapon, its attack strength is increased."
+          )
+          |> next()
+          |> mes("[Quatro]")
+          |> mes(
+            "For each upgrade level, attack strength increases by 2 for level 1 weapons. On level 2 weapons, 3 attack strength is added."
+          )
+          |> next()
+          |> mes("[Quatro]")
+          |> mes(
+            "On level 3 weapons, 5 attack strength is added for each level, and for level 4 weapons, 7 attack strength is added for each level."
+          )
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -54,7 +55,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Aldebaran.SmithingGuy do
       "They also have a dutiful son who's always helping out with the family business. I'm sure that kid will grow up to become a good Blacksmith like his father."
     )
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

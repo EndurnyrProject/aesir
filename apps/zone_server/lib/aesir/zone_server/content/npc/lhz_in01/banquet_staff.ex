@@ -29,7 +29,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.BanquetStaff do
     |> mes("be busy than twiddling my")
     |> mes("thumbs, to tell the truth.")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -105,6 +105,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Payon.Woman do
       end
 
     close(ctx)
-    exit(:normal)
   end
 end

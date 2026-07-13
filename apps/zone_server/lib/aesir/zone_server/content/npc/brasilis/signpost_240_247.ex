@@ -13,6 +13,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Brasilis.Signpost240247 do
   @impl true
   def on_talk(ctx) do
     ctx |> mes(":: Market ::") |> mes(" ") |> mes("- For your Potions and Weaponry -") |> close()
-    exit(:normal)
   end
 end

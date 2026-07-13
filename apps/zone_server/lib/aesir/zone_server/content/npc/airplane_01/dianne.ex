@@ -25,12 +25,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.Dianne do
     |> mes("weird reindeer. Oh!")
     |> mes("Do you think that...")
     |> close()
-
-    exit(:normal)
   end
 
   def ev_ontouch(ctx) do
-    _ = emotion(ctx, :cry)
-    exit(:normal)
+    emotion(ctx, :cry)
   end
 end

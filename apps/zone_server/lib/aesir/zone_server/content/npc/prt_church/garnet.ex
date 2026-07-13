@@ -29,184 +29,181 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtChurch.Garnet do
       "Go and ahead and ask if you have any questions about skills for Acolytes and Priests."
     )
     |> loop_1()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   defp loop_1(ctx) do
-    if true do
-      result =
-        try do
-          {ctx, v1} =
-            ctx
-            |> next()
-            |> select([
-              "About Heal",
-              "About Cure",
-              "About Increase AGI",
-              "About Angelus",
-              "About Blessing",
-              "About Warp Portal",
-              "End Conversation"
-            ])
+    result =
+      try do
+        {ctx, v1} =
+          ctx
+          |> next()
+          |> select([
+            "About Heal",
+            "About Cure",
+            "About Increase AGI",
+            "About Angelus",
+            "About Blessing",
+            "About Warp Portal",
+            "End Conversation"
+          ])
 
-          ctx =
-            case v1 do
-              1 ->
-                ctx =
-                  ctx
-                  |> mes("[Garnet]")
-                  |> mes(
-                    "You can recover your own HP with the ^6666CCHeal^000000 skill. Healing is one of the most important ways you can help your friends in battle."
-                  )
-                  |> next()
-                  |> mes("[Garnet]")
-                  |> mes(
-                    "Even though our powers are usually used to heal others, you can actually use the ^6666CCHeal^000000 skill to hurt Undead monsters."
-                  )
-                  |> next()
-                  |> mes("[Garnet]")
-                  |> mes(
-                    "Just remember to hold down the ^6666CCShift^000000 key when you use Cure or Heal on Undead monsters. Just be sure to hurt the monsters though, and don't use it to help monsters."
-                  )
-                  |> next()
-                  |> mes("[Garnet]")
-                  |> mes(
-                    "Later, if you've learned ^6666CCHeal^000000 as an Acolyte, you can learn ^6666CCSanctuary^000000 if you become a Priest."
-                  )
-                  |> next()
-                  |> mes("[Garnet]")
-                  |> mes(
-                    "Priests use ^6666CCSantuary^000000 to create an area which will restore the HP of you and your friends if you rest within the Sanctuary's area."
-                  )
+        ctx =
+          case v1 do
+            1 ->
+              ctx =
+                ctx
+                |> mes("[Garnet]")
+                |> mes(
+                  "You can recover your own HP with the ^6666CCHeal^000000 skill. Healing is one of the most important ways you can help your friends in battle."
+                )
+                |> next()
+                |> mes("[Garnet]")
+                |> mes(
+                  "Even though our powers are usually used to heal others, you can actually use the ^6666CCHeal^000000 skill to hurt Undead monsters."
+                )
+                |> next()
+                |> mes("[Garnet]")
+                |> mes(
+                  "Just remember to hold down the ^6666CCShift^000000 key when you use Cure or Heal on Undead monsters. Just be sure to hurt the monsters though, and don't use it to help monsters."
+                )
+                |> next()
+                |> mes("[Garnet]")
+                |> mes(
+                  "Later, if you've learned ^6666CCHeal^000000 as an Acolyte, you can learn ^6666CCSanctuary^000000 if you become a Priest."
+                )
+                |> next()
+                |> mes("[Garnet]")
+                |> mes(
+                  "Priests use ^6666CCSantuary^000000 to create an area which will restore the HP of you and your friends if you rest within the Sanctuary's area."
+                )
 
-                throw({:cont_1, ctx})
+              throw({:cont_1, ctx})
 
-              2 ->
-                ctx =
-                  ctx
-                  |> mes("[Garnet]")
-                  |> mes(
-                    "Once you reach ^6666CCLevel 2 Heal^000000 as an Acolyte, you can learn ^6666CCCure^000000, which can be used to treat abnormal statuses."
-                  )
-                  |> next()
-                  |> mes("[Garnet]")
-                  |> mes(
-                    "This skill can be such a life saver, since almost every abnormal status can be cured with the Cure skill. Just remember that you need ^6666CCLevel 2 Heal^000000 before you can learn Cure."
-                  )
+            2 ->
+              ctx =
+                ctx
+                |> mes("[Garnet]")
+                |> mes(
+                  "Once you reach ^6666CCLevel 2 Heal^000000 as an Acolyte, you can learn ^6666CCCure^000000, which can be used to treat abnormal statuses."
+                )
+                |> next()
+                |> mes("[Garnet]")
+                |> mes(
+                  "This skill can be such a life saver, since almost every abnormal status can be cured with the Cure skill. Just remember that you need ^6666CCLevel 2 Heal^000000 before you can learn Cure."
+                )
 
-                throw({:cont_1, ctx})
+              throw({:cont_1, ctx})
 
-              3 ->
-                ctx =
-                  ctx
-                  |> mes("[Garnet]")
-                  |> mes(
-                    "Now, the ^6666CCIncrease AGI^000000 skill can be used on you or your friends. For a while your AGI stat is increased, making you attack faster and dodge monster attacks more easily."
-                  )
-                  |> next()
-                  |> mes("[Garnet]")
-                  |> mes(
-                    "If you're an Acolyte that wants to learn ^6666CCIncrease AGI^000000, you need to learn ^6666CCLevel 3 Heal^000000 first."
-                  )
+            3 ->
+              ctx =
+                ctx
+                |> mes("[Garnet]")
+                |> mes(
+                  "Now, the ^6666CCIncrease AGI^000000 skill can be used on you or your friends. For a while your AGI stat is increased, making you attack faster and dodge monster attacks more easily."
+                )
+                |> next()
+                |> mes("[Garnet]")
+                |> mes(
+                  "If you're an Acolyte that wants to learn ^6666CCIncrease AGI^000000, you need to learn ^6666CCLevel 3 Heal^000000 first."
+                )
 
-                throw({:cont_1, ctx})
+              throw({:cont_1, ctx})
 
-              4 ->
-                ctx =
-                  ctx
-                  |> mes("[Garnet]")
-                  |> mes(
-                    "You can use ^6666CCAngelus^000000 to increase your Defense, as well as the Defense of other party members. Remember though, you can only use ^6666CCAngelus^000000 on other people if they are in your party."
-                  )
-                  |> next()
-                  |> mes("[Garnet]")
-                  |> mes(
-                    "Before you can learn Angelus, you will need to have ^6666CCLevel 3 Divine Protection^000000."
-                  )
-                  |> next()
-                  |> mes("[Garnet]")
-                  |> mes(
-                    "Also, if you keep learning Angelus, you'll eventually be able to learn ^6666CCKyrie Eleison^000000. That skill helps you evade initial attacks automatically."
-                  )
+            4 ->
+              ctx =
+                ctx
+                |> mes("[Garnet]")
+                |> mes(
+                  "You can use ^6666CCAngelus^000000 to increase your Defense, as well as the Defense of other party members. Remember though, you can only use ^6666CCAngelus^000000 on other people if they are in your party."
+                )
+                |> next()
+                |> mes("[Garnet]")
+                |> mes(
+                  "Before you can learn Angelus, you will need to have ^6666CCLevel 3 Divine Protection^000000."
+                )
+                |> next()
+                |> mes("[Garnet]")
+                |> mes(
+                  "Also, if you keep learning Angelus, you'll eventually be able to learn ^6666CCKyrie Eleison^000000. That skill helps you evade initial attacks automatically."
+                )
 
-                throw({:cont_1, ctx})
+              throw({:cont_1, ctx})
 
-              5 ->
-                ctx =
-                  ctx
-                  |> mes("[Garnet]")
-                  |> mes(
-                    "^6666CCBlessing^000000 temporarily increases STR, DEX and INT. This skill will give you and your friends a great advantage in battle!"
-                  )
-                  |> next()
-                  |> mes("[Garnet]")
-                  |> mes(
-                    "Before you can learn Blessing, you must first learn ^6666CCLevel 5 Divine Protection^000000."
-                  )
+            5 ->
+              ctx =
+                ctx
+                |> mes("[Garnet]")
+                |> mes(
+                  "^6666CCBlessing^000000 temporarily increases STR, DEX and INT. This skill will give you and your friends a great advantage in battle!"
+                )
+                |> next()
+                |> mes("[Garnet]")
+                |> mes(
+                  "Before you can learn Blessing, you must first learn ^6666CCLevel 5 Divine Protection^000000."
+                )
 
-                throw({:cont_1, ctx})
+              throw({:cont_1, ctx})
 
-              6 ->
-                ctx =
-                  ctx
-                  |> mes("[Garnet]")
-                  |> mes(
-                    "^6666CCWarp Portal^000000 is a pretty complex skill, and you need to know some other skills before you can learn it."
-                  )
-                  |> next()
-                  |> mes("[Garnet]")
-                  |> mes(
-                    "First, you need to learn ^6666CCRuwach^000000 which lets you see invisible monsters. After Ruwach, you will need to learn the ^6666CCTeleport^000000 skill."
-                  )
-                  |> next()
-                  |> mes("[Garnet]")
-                  |> mes(
-                    "Once you learn ^6666CCWarp Portal^000000, the level of the Warp Portal skill will determine how many warp destinations, or Warp Points, you can memorize."
-                  )
-                  |> next()
-                  |> mes("[Garnet]")
-                  |> mes(
-                    "If you master the Warp Portal skill, you can have a maximum of 4 different Warp Points. But at least one Warp Point is designated as the Save Point that you've made with a Kafra Employee."
-                  )
-                  |> next()
-                  |> mes("[Garnet]")
-                  |> mes(
-                    "Well, it's a bit of hassle, but if you want to make a certain place one of your Warp Points, you need to be physically there first. Then, type in ^6666CC/memo^000000 into the command prompt."
-                  )
-                  |> next()
-                  |> mes("[Garnet]")
-                  |> mes(
-                    "Just so you know, you can't save a Warp Point inside of a dungeon. Oh, and don't forget, each time you make a Warp Portal, you must use 1 ^6666CCBlue Gemstone^000000 as a Catalyst."
-                  )
+            6 ->
+              ctx =
+                ctx
+                |> mes("[Garnet]")
+                |> mes(
+                  "^6666CCWarp Portal^000000 is a pretty complex skill, and you need to know some other skills before you can learn it."
+                )
+                |> next()
+                |> mes("[Garnet]")
+                |> mes(
+                  "First, you need to learn ^6666CCRuwach^000000 which lets you see invisible monsters. After Ruwach, you will need to learn the ^6666CCTeleport^000000 skill."
+                )
+                |> next()
+                |> mes("[Garnet]")
+                |> mes(
+                  "Once you learn ^6666CCWarp Portal^000000, the level of the Warp Portal skill will determine how many warp destinations, or Warp Points, you can memorize."
+                )
+                |> next()
+                |> mes("[Garnet]")
+                |> mes(
+                  "If you master the Warp Portal skill, you can have a maximum of 4 different Warp Points. But at least one Warp Point is designated as the Save Point that you've made with a Kafra Employee."
+                )
+                |> next()
+                |> mes("[Garnet]")
+                |> mes(
+                  "Well, it's a bit of hassle, but if you want to make a certain place one of your Warp Points, you need to be physically there first. Then, type in ^6666CC/memo^000000 into the command prompt."
+                )
+                |> next()
+                |> mes("[Garnet]")
+                |> mes(
+                  "Just so you know, you can't save a Warp Point inside of a dungeon. Oh, and don't forget, each time you make a Warp Portal, you must use 1 ^6666CCBlue Gemstone^000000 as a Catalyst."
+                )
 
-                throw({:cont_1, ctx})
+              throw({:cont_1, ctx})
 
-              7 ->
+            7 ->
+              ctx =
                 ctx
                 |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
                 |> mes("Alright, I've")
                 |> mes("heard enough.")
                 |> close()
 
-                exit(:normal)
+              throw({:script_end, ctx})
 
-              _ ->
-                ctx
-            end
+            _ ->
+              ctx
+          end
 
-          {:next, ctx}
-        catch
-          :throw, {:brk_1, ctx} -> {:done, ctx}
-          :throw, {:cont_1, ctx} -> {:next, ctx}
-        end
-
-      case result do
-        {:next, ctx} -> loop_1(ctx)
-        {:done, ctx} -> ctx
+        {:next, ctx}
+      catch
+        :throw, {:brk_1, ctx} -> {:done, ctx}
+        :throw, {:cont_1, ctx} -> {:next, ctx}
       end
-    else
-      ctx
+
+    case result do
+      {:next, ctx} -> loop_1(ctx)
+      {:done, ctx} -> ctx
     end
   end
 end

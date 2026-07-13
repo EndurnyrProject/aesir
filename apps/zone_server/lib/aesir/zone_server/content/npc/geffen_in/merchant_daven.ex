@@ -117,6 +117,5 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.MerchantDaven do
       end
 
     close(ctx)
-    exit(:normal)
   end
 end

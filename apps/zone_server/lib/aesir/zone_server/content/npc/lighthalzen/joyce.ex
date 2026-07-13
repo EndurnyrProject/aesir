@@ -20,7 +20,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Joyce do
     |> mes("beating faster and faster")
     |> mes("with a feverish passion~")
     |> close()
-
-    exit(:normal)
   end
 end

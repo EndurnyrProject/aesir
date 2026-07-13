@@ -13,23 +13,27 @@ defmodule Aesir.ZoneServer.Content.Npc.Manuk.Galtun256143 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Galtun]")
-      |> mes("I will devote myself to")
-      |> mes("protect my family and Saphas.")
-      |> mes("That is all I want...")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Galtun]")
+        |> mes("I will devote myself to")
+        |> mes("protect my family and Saphas.")
+        |> mes("That is all I want...")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Galtun]")
-      |> mes("Mr ishh qw e ee")
-      |> mes("Baa eou sh ua sd")
-      |> mes("Up idhs ish dk I jsd")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Galtun]")
+        |> mes("Mr ishh qw e ee")
+        |> mes("Baa eou sh ua sd")
+        |> mes("Up idhs ish dk I jsd")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

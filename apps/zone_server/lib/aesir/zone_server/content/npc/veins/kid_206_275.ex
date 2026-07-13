@@ -20,7 +20,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.Kid206275 do
     |> mes("the outside! I wonder")
     |> mes("why it's like that?")
     |> close()
-
-    exit(:normal)
   end
 end

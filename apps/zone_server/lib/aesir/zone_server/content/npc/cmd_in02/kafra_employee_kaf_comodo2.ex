@@ -40,7 +40,5 @@ defmodule Aesir.ZoneServer.Content.Npc.CmdIn02.KafraEmployeeKafComodo2 do
     |> mes("Thank you for your patronage~")
     |> close()
     |> cutin("", 255)
-
-    exit(:normal)
   end
 end

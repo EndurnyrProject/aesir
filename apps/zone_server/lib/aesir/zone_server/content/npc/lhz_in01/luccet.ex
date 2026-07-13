@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Luccet do
     |> mes("just hide behind you! No?")
     |> mes("Nuts! Olly olly oxen free!")
     |> close()
-
-    exit(:normal)
   end
 end

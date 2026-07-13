@@ -13,21 +13,25 @@ defmodule Aesir.ZoneServer.Content.Npc.SplIn01.SplendideGuard do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Splendide Guard]")
-      |> mes(
-        "If you make too much noise, the prisoners will cause trouble. So try to keep quiet at all times."
-      )
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Splendide Guard]")
+        |> mes(
+          "If you make too much noise, the prisoners will cause trouble. So try to keep quiet at all times."
+        )
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Splendide Guard]")
-      |> mes("AnduVeldRe Ko VeldReFulo So LomaurDu So\tSo ")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Splendide Guard]")
+        |> mes("AnduVeldRe Ko VeldReFulo So LomaurDu So\tSo ")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

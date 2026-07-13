@@ -25,7 +25,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.SwordsmanShimizu do
     |> mes("stop. But soon, very soon,")
     |> mes("vengeance will be mine!")
     |> close()
-
-    exit(:normal)
   end
 end

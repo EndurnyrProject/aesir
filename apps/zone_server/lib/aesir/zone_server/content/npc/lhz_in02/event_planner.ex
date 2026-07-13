@@ -26,7 +26,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.EventPlanner do
     |> mes("something epochal, but what?")
     |> mes("Hey, do you have any ideas?")
     |> close()
-
-    exit(:normal)
   end
 end

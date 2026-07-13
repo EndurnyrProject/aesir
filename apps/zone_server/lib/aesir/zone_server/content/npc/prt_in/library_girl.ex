@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtIn.LibraryGirl do
       "Ooh~! The other branch of our library also has many interesting things to read! So if you get a chance, you just might want to visit."
     )
     |> close()
-
-    exit(:normal)
   end
 end

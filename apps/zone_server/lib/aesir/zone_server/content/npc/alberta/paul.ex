@@ -40,36 +40,40 @@ defmodule Aesir.ZoneServer.Content.Npc.Alberta.Paul do
         1 ->
           ctx =
             if zeny(ctx) < 200 do
-              ctx
-              |> mes("[Paul]")
-              |> mes(
-                "It seems you don't have the money, my friend. But please come back when you're able to pay."
-              )
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Paul]")
+                |> mes(
+                  "It seems you don't have the money, my friend. But please come back when you're able to pay."
+                )
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
               ctx
             end
 
-          ctx |> pay_zeny(200) |> warp("alb2trea", 62, 69) |> close()
-          exit(:normal)
+          ctx = ctx |> pay_zeny(200) |> warp("alb2trea", 62, 69) |> close()
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Paul]")
-          |> mes("Alright, well...")
-          |> mes("I'll be around")
-          |> mes("if you change")
-          |> mes("your mind.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Paul]")
+            |> mes("Alright, well...")
+            |> mes("I'll be around")
+            |> mes("if you change")
+            |> mes("your mind.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

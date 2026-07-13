@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Hugel.Lisa do
     |> mes("I wanna go out and")
     |> mes("live in the big city~")
     |> close()
-
-    exit(:normal)
   end
 end

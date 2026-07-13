@@ -40,7 +40,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Morocc.YoungMan do
       "Anyway, do you know where we are? I just had a little drink at a tavern, but all of a sudden, the whole town's disappeared when I got out.. or, some five hundred years have passed???!"
     )
     |> close()
-
-    exit(:normal)
   end
 end

@@ -29,7 +29,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Shengwen do
     |> mes("familiar faces. Maybe I'm")
     |> mes("just thinking too much...")
     |> close()
-
-    exit(:normal)
   end
 end

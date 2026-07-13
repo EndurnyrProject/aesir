@@ -13,37 +13,41 @@ defmodule Aesir.ZoneServer.Content.Npc.SplIn01.HighRankedSoldier do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) > 0 and get_char_var(ctx, :ep13_2_rhea, 0) > 99 do
-      ctx
-      |> mes("[High-Ranked Soldier]")
-      |> mes("Are there any new supplies?")
-      |> next()
-      |> mes("[Laphine Soldier]")
-      |> mes("This sword just arrived...")
-      |> mes(
-        "This is inspired by stars, and we tested it by cutting the thread floating over the water."
-      )
-      |> next()
-      |> mes("[High-Ranked Soldier]")
-      |> mes("Hmm, we rarely used swords. But it looks great as a decoration.")
-      |> next()
-      |> mes("- Seems their busy talking about weapons -")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[High-Ranked Soldier]")
+        |> mes("Are there any new supplies?")
+        |> next()
+        |> mes("[Laphine Soldier]")
+        |> mes("This sword just arrived...")
+        |> mes(
+          "This is inspired by stars, and we tested it by cutting the thread floating over the water."
+        )
+        |> next()
+        |> mes("[High-Ranked Soldier]")
+        |> mes("Hmm, we rarely used swords. But it looks great as a decoration.")
+        |> next()
+        |> mes("- Seems their busy talking about weapons -")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[High-Ranked Soldier]")
-      |> mes("NorVerNuff Ee Re....")
-      |> next()
-      |> mes("[Laphine Soldier]")
-      |> mes("FusVerAlah Di ")
-      |> mes("ModNorNor U DimVohlWeh O DimAmannea An WosAnoNoh An AnduMeOdes So TalAdor.")
-      |> next()
-      |> mes("[High-Ranked Soldier]")
-      |> mes("DurNohHir Ha UorVaThus Di AshNuffLon U mahNuffThus U RuAmanAgol Ir NohHir...?")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[High-Ranked Soldier]")
+        |> mes("NorVerNuff Ee Re....")
+        |> next()
+        |> mes("[Laphine Soldier]")
+        |> mes("FusVerAlah Di ")
+        |> mes("ModNorNor U DimVohlWeh O DimAmannea An WosAnoNoh An AnduMeOdes So TalAdor.")
+        |> next()
+        |> mes("[High-Ranked Soldier]")
+        |> mes("DurNohHir Ha UorVaThus Di AshNuffLon U mahNuffThus U RuAmanAgol Ir NohHir...?")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

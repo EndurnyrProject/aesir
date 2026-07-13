@@ -74,25 +74,27 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtIn.Shevild do
 
               ctx =
                 if v3 == 1 do
-                  ctx
-                  |> mes("[Shevild]")
-                  |> mes("Err? Haven't you still toured the outside of Prontera?")
-                  |> mes(
-                    "The maze can be found inside a forest at the north of Prontera. Go check the north west side of the forest."
-                  )
-                  |> close()
+                  ctx =
+                    ctx
+                    |> mes("[Shevild]")
+                    |> mes("Err? Haven't you still toured the outside of Prontera?")
+                    |> mes(
+                      "The maze can be found inside a forest at the north of Prontera. Go check the north west side of the forest."
+                    )
+                    |> close()
 
-                  exit(:normal)
+                  throw({:script_end, ctx})
                 else
                   ctx
                 end
 
-              ctx
-              |> mes("[Shevild]")
-              |> mes("Yeap, be careful when you adventure alone~")
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Shevild]")
+                |> mes("Yeap, be careful when you adventure alone~")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
 
             2 ->
               {ctx, v4} =
@@ -114,35 +116,38 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtIn.Shevild do
 
               ctx =
                 if v4 == 1 do
-                  ctx
-                  |> mes("[Shevild]")
-                  |> mes(
-                    "There is no road directly leads to the ruins. But if you go north and keep heading to east, you will get there."
-                  )
-                  |> mes(
-                    "Oh, be careful on your way to the ruins because there are some weird plant things that assault passersby for no reason."
-                  )
-                  |> close()
+                  ctx =
+                    ctx
+                    |> mes("[Shevild]")
+                    |> mes(
+                      "There is no road directly leads to the ruins. But if you go north and keep heading to east, you will get there."
+                    )
+                    |> mes(
+                      "Oh, be careful on your way to the ruins because there are some weird plant things that assault passersby for no reason."
+                    )
+                    |> close()
 
-                  exit(:normal)
+                  throw({:script_end, ctx})
                 else
                   ctx
                 end
 
-              ctx
-              |> mes("[Shevild]")
-              |> mes("Yeap, be careful when you adventure alone~")
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Shevild]")
+                |> mes("Yeap, be careful when you adventure alone~")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
 
             3 ->
-              ctx
-              |> mes("[Shevild]")
-              |> mes("Yeap, be careful when you adventure alone~")
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Shevild]")
+                |> mes("Yeap, be careful when you adventure alone~")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
 
             _ ->
               ctx
@@ -154,6 +159,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtIn.Shevild do
       end
 
     ctx |> mes("[Shevild]") |> mes("Come back any time~") |> close()
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

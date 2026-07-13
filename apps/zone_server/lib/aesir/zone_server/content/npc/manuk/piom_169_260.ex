@@ -13,25 +13,29 @@ defmodule Aesir.ZoneServer.Content.Npc.Manuk.Piom169260 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Piom]")
-      |> mes("We, Saphas are always together!")
-      |> mes("Wherever we are. We are always connected to each other.")
-      |> mes("I don't know where you are from but, you should learn our spirits.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Piom]")
+        |> mes("We, Saphas are always together!")
+        |> mes("Wherever we are. We are always connected to each other.")
+        |> mes("I don't know where you are from but, you should learn our spirits.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Piom]")
-      |> mes("Ng go oois yus dd")
-      |> mes("You ii iaao nfb ud")
-      |> mes("Wqq ifn isp did")
-      |> mes("Uy ydf sd fs wee")
-      |> mes("Mgg gf fs d ff")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Piom]")
+        |> mes("Ng go oois yus dd")
+        |> mes("You ii iaao nfb ud")
+        |> mes("Wqq ifn isp did")
+        |> mes("Uy ydf sd fs wee")
+        |> mes("Mgg gf fs d ff")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

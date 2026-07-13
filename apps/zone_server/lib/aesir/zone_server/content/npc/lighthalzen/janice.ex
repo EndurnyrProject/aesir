@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Janice do
     |> mes("a long time and I still")
     |> mes("can't find my way around...")
     |> close()
-
-    exit(:normal)
   end
 end

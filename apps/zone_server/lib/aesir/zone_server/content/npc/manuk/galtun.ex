@@ -13,34 +13,38 @@ defmodule Aesir.ZoneServer.Content.Npc.Manuk.Galtun do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Galtun]")
-      |> mes("Recently, tiny things have been flying around.")
-      |> mes("I am not sure if they are flies or not.")
-      |> mes("But it is very annoying.")
-      |> next()
-      |> mes("[Galtun]")
-      |> mes("They can only use their small magic from a long distance.")
-      |> mes("But I can kick them off quickly.")
-      |> mes("They are so bothersome. But I better not waste my time with them.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Galtun]")
+        |> mes("Recently, tiny things have been flying around.")
+        |> mes("I am not sure if they are flies or not.")
+        |> mes("But it is very annoying.")
+        |> next()
+        |> mes("[Galtun]")
+        |> mes("They can only use their small magic from a long distance.")
+        |> mes("But I can kick them off quickly.")
+        |> mes("They are so bothersome. But I better not waste my time with them.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Galtun]")
-      |> mes("Ya sda sdou sh dbi")
-      |> mes("Av bu dgs ldo gp gf ")
-      |> mes("Jg gfs dsd fw eerr ")
-      |> next()
-      |> mes("[Galtun]")
-      |> mes("Mb ih ids oj fd")
-      |> mes("Pg sdf dd sd fff")
-      |> mes("Bq wer jfsd fsd ut yy")
-      |> mes("Nx cxd fsd fs df ")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Galtun]")
+        |> mes("Ya sda sdou sh dbi")
+        |> mes("Av bu dgs ldo gp gf ")
+        |> mes("Jg gfs dsd fw eerr ")
+        |> next()
+        |> mes("[Galtun]")
+        |> mes("Mb ih ids oj fd")
+        |> mes("Pg sdf dd sd fff")
+        |> mes("Bq wer jfsd fsd ut yy")
+        |> mes("Nx cxd fsd fs df ")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

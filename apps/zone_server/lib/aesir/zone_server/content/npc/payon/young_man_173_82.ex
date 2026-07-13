@@ -45,7 +45,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Payon.YoungMan17382 do
     |> mes("...")
     |> mes("G-God...?")
     |> close()
-
-    exit(:normal)
   end
 end

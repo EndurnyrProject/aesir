@@ -32,8 +32,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Morocc.SoldierMorocc do
     |> mes("[Morocc Soldier]")
     |> mes("This is a restricted area. You can't come any further!")
     |> close()
-
-    exit(:normal)
   end
 
   def ev_ontouch(ctx) do
@@ -44,7 +42,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Morocc.SoldierMorocc do
     |> mes("[Morocc Soldier]")
     |> mes("This is a restricted area. You can't come any further!")
     |> close()
-
-    exit(:normal)
   end
 end

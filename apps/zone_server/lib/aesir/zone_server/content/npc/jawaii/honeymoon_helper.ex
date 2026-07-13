@@ -51,28 +51,30 @@ defmodule Aesir.ZoneServer.Content.Npc.Jawaii.HoneymoonHelper do
 
         ctx =
           if zeny(ctx) > 49999 do
-            ctx
-            |> pay_zeny(50000)
-            |> give_item(681, 1)
-            |> mes("Thank you very much~!")
-            |> mes("Please remember, you")
-            |> mes("should use this with your")
-            |> mes("partner in a place that is")
-            |> mes("special to the both of you.")
-            |> close()
+            ctx =
+              ctx
+              |> pay_zeny(50000)
+              |> give_item(681, 1)
+              |> mes("Thank you very much~!")
+              |> mes("Please remember, you")
+              |> mes("should use this with your")
+              |> mes("partner in a place that is")
+              |> mes("special to the both of you.")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
 
-        ctx
-        |> mes(
-          "'Sweet Memory of Marriage' is 50,000 zeny. But don't seem to have enough money with you right now. Maybe you and your partner could help each other to buy the Sweet Memory of Marriage?"
-        )
-        |> close()
+        ctx =
+          ctx
+          |> mes(
+            "'Sweet Memory of Marriage' is 50,000 zeny. But don't seem to have enough money with you right now. Maybe you and your partner could help each other to buy the Sweet Memory of Marriage?"
+          )
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -82,7 +84,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jawaii.HoneymoonHelper do
     |> mes("Even if your relationship ends,")
     |> mes("the memories the both of you have shared will remain forever...")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

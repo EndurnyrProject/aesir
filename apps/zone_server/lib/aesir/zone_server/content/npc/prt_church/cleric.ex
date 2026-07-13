@@ -32,21 +32,22 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtChurch.Cleric do
 
             ctx =
               if not Rathena.truthy?(v1) do
-                ctx
-                |> mes("[Father Mareusis]")
-                |> mes(
-                  "Unfortunately, I don't think you're ready to become an Acolyte yet. Please finish learning all of the Basic Skills first."
-                )
-                |> next()
-                |> mes("[Father Mareusis]")
-                |> mes("In the meantime,")
-                |> mes("I will wait until")
-                |> mes("you are ready.")
-                |> mes("May God be")
-                |> mes("with you.")
-                |> close()
+                ctx =
+                  ctx
+                  |> mes("[Father Mareusis]")
+                  |> mes(
+                    "Unfortunately, I don't think you're ready to become an Acolyte yet. Please finish learning all of the Basic Skills first."
+                  )
+                  |> next()
+                  |> mes("[Father Mareusis]")
+                  |> mes("In the meantime,")
+                  |> mes("I will wait until")
+                  |> mes("you are ready.")
+                  |> mes("May God be")
+                  |> mes("with you.")
+                  |> close()
 
-                exit(:normal)
+                throw({:script_end, ctx})
               else
                 ctx
               end
@@ -63,39 +64,42 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtChurch.Cleric do
             ctx = todo(ctx, :skill, ["NV_TRICKDEAD", 0, get_char_var(ctx, :SKILL_PERM, 0)])
             ctx = jobchange(ctx, get_char_var(ctx, :Job_Acolyte_High, 0))
 
-            ctx
-            |> todo(:skill, ["AL_HOLYLIGHT", 1, get_char_var(ctx, :SKILL_PERM, 0)])
-            |> mes("[Father Mareusis]")
-            |> mes(
-              "Now, venture forth and seek those who need your help. May God light your path."
-            )
-            |> close()
+            ctx =
+              ctx
+              |> todo(:skill, ["AL_HOLYLIGHT", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+              |> mes("[Father Mareusis]")
+              |> mes(
+                "Now, venture forth and seek those who need your help. May God light your path."
+              )
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
-            ctx
-            |> mes("[Father Mareusis]")
-            |> mes(
-              "Now, venture forth to seek people who need your help. May God enlighten your way."
-            )
-            |> close()
+            ctx =
+              ctx
+              |> mes("[Father Mareusis]")
+              |> mes(
+                "Now, venture forth to seek people who need your help. May God enlighten your way."
+              )
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           end
         else
-          ctx
-          |> mes("[Father Mareusis]")
-          |> mes(
-            "I sense that you have endured a past life experience. You must have learned many things before entering Valhalla."
-          )
-          |> next()
-          |> mes("[Father Mareusis]")
-          |> mes(
-            "However, I can tell that you are not suited to be an Acolyte. Please remember who you were in your past life and find your path."
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Father Mareusis]")
+            |> mes(
+              "I sense that you have endured a past life experience. You must have learned many things before entering Valhalla."
+            )
+            |> next()
+            |> mes("[Father Mareusis]")
+            |> mes(
+              "However, I can tell that you are not suited to be an Acolyte. Please remember who you were in your past life and find your path."
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
         end
       else
         ctx
@@ -128,8 +132,8 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtChurch.Cleric do
                 mes(ctx, "I'm sorry but it seems you already have your own job, aren't you?")
               end
 
-            close(ctx)
-            exit(:normal)
+            ctx = close(ctx)
+            throw({:script_end, ctx})
           else
             ctx =
               ctx
@@ -141,71 +145,76 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtChurch.Cleric do
 
             ctx =
               if not Rathena.truthy?(v3) do
-                ctx
-                |> mes("[Father Mareusis]")
-                |> mes(
-                  "Oh my?! You haven't accomplished the basic practice yet?! You have a long way to go! Come again after increasing your job level!"
-                )
-                |> close()
+                ctx =
+                  ctx
+                  |> mes("[Father Mareusis]")
+                  |> mes(
+                    "Oh my?! You haven't accomplished the basic practice yet?! You have a long way to go! Come again after increasing your job level!"
+                  )
+                  |> close()
 
-                exit(:normal)
+                throw({:script_end, ctx})
               else
                 ctx
               end
 
-            ctx
-            |> mes("[Father Mareusis]")
-            |> mes("Hmm... your job level is enough...")
-            |> mes("Good. Now I will give you the qualification to become an Acolyte.")
-            |> next()
-            |> mes("[Father Mareusis]")
-            |> mes(
-              "Always remember to be thankful to God, who takes care of us all the time. In chaos and times of difficulty, face your hardships with unwavering faith."
-            )
-            |> jobchange(:acolyte)
-            |> give_item(1545, 1)
-            |> next()
-            |> mes("[Father Mareusis]")
-            |> mes(
-              "Lastly, I want to sincerely congratulate you on persevering through your trial of penance."
-            )
-            |> close()
+            ctx =
+              ctx
+              |> mes("[Father Mareusis]")
+              |> mes("Hmm... your job level is enough...")
+              |> mes("Good. Now I will give you the qualification to become an Acolyte.")
+              |> next()
+              |> mes("[Father Mareusis]")
+              |> mes(
+                "Always remember to be thankful to God, who takes care of us all the time. In chaos and times of difficulty, face your hardships with unwavering faith."
+              )
+              |> jobchange(:acolyte)
+              |> give_item(1545, 1)
+              |> next()
+              |> mes("[Father Mareusis]")
+              |> mes(
+                "Lastly, I want to sincerely congratulate you on persevering through your trial of penance."
+              )
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           end
 
         2 ->
-          ctx
-          |> mes("[Father Mareusis]")
-          |> mes("Do you wish to become an Acolyte?")
-          |> mes(
-            "Then, you must fulfill the following requirements thinking those are the practices given by God."
-          )
-          |> next()
-          |> mes("[Father Mareusis]")
-          |> mes(
-            "First, you have to reach at least Novice Job Level 9 and learn all of the Basic Skills."
-          )
-          |> mes(
-            "This is the most basic thing to do, so you need to regard it as the way of training yourself."
-          )
-          |> next()
-          |> mes("[Father Mareusis]")
-          |> mes(
-            "When you think you fulfilled this requirement, then come back to me again. Then you will have a holy job in which you can spread God's will."
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Father Mareusis]")
+            |> mes("Do you wish to become an Acolyte?")
+            |> mes(
+              "Then, you must fulfill the following requirements thinking those are the practices given by God."
+            )
+            |> next()
+            |> mes("[Father Mareusis]")
+            |> mes(
+              "First, you have to reach at least Novice Job Level 9 and learn all of the Basic Skills."
+            )
+            |> mes(
+              "This is the most basic thing to do, so you need to regard it as the way of training yourself."
+            )
+            |> next()
+            |> mes("[Father Mareusis]")
+            |> mes(
+              "When you think you fulfilled this requirement, then come back to me again. Then you will have a holy job in which you can spread God's will."
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          close(ctx)
-          exit(:normal)
+          ctx = close(ctx)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

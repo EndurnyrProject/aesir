@@ -34,7 +34,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn03.Citizen do
     |> mes("who's not. We all need")
     |> mes("somebody to be with, right?")
     |> close()
-
-    exit(:normal)
   end
 end

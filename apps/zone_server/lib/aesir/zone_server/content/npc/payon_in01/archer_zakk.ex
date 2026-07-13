@@ -92,6 +92,5 @@ defmodule Aesir.ZoneServer.Content.Npc.PayonIn01.ArcherZakk do
       end
 
     close(ctx)
-    exit(:normal)
   end
 end

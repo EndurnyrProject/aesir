@@ -23,12 +23,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.AirshipStaff do
           |> next()
           |> select(["Do you have a passenger named Thierry?"])
 
-        ctx
-        |> mes("[Airship Staff]")
-        |> mes("I am sorry, but I do not think that we have a passenger by that name.")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Airship Staff]")
+          |> mes("I am sorry, but I do not think that we have a passenger by that name.")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -45,66 +46,72 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.AirshipStaff do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Airship Staff]")
-          |> mes("When you see a broadcast")
-          |> mes("announcing that we have")
-          |> mes("arrived at your destination,")
-          |> mes("please use one of the exits")
-          |> mes("located at the north and")
-          |> mes("south ends of the Airship.")
-          |> next()
-          |> mes("[Airship Staff]")
-          |> mes("If you happen to miss")
-          |> mes("your stop, don't worry.")
-          |> mes("The Airship is constantly")
-          |> mes("en route and you'll get")
-          |> mes("another chance to arrive")
-          |> mes("to your intended destination.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Airship Staff]")
+            |> mes("When you see a broadcast")
+            |> mes("announcing that we have")
+            |> mes("arrived at your destination,")
+            |> mes("please use one of the exits")
+            |> mes("located at the north and")
+            |> mes("south ends of the Airship.")
+            |> next()
+            |> mes("[Airship Staff]")
+            |> mes("If you happen to miss")
+            |> mes("your stop, don't worry.")
+            |> mes("The Airship is constantly")
+            |> mes("en route and you'll get")
+            |> mes("another chance to arrive")
+            |> mes("to your intended destination.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Airship Staff]")
-          |> mes("The Captain's Cabin")
-          |> mes("is located at the front")
-          |> mes("of the Airship. There, you")
-          |> mes("can meet the captain and")
-          |> mes("the pilot of the Airship.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Airship Staff]")
+            |> mes("The Captain's Cabin")
+            |> mes("is located at the front")
+            |> mes("of the Airship. There, you")
+            |> mes("can meet the captain and")
+            |> mes("the pilot of the Airship.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx
-          |> mes("[Airship Staff]")
-          |> mes("The Airship provides")
-          |> mes("various Mini Games for")
-          |> mes("the entertainment of all")
-          |> mes("our passengers. We invite")
-          |> mes("you to try your luck and skills")
-          |> mes("in the Airship's Mini Games~")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Airship Staff]")
+            |> mes("The Airship provides")
+            |> mes("various Mini Games for")
+            |> mes("the entertainment of all")
+            |> mes("our passengers. We invite")
+            |> mes("you to try your luck and skills")
+            |> mes("in the Airship's Mini Games~")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         4 ->
-          ctx
-          |> mes("[Airship Staff]")
-          |> mes("Well, I hope you")
-          |> mes("your flight aboard")
-          |> mes("our Airships. Thank")
-          |> mes("you and have a good day.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Airship Staff]")
+            |> mes("Well, I hope you")
+            |> mes("your flight aboard")
+            |> mes("our Airships. Thank")
+            |> mes("you and have a good day.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

@@ -25,7 +25,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Gonryun.QianYuenShuang do
     |> mes("I just hope other people feel the")
     |> mes("same way about what he has done.")
     |> close()
-
-    exit(:normal)
   end
 end

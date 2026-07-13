@@ -40,7 +40,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Blackboard do
     |> mes("is the best employee attitude.''")
     |> mes("- Mazwon")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbech.Tollaf do
     |> mes("Einbroch! Einbech must be the")
     |> mes("worst town Schwarzwald Republic. No, it's the worst in the world!")
     |> close()
-
-    exit(:normal)
   end
 end

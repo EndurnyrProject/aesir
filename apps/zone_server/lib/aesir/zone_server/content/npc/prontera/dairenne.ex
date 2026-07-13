@@ -24,22 +24,23 @@ defmodule Aesir.ZoneServer.Content.Npc.Prontera.Dairenne do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Towngirl Dairenne]")
-        |> mes(
-          "I wonder if you are interested in parties or dresses. Hehehe. These days, the hot topic is definitely the colorful, extravagant, magnificent dresses you can wear."
-        )
-        |> next()
-        |> mes("[Towngirl Dairenne]")
-        |> mes(
-          "To get such dazzling colors, I heard you have to use a dye that you can only get in Morocc. But I also heard that the price is beyond imagination."
-        )
-        |> next()
-        |> mes("[Towngirl Dairenne]")
-        |> mes("Aahhhh~ I wish I could wear such a dress. Even if it's just once...")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Towngirl Dairenne]")
+          |> mes(
+            "I wonder if you are interested in parties or dresses. Hehehe. These days, the hot topic is definitely the colorful, extravagant, magnificent dresses you can wear."
+          )
+          |> next()
+          |> mes("[Towngirl Dairenne]")
+          |> mes(
+            "To get such dazzling colors, I heard you have to use a dye that you can only get in Morocc. But I also heard that the price is beyond imagination."
+          )
+          |> next()
+          |> mes("[Towngirl Dairenne]")
+          |> mes("Aahhhh~ I wish I could wear such a dress. Even if it's just once...")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -48,7 +49,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Prontera.Dairenne do
     |> mes("[Towngirl Dairenne]")
     |> mes("Eh~? Why talk to me in the first place? What a strange person.")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

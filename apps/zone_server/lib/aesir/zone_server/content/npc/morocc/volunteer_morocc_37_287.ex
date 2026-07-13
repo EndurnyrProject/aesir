@@ -26,7 +26,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Morocc.VolunteerMorocc37287 do
       "People are scared to death, but those are fortunate at least.. cause.. many others got mentally ill and stuff.."
     )
     |> close()
-
-    exit(:normal)
   end
 end

@@ -13,28 +13,32 @@ defmodule Aesir.ZoneServer.Content.Npc.Manuk.Piom245124 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Piom]")
-      |> mes("Human, you think our battle is stupid, don't you?")
-      |> mes("And a waste of time?")
-      |> mes("But it is really depends on this war whether we can survive or not.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Piom]")
+        |> mes("Human, you think our battle is stupid, don't you?")
+        |> mes("And a waste of time?")
+        |> mes("But it is really depends on this war whether we can survive or not.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Piom]")
-      |> mes("Nsa dhi pao sdi a jp das")
-      |> mes("Uaa as iijds kn sdg f")
-      |> mes("Bzi hd sia pasd ")
-      |> mes("Es do ja pda sj d")
-      |> mes("Bs oju lujdi ni sdgf g ")
-      |> next()
-      |> mes("[Piom]")
-      |> mes("Us id jd nai dh")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Piom]")
+        |> mes("Nsa dhi pao sdi a jp das")
+        |> mes("Uaa as iijds kn sdg f")
+        |> mes("Bzi hd sia pasd ")
+        |> mes("Es do ja pda sj d")
+        |> mes("Bs oju lujdi ni sdgf g ")
+        |> next()
+        |> mes("[Piom]")
+        |> mes("Us id jd nai dh")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

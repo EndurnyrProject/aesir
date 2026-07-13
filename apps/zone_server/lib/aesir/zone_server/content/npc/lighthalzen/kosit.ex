@@ -34,7 +34,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Kosit do
     |> mes("our freedoms or standard")
     |> mes("of living, you know?")
     |> close()
-
-    exit(:normal)
   end
 end

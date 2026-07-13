@@ -32,7 +32,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Rachel.CheshrumnirGuardChesguard do
     |> mes("her Excellency, I expect you")
     |> mes("to enter with a pious heart.")
     |> close()
-
-    exit(:normal)
   end
 end

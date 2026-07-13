@@ -18,14 +18,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbroch.VoteTimer2 do
   end
 
   def ev_onenable(ctx) do
-    _ = initnpctimer(ctx)
-    exit(:normal)
+    initnpctimer(ctx)
   end
 
   def ev_ontimer60000(ctx) do
     ctx = stopnpctimer(ctx)
 
-    _ =
+    ctx =
       if get_server_var(ctx, "DTS_PeriodCheck", 0) == 8640 do
         ctx =
           ctx
@@ -43,6 +42,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbroch.VoteTimer2 do
         |> donpcevent("Vote Timer2#ein::OnEnable")
       end
 
-    exit(:normal)
+    ctx
   end
 end

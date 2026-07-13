@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.Arthur do
     |> mes("bank and I just wanted to get")
     |> mes("get away from all this heat...")
     |> close()
-
-    exit(:normal)
   end
 end

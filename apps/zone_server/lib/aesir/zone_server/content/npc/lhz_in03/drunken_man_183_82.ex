@@ -26,7 +26,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn03.DrunkenMan18382 do
     |> mes("today. Like, it's the flavor")
     |> mes("of relaxing, joyous relief~")
     |> close()
-
-    exit(:normal)
   end
 end

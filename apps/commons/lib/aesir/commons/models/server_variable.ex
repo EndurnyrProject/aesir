@@ -15,8 +15,8 @@ defmodule Aesir.Commons.Models.ServerVariable do
   import Ecto.Changeset
 
   @type t :: %__MODULE__{
-          name: String.t(),
-          value: map()
+          name: String.t() | nil,
+          value: map() | nil
         }
 
   @primary_key false

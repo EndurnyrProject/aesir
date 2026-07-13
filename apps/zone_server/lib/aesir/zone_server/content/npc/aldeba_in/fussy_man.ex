@@ -34,28 +34,30 @@ defmodule Aesir.ZoneServer.Content.Npc.AldebaIn.FussyMan do
 
         ctx =
           if v2 == 1 do
-            ctx
-            |> mes("[Fussy Man]")
-            |> mes("Don't be so ridiculous!")
-            |> mes("'Amazing Picky' is the most wonderful and the most unique name")
-            |> mes("in this world, and my chicken deserves the name!")
-            |> close()
+            ctx =
+              ctx
+              |> mes("[Fussy Man]")
+              |> mes("Don't be so ridiculous!")
+              |> mes("'Amazing Picky' is the most wonderful and the most unique name")
+              |> mes("in this world, and my chicken deserves the name!")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
 
-        ctx
-        |> mes("[Fussy Man]")
-        |> mes("You don't care, do you?")
-        |> mes(
-          "I am only child in my family, so I have been thinking of my little chicken as my brother!"
-        )
-        |> mes("I want my chicken back...*Sob*")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Fussy Man]")
+          |> mes("You don't care, do you?")
+          |> mes(
+            "I am only child in my family, so I have been thinking of my little chicken as my brother!"
+          )
+          |> mes("I want my chicken back...*Sob*")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -68,7 +70,7 @@ defmodule Aesir.ZoneServer.Content.Npc.AldebaIn.FussyMan do
     )
     |> mes("I want my chicken back...*Sob*")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

@@ -13,26 +13,30 @@ defmodule Aesir.ZoneServer.Content.Npc.Umbala.UtanMan do
   @impl true
   def on_talk(ctx) do
     if get_char_var(ctx, :event_umbala, 0) >= 3 do
-      ctx
-      |> mes("[Jertan]")
-      |> mes("Bungee jumping can be dangerous,")
-      |> mes("and you can risk your life doing")
-      |> mes("it. We Utans have consider")
-      |> mes("bungee jumping an important")
-      |> mes("part of the ceremony of")
-      |> mes("becoming an adult.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Jertan]")
+        |> mes("Bungee jumping can be dangerous,")
+        |> mes("and you can risk your life doing")
+        |> mes("it. We Utans have consider")
+        |> mes("bungee jumping an important")
+        |> mes("part of the ceremony of")
+        |> mes("becoming an adult.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[???]")
-      |> mes("Umbaumbah humba.")
-      |> mes("Woo umbaumbaumbabah woo humbah")
-      |> mes("Umbababah umba umba.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[???]")
+        |> mes("Umbaumbah humba.")
+        |> mes("Woo umbaumbaumbabah woo humbah")
+        |> mes("Umbababah umba umba.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

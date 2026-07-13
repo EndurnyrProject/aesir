@@ -38,19 +38,20 @@ defmodule Aesir.ZoneServer.Content.Npc.AldebaIn.KafraEmployee88161 do
 
         ctx =
           if get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 11000 do
-            ctx
-            |> mes("....Oh dear... What are you carrying so many things...?")
-            |> mes("I don't think you can keep the received items~")
-            |> next()
-            |> mes("[Kafra Employee]")
-            |> mes("I'm sorry~ but~")
-            |> mes(
-              "Please, visit Kafra warehouse and store your items until you have free space of ^0000FF1100^000000 and come back."
-            )
-            |> mes("I apologize for inconvenience~")
-            |> close()
+            ctx =
+              ctx
+              |> mes("....Oh dear... What are you carrying so many things...?")
+              |> mes("I don't think you can keep the received items~")
+              |> next()
+              |> mes("[Kafra Employee]")
+              |> mes("I'm sorry~ but~")
+              |> mes(
+                "Please, visit Kafra warehouse and store your items until you have free space of ^0000FF1100^000000 and come back."
+              )
+              |> mes("I apologize for inconvenience~")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
@@ -91,15 +92,16 @@ defmodule Aesir.ZoneServer.Content.Npc.AldebaIn.KafraEmployee88161 do
             ctx =
               if get_char_var(ctx, :RESRVPTS, 0) <
                    Enum.at(get_local(ctx, :points, []), get_local(ctx, :s, 0), 0) do
-                ctx
-                |> mes("I'm sorry~ dear~")
-                |> mes(
-                  "You can't choose the selected chance because you do not have enough special reserve points."
-                )
-                |> mes("Please check your special reserve points and choose another one~")
-                |> close()
+                ctx =
+                  ctx
+                  |> mes("I'm sorry~ dear~")
+                  |> mes(
+                    "You can't choose the selected chance because you do not have enough special reserve points."
+                  )
+                  |> mes("Please check your special reserve points and choose another one~")
+                  |> close()
 
-                exit(:normal)
+                throw({:script_end, ctx})
               else
                 ctx
               end
@@ -367,8 +369,8 @@ defmodule Aesir.ZoneServer.Content.Npc.AldebaIn.KafraEmployee88161 do
                 ctx
               end
 
-            ctx |> mes("Congratulations~~") |> close()
-            exit(:normal)
+            ctx = ctx |> mes("Congratulations~~") |> close()
+            throw({:script_end, ctx})
           else
             ctx
           end
@@ -384,7 +386,7 @@ defmodule Aesir.ZoneServer.Content.Npc.AldebaIn.KafraEmployee88161 do
     |> mes("Collect more~ and more~ special reserve points~")
     |> mes("Thank you for using Kafra Corporation's services~~")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

@@ -41,7 +41,5 @@ defmodule Aesir.ZoneServer.Content.Npc.EinIn01.Gesin do
     |> mes("instead of worrying")
     |> mes("about making money...")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -24,7 +24,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Amatsu.Grandma do
       "went to the bar and starts drinking again? The man just doesn't have any backbone. *Phew*"
     )
     |> close()
-
-    exit(:normal)
   end
 end

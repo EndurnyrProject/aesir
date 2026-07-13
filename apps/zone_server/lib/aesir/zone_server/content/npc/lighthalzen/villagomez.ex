@@ -20,7 +20,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Villagomez do
     |> mes("I don't keep my family")
     |> mes("waiting. ^333333*Sigh...*^000000")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Guide72195 do
     |> mes("are restricted from access")
     |> mes("by the general public.")
     |> close()
-
-    exit(:normal)
   end
 end

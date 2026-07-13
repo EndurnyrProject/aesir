@@ -24,32 +24,33 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.PrOfficerMoscovia do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Moscovia P.R. Officer]")
-          |> mes("Moscovia is a beautiful kingdom")
-          |> mes("on an island located north of Rune-")
-          |> mes("Midgarts.")
-          |> next()
-          |> mes("[Moscovia P.R. Officer]")
-          |> mes("I'm sure that you will be")
-          |> mes("absolutely fascinated")
-          |> mes("by Moscovia's beautiful scenery")
-          |> mes("and gorgeous palace.")
-          |> next()
-          |> mes("[Moscovia P.R. Officer]")
-          |> mes("Now that our long winter has")
-          |> mes("passed,")
-          |> mes("I'm happy that I can now show you")
-          |> mes("our gorgeous hometown.")
-          |> next()
-          |> mes("[Moscovia P.R. Officer]")
-          |> mes("If you feel like visiting Moscovia")
-          |> mes("take the chance now!")
-          |> mes("I'll help you to have a nice trip")
-          |> mes("to Moscovia!")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Moscovia P.R. Officer]")
+            |> mes("Moscovia is a beautiful kingdom")
+            |> mes("on an island located north of Rune-")
+            |> mes("Midgarts.")
+            |> next()
+            |> mes("[Moscovia P.R. Officer]")
+            |> mes("I'm sure that you will be")
+            |> mes("absolutely fascinated")
+            |> mes("by Moscovia's beautiful scenery")
+            |> mes("and gorgeous palace.")
+            |> next()
+            |> mes("[Moscovia P.R. Officer]")
+            |> mes("Now that our long winter has")
+            |> mes("passed,")
+            |> mes("I'm happy that I can now show you")
+            |> mes("our gorgeous hometown.")
+            |> next()
+            |> mes("[Moscovia P.R. Officer]")
+            |> mes("If you feel like visiting Moscovia")
+            |> mes("take the chance now!")
+            |> mes("I'll help you to have a nice trip")
+            |> mes("to Moscovia!")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
           {ctx, v2} =
@@ -68,54 +69,60 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.PrOfficerMoscovia do
 
           ctx =
             if v2 == 2 do
-              ctx
-              |> mes("[Moscovia P.R. Officer]")
-              |> mes("If you're too busy now,")
-              |> mes("please tell me again whenever you want.")
-              |> mes("I'm always ready to guide anyone to Moscovia.")
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Moscovia P.R. Officer]")
+                |> mes("If you're too busy now,")
+                |> mes("please tell me again whenever you want.")
+                |> mes("I'm always ready to guide anyone to Moscovia.")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
               ctx
             end
 
           if zeny(ctx) < 10000 do
-            ctx
-            |> mes("[Moscovia P.R. Officer]")
-            |> mes("I'm sorry but you don't have")
-            |> mes("enough zeny now")
-            |> mes("You need 10,000 zeny")
-            |> mes("to go to Moscovia")
-            |> mes("Thank you.")
-            |> close()
+            ctx =
+              ctx
+              |> mes("[Moscovia P.R. Officer]")
+              |> mes("I'm sorry but you don't have")
+              |> mes("enough zeny now")
+              |> mes("You need 10,000 zeny")
+              |> mes("to go to Moscovia")
+              |> mes("Thank you.")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
-            ctx
-            |> mes("[Moscovia P.R. Officer]")
-            |> mes("Ok then, we're leaving now.")
-            |> close()
-            |> pay_zeny(10000)
-            |> warp("moscovia", 163, 55)
+            ctx =
+              ctx
+              |> mes("[Moscovia P.R. Officer]")
+              |> mes("Ok then, we're leaving now.")
+              |> close()
+              |> pay_zeny(10000)
+              |> warp("moscovia", 163, 55)
 
-            exit(:normal)
+            throw({:script_end, ctx})
           end
 
         3 ->
-          ctx
-          |> mes("[Moscovia P.R. Officer]")
-          |> mes("If you're too busy now,")
-          |> mes("please tell me again whenever you want.")
-          |> mes("I'm always ready to guide anyone to Moscovia.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Moscovia P.R. Officer]")
+            |> mes("If you're too busy now,")
+            |> mes("please tell me again whenever you want.")
+            |> mes("I'm always ready to guide anyone to Moscovia.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

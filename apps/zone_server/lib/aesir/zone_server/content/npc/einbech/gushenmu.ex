@@ -42,7 +42,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbech.Gushenmu do
     |> mes("swarm outside of town. This")
     |> mes("is really Einbech's worst time...")
     |> close()
-
-    exit(:normal)
   end
 end

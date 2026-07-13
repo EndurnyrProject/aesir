@@ -61,7 +61,5 @@ defmodule Aesir.ZoneServer.Content.Npc.RaSan04.Loomin1stClassSecret do
     |> mes("guard the boy's prison, and")
     |> mes("to insure that no one would.")
     |> close()
-
-    exit(:normal)
   end
 end

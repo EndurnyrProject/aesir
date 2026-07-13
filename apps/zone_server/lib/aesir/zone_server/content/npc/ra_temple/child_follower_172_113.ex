@@ -25,7 +25,5 @@ defmodule Aesir.ZoneServer.Content.Npc.RaTemple.ChildFollower172113 do
     |> mes("Can't you see I'm")
     |> mes("playing Hide-and-Go-Seek?")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -33,7 +33,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.ShopAssistant do
     |> mes("N-no thank you!")
     |> mes("I'm not interested!")
     |> close()
-
-    exit(:normal)
   end
 end

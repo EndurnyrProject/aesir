@@ -38,26 +38,27 @@ defmodule Aesir.ZoneServer.Content.Npc.Amatsu.Veterinarian do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Sakura Seiichi]")
-        |> mes("Kuhuhu... They could be...")
-        |> mes("By the way, do you want")
-        |> mes("make a bet on it...?")
-        |> next()
-        |> emotion(:think)
-        |> mes("[Sakura Seiichi]")
-        |> mes("If I..........")
-        |> mes("............")
-        |> mes(".........")
-        |> next()
-        |> mes("^3355FFHis voice was getting lower")
-        |> mes("and lower as the wind blew.")
-        |> mes(
-          "Finally, I couldn't even hear his voice. I can't even recall what he was trying to tell me...^000000"
-        )
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Sakura Seiichi]")
+          |> mes("Kuhuhu... They could be...")
+          |> mes("By the way, do you want")
+          |> mes("make a bet on it...?")
+          |> next()
+          |> emotion(:think)
+          |> mes("[Sakura Seiichi]")
+          |> mes("If I..........")
+          |> mes("............")
+          |> mes(".........")
+          |> next()
+          |> mes("^3355FFHis voice was getting lower")
+          |> mes("and lower as the wind blew.")
+          |> mes(
+            "Finally, I couldn't even hear his voice. I can't even recall what he was trying to tell me...^000000"
+          )
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -80,7 +81,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Amatsu.Veterinarian do
       "Finally, I couldn't even hear anything. I can't even recall what he was trying to tell me...^000000"
     )
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

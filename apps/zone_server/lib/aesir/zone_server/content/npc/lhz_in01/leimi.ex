@@ -51,6 +51,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Leimi do
       end
 
     close(ctx)
-    exit(:normal)
   end
 end

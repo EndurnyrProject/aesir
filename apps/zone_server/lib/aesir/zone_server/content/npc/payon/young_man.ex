@@ -39,7 +39,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Payon.YoungMan do
       "Of course, not everyone can study magic. The point is that you should keep different kinds of friends and comrades close to you, as you can't possibly handle every situation by yourself."
     )
     |> close()
-
-    exit(:normal)
   end
 end

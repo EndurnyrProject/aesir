@@ -13,23 +13,27 @@ defmodule Aesir.ZoneServer.Content.Npc.Splendide.Fairy121259 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 do
-      ctx
-      |> mes("[Fairy]")
-      |> mes("Have you ever gone to the East side?")
-      |> mes("Theres lots of ice~")
-      |> mes("How cold...")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Fairy]")
+        |> mes("Have you ever gone to the East side?")
+        |> mes("Theres lots of ice~")
+        |> mes("How cold...")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[nes]")
-      |> mes("VaFuloDor An ")
-      |> mes("WosNuffremu Ha TurAshTi")
-      |> mes("VilTiRini O ")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[nes]")
+        |> mes("VaFuloDor An ")
+        |> mes("WosNuffremu Ha TurAshTi")
+        |> mes("VilTiRini O ")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

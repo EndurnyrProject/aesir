@@ -12,33 +12,45 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.Employee30100 do
 
   alias Aesir.ZoneServer.Script.Rathena
   @impl true
-  def on_event("OnWelcome", ctx), do: ev_onwelcome(ctx)
-  def on_event("OnSolo", ctx), do: ev_onsolo(ctx)
+  def on_event("OnWelcome", ctx) do
+    ev_onwelcome(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  def on_event("OnSolo", ctx) do
+    ev_onsolo(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
   @impl true
   def on_talk(ctx) do
     ctx = ctx |> mes("[Employee Yasmine]") |> mes("Welcome to Jawaii Tavern~")
 
     ctx =
       if Rathena.truthy?(getpartnerid(ctx)) do
-        ctx
-        |> mes(
-          "Just like the moon and the stars, you and your partner look perfect together. I'm really happy for you!"
-        )
-        |> close()
+        ctx =
+          ctx
+          |> mes(
+            "Just like the moon and the stars, you and your partner look perfect together. I'm really happy for you!"
+          )
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx =
           if not Rathena.truthy?(getpartnerid(ctx)) do
-            ctx
-            |> next()
-            |> mes("[Employee Yasmine]")
-            |> mes(
-              "You don't look like you belong here, but I hope you find your perfect match one of these days. Have fun!"
-            )
-            |> close()
+            ctx =
+              ctx
+              |> next()
+              |> mes("[Employee Yasmine]")
+              |> mes(
+                "You don't look like you belong here, but I hope you find your perfect match one of these days. Have fun!"
+              )
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
@@ -47,16 +59,15 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.Employee30100 do
       end
 
     ctx |> mes("I hope you will have a good time.") |> close()
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   def ev_onwelcome(ctx) do
-    _ = emotion(ctx, :chup)
-    exit(:normal)
+    emotion(ctx, :chup)
   end
 
   def ev_onsolo(ctx) do
-    _ = emotion(ctx, :huk)
-    exit(:normal)
+    emotion(ctx, :huk)
   end
 end

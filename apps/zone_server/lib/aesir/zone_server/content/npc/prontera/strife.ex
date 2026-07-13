@@ -41,74 +41,77 @@ defmodule Aesir.ZoneServer.Content.Npc.Prontera.Strife do
 
           ctx =
             if v1 == 1 do
-              ctx
-              |> set_char_var(:event_prt_nov_dreamtalk, 1)
-              |> mes("[Strife]")
-              |> mes("Wow...!")
-              |> mes("That's so awesome!")
-              |> mes("We both share the")
-              |> mes("same dream!")
-              |> next()
-              |> mes("[Strife]")
-              |> mes(
-                "Hey, if you wanna become a Swordie, you gotta go to Izlude. There, you can go ahead and take the Swordman job test. The first time, I, um, failed miserably. But I won't fail again!"
-              )
-              |> next()
-              |> mes("[Strife]")
-              |> mes(
-                "Training! Training! Gotta keep training! You need to be strong too! Once we both get stronger, we'll meet again!"
-              )
-              |> close()
+              ctx =
+                ctx
+                |> set_char_var(:event_prt_nov_dreamtalk, 1)
+                |> mes("[Strife]")
+                |> mes("Wow...!")
+                |> mes("That's so awesome!")
+                |> mes("We both share the")
+                |> mes("same dream!")
+                |> next()
+                |> mes("[Strife]")
+                |> mes(
+                  "Hey, if you wanna become a Swordie, you gotta go to Izlude. There, you can go ahead and take the Swordman job test. The first time, I, um, failed miserably. But I won't fail again!"
+                )
+                |> next()
+                |> mes("[Strife]")
+                |> mes(
+                  "Training! Training! Gotta keep training! You need to be strong too! Once we both get stronger, we'll meet again!"
+                )
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
               ctx
             end
 
-          ctx
-          |> mes("[Strife]")
-          |> mes(
-            "Heh heh! I will for sure! 'Strife, the courageous Knight.' It sounds cool, doesn't it?"
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Strife]")
+            |> mes(
+              "Heh heh! I will for sure! 'Strife, the courageous Knight.' It sounds cool, doesn't it?"
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
         else
-          ctx |> mes("[Strife]") |> mes("Fight...!") |> mes("Fight Fight FIGHT!") |> close()
-          exit(:normal)
+          ctx = ctx |> mes("[Strife]") |> mes("Fight...!") |> mes("Fight Fight FIGHT!") |> close()
+          throw({:script_end, ctx})
         end
       else
         ctx =
           if class(ctx) != :novice do
             ctx =
               if get_char_var(ctx, :event_prt_nov_dreamtalk, 0) == 1 do
-                ctx
-                |> mes("[Strife]")
-                |> mes("Hey...!")
-                |> mes(
-                  "You look different now. *Gasp* You've gotten... ^993333stronger^000000. Wow, that's so coooool!"
-                )
-                |> next()
-                |> mes("[Strife]")
-                |> mes("I'm so jealous!")
-                |> mes("I guess that means")
-                |> mes("that now, I gotta")
-                |> mes("train even harder!")
-                |> next()
-                |> set_char_var(:event_prt_nov_dreamtalk, 2)
-                |> give_item(2501, 1)
-                |> mes("[Strife]")
-                |> mes(
-                  "This is, well, for you to help you get even stronger. I guess I want to thank you for being such a good example."
-                )
-                |> close()
+                ctx =
+                  ctx
+                  |> mes("[Strife]")
+                  |> mes("Hey...!")
+                  |> mes(
+                    "You look different now. *Gasp* You've gotten... ^993333stronger^000000. Wow, that's so coooool!"
+                  )
+                  |> next()
+                  |> mes("[Strife]")
+                  |> mes("I'm so jealous!")
+                  |> mes("I guess that means")
+                  |> mes("that now, I gotta")
+                  |> mes("train even harder!")
+                  |> next()
+                  |> set_char_var(:event_prt_nov_dreamtalk, 2)
+                  |> give_item(2501, 1)
+                  |> mes("[Strife]")
+                  |> mes(
+                    "This is, well, for you to help you get even stronger. I guess I want to thank you for being such a good example."
+                  )
+                  |> close()
 
-                exit(:normal)
+                throw({:script_end, ctx})
               else
                 ctx =
                   if get_char_var(ctx, :event_prt_nov_dreamtalk, 0) == 2 do
-                    ctx |> mes("[Strife]") |> mes("Fight! Fight!") |> close()
-                    exit(:normal)
+                    ctx = ctx |> mes("[Strife]") |> mes("Fight! Fight!") |> close()
+                    throw({:script_end, ctx})
                   else
                     ctx
                   end
@@ -139,25 +142,29 @@ defmodule Aesir.ZoneServer.Content.Npc.Prontera.Strife do
 
             ctx =
               if v2 == 1 do
-                ctx
-                |> mes("[Strife]")
-                |> mes(
-                  "Yes, yes of course! Someday, I'll even be as strong as you! When that day comes, I hope that we can train together!"
-                )
-                |> close()
+                ctx =
+                  ctx
+                  |> mes("[Strife]")
+                  |> mes(
+                    "Yes, yes of course! Someday, I'll even be as strong as you! When that day comes, I hope that we can train together!"
+                  )
+                  |> close()
 
-                exit(:normal)
+                throw({:script_end, ctx})
               else
                 ctx
               end
 
-            ctx
-            |> mes("[Strife]")
-            |> mes("Wha--?")
-            |> mes("Fine! But I'm gonna keep on training, and we'll see who gets the last laugh!")
-            |> close()
+            ctx =
+              ctx
+              |> mes("[Strife]")
+              |> mes("Wha--?")
+              |> mes(
+                "Fine! But I'm gonna keep on training, and we'll see who gets the last laugh!"
+              )
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
@@ -166,5 +173,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Prontera.Strife do
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

@@ -43,7 +43,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Louyang.FistMaster do
       "When you're learning a martial art, you can't rush yourself and learn everything in a short period of time. It's impossible! Plus, that isn't the essence of art..."
     )
     |> close()
-
-    exit(:normal)
   end
 end

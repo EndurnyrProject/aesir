@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.VeIn.Prisoner do
     |> mes("beliefs, you know that?")
     |> mes("Someone, someone help!")
     |> close()
-
-    exit(:normal)
   end
 end

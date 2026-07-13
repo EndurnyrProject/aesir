@@ -25,31 +25,32 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Sergei do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Sergei]")
-        |> mes("This previous owner of")
-        |> mes("this Weapon Shop was")
-        |> mes("a convicted serial killer.")
-        |> mes("Each night, he'd take that")
-        |> mes("axe and cruelly murder")
-        |> mes("beautiful ladies like me.")
-        |> next()
-        |> mes("[Sergei]")
-        |> mes("When he was finally")
-        |> mes("caught, they beheaded")
-        |> mes("him with his own axe.")
-        |> mes("Since then, they say that")
-        |> mes("his ghost still lingers and")
-        |> mes("sharpens this axe at night.")
-        |> next()
-        |> mes("[Sergei]")
-        |> mes("Just thinking about")
-        |> mes("it gives me goosebumps!")
-        |> mes("And I'm supposed to work")
-        |> mes("here! It's so creepy!")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Sergei]")
+          |> mes("This previous owner of")
+          |> mes("this Weapon Shop was")
+          |> mes("a convicted serial killer.")
+          |> mes("Each night, he'd take that")
+          |> mes("axe and cruelly murder")
+          |> mes("beautiful ladies like me.")
+          |> next()
+          |> mes("[Sergei]")
+          |> mes("When he was finally")
+          |> mes("caught, they beheaded")
+          |> mes("him with his own axe.")
+          |> mes("Since then, they say that")
+          |> mes("his ghost still lingers and")
+          |> mes("sharpens this axe at night.")
+          |> next()
+          |> mes("[Sergei]")
+          |> mes("Just thinking about")
+          |> mes("it gives me goosebumps!")
+          |> mes("And I'm supposed to work")
+          |> mes("here! It's so creepy!")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -62,7 +63,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Sergei do
     |> mes("I think about it, that story is")
     |> mes("actually pretty creepy...")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

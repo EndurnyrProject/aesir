@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.Mendel do
     |> mes("have brought my chef so that")
     |> mes("I could enjoy a real meal.")
     |> close()
-
-    exit(:normal)
   end
 end

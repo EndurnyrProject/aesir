@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.Towner310195 do
     |> mes("and makes loud, obnoxious")
     |> mes("noises. How can that be true?")
     |> close()
-
-    exit(:normal)
   end
 end

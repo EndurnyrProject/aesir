@@ -26,7 +26,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.Hinkley do
     |> mes("hammered out")
     |> mes("of his mind!^000000")
     |> close()
-
-    exit(:normal)
   end
 end

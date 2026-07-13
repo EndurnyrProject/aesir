@@ -32,19 +32,20 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.MageGuildsman do
 
             ctx =
               if not Rathena.truthy?(v1) do
-                ctx
-                |> mes("[Mage Guildsman]")
-                |> mes(
-                  "I'm sorry, but I don't think you're ready to learn magic yet. Why don't you go finish learning the Basic Skills first?"
-                )
-                |> next()
-                |> mes("[Mage Guildsman]")
-                |> mes(
-                  "Take your time. The more you learn, the more ready you'll be to learn magic again."
-                )
-                |> close()
+                ctx =
+                  ctx
+                  |> mes("[Mage Guildsman]")
+                  |> mes(
+                    "I'm sorry, but I don't think you're ready to learn magic yet. Why don't you go finish learning the Basic Skills first?"
+                  )
+                  |> next()
+                  |> mes("[Mage Guildsman]")
+                  |> mes(
+                    "Take your time. The more you learn, the more ready you'll be to learn magic again."
+                  )
+                  |> close()
 
-                exit(:normal)
+                throw({:script_end, ctx})
               else
                 ctx
               end
@@ -60,39 +61,42 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.MageGuildsman do
             ctx = todo(ctx, :skill, ["NV_TRICKDEAD", 0, get_char_var(ctx, :SKILL_PERM, 0)])
             ctx = jobchange(ctx, get_char_var(ctx, :Job_Mage_High, 0))
 
-            ctx
-            |> todo(:skill, ["MG_ENERGYCOAT", 1, get_char_var(ctx, :SKILL_PERM, 0)])
-            |> mes("[Mage Guildsman]")
-            |> mes(
-              "Wow, for some reason, you look way better than you did before. Anyway, I believe you will do a better job being a Mage as well."
-            )
-            |> close()
+            ctx =
+              ctx
+              |> todo(:skill, ["MG_ENERGYCOAT", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+              |> mes("[Mage Guildsman]")
+              |> mes(
+                "Wow, for some reason, you look way better than you did before. Anyway, I believe you will do a better job being a Mage as well."
+              )
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
-            ctx
-            |> mes("[Mage Guildsman]")
-            |> mes(
-              "Is there anything more I can help you with? If not, why don't you go test your skills? The world is waiting for you~!"
-            )
-            |> close()
+            ctx =
+              ctx
+              |> mes("[Mage Guildsman]")
+              |> mes(
+                "Is there anything more I can help you with? If not, why don't you go test your skills? The world is waiting for you~!"
+              )
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           end
         else
-          ctx
-          |> mes("[Mage Guildsman]")
-          |> mes(
-            "What, are you interested in the Mage guild? I didn't want to tell you this, but you don't belong here."
-          )
-          |> next()
-          |> mes("[Mage Guildsman]")
-          |> mes(
-            "I am not sure why you're still standing in front of me, but I can tell that you're not meant to be a Mage."
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Mage Guildsman]")
+            |> mes(
+              "What, are you interested in the Mage guild? I didn't want to tell you this, but you don't belong here."
+            )
+            |> next()
+            |> mes("[Mage Guildsman]")
+            |> mes(
+              "I am not sure why you're still standing in front of me, but I can tell that you're not meant to be a Mage."
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
         end
       else
         ctx
@@ -116,8 +120,8 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.MageGuildsman do
             )
           end
 
-        close(ctx)
-        exit(:normal)
+        ctx = close(ctx)
+        throw({:script_end, ctx})
       else
         {ctx, v2} =
           ctx
@@ -154,14 +158,15 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.MageGuildsman do
 
               ctx =
                 if v3 == 2 do
-                  ctx
-                  |> mes("[Mage Guildsman]")
-                  |> mes(
-                    "Whaaaaat~?! Right after you tell me that you wanna become a Mage, you change your mind?! Be a bit more decisive!"
-                  )
-                  |> close()
+                  ctx =
+                    ctx
+                    |> mes("[Mage Guildsman]")
+                    |> mes(
+                      "Whaaaaat~?! Right after you tell me that you wanna become a Mage, you change your mind?! Be a bit more decisive!"
+                    )
+                    |> close()
 
-                  exit(:normal)
+                  throw({:script_end, ctx})
                 else
                   ctx
                 end
@@ -171,12 +176,13 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.MageGuildsman do
 
               ctx =
                 if not Rathena.truthy?(v4) do
-                  ctx
-                  |> mes("Oh, man your Basic Skill Level doesn't reach enough to be a Mage.")
-                  |> mes("Go back and level up your Basic Skill.")
-                  |> close()
+                  ctx =
+                    ctx
+                    |> mes("Oh, man your Basic Skill Level doesn't reach enough to be a Mage.")
+                    |> mes("Go back and level up your Basic Skill.")
+                    |> close()
 
-                  exit(:normal)
+                  throw({:script_end, ctx})
                 else
                   ctx
                 end
@@ -187,56 +193,58 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.MageGuildsman do
                   "Alright.. sign the application form.... Wow~ you have good handwriting! Ahh, okay. That's enough."
                 )
 
-              ctx
-              |> mes(Rathena.concat(Rathena.concat("You are... ", char_name(ctx, 0)), "."))
-              |> next()
-              |> mes("[Mage Guildsman]")
-              |> mes(
-                "Hmm I can see that you've tried hard in your own way. Though it seems to be a little clumsy, but well I think it's okay!"
-              )
-              |> mes(
-                "Good! Always sticking to the basics is the best! I will transform you right away."
-              )
-              |> next()
-              |> mes("[Mage Guildsman]")
-              |> mes("Hahh..! You are now a Mage, one of our colleagues!")
-              |> mes("We welcome you to the Mage Guild, our new friend!")
-              |> next()
-              |> mes("[Mage Guildsman]")
-              |> mes("'Welcome to the Mage Guild~'")
-              |> mes("Congratulations on becoming a member of the Mage Guild! Go for it!")
-              |> jobchange(:mage)
-              |> give_item(1639, 1)
-              |> close()
+              ctx =
+                ctx
+                |> mes(Rathena.concat(Rathena.concat("You are... ", char_name(ctx, 0)), "."))
+                |> next()
+                |> mes("[Mage Guildsman]")
+                |> mes(
+                  "Hmm I can see that you've tried hard in your own way. Though it seems to be a little clumsy, but well I think it's okay!"
+                )
+                |> mes(
+                  "Good! Always sticking to the basics is the best! I will transform you right away."
+                )
+                |> next()
+                |> mes("[Mage Guildsman]")
+                |> mes("Hahh..! You are now a Mage, one of our colleagues!")
+                |> mes("We welcome you to the Mage Guild, our new friend!")
+                |> next()
+                |> mes("[Mage Guildsman]")
+                |> mes("'Welcome to the Mage Guild~'")
+                |> mes("Congratulations on becoming a member of the Mage Guild! Go for it!")
+                |> jobchange(:mage)
+                |> give_item(1639, 1)
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
 
             2 ->
-              ctx
-              |> mes("[Mage Guildsman]")
-              |> mes("Wanna be a Mage, eh?")
-              |> mes("I'd be happy to explain the requirements for a pretty girl like you!")
-              |> next()
-              |> mes("[Mage Guildsman]")
-              |> mes(
-                "First of all, you have to reach Novice Job Level 10 and learn all of the Basic Skills."
-              )
-              |> next()
-              |> mes("[Mage Guildsman]")
-              |> mes(
-                "In the past, there was a complicated potion making test. Because of that, we'd lost an aplicant slowly."
-              )
-              |> mes("So, we decided to accept all aplicants who meet the basic requirements.")
-              |> next()
-              |> mes("[Mage Guildsman]")
-              |> mes("Don't hesitate. Just be a magician!")
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Mage Guildsman]")
+                |> mes("Wanna be a Mage, eh?")
+                |> mes("I'd be happy to explain the requirements for a pretty girl like you!")
+                |> next()
+                |> mes("[Mage Guildsman]")
+                |> mes(
+                  "First of all, you have to reach Novice Job Level 10 and learn all of the Basic Skills."
+                )
+                |> next()
+                |> mes("[Mage Guildsman]")
+                |> mes(
+                  "In the past, there was a complicated potion making test. Because of that, we'd lost an aplicant slowly."
+                )
+                |> mes("So, we decided to accept all aplicants who meet the basic requirements.")
+                |> next()
+                |> mes("[Mage Guildsman]")
+                |> mes("Don't hesitate. Just be a magician!")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
 
             3 ->
-              ctx |> mes("[Mage Guildsman]") |> mes("Nothing...?") |> close()
-              exit(:normal)
+              ctx = ctx |> mes("[Mage Guildsman]") |> mes("Nothing...?") |> close()
+              throw({:script_end, ctx})
 
             _ ->
               ctx
@@ -246,5 +254,7 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.MageGuildsman do
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

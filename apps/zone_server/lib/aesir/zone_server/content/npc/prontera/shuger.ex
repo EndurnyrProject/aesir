@@ -31,7 +31,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Prontera.Shuger do
       "The green colored ^000077Poporing^000000 is tougher than Poring. Newbies generally make the mistake of attacking it without being aware of its power... So be careful!"
     )
     |> close()
-
-    exit(:normal)
   end
 end

@@ -13,17 +13,20 @@ defmodule Aesir.ZoneServer.Content.Npc.Manuk.Soldier107233 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 do
-      ctx
-      |> mes("[Anxious Soldier]")
-      |> mes(
-        "Hurry, I am in big trouble. I lost all the Manuk Coins. I think I dropped them somewhere on the snowfield. Gosh, I saw them right before I fell asleep!"
-      )
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Anxious Soldier]")
+        |> mes(
+          "Hurry, I am in big trouble. I lost all the Manuk Coins. I think I dropped them somewhere on the snowfield. Gosh, I saw them right before I fell asleep!"
+        )
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx |> mes("[Anxious Soldier]") |> mes("Qosi dhhui rffd poaner ouh.") |> close()
-      exit(:normal)
+      ctx = ctx |> mes("[Anxious Soldier]") |> mes("Qosi dhhui rffd poaner ouh.") |> close()
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

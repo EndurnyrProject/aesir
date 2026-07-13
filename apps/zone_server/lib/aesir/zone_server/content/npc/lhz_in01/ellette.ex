@@ -51,7 +51,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Ellette do
     |> mes("good at this, but there's")
     |> mes("no way I can beat Cenku.")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -15,35 +15,39 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Repairman do
   @impl true
   def on_talk(ctx) do
     if Rathena.truthy?(is_equipped(ctx, 2241)) and Rathena.truthy?(is_equipped(ctx, 2243)) do
-      ctx
-      |> mes("[Repairman]")
-      |> mes("No wonder these things")
-      |> mes("break all the time! These")
-      |> mes("machines have been totally")
-      |> mes("abused! Ugh, there's no")
-      |> mes("appreciation for all of this")
-      |> mes("convenient technology...")
-      |> next()
-      |> mes("[Repairman]")
-      |> mes("Yeah, all of this lab")
-      |> mes("equipment is really sensitive,")
-      |> mes("not to mention expensive. If")
-      |> mes("you ever handle this stuff, you")
-      |> mes("need to be extra cautious.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Repairman]")
+        |> mes("No wonder these things")
+        |> mes("break all the time! These")
+        |> mes("machines have been totally")
+        |> mes("abused! Ugh, there's no")
+        |> mes("appreciation for all of this")
+        |> mes("convenient technology...")
+        |> next()
+        |> mes("[Repairman]")
+        |> mes("Yeah, all of this lab")
+        |> mes("equipment is really sensitive,")
+        |> mes("not to mention expensive. If")
+        |> mes("you ever handle this stuff, you")
+        |> mes("need to be extra cautious.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Repairman]")
-      |> mes("Hey, you don't work--")
-      |> mes("G-guards! Hurry! There's")
-      |> mes("somebody over here!")
-      |> emotion(:surprise)
-      |> close()
-      |> warp("lhz_in01", 33, 224)
+      ctx =
+        ctx
+        |> mes("[Repairman]")
+        |> mes("Hey, you don't work--")
+        |> mes("G-guards! Hurry! There's")
+        |> mes("somebody over here!")
+        |> emotion(:surprise)
+        |> close()
+        |> warp("lhz_in01", 33, 224)
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

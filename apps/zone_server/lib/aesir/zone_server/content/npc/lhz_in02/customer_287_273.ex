@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.Customer287273 do
     |> mes("Now why don't you kick")
     |> mes("back and chill with me?")
     |> close()
-
-    exit(:normal)
   end
 end

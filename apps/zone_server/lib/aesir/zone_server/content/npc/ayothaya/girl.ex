@@ -44,21 +44,22 @@ defmodule Aesir.ZoneServer.Content.Npc.Ayothaya.Girl do
           |> emotion(:question)
           |> next()
 
-        ctx
-        |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
-        |> mes(".........")
-        |> next()
-        |> mes("[Lalitha]")
-        |> mes("..........")
-        |> emotion(:sweat)
-        |> next()
-        |> mes("[Lalitha]")
-        |> mes("Okay~!")
-        |> mes("Take care and")
-        |> mes("enjoy your travels!")
-        |> close()
+        ctx =
+          ctx
+          |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
+          |> mes(".........")
+          |> next()
+          |> mes("[Lalitha]")
+          |> mes("..........")
+          |> emotion(:sweat)
+          |> next()
+          |> mes("[Lalitha]")
+          |> mes("Okay~!")
+          |> mes("Take care and")
+          |> mes("enjoy your travels!")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx =
           if get_local(ctx, :sit, 0) > 2 and get_local(ctx, :sit, 0) < 6 do
@@ -80,20 +81,21 @@ defmodule Aesir.ZoneServer.Content.Npc.Ayothaya.Girl do
               |> emotion(:throb)
               |> next()
 
-            ctx
-            |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
-            |> mes("Don't you mean...")
-            |> mes("Knight in shining armor")
-            |> mes("riding a white horse?")
-            |> next()
-            |> mes("[Lalitha]")
-            |> mes("Hmm...?")
-            |> mes("Oh, well...")
-            |> mes("I'll take them both!")
-            |> mes("Hee hee~!")
-            |> close()
+            ctx =
+              ctx
+              |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
+              |> mes("Don't you mean...")
+              |> mes("Knight in shining armor")
+              |> mes("riding a white horse?")
+              |> next()
+              |> mes("[Lalitha]")
+              |> mes("Hmm...?")
+              |> mes("Oh, well...")
+              |> mes("I'll take them both!")
+              |> mes("Hee hee~!")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
@@ -102,6 +104,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Ayothaya.Girl do
       end
 
     ctx |> mes("[Lalitha]") |> mes("Mmm...?") |> mes("What's up?") |> close()
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

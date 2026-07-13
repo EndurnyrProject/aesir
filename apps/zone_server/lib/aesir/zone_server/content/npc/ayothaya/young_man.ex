@@ -30,7 +30,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Ayothaya.YoungMan do
     )
     |> mes("I think.")
     |> close()
-
-    exit(:normal)
   end
 end

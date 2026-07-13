@@ -47,7 +47,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.RekenberGuardDrew do
     |> mes("photo around strikes me as...")
     |> mes("Yeah. Yeah, it's no good.")
     |> close()
-
-    exit(:normal)
   end
 end

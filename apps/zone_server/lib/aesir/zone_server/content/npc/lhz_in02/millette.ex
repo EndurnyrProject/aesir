@@ -29,7 +29,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.Millette do
     |> mes("a beautiful tenor voice?!")
     |> mes("Get me outta this joint!")
     |> close()
-
-    exit(:normal)
   end
 end

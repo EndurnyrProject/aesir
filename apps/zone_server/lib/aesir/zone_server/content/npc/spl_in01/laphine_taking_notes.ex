@@ -13,31 +13,35 @@ defmodule Aesir.ZoneServer.Content.Npc.SplIn01.LaphineTakingNotes do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) > 0 and get_char_var(ctx, :ep13_2_rhea, 0) > 99 do
-      ctx
-      |> mes("[Laphine taking notes]")
-      |> mes("We are quite impressed by the poet.")
-      |> mes("We Laphine love music as well.")
-      |> mes("I never imagined that I would ever hear such exotic music.")
-      |> next()
-      |> mes("[Laphine taking notes]")
-      |> mes("I want to study music someday.")
-      |> mes("I plan to write much about the study of instruments and music")
-      |> next()
-      |> mes("[Laphine taking notes]")
-      |> mes("Someday you should listen to mu people's music.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Laphine taking notes]")
+        |> mes("We are quite impressed by the poet.")
+        |> mes("We Laphine love music as well.")
+        |> mes("I never imagined that I would ever hear such exotic music.")
+        |> next()
+        |> mes("[Laphine taking notes]")
+        |> mes("I want to study music someday.")
+        |> mes("I plan to write much about the study of instruments and music")
+        |> next()
+        |> mes("[Laphine taking notes]")
+        |> mes("Someday you should listen to mu people's music.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Laphine taking notes]")
-      |> mes("TiTalLars Ur tasThorNoth O AnImanWha.")
-      |> mes("FusLuRuff..... Mu TingLuAla Yee AnmanAndu")
-      |> next()
-      |> mes("- He seems frustrated that you don't understand him -")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Laphine taking notes]")
+        |> mes("TiTalLars Ur tasThorNoth O AnImanWha.")
+        |> mes("FusLuRuff..... Mu TingLuAla Yee AnmanAndu")
+        |> next()
+        |> mes("- He seems frustrated that you don't understand him -")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

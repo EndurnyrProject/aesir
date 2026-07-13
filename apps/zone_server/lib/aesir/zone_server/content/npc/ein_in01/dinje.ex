@@ -38,7 +38,5 @@ defmodule Aesir.ZoneServer.Content.Npc.EinIn01.Dinje do
     |> mes("Hey, kick his ass for me if")
     |> mes("he doesn't wake up soon!")
     |> close()
-
-    exit(:normal)
   end
 end

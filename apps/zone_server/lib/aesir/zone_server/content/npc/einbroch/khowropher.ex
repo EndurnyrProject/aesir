@@ -35,7 +35,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbroch.Khowropher do
     |> mes("and leave. I suppose it's my")
     |> mes("fate to suffer from this foul air until the day I die. ^666666*Sigh...*^000000")
     |> close()
-
-    exit(:normal)
   end
 end

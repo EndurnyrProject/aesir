@@ -13,6 +13,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Louyang.Trainee274133 do
   @impl true
   def on_talk(ctx) do
     ctx |> mes("[Trainee]") |> mes("Dergh!") |> mes("Dergh!") |> mes("Schwa--!") |> close()
-    exit(:normal)
   end
 end

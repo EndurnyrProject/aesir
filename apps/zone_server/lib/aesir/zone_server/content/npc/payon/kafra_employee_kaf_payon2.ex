@@ -41,5 +41,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Payon.KafraEmployeeKafPayon2 do
       |> Aesir.ZoneServer.Content.Npc.Functions.FKafend.call([0, 1, "in the city of Payon"])
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

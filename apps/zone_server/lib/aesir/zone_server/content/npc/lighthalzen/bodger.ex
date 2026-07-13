@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Bodger do
     |> mes("times a day! Hopefully it's just an exaggeration. 'Cuz if it")
     |> mes("wasn't, I'd be so mad...")
     |> close()
-
-    exit(:normal)
   end
 end

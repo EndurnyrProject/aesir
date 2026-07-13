@@ -18,7 +18,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Rachel.RachelPriest do
     |> mes("drinks taste much better")
     |> mes("during work hours!")
     |> close()
-
-    exit(:normal)
   end
 end

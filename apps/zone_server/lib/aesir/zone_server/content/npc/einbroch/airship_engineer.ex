@@ -43,22 +43,23 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbroch.AirshipEngineer do
           ctx =
             case v2 do
               1 ->
-                ctx
-                |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
-                |> mes("Ah~")
-                |> mes("I see, so you're")
-                |> mes("working on restoring")
-                |> mes("this magnificent specimen")
-                |> mes("of an Airship. Best of luck~")
-                |> next()
-                |> mes("[Airship Engineer]")
-                |> mes("Yeah. I'd appreciate")
-                |> mes("it if you'd just be careful.")
-                |> mes("I've put a lot of love into")
-                |> mes("fixing up Burielle...")
-                |> close()
+                ctx =
+                  ctx
+                  |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
+                  |> mes("Ah~")
+                  |> mes("I see, so you're")
+                  |> mes("working on restoring")
+                  |> mes("this magnificent specimen")
+                  |> mes("of an Airship. Best of luck~")
+                  |> next()
+                  |> mes("[Airship Engineer]")
+                  |> mes("Yeah. I'd appreciate")
+                  |> mes("it if you'd just be careful.")
+                  |> mes("I've put a lot of love into")
+                  |> mes("fixing up Burielle...")
+                  |> close()
 
-                exit(:normal)
+                throw({:script_end, ctx})
 
               2 ->
                 ctx =
@@ -72,49 +73,54 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbroch.AirshipEngineer do
                   |> mes("weren't, you know, a nutcase.")
                   |> next()
 
-                ctx
-                |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
-                |> mes("Oh, did you say,")
-                |> mes("''prettiest model?''")
-                |> mes("All Airships look the")
-                |> mes("same to me, this one")
-                |> mes("ain't special at all. You've")
-                |> mes("gone loony tunes, paley boy.")
-                |> next()
-                |> emotion(:fret)
-                |> mes("[Airship Engineer]")
-                |> mes("Wh-what...?!")
-                |> close()
+                ctx =
+                  ctx
+                  |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
+                  |> mes("Oh, did you say,")
+                  |> mes("''prettiest model?''")
+                  |> mes("All Airships look the")
+                  |> mes("same to me, this one")
+                  |> mes("ain't special at all. You've")
+                  |> mes("gone loony tunes, paley boy.")
+                  |> next()
+                  |> emotion(:fret)
+                  |> mes("[Airship Engineer]")
+                  |> mes("Wh-what...?!")
+                  |> close()
 
-                exit(:normal)
+                throw({:script_end, ctx})
 
               _ ->
                 ctx
             end
 
-          ctx
-          |> mes("[Airship Engineer]")
-          |> mes("Well, at least you know")
-          |> mes("what you did wrong. Now")
-          |> mes("quit disturbing her and git!")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Airship Engineer]")
+            |> mes("Well, at least you know")
+            |> mes("what you did wrong. Now")
+            |> mes("quit disturbing her and git!")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Airship Engineer]")
-          |> mes("Well, at least you know")
-          |> mes("what you did wrong. Now")
-          |> mes("quit disturbing her and git!")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Airship Engineer]")
+            |> mes("Well, at least you know")
+            |> mes("what you did wrong. Now")
+            |> mes("quit disturbing her and git!")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

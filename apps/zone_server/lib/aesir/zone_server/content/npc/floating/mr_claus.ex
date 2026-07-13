@@ -24,66 +24,71 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.MrClaus do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Mr. Claus]")
-          |> mes(
-            "^3355FFLutie^000000, the fantastic Christmas Town! Always filled with the spirit of giving, Lutie is filled with appetizing cakes, tiny toy soldiers, and all sorts of wonderful things~!"
-          )
-          |> next()
-          |> mes("[Mr. Claus]")
-          |> mes("Ho Ho Ho~")
-          |> mes(
-            "It's an amazing land blessed with the beauty of winter, and a year round atmosphere of festivity!"
-          )
-          |> next()
-          |> mes("[Mr. Claus]")
-          |> mes(
-            "I'm a Santa that will guide people to Lutie, the Christmas Town. Ask me at any time, and I'll magically send you there~"
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Mr. Claus]")
+            |> mes(
+              "^3355FFLutie^000000, the fantastic Christmas Town! Always filled with the spirit of giving, Lutie is filled with appetizing cakes, tiny toy soldiers, and all sorts of wonderful things~!"
+            )
+            |> next()
+            |> mes("[Mr. Claus]")
+            |> mes("Ho Ho Ho~")
+            |> mes(
+              "It's an amazing land blessed with the beauty of winter, and a year round atmosphere of festivity!"
+            )
+            |> next()
+            |> mes("[Mr. Claus]")
+            |> mes(
+              "I'm a Santa that will guide people to Lutie, the Christmas Town. Ask me at any time, and I'll magically send you there~"
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Mr. Claus]")
-          |> mes("Ho Ho Ho~")
-          |> mes("The only way to get to Lutie is here in Al de Baran!")
-          |> next()
-          |> mes("[Mr. Claus]")
-          |> mes(
-            "I keep this place and personally transport people who want to visit Lutie. Please ask Santa Claus over there if you want to leave town. He will let you know the way out of Lutie."
-          )
-          |> next()
-          |> mes("[Mr. Claus]")
-          |> mes("Ho Ho Ho~")
-          |> mes("Well, are you ready?")
-          |> mes("Have a nice trip!")
-          |> mes("Meeeeerry Christmas!")
-          |> close()
-          |> warp("xmas_fild01", 78, 68)
+          ctx =
+            ctx
+            |> mes("[Mr. Claus]")
+            |> mes("Ho Ho Ho~")
+            |> mes("The only way to get to Lutie is here in Al de Baran!")
+            |> next()
+            |> mes("[Mr. Claus]")
+            |> mes(
+              "I keep this place and personally transport people who want to visit Lutie. Please ask Santa Claus over there if you want to leave town. He will let you know the way out of Lutie."
+            )
+            |> next()
+            |> mes("[Mr. Claus]")
+            |> mes("Ho Ho Ho~")
+            |> mes("Well, are you ready?")
+            |> mes("Have a nice trip!")
+            |> mes("Meeeeerry Christmas!")
+            |> close()
+            |> warp("xmas_fild01", 78, 68)
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx
-          |> mes("[Mr. Claus]")
-          |> mes("Ho Ho Ho~")
-          |> mes(
-            "Whenever you want to visit Lutie, be my guest. Just let me know when you want to leave."
-          )
-          |> next()
-          |> mes("[Mr. Claus]")
-          |> mes("Ho ho hooooo!!")
-          |> mes("Haaaaappy Holidays!")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Mr. Claus]")
+            |> mes("Ho Ho Ho~")
+            |> mes(
+              "Whenever you want to visit Lutie, be my guest. Just let me know when you want to leave."
+            )
+            |> next()
+            |> mes("[Mr. Claus]")
+            |> mes("Ho ho hooooo!!")
+            |> mes("Haaaaappy Holidays!")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

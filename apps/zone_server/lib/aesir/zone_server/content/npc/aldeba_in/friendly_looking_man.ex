@@ -22,7 +22,5 @@ defmodule Aesir.ZoneServer.Content.Npc.AldebaIn.FriendlyLookingMan do
     |> mes("He keeps talking to himself loud and it gives me a headache...")
     |> mes("Gosh!")
     |> close()
-
-    exit(:normal)
   end
 end

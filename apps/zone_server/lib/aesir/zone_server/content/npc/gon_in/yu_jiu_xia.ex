@@ -26,7 +26,5 @@ defmodule Aesir.ZoneServer.Content.Npc.GonIn.YuJiuXia do
     |> mes("It makes my mouth water just")
     |> mes("thinking about this new tea.")
     |> close()
-
-    exit(:normal)
   end
 end

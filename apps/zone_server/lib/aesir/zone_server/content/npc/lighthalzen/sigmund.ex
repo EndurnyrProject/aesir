@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Sigmund do
     |> mes("do there. Which makes me")
     |> mes("wonder... Why guard it?")
     |> close()
-
-    exit(:normal)
   end
 end

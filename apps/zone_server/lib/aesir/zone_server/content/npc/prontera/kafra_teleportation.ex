@@ -14,5 +14,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Prontera.KafraTeleportation do
   def on_talk(ctx) do
     {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram.call(ctx, [8])
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

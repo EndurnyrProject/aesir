@@ -24,17 +24,18 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.DowbowRyuei do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Dowbow Ryuei]")
-        |> mes("Oh yeah? Me too!")
-        |> mes("Yeah, we got the same")
-        |> mes("outlook on life. If you don't")
-        |> mes("mind, I'd like to shake")
-        |> mes("your hand, adventurer.")
-        |> emotion(:best)
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Dowbow Ryuei]")
+          |> mes("Oh yeah? Me too!")
+          |> mes("Yeah, we got the same")
+          |> mes("outlook on life. If you don't")
+          |> mes("mind, I'd like to shake")
+          |> mes("your hand, adventurer.")
+          |> emotion(:best)
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -46,7 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.DowbowRyuei do
     |> mes("being realistic has its")
     |> mes("perks, I'm more of a dreamer.")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.Kid253133 do
     |> mes("must be someplace I haven't")
     |> mes("checked yet... Let's see...")
     |> close()
-
-    exit(:normal)
   end
 end

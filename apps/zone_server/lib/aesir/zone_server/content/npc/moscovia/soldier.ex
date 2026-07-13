@@ -18,7 +18,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Moscovia.Soldier do
     |> mes("He rules over Moscovia.")
     |> mes("Please be careful not to cause him any trouble.")
     |> close()
-
-    exit(:normal)
   end
 end

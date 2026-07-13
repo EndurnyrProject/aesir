@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.EinIn01.Vonstein do
     |> mes("Oh, I'm sorry if I'm talking")
     |> mes("crazy talk! I'm just kidding~")
     |> close()
-
-    exit(:normal)
   end
 end

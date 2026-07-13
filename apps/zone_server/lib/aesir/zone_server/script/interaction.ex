@@ -79,10 +79,22 @@ defmodule Aesir.ZoneServer.Script.Interaction do
         session_ref: session_ref
     }
 
-    entry_fn.(ctx)
+    ctx
+    |> run_entry(entry_fn)
     |> auto_close()
 
     exit(:normal)
+  end
+
+  # Transpiled scripts end `close`/`end` by throwing `{:script_end, ctx}`;
+  # generated entry points catch it themselves, but a hand-written `on_talk`
+  # calling a transpiled global function (`Functions.*.call/2`) lets it unwind
+  # to here. Catching it makes that a clean end instead of a {:nocatch, _}
+  # crash, and hands auto_close the ctx the script terminated with.
+  defp run_entry(ctx, entry_fn) do
+    entry_fn.(ctx)
+  catch
+    :throw, {:script_end, %Ctx{} = ctx} -> ctx
   end
 
   # Honors the design's "un-flushed mes on normal return auto-flushes a CLOSE":

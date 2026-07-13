@@ -147,7 +147,5 @@ defmodule Aesir.ZoneServer.Content.Npc.PayonIn01.Waitress do
     |> mes("by my perfectly formed,")
     |> mes("yet well read man?")
     |> close()
-
-    exit(:normal)
   end
 end

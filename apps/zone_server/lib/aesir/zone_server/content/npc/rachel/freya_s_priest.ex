@@ -27,13 +27,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Rachel.FreyaSPriest do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Freya's Priest]")
-        |> mes("Oh. That much is")
-        |> mes("true, I suppose.")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Freya's Priest]")
+          |> mes("Oh. That much is")
+          |> mes("true, I suppose.")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -49,20 +50,21 @@ defmodule Aesir.ZoneServer.Content.Npc.Rachel.FreyaSPriest do
 
     ctx =
       if v2 == 1 do
-        ctx
-        |> mes("^3355FFYou told her the first")
-        |> mes("funny story that you")
-        |> mes("could think of.^000000")
-        |> specialeffect2(:talk_frostjoke)
-        |> next()
-        |> mes("[Freya's Priest]")
-        |> mes("That's supposed to")
-        |> mes("be funny? I suppose")
-        |> mes("that I don't understand")
-        |> mes("hoi polloi humor.")
-        |> close()
+        ctx =
+          ctx
+          |> mes("^3355FFYou told her the first")
+          |> mes("funny story that you")
+          |> mes("could think of.^000000")
+          |> specialeffect2(:talk_frostjoke)
+          |> next()
+          |> mes("[Freya's Priest]")
+          |> mes("That's supposed to")
+          |> mes("be funny? I suppose")
+          |> mes("that I don't understand")
+          |> mes("hoi polloi humor.")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -77,7 +79,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Rachel.FreyaSPriest do
       |> close()
       |> set_local(:play, Enum.random(1..10))
 
-    _ =
+    ctx =
       if get_local(ctx, :play, 0) < 3 do
         warp(ctx, :random)
       else
@@ -91,6 +93,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Rachel.FreyaSPriest do
         ctx
       end
 
-    exit(:normal)
+    ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

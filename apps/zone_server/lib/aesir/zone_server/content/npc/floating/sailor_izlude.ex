@@ -27,45 +27,49 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SailorIzlude do
         1 ->
           ctx =
             if zeny(ctx) < 150 do
-              ctx
-              |> mes("[Sailor]")
-              |> mes("150 Zeny!")
-              |> mes("Only 150 Zeny to ride!")
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Sailor]")
+                |> mes("150 Zeny!")
+                |> mes("Only 150 Zeny to ride!")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
               ctx
             end
 
-          ctx |> pay_zeny(150) |> warp("izlu2dun", 107, 50)
-          exit(:normal)
+          ctx = ctx |> pay_zeny(150) |> warp("izlu2dun", 107, 50)
+          throw({:script_end, ctx})
 
         2 ->
           ctx =
             if zeny(ctx) < 500 do
-              ctx
-              |> mes("[Sailor]")
-              |> mes("500 Zeny!")
-              |> mes("Only 500 Zeny to ride!")
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Sailor]")
+                |> mes("500 Zeny!")
+                |> mes("Only 500 Zeny to ride!")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
               ctx
             end
 
-          ctx |> pay_zeny(500) |> warp("alberta", 188, 169)
-          exit(:normal)
+          ctx = ctx |> pay_zeny(500) |> warp("alberta", 188, 169)
+          throw({:script_end, ctx})
 
         3 ->
-          close(ctx)
-          exit(:normal)
+          ctx = close(ctx)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Wallace do
     |> mes("man. I could ask her out now.")
     |> mes("Hm? What's that look for?")
     |> close()
-
-    exit(:normal)
   end
 end

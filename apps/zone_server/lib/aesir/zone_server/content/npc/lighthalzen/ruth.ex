@@ -38,7 +38,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Ruth do
     |> mes("really headed for")
     |> mes("Cloud 9, aren't they?")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -29,5 +29,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Xmas.KafraEmployeeKafXmas do
 
     {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0, "in Lutie"])
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

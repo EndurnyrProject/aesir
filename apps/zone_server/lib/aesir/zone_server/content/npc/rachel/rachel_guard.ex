@@ -33,7 +33,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Rachel.RachelGuard do
     |> mes("for information and")
     |> mes("guest services.")
     |> close()
-
-    exit(:normal)
   end
 end

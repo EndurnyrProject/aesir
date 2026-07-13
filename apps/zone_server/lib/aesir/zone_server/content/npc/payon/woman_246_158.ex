@@ -49,21 +49,22 @@ defmodule Aesir.ZoneServer.Content.Npc.Payon.Woman246158 do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Jim's Mother]")
-        |> mes("Oh yes...")
-        |> mes(
-          "There's an extraordinary fortune teller in the Central Palace of Payon. The more Zeny you pay her, the better fortune you'll get!"
-        )
-        |> next()
-        |> mes("[Jim's Mother]")
-        |> mes("She told me")
-        |> mes("I would meet")
-        |> mes("a nice guy this month.")
-        |> mes("Hohohoho~ ")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Jim's Mother]")
+          |> mes("Oh yes...")
+          |> mes(
+            "There's an extraordinary fortune teller in the Central Palace of Payon. The more Zeny you pay her, the better fortune you'll get!"
+          )
+          |> next()
+          |> mes("[Jim's Mother]")
+          |> mes("She told me")
+          |> mes("I would meet")
+          |> mes("a nice guy this month.")
+          |> mes("Hohohoho~ ")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -75,7 +76,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Payon.Woman246158 do
     |> mes("any time to stay")
     |> mes("and chit-chat with me?")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

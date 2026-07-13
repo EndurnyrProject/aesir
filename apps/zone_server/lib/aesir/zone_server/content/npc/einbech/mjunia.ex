@@ -49,7 +49,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbech.Mjunia do
     |> mes("to be feminine years ago.")
     |> mes("I have to work so hard...")
     |> close()
-
-    exit(:normal)
   end
 end

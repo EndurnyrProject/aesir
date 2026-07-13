@@ -27,5 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Job3Rune01.KafraEmployeeKafRune do
 
     {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafra.call(ctx, [0, 9, 2, 80, 700])
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

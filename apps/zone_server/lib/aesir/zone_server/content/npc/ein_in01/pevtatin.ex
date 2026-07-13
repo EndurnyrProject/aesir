@@ -32,7 +32,5 @@ defmodule Aesir.ZoneServer.Content.Npc.EinIn01.Pevtatin do
     |> mes("Yo-heave-ho!")
     |> mes("Yo-heave-ho~!")
     |> close()
-
-    exit(:normal)
   end
 end

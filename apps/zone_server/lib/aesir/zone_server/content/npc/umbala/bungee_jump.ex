@@ -10,10 +10,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Umbala.BungeeJump do
   use Aesir.ZoneServer.Npc, spawn: []
   alias Aesir.ZoneServer.Script.Rathena
   @impl true
-  def on_event("OnTouch", ctx), do: ev_ontouch(ctx)
+  def on_event("OnTouch", ctx) do
+    ev_ontouch(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
   @impl true
   def on_talk(ctx) do
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   def ev_ontouch(ctx) do
@@ -24,7 +31,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Umbala.BungeeJump do
         1 ->
           ctx = percent_heal(ctx, hp: -100, sp: 0)
 
-          _ =
+          ctx =
             mapannounce(
               ctx,
               "umbala",
@@ -35,12 +42,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Umbala.BungeeJump do
               1
             )
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
           ctx = percent_heal(ctx, hp: -50, sp: 0)
 
-          _ =
+          ctx =
             mapannounce(
               ctx,
               "umbala",
@@ -51,17 +58,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Umbala.BungeeJump do
               1
             )
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          _ =
+          ctx =
             if Enum.random(1..2) == 2 do
               ctx |> percent_heal(hp: -99, sp: 0) |> warp("nif_in", 69, 15)
             else
               ctx
             end
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx

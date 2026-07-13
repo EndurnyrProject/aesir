@@ -21,44 +21,34 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbroch.ScrutinyAssociation24971 do
   end
 
   def ev_onenable(ctx) do
-    _ = initnpctimer(ctx)
-    exit(:normal)
+    initnpctimer(ctx)
   end
 
   def ev_ontimer1000(ctx) do
-    _ =
-      announce(
-        ctx,
-        "All the votes for the Dungeon Teleport Service Provider Election have been received and counted.",
-        0,
-        "0x70dbdb"
-      )
-
-    exit(:normal)
+    announce(
+      ctx,
+      "All the votes for the Dungeon Teleport Service Provider Election have been received and counted.",
+      0,
+      "0x70dbdb"
+    )
   end
 
   def ev_ontimer5000(ctx) do
-    _ = announce(ctx, "The results are now in...", 0, "0x70dbdb")
-    exit(:normal)
+    announce(ctx, "The results are now in...", 0, "0x70dbdb")
   end
 
   def ev_ontimer10000(ctx) do
-    _ =
-      announce(
-        ctx,
-        "This time, Kafra Corporation will be the Dungeon Teleport Service Provider.",
-        0,
-        "0x70dbdb"
-      )
-
-    exit(:normal)
+    announce(
+      ctx,
+      "This time, Kafra Corporation will be the Dungeon Teleport Service Provider.",
+      0,
+      "0x70dbdb"
+    )
   end
 
   def ev_ontimer15000(ctx) do
     ctx
     |> announce("Many thanks to all of you who have voted and shown your support.", 0, "0x70dbdb")
     |> stopnpctimer()
-
-    exit(:normal)
   end
 end

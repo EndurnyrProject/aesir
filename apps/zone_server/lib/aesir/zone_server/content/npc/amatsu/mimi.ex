@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Amatsu.Mimi do
     |> mes("in this town but...")
     |> mes("A lady can always use a little more makeup.")
     |> close()
-
-    exit(:normal)
   end
 end

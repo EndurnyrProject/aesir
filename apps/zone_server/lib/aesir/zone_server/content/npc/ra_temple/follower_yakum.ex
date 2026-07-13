@@ -24,7 +24,5 @@ defmodule Aesir.ZoneServer.Content.Npc.RaTemple.FollowerYakum do
     |> mes("It'd be rude to")
     |> mes("disturb her now.^000000")
     |> close()
-
-    exit(:normal)
   end
 end

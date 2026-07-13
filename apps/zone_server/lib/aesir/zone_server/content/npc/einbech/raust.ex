@@ -40,7 +40,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbech.Raust do
     |> mes("Einbroch?! I hate this!")
     |> mes("^333333*Grumble*^000000")
     |> close()
-
-    exit(:normal)
   end
 end

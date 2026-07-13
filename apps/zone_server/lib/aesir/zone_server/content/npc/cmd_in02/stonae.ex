@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.CmdIn02.Stonae do
     |> mes("going, and I'm gonna")
     |> mes("leave this place a winner!")
     |> close()
-
-    exit(:normal)
   end
 end

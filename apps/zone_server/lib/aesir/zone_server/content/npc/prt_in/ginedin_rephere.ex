@@ -27,68 +27,73 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtIn.GinedinRephere do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Tailor Ginedin Rephere]")
-          |> mes(
-            "Life may have gotten a little better, but receiving all these orders? *Whew!* Young ladies these days must be very well off, so my services may no longer be a luxury."
-          )
-          |> next()
-          |> mes("[Tailor Ginedin Rephere]")
-          |> mes(
-            "Well, people like them probably further the pursuit of beauty and fashion. But, of course, that's only my opinion."
-          )
-          |> next()
-          |> mes("[Tailor Ginedin Rephere]")
-          |> mes(
-            "I believe for us humans, clothes are one of the few ways to show our personality, style, and beauty."
-          )
-          |> next()
-          |> mes("[Tailor Ginedin Rephere]")
-          |> mes(
-            "Considering this, I personally think my job is very helpful and rather fancy. This in itself makes it all worthwhile. Coarse fabric and rough leather burst with energy and life when colored..."
-          )
-          |> next()
-          |> mes("[Tailor Ginedin Rephere]")
-          |> mes(
-            "It is a very hard and tedious process, but the happiness and delight you feel when your clothes are done makes up for all the hard work."
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Tailor Ginedin Rephere]")
+            |> mes(
+              "Life may have gotten a little better, but receiving all these orders? *Whew!* Young ladies these days must be very well off, so my services may no longer be a luxury."
+            )
+            |> next()
+            |> mes("[Tailor Ginedin Rephere]")
+            |> mes(
+              "Well, people like them probably further the pursuit of beauty and fashion. But, of course, that's only my opinion."
+            )
+            |> next()
+            |> mes("[Tailor Ginedin Rephere]")
+            |> mes(
+              "I believe for us humans, clothes are one of the few ways to show our personality, style, and beauty."
+            )
+            |> next()
+            |> mes("[Tailor Ginedin Rephere]")
+            |> mes(
+              "Considering this, I personally think my job is very helpful and rather fancy. This in itself makes it all worthwhile. Coarse fabric and rough leather burst with energy and life when colored..."
+            )
+            |> next()
+            |> mes("[Tailor Ginedin Rephere]")
+            |> mes(
+              "It is a very hard and tedious process, but the happiness and delight you feel when your clothes are done makes up for all the hard work."
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Tailor Ginedin Rephere]")
-          |> mes("Ah...!")
-          |> mes("You came to dye")
-          |> mes("your clothes as well.")
-          |> next()
-          |> mes("[Tailor Ginedin Rephere]")
-          |> mes("But... I'm so sorry.")
-          |> mes(
-            "I don't have enough time to dye your clothes right now. I have so many orders that are still waiting to be done."
-          )
-          |> next()
-          |> mes("[Tailor Ginedin Rephere]")
-          |> mes("I'm sorry for the inconvenience, but could you come back again next time?")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Tailor Ginedin Rephere]")
+            |> mes("Ah...!")
+            |> mes("You came to dye")
+            |> mes("your clothes as well.")
+            |> next()
+            |> mes("[Tailor Ginedin Rephere]")
+            |> mes("But... I'm so sorry.")
+            |> mes(
+              "I don't have enough time to dye your clothes right now. I have so many orders that are still waiting to be done."
+            )
+            |> next()
+            |> mes("[Tailor Ginedin Rephere]")
+            |> mes("I'm sorry for the inconvenience, but could you come back again next time?")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx
-          |> mes("[Tailor Ginedin Rephere]")
-          |> mes(
-            "Feel free to take your time and relax here. I apologize that I have nothing to serve you, though."
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Tailor Ginedin Rephere]")
+            |> mes(
+              "Feel free to take your time and relax here. I apologize that I have nothing to serve you, though."
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

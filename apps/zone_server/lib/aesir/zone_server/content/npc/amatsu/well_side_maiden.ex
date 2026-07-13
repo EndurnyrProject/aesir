@@ -26,7 +26,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Amatsu.WellSideMaiden do
     |> mes("the bottom of this well...")
     |> mes("It really gives me the creeps.")
     |> close()
-
-    exit(:normal)
   end
 end

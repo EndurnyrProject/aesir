@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.CmdFild07.Hallosu do
     |> mes("renovation, so it's not")
     |> mes("open to the public.")
     |> close()
-
-    exit(:normal)
   end
 end

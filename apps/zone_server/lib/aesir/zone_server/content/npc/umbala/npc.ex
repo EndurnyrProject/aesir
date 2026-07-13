@@ -17,7 +17,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Umbala.Npc do
   end
 
   def ev_ontouch(ctx) do
-    _ = warp(ctx, "umbala", 145, 166)
-    exit(:normal)
+    warp(ctx, "umbala", 145, 166)
   end
 end

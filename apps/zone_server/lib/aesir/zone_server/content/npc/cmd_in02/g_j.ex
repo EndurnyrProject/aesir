@@ -35,7 +35,5 @@ defmodule Aesir.ZoneServer.Content.Npc.CmdIn02.GJ do
     |> mes("if you win it, right? Yeah, you")
     |> mes("gotta be wise about it all...")
     |> close()
-
-    exit(:normal)
   end
 end

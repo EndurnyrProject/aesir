@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Srinivas do
     |> mes("them down. What do I care")
     |> mes("about the poor and needy?")
     |> close()
-
-    exit(:normal)
   end
 end

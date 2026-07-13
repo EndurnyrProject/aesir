@@ -26,54 +26,56 @@ defmodule Aesir.ZoneServer.Content.Npc.RaFild12.ApprenticePriestess do
 
         ctx =
           if v1 == 1 do
-            ctx
-            |> mes("[Papaii]")
-            |> mes("Oh, actually, if you")
-            |> mes("want to speak to a guide,")
-            |> mes("head west to Rachel, and")
-            |> mes("then go north from the plaza")
-            |> mes("in the center of the city.")
-            |> mes("You'll find one over there.")
-            |> next()
-            |> mes("[Papaii]")
-            |> mes("My name is Papaii,")
-            |> mes("and I've been sent here to")
-            |> mes("promote the upcoming festival")
-            |> mes("in honor of Freya. I encourage")
-            |> mes("you to donate for our festival")
-            |> mes("if you can spare the zeny.")
-            |> next()
-            |> mes("[Papaii]")
-            |> mes("If you're interested in")
-            |> mes("learning more, then please")
-            |> mes("visit our temple, which will")
-            |> mes("be accepting donations and")
-            |> mes("hosting the festival, and")
-            |> mes("speak to Priestess Nemma.")
-            |> next()
-            |> mes("[Papaii]")
-            |> mes("If you donate, you can")
-            |> mes("receive Lottery Tickets")
-            |> mes("that you can redeem for")
-            |> mes("randomly selected items from")
-            |> mes("the temple's storage. May")
-            |> mes("Freya bless you, traveler~")
-            |> close()
+            ctx =
+              ctx
+              |> mes("[Papaii]")
+              |> mes("Oh, actually, if you")
+              |> mes("want to speak to a guide,")
+              |> mes("head west to Rachel, and")
+              |> mes("then go north from the plaza")
+              |> mes("in the center of the city.")
+              |> mes("You'll find one over there.")
+              |> next()
+              |> mes("[Papaii]")
+              |> mes("My name is Papaii,")
+              |> mes("and I've been sent here to")
+              |> mes("promote the upcoming festival")
+              |> mes("in honor of Freya. I encourage")
+              |> mes("you to donate for our festival")
+              |> mes("if you can spare the zeny.")
+              |> next()
+              |> mes("[Papaii]")
+              |> mes("If you're interested in")
+              |> mes("learning more, then please")
+              |> mes("visit our temple, which will")
+              |> mes("be accepting donations and")
+              |> mes("hosting the festival, and")
+              |> mes("speak to Priestess Nemma.")
+              |> next()
+              |> mes("[Papaii]")
+              |> mes("If you donate, you can")
+              |> mes("receive Lottery Tickets")
+              |> mes("that you can redeem for")
+              |> mes("randomly selected items from")
+              |> mes("the temple's storage. May")
+              |> mes("Freya bless you, traveler~")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
 
-        ctx
-        |> mes("[Papaii]")
-        |> mes("May Freya bless you.")
-        |> mes("If you have time, please")
-        |> mes("visit our temple and make")
-        |> mes("a donation if you can~")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Papaii]")
+          |> mes("May Freya bless you.")
+          |> mes("If you have time, please")
+          |> mes("visit our temple and make")
+          |> mes("a donation if you can~")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -92,40 +94,41 @@ defmodule Aesir.ZoneServer.Content.Npc.RaFild12.ApprenticePriestess do
 
     ctx =
       if v2 == 1 do
-        ctx
-        |> mes("[Papaii]")
-        |> mes("Actually, my name is")
-        |> mes("Papaii, and I'm stationed")
-        |> mes("here on behalf of the temple")
-        |> mes("spread awareness of this our")
-        |> mes("religion to visiting tourists.")
-        |> next()
-        |> mes("[Papaii]")
-        |> mes("The entire nation of")
-        |> mes("Arunafeltz worships the")
-        |> mes("goddess Freya, and most")
-        |> mes("aspects of our lives are")
-        |> mes("largely influenced by our")
-        |> mes("religion. Did you know that?")
-        |> next()
-        |> mes("[Papaii]")
-        |> mes("I invite you to visit")
-        |> mes("our temple if you'd like")
-        |> mes("to learn more about goddess")
-        |> mes("Freya. May Freya guide you")
-        |> mes("in all that you do, and may she")
-        |> mes("protect you in your journeys!")
-        |> next()
-        |> mes("[Papaii]")
-        |> mes("Welcome to Arunafeltz!")
-        |> mes("The city over the rampart")
-        |> mes("is Rachel, the capital of")
-        |> mes("Arunafeltz. If you'd like to")
-        |> mes("rest from your travels, why")
-        |> mes("don't you visit Rachel?")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Papaii]")
+          |> mes("Actually, my name is")
+          |> mes("Papaii, and I'm stationed")
+          |> mes("here on behalf of the temple")
+          |> mes("spread awareness of this our")
+          |> mes("religion to visiting tourists.")
+          |> next()
+          |> mes("[Papaii]")
+          |> mes("The entire nation of")
+          |> mes("Arunafeltz worships the")
+          |> mes("goddess Freya, and most")
+          |> mes("aspects of our lives are")
+          |> mes("largely influenced by our")
+          |> mes("religion. Did you know that?")
+          |> next()
+          |> mes("[Papaii]")
+          |> mes("I invite you to visit")
+          |> mes("our temple if you'd like")
+          |> mes("to learn more about goddess")
+          |> mes("Freya. May Freya guide you")
+          |> mes("in all that you do, and may she")
+          |> mes("protect you in your journeys!")
+          |> next()
+          |> mes("[Papaii]")
+          |> mes("Welcome to Arunafeltz!")
+          |> mes("The city over the rampart")
+          |> mes("is Rachel, the capital of")
+          |> mes("Arunafeltz. If you'd like to")
+          |> mes("rest from your travels, why")
+          |> mes("don't you visit Rachel?")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -147,7 +150,7 @@ defmodule Aesir.ZoneServer.Content.Npc.RaFild12.ApprenticePriestess do
     |> mes("do miraculous things. You'll")
     |> mes("see once you enter the capital.")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

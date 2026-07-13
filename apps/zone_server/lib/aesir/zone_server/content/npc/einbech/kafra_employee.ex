@@ -38,5 +38,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbech.KafraEmployee do
       |> Aesir.ZoneServer.Content.Npc.Functions.FKafend.call([0, 1, "in the town of Einbech"])
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

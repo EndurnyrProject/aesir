@@ -20,7 +20,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.Maelin do
     |> mes("but I haven't heard any")
     |> mes("broadcast about Lutie.")
     |> close()
-
-    exit(:normal)
   end
 end

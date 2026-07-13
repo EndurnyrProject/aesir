@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.CmdFild04.Daeguro do
     |> mes("I wanna go to Alberta")
     |> mes("and see everything I can!")
     |> close()
-
-    exit(:normal)
   end
 end

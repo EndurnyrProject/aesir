@@ -14,34 +14,38 @@ defmodule Aesir.ZoneServer.Content.Npc.PayonIn03.Guard do
   def on_talk(ctx) do
     ctx =
       if base_level(ctx) < 30 do
-        ctx
-        |> mes("[Guard]")
-        |> mes("Hey...!")
-        |> mes("You're not")
-        |> mes("allowed here!")
-        |> mes("Go back outside!")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Guard]")
+          |> mes("Hey...!")
+          |> mes("You're not")
+          |> mes("allowed here!")
+          |> mes("Go back outside!")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
 
-    _ =
+    ctx =
       if base_level(ctx) > 30 do
-        ctx
-        |> mes("[Guard]")
-        |> mes("I'm sorry,")
-        |> mes("but you're")
-        |> mes("not allowed here.")
-        |> mes("Please leave.")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Guard]")
+          |> mes("I'm sorry,")
+          |> mes("but you're")
+          |> mes("not allowed here.")
+          |> mes("Please leave.")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
 
-    exit(:normal)
+    ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

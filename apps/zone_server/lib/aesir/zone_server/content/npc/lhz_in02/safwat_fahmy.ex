@@ -36,7 +36,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.SafwatFahmy do
     |> mes("I just wish there were")
     |> mes("someplace quieter to drink.")
     |> close()
-
-    exit(:normal)
   end
 end

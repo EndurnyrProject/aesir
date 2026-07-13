@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Yuno.JunoFighter do
       "It attacks using its strong bill and many Peco Pecos follow it. There's quite a difference in power between Peco Peco and the Grand Peco."
     )
     |> close()
-
-    exit(:normal)
   end
 end

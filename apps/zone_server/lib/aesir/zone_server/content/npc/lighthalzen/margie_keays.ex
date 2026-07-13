@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.MargieKeays do
     |> mes("decided to go take")
     |> mes("a walk together~")
     |> close()
-
-    exit(:normal)
   end
 end

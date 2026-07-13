@@ -26,62 +26,66 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbech.Nemuk do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Nemuk]")
-          |> mes("Huh...?")
-          |> mes("I'm not sure what")
-          |> mes("you've seen, but I'm")
-          |> mes("surprised to hear you")
-          |> mes("say something like that.")
-          |> next()
-          |> mes("[Nemuk]")
-          |> mes("It's been ten years since")
-          |> mes("I've started to think about")
-          |> mes("moving out. However, I'm still")
-          |> mes(
-            "debating it. Now, if I were rich, I'd leave in no time, but it's hard getting the money to move out."
-          )
-          |> next()
-          |> mes("[Nemuk]")
-          |> mes("^333333*Sigh...*^000000")
-          |> mes("Maybe if I had been")
-          |> mes("an adventurer when I was")
-          |> mes("younger, I wouldn't have")
-          |> mes("these problems today...")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Nemuk]")
+            |> mes("Huh...?")
+            |> mes("I'm not sure what")
+            |> mes("you've seen, but I'm")
+            |> mes("surprised to hear you")
+            |> mes("say something like that.")
+            |> next()
+            |> mes("[Nemuk]")
+            |> mes("It's been ten years since")
+            |> mes("I've started to think about")
+            |> mes("moving out. However, I'm still")
+            |> mes(
+              "debating it. Now, if I were rich, I'd leave in no time, but it's hard getting the money to move out."
+            )
+            |> next()
+            |> mes("[Nemuk]")
+            |> mes("^333333*Sigh...*^000000")
+            |> mes("Maybe if I had been")
+            |> mes("an adventurer when I was")
+            |> mes("younger, I wouldn't have")
+            |> mes("these problems today...")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Nemuk]")
-          |> mes("I thought so.")
-          |> mes("Well, I apologize if")
-          |> mes("I put you on the spot.")
-          |> next()
-          |> mes("[Nemuk]")
-          |> mes("Everyone here has been")
-          |> mes("having a tough time just")
-          |> mes("living day to day for as long")
-          |> mes("as I can remember. It's like")
-          |> mes("things never seem to get any")
-          |> mes("better, no matter what we do.")
-          |> next()
-          |> mes("[Nemuk]")
-          |> mes("I really want to leave,")
-          |> mes("but it's just an empty")
-          |> mes("wish. My body is trapped")
-          |> mes("here while my heart longs")
-          |> mes("for a much better life. ^333333*Sigh*^000000")
-          |> mes("Is it hopeless? What can I do?")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Nemuk]")
+            |> mes("I thought so.")
+            |> mes("Well, I apologize if")
+            |> mes("I put you on the spot.")
+            |> next()
+            |> mes("[Nemuk]")
+            |> mes("Everyone here has been")
+            |> mes("having a tough time just")
+            |> mes("living day to day for as long")
+            |> mes("as I can remember. It's like")
+            |> mes("things never seem to get any")
+            |> mes("better, no matter what we do.")
+            |> next()
+            |> mes("[Nemuk]")
+            |> mes("I really want to leave,")
+            |> mes("but it's just an empty")
+            |> mes("wish. My body is trapped")
+            |> mes("here while my heart longs")
+            |> mes("for a much better life. ^333333*Sigh*^000000")
+            |> mes("Is it hopeless? What can I do?")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

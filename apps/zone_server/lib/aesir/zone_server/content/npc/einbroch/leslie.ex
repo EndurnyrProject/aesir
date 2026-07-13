@@ -32,7 +32,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbroch.Leslie do
     |> mes("pricks! But they sell stuff")
     |> mes("here I can't buy back home...")
     |> close()
-
-    exit(:normal)
   end
 end

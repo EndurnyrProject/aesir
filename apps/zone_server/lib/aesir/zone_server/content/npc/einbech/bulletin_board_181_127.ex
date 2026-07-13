@@ -17,7 +17,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbech.BulletinBoard181127 do
     |> mes("South - Tavern")
     |> mes("North - Tool Shop, Mine Dungeon")
     |> close()
-
-    exit(:normal)
   end
 end

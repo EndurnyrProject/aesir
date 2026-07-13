@@ -23,7 +23,5 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtMaze02.Soldier11069 do
       "Whaaaat a stupid guy. Why would anyone want to throw his life away just to collect some silly Herbs?"
     )
     |> close()
-
-    exit(:normal)
   end
 end

@@ -44,7 +44,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Sameer do
     |> mes("to arrest couples for indecency!")
     |> mes("Hand holding. Have they no shame?!")
     |> close()
-
-    exit(:normal)
   end
 end

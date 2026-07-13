@@ -12,74 +12,78 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FGetweapontype do
 
   @doc "Callable rAthena global function; returns `{ctx, return_value}`."
   def call(ctx, args) do
-    v1 = Todo.call!(:getiteminfo, [Enum.at(args, 0, 0), get_char_var(ctx, :ITEMINFO_VIEW, 0)])
+    try do
+      v1 = Todo.call!(:getiteminfo, [Enum.at(args, 0, 0), get_char_var(ctx, :ITEMINFO_VIEW, 0)])
 
-    case v1 do
-      1 ->
-        {ctx, "Dagger"}
+      case v1 do
+        1 ->
+          throw({:script_return, {ctx, "Dagger"}})
 
-      2 ->
-        {ctx, "One-handed Sword"}
+        2 ->
+          throw({:script_return, {ctx, "One-handed Sword"}})
 
-      3 ->
-        {ctx, "Two-handed Sword"}
+        3 ->
+          throw({:script_return, {ctx, "Two-handed Sword"}})
 
-      4 ->
-        {ctx, "One-handed Spear"}
+        4 ->
+          throw({:script_return, {ctx, "One-handed Spear"}})
 
-      5 ->
-        {ctx, "Two-handed Spear"}
+        5 ->
+          throw({:script_return, {ctx, "Two-handed Spear"}})
 
-      6 ->
-        {ctx, "One-handed Axe"}
+        6 ->
+          throw({:script_return, {ctx, "One-handed Axe"}})
 
-      7 ->
-        {ctx, "Two-handed Axe"}
+        7 ->
+          throw({:script_return, {ctx, "Two-handed Axe"}})
 
-      8 ->
-        {ctx, "Mace"}
+        8 ->
+          throw({:script_return, {ctx, "Mace"}})
 
-      10 ->
-        {ctx, "Staff"}
+        10 ->
+          throw({:script_return, {ctx, "Staff"}})
 
-      11 ->
-        {ctx, "Bow"}
+        11 ->
+          throw({:script_return, {ctx, "Bow"}})
 
-      12 ->
-        {ctx, "Knuckle"}
+        12 ->
+          throw({:script_return, {ctx, "Knuckle"}})
 
-      13 ->
-        {ctx, "Instrument"}
+        13 ->
+          throw({:script_return, {ctx, "Instrument"}})
 
-      14 ->
-        {ctx, "Whip"}
+        14 ->
+          throw({:script_return, {ctx, "Whip"}})
 
-      15 ->
-        {ctx, "Book"}
+        15 ->
+          throw({:script_return, {ctx, "Book"}})
 
-      16 ->
-        {ctx, "Katar"}
+        16 ->
+          throw({:script_return, {ctx, "Katar"}})
 
-      17 ->
-        {ctx, "Revolver"}
+        17 ->
+          throw({:script_return, {ctx, "Revolver"}})
 
-      18 ->
-        {ctx, "Rifle"}
+        18 ->
+          throw({:script_return, {ctx, "Rifle"}})
 
-      19 ->
-        {ctx, "Gatling gun"}
+        19 ->
+          throw({:script_return, {ctx, "Gatling gun"}})
 
-      20 ->
-        {ctx, "Shotgun"}
+        20 ->
+          throw({:script_return, {ctx, "Shotgun"}})
 
-      21 ->
-        {ctx, "Grenade Launcher"}
+        21 ->
+          throw({:script_return, {ctx, "Grenade Launcher"}})
 
-      22 ->
-        {ctx, "Shuriken"}
+        22 ->
+          throw({:script_return, {ctx, "Shuriken"}})
 
-      _ ->
-        {ctx, "Unknown Weapon"}
+        _ ->
+          throw({:script_return, {ctx, "Unknown Weapon"}})
+      end
+    catch
+      :throw, {:script_return, result} -> result
     end
   end
 end

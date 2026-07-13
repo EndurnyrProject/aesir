@@ -14,47 +14,51 @@ defmodule Aesir.ZoneServer.Content.Npc.GonIn.JiChungZhe do
   def on_talk(ctx) do
     ctx =
       if get_char_var(ctx, :nakha, 0) >= 0 and get_char_var(ctx, :nakha, 0) <= 2 do
-        ctx
-        |> mes("[Ji Chung Zhe]")
-        |> mes("............")
-        |> next()
-        |> mes("[Ji Chung Zhe]")
-        |> mes("puuuuu....This sure is")
-        |> mes("something to worry about.")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Ji Chung Zhe]")
+          |> mes("............")
+          |> next()
+          |> mes("[Ji Chung Zhe]")
+          |> mes("puuuuu....This sure is")
+          |> mes("something to worry about.")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
 
     ctx =
       if get_char_var(ctx, :nakha, 0) == 3 do
-        ctx
-        |> mes("[Ji Chung Zhe]")
-        |> mes("I am Ji Chung Zhe, a renown brewer")
-        |> mes("of teas. Everyday, I put all my")
-        |> mes("efforts in making scrumptious, delicious tea.")
-        |> next()
-        |> mes("[Ji Chung Zhe]")
-        |> mes("*Sigh* But lately, the tea I've")
-        |> mes("been making hasn't been that")
-        |> mes("great... If I only had some special ingredients...")
-        |> next()
-        |> mes("[Ji Chung Zhe]")
-        |> mes("I've been told that if you use")
-        |> mes("a snake, you can concoct a truly")
-        |> mes("extraordinary beverage~")
-        |> mes("But...where can I find one")
-        |> mes("and how can I catch one?")
-        |> mes("Hmm...")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Ji Chung Zhe]")
+          |> mes("I am Ji Chung Zhe, a renown brewer")
+          |> mes("of teas. Everyday, I put all my")
+          |> mes("efforts in making scrumptious, delicious tea.")
+          |> next()
+          |> mes("[Ji Chung Zhe]")
+          |> mes("*Sigh* But lately, the tea I've")
+          |> mes("been making hasn't been that")
+          |> mes("great... If I only had some special ingredients...")
+          |> next()
+          |> mes("[Ji Chung Zhe]")
+          |> mes("I've been told that if you use")
+          |> mes("a snake, you can concoct a truly")
+          |> mes("extraordinary beverage~")
+          |> mes("But...where can I find one")
+          |> mes("and how can I catch one?")
+          |> mes("Hmm...")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

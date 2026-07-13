@@ -18,7 +18,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn03.Shayna do
     |> mes("Oh, you poor")
     |> mes("darling girl...")
     |> close()
-
-    exit(:normal)
   end
 end

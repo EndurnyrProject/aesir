@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.OldMan do
     |> mes("can't help but think about")
     |> mes("these sorts of things...")
     |> close()
-
-    exit(:normal)
   end
 end

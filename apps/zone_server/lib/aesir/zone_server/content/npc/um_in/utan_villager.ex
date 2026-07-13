@@ -82,6 +82,5 @@ defmodule Aesir.ZoneServer.Content.Npc.UmIn.UtanVillager do
       end
 
     close(ctx)
-    exit(:normal)
   end
 end

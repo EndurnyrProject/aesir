@@ -252,7 +252,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     case NpcEvents.trigger_attached(gid, "OnTouch", base_ctx, self()) do
       {:ok, pid} ->
         ref = Process.monitor(pid)
-        %{state | interaction_lock: {pid, ref, gid}}
+        Map.put(state, :interaction_lock, {pid, ref, gid})
 
       {:error, :no_handler} ->
         {:noreply, new_state} = NpcInteractionHandler.talk_to_npc(gid, state.game_state, state)

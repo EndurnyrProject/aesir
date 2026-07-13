@@ -120,6 +120,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Payon.MonsterScholar do
       end
 
     close(ctx)
-    exit(:normal)
   end
 end

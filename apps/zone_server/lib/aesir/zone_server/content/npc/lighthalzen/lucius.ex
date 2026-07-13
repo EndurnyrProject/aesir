@@ -43,29 +43,31 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Lucius do
 
             ctx =
               if get_local(ctx, :input, 0) > 30000 or get_local(ctx, :input, 0) < 0 do
-                ctx
-                |> mes("[Lucius]")
-                |> mes("Please enter a value")
-                |> mes("from 1 to 30,000 in")
-                |> mes("order to make a donation")
-                |> mes("to the needy, youngster.")
-                |> close()
+                ctx =
+                  ctx
+                  |> mes("[Lucius]")
+                  |> mes("Please enter a value")
+                  |> mes("from 1 to 30,000 in")
+                  |> mes("order to make a donation")
+                  |> mes("to the needy, youngster.")
+                  |> close()
 
-                exit(:normal)
+                throw({:script_end, ctx})
               else
                 ctx =
                   if get_local(ctx, :input, 0) == 0 do
-                    ctx
-                    |> mes("[Lucius]")
-                    |> mes("How disappointing,")
-                    |> mes("but I'm sure you have")
-                    |> mes("your reasons. Well, when")
-                    |> mes("you can afford to give to")
-                    |> mes("the needy, you're welcome")
-                    |> mes("to come back at any time.")
-                    |> close()
+                    ctx =
+                      ctx
+                      |> mes("[Lucius]")
+                      |> mes("How disappointing,")
+                      |> mes("but I'm sure you have")
+                      |> mes("your reasons. Well, when")
+                      |> mes("you can afford to give to")
+                      |> mes("the needy, you're welcome")
+                      |> mes("to come back at any time.")
+                      |> close()
 
-                    exit(:normal)
+                    throw({:script_end, ctx})
                   else
                     ctx
                   end
@@ -90,15 +92,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Lucius do
 
             ctx =
               if zeny(ctx) < get_local(ctx, :input, 0) do
-                ctx
-                |> mes("[Lucius]")
-                |> mes("Still, I'm just a little")
-                |> mes("disappointed. An adventurer")
-                |> mes("like you should be donating")
-                |> mes("as much as you possibly can...")
-                |> close()
+                ctx =
+                  ctx
+                  |> mes("[Lucius]")
+                  |> mes("Still, I'm just a little")
+                  |> mes("disappointed. An adventurer")
+                  |> mes("like you should be donating")
+                  |> mes("as much as you possibly can...")
+                  |> close()
 
-                exit(:normal)
+                throw({:script_end, ctx})
               else
                 ctx
               end
@@ -144,23 +147,24 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Lucius do
                 ctx
               end
 
-            close(ctx)
-            exit(:normal)
+            ctx = close(ctx)
+            throw({:script_end, ctx})
           else
             ctx
           end
 
-        ctx
-        |> mes("[Lucius]")
-        |> mes("I understand. Still,")
-        |> mes("keep in mind that when")
-        |> mes("you give from your heart,")
-        |> mes("you will be rewarded tenfold.")
-        |> mes("Though I admit, the benefits")
-        |> mes("aren't always readily apparent.")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Lucius]")
+          |> mes("I understand. Still,")
+          |> mes("keep in mind that when")
+          |> mes("you give from your heart,")
+          |> mes("you will be rewarded tenfold.")
+          |> mes("Though I admit, the benefits")
+          |> mes("aren't always readily apparent.")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -179,7 +183,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Lucius do
     |> mes("towards others who may be")
     |> mes("much less fortunate than you.")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

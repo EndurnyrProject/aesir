@@ -36,7 +36,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Jade do
     |> mes("It sounds so fantastic")
     |> mes("and romantic in a way...")
     |> close()
-
-    exit(:normal)
   end
 end

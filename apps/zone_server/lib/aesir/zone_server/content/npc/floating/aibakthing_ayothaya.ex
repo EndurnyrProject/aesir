@@ -25,31 +25,32 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.AibakthingAyothaya do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Aibakthing]")
-          |> mes(
-            "We Ayothayans are a pious people who value peace and sincerity. We endeavor to lead simple, yet noble, lives in harmony with nature."
-          )
-          |> next()
-          |> mes("[Aibakthing]")
-          |> mes(
-            "Our traditional cuisine is world famous. It's no surprise when we serve dishes like Tom Yum Goong, made of Shrimp, Lemon and Chillies, which has a tantalizing aroma and flavor beyond imagining."
-          )
-          |> next()
-          |> mes("[Aibakthing]")
-          |> mes(
-            "For those who crave adventure, there is an age old story about the Sa-mhing Tiger, an evil creature that haunts our temple ruins."
-          )
-          |> next()
-          |> mes("[Aibakthing]")
-          |> mes("Hoo! Hahh! Hoo! Hahh!")
-          |> mes("No man alive can resist the")
-          |> mes("call of this beautiful land.")
-          |> mes("Midgardians are")
-          |> mes("always welcome!")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Aibakthing]")
+            |> mes(
+              "We Ayothayans are a pious people who value peace and sincerity. We endeavor to lead simple, yet noble, lives in harmony with nature."
+            )
+            |> next()
+            |> mes("[Aibakthing]")
+            |> mes(
+              "Our traditional cuisine is world famous. It's no surprise when we serve dishes like Tom Yum Goong, made of Shrimp, Lemon and Chillies, which has a tantalizing aroma and flavor beyond imagining."
+            )
+            |> next()
+            |> mes("[Aibakthing]")
+            |> mes(
+              "For those who crave adventure, there is an age old story about the Sa-mhing Tiger, an evil creature that haunts our temple ruins."
+            )
+            |> next()
+            |> mes("[Aibakthing]")
+            |> mes("Hoo! Hahh! Hoo! Hahh!")
+            |> mes("No man alive can resist the")
+            |> mes("call of this beautiful land.")
+            |> mes("Midgardians are")
+            |> mes("always welcome!")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
           {ctx, v2} =
@@ -66,59 +67,65 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.AibakthingAyothaya do
             if v2 == 1 do
               ctx =
                 if zeny(ctx) > 9999 do
-                  ctx
-                  |> mes("[Aibakthing]")
-                  |> mes("Hoo! Hah! Hoo! Hah!")
-                  |> mes("Let us be off! Back to my")
-                  |> mes("beautiful Ayothaya!")
-                  |> close()
-                  |> pay_zeny(10000)
-                  |> warp("ayothaya", 149, 71)
+                  ctx =
+                    ctx
+                    |> mes("[Aibakthing]")
+                    |> mes("Hoo! Hah! Hoo! Hah!")
+                    |> mes("Let us be off! Back to my")
+                    |> mes("beautiful Ayothaya!")
+                    |> close()
+                    |> pay_zeny(10000)
+                    |> warp("ayothaya", 149, 71)
 
-                  exit(:normal)
+                  throw({:script_end, ctx})
                 else
                   ctx
                 end
 
-              ctx
-              |> mes("[Aibakthing]")
-              |> mes(
-                "I am sorry, but you do not have the 10,000 Zeny to travel to Ayothaya. Such a price is nothing compared to the experiences that await you!"
-              )
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Aibakthing]")
+                |> mes(
+                  "I am sorry, but you do not have the 10,000 Zeny to travel to Ayothaya. Such a price is nothing compared to the experiences that await you!"
+                )
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
               ctx
             end
 
-          ctx
-          |> mes("[Aibakthing]")
-          |> mes("Have you ever dreamed")
-          |> mes("of a beautiful place filled")
-          |> mes("with spiritual serenity? You")
-          |> mes("must have been dreaming")
-          |> mes("of Ayothaya, my friend.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Aibakthing]")
+            |> mes("Have you ever dreamed")
+            |> mes("of a beautiful place filled")
+            |> mes("with spiritual serenity? You")
+            |> mes("must have been dreaming")
+            |> mes("of Ayothaya, my friend.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx
-          |> mes("[Aibakthing]")
-          |> mes("Have you ever dreamed")
-          |> mes("of a beautiful place filled")
-          |> mes("with spiritual serenity? You")
-          |> mes("must have been dreaming")
-          |> mes("of Ayothaya, my friend.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Aibakthing]")
+            |> mes("Have you ever dreamed")
+            |> mes("of a beautiful place filled")
+            |> mes("with spiritual serenity? You")
+            |> mes("must have been dreaming")
+            |> mes("of Ayothaya, my friend.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

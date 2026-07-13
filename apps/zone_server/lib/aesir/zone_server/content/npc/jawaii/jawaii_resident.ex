@@ -34,7 +34,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Jawaii.JawaiiResident do
     |> mes("You'd look like such")
     |> mes("a pathetic loser!")
     |> close()
-
-    exit(:normal)
   end
 end

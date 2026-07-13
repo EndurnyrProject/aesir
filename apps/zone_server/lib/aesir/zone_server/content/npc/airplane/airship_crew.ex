@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.AirshipCrew do
     |> mes("stairs up ahead. Thank")
     |> mes("you for your patronage.")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -13,73 +13,77 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FGetarticle do
 
   @doc "Callable rAthena global function; returns `{ctx, return_value}`."
   def call(ctx, args) do
-    ctx = set_local(ctx, :"str$", Todo.call!(:strtolower, [Enum.at(args, 0, 0)]))
+    try do
+      ctx = set_local(ctx, :"str$", Todo.call!(:strtolower, [Enum.at(args, 0, 0)]))
 
-    ctx =
-      if not Rathena.truthy?(Todo.call!(:charisalpha, [get_local(ctx, :"str$", ""), 0])) do
-        {ctx, "a"}
-      else
-        ctx
-      end
-
-    ctx =
-      if Todo.call!(:getstrlen, [get_local(ctx, :"str$", "")]) == 1 do
-        if Todo.call!(:strpos, ["aefhilmnorsx", get_local(ctx, :"str$", "")]) > -1 do
-          {ctx, "an"}
+      ctx =
+        if not Rathena.truthy?(Todo.call!(:charisalpha, [get_local(ctx, :"str$", ""), 0])) do
+          throw({:script_return, {ctx, "a"}})
         else
-          {ctx, "a"}
+          ctx
         end
-      else
-        ctx
-      end
 
-    ctx =
-      if Rathena.truthy?(
-           Todo.call!(:preg_match, [
-             "(euler|hour(?!i)|heir|honest|hono)",
-             get_local(ctx, :"str$", "")
-           ])
-         ) do
-        {ctx, "an"}
-      else
-        ctx
-      end
+      ctx =
+        if Todo.call!(:getstrlen, [get_local(ctx, :"str$", "")]) == 1 do
+          if Todo.call!(:strpos, ["aefhilmnorsx", get_local(ctx, :"str$", "")]) > -1 do
+            throw({:script_return, {ctx, "an"}})
+          else
+            throw({:script_return, {ctx, "a"}})
+          end
+        else
+          ctx
+        end
 
-    ctx =
-      if Rathena.truthy?(Todo.call!(:preg_match, ["^[^aeiouy]", get_local(ctx, :"str$", "")])) do
-        {ctx, "a"}
-      else
-        ctx
-      end
-
-    ctx =
-      if Rathena.truthy?(Todo.call!(:preg_match, ["^e[uw]", get_local(ctx, :"str$", "")])) or
-           Rathena.truthy?(Todo.call!(:preg_match, ["^onc?eb", get_local(ctx, :"str$", "")])) or
-           Rathena.truthy?(
-             Todo.call!(:preg_match, ["^uni([^nmd]|mo)", get_local(ctx, :"str$", "")])
-           ) or
-           Rathena.truthy?(
-             Todo.call!(:preg_match, ["^u[bcfhjkqrst][aeiou]", get_local(ctx, :"str$", "")])
+      ctx =
+        if Rathena.truthy?(
+             Todo.call!(:preg_match, [
+               "(euler|hour(?!i)|heir|honest|hono)",
+               get_local(ctx, :"str$", "")
+             ])
            ) do
-        {ctx, "a"}
-      else
-        ctx
-      end
+          throw({:script_return, {ctx, "an"}})
+        else
+          ctx
+        end
 
-    ctx =
-      if Rathena.truthy?(Todo.call!(:preg_match, ["^ut[th]", get_local(ctx, :"str$", "")])) do
-        {ctx, "an"}
-      else
-        ctx
-      end
+      ctx =
+        if Rathena.truthy?(Todo.call!(:preg_match, ["^[^aeiouy]", get_local(ctx, :"str$", "")])) do
+          throw({:script_return, {ctx, "a"}})
+        else
+          ctx
+        end
 
-    ctx =
-      if Rathena.truthy?(Todo.call!(:preg_match, ["^[aeiou]", get_local(ctx, :"str$", "")])) do
-        {ctx, "an"}
-      else
-        ctx
-      end
+      ctx =
+        if Rathena.truthy?(Todo.call!(:preg_match, ["^e[uw]", get_local(ctx, :"str$", "")])) or
+             Rathena.truthy?(Todo.call!(:preg_match, ["^onc?eb", get_local(ctx, :"str$", "")])) or
+             Rathena.truthy?(
+               Todo.call!(:preg_match, ["^uni([^nmd]|mo)", get_local(ctx, :"str$", "")])
+             ) or
+             Rathena.truthy?(
+               Todo.call!(:preg_match, ["^u[bcfhjkqrst][aeiou]", get_local(ctx, :"str$", "")])
+             ) do
+          throw({:script_return, {ctx, "a"}})
+        else
+          ctx
+        end
 
-    {ctx, "a"}
+      ctx =
+        if Rathena.truthy?(Todo.call!(:preg_match, ["^ut[th]", get_local(ctx, :"str$", "")])) do
+          throw({:script_return, {ctx, "an"}})
+        else
+          ctx
+        end
+
+      ctx =
+        if Rathena.truthy?(Todo.call!(:preg_match, ["^[aeiou]", get_local(ctx, :"str$", "")])) do
+          throw({:script_return, {ctx, "an"}})
+        else
+          ctx
+        end
+
+      throw({:script_return, {ctx, "a"}})
+    catch
+      :throw, {:script_return, result} -> result
+    end
   end
 end

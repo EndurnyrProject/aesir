@@ -14,13 +14,14 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn03.Rocky do
   def on_talk(ctx) do
     ctx =
       if Enum.random(1..2) == 1 do
-        ctx |> mes("[Rocky]") |> mes("Woof woof!") |> close()
-        exit(:normal)
+        ctx = ctx |> mes("[Rocky]") |> mes("Woof woof!") |> close()
+        throw({:script_end, ctx})
       else
         ctx
       end
 
     ctx |> mes("[Rocky]") |> mes("Grrrrrrr...") |> close()
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

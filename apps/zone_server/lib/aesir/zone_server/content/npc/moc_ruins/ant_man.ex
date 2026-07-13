@@ -37,76 +37,83 @@ defmodule Aesir.ZoneServer.Content.Npc.MocRuins.AntMan do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Akira]")
-          |> mes(
-            "That cave is sure a dangerous hell, sticky and all... There are 2 underground levels."
-          )
-          |> mes("Just head East till you see the bridge which connects to the Payon Forest.")
-          |> next()
-          |> mes("[Akira]")
-          |> mes(
-            "In the map right before that bridge, head north to find the entrance to Ant Hell, though I'm not sure if it's still there."
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Akira]")
+            |> mes(
+              "That cave is sure a dangerous hell, sticky and all... There are 2 underground levels."
+            )
+            |> mes("Just head East till you see the bridge which connects to the Payon Forest.")
+            |> next()
+            |> mes("[Akira]")
+            |> mes(
+              "In the map right before that bridge, head north to find the entrance to Ant Hell, though I'm not sure if it's still there."
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Akira]")
-          |> mes(
-            "Ant Hell is swarming with Ant monsters. You'll notice that they all classed with different names..."
-          )
-          |> next()
-          |> mes("[Akira]")
-          |> mes(
-            "Andre is the weakest, Piere is comparatively average, and Deniro is the strongest Ant. Keep that in mind so you can fight the Ants suitable to your level."
-          )
-          |> next()
-          |> mes("[Akira]")
-          |> mes(
-            "Andre is colored in Ivory, Yellowish Green is Piere, and the Red one is Deniro."
-          )
-          |> mes(
-            "It's really easy to distinguish those from Bitata, the common ants because they look very different."
-          )
-          |> next()
-          |> mes("[Akira]")
-          |> mes(
-            "Oh, and those ants are greedy as Porings and will try to steal your items, so keep that in mind."
-          )
-          |> next()
-          |> mes("[Akira]")
-          |> mes("If you ever, could cross the desert without any disturbances from the Satan...")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Akira]")
+            |> mes(
+              "Ant Hell is swarming with Ant monsters. You'll notice that they all classed with different names..."
+            )
+            |> next()
+            |> mes("[Akira]")
+            |> mes(
+              "Andre is the weakest, Piere is comparatively average, and Deniro is the strongest Ant. Keep that in mind so you can fight the Ants suitable to your level."
+            )
+            |> next()
+            |> mes("[Akira]")
+            |> mes(
+              "Andre is colored in Ivory, Yellowish Green is Piere, and the Red one is Deniro."
+            )
+            |> mes(
+              "It's really easy to distinguish those from Bitata, the common ants because they look very different."
+            )
+            |> next()
+            |> mes("[Akira]")
+            |> mes(
+              "Oh, and those ants are greedy as Porings and will try to steal your items, so keep that in mind."
+            )
+            |> next()
+            |> mes("[Akira]")
+            |> mes(
+              "If you ever, could cross the desert without any disturbances from the Satan..."
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx
-          |> mes("[Akira]")
-          |> mes(
-            "There's also an old man called Guias, the spirit of the earth. He's pretty hard to deal with."
-          )
-          |> next()
-          |> mes("[Akira]")
-          |> mes(
-            "Sharp teeth and strong jaws of the ants would be something that you should be careful of, but the shovelling skills of that old grandpa is very strong that you should watch out."
-          )
-          |> next()
-          |> mes("[Akira]")
-          |> mes(
-            "...Well, what am I talking about? What is left to be afraid when the Satan of Morocc is revived? Huh..huhhuh..."
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Akira]")
+            |> mes(
+              "There's also an old man called Guias, the spirit of the earth. He's pretty hard to deal with."
+            )
+            |> next()
+            |> mes("[Akira]")
+            |> mes(
+              "Sharp teeth and strong jaws of the ants would be something that you should be careful of, but the shovelling skills of that old grandpa is very strong that you should watch out."
+            )
+            |> next()
+            |> mes("[Akira]")
+            |> mes(
+              "...Well, what am I talking about? What is left to be afraid when the Satan of Morocc is revived? Huh..huhhuh..."
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

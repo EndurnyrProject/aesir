@@ -30,7 +30,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Jawaii.JawaiiResident168247 do
       "a ship to Alberta. If you want to sail to Izlude, there's a ship waiting in the SouthEast."
     )
     |> close()
-
-    exit(:normal)
   end
 end

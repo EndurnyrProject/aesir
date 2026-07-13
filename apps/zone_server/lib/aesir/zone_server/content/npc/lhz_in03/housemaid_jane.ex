@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn03.HousemaidJane do
     |> mes("of indoor living space. Being")
     |> mes("a maid can be pretty hard...")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -35,7 +35,5 @@ defmodule Aesir.ZoneServer.Content.Npc.NifIn.UndeadFamiliar do
     |> mes("Foolish mortal!")
     |> mes("Beware my powers!")
     |> close()
-
-    exit(:normal)
   end
 end

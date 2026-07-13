@@ -24,29 +24,30 @@ defmodule Aesir.ZoneServer.Content.Npc.Aldebaran.ForgerMunster do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Munster]")
-        |> mes(
-          "My father was a famous blacksmith in Geffen, and he taught me a lot about forging equipment."
-        )
-        |> next()
-        |> mes("[Munster]")
-        |> mes(
-          "One of the fundamentals is that the success probability of upgrading an item depends on the level of the weapon."
-        )
-        |> next()
-        |> mes("[Munster]")
-        |> mes(
-          "For level 1 weapons, you may upgrade up to + 7 without the risk of breaking the weapon. Level 2 weapons can be upgraded to +6. Level 3 weapons can be upgraded to +5 safely."
-        )
-        |> next()
-        |> mes("[Munster]")
-        |> mes(
-          "For level 4 weapons, you can upgrade + 4 without too much risk. As for armors, you can upgrade them to +4. But if the upgrade for the equipment fails, it will be destroyed!"
-        )
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Munster]")
+          |> mes(
+            "My father was a famous blacksmith in Geffen, and he taught me a lot about forging equipment."
+          )
+          |> next()
+          |> mes("[Munster]")
+          |> mes(
+            "One of the fundamentals is that the success probability of upgrading an item depends on the level of the weapon."
+          )
+          |> next()
+          |> mes("[Munster]")
+          |> mes(
+            "For level 1 weapons, you may upgrade up to + 7 without the risk of breaking the weapon. Level 2 weapons can be upgraded to +6. Level 3 weapons can be upgraded to +5 safely."
+          )
+          |> next()
+          |> mes("[Munster]")
+          |> mes(
+            "For level 4 weapons, you can upgrade + 4 without too much risk. As for armors, you can upgrade them to +4. But if the upgrade for the equipment fails, it will be destroyed!"
+          )
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -58,7 +59,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Aldebaran.ForgerMunster do
       "If you get a chance, try to visit my father's workshop here in Al de Baran. If I may say so, he's a pretty talented Blacksmith."
     )
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

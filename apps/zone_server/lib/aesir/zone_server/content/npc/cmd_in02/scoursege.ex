@@ -26,7 +26,5 @@ defmodule Aesir.ZoneServer.Content.Npc.CmdIn02.Scoursege do
     |> mes("this to the proper authorities,")
     |> mes("no matter how ashamed I feel...")
     |> close()
-
-    exit(:normal)
   end
 end

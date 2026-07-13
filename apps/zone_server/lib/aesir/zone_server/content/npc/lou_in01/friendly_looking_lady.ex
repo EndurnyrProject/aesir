@@ -28,66 +28,72 @@ defmodule Aesir.ZoneServer.Content.Npc.LouIn01.FriendlyLookingLady do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Hong Miao]")
-          |> mes(
-            "After many suggestions and proposals were sent to the Luoyang tourism office, the Observation Tower was built so tourists can enjoy the sights."
-          )
-          |> next()
-          |> mes("[Hong Miao]")
-          |> mes("Due to the geographical")
-          |> mes(
-            "features of Luoyang, it's difficult to enjoy the breath taking view that our land has to offer."
-          )
-          |> next()
-          |> mes("[Hong Miao]")
-          |> mes(
-            "You can come up to the tower by taking the elevator right here. We are providing this quick and safe transfer service for 500 zeny per person."
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Hong Miao]")
+            |> mes(
+              "After many suggestions and proposals were sent to the Luoyang tourism office, the Observation Tower was built so tourists can enjoy the sights."
+            )
+            |> next()
+            |> mes("[Hong Miao]")
+            |> mes("Due to the geographical")
+            |> mes(
+              "features of Luoyang, it's difficult to enjoy the breath taking view that our land has to offer."
+            )
+            |> next()
+            |> mes("[Hong Miao]")
+            |> mes(
+              "You can come up to the tower by taking the elevator right here. We are providing this quick and safe transfer service for 500 zeny per person."
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
           ctx =
             if zeny(ctx) < 500 do
-              ctx
-              |> mes("[Hong Miao]")
-              |> mes(
-                "I'm sorry, but you do not have enough zeny. I hope you'll come back later to enjoy the Observation Tower. Have a good day."
-              )
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Hong Miao]")
+                |> mes(
+                  "I'm sorry, but you do not have enough zeny. I hope you'll come back later to enjoy the Observation Tower. Have a good day."
+                )
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
               ctx
             end
 
-          ctx
-          |> mes("[Hong Miao]")
-          |> mes("Thank you for your patronage.")
-          |> mes("We are trying to provide you with the best of service. Please")
-          |> mes("come again.")
-          |> next()
-          |> pay_zeny(500)
-          |> warp("lou_in01", 17, 19)
+          ctx =
+            ctx
+            |> mes("[Hong Miao]")
+            |> mes("Thank you for your patronage.")
+            |> mes("We are trying to provide you with the best of service. Please")
+            |> mes("come again.")
+            |> next()
+            |> pay_zeny(500)
+            |> warp("lou_in01", 17, 19)
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx
-          |> mes("[Hong Miao]")
-          |> mes("Please come")
-          |> mes("back later.")
-          |> mes("Have a good day.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Hong Miao]")
+            |> mes("Please come")
+            |> mes("back later.")
+            |> mes("Have a good day.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

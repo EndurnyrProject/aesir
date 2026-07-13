@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.LabStaff do
     |> mes("why, but for some reason, its")
     |> mes("taste reminds me of teamwork~")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -109,167 +109,204 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbech.Shena do
               ctx
             end
 
-          ctx
-          |> loop_2()
-          |> mes("[Shena]")
-          |> mes("Luda...")
-          |> mes("You don't live")
-          |> mes("to be as old as")
-          |> mes("I am and not learn")
-          |> mes("a little something")
-          |> mes("about this world of ours~")
-          |> close()
+          ctx =
+            ctx
+            |> loop_2()
+            |> mes("[Shena]")
+            |> mes("Luda...")
+            |> mes("You don't live")
+            |> mes("to be as old as")
+            |> mes("I am and not learn")
+            |> mes("a little something")
+            |> mes("about this world of ours~")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Shena]")
-          |> mes("Luda...")
-          |> mes("You don't live")
-          |> mes("to be as old as")
-          |> mes("I am and not learn")
-          |> mes("a little something")
-          |> mes("about this world of ours~")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Shena]")
+            |> mes("Luda...")
+            |> mes("You don't live")
+            |> mes("to be as old as")
+            |> mes("I am and not learn")
+            |> mes("a little something")
+            |> mes("about this world of ours~")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   defp loop_2(ctx) do
-    if true do
-      {ctx, v2} = select(ctx, ["Metalling", "Mineral", "Pit Man", "Old Stove", "Quit"])
+    {ctx, v2} = select(ctx, ["Metalling", "Mineral", "Pit Man", "Old Stove", "Quit"])
 
-      ctx =
-        case v2 do
-          1 ->
+    ctx =
+      case v2 do
+        1 ->
+          ctx
+          |> mes("[Shena]")
+          |> mes("Well, the Metallings")
+          |> mes("were created during")
+          |> mes("the time when the gods")
+          |> mes("ruled over this world.")
+          |> next()
+          |> mes("[Shena]")
+          |> mes("I'm not sure if you knew")
+          |> mes("this or not, but according")
+          |> mes("to myth, Porings and Drops")
+          |> mes("were created from Odin's")
+          |> mes("saliva. You might not want")
+          |> mes("to know about Poporing...")
+          |> next()
+          |> mes("[Shena]")
+          |> mes("Metallings, on the")
+          |> mes("other hand, were made")
+          |> mes("from the blood of living")
+          |> mes("machines that I believe")
+          |> mes("were called ''Gigantes.''")
+          |> next()
+          |> mes("[Shena]")
+          |> mes("Metalling is still like")
+          |> mes("those other hopping")
+          |> mes("blobs of gelatin in that")
+          |> mes("they'll swallow whatever")
+          |> mes("might be lying on the ground.")
+          |> next()
+          |> mes("[Shena]")
+          |> mes("If you defeat a Metalling,")
+          |> mes("it could drop Large Jellopy,")
+          |> mes("Iron Ore or even Iron. That")
+          |> mes("might be good to know, right?")
+          |> next()
+          |> mes("[Shena]")
+          |> mes("Is there")
+          |> mes("anything else")
+          |> mes("you'd like to")
+          |> mes("ask, dearie?")
+          |> next()
+
+        2 ->
+          ctx
+          |> mes("[Shena]")
+          |> mes("Did you know that")
+          |> mes("stalactites and cave")
+          |> mes("crystals grow for thousands")
+          |> mes("and thousands of years?")
+          |> next()
+          |> mes("[Shena]")
+          |> mes("Now, if something's been")
+          |> mes("growing for thousands of")
+          |> mes("years, it would make sense")
+          |> mes("if it were actually alive. Now,")
+          |> mes("Mineral monsters are actually living stalactites.")
+          |> next()
+          |> mes("[Shena]")
+          |> mes("It's rumored that they")
+          |> mes("are grown in a dark cave")
+          |> mes("in which something inside")
+          |> mes("has some sort of malicious")
+          |> mes("influence over them.")
+          |> next()
+          |> mes("[Shena]")
+          |> mes("Minerals can defend themselves,")
+          |> mes(
+            "but they might drop Crystal Piece, Topaz or Emvertacon if you defeat one. There's also a slim chance that they may drop a rare jewel, but I'm not quite sure."
+          )
+          |> next()
+          |> mes("[Shena]")
+          |> mes("Are there any")
+          |> mes("other monsters")
+          |> mes("around here that")
+          |> mes("you'd want to learn")
+          |> mes("more about?")
+          |> next()
+
+        3 ->
+          ctx
+          |> mes("[Shena]")
+          |> mes("Pit Men are the ghosts")
+          |> mes("of dead miners that haunt")
+          |> mes("old and rusted mine cars.")
+          |> mes("For some reason, they can't")
+          |> mes("leave this world so they just")
+          |> mes("wander around the mines.")
+          |> next()
+          |> mes("[Shena]")
+          |> mes("If you can defeat")
+          |> mes("them, they'll drop")
+          |> mes("Old Pick, Lantern, Iron,")
+          |> mes("Steel, Coal, Flashlight")
+          |> mes("and Old Iron Plate.")
+          |> next()
+          |> mes("[Shena]")
+          |> mes("Did you want")
+          |> mes("to ask me about")
+          |> mes("any other of the")
+          |> mes("local monsters?")
+          |> next()
+
+        4 ->
+          {ctx, v3} =
             ctx
             |> mes("[Shena]")
-            |> mes("Well, the Metallings")
-            |> mes("were created during")
-            |> mes("the time when the gods")
-            |> mes("ruled over this world.")
+            |> mes("It's just an evil,")
+            |> mes("man-eating stove.")
             |> next()
-            |> mes("[Shena]")
-            |> mes("I'm not sure if you knew")
-            |> mes("this or not, but according")
-            |> mes("to myth, Porings and Drops")
-            |> mes("were created from Odin's")
-            |> mes("saliva. You might not want")
-            |> mes("to know about Poporing...")
-            |> next()
-            |> mes("[Shena]")
-            |> mes("Metallings, on the")
-            |> mes("other hand, were made")
-            |> mes("from the blood of living")
-            |> mes("machines that I believe")
-            |> mes("were called ''Gigantes.''")
-            |> next()
-            |> mes("[Shena]")
-            |> mes("Metalling is still like")
-            |> mes("those other hopping")
-            |> mes("blobs of gelatin in that")
-            |> mes("they'll swallow whatever")
-            |> mes("might be lying on the ground.")
-            |> next()
-            |> mes("[Shena]")
-            |> mes("If you defeat a Metalling,")
-            |> mes("it could drop Large Jellopy,")
-            |> mes("Iron Ore or even Iron. That")
-            |> mes("might be good to know, right?")
-            |> next()
-            |> mes("[Shena]")
-            |> mes("Is there")
-            |> mes("anything else")
-            |> mes("you'd like to")
-            |> mes("ask, dearie?")
-            |> next()
+            |> select(["...That's it?", "H-horrifying!"])
 
-          2 ->
-            ctx
-            |> mes("[Shena]")
-            |> mes("Did you know that")
-            |> mes("stalactites and cave")
-            |> mes("crystals grow for thousands")
-            |> mes("and thousands of years?")
-            |> next()
-            |> mes("[Shena]")
-            |> mes("Now, if something's been")
-            |> mes("growing for thousands of")
-            |> mes("years, it would make sense")
-            |> mes("if it were actually alive. Now,")
-            |> mes("Mineral monsters are actually living stalactites.")
-            |> next()
-            |> mes("[Shena]")
-            |> mes("It's rumored that they")
-            |> mes("are grown in a dark cave")
-            |> mes("in which something inside")
-            |> mes("has some sort of malicious")
-            |> mes("influence over them.")
-            |> next()
-            |> mes("[Shena]")
-            |> mes("Minerals can defend themselves,")
-            |> mes(
-              "but they might drop Crystal Piece, Topaz or Emvertacon if you defeat one. There's also a slim chance that they may drop a rare jewel, but I'm not quite sure."
-            )
-            |> next()
-            |> mes("[Shena]")
-            |> mes("Are there any")
-            |> mes("other monsters")
-            |> mes("around here that")
-            |> mes("you'd want to learn")
-            |> mes("more about?")
-            |> next()
+          ctx =
+            case v3 do
+              1 ->
+                ctx
+                |> mes("[Shena]")
+                |> mes("Now, you know the importance")
+                |> mes("of recycling and preserving our")
+                |> mes("natural resources, right? Now,")
+                |> mes("it would do my heart good if you were to recycle the scrap iron")
+                |> mes("from those Old Stove monsters.")
+                |> next()
+                |> mes("[Shena]")
+                |> mes("Old Stoves will usually")
+                |> mes("drop Battered Pot, Burnt Tree,")
+                |> mes(
+                  "Iron, Iron Ore and Old Iron Plate. But once in a while they might drop interesting items like Rusty Iron or even Dead Branch."
+                )
+                |> next()
 
-          3 ->
-            ctx
-            |> mes("[Shena]")
-            |> mes("Pit Men are the ghosts")
-            |> mes("of dead miners that haunt")
-            |> mes("old and rusted mine cars.")
-            |> mes("For some reason, they can't")
-            |> mes("leave this world so they just")
-            |> mes("wander around the mines.")
-            |> next()
-            |> mes("[Shena]")
-            |> mes("If you can defeat")
-            |> mes("them, they'll drop")
-            |> mes("Old Pick, Lantern, Iron,")
-            |> mes("Steel, Coal, Flashlight")
-            |> mes("and Old Iron Plate.")
-            |> next()
-            |> mes("[Shena]")
-            |> mes("Did you want")
-            |> mes("to ask me about")
-            |> mes("any other of the")
-            |> mes("local monsters?")
-            |> next()
-
-          4 ->
-            {ctx, v3} =
-              ctx
-              |> mes("[Shena]")
-              |> mes("It's just an evil,")
-              |> mes("man-eating stove.")
-              |> next()
-              |> select(["...That's it?", "H-horrifying!"])
-
-            ctx =
-              case v3 do
-                1 ->
+              2 ->
+                ctx =
                   ctx
                   |> mes("[Shena]")
-                  |> mes("Now, you know the importance")
-                  |> mes("of recycling and preserving our")
-                  |> mes("natural resources, right? Now,")
-                  |> mes("it would do my heart good if you were to recycle the scrap iron")
-                  |> mes("from those Old Stove monsters.")
+                  |> mes("Yes. God's creation,")
+                  |> mes("that creature is cruel")
+                  |> mes("and merciless, perhaps")
+                  |> mes("a symbol of purest evil")
+                  |> mes("if I ever saw one.")
+                  |> next()
+                  |> mes("[Shena]")
+                  |> mes("Unlike newer appliances,")
+                  |> mes("Old Stoves were hand made by")
+                  |> mes("master craftsmen that, I guess,")
+                  |> mes("developed their own souls. They")
+                  |> mes("used to be benevolent machines, content to provide loving warmth.")
+                  |> next()
+                  |> mes("[Shena]")
+                  |> mes("For years they would serve")
+                  |> mes("their owners with loyalty. But")
+                  |> mes("as technology advanced and")
+                  |> mes("they became obsolete, they were")
+                  |> mes(
+                    "discarded like pieces of trash. This twisted their hearts to ^FF0000evil^000000."
+                  )
                   |> next()
                   |> mes("[Shena]")
                   |> mes("Old Stoves will usually")
@@ -279,55 +316,22 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbech.Shena do
                   )
                   |> next()
 
-                2 ->
-                  ctx =
-                    ctx
-                    |> mes("[Shena]")
-                    |> mes("Yes. God's creation,")
-                    |> mes("that creature is cruel")
-                    |> mes("and merciless, perhaps")
-                    |> mes("a symbol of purest evil")
-                    |> mes("if I ever saw one.")
-                    |> next()
-                    |> mes("[Shena]")
-                    |> mes("Unlike newer appliances,")
-                    |> mes("Old Stoves were hand made by")
-                    |> mes("master craftsmen that, I guess,")
-                    |> mes("developed their own souls. They")
-                    |> mes("used to be benevolent machines, content to provide loving warmth.")
-                    |> next()
-                    |> mes("[Shena]")
-                    |> mes("For years they would serve")
-                    |> mes("their owners with loyalty. But")
-                    |> mes("as technology advanced and")
-                    |> mes("they became obsolete, they were")
-                    |> mes(
-                      "discarded like pieces of trash. This twisted their hearts to ^FF0000evil^000000."
-                    )
-                    |> next()
-                    |> mes("[Shena]")
-                    |> mes("Old Stoves will usually")
-                    |> mes("drop Battered Pot, Burnt Tree,")
-                    |> mes(
-                      "Iron, Iron Ore and Old Iron Plate. But once in a while they might drop interesting items like Rusty Iron or even Dead Branch."
-                    )
-                    |> next()
+                ctx
 
-                  ctx
+              _ ->
+                ctx
+            end
 
-                _ ->
-                  ctx
-              end
+          ctx
+          |> mes("[Shena]")
+          |> mes("So, is there")
+          |> mes("anything else")
+          |> mes("you'd like me to")
+          |> mes("share with you?")
+          |> next()
 
-            ctx
-            |> mes("[Shena]")
-            |> mes("So, is there")
-            |> mes("anything else")
-            |> mes("you'd like me to")
-            |> mes("share with you?")
-            |> next()
-
-          5 ->
+        5 ->
+          ctx =
             ctx
             |> mes("[Shena]")
             |> mes("Alright then.")
@@ -343,15 +347,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbech.Shena do
             |> mes("on your travels, adventurer~")
             |> close()
 
-            exit(:normal)
+          throw({:script_end, ctx})
 
-          _ ->
-            ctx
-        end
+        _ ->
+          ctx
+      end
 
-      loop_2(ctx)
-    else
-      ctx
-    end
+    loop_2(ctx)
   end
 end

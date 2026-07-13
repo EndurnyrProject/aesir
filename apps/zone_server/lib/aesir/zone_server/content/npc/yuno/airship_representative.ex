@@ -86,8 +86,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Yuno.AirshipRepresentative do
 
           {ctx, _} = s_s_warp(ctx, ["alberta", 117, 56])
           {ctx, _} = s_s_warp(ctx, ["comodo", 209, 143])
-          close(ctx)
-          exit(:normal)
+          ctx = close(ctx)
+          throw({:script_end, ctx})
 
         2 ->
           ctx =
@@ -113,8 +113,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Yuno.AirshipRepresentative do
 
           {ctx, _} = s_s_warp(ctx, ["alberta", 117, 56])
           {ctx, _} = s_s_warp(ctx, ["comodo", 209, 143])
-          close(ctx)
-          exit(:normal)
+          ctx = close(ctx)
+          throw({:script_end, ctx})
 
         3 ->
           {ctx, _} = s_s_warp(ctx, ["geffen", 120, 39])
@@ -131,8 +131,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Yuno.AirshipRepresentative do
 
           {ctx, _} = s_s_warp(ctx, ["alberta", 117, 56])
           {ctx, _} = s_s_warp(ctx, ["comodo", 209, 143])
-          close(ctx)
-          exit(:normal)
+          ctx = close(ctx)
+          throw({:script_end, ctx})
 
         4 ->
           {ctx, _} = s_s_warp(ctx, ["morocc", 156, 46])
@@ -148,8 +148,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Yuno.AirshipRepresentative do
 
           {ctx, _} = s_s_warp(ctx, ["alberta", 117, 56])
           {ctx, _} = s_s_warp(ctx, ["comodo", 209, 143])
-          close(ctx)
-          exit(:normal)
+          ctx = close(ctx)
+          throw({:script_end, ctx})
 
         5 ->
           ctx =
@@ -163,23 +163,23 @@ defmodule Aesir.ZoneServer.Content.Npc.Yuno.AirshipRepresentative do
 
           {ctx, _} = s_s_warp(ctx, ["alberta", 117, 56])
           {ctx, _} = s_s_warp(ctx, ["comodo", 209, 143])
-          close(ctx)
-          exit(:normal)
+          ctx = close(ctx)
+          throw({:script_end, ctx})
 
         6 ->
           {ctx, _} = s_s_warp(ctx, ["alberta", 117, 56])
           {ctx, _} = s_s_warp(ctx, ["comodo", 209, 143])
-          close(ctx)
-          exit(:normal)
+          ctx = close(ctx)
+          throw({:script_end, ctx})
 
         7 ->
           {ctx, _} = s_s_warp(ctx, ["comodo", 209, 143])
-          close(ctx)
-          exit(:normal)
+          ctx = close(ctx)
+          throw({:script_end, ctx})
 
         8 ->
-          close(ctx)
-          exit(:normal)
+          ctx = close(ctx)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
@@ -187,23 +187,27 @@ defmodule Aesir.ZoneServer.Content.Npc.Yuno.AirshipRepresentative do
 
     {ctx, _} = s_s_warp(ctx, [])
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   defp s_s_warp(ctx, args) do
     if zeny(ctx) >= 1800 do
-      ctx
-      |> pay_zeny(1800)
-      |> todo(:warp, [Enum.at(args, 0, 0), Enum.at(args, 1, 0), Enum.at(args, 2, 0)])
+      ctx =
+        ctx
+        |> pay_zeny(1800)
+        |> todo(:warp, [Enum.at(args, 0, 0), Enum.at(args, 1, 0), Enum.at(args, 2, 0)])
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Airship Representative]")
-      |> mes("I regret to say that you do not have enough zeny with you.")
-      |> mes("Please check the amount of zeny that you have.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Airship Representative]")
+        |> mes("I regret to say that you do not have enough zeny with you.")
+        |> mes("Please check the amount of zeny that you have.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
   end
 end

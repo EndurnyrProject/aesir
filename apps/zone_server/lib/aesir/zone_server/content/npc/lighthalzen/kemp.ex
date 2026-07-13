@@ -26,7 +26,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Kemp do
     |> mes("strange is happening with")
     |> mes("all the people who work there.")
     |> close()
-
-    exit(:normal)
   end
 end

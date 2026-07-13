@@ -10,28 +10,36 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Npc13847 do
   use Aesir.ZoneServer.Npc, spawn: []
   alias Aesir.ZoneServer.Script.Rathena
   @impl true
-  def on_event("OnTouch", ctx), do: ev_ontouch(ctx)
+  def on_event("OnTouch", ctx) do
+    ev_ontouch(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
   @impl true
   def on_talk(ctx) do
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   def ev_ontouch(ctx) do
-    _ =
+    ctx =
       if get_char_var(ctx, :BaseJob, 0) == :assassin do
         ctx =
           if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
             ctx = ctx |> mes("^3355FF*Click*^000000") |> next()
 
-            ctx
-            |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
-            |> mes("What the...?")
-            |> mes("That sound. Did...")
-            |> mes("Did someone just")
-            |> mes("take my picture?")
-            |> close()
+            ctx =
+              ctx
+              |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
+              |> mes("What the...?")
+              |> mes("That sound. Did...")
+              |> mes("Did someone just")
+              |> mes("take my picture?")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
@@ -41,6 +49,6 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Npc13847 do
         ctx
       end
 
-    exit(:normal)
+    ctx
   end
 end

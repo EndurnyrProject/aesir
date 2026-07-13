@@ -29,7 +29,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.ElmerKeays do
     |> emotion(:chup)
     |> emotion(:chupchup)
     |> close()
-
-    exit(:normal)
   end
 end

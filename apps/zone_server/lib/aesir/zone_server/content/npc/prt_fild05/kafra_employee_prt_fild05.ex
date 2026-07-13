@@ -40,5 +40,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtFild05.KafraEmployeePrtFild05 do
       |> Aesir.ZoneServer.Content.Npc.Functions.FKafend.call([0, 1, "at the Prontera Culverts"])
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

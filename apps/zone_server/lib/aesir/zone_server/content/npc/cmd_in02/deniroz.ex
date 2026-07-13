@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.CmdIn02.Deniroz do
     |> mes("last time. Not again! Alright,")
     |> mes("j-just one more t-time...")
     |> close()
-
-    exit(:normal)
   end
 end

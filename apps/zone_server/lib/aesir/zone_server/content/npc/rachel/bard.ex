@@ -43,7 +43,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Rachel.Bard do
     |> mes(".........")
     |> emotion(:cry)
     |> close()
-
-    exit(:normal)
   end
 end

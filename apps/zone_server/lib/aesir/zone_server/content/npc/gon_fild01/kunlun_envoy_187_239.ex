@@ -18,7 +18,5 @@ defmodule Aesir.ZoneServer.Content.Npc.GonFild01.KunlunEnvoy187239 do
     |> mes("I hope you will have a great time")
     |> mes("while staying in Kunlun.")
     |> close()
-
-    exit(:normal)
   end
 end

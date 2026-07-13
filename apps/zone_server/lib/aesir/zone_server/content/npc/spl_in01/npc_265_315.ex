@@ -10,31 +10,40 @@ defmodule Aesir.ZoneServer.Content.Npc.SplIn01.Npc265315 do
   use Aesir.ZoneServer.Npc, spawn: []
 
   @impl true
-  def on_event("OnTouch", ctx), do: ev_ontouch(ctx)
+  def on_event("OnTouch", ctx) do
+    ev_ontouch(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
   @impl true
   def on_talk(ctx) do
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   def ev_ontouch(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Voice from another side]")
-      |> mes("Sir, Please!!!")
-      |> mes("How can I communicate secretly with Manuk!!")
-      |> mes("I'm innocent. Please.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Voice from another side]")
+        |> mes("Sir, Please!!!")
+        |> mes("How can I communicate secretly with Manuk!!")
+        |> mes("I'm innocent. Please.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Voice from another side]")
-      |> mes("RuffUdeneo Mu VilAsh")
-      |> mes("YurReDur Ha DielTalNe Ko Lars")
-      |> mes("HirVerWeh Yu AnuNud")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Voice from another side]")
+        |> mes("RuffUdeneo Mu VilAsh")
+        |> mes("YurReDur Ha DielTalNe Ko Lars")
+        |> mes("HirVerWeh Yu AnuNud")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
   end
 end

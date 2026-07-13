@@ -40,14 +40,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Jawaii.Mariner do
           |> mes("Izlude.")
           |> close()
 
-        _ =
+        ctx =
           if Rathena.truthy?(checkre(ctx, 0)) do
             warp(ctx, "izlude", 195, 212)
           else
             warp(ctx, "izlude", 176, 182)
           end
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -61,7 +61,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jawaii.Mariner do
     |> mes("a place that you can")
     |> mes("visit often, you know?")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

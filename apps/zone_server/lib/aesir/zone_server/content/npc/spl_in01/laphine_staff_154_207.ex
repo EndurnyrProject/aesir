@@ -13,29 +13,33 @@ defmodule Aesir.ZoneServer.Content.Npc.SplIn01.LaphineStaff154207 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) > 0 and get_char_var(ctx, :ep13_2_rhea, 0) > 99 do
-      ctx
-      |> mes("[Laphine Staff]")
-      |> mes("his camp serves a military purpose. But we also have a need for bars.")
-      |> next()
-      |> mes("[Laphine Staff]")
-      |> mes("How else can a soldier release stress if not through drinking...")
-      |> next()
-      |> mes("[Laphine Staff]")
-      |> mes(
-        "We are here to support the laphine soldier by giving good drinks and entertainment."
-      )
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Laphine Staff]")
+        |> mes("his camp serves a military purpose. But we also have a need for bars.")
+        |> next()
+        |> mes("[Laphine Staff]")
+        |> mes("How else can a soldier release stress if not through drinking...")
+        |> next()
+        |> mes("[Laphine Staff]")
+        |> mes(
+          "We are here to support the laphine soldier by giving good drinks and entertainment."
+        )
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Laphine Staff]")
-      |> mes("NorVerNuff Ee Re!")
-      |> mes("remuDurOdes Mu AshFus~!")
-      |> mes("OdesTalWeh Ur??? ")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Laphine Staff]")
+        |> mes("NorVerNuff Ee Re!")
+        |> mes("remuDurOdes Mu AshFus~!")
+        |> mes("OdesTalWeh Ur??? ")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

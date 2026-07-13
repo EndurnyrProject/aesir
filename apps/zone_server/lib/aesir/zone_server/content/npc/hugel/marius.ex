@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Hugel.Marius do
     |> mes("you how strong I am! Let's")
     |> mes("wrestle or something, kid~")
     |> close()
-
-    exit(:normal)
   end
 end

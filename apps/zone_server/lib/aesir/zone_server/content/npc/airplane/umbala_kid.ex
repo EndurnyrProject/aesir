@@ -30,6 +30,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.UmbalaKid do
       end
 
     close(ctx)
-    exit(:normal)
   end
 end

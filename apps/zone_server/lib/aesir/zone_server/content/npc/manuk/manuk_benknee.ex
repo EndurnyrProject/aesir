@@ -13,23 +13,27 @@ defmodule Aesir.ZoneServer.Content.Npc.Manuk.ManukBenknee do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Manuk Benknee]")
-      |> mes("Can you see that statue?")
-      |> mes("He's the Hwergelmir, who is like a legend for us Sapha.")
-      |> mes("He was a real majestic and brave man.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Manuk Benknee]")
+        |> mes("Can you see that statue?")
+        |> mes("He's the Hwergelmir, who is like a legend for us Sapha.")
+        |> mes("He was a real majestic and brave man.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Manuk Piom]")
-      |> mes("Ys oadj oa s d")
-      |> mes("Bni ii osd jo as das")
-      |> mes("Qa oj df isd oo o")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Manuk Piom]")
+        |> mes("Ys oadj oa s d")
+        |> mes("Bni ii osd jo as das")
+        |> mes("Qa oj df isd oo o")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

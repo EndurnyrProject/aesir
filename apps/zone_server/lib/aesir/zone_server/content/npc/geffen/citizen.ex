@@ -31,7 +31,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Geffen.Citizen do
     |> mes("I don't think that 4 sons of him")
     |> mes("went to the heaven with the anxiety.")
     |> close()
-
-    exit(:normal)
   end
 end

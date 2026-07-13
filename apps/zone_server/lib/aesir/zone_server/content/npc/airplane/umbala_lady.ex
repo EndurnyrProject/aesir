@@ -31,6 +31,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.UmbalaLady do
       end
 
     close(ctx)
-    exit(:normal)
   end
 end

@@ -29,7 +29,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn03.BadDrunk18629 do
     |> mes("Its the taste of happiness?")
     |> mes("I'm too drunk to even tell!")
     |> close()
-
-    exit(:normal)
   end
 end

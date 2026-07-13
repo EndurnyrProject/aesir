@@ -22,7 +22,5 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtMaze02.Soldier do
     |> mes("Don't you know there's a Demon living in this forest?! I can't guarantee your safety")
     |> mes("if you go in!")
     |> close()
-
-    exit(:normal)
   end
 end

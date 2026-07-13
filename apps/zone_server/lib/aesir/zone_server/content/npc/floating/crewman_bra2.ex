@@ -42,26 +42,32 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CrewmanBra2 do
           if zeny(ctx) < get_local(ctx, :cost, 0) do
             ctx = mes(ctx, "[Crewman]")
             v2 = insert_comma(ctx, get_local(ctx, :cost, 0))
-            ctx |> mes(Rathena.concat(Rathena.concat("I said ", v2), " zeny.")) |> close()
-            exit(:normal)
+            ctx = ctx |> mes(Rathena.concat(Rathena.concat("I said ", v2), " zeny.")) |> close()
+            throw({:script_end, ctx})
           else
             ctx = ctx |> mes("[Crewman]") |> mes("Cool~!! Let's go~!")
-            ctx |> pay_zeny(get_local(ctx, :cost, 0)) |> close() |> warp("brasilis", 314, 60)
-            exit(:normal)
+
+            ctx =
+              ctx |> pay_zeny(get_local(ctx, :cost, 0)) |> close() |> warp("brasilis", 314, 60)
+
+            throw({:script_end, ctx})
           end
 
         2 ->
-          ctx
-          |> mes("[Crewman]")
-          |> mes("Well if you're ever interested, let me know and I can take you there.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Crewman]")
+            |> mes("Well if you're ever interested, let me know and I can take you there.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

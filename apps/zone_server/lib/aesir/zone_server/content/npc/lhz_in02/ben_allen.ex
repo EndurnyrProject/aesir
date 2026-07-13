@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.BenAllen do
     |> mes("After a night's sleep over")
     |> mes("here, I feel like a new man!")
     |> close()
-
-    exit(:normal)
   end
 end

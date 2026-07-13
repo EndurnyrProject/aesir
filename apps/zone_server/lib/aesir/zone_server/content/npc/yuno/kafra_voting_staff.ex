@@ -14,5 +14,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Yuno.KafraVotingStaff do
   def on_talk(ctx) do
     {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FVotekafra.call(ctx, [9])
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

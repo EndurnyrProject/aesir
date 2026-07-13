@@ -49,7 +49,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbech.YoungMan do
       "of all that is good and holy, I'm begging you, please kill those foul and evil creatures. Please~!"
     )
     |> close()
-
-    exit(:normal)
   end
 end

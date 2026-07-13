@@ -116,6 +116,5 @@ defmodule Aesir.ZoneServer.Content.Npc.AldebaIn.KafraService83245 do
       end
 
     ctx |> close() |> cutin("", 255)
-    exit(:normal)
   end
 end

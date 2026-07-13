@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.CoolEventStaff36284 do
     |> mes("going out with me?")
     |> mes("That would be nice~")
     |> close()
-
-    exit(:normal)
   end
 end

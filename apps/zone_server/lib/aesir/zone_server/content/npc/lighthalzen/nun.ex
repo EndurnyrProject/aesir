@@ -34,7 +34,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Nun do
     |> mes("reason. I'm starting to get")
     |> mes("a little worried about this...")
     |> close()
-
-    exit(:normal)
   end
 end

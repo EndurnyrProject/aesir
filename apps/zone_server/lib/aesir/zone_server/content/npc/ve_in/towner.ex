@@ -24,7 +24,5 @@ defmodule Aesir.ZoneServer.Content.Npc.VeIn.Towner do
     |> mes("these days if I can just")
     |> mes("expand my knowledge.")
     |> close()
-
-    exit(:normal)
   end
 end

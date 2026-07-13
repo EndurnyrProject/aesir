@@ -23,7 +23,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Aldebaran.YoungMan do
       "Well, they're rarely seen in the open market, but boss monsters will drop them by a low chance if you happen to be able to kill them."
     )
     |> close()
-
-    exit(:normal)
   end
 end

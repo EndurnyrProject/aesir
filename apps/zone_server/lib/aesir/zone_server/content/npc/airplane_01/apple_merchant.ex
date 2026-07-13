@@ -16,15 +16,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.AppleMerchant do
   def on_talk(ctx) do
     ctx =
       if checkweight(ctx, [{1201, 1}]) == 0 do
-        ctx
-        |> mes("- Wait a minute !! -")
-        |> mes("- Currently you're carrying -")
-        |> mes("- too many items with you. -")
-        |> mes("- Please try again -")
-        |> mes("- after you lose some weight. -")
-        |> close()
+        ctx =
+          ctx
+          |> mes("- Wait a minute !! -")
+          |> mes("- Currently you're carrying -")
+          |> mes("- too many items with you. -")
+          |> mes("- Please try again -")
+          |> mes("- after you lose some weight. -")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -55,39 +56,42 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.AppleMerchant do
             |> loop_2()
 
           if zeny(ctx) < get_local(ctx, :pay, 0) do
-            ctx
-            |> mes("[Meltz]")
-            |> mes("I'm sorry, you don't have")
-            |> mes("enough money with you.")
-            |> mes("Please check your funds or")
-            |> mes("purchase less Apples.")
-            |> close()
-
-            exit(:normal)
-          else
-            if checkweight(ctx, [{512, get_local(ctx, :input, 0)}]) == 0 do
+            ctx =
               ctx
               |> mes("[Meltz]")
-              |> mes("Hmm, I don't think you've")
-              |> mes("got enough room to carry")
-              |> mes("this many Apples. You might")
-              |> mes("want to free up your inventory")
-              |> mes("space.")
+              |> mes("I'm sorry, you don't have")
+              |> mes("enough money with you.")
+              |> mes("Please check your funds or")
+              |> mes("purchase less Apples.")
               |> close()
 
-              exit(:normal)
+            throw({:script_end, ctx})
+          else
+            if checkweight(ctx, [{512, get_local(ctx, :input, 0)}]) == 0 do
+              ctx =
+                ctx
+                |> mes("[Meltz]")
+                |> mes("Hmm, I don't think you've")
+                |> mes("got enough room to carry")
+                |> mes("this many Apples. You might")
+                |> mes("want to free up your inventory")
+                |> mes("space.")
+                |> close()
+
+              throw({:script_end, ctx})
             else
               ctx = pay_zeny(ctx, get_local(ctx, :pay, 0))
 
-              ctx
-              |> give_item(512, get_local(ctx, :input, 0))
-              |> mes("[Meltz]")
-              |> mes("Thanks for stopping by")
-              |> mes("my shop. I hope you enjoy")
-              |> mes("the flavor of these Apples~!")
-              |> close()
+              ctx =
+                ctx
+                |> give_item(512, get_local(ctx, :input, 0))
+                |> mes("[Meltz]")
+                |> mes("Thanks for stopping by")
+                |> mes("my shop. I hope you enjoy")
+                |> mes("the flavor of these Apples~!")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             end
           end
 
@@ -106,92 +110,99 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.AppleMerchant do
             case v4 do
               1 ->
                 if count_item(ctx, 512) < 3 or count_item(ctx, 713) < 1 do
-                  ctx
-                  |> mes("[Meltz]")
-                  |> mes("I'm sorry, but you don't")
-                  |> mes("have enough materials to")
-                  |> mes("create a bottle of Apple Juice.")
-                  |> mes("Remember, I need 3 Apples")
-                  |> mes("and 1 Empty Bottle to do it.")
-                  |> close()
+                  ctx =
+                    ctx
+                    |> mes("[Meltz]")
+                    |> mes("I'm sorry, but you don't")
+                    |> mes("have enough materials to")
+                    |> mes("create a bottle of Apple Juice.")
+                    |> mes("Remember, I need 3 Apples")
+                    |> mes("and 1 Empty Bottle to do it.")
+                    |> close()
 
-                  exit(:normal)
+                  throw({:script_end, ctx})
                 else
-                  ctx
-                  |> mes("[Meltz]")
-                  |> mes("Thank you, please wait.")
-                  |> next()
-                  |> mes("^3355FF*Grind* *Grind*")
-                  |> mes("*Grind* *Grind*")
-                  |> mes("*Clang...!*^000000")
-                  |> next()
-                  |> delitem(512, 3)
-                  |> delitem(713, 1)
-                  |> give_item(531, 1)
-                  |> mes("[Meltz]")
-                  |> mes("There you go~")
-                  |> mes("Please come again.")
-                  |> close()
+                  ctx =
+                    ctx
+                    |> mes("[Meltz]")
+                    |> mes("Thank you, please wait.")
+                    |> next()
+                    |> mes("^3355FF*Grind* *Grind*")
+                    |> mes("*Grind* *Grind*")
+                    |> mes("*Clang...!*^000000")
+                    |> next()
+                    |> delitem(512, 3)
+                    |> delitem(713, 1)
+                    |> give_item(531, 1)
+                    |> mes("[Meltz]")
+                    |> mes("There you go~")
+                    |> mes("Please come again.")
+                    |> close()
 
-                  exit(:normal)
+                  throw({:script_end, ctx})
                 end
 
               2 ->
-                ctx
-                |> mes("[Meltz]")
-                |> mes("Thanks for stopping")
-                |> mes("by my shop. Farewell!")
-                |> mes("Come by anytime when")
-                |> mes("you feel like having an")
-                |> mes("Apple to snack on~")
-                |> close()
+                ctx =
+                  ctx
+                  |> mes("[Meltz]")
+                  |> mes("Thanks for stopping")
+                  |> mes("by my shop. Farewell!")
+                  |> mes("Come by anytime when")
+                  |> mes("you feel like having an")
+                  |> mes("Apple to snack on~")
+                  |> close()
 
-                exit(:normal)
+                throw({:script_end, ctx})
 
               _ ->
                 ctx
             end
 
-          ctx
-          |> mes("[Meltz]")
-          |> mes("Thanks for stopping")
-          |> mes("by my shop. Farewell!")
-          |> mes("Come by anytime when")
-          |> mes("you feel like having an")
-          |> mes("Apple to snack on~")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Meltz]")
+            |> mes("Thanks for stopping")
+            |> mes("by my shop. Farewell!")
+            |> mes("Come by anytime when")
+            |> mes("you feel like having an")
+            |> mes("Apple to snack on~")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx
-          |> mes("[Meltz]")
-          |> mes("Thanks for stopping")
-          |> mes("by my shop. Farewell!")
-          |> mes("Come by anytime when")
-          |> mes("you feel like having an")
-          |> mes("Apple to snack on~")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Meltz]")
+            |> mes("Thanks for stopping")
+            |> mes("by my shop. Farewell!")
+            |> mes("Come by anytime when")
+            |> mes("you feel like having an")
+            |> mes("Apple to snack on~")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   defp loop_2(ctx) do
-    if true do
-      result =
-        try do
-          {ctx, v2} = input(ctx, :int)
-          ctx = set_local(ctx, :input, v2)
-          ctx = set_local(ctx, :pay, get_local(ctx, :input, 0) * 15)
+    result =
+      try do
+        {ctx, v2} = input(ctx, :int)
+        ctx = set_local(ctx, :input, v2)
+        ctx = set_local(ctx, :pay, get_local(ctx, :input, 0) * 15)
 
-          ctx =
-            if get_local(ctx, :input, 0) == 0 do
+        ctx =
+          if get_local(ctx, :input, 0) == 0 do
+            ctx =
               ctx
               |> mes("[Meltz]")
               |> mes("Thanks for stopping")
@@ -201,44 +212,45 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.AppleMerchant do
               |> mes("Apple to snack on~")
               |> close()
 
-              exit(:normal)
-            else
-              ctx =
-                if get_local(ctx, :input, 0) < 1 or get_local(ctx, :input, 0) > 500 do
+            throw({:script_end, ctx})
+          else
+            ctx =
+              if get_local(ctx, :input, 0) < 1 or get_local(ctx, :input, 0) > 500 do
+                ctx
+                |> mes("[Meltz]")
+                |> mes("You've entered a number")
+                |> mes("higher than the maximum")
+                |> mes("value of 500. Please enter")
+                |> mes("the number of Apples you")
+                |> mes("wish to purchase again.")
+                |> next()
+              else
+                ctx = mes(ctx, "[Meltz]")
+
+                ctx =
+                  mes(
+                    ctx,
+                    Rathena.concat(
+                      Rathena.concat("A total of ^FF0000", get_local(ctx, :input, 0)),
+                      "^000000 Apples"
+                    )
+                  )
+
+                {ctx, v3} =
                   ctx
-                  |> mes("[Meltz]")
-                  |> mes("You've entered a number")
-                  |> mes("higher than the maximum")
-                  |> mes("value of 500. Please enter")
-                  |> mes("the number of Apples you")
-                  |> mes("wish to purchase again.")
+                  |> mes(
+                    Rathena.concat(
+                      Rathena.concat("will cost you ^FF0000", get_local(ctx, :pay, 0)),
+                      "^000000 zeny."
+                    )
+                  )
+                  |> mes("Would you like to continue?")
                   |> next()
-                else
-                  ctx = mes(ctx, "[Meltz]")
+                  |> select(["Yes", "No"])
 
-                  ctx =
-                    mes(
-                      ctx,
-                      Rathena.concat(
-                        Rathena.concat("A total of ^FF0000", get_local(ctx, :input, 0)),
-                        "^000000 Apples"
-                      )
-                    )
-
-                  {ctx, v3} =
-                    ctx
-                    |> mes(
-                      Rathena.concat(
-                        Rathena.concat("will cost you ^FF0000", get_local(ctx, :pay, 0)),
-                        "^000000 zeny."
-                      )
-                    )
-                    |> mes("Would you like to continue?")
-                    |> next()
-                    |> select(["Yes", "No"])
-
-                  ctx =
-                    if v3 == 2 do
+                ctx =
+                  if v3 == 2 do
+                    ctx =
                       ctx
                       |> mes("[Meltz]")
                       |> mes("Thanks for stopping")
@@ -248,29 +260,26 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.AppleMerchant do
                       |> mes("Apple to snack on~")
                       |> close()
 
-                      exit(:normal)
-                    else
-                      ctx
-                    end
+                    throw({:script_end, ctx})
+                  else
+                    ctx
+                  end
 
-                  throw({:brk_2, ctx})
-                end
+                throw({:brk_2, ctx})
+              end
 
-              ctx
-            end
+            ctx
+          end
 
-          {:next, ctx}
-        catch
-          :throw, {:brk_2, ctx} -> {:done, ctx}
-          :throw, {:cont_2, ctx} -> {:next, ctx}
-        end
-
-      case result do
-        {:next, ctx} -> loop_2(ctx)
-        {:done, ctx} -> ctx
+        {:next, ctx}
+      catch
+        :throw, {:brk_2, ctx} -> {:done, ctx}
+        :throw, {:cont_2, ctx} -> {:next, ctx}
       end
-    else
-      ctx
+
+    case result do
+      {:next, ctx} -> loop_2(ctx)
+      {:done, ctx} -> ctx
     end
   end
 end

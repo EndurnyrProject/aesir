@@ -18,39 +18,41 @@ defmodule Aesir.ZoneServer.Content.Npc.Alberta.Phelix do
 
     ctx =
       if get_char_var(ctx, :MaxWeight, 0) - weight(ctx) < 10000 do
-        ctx
-        |> mes("Wait a moment!!")
-        |> mes("You have brought too many things!")
-        |> mes("You cannot accept any more items!")
-        |> mes("Please reduce the amount of items,")
-        |> mes("then come see me again.")
-        |> close()
+        ctx =
+          ctx
+          |> mes("Wait a moment!!")
+          |> mes("You have brought too many things!")
+          |> mes("You cannot accept any more items!")
+          |> mes("Please reduce the amount of items,")
+          |> mes("then come see me again.")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
 
     ctx =
       if get_temp_var(ctx, :event_zelopy, 0) == 0 do
-        ctx
-        |> mes("The hell are you doing here?")
-        |> mes(
-          "There is nothing you can get for free on this ship, if you want somethin', work for it!!"
-        )
-        |> next()
-        |> mes("[Phelix]")
-        |> mes(
-          "Hmm, so why don't you bring me 10 Jellopies and I will give 1 potion. How's that sound?"
-        )
-        |> mes("Or if that's too hard for your pansy ass, 3 Jellopies for 1 Carrot.")
-        |> next()
-        |> mes("[Phelix]")
-        |> mes("If you're interested in my offer, get me the stuff I mentioned.")
-        |> set_temp_var(:event_zelopy, 1)
-        |> close()
+        ctx =
+          ctx
+          |> mes("The hell are you doing here?")
+          |> mes(
+            "There is nothing you can get for free on this ship, if you want somethin', work for it!!"
+          )
+          |> next()
+          |> mes("[Phelix]")
+          |> mes(
+            "Hmm, so why don't you bring me 10 Jellopies and I will give 1 potion. How's that sound?"
+          )
+          |> mes("Or if that's too hard for your pansy ass, 3 Jellopies for 1 Carrot.")
+          |> next()
+          |> mes("[Phelix]")
+          |> mes("If you're interested in my offer, get me the stuff I mentioned.")
+          |> set_temp_var(:event_zelopy, 1)
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -76,13 +78,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Alberta.Phelix do
             |> mes("[Phelix]")
 
           if count_item(ctx, 909) < 10 do
-            ctx
-            |> mes(
-              "Hey! Weren't you listening? I said 10 Jellopies for 1 Red Potion.. are ya deaf?"
-            )
-            |> close()
+            ctx =
+              ctx
+              |> mes(
+                "Hey! Weren't you listening? I said 10 Jellopies for 1 Red Potion.. are ya deaf?"
+              )
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             {ctx, v2} =
               ctx
@@ -128,34 +131,36 @@ defmodule Aesir.ZoneServer.Content.Npc.Alberta.Phelix do
 
                   ctx =
                     if get_local(ctx, :amount, 0) <= 0 do
-                      ctx |> mes("Much obliged, come again anytime.") |> close()
-                      exit(:normal)
+                      ctx = ctx |> mes("Much obliged, come again anytime.") |> close()
+                      throw({:script_end, ctx})
                     else
                       ctx
                     end
 
                   ctx =
                     if get_local(ctx, :amount, 0) > 100 do
-                      ctx
-                      |> mes(
-                        "Hey, what'd I say? 100 at a time at most, you're trying to kill me aren't you!"
-                      )
-                      |> close()
+                      ctx =
+                        ctx
+                        |> mes(
+                          "Hey, what'd I say? 100 at a time at most, you're trying to kill me aren't you!"
+                        )
+                        |> close()
 
-                      exit(:normal)
+                      throw({:script_end, ctx})
                     else
                       ctx
                     end
 
                   ctx =
                     if count_item(ctx, 909) < get_local(ctx, :amount, 0) * 10 do
-                      ctx
-                      |> mes(
-                        "Hmm, it looks like you don't have enough. Go get more Jellopies if you want anything else from me."
-                      )
-                      |> close()
+                      ctx =
+                        ctx
+                        |> mes(
+                          "Hmm, it looks like you don't have enough. Go get more Jellopies if you want anything else from me."
+                        )
+                        |> close()
 
-                      exit(:normal)
+                      throw({:script_end, ctx})
                     else
                       ctx
                     end
@@ -164,24 +169,26 @@ defmodule Aesir.ZoneServer.Content.Npc.Alberta.Phelix do
                   give_item(ctx, 501, get_local(ctx, :amount, 0))
 
                 3 ->
-                  ctx
-                  |> mes("[Phelix]")
-                  |> mes("No problem,")
-                  |> mes("see you next time.")
-                  |> close()
+                  ctx =
+                    ctx
+                    |> mes("[Phelix]")
+                    |> mes("No problem,")
+                    |> mes("see you next time.")
+                    |> close()
 
-                  exit(:normal)
+                  throw({:script_end, ctx})
 
                 _ ->
                   ctx
               end
 
-            ctx
-            |> mes("[Phelix]")
-            |> mes("There you go! As I promised. Don't go suckin' them all down at once.")
-            |> close()
+            ctx =
+              ctx
+              |> mes("[Phelix]")
+              |> mes("There you go! As I promised. Don't go suckin' them all down at once.")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           end
 
         2 ->
@@ -194,11 +201,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Alberta.Phelix do
 
           ctx =
             if count_item(ctx, 909) < 3 do
-              ctx
-              |> mes("Hmm, look pansy ass, I said 3 Jellopies for 1 Carrot.. got it?")
-              |> close()
+              ctx =
+                ctx
+                |> mes("Hmm, look pansy ass, I said 3 Jellopies for 1 Carrot.. got it?")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
               ctx
             end
@@ -234,34 +242,36 @@ defmodule Aesir.ZoneServer.Content.Npc.Alberta.Phelix do
 
                 ctx =
                   if get_local(ctx, :amount, 0) == 0 do
-                    ctx |> mes("Alright then, see you next time.") |> close()
-                    exit(:normal)
+                    ctx = ctx |> mes("Alright then, see you next time.") |> close()
+                    throw({:script_end, ctx})
                   else
                     ctx
                   end
 
                 ctx =
                   if get_local(ctx, :amount, 0) > 100 do
-                    ctx
-                    |> mes(
-                      "Hey pansy ass, I said 100 at most, no more than that! I'm not going to break my back for the likes of you!"
-                    )
-                    |> close()
+                    ctx =
+                      ctx
+                      |> mes(
+                        "Hey pansy ass, I said 100 at most, no more than that! I'm not going to break my back for the likes of you!"
+                      )
+                      |> close()
 
-                    exit(:normal)
+                    throw({:script_end, ctx})
                   else
                     ctx
                   end
 
                 ctx =
                   if count_item(ctx, 909) < get_local(ctx, :amount, 0) * 3 do
-                    ctx
-                    |> mes(
-                      "Seems you don't have enough. Go get some more if you want anything else."
-                    )
-                    |> close()
+                    ctx =
+                      ctx
+                      |> mes(
+                        "Seems you don't have enough. Go get some more if you want anything else."
+                      )
+                      |> close()
 
-                    exit(:normal)
+                    throw({:script_end, ctx})
                   else
                     ctx
                   end
@@ -270,24 +280,27 @@ defmodule Aesir.ZoneServer.Content.Npc.Alberta.Phelix do
                 give_item(ctx, 515, get_local(ctx, :amount, 0))
 
               3 ->
-                ctx |> mes("[Phelix]") |> mes("Catch'ya later.") |> close()
-                exit(:normal)
+                ctx = ctx |> mes("[Phelix]") |> mes("Catch'ya later.") |> close()
+                throw({:script_end, ctx})
 
               _ ->
                 ctx
             end
 
-          ctx
-          |> mes("[Phelix]")
-          |> mes("There you go~! As I promised. Try not to stuff yer face.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Phelix]")
+            |> mes("There you go~! As I promised. Try not to stuff yer face.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

@@ -39,51 +39,57 @@ defmodule Aesir.ZoneServer.Content.Npc.Yuno.JunoSage do
 
         ctx =
           if v1 == 1 do
-            ctx
-            |> mes("[Le Morpheus]")
-            |> mes(
-              "As you have chosen, you will forget everything, and remain in this virtual reality."
-            )
-            |> pay_zeny(5000)
-            |> give_item(507, 1)
-            |> close()
-            |> warp("prontera", 182, 206)
+            ctx =
+              ctx
+              |> mes("[Le Morpheus]")
+              |> mes(
+                "As you have chosen, you will forget everything, and remain in this virtual reality."
+              )
+              |> pay_zeny(5000)
+              |> give_item(507, 1)
+              |> close()
+              |> warp("prontera", 182, 206)
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
 
-        ctx
-        |> mes("[Le Morpheus]")
-        |> mes("You will see the truth.")
-        |> pay_zeny(5000)
-        |> give_item(510, 1)
-        |> close()
-        |> warp("pay_dun03", 200, 222)
+        ctx =
+          ctx
+          |> mes("[Le Morpheus]")
+          |> mes("You will see the truth.")
+          |> pay_zeny(5000)
+          |> give_item(510, 1)
+          |> close()
+          |> warp("pay_dun03", 200, 222)
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
+        ctx =
+          ctx
+          |> mes(
+            "Hmm. I'm sorry to say you just missed a fortunate chance. However, I can tell you don't have enough wealth to bring this fortune to fruition."
+          )
+          |> close()
+
+        throw({:script_end, ctx})
+      end
+    else
+      ctx =
         ctx
+        |> mes("^3355FFApocalypse^000000...")
+        |> mes("It is the name of an android that used to guard Juno long ago.")
+        |> next()
+        |> mes("[Le Morpheus]")
         |> mes(
-          "Hmm. I'm sorry to say you just missed a fortunate chance. However, I can tell you don't have enough wealth to bring this fortune to fruition."
+          "Because its artificial intelligence has corrupted over the years, it can no longer distinguish comrades from enemies. Sadly, that android is nothing but a mindless monster now."
         )
         |> close()
 
-        exit(:normal)
-      end
-    else
-      ctx
-      |> mes("^3355FFApocalypse^000000...")
-      |> mes("It is the name of an android that used to guard Juno long ago.")
-      |> next()
-      |> mes("[Le Morpheus]")
-      |> mes(
-        "Because its artificial intelligence has corrupted over the years, it can no longer distinguish comrades from enemies. Sadly, that android is nothing but a mindless monster now."
-      )
-      |> close()
-
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

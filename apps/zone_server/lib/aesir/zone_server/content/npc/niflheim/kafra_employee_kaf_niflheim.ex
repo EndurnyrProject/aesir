@@ -30,5 +30,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Niflheim.KafraEmployeeKafNiflheim do
       |> Aesir.ZoneServer.Content.Npc.Functions.FKafend.call([1, 1, "in the city of Niflheim"])
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

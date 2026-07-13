@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.CenkuDekdam do
     |> mes("makes this city such a nice")
     |> mes("and pleasant place to live.")
     |> close()
-
-    exit(:normal)
   end
 end

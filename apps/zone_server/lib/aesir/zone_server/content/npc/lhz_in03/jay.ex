@@ -25,7 +25,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn03.Jay do
     |> mes("eating with anybody.")
     |> mes("Maybe I'm just lonely.")
     |> close()
-
-    exit(:normal)
   end
 end

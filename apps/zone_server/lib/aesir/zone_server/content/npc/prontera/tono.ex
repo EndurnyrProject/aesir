@@ -34,7 +34,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Prontera.Tono do
       "Pickys are so cute when they're young, but when they grow up, they turn into those big, gawky looking Peco Pecos. Talk about awkward puberty."
     )
     |> close()
-
-    exit(:normal)
   end
 end

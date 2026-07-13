@@ -246,7 +246,9 @@ defmodule Aesir.ZoneServer.Npc.Events do
   # Runs the handler with nothing swallowed: an exception, exit, or throw is
   # logged with the {module, label, reason} that caused it, then propagated
   # faithfully so the task still dies with its original reason — only the log
-  # line is new, not the crash behavior.
+  # line is new, not the crash behavior. The one exception is the script
+  # termination protocol: `{:script_end, ctx}` is a transpiled `close`/`end`
+  # unwinding cleanly, not a crash, so it resolves to the final ctx.
   @spec run_detached(module(), non_neg_integer(), String.t()) :: any()
   defp run_detached(module, gid, label) do
     module.on_event(label, Ctx.detached(module, gid))
@@ -255,6 +257,9 @@ defmodule Aesir.ZoneServer.Npc.Events do
       log_crash(module, label, reason)
       reraise reason, __STACKTRACE__
   catch
+    :throw, {:script_end, %Ctx{} = ctx} ->
+      ctx
+
     :exit, reason ->
       log_crash(module, label, reason)
       exit(reason)

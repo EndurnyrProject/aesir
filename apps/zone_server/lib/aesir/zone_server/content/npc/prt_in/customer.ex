@@ -18,57 +18,58 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtIn.Customer do
 
     ctx =
       if not Rathena.truthy?(getpartnerid(ctx)) do
-        ctx
-        |> mes("Oh man...")
-        |> mes("I think I'm drunk~")
-        |> mes("^666666*Hiccup...!*^000000")
-        |> next()
-        |> mes("[SoloHan]")
-        |> mes("Hey, you...!")
-        |> mes("You understand, don't you?!")
-        |> mes("Aren't you upset looking at all these happily married couples?!")
-        |> mes("Yeah~? Me too!")
-        |> next()
-        |> mes("[SoloHan]")
-        |> mes(
-          "How dare they show off their happiness in front of people like us--!! ^666666*Sniff*^000000 Just because they found everlasting love, they think they're better than we are?!"
-        )
-        |> next()
-        |> mes("[SoloHan]")
-        |> mes(
-          "I remember when couples were polite and were lovey dovey behind closed doors. Nowadays they hold hands, and even cuddle in public. I mean, come on! Get a room!"
-        )
-        |> next()
-        |> mes("[SoloHan]")
-        |> mes("I mean, ^666666*Sniff*^000000, it's not like,")
-        |> mes("I'm lonely or anything. I don't neeeeeeeed a woman~!")
-        |> mes("Right, Bachewcca!")
-        |> next()
-        |> mes("[Bachewcca]")
-        |> mes("...!")
-        |> emotion(:best)
-        |> next()
-        |> mes("[SoloHan]")
-        |> mes("It's doesn't really matter whether you're married")
-        |> mes("or not, right buddy? Right?!")
-        |> mes("Come on! Drink with me!!")
-        |> next()
-        |> mes(
-          "^3355FFSuddenly he treated me as a close friend. It's a little embarrassing, but it's not a bad idea to accept"
-        )
-        |> mes("a free drink...^000000")
-        |> next()
-        |> mes("^3355FF* Gulp Gulp Gulp *^000000")
-        |> percent_heal(hp: -10, sp: 0)
-        |> next()
-        |> mes("[SoloHan]")
-        |> mes("So, what do you say?")
-        |> mes("Let's go somewhere")
-        |> mes("with some real liquor.")
-        |> loop_1()
-        |> warp("jawaii_in", 44, 124)
+        ctx =
+          ctx
+          |> mes("Oh man...")
+          |> mes("I think I'm drunk~")
+          |> mes("^666666*Hiccup...!*^000000")
+          |> next()
+          |> mes("[SoloHan]")
+          |> mes("Hey, you...!")
+          |> mes("You understand, don't you?!")
+          |> mes("Aren't you upset looking at all these happily married couples?!")
+          |> mes("Yeah~? Me too!")
+          |> next()
+          |> mes("[SoloHan]")
+          |> mes(
+            "How dare they show off their happiness in front of people like us--!! ^666666*Sniff*^000000 Just because they found everlasting love, they think they're better than we are?!"
+          )
+          |> next()
+          |> mes("[SoloHan]")
+          |> mes(
+            "I remember when couples were polite and were lovey dovey behind closed doors. Nowadays they hold hands, and even cuddle in public. I mean, come on! Get a room!"
+          )
+          |> next()
+          |> mes("[SoloHan]")
+          |> mes("I mean, ^666666*Sniff*^000000, it's not like,")
+          |> mes("I'm lonely or anything. I don't neeeeeeeed a woman~!")
+          |> mes("Right, Bachewcca!")
+          |> next()
+          |> mes("[Bachewcca]")
+          |> mes("...!")
+          |> emotion(:best)
+          |> next()
+          |> mes("[SoloHan]")
+          |> mes("It's doesn't really matter whether you're married")
+          |> mes("or not, right buddy? Right?!")
+          |> mes("Come on! Drink with me!!")
+          |> next()
+          |> mes(
+            "^3355FFSuddenly he treated me as a close friend. It's a little embarrassing, but it's not a bad idea to accept"
+          )
+          |> mes("a free drink...^000000")
+          |> next()
+          |> mes("^3355FF* Gulp Gulp Gulp *^000000")
+          |> percent_heal(hp: -10, sp: 0)
+          |> next()
+          |> mes("[SoloHan]")
+          |> mes("So, what do you say?")
+          |> mes("Let's go somewhere")
+          |> mes("with some real liquor.")
+          |> loop_1()
+          |> warp("jawaii_in", 44, 124)
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx =
           if Rathena.truthy?(getpartnerid(ctx)) do
@@ -95,20 +96,21 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtIn.Customer do
                 |> mes("hubby around or something!")
               end
 
-            ctx
-            |> next()
-            |> mes("[SoloHan]")
-            |> mes("Leave me alone!")
-            |> mes(
-              "I don't want any of your marital bliss to rub off on me. Come on, Bachewcca! Tell 'em their kind ain't welcome here!"
-            )
-            |> next()
-            |> mes("[Bachewcca]")
-            |> mes("^666666*Grrr...!*^000000")
-            |> specialeffect(:throwitem)
-            |> close()
+            ctx =
+              ctx
+              |> next()
+              |> mes("[SoloHan]")
+              |> mes("Leave me alone!")
+              |> mes(
+                "I don't want any of your marital bliss to rub off on me. Come on, Bachewcca! Tell 'em their kind ain't welcome here!"
+              )
+              |> next()
+              |> mes("[Bachewcca]")
+              |> mes("^666666*Grrr...!*^000000")
+              |> specialeffect(:throwitem)
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
@@ -125,74 +127,74 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtIn.Customer do
     |> mes("What is that...?")
     |> mes("Is this the third time this week I've gotten plastered? Bachewcca, help me count!")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   defp loop_1(ctx) do
-    if true do
-      result =
-        try do
-          {ctx, v1} =
-            ctx |> next() |> select(["...One more drink.", "...What kind of place is it?"])
+    result =
+      try do
+        {ctx, v1} =
+          ctx |> next() |> select(["...One more drink.", "...What kind of place is it?"])
 
-          ctx =
-            if v1 == 1 do
-              ctx =
-                ctx
-                |> mes("[SoloHan]")
-                |> mes("Yeah~!")
-                |> mes("That's the spirit!")
-                |> mes("Hey, Bachewcca...")
-                |> mes("Let's drink!")
-                |> next()
-                |> mes("[Bachewcca]")
-                |> mes("^666666*Grunt!*^000000")
-                |> specialeffect(:talk_scream)
-                |> next()
-                |> mes("[SoloHan]")
-                |> mes("To...")
-                |> mes("To being single!")
-                |> mes("F-Forever!!!")
-                |> next()
-                |> mes("^3355FF* Gulp Gulp Gulp *^000000")
-                |> percent_heal(hp: -10, sp: 0)
-                |> next()
+        ctx =
+          if v1 == 1 do
+            ctx =
+              ctx
+              |> mes("[SoloHan]")
+              |> mes("Yeah~!")
+              |> mes("That's the spirit!")
+              |> mes("Hey, Bachewcca...")
+              |> mes("Let's drink!")
+              |> next()
+              |> mes("[Bachewcca]")
+              |> mes("^666666*Grunt!*^000000")
+              |> specialeffect(:talk_scream)
+              |> next()
+              |> mes("[SoloHan]")
+              |> mes("To...")
+              |> mes("To being single!")
+              |> mes("F-Forever!!!")
+              |> next()
+              |> mes("^3355FF* Gulp Gulp Gulp *^000000")
+              |> percent_heal(hp: -10, sp: 0)
+              |> next()
 
-              ctx =
-                ctx |> set_local(:jaw_roof, get_local(ctx, :jaw_roof, 0) + 2) |> mes("[SoloHan]")
+            ctx =
+              ctx |> set_local(:jaw_roof, get_local(ctx, :jaw_roof, 0) + 2) |> mes("[SoloHan]")
 
-              ctx =
-                if get_local(ctx, :jaw_roof, 0) > 8 do
-                  {ctx, v2} =
-                    ctx
-                    |> mes("Whoa...")
-                    |> mes("You alright?")
-                    |> mes("You seem kind of drunk...")
-                    |> next()
-                    |> mes("[SoloHan]")
-                    |> mes(
-                      "I guess now's the perfect time to have you sign this! Don't worry, I'll send you straight to paradise!"
-                    )
-                    |> next()
-                    |> select(["Sign", "Refuse to Sign"])
+            ctx =
+              if get_local(ctx, :jaw_roof, 0) > 8 do
+                {ctx, v2} =
+                  ctx
+                  |> mes("Whoa...")
+                  |> mes("You alright?")
+                  |> mes("You seem kind of drunk...")
+                  |> next()
+                  |> mes("[SoloHan]")
+                  |> mes(
+                    "I guess now's the perfect time to have you sign this! Don't worry, I'll send you straight to paradise!"
+                  )
+                  |> next()
+                  |> select(["Sign", "Refuse to Sign"])
 
-                  ctx =
-                    if v2 == 1 do
-                      ctx =
-                        ctx
-                        |> mes("[SoloHan]")
-                        |> mes("Alright!")
-                        |> mes("Take care!")
-                        |> mes("Hahaha!")
-                        |> close()
-                        |> percent_heal(hp: 100, sp: 0)
-
-                      throw({:brk_1, ctx})
-                    else
+                ctx =
+                  if v2 == 1 do
+                    ctx =
                       ctx
-                    end
+                      |> mes("[SoloHan]")
+                      |> mes("Alright!")
+                      |> mes("Take care!")
+                      |> mes("Hahaha!")
+                      |> close()
+                      |> percent_heal(hp: 100, sp: 0)
 
+                    throw({:brk_1, ctx})
+                  else
+                    ctx
+                  end
+
+                ctx =
                   ctx
                   |> mes("[SoloHan]")
                   |> mes("Oh...")
@@ -201,45 +203,46 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtIn.Customer do
                   |> mes("like this all the time, eh?")
                   |> close()
 
-                  exit(:normal)
-                else
-                  ctx
-                end
-
-              ctx
-            else
-              ctx
-            end
-
-          ctx =
-            if get_local(ctx, :jaw_roof, 0) > 6 do
-              {ctx, v3} =
+                throw({:script_end, ctx})
+              else
                 ctx
-                |> mes("[SoloHan]")
-                |> mes("^666666*Hiccup!*^000000")
-                |> mes("So you feel like having some")
-                |> mes(
-                  "real fun? Okay, then just sign over here. Count on me, I'll send you to paradise."
-                )
-                |> next()
-                |> select(["Sign", "Refuse to Sign"])
+              end
 
-              ctx =
-                if v3 == 1 do
-                  ctx =
-                    ctx
-                    |> mes("[SoloHan]")
-                    |> mes("Alright~!")
-                    |> mes("Take care and have fun!")
-                    |> mes("Harass some couples over there for me, will you?")
-                    |> close()
-                    |> percent_heal(hp: 100, sp: 0)
+            ctx
+          else
+            ctx
+          end
 
-                  throw({:brk_1, ctx})
-                else
+        ctx =
+          if get_local(ctx, :jaw_roof, 0) > 6 do
+            {ctx, v3} =
+              ctx
+              |> mes("[SoloHan]")
+              |> mes("^666666*Hiccup!*^000000")
+              |> mes("So you feel like having some")
+              |> mes(
+                "real fun? Okay, then just sign over here. Count on me, I'll send you to paradise."
+              )
+              |> next()
+              |> select(["Sign", "Refuse to Sign"])
+
+            ctx =
+              if v3 == 1 do
+                ctx =
                   ctx
-                end
+                  |> mes("[SoloHan]")
+                  |> mes("Alright~!")
+                  |> mes("Take care and have fun!")
+                  |> mes("Harass some couples over there for me, will you?")
+                  |> close()
+                  |> percent_heal(hp: 100, sp: 0)
 
+                throw({:brk_1, ctx})
+              else
+                ctx
+              end
+
+            ctx =
               ctx
               |> mes("[SoloHan]")
               |> mes("Oh...")
@@ -249,40 +252,37 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtIn.Customer do
               )
               |> close()
 
-              exit(:normal)
-            else
-              ctx
-            end
-
-          ctx =
+            throw({:script_end, ctx})
+          else
             ctx
-            |> set_local(:jaw_roof, get_local(ctx, :jaw_roof, 0) + 3)
-            |> mes("[SoloHan]")
-            |> mes("Drink, drink!")
-            |> mes("That's not enough!")
-            |> mes("Drink more, buddy!")
-            |> next()
-            |> mes("[SoloHan]")
-            |> mes("To...")
-            |> mes("To being single!")
-            |> mes("FOR EVER.")
-            |> next()
-            |> mes("^3355FF*Gulp Gulp Gulp*^000000")
-            |> percent_heal(hp: -10, sp: 0)
-            |> next()
+          end
 
-          {:next, ctx}
-        catch
-          :throw, {:brk_1, ctx} -> {:done, ctx}
-          :throw, {:cont_1, ctx} -> {:next, ctx}
-        end
+        ctx =
+          ctx
+          |> set_local(:jaw_roof, get_local(ctx, :jaw_roof, 0) + 3)
+          |> mes("[SoloHan]")
+          |> mes("Drink, drink!")
+          |> mes("That's not enough!")
+          |> mes("Drink more, buddy!")
+          |> next()
+          |> mes("[SoloHan]")
+          |> mes("To...")
+          |> mes("To being single!")
+          |> mes("FOR EVER.")
+          |> next()
+          |> mes("^3355FF*Gulp Gulp Gulp*^000000")
+          |> percent_heal(hp: -10, sp: 0)
+          |> next()
 
-      case result do
-        {:next, ctx} -> loop_1(ctx)
-        {:done, ctx} -> ctx
+        {:next, ctx}
+      catch
+        :throw, {:brk_1, ctx} -> {:done, ctx}
+        :throw, {:cont_1, ctx} -> {:next, ctx}
       end
-    else
-      ctx
+
+    case result do
+      {:next, ctx} -> loop_1(ctx)
+      {:done, ctx} -> ctx
     end
   end
 end

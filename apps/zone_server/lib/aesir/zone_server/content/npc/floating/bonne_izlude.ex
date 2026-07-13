@@ -39,7 +39,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.BonneIzlude do
     |> mes("your visit")
     |> mes("here in Izlude.")
     |> close()
-
-    exit(:normal)
   end
 end

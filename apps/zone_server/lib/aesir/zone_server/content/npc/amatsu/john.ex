@@ -67,7 +67,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Amatsu.John do
     |> mes("in Amatsu, but...")
     |> mes("I guess it's over...")
     |> close()
-
-    exit(:normal)
   end
 end

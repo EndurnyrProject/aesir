@@ -36,70 +36,74 @@ defmodule Aesir.ZoneServer.Content.Npc.Alberta.DrunkenOldMan do
           ctx =
             case v2 do
               1 ->
-                ctx
-                |> mes("[Deagle]")
-                |> mes(
-                  "Never heard of it?! Everybody knows th'notorious pirate ship 'Going Mary!' ^666666*Hiccup~*^000000"
-                )
-                |> next()
-                |> mes("[Deagle]")
-                |> mes(
-                  "Ah~ The ol'days. If only... If only we hadn't run into that STORM...^666666*hiccup*^000000"
-                )
-                |> next()
-                |> mes("[Deagle]")
-                |> mes(
-                  "AH~ Captain. I miss our cap'n more than anything... No foe survived before cap'n's sword."
-                )
-                |> close()
+                ctx =
+                  ctx
+                  |> mes("[Deagle]")
+                  |> mes(
+                    "Never heard of it?! Everybody knows th'notorious pirate ship 'Going Mary!' ^666666*Hiccup~*^000000"
+                  )
+                  |> next()
+                  |> mes("[Deagle]")
+                  |> mes(
+                    "Ah~ The ol'days. If only... If only we hadn't run into that STORM...^666666*hiccup*^000000"
+                  )
+                  |> next()
+                  |> mes("[Deagle]")
+                  |> mes(
+                    "AH~ Captain. I miss our cap'n more than anything... No foe survived before cap'n's sword."
+                  )
+                  |> close()
 
-                exit(:normal)
+                throw({:script_end, ctx})
 
               2 ->
-                ctx
-                |> mes("[Deagle]")
-                |> mes(
-                  "That's right! NOBODY meshes with the crew of the 'Going Mary!' And nobody can beat out cap'n in a sword fight!"
-                )
-                |> next()
-                |> mes("[Deagle]")
-                |> mes(
-                  "CAPTAIN~!!! ^666666*HICCUP~*^000000 He would swing his sword like this, then... THEN!!"
-                )
-                |> next()
-                |> mes("[Deagle]")
-                |> mes(
-                  "The bastard the captain was fighting, and anyone of his friends near him, were surrounded in flame!"
-                )
-                |> next()
-                |> mes("[Deagle]")
-                |> mes(
-                  "Man, that sword must have had some sort of mysterious power, or the captain was just that good...!"
-                )
-                |> next()
-                |> mes("[Deagle]")
-                |> mes(
-                  "Phew~~ ^666666*Sob* *Sob...*^000000 God, I miss everyone! Now I'm depressed! Please, go away now."
-                )
-                |> close()
+                ctx =
+                  ctx
+                  |> mes("[Deagle]")
+                  |> mes(
+                    "That's right! NOBODY meshes with the crew of the 'Going Mary!' And nobody can beat out cap'n in a sword fight!"
+                  )
+                  |> next()
+                  |> mes("[Deagle]")
+                  |> mes(
+                    "CAPTAIN~!!! ^666666*HICCUP~*^000000 He would swing his sword like this, then... THEN!!"
+                  )
+                  |> next()
+                  |> mes("[Deagle]")
+                  |> mes(
+                    "The bastard the captain was fighting, and anyone of his friends near him, were surrounded in flame!"
+                  )
+                  |> next()
+                  |> mes("[Deagle]")
+                  |> mes(
+                    "Man, that sword must have had some sort of mysterious power, or the captain was just that good...!"
+                  )
+                  |> next()
+                  |> mes("[Deagle]")
+                  |> mes(
+                    "Phew~~ ^666666*Sob* *Sob...*^000000 God, I miss everyone! Now I'm depressed! Please, go away now."
+                  )
+                  |> close()
 
-                exit(:normal)
+                throw({:script_end, ctx})
 
               _ ->
                 ctx
             end
 
-          ctx |> mes("[Deagle]") |> mes("That's right!") |> mes("Go AWAY~") |> close()
-          exit(:normal)
+          ctx = ctx |> mes("[Deagle]") |> mes("That's right!") |> mes("Go AWAY~") |> close()
+          throw({:script_end, ctx})
 
         2 ->
-          ctx |> mes("[Deagle]") |> mes("That's right!") |> mes("Go AWAY~") |> close()
-          exit(:normal)
+          ctx = ctx |> mes("[Deagle]") |> mes("That's right!") |> mes("Go AWAY~") |> close()
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

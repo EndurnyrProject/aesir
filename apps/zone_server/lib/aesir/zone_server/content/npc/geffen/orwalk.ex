@@ -34,7 +34,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Geffen.Orwalk do
       "Speaking of which, I've also heard of a rumor about a miraculous tree in some land near Comodo. They must be connected, I'm sure of it!"
     )
     |> close()
-
-    exit(:normal)
   end
 end

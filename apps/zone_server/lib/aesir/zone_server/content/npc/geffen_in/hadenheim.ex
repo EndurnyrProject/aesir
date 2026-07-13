@@ -26,22 +26,23 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.Hadenheim do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Hans Hadenheim]")
-        |> mes("You...")
-        |> mes("Don't know the")
-        |> mes("Schwarzwald Republic?")
-        |> next()
-        |> mes("[Hans Hadenheim]")
-        |> mes("You know, ally of the Rune-Midgarts Kingdom. Um... Our capital city is Juno?")
-        |> next()
-        |> mes("[Hans Hadenheim]")
-        |> mes("You should really")
-        |> mes("read up on your")
-        |> mes("world events!")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Hans Hadenheim]")
+          |> mes("You...")
+          |> mes("Don't know the")
+          |> mes("Schwarzwald Republic?")
+          |> next()
+          |> mes("[Hans Hadenheim]")
+          |> mes("You know, ally of the Rune-Midgarts Kingdom. Um... Our capital city is Juno?")
+          |> next()
+          |> mes("[Hans Hadenheim]")
+          |> mes("You should really")
+          |> mes("read up on your")
+          |> mes("world events!")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -91,7 +92,7 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.Hadenheim do
       "Still, if you want to go sightseeing, I personally recommend that you visit my hometown of Juno. It's quite beautiful, you know."
     )
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

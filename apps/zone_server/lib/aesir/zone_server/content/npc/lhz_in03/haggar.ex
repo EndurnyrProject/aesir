@@ -24,7 +24,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn03.Haggar do
     |> mes("rum! I want a man's")
     |> mes("drink! Gimme whiskey!")
     |> close()
-
-    exit(:normal)
   end
 end

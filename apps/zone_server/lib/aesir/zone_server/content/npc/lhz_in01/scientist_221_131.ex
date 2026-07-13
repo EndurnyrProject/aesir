@@ -16,37 +16,42 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Scientist221131 do
   def on_talk(ctx) do
     if Rathena.truthy?(is_equipped(ctx, 2241)) and Rathena.truthy?(is_equipped(ctx, 2243)) do
       if get_char_var(ctx, :hg_tre, 0) > 54 do
-        ctx
-        |> mes("[A Scientist]")
-        |> mes(
-          "What happened? All the machines are ruined and the research report are gone! The history of Regenschirm has been hacked!"
-        )
-        |> close()
+        ctx =
+          ctx
+          |> mes("[A Scientist]")
+          |> mes(
+            "What happened? All the machines are ruined and the research report are gone! The history of Regenschirm has been hacked!"
+          )
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
-        ctx
-        |> mes("[Scientist]")
-        |> mes("It takes so long for")
-        |> mes("this device to process")
-        |> mes("all the data and give me")
-        |> mes("the results. Still, the wait")
-        |> mes("heightens my anticipation...")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Scientist]")
+          |> mes("It takes so long for")
+          |> mes("this device to process")
+          |> mes("all the data and give me")
+          |> mes("the results. Still, the wait")
+          |> mes("heightens my anticipation...")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       end
     else
-      ctx
-      |> mes("[Scientist]")
-      |> mes("What?! Guards!")
-      |> mes("Hurry, there's an")
-      |> mes("intruder right here!")
-      |> emotion(:surprise)
-      |> close()
-      |> warp("lhz_in01", 33, 224)
+      ctx =
+        ctx
+        |> mes("[Scientist]")
+        |> mes("What?! Guards!")
+        |> mes("Hurry, there's an")
+        |> mes("intruder right here!")
+        |> emotion(:surprise)
+        |> close()
+        |> warp("lhz_in01", 33, 224)
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

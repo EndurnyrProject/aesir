@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.Customer do
     |> mes("nice boy would just")
     |> mes("talk to me for real.")
     |> close()
-
-    exit(:normal)
   end
 end

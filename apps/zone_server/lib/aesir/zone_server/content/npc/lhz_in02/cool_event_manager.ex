@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.CoolEventManager do
     |> mes("more often and much")
     |> mes("harder. Ha ha ha ha!")
     |> close()
-
-    exit(:normal)
   end
 end

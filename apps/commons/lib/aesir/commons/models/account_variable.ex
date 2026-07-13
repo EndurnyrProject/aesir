@@ -15,9 +15,9 @@ defmodule Aesir.Commons.Models.AccountVariable do
   import Ecto.Changeset
 
   @type t :: %__MODULE__{
-          account_id: integer(),
-          name: String.t(),
-          value: map()
+          account_id: integer() | nil,
+          name: String.t() | nil,
+          value: map() | nil
         }
 
   @primary_key false

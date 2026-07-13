@@ -70,7 +70,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.Diana do
     |> mes("I take that back.")
     |> mes("This shop really sucks.")
     |> close()
-
-    exit(:normal)
   end
 end

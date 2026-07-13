@@ -26,7 +26,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Guide do
     |> mes("C-can I help you")
     |> mes("with anything?")
     |> close()
-
-    exit(:normal)
   end
 end

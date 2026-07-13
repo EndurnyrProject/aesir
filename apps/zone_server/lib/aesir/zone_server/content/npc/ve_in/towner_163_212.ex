@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.VeIn.Towner163212 do
     |> mes("I'll be able to get married")
     |> mes("anytime soon! Oh, the misery!")
     |> close()
-
-    exit(:normal)
   end
 end

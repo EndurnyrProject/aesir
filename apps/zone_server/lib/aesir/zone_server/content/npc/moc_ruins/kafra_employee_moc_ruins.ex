@@ -40,5 +40,7 @@ defmodule Aesir.ZoneServer.Content.Npc.MocRuins.KafraEmployeeMocRuins do
       |> Aesir.ZoneServer.Content.Npc.Functions.FKafend.call([0, 1, "at the Pyramids"])
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

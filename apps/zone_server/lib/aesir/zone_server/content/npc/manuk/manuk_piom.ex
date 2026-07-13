@@ -13,29 +13,33 @@ defmodule Aesir.ZoneServer.Content.Npc.Manuk.ManukPiom do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Manuk Piom]")
-      |> mes("Galtuns are brave Sapha warriors.")
-      |> mes("I am a Piom class which is general labor.")
-      |> next()
-      |> mes("[Manuk Piom]")
-      |> mes(
-        "By virtue of the braveness of the Galtun, we can stand for a long time from the diversions of the Laphine."
-      )
-      |> mes("We always appreciate their efforts.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Manuk Piom]")
+        |> mes("Galtuns are brave Sapha warriors.")
+        |> mes("I am a Piom class which is general labor.")
+        |> next()
+        |> mes("[Manuk Piom]")
+        |> mes(
+          "By virtue of the braveness of the Galtun, we can stand for a long time from the diversions of the Laphine."
+        )
+        |> mes("We always appreciate their efforts.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Manuk Piom]")
-      |> mes("H dn i sid p sd ")
-      |> mes("Nd isjd sapd j s id")
-      |> mes("Bsi o ps dkm jgf")
-      |> mes("Eo oo ptr n sid")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Manuk Piom]")
+        |> mes("H dn i sid p sd ")
+        |> mes("Nd isjd sapd j s id")
+        |> mes("Bsi o ps dkm jgf")
+        |> mes("Eo oo ptr n sid")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

@@ -13,25 +13,29 @@ defmodule Aesir.ZoneServer.Content.Npc.Splendide.Fairy181107 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Fairy]")
-      |> mes("Neatness, tidiness and cleanness!")
-      |> mes("Those are the words.")
-      |> mes("that can describe us!")
-      |> mes("Others are so dirty and messy!")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Fairy]")
+        |> mes("Neatness, tidiness and cleanness!")
+        |> mes("Those are the words.")
+        |> mes("that can describe us!")
+        |> mes("Others are so dirty and messy!")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Fairy]")
-      |> mes("FusYurnah So M ")
-      |> mes("WehFarDieb Ir FarRu ")
-      |> mes("FusYurnah ")
-      |> mes("AgolDiebUor No Tur")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Fairy]")
+        |> mes("FusYurnah So M ")
+        |> mes("WehFarDieb Ir FarRu ")
+        |> mes("FusYurnah ")
+        |> mes("AgolDiebUor No Tur")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

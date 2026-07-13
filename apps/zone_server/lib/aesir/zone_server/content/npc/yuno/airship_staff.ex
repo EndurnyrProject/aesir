@@ -30,7 +30,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Yuno.AirshipStaff do
     |> mes("you to the main terminal. Thank")
     |> mes("you, and enjoy your travels.")
     |> close()
-
-    exit(:normal)
   end
 end

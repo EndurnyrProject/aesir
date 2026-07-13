@@ -194,16 +194,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.Nils do
 
             ctx =
               if get_local(ctx, :tasoo, 0) >= 1300 do
-                ctx
-                |> mes("[Nils]")
-                |> mes("Hmmm, this record isn't")
-                |> mes("humanly possible unless you")
-                |> mes("copy and paste the whole")
-                |> mes("sentence. Please play fairly")
-                |> mes("next time.")
-                |> close()
+                ctx =
+                  ctx
+                  |> mes("[Nils]")
+                  |> mes("Hmmm, this record isn't")
+                  |> mes("humanly possible unless you")
+                  |> mes("copy and paste the whole")
+                  |> mes("sentence. Please play fairly")
+                  |> mes("next time.")
+                  |> close()
 
-                exit(:normal)
+                throw({:script_end, ctx})
               else
                 ctx
               end
@@ -247,8 +248,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.Nils do
                 |> mes("this time. Congratulations!")
 
               ctx = set_server_var(ctx, "050320_minus1_typing$", char_name(ctx, 0))
-              ctx |> set_server_var("050320_ein_typing", get_local(ctx, :tasoo, 0)) |> close()
-              exit(:normal)
+
+              ctx =
+                ctx |> set_server_var("050320_ein_typing", get_local(ctx, :tasoo, 0)) |> close()
+
+              throw({:script_end, ctx})
             else
               ctx = mes(ctx, "[Nils]")
 
@@ -263,54 +267,57 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.Nils do
                 |> mes("is the current")
                 |> mes("record holder with")
 
-              ctx
-              |> mes(
-                Rathena.concat(
+              ctx =
+                ctx
+                |> mes(
                   Rathena.concat(
-                    "a letter total of ^0000ff",
-                    get_server_var(ctx, "050320_ein_typing", 0)
-                  ),
-                  "^000000"
+                    Rathena.concat(
+                      "a letter total of ^0000ff",
+                      get_server_var(ctx, "050320_ein_typing", 0)
+                    ),
+                    "^000000"
+                  )
                 )
-              )
-              |> mes("characters. Try to beat")
-              |> mes("that record next time~")
-              |> close()
+                |> mes("characters. Try to beat")
+                |> mes("that record next time~")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             end
           else
-            ctx
-            |> mes("[Nils]")
-            |> mes("Oooh...")
-            |> mes("I'm sorry, but")
-            |> mes("you entered the")
-            |> mes("text incorrectly...")
-            |> close()
+            ctx =
+              ctx
+              |> mes("[Nils]")
+              |> mes("Oooh...")
+              |> mes("I'm sorry, but")
+              |> mes("you entered the")
+              |> mes("text incorrectly...")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           end
 
         2 ->
-          ctx
-          |> mes("[Nils]")
-          |> mes("The ^ff0000RO Typing Challenge^000000")
-          |> mes("is a game where you enter")
-          |> mes("the given text as quickly as you")
-          |> mes("can. The name of the top player")
-          |> mes("is recorded for posterity. If you")
-          |> mes("want fame, here's your chance!")
-          |> next()
-          |> mes("[Nils]")
-          |> mes("I'd just like to let")
-          |> mes("you know that you type")
-          |> mes("all the text that you see")
-          |> mes("in the single input line that")
-          |> mes("you're given. So don't press")
-          |> mes("the enter key, just click 'OK.'")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Nils]")
+            |> mes("The ^ff0000RO Typing Challenge^000000")
+            |> mes("is a game where you enter")
+            |> mes("the given text as quickly as you")
+            |> mes("can. The name of the top player")
+            |> mes("is recorded for posterity. If you")
+            |> mes("want fame, here's your chance!")
+            |> next()
+            |> mes("[Nils]")
+            |> mes("I'd just like to let")
+            |> mes("you know that you type")
+            |> mes("all the text that you see")
+            |> mes("in the single input line that")
+            |> mes("you're given. So don't press")
+            |> mes("the enter key, just click 'OK.'")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
           ctx = mes(ctx, "[Nils]")
@@ -326,36 +333,40 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.Nils do
             |> mes("is the current")
             |> mes("record holder with")
 
-          ctx
-          |> mes(
-            Rathena.concat(
+          ctx =
+            ctx
+            |> mes(
               Rathena.concat(
-                "a letter total of ^0000ff",
-                get_server_var(ctx, "050320_ein_typing", 0)
-              ),
-              "^000000"
+                Rathena.concat(
+                  "a letter total of ^0000ff",
+                  get_server_var(ctx, "050320_ein_typing", 0)
+                ),
+                "^000000"
+              )
             )
-          )
-          |> mes("characters. Try to beat")
-          |> mes("that record next time~")
-          |> close()
+            |> mes("characters. Try to beat")
+            |> mes("that record next time~")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         4 ->
-          ctx
-          |> mes("[Nils]")
-          |> mes("Feel free to take on the")
-          |> mes("^ff0000RO Typing Challenge^000000")
-          |> mes("anytime. I'll be here~")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Nils]")
+            |> mes("Feel free to take on the")
+            |> mes("^ff0000RO Typing Challenge^000000")
+            |> mes("anytime. I'll be here~")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

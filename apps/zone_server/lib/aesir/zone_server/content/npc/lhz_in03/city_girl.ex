@@ -29,7 +29,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn03.CityGirl do
     |> mes("it doesn't look like we've got")
     |> mes("any real shortage of drunks...")
     |> close()
-
-    exit(:normal)
   end
 end

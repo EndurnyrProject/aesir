@@ -34,7 +34,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbroch.Tan do
     |> mes("If you'll be here for a while,")
     |> mes("you should carry one with you.")
     |> close()
-
-    exit(:normal)
   end
 end

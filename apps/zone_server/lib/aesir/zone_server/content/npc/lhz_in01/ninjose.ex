@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Ninjose do
     |> mes("''Anybody Can Be Rich!''")
     |> mes("It's such a great book!")
     |> close()
-
-    exit(:normal)
   end
 end

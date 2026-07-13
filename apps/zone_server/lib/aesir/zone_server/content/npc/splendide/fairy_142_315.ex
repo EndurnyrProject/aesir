@@ -13,34 +13,38 @@ defmodule Aesir.ZoneServer.Content.Npc.Splendide.Fairy142315 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Fairy]")
-      |> mes("Flying in the sky is not easy.")
-      |> mes("But it is better than a walk on the ground.")
-      |> next()
-      |> mes("[Fairy]")
-      |> mes("Are you a human? Poor thing...")
-      |> mes("You can't have these beautiful wings?")
-      |> mes("Pathetic lives.")
-      |> mes("It is obvious that we are the only ones who are blessed.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Fairy]")
+        |> mes("Flying in the sky is not easy.")
+        |> mes("But it is better than a walk on the ground.")
+        |> next()
+        |> mes("[Fairy]")
+        |> mes("Are you a human? Poor thing...")
+        |> mes("You can't have these beautiful wings?")
+        |> mes("Pathetic lives.")
+        |> mes("It is obvious that we are the only ones who are blessed.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Fairy]")
-      |> mes("WharemuLars Ur SharUdenWha Yu Agol")
-      |> mes("LontasSar Ra DathVeAlah Ee Noh")
-      |> mes("LarsLonnah Ko TalnesIman Ie Diel")
-      |> next()
-      |> mes("[Fairy]")
-      |> mes("tasSarNuff Or WehFarDieb Ir FarRu")
-      |> mes("FusYurnah So MeAshnar O Noth")
-      |> mes("YurBurDu Yu VeldVaMush So Thor")
-      |> mes("AgolDiebUor No TurnahAla O ")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Fairy]")
+        |> mes("WharemuLars Ur SharUdenWha Yu Agol")
+        |> mes("LontasSar Ra DathVeAlah Ee Noh")
+        |> mes("LarsLonnah Ko TalnesIman Ie Diel")
+        |> next()
+        |> mes("[Fairy]")
+        |> mes("tasSarNuff Or WehFarDieb Ir FarRu")
+        |> mes("FusYurnah So MeAshnar O Noth")
+        |> mes("YurBurDu Yu VeldVaMush So Thor")
+        |> mes("AgolDiebUor No TurnahAla O ")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

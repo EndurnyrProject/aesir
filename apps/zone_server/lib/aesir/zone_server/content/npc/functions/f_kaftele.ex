@@ -79,7 +79,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKaftele do
 
       ctx = cutin(ctx, "", 255)
 
-      _ =
+      ctx =
         if Enum.at(get_temp_var(ctx, :"wrpD$", []), get_local(ctx, :j, 0), "") == "Al De Baran" do
           warp(ctx, "aldebaran", 168, 112)
         else
@@ -208,7 +208,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKaftele do
           ctx
         end
 
-      exit(:normal)
+      throw({:script_end, ctx})
     catch
       :throw, {:script_return, result} -> result
     end

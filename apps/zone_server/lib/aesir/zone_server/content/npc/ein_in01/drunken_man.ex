@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.EinIn01.DrunkenMan do
     |> mes("..^333333*Hiccup*^000000.....")
     |> mes("^333333*Hiccup*^000000..")
     |> close()
-
-    exit(:normal)
   end
 end

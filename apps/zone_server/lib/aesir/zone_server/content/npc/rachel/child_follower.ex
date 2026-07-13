@@ -36,7 +36,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Rachel.ChildFollower do
     |> mes("being reliant on our goddess")
     |> mes("while relying our ourselves.")
     |> close()
-
-    exit(:normal)
   end
 end

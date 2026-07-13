@@ -16,71 +16,77 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.Pilot do
 
     case v1 do
       1 ->
-        ctx
-        |> mes("[Pilot]")
-        |> mes("Longitude, 131 degrees east.")
-        |> mes("Latitude, 37 degrees north.")
-        |> mes("We're right on course, captain.")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Pilot]")
+          |> mes("Longitude, 131 degrees east.")
+          |> mes("Latitude, 37 degrees north.")
+          |> mes("We're right on course, captain.")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
 
       2 ->
-        ctx
-        |> mes("[Pilot]")
-        |> mes("Looks like a really")
-        |> mes("cloudy day. Always hard")
-        |> mes("to navigate when the skies")
-        |> mes("aren't clear. Guess we'll")
-        |> mes("need to amp the radar.")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Pilot]")
+          |> mes("Looks like a really")
+          |> mes("cloudy day. Always hard")
+          |> mes("to navigate when the skies")
+          |> mes("aren't clear. Guess we'll")
+          |> mes("need to amp the radar.")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
 
       3 ->
-        ctx
-        |> mes("[Pilot]")
-        |> mes("The Captain is a good")
-        |> mes("man and I can't think of")
-        |> mes("a finer person to command")
-        |> mes("this ship. Still, he's pretty")
-        |> mes("tough, a real slave driver.")
-        |> next()
-        |> mes("[^ff0000Tarlock^000000]")
-        |> mes("^ff0000Hey...!^000000")
-        |> mes("^ff0000Less chit-chat^000000")
-        |> mes("^ff0000and more piloting!^000000")
-        |> next()
-        |> mes("[Pilot]")
-        |> mes("R-right away, sir!")
-        |> mes("(See what I mean?)")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Pilot]")
+          |> mes("The Captain is a good")
+          |> mes("man and I can't think of")
+          |> mes("a finer person to command")
+          |> mes("this ship. Still, he's pretty")
+          |> mes("tough, a real slave driver.")
+          |> next()
+          |> mes("[^ff0000Tarlock^000000]")
+          |> mes("^ff0000Hey...!^000000")
+          |> mes("^ff0000Less chit-chat^000000")
+          |> mes("^ff0000and more piloting!^000000")
+          |> next()
+          |> mes("[Pilot]")
+          |> mes("R-right away, sir!")
+          |> mes("(See what I mean?)")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
 
       _ ->
-        ctx
-        |> mes("[Pilot]")
-        |> mes("This uniform is")
-        |> mes("really dapper, but")
-        |> mes("it's way too thick to")
-        |> mes("wear around the Airship.")
-        |> next()
-        |> mes("[Pilot]")
-        |> mes("...")
-        |> mes("......")
-        |> mes("No one ever really")
-        |> mes("comes into this room.")
-        |> mes("And the captain IS a reindeer.")
-        |> mes("I could just strip to my boxers.")
-        |> next()
-        |> emotion(:huk)
-        |> mes("[Pilot]")
-        |> mes("Oh...! Hello there!")
-        |> mes("E-e-enjoying your flight?!")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Pilot]")
+          |> mes("This uniform is")
+          |> mes("really dapper, but")
+          |> mes("it's way too thick to")
+          |> mes("wear around the Airship.")
+          |> next()
+          |> mes("[Pilot]")
+          |> mes("...")
+          |> mes("......")
+          |> mes("No one ever really")
+          |> mes("comes into this room.")
+          |> mes("And the captain IS a reindeer.")
+          |> mes("I could just strip to my boxers.")
+          |> next()
+          |> emotion(:huk)
+          |> mes("[Pilot]")
+          |> mes("Oh...! Hello there!")
+          |> mes("E-e-enjoying your flight?!")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

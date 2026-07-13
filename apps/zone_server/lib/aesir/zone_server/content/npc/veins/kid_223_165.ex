@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.Kid223165 do
     |> mes("I'm gonna be able to jump")
     |> mes("all the way to the mooooon!")
     |> close()
-
-    exit(:normal)
   end
 end

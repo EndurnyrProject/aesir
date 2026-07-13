@@ -59,40 +59,43 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbroch.Mark do
       case v1 do
         1 ->
           if zeny(ctx) < 10 do
-            ctx
-            |> mes(Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]"))
-            |> mes("I'm sorry, but you")
-            |> mes("don't have enough")
-            |> mes("zeny. The Einbroch")
-            |> mes("Tower Admission")
-            |> mes("fee is 10 zeny.")
-            |> close()
+            ctx =
+              ctx
+              |> mes(Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]"))
+              |> mes("I'm sorry, but you")
+              |> mes("don't have enough")
+              |> mes("zeny. The Einbroch")
+              |> mes("Tower Admission")
+              |> mes("fee is 10 zeny.")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
-            ctx
-            |> mes(Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]"))
-            |> mes("Thank you for")
-            |> mes("using our services.")
-            |> mes("Let me guide you to")
-            |> mes("the tower right away.")
-            |> pay_zeny(10)
-            |> close()
-            |> warp("einbroch", 181, 196)
+            ctx =
+              ctx
+              |> mes(Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]"))
+              |> mes("Thank you for")
+              |> mes("using our services.")
+              |> mes("Let me guide you to")
+              |> mes("the tower right away.")
+              |> pay_zeny(10)
+              |> close()
+              |> warp("einbroch", 181, 196)
 
-            exit(:normal)
+            throw({:script_end, ctx})
           end
 
         2 ->
           if zeny(ctx) < 20 do
-            ctx
-            |> mes(Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]"))
-            |> mes("I'm sorry, but you don't")
-            |> mes("have enough zeny. The")
-            |> mes("Apple Combo Set is 20 zeny.")
-            |> close()
+            ctx =
+              ctx
+              |> mes(Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]"))
+              |> mes("I'm sorry, but you don't")
+              |> mes("have enough zeny. The")
+              |> mes("Apple Combo Set is 20 zeny.")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx =
               ctx
@@ -105,47 +108,52 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbroch.Mark do
               |> next()
 
             if Rathena.truthy?(checkweight(ctx, [{512, 1}])) do
-              ctx
-              |> mes(Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]"))
-              |> mes("Thank you for")
-              |> mes("using our services.")
-              |> mes("Let me guide you to")
-              |> mes("the tower right away.")
-              |> pay_zeny(20)
-              |> give_item(512, 1)
-              |> close()
-              |> warp("einbroch", 174, 204)
+              ctx =
+                ctx
+                |> mes(Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]"))
+                |> mes("Thank you for")
+                |> mes("using our services.")
+                |> mes("Let me guide you to")
+                |> mes("the tower right away.")
+                |> pay_zeny(20)
+                |> give_item(512, 1)
+                |> close()
+                |> warp("einbroch", 174, 204)
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
-              ctx
-              |> mes(Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]"))
-              |> mes("I'm sorry, but you're carrying")
-              |> mes(
-                "too many items with you. Please store some of your things in your Kafra Storage before purchasing"
-              )
-              |> mes("the Apple Combo Set.")
-              |> close()
+              ctx =
+                ctx
+                |> mes(Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]"))
+                |> mes("I'm sorry, but you're carrying")
+                |> mes(
+                  "too many items with you. Please store some of your things in your Kafra Storage before purchasing"
+                )
+                |> mes("the Apple Combo Set.")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             end
           end
 
         3 ->
-          ctx
-          |> mes(Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]"))
-          |> mes("I see.")
-          |> mes("Feel free to")
-          |> mes("come back any")
-          |> mes("time. Thank you.")
-          |> close()
+          ctx =
+            ctx
+            |> mes(Rathena.concat(Rathena.concat("[", get_local(ctx, :"npc_name$", "")), "]"))
+            |> mes("I see.")
+            |> mes("Feel free to")
+            |> mes("come back any")
+            |> mes("time. Thank you.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

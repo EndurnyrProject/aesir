@@ -14,17 +14,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Xmas.Snowman do
   def on_talk(ctx) do
     ctx =
       if checkweight(ctx, [{1201, 1}]) == 0 do
-        ctx
-        |> cutin("rutie_snownow01.bmp", 2)
-        |> mes("- Wait a minute !! -")
-        |> mes("- Currently you're carrying -")
-        |> mes("- too many items with you. -")
-        |> mes("- Please try again -")
-        |> mes("- after you lose some weight. -")
-        |> close()
-        |> cutin("", 255)
+        ctx =
+          ctx
+          |> cutin("rutie_snownow01.bmp", 2)
+          |> mes("- Wait a minute !! -")
+          |> mes("- Currently you're carrying -")
+          |> mes("- too many items with you. -")
+          |> mes("- Please try again -")
+          |> mes("- after you lose some weight. -")
+          |> close()
+          |> cutin("", 255)
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -54,247 +55,260 @@ defmodule Aesir.ZoneServer.Content.Npc.Xmas.Snowman do
         1 ->
           ctx =
             if get_char_var(ctx, :xmas_npc, 0) < 2 do
-              ctx
-              |> cutin("rutie_snownow01.bmp", 2)
-              |> mes("[Snowysnow]")
-              |> mes(
-                "I was born in an area to the north where it snowed all the time, and was much colder than Lutie, if you can believe that."
-              )
-              |> next()
-              |> mes("[Snowysnow]")
-              |> mes(
-                "I was made with love by a human, and I was really happy there. Life was simple, but it was full of quiet bliss."
-              )
-              |> next()
-              |> mes("[Snowysnow]")
-              |> mes(
-                "I thought I could live the rest of my life in that kind of contentment. But... It was not to be."
-              )
-              |> next()
-              |> cutin("rutie_snownow01.bmp", 2)
-              |> mes("[Snowysnow]")
-              |> mes(
-                "One fateful day, some ugly old woman came to our town. People say her name was 'Merlophechum,' and that she was from some strange cave town where the weather was always hot."
-              )
-              |> next()
-              |> mes("[Snowysnow]")
-              |> mes(
-                "On the third night she was there, she set the town on fire with frightening magic. Everyone was running in panic amongst the fear and chaos. And somehow, I was knocked out."
-              )
-              |> next()
-              |> cutin("rutie_snownow02.bmp", 2)
-              |> mes("[Snowysnow]")
-              |> mes(
-                "I didn't notice how much time passed after that, but when I woke up, I was here. Well, I can say that this place, Lutie, is pretty much like heaven."
-              )
-              |> next()
-              |> mes("[Snowysnow]")
-              |> mes(
-                "Everyone here is never worried, and I'm always hearing Christmas carols and stuff."
-              )
-              |> next()
-              |> cutin("rutie_snownow03.bmp", 2)
-              |> mes("[Snowysnow]")
-              |> mes("But still...")
-              |> mes(
-                "Sometimes all that Christmas joy somehow doesn't cure the dark loneliness that wells deep inside of me."
-              )
-              |> next()
-              |> mes("[Snowysnow]")
-              |> mes("So will you be my friend? If you do, I'll be your friend too~")
-              |> close()
-              |> cutin("", 255)
+              ctx =
+                ctx
+                |> cutin("rutie_snownow01.bmp", 2)
+                |> mes("[Snowysnow]")
+                |> mes(
+                  "I was born in an area to the north where it snowed all the time, and was much colder than Lutie, if you can believe that."
+                )
+                |> next()
+                |> mes("[Snowysnow]")
+                |> mes(
+                  "I was made with love by a human, and I was really happy there. Life was simple, but it was full of quiet bliss."
+                )
+                |> next()
+                |> mes("[Snowysnow]")
+                |> mes(
+                  "I thought I could live the rest of my life in that kind of contentment. But... It was not to be."
+                )
+                |> next()
+                |> cutin("rutie_snownow01.bmp", 2)
+                |> mes("[Snowysnow]")
+                |> mes(
+                  "One fateful day, some ugly old woman came to our town. People say her name was 'Merlophechum,' and that she was from some strange cave town where the weather was always hot."
+                )
+                |> next()
+                |> mes("[Snowysnow]")
+                |> mes(
+                  "On the third night she was there, she set the town on fire with frightening magic. Everyone was running in panic amongst the fear and chaos. And somehow, I was knocked out."
+                )
+                |> next()
+                |> cutin("rutie_snownow02.bmp", 2)
+                |> mes("[Snowysnow]")
+                |> mes(
+                  "I didn't notice how much time passed after that, but when I woke up, I was here. Well, I can say that this place, Lutie, is pretty much like heaven."
+                )
+                |> next()
+                |> mes("[Snowysnow]")
+                |> mes(
+                  "Everyone here is never worried, and I'm always hearing Christmas carols and stuff."
+                )
+                |> next()
+                |> cutin("rutie_snownow03.bmp", 2)
+                |> mes("[Snowysnow]")
+                |> mes("But still...")
+                |> mes(
+                  "Sometimes all that Christmas joy somehow doesn't cure the dark loneliness that wells deep inside of me."
+                )
+                |> next()
+                |> mes("[Snowysnow]")
+                |> mes("So will you be my friend? If you do, I'll be your friend too~")
+                |> close()
+                |> cutin("", 255)
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
               v3 = get_char_var(ctx, :xmas_npc, 0)
 
               ctx =
                 case v3 do
                   2 ->
-                    ctx
-                    |> cutin("rutie_snownow01.bmp", 2)
-                    |> mes("[Snowysnow]")
-                    |> mes("Oh...?")
-                    |> mes("So you've met Duffle?")
-                    |> mes("Yeah, sometimes she")
-                    |> mes("stops by and says 'hi...'")
-                    |> next()
-                    |> mes("[Snowysnow]")
-                    |> mes(
-                      "It's weird that the people of Lutie call me a mysterious, magical snowman. I mean, inside, aren't I just the same as regular people?"
-                    )
-                    |> next()
-                    |> mes("[Snowysnow]")
-                    |> mes("*Sniff* S-sometimes,")
-                    |> mes(
-                      "I don't even know what I am. But even so, the people of Lutie try to accept me no matter what."
-                    )
-                    |> next()
-                    |> mes("[Snowysnow]")
-                    |> mes(
-                      "^3355FFPoze^000000 gave me his glamour photo with his address on it, and told me to visit him whenever I'm feeling blue. I was so happy to hear that..."
-                    )
-                    |> next()
-                    |> mes("[Snowysnow]")
-                    |> mes(
-                      "But then fate played its cruel joke on me once again, and I realized that I had no legs to visit him with."
-                    )
-                    |> next()
-                    |> mes("[Snowysnow]")
-                    |> mes(
-                      "How did I ever get to this town? And how in the world am I able to talk?! I-It's not natural, is it? Does... Does that make me a monster?"
-                    )
-                    |> next()
-                    |> mes("^3355FFSnowysnow is immersed in his deep thoughts, and seems^000000")
-                    |> mes("^3355FFfixated on Poze's memento.^000000")
-                    |> set_char_var(:xmas_npc, 3)
-                    |> close()
-                    |> cutin("", 255)
+                    ctx =
+                      ctx
+                      |> cutin("rutie_snownow01.bmp", 2)
+                      |> mes("[Snowysnow]")
+                      |> mes("Oh...?")
+                      |> mes("So you've met Duffle?")
+                      |> mes("Yeah, sometimes she")
+                      |> mes("stops by and says 'hi...'")
+                      |> next()
+                      |> mes("[Snowysnow]")
+                      |> mes(
+                        "It's weird that the people of Lutie call me a mysterious, magical snowman. I mean, inside, aren't I just the same as regular people?"
+                      )
+                      |> next()
+                      |> mes("[Snowysnow]")
+                      |> mes("*Sniff* S-sometimes,")
+                      |> mes(
+                        "I don't even know what I am. But even so, the people of Lutie try to accept me no matter what."
+                      )
+                      |> next()
+                      |> mes("[Snowysnow]")
+                      |> mes(
+                        "^3355FFPoze^000000 gave me his glamour photo with his address on it, and told me to visit him whenever I'm feeling blue. I was so happy to hear that..."
+                      )
+                      |> next()
+                      |> mes("[Snowysnow]")
+                      |> mes(
+                        "But then fate played its cruel joke on me once again, and I realized that I had no legs to visit him with."
+                      )
+                      |> next()
+                      |> mes("[Snowysnow]")
+                      |> mes(
+                        "How did I ever get to this town? And how in the world am I able to talk?! I-It's not natural, is it? Does... Does that make me a monster?"
+                      )
+                      |> next()
+                      |> mes(
+                        "^3355FFSnowysnow is immersed in his deep thoughts, and seems^000000"
+                      )
+                      |> mes("^3355FFfixated on Poze's memento.^000000")
+                      |> set_char_var(:xmas_npc, 3)
+                      |> close()
+                      |> cutin("", 255)
 
-                    exit(:normal)
+                    throw({:script_end, ctx})
 
                   3 ->
-                    ctx
-                    |> cutin("rutie_snownow01.bmp", 2)
-                    |> mes("[Snowysnow]")
-                    |> mes("...")
-                    |> next()
-                    |> mes("^3355FFSnowysnow is immersed in his deep thoughts, and seems^000000")
-                    |> mes("^3355FFfixated on Poze's memento.^000000")
-                    |> close()
-                    |> cutin("", 255)
+                    ctx =
+                      ctx
+                      |> cutin("rutie_snownow01.bmp", 2)
+                      |> mes("[Snowysnow]")
+                      |> mes("...")
+                      |> next()
+                      |> mes(
+                        "^3355FFSnowysnow is immersed in his deep thoughts, and seems^000000"
+                      )
+                      |> mes("^3355FFfixated on Poze's memento.^000000")
+                      |> close()
+                      |> cutin("", 255)
 
-                    exit(:normal)
+                    throw({:script_end, ctx})
 
                   4 ->
-                    ctx
-                    |> cutin("rutie_snownow01.bmp", 2)
-                    |> mes("[Snowysnow]")
-                    |> mes("Oh goody!")
-                    |> mes("You've met Poze!")
-                    |> next()
-                    |> mes("[Snowysnow]")
-                    |> mes(
-                      "He's such an honest, good hearted guy. I hope he and Duffle get together someday."
-                    )
-                    |> next()
-                    |> mes("[Snowysnow]")
-                    |> mes("...Oh no~!")
-                    |> mes(
-                      "Did I say that out loud? That was supposed to stay in my head! I'm soooo sorry! Boy, I can be a real dum-dum head, huh?"
-                    )
-                    |> next()
-                    |> mes("[Snowysnow]")
-                    |> mes("Yeah...")
-                    |> mes(
-                      "Poze is in love with Duffle. And she's kind to everybody, except for Poze."
-                    )
-                    |> next()
-                    |> mes("[Snowysnow]")
-                    |> mes(
-                      "But I know that's because she likes him a whole whole lot! Hee hee hee!"
-                    )
-                    |> close()
-                    |> cutin("", 255)
+                    ctx =
+                      ctx
+                      |> cutin("rutie_snownow01.bmp", 2)
+                      |> mes("[Snowysnow]")
+                      |> mes("Oh goody!")
+                      |> mes("You've met Poze!")
+                      |> next()
+                      |> mes("[Snowysnow]")
+                      |> mes(
+                        "He's such an honest, good hearted guy. I hope he and Duffle get together someday."
+                      )
+                      |> next()
+                      |> mes("[Snowysnow]")
+                      |> mes("...Oh no~!")
+                      |> mes(
+                        "Did I say that out loud? That was supposed to stay in my head! I'm soooo sorry! Boy, I can be a real dum-dum head, huh?"
+                      )
+                      |> next()
+                      |> mes("[Snowysnow]")
+                      |> mes("Yeah...")
+                      |> mes(
+                        "Poze is in love with Duffle. And she's kind to everybody, except for Poze."
+                      )
+                      |> next()
+                      |> mes("[Snowysnow]")
+                      |> mes(
+                        "But I know that's because she likes him a whole whole lot! Hee hee hee!"
+                      )
+                      |> close()
+                      |> cutin("", 255)
 
-                    exit(:normal)
+                    throw({:script_end, ctx})
 
                   5 ->
-                    ctx
-                    |> cutin("rutie_snownow01.bmp", 2)
-                    |> mes("[Snowysnow]")
-                    |> mes("Oh...?")
-                    |> mes("You've met")
-                    |> mes("^3355FFUncle Hairy Cantata^000000?")
-                    |> next()
-                    |> cutin("rutie_snownow02.bmp", 2)
-                    |> mes("[Snowysnow]")
-                    |> mes(
-                      "Sure, he has a loud voice, doesn't take showers and smells like rotting food. But he's a funny guy with a warm heart. Everybody loves him!"
-                    )
-                    |> next()
-                    |> mes("[Snowysnow]")
-                    |> mes(
-                      "Of course, he still enjoys drinking strange things. They say it's a miracle that he doesn't have a tummyache. Hee hee~! Oh, I love that guy!"
-                    )
-                    |> close()
-                    |> cutin("", 255)
+                    ctx =
+                      ctx
+                      |> cutin("rutie_snownow01.bmp", 2)
+                      |> mes("[Snowysnow]")
+                      |> mes("Oh...?")
+                      |> mes("You've met")
+                      |> mes("^3355FFUncle Hairy Cantata^000000?")
+                      |> next()
+                      |> cutin("rutie_snownow02.bmp", 2)
+                      |> mes("[Snowysnow]")
+                      |> mes(
+                        "Sure, he has a loud voice, doesn't take showers and smells like rotting food. But he's a funny guy with a warm heart. Everybody loves him!"
+                      )
+                      |> next()
+                      |> mes("[Snowysnow]")
+                      |> mes(
+                        "Of course, he still enjoys drinking strange things. They say it's a miracle that he doesn't have a tummyache. Hee hee~! Oh, I love that guy!"
+                      )
+                      |> close()
+                      |> cutin("", 255)
 
-                    exit(:normal)
+                    throw({:script_end, ctx})
 
                   6 ->
-                    ctx
-                    |> cutin("rutie_snownow01.bmp", 2)
-                    |> mes("[Snowysnow]")
-                    |> mes("Oh...?")
-                    |> mes("You've met")
-                    |> mes("^3355FFAunt Thachentze^000000?")
-                    |> next()
-                    |> mes("[Snowysnow]")
-                    |> mes(
-                      "Yeah, she's a pickle expert, alright. Oh right, would you give this to her? I've been keeping the roughest salt in the world for her as a bit of a favor."
-                    )
-                    |> next()
-                    |> set_char_var(:xmas_npc, 7)
-                    |> mes("^3355FFSnowysnow gave you the roughest salt in the world^000000.")
-                    |> next()
-                    |> mes("[Snowysnow]")
-                    |> mes(
-                      "I like her cooking because it's soooo delicious! Sometimes, she gives me grape syrup on snow flakes. Anyway, please deliver that salt for me, buddy~!"
-                    )
-                    |> close()
-                    |> cutin("", 255)
+                    ctx =
+                      ctx
+                      |> cutin("rutie_snownow01.bmp", 2)
+                      |> mes("[Snowysnow]")
+                      |> mes("Oh...?")
+                      |> mes("You've met")
+                      |> mes("^3355FFAunt Thachentze^000000?")
+                      |> next()
+                      |> mes("[Snowysnow]")
+                      |> mes(
+                        "Yeah, she's a pickle expert, alright. Oh right, would you give this to her? I've been keeping the roughest salt in the world for her as a bit of a favor."
+                      )
+                      |> next()
+                      |> set_char_var(:xmas_npc, 7)
+                      |> mes("^3355FFSnowysnow gave you the roughest salt in the world^000000.")
+                      |> next()
+                      |> mes("[Snowysnow]")
+                      |> mes(
+                        "I like her cooking because it's soooo delicious! Sometimes, she gives me grape syrup on snow flakes. Anyway, please deliver that salt for me, buddy~!"
+                      )
+                      |> close()
+                      |> cutin("", 255)
 
-                    exit(:normal)
+                    throw({:script_end, ctx})
 
                   7 ->
-                    ctx
-                    |> cutin("rutie_snownow01.bmp", 2)
-                    |> mes("[Snowysnow]")
-                    |> mes("'^3355FFThe roughest")
-                    |> mes("salt in the world^000000...'")
-                    |> mes(
-                      "Wow. Now, that's rough! Aunt Tachentze is always making pickles, so she sure could use it soon!"
-                    )
-                    |> close()
-                    |> cutin("", 255)
+                    ctx =
+                      ctx
+                      |> cutin("rutie_snownow01.bmp", 2)
+                      |> mes("[Snowysnow]")
+                      |> mes("'^3355FFThe roughest")
+                      |> mes("salt in the world^000000...'")
+                      |> mes(
+                        "Wow. Now, that's rough! Aunt Tachentze is always making pickles, so she sure could use it soon!"
+                      )
+                      |> close()
+                      |> cutin("", 255)
 
-                    exit(:normal)
+                    throw({:script_end, ctx})
 
                   8 ->
-                    ctx
-                    |> cutin("rutie_snownow01.bmp", 2)
-                    |> mes("[Snowysnow]")
-                    |> mes(
-                      "Hashokii, the boring clown? At first, he seems kind of dumb and not really that funny. But deep inside, he cares a lot about other people."
-                    )
-                    |> next()
-                    |> mes("[Snowysnow]")
-                    |> mes(
-                      "He's always trying his best to make those two orphans laugh and forget their troubles..."
-                    )
-                    |> close()
-                    |> cutin("", 255)
+                    ctx =
+                      ctx
+                      |> cutin("rutie_snownow01.bmp", 2)
+                      |> mes("[Snowysnow]")
+                      |> mes(
+                        "Hashokii, the boring clown? At first, he seems kind of dumb and not really that funny. But deep inside, he cares a lot about other people."
+                      )
+                      |> next()
+                      |> mes("[Snowysnow]")
+                      |> mes(
+                        "He's always trying his best to make those two orphans laugh and forget their troubles..."
+                      )
+                      |> close()
+                      |> cutin("", 255)
 
-                    exit(:normal)
+                    throw({:script_end, ctx})
 
                   9 ->
-                    ctx
-                    |> cutin("rutie_snownow01.bmp", 2)
-                    |> mes("[Snowysnow]")
-                    |> mes("Ah...")
-                    |> mes(
-                      "So you've met Charu Charu? That boy is so full of optimism and always looking forward. When he grows up, he's going to be a big shot!"
-                    )
-                    |> next()
-                    |> mes("[Snowysnow]")
-                    |> mes("I'm sure of it!")
-                    |> mes("Hee hee hee~!")
-                    |> close()
-                    |> cutin("", 255)
+                    ctx =
+                      ctx
+                      |> cutin("rutie_snownow01.bmp", 2)
+                      |> mes("[Snowysnow]")
+                      |> mes("Ah...")
+                      |> mes(
+                        "So you've met Charu Charu? That boy is so full of optimism and always looking forward. When he grows up, he's going to be a big shot!"
+                      )
+                      |> next()
+                      |> mes("[Snowysnow]")
+                      |> mes("I'm sure of it!")
+                      |> mes("Hee hee hee~!")
+                      |> close()
+                      |> cutin("", 255)
 
-                    exit(:normal)
+                    throw({:script_end, ctx})
 
                   10 ->
                     ctx =
@@ -404,31 +418,33 @@ defmodule Aesir.ZoneServer.Content.Npc.Xmas.Snowman do
                           ctx
                       end
 
-                    ctx
-                    |> next()
-                    |> mes("[Snowysnow]")
-                    |> mes(
-                      "My dear friend, please visit me from time to time, so that we can chitchat, okay? See you soon! And Merry Christmas!"
-                    )
-                    |> close()
-                    |> cutin("", 255)
+                    ctx =
+                      ctx
+                      |> next()
+                      |> mes("[Snowysnow]")
+                      |> mes(
+                        "My dear friend, please visit me from time to time, so that we can chitchat, okay? See you soon! And Merry Christmas!"
+                      )
+                      |> close()
+                      |> cutin("", 255)
 
-                    exit(:normal)
+                    throw({:script_end, ctx})
 
                   11 ->
-                    ctx
-                    |> cutin("rutie_snownow02.bmp", 2)
-                    |> mes("[Snowysnow]")
-                    |> mes("Hello hello!")
-                    |> next()
-                    |> mes("[Snowysnow]")
-                    |> mes(
-                      "You're always welcome in Lutie, especially by me, Snowysnow! Happy Kwanza, Happy Hannukah and Merry Christmas~!"
-                    )
-                    |> close()
-                    |> cutin("", 255)
+                    ctx =
+                      ctx
+                      |> cutin("rutie_snownow02.bmp", 2)
+                      |> mes("[Snowysnow]")
+                      |> mes("Hello hello!")
+                      |> next()
+                      |> mes("[Snowysnow]")
+                      |> mes(
+                        "You're always welcome in Lutie, especially by me, Snowysnow! Happy Kwanza, Happy Hannukah and Merry Christmas~!"
+                      )
+                      |> close()
+                      |> cutin("", 255)
 
-                    exit(:normal)
+                    throw({:script_end, ctx})
 
                   _ ->
                     ctx
@@ -437,67 +453,72 @@ defmodule Aesir.ZoneServer.Content.Npc.Xmas.Snowman do
               ctx
             end
 
-          ctx
-          |> cutin("rutie_snownow01.bmp", 2)
-          |> mes("[Snowysnow]")
-          |> mes(
-            "Around this wonderful town, eternally blessed with Christmas, there is a horrible dungeon, eternally cursed with Christmas."
-          )
-          |> next()
-          |> mes("[Snowysnow]")
-          |> mes(
-            "I've heard that it's well decorated and looks just like a Toy Factory inside, where everything is so cute and pretty. They are Toy Soldiers and Gift Boxes as far as the eye can see!"
-          )
-          |> next()
-          |> cutin("rutie_snownow01.bmp", 2)
-          |> mes("[Snowysnow]")
-          |> mes(
-            "Isn't that soooo exciting?! *Sigh* Even if it is a dungeon, I would like to go inside just to look. If only I was a real boy, or even had legs..."
-          )
-          |> close()
-          |> cutin("", 255)
+          ctx =
+            ctx
+            |> cutin("rutie_snownow01.bmp", 2)
+            |> mes("[Snowysnow]")
+            |> mes(
+              "Around this wonderful town, eternally blessed with Christmas, there is a horrible dungeon, eternally cursed with Christmas."
+            )
+            |> next()
+            |> mes("[Snowysnow]")
+            |> mes(
+              "I've heard that it's well decorated and looks just like a Toy Factory inside, where everything is so cute and pretty. They are Toy Soldiers and Gift Boxes as far as the eye can see!"
+            )
+            |> next()
+            |> cutin("rutie_snownow01.bmp", 2)
+            |> mes("[Snowysnow]")
+            |> mes(
+              "Isn't that soooo exciting?! *Sigh* Even if it is a dungeon, I would like to go inside just to look. If only I was a real boy, or even had legs..."
+            )
+            |> close()
+            |> cutin("", 255)
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> cutin("rutie_snownow01.bmp", 2)
-          |> mes("[Snowysnow]")
-          |> mes(
-            "Around this wonderful town, eternally blessed with Christmas, there is a horrible dungeon, eternally cursed with Christmas."
-          )
-          |> next()
-          |> mes("[Snowysnow]")
-          |> mes(
-            "I've heard that it's well decorated and looks just like a Toy Factory inside, where everything is so cute and pretty. They are Toy Soldiers and Gift Boxes as far as the eye can see!"
-          )
-          |> next()
-          |> cutin("rutie_snownow01.bmp", 2)
-          |> mes("[Snowysnow]")
-          |> mes(
-            "Isn't that soooo exciting?! *Sigh* Even if it is a dungeon, I would like to go inside just to look. If only I was a real boy, or even had legs..."
-          )
-          |> close()
-          |> cutin("", 255)
+          ctx =
+            ctx
+            |> cutin("rutie_snownow01.bmp", 2)
+            |> mes("[Snowysnow]")
+            |> mes(
+              "Around this wonderful town, eternally blessed with Christmas, there is a horrible dungeon, eternally cursed with Christmas."
+            )
+            |> next()
+            |> mes("[Snowysnow]")
+            |> mes(
+              "I've heard that it's well decorated and looks just like a Toy Factory inside, where everything is so cute and pretty. They are Toy Soldiers and Gift Boxes as far as the eye can see!"
+            )
+            |> next()
+            |> cutin("rutie_snownow01.bmp", 2)
+            |> mes("[Snowysnow]")
+            |> mes(
+              "Isn't that soooo exciting?! *Sigh* Even if it is a dungeon, I would like to go inside just to look. If only I was a real boy, or even had legs..."
+            )
+            |> close()
+            |> cutin("", 255)
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx
-          |> cutin("rutie_snownow03.bmp", 2)
-          |> mes("[Snowysnow]")
-          |> mes("Bye bye, friend~!")
-          |> mes("Thank you for listening to me~")
-          |> mes("I'll see you again, someday! You'll always be in my heart~")
-          |> close()
-          |> cutin("", 255)
+          ctx =
+            ctx
+            |> cutin("rutie_snownow03.bmp", 2)
+            |> mes("[Snowysnow]")
+            |> mes("Bye bye, friend~!")
+            |> mes("Thank you for listening to me~")
+            |> mes("I'll see you again, someday! You'll always be in my heart~")
+            |> close()
+            |> cutin("", 255)
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

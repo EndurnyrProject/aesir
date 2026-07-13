@@ -17,41 +17,43 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.DegaIzlude do
     ctx =
       case v2 do
         1 ->
-          ctx
-          |> mes("Mt. Mjornir, located north of Prontera, is a tough")
-          |> mes("and steep climb.")
-          |> next()
-          |> mes("[Dega]")
-          |> mes(
-            "Aside from the dangers of the mountain itself, insanely vicious insects live there too. I mean, they'll just attack you for no reason."
-          )
-          |> next()
-          |> mes("[Dega]")
-          |> mes(
-            "If you ever want to visit somewhere past Mt. Mjolnir, then you prepare yourself for the challenge.  Or you could walk around it."
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("Mt. Mjornir, located north of Prontera, is a tough")
+            |> mes("and steep climb.")
+            |> next()
+            |> mes("[Dega]")
+            |> mes(
+              "Aside from the dangers of the mountain itself, insanely vicious insects live there too. I mean, they'll just attack you for no reason."
+            )
+            |> next()
+            |> mes("[Dega]")
+            |> mes(
+              "If you ever want to visit somewhere past Mt. Mjolnir, then you prepare yourself for the challenge.  Or you could walk around it."
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes(
-            "Some monsters in the world have the unique ability to sense mystical energy, and can detect Magic spells before they are cast."
-          )
-          |> next()
-          |> mes("[Dega]")
-          |> mes(
-            "Golem of the desert is one of them. Don't underestimate it due to its sluggishness..."
-          )
-          |> next()
-          |> mes("[Dega]")
-          |> mes(
-            "If you try to cast magic near it, it will notice and saunter over to smash you. So you better watch out for Golem."
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes(
+              "Some monsters in the world have the unique ability to sense mystical energy, and can detect Magic spells before they are cast."
+            )
+            |> next()
+            |> mes("[Dega]")
+            |> mes(
+              "Golem of the desert is one of them. Don't underestimate it due to its sluggishness..."
+            )
+            |> next()
+            |> mes("[Dega]")
+            |> mes(
+              "If you try to cast magic near it, it will notice and saunter over to smash you. So you better watch out for Golem."
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
@@ -87,62 +89,60 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.DegaIzlude do
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   defp loop_2(ctx) do
-    if true do
-      {ctx, v1} = select(ctx, ["Ghostring?", "Angeling?", "End Conversation."])
+    {ctx, v1} = select(ctx, ["Ghostring?", "Angeling?", "End Conversation."])
 
-      ctx =
-        case v1 do
-          1 ->
-            ctx
-            |> mes("[Dega]")
-            |> mes(
-              "Ghostring is a grayish Poring that floats around in the air like a ghost. Just like other ghosts, physical attacks can't do any damage to it."
-            )
-            |> next()
-            |> mes("[Dega]")
-            |> mes(
-              "Those whose main attack methods are physical like Swordman and Archer might have to run for their lives when facing Ghostrings."
-            )
-            |> next()
-            |> mes("[Dega]")
-            |> mes(
-              "But don't leave just yet~! There is great news for people with those jobs. Making a weapon of some elemental property is the key."
-            )
-            |> next()
-            |> mes("[Dega]")
-            |> mes(
-              "This way, even a Swordman or an Archer can inflict damage, the way Magic does, on Ghostrings."
-            )
-            |> next()
+    ctx =
+      case v1 do
+        1 ->
+          ctx
+          |> mes("[Dega]")
+          |> mes(
+            "Ghostring is a grayish Poring that floats around in the air like a ghost. Just like other ghosts, physical attacks can't do any damage to it."
+          )
+          |> next()
+          |> mes("[Dega]")
+          |> mes(
+            "Those whose main attack methods are physical like Swordman and Archer might have to run for their lives when facing Ghostrings."
+          )
+          |> next()
+          |> mes("[Dega]")
+          |> mes(
+            "But don't leave just yet~! There is great news for people with those jobs. Making a weapon of some elemental property is the key."
+          )
+          |> next()
+          |> mes("[Dega]")
+          |> mes(
+            "This way, even a Swordman or an Archer can inflict damage, the way Magic does, on Ghostrings."
+          )
+          |> next()
 
-          2 ->
-            ctx
-            |> mes("[Dega]")
-            |> mes(
-              "Angelings are immune to Magic attacks. If people who can only attack with Magic face an Angeling, then it's time for"
-            )
-            |> mes("them to run.")
-            |> next()
-            |> mes("[Dega]")
-            |> mes(
-              "If you've got an extra knife or sword, you could give it a shot. But it will be very difficult alone, don't you think?"
-            )
-            |> next()
+        2 ->
+          ctx
+          |> mes("[Dega]")
+          |> mes(
+            "Angelings are immune to Magic attacks. If people who can only attack with Magic face an Angeling, then it's time for"
+          )
+          |> mes("them to run.")
+          |> next()
+          |> mes("[Dega]")
+          |> mes(
+            "If you've got an extra knife or sword, you could give it a shot. But it will be very difficult alone, don't you think?"
+          )
+          |> next()
 
-          3 ->
-            ctx |> mes("[Dega]") |> mes("Good Luck~") |> close()
-            exit(:normal)
+        3 ->
+          ctx = ctx |> mes("[Dega]") |> mes("Good Luck~") |> close()
+          throw({:script_end, ctx})
 
-          _ ->
-            ctx
-        end
+        _ ->
+          ctx
+      end
 
-      loop_2(ctx)
-    else
-      ctx
-    end
+    loop_2(ctx)
   end
 end

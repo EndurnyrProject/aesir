@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.RekenberEmployee do
     |> mes("It's almost scary what he can")
     |> mes("do with his money, you know?")
     |> close()
-
-    exit(:normal)
   end
 end

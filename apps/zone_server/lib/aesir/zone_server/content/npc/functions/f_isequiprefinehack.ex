@@ -13,35 +13,39 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FIsequiprefinehack do
 
   @doc "Callable rAthena global function; returns `{ctx, return_value}`."
   def call(ctx, args) do
-    ctx =
-      ctx
-      |> set_local(:refine_chk, Todo.call!(:getequiprefinerycnt, [Enum.at(args, 0, 0)]))
-      |> set_local(:refine, Enum.at(args, 1, 0))
+    try do
+      ctx =
+        ctx
+        |> set_local(:refine_chk, Todo.call!(:getequiprefinerycnt, [Enum.at(args, 0, 0)]))
+        |> set_local(:refine, Enum.at(args, 1, 0))
 
-    ctx =
-      if get_local(ctx, :refine, 0) != get_local(ctx, :refine_chk, 0) do
-        ctx =
-          todo(ctx, :logmes, [
-            Rathena.concat(
+      ctx =
+        if get_local(ctx, :refine, 0) != get_local(ctx, :refine_chk, 0) do
+          ctx =
+            todo(ctx, :logmes, [
               Rathena.concat(
                 Rathena.concat(
                   Rathena.concat(
-                    "Hack: Tried to swap equip with refine +",
-                    get_local(ctx, :refine, 0)
+                    Rathena.concat(
+                      "Hack: Tried to swap equip with refine +",
+                      get_local(ctx, :refine, 0)
+                    ),
+                    " for +"
                   ),
-                  " for +"
+                  get_local(ctx, :refine_chk, 0)
                 ),
-                get_local(ctx, :refine_chk, 0)
-              ),
-              "."
-            )
-          ])
+                "."
+              )
+            ])
 
-        {ctx, 1}
-      else
-        ctx
-      end
+          throw({:script_return, {ctx, 1}})
+        else
+          ctx
+        end
 
-    {ctx, 0}
+      throw({:script_return, {ctx, 0}})
+    catch
+      :throw, {:script_return, result} -> result
+    end
   end
 end

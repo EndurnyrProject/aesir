@@ -29,7 +29,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.OldMan121199 do
     |> mes("towns. They can't appreciate")
     |> mes("what's really special here...")
     |> close()
-
-    exit(:normal)
   end
 end

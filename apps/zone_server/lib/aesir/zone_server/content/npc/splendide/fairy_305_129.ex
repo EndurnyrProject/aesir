@@ -13,36 +13,40 @@ defmodule Aesir.ZoneServer.Content.Npc.Splendide.Fairy305129 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Fairy]")
-      |> mes("Hu...feel sleepy.")
-      |> mes("I am so bored. I have nothing to do.")
-      |> mes(
-        "Even my friends are fighting with those giants, but it is not really my job to help them."
-      )
-      |> next()
-      |> mes("[Fairy]")
-      |> mes("I better check my make-up")
-      |> mes("in the dressing room.")
-      |> mes("Or should I get more beauty sleep?")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Fairy]")
+        |> mes("Hu...feel sleepy.")
+        |> mes("I am so bored. I have nothing to do.")
+        |> mes(
+          "Even my friends are fighting with those giants, but it is not really my job to help them."
+        )
+        |> next()
+        |> mes("[Fairy]")
+        |> mes("I better check my make-up")
+        |> mes("in the dressing room.")
+        |> mes("Or should I get more beauty sleep?")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Fairy]")
-      |> mes("AnduNothUor O eomaurShar Mu AnduVeld")
-      |> mes("AdorFulotas Ko NorAlahAsh Ie Ala")
-      |> mes("KoOsaLon Ha AnuNeiNoh Di Ting")
-      |> mes("tasKoDiel O IyazGoth")
-      |> next()
-      |> mes("[Fairy]")
-      |> mes("OdesmahHir Or mahneaLars So ")
-      |> mes("HirNudAman O AdorWosDu")
-      |> mes("DimYurVa So DanaRuYur")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Fairy]")
+        |> mes("AnduNothUor O eomaurShar Mu AnduVeld")
+        |> mes("AdorFulotas Ko NorAlahAsh Ie Ala")
+        |> mes("KoOsaLon Ha AnuNeiNoh Di Ting")
+        |> mes("tasKoDiel O IyazGoth")
+        |> next()
+        |> mes("[Fairy]")
+        |> mes("OdesmahHir Or mahneaLars So ")
+        |> mes("HirNudAman O AdorWosDu")
+        |> mes("DimYurVa So DanaRuYur")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

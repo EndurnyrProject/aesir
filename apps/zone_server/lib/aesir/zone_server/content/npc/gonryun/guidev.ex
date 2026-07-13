@@ -32,7 +32,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Gonryun.Guidev do
     |> mes("You'll find all sorts of beautiful")
     |> mes("sights throughout the town.")
     |> close()
-
-    exit(:normal)
   end
 end

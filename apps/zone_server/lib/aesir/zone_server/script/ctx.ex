@@ -39,10 +39,10 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   @type status :: :ok | {:error, term()}
 
   typedstruct do
-    field :char_id, integer(), enforce: true
-    field :account_id, integer(), enforce: true
-    field :connection_pid, pid(), enforce: true
-    field :game_state, PlayerState.t(), enforce: true
+    field :char_id, integer() | nil, enforce: true
+    field :account_id, integer() | nil, enforce: true
+    field :connection_pid, pid() | nil, enforce: true
+    field :game_state, PlayerState.t() | nil, enforce: true
     field :source, source(), enforce: true
     field :status, status(), default: :ok
     field :interaction_pid, pid()

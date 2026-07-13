@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Jiwon do
     |> mes("Lighthalzen is like Asgard")
     |> mes("in Midgard, heaven on earth~")
     |> close()
-
-    exit(:normal)
   end
 end

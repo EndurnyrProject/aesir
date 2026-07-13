@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.EinIn01.Teinz do
     |> mes("as long as the zeny's coming")
     |> mes("in, I'm happy. Heh heh heh~")
     |> close()
-
-    exit(:normal)
   end
 end

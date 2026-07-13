@@ -23,5 +23,6 @@
   # CompiledItemScripts is generated at runtime by ScriptCompiler.compile_all!/1, so
   # it does not exist at compile/analysis time. The call is guarded with
   # @compile {:no_warn_undefined, CompiledItemScripts}, which dialyzer does not honor.
-  {"lib/aesir/zone_server/unit/player/handlers/item_handler.ex", :unknown_function}
+  {"lib/aesir/zone_server/unit/player/handlers/item_handler.ex", :unknown_function},
+  {"lib/aesir/zone_server/script/dsl.ex", :unknown_function}
 ]

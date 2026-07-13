@@ -13,23 +13,27 @@ defmodule Aesir.ZoneServer.Content.Npc.Splendide.Fairy180223 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 do
-      ctx
-      |> mes("[Kalua]")
-      |> mes(
-        "You don't look sophisticated, but I think you are better than those uncivilized guys who are around the snowfield."
-      )
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Kalua]")
+        |> mes(
+          "You don't look sophisticated, but I think you are better than those uncivilized guys who are around the snowfield."
+        )
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Kalua]")
-      |> mes(
-        "AlahCyamah U MeKoser Ir TimaurRiveh Di LarsRasTi Di AgolKones Or AlahUdenAndu Ee FusRe"
-      )
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Kalua]")
+        |> mes(
+          "AlahCyamah U MeKoser Ir TimaurRiveh Di LarsRasTi Di AgolKones Or AlahUdenAndu Ee FusRe"
+        )
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

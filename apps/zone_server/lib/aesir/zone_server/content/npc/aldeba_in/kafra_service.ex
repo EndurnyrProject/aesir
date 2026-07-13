@@ -33,15 +33,16 @@ defmodule Aesir.ZoneServer.Content.Npc.AldebaIn.KafraService do
     ctx =
       if v1 == 1 do
         if count_item(ctx, 1084) == 0 do
-          ctx
-          |> mes("[Kafra Pavianne]")
-          |> mes("I'm sorry,")
-          |> mes("but you don't")
-          |> mes("have any Kafra Passes.")
-          |> close()
-          |> cutin("", 255)
+          ctx =
+            ctx
+            |> mes("[Kafra Pavianne]")
+            |> mes("I'm sorry,")
+            |> mes("but you don't")
+            |> mes("have any Kafra Passes.")
+            |> close()
+            |> cutin("", 255)
 
-          exit(:normal)
+          throw({:script_end, ctx})
         else
           ctx =
             ctx
@@ -84,13 +85,14 @@ defmodule Aesir.ZoneServer.Content.Npc.AldebaIn.KafraService do
             if v2 == 1 do
               ctx =
                 if count_item(ctx, 1084) == 0 do
-                  ctx
-                  |> mes("[Kafra Pavianne]")
-                  |> mes("I'm sorry, but you don't have any Kafra Passes.")
-                  |> close()
-                  |> cutin("", 255)
+                  ctx =
+                    ctx
+                    |> mes("[Kafra Pavianne]")
+                    |> mes("I'm sorry, but you don't have any Kafra Passes.")
+                    |> close()
+                    |> cutin("", 255)
 
-                  exit(:normal)
+                  throw({:script_end, ctx})
                 else
                   ctx
                 end
@@ -105,8 +107,8 @@ defmodule Aesir.ZoneServer.Content.Npc.AldebaIn.KafraService do
               ctx
             end
 
-          ctx |> close() |> cutin("", 255)
-          exit(:normal)
+          ctx = ctx |> close() |> cutin("", 255)
+          throw({:script_end, ctx})
         end
       else
         ctx
@@ -118,7 +120,7 @@ defmodule Aesir.ZoneServer.Content.Npc.AldebaIn.KafraService do
     |> mes("have a good day.")
     |> close()
     |> cutin("", 255)
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

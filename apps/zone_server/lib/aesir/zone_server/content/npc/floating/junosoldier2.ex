@@ -29,7 +29,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Junosoldier2 do
       "The name of this monster originated from a story about a poor geographer who, unfortunately, was eaten by this monster while he was immersed in his studies."
     )
     |> close()
-
-    exit(:normal)
   end
 end

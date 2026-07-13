@@ -90,7 +90,5 @@ defmodule Aesir.ZoneServer.Content.Npc.CmdIn01.Niels do
     |> mes("to hell?! Go forth, meet your")
     |> mes("destiny, adventurer!")
     |> close()
-
-    exit(:normal)
   end
 end

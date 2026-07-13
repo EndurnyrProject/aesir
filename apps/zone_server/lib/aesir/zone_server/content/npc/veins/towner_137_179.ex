@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.Towner137179 do
     |> mes("weapons? Of course, that's")
     |> mes("asking a bit too much.")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -20,7 +20,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Rachel.Himuhimu do
     |> mes("me here... Zzzzz...")
     |> mes("... So hungry...")
     |> close()
-
-    exit(:normal)
   end
 end

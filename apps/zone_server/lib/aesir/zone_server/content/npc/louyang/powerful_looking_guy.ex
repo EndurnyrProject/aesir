@@ -36,7 +36,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Louyang.PowerfulLookingGuy do
       "and meditate on life's truths. First, you must find peace of mind before you can hope to master the mind and body."
     )
     |> close()
-
-    exit(:normal)
   end
 end

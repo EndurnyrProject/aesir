@@ -41,5 +41,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Umbala.KafraEmployeeKafUmbala do
       |> Aesir.ZoneServer.Content.Npc.Functions.FKafend.call([0, 1, "in the city of Umbala"])
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

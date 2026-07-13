@@ -18,6 +18,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Soldier do
   @impl true
   def on_talk(ctx) do
     ctx |> mes("[Soldier]") |> mes("Please be silent or the Csar will be angry.") |> close()
-    exit(:normal)
   end
 end

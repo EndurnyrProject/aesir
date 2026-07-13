@@ -30,35 +30,38 @@ defmodule Aesir.ZoneServer.Content.Npc.MocRuins.FlyMan do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Armani]")
-          |> mes("Yes, yes! I'm talking about the Dragon Fly, master of all flies!!")
-          |> mes("The Dragon Fly is a special one that stays in the North-east of the town.")
-          |> next()
-          |> mes("[Armani]")
-          |> mes("It's so much stronger than the other flies.")
-          |> next()
-          |> mes("[Armani]")
-          |> mes(
-            "And when you kill it, there's even a chance that you might earn a ^880000Clip^000000 item!"
-          )
-          |> next()
-          |> mes("[Armani]")
-          |> mes("Anyways, don't you think the Satan Morocc is so cruel?")
-          |> mes(
-            "They may not be the same kind, but still isn't it cruel to take that monster's soul with a single blow?"
-          )
-          |> next()
-          |> mes("[Armani]")
-          |> mes("What should we do when this dreadful evil has come to life again!")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Armani]")
+            |> mes("Yes, yes! I'm talking about the Dragon Fly, master of all flies!!")
+            |> mes("The Dragon Fly is a special one that stays in the North-east of the town.")
+            |> next()
+            |> mes("[Armani]")
+            |> mes("It's so much stronger than the other flies.")
+            |> next()
+            |> mes("[Armani]")
+            |> mes(
+              "And when you kill it, there's even a chance that you might earn a ^880000Clip^000000 item!"
+            )
+            |> next()
+            |> mes("[Armani]")
+            |> mes("Anyways, don't you think the Satan Morocc is so cruel?")
+            |> mes(
+              "They may not be the same kind, but still isn't it cruel to take that monster's soul with a single blow?"
+            )
+            |> next()
+            |> mes("[Armani]")
+            |> mes("What should we do when this dreadful evil has come to life again!")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

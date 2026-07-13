@@ -70,60 +70,63 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.RedIzlude do
       if v1 == 1 do
         ctx =
           if get_char_var(ctx, :BaseClass, 0) == :swordman do
-            ctx
-            |> mes("[Red]")
-            |> mes(
-              "Hahahaha!!! I knew you'd see things my way!! You ARE a great guy!! Undoubtedly, only ^FF2400Bash^000000 suits a Swordman. Please tell that to this BONEHEAD over here~ Hahaha!"
-            )
-            |> next()
-            |> mes("[Red]")
-            |> mes(
-              "Hmm, let me give you a bit of advice. After you achieve level 5 'Bash', the amount of SP consumed by the skill increases greatly, so watch out for your SP."
-            )
-            |> close()
+            ctx =
+              ctx
+              |> mes("[Red]")
+              |> mes(
+                "Hahahaha!!! I knew you'd see things my way!! You ARE a great guy!! Undoubtedly, only ^FF2400Bash^000000 suits a Swordman. Please tell that to this BONEHEAD over here~ Hahaha!"
+              )
+              |> next()
+              |> mes("[Red]")
+              |> mes(
+                "Hmm, let me give you a bit of advice. After you achieve level 5 'Bash', the amount of SP consumed by the skill increases greatly, so watch out for your SP."
+              )
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
 
-        ctx
-        |> mes("[Red]")
-        |> mes(
-          "Hahahaha!! See!? Someone who pursues a different job agrees with me~! You really are a great guy! Hahaha!! Undoubtedly, only ^FF2400Bash^000000 suits a Swordman. Please tell that to this NIMROD over here~ Hahaha!"
-        )
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Red]")
+          |> mes(
+            "Hahahaha!! See!? Someone who pursues a different job agrees with me~! You really are a great guy! Hahaha!! Undoubtedly, only ^FF2400Bash^000000 suits a Swordman. Please tell that to this NIMROD over here~ Hahaha!"
+          )
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
 
     ctx =
       if get_char_var(ctx, :BaseClass, 0) == :swordman do
-        ctx
-        |> mes("[Cebalis]")
-        |> mes(
-          "Alright!! ^EE0000Magnum Break^000000 is the BEST!! Now you're talking~!! You know the stuff~ HaHaHa!"
-        )
-        |> next()
-        |> mes("[Cebalis]")
-        |> mes(
-          "You wanna know some useful information? Okay, okay lemme tell ya! Magnum Break has Fire Property."
-        )
-        |> next()
-        |> mes("[Cebalis]")
-        |> mes(
-          "So it won't be too effective against monsters with the Water property, but this is THE skill to use against Undead and Earth property monsters!"
-        )
-        |> next()
-        |> mes("[Cebalis]")
-        |> mes(
-          "And most importantly, look around before you use it. Otherwise you'll be in BIG trouble~ "
-        )
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Cebalis]")
+          |> mes(
+            "Alright!! ^EE0000Magnum Break^000000 is the BEST!! Now you're talking~!! You know the stuff~ HaHaHa!"
+          )
+          |> next()
+          |> mes("[Cebalis]")
+          |> mes(
+            "You wanna know some useful information? Okay, okay lemme tell ya! Magnum Break has Fire Property."
+          )
+          |> next()
+          |> mes("[Cebalis]")
+          |> mes(
+            "So it won't be too effective against monsters with the Water property, but this is THE skill to use against Undead and Earth property monsters!"
+          )
+          |> next()
+          |> mes("[Cebalis]")
+          |> mes(
+            "And most importantly, look around before you use it. Otherwise you'll be in BIG trouble~ "
+          )
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -134,7 +137,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.RedIzlude do
       "Right?! ^EE0000Magnum Break^000000 is THE BEST!!! You know what you're talking about, eh? I don't know why this jerkface is being sooooo stubborn."
     )
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

@@ -50,5 +50,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Izlu2dun.KafraEmployeeKafIzlu2dun do
       |> Aesir.ZoneServer.Content.Npc.Functions.FKafend.call([0, 1, "at Byalan Island"])
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

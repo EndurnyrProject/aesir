@@ -13,34 +13,38 @@ defmodule Aesir.ZoneServer.Content.Npc.Umbala.UtanMan193208 do
   @impl true
   def on_talk(ctx) do
     if get_char_var(ctx, :event_umbala, 0) >= 3 do
-      ctx
-      |> mes("[Weitan]")
-      |> mes("I too did the bungee jump when I")
-      |> mes("was young. I remember it well...")
-      |> mes("It was my first time, and the")
-      |> mes("ground rushed up to meet me...")
-      |> mes("For a moment, I thought I was")
-      |> mes("going to get myself killed...")
-      |> next()
-      |> mes("[Weitan]")
-      |> mes("But after I made it, I was so")
-      |> mes("proud of myself~")
-      |> mes("Some Utans may not agree, but")
-      |> mes("I think bungee jumping is an")
-      |> mes("important part of the ceremony")
-      |> mes("of adulthood.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Weitan]")
+        |> mes("I too did the bungee jump when I")
+        |> mes("was young. I remember it well...")
+        |> mes("It was my first time, and the")
+        |> mes("ground rushed up to meet me...")
+        |> mes("For a moment, I thought I was")
+        |> mes("going to get myself killed...")
+        |> next()
+        |> mes("[Weitan]")
+        |> mes("But after I made it, I was so")
+        |> mes("proud of myself~")
+        |> mes("Some Utans may not agree, but")
+        |> mes("I think bungee jumping is an")
+        |> mes("important part of the ceremony")
+        |> mes("of adulthood.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[???]")
-      |> mes("Umbahumba umumbah.")
-      |> mes("Umbahumbah umbabah.")
-      |> mes("Umbahumhumbabahum.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[???]")
+        |> mes("Umbahumba umumbah.")
+        |> mes("Umbahumbah umbabah.")
+        |> mes("Umbahumhumbabahum.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

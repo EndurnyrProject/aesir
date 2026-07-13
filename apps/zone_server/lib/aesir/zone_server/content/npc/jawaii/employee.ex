@@ -44,28 +44,30 @@ defmodule Aesir.ZoneServer.Content.Npc.Jawaii.Employee do
 
         ctx =
           if zeny(ctx) > 999 do
-            ctx
-            |> mes("T-Thank you ssso much!")
-            |> mes("L-Let open the room door")
-            |> mes("ffffor you. Thank y-you.")
-            |> mes("Ha-have a good time.")
-            |> close()
-            |> pay_zeny(1000)
-            |> warp("jawaii_in", 116, 64)
+            ctx =
+              ctx
+              |> mes("T-Thank you ssso much!")
+              |> mes("L-Let open the room door")
+              |> mes("ffffor you. Thank y-you.")
+              |> mes("Ha-have a good time.")
+              |> close()
+              |> pay_zeny(1000)
+              |> warp("jawaii_in", 116, 64)
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
 
-        ctx
-        |> mes("Oh no! Oh no no no no no.")
-        |> mes("Th-This isn't enough money?")
-        |> mes("I-I'm ssssorry, but my b-boss w-will beat me if I l-let you")
-        |> mes("in without paying...")
-        |> close()
+        ctx =
+          ctx
+          |> mes("Oh no! Oh no no no no no.")
+          |> mes("Th-This isn't enough money?")
+          |> mes("I-I'm ssssorry, but my b-boss w-will beat me if I l-let you")
+          |> mes("in without paying...")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -78,7 +80,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jawaii.Employee do
     )
     |> emotion(:cry)
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

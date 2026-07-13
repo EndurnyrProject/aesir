@@ -30,15 +30,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Jawaii.Mariner122263 do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Mariner]")
-        |> mes("Now, let me")
-        |> mes("take you back")
-        |> mes("to Alberta.")
-        |> close()
-        |> warp("alberta", 192, 157)
+        ctx =
+          ctx
+          |> mes("[Mariner]")
+          |> mes("Now, let me")
+          |> mes("take you back")
+          |> mes("to Alberta.")
+          |> close()
+          |> warp("alberta", 192, 157)
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -52,7 +53,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jawaii.Mariner122263 do
     |> mes("ready to leave when")
     |> mes("you are.")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

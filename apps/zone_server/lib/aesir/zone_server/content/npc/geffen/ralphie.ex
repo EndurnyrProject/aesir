@@ -44,7 +44,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Geffen.Ralphie do
     |> mes("[Ralphie]")
     |> mes("...Boy, this is awkward.")
     |> close()
-
-    exit(:normal)
   end
 end

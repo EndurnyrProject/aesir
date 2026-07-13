@@ -24,19 +24,20 @@ defmodule Aesir.ZoneServer.Content.Npc.Izlu2dun.Sailor do
 
     ctx =
       if v1 == 1 do
-        _ =
+        ctx =
           if Rathena.truthy?(checkre(ctx, 0)) do
             warp(ctx, "izlude", 197, 210)
           else
             warp(ctx, "izlude", 176, 182)
           end
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
 
     close(ctx)
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

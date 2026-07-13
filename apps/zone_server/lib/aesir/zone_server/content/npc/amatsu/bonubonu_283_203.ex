@@ -40,7 +40,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Amatsu.Bonubonu283203 do
     |> mes("spend some time there.")
     |> mes("It is really a miraculous and gracious tree...")
     |> close()
-
-    exit(:normal)
   end
 end

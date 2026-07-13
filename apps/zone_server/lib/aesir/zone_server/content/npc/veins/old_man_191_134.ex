@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.OldMan191134 do
     |> mes("you think that's great,")
     |> mes("young adventurer?")
     |> close()
-
-    exit(:normal)
   end
 end

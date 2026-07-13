@@ -15,13 +15,35 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.Npc do
 
   alias Aesir.ZoneServer.Script.Rathena
   @impl true
-  def on_event("OnTouch", ctx), do: ev_ontouch(ctx)
-  def on_event("OnInit", ctx), do: ev_oninit(ctx)
-  def on_event("OnHide", ctx), do: ev_onhide(ctx)
-  def on_event("OnUnhide", ctx), do: ev_onunhide(ctx)
+  def on_event("OnTouch", ctx) do
+    ev_ontouch(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  def on_event("OnInit", ctx) do
+    ev_oninit(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  def on_event("OnHide", ctx) do
+    ev_onhide(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  def on_event("OnUnhide", ctx) do
+    ev_onunhide(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
   @impl true
-  def on_talk(_ctx) do
-    exit(:normal)
+  def on_talk(ctx) do
+    ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   def ev_ontouch(ctx) do
@@ -30,22 +52,22 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.Npc do
     ctx =
       case v1 do
         0 ->
-          _ = warp(ctx, "ra_fild12", 292, 204)
-          exit(:normal)
+          ctx = warp(ctx, "ra_fild12", 292, 204)
+          throw({:script_end, ctx})
 
         1 ->
-          _ =
+          ctx =
             if Rathena.truthy?(checkre(ctx, 0)) do
               warp(ctx, "izlude", 200, 73)
             else
               warp(ctx, "izlude", 200, 56)
             end
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          _ = warp(ctx, "yuno", 12, 261)
-          exit(:normal)
+          ctx = warp(ctx, "yuno", 12, 261)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
@@ -60,11 +82,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.Npc do
 
   def ev_onhide(ctx) do
     ctx |> specialeffect(:bash) |> todo(:disablenpc, [])
-    exit(:normal)
   end
 
   def ev_onunhide(ctx) do
     ctx |> todo(:enablenpc, []) |> specialeffect(:summonslave)
-    exit(:normal)
   end
 end

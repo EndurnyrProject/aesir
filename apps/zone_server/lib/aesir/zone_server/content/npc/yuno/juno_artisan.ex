@@ -32,71 +32,77 @@ defmodule Aesir.ZoneServer.Content.Npc.Yuno.JunoArtisan do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Artisan]")
-          |> mes(
-            "Let me suggest the ^3355FFHoly Guard^000000 and ^3355FFHoly Avenger^000000 which are special items for Crusaders."
-          )
-          |> next()
-          |> mes("[Artisan]")
-          |> mes(
-            "These pieces of equipment are very light and have sufficient abilities. They also happen to possess holy power."
-          )
-          |> next()
-          |> mes("[Artisan]")
-          |> mes(
-            "Therefore, this equipment is more powerful over some kinds of monsters such as Ghosts or the Undead."
-          )
-          |> next()
-          |> mes("[Artisan]")
-          |> mes(
-            "However it is rumored that only a few chosen Crusaders are able to obtain those items due of their rarity."
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Artisan]")
+            |> mes(
+              "Let me suggest the ^3355FFHoly Guard^000000 and ^3355FFHoly Avenger^000000 which are special items for Crusaders."
+            )
+            |> next()
+            |> mes("[Artisan]")
+            |> mes(
+              "These pieces of equipment are very light and have sufficient abilities. They also happen to possess holy power."
+            )
+            |> next()
+            |> mes("[Artisan]")
+            |> mes(
+              "Therefore, this equipment is more powerful over some kinds of monsters such as Ghosts or the Undead."
+            )
+            |> next()
+            |> mes("[Artisan]")
+            |> mes(
+              "However it is rumored that only a few chosen Crusaders are able to obtain those items due of their rarity."
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Artisan]")
-          |> mes(
-            "It looks like a simple scroll marked with concentric circles and a star. Although the ^FF3355Worn-Out Magic Scroll^000000 is very old, it's wanted by many Sages for research purposes."
-          )
-          |> next()
-          |> mes("[Artisan]")
-          |> mes("It seems you can use that item when you chant a high-level magic spell.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Artisan]")
+            |> mes(
+              "It looks like a simple scroll marked with concentric circles and a star. Although the ^FF3355Worn-Out Magic Scroll^000000 is very old, it's wanted by many Sages for research purposes."
+            )
+            |> next()
+            |> mes("[Artisan]")
+            |> mes("It seems you can use that item when you chant a high-level magic spell.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx
-          |> mes("[Artisan]")
-          |> mes(
-            "^3355FFRice Cake^000000! Yes, it's a traditional food that's favored by a lot of people. There's a lot of nostalgic memories of old fashioned markets that are connected to the Rice Cake."
-          )
-          |> next()
-          |> mes("[Artisan]")
-          |> mes("Ahhh~")
-          |> mes("I wish I could eat a bit of Rice Cake right now.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Artisan]")
+            |> mes(
+              "^3355FFRice Cake^000000! Yes, it's a traditional food that's favored by a lot of people. There's a lot of nostalgic memories of old fashioned markets that are connected to the Rice Cake."
+            )
+            |> next()
+            |> mes("[Artisan]")
+            |> mes("Ahhh~")
+            |> mes("I wish I could eat a bit of Rice Cake right now.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         4 ->
-          ctx
-          |> mes("[Artisan]")
-          |> mes(
-            "Although Juno is known as a city of Sages, I hope you understand that ordinary people live and prosper here as well. Please enjoy the unique atmosphere that Juno has to offer."
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Artisan]")
+            |> mes(
+              "Although Juno is known as a city of Sages, I hope you understand that ordinary people live and prosper here as well. Please enjoy the unique atmosphere that Juno has to offer."
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

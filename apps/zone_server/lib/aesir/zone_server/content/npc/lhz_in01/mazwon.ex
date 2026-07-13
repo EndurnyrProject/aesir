@@ -30,7 +30,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Mazwon do
     |> mes("Stop bugging me,")
     |> mes("I didn't do anything!")
     |> close()
-
-    exit(:normal)
   end
 end

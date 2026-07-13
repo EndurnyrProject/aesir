@@ -34,7 +34,5 @@ defmodule Aesir.ZoneServer.Content.Npc.VeIn.Towner318121 do
     |> mes("compassion, her liquor")
     |> mes("is limitless. Let us pray.")
     |> close()
-
-    exit(:normal)
   end
 end

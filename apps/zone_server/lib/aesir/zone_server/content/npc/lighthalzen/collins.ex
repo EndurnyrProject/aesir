@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Collins do
     |> mes("do people get hired there")
     |> mes("in the first place anyway?")
     |> close()
-
-    exit(:normal)
   end
 end

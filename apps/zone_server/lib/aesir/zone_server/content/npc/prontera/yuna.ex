@@ -44,7 +44,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Prontera.Yuna do
       "But this statue is obviously not muscular enough, not godly enough to fairly represent a god! Maybe if he had a halo?"
     )
     |> close()
-
-    exit(:normal)
   end
 end

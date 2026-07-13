@@ -24,15 +24,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Gonryun.KunlunEnvoy do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Zhang Quing Long]")
-        |> mes("I hope you enjoyed your trip.")
-        |> mes("Now, let me guide you back")
-        |> mes("to the harbor.")
-        |> close()
-        |> warp("gon_fild01", 258, 82)
+        ctx =
+          ctx
+          |> mes("[Zhang Quing Long]")
+          |> mes("I hope you enjoyed your trip.")
+          |> mes("Now, let me guide you back")
+          |> mes("to the harbor.")
+          |> close()
+          |> warp("gon_fild01", 258, 82)
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -43,7 +44,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Gonryun.KunlunEnvoy do
     |> mes("There should be many places")
     |> mes("you may have missed.")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

@@ -33,7 +33,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.Towner14841 do
     |> mes("Well then, I hope that")
     |> mes("you enjoy your stay~")
     |> close()
-
-    exit(:normal)
   end
 end

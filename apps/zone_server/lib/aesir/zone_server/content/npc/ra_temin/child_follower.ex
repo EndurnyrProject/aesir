@@ -36,7 +36,5 @@ defmodule Aesir.ZoneServer.Content.Npc.RaTemin.ChildFollower do
     |> mes("Do you know how I can")
     |> mes("find our pope?")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -27,8 +27,8 @@ defmodule Aesir.ZoneServer.Content.Npc.YAirport.InternationalBoarding do
 
     ctx =
       if v1 == 1 do
-        _ = warp(ctx, "yuno", 47, 244)
-        exit(:normal)
+        ctx = warp(ctx, "yuno", 47, 244)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -41,7 +41,7 @@ defmodule Aesir.ZoneServer.Content.Npc.YAirport.InternationalBoarding do
     |> mes("enjoy your travels on our")
     |> mes("state of the art Airships.")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

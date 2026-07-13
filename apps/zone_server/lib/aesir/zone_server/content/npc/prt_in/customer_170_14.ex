@@ -19,7 +19,5 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtIn.Customer17014 do
     |> mes("Grrrrr!! That hit the spot!")
     |> emotion(:cry)
     |> close()
-
-    exit(:normal)
   end
 end

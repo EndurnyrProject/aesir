@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbroch.Khetine do
     |> mes("doesn't affect me, why")
     |> mes("should I be concerned?")
     |> close()
-
-    exit(:normal)
   end
 end

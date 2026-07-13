@@ -13,8 +13,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FIsequipcardhack do
 
   @doc "Callable rAthena global function; returns `{ctx, return_value}`."
   def call(ctx, args) do
-    ctx = ctx |> set_local(:pos, Enum.at(args, 0, 0)) |> set_local(:i, 0) |> loop_1(args)
-    {ctx, 0}
+    try do
+      ctx = ctx |> set_local(:pos, Enum.at(args, 0, 0)) |> set_local(:i, 0) |> loop_1(args)
+      throw({:script_return, {ctx, 0}})
+    catch
+      :throw, {:script_return, result} -> result
+    end
   end
 
   defp loop_1(ctx, args) do
@@ -47,7 +51,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FIsequipcardhack do
               )
             ])
 
-          {ctx, 1}
+          throw({:script_return, {ctx, 1}})
         else
           ctx
         end

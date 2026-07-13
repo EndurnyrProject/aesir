@@ -11,7 +11,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Comodo.LaEd do
     spawn: [%{map: "comodo", x: 170, y: 137, dir: 7, sprite: 84, name: "La Ed"}]
 
   @impl true
-  def on_talk(_ctx) do
-    exit(:normal)
+  def on_talk(ctx) do
+    ctx
   end
 end

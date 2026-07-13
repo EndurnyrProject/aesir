@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Enoz do
     |> mes("I was compelled to share that")
     |> mes("with you. Seriously, I don't...")
     |> close()
-
-    exit(:normal)
   end
 end

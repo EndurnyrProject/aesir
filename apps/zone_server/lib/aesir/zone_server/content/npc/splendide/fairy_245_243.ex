@@ -13,36 +13,40 @@ defmodule Aesir.ZoneServer.Content.Npc.Splendide.Fairy245243 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Fairy]")
-      |> mes("This land was such a waste land.")
-      |> mes("It was extremely cold and")
-      |> mes("nothing could live here.")
-      |> mes("but, once we inhabited this place, it has been changing day by day.")
-      |> next()
-      |> mes("[Fairy]")
-      |> mes("Now, all the problems are gone.")
-      |> mes("Except those ugly fat Saphas.")
-      |> mes("How can we be rid of those things?")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Fairy]")
+        |> mes("This land was such a waste land.")
+        |> mes("It was extremely cold and")
+        |> mes("nothing could live here.")
+        |> mes("but, once we inhabited this place, it has been changing day by day.")
+        |> next()
+        |> mes("[Fairy]")
+        |> mes("Now, all the problems are gone.")
+        |> mes("Except those ugly fat Saphas.")
+        |> mes("How can we be rid of those things?")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Fairy]")
-      |> mes("DiebVohlWeh Ko RasVeldFar Ie AshVohl")
-      |> mes("neaAmanIman Ie DorDuMe No Hireo")
-      |> mes("tassermaur Yee DorAdorNud Ee ")
-      |> mes("NohThorVe O FusImanAman")
-      |> next()
-      |> mes("[Fairy]")
-      |> mes("OsaVeldWeh U GothIyazVer Or ")
-      |> mes("LarsAnDor Yee TurVeldVil")
-      |> mes("LarsDanaFus An DiebImanmar er Dim")
-      |> mes("tasLoRini Ir WehAndu")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Fairy]")
+        |> mes("DiebVohlWeh Ko RasVeldFar Ie AshVohl")
+        |> mes("neaAmanIman Ie DorDuMe No Hireo")
+        |> mes("tassermaur Yee DorAdorNud Ee ")
+        |> mes("NohThorVe O FusImanAman")
+        |> next()
+        |> mes("[Fairy]")
+        |> mes("OsaVeldWeh U GothIyazVer Or ")
+        |> mes("LarsAnDor Yee TurVeldVil")
+        |> mes("LarsDanaFus An DiebImanmar er Dim")
+        |> mes("tasLoRini Ir WehAndu")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

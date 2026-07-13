@@ -28,8 +28,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Geffen.Stacey do
           ctx |> mes("Oooh~!") |> mes("I'm so jealous!")
         end
 
-      close(ctx)
-      exit(:normal)
+      ctx = close(ctx)
+      throw({:script_end, ctx})
     else
       if getequipid(ctx, 6) == 5094 do
         ctx =
@@ -62,33 +62,36 @@ defmodule Aesir.ZoneServer.Content.Npc.Geffen.Stacey do
             |> mes("But I thought only members of the Orc Tribe could wear those?")
           end
 
-        close(ctx)
-        exit(:normal)
+        ctx = close(ctx)
+        throw({:script_end, ctx})
       else
-        ctx
-        |> mes("[Stacey]")
-        |> mes("Hello~!")
-        |> mes("Oh, aren't you")
-        |> mes("an adventurer?")
-        |> next()
-        |> mes("[Stacey]")
-        |> mes(
-          "Have you ever seen any Orcs from the Demi-Human tribe? If you go down southward from here, I think you can find Orcs in the deep forest."
-        )
-        |> next()
-        |> mes("[Stacey]")
-        |> mes(
-          "I hear that Orcs have their own culture and language, supposedly just like us humans. Does that mean Orcs go on dates...?"
-        )
-        |> next()
-        |> mes("[Stacey]")
-        |> mes(
-          "You know, where they tenderly whisper sweet nothings and then... Oh! I really want to know!"
-        )
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Stacey]")
+          |> mes("Hello~!")
+          |> mes("Oh, aren't you")
+          |> mes("an adventurer?")
+          |> next()
+          |> mes("[Stacey]")
+          |> mes(
+            "Have you ever seen any Orcs from the Demi-Human tribe? If you go down southward from here, I think you can find Orcs in the deep forest."
+          )
+          |> next()
+          |> mes("[Stacey]")
+          |> mes(
+            "I hear that Orcs have their own culture and language, supposedly just like us humans. Does that mean Orcs go on dates...?"
+          )
+          |> next()
+          |> mes("[Stacey]")
+          |> mes(
+            "You know, where they tenderly whisper sweet nothings and then... Oh! I really want to know!"
+          )
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       end
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

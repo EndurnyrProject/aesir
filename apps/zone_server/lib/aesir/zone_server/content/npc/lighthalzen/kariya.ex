@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Kariya do
     |> mes("all the Schwarzwald Republic.")
     |> mes("So how do you like this place?")
     |> close()
-
-    exit(:normal)
   end
 end

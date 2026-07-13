@@ -98,6 +98,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Payon.Drunkard do
       end
 
     close(ctx)
-    exit(:normal)
   end
 end

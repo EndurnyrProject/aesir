@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.VeIn.Towner234105 do
     |> mes("believe anymore! Freya!")
     |> mes("Freya looooves you!")
     |> close()
-
-    exit(:normal)
   end
 end

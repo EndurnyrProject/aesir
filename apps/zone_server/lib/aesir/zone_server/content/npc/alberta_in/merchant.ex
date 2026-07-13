@@ -36,20 +36,21 @@ defmodule Aesir.ZoneServer.Content.Npc.AlbertaIn.Merchant do
 
           ctx =
             if not Rathena.truthy?(v1) do
-              ctx
-              |> mes("[Chief Mahnsoo]")
-              |> mes("Hmmm...")
-              |> mes(
-                "It seems that you're not ready to become a Merchant again. Go finish learning the Basic Novice Skills first."
-              )
-              |> next()
-              |> mes("[Chief Mahnsoo]")
-              |> mes(
-                "Don't worry, we'll always have a Merchant position open for you. Just come back when you're ready, okay?"
-              )
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Chief Mahnsoo]")
+                |> mes("Hmmm...")
+                |> mes(
+                  "It seems that you're not ready to become a Merchant again. Go finish learning the Basic Novice Skills first."
+                )
+                |> next()
+                |> mes("[Chief Mahnsoo]")
+                |> mes(
+                  "Don't worry, we'll always have a Merchant position open for you. Just come back when you're ready, okay?"
+                )
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
               ctx
             end
@@ -67,22 +68,24 @@ defmodule Aesir.ZoneServer.Content.Npc.AlbertaIn.Merchant do
           ctx = todo(ctx, :skill, ["MC_CARTREVOLUTION", 1, get_char_var(ctx, :SKILL_PERM, 0)])
           ctx = todo(ctx, :skill, ["MC_CHANGECART", 1, get_char_var(ctx, :SKILL_PERM, 0)])
 
-          ctx
-          |> todo(:skill, ["MC_LOUD", 1, get_char_var(ctx, :SKILL_PERM, 0)])
-          |> mes("[Chief Mahnsoo]")
-          |> mes("Ah~ How nostalgic. Just like old times! Alright, do your best!")
-          |> close()
+          ctx =
+            ctx
+            |> todo(:skill, ["MC_LOUD", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+            |> mes("[Chief Mahnsoo]")
+            |> mes("Ah~ How nostalgic. Just like old times! Alright, do your best!")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
         else
-          ctx
-          |> mes("[Chief Mahnsoo]")
-          |> mes("^333333*Sigh*^000000")
-          |> mes("I'm so bored...")
-          |> mes("When will I hear from my lovely Blossom?")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Chief Mahnsoo]")
+            |> mes("^333333*Sigh*^000000")
+            |> mes("I'm so bored...")
+            |> mes("When will I hear from my lovely Blossom?")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
         end
       else
         ctx
@@ -121,107 +124,113 @@ defmodule Aesir.ZoneServer.Content.Npc.AlbertaIn.Merchant do
                 |> mes("We have business ethics you know.")
               end
 
-            close(ctx)
-            exit(:normal)
+            ctx = close(ctx)
+            throw({:script_end, ctx})
           else
             ctx = ctx |> mes("Want to be a merchant? Hmm...") |> next()
             v3 = can_change_job?(ctx)
 
             ctx =
               if not Rathena.truthy?(v3) do
-                ctx
-                |> mes("[Guildsman Mahnsoo]")
-                |> mes(
-                  "But if you want to be a merchant, your basic skill level must reach Level 9 or you must spend all of your skill points."
-                )
-                |> next()
-                |> mes("[Guildsman Mahnsoo]")
-                |> mes(
-                  "Don't you think we need to learn some basic skills although we just deal with money?"
-                )
-                |> close()
+                ctx =
+                  ctx
+                  |> mes("[Guildsman Mahnsoo]")
+                  |> mes(
+                    "But if you want to be a merchant, your basic skill level must reach Level 9 or you must spend all of your skill points."
+                  )
+                  |> next()
+                  |> mes("[Guildsman Mahnsoo]")
+                  |> mes(
+                    "Don't you think we need to learn some basic skills although we just deal with money?"
+                  )
+                  |> close()
 
-                exit(:normal)
+                throw({:script_end, ctx})
               else
                 ctx
               end
 
-            ctx
-            |> mes("[Guildsman Mahnsoo]")
-            |> mes(
-              "Good, I think you're fully ready for it seeing that your basic skill level is fulfilled."
-            )
-            |> mes("Now I allow you to be a merchant.")
-            |> next()
-            |> mes("[Guildsman Mahnsoo]")
-            |> mes("Congratulations on becoming a merchant!")
-            |> mes(
-              "Congratulations again for being a member of the merchant guild and one of our colleagues. I expect your active participation from now on!"
-            )
-            |> jobchange(:merchant)
-            |> give_item(1381, 1)
-            |> next()
-            |> mes("[Guildsman Mahnsoo]")
-            |> mes(
-              "Absolutely, we need young people who have passion to achieve our great goal for securing 20% of the worldwide currency volume. You get it? Huh?"
-            )
-            |> mes(
-              "Well, I'm just saying... it means let's make lots of money in the end. You guys know that~"
-            )
-            |> close()
+            ctx =
+              ctx
+              |> mes("[Guildsman Mahnsoo]")
+              |> mes(
+                "Good, I think you're fully ready for it seeing that your basic skill level is fulfilled."
+              )
+              |> mes("Now I allow you to be a merchant.")
+              |> next()
+              |> mes("[Guildsman Mahnsoo]")
+              |> mes("Congratulations on becoming a merchant!")
+              |> mes(
+                "Congratulations again for being a member of the merchant guild and one of our colleagues. I expect your active participation from now on!"
+              )
+              |> jobchange(:merchant)
+              |> give_item(1381, 1)
+              |> next()
+              |> mes("[Guildsman Mahnsoo]")
+              |> mes(
+                "Absolutely, we need young people who have passion to achieve our great goal for securing 20% of the worldwide currency volume. You get it? Huh?"
+              )
+              |> mes(
+                "Well, I'm just saying... it means let's make lots of money in the end. You guys know that~"
+              )
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           end
 
         2 ->
-          ctx
-          |> mes("[Guildsman Mahnsoo]")
-          |> mes(
-            "Merchant? To put it simply, the person who sells good and makes money is a merchant."
-          )
-          |> mes(
-            "Not good at fighting and doesn't have special attack/recovery skills... but a merchant can buy things at a low price and then sell them and make money."
-          )
-          |> next()
-          |> mes("[Guildsman Mahnsoo]")
-          |> mes(
-            "Well, a merchant has an ultimate skill called Mammonite which strikes an enemy with his/her money... We can equip everything except Bows, Rods, and Two-Handed Swords. But we can always sell and buy those."
-          )
-          |> mes("Yes... we merchants always have money on our minds, got it?")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Guildsman Mahnsoo]")
+            |> mes(
+              "Merchant? To put it simply, the person who sells good and makes money is a merchant."
+            )
+            |> mes(
+              "Not good at fighting and doesn't have special attack/recovery skills... but a merchant can buy things at a low price and then sell them and make money."
+            )
+            |> next()
+            |> mes("[Guildsman Mahnsoo]")
+            |> mes(
+              "Well, a merchant has an ultimate skill called Mammonite which strikes an enemy with his/her money... We can equip everything except Bows, Rods, and Two-Handed Swords. But we can always sell and buy those."
+            )
+            |> mes("Yes... we merchants always have money on our minds, got it?")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx
-          |> mes("[Guildsman Mahnsoo]")
-          |> mes(
-            "To become a merchant, although just selling and receiving money is our job, you must reach at least basic skill level 9."
-          )
-          |> next()
-          |> mes("[Guildsman Mahnsoo]")
-          |> mes(
-            "Well, we used to receive a start-up fee before. Wasn't it hard to make that money?"
-          )
-          |> mes("There were too many people who couldn't gather that money and kept crying.")
-          |> next()
-          |> mes("[Guildsman Mahnsoo]")
-          |> mes(
-            "So recently, we decided to allow any Novice who wants to be a merchant become one."
-          )
-          |> mes("Because to be alive or not later is all up to one's ability.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Guildsman Mahnsoo]")
+            |> mes(
+              "To become a merchant, although just selling and receiving money is our job, you must reach at least basic skill level 9."
+            )
+            |> next()
+            |> mes("[Guildsman Mahnsoo]")
+            |> mes(
+              "Well, we used to receive a start-up fee before. Wasn't it hard to make that money?"
+            )
+            |> mes("There were too many people who couldn't gather that money and kept crying.")
+            |> next()
+            |> mes("[Guildsman Mahnsoo]")
+            |> mes(
+              "So recently, we decided to allow any Novice who wants to be a merchant become one."
+            )
+            |> mes("Because to be alive or not later is all up to one's ability.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         4 ->
-          close(ctx)
-          exit(:normal)
+          ctx = close(ctx)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

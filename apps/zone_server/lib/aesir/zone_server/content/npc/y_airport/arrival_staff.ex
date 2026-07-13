@@ -47,8 +47,8 @@ defmodule Aesir.ZoneServer.Content.Npc.YAirport.ArrivalStaff do
 
         ctx =
           if v2 == 1 do
-            _ = warp(ctx, "y_airport", 142, 40)
-            exit(:normal)
+            ctx = warp(ctx, "y_airport", 142, 40)
+            throw({:script_end, ctx})
           else
             ctx
           end
@@ -65,7 +65,7 @@ defmodule Aesir.ZoneServer.Content.Npc.YAirport.ArrivalStaff do
     |> mes("and I hope you have")
     |> mes("a pleasant flight~")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

@@ -37,7 +37,5 @@ defmodule Aesir.ZoneServer.Content.Npc.HuIn01.APartTimer do
     |> mes("can't really pay you, but it's")
     |> mes("a great chance to explore~")
     |> close()
-
-    exit(:normal)
   end
 end

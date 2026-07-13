@@ -42,28 +42,30 @@ defmodule Aesir.ZoneServer.Content.Npc.Jawaii.Employee112173 do
 
         ctx =
           if zeny(ctx) > 999 do
-            ctx
-            |> mes("Thank you~")
-            |> mes("Enjoy your stay.")
-            |> close()
-            |> pay_zeny(1000)
-            |> warp("jawaii_in", 87, 75)
+            ctx =
+              ctx
+              |> mes("Thank you~")
+              |> mes("Enjoy your stay.")
+              |> close()
+              |> pay_zeny(1000)
+              |> warp("jawaii_in", 87, 75)
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
 
-        ctx
-        |> mes("Oh what a shame!")
-        |> mes("You don't seem")
-        |> mes("to have enough money...?")
-        |> mes("Why don't you ask your")
-        |> mes("partner to help you")
-        |> mes("with the charge?")
-        |> close()
+        ctx =
+          ctx
+          |> mes("Oh what a shame!")
+          |> mes("You don't seem")
+          |> mes("to have enough money...?")
+          |> mes("Why don't you ask your")
+          |> mes("partner to help you")
+          |> mes("with the charge?")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -75,7 +77,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jawaii.Employee112173 do
       "If you like, you may wish to check the Honey Room. Although the roomkeeper, Sharkie, is a shy girl, the room is really beautiful."
     )
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

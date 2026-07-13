@@ -25,8 +25,8 @@ defmodule Aesir.ZoneServer.Content.Npc.YAirport.DomesticBoarding do
 
     ctx =
       if v1 == 1 do
-        _ = warp(ctx, "yuno", 59, 244)
-        exit(:normal)
+        ctx = warp(ctx, "yuno", 59, 244)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -38,7 +38,7 @@ defmodule Aesir.ZoneServer.Content.Npc.YAirport.DomesticBoarding do
     |> mes("patronage, and I hope")
     |> mes("you enjoy your travels~")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

@@ -24,59 +24,64 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SeaCaptainAmatsu do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Walter Moers]")
-          |> mes("I heard that a drifting ship")
-          |> mes("accidentally discovered it...")
-          |> mes("The ship was totally destroyed")
-          |> mes("by a raging storm in heavy fog.")
-          |> mes(" ")
-          |> next()
-          |> mes("[Walter Moers]")
-          |> mes("Anyway, the ship was wrecked")
-          |> mes("on the beach. It was there")
-          |> mes("he arrived at a town called Amatsu.")
-          |> next()
-          |> mes("[Walter Moers]")
-          |> mes("The towners took pity on him")
-          |> mes("and took care of his wounds.")
-          |> mes("He lived there until he finished making a map.")
-          |> next()
-          |> mes("[Walter Moers]")
-          |> mes("He passed away when he returned")
-          |> mes("to Rune-Midgarts. Fortunately,")
-          |> mes("the map was given to our king, Tristan III.")
-          |> next()
-          |> mes("[Walter Moers]")
-          |> mes("King Tristan III announced")
-          |> mes("that he would reward any")
-          |> mes("person brave enough to venture to Amatsu, and spread copies of this map.")
-          |> next()
-          |> mes("[Walter Moers]")
-          |> mes("Many brave and adventurous")
-          |> mes("sea captains took the")
-          |> mes("challenge. Great fortune could")
-          |> mes("be made in trade with Amatsu, as well as the rewards from King Tristan III...")
-          |> next()
-          |> mes("[Walter Moers]")
-          |> mes("However, they all failed!")
-          |> mes("To overcome various currents")
-          |> mes("and bad weather, lots of")
-          |> mes("experience is required. But they were all blinded by their greed...")
-          |> next()
-          |> mes("[Walter Moers]")
-          |> mes("Finally, a great man discovered")
-          |> mes("the perfect sealane to Amatsu...")
-          |> mes("Right! That is me. Sir Walter")
-          |> mes("Moers. I started the trade with Amatsu! Hahaha! Well, that's all about Amatsu.")
-          |> next()
-          |> mes("[Walter Moers]")
-          |> mes("I made good money from trades")
-          |> mes("for years, and now I'm interested")
-          |> mes("in tourism. If you want to go to Amatsu, let me know~!")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Walter Moers]")
+            |> mes("I heard that a drifting ship")
+            |> mes("accidentally discovered it...")
+            |> mes("The ship was totally destroyed")
+            |> mes("by a raging storm in heavy fog.")
+            |> mes(" ")
+            |> next()
+            |> mes("[Walter Moers]")
+            |> mes("Anyway, the ship was wrecked")
+            |> mes("on the beach. It was there")
+            |> mes("he arrived at a town called Amatsu.")
+            |> next()
+            |> mes("[Walter Moers]")
+            |> mes("The towners took pity on him")
+            |> mes("and took care of his wounds.")
+            |> mes("He lived there until he finished making a map.")
+            |> next()
+            |> mes("[Walter Moers]")
+            |> mes("He passed away when he returned")
+            |> mes("to Rune-Midgarts. Fortunately,")
+            |> mes("the map was given to our king, Tristan III.")
+            |> next()
+            |> mes("[Walter Moers]")
+            |> mes("King Tristan III announced")
+            |> mes("that he would reward any")
+            |> mes("person brave enough to venture to Amatsu, and spread copies of this map.")
+            |> next()
+            |> mes("[Walter Moers]")
+            |> mes("Many brave and adventurous")
+            |> mes("sea captains took the")
+            |> mes("challenge. Great fortune could")
+            |> mes(
+              "be made in trade with Amatsu, as well as the rewards from King Tristan III..."
+            )
+            |> next()
+            |> mes("[Walter Moers]")
+            |> mes("However, they all failed!")
+            |> mes("To overcome various currents")
+            |> mes("and bad weather, lots of")
+            |> mes("experience is required. But they were all blinded by their greed...")
+            |> next()
+            |> mes("[Walter Moers]")
+            |> mes("Finally, a great man discovered")
+            |> mes("the perfect sealane to Amatsu...")
+            |> mes("Right! That is me. Sir Walter")
+            |> mes(
+              "Moers. I started the trade with Amatsu! Hahaha! Well, that's all about Amatsu."
+            )
+            |> next()
+            |> mes("[Walter Moers]")
+            |> mes("I made good money from trades")
+            |> mes("for years, and now I'm interested")
+            |> mes("in tourism. If you want to go to Amatsu, let me know~!")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
           {ctx, v2} =
@@ -105,55 +110,61 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SeaCaptainAmatsu do
             if v2 == 1 do
               ctx =
                 if zeny(ctx) > 9999 do
-                  ctx
-                  |> mes("[Walter Moers]")
-                  |> mes("Alright, I will start the engine!")
-                  |> close()
-                  |> pay_zeny(10000)
-                  |> warp("amatsu", 197, 83)
+                  ctx =
+                    ctx
+                    |> mes("[Walter Moers]")
+                    |> mes("Alright, I will start the engine!")
+                    |> close()
+                    |> pay_zeny(10000)
+                    |> warp("amatsu", 197, 83)
 
-                  exit(:normal)
+                  throw({:script_end, ctx})
                 else
                   ctx
                 end
 
-              ctx
-              |> mes("[Walter Moers]")
-              |> mes("Were you even listening to me?")
-              |> mes("10,000 zeny. If you got")
-              |> mes("nothing, find some treasure")
-              |> mes("somewhere, like in a wrecked ship...Show me the money!")
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Walter Moers]")
+                |> mes("Were you even listening to me?")
+                |> mes("10,000 zeny. If you got")
+                |> mes("nothing, find some treasure")
+                |> mes("somewhere, like in a wrecked ship...Show me the money!")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
               ctx
             end
 
-          ctx
-          |> mes("[Walter Moers]")
-          |> mes("If you are an adventurer,")
-          |> mes("this is a great chance")
-          |> mes("to experience a different culture...Well, it is up to you.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Walter Moers]")
+            |> mes("If you are an adventurer,")
+            |> mes("this is a great chance")
+            |> mes("to experience a different culture...Well, it is up to you.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx
-          |> mes("[Walter Moers]")
-          |> mes("If you are tired of your daily")
-          |> mes("life, take a trip to a distant")
-          |> mes("country across the ocean.")
-          |> mes("Someplace like, oh I don't know, Amatsu~")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Walter Moers]")
+            |> mes("If you are tired of your daily")
+            |> mes("life, take a trip to a distant")
+            |> mes("country across the ocean.")
+            |> mes("Someplace like, oh I don't know, Amatsu~")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

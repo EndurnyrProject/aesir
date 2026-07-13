@@ -13,11 +13,13 @@ defmodule Aesir.ZoneServer.Content.Npc.ManIn01.Worker333128 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 do
-      ctx |> mes("[Worker]") |> mes("My eyesight is getting weaker these days.") |> close()
-      exit(:normal)
+      ctx = ctx |> mes("[Worker]") |> mes("My eyesight is getting weaker these days.") |> close()
+      throw({:script_end, ctx})
     else
-      ctx |> mes("[Worker]") |> mes("Yw I eus ia d ap s") |> close()
-      exit(:normal)
+      ctx = ctx |> mes("[Worker]") |> mes("Yw I eus ia d ap s") |> close()
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

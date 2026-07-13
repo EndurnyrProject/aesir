@@ -68,7 +68,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Morocc.VolunteerMorocc223102 do
     |> mes("[Morocc Volunteer]")
     |> mes("No, No way!? It,, sure is not!")
     |> close()
-
-    exit(:normal)
   end
 end

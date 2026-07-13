@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.CmdIn02.Shalone do
     |> mes("You've been having quite")
     |> mes("a run of really bad luck...")
     |> close()
-
-    exit(:normal)
   end
 end

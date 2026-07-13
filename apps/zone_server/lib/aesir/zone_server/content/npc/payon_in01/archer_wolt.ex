@@ -210,8 +210,8 @@ defmodule Aesir.ZoneServer.Content.Npc.PayonIn01.ArcherWolt do
                     ctx
                 end
 
-              close(ctx)
-              exit(:normal)
+              ctx = close(ctx)
+              throw({:script_end, ctx})
             else
               ctx
             end
@@ -443,6 +443,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PayonIn01.ArcherWolt do
       end
 
     close(ctx)
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

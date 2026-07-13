@@ -24,48 +24,52 @@ defmodule Aesir.ZoneServer.Content.Npc.Aldebaran.PhraconGuy do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Joy]")
-          |> mes(
-            "Phracon is a pretty common metal and can be found all over the Midgard continent."
-          )
-          |> next()
-          |> mes("[Joy]")
-          |> mes(
-            "Although it lacks the strength of other metals, it's easy to find and obtain. You can get Phracons by killing monsters or by buying them in Forging Shops in towns."
-          )
-          |> next()
-          |> mes("[Joy]")
-          |> mes(
-            "When you no longer need Phracons because you are using higher level weapons, you can sell them for some zeny!"
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Joy]")
+            |> mes(
+              "Phracon is a pretty common metal and can be found all over the Midgard continent."
+            )
+            |> next()
+            |> mes("[Joy]")
+            |> mes(
+              "Although it lacks the strength of other metals, it's easy to find and obtain. You can get Phracons by killing monsters or by buying them in Forging Shops in towns."
+            )
+            |> next()
+            |> mes("[Joy]")
+            |> mes(
+              "When you no longer need Phracons because you are using higher level weapons, you can sell them for some zeny!"
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Joy]")
-          |> mes(
-            "Well, I hear lots of monsters carry Phracons and will drop them once killed. Why don't you go hunting for them?"
-          )
-          |> next()
-          |> mes("[Joy]")
-          |> mes(
-            "It shouldn't be too difficult. Once I found a Phracon that dropped after killing a Bebe Savage! But if you're desperate, you can always buy them at the Forging Shop."
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Joy]")
+            |> mes(
+              "Well, I hear lots of monsters carry Phracons and will drop them once killed. Why don't you go hunting for them?"
+            )
+            |> next()
+            |> mes("[Joy]")
+            |> mes(
+              "It shouldn't be too difficult. Once I found a Phracon that dropped after killing a Bebe Savage! But if you're desperate, you can always buy them at the Forging Shop."
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx |> mes("[Joy]") |> mes("Good luck with finding Phracons!") |> close()
-          exit(:normal)
+          ctx = ctx |> mes("[Joy]") |> mes("Good luck with finding Phracons!") |> close()
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

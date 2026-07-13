@@ -31,7 +31,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.BankClerk do
     |> mes("have been temporarily stopped.")
     |> mes("We apologize for any inconvenience and appreciate your understanding.")
     |> close()
-
-    exit(:normal)
   end
 end

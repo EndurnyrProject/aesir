@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Gonryun.Gatekeeper113127 do
     |> mes("like a trustworthy person.")
     |> mes("I'm sure nothing will happen. Enjoy your visit.")
     |> close()
-
-    exit(:normal)
   end
 end

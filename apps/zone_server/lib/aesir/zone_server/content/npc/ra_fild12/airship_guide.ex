@@ -22,7 +22,5 @@ defmodule Aesir.ZoneServer.Content.Npc.RaFild12.AirshipGuide do
     |> mes("Mini-Map to find the Airport.")
     |> viewpoint(1, 293, 208, 1, 16_711_680)
     |> close()
-
-    exit(:normal)
   end
 end

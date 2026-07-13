@@ -36,7 +36,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.BankriKun do
     |> mes("lame-- I couldn't think of")
     |> mes("anything else to tell you.")
     |> close()
-
-    exit(:normal)
   end
 end

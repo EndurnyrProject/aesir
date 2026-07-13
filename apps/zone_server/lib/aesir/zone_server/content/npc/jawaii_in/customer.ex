@@ -20,25 +20,26 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.Customer do
       if not Rathena.truthy?(getpartnerid(ctx)) do
         ctx =
           if zeny(ctx) > 99 do
-            ctx
-            |> mes("Grrrr...")
-            |> mes("Damn! I don't")
-            |> mes("like this place!")
-            |> mes("I don't like this at all!")
-            |> next()
-            |> mes("[Buchi]")
-            |> mes(
-              "I can't believe my eyes! Everyone else looks disgustingly happy! It makes me feel so miserable!"
-            )
-            |> mes("You agree, don't you?!")
-            |> next()
-            |> mes("[Buchi]")
-            |> mes("Grrrr...")
-            |> mes("Bartender!")
-            |> mes("Give me one more!")
-            |> close()
+            ctx =
+              ctx
+              |> mes("Grrrr...")
+              |> mes("Damn! I don't")
+              |> mes("like this place!")
+              |> mes("I don't like this at all!")
+              |> next()
+              |> mes("[Buchi]")
+              |> mes(
+                "I can't believe my eyes! Everyone else looks disgustingly happy! It makes me feel so miserable!"
+              )
+              |> mes("You agree, don't you?!")
+              |> next()
+              |> mes("[Buchi]")
+              |> mes("Grrrr...")
+              |> mes("Bartender!")
+              |> mes("Give me one more!")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
@@ -64,17 +65,18 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.Customer do
           |> mes("^3355FFHe ordered a JJ special for me.^000000")
           |> next()
 
-        ctx
-        |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
-        |> mes("Damn...!")
-        |> mes("Damn! I will be")
-        |> mes("the one who laughs last!")
-        |> next()
-        |> mes("^3355FFYou drank to your fill.^000000")
-        |> close()
-        |> percent_heal(hp: -100, sp: 0)
+        ctx =
+          ctx
+          |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
+          |> mes("Damn...!")
+          |> mes("Damn! I will be")
+          |> mes("the one who laughs last!")
+          |> next()
+          |> mes("^3355FFYou drank to your fill.^000000")
+          |> close()
+          |> percent_heal(hp: -100, sp: 0)
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -87,7 +89,7 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.Customer do
     |> mes(" ")
     |> mes("^666666*Hiccup...!*^000000")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

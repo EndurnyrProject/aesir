@@ -43,7 +43,5 @@ defmodule Aesir.ZoneServer.Content.Npc.IceDun04.FrozenBoy do
     |> mes("What happened to this boy?")
     |> close()
     |> cutin("", 255)
-
-    exit(:normal)
   end
 end

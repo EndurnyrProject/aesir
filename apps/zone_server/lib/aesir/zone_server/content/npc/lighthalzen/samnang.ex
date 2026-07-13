@@ -36,7 +36,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Samnang do
     |> mes("besides the point. Never hit")
     |> mes("a lady, especially an old one!")
     |> close()
-
-    exit(:normal)
   end
 end

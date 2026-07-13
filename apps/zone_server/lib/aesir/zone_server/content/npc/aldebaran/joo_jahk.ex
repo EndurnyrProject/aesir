@@ -33,19 +33,20 @@ defmodule Aesir.ZoneServer.Content.Npc.Aldebaran.JooJahk do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Joo Jahk]")
-        |> mes(
-          "On one of my travels around Midgard, I've heard from a really high level Mage that physical attacks, or magic with Neutral Property, won't damage Spiritual Property monsters."
-        )
-        |> next()
-        |> mes("[Joo Jahk]")
-        |> mes(
-          "Maybe that advice will come in handy, now that you know that. Always remember the importance of the Properties of your skills and weapons when battling monsters."
-        )
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Joo Jahk]")
+          |> mes(
+            "On one of my travels around Midgard, I've heard from a really high level Mage that physical attacks, or magic with Neutral Property, won't damage Spiritual Property monsters."
+          )
+          |> next()
+          |> mes("[Joo Jahk]")
+          |> mes(
+            "Maybe that advice will come in handy, now that you know that. Always remember the importance of the Properties of your skills and weapons when battling monsters."
+          )
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -56,7 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Aldebaran.JooJahk do
       "On the other hand, the water I drank did taste pretty good. Hopefully it didn't have anything too weird in it..."
     )
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

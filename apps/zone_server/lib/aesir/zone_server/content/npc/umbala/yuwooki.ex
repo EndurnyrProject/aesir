@@ -64,7 +64,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Umbala.Yuwooki do
     |> mes("quite much from the Utan")
     |> mes("playboys and their awesome methods.")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -23,7 +23,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Junosoldier3 do
     |> mes("[Juno Soldier]")
     |> mes("Don't be fooled by its appearance, or you'll find yourself in trouble.")
     |> close()
-
-    exit(:normal)
   end
 end

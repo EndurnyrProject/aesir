@@ -33,5 +33,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Harboro1.KafraEmployeeKafRock do
       |> Aesir.ZoneServer.Content.Npc.Functions.FKafend.call([2, 0, 0])
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

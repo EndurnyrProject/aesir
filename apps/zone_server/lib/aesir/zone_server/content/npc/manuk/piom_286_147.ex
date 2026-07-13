@@ -13,33 +13,37 @@ defmodule Aesir.ZoneServer.Content.Npc.Manuk.Piom286147 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Piom]")
-      |> mes("I'll never forget the deep-rooted rancor against those traitors.")
-      |> mes("I remember how our ancestors died.")
-      |> mes("I swear that I would avenge them.")
-      |> next()
-      |> mes("[Piom]")
-      |> mes("First, I'll kick those bastards.")
-      |> mes("Those flying little things bother me so much.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Piom]")
+        |> mes("I'll never forget the deep-rooted rancor against those traitors.")
+        |> mes("I remember how our ancestors died.")
+        |> mes("I swear that I would avenge them.")
+        |> next()
+        |> mes("[Piom]")
+        |> mes("First, I'll kick those bastards.")
+        |> mes("Those flying little things bother me so much.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Piom]")
-      |> mes("Vio hs pf I aps")
-      |> mes("Vs ou oas de ee")
-      |> mes("Bzi sh da opd")
-      |> mes("Mc oju asop dj a ps")
-      |> next()
-      |> mes("[Piom]")
-      |> mes("Be juas da sd")
-      |> mes("Eoj ssr owq w e ")
-      |> mes("Wps dj i ao sj daasd asd")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Piom]")
+        |> mes("Vio hs pf I aps")
+        |> mes("Vs ou oas de ee")
+        |> mes("Bzi sh da opd")
+        |> mes("Mc oju asop dj a ps")
+        |> next()
+        |> mes("[Piom]")
+        |> mes("Be juas da sd")
+        |> mes("Eoj ssr owq w e ")
+        |> mes("Wps dj i ao sj daasd asd")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

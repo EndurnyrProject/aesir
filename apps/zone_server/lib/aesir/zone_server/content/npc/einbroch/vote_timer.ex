@@ -29,17 +29,15 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbroch.VoteTimer do
         ctx
       end
 
-    _ = initnpctimer(ctx)
-    exit(:normal)
+    initnpctimer(ctx)
   end
 
   def ev_onenable(ctx) do
-    _ = initnpctimer(ctx)
-    exit(:normal)
+    initnpctimer(ctx)
   end
 
   def ev_ontimer60000(ctx) do
-    _ =
+    ctx =
       if get_server_var(ctx, "DTS_Result", 0) == 1 do
         ctx =
           if get_server_var(ctx, "DTS_JondaWins", 0) == 0 do
@@ -286,6 +284,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbroch.VoteTimer do
         ctx
       end
 
-    exit(:normal)
+    ctx
   end
 end

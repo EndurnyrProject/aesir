@@ -34,7 +34,5 @@ defmodule Aesir.ZoneServer.Content.Npc.EinIn01.Canphotii do
     |> mes("in! This requires extreme")
     |> mes("disciplinary action!")
     |> close()
-
-    exit(:normal)
   end
 end

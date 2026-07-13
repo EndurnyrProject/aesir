@@ -42,111 +42,114 @@ defmodule Aesir.ZoneServer.Content.Npc.Brasilis.IceCreamMaker do
 
           ctx =
             if zeny(ctx) < get_local(ctx, :icecream_hap, 0) do
-              ctx
-              |> mes("[Ice Cream Maker]")
-              |> mes("Dood~! You don't have enough money.")
-              |> mes("It's only ^3355FF100 Zeny^000000~ Seriously!")
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Ice Cream Maker]")
+                |> mes("Dood~! You don't have enough money.")
+                |> mes("It's only ^3355FF100 Zeny^000000~ Seriously!")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
               ctx
             end
 
           ctx =
             if not Rathena.truthy?(checkweight(ctx, [{536, get_local(ctx, :input, 0)}])) do
-              ctx
-              |> mes("[Ice Cream Maker]")
-              |> mes("You seem to have too much stuff.")
-              |> mes("Lighten your pack before buying this.")
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Ice Cream Maker]")
+                |> mes("You seem to have too much stuff.")
+                |> mes("Lighten your pack before buying this.")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
               ctx
             end
 
           ctx = pay_zeny(ctx, get_local(ctx, :icecream_hap, 0))
-          ctx |> give_item(536, get_local(ctx, :input, 0)) |> close()
-          exit(:normal)
+          ctx = ctx |> give_item(536, get_local(ctx, :input, 0)) |> close()
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Ice Cream Maker]")
-          |> mes("'Ice cream is...")
-          |> mes("Wait, don't you know")
-          |> mes("what Ice Cream is?")
-          |> mes("What rock have you")
-          |> mes("been living under?")
-          |> next()
-          |> mes("[Ice Cream Maker]")
-          |> mes("I'm not going to even start with how weird that sounds.")
-          |> mes("Anyway, get 'yer Ice Cream right here while it's nice and cold.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Ice Cream Maker]")
+            |> mes("'Ice cream is...")
+            |> mes("Wait, don't you know")
+            |> mes("what Ice Cream is?")
+            |> mes("What rock have you")
+            |> mes("been living under?")
+            |> next()
+            |> mes("[Ice Cream Maker]")
+            |> mes("I'm not going to even start with how weird that sounds.")
+            |> mes("Anyway, get 'yer Ice Cream right here while it's nice and cold.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx
-          |> mes("[Ice Cream Maker]")
-          |> mes("Don't miss your chance to eat the greatest Ice Cream in all the land~!")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Ice Cream Maker]")
+            |> mes("Don't miss your chance to eat the greatest Ice Cream in all the land~!")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   defp loop_2(ctx) do
-    if true do
-      result =
-        try do
-          {ctx, v2} = input(ctx, :int)
-          ctx = set_local(ctx, :input, v2)
+    result =
+      try do
+        {ctx, v2} = input(ctx, :int)
+        ctx = set_local(ctx, :input, v2)
 
-          ctx =
-            if get_local(ctx, :input, 0) == 0 do
+        ctx =
+          if get_local(ctx, :input, 0) == 0 do
+            ctx =
               ctx
               |> mes("[Ice Cream Maker]")
               |> mes("None?")
               |> mes("Fine get outta the way, I have customers to serve.")
               |> close()
 
-              exit(:normal)
-            else
-              ctx =
-                if get_local(ctx, :input, 0) < 0 or get_local(ctx, :input, 0) > 5 do
-                  ctx
-                  |> mes("[Ice Cream Maker]")
-                  |> mes("Wow.")
-                  |> mes("You ordered too much.")
-                  |> mes(
-                    "If you eat over 5 you might need to fight with a monster in your stomach. Calm down buddy."
-                  )
-                  |> next()
-                else
-                  throw({:brk_2, ctx})
-                end
+            throw({:script_end, ctx})
+          else
+            ctx =
+              if get_local(ctx, :input, 0) < 0 or get_local(ctx, :input, 0) > 5 do
+                ctx
+                |> mes("[Ice Cream Maker]")
+                |> mes("Wow.")
+                |> mes("You ordered too much.")
+                |> mes(
+                  "If you eat over 5 you might need to fight with a monster in your stomach. Calm down buddy."
+                )
+                |> next()
+              else
+                throw({:brk_2, ctx})
+              end
 
-              ctx
-            end
+            ctx
+          end
 
-          {:next, ctx}
-        catch
-          :throw, {:brk_2, ctx} -> {:done, ctx}
-          :throw, {:cont_2, ctx} -> {:next, ctx}
-        end
-
-      case result do
-        {:next, ctx} -> loop_2(ctx)
-        {:done, ctx} -> ctx
+        {:next, ctx}
+      catch
+        :throw, {:brk_2, ctx} -> {:done, ctx}
+        :throw, {:cont_2, ctx} -> {:next, ctx}
       end
-    else
-      ctx
+
+    case result do
+      {:next, ctx} -> loop_2(ctx)
+      {:done, ctx} -> ctx
     end
   end
 end

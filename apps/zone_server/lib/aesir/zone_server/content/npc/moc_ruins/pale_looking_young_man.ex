@@ -43,7 +43,5 @@ defmodule Aesir.ZoneServer.Content.Npc.MocRuins.PaleLookingYoungMan do
     |> next()
     |> mes("- It'd be better not to disturb him anymore -")
     |> close()
-
-    exit(:normal)
   end
 end

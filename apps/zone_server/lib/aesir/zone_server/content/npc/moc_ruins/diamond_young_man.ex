@@ -34,7 +34,5 @@ defmodule Aesir.ZoneServer.Content.Npc.MocRuins.DiamondYoungMan do
       "I know it's not the time to worry about some gemstones but.. this.. was my everything.."
     )
     |> close()
-
-    exit(:normal)
   end
 end

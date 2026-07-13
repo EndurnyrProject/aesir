@@ -16,22 +16,23 @@ defmodule Aesir.ZoneServer.Content.Npc.Yuno.JunoDespot do
 
     ctx =
       if Enum.random(1..1000) == 1 do
-        ctx
-        |> mes(
-          "You are very lucky to have me tell you this story. This only happens by ^FF33551 out of a 1,000 chance^000000."
-        )
-        |> next()
-        |> mes("[Ninno]")
-        |> mes(
-          "This world you are experiencing is actually fabricated! It's time for you to see reality for what it is!"
-        )
-        |> next()
-        |> mes("[Ninno]")
-        |> mes("Open your eyes! Stop being manipulated by virtual reality!")
-        |> close()
-        |> warp("prontera", 182, 206)
+        ctx =
+          ctx
+          |> mes(
+            "You are very lucky to have me tell you this story. This only happens by ^FF33551 out of a 1,000 chance^000000."
+          )
+          |> next()
+          |> mes("[Ninno]")
+          |> mes(
+            "This world you are experiencing is actually fabricated! It's time for you to see reality for what it is!"
+          )
+          |> next()
+          |> mes("[Ninno]")
+          |> mes("Open your eyes! Stop being manipulated by virtual reality!")
+          |> close()
+          |> warp("prontera", 182, 206)
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -49,7 +50,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Yuno.JunoDespot do
     |> mes("[Ninno]")
     |> mes("As an adventurer, it's possible that you may see him in your travels. Be careful...")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

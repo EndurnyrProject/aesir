@@ -16,14 +16,15 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.Waitress do
   def on_talk(ctx) do
     ctx =
       if checkweight(ctx, [{1201, 1}]) == 0 do
-        ctx
-        |> mes("^3355FF * Wait a minute! *")
-        |> mes(
-          "You're carrying too many items with you right now. Please store some of your things into Kafra Storage and try again.^000000"
-        )
-        |> close()
+        ctx =
+          ctx
+          |> mes("^3355FF * Wait a minute! *")
+          |> mes(
+            "You're carrying too many items with you right now. Please store some of your things into Kafra Storage and try again.^000000"
+          )
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -57,32 +58,36 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.Waitress do
 
                   ctx =
                     if zeny(ctx) > 999 do
-                      ctx
-                      |> pay_zeny(1000)
-                      |> give_item(517, 1)
-                      |> mes("There you go~")
-                      |> mes("Enjoy your meal~!")
-                      |> close()
+                      ctx =
+                        ctx
+                        |> pay_zeny(1000)
+                        |> give_item(517, 1)
+                        |> mes("There you go~")
+                        |> mes("Enjoy your meal~!")
+                        |> close()
 
-                      exit(:normal)
+                      throw({:script_end, ctx})
                     else
                       ctx
                     end
 
-                  ctx |> mes("I'm sorry but...") |> mes("This isn't enough money...") |> close()
-                  exit(:normal)
+                  ctx =
+                    ctx |> mes("I'm sorry but...") |> mes("This isn't enough money...") |> close()
+
+                  throw({:script_end, ctx})
                 else
                   ctx
                 end
 
-              ctx
-              |> mes("[Waitress]")
-              |> mes("If you")
-              |> mes("need anything,")
-              |> mes("please let me know.")
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Waitress]")
+                |> mes("If you")
+                |> mes("need anything,")
+                |> mes("please let me know.")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
 
             2 ->
               {ctx, v3} =
@@ -101,43 +106,46 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.Waitress do
 
                   ctx =
                     if zeny(ctx) > 999 do
-                      ctx
-                      |> pay_zeny(1000)
-                      |> give_item(503, 1)
-                      |> mes("There you go~")
-                      |> mes("Enjoy your meal~!")
-                      |> close()
+                      ctx =
+                        ctx
+                        |> pay_zeny(1000)
+                        |> give_item(503, 1)
+                        |> mes("There you go~")
+                        |> mes("Enjoy your meal~!")
+                        |> close()
 
-                      exit(:normal)
+                      throw({:script_end, ctx})
                     else
                       ctx
                     end
 
-                  ctx |> mes("I am sorry but you don't have enough money?!") |> close()
-                  exit(:normal)
+                  ctx = ctx |> mes("I am sorry but you don't have enough money?!") |> close()
+                  throw({:script_end, ctx})
                 else
                   ctx
                 end
 
-              ctx
-              |> mes("[Waitress]")
-              |> mes("If you")
-              |> mes("need anything,")
-              |> mes("please let me know.")
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Waitress]")
+                |> mes("If you")
+                |> mes("need anything,")
+                |> mes("please let me know.")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
 
             3 ->
-              ctx
-              |> mes("[Waitress]")
-              |> mes("Oh, just go toward the center")
-              |> mes("of the tavern. I hope you have")
-              |> mes("a good time, but be careful and")
-              |> mes("don't drink too much! Have fun!")
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Waitress]")
+                |> mes("Oh, just go toward the center")
+                |> mes("of the tavern. I hope you have")
+                |> mes("a good time, but be careful and")
+                |> mes("don't drink too much! Have fun!")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
 
             _ ->
               ctx
@@ -167,21 +175,22 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.Waitress do
 
     ctx =
       if v4 == 1 do
-        ctx
-        |> mes("[Employee]")
-        |> mes("Yeah, right.")
-        |> mes("Knock it off already.")
-        |> mes("Why can't you be happy")
-        |> mes("for other people?!")
-        |> next()
-        |> mes("[Employee]")
-        |> mes("^666666*Sigh*^000000")
-        |> mes("You will be welcome")
-        |> mes("here when you visit")
-        |> mes("with your partner, okay?")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Employee]")
+          |> mes("Yeah, right.")
+          |> mes("Knock it off already.")
+          |> mes("Why can't you be happy")
+          |> mes("for other people?!")
+          |> next()
+          |> mes("[Employee]")
+          |> mes("^666666*Sigh*^000000")
+          |> mes("You will be welcome")
+          |> mes("here when you visit")
+          |> mes("with your partner, okay?")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -202,7 +211,7 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.Waitress do
     |> mes("I hope you have")
     |> mes("a good time.")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

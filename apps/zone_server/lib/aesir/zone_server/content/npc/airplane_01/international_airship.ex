@@ -10,26 +10,113 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.InternationalAirship do
   use Aesir.ZoneServer.Npc, spawn: []
 
   @impl true
-  def on_event("OnInit", ctx), do: ev_oninit(ctx)
-  def on_event("OnEnable", ctx), do: ev_onenable(ctx)
-  def on_event("OnTimer25000", ctx), do: ev_ontimer25000(ctx)
-  def on_event("OnTimer50000", ctx), do: ev_ontimer50000(ctx)
-  def on_event("OnTimer60000", ctx), do: ev_ontimer60000(ctx)
-  def on_event("OnTimer70000", ctx), do: ev_ontimer70000(ctx)
-  def on_event("OnTimer80000", ctx), do: ev_ontimer80000(ctx)
-  def on_event("OnTimer105000", ctx), do: ev_ontimer105000(ctx)
-  def on_event("OnTimer130000", ctx), do: ev_ontimer130000(ctx)
-  def on_event("OnTimer140000", ctx), do: ev_ontimer140000(ctx)
-  def on_event("OnTimer150000", ctx), do: ev_ontimer150000(ctx)
-  def on_event("OnTimer160000", ctx), do: ev_ontimer160000(ctx)
-  def on_event("OnTimer185000", ctx), do: ev_ontimer185000(ctx)
-  def on_event("OnTimer210000", ctx), do: ev_ontimer210000(ctx)
-  def on_event("OnTimer220000", ctx), do: ev_ontimer220000(ctx)
-  def on_event("OnTimer230000", ctx), do: ev_ontimer230000(ctx)
-  def on_event("OnTimer240000", ctx), do: ev_ontimer240000(ctx)
+  def on_event("OnInit", ctx) do
+    ev_oninit(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  def on_event("OnEnable", ctx) do
+    ev_onenable(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  def on_event("OnTimer25000", ctx) do
+    ev_ontimer25000(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  def on_event("OnTimer50000", ctx) do
+    ev_ontimer50000(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  def on_event("OnTimer60000", ctx) do
+    ev_ontimer60000(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  def on_event("OnTimer70000", ctx) do
+    ev_ontimer70000(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  def on_event("OnTimer80000", ctx) do
+    ev_ontimer80000(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  def on_event("OnTimer105000", ctx) do
+    ev_ontimer105000(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  def on_event("OnTimer130000", ctx) do
+    ev_ontimer130000(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  def on_event("OnTimer140000", ctx) do
+    ev_ontimer140000(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  def on_event("OnTimer150000", ctx) do
+    ev_ontimer150000(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  def on_event("OnTimer160000", ctx) do
+    ev_ontimer160000(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  def on_event("OnTimer185000", ctx) do
+    ev_ontimer185000(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  def on_event("OnTimer210000", ctx) do
+    ev_ontimer210000(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  def on_event("OnTimer220000", ctx) do
+    ev_ontimer220000(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  def on_event("OnTimer230000", ctx) do
+    ev_ontimer230000(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  def on_event("OnTimer240000", ctx) do
+    ev_ontimer240000(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
   @impl true
-  def on_talk(_ctx) do
-    exit(:normal)
+  def on_talk(ctx) do
+    ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   def ev_oninit(ctx) do
@@ -37,18 +124,15 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.InternationalAirship do
   end
 
   def ev_onenable(ctx) do
-    _ = initnpctimer(ctx)
-    exit(:normal)
+    initnpctimer(ctx)
   end
 
   def ev_ontimer25000(ctx) do
-    _ = mapannounce(ctx, "airplane_01", "We are heading to Izlude.", 1, "0x00ff00")
-    exit(:normal)
+    mapannounce(ctx, "airplane_01", "We are heading to Izlude.", 1, "0x00ff00")
   end
 
   def ev_ontimer50000(ctx) do
-    _ = mapannounce(ctx, "airplane_01", "We will arrive in Izlude shortly.", 1, "0x00ff00")
-    exit(:normal)
+    mapannounce(ctx, "airplane_01", "We will arrive in Izlude shortly.", 1, "0x00ff00")
   end
 
   def ev_ontimer60000(ctx) do
@@ -57,21 +141,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.InternationalAirship do
     |> donpcevent("#AirshipWarp-3::OnUnhide")
     |> donpcevent("#AirshipWarp-4::OnUnhide")
     |> mapannounce("airplane_01", "Welcome to Izlude. Have a safe trip.", 1, "0x00ff00")
-
-    exit(:normal)
   end
 
   def ev_ontimer70000(ctx) do
-    _ =
-      mapannounce(
-        ctx,
-        "airplane_01",
-        "We are currently in Izlude. The Airship will take off shortly.",
-        1,
-        "0x00ff00"
-      )
-
-    exit(:normal)
+    mapannounce(
+      ctx,
+      "airplane_01",
+      "We are currently in Izlude. The Airship will take off shortly.",
+      1,
+      "0x00ff00"
+    )
   end
 
   def ev_ontimer80000(ctx) do
@@ -84,18 +163,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.InternationalAirship do
       1,
       "0x70dbdb"
     )
-
-    exit(:normal)
   end
 
   def ev_ontimer105000(ctx) do
-    _ = mapannounce(ctx, "airplane_01", "We are heading to Juno.", 1, "0x70dbdb")
-    exit(:normal)
+    mapannounce(ctx, "airplane_01", "We are heading to Juno.", 1, "0x70dbdb")
   end
 
   def ev_ontimer130000(ctx) do
-    _ = mapannounce(ctx, "airplane_01", "We will arrive in Juno shortly.", 1, "0x70dbdb")
-    exit(:normal)
+    mapannounce(ctx, "airplane_01", "We will arrive in Juno shortly.", 1, "0x70dbdb")
   end
 
   def ev_ontimer140000(ctx) do
@@ -104,21 +179,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.InternationalAirship do
     |> donpcevent("#AirshipWarp-3::OnUnhide")
     |> donpcevent("#AirshipWarp-4::OnUnhide")
     |> mapannounce("airplane_01", "Welcome to Juno. Have a safe trip.", 1, "0x70dbdb")
-
-    exit(:normal)
   end
 
   def ev_ontimer150000(ctx) do
-    _ =
-      mapannounce(
-        ctx,
-        "airplane_01",
-        "We are currently in Juno. The Airship will leave shortly.",
-        1,
-        "0x70dbdb"
-      )
-
-    exit(:normal)
+    mapannounce(
+      ctx,
+      "airplane_01",
+      "We are currently in Juno. The Airship will leave shortly.",
+      1,
+      "0x70dbdb"
+    )
   end
 
   def ev_ontimer160000(ctx) do
@@ -131,18 +201,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.InternationalAirship do
       1,
       "0xFF8200"
     )
-
-    exit(:normal)
   end
 
   def ev_ontimer185000(ctx) do
-    _ = mapannounce(ctx, "airplane_01", "We are heading to Rachel.", 1, "0xFF8200")
-    exit(:normal)
+    mapannounce(ctx, "airplane_01", "We are heading to Rachel.", 1, "0xFF8200")
   end
 
   def ev_ontimer210000(ctx) do
-    _ = mapannounce(ctx, "airplane_01", "We will arrive in Rachel shortly.", 1, "0xFF8200")
-    exit(:normal)
+    mapannounce(ctx, "airplane_01", "We will arrive in Rachel shortly.", 1, "0xFF8200")
   end
 
   def ev_ontimer220000(ctx) do
@@ -151,21 +217,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.InternationalAirship do
     |> donpcevent("#AirshipWarp-3::OnUnhide")
     |> donpcevent("#AirshipWarp-4::OnUnhide")
     |> mapannounce("airplane_01", "Welcome to Rachel. Have a safe trip.", 1, "0xFF8200")
-
-    exit(:normal)
   end
 
   def ev_ontimer230000(ctx) do
-    _ =
-      mapannounce(
-        ctx,
-        "airplane_01",
-        "We are currently in Rachel. The Airship will take off shortly.",
-        1,
-        "0xFF8200"
-      )
-
-    exit(:normal)
+    mapannounce(
+      ctx,
+      "airplane_01",
+      "We are currently in Rachel. The Airship will take off shortly.",
+      1,
+      "0xFF8200"
+    )
   end
 
   def ev_ontimer240000(ctx) do
@@ -187,8 +248,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.InternationalAirship do
       if get_npc_var(ctx, "moninv", 0) == 7 do
         ctx =
           if Enum.random(1..3) == 3 do
-            _ = donpcevent(ctx, "Airship#airplane02::OnEnable")
-            exit(:normal)
+            ctx = donpcevent(ctx, "Airship#airplane02::OnEnable")
+            throw({:script_end, ctx})
           else
             ctx
           end
@@ -198,7 +259,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.InternationalAirship do
         ctx
       end
 
-    _ = initnpctimer(ctx)
-    exit(:normal)
+    initnpctimer(ctx)
   end
 end

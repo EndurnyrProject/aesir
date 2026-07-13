@@ -19,7 +19,5 @@ defmodule Aesir.ZoneServer.Content.Npc.RaTemin.FreyaSFollower230303 do
     |> mes("that Freya would be proud")
     |> mes("of all your effots.")
     |> close()
-
-    exit(:normal)
   end
 end

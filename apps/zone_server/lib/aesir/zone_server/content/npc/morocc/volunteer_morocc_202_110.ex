@@ -26,7 +26,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Morocc.VolunteerMorocc202110 do
       "Unless we settle the original cause, the damage will even spread out of Morocc. The only thing left is to get worse."
     )
     |> close()
-
-    exit(:normal)
   end
 end

@@ -30,7 +30,5 @@ defmodule Aesir.ZoneServer.Content.Npc.MocRuins.LittleBoy do
       "Right, you love ice-cream, don't you? I.. I can get you an ice-cream if you stop crying. Don't cry, Eliese, please.. Ok? Don't..."
     )
     |> close()
-
-    exit(:normal)
   end
 end

@@ -32,7 +32,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Guard do
     |> mes("special authorization.")
     |> mes("Thank you for your cooperating.")
     |> close()
-
-    exit(:normal)
   end
 end

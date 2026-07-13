@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.Citizen do
     |> mes("Oh well, back to schmoozin'")
     |> mes("with all the hot chicks~")
     |> close()
-
-    exit(:normal)
   end
 end

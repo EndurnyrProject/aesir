@@ -44,7 +44,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn03.Bartender do
     |> mes("loneliness. You really")
     |> mes("oughta try it when you can.")
     |> close()
-
-    exit(:normal)
   end
 end

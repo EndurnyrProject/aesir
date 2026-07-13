@@ -31,19 +31,20 @@ defmodule Aesir.ZoneServer.Content.Npc.MocPrydb1.ThiefGuide do
 
             ctx =
               if not Rathena.truthy?(v1) do
-                ctx
-                |> mes("[Thief Guide]")
-                |> mes(
-                  "What, do you want to be a Thief? I'm sorry, but you look like you need more training."
-                )
-                |> next()
-                |> mes("[Thief Guide]")
-                |> mes(
-                  "Take your time and learn all the Basic Skills, will you? Well then, see you later~!"
-                )
-                |> close()
+                ctx =
+                  ctx
+                  |> mes("[Thief Guide]")
+                  |> mes(
+                    "What, do you want to be a Thief? I'm sorry, but you look like you need more training."
+                  )
+                  |> next()
+                  |> mes("[Thief Guide]")
+                  |> mes(
+                    "Take your time and learn all the Basic Skills, will you? Well then, see you later~!"
+                  )
+                  |> close()
 
-                exit(:normal)
+                throw({:script_end, ctx})
               else
                 ctx
               end
@@ -62,13 +63,14 @@ defmodule Aesir.ZoneServer.Content.Npc.MocPrydb1.ThiefGuide do
             ctx = todo(ctx, :skill, ["TF_BACKSLIDING", 1, get_char_var(ctx, :SKILL_PERM, 0)])
             ctx = todo(ctx, :skill, ["TF_PICKSTONE", 1, get_char_var(ctx, :SKILL_PERM, 0)])
 
-            ctx
-            |> todo(:skill, ["TF_THROWSTONE", 1, get_char_var(ctx, :SKILL_PERM, 0)])
-            |> mes("[Thief Guide]")
-            |> mes("Since you've become a Thief, live as a Thief. Now, go for it! Next~")
-            |> close()
+            ctx =
+              ctx
+              |> todo(:skill, ["TF_THROWSTONE", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+              |> mes("[Thief Guide]")
+              |> mes("Since you've become a Thief, live as a Thief. Now, go for it! Next~")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx = mes(ctx, "[Thief Guide]")
 
@@ -79,8 +81,8 @@ defmodule Aesir.ZoneServer.Content.Npc.MocPrydb1.ThiefGuide do
                 mes(ctx, "Hey, baby~")
               end
 
-            close(ctx)
-            exit(:normal)
+            ctx = close(ctx)
+            throw({:script_end, ctx})
           end
         else
           ctx = mes(ctx, "[Thief Guide]")
@@ -92,13 +94,14 @@ defmodule Aesir.ZoneServer.Content.Npc.MocPrydb1.ThiefGuide do
               mes(ctx, "Hey, baby.")
             end
 
-          ctx
-          |> mes(
-            "...Hey! You look too goody-goody to want to be a Thief!! Now scram, I'm busy. Next!"
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes(
+              "...Hey! You look too goody-goody to want to be a Thief!! Now scram, I'm busy. Next!"
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
         end
       else
         ctx
@@ -108,25 +111,26 @@ defmodule Aesir.ZoneServer.Content.Npc.MocPrydb1.ThiefGuide do
       if get_char_var(ctx, :q_job_thief, 0) == 1 do
         ctx = mes(ctx, "[Thief Guildsman]")
 
-        ctx
-        |> mes(
-          Rathena.concat(
+        ctx =
+          ctx
+          |> mes(
             Rathena.concat(
-              "Ehh... Seems like a beloved ",
-              if(sex(ctx) == get_char_var(ctx, :SEX_MALE, 0), do: "son", else: "daughter")
-            ),
-            " of a rich family, but why are you here in this dirty place?"
+              Rathena.concat(
+                "Ehh... Seems like a beloved ",
+                if(sex(ctx) == get_char_var(ctx, :SEX_MALE, 0), do: "son", else: "daughter")
+              ),
+              " of a rich family, but why are you here in this dirty place?"
+            )
           )
-        )
-        |> next()
-        |> mes("[Thief Guildsman]")
-        |> mes(
-          "Well, I'm not in charge of making you a Thief. I just accept applications, get it?"
-        )
-        |> mes("If you want to become a Thief, ask the sharp-eyed guy next to me.")
-        |> close()
+          |> next()
+          |> mes("[Thief Guildsman]")
+          |> mes(
+            "Well, I'm not in charge of making you a Thief. I just accept applications, get it?"
+          )
+          |> mes("If you want to become a Thief, ask the sharp-eyed guy next to me.")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -136,8 +140,10 @@ defmodule Aesir.ZoneServer.Content.Npc.MocPrydb1.ThiefGuide do
     ctx =
       if get_char_var(ctx, :BaseJob, 0) != :novice do
         if get_char_var(ctx, :BaseJob, 0) == :thief do
-          ctx |> mes("Hey~ if you have any trouble, get it out to me anytime, huh?") |> close()
-          exit(:normal)
+          ctx =
+            ctx |> mes("Hey~ if you have any trouble, get it out to me anytime, huh?") |> close()
+
+          throw({:script_end, ctx})
         else
           ctx = mes(ctx, "What the heck...?")
 
@@ -157,8 +163,8 @@ defmodule Aesir.ZoneServer.Content.Npc.MocPrydb1.ThiefGuide do
               ctx |> next() |> mes("[Thief Guildsman]") |> mes("Hey, lady.")
             end
 
-          ctx |> mes("Why are you here? Go back to your place~ go back~~") |> close()
-          exit(:normal)
+          ctx = ctx |> mes("Why are you here? Go back to your place~ go back~~") |> close()
+          throw({:script_end, ctx})
         end
       else
         ctx
@@ -180,13 +186,14 @@ defmodule Aesir.ZoneServer.Content.Npc.MocPrydb1.ThiefGuide do
 
     ctx =
       if v2 == 2 do
-        ctx
-        |> mes("[Thief Guildsman]")
-        |> mes("You know you cannot be a thief without an application...")
-        |> mes("What's on your mind...?")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Thief Guildsman]")
+          |> mes("You know you cannot be a thief without an application...")
+          |> mes("What's on your mind...?")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -251,12 +258,13 @@ defmodule Aesir.ZoneServer.Content.Npc.MocPrydb1.ThiefGuide do
 
     ctx =
       if v4 == 2 do
-        ctx
-        |> mes("[Thief Guildsman]")
-        |> mes("Well... do what you want to do~ Go your way~")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Thief Guildsman]")
+          |> mes("Well... do what you want to do~ Go your way~")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -280,14 +288,15 @@ defmodule Aesir.ZoneServer.Content.Npc.MocPrydb1.ThiefGuide do
 
     ctx =
       if not Rathena.truthy?(v5) do
-        ctx
-        |> mes("[Thief Guildsman]")
-        |> mes("I can see your strong will to become a Thief......")
-        |> mes("But only with your will, you cannot make it in a real fight, can you?")
-        |> mes("So go and reach at least Basic Skill Level 9.")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Thief Guildsman]")
+          |> mes("I can see your strong will to become a Thief......")
+          |> mes("But only with your will, you cannot make it in a real fight, can you?")
+          |> mes("So go and reach at least Basic Skill Level 9.")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -312,7 +321,7 @@ defmodule Aesir.ZoneServer.Content.Npc.MocPrydb1.ThiefGuide do
     |> mes("If you want to become a Thief, ask the guy next to me.")
     |> set_char_var(:q_job_thief, 1)
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

@@ -13,35 +13,39 @@ defmodule Aesir.ZoneServer.Content.Npc.Splendide.Fairy22336 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Fairy]")
-      |> mes("I don't want to touch them at all.")
-      |> mes("But they are ruining my Yggdrasilberries.")
-      |> mes("I can't stand it anymore!")
-      |> next()
-      |> mes("[Fairy]")
-      |> mes("Fighting is not my thing...")
-      |> mes("But for our glory, I will fight!")
-      |> mes("They should feel honored to be battling with us!")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Fairy]")
+        |> mes("I don't want to touch them at all.")
+        |> mes("But they are ruining my Yggdrasilberries.")
+        |> mes("I can't stand it anymore!")
+        |> next()
+        |> mes("[Fairy]")
+        |> mes("Fighting is not my thing...")
+        |> mes("But for our glory, I will fight!")
+        |> mes("They should feel honored to be battling with us!")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Fairy]")
-      |> mes("AshAmanNei Ir LonVeldremu O ")
-      |> mes("AnduSarHir No NudAnumaur Ha Veld")
-      |> mes("Semarmah U VeTingDieb Yu ")
-      |> mes("mahsertas Ra marAmanAdor Ir ")
-      |> next()
-      |> mes("[Fairy]")
-      |> mes("TingAgolLu So MushAndumah U neseor")
-      |> mes("WhaDuFulo er ImanThusNe Di Tur")
-      |> mes("DathUornah Ir MemaurDeh Yu Fulo")
-      |> mes("CyaMeDor Ko VeLarsAgol")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Fairy]")
+        |> mes("AshAmanNei Ir LonVeldremu O ")
+        |> mes("AnduSarHir No NudAnumaur Ha Veld")
+        |> mes("Semarmah U VeTingDieb Yu ")
+        |> mes("mahsertas Ra marAmanAdor Ir ")
+        |> next()
+        |> mes("[Fairy]")
+        |> mes("TingAgolLu So MushAndumah U neseor")
+        |> mes("WhaDuFulo er ImanThusNe Di Tur")
+        |> mes("DathUornah Ir MemaurDeh Yu Fulo")
+        |> mes("CyaMeDor Ko VeLarsAgol")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

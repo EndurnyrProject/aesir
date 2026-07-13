@@ -11,7 +11,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Niflheim.CursedSpirit do
     spawn: [%{map: "niflheim", x: 350, y: 258, dir: 1, sprite: 802, name: "Cursed Spirit"}]
 
   @impl true
-  def on_event("OnMyMobDead", ctx), do: ev_onmymobdead(ctx)
+  def on_event("OnMyMobDead", ctx) do
+    ev_onmymobdead(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
   @impl true
   def on_talk(ctx) do
     {ctx, v1} =
@@ -55,40 +60,42 @@ defmodule Aesir.ZoneServer.Content.Npc.Niflheim.CursedSpirit do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> summon_mob(
-            mob_id: 1478,
-            map: "niflheim",
-            at: {349, 259},
-            event: "Cursed Spirit#nif::OnMyMobDead"
-          )
-          |> mes("[Ashe Bruce]")
-          |> mes("...!...")
-          |> mes("How dare you touch my books")
-          |> mes("when I specifically said")
-          |> mes("'Don't touch my books!'")
-          |> next()
-          |> mes("[Ashe Bruce]")
-          |> mes("....!...Grrrrr!")
-          |> mes("I shall tear you apart...!")
-          |> mes("Be bound by an eternal curse...!")
-          |> close()
+          ctx =
+            ctx
+            |> summon_mob(
+              mob_id: 1478,
+              map: "niflheim",
+              at: {349, 259},
+              event: "Cursed Spirit#nif::OnMyMobDead"
+            )
+            |> mes("[Ashe Bruce]")
+            |> mes("...!...")
+            |> mes("How dare you touch my books")
+            |> mes("when I specifically said")
+            |> mes("'Don't touch my books!'")
+            |> next()
+            |> mes("[Ashe Bruce]")
+            |> mes("....!...Grrrrr!")
+            |> mes("I shall tear you apart...!")
+            |> mes("Be bound by an eternal curse...!")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Ashe Bruce]")
-          |> mes("...!...")
-          |> mes("You dare touch my books?!")
-          |> mes("Right after I said not")
-          |> mes("to touch them...?!")
-          |> mes("Foolish mortal!")
-          |> mes("...BEGONE!")
-          |> close()
-          |> warp("niflheim", 34, 162)
+          ctx =
+            ctx
+            |> mes("[Ashe Bruce]")
+            |> mes("...!...")
+            |> mes("You dare touch my books?!")
+            |> mes("Right after I said not")
+            |> mes("to touch them...?!")
+            |> mes("Foolish mortal!")
+            |> mes("...BEGONE!")
+            |> close()
+            |> warp("niflheim", 34, 162)
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
           {ctx, v2} =
@@ -145,117 +152,124 @@ defmodule Aesir.ZoneServer.Content.Npc.Niflheim.CursedSpirit do
                   1 ->
                     ctx =
                       if get_char_var(ctx, :morison_meat, 0) < 15 do
-                        ctx
-                        |> set_char_var(:morrison_meat, 15)
-                        |> mes("[Ashe Bruce]")
-                        |> mes("You... You broke the curse!")
-                        |> mes("How did you know that spell?!")
-                        |> next()
-                        |> mes("[Ashe Bruce]")
-                        |> mes("I suppose you expect for me to")
-                        |> mes("melt in agony about now, don't")
-                        |> mes("you? Well... Sorry to disappoint")
-                        |> mes("you, mortal, but I can never die!")
-                        |> close()
+                        ctx =
+                          ctx
+                          |> set_char_var(:morrison_meat, 15)
+                          |> mes("[Ashe Bruce]")
+                          |> mes("You... You broke the curse!")
+                          |> mes("How did you know that spell?!")
+                          |> next()
+                          |> mes("[Ashe Bruce]")
+                          |> mes("I suppose you expect for me to")
+                          |> mes("melt in agony about now, don't")
+                          |> mes("you? Well... Sorry to disappoint")
+                          |> mes("you, mortal, but I can never die!")
+                          |> close()
 
-                        exit(:normal)
+                        throw({:script_end, ctx})
                       else
                         ctx
                       end
 
-                    ctx
-                    |> mes("[Ashe Bruce]")
-                    |> mes("...! You cast the correct spell?!")
-                    |> mes("...!...")
-                    |> mes("But...You're still cursed...")
-                    |> mes("Umhaaaaaaaaaaaaaaaaa.....!")
-                    |> close()
+                    ctx =
+                      ctx
+                      |> mes("[Ashe Bruce]")
+                      |> mes("...! You cast the correct spell?!")
+                      |> mes("...!...")
+                      |> mes("But...You're still cursed...")
+                      |> mes("Umhaaaaaaaaaaaaaaaaa.....!")
+                      |> close()
 
-                    exit(:normal)
+                    throw({:script_end, ctx})
 
                   2 ->
                     ctx =
                       if get_char_var(ctx, :thai_head, 0) == 1 do
-                        ctx
-                        |> set_char_var(:thai_head, 2)
-                        |> mes("[Ashe Bruce]")
-                        |> mes("What's...")
-                        |> mes("this feeling?")
-                        |> next()
-                        |> mes("[Ashe Bruce]")
-                        |> mes("No...!")
-                        |> mes("NOOOOOOOOOOOOOOOO!")
-                        |> next()
-                        |> mes("[Ashe Bruce]")
-                        |> mes("Why did your spell have to work?!")
-                        |> close()
+                        ctx =
+                          ctx
+                          |> set_char_var(:thai_head, 2)
+                          |> mes("[Ashe Bruce]")
+                          |> mes("What's...")
+                          |> mes("this feeling?")
+                          |> next()
+                          |> mes("[Ashe Bruce]")
+                          |> mes("No...!")
+                          |> mes("NOOOOOOOOOOOOOOOO!")
+                          |> next()
+                          |> mes("[Ashe Bruce]")
+                          |> mes("Why did your spell have to work?!")
+                          |> close()
 
-                        exit(:normal)
+                        throw({:script_end, ctx})
                       else
                         ctx
                       end
 
-                    ctx
-                    |> mes("[Ashe Bruce]")
-                    |> mes("You...")
-                    |> mes("cast the correct spell?!")
-                    |> next()
-                    |> mes("[Ashe Bruce]")
-                    |> mes("Hoho~")
-                    |> mes("But you're still cursed...")
-                    |> close()
+                    ctx =
+                      ctx
+                      |> mes("[Ashe Bruce]")
+                      |> mes("You...")
+                      |> mes("cast the correct spell?!")
+                      |> next()
+                      |> mes("[Ashe Bruce]")
+                      |> mes("Hoho~")
+                      |> mes("But you're still cursed...")
+                      |> close()
 
-                    exit(:normal)
+                    throw({:script_end, ctx})
 
                   3 ->
                     ctx =
                       if get_char_var(ctx, :thai_head, 0) == 8 do
-                        ctx
-                        |> set_char_var(:thai_head, 7)
-                        |> mes("[Ashe Bruce]")
-                        |> mes("You... You broke the curse!")
-                        |> mes("Who taught you that spell?!")
-                        |> next()
-                        |> mes("[Ashe Bruce]")
-                        |> mes("I suppose you expect for me to")
-                        |> mes("melt in agony about now, don't")
-                        |> mes("you? Well... Sorry to disappoint")
-                        |> mes("you, mortal, but I can never die!")
-                        |> next()
-                        |> mes("[Ashe Bruce]")
-                        |> mes("So long as I'm...")
-                        |> mes("still...")
-                        |> mes("cursed.")
-                        |> next()
-                        |> mes("[Ashe Bruce]")
-                        |> mes("NOOOOOOOOOO!")
-                        |> close()
+                        ctx =
+                          ctx
+                          |> set_char_var(:thai_head, 7)
+                          |> mes("[Ashe Bruce]")
+                          |> mes("You... You broke the curse!")
+                          |> mes("Who taught you that spell?!")
+                          |> next()
+                          |> mes("[Ashe Bruce]")
+                          |> mes("I suppose you expect for me to")
+                          |> mes("melt in agony about now, don't")
+                          |> mes("you? Well... Sorry to disappoint")
+                          |> mes("you, mortal, but I can never die!")
+                          |> next()
+                          |> mes("[Ashe Bruce]")
+                          |> mes("So long as I'm...")
+                          |> mes("still...")
+                          |> mes("cursed.")
+                          |> next()
+                          |> mes("[Ashe Bruce]")
+                          |> mes("NOOOOOOOOOO!")
+                          |> close()
 
-                        exit(:normal)
+                        throw({:script_end, ctx})
                       else
                         ctx
                       end
 
-                    ctx
-                    |> mes("[Ashe Bruce]")
-                    |> mes("...! You cast the correct spell?!")
-                    |> mes("...!...")
-                    |> mes("But...You're still cursed...")
-                    |> mes("Umhaaaaaaaaaaaaaaaaa.....!")
-                    |> close()
+                    ctx =
+                      ctx
+                      |> mes("[Ashe Bruce]")
+                      |> mes("...! You cast the correct spell?!")
+                      |> mes("...!...")
+                      |> mes("But...You're still cursed...")
+                      |> mes("Umhaaaaaaaaaaaaaaaaa.....!")
+                      |> close()
 
-                    exit(:normal)
+                    throw({:script_end, ctx})
 
                   4 ->
-                    ctx
-                    |> mes("[Ashe Bruce]")
-                    |> mes("...! You cast the correct spell?!")
-                    |> mes("...!...")
-                    |> mes("But...You're still cursed...")
-                    |> mes("Mwahahahaaaa.....!")
-                    |> close()
+                    ctx =
+                      ctx
+                      |> mes("[Ashe Bruce]")
+                      |> mes("...! You cast the correct spell?!")
+                      |> mes("...!...")
+                      |> mes("But...You're still cursed...")
+                      |> mes("Mwahahahaaaa.....!")
+                      |> close()
 
-                    exit(:normal)
+                    throw({:script_end, ctx})
 
                   _ ->
                     ctx
@@ -266,82 +280,86 @@ defmodule Aesir.ZoneServer.Content.Npc.Niflheim.CursedSpirit do
               ctx
             end
 
-          ctx
-          |> summon_mob(
-            mob_id: 1462,
-            map: "niflheim",
-            at: {345, 259},
-            event: "Cursed Spirit#nif::OnMyMobDead"
-          )
-          |> summon_mob(
-            mob_id: 1462,
-            map: "niflheim",
-            at: {347, 261},
-            event: "Cursed Spirit#nif::OnMyMobDead"
-          )
-          |> summon_mob(
-            mob_id: 1462,
-            map: "niflheim",
-            at: {344, 253},
-            event: "Cursed Spirit#nif::OnMyMobDead"
-          )
-          |> summon_mob(
-            mob_id: 1462,
-            map: "niflheim",
-            at: {346, 251},
-            event: "Cursed Spirit#nif::OnMyMobDead"
-          )
-          |> summon_mob(
-            mob_id: 1462,
-            map: "niflheim",
-            at: {349, 249},
-            event: "Cursed Spirit#nif::OnMyMobDead"
-          )
-          |> summon_mob(
-            mob_id: 1462,
-            map: "niflheim",
-            at: {350, 260},
-            event: "Cursed Spirit#nif::OnMyMobDead"
-          )
-          |> summon_mob(
-            mob_id: 1462,
-            map: "niflheim",
-            at: {353, 256},
-            event: "Cursed Spirit#nif::OnMyMobDead"
-          )
-          |> mes("[Ashe Bruce]")
-          |> mes("Muhahahahahaha!")
-          |> mes("That's not the right spell!")
-          |> mes("Now, death awaits you!")
-          |> mes("You're eternally bound")
-          |> mes("to the curse...!")
-          |> close()
+          ctx =
+            ctx
+            |> summon_mob(
+              mob_id: 1462,
+              map: "niflheim",
+              at: {345, 259},
+              event: "Cursed Spirit#nif::OnMyMobDead"
+            )
+            |> summon_mob(
+              mob_id: 1462,
+              map: "niflheim",
+              at: {347, 261},
+              event: "Cursed Spirit#nif::OnMyMobDead"
+            )
+            |> summon_mob(
+              mob_id: 1462,
+              map: "niflheim",
+              at: {344, 253},
+              event: "Cursed Spirit#nif::OnMyMobDead"
+            )
+            |> summon_mob(
+              mob_id: 1462,
+              map: "niflheim",
+              at: {346, 251},
+              event: "Cursed Spirit#nif::OnMyMobDead"
+            )
+            |> summon_mob(
+              mob_id: 1462,
+              map: "niflheim",
+              at: {349, 249},
+              event: "Cursed Spirit#nif::OnMyMobDead"
+            )
+            |> summon_mob(
+              mob_id: 1462,
+              map: "niflheim",
+              at: {350, 260},
+              event: "Cursed Spirit#nif::OnMyMobDead"
+            )
+            |> summon_mob(
+              mob_id: 1462,
+              map: "niflheim",
+              at: {353, 256},
+              event: "Cursed Spirit#nif::OnMyMobDead"
+            )
+            |> mes("[Ashe Bruce]")
+            |> mes("Muhahahahahaha!")
+            |> mes("That's not the right spell!")
+            |> mes("Now, death awaits you!")
+            |> mes("You're eternally bound")
+            |> mes("to the curse...!")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         4 ->
-          ctx
-          |> mes("[Ashe Bruce]")
-          |> mes("...")
-          |> mes(".....")
-          |> next()
-          |> mes("[Ashe Bruce]")
-          |> mes("Well then.")
-          |> mes("Try not to trip on")
-          |> mes("your feet in your")
-          |> mes("rush to leave.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Ashe Bruce]")
+            |> mes("...")
+            |> mes(".....")
+            |> next()
+            |> mes("[Ashe Bruce]")
+            |> mes("Well then.")
+            |> mes("Try not to trip on")
+            |> mes("your feet in your")
+            |> mes("rush to leave.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
-  def ev_onmymobdead(_ctx) do
-    exit(:normal)
+  def ev_onmymobdead(ctx) do
+    ctx
   end
 end

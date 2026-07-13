@@ -18,7 +18,5 @@ defmodule Aesir.ZoneServer.Content.Npc.HuIn01.APartTimer2677 do
     |> mes("in his task of organizing")
     |> mes("files and books.^000000")
     |> close()
-
-    exit(:normal)
   end
 end

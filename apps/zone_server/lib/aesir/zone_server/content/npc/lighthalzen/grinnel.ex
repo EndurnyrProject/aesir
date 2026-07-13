@@ -36,7 +36,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Grinnel do
     |> mes("think they can push you")
     |> mes("around. I hate Lighthalzen...")
     |> close()
-
-    exit(:normal)
   end
 end

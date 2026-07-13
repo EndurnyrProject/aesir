@@ -34,7 +34,5 @@ defmodule Aesir.ZoneServer.Content.Npc.EinIn01.TavernLady do
     |> mes("and drink chamomile tea over")
     |> mes("freshly knit doilies?")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -7,15 +7,19 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   - Statements thread `ctx` by rebinding (`ctx = mes(ctx, "…")`); runs of
     consecutive `ctx`-threading calls then collapse into pipe chains
     (`ctx |> mes("…") |> close()`), mirroring the hand-written NPC style.
-  - `close`/`end` terminate the script by exiting the interaction process
-    (`exit(:normal)`), exactly like rAthena stops execution there; the
-    interaction Task treats it as a clean end. `close2`/`close3` flush the
-    CLOSE frame and continue.
+  - `close`/`end` terminate the script by throwing `{:script_end, ctx}`,
+    which unwinds the whole call stack (subs, callfunc modules, loop
+    helpers) exactly like rAthena stops execution there. The `on_talk` and
+    `on_event` entry points catch it and return the ctx, so every entry
+    honors its `Ctx.t()` contract; a global function's `call/2` does not
+    catch, so its `close`/`end` still ends the calling script. Tail-position
+    throws are rewritten back into plain returns. `close2`/`close3` flush
+    the CLOSE frame and continue.
   - Top-level labels split the body into segments. `goto`/`menu` targets
-    become private functions that never return (they end in `exit(:normal)`
-    or fall through by tail-calling the next segment), which makes `goto`
-    safe from any nesting depth. `callsub` targets become subroutines
-    returning `{ctx, value}`.
+    become private functions that end by throwing `{:script_end, ctx}` or
+    fall through by tail-calling the next segment, which makes `goto` safe
+    from any nesting depth. `callsub` targets become subroutines returning
+    `{ctx, value}`.
   - Loops become recursive helper functions; `break`/`continue` compile to
     `throw` only when they occur nested below the loop body's top level.
   - Blocking or effectful calls in expression position (`select`,
@@ -41,6 +45,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   @comparisons %{==: "==", !=: "!=", <: "<", <=: "<=", >: ">", >=: ">="}
   @arith %{+: "+", -: "-", *: "*"}
   @bitwise %{&: "band", |: "bor", ^: "bxor", shl: "bsl", shr: "bsr"}
+
+  @script_end "throw({:script_end, ctx})"
 
   @pipe_rebind ~r/^ctx = ([a-z_][a-zA-Z0-9_]*[!?]?)\(ctx(?:, (.+))?\)$/
   @pipe_call ~r/^([A-Za-z_][A-Za-z0-9_.]*[!?]?)\(ctx(?:, (.+))?\)$/
@@ -85,15 +91,24 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     catch_return? = env.sub and needs_return_catch?(main)
     main_env = %{env | catch_return: catch_return?}
     {main_lines, main_terminal} = emit_block(main, main_env)
-    main_body = main_lines ++ fall_through(main_terminal, segments, env)
+
+    main_body =
+      case opts.kind do
+        :function ->
+          main_lines ++ main_fall_through(:function, main_terminal, segments, env)
+
+        _ ->
+          tail_return(main_lines ++ main_fall_through(opts.kind, main_terminal, segments, env))
+      end
 
     segment_defs = emit_segments(segments, env)
     deferred = get_defs()
+    catch_end? = catches_script_end?(main_body, segment_defs ++ deferred)
 
     entry =
       case opts.kind do
         :function -> function_entry(main_body, catch_return?)
-        _ -> on_talk_entry(main_body)
+        _ -> on_talk_entry(main_body, catch_end?)
       end
 
     """
@@ -108,7 +123,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
       #{header(opts)}
       #{aliases()}
-      #{event_clauses(env)}
+      #{event_clauses(env, catch_end?)}
       #{entry}
       #{Enum.join(segment_defs, "\n\n")}
       #{Enum.join(deferred, "\n\n")}
@@ -161,7 +176,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   # area-trigger variant) normalizes to the plain `"OnTouch"` head the engine
   # actually dispatches — a script defining both collapses to one clause,
   # keeping the first and warning.
-  defp event_clauses(env) do
+  defp event_clauses(env, catch_end?) do
     case env.a.events |> Enum.map(&{normalized_event_head(&1), &1}) |> dedupe_event_heads() do
       [] ->
         ""
@@ -169,11 +184,22 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
       pairs ->
         clauses =
           Enum.map_join(pairs, "\n", fn {head, label} ->
-            "def on_event(#{inspect(head)}, ctx), do: #{event_call(env, label)}"
+            event_clause(head, event_call(env, label), catch_end?)
           end)
 
         "@impl true\n" <> clauses
     end
+  end
+
+  defp event_clause(head, call, false), do: "def on_event(#{inspect(head)}, ctx), do: #{call}"
+
+  defp event_clause(head, call, true) do
+    """
+    def on_event(#{inspect(head)}, ctx) do
+      #{call}
+    #{script_end_catch()}
+    end
+    """
   end
 
   defp normalized_event_head(label) do
@@ -209,13 +235,32 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     end
   end
 
-  defp on_talk_entry(body_lines) do
+  defp on_talk_entry(body_lines, catch_end?) do
     """
     @impl true
     def on_talk(#{param(body_lines)}) do
       #{join_body(body_lines)}
+    #{if catch_end?, do: script_end_catch(), else: ""}
     end
     """
+  end
+
+  # The entry-point half of the `{:script_end, ctx}` protocol: a `close`/`end`
+  # anywhere below (branches, subs, callfunc modules) unwinds here and the
+  # entry returns the ctx it carried. Emitted only when this module can throw —
+  # a remaining non-tail script-end throw, or a `callfunc` into another
+  # transpiled module whose `close`/`end` propagates through `call/2`.
+  defp script_end_catch do
+    """
+    catch
+    :throw, {:script_end, ctx} -> ctx
+    """
+  end
+
+  defp catches_script_end?(main_body, defs) do
+    Enum.any?(main_body ++ defs, fn code ->
+      String.contains?(code, @script_end) or String.contains?(code, ".call(ctx")
+    end)
   end
 
   defp function_entry(body_lines, catch_return?) do
@@ -230,71 +275,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     """
   end
 
-  # A `ctx = ...` rebinding whose value is only followed by `exit(:normal)`
-  # (the `close2; warp; end` idiom, or an if/case feeding a trailing `end`
-  # command) is dead; unbind it to keep generated modules warning-free.
-  defp join_body(lines),
-    do: lines |> pipe_chains() |> tidy() |> tidy_block_bind() |> Enum.join("\n")
-
-  defp tidy([<<"ctx = ", expr::binary>>, "exit(:normal)" | rest]),
-    do: [unbound(expr), "exit(:normal)" | tidy(rest)]
-
-  defp tidy([<<"{ctx, _} = ", expr::binary>>, "exit(:normal)" | rest]),
-    do: [unbound(expr), "exit(:normal)" | tidy(rest)]
-
-  defp tidy([line | rest]), do: [line | tidy(rest)]
-  defp tidy([]), do: []
-
-  defp unbound("ctx |> " <> _ = pipe), do: pipe
-  defp unbound(expr), do: "_ = " <> expr
-
-  # `ctx = if ... do … end` (or a standalone `ctx =` before `case`/`try`)
-  # immediately followed by `exit(:normal)`: locate the block opener by
-  # depth-matching the emitted lines and drop the binding.
-  defp tidy_block_bind(lines) do
-    arr = List.to_tuple(lines)
-
-    0..(tuple_size(arr) - 1)
-    |> Enum.filter(fn i ->
-      elem(arr, i) == "exit(:normal)" and i > 0 and elem(arr, i - 1) == "end"
-    end)
-    |> Enum.reduce(lines, fn i, acc ->
-      case find_opener(arr, i - 1) do
-        nil -> acc
-        opener -> unbind_at(acc, arr, opener)
-      end
-    end)
-  end
-
-  defp find_opener(arr, end_idx) do
-    Enum.reduce_while((end_idx - 1)..0//-1, 1, fn i, depth ->
-      line = elem(arr, i)
-
-      cond do
-        line == "end" -> {:cont, depth + 1}
-        not String.ends_with?(line, " do") -> {:cont, depth}
-        depth == 1 -> {:halt, {:found, i}}
-        true -> {:cont, depth - 1}
-      end
-    end)
-    |> case do
-      {:found, i} -> i
-      _ -> nil
-    end
-  end
-
-  defp unbind_at(lines, arr, opener) do
-    cond do
-      String.starts_with?(elem(arr, opener), "ctx = ") ->
-        List.update_at(lines, opener, &("_ = " <> String.trim_leading(&1, "ctx = ")))
-
-      opener > 0 and elem(arr, opener - 1) == "ctx =" ->
-        List.replace_at(lines, opener - 1, "_ =")
-
-      true ->
-        lines
-    end
-  end
+  defp join_body(lines), do: lines |> pipe_chains() |> Enum.join("\n")
 
   # -- pipe chains ---------------------------------------------------------
 
@@ -460,6 +441,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp emit_segment(kind, name, stmts, next, env) do
     {lines, terminal} = emit_block(stmts, env)
     lines = lines ++ fall_through(terminal, List.wrap(next), env)
+    lines = if kind == :event, do: tail_return(lines), else: lines
     visibility = if kind == :event, do: "def", else: "defp"
 
     """
@@ -468,6 +450,54 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     end
     """
   end
+
+  # A script whose body ends in `close`/`end` throws in tail position, where
+  # unwinding to the entry catch is pure ceremony: the tail rewrite turns the
+  # throw back into a plain ctx return (the wrapper terminates the task the
+  # same way). A preceding `ctx = …` rebind becomes the tail expression itself
+  # — every rebind evaluates to ctx, so unbinding keeps the value and drops
+  # the dead binding. Non-tail throws (in branches, or anywhere in a global
+  # function's `call/2`) stay: those must unwind for real.
+  defp tail_return(lines) do
+    case List.last(lines) do
+      @script_end ->
+        case Enum.drop(lines, -1) do
+          [] -> ["ctx"]
+          head -> unbind_tail(head)
+        end
+
+      _ ->
+        lines
+    end
+  end
+
+  defp unbind_tail(head) do
+    case List.last(head) do
+      <<"ctx = ", expr::binary>> -> List.replace_at(head, -1, expr)
+      _ -> head ++ ["ctx"]
+    end
+  end
+
+  # A `callfunc` target's `call/2` must always return `{ctx, value}` (callers
+  # bind `{ctx, _} = ...`). The shared `fall_through` ends a runs-off-the-end
+  # path with a bare `ctx` (correct for a dialog entry point, which returns
+  # ctx) — for a function that trailing `ctx` is the return value and must be a
+  # tuple instead. Rewrite it to `{ctx, nil}` wherever it lands (no segment, or
+  # a fall into a subroutine/event segment).
+  defp main_fall_through(:function, terminal, segments, env) do
+    case fall_through(terminal, segments, env) do
+      [] ->
+        []
+
+      lines ->
+        if List.last(lines) == "ctx",
+          do: List.replace_at(lines, -1, "{ctx, nil}"),
+          else: lines
+    end
+  end
+
+  defp main_fall_through(_kind, terminal, segments, env),
+    do: fall_through(terminal, segments, env)
 
   # A label function that runs off its end falls through into the next
   # segment; the last one (or a fall into a subroutine) ends the script.
@@ -602,7 +632,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["{ctx, #{if expr, do: render(expr, env), else: "nil"}}"], :stop}
   end
 
-  defp emit_stmt({:return, _}, _env), do: {["exit(:normal)"], :stop}
+  defp emit_stmt({:return, _}, _env), do: {[@script_end], :stop}
 
   defp emit_stmt({:break}, %{break: nil}), do: {[], :cont}
   defp emit_stmt({:break}, %{break: {:throw, tag}}), do: {["throw({:#{tag}, ctx})"], :stop}
@@ -654,8 +684,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   end
 
   defp emit_stmt({:cmd, "next", _}, _env), do: {["ctx = next(ctx)"], :cont}
-  defp emit_stmt({:cmd, "close", _}, _env), do: {["close(ctx)", "exit(:normal)"], :stop}
-  defp emit_stmt({:cmd, "end", _}, _env), do: {["exit(:normal)"], :stop}
+  defp emit_stmt({:cmd, "close", _}, _env), do: {["ctx = close(ctx)", @script_end], :stop}
+  defp emit_stmt({:cmd, "end", _}, _env), do: {[@script_end], :stop}
 
   defp emit_stmt({:cmd, "close2", _}, _env), do: {["ctx = close(ctx)"], :cont}
 
@@ -678,7 +708,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   # `input <var>,<min>{,<max>}`: clamp the entry into range before writing it
   # back; the discarded status is only meaningful in expression position.
   defp emit_stmt({:cmd, "input", [target | bounds]}, env) do
-    {_status, lines} = input_lines(target, bounds, env)
+    # Statement position discards the range status, so bind it to `_` rather
+    # than a fresh temp — the value would otherwise be an unused variable.
+    {_status, lines} = input_lines(target, bounds, env, "_")
     {lines, :cont}
   end
 
@@ -1224,6 +1256,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
     inner =
       case kind do
+        # `while(1)` (rAthena's idiomatic infinite loop) has a constant-true
+        # guard: the body runs unconditionally and only `break`/`close`/`end`
+        # exits it, so emitting `if true do … else ctx end` would leave a dead
+        # `else` branch. Drop the guard and emit the body straight.
+        :while when cond_s == "true" -> cond_pre ++ body
         :while -> cond_pre ++ ["if #{cond_s} do"] ++ body ++ ["else", "ctx", "end"]
         :do_while -> body
       end
@@ -1565,12 +1602,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   # checks it into range (rAthena `Rathena.input_int/3` / `input_str/3`), and
   # writes the clamped value back to the var. Returns {status_temp, lines} in
   # execution order; the status temp is only used in expression position.
-  defp input_lines(target, bounds, env) do
+  defp input_lines(target, bounds, env, status \\ nil) do
     kind = if str_target?(target), do: ":string", else: ":int"
     helper = if str_target?(target), do: "input_str", else: "input_int"
     {min, max} = input_bounds(bounds, env)
     raw = tmp_var()
-    status = tmp_var()
+    status = status || tmp_var()
     stored = tmp_var()
     flag(:rathena)
     {writeback, :cont} = emit_assign(target, {:temp, stored}, env)

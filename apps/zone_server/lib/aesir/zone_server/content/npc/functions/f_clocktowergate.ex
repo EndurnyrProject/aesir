@@ -53,71 +53,73 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FClocktowergate do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Gatekeeper Boy]")
-          |> mes("Homeland of Alchemy, Aldebaran!")
-          |> mes("Long Time ago, there were")
-          |> mes("3 Legendary Alchemists...They are")
-          |> mes("Bruke Seimer")
-          |> mes("Philip Warisez")
-          |> mes("And ..")
-          |> next()
-          |> mes("[Gatekeeper Boy]")
-          |> mes("Romero Specialre!")
-          |> mes("This venerable architecture is")
-          |> mes("their masterpiece.")
-          |> mes("I assume you would feel something unusual")
-          |> mes("While on the way to this floor,")
-          |> mes("Every feature of This Clocktower ")
-          |> next()
-          |> mes("[Gatekeeper Boy]")
-          |> mes("Consists of Mysterious Ancient Magics.")
-          |> mes("If you just wander around here,")
-          |> mes(" without any intention")
-          |> next()
-          |> mes("[Gatekeeper Boy]")
-          |> mes("By any means,")
-          |> mes("You will meet with a mishap")
-          |> mes("by Gatekeeper Creatures.")
-          |> mes("Please be careful ..")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Gatekeeper Boy]")
+            |> mes("Homeland of Alchemy, Aldebaran!")
+            |> mes("Long Time ago, there were")
+            |> mes("3 Legendary Alchemists...They are")
+            |> mes("Bruke Seimer")
+            |> mes("Philip Warisez")
+            |> mes("And ..")
+            |> next()
+            |> mes("[Gatekeeper Boy]")
+            |> mes("Romero Specialre!")
+            |> mes("This venerable architecture is")
+            |> mes("their masterpiece.")
+            |> mes("I assume you would feel something unusual")
+            |> mes("While on the way to this floor,")
+            |> mes("Every feature of This Clocktower ")
+            |> next()
+            |> mes("[Gatekeeper Boy]")
+            |> mes("Consists of Mysterious Ancient Magics.")
+            |> mes("If you just wander around here,")
+            |> mes(" without any intention")
+            |> next()
+            |> mes("[Gatekeeper Boy]")
+            |> mes("By any means,")
+            |> mes("You will meet with a mishap")
+            |> mes("by Gatekeeper Creatures.")
+            |> mes("Please be careful ..")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Gatekeeper Boy]")
-          |> mes("Ancient Alchemists")
-          |> mes("Sealed the Gate of 4th Floor using an Alchemistic Device ")
-          |> mes("To keep something")
-          |> mes("From Evil Creatures and Human Enemies.")
-          |> mes("To go through this door")
-          |> next()
-          |> mes("[Gatekeeper Boy]")
-          |> mes("It needs a Key.")
-          |> mes("That Key has rumored to be possessed by Gatekeeper Creatures")
-          |> mes("Prowling around here.")
-          |> next()
-          |> mes("[Gatekeeper Boy]")
-          |> mes("The Key is the Intensiveness of Ancient Alchemy,")
-          |> mes("By hearsay When used once,")
-          |> mes("It will be released from being spelled")
-          |> mes("And be disappeared.")
-          |> next()
-          |> mes("[Gatekeeper Boy]")
-          |> mes("If that key")
-          |> mes("Comes into your possession,")
-          |> mes("Please show me.")
-          |> mes("The one who possesses the Key")
-          |> mes("Will have access to go through")
-          |> mes("This Gate with his own will!")
-          |> next()
-          |> mes("[Gatekeeper Boy]")
-          |> mes("I will give you a chance.")
-          |> mes(". . . . .")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Gatekeeper Boy]")
+            |> mes("Ancient Alchemists")
+            |> mes("Sealed the Gate of 4th Floor using an Alchemistic Device ")
+            |> mes("To keep something")
+            |> mes("From Evil Creatures and Human Enemies.")
+            |> mes("To go through this door")
+            |> next()
+            |> mes("[Gatekeeper Boy]")
+            |> mes("It needs a Key.")
+            |> mes("That Key has rumored to be possessed by Gatekeeper Creatures")
+            |> mes("Prowling around here.")
+            |> next()
+            |> mes("[Gatekeeper Boy]")
+            |> mes("The Key is the Intensiveness of Ancient Alchemy,")
+            |> mes("By hearsay When used once,")
+            |> mes("It will be released from being spelled")
+            |> mes("And be disappeared.")
+            |> next()
+            |> mes("[Gatekeeper Boy]")
+            |> mes("If that key")
+            |> mes("Comes into your possession,")
+            |> mes("Please show me.")
+            |> mes("The one who possesses the Key")
+            |> mes("Will have access to go through")
+            |> mes("This Gate with his own will!")
+            |> next()
+            |> mes("[Gatekeeper Boy]")
+            |> mes("I will give you a chance.")
+            |> mes(". . . . .")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
           if count_item(ctx, get_local(ctx, :item_req, 0)) > 0 do
@@ -130,40 +132,43 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FClocktowergate do
               |> mes("May God bless you ..")
               |> close()
 
-            ctx
-            |> delitem(get_local(ctx, :item_req, 0), 1)
-            |> todo(:warp, [Enum.at(args, 2, 0), Enum.at(args, 3, 0), Enum.at(args, 4, 0)])
+            ctx =
+              ctx
+              |> delitem(get_local(ctx, :item_req, 0), 1)
+              |> todo(:warp, [Enum.at(args, 2, 0), Enum.at(args, 3, 0), Enum.at(args, 4, 0)])
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
-            ctx
-            |> mes("[Gatekeeper Boy]")
-            |> mes(". . . . . .")
-            |> mes("Unfortunately you don't have a privilege")
-            |> mes("To enter this Gate ..")
-            |> mes("You won't be able to go through")
-            |> mes("As long as Ancient Alchemists")
-            |> mes(" Don't grant you.")
-            |> close()
+            ctx =
+              ctx
+              |> mes("[Gatekeeper Boy]")
+              |> mes(". . . . . .")
+              |> mes("Unfortunately you don't have a privilege")
+              |> mes("To enter this Gate ..")
+              |> mes("You won't be able to go through")
+              |> mes("As long as Ancient Alchemists")
+              |> mes(" Don't grant you.")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           end
 
         4 ->
-          ctx
-          |> mes("[Gatekeeper Boy]")
-          |> mes("This Clock Tower")
-          |> mes("Is the place where the 3 Ancient Legendary Alchemists")
-          |> mes("Has left their Spirits and Skills.")
-          |> mes("Please Do not Scribble or Damage on the Interior.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Gatekeeper Boy]")
+            |> mes("This Clock Tower")
+            |> mes("Is the place where the 3 Ancient Legendary Alchemists")
+            |> mes("Has left their Spirits and Skills.")
+            |> mes("Please Do not Scribble or Damage on the Interior.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
-    ctx
+    {ctx, nil}
   end
 end

@@ -139,8 +139,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FCooleventcorp do
                         ctx
                       end
 
-                    _ = cutin(ctx, "", 255)
-                    exit(:normal)
+                    ctx = cutin(ctx, "", 255)
+                    throw({:script_end, ctx})
                   else
                     ctx =
                       ctx
@@ -292,7 +292,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FCooleventcorp do
         :throw, {:brk_1, ctx} -> ctx
       end
 
-    _ = cutin(ctx, "", 255)
-    exit(:normal)
+    ctx = cutin(ctx, "", 255)
+    throw({:script_end, ctx})
   end
 end

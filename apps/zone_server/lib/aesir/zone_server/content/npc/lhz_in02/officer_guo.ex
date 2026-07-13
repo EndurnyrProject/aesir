@@ -94,7 +94,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.OfficerGuo do
     |> mes("TELL ME...!!")
     |> mes("Admit you did it!!")
     |> close()
-
-    exit(:normal)
   end
 end

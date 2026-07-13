@@ -29,7 +29,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Mauro do
     |> mes("know that they owe their")
     |> mes("lives of luxury to us...")
     |> close()
-
-    exit(:normal)
   end
 end

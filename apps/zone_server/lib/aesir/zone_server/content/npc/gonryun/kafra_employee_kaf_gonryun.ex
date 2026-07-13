@@ -39,5 +39,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Gonryun.KafraEmployeeKafGonryun do
       |> Aesir.ZoneServer.Content.Npc.Functions.FKafend.call([0, 1, "in the city of Kunlun"])
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Prontera.Merideth do
       "They might just be bugs, but I think they've got the right idea. Men really ought to take commands from us women... We do things right!"
     )
     |> close()
-
-    exit(:normal)
   end
 end

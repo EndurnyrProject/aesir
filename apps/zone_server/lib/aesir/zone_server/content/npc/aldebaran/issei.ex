@@ -23,35 +23,37 @@ defmodule Aesir.ZoneServer.Content.Npc.Aldebaran.Issei do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Issei]")
-        |> mes("Hey...")
-        |> mes(
-          "Is that so hard to believe?! Yeah, ask anyone! She really exists! Although, sometimes, just sometimes mind you, she gets too excited about weapons and armor."
-        )
-        |> next()
-        |> mes("[Issei]")
-        |> mes(
-          "I mean, instead of enjoying a romantic dinner, she'll just go on about how equipment dropped from monsters is higher quality than those sold in shops..."
-        )
-        |> next()
-        |> mes("[Issei]")
-        |> mes(
-          "I mean, why should I care if equipment dropped by monsters tend to have more Slots?! I can't even kill a Poring!"
-        )
-        |> next()
-        |> mes("[Issei]")
-        |> mes("As you can see,")
-        |> mes("I'm a lover,")
-        |> mes(" not a fighter.")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Issei]")
+          |> mes("Hey...")
+          |> mes(
+            "Is that so hard to believe?! Yeah, ask anyone! She really exists! Although, sometimes, just sometimes mind you, she gets too excited about weapons and armor."
+          )
+          |> next()
+          |> mes("[Issei]")
+          |> mes(
+            "I mean, instead of enjoying a romantic dinner, she'll just go on about how equipment dropped from monsters is higher quality than those sold in shops..."
+          )
+          |> next()
+          |> mes("[Issei]")
+          |> mes(
+            "I mean, why should I care if equipment dropped by monsters tend to have more Slots?! I can't even kill a Poring!"
+          )
+          |> next()
+          |> mes("[Issei]")
+          |> mes("As you can see,")
+          |> mes("I'm a lover,")
+          |> mes(" not a fighter.")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
 
     ctx |> mes("[Issei]") |> mes("So, you don't think of me stupid, do you?") |> close()
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

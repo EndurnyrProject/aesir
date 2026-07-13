@@ -13,21 +13,25 @@ defmodule Aesir.ZoneServer.Content.Npc.Manuk.Soldier do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 do
-      ctx
-      |> mes("[Food Provider]")
-      |> mes(
-        "The Manuk family subsists mostly on refining Gray Hollows that were buried a long time ago deep down under the ground."
-      )
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Food Provider]")
+        |> mes(
+          "The Manuk family subsists mostly on refining Gray Hollows that were buried a long time ago deep down under the ground."
+        )
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Food Provider]")
-      |> mes("Gdiios duuie Dssoas pogggd fdrul fdddoweet")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Food Provider]")
+        |> mes("Gdiios duuie Dssoas pogggd fdrul fdddoweet")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

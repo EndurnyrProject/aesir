@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.Towner333318 do
     |> mes("for adventures? Take it from")
     |> mes("me, this place if bo-ring.")
     |> close()
-
-    exit(:normal)
   end
 end

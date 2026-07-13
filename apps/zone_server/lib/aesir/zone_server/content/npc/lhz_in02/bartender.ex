@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.Bartender do
     |> mes("in Lighthalzen and have")
     |> mes("yourself a good time.")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -38,7 +38,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.Towner218323 do
     |> mes("that important anyway.")
     |> mes("May Freya bless you~")
     |> close()
-
-    exit(:normal)
   end
 end

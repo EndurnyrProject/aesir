@@ -13,15 +13,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Manuk.YoungVillager do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 do
-      ctx
-      |> mes("[Young Villager]")
-      |> mes("It's past the time of our date, why isn't she here yet!!?")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Young Villager]")
+        |> mes("It's past the time of our date, why isn't she here yet!!?")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx |> mes("[Asd]") |> mes("Ywo di pi butfs oui Afbsu ") |> close()
-      exit(:normal)
+      ctx = ctx |> mes("[Asd]") |> mes("Ywo di pi butfs oui Afbsu ") |> close()
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

@@ -41,5 +41,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Comodo.KafraEmployeeKafComodo do
       |> Aesir.ZoneServer.Content.Npc.Functions.FKafend.call([0, 1, "in the town of Comodo"])
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

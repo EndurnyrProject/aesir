@@ -10,26 +10,34 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.JawEmOrder do
   use Aesir.ZoneServer.Npc, spawn: []
   alias Aesir.ZoneServer.Script.Rathena
   @impl true
-  def on_event("OnTouch", ctx), do: ev_ontouch(ctx)
+  def on_event("OnTouch", ctx) do
+    ev_ontouch(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
   @impl true
   def on_talk(ctx) do
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   def ev_ontouch(ctx) do
     ctx =
       if Rathena.truthy?(getpartnerid(ctx)) do
-        ctx
-        |> donpcevent("Employee#jaw8::OnWelcome")
-        |> donpcevent("Employee#jaw7::OnWelcome")
-        |> donpcevent("Employee#jaw6::OnWelcome")
-        |> donpcevent("Employee#jaw5::OnWelcome")
-        |> donpcevent("Employee#jaw4::OnWelcome")
-        |> donpcevent("Employee#jaw3::OnWelcome")
-        |> donpcevent("Employee#jaw2::OnWelcome")
-        |> donpcevent("Employee#jaw1::OnWelcome")
+        ctx =
+          ctx
+          |> donpcevent("Employee#jaw8::OnWelcome")
+          |> donpcevent("Employee#jaw7::OnWelcome")
+          |> donpcevent("Employee#jaw6::OnWelcome")
+          |> donpcevent("Employee#jaw5::OnWelcome")
+          |> donpcevent("Employee#jaw4::OnWelcome")
+          |> donpcevent("Employee#jaw3::OnWelcome")
+          |> donpcevent("Employee#jaw2::OnWelcome")
+          |> donpcevent("Employee#jaw1::OnWelcome")
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -43,7 +51,5 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.JawEmOrder do
     |> donpcevent("Employee#jaw3::OnSolo")
     |> donpcevent("Employee#jaw2::OnSolo")
     |> donpcevent("Employee#jaw1::OnSolo")
-
-    exit(:normal)
   end
 end

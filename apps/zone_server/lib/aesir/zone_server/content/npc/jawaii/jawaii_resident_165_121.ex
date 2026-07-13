@@ -37,7 +37,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Jawaii.JawaiiResident165121 do
     |> mes("Where you can")
     |> mes("find happiness~")
     |> close()
-
-    exit(:normal)
   end
 end

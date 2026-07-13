@@ -31,55 +31,60 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Klaubis do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Klaubis]")
-          |> mes("Yes, our family has")
-          |> mes("lived in this city for a")
-          |> mes("long time, starting with")
-          |> mes("my great grandfather. Let's")
-          |> mes("see, my family's been here")
-          |> mes("for about two hundred years.")
-          |> next()
-          |> mes("[Klaubis]")
-          |> mes("You'd be surprised how")
-          |> mes("many people stay in their")
-          |> mes("hometowns. Even if you do")
-          |> mes("leave, though, you can always")
-          |> mes("come back. It wouldn't be your hometown if you couldn't, right?")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Klaubis]")
+            |> mes("Yes, our family has")
+            |> mes("lived in this city for a")
+            |> mes("long time, starting with")
+            |> mes("my great grandfather. Let's")
+            |> mes("see, my family's been here")
+            |> mes("for about two hundred years.")
+            |> next()
+            |> mes("[Klaubis]")
+            |> mes("You'd be surprised how")
+            |> mes("many people stay in their")
+            |> mes("hometowns. Even if you do")
+            |> mes("leave, though, you can always")
+            |> mes("come back. It wouldn't be your hometown if you couldn't, right?")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Klaubis]")
-          |> mes("Yes, the atmosphere")
-          |> mes("can get pretty listless")
-          |> mes("around here. But still,")
-          |> mes("there are plenty of nice")
-          |> mes("sights to enjoy here in")
-          |> mes("Lighthalzen, so look around~")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Klaubis]")
+            |> mes("Yes, the atmosphere")
+            |> mes("can get pretty listless")
+            |> mes("around here. But still,")
+            |> mes("there are plenty of nice")
+            |> mes("sights to enjoy here in")
+            |> mes("Lighthalzen, so look around~")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx
-          |> mes("[Klaubis]")
-          |> mes("You mean the Serial")
-          |> mes("Axe Murderer? I thought")
-          |> mes("that was an old ghost story.")
-          |> mes("Hm. I think that lady inside")
-          |> mes("the Weapon Shop would")
-          |> mes("know more about that tale...")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Klaubis]")
+            |> mes("You mean the Serial")
+            |> mes("Axe Murderer? I thought")
+            |> mes("that was an old ghost story.")
+            |> mes("Hm. I think that lady inside")
+            |> mes("the Weapon Shop would")
+            |> mes("know more about that tale...")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

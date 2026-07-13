@@ -22,26 +22,34 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.RekenberGuard23132 do
 
   alias Aesir.ZoneServer.Script.Rathena
   @impl true
-  def on_event("OnTouch", ctx), do: ev_ontouch(ctx)
+  def on_event("OnTouch", ctx) do
+    ev_ontouch(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
   @impl true
   def on_talk(ctx) do
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   def ev_ontouch(ctx) do
-    _ =
+    ctx =
       if Rathena.truthy?(is_equipped(ctx, 2241)) and Rathena.truthy?(is_equipped(ctx, 2243)) do
-        ctx
-        |> mes("[Rekenber Guard]")
-        |> mes("Keep your eyes open.")
-        |> mes("I've heard rumors that some")
-        |> mes("adventurers from Rune-Midgarts")
-        |> mes("are trying to sneak into here!")
-        |> mes("I know the security here is")
-        |> mes("pretty much fail sure, but...")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Rekenber Guard]")
+          |> mes("Keep your eyes open.")
+          |> mes("I've heard rumors that some")
+          |> mes("adventurers from Rune-Midgarts")
+          |> mes("are trying to sneak into here!")
+          |> mes("I know the security here is")
+          |> mes("pretty much fail sure, but...")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
         |> mes("[Rekenber Guard]")
@@ -53,6 +61,6 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.RekenberGuard23132 do
         |> warp("lhz_in01", 33, 224)
       end
 
-    exit(:normal)
+    ctx
   end
 end

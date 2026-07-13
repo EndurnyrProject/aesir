@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.RaTemple.FollowerAkarna do
     |> mes("in all of her glory. I hope")
     |> mes("that I live to see that.")
     |> close()
-
-    exit(:normal)
   end
 end

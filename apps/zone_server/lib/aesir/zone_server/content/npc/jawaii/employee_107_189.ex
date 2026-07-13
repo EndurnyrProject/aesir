@@ -30,32 +30,35 @@ defmodule Aesir.ZoneServer.Content.Npc.Jawaii.Employee107189 do
 
         ctx =
           if zeny(ctx) > 999 do
-            ctx
-            |> mes("Eh, alright.")
-            |> mes("Let's get going.")
-            |> close()
-            |> pay_zeny(1000)
-            |> warp("jawaii_in", 86, 117)
+            ctx =
+              ctx
+              |> mes("Eh, alright.")
+              |> mes("Let's get going.")
+              |> close()
+              |> pay_zeny(1000)
+              |> warp("jawaii_in", 86, 117)
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
 
-        ctx
-        |> mes("You...")
-        |> mes("Don't have")
-        |> mes("enough money.")
-        |> mes("C'mon, romance")
-        |> mes("takes zeny, got it?")
-        |> close()
+        ctx =
+          ctx
+          |> mes("You...")
+          |> mes("Don't have")
+          |> mes("enough money.")
+          |> mes("C'mon, romance")
+          |> mes("takes zeny, got it?")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
 
     ctx |> mes("[Sharkie Rania]") |> mes("No prob.") |> close()
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

@@ -20,7 +20,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbech.TrainStationManager do
     |> mes("to Einbroch. Please speak")
     |> mes("to the staff in the 11 'o clock direction if you'd like to board.")
     |> close()
-
-    exit(:normal)
   end
 end

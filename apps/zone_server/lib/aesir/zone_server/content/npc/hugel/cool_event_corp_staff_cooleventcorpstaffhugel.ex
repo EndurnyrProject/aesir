@@ -22,7 +22,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Hugel.CoolEventCorpStaffCooleventcorpstaf
 
   @impl true
   def on_talk(ctx) do
-    _ =
+    {ctx, _} =
       Aesir.ZoneServer.Content.Npc.Functions.FCooleventcorp.call(ctx, [
         "Save:Use Storage::Rent a Pushcart:Storage Password Service:Cancel",
         "in the village of Hugel",
@@ -31,6 +31,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Hugel.CoolEventCorpStaffCooleventcorpstaf
         155
       ])
 
-    exit(:normal)
+    ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

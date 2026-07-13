@@ -13,11 +13,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Manuk.ManukPiom103311 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx |> mes("[Manuk Piom]") |> mes("My leg...") |> mes("It's time to already.") |> close()
-      exit(:normal)
+      ctx =
+        ctx |> mes("[Manuk Piom]") |> mes("My leg...") |> mes("It's time to already.") |> close()
+
+      throw({:script_end, ctx})
     else
-      ctx |> mes("[Manuk Piom]") |> mes("Fn is d id ") |> mes("Yon sdi dh so dps") |> close()
-      exit(:normal)
+      ctx =
+        ctx |> mes("[Manuk Piom]") |> mes("Fn is d id ") |> mes("Yon sdi dh so dps") |> close()
+
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

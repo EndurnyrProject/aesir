@@ -24,31 +24,35 @@ defmodule Aesir.ZoneServer.Content.Npc.Aldebaran.CanalGuy do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Panama]")
-          |> mes("Well, a canal is an artificial waterway used for travel,")
-          |> mes("shipping, or irrigation.")
-          |> next()
-          |> mes("[Panama]")
-          |> mes(
-            "However, the canals over here are just for show. If we needed to transport anything, we just use the Kafra Corporation Teleport service!"
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Panama]")
+            |> mes("Well, a canal is an artificial waterway used for travel,")
+            |> mes("shipping, or irrigation.")
+            |> next()
+            |> mes("[Panama]")
+            |> mes(
+              "However, the canals over here are just for show. If we needed to transport anything, we just use the Kafra Corporation Teleport service!"
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Panama]")
-          |> mes("I have that you will enjoy your stay in Al De Baran.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Panama]")
+            |> mes("I have that you will enjoy your stay in Al De Baran.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

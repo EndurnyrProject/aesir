@@ -26,7 +26,5 @@ defmodule Aesir.ZoneServer.Content.Npc.HuIn01.Chris do
     |> mes("then I suggest buying")
     |> mes("some in a bigger city.")
     |> close()
-
-    exit(:normal)
   end
 end

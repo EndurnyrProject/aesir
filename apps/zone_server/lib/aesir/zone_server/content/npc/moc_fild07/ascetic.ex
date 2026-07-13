@@ -20,16 +20,17 @@ defmodule Aesir.ZoneServer.Content.Npc.MocFild07.Ascetic do
       if get_char_var(ctx, :BaseJob, 0) == :novice do
         ctx =
           if get_char_var(ctx, :job_acolyte_q, 0) == 7 do
-            ctx
-            |> mes(
-              "I will send a carrier pigeon to the Prontera Sanctuary. When you return, the Priest there should already have received my message."
-            )
-            |> next()
-            |> mes("[Mother Mathilda]")
-            |> mes("I will pray to God, and hope that you become an Acolyte soon.")
-            |> close()
+            ctx =
+              ctx
+              |> mes(
+                "I will send a carrier pigeon to the Prontera Sanctuary. When you return, the Priest there should already have received my message."
+              )
+              |> next()
+              |> mes("[Mother Mathilda]")
+              |> mes("I will pray to God, and hope that you become an Acolyte soon.")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
@@ -53,24 +54,25 @@ defmodule Aesir.ZoneServer.Content.Npc.MocFild07.Ascetic do
               |> next()
               |> mes("[Mother Mathilda]")
 
-            ctx
-            |> mes(
-              Rathena.concat(
+            ctx =
+              ctx
+              |> mes(
                 Rathena.concat(
-                  "I will send a message to the Sanctuary confirming that you, ",
-                  char_name(ctx, 0)
-                ),
-                " visited me and completed your penance."
+                  Rathena.concat(
+                    "I will send a message to the Sanctuary confirming that you, ",
+                    char_name(ctx, 0)
+                  ),
+                  " visited me and completed your penance."
+                )
               )
-            )
-            |> next()
-            |> mes("[Mother Mathilda]")
-            |> mes("Please return to the Prontera Sanctuary and speak to the Priest in charge.")
-            |> close()
-            |> savepoint("moc_fild07", 35, 355)
-            |> set_char_var(:job_acolyte_q, 7)
+              |> next()
+              |> mes("[Mother Mathilda]")
+              |> mes("Please return to the Prontera Sanctuary and speak to the Priest in charge.")
+              |> close()
+              |> savepoint("moc_fild07", 35, 355)
+              |> set_char_var(:job_acolyte_q, 7)
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx =
               ctx
@@ -82,25 +84,26 @@ defmodule Aesir.ZoneServer.Content.Npc.MocFild07.Ascetic do
               |> mes("[Mother Mathilda]")
               |> mes("Now, what is your name?")
 
-            ctx
-            |> mes(Rathena.concat(Rathena.concat("", char_name(ctx, 0)), "? Let's see..."))
-            |> next()
-            |> mes("[Mother Mathilda]")
-            |> mes("Hmm...")
-            |> mes("It seems your name")
-            |> mes("is not on my list...")
-            |> next()
-            |> mes("[Mother Mathilda]")
-            |> mes(
-              "Perhaps you should return to the Prontera Sanctuary and check the destination for your penance trial once again."
-            )
-            |> close()
+            ctx =
+              ctx
+              |> mes(Rathena.concat(Rathena.concat("", char_name(ctx, 0)), "? Let's see..."))
+              |> next()
+              |> mes("[Mother Mathilda]")
+              |> mes("Hmm...")
+              |> mes("It seems your name")
+              |> mes("is not on my list...")
+              |> next()
+              |> mes("[Mother Mathilda]")
+              |> mes(
+                "Perhaps you should return to the Prontera Sanctuary and check the destination for your penance trial once again."
+              )
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           end
         else
-          ctx |> mes("...") |> close()
-          exit(:normal)
+          ctx = ctx |> mes("...") |> close()
+          throw({:script_end, ctx})
         end
       else
         ctx =
@@ -108,19 +111,20 @@ defmodule Aesir.ZoneServer.Content.Npc.MocFild07.Ascetic do
             todo(ctx, :callfunc, ["F_MotherMart"])
           else
             if get_char_var(ctx, :BaseJob, 0) == :priest do
-              ctx
-              |> mes("Hello there~")
-              |> next()
-              |> mes("[Mother Mathilda]")
-              |> mes(
-                "How is your practice coming along? I certainly hope you're enjoying living in the grace of God."
-              )
-              |> close()
+              ctx =
+                ctx
+                |> mes("Hello there~")
+                |> next()
+                |> mes("[Mother Mathilda]")
+                |> mes(
+                  "How is your practice coming along? I certainly hope you're enjoying living in the grace of God."
+                )
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
-              ctx |> mes("May God") |> mes("be with you...") |> close()
-              exit(:normal)
+              ctx = ctx |> mes("May God") |> mes("be with you...") |> close()
+              throw({:script_end, ctx})
             end
           end
 
@@ -128,5 +132,7 @@ defmodule Aesir.ZoneServer.Content.Npc.MocFild07.Ascetic do
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

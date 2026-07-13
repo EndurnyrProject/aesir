@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.Towner197219 do
     |> mes("a natural consequence of")
     |> mes("living here in the desert...")
     |> close()
-
-    exit(:normal)
   end
 end

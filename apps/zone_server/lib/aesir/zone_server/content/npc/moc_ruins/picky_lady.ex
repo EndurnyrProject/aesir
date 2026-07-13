@@ -38,61 +38,65 @@ defmodule Aesir.ZoneServer.Content.Npc.MocRuins.PickyLady do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Syvia]")
-          |> mes(
-            "Ooh! Angeling is just like Poring, except it has angel wings! Of course, I don't know if they can actually fly.."
-          )
-          |> next()
-          |> mes("[Syvia]")
-          |> mes(
-            "Angelings are rarely seen, but can be found among large groups of Porings living in one of the fields south of Prontera."
-          )
-          |> mes(
-            "Angeling is a high level monster with Holy property, so it's immune to most magic, aside from spells that have Neutral or Shadow attack properties."
-          )
-          |> next()
-          |> mes("[Syvia]")
-          |> mes("Hehe~ Don't you think I know a lot about Porings? I love them soooo much")
-          |> next()
-          |> mes("[Syvia]")
-          |> mes("Hehe... Poring... Hee......")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Syvia]")
+            |> mes(
+              "Ooh! Angeling is just like Poring, except it has angel wings! Of course, I don't know if they can actually fly.."
+            )
+            |> next()
+            |> mes("[Syvia]")
+            |> mes(
+              "Angelings are rarely seen, but can be found among large groups of Porings living in one of the fields south of Prontera."
+            )
+            |> mes(
+              "Angeling is a high level monster with Holy property, so it's immune to most magic, aside from spells that have Neutral or Shadow attack properties."
+            )
+            |> next()
+            |> mes("[Syvia]")
+            |> mes("Hehe~ Don't you think I know a lot about Porings? I love them soooo much")
+            |> next()
+            |> mes("[Syvia]")
+            |> mes("Hehe... Poring... Hee......")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Syvia]")
-          |> mes(
-            "Ghostring is an evil ghost Poring. It's rarely seen, but can be found among mass groups of Porings living in one of the fields south of Prontera."
-          )
-          |> next()
-          |> mes("[Syvia]")
-          |> mes(
-            "Ghostring is a high-leveled monster with the Ghost property, so it can withstand all physical attacks."
-          )
-          |> mes(
-            "Damage can only be caused to Ghostring through magic spells or weapons with an a specific property."
-          )
-          |> next()
-          |> mes("[Syvia]")
-          |> mes("Hehe~ Don't you think I know a lot about Porings? I love them soooo much~")
-          |> next()
-          |> mes("[Syvia]")
-          |> mes("Hehe... Poring... Teehee......")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Syvia]")
+            |> mes(
+              "Ghostring is an evil ghost Poring. It's rarely seen, but can be found among mass groups of Porings living in one of the fields south of Prontera."
+            )
+            |> next()
+            |> mes("[Syvia]")
+            |> mes(
+              "Ghostring is a high-leveled monster with the Ghost property, so it can withstand all physical attacks."
+            )
+            |> mes(
+              "Damage can only be caused to Ghostring through magic spells or weapons with an a specific property."
+            )
+            |> next()
+            |> mes("[Syvia]")
+            |> mes("Hehe~ Don't you think I know a lot about Porings? I love them soooo much~")
+            |> next()
+            |> mes("[Syvia]")
+            |> mes("Hehe... Poring... Teehee......")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx |> mes("[Syvia]") |> mes("Hehe... Poring... Teehee......") |> close()
-          exit(:normal)
+          ctx = ctx |> mes("[Syvia]") |> mes("Hehe... Poring... Teehee......") |> close()
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

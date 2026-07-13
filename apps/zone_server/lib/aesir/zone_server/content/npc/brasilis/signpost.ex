@@ -13,6 +13,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Brasilis.Signpost do
   @impl true
   def on_talk(ctx) do
     ctx |> mes(":: Art Museum ::") |> close()
-    exit(:normal)
   end
 end

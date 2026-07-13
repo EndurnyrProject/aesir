@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.KejulleRekenber do
     |> mes("I'm merely a normal employee.")
     |> mes("Yeah, no special treatment...")
     |> close()
-
-    exit(:normal)
   end
 end

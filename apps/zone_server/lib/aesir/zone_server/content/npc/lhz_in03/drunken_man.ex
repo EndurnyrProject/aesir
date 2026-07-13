@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn03.DrunkenMan do
     |> mes("my misery. This is all the")
     |> mes("comfort I need, you hear?!")
     |> close()
-
-    exit(:normal)
   end
 end

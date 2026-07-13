@@ -17,6 +17,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Guard do
   @impl true
   def on_talk(ctx) do
     ctx |> mes("[Prontera Guard]") |> mes("Welcome to Prontera.") |> close()
-    exit(:normal)
   end
 end

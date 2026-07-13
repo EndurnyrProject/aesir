@@ -13,27 +13,31 @@ defmodule Aesir.ZoneServer.Content.Npc.SplIn01.DiningLaphine do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) > 0 and get_char_var(ctx, :ep13_2_rhea, 0) > 99 do
-      ctx
-      |> mes("[Dining Laphine]")
-      |> mes("I got bored eating home cooked food.")
-      |> mes("The only thing that keeps me coming here is fruit soup...")
-      |> next()
-      |> mes("[Dining Laphine]")
-      |> mes("Hey you!")
-      |> mes("Why are you staring at me eating dinner?")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Dining Laphine]")
+        |> mes("I got bored eating home cooked food.")
+        |> mes("The only thing that keeps me coming here is fruit soup...")
+        |> next()
+        |> mes("[Dining Laphine]")
+        |> mes("Hey you!")
+        |> mes("Why are you staring at me eating dinner?")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Dining Laphine]")
-      |> mes("NothFarLu Ra...? ")
-      |> mes("RuffYur..!")
-      |> next()
-      |> mes("- He is giving me a odd stare as he eats his dinner -")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Dining Laphine]")
+        |> mes("NothFarLu Ra...? ")
+        |> mes("RuffYur..!")
+        |> next()
+        |> mes("- He is giving me a odd stare as he eats his dinner -")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

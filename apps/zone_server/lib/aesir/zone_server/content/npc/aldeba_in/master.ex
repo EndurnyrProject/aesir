@@ -96,72 +96,83 @@ defmodule Aesir.ZoneServer.Content.Npc.AldebaIn.Master do
         ctx =
           case v2 do
             1 ->
-              ctx
-              |> mes("[Master]")
-              |> mes("Oh~")
-              |> mes("So you're a lover of classics. I respect that very much.")
-              |> next()
-              |> mes("[Master]")
-              |> mes(
-                "I'll also guess that you tend to enjoy the original movie more than sequels, and dislike bad imitations. Am I right?"
-              )
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Master]")
+                |> mes("Oh~")
+                |> mes("So you're a lover of classics. I respect that very much.")
+                |> next()
+                |> mes("[Master]")
+                |> mes(
+                  "I'll also guess that you tend to enjoy the original movie more than sequels, and dislike bad imitations. Am I right?"
+                )
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
 
             2 ->
-              ctx
-              |> mes("[Master]")
-              |> mes("Hmmm...")
-              |> mes(
-                "Blossom strikes me as the girl-next-door type. So I guess that's the type of girl you're attracted to, eh?"
-              )
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Master]")
+                |> mes("Hmmm...")
+                |> mes(
+                  "Blossom strikes me as the girl-next-door type. So I guess that's the type of girl you're attracted to, eh?"
+                )
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
 
             3 ->
-              ctx
-              |> mes("[Master]")
-              |> mes("So...")
-              |> mes(
-                "Long, luxurious hair is important to you, hmm? I suppose it such hair makes a woman look quite elegant."
-              )
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Master]")
+                |> mes("So...")
+                |> mes(
+                  "Long, luxurious hair is important to you, hmm? I suppose it such hair makes a woman look quite elegant."
+                )
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
 
             4 ->
-              ctx
-              |> mes("[Master]")
-              |> mes(
-                "Ah, so you tend to like active, spontaneous types. I can understand that..."
-              )
-              |> next()
-              |> mes("[Master]")
-              |> mes(
-                "Since Roxie isn't exactly the demure housewife type, you probably have an open mind when it comes to defining femininity, right?"
-              )
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Master]")
+                |> mes(
+                  "Ah, so you tend to like active, spontaneous types. I can understand that..."
+                )
+                |> next()
+                |> mes("[Master]")
+                |> mes(
+                  "Since Roxie isn't exactly the demure housewife type, you probably have an open mind when it comes to defining femininity, right?"
+                )
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
 
             5 ->
-              ctx
-              |> mes("[Master]")
-              |> mes("Ah, so you like the intellectual type. That's good, that's good.")
-              |> next()
-              |> mes("[Master]")
-              |> mes(
-                "Still, that Leilah can be cold as stone sometimes. I've seen her shrug off many young men and crush even more hearts!"
-              )
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Master]")
+                |> mes("Ah, so you like the intellectual type. That's good, that's good.")
+                |> next()
+                |> mes("[Master]")
+                |> mes(
+                  "Still, that Leilah can be cold as stone sometimes. I've seen her shrug off many young men and crush even more hearts!"
+                )
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
 
             6 ->
-              ctx |> mes("[Master]") |> mes("Say whaaat?!") |> mes("She's too young!") |> close()
-              exit(:normal)
+              ctx =
+                ctx
+                |> mes("[Master]")
+                |> mes("Say whaaat?!")
+                |> mes("She's too young!")
+                |> close()
+
+              throw({:script_end, ctx})
 
             _ ->
               ctx
@@ -178,7 +189,7 @@ defmodule Aesir.ZoneServer.Content.Npc.AldebaIn.Master do
       "But I worked so hard on this delightful survey! Come now, be a sport! Admiring a pretty woman is like appreciating fine art."
     )
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

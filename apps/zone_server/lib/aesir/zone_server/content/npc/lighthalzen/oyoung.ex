@@ -41,7 +41,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Oyoung do
     |> mes("that line or the fact that")
     |> mes("it's actually working...")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -28,57 +28,62 @@ defmodule Aesir.ZoneServer.Content.Npc.Aldebaran.SlotGuy do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Epthiel]")
-          |> mes(
-            "Items dropped by monsters possess more Slots than ordinary weapons or armor sold in NPC shops."
-          )
-          |> next()
-          |> mes("[Epthiel]")
-          |> mes(
-            "I guess you can assume that an item with more Slots is more valuable than the same item with fewer Slots."
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Epthiel]")
+            |> mes(
+              "Items dropped by monsters possess more Slots than ordinary weapons or armor sold in NPC shops."
+            )
+            |> next()
+            |> mes("[Epthiel]")
+            |> mes(
+              "I guess you can assume that an item with more Slots is more valuable than the same item with fewer Slots."
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Epthiel]")
-          |> mes(
-            "Once a Card is inserted into a Slot, it is impossible to remove it. So please be careful when you insert Cards into weapons or armor."
-          )
-          |> next()
-          |> mes("[Epthiel]")
-          |> mes(
-            "Also, when you mouse over equipment in the Item Window or Vending Window, the name of the item will be followed by the number of its Slots in brackets."
-          )
-          |> next()
-          |> mes("[Epthiel]")
-          |> mes(
-            "For example, a Shield with 1 Slot, when moused over, would display the name 'Shield [1].'"
-          )
-          |> next()
-          |> mes("[Epthiel]")
-          |> mes(
-            "You may also right-click an item, and check the Card Slot window below the item description window for the number of Slots."
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Epthiel]")
+            |> mes(
+              "Once a Card is inserted into a Slot, it is impossible to remove it. So please be careful when you insert Cards into weapons or armor."
+            )
+            |> next()
+            |> mes("[Epthiel]")
+            |> mes(
+              "Also, when you mouse over equipment in the Item Window or Vending Window, the name of the item will be followed by the number of its Slots in brackets."
+            )
+            |> next()
+            |> mes("[Epthiel]")
+            |> mes(
+              "For example, a Shield with 1 Slot, when moused over, would display the name 'Shield [1].'"
+            )
+            |> next()
+            |> mes("[Epthiel]")
+            |> mes(
+              "You may also right-click an item, and check the Card Slot window below the item description window for the number of Slots."
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx
-          |> mes("[Epithiel]")
-          |> mes("Have you ever obtained a card from a monster?")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Epithiel]")
+            |> mes("Have you ever obtained a card from a monster?")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

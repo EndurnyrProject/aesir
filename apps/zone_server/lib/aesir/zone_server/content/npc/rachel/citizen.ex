@@ -26,7 +26,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Rachel.Citizen do
     |> mes("enough, she'll help me")
     |> mes("get a really pretty girlfriend?")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -13,6 +13,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Brasilis.Signpost278137 do
   @impl true
   def on_talk(ctx) do
     ctx |> mes(":: Brasilis Hotel ::") |> close()
-    exit(:normal)
   end
 end

@@ -21,10 +21,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Geffen.SuspiciousGuy do
     ]
 
   @impl true
-  def on_event("OnTouch", ctx), do: ev_ontouch(ctx)
+  def on_event("OnTouch", ctx) do
+    ev_ontouch(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
   @impl true
-  def on_talk(_ctx) do
-    exit(:normal)
+  def on_talk(ctx) do
+    ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   def ev_ontouch(ctx) do
@@ -110,20 +117,21 @@ defmodule Aesir.ZoneServer.Content.Npc.Geffen.SuspiciousGuy do
 
           ctx =
             if zeny(ctx) < get_local(ctx, :Red_potion_hap, 0) do
-              ctx
-              |> mes("[Suspicious Guy]")
-              |> mes("Oh maaan~")
-              |> mes("Are you")
-              |> mes("short on dough?")
-              |> mes("That's no good.")
-              |> next()
-              |> mes("[Suspicious Guy]")
-              |> mes(
-                "^333333Now I gotta find some other sucker to dump this junk on!^000000 *Ahem* I mean, come again!"
-              )
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Suspicious Guy]")
+                |> mes("Oh maaan~")
+                |> mes("Are you")
+                |> mes("short on dough?")
+                |> mes("That's no good.")
+                |> next()
+                |> mes("[Suspicious Guy]")
+                |> mes(
+                  "^333333Now I gotta find some other sucker to dump this junk on!^000000 *Ahem* I mean, come again!"
+                )
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
               ctx
             end
@@ -190,15 +198,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Geffen.SuspiciousGuy do
 
           ctx =
             if zeny(ctx) < get_local(ctx, :Main_gauche_hap, 0) do
-              ctx
-              |> mes("[Suspicious Guy]")
-              |> mes("Short on zeny?")
-              |> mes(
-                "When the greatest deal in your life is right before your eyes?! Tragic, truly tragic..."
-              )
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Suspicious Guy]")
+                |> mes("Short on zeny?")
+                |> mes(
+                  "When the greatest deal in your life is right before your eyes?! Tragic, truly tragic..."
+                )
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
               ctx
             end
@@ -258,13 +267,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Geffen.SuspiciousGuy do
 
           ctx =
             if zeny(ctx) < get_local(ctx, :Hood__hap, 0) do
-              ctx
-              |> mes("[Suspicious Guy]")
-              |> mes("Oh nuts...")
-              |> mes("Short on zeny, eh?")
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Suspicious Guy]")
+                |> mes("Oh nuts...")
+                |> mes("Short on zeny, eh?")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
               ctx
             end
@@ -273,18 +283,19 @@ defmodule Aesir.ZoneServer.Content.Npc.Geffen.SuspiciousGuy do
           give_item(ctx, 2501, get_local(ctx, :input, 0))
 
         4 ->
-          ctx
-          |> mes("[Suspicious Guy]")
-          |> mes("Man...")
-          |> mes(
-            "You sure like to ask for the impossible. Well, let me tell you right now. No other Merchant in the world sells the goods only I can offer."
-          )
-          |> next()
-          |> mes("[Suspicious Guy]")
-          |> mes("You just gotta believe me!")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Suspicious Guy]")
+            |> mes("Man...")
+            |> mes(
+              "You sure like to ask for the impossible. Well, let me tell you right now. No other Merchant in the world sells the goods only I can offer."
+            )
+            |> next()
+            |> mes("[Suspicious Guy]")
+            |> mes("You just gotta believe me!")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
@@ -299,77 +310,71 @@ defmodule Aesir.ZoneServer.Content.Npc.Geffen.SuspiciousGuy do
       "Please come back sometime, and buy more of my stuff. I love a customer who knows what they want! Hehe~"
     )
     |> close()
-
-    exit(:normal)
   end
 
   defp loop_2(ctx) do
-    if true do
-      result =
-        try do
-          {ctx, v2} = input(ctx, :int)
-          ctx = set_local(ctx, :input, v2)
+    result =
+      try do
+        {ctx, v2} = input(ctx, :int)
+        ctx = set_local(ctx, :input, v2)
 
-          ctx =
-            if get_local(ctx, :input, 0) == 0 do
-              ctx = mes(ctx, "[Suspicious Guy]")
+        ctx =
+          if get_local(ctx, :input, 0) == 0 do
+            ctx = mes(ctx, "[Suspicious Guy]")
 
-              ctx =
-                if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-                  mes(
-                    ctx,
-                    "Ah duuuuuude~ You're breakin' my heart! I mean, at these prices, I'm practically performing charity!"
-                  )
-                else
-                  mes(
-                    ctx,
-                    "W-waaaait! You didn't let me tell you the part about how Red Potions help you lose and gain weight in all the right places! Waaaaait!"
-                  )
-                end
+            ctx =
+              if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
+                mes(
+                  ctx,
+                  "Ah duuuuuude~ You're breakin' my heart! I mean, at these prices, I'm practically performing charity!"
+                )
+              else
+                mes(
+                  ctx,
+                  "W-waaaait! You didn't let me tell you the part about how Red Potions help you lose and gain weight in all the right places! Waaaaait!"
+                )
+              end
 
-              close(ctx)
-              exit(:normal)
-            else
-              ctx =
-                if get_local(ctx, :input, 0) > 100 do
-                  ctx
-                  |> mes("[Suspicious Guy]")
-                  |> mes("Whoa...")
-                  |> mes(
-                    "I can't let you buy that many. I mean, it's not like, you know, there's a trace impurity in these Potions or anything like that..."
-                  )
-                  |> next()
-                else
-                  throw({:brk_2, ctx})
-                end
+            ctx = close(ctx)
+            throw({:script_end, ctx})
+          else
+            ctx =
+              if get_local(ctx, :input, 0) > 100 do
+                ctx
+                |> mes("[Suspicious Guy]")
+                |> mes("Whoa...")
+                |> mes(
+                  "I can't let you buy that many. I mean, it's not like, you know, there's a trace impurity in these Potions or anything like that..."
+                )
+                |> next()
+              else
+                throw({:brk_2, ctx})
+              end
 
-              ctx
-            end
+            ctx
+          end
 
-          {:next, ctx}
-        catch
-          :throw, {:brk_2, ctx} -> {:done, ctx}
-          :throw, {:cont_2, ctx} -> {:next, ctx}
-        end
-
-      case result do
-        {:next, ctx} -> loop_2(ctx)
-        {:done, ctx} -> ctx
+        {:next, ctx}
+      catch
+        :throw, {:brk_2, ctx} -> {:done, ctx}
+        :throw, {:cont_2, ctx} -> {:next, ctx}
       end
-    else
-      ctx
+
+    case result do
+      {:next, ctx} -> loop_2(ctx)
+      {:done, ctx} -> ctx
     end
   end
 
   defp loop_3(ctx) do
-    if true do
-      result =
-        try do
-          {ctx, v3} = input(ctx, :int)
-          ctx = set_local(ctx, :input, v3)
+    result =
+      try do
+        {ctx, v3} = input(ctx, :int)
+        ctx = set_local(ctx, :input, v3)
 
-          ctx =
-            if get_local(ctx, :input, 0) == 0 do
+        ctx =
+          if get_local(ctx, :input, 0) == 0 do
+            ctx =
               ctx
               |> mes("[Suspicious Guy]")
               |> mes(
@@ -379,84 +384,78 @@ defmodule Aesir.ZoneServer.Content.Npc.Geffen.SuspiciousGuy do
               |> mes("pass that up too.")
               |> close()
 
-              exit(:normal)
-            else
-              ctx =
-                if get_local(ctx, :input, 0) > 100 do
-                  ctx
-                  |> mes("[Suspicious Guy]")
-                  |> mes("Whoa!")
-                  |> mes(
-                    "I can't sell that many Daggers! That'll attract the Prontera Chiv--I mean, um, I was gonna donate some Daggers to... Hungry children?"
-                  )
-                  |> next()
-                else
-                  throw({:brk_3, ctx})
-                end
+            throw({:script_end, ctx})
+          else
+            ctx =
+              if get_local(ctx, :input, 0) > 100 do
+                ctx
+                |> mes("[Suspicious Guy]")
+                |> mes("Whoa!")
+                |> mes(
+                  "I can't sell that many Daggers! That'll attract the Prontera Chiv--I mean, um, I was gonna donate some Daggers to... Hungry children?"
+                )
+                |> next()
+              else
+                throw({:brk_3, ctx})
+              end
 
-              ctx
-            end
+            ctx
+          end
 
-          {:next, ctx}
-        catch
-          :throw, {:brk_3, ctx} -> {:done, ctx}
-          :throw, {:cont_3, ctx} -> {:next, ctx}
-        end
-
-      case result do
-        {:next, ctx} -> loop_3(ctx)
-        {:done, ctx} -> ctx
+        {:next, ctx}
+      catch
+        :throw, {:brk_3, ctx} -> {:done, ctx}
+        :throw, {:cont_3, ctx} -> {:next, ctx}
       end
-    else
-      ctx
+
+    case result do
+      {:next, ctx} -> loop_3(ctx)
+      {:done, ctx} -> ctx
     end
   end
 
   defp loop_4(ctx) do
-    if true do
-      result =
-        try do
-          {ctx, v4} = input(ctx, :int)
-          ctx = set_local(ctx, :input, v4)
+    result =
+      try do
+        {ctx, v4} = input(ctx, :int)
+        ctx = set_local(ctx, :input, v4)
 
-          ctx =
-            if get_local(ctx, :input, 0) == 0 do
+        ctx =
+          if get_local(ctx, :input, 0) == 0 do
+            ctx =
               ctx
               |> mes("[Suspicious Guy]")
               |> mes("Awww...")
               |> mes("It wasn't because of the whole drawstrings thing, was it?")
               |> close()
 
-              exit(:normal)
-            else
-              ctx =
-                if get_local(ctx, :input, 0) > 100 do
-                  ctx
-                  |> mes("[Suspicious Guy]")
-                  |> mes("Whoa~!")
-                  |> mes(
-                    "I can't sell you that many! What are you trying to do, take advantage of me?"
-                  )
-                  |> next()
-                else
-                  throw({:brk_4, ctx})
-                end
+            throw({:script_end, ctx})
+          else
+            ctx =
+              if get_local(ctx, :input, 0) > 100 do
+                ctx
+                |> mes("[Suspicious Guy]")
+                |> mes("Whoa~!")
+                |> mes(
+                  "I can't sell you that many! What are you trying to do, take advantage of me?"
+                )
+                |> next()
+              else
+                throw({:brk_4, ctx})
+              end
 
-              ctx
-            end
+            ctx
+          end
 
-          {:next, ctx}
-        catch
-          :throw, {:brk_4, ctx} -> {:done, ctx}
-          :throw, {:cont_4, ctx} -> {:next, ctx}
-        end
-
-      case result do
-        {:next, ctx} -> loop_4(ctx)
-        {:done, ctx} -> ctx
+        {:next, ctx}
+      catch
+        :throw, {:brk_4, ctx} -> {:done, ctx}
+        :throw, {:cont_4, ctx} -> {:next, ctx}
       end
-    else
-      ctx
+
+    case result do
+      {:next, ctx} -> loop_4(ctx)
+      {:done, ctx} -> ctx
     end
   end
 end

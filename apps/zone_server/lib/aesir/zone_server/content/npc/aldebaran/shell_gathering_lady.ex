@@ -21,30 +21,31 @@ defmodule Aesir.ZoneServer.Content.Npc.Aldebaran.ShellGatheringLady do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Joanne]")
-        |> mes(
-          "When you see bubbles popping up from the sand or muddy puddles, try digging into the ground a bit. You might find some shells underneath the ground!"
-        )
-        |> next()
-        |> mes("[Joanne]")
-        |> mes("Have you heard")
-        |> mes("of Ambernite?")
-        |> mes("That shell monster")
-        |> mes("is pretty tough~")
-        |> next()
-        |> mes("[Joanne]")
-        |> mes(
-          "It's usually seen at the beach near the west province of Prontera. If you ever try attacking it without being prepared, you might be in trouble."
-        )
-        |> next()
-        |> mes("[Joanne]")
-        |> mes("Ambernite is")
-        |> mes("pretty strong!")
-        |> mes("So look out for it!")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Joanne]")
+          |> mes(
+            "When you see bubbles popping up from the sand or muddy puddles, try digging into the ground a bit. You might find some shells underneath the ground!"
+          )
+          |> next()
+          |> mes("[Joanne]")
+          |> mes("Have you heard")
+          |> mes("of Ambernite?")
+          |> mes("That shell monster")
+          |> mes("is pretty tough~")
+          |> next()
+          |> mes("[Joanne]")
+          |> mes(
+            "It's usually seen at the beach near the west province of Prontera. If you ever try attacking it without being prepared, you might be in trouble."
+          )
+          |> next()
+          |> mes("[Joanne]")
+          |> mes("Ambernite is")
+          |> mes("pretty strong!")
+          |> mes("So look out for it!")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -55,7 +56,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Aldebaran.ShellGatheringLady do
     |> mes("pretty strong!")
     |> mes("So look out for it!")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

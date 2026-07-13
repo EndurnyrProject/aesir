@@ -23,31 +23,33 @@ defmodule Aesir.ZoneServer.Content.Npc.Umbala.UtanKid194104 do
 
       ctx =
         if v1 == 1 do
-          ctx
-          |> mes("[Boorkatan]")
-          |> mes("Whoa, what a surprise! I never")
-          |> mes("would have thought someone from")
-          |> mes("outside would know how to do it.")
-          |> mes("Okay, I'll take your word for")
-          |> mes("it and welcome you to our village.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Boorkatan]")
+            |> mes("Whoa, what a surprise! I never")
+            |> mes("would have thought someone from")
+            |> mes("outside would know how to do it.")
+            |> mes("Okay, I'll take your word for")
+            |> mes("it and welcome you to our village.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
         else
           ctx
         end
 
-      ctx
-      |> mes("[Boorkatan]")
-      |> mes("Er, I see...")
-      |> mes("As part of the ceremony of")
-      |> mes("adulthood, all Utans have to do")
-      |> mes("a bungee jump. When I grow up,")
-      |> mes("I'm gonna do it too, and prove")
-      |> mes("to everybody that I am a man!")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Boorkatan]")
+        |> mes("Er, I see...")
+        |> mes("As part of the ceremony of")
+        |> mes("adulthood, all Utans have to do")
+        |> mes("a bungee jump. When I grow up,")
+        |> mes("I'm gonna do it too, and prove")
+        |> mes("to everybody that I am a man!")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
       {ctx, v2} =
         ctx
@@ -59,25 +61,29 @@ defmodule Aesir.ZoneServer.Content.Npc.Umbala.UtanKid194104 do
 
       ctx =
         if v2 == 1 do
-          ctx
-          |> mes("[???]")
-          |> mes("Umba, Umumbah umbabah.")
-          |> mes("Umbaumbah umumbabah.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[???]")
+            |> mes("Umba, Umumbah umbabah.")
+            |> mes("Umbaumbah umumbabah.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
         else
           ctx
         end
 
-      ctx
-      |> mes("[???]")
-      |> mes("Er, Umbahumba umumbah.")
-      |> mes("Umbahumbah umbabah.")
-      |> mes("Umbahumhumbabahum.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[???]")
+        |> mes("Er, Umbahumba umumbah.")
+        |> mes("Umbahumbah umbabah.")
+        |> mes("Umbahumhumbabahum.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

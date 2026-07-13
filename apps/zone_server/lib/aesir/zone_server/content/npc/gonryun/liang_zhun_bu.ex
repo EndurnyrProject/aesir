@@ -26,7 +26,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Gonryun.LiangZhunBu do
     |> mes("we shall never forget the")
     |> mes("Triumphal Song that has helped us in our struggles.")
     |> close()
-
-    exit(:normal)
   end
 end

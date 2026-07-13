@@ -20,7 +20,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn03.HousemaidBrenda do
     |> mes("and if it were to-- No. No!")
     |> mes("I'm not even going to think it!")
     |> close()
-
-    exit(:normal)
   end
 end

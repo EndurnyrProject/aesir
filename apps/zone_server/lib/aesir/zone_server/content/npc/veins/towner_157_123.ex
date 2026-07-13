@@ -24,7 +24,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.Towner157123 do
     |> mes("know as you spend more")
     |> mes("time here in the desert.")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -31,7 +31,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.Kid291205 do
     |> mes("I grow up, I wanna be")
     |> mes("that kind of hero!")
     |> close()
-
-    exit(:normal)
   end
 end

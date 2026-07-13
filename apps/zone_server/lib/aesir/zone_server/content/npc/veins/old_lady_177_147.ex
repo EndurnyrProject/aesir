@@ -34,7 +34,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.OldLady177147 do
     |> mes("in the middle of the desert,")
     |> mes("so maybe I'm asking too much.")
     |> close()
-
-    exit(:normal)
   end
 end

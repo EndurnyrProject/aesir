@@ -70,7 +70,5 @@ defmodule Aesir.ZoneServer.Content.Npc.EinIn01.RyanDanger do
     |> mes("must be drunk out")
     |> mes("of his freakin' mind!)")
     |> close()
-
-    exit(:normal)
   end
 end

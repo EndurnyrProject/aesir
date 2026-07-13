@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.Maggie do
     |> mes("the price of my flowers. Why")
     |> mes("are the city officials so greedy?")
     |> close()
-
-    exit(:normal)
   end
 end

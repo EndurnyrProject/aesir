@@ -13,6 +13,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbroch.BulletinBoard9084 do
   @impl true
   def on_talk(ctx) do
     ctx |> mes(" ") |> mes(" Laboratory ") |> mes(" ") |> close()
-    exit(:normal)
   end
 end

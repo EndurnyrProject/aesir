@@ -69,8 +69,8 @@ defmodule Aesir.ZoneServer.Content.Npc.MocPara01.KafraTeleportation do
             |> next()
             |> s_s_zone([])
 
-          _ = warp(ctx, "prt_fild05", 276, 241)
-          exit(:normal)
+          ctx = warp(ctx, "prt_fild05", 276, 241)
+          throw({:script_end, ctx})
 
         2 ->
           {ctx, _} =
@@ -81,8 +81,8 @@ defmodule Aesir.ZoneServer.Content.Npc.MocPara01.KafraTeleportation do
             |> next()
             |> s_s_zone([])
 
-          _ = warp(ctx, "prt_fild07", 250, 257)
-          exit(:normal)
+          ctx = warp(ctx, "prt_fild07", 250, 257)
+          throw({:script_end, ctx})
 
         3 ->
           {ctx, _} =
@@ -93,8 +93,8 @@ defmodule Aesir.ZoneServer.Content.Npc.MocPara01.KafraTeleportation do
             |> next()
             |> s_s_zone([])
 
-          _ = warp(ctx, "prt_fild04", 204, 109)
-          exit(:normal)
+          ctx = warp(ctx, "prt_fild04", 204, 109)
+          throw({:script_end, ctx})
 
         4 ->
           {ctx, _} =
@@ -107,8 +107,8 @@ defmodule Aesir.ZoneServer.Content.Npc.MocPara01.KafraTeleportation do
             |> next()
             |> s_s_zone([])
 
-          _ = warp(ctx, "pay_arche", 69, 130)
-          exit(:normal)
+          ctx = warp(ctx, "pay_arche", 69, 130)
+          throw({:script_end, ctx})
 
         5 ->
           {ctx, _} =
@@ -121,8 +121,8 @@ defmodule Aesir.ZoneServer.Content.Npc.MocPara01.KafraTeleportation do
             |> next()
             |> s_s_zone([])
 
-          _ = warp(ctx, "moc_fild01", 232, 250)
-          exit(:normal)
+          ctx = warp(ctx, "moc_fild01", 232, 250)
+          throw({:script_end, ctx})
 
         6 ->
           {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -134,30 +134,36 @@ defmodule Aesir.ZoneServer.Content.Npc.MocPara01.KafraTeleportation do
 
     {ctx, _} = s_s_zone(ctx, [])
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   defp s_s_zone(ctx, _args) do
-    {ctx, v2} = select(ctx, ["I wish to go.", "I want to stay."])
+    try do
+      {ctx, v2} = select(ctx, ["I wish to go.", "I want to stay."])
 
-    ctx =
-      case v2 do
-        1 ->
-          {ctx, nil}
+      ctx =
+        case v2 do
+          1 ->
+            throw({:script_return, {ctx, nil}})
 
-        2 ->
-          ctx =
+          2 ->
+            ctx =
+              ctx
+              |> mes("[Kafra Employee]")
+              |> mes("Want to check out our other services?")
+              |> close()
+              |> cutin("", 255)
+
             ctx
-            |> mes("[Kafra Employee]")
-            |> mes("Want to check out our other services?")
-            |> close()
-            |> cutin("", 255)
 
-          ctx
+          _ ->
+            ctx
+        end
 
-        _ ->
-          ctx
-      end
-
-    {ctx, nil}
+      {ctx, nil}
+    catch
+      :throw, {:script_return, result} -> result
+    end
   end
 end

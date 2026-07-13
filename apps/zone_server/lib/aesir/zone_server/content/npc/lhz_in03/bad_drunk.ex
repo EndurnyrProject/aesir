@@ -30,7 +30,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn03.BadDrunk do
     |> mes("No, wait, that's")
     |> mes("not a song either...")
     |> close()
-
-    exit(:normal)
   end
 end

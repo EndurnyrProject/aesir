@@ -52,31 +52,32 @@ defmodule Aesir.ZoneServer.Content.Npc.Airport.AirportStaff do
           if v2 == 1 do
             ctx =
               if count_item(ctx, 7311) > 0 do
-                ctx |> delitem(7311, 1) |> warp("airport", 148, 51)
-                exit(:normal)
+                ctx = ctx |> delitem(7311, 1) |> warp("airport", 148, 51)
+                throw({:script_end, ctx})
               else
                 ctx
               end
 
             ctx =
               if zeny(ctx) >= 1200 do
-                ctx |> pay_zeny(1200) |> warp("airport", 148, 51)
-                exit(:normal)
+                ctx = ctx |> pay_zeny(1200) |> warp("airport", 148, 51)
+                throw({:script_end, ctx})
               else
                 ctx
               end
 
-            ctx
-            |> mes("[Airport Staff]")
-            |> mes("I'm sorry, but you don't")
-            |> mes("have a Free Ticket for")
-            |> mes("Airship and you don't have")
-            |> mes("enough zeny for boarding")
-            |> mes("the Airship. Remember, the")
-            |> mes("boarding fee is 1,200 zeny.")
-            |> close()
+            ctx =
+              ctx
+              |> mes("[Airport Staff]")
+              |> mes("I'm sorry, but you don't")
+              |> mes("have a Free Ticket for")
+              |> mes("Airship and you don't have")
+              |> mes("enough zeny for boarding")
+              |> mes("the Airship. Remember, the")
+              |> mes("boarding fee is 1,200 zeny.")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
@@ -87,6 +88,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airport.AirportStaff do
       end
 
     ctx |> mes("[Airport Staff]") |> mes("Thank you and") |> mes("have a nice day.") |> close()
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

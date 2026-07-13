@@ -12,8 +12,18 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.Employee2598 do
 
   alias Aesir.ZoneServer.Script.Rathena
   @impl true
-  def on_event("OnWelcome", ctx), do: ev_onwelcome(ctx)
-  def on_event("OnSolo", ctx), do: ev_onsolo(ctx)
+  def on_event("OnWelcome", ctx) do
+    ev_onwelcome(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
+  def on_event("OnSolo", ctx) do
+    ev_onsolo(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
   @impl true
   def on_talk(ctx) do
     ctx = ctx |> mes("[Employee Buffy]") |> mes("Welcome to Jawaii Tavern~")
@@ -35,8 +45,8 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.Employee2598 do
             mes(ctx, "with your husband~")
           end
 
-        ctx |> mes("Awwww, I want to") |> mes("get married soon~!") |> close()
-        exit(:normal)
+        ctx = ctx |> mes("Awwww, I want to") |> mes("get married soon~!") |> close()
+        throw({:script_end, ctx})
       else
         ctx =
           if not Rathena.truthy?(getpartnerid(ctx)) do
@@ -61,8 +71,8 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.Employee2598 do
                 ctx
               end
 
-            close(ctx)
-            exit(:normal)
+            ctx = close(ctx)
+            throw({:script_end, ctx})
           else
             ctx
           end
@@ -71,16 +81,15 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.Employee2598 do
       end
 
     ctx |> mes("I hope you will have a good time.") |> close()
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   def ev_onwelcome(ctx) do
-    _ = emotion(ctx, :chup)
-    exit(:normal)
+    emotion(ctx, :chup)
   end
 
   def ev_onsolo(ctx) do
-    _ = emotion(ctx, :huk)
-    exit(:normal)
+    emotion(ctx, :huk)
   end
 end

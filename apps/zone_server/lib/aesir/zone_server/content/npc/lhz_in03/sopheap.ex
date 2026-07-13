@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn03.Sopheap do
     |> mes("with just relaxing and resting.")
     |> mes("Still, there are a lot of old folk who refuse to sit still like this~")
     |> close()
-
-    exit(:normal)
   end
 end

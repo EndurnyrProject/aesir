@@ -12,21 +12,25 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FGetnumsuffix do
 
   @doc "Callable rAthena global function; returns `{ctx, return_value}`."
   def call(ctx, args) do
-    ctx = set_local(ctx, :n, Enum.at(args, 0, 0))
-    ctx = set_local(ctx, :mod, rem(get_local(ctx, :n, 0), 10))
+    try do
+      ctx = set_local(ctx, :n, Enum.at(args, 0, 0))
+      ctx = set_local(ctx, :mod, rem(get_local(ctx, :n, 0), 10))
 
-    if get_local(ctx, :mod, 0) == 1 and get_local(ctx, :n, 0) != 11 do
-      {ctx, Rathena.concat(get_local(ctx, :n, 0), "st")}
-    else
-      if get_local(ctx, :mod, 0) == 2 and get_local(ctx, :n, 0) != 12 do
-        {ctx, Rathena.concat(get_local(ctx, :n, 0), "nd")}
+      if get_local(ctx, :mod, 0) == 1 and get_local(ctx, :n, 0) != 11 do
+        throw({:script_return, {ctx, Rathena.concat(get_local(ctx, :n, 0), "st")}})
       else
-        if get_local(ctx, :mod, 0) == 3 and get_local(ctx, :n, 0) != 13 do
-          {ctx, Rathena.concat(get_local(ctx, :n, 0), "rd")}
+        if get_local(ctx, :mod, 0) == 2 and get_local(ctx, :n, 0) != 12 do
+          throw({:script_return, {ctx, Rathena.concat(get_local(ctx, :n, 0), "nd")}})
         else
-          {ctx, Rathena.concat(get_local(ctx, :n, 0), "th")}
+          if get_local(ctx, :mod, 0) == 3 and get_local(ctx, :n, 0) != 13 do
+            throw({:script_return, {ctx, Rathena.concat(get_local(ctx, :n, 0), "rd")}})
+          else
+            throw({:script_return, {ctx, Rathena.concat(get_local(ctx, :n, 0), "th")}})
+          end
         end
       end
+    catch
+      :throw, {:script_return, result} -> result
     end
   end
 end

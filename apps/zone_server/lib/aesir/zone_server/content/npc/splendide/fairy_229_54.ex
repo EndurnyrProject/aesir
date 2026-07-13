@@ -13,33 +13,37 @@ defmodule Aesir.ZoneServer.Content.Npc.Splendide.Fairy22954 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Fairy]")
-      |> mes("Huh? You are a human.")
-      |> mes(
-        "You are better than those fat Saphas, but still you are not a beautiful thing also."
-      )
-      |> next()
-      |> mes("[Fairy]")
-      |> mes("How did you find this wonderful place?")
-      |> mes("This is a sophisticated place.")
-      |> mes("I don't think you can be here with us.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Fairy]")
+        |> mes("Huh? You are a human.")
+        |> mes(
+          "You are better than those fat Saphas, but still you are not a beautiful thing also."
+        )
+        |> next()
+        |> mes("[Fairy]")
+        |> mes("How did you find this wonderful place?")
+        |> mes("This is a sophisticated place.")
+        |> mes("I don't think you can be here with us.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Fairy]")
-      |> mes("ImanAnuUor Yee NeUorVer Ir RivehAshOsa")
-      |> mes("AdorserHir er OsaAlahAno Mu RivehDath")
-      |> next()
-      |> mes("[Fairy]")
-      |> mes("LarsFuloSar Yu VilGotheor Yu nes")
-      |> mes("Anuneseor Ie remuSeDieb er ")
-      |> mes("WosLoNud Ko NuffDuIman Ir ")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Fairy]")
+        |> mes("ImanAnuUor Yee NeUorVer Ir RivehAshOsa")
+        |> mes("AdorserHir er OsaAlahAno Mu RivehDath")
+        |> next()
+        |> mes("[Fairy]")
+        |> mes("LarsFuloSar Yu VilGotheor Yu nes")
+        |> mes("Anuneseor Ie remuSeDieb er ")
+        |> mes("WosLoNud Ko NuffDuIman Ir ")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

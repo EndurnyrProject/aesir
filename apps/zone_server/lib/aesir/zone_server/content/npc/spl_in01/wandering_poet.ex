@@ -166,6 +166,5 @@ defmodule Aesir.ZoneServer.Content.Npc.SplIn01.WanderingPoet do
       end
 
     ctx |> close() |> cutin("god_nelluad01", 255)
-    exit(:normal)
   end
 end

@@ -19,7 +19,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Gonryun.JianChungXun do
     |> mes("This town makes me feel like I am")
     |> mes("in the middle of a festival all year round.")
     |> close()
-
-    exit(:normal)
   end
 end

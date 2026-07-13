@@ -28,64 +28,69 @@ defmodule Aesir.ZoneServer.Content.Npc.CmdIn02.Loyar do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Loyar]")
-          |> mes("Hmm... Maybe I better")
-          |> mes("go home soon. I didn't")
-          |> mes("spend all the money that")
-          |> mes("I set aside for gambling")
-          |> mes("quite yet, but it's not a good")
-          |> mes("idea to stay out too long.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Loyar]")
+            |> mes("Hmm... Maybe I better")
+            |> mes("go home soon. I didn't")
+            |> mes("spend all the money that")
+            |> mes("I set aside for gambling")
+            |> mes("quite yet, but it's not a good")
+            |> mes("idea to stay out too long.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Loyar]")
-          |> mes("I have to admit, the")
-          |> mes("atmosphere of this place")
-          |> mes("is exciting and addictive.")
-          |> mes("Even when you're tired, the")
-          |> mes("energy of this place just")
-          |> mes("gets into you, you know?")
-          |> next()
-          |> mes("[Loyar]")
-          |> mes("Although this kind of place")
-          |> mes("may encourage people with")
-          |> mes("serious gambling problems,")
-          |> mes("it's much nicer to gamble")
-          |> mes("here than in a place that's")
-          |> mes("dirtier and more questionable.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Loyar]")
+            |> mes("I have to admit, the")
+            |> mes("atmosphere of this place")
+            |> mes("is exciting and addictive.")
+            |> mes("Even when you're tired, the")
+            |> mes("energy of this place just")
+            |> mes("gets into you, you know?")
+            |> next()
+            |> mes("[Loyar]")
+            |> mes("Although this kind of place")
+            |> mes("may encourage people with")
+            |> mes("serious gambling problems,")
+            |> mes("it's much nicer to gamble")
+            |> mes("here than in a place that's")
+            |> mes("dirtier and more questionable.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx
-          |> mes("[Loyar]")
-          |> mes("Whoa whoa whoa...")
-          |> mes("Why did that guy make")
-          |> mes("that bet? What an amateur...")
-          |> mes("Er, I guess you don't know")
-          |> mes("too much about this game.")
-          |> mes("As for me, I'm just a fan~")
-          |> next()
-          |> mes("[Loyar]")
-          |> mes("I'm a big fan of a lot")
-          |> mes("of these games, but I'll")
-          |> mes("admit that I'm an even bigger")
-          |> mes("fan of winning! Still, I have")
-          |> mes("enough sense to stay out of")
-          |> mes("those high stakes games.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Loyar]")
+            |> mes("Whoa whoa whoa...")
+            |> mes("Why did that guy make")
+            |> mes("that bet? What an amateur...")
+            |> mes("Er, I guess you don't know")
+            |> mes("too much about this game.")
+            |> mes("As for me, I'm just a fan~")
+            |> next()
+            |> mes("[Loyar]")
+            |> mes("I'm a big fan of a lot")
+            |> mes("of these games, but I'll")
+            |> mes("admit that I'm an even bigger")
+            |> mes("fan of winning! Still, I have")
+            |> mes("enough sense to stay out of")
+            |> mes("those high stakes games.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

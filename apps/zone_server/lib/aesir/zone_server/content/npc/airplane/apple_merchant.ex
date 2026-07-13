@@ -40,39 +40,42 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.AppleMerchant do
             |> loop_2()
 
           if zeny(ctx) < get_local(ctx, :pay, 0) do
-            ctx
-            |> mes("[Fruitz]")
-            |> mes("I'm sorry, but you don't")
-            |> mes("have enough money to")
-            |> mes("purchase that many Apples.")
-            |> mes("Please check your zeny or")
-            |> mes("purchase fewer Apples.")
-            |> close()
-
-            exit(:normal)
-          else
-            if checkweight(ctx, [{512, get_local(ctx, :input, 0)}]) == 0 do
+            ctx =
               ctx
               |> mes("[Fruitz]")
-              |> mes("Hmmm, I don't think")
-              |> mes("you've got enough room in")
-              |> mes("your inventory to carry this")
-              |> mes("many Apples. Why don't you free up some of your inventory space?")
+              |> mes("I'm sorry, but you don't")
+              |> mes("have enough money to")
+              |> mes("purchase that many Apples.")
+              |> mes("Please check your zeny or")
+              |> mes("purchase fewer Apples.")
               |> close()
 
-              exit(:normal)
+            throw({:script_end, ctx})
+          else
+            if checkweight(ctx, [{512, get_local(ctx, :input, 0)}]) == 0 do
+              ctx =
+                ctx
+                |> mes("[Fruitz]")
+                |> mes("Hmmm, I don't think")
+                |> mes("you've got enough room in")
+                |> mes("your inventory to carry this")
+                |> mes("many Apples. Why don't you free up some of your inventory space?")
+                |> close()
+
+              throw({:script_end, ctx})
             else
               ctx = pay_zeny(ctx, get_local(ctx, :pay, 0))
 
-              ctx
-              |> give_item(512, get_local(ctx, :input, 0))
-              |> mes("[Fruitz]")
-              |> mes("Thanks for stopping by")
-              |> mes("my shop. I hope you enjoy")
-              |> mes("the flavor of these Apples~!")
-              |> close()
+              ctx =
+                ctx
+                |> give_item(512, get_local(ctx, :input, 0))
+                |> mes("[Fruitz]")
+                |> mes("Thanks for stopping by")
+                |> mes("my shop. I hope you enjoy")
+                |> mes("the flavor of these Apples~!")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             end
           end
 
@@ -91,184 +94,192 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.AppleMerchant do
             case v4 do
               1 ->
                 if count_item(ctx, 512) < 3 or count_item(ctx, 713) < 1 do
-                  ctx
-                  |> mes("[Fruitz]")
-                  |> mes("I'm sorry, but you don't")
-                  |> mes("have enough materials to")
-                  |> mes("create a bottle of Apple Juice.")
-                  |> mes("Remember, I need 3 Apples")
-                  |> mes("and 1 Empty Bottle to do it.")
-                  |> close()
+                  ctx =
+                    ctx
+                    |> mes("[Fruitz]")
+                    |> mes("I'm sorry, but you don't")
+                    |> mes("have enough materials to")
+                    |> mes("create a bottle of Apple Juice.")
+                    |> mes("Remember, I need 3 Apples")
+                    |> mes("and 1 Empty Bottle to do it.")
+                    |> close()
 
-                  exit(:normal)
+                  throw({:script_end, ctx})
                 else
-                  ctx
-                  |> mes("[Fruitz]")
-                  |> mes("Thank you,")
-                  |> mes("please wait")
-                  |> mes("just a moment.")
-                  |> next()
-                  |> mes("^3355FF*Grind grind*")
-                  |> mes("*Grind grind*")
-                  |> mes("*Clang...!*^000000")
-                  |> next()
-                  |> delitem(512, 3)
-                  |> delitem(713, 1)
-                  |> give_item(531, 1)
-                  |> mes("[Fruitz]")
-                  |> mes("There you go~")
-                  |> mes("I hope you enjoy!")
-                  |> mes("Please feel free to")
-                  |> mes("stop by for your Apple")
-                  |> mes("and Apple Juice needs")
-                  |> mes("at anytime, adventurer~")
-                  |> close()
+                  ctx =
+                    ctx
+                    |> mes("[Fruitz]")
+                    |> mes("Thank you,")
+                    |> mes("please wait")
+                    |> mes("just a moment.")
+                    |> next()
+                    |> mes("^3355FF*Grind grind*")
+                    |> mes("*Grind grind*")
+                    |> mes("*Clang...!*^000000")
+                    |> next()
+                    |> delitem(512, 3)
+                    |> delitem(713, 1)
+                    |> give_item(531, 1)
+                    |> mes("[Fruitz]")
+                    |> mes("There you go~")
+                    |> mes("I hope you enjoy!")
+                    |> mes("Please feel free to")
+                    |> mes("stop by for your Apple")
+                    |> mes("and Apple Juice needs")
+                    |> mes("at anytime, adventurer~")
+                    |> close()
 
-                  exit(:normal)
+                  throw({:script_end, ctx})
                 end
 
               2 ->
-                ctx
-                |> mes("[Fruitz]")
-                |> mes("Thanks for stopping")
-                |> mes("by my shop. Farewell!")
-                |> mes("Come by anytime when")
-                |> mes("you feel like having an")
-                |> mes("Apple to snack on~")
-                |> close()
+                ctx =
+                  ctx
+                  |> mes("[Fruitz]")
+                  |> mes("Thanks for stopping")
+                  |> mes("by my shop. Farewell!")
+                  |> mes("Come by anytime when")
+                  |> mes("you feel like having an")
+                  |> mes("Apple to snack on~")
+                  |> close()
 
-                exit(:normal)
+                throw({:script_end, ctx})
 
               _ ->
                 ctx
             end
 
-          ctx
-          |> mes("[Fruitz]")
-          |> mes("I used to be a wandering")
-          |> mes("vagabond when, one day,")
-          |> mes("I took a nap and something")
-          |> mes("struck my head and awoke")
-          |> mes("me from my restful slumber.")
-          |> next()
-          |> mes("[Fruitz]")
-          |> mes("It turns out that I was")
-          |> mes("sleeping beneath an apple")
-          |> mes("tree and that an apple fell")
-          |> mes("and hit me on the head.")
-          |> mes("I was dying of hunger and")
-          |> mes("was about to eat that Apple...")
-          |> next()
-          |> mes("[Fruitz]")
-          |> mes("But suddenly, Kain, my old")
-          |> mes("friend from the mining days,")
-          |> mes("asked me to help him around")
-          |> mes("on the Airship. So I did, and")
-          |> mes("it was there where I found some")
-          |> mes("people playing the Dice game.")
-          |> next()
-          |> mes("[Fruitz]")
-          |> mes("I was bored and curious")
-          |> mes("and ended up wagering that")
-          |> mes("single Apple in a game of")
-          |> mes("dice. But for some reason,")
-          |> mes("I had this incredible lucky")
-          |> mes("streak. One apple became two... ")
-          |> next()
-          |> mes("[Fruitz]")
-          |> mes("Two became four and")
-          |> mes("before I knew it, I had")
-          |> mes("cornered the Apple market!")
-          |> mes("I won so many Apples, I just")
-          |> mes("started my own business here")
-          |> mes("on the Airship. Weird, huh?")
-          |> next()
-          |> mes("[Fruitz]")
-          |> mes("So Apples are good")
-          |> mes("for you. They were")
-          |> mes("certainly very good")
-          |> mes("to me. Hahahahaah~!")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Fruitz]")
+            |> mes("I used to be a wandering")
+            |> mes("vagabond when, one day,")
+            |> mes("I took a nap and something")
+            |> mes("struck my head and awoke")
+            |> mes("me from my restful slumber.")
+            |> next()
+            |> mes("[Fruitz]")
+            |> mes("It turns out that I was")
+            |> mes("sleeping beneath an apple")
+            |> mes("tree and that an apple fell")
+            |> mes("and hit me on the head.")
+            |> mes("I was dying of hunger and")
+            |> mes("was about to eat that Apple...")
+            |> next()
+            |> mes("[Fruitz]")
+            |> mes("But suddenly, Kain, my old")
+            |> mes("friend from the mining days,")
+            |> mes("asked me to help him around")
+            |> mes("on the Airship. So I did, and")
+            |> mes("it was there where I found some")
+            |> mes("people playing the Dice game.")
+            |> next()
+            |> mes("[Fruitz]")
+            |> mes("I was bored and curious")
+            |> mes("and ended up wagering that")
+            |> mes("single Apple in a game of")
+            |> mes("dice. But for some reason,")
+            |> mes("I had this incredible lucky")
+            |> mes("streak. One apple became two... ")
+            |> next()
+            |> mes("[Fruitz]")
+            |> mes("Two became four and")
+            |> mes("before I knew it, I had")
+            |> mes("cornered the Apple market!")
+            |> mes("I won so many Apples, I just")
+            |> mes("started my own business here")
+            |> mes("on the Airship. Weird, huh?")
+            |> next()
+            |> mes("[Fruitz]")
+            |> mes("So Apples are good")
+            |> mes("for you. They were")
+            |> mes("certainly very good")
+            |> mes("to me. Hahahahaah~!")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx
-          |> mes("[Fruitz]")
-          |> mes("I used to be a wandering")
-          |> mes("vagabond when, one day,")
-          |> mes("I took a nap and something")
-          |> mes("struck my head and awoke")
-          |> mes("me from my restful slumber.")
-          |> next()
-          |> mes("[Fruitz]")
-          |> mes("It turns out that I was")
-          |> mes("sleeping beneath an apple")
-          |> mes("tree and that an apple fell")
-          |> mes("and hit me on the head.")
-          |> mes("I was dying of hunger and")
-          |> mes("was about to eat that Apple...")
-          |> next()
-          |> mes("[Fruitz]")
-          |> mes("But suddenly, Kain, my old")
-          |> mes("friend from the mining days,")
-          |> mes("asked me to help him around")
-          |> mes("on the Airship. So I did, and")
-          |> mes("it was there where I found some")
-          |> mes("people playing the Dice game.")
-          |> next()
-          |> mes("[Fruitz]")
-          |> mes("I was bored and curious")
-          |> mes("and ended up wagering that")
-          |> mes("single Apple in a game of")
-          |> mes("dice. But for some reason,")
-          |> mes("I had this incredible lucky")
-          |> mes("streak. One apple became two... ")
-          |> next()
-          |> mes("[Fruitz]")
-          |> mes("Two became four and")
-          |> mes("before I knew it, I had")
-          |> mes("cornered the Apple market!")
-          |> mes("I won so many Apples, I just")
-          |> mes("started my own business here")
-          |> mes("on the Airship. Weird, huh?")
-          |> next()
-          |> mes("[Fruitz]")
-          |> mes("So Apples are good")
-          |> mes("for you. They were")
-          |> mes("certainly very good")
-          |> mes("to me. Hahahahaah~!")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Fruitz]")
+            |> mes("I used to be a wandering")
+            |> mes("vagabond when, one day,")
+            |> mes("I took a nap and something")
+            |> mes("struck my head and awoke")
+            |> mes("me from my restful slumber.")
+            |> next()
+            |> mes("[Fruitz]")
+            |> mes("It turns out that I was")
+            |> mes("sleeping beneath an apple")
+            |> mes("tree and that an apple fell")
+            |> mes("and hit me on the head.")
+            |> mes("I was dying of hunger and")
+            |> mes("was about to eat that Apple...")
+            |> next()
+            |> mes("[Fruitz]")
+            |> mes("But suddenly, Kain, my old")
+            |> mes("friend from the mining days,")
+            |> mes("asked me to help him around")
+            |> mes("on the Airship. So I did, and")
+            |> mes("it was there where I found some")
+            |> mes("people playing the Dice game.")
+            |> next()
+            |> mes("[Fruitz]")
+            |> mes("I was bored and curious")
+            |> mes("and ended up wagering that")
+            |> mes("single Apple in a game of")
+            |> mes("dice. But for some reason,")
+            |> mes("I had this incredible lucky")
+            |> mes("streak. One apple became two... ")
+            |> next()
+            |> mes("[Fruitz]")
+            |> mes("Two became four and")
+            |> mes("before I knew it, I had")
+            |> mes("cornered the Apple market!")
+            |> mes("I won so many Apples, I just")
+            |> mes("started my own business here")
+            |> mes("on the Airship. Weird, huh?")
+            |> next()
+            |> mes("[Fruitz]")
+            |> mes("So Apples are good")
+            |> mes("for you. They were")
+            |> mes("certainly very good")
+            |> mes("to me. Hahahahaah~!")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         4 ->
-          ctx
-          |> mes("[Fruitz]")
-          |> mes("Thank you for")
-          |> mes("using my shop.")
-          |> mes("Farewell~")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Fruitz]")
+            |> mes("Thank you for")
+            |> mes("using my shop.")
+            |> mes("Farewell~")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   defp loop_2(ctx) do
-    if true do
-      result =
-        try do
-          {ctx, v2} = input(ctx, :int)
-          ctx = set_local(ctx, :input, v2)
-          ctx = set_local(ctx, :pay, get_local(ctx, :input, 0) * 15)
+    result =
+      try do
+        {ctx, v2} = input(ctx, :int)
+        ctx = set_local(ctx, :input, v2)
+        ctx = set_local(ctx, :pay, get_local(ctx, :input, 0) * 15)
 
-          ctx =
-            if get_local(ctx, :input, 0) == 0 do
+        ctx =
+          if get_local(ctx, :input, 0) == 0 do
+            ctx =
               ctx
               |> mes("[Fruitz]")
               |> mes("Thanks for stopping")
@@ -278,44 +289,45 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.AppleMerchant do
               |> mes("Apple to snack on~")
               |> close()
 
-              exit(:normal)
-            else
-              ctx =
-                if get_local(ctx, :input, 0) < 1 or get_local(ctx, :input, 0) > 500 do
+            throw({:script_end, ctx})
+          else
+            ctx =
+              if get_local(ctx, :input, 0) < 1 or get_local(ctx, :input, 0) > 500 do
+                ctx
+                |> mes("[Fruitz]")
+                |> mes("You've entered a number")
+                |> mes("higher than the maximum")
+                |> mes("value of 500. Please enter")
+                |> mes("the number of Apples you")
+                |> mes("wish to purchase again.")
+                |> next()
+              else
+                ctx = mes(ctx, "[Fruitz]")
+
+                ctx =
+                  mes(
+                    ctx,
+                    Rathena.concat(
+                      Rathena.concat("A total of ^FF0000", get_local(ctx, :input, 0)),
+                      "^000000 Apples"
+                    )
+                  )
+
+                {ctx, v3} =
                   ctx
-                  |> mes("[Fruitz]")
-                  |> mes("You've entered a number")
-                  |> mes("higher than the maximum")
-                  |> mes("value of 500. Please enter")
-                  |> mes("the number of Apples you")
-                  |> mes("wish to purchase again.")
+                  |> mes(
+                    Rathena.concat(
+                      Rathena.concat("will cost you ^FF0000", get_local(ctx, :pay, 0)),
+                      "^000000 zeny."
+                    )
+                  )
+                  |> mes("Would you like to continue?")
                   |> next()
-                else
-                  ctx = mes(ctx, "[Fruitz]")
+                  |> select(["Yes", "No"])
 
-                  ctx =
-                    mes(
-                      ctx,
-                      Rathena.concat(
-                        Rathena.concat("A total of ^FF0000", get_local(ctx, :input, 0)),
-                        "^000000 Apples"
-                      )
-                    )
-
-                  {ctx, v3} =
-                    ctx
-                    |> mes(
-                      Rathena.concat(
-                        Rathena.concat("will cost you ^FF0000", get_local(ctx, :pay, 0)),
-                        "^000000 zeny."
-                      )
-                    )
-                    |> mes("Would you like to continue?")
-                    |> next()
-                    |> select(["Yes", "No"])
-
-                  ctx =
-                    if v3 == 2 do
+                ctx =
+                  if v3 == 2 do
+                    ctx =
                       ctx
                       |> mes("[Fruitz]")
                       |> mes("Thanks for stopping")
@@ -325,29 +337,26 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.AppleMerchant do
                       |> mes("Apple to snack on~")
                       |> close()
 
-                      exit(:normal)
-                    else
-                      ctx
-                    end
+                    throw({:script_end, ctx})
+                  else
+                    ctx
+                  end
 
-                  throw({:brk_2, ctx})
-                end
+                throw({:brk_2, ctx})
+              end
 
-              ctx
-            end
+            ctx
+          end
 
-          {:next, ctx}
-        catch
-          :throw, {:brk_2, ctx} -> {:done, ctx}
-          :throw, {:cont_2, ctx} -> {:next, ctx}
-        end
-
-      case result do
-        {:next, ctx} -> loop_2(ctx)
-        {:done, ctx} -> ctx
+        {:next, ctx}
+      catch
+        :throw, {:brk_2, ctx} -> {:done, ctx}
+        :throw, {:cont_2, ctx} -> {:next, ctx}
       end
-    else
-      ctx
+
+    case result do
+      {:next, ctx} -> loop_2(ctx)
+      {:done, ctx} -> ctx
     end
   end
 end

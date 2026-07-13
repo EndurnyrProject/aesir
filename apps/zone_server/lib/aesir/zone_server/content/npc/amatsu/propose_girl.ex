@@ -47,7 +47,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Amatsu.ProposeGirl do
     |> mes("under that tree. I'm sure ")
     |> mes("happy things will happen, if you do.")
     |> close()
-
-    exit(:normal)
   end
 end

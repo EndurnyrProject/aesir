@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Sefith do
     |> mes("in Lighthalzen. They don't hold")
     |> mes("a candle to my studliness~")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -30,5 +30,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Malaya.KafraEmployeeKafMalaya2 do
       |> Aesir.ZoneServer.Content.Npc.Functions.FKafend.call([0, 1, "in Port Malaya"])
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

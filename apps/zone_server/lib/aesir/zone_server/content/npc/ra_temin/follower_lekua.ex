@@ -26,7 +26,5 @@ defmodule Aesir.ZoneServer.Content.Npc.RaTemin.FollowerLekua do
     |> mes("the world as we can. What")
     |> mes("do you think about that?")
     |> close()
-
-    exit(:normal)
   end
 end

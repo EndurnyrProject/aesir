@@ -42,7 +42,5 @@ defmodule Aesir.ZoneServer.Content.Npc.EinIn01.Cendadt do
     |> mes("before I get")
     |> mes("in trouble...")
     |> close()
-
-    exit(:normal)
   end
 end

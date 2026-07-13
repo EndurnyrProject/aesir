@@ -25,85 +25,90 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.CoolEventStaff do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Saera]")
-          |> mes("Our headquarters building")
-          |> mes("is currently undergoing")
-          |> mes("reconstruction, so we are")
-          |> mes("basing our operations in")
-          |> mes("this place for the meantime.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Saera]")
+            |> mes("Our headquarters building")
+            |> mes("is currently undergoing")
+            |> mes("reconstruction, so we are")
+            |> mes("basing our operations in")
+            |> mes("this place for the meantime.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
           if get_char_var(ctx, :lhz_boss, 0) < 17 do
-            ctx
-            |> mes("[Saera]")
-            |> mes("Currently, Kafra Corporation")
-            |> mes("and Cool Event Corp are working")
-            |> mes("on a collaborative program that")
-            |> mes("will provide direct teleport")
-            |> mes("services to dungeons.")
-            |> next()
-            |> mes("[Saera]")
-            |> mes("Due to technical issues,")
-            |> mes("both companies cannot provide")
-            |> mes("teleport services to the same")
-            |> mes("dungeon. Therefore, we will be")
-            |> mes("selecting our valued customers to choose the company they want.")
-            |> next()
-            |> mes("[Saera]")
-            |> mes("Only a limited number of")
-            |> mes("voters will be chosen, so")
-            |> mes("you can check your voting")
-            |> mes("eligibility at the headquarters")
-            |> mes("of both participating companies. Thank you for your patronage~")
-            |> close()
+            ctx =
+              ctx
+              |> mes("[Saera]")
+              |> mes("Currently, Kafra Corporation")
+              |> mes("and Cool Event Corp are working")
+              |> mes("on a collaborative program that")
+              |> mes("will provide direct teleport")
+              |> mes("services to dungeons.")
+              |> next()
+              |> mes("[Saera]")
+              |> mes("Due to technical issues,")
+              |> mes("both companies cannot provide")
+              |> mes("teleport services to the same")
+              |> mes("dungeon. Therefore, we will be")
+              |> mes("selecting our valued customers to choose the company they want.")
+              |> next()
+              |> mes("[Saera]")
+              |> mes("Only a limited number of")
+              |> mes("voters will be chosen, so")
+              |> mes("you can check your voting")
+              |> mes("eligibility at the headquarters")
+              |> mes("of both participating companies. Thank you for your patronage~")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
-            ctx
-            |> mes("[Saera]")
-            |> mes("Currently, Kafra Corporation")
-            |> mes("and Cool Event Corp are working")
-            |> mes("on a collaborative program that")
-            |> mes("will provide direct teleport")
-            |> mes("services to dungeons.")
-            |> next()
-            |> mes("[Saera]")
-            |> mes("Due to technical issues,")
-            |> mes("both companies cannot provide")
-            |> mes("teleport services to the same")
-            |> mes("dungeon. Therefore, we will be")
-            |> mes("selecting a number of valued customers to vote for their choice.")
-            |> next()
-            |> mes("[Saera]")
-            |> mes("I've just reviewed your")
-            |> mes("information and would like")
-            |> mes("to inform you that you are")
-            |> mes("indeed eligible to vote.")
-            |> mes("Your participation in this")
-            |> mes("election is much appreciated.")
-            |> next()
-            |> mes("[Saera]")
-            |> mes("Remember that the")
-            |> mes("election polls can be")
-            |> mes("found in either Prontera")
-            |> mes("or Juno. Thank you very much.")
-            |> close()
+            ctx =
+              ctx
+              |> mes("[Saera]")
+              |> mes("Currently, Kafra Corporation")
+              |> mes("and Cool Event Corp are working")
+              |> mes("on a collaborative program that")
+              |> mes("will provide direct teleport")
+              |> mes("services to dungeons.")
+              |> next()
+              |> mes("[Saera]")
+              |> mes("Due to technical issues,")
+              |> mes("both companies cannot provide")
+              |> mes("teleport services to the same")
+              |> mes("dungeon. Therefore, we will be")
+              |> mes("selecting a number of valued customers to vote for their choice.")
+              |> next()
+              |> mes("[Saera]")
+              |> mes("I've just reviewed your")
+              |> mes("information and would like")
+              |> mes("to inform you that you are")
+              |> mes("indeed eligible to vote.")
+              |> mes("Your participation in this")
+              |> mes("election is much appreciated.")
+              |> next()
+              |> mes("[Saera]")
+              |> mes("Remember that the")
+              |> mes("election polls can be")
+              |> mes("found in either Prontera")
+              |> mes("or Juno. Thank you very much.")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           end
 
         3 ->
-          ctx |> mes("[Saera]") |> mes("Thank you.") |> mes("Have a good day.") |> close()
-          exit(:normal)
+          ctx = ctx |> mes("[Saera]") |> mes("Thank you.") |> mes("Have a good day.") |> close()
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

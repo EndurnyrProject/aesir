@@ -24,7 +24,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Npc16655 do
     |> mes("power, causing you to drop it.^000000")
     |> specialeffect(:curseattack)
     |> close()
-
-    exit(:normal)
   end
 end

@@ -29,7 +29,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.MartialArtist do
     |> mes("brawl. Hopefully, I'll find a")
     |> mes("rival around here soon...")
     |> close()
-
-    exit(:normal)
   end
 end

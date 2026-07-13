@@ -26,13 +26,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Moscovia.MoscoviaPROfficer do
 
     ctx =
       if v1 == 2 do
-        ctx
-        |> mes("[Moscovia P.R. Officer]")
-        |> mes("If you want to see more")
-        |> mes("please take your time.")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Moscovia P.R. Officer]")
+          |> mes("If you want to see more")
+          |> mes("please take your time.")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -44,13 +45,15 @@ defmodule Aesir.ZoneServer.Content.Npc.Moscovia.MoscoviaPROfficer do
       |> mes("Ok then, Let's get going.")
       |> close()
 
-    _ =
+    ctx =
       if Rathena.truthy?(checkre(ctx, 0)) do
         warp(ctx, "alberta", 244, 86)
       else
         warp(ctx, "alberta", 243, 67)
       end
 
-    exit(:normal)
+    ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

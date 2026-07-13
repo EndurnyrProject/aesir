@@ -22,7 +22,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Verus04.CoolEventCorpStaffCooleventcorpst
 
   @impl true
   def on_talk(ctx) do
-    _ =
+    {ctx, _} =
       Aesir.ZoneServer.Content.Npc.Functions.FCooleventcorp.call(ctx, [
         "Save:Use Storage::Rent a Pushcart::Cancel",
         "in Verus",
@@ -31,6 +31,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Verus04.CoolEventCorpStaffCooleventcorpst
         246
       ])
 
-    exit(:normal)
+    ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

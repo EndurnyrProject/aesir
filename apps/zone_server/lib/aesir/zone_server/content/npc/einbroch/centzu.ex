@@ -35,7 +35,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbroch.Centzu do
     |> mes("I'll just sit back, watch what")
     |> mes("happens and just enjoy life...")
     |> close()
-
-    exit(:normal)
   end
 end

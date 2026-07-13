@@ -13,19 +13,23 @@ defmodule Aesir.ZoneServer.Content.Npc.Splendide.SplendideSoldier do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Splendide Soldier]")
-      |> mes("This is Splendide, the garrison base of the Laphine.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Splendide Soldier]")
+        |> mes("This is Splendide, the garrison base of the Laphine.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Splendide Soldier]")
-      |> mes("SeAshLu Di YurDiebTing Ee VeModTur No NuffLarsVa No ")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Splendide Soldier]")
+        |> mes("SeAshLu Di YurDiebTing Ee VeModTur No NuffLarsVa No ")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

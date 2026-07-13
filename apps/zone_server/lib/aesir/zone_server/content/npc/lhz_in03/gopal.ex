@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn03.Gopal do
     |> mes("I'll found a company as big")
     |> mes("as the Rekenber Corporation!")
     |> close()
-
-    exit(:normal)
   end
 end

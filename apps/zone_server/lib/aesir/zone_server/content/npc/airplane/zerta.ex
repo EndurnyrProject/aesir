@@ -20,7 +20,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.Zerta do
     |> mes("prayer for the sake of the")
     |> mes("Midgard continent.")
     |> close()
-
-    exit(:normal)
   end
 end

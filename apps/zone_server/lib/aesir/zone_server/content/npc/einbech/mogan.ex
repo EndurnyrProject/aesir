@@ -35,7 +35,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbech.Mogan do
     |> mes("mines, lest your footsteps")
     |> mes("disturb Ungoliant's slumber.")
     |> close()
-
-    exit(:normal)
   end
 end

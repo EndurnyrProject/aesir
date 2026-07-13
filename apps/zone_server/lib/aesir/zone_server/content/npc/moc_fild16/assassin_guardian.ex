@@ -33,8 +33,8 @@ defmodule Aesir.ZoneServer.Content.Npc.MocFild16.AssassinGuardian do
 
     ctx =
       if get_char_var(ctx, :BaseJob, 0) == :assassin do
-        ctx |> mes("Welcome.") |> close()
-        exit(:normal)
+        ctx = ctx |> mes("Welcome.") |> close()
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -70,6 +70,7 @@ defmodule Aesir.ZoneServer.Content.Npc.MocFild16.AssassinGuardian do
       end
 
     close(ctx)
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

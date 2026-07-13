@@ -13,33 +13,37 @@ defmodule Aesir.ZoneServer.Content.Npc.Manuk.Benknee do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Benknee]")
-      |> mes("What brings you here?")
-      |> mes("Are you a human?")
-      |> mes("If you are human, you shouldn't be here.")
-      |> next()
-      |> mes("[Benknee]")
-      |> mes("Jotunheim is a blessed and sacred place.")
-      |> mes("We, Saphas will be standing with our own feet.")
-      |> mes("And rise against oppression!")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Benknee]")
+        |> mes("What brings you here?")
+        |> mes("Are you a human?")
+        |> mes("If you are human, you shouldn't be here.")
+        |> next()
+        |> mes("[Benknee]")
+        |> mes("Jotunheim is a blessed and sacred place.")
+        |> mes("We, Saphas will be standing with our own feet.")
+        |> mes("And rise against oppression!")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Benknee]")
-      |> mes("Bdf sdio hs ioq")
-      |> mes("Wfn is ao ps od jd")
-      |> mes("No pip dd dow hso le")
-      |> next()
-      |> mes("[Benknee]")
-      |> mes("Wsd oup nc xkh d")
-      |> mes("Rww o jsd sp")
-      |> mes("Yd aihd oa sd s dd")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Benknee]")
+        |> mes("Bdf sdio hs ioq")
+        |> mes("Wfn is ao ps od jd")
+        |> mes("No pip dd dow hso le")
+        |> next()
+        |> mes("[Benknee]")
+        |> mes("Wsd oup nc xkh d")
+        |> mes("Rww o jsd sp")
+        |> mes("Yd aihd oa sd s dd")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

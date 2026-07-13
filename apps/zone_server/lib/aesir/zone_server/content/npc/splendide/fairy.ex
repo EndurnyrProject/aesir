@@ -13,21 +13,25 @@ defmodule Aesir.ZoneServer.Content.Npc.Splendide.Fairy do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 do
-      ctx
-      |> mes("[Exhausted Fairy]")
-      |> mes("Wait, don't come any closer. I can't stand your smell, it makes me feel dizzy.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Exhausted Fairy]")
+        |> mes("Wait, don't come any closer. I can't stand your smell, it makes me feel dizzy.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Exhausted Fairy]")
-      |> mes(
-        "OdesKoUor Ko NuffSharUden Ko CyaVenah An NudNuffser An KoRivehAdor Mu LarseorAnu O DorNe"
-      )
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Exhausted Fairy]")
+        |> mes(
+          "OdesKoUor Ko NuffSharUden Ko CyaVenah An NudNuffser An KoRivehAdor Mu LarseorAnu O DorNe"
+        )
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

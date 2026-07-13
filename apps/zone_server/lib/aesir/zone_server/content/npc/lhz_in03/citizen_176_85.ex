@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn03.Citizen17685 do
     |> mes("case, pubs and bars are")
     |> mes("all I happen to need~")
     |> close()
-
-    exit(:normal)
   end
 end

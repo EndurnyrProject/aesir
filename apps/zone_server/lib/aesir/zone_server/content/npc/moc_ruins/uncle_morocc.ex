@@ -28,53 +28,57 @@ defmodule Aesir.ZoneServer.Content.Npc.MocRuins.UncleMorocc do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Phlanette]")
-          |> mes("Um.. I'll briefly tell ya about the desert if you want to know.")
-          |> mes(
-            "Due to low annual rainfall, low humidity and high evaporation rate, little vegetation can be found in the desert."
-          )
-          |> next()
-          |> mes("[Phlanette]")
-          |> mes(
-            "Nonetheless, there are a few hardy plants that can survive and grow in the desert."
-          )
-          |> next()
-          |> mes("[Phlanette]")
-          |> mes(
-            "Unfortunately some of those plants growing around Morocc have been mutated into monsters."
-          )
-          |> mes("One of those is Muka, the mutated cactus..")
-          |> next()
-          |> mes("[Phlanette]")
-          |> mes(
-            "However, now that the Satan has revived, no one's sure of what changes would be made in the life cycles of Morocc."
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Phlanette]")
+            |> mes("Um.. I'll briefly tell ya about the desert if you want to know.")
+            |> mes(
+              "Due to low annual rainfall, low humidity and high evaporation rate, little vegetation can be found in the desert."
+            )
+            |> next()
+            |> mes("[Phlanette]")
+            |> mes(
+              "Nonetheless, there are a few hardy plants that can survive and grow in the desert."
+            )
+            |> next()
+            |> mes("[Phlanette]")
+            |> mes(
+              "Unfortunately some of those plants growing around Morocc have been mutated into monsters."
+            )
+            |> mes("One of those is Muka, the mutated cactus..")
+            |> next()
+            |> mes("[Phlanette]")
+            |> mes(
+              "However, now that the Satan has revived, no one's sure of what changes would be made in the life cycles of Morocc."
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Phlanette]")
-          |> mes("Here and there!")
-          |> mes("Sand everywhere...")
-          |> mes("Oh, I curse you, the desert of Morocc!!")
-          |> mes("Damn you!")
-          |> next()
-          |> mes("[Phlanette]")
-          |> mes("But our of all this hatred, I didn't want it to be completely destroyed...")
-          |> next()
-          |> mes("[Phlanette]")
-          |> mes("How come it's never possible to know its value while it's still around?")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Phlanette]")
+            |> mes("Here and there!")
+            |> mes("Sand everywhere...")
+            |> mes("Oh, I curse you, the desert of Morocc!!")
+            |> mes("Damn you!")
+            |> next()
+            |> mes("[Phlanette]")
+            |> mes("But our of all this hatred, I didn't want it to be completely destroyed...")
+            |> next()
+            |> mes("[Phlanette]")
+            |> mes("How come it's never possible to know its value while it's still around?")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

@@ -13,16 +13,21 @@ defmodule Aesir.ZoneServer.Content.Npc.ManIn01.Mechanic do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 do
-      ctx
-      |> mes("[Mechanic]")
-      |> mes("Alien races are not allowed to enter.")
-      |> mes("It's very dangerous here, please don't come any closer.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Mechanic]")
+        |> mes("Alien races are not allowed to enter.")
+        |> mes("It's very dangerous here, please don't come any closer.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx |> mes("[Asoui]") |> mes("Fs iua sdjosow ww ") |> mes("Adds wwpq iusnd ") |> close()
-      exit(:normal)
+      ctx =
+        ctx |> mes("[Asoui]") |> mes("Fs iua sdjosow ww ") |> mes("Adds wwpq iusnd ") |> close()
+
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

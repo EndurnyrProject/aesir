@@ -29,7 +29,5 @@ defmodule Aesir.ZoneServer.Content.Npc.MocRuins.WolfYoungMan do
       "But the thing is that.. I even kinda feel those merciless cold-blooded monsters are nothing to be afraid of, compared to what has happened in Morocc. Morocc is already a hell."
     )
     |> close()
-
-    exit(:normal)
   end
 end

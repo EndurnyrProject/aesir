@@ -20,7 +20,5 @@ defmodule Aesir.ZoneServer.Content.Npc.EinIn01.Khashurantze do
     |> mes("to ask you to leave right now.")
     |> close()
     |> warp("einbroch", 179, 63)
-
-    exit(:normal)
   end
 end

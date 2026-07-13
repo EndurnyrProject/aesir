@@ -23,7 +23,5 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtIn.AnOldMan do
       "These Thief Bugs seem to quickly grab items dropped on the ground, and then run away with them... They're even more annoying than cockroaches!!"
     )
     |> close()
-
-    exit(:normal)
   end
 end

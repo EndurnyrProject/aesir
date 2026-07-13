@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.Towner16691 do
     |> mes("over our foes. That, friend,")
     |> mes("is the power of faith.")
     |> close()
-
-    exit(:normal)
   end
 end

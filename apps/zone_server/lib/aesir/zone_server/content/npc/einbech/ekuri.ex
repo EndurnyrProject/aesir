@@ -39,7 +39,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbech.Ekuri do
     |> mes("my work? Heave-ho!")
     |> mes("Ores, come to me!")
     |> close()
-
-    exit(:normal)
   end
 end

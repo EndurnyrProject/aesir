@@ -13,25 +13,29 @@ defmodule Aesir.ZoneServer.Content.Npc.Manuk.Piom do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Piom]")
-      |> mes("You are... tiny. But you don't seem like a Fairy.")
-      |> mes("As long as you are not a damned Fairy,")
-      |> mes("then you are not our foe!")
-      |> mes("In this world, there are only friends or foe!")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Piom]")
+        |> mes("You are... tiny. But you don't seem like a Fairy.")
+        |> mes("As long as you are not a damned Fairy,")
+        |> mes("then you are not our foe!")
+        |> mes("In this world, there are only friends or foe!")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Piom]")
-      |> mes("As our wi nueo woud bus")
-      |> mes("Gw pii rooop pishe")
-      |> mes("Fw iusbn podim bn usow ")
-      |> mes("Psbh io whe pasn jd")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Piom]")
+        |> mes("As our wi nueo woud bus")
+        |> mes("Gw pii rooop pishe")
+        |> mes("Fw iusbn podim bn usow ")
+        |> mes("Psbh io whe pasn jd")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

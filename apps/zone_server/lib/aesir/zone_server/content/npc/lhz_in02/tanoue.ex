@@ -26,7 +26,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.Tanoue do
     |> mes("plush and have electronic")
     |> mes("massage and heating controls...")
     |> close()
-
-    exit(:normal)
   end
 end

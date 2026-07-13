@@ -25,7 +25,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.Towner320254 do
     |> mes("taxes? Pay off my mortgage?")
     |> mes("No? Heh. Didn't think so.")
     |> close()
-
-    exit(:normal)
   end
 end

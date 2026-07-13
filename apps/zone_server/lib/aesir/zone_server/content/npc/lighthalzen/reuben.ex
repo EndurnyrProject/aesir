@@ -14,24 +14,25 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Reuben do
   def on_talk(ctx) do
     ctx =
       if Enum.random(1..2) == 1 do
-        ctx
-        |> mes("[Reuben]")
-        |> mes("Someday...")
-        |> mes("Someday I just gotta")
-        |> mes("become a train conductor")
-        |> mes("and just get outta here!")
-        |> mes("I really hate this place!")
-        |> emotion(:anger)
-        |> next()
-        |> mes("[Reuben]]")
-        |> mes("Wh-whoa...!")
-        |> mes("Did you just hear")
-        |> mes("me talk to myself?")
-        |> mes("Crud! Don't be so nosy!")
-        |> emotion(:fret)
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Reuben]")
+          |> mes("Someday...")
+          |> mes("Someday I just gotta")
+          |> mes("become a train conductor")
+          |> mes("and just get outta here!")
+          |> mes("I really hate this place!")
+          |> emotion(:anger)
+          |> next()
+          |> mes("[Reuben]]")
+          |> mes("Wh-whoa...!")
+          |> mes("Did you just hear")
+          |> mes("me talk to myself?")
+          |> mes("Crud! Don't be so nosy!")
+          |> emotion(:fret)
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -45,7 +46,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Reuben do
     |> mes("from Adam, so get lost~")
     |> emotion(:rock)
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

@@ -25,7 +25,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Junosoldier5 do
     |> mes("that such a large and")
     |> mes("shining jellopy even exists!")
     |> close()
-
-    exit(:normal)
   end
 end

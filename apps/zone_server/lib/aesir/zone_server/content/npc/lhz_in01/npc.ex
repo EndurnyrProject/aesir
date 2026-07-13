@@ -17,7 +17,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Npc do
     |> mes("of files, a smattering of")
     |> mes("books and a family portrait.^000000")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -35,62 +35,68 @@ defmodule Aesir.ZoneServer.Content.Npc.Yuno.JunoGranny do
 
         ctx =
           if v1 == 1 do
-            ctx
-            |> mes("[Granny]")
-            |> mes("*Giggle*")
-            |> mes("There you go~")
-            |> pay_zeny(1000)
-            |> give_item(529, 1)
-            |> next()
-            |> mes("[Granny]")
-            |> mes("*Giggle*")
-            |> mes("Well then...")
-            |> mes("See you ~")
-            |> close()
+            ctx =
+              ctx
+              |> mes("[Granny]")
+              |> mes("*Giggle*")
+              |> mes("There you go~")
+              |> pay_zeny(1000)
+              |> give_item(529, 1)
+              |> next()
+              |> mes("[Granny]")
+              |> mes("*Giggle*")
+              |> mes("Well then...")
+              |> mes("See you ~")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
 
+        ctx =
+          ctx
+          |> mes("[Granny]")
+          |> mes(
+            "Yes, that's right. Now you must ask yourself why you didn't accept the candy I offered."
+          )
+          |> close()
+
+        throw({:script_end, ctx})
+      else
+        ctx =
+          ctx
+          |> mes("*Giggle giggle*")
+          |> mes("The time has come.")
+          |> mes("Well then...")
+          |> close()
+
+        throw({:script_end, ctx})
+      end
+    else
+      ctx =
         ctx
+        |> mes("I am an old Sage granny who foresees everything...")
+        |> next()
         |> mes("[Granny]")
         |> mes(
-          "Yes, that's right. Now you must ask yourself why you didn't accept the candy I offered."
+          "Have you heard of a boss monster that has been around Juno for a long time? It's known only as the ^FF3355Lord of the Dead^000000."
+        )
+        |> next()
+        |> mes("[Granny]")
+        |> mes(
+          "It is rumored to be from the realm of the dead. It brings many undead monsters with it, intending to lead living creatures to its cold and icy realm."
+        )
+        |> next()
+        |> mes("[Granny]")
+        |> mes(
+          "You have already chosen whether or not you will challenge the Lord of the Dead. All you need to do right now is understand why you made the decision."
         )
         |> close()
 
-        exit(:normal)
-      else
-        ctx
-        |> mes("*Giggle giggle*")
-        |> mes("The time has come.")
-        |> mes("Well then...")
-        |> close()
-
-        exit(:normal)
-      end
-    else
-      ctx
-      |> mes("I am an old Sage granny who foresees everything...")
-      |> next()
-      |> mes("[Granny]")
-      |> mes(
-        "Have you heard of a boss monster that has been around Juno for a long time? It's known only as the ^FF3355Lord of the Dead^000000."
-      )
-      |> next()
-      |> mes("[Granny]")
-      |> mes(
-        "It is rumored to be from the realm of the dead. It brings many undead monsters with it, intending to lead living creatures to its cold and icy realm."
-      )
-      |> next()
-      |> mes("[Granny]")
-      |> mes(
-        "You have already chosen whether or not you will challenge the Lord of the Dead. All you need to do right now is understand why you made the decision."
-      )
-      |> close()
-
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

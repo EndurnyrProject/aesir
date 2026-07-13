@@ -29,7 +29,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn03.Avetis do
     |> mes("the money to ^333333*Haack*^000000")
     |> mes("buy med-medicine... ")
     |> close()
-
-    exit(:normal)
   end
 end

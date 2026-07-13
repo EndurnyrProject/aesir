@@ -13,29 +13,37 @@ defmodule Aesir.ZoneServer.Content.Npc.PayonIn03.Chief do
     ]
 
   @impl true
-  def on_event("OnTouch", ctx), do: ev_ontouch(ctx)
+  def on_event("OnTouch", ctx) do
+    ev_ontouch(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
   @impl true
-  def on_talk(_ctx) do
-    exit(:normal)
+  def on_talk(ctx) do
+    ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   def ev_ontouch(ctx) do
     ctx =
       if base_level(ctx) < 30 do
-        ctx
-        |> mes("[Guard]")
-        |> mes("Hey...")
-        |> mes("Hey...!")
-        |> mes("Show your respect")
-        |> mes("to our chief!")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Guard]")
+          |> mes("Hey...")
+          |> mes("Hey...!")
+          |> mes("Show your respect")
+          |> mes("to our chief!")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
 
-    _ =
+    ctx =
       if base_level(ctx) > 30 do
         ctx = set_local(ctx, :oldman_random, Enum.random(1..2))
 
@@ -210,20 +218,21 @@ defmodule Aesir.ZoneServer.Content.Npc.PayonIn03.Chief do
               ctx
           end
 
-        ctx
-        |> next()
-        |> mes("[Chief]")
-        |> mes("So tired...")
-        |> mes("I'd better rest.")
-        |> mes("Please, take care")
-        |> mes("of yourself.")
-        |> close()
+        ctx =
+          ctx
+          |> next()
+          |> mes("[Chief]")
+          |> mes("So tired...")
+          |> mes("I'd better rest.")
+          |> mes("Please, take care")
+          |> mes("of yourself.")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
 
-    exit(:normal)
+    ctx
   end
 end

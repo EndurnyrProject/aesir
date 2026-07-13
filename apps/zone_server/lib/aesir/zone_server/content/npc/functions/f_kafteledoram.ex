@@ -33,13 +33,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v1 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Southeast Field of Payon", 250, 13])
-                _ = warp(ctx, "pay_fild06", 199, 152)
-                exit(:normal)
+                ctx = warp(ctx, "pay_fild06", 199, 152)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Sunken Ship", 50, 3])
-                _ = warp(ctx, "alb2trea", 55, 63)
-                exit(:normal)
+                ctx = warp(ctx, "alb2trea", 55, 63)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -55,8 +55,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v2 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Aldebaran Border", 50, 3])
-                _ = warp(ctx, "yuno_fild01", 194, 150)
-                exit(:normal)
+                ctx = warp(ctx, "yuno_fild01", 194, 150)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -77,13 +77,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v3 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of the Abyss Valley", 600, 30])
-                _ = warp(ctx, "ein_fild06", 199, 152)
-                exit(:normal)
+                ctx = warp(ctx, "ein_fild06", 199, 152)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["North Field of Lighthalzen", 1400, 70])
-                _ = warp(ctx, "lhz_fild01", 244, 130)
-                exit(:normal)
+                ctx = warp(ctx, "lhz_fild01", 244, 130)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -106,23 +106,23 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v4 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Geffen Tower Underground Entrance", 300, 15])
-                _ = warp(ctx, "gef_tower", 153, 46)
-                exit(:normal)
+                ctx = warp(ctx, "gef_tower", 153, 46)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["North Field of Mount Mjolnir", 150, 8])
-                _ = warp(ctx, "mjolnir_02", 172, 195)
-                exit(:normal)
+                ctx = warp(ctx, "mjolnir_02", 172, 195)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Orc Village", 100, 5])
-                _ = warp(ctx, "gef_fild10", 150, 301)
-                exit(:normal)
+                ctx = warp(ctx, "gef_fild10", 150, 301)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["Glast Heim Entrance", 6666, 444])
-                _ = warp(ctx, "gef_fild06", 34, 270)
-                exit(:normal)
+                ctx = warp(ctx, "gef_fild06", 34, 270)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -138,8 +138,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v5 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["North Field of Lighthalzen", 200, 10])
-                _ = warp(ctx, "lhz_fild01", 244, 130)
-                exit(:normal)
+                ctx = warp(ctx, "lhz_fild01", 244, 130)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -163,28 +163,28 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v6 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Morocc Ruins Pyramid", 50, 3])
-                _ = warp(ctx, "moc_ruins", 100, 140)
-                exit(:normal)
+                ctx = warp(ctx, "moc_ruins", 100, 140)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Sograt Desert Sphinx", 50, 3])
-                _ = warp(ctx, "moc_fild19", 132, 100)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild19", 132, 100)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Southeast Morocc Field", 100, 5])
-                _ = warp(ctx, "moc_fild11", 267, 100)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild11", 267, 100)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["Comodo Beaches", 250, 13])
-                _ = warp(ctx, "cmd_fild02", 89, 83)
-                exit(:normal)
+                ctx = warp(ctx, "cmd_fild02", 89, 83)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = s_s_zone(ctx, ["Kingdom of the Dead", 12121, 666])
-                _ = warp(ctx, "niflheim", 220, 141)
-                exit(:normal)
+                ctx = warp(ctx, "niflheim", 220, 141)
+                throw({:script_end, ctx})
 
               6 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -206,18 +206,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v7 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Archer's Village", 50, 3])
-                _ = warp(ctx, "pay_arche", 69, 130)
-                exit(:normal)
+                ctx = warp(ctx, "pay_arche", 69, 130)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Southeast Payon Field", 100, 5])
-                _ = warp(ctx, "pay_fild10", 203, 331)
-                exit(:normal)
+                ctx = warp(ctx, "pay_fild10", 203, 331)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Prontera South Field", 150, 8])
-                _ = warp(ctx, "moc_fild02", 109, 144)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild02", 109, 144)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -240,23 +240,23 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v8 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Southwestern Prontera Field", 100, 5])
-                _ = warp(ctx, "prt_fild07", 250, 257)
-                exit(:normal)
+                ctx = warp(ctx, "prt_fild07", 250, 257)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Prontera North Field", 150, 8])
-                _ = warp(ctx, "prt_fild01", 194, 123)
-                exit(:normal)
+                ctx = warp(ctx, "prt_fild01", 194, 123)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Byalan Island", 150, 8])
-                _ = warp(ctx, "izlu2dun", 63, 129)
-                exit(:normal)
+                ctx = warp(ctx, "izlu2dun", 63, 129)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["Prontera South Field", 150, 8])
-                _ = warp(ctx, "moc_fild02", 109, 144)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild02", 109, 144)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -273,13 +273,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v9 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Southern Ice Cave Field", 600, 30])
-                _ = warp(ctx, "ra_fild04", 214, 220)
-                exit(:normal)
+                ctx = warp(ctx, "ra_fild04", 214, 220)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Thor Volcano East Field", 600, 30])
-                _ = warp(ctx, "ve_fild04", 198, 174)
-                exit(:normal)
+                ctx = warp(ctx, "ve_fild04", 198, 174)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -295,13 +295,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v10 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Thor Volcano East Field", 400, 20])
-                _ = warp(ctx, "ra_fild04", 198, 174)
-                exit(:normal)
+                ctx = warp(ctx, "ra_fild04", 198, 174)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["South Veins Field", 200, 10])
-                _ = warp(ctx, "ve_fild07", 85, 255)
-                exit(:normal)
+                ctx = warp(ctx, "ve_fild07", 85, 255)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -324,25 +324,25 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v11 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of the Abyss Valley", 400, 20])
-                _ = warp(ctx, "ein_fild06", 199, 152)
-                exit(:normal)
+                ctx = warp(ctx, "ein_fild06", 199, 152)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} =
                   s_s_zone(ctx, ["Phantasmagorika Excavation of the Abyss Valley", 400, 20])
 
-                _ = warp(ctx, "yuno_fild07", 225, 145)
-                exit(:normal)
+                ctx = warp(ctx, "yuno_fild07", 225, 145)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Magma Dungeon Juno Plateau", 400, 20])
-                _ = warp(ctx, "yuno_fild03", 201, 152)
-                exit(:normal)
+                ctx = warp(ctx, "yuno_fild03", 201, 152)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of Abyss Lake", 800, 40])
-                _ = warp(ctx, "hu_fild04", 186, 78)
-                exit(:normal)
+                ctx = warp(ctx, "hu_fild04", 186, 78)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -361,8 +361,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v12 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Aldebaran Border", 50, 3])
-                _ = warp(ctx, "yuno_fild01", 194, 150)
-                exit(:normal)
+                ctx = warp(ctx, "yuno_fild01", 194, 150)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -383,13 +383,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v13 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of the Abyss Valley", 600, 30])
-                _ = warp(ctx, "ein_fild06", 199, 152)
-                exit(:normal)
+                ctx = warp(ctx, "ein_fild06", 199, 152)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["North Field of Lighthalzen", 1400, 70])
-                _ = warp(ctx, "lhz_fild01", 244, 130)
-                exit(:normal)
+                ctx = warp(ctx, "lhz_fild01", 244, 130)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -412,23 +412,23 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v14 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Geffen Tower Underground Entrance", 300, 15])
-                _ = warp(ctx, "gef_tower", 153, 46)
-                exit(:normal)
+                ctx = warp(ctx, "gef_tower", 153, 46)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["North Field of Mount Mjolnir", 150, 8])
-                _ = warp(ctx, "mjolnir_02", 172, 195)
-                exit(:normal)
+                ctx = warp(ctx, "mjolnir_02", 172, 195)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Orc Village", 100, 5])
-                _ = warp(ctx, "gef_fild10", 150, 301)
-                exit(:normal)
+                ctx = warp(ctx, "gef_fild10", 150, 301)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["Glast Heim Entrance", 6666, 444])
-                _ = warp(ctx, "gef_fild06", 34, 270)
-                exit(:normal)
+                ctx = warp(ctx, "gef_fild06", 34, 270)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -444,8 +444,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v15 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["North Field of Lighthalzen", 200, 10])
-                _ = warp(ctx, "lhz_fild01", 244, 130)
-                exit(:normal)
+                ctx = warp(ctx, "lhz_fild01", 244, 130)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -469,28 +469,28 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v16 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Morocc Ruins Pyramid", 50, 3])
-                _ = warp(ctx, "moc_ruins", 100, 140)
-                exit(:normal)
+                ctx = warp(ctx, "moc_ruins", 100, 140)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Sograt Desert Sphinx", 50, 3])
-                _ = warp(ctx, "moc_fild19", 132, 100)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild19", 132, 100)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Southeast Morocc Field", 100, 5])
-                _ = warp(ctx, "moc_fild11", 267, 100)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild11", 267, 100)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["Comodo Beaches", 250, 13])
-                _ = warp(ctx, "cmd_fild02", 89, 83)
-                exit(:normal)
+                ctx = warp(ctx, "cmd_fild02", 89, 83)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = s_s_zone(ctx, ["Kingdom of the Dead", 12121, 666])
-                _ = warp(ctx, "niflheim", 220, 141)
-                exit(:normal)
+                ctx = warp(ctx, "niflheim", 220, 141)
+                throw({:script_end, ctx})
 
               6 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -512,18 +512,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v17 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Archer's Village", 50, 3])
-                _ = warp(ctx, "pay_arche", 69, 130)
-                exit(:normal)
+                ctx = warp(ctx, "pay_arche", 69, 130)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Southeast Payon Field", 100, 5])
-                _ = warp(ctx, "pay_fild10", 203, 331)
-                exit(:normal)
+                ctx = warp(ctx, "pay_fild10", 203, 331)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Prontera South Field", 150, 8])
-                _ = warp(ctx, "moc_fild02", 109, 144)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild02", 109, 144)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -546,23 +546,23 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v18 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Southwestern Prontera Field", 100, 5])
-                _ = warp(ctx, "prt_fild07", 250, 257)
-                exit(:normal)
+                ctx = warp(ctx, "prt_fild07", 250, 257)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Prontera North Field", 150, 8])
-                _ = warp(ctx, "prt_fild01", 194, 123)
-                exit(:normal)
+                ctx = warp(ctx, "prt_fild01", 194, 123)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Byalan Island", 150, 8])
-                _ = warp(ctx, "izlu2dun", 63, 129)
-                exit(:normal)
+                ctx = warp(ctx, "izlu2dun", 63, 129)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["Prontera South Field", 150, 8])
-                _ = warp(ctx, "moc_fild02", 109, 144)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild02", 109, 144)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -579,13 +579,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v19 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Southern Ice Cave Field", 600, 30])
-                _ = warp(ctx, "ra_fild04", 214, 220)
-                exit(:normal)
+                ctx = warp(ctx, "ra_fild04", 214, 220)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Thor Volcano East Field", 600, 30])
-                _ = warp(ctx, "ve_fild04", 198, 174)
-                exit(:normal)
+                ctx = warp(ctx, "ve_fild04", 198, 174)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -601,13 +601,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v20 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Thor Volcano East Field", 400, 20])
-                _ = warp(ctx, "ra_fild04", 198, 174)
-                exit(:normal)
+                ctx = warp(ctx, "ra_fild04", 198, 174)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["South Veins Field", 200, 10])
-                _ = warp(ctx, "ve_fild07", 85, 255)
-                exit(:normal)
+                ctx = warp(ctx, "ve_fild07", 85, 255)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -630,25 +630,25 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v21 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of the Abyss Valley", 400, 20])
-                _ = warp(ctx, "ein_fild06", 199, 152)
-                exit(:normal)
+                ctx = warp(ctx, "ein_fild06", 199, 152)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} =
                   s_s_zone(ctx, ["Phantasmagorika Excavation of the Abyss Valley", 400, 20])
 
-                _ = warp(ctx, "yuno_fild07", 225, 145)
-                exit(:normal)
+                ctx = warp(ctx, "yuno_fild07", 225, 145)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Magma Dungeon Juno Plateau", 400, 20])
-                _ = warp(ctx, "yuno_fild03", 201, 152)
-                exit(:normal)
+                ctx = warp(ctx, "yuno_fild03", 201, 152)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of Abyss Lake", 800, 40])
-                _ = warp(ctx, "hu_fild04", 186, 78)
-                exit(:normal)
+                ctx = warp(ctx, "hu_fild04", 186, 78)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -672,13 +672,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v22 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of the Abyss Valley", 600, 30])
-                _ = warp(ctx, "ein_fild06", 199, 152)
-                exit(:normal)
+                ctx = warp(ctx, "ein_fild06", 199, 152)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["North Field of Lighthalzen", 1400, 70])
-                _ = warp(ctx, "lhz_fild01", 244, 130)
-                exit(:normal)
+                ctx = warp(ctx, "lhz_fild01", 244, 130)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -701,23 +701,23 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v23 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Geffen Tower Underground Entrance", 300, 15])
-                _ = warp(ctx, "gef_tower", 153, 46)
-                exit(:normal)
+                ctx = warp(ctx, "gef_tower", 153, 46)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["North Field of Mount Mjolnir", 150, 8])
-                _ = warp(ctx, "mjolnir_02", 172, 195)
-                exit(:normal)
+                ctx = warp(ctx, "mjolnir_02", 172, 195)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Orc Village", 100, 5])
-                _ = warp(ctx, "gef_fild10", 150, 301)
-                exit(:normal)
+                ctx = warp(ctx, "gef_fild10", 150, 301)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["Glast Heim Entrance", 6666, 444])
-                _ = warp(ctx, "gef_fild06", 34, 270)
-                exit(:normal)
+                ctx = warp(ctx, "gef_fild06", 34, 270)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -733,8 +733,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v24 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["North Field of Lighthalzen", 200, 10])
-                _ = warp(ctx, "lhz_fild01", 244, 130)
-                exit(:normal)
+                ctx = warp(ctx, "lhz_fild01", 244, 130)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -758,28 +758,28 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v25 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Morocc Ruins Pyramid", 50, 3])
-                _ = warp(ctx, "moc_ruins", 100, 140)
-                exit(:normal)
+                ctx = warp(ctx, "moc_ruins", 100, 140)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Sograt Desert Sphinx", 50, 3])
-                _ = warp(ctx, "moc_fild19", 132, 100)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild19", 132, 100)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Southeast Morocc Field", 100, 5])
-                _ = warp(ctx, "moc_fild11", 267, 100)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild11", 267, 100)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["Comodo Beaches", 250, 13])
-                _ = warp(ctx, "cmd_fild02", 89, 83)
-                exit(:normal)
+                ctx = warp(ctx, "cmd_fild02", 89, 83)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = s_s_zone(ctx, ["Kingdom of the Dead", 12121, 666])
-                _ = warp(ctx, "niflheim", 220, 141)
-                exit(:normal)
+                ctx = warp(ctx, "niflheim", 220, 141)
+                throw({:script_end, ctx})
 
               6 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -801,18 +801,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v26 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Archer's Village", 50, 3])
-                _ = warp(ctx, "pay_arche", 69, 130)
-                exit(:normal)
+                ctx = warp(ctx, "pay_arche", 69, 130)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Southeast Payon Field", 100, 5])
-                _ = warp(ctx, "pay_fild10", 203, 331)
-                exit(:normal)
+                ctx = warp(ctx, "pay_fild10", 203, 331)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Prontera South Field", 150, 8])
-                _ = warp(ctx, "moc_fild02", 109, 144)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild02", 109, 144)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -835,23 +835,23 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v27 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Southwestern Prontera Field", 100, 5])
-                _ = warp(ctx, "prt_fild07", 250, 257)
-                exit(:normal)
+                ctx = warp(ctx, "prt_fild07", 250, 257)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Prontera North Field", 150, 8])
-                _ = warp(ctx, "prt_fild01", 194, 123)
-                exit(:normal)
+                ctx = warp(ctx, "prt_fild01", 194, 123)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Byalan Island", 150, 8])
-                _ = warp(ctx, "izlu2dun", 63, 129)
-                exit(:normal)
+                ctx = warp(ctx, "izlu2dun", 63, 129)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["Prontera South Field", 150, 8])
-                _ = warp(ctx, "moc_fild02", 109, 144)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild02", 109, 144)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -868,13 +868,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v28 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Southern Ice Cave Field", 600, 30])
-                _ = warp(ctx, "ra_fild04", 214, 220)
-                exit(:normal)
+                ctx = warp(ctx, "ra_fild04", 214, 220)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Thor Volcano East Field", 600, 30])
-                _ = warp(ctx, "ve_fild04", 198, 174)
-                exit(:normal)
+                ctx = warp(ctx, "ve_fild04", 198, 174)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -890,13 +890,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v29 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Thor Volcano East Field", 400, 20])
-                _ = warp(ctx, "ra_fild04", 198, 174)
-                exit(:normal)
+                ctx = warp(ctx, "ra_fild04", 198, 174)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["South Veins Field", 200, 10])
-                _ = warp(ctx, "ve_fild07", 85, 255)
-                exit(:normal)
+                ctx = warp(ctx, "ve_fild07", 85, 255)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -919,25 +919,25 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v30 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of the Abyss Valley", 400, 20])
-                _ = warp(ctx, "ein_fild06", 199, 152)
-                exit(:normal)
+                ctx = warp(ctx, "ein_fild06", 199, 152)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} =
                   s_s_zone(ctx, ["Phantasmagorika Excavation of the Abyss Valley", 400, 20])
 
-                _ = warp(ctx, "yuno_fild07", 225, 145)
-                exit(:normal)
+                ctx = warp(ctx, "yuno_fild07", 225, 145)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Magma Dungeon Juno Plateau", 400, 20])
-                _ = warp(ctx, "yuno_fild03", 201, 152)
-                exit(:normal)
+                ctx = warp(ctx, "yuno_fild03", 201, 152)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of Abyss Lake", 800, 40])
-                _ = warp(ctx, "hu_fild04", 186, 78)
-                exit(:normal)
+                ctx = warp(ctx, "hu_fild04", 186, 78)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -963,23 +963,23 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v31 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Geffen Tower Underground Entrance", 300, 15])
-                _ = warp(ctx, "gef_tower", 153, 46)
-                exit(:normal)
+                ctx = warp(ctx, "gef_tower", 153, 46)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["North Field of Mount Mjolnir", 150, 8])
-                _ = warp(ctx, "mjolnir_02", 172, 195)
-                exit(:normal)
+                ctx = warp(ctx, "mjolnir_02", 172, 195)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Orc Village", 100, 5])
-                _ = warp(ctx, "gef_fild10", 150, 301)
-                exit(:normal)
+                ctx = warp(ctx, "gef_fild10", 150, 301)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["Glast Heim Entrance", 6666, 444])
-                _ = warp(ctx, "gef_fild06", 34, 270)
-                exit(:normal)
+                ctx = warp(ctx, "gef_fild06", 34, 270)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -995,8 +995,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v32 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["North Field of Lighthalzen", 200, 10])
-                _ = warp(ctx, "lhz_fild01", 244, 130)
-                exit(:normal)
+                ctx = warp(ctx, "lhz_fild01", 244, 130)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1020,28 +1020,28 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v33 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Morocc Ruins Pyramid", 50, 3])
-                _ = warp(ctx, "moc_ruins", 100, 140)
-                exit(:normal)
+                ctx = warp(ctx, "moc_ruins", 100, 140)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Sograt Desert Sphinx", 50, 3])
-                _ = warp(ctx, "moc_fild19", 132, 100)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild19", 132, 100)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Southeast Morocc Field", 100, 5])
-                _ = warp(ctx, "moc_fild11", 267, 100)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild11", 267, 100)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["Comodo Beaches", 250, 13])
-                _ = warp(ctx, "cmd_fild02", 89, 83)
-                exit(:normal)
+                ctx = warp(ctx, "cmd_fild02", 89, 83)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = s_s_zone(ctx, ["Kingdom of the Dead", 12121, 666])
-                _ = warp(ctx, "niflheim", 220, 141)
-                exit(:normal)
+                ctx = warp(ctx, "niflheim", 220, 141)
+                throw({:script_end, ctx})
 
               6 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1063,18 +1063,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v34 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Archer's Village", 50, 3])
-                _ = warp(ctx, "pay_arche", 69, 130)
-                exit(:normal)
+                ctx = warp(ctx, "pay_arche", 69, 130)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Southeast Payon Field", 100, 5])
-                _ = warp(ctx, "pay_fild10", 203, 331)
-                exit(:normal)
+                ctx = warp(ctx, "pay_fild10", 203, 331)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Prontera South Field", 150, 8])
-                _ = warp(ctx, "moc_fild02", 109, 144)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild02", 109, 144)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1097,23 +1097,23 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v35 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Southwestern Prontera Field", 100, 5])
-                _ = warp(ctx, "prt_fild07", 250, 257)
-                exit(:normal)
+                ctx = warp(ctx, "prt_fild07", 250, 257)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Prontera North Field", 150, 8])
-                _ = warp(ctx, "prt_fild01", 194, 123)
-                exit(:normal)
+                ctx = warp(ctx, "prt_fild01", 194, 123)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Byalan Island", 150, 8])
-                _ = warp(ctx, "izlu2dun", 63, 129)
-                exit(:normal)
+                ctx = warp(ctx, "izlu2dun", 63, 129)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["Prontera South Field", 150, 8])
-                _ = warp(ctx, "moc_fild02", 109, 144)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild02", 109, 144)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1130,13 +1130,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v36 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Southern Ice Cave Field", 600, 30])
-                _ = warp(ctx, "ra_fild04", 214, 220)
-                exit(:normal)
+                ctx = warp(ctx, "ra_fild04", 214, 220)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Thor Volcano East Field", 600, 30])
-                _ = warp(ctx, "ve_fild04", 198, 174)
-                exit(:normal)
+                ctx = warp(ctx, "ve_fild04", 198, 174)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1152,13 +1152,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v37 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Thor Volcano East Field", 400, 20])
-                _ = warp(ctx, "ra_fild04", 198, 174)
-                exit(:normal)
+                ctx = warp(ctx, "ra_fild04", 198, 174)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["South Veins Field", 200, 10])
-                _ = warp(ctx, "ve_fild07", 85, 255)
-                exit(:normal)
+                ctx = warp(ctx, "ve_fild07", 85, 255)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1181,25 +1181,25 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v38 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of the Abyss Valley", 400, 20])
-                _ = warp(ctx, "ein_fild06", 199, 152)
-                exit(:normal)
+                ctx = warp(ctx, "ein_fild06", 199, 152)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} =
                   s_s_zone(ctx, ["Phantasmagorika Excavation of the Abyss Valley", 400, 20])
 
-                _ = warp(ctx, "yuno_fild07", 225, 145)
-                exit(:normal)
+                ctx = warp(ctx, "yuno_fild07", 225, 145)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Magma Dungeon Juno Plateau", 400, 20])
-                _ = warp(ctx, "yuno_fild03", 201, 152)
-                exit(:normal)
+                ctx = warp(ctx, "yuno_fild03", 201, 152)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of Abyss Lake", 800, 40])
-                _ = warp(ctx, "hu_fild04", 186, 78)
-                exit(:normal)
+                ctx = warp(ctx, "hu_fild04", 186, 78)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1218,8 +1218,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v39 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["North Field of Lighthalzen", 200, 10])
-                _ = warp(ctx, "lhz_fild01", 244, 130)
-                exit(:normal)
+                ctx = warp(ctx, "lhz_fild01", 244, 130)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1243,28 +1243,28 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v40 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Morocc Ruins Pyramid", 50, 3])
-                _ = warp(ctx, "moc_ruins", 100, 140)
-                exit(:normal)
+                ctx = warp(ctx, "moc_ruins", 100, 140)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Sograt Desert Sphinx", 50, 3])
-                _ = warp(ctx, "moc_fild19", 132, 100)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild19", 132, 100)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Southeast Morocc Field", 100, 5])
-                _ = warp(ctx, "moc_fild11", 267, 100)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild11", 267, 100)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["Comodo Beaches", 250, 13])
-                _ = warp(ctx, "cmd_fild02", 89, 83)
-                exit(:normal)
+                ctx = warp(ctx, "cmd_fild02", 89, 83)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = s_s_zone(ctx, ["Kingdom of the Dead", 12121, 666])
-                _ = warp(ctx, "niflheim", 220, 141)
-                exit(:normal)
+                ctx = warp(ctx, "niflheim", 220, 141)
+                throw({:script_end, ctx})
 
               6 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1286,18 +1286,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v41 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Archer's Village", 50, 3])
-                _ = warp(ctx, "pay_arche", 69, 130)
-                exit(:normal)
+                ctx = warp(ctx, "pay_arche", 69, 130)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Southeast Payon Field", 100, 5])
-                _ = warp(ctx, "pay_fild10", 203, 331)
-                exit(:normal)
+                ctx = warp(ctx, "pay_fild10", 203, 331)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Prontera South Field", 150, 8])
-                _ = warp(ctx, "moc_fild02", 109, 144)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild02", 109, 144)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1320,23 +1320,23 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v42 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Southwestern Prontera Field", 100, 5])
-                _ = warp(ctx, "prt_fild07", 250, 257)
-                exit(:normal)
+                ctx = warp(ctx, "prt_fild07", 250, 257)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Prontera North Field", 150, 8])
-                _ = warp(ctx, "prt_fild01", 194, 123)
-                exit(:normal)
+                ctx = warp(ctx, "prt_fild01", 194, 123)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Byalan Island", 150, 8])
-                _ = warp(ctx, "izlu2dun", 63, 129)
-                exit(:normal)
+                ctx = warp(ctx, "izlu2dun", 63, 129)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["Prontera South Field", 150, 8])
-                _ = warp(ctx, "moc_fild02", 109, 144)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild02", 109, 144)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1353,13 +1353,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v43 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Southern Ice Cave Field", 600, 30])
-                _ = warp(ctx, "ra_fild04", 214, 220)
-                exit(:normal)
+                ctx = warp(ctx, "ra_fild04", 214, 220)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Thor Volcano East Field", 600, 30])
-                _ = warp(ctx, "ve_fild04", 198, 174)
-                exit(:normal)
+                ctx = warp(ctx, "ve_fild04", 198, 174)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1375,13 +1375,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v44 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Thor Volcano East Field", 400, 20])
-                _ = warp(ctx, "ra_fild04", 198, 174)
-                exit(:normal)
+                ctx = warp(ctx, "ra_fild04", 198, 174)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["South Veins Field", 200, 10])
-                _ = warp(ctx, "ve_fild07", 85, 255)
-                exit(:normal)
+                ctx = warp(ctx, "ve_fild07", 85, 255)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1404,25 +1404,25 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v45 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of the Abyss Valley", 400, 20])
-                _ = warp(ctx, "ein_fild06", 199, 152)
-                exit(:normal)
+                ctx = warp(ctx, "ein_fild06", 199, 152)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} =
                   s_s_zone(ctx, ["Phantasmagorika Excavation of the Abyss Valley", 400, 20])
 
-                _ = warp(ctx, "yuno_fild07", 225, 145)
-                exit(:normal)
+                ctx = warp(ctx, "yuno_fild07", 225, 145)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Magma Dungeon Juno Plateau", 400, 20])
-                _ = warp(ctx, "yuno_fild03", 201, 152)
-                exit(:normal)
+                ctx = warp(ctx, "yuno_fild03", 201, 152)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of Abyss Lake", 800, 40])
-                _ = warp(ctx, "hu_fild04", 186, 78)
-                exit(:normal)
+                ctx = warp(ctx, "hu_fild04", 186, 78)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1449,28 +1449,28 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v46 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Morocc Ruins Pyramid", 50, 3])
-                _ = warp(ctx, "moc_ruins", 100, 140)
-                exit(:normal)
+                ctx = warp(ctx, "moc_ruins", 100, 140)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Sograt Desert Sphinx", 50, 3])
-                _ = warp(ctx, "moc_fild19", 132, 100)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild19", 132, 100)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Southeast Morocc Field", 100, 5])
-                _ = warp(ctx, "moc_fild11", 267, 100)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild11", 267, 100)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["Comodo Beaches", 250, 13])
-                _ = warp(ctx, "cmd_fild02", 89, 83)
-                exit(:normal)
+                ctx = warp(ctx, "cmd_fild02", 89, 83)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = s_s_zone(ctx, ["Kingdom of the Dead", 12121, 666])
-                _ = warp(ctx, "niflheim", 220, 141)
-                exit(:normal)
+                ctx = warp(ctx, "niflheim", 220, 141)
+                throw({:script_end, ctx})
 
               6 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1492,18 +1492,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v47 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Archer's Village", 50, 3])
-                _ = warp(ctx, "pay_arche", 69, 130)
-                exit(:normal)
+                ctx = warp(ctx, "pay_arche", 69, 130)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Southeast Payon Field", 100, 5])
-                _ = warp(ctx, "pay_fild10", 203, 331)
-                exit(:normal)
+                ctx = warp(ctx, "pay_fild10", 203, 331)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Prontera South Field", 150, 8])
-                _ = warp(ctx, "moc_fild02", 109, 144)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild02", 109, 144)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1526,23 +1526,23 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v48 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Southwestern Prontera Field", 100, 5])
-                _ = warp(ctx, "prt_fild07", 250, 257)
-                exit(:normal)
+                ctx = warp(ctx, "prt_fild07", 250, 257)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Prontera North Field", 150, 8])
-                _ = warp(ctx, "prt_fild01", 194, 123)
-                exit(:normal)
+                ctx = warp(ctx, "prt_fild01", 194, 123)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Byalan Island", 150, 8])
-                _ = warp(ctx, "izlu2dun", 63, 129)
-                exit(:normal)
+                ctx = warp(ctx, "izlu2dun", 63, 129)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["Prontera South Field", 150, 8])
-                _ = warp(ctx, "moc_fild02", 109, 144)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild02", 109, 144)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1559,13 +1559,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v49 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Southern Ice Cave Field", 600, 30])
-                _ = warp(ctx, "ra_fild04", 214, 220)
-                exit(:normal)
+                ctx = warp(ctx, "ra_fild04", 214, 220)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Thor Volcano East Field", 600, 30])
-                _ = warp(ctx, "ve_fild04", 198, 174)
-                exit(:normal)
+                ctx = warp(ctx, "ve_fild04", 198, 174)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1581,13 +1581,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v50 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Thor Volcano East Field", 400, 20])
-                _ = warp(ctx, "ra_fild04", 198, 174)
-                exit(:normal)
+                ctx = warp(ctx, "ra_fild04", 198, 174)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["South Veins Field", 200, 10])
-                _ = warp(ctx, "ve_fild07", 85, 255)
-                exit(:normal)
+                ctx = warp(ctx, "ve_fild07", 85, 255)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1610,25 +1610,25 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v51 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of the Abyss Valley", 400, 20])
-                _ = warp(ctx, "ein_fild06", 199, 152)
-                exit(:normal)
+                ctx = warp(ctx, "ein_fild06", 199, 152)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} =
                   s_s_zone(ctx, ["Phantasmagorika Excavation of the Abyss Valley", 400, 20])
 
-                _ = warp(ctx, "yuno_fild07", 225, 145)
-                exit(:normal)
+                ctx = warp(ctx, "yuno_fild07", 225, 145)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Magma Dungeon Juno Plateau", 400, 20])
-                _ = warp(ctx, "yuno_fild03", 201, 152)
-                exit(:normal)
+                ctx = warp(ctx, "yuno_fild03", 201, 152)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of Abyss Lake", 800, 40])
-                _ = warp(ctx, "hu_fild04", 186, 78)
-                exit(:normal)
+                ctx = warp(ctx, "hu_fild04", 186, 78)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1653,18 +1653,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v52 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Archer's Village", 50, 3])
-                _ = warp(ctx, "pay_arche", 69, 130)
-                exit(:normal)
+                ctx = warp(ctx, "pay_arche", 69, 130)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Southeast Payon Field", 100, 5])
-                _ = warp(ctx, "pay_fild10", 203, 331)
-                exit(:normal)
+                ctx = warp(ctx, "pay_fild10", 203, 331)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Prontera South Field", 150, 8])
-                _ = warp(ctx, "moc_fild02", 109, 144)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild02", 109, 144)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1687,23 +1687,23 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v53 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Southwestern Prontera Field", 100, 5])
-                _ = warp(ctx, "prt_fild07", 250, 257)
-                exit(:normal)
+                ctx = warp(ctx, "prt_fild07", 250, 257)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Prontera North Field", 150, 8])
-                _ = warp(ctx, "prt_fild01", 194, 123)
-                exit(:normal)
+                ctx = warp(ctx, "prt_fild01", 194, 123)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Byalan Island", 150, 8])
-                _ = warp(ctx, "izlu2dun", 63, 129)
-                exit(:normal)
+                ctx = warp(ctx, "izlu2dun", 63, 129)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["Prontera South Field", 150, 8])
-                _ = warp(ctx, "moc_fild02", 109, 144)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild02", 109, 144)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1720,13 +1720,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v54 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Southern Ice Cave Field", 600, 30])
-                _ = warp(ctx, "ra_fild04", 214, 220)
-                exit(:normal)
+                ctx = warp(ctx, "ra_fild04", 214, 220)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Thor Volcano East Field", 600, 30])
-                _ = warp(ctx, "ve_fild04", 198, 174)
-                exit(:normal)
+                ctx = warp(ctx, "ve_fild04", 198, 174)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1742,13 +1742,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v55 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Thor Volcano East Field", 400, 20])
-                _ = warp(ctx, "ra_fild04", 198, 174)
-                exit(:normal)
+                ctx = warp(ctx, "ra_fild04", 198, 174)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["South Veins Field", 200, 10])
-                _ = warp(ctx, "ve_fild07", 85, 255)
-                exit(:normal)
+                ctx = warp(ctx, "ve_fild07", 85, 255)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1771,25 +1771,25 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v56 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of the Abyss Valley", 400, 20])
-                _ = warp(ctx, "ein_fild06", 199, 152)
-                exit(:normal)
+                ctx = warp(ctx, "ein_fild06", 199, 152)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} =
                   s_s_zone(ctx, ["Phantasmagorika Excavation of the Abyss Valley", 400, 20])
 
-                _ = warp(ctx, "yuno_fild07", 225, 145)
-                exit(:normal)
+                ctx = warp(ctx, "yuno_fild07", 225, 145)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Magma Dungeon Juno Plateau", 400, 20])
-                _ = warp(ctx, "yuno_fild03", 201, 152)
-                exit(:normal)
+                ctx = warp(ctx, "yuno_fild03", 201, 152)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of Abyss Lake", 800, 40])
-                _ = warp(ctx, "hu_fild04", 186, 78)
-                exit(:normal)
+                ctx = warp(ctx, "hu_fild04", 186, 78)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1815,23 +1815,23 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v57 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Southwestern Prontera Field", 100, 5])
-                _ = warp(ctx, "prt_fild07", 250, 257)
-                exit(:normal)
+                ctx = warp(ctx, "prt_fild07", 250, 257)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Prontera North Field", 150, 8])
-                _ = warp(ctx, "prt_fild01", 194, 123)
-                exit(:normal)
+                ctx = warp(ctx, "prt_fild01", 194, 123)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Byalan Island", 150, 8])
-                _ = warp(ctx, "izlu2dun", 63, 129)
-                exit(:normal)
+                ctx = warp(ctx, "izlu2dun", 63, 129)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["Prontera South Field", 150, 8])
-                _ = warp(ctx, "moc_fild02", 109, 144)
-                exit(:normal)
+                ctx = warp(ctx, "moc_fild02", 109, 144)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1848,13 +1848,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v58 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Southern Ice Cave Field", 600, 30])
-                _ = warp(ctx, "ra_fild04", 214, 220)
-                exit(:normal)
+                ctx = warp(ctx, "ra_fild04", 214, 220)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Thor Volcano East Field", 600, 30])
-                _ = warp(ctx, "ve_fild04", 198, 174)
-                exit(:normal)
+                ctx = warp(ctx, "ve_fild04", 198, 174)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1870,13 +1870,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v59 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Thor Volcano East Field", 400, 20])
-                _ = warp(ctx, "ra_fild04", 198, 174)
-                exit(:normal)
+                ctx = warp(ctx, "ra_fild04", 198, 174)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["South Veins Field", 200, 10])
-                _ = warp(ctx, "ve_fild07", 85, 255)
-                exit(:normal)
+                ctx = warp(ctx, "ve_fild07", 85, 255)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1899,25 +1899,25 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v60 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of the Abyss Valley", 400, 20])
-                _ = warp(ctx, "ein_fild06", 199, 152)
-                exit(:normal)
+                ctx = warp(ctx, "ein_fild06", 199, 152)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} =
                   s_s_zone(ctx, ["Phantasmagorika Excavation of the Abyss Valley", 400, 20])
 
-                _ = warp(ctx, "yuno_fild07", 225, 145)
-                exit(:normal)
+                ctx = warp(ctx, "yuno_fild07", 225, 145)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Magma Dungeon Juno Plateau", 400, 20])
-                _ = warp(ctx, "yuno_fild03", 201, 152)
-                exit(:normal)
+                ctx = warp(ctx, "yuno_fild03", 201, 152)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of Abyss Lake", 800, 40])
-                _ = warp(ctx, "hu_fild04", 186, 78)
-                exit(:normal)
+                ctx = warp(ctx, "hu_fild04", 186, 78)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1937,13 +1937,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v61 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Southern Ice Cave Field", 600, 30])
-                _ = warp(ctx, "ra_fild04", 214, 220)
-                exit(:normal)
+                ctx = warp(ctx, "ra_fild04", 214, 220)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["Thor Volcano East Field", 600, 30])
-                _ = warp(ctx, "ve_fild04", 198, 174)
-                exit(:normal)
+                ctx = warp(ctx, "ve_fild04", 198, 174)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1959,13 +1959,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v62 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Thor Volcano East Field", 400, 20])
-                _ = warp(ctx, "ra_fild04", 198, 174)
-                exit(:normal)
+                ctx = warp(ctx, "ra_fild04", 198, 174)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["South Veins Field", 200, 10])
-                _ = warp(ctx, "ve_fild07", 85, 255)
-                exit(:normal)
+                ctx = warp(ctx, "ve_fild07", 85, 255)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -1988,25 +1988,25 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v63 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of the Abyss Valley", 400, 20])
-                _ = warp(ctx, "ein_fild06", 199, 152)
-                exit(:normal)
+                ctx = warp(ctx, "ein_fild06", 199, 152)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} =
                   s_s_zone(ctx, ["Phantasmagorika Excavation of the Abyss Valley", 400, 20])
 
-                _ = warp(ctx, "yuno_fild07", 225, 145)
-                exit(:normal)
+                ctx = warp(ctx, "yuno_fild07", 225, 145)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Magma Dungeon Juno Plateau", 400, 20])
-                _ = warp(ctx, "yuno_fild03", 201, 152)
-                exit(:normal)
+                ctx = warp(ctx, "yuno_fild03", 201, 152)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of Abyss Lake", 800, 40])
-                _ = warp(ctx, "hu_fild04", 186, 78)
-                exit(:normal)
+                ctx = warp(ctx, "hu_fild04", 186, 78)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -2025,13 +2025,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v64 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["Thor Volcano East Field", 400, 20])
-                _ = warp(ctx, "ra_fild04", 198, 174)
-                exit(:normal)
+                ctx = warp(ctx, "ra_fild04", 198, 174)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} = s_s_zone(ctx, ["South Veins Field", 200, 10])
-                _ = warp(ctx, "ve_fild07", 85, 255)
-                exit(:normal)
+                ctx = warp(ctx, "ve_fild07", 85, 255)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -2054,25 +2054,25 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v65 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of the Abyss Valley", 400, 20])
-                _ = warp(ctx, "ein_fild06", 199, 152)
-                exit(:normal)
+                ctx = warp(ctx, "ein_fild06", 199, 152)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} =
                   s_s_zone(ctx, ["Phantasmagorika Excavation of the Abyss Valley", 400, 20])
 
-                _ = warp(ctx, "yuno_fild07", 225, 145)
-                exit(:normal)
+                ctx = warp(ctx, "yuno_fild07", 225, 145)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Magma Dungeon Juno Plateau", 400, 20])
-                _ = warp(ctx, "yuno_fild03", 201, 152)
-                exit(:normal)
+                ctx = warp(ctx, "yuno_fild03", 201, 152)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of Abyss Lake", 800, 40])
-                _ = warp(ctx, "hu_fild04", 186, 78)
-                exit(:normal)
+                ctx = warp(ctx, "hu_fild04", 186, 78)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -2098,25 +2098,25 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
             case v66 do
               1 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of the Abyss Valley", 400, 20])
-                _ = warp(ctx, "ein_fild06", 199, 152)
-                exit(:normal)
+                ctx = warp(ctx, "ein_fild06", 199, 152)
+                throw({:script_end, ctx})
 
               2 ->
                 {ctx, _} =
                   s_s_zone(ctx, ["Phantasmagorika Excavation of the Abyss Valley", 400, 20])
 
-                _ = warp(ctx, "yuno_fild07", 225, 145)
-                exit(:normal)
+                ctx = warp(ctx, "yuno_fild07", 225, 145)
+                throw({:script_end, ctx})
 
               3 ->
                 {ctx, _} = s_s_zone(ctx, ["Magma Dungeon Juno Plateau", 400, 20])
-                _ = warp(ctx, "yuno_fild03", 201, 152)
-                exit(:normal)
+                ctx = warp(ctx, "yuno_fild03", 201, 152)
+                throw({:script_end, ctx})
 
               4 ->
                 {ctx, _} = s_s_zone(ctx, ["West Field of Abyss Lake", 800, 40])
-                _ = warp(ctx, "hu_fild04", 186, 78)
-                exit(:normal)
+                ctx = warp(ctx, "hu_fild04", 186, 78)
+                throw({:script_end, ctx})
 
               5 ->
                 {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [0, 0])
@@ -2133,98 +2133,102 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafteledoram do
       end
 
     {ctx, _} = s_s_zone(ctx, [])
-    ctx
+    {ctx, nil}
   end
 
   defp s_s_zone(ctx, args) do
-    ctx =
-      ctx
-      |> set_local(:zeny_req, Enum.at(args, 1, 0))
-      |> set_local(:item_req, Enum.at(args, 2, 0))
-      |> mes("[Kafra Employee]")
+    try do
+      ctx =
+        ctx
+        |> set_local(:zeny_req, Enum.at(args, 1, 0))
+        |> set_local(:item_req, Enum.at(args, 2, 0))
+        |> mes("[Kafra Employee]")
 
-    ctx =
-      ctx
-      |> mes(
-        Rathena.concat(
+      ctx =
+        ctx
+        |> mes(
           Rathena.concat(
             Rathena.concat(
               Rathena.concat(
-                Rathena.concat(Enum.at(args, 0, 0), " is available for ^ff0000"),
-                get_local(ctx, :zeny_req, 0)
+                Rathena.concat(
+                  Rathena.concat(Enum.at(args, 0, 0), " is available for ^ff0000"),
+                  get_local(ctx, :zeny_req, 0)
+                ),
+                " Zenys^000000 or ^ff0000"
               ),
-              " Zenys^000000 or ^ff0000"
+              get_local(ctx, :item_req, 0)
             ),
-            get_local(ctx, :item_req, 0)
-          ),
-          " Malang Sp Can^000000."
+            " Malang Sp Can^000000."
+          )
         )
-      )
-      |> next()
+        |> next()
 
-    {ctx, v68} =
-      select(
-        ctx,
-        Enum.flat_map(
-          [
-            Rathena.concat(get_local(ctx, :zeny_req, 0), " Zeny"),
-            Rathena.concat(get_local(ctx, :item_req, 0), " Malang Sp Can"),
-            "Cancel"
-          ],
-          &String.split(&1, ":")
+      {ctx, v68} =
+        select(
+          ctx,
+          Enum.flat_map(
+            [
+              Rathena.concat(get_local(ctx, :zeny_req, 0), " Zeny"),
+              Rathena.concat(get_local(ctx, :item_req, 0), " Malang Sp Can"),
+              "Cancel"
+            ],
+            &String.split(&1, ":")
+          )
         )
-      )
 
-    ctx =
-      try do
-        case v68 do
-          1 ->
-            ctx =
-              if zeny(ctx) < get_local(ctx, :zeny_req, 0) do
-                throw({:brk_68, ctx})
-              else
+      ctx =
+        try do
+          case v68 do
+            1 ->
+              ctx =
+                if zeny(ctx) < get_local(ctx, :zeny_req, 0) do
+                  throw({:brk_68, ctx})
+                else
+                  ctx
+                end
+
+              ctx = pay_zeny(ctx, get_local(ctx, :zeny_req, 0))
+              throw({:script_return, {ctx, nil}})
+
+            2 ->
+              ctx =
+                if count_item(ctx, 12636) < get_local(ctx, :item_req, 0) do
+                  throw({:brk_68, ctx})
+                else
+                  ctx
+                end
+
+              ctx = delitem(ctx, 12636, get_local(ctx, :item_req, 0))
+              throw({:script_return, {ctx, nil}})
+
+            3 ->
+              ctx =
                 ctx
-              end
+                |> mes("[Kafra Employee]")
+                |> mes("Can you tell me about other areas of service?")
+                |> close()
+                |> cutin("", 255)
 
-            ctx = pay_zeny(ctx, get_local(ctx, :zeny_req, 0))
-            {ctx, nil}
-
-          2 ->
-            ctx =
-              if count_item(ctx, 12636) < get_local(ctx, :item_req, 0) do
-                throw({:brk_68, ctx})
-              else
-                ctx
-              end
-
-            ctx = delitem(ctx, 12636, get_local(ctx, :item_req, 0))
-            {ctx, nil}
-
-          3 ->
-            ctx =
               ctx
-              |> mes("[Kafra Employee]")
-              |> mes("Can you tell me about other areas of service?")
-              |> close()
-              |> cutin("", 255)
 
-            ctx
-
-          _ ->
-            ctx
+            _ ->
+              ctx
+          end
+        catch
+          :throw, {:brk_68, ctx} -> ctx
         end
-      catch
-        :throw, {:brk_68, ctx} -> ctx
-      end
 
-    ctx =
-      ctx
-      |> mes("[Kafra Employee]")
-      |> mes("Sir! You do not have enough value that we are asking for.")
-      |> mes("Please check back again.")
-      |> close()
-      |> cutin("", 255)
+      ctx =
+        ctx
+        |> mes("[Kafra Employee]")
+        |> mes("Sir! You do not have enough value that we are asking for.")
+        |> mes("Please check back again.")
+        |> close()
+        |> cutin("", 255)
 
-    {ctx, nil}
+      {ctx, nil}
+    catch
+      :throw, {:script_return, result} -> result
+    end
   end
 end

@@ -52,25 +52,27 @@ defmodule Aesir.ZoneServer.Content.Npc.IzludeIn.Aaron do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Aaron]")
-        |> mes("Hmm...")
-        |> mes(
-          "In that case, I'll explain about the other attributes to you briefly. In order to attack and evade quickly, you've gotta pay attention to AGI. "
-        )
-        |> next()
-        |> mes("[Aaron]")
-        |> mes(
-          "In case you want to make more critical hits, it's a good idea to invest in LUK. INT also increases Max SP, which is needed to use various skills... But it's really up to you."
-        )
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Aaron]")
+          |> mes("Hmm...")
+          |> mes(
+            "In that case, I'll explain about the other attributes to you briefly. In order to attack and evade quickly, you've gotta pay attention to AGI. "
+          )
+          |> next()
+          |> mes("[Aaron]")
+          |> mes(
+            "In case you want to make more critical hits, it's a good idea to invest in LUK. INT also increases Max SP, which is needed to use various skills... But it's really up to you."
+          )
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
 
     ctx |> mes("[Aaron]") |> mes("Okay then,") |> mes("train hard~~") |> close()
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

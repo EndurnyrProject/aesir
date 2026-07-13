@@ -55,6 +55,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.UmbalaMan do
       end
 
     close(ctx)
-    exit(:normal)
   end
 end

@@ -23,8 +23,8 @@ defmodule Aesir.ZoneServer.Content.Npc.PayonIn03.ChiefGuardsman do
   @impl true
   def on_event("OnTouch", ctx), do: ev_ontouch(ctx)
   @impl true
-  def on_talk(_ctx) do
-    exit(:normal)
+  def on_talk(ctx) do
+    ctx
   end
 
   def ev_ontouch(ctx) do
@@ -45,7 +45,5 @@ defmodule Aesir.ZoneServer.Content.Npc.PayonIn03.ChiefGuardsman do
     )
     |> nude()
     |> close()
-
-    exit(:normal)
   end
 end

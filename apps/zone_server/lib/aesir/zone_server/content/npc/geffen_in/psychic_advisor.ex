@@ -146,14 +146,15 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.PsychicAdvisor do
                 ctx
             end
 
-          ctx
-          |> mes("[Psychic Advisor]")
-          |> mes(
-            "Well, I hope I settled any doubts you've had about the future. That is, after all, my job as a professional psychic consultant. Come back anytime~"
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Psychic Advisor]")
+            |> mes(
+              "Well, I hope I settled any doubts you've had about the future. That is, after all, my job as a professional psychic consultant. Come back anytime~"
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
           ctx = mes(ctx, "[Psychic Advisor]")
@@ -226,15 +227,16 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.PsychicAdvisor do
                 ctx =
                   case v3 do
                     1 ->
-                      ctx
-                      |> mes("[Psychic Advisor]")
-                      |> mes("Well...")
-                      |> mes(
-                        "We psychics are pretty accurate at this kind of thing. And it's so good to see that you're really happy with your partner!"
-                      )
-                      |> close()
+                      ctx =
+                        ctx
+                        |> mes("[Psychic Advisor]")
+                        |> mes("Well...")
+                        |> mes(
+                          "We psychics are pretty accurate at this kind of thing. And it's so good to see that you're really happy with your partner!"
+                        )
+                        |> close()
 
-                      exit(:normal)
+                      throw({:script_end, ctx})
 
                     2 ->
                       ctx =
@@ -251,23 +253,24 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.PsychicAdvisor do
                           mes(ctx, "The boy that you")
                         end
 
-                      ctx
-                      |> mes(
-                        "are currently seeing is perfect for you if you want to live the rest of your life in utter misery!"
-                      )
-                      |> next()
-                      |> mes("[Psychic Advisor]")
-                      |> mes(
-                        "But even if you break up, do it as soon as possible and try to be good friends after the matter."
-                      )
-                      |> next()
-                      |> mes("[Psychic Advisor]")
-                      |> mes(
-                        "It'll make better people out of both of you. But that's just what I think."
-                      )
-                      |> close()
+                      ctx =
+                        ctx
+                        |> mes(
+                          "are currently seeing is perfect for you if you want to live the rest of your life in utter misery!"
+                        )
+                        |> next()
+                        |> mes("[Psychic Advisor]")
+                        |> mes(
+                          "But even if you break up, do it as soon as possible and try to be good friends after the matter."
+                        )
+                        |> next()
+                        |> mes("[Psychic Advisor]")
+                        |> mes(
+                          "It'll make better people out of both of you. But that's just what I think."
+                        )
+                        |> close()
 
-                      exit(:normal)
+                      throw({:script_end, ctx})
 
                     3 ->
                       ctx =
@@ -296,8 +299,8 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.PsychicAdvisor do
                           )
                         end
 
-                      close(ctx)
-                      exit(:normal)
+                      ctx = close(ctx)
+                      throw({:script_end, ctx})
 
                     _ ->
                       ctx
@@ -328,14 +331,15 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.PsychicAdvisor do
                 ctx
             end
 
-          ctx
-          |> mes("[Psychic Advisor]")
-          |> mes(
-            "Love is always fun! Even in this bleak world, love surrounds us in its inviting glow. Treasure that person who is special to you, and come back for another reading!"
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Psychic Advisor]")
+            |> mes(
+              "Love is always fun! Even in this bleak world, love surrounds us in its inviting glow. Treasure that person who is special to you, and come back for another reading!"
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
           ctx = mes(ctx, "[Psychic Advisor]")
@@ -407,14 +411,15 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.PsychicAdvisor do
                 ctx
             end
 
-          ctx
-          |> mes("[Psychic Advisor]")
-          |> mes(
-            "Well, you need money to live, but having money alone isn't living. Don't forget that there are other important things. And try not to stress out, okay?"
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Psychic Advisor]")
+            |> mes(
+              "Well, you need money to live, but having money alone isn't living. Don't forget that there are other important things. And try not to stress out, okay?"
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         4 ->
           ctx = mes(ctx, "[Psychic Advisor]")
@@ -516,14 +521,15 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.PsychicAdvisor do
                 ctx
             end
 
-          ctx
-          |> mes("[Psychic Advisor]")
-          |> mes(
-            "Well, in any case, concentrating on your studies is tough, but it can be rewarding. I hope you do well in whatever you choose to do~"
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Psychic Advisor]")
+            |> mes(
+              "Well, in any case, concentrating on your studies is tough, but it can be rewarding. I hope you do well in whatever you choose to do~"
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         5 ->
           ctx =
@@ -630,15 +636,16 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.PsychicAdvisor do
                 ctx
             end
 
-          ctx
-          |> mes("[Psychic Advisor]")
-          |> mes("Well...")
-          |> mes(
-            "That's my prediction. Can you really argue with the wisdom of the spirit world?"
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Psychic Advisor]")
+            |> mes("Well...")
+            |> mes(
+              "That's my prediction. Can you really argue with the wisdom of the spirit world?"
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         6 ->
           ctx =
@@ -741,20 +748,23 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.PsychicAdvisor do
                 ctx
             end
 
-          ctx
-          |> mes("[Psychic Advisor]")
-          |> mes("Well...")
-          |> mes(
-            "We psychic consultants aren't really trained for fashion matters, but I hope I was at least a little bit of help to you."
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Psychic Advisor]")
+            |> mes("Well...")
+            |> mes(
+              "We psychic consultants aren't really trained for fashion matters, but I hope I was at least a little bit of help to you."
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

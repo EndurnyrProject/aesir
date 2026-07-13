@@ -35,14 +35,14 @@ defmodule Aesir.ZoneServer.Content.Npc.GonFild01.KunlunEnvoy do
           |> mes("back to Alberta.")
           |> close()
 
-        _ =
+        ctx =
           if Rathena.truthy?(checkre(ctx, 0)) do
             warp(ctx, "alberta", 245, 87)
           else
             warp(ctx, "alberta", 243, 67)
           end
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -53,7 +53,7 @@ defmodule Aesir.ZoneServer.Content.Npc.GonFild01.KunlunEnvoy do
     |> mes("There should be many places")
     |> mes("you may have missed.")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

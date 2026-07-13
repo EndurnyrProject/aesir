@@ -19,7 +19,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Jorjerro do
     |> mes("and purposes, is")
     |> mes("soundly asleep.^000000")
     |> close()
-
-    exit(:normal)
   end
 end

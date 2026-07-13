@@ -16,24 +16,25 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Scientist do
   def on_talk(ctx) do
     ctx =
       if Rathena.truthy?(is_equipped(ctx, 2241)) and Rathena.truthy?(is_equipped(ctx, 2243)) do
-        ctx
-        |> mes("[Scientist]")
-        |> mes("Alright. Pull one test")
-        |> mes("tube out of the machine,")
-        |> mes("replace the other test")
-        |> mes("tube over here and then")
-        |> mes("clean the first test tube?")
-        |> next()
-        |> mes("[Scientist]")
-        |> mes("Or do I clean the test tube,")
-        |> mes("put it into the machine and")
-        |> mes("then replace the other one?")
-        |> mes("I'm so confused with this")
-        |> mes("procedure! If only I didn't")
-        |> mes("lose the instructions...")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Scientist]")
+          |> mes("Alright. Pull one test")
+          |> mes("tube out of the machine,")
+          |> mes("replace the other test")
+          |> mes("tube over here and then")
+          |> mes("clean the first test tube?")
+          |> next()
+          |> mes("[Scientist]")
+          |> mes("Or do I clean the test tube,")
+          |> mes("put it into the machine and")
+          |> mes("then replace the other one?")
+          |> mes("I'm so confused with this")
+          |> mes("procedure! If only I didn't")
+          |> mes("lose the instructions...")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -48,7 +49,7 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Scientist do
     |> emotion(:surprise)
     |> close()
     |> warp("lhz_in01", 33, 224)
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

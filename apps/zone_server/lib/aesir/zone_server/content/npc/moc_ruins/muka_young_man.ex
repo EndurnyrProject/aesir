@@ -35,7 +35,5 @@ defmodule Aesir.ZoneServer.Content.Npc.MocRuins.MukaYoungMan do
     )
     |> mes("Now I come to think of it, it was fun as much as dangerous.")
     |> close()
-
-    exit(:normal)
   end
 end

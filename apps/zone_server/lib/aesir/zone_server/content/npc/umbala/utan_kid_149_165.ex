@@ -13,32 +13,36 @@ defmodule Aesir.ZoneServer.Content.Npc.Umbala.UtanKid149165 do
   @impl true
   def on_talk(ctx) do
     if get_char_var(ctx, :event_umbala, 0) >= 3 do
-      ctx
-      |> mes("[Klumatan]")
-      |> mes("It's really scary, falling from")
-      |> mes("such a high place...")
-      |> mes("But I guess you have to do it,")
-      |> mes("otherwise no one will ever")
-      |> mes("consider you a grownup.")
-      |> next()
-      |> mes("[Klumatan]")
-      |> mes("I guess I don't want to")
-      |> mes("be a grownup right away.")
-      |> mes("But some kids my age are")
-      |> mes("in too big of a hurry")
-      |> mes("to not be kids anymore.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Klumatan]")
+        |> mes("It's really scary, falling from")
+        |> mes("such a high place...")
+        |> mes("But I guess you have to do it,")
+        |> mes("otherwise no one will ever")
+        |> mes("consider you a grownup.")
+        |> next()
+        |> mes("[Klumatan]")
+        |> mes("I guess I don't want to")
+        |> mes("be a grownup right away.")
+        |> mes("But some kids my age are")
+        |> mes("in too big of a hurry")
+        |> mes("to not be kids anymore.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[???]")
-      |> mes("Umbahumba umumbah.")
-      |> mes("Umbahumbah umbabah.")
-      |> mes("Umbahumhumbabahum.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[???]")
+        |> mes("Umbahumba umumbah.")
+        |> mes("Umbahumbah umbabah.")
+        |> mes("Umbahumhumbabahum.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

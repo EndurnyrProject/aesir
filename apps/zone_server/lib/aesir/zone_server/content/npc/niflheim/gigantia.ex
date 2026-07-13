@@ -14,31 +14,37 @@ defmodule Aesir.ZoneServer.Content.Npc.Niflheim.Gigantia do
 
   alias Aesir.ZoneServer.Script.Rathena
   @impl true
-  def on_event("OnTouch", ctx), do: ev_ontouch(ctx)
+  def on_event("OnTouch", ctx) do
+    ev_ontouch(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
   @impl true
   def on_talk(ctx) do
     ctx =
       if Rathena.truthy?(is_equipped(ctx, 5038)) or Rathena.truthy?(is_equipped(ctx, 2257)) or
            Rathena.truthy?(is_equipped(ctx, 2256)) do
-        ctx
-        |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
-        |> mes("What's up?")
-        |> next()
-        |> mes("[Gigantia]")
-        |> mes("Just...")
-        |> mes("Come over here.")
-        |> mes("I have something")
-        |> mes("I must do for you.")
-        |> next()
-        |> mes("[Gigantia]")
-        |> mes("Your horn is crooked.")
-        |> mes("Always make sure your horn")
-        |> mes("is worn straight and neat.")
-        |> mes("The Lord of Death is always")
-        |> mes("looking at you.")
-        |> close()
+        ctx =
+          ctx
+          |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
+          |> mes("What's up?")
+          |> next()
+          |> mes("[Gigantia]")
+          |> mes("Just...")
+          |> mes("Come over here.")
+          |> mes("I have something")
+          |> mes("I must do for you.")
+          |> next()
+          |> mes("[Gigantia]")
+          |> mes("Your horn is crooked.")
+          |> mes("Always make sure your horn")
+          |> mes("is worn straight and neat.")
+          |> mes("The Lord of Death is always")
+          |> mes("looking at you.")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -50,20 +56,20 @@ defmodule Aesir.ZoneServer.Content.Npc.Niflheim.Gigantia do
     |> mes("to hide, and escape from")
     |> mes("Death's sweet embrace.")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   def ev_ontouch(ctx) do
-    _ =
+    ctx =
       if Rathena.truthy?(is_equipped(ctx, 5038)) or Rathena.truthy?(is_equipped(ctx, 2257)) or
            Rathena.truthy?(is_equipped(ctx, 2256)) do
-        ctx |> mes("[Gigantia]") |> mes("Hey, wait!") |> close()
-        exit(:normal)
+        ctx = ctx |> mes("[Gigantia]") |> mes("Hey, wait!") |> close()
+        throw({:script_end, ctx})
       else
         ctx
       end
 
-    exit(:normal)
+    ctx
   end
 end

@@ -25,7 +25,5 @@ defmodule Aesir.ZoneServer.Content.Npc.VeIn.Ward126378 do
     |> mes("been assigned to such")
     |> mes("a peaceful, quiet place.")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -48,7 +48,5 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.Theodore do
     |> mes("I find something")
     |> mes("like that?!")
     |> close()
-
-    exit(:normal)
   end
 end

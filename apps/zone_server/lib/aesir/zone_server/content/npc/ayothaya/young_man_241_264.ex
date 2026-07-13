@@ -24,18 +24,19 @@ defmodule Aesir.ZoneServer.Content.Npc.Ayothaya.YoungMan241264 do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Eik]")
-        |> mes("Ow ow ow!")
-        |> mes("I was just")
-        |> mes("kidding, man!")
-        |> next()
-        |> mes("[Eik]")
-        |> mes("I'm not so rude as to pick fights with strangers for no reason!")
-        |> emotion(:kek)
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Eik]")
+          |> mes("Ow ow ow!")
+          |> mes("I was just")
+          |> mes("kidding, man!")
+          |> next()
+          |> mes("[Eik]")
+          |> mes("I'm not so rude as to pick fights with strangers for no reason!")
+          |> emotion(:kek)
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -47,7 +48,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Ayothaya.YoungMan241264 do
     )
     |> emotion(:hng)
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

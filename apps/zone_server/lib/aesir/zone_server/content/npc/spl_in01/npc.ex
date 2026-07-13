@@ -13,21 +13,25 @@ defmodule Aesir.ZoneServer.Content.Npc.SplIn01.Npc do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Manuk Prisoner]")
-      |> mes("My, my body...!!")
-      |> mes("Injection! Please!! Help me!")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Manuk Prisoner]")
+        |> mes("My, my body...!!")
+        |> mes("Injection! Please!! Help me!")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Manuk Prisoner]")
-      |> mes("Gi ha sd I das ")
-      |> mes("Yda sod ja si dsa")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Manuk Prisoner]")
+        |> mes("Gi ha sd I das ")
+        |> mes("Yda sod ja si dsa")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

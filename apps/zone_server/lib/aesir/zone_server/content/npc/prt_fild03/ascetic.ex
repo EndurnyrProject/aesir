@@ -20,18 +20,19 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtFild03.Ascetic do
       if get_char_var(ctx, :BaseJob, 0) == :novice do
         ctx =
           if get_char_var(ctx, :job_acolyte_q, 0) == 6 do
-            ctx
-            |> mes(
-              "Please take care. They should know that you've met me by the time you arrive at the Prontera Sanctuary."
-            )
-            |> next()
-            |> mes("[Father Rubalkabara]")
-            |> mes(
-              "I've sent a carrier pigeon with a message. I hope it will arrive there safely..."
-            )
-            |> close()
+            ctx =
+              ctx
+              |> mes(
+                "Please take care. They should know that you've met me by the time you arrive at the Prontera Sanctuary."
+              )
+              |> next()
+              |> mes("[Father Rubalkabara]")
+              |> mes(
+                "I've sent a carrier pigeon with a message. I hope it will arrive there safely..."
+              )
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
@@ -46,41 +47,42 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtFild03.Ascetic do
               |> next()
               |> mes("[Father Rubalkabara]")
 
-            ctx
-            |> mes(
-              Rathena.concat(
-                Rathena.concat("Now, your name was ", char_name(ctx, 0)),
-                ", right? Excellent, thank you for visiting me."
+            ctx =
+              ctx
+              |> mes(
+                Rathena.concat(
+                  Rathena.concat("Now, your name was ", char_name(ctx, 0)),
+                  ", right? Excellent, thank you for visiting me."
+                )
               )
-            )
-            |> next()
-            |> mes("[Father Rubalkabara]")
-            |> mes(
-              "I believe you've been told much about Acolytes from Friar Mareusis. Plus, there's plenty of helpful people in the Prontera Sanctuary."
-            )
-            |> next()
-            |> mes("[Father Rubalkabara]")
-            |> mes(
-              "I guess there's really no need for me to teach you much. Besides, I'm sure your someone from your generation may have trouble listening to an old man like me. Hahaha~"
-            )
-            |> next()
-            |> mes("[Father Rubalkabara]")
-            |> mes(
-              "Still, lessons may come from the places you'd least expect. God loves to teach his children in strange ways. You'll see."
-            )
-            |> next()
-            |> mes("[Father Rubalkabara]")
-            |> mes(
-              "Well, I'll send the message telling them that you've come to visit me. So, you may now return to the Prontera Sanctuary."
-            )
-            |> next()
-            |> mes("[Father Rubalkabara]")
-            |> mes("Farewell.")
-            |> close()
-            |> savepoint("prt_fild03", 361, 255)
-            |> set_char_var(:job_acolyte_q, 6)
+              |> next()
+              |> mes("[Father Rubalkabara]")
+              |> mes(
+                "I believe you've been told much about Acolytes from Friar Mareusis. Plus, there's plenty of helpful people in the Prontera Sanctuary."
+              )
+              |> next()
+              |> mes("[Father Rubalkabara]")
+              |> mes(
+                "I guess there's really no need for me to teach you much. Besides, I'm sure your someone from your generation may have trouble listening to an old man like me. Hahaha~"
+              )
+              |> next()
+              |> mes("[Father Rubalkabara]")
+              |> mes(
+                "Still, lessons may come from the places you'd least expect. God loves to teach his children in strange ways. You'll see."
+              )
+              |> next()
+              |> mes("[Father Rubalkabara]")
+              |> mes(
+                "Well, I'll send the message telling them that you've come to visit me. So, you may now return to the Prontera Sanctuary."
+              )
+              |> next()
+              |> mes("[Father Rubalkabara]")
+              |> mes("Farewell.")
+              |> close()
+              |> savepoint("prt_fild03", 361, 255)
+              |> set_char_var(:job_acolyte_q, 6)
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx =
               ctx
@@ -91,25 +93,27 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtFild03.Ascetic do
               |> next()
               |> mes("[Father Rubalkabara]")
 
-            ctx
-            |> mes(Rathena.concat(Rathena.concat("Your name is ", char_name(ctx, 0)), "?"))
-            |> mes("I don't think your name")
-            |> mes("is on my list. Hmmm...")
-            |> next()
-            |> mes("[Father Rubalkabara]")
-            |> mes("Why don't you go back to the Prontera Sanctuary and check again?")
-            |> close()
+            ctx =
+              ctx
+              |> mes(Rathena.concat(Rathena.concat("Your name is ", char_name(ctx, 0)), "?"))
+              |> mes("I don't think your name")
+              |> mes("is on my list. Hmmm...")
+              |> next()
+              |> mes("[Father Rubalkabara]")
+              |> mes("Why don't you go back to the Prontera Sanctuary and check again?")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           end
         else
-          ctx
-          |> mes(
-            "Huh? What brings you here? This is a very dangerous place for a Novice like yourself!"
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes(
+              "Huh? What brings you here? This is a very dangerous place for a Novice like yourself!"
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
         end
       else
         ctx =
@@ -117,28 +121,32 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtFild03.Ascetic do
             todo(ctx, :callfunc, ["F_FatherRub"])
           else
             if get_char_var(ctx, :BaseJob, 0) == :priest do
-              ctx
-              |> mes("Greetings.")
-              |> next()
-              |> mes("[Father Rubalkabara]")
-              |> mes(
-                "Welcome to the Deep. Feel free to sit and contemplate God's message with me. This place is beautiful, even if danger accompanies its sense of serenity..."
-              )
-              |> close()
+              ctx =
+                ctx
+                |> mes("Greetings.")
+                |> next()
+                |> mes("[Father Rubalkabara]")
+                |> mes(
+                  "Welcome to the Deep. Feel free to sit and contemplate God's message with me. This place is beautiful, even if danger accompanies its sense of serenity..."
+                )
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
-              ctx
-              |> mes("Oh ho...")
-              |> mes("Have you come into the Deep here for training? Or are you just a Wanderer?")
-              |> next()
-              |> mes("[Father Rubalkabara]")
-              |> mes(
-                "Whoever you are, please take care of yourself. The monsters in here are shockingly strong, contrary to their cute appearance."
-              )
-              |> close()
+              ctx =
+                ctx
+                |> mes("Oh ho...")
+                |> mes(
+                  "Have you come into the Deep here for training? Or are you just a Wanderer?"
+                )
+                |> next()
+                |> mes("[Father Rubalkabara]")
+                |> mes(
+                  "Whoever you are, please take care of yourself. The monsters in here are shockingly strong, contrary to their cute appearance."
+                )
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             end
           end
 
@@ -146,5 +154,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtFild03.Ascetic do
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

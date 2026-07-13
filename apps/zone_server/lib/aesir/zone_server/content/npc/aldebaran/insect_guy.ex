@@ -23,34 +23,35 @@ defmodule Aesir.ZoneServer.Content.Npc.Aldebaran.InsectGuy do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Stromme]")
-        |> mes(
-          "Honey Bees, Butterflies and Moths seem like simple creatures, but that doesn't mean you should underestimate them."
-        )
-        |> next()
-        |> mes("[Stromme]")
-        |> mes(
-          "These Insects have evolved over time, and can counter attacks from threats like you adventurers!"
-        )
-        |> next()
-        |> mes("[Stromme]")
-        |> mes(
-          "There are also carnivorous Insects, such as praying Spiders, praying Mantises, and the millipede like Argiopes."
-        )
-        |> next()
-        |> mes("[Stromme]")
-        |> mes(
-          "These monsters have mutated and are too strong for a person at certain levels. You should especially watch out for Argiopes."
-        )
-        |> next()
-        |> mes("[Stromme]")
-        |> mes(
-          "Luckily, their eyesight is pretty bad, so it won't notice you if you walk a safe distance away from it."
-        )
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Stromme]")
+          |> mes(
+            "Honey Bees, Butterflies and Moths seem like simple creatures, but that doesn't mean you should underestimate them."
+          )
+          |> next()
+          |> mes("[Stromme]")
+          |> mes(
+            "These Insects have evolved over time, and can counter attacks from threats like you adventurers!"
+          )
+          |> next()
+          |> mes("[Stromme]")
+          |> mes(
+            "There are also carnivorous Insects, such as praying Spiders, praying Mantises, and the millipede like Argiopes."
+          )
+          |> next()
+          |> mes("[Stromme]")
+          |> mes(
+            "These monsters have mutated and are too strong for a person at certain levels. You should especially watch out for Argiopes."
+          )
+          |> next()
+          |> mes("[Stromme]")
+          |> mes(
+            "Luckily, their eyesight is pretty bad, so it won't notice you if you walk a safe distance away from it."
+          )
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -62,7 +63,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Aldebaran.InsectGuy do
     |> mes("They are extremely strong unlike their innocent looking.")
     |> mes("Don't belittle the livings in the Mt. Mjolnir.")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

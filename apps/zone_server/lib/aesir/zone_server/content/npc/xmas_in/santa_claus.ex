@@ -33,7 +33,5 @@ defmodule Aesir.ZoneServer.Content.Npc.XmasIn.SantaClaus do
     |> mes("Ho ho ho~")
     |> mes("Meeeeeeerry Christmas!")
     |> close()
-
-    exit(:normal)
   end
 end

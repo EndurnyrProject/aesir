@@ -13,29 +13,33 @@ defmodule Aesir.ZoneServer.Content.Npc.Splendide.Fairy224230 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Fairy]")
-      |> mes("Listen carefully and learn more!")
-      |> mes("Let's sing and dance!")
-      |> mes("You can be part of us!")
-      |> mes("Shake your hips!")
-      |> mes("Wow~Woo~Wow~")
-      |> mes("Dance~!")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Fairy]")
+        |> mes("Listen carefully and learn more!")
+        |> mes("Let's sing and dance!")
+        |> mes("You can be part of us!")
+        |> mes("Shake your hips!")
+        |> mes("Wow~Woo~Wow~")
+        |> mes("Dance~!")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Fairy]")
-      |> mes("NuffMushLars Ra WehVilnah Ra DielWeh")
-      |> mes("RivehnarWos Ra YurSharRe")
-      |> mes("TalVaThor O VerWhatas")
-      |> mes("FuloDimIyaz Mu WhaNoreo U ")
-      |> mes("AlahNeLo Ra UorOsa")
-      |> mes("SeAnduMush Ur ")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Fairy]")
+        |> mes("NuffMushLars Ra WehVilnah Ra DielWeh")
+        |> mes("RivehnarWos Ra YurSharRe")
+        |> mes("TalVaThor O VerWhatas")
+        |> mes("FuloDimIyaz Mu WhaNoreo U ")
+        |> mes("AlahNeLo Ra UorOsa")
+        |> mes("SeAnduMush Ur ")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

@@ -24,7 +24,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane01.Exit do
     ]
 
   @impl true
-  def on_talk(_ctx) do
-    exit(:normal)
+  def on_talk(ctx) do
+    ctx
   end
 end

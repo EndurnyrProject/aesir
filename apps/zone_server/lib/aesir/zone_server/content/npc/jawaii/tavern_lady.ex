@@ -60,7 +60,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Jawaii.TavernLady do
       "^666666*Sigh*^000000 I'm a waitress there, but still I just want to tell you not to go in there..."
     )
     |> close()
-
-    exit(:normal)
   end
 end

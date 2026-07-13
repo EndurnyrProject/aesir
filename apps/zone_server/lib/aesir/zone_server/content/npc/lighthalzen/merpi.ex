@@ -33,46 +33,51 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Merpi do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Merpi]")
-          |> mes("Oh, really?")
-          |> mes("Well, if you've traveled")
-          |> mes("all over the world, maybe")
-          |> mes("you've found a place just")
-          |> mes("like Lighthalzen, so maybe")
-          |> mes("you're already comfortable?")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Merpi]")
+            |> mes("Oh, really?")
+            |> mes("Well, if you've traveled")
+            |> mes("all over the world, maybe")
+            |> mes("you've found a place just")
+            |> mes("like Lighthalzen, so maybe")
+            |> mes("you're already comfortable?")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Merpi]")
-          |> mes("Well, things have")
-          |> mes("been pretty peaceful")
-          |> mes("for the past few years.")
-          |> mes("The only rumor floating")
-          |> mes("around is about some")
-          |> mes("weird axe murderer...")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Merpi]")
+            |> mes("Well, things have")
+            |> mes("been pretty peaceful")
+            |> mes("for the past few years.")
+            |> mes("The only rumor floating")
+            |> mes("around is about some")
+            |> mes("weird axe murderer...")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx
-          |> mes("[Merpi]")
-          |> mes("Oh, that's wonderful!")
-          |> mes("I so love doing hand")
-          |> mes("laundry, though I'm not")
-          |> mes("quite sure why. Oh well~")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Merpi]")
+            |> mes("Oh, that's wonderful!")
+            |> mes("I so love doing hand")
+            |> mes("laundry, though I'm not")
+            |> mes("quite sure why. Oh well~")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

@@ -41,6 +41,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.Customer283276 do
       end
 
     close(ctx)
-    exit(:normal)
   end
 end

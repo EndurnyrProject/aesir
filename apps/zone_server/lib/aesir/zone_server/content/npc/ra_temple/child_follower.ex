@@ -31,21 +31,23 @@ defmodule Aesir.ZoneServer.Content.Npc.RaTemple.ChildFollower do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Lewei]")
-        |> mes("Hellooo~?")
-        |> mes("Can't you see?")
-        |> mes("It's called Hide-and-")
-        |> mes("Go-Seek. Gee whiz!")
-        |> mes("Hurry, get away!")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Lewei]")
+          |> mes("Hellooo~?")
+          |> mes("Can't you see?")
+          |> mes("It's called Hide-and-")
+          |> mes("Go-Seek. Gee whiz!")
+          |> mes("Hurry, get away!")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
 
     ctx |> mes("[Lewei]") |> mes("Hurry, and get") |> mes("outta here!") |> close()
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

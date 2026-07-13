@@ -33,7 +33,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbroch.LittleToby do
     |> mes("going?! Don't leave")
     |> mes("me, I'm all alone...!")
     |> close()
-
-    exit(:normal)
   end
 end

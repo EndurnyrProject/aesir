@@ -69,7 +69,5 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.WizardStanza do
     |> mes("Gemstone...")
     |> mes("If you wish to use your powers to the fullest, remember this item.")
     |> close()
-
-    exit(:normal)
   end
 end

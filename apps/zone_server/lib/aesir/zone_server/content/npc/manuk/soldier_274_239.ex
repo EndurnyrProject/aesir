@@ -13,20 +13,24 @@ defmodule Aesir.ZoneServer.Content.Npc.Manuk.Soldier274239 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 do
-      ctx
-      |> mes("[Injured Manuk Soldier]")
-      |> mes("I can't absorb Bradium Essence anymore because of my fatal injury.")
-      |> mes("Those wicked fairies attacked me and left me like this.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Injured Manuk Soldier]")
+        |> mes("I can't absorb Bradium Essence anymore because of my fatal injury.")
+        |> mes("Those wicked fairies attacked me and left me like this.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Injured Manuk Soldier]")
-      |> mes("Bhiio aaas dgwer fdds rrrrrpppp Ee")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Injured Manuk Soldier]")
+        |> mes("Bhiio aaas dgwer fdds rrrrrpppp Ee")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

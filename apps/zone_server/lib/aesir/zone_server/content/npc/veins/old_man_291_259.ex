@@ -35,7 +35,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.OldMan291259 do
     |> mes("enemies drive them to")
     |> mes("madness before death!")
     |> close()
-
-    exit(:normal)
   end
 end

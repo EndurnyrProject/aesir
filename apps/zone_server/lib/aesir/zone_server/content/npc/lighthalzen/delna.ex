@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Delna do
     |> mes("sunburn or a tan, a little sun")
     |> mes("can be really good for you.")
     |> close()
-
-    exit(:normal)
   end
 end

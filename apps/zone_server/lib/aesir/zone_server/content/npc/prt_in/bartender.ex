@@ -37,71 +37,67 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtIn.Bartender do
       "I can't keep my business busy without my special menu 'Crunch Crunch Sour' and 'Savory Yum Yum'...*Sigh*"
     )
     |> loop_1()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   defp loop_1(ctx) do
-    if true do
-      result =
-        try do
-          {ctx, v1} =
-            ctx |> next() |> select(["'Crunch Crunch Sour'?", "'Savory Yum Yum'?", "Cancel."])
+    result =
+      try do
+        {ctx, v1} =
+          ctx |> next() |> select(["'Crunch Crunch Sour'?", "'Savory Yum Yum'?", "Cancel."])
 
-          ctx =
-            case v1 do
-              1 ->
-                ctx =
-                  ctx
-                  |> mes("[Bartender]")
-                  |> mes(
-                    "The basic ingredients of my Crunch Crunch Sour are the ants roaming inside the Ant Hell in the desert."
-                  )
-                  |> mes(
-                    "Rumor has it that the numbers of the ants have been greatly increased and they have become more violent, so that no one wants to get in the place."
-                  )
-                  |> next()
-                  |> mes("[Bartender]")
-                  |> mes("*Sigh*...I am afraid that my business days are numbered now.")
-
-                throw({:cont_1, ctx})
-
-              2 ->
-                ctx =
-                  ctx
-                  |> mes("[Bartender]")
-                  |> mes(
-                    "Savory Yum Yum's basic ingredients are the grasshoppers romping in a place over the west forest. Yeah, it is the best selling menu ever."
-                  )
-                  |> mes(
-                    "Rumor has it that they have become very violent and Bees have built their habitat in the place, so that no one wants to get in there."
-                  )
-                  |> next()
-                  |> mes("[Bartender]")
-                  |> mes("*Sigh*...I am afraid that my business days are numbered now.")
-
-                throw({:cont_1, ctx})
-
-              3 ->
-                ctx |> mes("[Bartender]") |> mes("Take care of yourself~.") |> close()
-                exit(:normal)
-
-              _ ->
+        ctx =
+          case v1 do
+            1 ->
+              ctx =
                 ctx
-            end
+                |> mes("[Bartender]")
+                |> mes(
+                  "The basic ingredients of my Crunch Crunch Sour are the ants roaming inside the Ant Hell in the desert."
+                )
+                |> mes(
+                  "Rumor has it that the numbers of the ants have been greatly increased and they have become more violent, so that no one wants to get in the place."
+                )
+                |> next()
+                |> mes("[Bartender]")
+                |> mes("*Sigh*...I am afraid that my business days are numbered now.")
 
-          {:next, ctx}
-        catch
-          :throw, {:brk_1, ctx} -> {:done, ctx}
-          :throw, {:cont_1, ctx} -> {:next, ctx}
-        end
+              throw({:cont_1, ctx})
 
-      case result do
-        {:next, ctx} -> loop_1(ctx)
-        {:done, ctx} -> ctx
+            2 ->
+              ctx =
+                ctx
+                |> mes("[Bartender]")
+                |> mes(
+                  "Savory Yum Yum's basic ingredients are the grasshoppers romping in a place over the west forest. Yeah, it is the best selling menu ever."
+                )
+                |> mes(
+                  "Rumor has it that they have become very violent and Bees have built their habitat in the place, so that no one wants to get in there."
+                )
+                |> next()
+                |> mes("[Bartender]")
+                |> mes("*Sigh*...I am afraid that my business days are numbered now.")
+
+              throw({:cont_1, ctx})
+
+            3 ->
+              ctx = ctx |> mes("[Bartender]") |> mes("Take care of yourself~.") |> close()
+              throw({:script_end, ctx})
+
+            _ ->
+              ctx
+          end
+
+        {:next, ctx}
+      catch
+        :throw, {:brk_1, ctx} -> {:done, ctx}
+        :throw, {:cont_1, ctx} -> {:next, ctx}
       end
-    else
-      ctx
+
+    case result do
+      {:next, ctx} -> loop_1(ctx)
+      {:done, ctx} -> ctx
     end
   end
 end

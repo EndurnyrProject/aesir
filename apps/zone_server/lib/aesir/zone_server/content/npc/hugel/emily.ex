@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Hugel.Emily do
     |> mes("out by the people that live here.")
     |> mes("Don't you think that sounds weird?")
     |> close()
-
-    exit(:normal)
   end
 end

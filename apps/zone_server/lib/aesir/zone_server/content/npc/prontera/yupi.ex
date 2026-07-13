@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Prontera.Yupi do
       "You can tell these kinds of monsters apart by their body color. Wilder and more powerful monsters have more dangerous looking colors."
     )
     |> close()
-
-    exit(:normal)
   end
 end

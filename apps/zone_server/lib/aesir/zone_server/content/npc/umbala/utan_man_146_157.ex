@@ -13,24 +13,28 @@ defmodule Aesir.ZoneServer.Content.Npc.Umbala.UtanMan146157 do
   @impl true
   def on_talk(ctx) do
     if get_char_var(ctx, :event_umbala, 0) >= 3 do
-      ctx
-      |> mes("[Arotan]")
-      |> mes("Completing the bungee jump")
-      |> mes("is very difficult to do.")
-      |> mes("Today, we are here in celebration")
-      |> mes("of the people that made it and")
-      |> mes("have shown their courage.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Arotan]")
+        |> mes("Completing the bungee jump")
+        |> mes("is very difficult to do.")
+        |> mes("Today, we are here in celebration")
+        |> mes("of the people that made it and")
+        |> mes("have shown their courage.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[???]")
-      |> mes("Woo umbaumbaumbabah woo humbah")
-      |> mes("Umbababah umba umba.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[???]")
+        |> mes("Woo umbaumbaumbabah woo humbah")
+        |> mes("Umbababah umba umba.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

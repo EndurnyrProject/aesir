@@ -36,7 +36,5 @@ defmodule Aesir.ZoneServer.Content.Npc.EinIn01.Rombell do
     |> mes("worse. How can we")
     |> mes("solve this problem?")
     |> close()
-
-    exit(:normal)
   end
 end

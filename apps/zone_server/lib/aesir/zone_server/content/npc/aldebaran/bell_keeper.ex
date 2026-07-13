@@ -23,29 +23,30 @@ defmodule Aesir.ZoneServer.Content.Npc.Aldebaran.BellKeeper do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Bell Keeper]")
-        |> mes(
-          "Every floor of this tower is connected to each other by a certain device we like to call 'Warp Gear.'"
-        )
-        |> next()
-        |> mes("[Bell Keeper]")
-        |> mes(
-          "Even though there are interconnecting warps everywhere in the Clock Tower, beware the 'Random Warp.'"
-        )
-        |> next()
-        |> mes("[Bell Keeper]")
-        |> mes(
-          "The 'Random Warp' will transport you to an unknown spot. Be advised if you don't want to suddenly be separated from your party..."
-        )
-        |> next()
-        |> mes("[Bell Keeper]")
-        |> mes(
-          "Remember, Random Warps are shown in green on the mini-map. So keep your eyes peeled for that, as well as for those dangerous Clocks."
-        )
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Bell Keeper]")
+          |> mes(
+            "Every floor of this tower is connected to each other by a certain device we like to call 'Warp Gear.'"
+          )
+          |> next()
+          |> mes("[Bell Keeper]")
+          |> mes(
+            "Even though there are interconnecting warps everywhere in the Clock Tower, beware the 'Random Warp.'"
+          )
+          |> next()
+          |> mes("[Bell Keeper]")
+          |> mes(
+            "The 'Random Warp' will transport you to an unknown spot. Be advised if you don't want to suddenly be separated from your party..."
+          )
+          |> next()
+          |> mes("[Bell Keeper]")
+          |> mes(
+            "Remember, Random Warps are shown in green on the mini-map. So keep your eyes peeled for that, as well as for those dangerous Clocks."
+          )
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -54,7 +55,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Aldebaran.BellKeeper do
     |> mes("[Bell Keeper]")
     |> mes("Please take heed that this Clock Tower is filled with extremely dangerous monsters.")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

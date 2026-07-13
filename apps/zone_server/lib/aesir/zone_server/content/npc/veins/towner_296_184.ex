@@ -40,7 +40,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.Towner296184 do
     |> mes("What did you just say? Zinger?")
     |> mes("Amazing Z? The hell's that?")
     |> close()
-
-    exit(:normal)
   end
 end

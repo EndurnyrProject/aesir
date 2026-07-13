@@ -37,7 +37,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Rachel.Girl do
     |> mes("But when I tell that to Daddy,")
     |> mes("he gets so mad at me! Oh, well.")
     |> close()
-
-    exit(:normal)
   end
 end

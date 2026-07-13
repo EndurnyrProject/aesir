@@ -20,7 +20,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.HotelEmployee251212 do
     |> mes("prioritize couples when")
     |> mes("assigning this room.")
     |> close()
-
-    exit(:normal)
   end
 end

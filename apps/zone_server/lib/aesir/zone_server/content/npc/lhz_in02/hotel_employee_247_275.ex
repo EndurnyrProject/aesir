@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.HotelEmployee247275 do
     |> mes("Alcohol certainly is the")
     |> mes("grease for social gears.")
     |> close()
-
-    exit(:normal)
   end
 end

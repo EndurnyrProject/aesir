@@ -28,28 +28,29 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.Pilot do
           |> next()
           |> select(["Do you know a passenger named Thierry?"])
 
-        ctx
-        |> mes("[Pilot]")
-        |> mes("This uniform is")
-        |> mes("really dapper, but")
-        |> mes("it's way too thick to")
-        |> mes("wear around the Airship.")
-        |> next()
-        |> mes("[Pilot]")
-        |> mes("...")
-        |> mes("......")
-        |> mes("No one ever really")
-        |> mes("comes into this room.")
-        |> mes("And the captain IS a reindeer. I could just strip to my boxers.")
-        |> next()
-        |> emotion(:huk)
-        |> mes("[Pilot]")
-        |> mes("Wah!? Who is it!")
-        |> next()
-        |> mes("- ...He is not listening to you, at all. -")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Pilot]")
+          |> mes("This uniform is")
+          |> mes("really dapper, but")
+          |> mes("it's way too thick to")
+          |> mes("wear around the Airship.")
+          |> next()
+          |> mes("[Pilot]")
+          |> mes("...")
+          |> mes("......")
+          |> mes("No one ever really")
+          |> mes("comes into this room.")
+          |> mes("And the captain IS a reindeer. I could just strip to my boxers.")
+          |> next()
+          |> emotion(:huk)
+          |> mes("[Pilot]")
+          |> mes("Wah!? Who is it!")
+          |> next()
+          |> mes("- ...He is not listening to you, at all. -")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -58,80 +59,86 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.Pilot do
 
     case v1 do
       1 ->
-        ctx
-        |> mes("[Pilot]")
-        |> mes("It's been sooo")
-        |> mes("long since I've")
-        |> mes("enjoyed a nice, cold")
-        |> mes("alcoholic brew. But the")
-        |> mes("job requires me to be as")
-        |> mes("clear headed as I can!")
-        |> next()
-        |> mes("[Pilot]")
-        |> mes("Always drink responsibly!")
-        |> mes("Still, I can't remember the")
-        |> mes("last time I had a real vacation")
-        |> mes("or even a day off. Yeap, some")
-        |> mes("booze, some chips, some TV")
-        |> mes("and serious R&R is in order.")
-        |> emotion(:cry)
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Pilot]")
+          |> mes("It's been sooo")
+          |> mes("long since I've")
+          |> mes("enjoyed a nice, cold")
+          |> mes("alcoholic brew. But the")
+          |> mes("job requires me to be as")
+          |> mes("clear headed as I can!")
+          |> next()
+          |> mes("[Pilot]")
+          |> mes("Always drink responsibly!")
+          |> mes("Still, I can't remember the")
+          |> mes("last time I had a real vacation")
+          |> mes("or even a day off. Yeap, some")
+          |> mes("booze, some chips, some TV")
+          |> mes("and serious R&R is in order.")
+          |> emotion(:cry)
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
 
       2 ->
-        ctx
-        |> mes("[Pilot]")
-        |> mes("Man, the weather")
-        |> mes("is really nice today.")
-        |> mes("Bright, open skies make")
-        |> mes("for some good visibility")
-        |> mes("and safe, carefree flying.")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Pilot]")
+          |> mes("Man, the weather")
+          |> mes("is really nice today.")
+          |> mes("Bright, open skies make")
+          |> mes("for some good visibility")
+          |> mes("and safe, carefree flying.")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
 
       3 ->
-        ctx
-        |> mes("[Pilot]")
-        |> mes("You know, our captain's a")
-        |> mes("respectable guy. Him and")
-        |> mes("his brother are actually well")
-        |> mes("known in the aircraft industry.")
-        |> mes("Who knew reindeer made")
-        |> mes("such good captains?")
-        |> next()
-        |> mes("[Pilot]")
-        |> mes("Just between you")
-        |> mes("and me, I gotta tell")
-        |> mes("you, that Santa was onto")
-        |> mes("something, getting reindeers")
-        |> mes("and elves to work for him.")
-        |> mes("The man must be a genius!")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Pilot]")
+          |> mes("You know, our captain's a")
+          |> mes("respectable guy. Him and")
+          |> mes("his brother are actually well")
+          |> mes("known in the aircraft industry.")
+          |> mes("Who knew reindeer made")
+          |> mes("such good captains?")
+          |> next()
+          |> mes("[Pilot]")
+          |> mes("Just between you")
+          |> mes("and me, I gotta tell")
+          |> mes("you, that Santa was onto")
+          |> mes("something, getting reindeers")
+          |> mes("and elves to work for him.")
+          |> mes("The man must be a genius!")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
 
       _ ->
-        ctx
-        |> mes("[Pilot]")
-        |> mes("You know, this whole")
-        |> mes("piloting thing in the air,")
-        |> mes("it's rather new, you know?")
-        |> mes("Yeah, they got this Airship")
-        |> mes("operation in a hurry.")
-        |> next()
-        |> emotion(:huk)
-        |> mes("[Pilot]")
-        |> mes("Still, they were real")
-        |> mes("serious, really thought")
-        |> mes("ahead. I mean, they had us")
-        |> mes("training while the Airships")
-        |> mes("were still being invented.")
-        |> mes("Isn't that freakin' crazy?!")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Pilot]")
+          |> mes("You know, this whole")
+          |> mes("piloting thing in the air,")
+          |> mes("it's rather new, you know?")
+          |> mes("Yeah, they got this Airship")
+          |> mes("operation in a hurry.")
+          |> next()
+          |> emotion(:huk)
+          |> mes("[Pilot]")
+          |> mes("Still, they were real")
+          |> mes("serious, really thought")
+          |> mes("ahead. I mean, they had us")
+          |> mes("training while the Airships")
+          |> mes("were still being invented.")
+          |> mes("Isn't that freakin' crazy?!")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

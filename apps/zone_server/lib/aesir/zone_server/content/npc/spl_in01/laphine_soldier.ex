@@ -13,36 +13,40 @@ defmodule Aesir.ZoneServer.Content.Npc.SplIn01.LaphineSoldier do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) > 0 and get_char_var(ctx, :ep13_2_rhea, 0) > 99 do
-      ctx
-      |> mes("[Laphine Soldier]")
-      |> mes("You are a stranger here, aren't you?")
-      |> mes("I am watching him to prevent anything bad from happening.")
-      |> next()
-      |> mes("[Laphine Soldier]")
-      |> mes("Definitely you are involved.")
-      |> mes("The upper side people allow you to pass here...")
-      |> mes("But nobody knows what's going to happen in this battlefield.")
-      |> next()
-      |> mes("[Laphine Soldier]")
-      |> mes("Anyway, what's that instrument over there?")
-      |> mes("We have a similar one...")
-      |> mes("But it sounds totally different.")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Laphine Soldier]")
+        |> mes("You are a stranger here, aren't you?")
+        |> mes("I am watching him to prevent anything bad from happening.")
+        |> next()
+        |> mes("[Laphine Soldier]")
+        |> mes("Definitely you are involved.")
+        |> mes("The upper side people allow you to pass here...")
+        |> mes("But nobody knows what's going to happen in this battlefield.")
+        |> next()
+        |> mes("[Laphine Soldier]")
+        |> mes("Anyway, what's that instrument over there?")
+        |> mes("We have a similar one...")
+        |> mes("But it sounds totally different.")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Laphine Soldier]")
-      |> mes("FusVohlAnu Ur Lon.")
-      |> mes("LoUdenFar Ha Dormaur?")
-      |> mes("...marAmanYur Mu.")
-      |> next()
-      |> mes(
-        "-The Laphine Soldier wants to tell you something, but just stops talking as you give him a blank stare -"
-      )
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Laphine Soldier]")
+        |> mes("FusVohlAnu Ur Lon.")
+        |> mes("LoUdenFar Ha Dormaur?")
+        |> mes("...marAmanYur Mu.")
+        |> next()
+        |> mes(
+          "-The Laphine Soldier wants to tell you something, but just stops talking as you give him a blank stare -"
+        )
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

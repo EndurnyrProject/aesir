@@ -28,63 +28,67 @@ defmodule Aesir.ZoneServer.Content.Npc.MocFild16.UncleAssassin do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Hashisid]")
-          |> mes("Well, then..")
-          |> mes("I'll tell you what it is!")
-          |> mes("Assassins ..")
-          |> mes("may be commonly known as")
-          |> mes("infiltrators and murderers")
-          |> mes("who kill without remorse.")
-          |> next()
-          |> mes("[Hashisid]")
-          |> mes("In actuality,")
-          |> mes("the Assassin clan")
-          |> mes("is forbidden to harm innocent people,")
-          |> mes("or at least,")
-          |> mes("not without good reason")
-          |> next()
-          |> mes("[Hashisid]")
-          |> mes("Our true directive is to assassinate evil creatures,")
-          |> mes("and to use our stealth to gather intelligence")
-          |> mes("for the good of all Rune-Midgarts.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Hashisid]")
+            |> mes("Well, then..")
+            |> mes("I'll tell you what it is!")
+            |> mes("Assassins ..")
+            |> mes("may be commonly known as")
+            |> mes("infiltrators and murderers")
+            |> mes("who kill without remorse.")
+            |> next()
+            |> mes("[Hashisid]")
+            |> mes("In actuality,")
+            |> mes("the Assassin clan")
+            |> mes("is forbidden to harm innocent people,")
+            |> mes("or at least,")
+            |> mes("not without good reason")
+            |> next()
+            |> mes("[Hashisid]")
+            |> mes("Our true directive is to assassinate evil creatures,")
+            |> mes("and to use our stealth to gather intelligence")
+            |> mes("for the good of all Rune-Midgarts.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Hashisid]")
-          |> mes("Once upon a time,")
-          |> mes("our ancestors would")
-          |> mes("smoke tobacco called 'Hashish'")
-          |> mes("before performing their duties.")
-          |> mes("However, we no longer do so,")
-          |> mes("since insect or animal monsters are")
-          |> mes("very sensitive to the smell.")
-          |> next()
-          |> mes("[Hashisid]")
-          |> mes("We strictly prohibit")
-          |> mes("smoking or eating")
-          |> mes("anything that has")
-          |> mes("strong smell...")
-          |> mes("If you ever,")
-          |> mes("try eating those")
-          |> mes("smelly garlic bread with spices,")
-          |> next()
-          |> mes("[Hashisid]")
-          |> mes("and try hiding against")
-          |> mes("those wild boars or wolves,")
-          |> mes("believe me,")
-          |> mes("you'll be ripped in pieces.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Hashisid]")
+            |> mes("Once upon a time,")
+            |> mes("our ancestors would")
+            |> mes("smoke tobacco called 'Hashish'")
+            |> mes("before performing their duties.")
+            |> mes("However, we no longer do so,")
+            |> mes("since insect or animal monsters are")
+            |> mes("very sensitive to the smell.")
+            |> next()
+            |> mes("[Hashisid]")
+            |> mes("We strictly prohibit")
+            |> mes("smoking or eating")
+            |> mes("anything that has")
+            |> mes("strong smell...")
+            |> mes("If you ever,")
+            |> mes("try eating those")
+            |> mes("smelly garlic bread with spices,")
+            |> next()
+            |> mes("[Hashisid]")
+            |> mes("and try hiding against")
+            |> mes("those wild boars or wolves,")
+            |> mes("believe me,")
+            |> mes("you'll be ripped in pieces.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

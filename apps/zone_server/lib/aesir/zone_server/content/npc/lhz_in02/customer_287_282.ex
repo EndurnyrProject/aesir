@@ -29,7 +29,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.Customer287282 do
     |> mes("the way the odds work, right?")
     |> mes("Even when they're against me...")
     |> close()
-
-    exit(:normal)
   end
 end

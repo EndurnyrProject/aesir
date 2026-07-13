@@ -14,20 +14,21 @@ defmodule Aesir.ZoneServer.Content.Npc.Louyang.MuscularWoman do
   def on_talk(ctx) do
     ctx =
       if sex(ctx) == get_char_var(ctx, :SEX_FEMALE, 0) do
-        ctx
-        |> mes("[Zhi Ching Li]")
-        |> mes(
-          "All the members of the Maiden Palace, including myself and our master, are all female."
-        )
-        |> next()
-        |> mes("[Zhi Ching Li]")
-        |> mes(
-          "Recently we've had a hard time recruiting new members, so I came here to check if there's any woman who wishes to join us."
-        )
-        |> emotion(:think)
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Zhi Ching Li]")
+          |> mes(
+            "All the members of the Maiden Palace, including myself and our master, are all female."
+          )
+          |> next()
+          |> mes("[Zhi Ching Li]")
+          |> mes(
+            "Recently we've had a hard time recruiting new members, so I came here to check if there's any woman who wishes to join us."
+          )
+          |> emotion(:think)
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -44,7 +45,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Louyang.MuscularWoman do
     |> mes("Please leave me")
     |> mes("alone, I'm busy.")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

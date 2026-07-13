@@ -24,13 +24,14 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.Crumpler do
 
     ctx =
       if class(ctx) == :mage do
-        ctx
-        |> mes(
-          "^3355FFSomeday, you swear to yourself, you will have your bloody revenge on this belligerent drunk for besmirching the proud Mage profession. Someday...^000000"
-        )
-        |> close()
+        ctx =
+          ctx
+          |> mes(
+            "^3355FFSomeday, you swear to yourself, you will have your bloody revenge on this belligerent drunk for besmirching the proud Mage profession. Someday...^000000"
+          )
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx =
           if class(ctx) == :wizard do
@@ -52,64 +53,67 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.Crumpler do
             ctx =
               case v1 do
                 1 ->
-                  ctx
-                  |> mes("[Crumpler]")
-                  |> mes("Huh?")
-                  |> mes("What'd you just say?")
-                  |> next()
-                  |> mes("[Crumpler]")
-                  |> mes("...")
-                  |> next()
-                  |> mes("[Crumpler]")
-                  |> mes("...")
-                  |> mes("......")
-                  |> next()
-                  |> mes("[Crumpler]")
-                  |> mes("Ooooooooh")
-                  |> mes("crraaaap!")
-                  |> emotion(:surprise)
-                  |> next()
-                  |> mes("[Crumpler]")
-                  |> mes("Help meeeee!")
-                  |> specialeffect(:meteorstorm)
-                  |> close()
+                  ctx =
+                    ctx
+                    |> mes("[Crumpler]")
+                    |> mes("Huh?")
+                    |> mes("What'd you just say?")
+                    |> next()
+                    |> mes("[Crumpler]")
+                    |> mes("...")
+                    |> next()
+                    |> mes("[Crumpler]")
+                    |> mes("...")
+                    |> mes("......")
+                    |> next()
+                    |> mes("[Crumpler]")
+                    |> mes("Ooooooooh")
+                    |> mes("crraaaap!")
+                    |> emotion(:surprise)
+                    |> next()
+                    |> mes("[Crumpler]")
+                    |> mes("Help meeeee!")
+                    |> specialeffect(:meteorstorm)
+                    |> close()
 
-                  exit(:normal)
+                  throw({:script_end, ctx})
 
                 2 ->
-                  ctx
-                  |> mes("[Crumpler]")
-                  |> mes("Hahahahaah!")
-                  |> mes(
-                    "Silly Wizard! Only a monster like Baphomet can handle a big spell like th--"
-                  )
-                  |> next()
-                  |> mes("[Crumpler]")
-                  |> mes("Oh sweet lord...")
-                  |> mes("You're serious...")
-                  |> next()
-                  |> specialeffect(:lord)
-                  |> mes("[Crumpler]")
-                  |> mes("ARRRRRGH~!")
-                  |> mes("IT BUUUURNS!")
-                  |> close()
+                  ctx =
+                    ctx
+                    |> mes("[Crumpler]")
+                    |> mes("Hahahahaah!")
+                    |> mes(
+                      "Silly Wizard! Only a monster like Baphomet can handle a big spell like th--"
+                    )
+                    |> next()
+                    |> mes("[Crumpler]")
+                    |> mes("Oh sweet lord...")
+                    |> mes("You're serious...")
+                    |> next()
+                    |> specialeffect(:lord)
+                    |> mes("[Crumpler]")
+                    |> mes("ARRRRRGH~!")
+                    |> mes("IT BUUUURNS!")
+                    |> close()
 
-                  exit(:normal)
+                  throw({:script_end, ctx})
 
                 3 ->
-                  ctx
-                  |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
-                  |> mes("No...")
-                  |> mes("I can only use")
-                  |> mes("my powers for good.")
-                  |> next()
-                  |> mes("[Crumpler]")
-                  |> mes("Haw haw!")
-                  |> mes("Good...")
-                  |> mes("For nothing!")
-                  |> close()
+                  ctx =
+                    ctx
+                    |> mes(Rathena.concat(Rathena.concat("[", char_name(ctx, 0)), "]"))
+                    |> mes("No...")
+                    |> mes("I can only use")
+                    |> mes("my powers for good.")
+                    |> next()
+                    |> mes("[Crumpler]")
+                    |> mes("Haw haw!")
+                    |> mes("Good...")
+                    |> mes("For nothing!")
+                    |> close()
 
-                  exit(:normal)
+                  throw({:script_end, ctx})
 
                 _ ->
                   ctx
@@ -120,40 +124,44 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.Crumpler do
             if class(ctx) == :sage do
               {ctx, _} = select(ctx, ["Actually, sir, I'm a Sage."])
 
-              ctx
-              |> mes("[Crumpler]")
-              |> mes("A...")
-              |> mes("Sage?")
-              |> emotion(:question)
-              |> next()
-              |> mes("[Crumpler]")
-              |> mes("I don't know what that is. But I guess it can't be half as bad as a Mage.")
-              |> next()
-              |> mes("[Crumpler]")
-              |> mes("Soooo...")
-              |> mes("Wanna drink with me?")
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Crumpler]")
+                |> mes("A...")
+                |> mes("Sage?")
+                |> emotion(:question)
+                |> next()
+                |> mes("[Crumpler]")
+                |> mes(
+                  "I don't know what that is. But I guess it can't be half as bad as a Mage."
+                )
+                |> next()
+                |> mes("[Crumpler]")
+                |> mes("Soooo...")
+                |> mes("Wanna drink with me?")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
-              ctx
-              |> mes("[Crumpler]")
-              |> mes("Wait a sec...")
-              |> mes("You're not a Mage!")
-              |> mes("J-just how drunk am I?!")
-              |> next()
-              |> mes("[Crumpler]")
-              |> mes(
-                "Man, I hate Mages with a passion! Always studying and chanting and making taxes high and stuff..."
-              )
-              |> next()
-              |> mes("[Crumpler]")
-              |> mes(
-                "Taking our jobs, censoring the media, ruining our education system, causing air pollution, starting wars, making rap music..."
-              )
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Crumpler]")
+                |> mes("Wait a sec...")
+                |> mes("You're not a Mage!")
+                |> mes("J-just how drunk am I?!")
+                |> next()
+                |> mes("[Crumpler]")
+                |> mes(
+                  "Man, I hate Mages with a passion! Always studying and chanting and making taxes high and stuff..."
+                )
+                |> next()
+                |> mes("[Crumpler]")
+                |> mes(
+                  "Taking our jobs, censoring the media, ruining our education system, causing air pollution, starting wars, making rap music..."
+                )
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             end
           end
 
@@ -161,5 +169,7 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.Crumpler do
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

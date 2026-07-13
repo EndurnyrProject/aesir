@@ -56,7 +56,5 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtIn.Marvin do
       "So relax and plan ahead, so you can master all the skills that you really want to master the most. Also, don't just put skill points into anything. Remember to use your skill points wisely."
     )
     |> close()
-
-    exit(:normal)
   end
 end

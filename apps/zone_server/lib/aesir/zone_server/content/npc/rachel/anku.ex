@@ -26,7 +26,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Rachel.Anku do
     |> mes("Himuhimu! I give up!")
     |> mes("H-Himuhimu...?")
     |> close()
-
-    exit(:normal)
   end
 end

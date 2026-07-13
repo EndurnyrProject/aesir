@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.HotelEmployee238275 do
     |> mes("Please inquire at the front")
     |> mes("desk if you wish to check in.")
     |> close()
-
-    exit(:normal)
   end
 end

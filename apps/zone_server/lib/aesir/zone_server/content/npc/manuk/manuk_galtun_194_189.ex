@@ -12,19 +12,22 @@ defmodule Aesir.ZoneServer.Content.Npc.Manuk.ManukGaltun194189 do
 
   @impl true
   def on_talk(ctx) do
-    _ =
+    ctx =
       if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-        ctx
-        |> mes("[Manuk Galtun]")
-        |> mes("Welcome to Manuk.")
-        |> mes("How can I help you?")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Manuk Galtun]")
+          |> mes("Welcome to Manuk.")
+          |> mes("How can I help you?")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
 
-    exit(:normal)
+    ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

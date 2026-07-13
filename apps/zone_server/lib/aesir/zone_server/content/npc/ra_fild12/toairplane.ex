@@ -13,10 +13,17 @@ defmodule Aesir.ZoneServer.Content.Npc.RaFild12.Toairplane do
     ]
 
   @impl true
-  def on_event("OnTouch", ctx), do: ev_ontouch(ctx)
+  def on_event("OnTouch", ctx) do
+    ev_ontouch(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
   @impl true
-  def on_talk(_ctx) do
-    exit(:normal)
+  def on_talk(ctx) do
+    ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   def ev_ontouch(ctx) do
@@ -31,31 +38,31 @@ defmodule Aesir.ZoneServer.Content.Npc.RaFild12.Toairplane do
       if v1 == 1 do
         ctx =
           if count_item(ctx, 7311) > 0 do
-            ctx |> delitem(7311, 1) |> warp("airplane_01", 245, 60)
-            exit(:normal)
+            ctx = ctx |> delitem(7311, 1) |> warp("airplane_01", 245, 60)
+            throw({:script_end, ctx})
           else
             ctx
           end
 
         ctx =
           if zeny(ctx) >= 1200 do
-            ctx |> pay_zeny(1200) |> warp("airplane_01", 245, 60)
-            exit(:normal)
+            ctx = ctx |> pay_zeny(1200) |> warp("airplane_01", 245, 60)
+            throw({:script_end, ctx})
           else
             ctx
           end
 
-        ctx
-        |> mes("I am sorry, but you do not have enough money.")
-        |> mes("Please remember, you are required to pay 1,200 zeny to use the service.")
-        |> close()
+        ctx =
+          ctx
+          |> mes("I am sorry, but you do not have enough money.")
+          |> mes("Please remember, you are required to pay 1,200 zeny to use the service.")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
 
     ctx |> mes("Thank you, please come again.") |> close()
-    exit(:normal)
   end
 end

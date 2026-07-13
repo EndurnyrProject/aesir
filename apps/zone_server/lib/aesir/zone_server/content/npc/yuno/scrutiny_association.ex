@@ -19,13 +19,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Yuno.ScrutinyAssociation do
   end
 
   def ev_oninit(ctx) do
-    _ = initnpctimer(ctx)
-    exit(:normal)
+    initnpctimer(ctx)
   end
 
   def ev_onenable(ctx) do
-    _ = initnpctimer(ctx)
-    exit(:normal)
+    initnpctimer(ctx)
   end
 
   def ev_ontimer7200000(ctx) do
@@ -43,7 +41,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Yuno.ScrutinyAssociation do
         ctx
       end
 
-    _ = donpcevent(ctx, "Scrutiny Association#5::OnEnable")
-    exit(:normal)
+    donpcevent(ctx, "Scrutiny Association#5::OnEnable")
   end
 end

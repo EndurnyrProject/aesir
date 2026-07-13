@@ -21,7 +21,5 @@ defmodule Aesir.ZoneServer.Content.Npc.RaTemin.FreyaSFollower do
     |> mes("but I feel pretty good about")
     |> mes("making that small sacrifice.")
     |> close()
-
-    exit(:normal)
   end
 end

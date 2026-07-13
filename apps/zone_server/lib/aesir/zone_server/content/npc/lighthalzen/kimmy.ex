@@ -29,7 +29,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Kimmy do
     |> mes("new, unique and trendy gear")
     |> mes("over here in Lighthalzen~")
     |> close()
-
-    exit(:normal)
   end
 end

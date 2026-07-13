@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Einbroch.Sleik do
     |> mes("still, I guess having our own")
     |> mes("Train Station is a good thing.")
     |> close()
-
-    exit(:normal)
   end
 end

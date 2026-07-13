@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Laqumet do
     |> mes("my honesty and loyalty will")
     |> mes("help me find someone good.")
     |> close()
-
-    exit(:normal)
   end
 end

@@ -536,25 +536,26 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert Dsl.job_level(ctx) == 3
     end
 
-    test "sex/1 returns the player sex" do
-      assert Dsl.sex(build_ctx()) == "M"
+    test "sex/1 returns rAthena's Sex: 1 male, 0 female" do
+      assert Dsl.sex(build_ctx(sex: "M")) == 1
+      assert Dsl.sex(build_ctx(sex: "F")) == 0
     end
 
     test "position/1 returns {x, y, map_name}" do
       assert Dsl.position(build_ctx()) == {50, 50, "prontera"}
     end
 
-    test "is_equipped/2 is true only for an equipped item id" do
+    test "is_equipped/2 returns 1 only for an equipped item id" do
       ctx = build_ctx(inventory: %{0 => %InventoryItem{nameid: 1201, equip: 2}})
 
-      assert Dsl.is_equipped(ctx, 1201)
-      refute Dsl.is_equipped(ctx, 9999)
+      assert Dsl.is_equipped(ctx, 1201) == 1
+      assert Dsl.is_equipped(ctx, 9999) == 0
     end
 
-    test "is_equipped/2 is false for a carried-but-not-equipped item" do
+    test "is_equipped/2 returns 0 for a carried-but-not-equipped item" do
       ctx = build_ctx(inventory: %{0 => %InventoryItem{nameid: 1201, equip: 0}})
 
-      refute Dsl.is_equipped(ctx, 1201)
+      assert Dsl.is_equipped(ctx, 1201) == 0
     end
 
     test "getequipid/2 returns the item id worn in the given EQI slot" do
@@ -902,7 +903,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       character_id: 1,
       account_id: 100,
       character_name: Keyword.get(opts, :character_name, "Alice"),
-      sex: "M",
+      sex: Keyword.get(opts, :sex, "M"),
       x: 50,
       y: 50,
       map_name: "prontera",

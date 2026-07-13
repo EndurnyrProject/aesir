@@ -39,5 +39,7 @@ defmodule Aesir.ZoneServer.Content.Npc.GefFild10.KafraEmployeeKafGefFild10 do
       |> Aesir.ZoneServer.Content.Npc.Functions.FKafend.call([0, 1, "at the Orc Dungeon"])
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

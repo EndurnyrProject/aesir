@@ -36,7 +36,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.VictorPerfecto do
     |> mes("can be man-made and")
     |> mes("equated to zeny, you know?")
     |> close()
-
-    exit(:normal)
   end
 end

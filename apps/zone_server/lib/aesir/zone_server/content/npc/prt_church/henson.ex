@@ -26,166 +26,166 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtChurch.Henson do
     |> mes("[Henson]")
     |> mes("Did you have any questions about Acolyte and Priest skills?")
     |> loop_1()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   defp loop_1(ctx) do
-    if true do
-      result =
-        try do
-          {ctx, v1} =
-            ctx
-            |> next()
-            |> select([
-              "About Divine Protection",
-              "About Demon Bane",
-              "About Decrease AGI",
-              "About Signum Crusis ",
-              "About Pneuma",
-              "About Ruwach",
-              "About Teleport",
-              "End conversation."
-            ])
+    result =
+      try do
+        {ctx, v1} =
+          ctx
+          |> next()
+          |> select([
+            "About Divine Protection",
+            "About Demon Bane",
+            "About Decrease AGI",
+            "About Signum Crusis ",
+            "About Pneuma",
+            "About Ruwach",
+            "About Teleport",
+            "End conversation."
+          ])
 
-          ctx =
-            case v1 do
-              1 ->
-                ctx =
-                  ctx
-                  |> mes("[Henson]")
-                  |> mes(
-                    "If you want to permanently improve your Defense against the Undead, learn ^6666CCDivine Protection^000000."
-                  )
-                  |> next()
-                  |> mes("[Henson]")
-                  |> mes(
-                    "Learning Divine Protection to certain levels will also allow you to learn other skills, like ^6666CCAngelus^000000 and ^6666CCBlessing^000000, which Garnet can explain."
-                  )
-                  |> next()
-                  |> mes("[Henson]")
-                  |> mes(
-                    "When you learn ^6666CCLevel 3 Divine Protection^000000, you will then be able to learn the ^6666CCDemon Bane^000000 skill."
-                  )
-                  |> next()
-                  |> mes("[Henson]")
-                  |> mes(
-                    "With ^6666CCDemon Bane^000000, the damage of your attacks against the Undead will be increased. Permanently."
-                  )
+        ctx =
+          case v1 do
+            1 ->
+              ctx =
+                ctx
+                |> mes("[Henson]")
+                |> mes(
+                  "If you want to permanently improve your Defense against the Undead, learn ^6666CCDivine Protection^000000."
+                )
+                |> next()
+                |> mes("[Henson]")
+                |> mes(
+                  "Learning Divine Protection to certain levels will also allow you to learn other skills, like ^6666CCAngelus^000000 and ^6666CCBlessing^000000, which Garnet can explain."
+                )
+                |> next()
+                |> mes("[Henson]")
+                |> mes(
+                  "When you learn ^6666CCLevel 3 Divine Protection^000000, you will then be able to learn the ^6666CCDemon Bane^000000 skill."
+                )
+                |> next()
+                |> mes("[Henson]")
+                |> mes(
+                  "With ^6666CCDemon Bane^000000, the damage of your attacks against the Undead will be increased. Permanently."
+                )
 
-                throw({:cont_1, ctx})
+              throw({:cont_1, ctx})
 
-              2 ->
-                ctx =
-                  ctx
-                  |> mes("[Henson]")
-                  |> mes(
-                    "^6666CCDemon Bane^000000 increases the damage you will inflict upon the Undead. Permanently."
-                  )
-                  |> next()
-                  |> mes("[Henson]")
-                  |> mes(
-                    "First, you'll need to learn ^6666CCLevel 3 Divine Protection^000000 to be able to learn Demon Bane, so keep that in mind."
-                  )
-                  |> next()
-                  |> mes("[Henson]")
-                  |> mes(
-                    "When you learn ^6666CCLevel 3 Demon Bane^000000, you will be able to learn ^6666CCSignum Crusis^000000, which lowers the Defense of Undead monsters, as well as monsters with the Dark property."
-                  )
+            2 ->
+              ctx =
+                ctx
+                |> mes("[Henson]")
+                |> mes(
+                  "^6666CCDemon Bane^000000 increases the damage you will inflict upon the Undead. Permanently."
+                )
+                |> next()
+                |> mes("[Henson]")
+                |> mes(
+                  "First, you'll need to learn ^6666CCLevel 3 Divine Protection^000000 to be able to learn Demon Bane, so keep that in mind."
+                )
+                |> next()
+                |> mes("[Henson]")
+                |> mes(
+                  "When you learn ^6666CCLevel 3 Demon Bane^000000, you will be able to learn ^6666CCSignum Crusis^000000, which lowers the Defense of Undead monsters, as well as monsters with the Dark property."
+                )
 
-                throw({:cont_1, ctx})
+              throw({:cont_1, ctx})
 
-              3 ->
-                ctx =
-                  ctx
-                  |> mes("[Henson]")
-                  |> mes(
-                    "Using ^6666CCDecrease AGI^000000 on monsters will slow their movement, attack speed, and the rate at which they can evade your own attacks. That way, you can maim them properly."
-                  )
-                  |> next()
-                  |> mes("[Henson]")
-                  |> mes(
-                    "Remember, you must first learn ^6666CCLevel 2 Increase AGI^000000 if you want to be able to learn the Decrease AGI skill."
-                  )
+            3 ->
+              ctx =
+                ctx
+                |> mes("[Henson]")
+                |> mes(
+                  "Using ^6666CCDecrease AGI^000000 on monsters will slow their movement, attack speed, and the rate at which they can evade your own attacks. That way, you can maim them properly."
+                )
+                |> next()
+                |> mes("[Henson]")
+                |> mes(
+                  "Remember, you must first learn ^6666CCLevel 2 Increase AGI^000000 if you want to be able to learn the Decrease AGI skill."
+                )
 
-                throw({:cont_1, ctx})
+              throw({:cont_1, ctx})
 
-              4 ->
-                ctx =
-                  ctx
-                  |> mes("[Henson]")
-                  |> mes(
-                    "The ^6666CCSignum Crusis^000000 skill lowers the Defense of monsters with the Undead or Dark properties. It has a wide range and can be quite powerful."
-                  )
-                  |> next()
-                  |> mes("[Henson]")
-                  |> mes(
-                    "However, it's a very difficult skill to use, and it has a relatively low success rate. But, do not despair if this skill is not successful all the time."
-                  )
-                  |> next()
-                  |> mes("[Henson]")
-                  |> mes(
-                    "When it does work, it will give you a great battle advantage. Remember, you will ^6666CCLevel 3 Demon Bane^000000 to acquire this skill."
-                  )
+            4 ->
+              ctx =
+                ctx
+                |> mes("[Henson]")
+                |> mes(
+                  "The ^6666CCSignum Crusis^000000 skill lowers the Defense of monsters with the Undead or Dark properties. It has a wide range and can be quite powerful."
+                )
+                |> next()
+                |> mes("[Henson]")
+                |> mes(
+                  "However, it's a very difficult skill to use, and it has a relatively low success rate. But, do not despair if this skill is not successful all the time."
+                )
+                |> next()
+                |> mes("[Henson]")
+                |> mes(
+                  "When it does work, it will give you a great battle advantage. Remember, you will ^6666CCLevel 3 Demon Bane^000000 to acquire this skill."
+                )
 
-                throw({:cont_1, ctx})
+              throw({:cont_1, ctx})
 
-              5 ->
-                ctx =
-                  ctx
-                  |> mes("[Henson]")
-                  |> mes(
-                    "The ^6666CCPneuma^000000 allows you to generate a barrier that will block all long-range attacks in a certain range, creating a zone that will protect you from monsters that attack from a distance."
-                  )
-                  |> next()
-                  |> mes("[Henson]")
-                  |> mes(
-                    "In order to become ready to learn Pneuma, you must first completely master the ^6666CCWarp Portal^000000 skill."
-                  )
+            5 ->
+              ctx =
+                ctx
+                |> mes("[Henson]")
+                |> mes(
+                  "The ^6666CCPneuma^000000 allows you to generate a barrier that will block all long-range attacks in a certain range, creating a zone that will protect you from monsters that attack from a distance."
+                )
+                |> next()
+                |> mes("[Henson]")
+                |> mes(
+                  "In order to become ready to learn Pneuma, you must first completely master the ^6666CCWarp Portal^000000 skill."
+                )
 
-                throw({:cont_1, ctx})
+              throw({:cont_1, ctx})
 
-              6 ->
-                ctx =
-                  ctx
-                  |> mes("[Henson]")
-                  |> mes(
-                    "Nothing can escape the eyes of the Holy! ^6666CCRuwach^000000 allows you to see monsters, as well as other adventurers, that are hidden or invisible."
-                  )
-                  |> next()
-                  |> mes("[Henson]")
-                  |> mes(
-                    "Once you learn Ruwach, you will be able to learn the ^6666CCTeleport^000000 skill."
-                  )
+            6 ->
+              ctx =
+                ctx
+                |> mes("[Henson]")
+                |> mes(
+                  "Nothing can escape the eyes of the Holy! ^6666CCRuwach^000000 allows you to see monsters, as well as other adventurers, that are hidden or invisible."
+                )
+                |> next()
+                |> mes("[Henson]")
+                |> mes(
+                  "Once you learn Ruwach, you will be able to learn the ^6666CCTeleport^000000 skill."
+                )
 
-                throw({:cont_1, ctx})
+              throw({:cont_1, ctx})
 
-              7 ->
-                ctx =
-                  ctx
-                  |> mes("[Henson]")
-                  |> mes(
-                    "First, you must learn the ^6666CCRuwach^000000 skill in order to learn how to Teleport."
-                  )
-                  |> next()
-                  |> mes("[Henson]")
-                  |> mes(
-                    "The ^6666CCTeleport^000000 skill teleports you to a random location in the field or city which you are currently in. Teleport will prove useful for quick escapes, but where you may end up is... unpredictable."
-                  )
-                  |> next()
-                  |> mes("[Henson]")
-                  |> mes(
-                    "Once the Teleport skill is mastered, you can Teleport to the latest Save Point that you have made with a Kafra Employee. I do not know why it is that way, but the Lord works in mysterious ways."
-                  )
-                  |> next()
-                  |> mes("[Henson]")
-                  |> mes(
-                    "When Teleport is mastered, you can also learn the ^6666CCWarp Portal^000000 skill. Ask Garnet if you wish to know more about Warp Portal."
-                  )
+            7 ->
+              ctx =
+                ctx
+                |> mes("[Henson]")
+                |> mes(
+                  "First, you must learn the ^6666CCRuwach^000000 skill in order to learn how to Teleport."
+                )
+                |> next()
+                |> mes("[Henson]")
+                |> mes(
+                  "The ^6666CCTeleport^000000 skill teleports you to a random location in the field or city which you are currently in. Teleport will prove useful for quick escapes, but where you may end up is... unpredictable."
+                )
+                |> next()
+                |> mes("[Henson]")
+                |> mes(
+                  "Once the Teleport skill is mastered, you can Teleport to the latest Save Point that you have made with a Kafra Employee. I do not know why it is that way, but the Lord works in mysterious ways."
+                )
+                |> next()
+                |> mes("[Henson]")
+                |> mes(
+                  "When Teleport is mastered, you can also learn the ^6666CCWarp Portal^000000 skill. Ask Garnet if you wish to know more about Warp Portal."
+                )
 
-                throw({:cont_1, ctx})
+              throw({:cont_1, ctx})
 
-              8 ->
+            8 ->
+              ctx =
                 ctx
                 |> mes("[Henson]")
                 |> mes(
@@ -193,24 +193,21 @@ defmodule Aesir.ZoneServer.Content.Npc.PrtChurch.Henson do
                 )
                 |> close()
 
-                exit(:normal)
+              throw({:script_end, ctx})
 
-              _ ->
-                ctx
-            end
+            _ ->
+              ctx
+          end
 
-          {:next, ctx}
-        catch
-          :throw, {:brk_1, ctx} -> {:done, ctx}
-          :throw, {:cont_1, ctx} -> {:next, ctx}
-        end
-
-      case result do
-        {:next, ctx} -> loop_1(ctx)
-        {:done, ctx} -> ctx
+        {:next, ctx}
+      catch
+        :throw, {:brk_1, ctx} -> {:done, ctx}
+        :throw, {:cont_1, ctx} -> {:next, ctx}
       end
-    else
-      ctx
+
+    case result do
+      {:next, ctx} -> loop_1(ctx)
+      {:done, ctx} -> ctx
     end
   end
 end

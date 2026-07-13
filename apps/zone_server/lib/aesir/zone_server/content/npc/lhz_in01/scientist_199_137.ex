@@ -16,16 +16,17 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Scientist199137 do
   def on_talk(ctx) do
     ctx =
       if Rathena.truthy?(is_equipped(ctx, 2241)) and Rathena.truthy?(is_equipped(ctx, 2243)) do
-        ctx
-        |> mes("[Scientist]")
-        |> mes("Whoa whoa~!")
-        |> mes("Please! Don't")
-        |> mes("touch anything!")
-        |> mes("I'm dealing with highly")
-        |> mes("volatile chemicals here!")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Scientist]")
+          |> mes("Whoa whoa~!")
+          |> mes("Please! Don't")
+          |> mes("touch anything!")
+          |> mes("I'm dealing with highly")
+          |> mes("volatile chemicals here!")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -40,7 +41,7 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Scientist199137 do
     |> emotion(:surprise)
     |> close()
     |> warp("lhz_in01", 33, 224)
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

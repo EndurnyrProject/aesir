@@ -28,7 +28,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Veins.OldLady do
     |> mes("some things. You'll see.")
     |> mes("^FFFFFFYes, like secret knowledge.^000000")
     |> close()
-
-    exit(:normal)
   end
 end

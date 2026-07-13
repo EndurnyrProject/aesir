@@ -22,10 +22,17 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.RekenberGuard46125 do
 
   alias Aesir.ZoneServer.Script.Rathena
   @impl true
-  def on_event("OnTouch", ctx), do: ev_ontouch(ctx)
+  def on_event("OnTouch", ctx) do
+    ev_ontouch(ctx)
+  catch
+    :throw, {:script_end, ctx} -> ctx
+  end
+
   @impl true
   def on_talk(ctx) do
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   def ev_ontouch(ctx) do
@@ -40,14 +47,14 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.RekenberGuard46125 do
 
         ctx =
           if v1 == 1 do
-            ctx |> mes("[Rekenber Guard]") |> mes("...") |> emotion(:fret) |> close()
-            exit(:normal)
+            ctx = ctx |> mes("[Rekenber Guard]") |> mes("...") |> emotion(:fret) |> close()
+            throw({:script_end, ctx})
           else
             ctx
           end
 
-        ctx |> mes("[Rekenber Guard]") |> mes("...") |> close()
-        exit(:normal)
+        ctx = ctx |> mes("[Rekenber Guard]") |> mes("...") |> close()
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -58,7 +65,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.RekenberGuard46125 do
     |> emotion(:surprise)
     |> close()
     |> warp("lhz_in01", 33, 224)
-
-    exit(:normal)
   end
 end

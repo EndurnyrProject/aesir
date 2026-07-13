@@ -50,33 +50,33 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Zondateleportationservices do
       case v1 do
         1 ->
           {ctx, _} = s_s_zone(ctx, ["North Bifrost", 17000, 850, 7213])
-          _ = warp(ctx, "bif_fild02", 160, 230)
-          exit(:normal)
+          ctx = warp(ctx, "bif_fild02", 160, 230)
+          throw({:script_end, ctx})
 
         2 ->
           {ctx, _} = s_s_zone(ctx, ["Eclage", 17000, 850, 11311])
-          _ = warp(ctx, "eclage", 111, 39)
-          exit(:normal)
+          ctx = warp(ctx, "eclage", 111, 39)
+          throw({:script_end, ctx})
 
         3 ->
           {ctx, _} = s_s_zone(ctx, ["Splendide", 17000, 850, 10078])
-          _ = warp(ctx, "splendide", 171, 115)
-          exit(:normal)
+          ctx = warp(ctx, "splendide", 171, 115)
+          throw({:script_end, ctx})
 
         4 ->
           {ctx, _} = s_s_zone(ctx, ["Midgard Expedition Camp", 19000, 950, 10078])
-          _ = warp(ctx, "mid_camp", 210, 288)
-          exit(:normal)
+          ctx = warp(ctx, "mid_camp", 210, 288)
+          throw({:script_end, ctx})
 
         5 ->
           {ctx, _} = s_s_zone(ctx, ["Manuk", 22000, 1100, 10078])
-          _ = warp(ctx, "manuk", 263, 177)
-          exit(:normal)
+          ctx = warp(ctx, "manuk", 263, 177)
+          throw({:script_end, ctx})
 
         6 ->
           {ctx, _} = s_s_zone(ctx, ["Outskirts of Kamidal Mountain", 24000, 1200, 7184])
-          _ = warp(ctx, "dic_fild01", 188, 187)
-          exit(:normal)
+          ctx = warp(ctx, "dic_fild01", 188, 187)
+          throw({:script_end, ctx})
 
         7 ->
           ctx =
@@ -95,118 +95,124 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Zondateleportationservices do
 
     {ctx, _} = s_s_zone(ctx, [])
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 
   defp s_s_zone(ctx, args) do
-    ctx =
-      ctx
-      |> set_local(:zeny_req, Enum.at(args, 1, 0))
-      |> set_local(:item_req, Enum.at(args, 2, 0))
-      |> set_local(:quest_req, Enum.at(args, 3, 0))
-
-    ctx =
-      if isbegin_quest(ctx, get_local(ctx, :quest_req, 0)) == 0 do
+    try do
+      ctx =
         ctx
-        |> mes("[Zonda Employee]")
+        |> set_local(:zeny_req, Enum.at(args, 1, 0))
+        |> set_local(:item_req, Enum.at(args, 2, 0))
+        |> set_local(:quest_req, Enum.at(args, 3, 0))
+
+      ctx =
+        if isbegin_quest(ctx, get_local(ctx, :quest_req, 0)) == 0 do
+          ctx
+          |> mes("[Zonda Employee]")
+          |> mes(
+            Rathena.concat(
+              Rathena.concat(
+                "You must complete the access mission to teleport to ",
+                Enum.at(args, 0, 0)
+              ),
+              " before using our Teleportation services."
+            )
+          )
+          |> close()
+          |> cutin("", 255)
+        else
+          ctx
+        end
+
+      ctx = mes(ctx, "[Zonda Employee]")
+
+      ctx =
+        ctx
         |> mes(
           Rathena.concat(
             Rathena.concat(
-              "You must complete the access mission to teleport to ",
-              Enum.at(args, 0, 0)
+              Rathena.concat(
+                Rathena.concat(
+                  Rathena.concat(Enum.at(args, 0, 0), " is available for ^ff0000"),
+                  get_local(ctx, :zeny_req, 0)
+                ),
+                " Zenys^000000 or ^ff0000"
+              ),
+              get_local(ctx, :item_req, 0)
             ),
-            " before using our Teleportation services."
+            " Malang Sp Can^000000."
           )
         )
+        |> next()
+
+      {ctx, v2} =
+        select(
+          ctx,
+          Enum.flat_map(
+            [
+              Rathena.concat(get_local(ctx, :zeny_req, 0), " Zeny"),
+              Rathena.concat(get_local(ctx, :item_req, 0), " Malang Sp Can"),
+              "Cancel"
+            ],
+            &String.split(&1, ":")
+          )
+        )
+
+      ctx =
+        try do
+          case v2 do
+            1 ->
+              ctx =
+                if zeny(ctx) < get_local(ctx, :zeny_req, 0) do
+                  throw({:brk_2, ctx})
+                else
+                  ctx
+                end
+
+              ctx = pay_zeny(ctx, get_local(ctx, :zeny_req, 0))
+              throw({:script_return, {ctx, nil}})
+
+            2 ->
+              ctx =
+                if count_item(ctx, 12636) < get_local(ctx, :item_req, 0) do
+                  throw({:brk_2, ctx})
+                else
+                  ctx
+                end
+
+              ctx = delitem(ctx, 12636, get_local(ctx, :item_req, 0))
+              throw({:script_return, {ctx, nil}})
+
+            3 ->
+              ctx =
+                ctx
+                |> mes("[Zonda Employee]")
+                |> mes("Can you tell me about other areas of service?")
+                |> close()
+                |> cutin("", 255)
+
+              ctx
+
+            _ ->
+              ctx
+          end
+        catch
+          :throw, {:brk_2, ctx} -> ctx
+        end
+
+      ctx =
+        ctx
+        |> mes("[Zonda Employee]")
+        |> mes("Sir! You do not have enough value that we are asking for.")
+        |> mes("Please check back again.")
         |> close()
         |> cutin("", 255)
-      else
-        ctx
-      end
 
-    ctx = mes(ctx, "[Zonda Employee]")
-
-    ctx =
-      ctx
-      |> mes(
-        Rathena.concat(
-          Rathena.concat(
-            Rathena.concat(
-              Rathena.concat(
-                Rathena.concat(Enum.at(args, 0, 0), " is available for ^ff0000"),
-                get_local(ctx, :zeny_req, 0)
-              ),
-              " Zenys^000000 or ^ff0000"
-            ),
-            get_local(ctx, :item_req, 0)
-          ),
-          " Malang Sp Can^000000."
-        )
-      )
-      |> next()
-
-    {ctx, v2} =
-      select(
-        ctx,
-        Enum.flat_map(
-          [
-            Rathena.concat(get_local(ctx, :zeny_req, 0), " Zeny"),
-            Rathena.concat(get_local(ctx, :item_req, 0), " Malang Sp Can"),
-            "Cancel"
-          ],
-          &String.split(&1, ":")
-        )
-      )
-
-    ctx =
-      try do
-        case v2 do
-          1 ->
-            ctx =
-              if zeny(ctx) < get_local(ctx, :zeny_req, 0) do
-                throw({:brk_2, ctx})
-              else
-                ctx
-              end
-
-            ctx = pay_zeny(ctx, get_local(ctx, :zeny_req, 0))
-            {ctx, nil}
-
-          2 ->
-            ctx =
-              if count_item(ctx, 12636) < get_local(ctx, :item_req, 0) do
-                throw({:brk_2, ctx})
-              else
-                ctx
-              end
-
-            ctx = delitem(ctx, 12636, get_local(ctx, :item_req, 0))
-            {ctx, nil}
-
-          3 ->
-            ctx =
-              ctx
-              |> mes("[Zonda Employee]")
-              |> mes("Can you tell me about other areas of service?")
-              |> close()
-              |> cutin("", 255)
-
-            ctx
-
-          _ ->
-            ctx
-        end
-      catch
-        :throw, {:brk_2, ctx} -> ctx
-      end
-
-    ctx =
-      ctx
-      |> mes("[Zonda Employee]")
-      |> mes("Sir! You do not have enough value that we are asking for.")
-      |> mes("Please check back again.")
-      |> close()
-      |> cutin("", 255)
-
-    {ctx, nil}
+      {ctx, nil}
+    catch
+      :throw, {:script_return, result} -> result
+    end
   end
 end

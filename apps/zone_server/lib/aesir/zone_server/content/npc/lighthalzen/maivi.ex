@@ -36,7 +36,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.Maivi do
     |> mes("do with technology now, isn't")
     |> mes("it? Ahhh, it's so peaceful~")
     |> close()
-
-    exit(:normal)
   end
 end

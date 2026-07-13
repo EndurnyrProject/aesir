@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.HotelEmployee do
     |> mes("Thank you and I hope that")
     |> mes("you enjoy your stay here.")
     |> close()
-
-    exit(:normal)
   end
 end

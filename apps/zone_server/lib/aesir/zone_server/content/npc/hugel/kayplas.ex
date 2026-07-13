@@ -20,7 +20,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Hugel.Kayplas do
     |> mes("to buy me one. It doesn't")
     |> mes("look too expensive, does it?")
     |> close()
-
-    exit(:normal)
   end
 end

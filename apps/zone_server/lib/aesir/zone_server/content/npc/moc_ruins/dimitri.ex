@@ -24,65 +24,70 @@ defmodule Aesir.ZoneServer.Content.Npc.MocRuins.Dimitri do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Dimitri]")
-          |> mes("......What I mean is that...")
-          |> mes("It seems like it should be all burnt, but it's not!")
-          |> next()
-          |> mes("[Dimitri]")
-          |> mes(
-            "You can sit down and take a rest whenever you need to and your ass won't burn. I guess the Morocc sand doesn't conduct heat as much as it should."
-          )
-          |> next()
-          |> mes("[Dimitri]")
-          |> mes("That's why everyone could recover the HP and SP in the middle of desert.")
-          |> next()
-          |> mes("[Dimitri]")
-          |> mes(
-            "Now I come to think of it, maybe the reason why Morocc has exceptionally high average temperature is because that Satan is sealed within."
-          )
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Dimitri]")
+            |> mes("......What I mean is that...")
+            |> mes("It seems like it should be all burnt, but it's not!")
+            |> next()
+            |> mes("[Dimitri]")
+            |> mes(
+              "You can sit down and take a rest whenever you need to and your ass won't burn. I guess the Morocc sand doesn't conduct heat as much as it should."
+            )
+            |> next()
+            |> mes("[Dimitri]")
+            |> mes("That's why everyone could recover the HP and SP in the middle of desert.")
+            |> next()
+            |> mes("[Dimitri]")
+            |> mes(
+              "Now I come to think of it, maybe the reason why Morocc has exceptionally high average temperature is because that Satan is sealed within."
+            )
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
-          ctx
-          |> mes("[Dimitri]")
-          |> mes("Recovery!")
-          |> mes("That's what the potions are for!")
-          |> mes(
-            "Red Potions have become steadily popular since they're so affordable, even though they only recover a little bit of HP."
-          )
-          |> next()
-          |> mes("[Dimitri]")
-          |> mes(
-            "Try this bottle of ice-cold potion when you go into the Oasis around the Pyramid..."
-          )
-          |> mes("Yeah.. you want this bad.. but the situation's not good...")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Dimitri]")
+            |> mes("Recovery!")
+            |> mes("That's what the potions are for!")
+            |> mes(
+              "Red Potions have become steadily popular since they're so affordable, even though they only recover a little bit of HP."
+            )
+            |> next()
+            |> mes("[Dimitri]")
+            |> mes(
+              "Try this bottle of ice-cold potion when you go into the Oasis around the Pyramid..."
+            )
+            |> mes("Yeah.. you want this bad.. but the situation's not good...")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx
-          |> mes("[Dimitri]")
-          |> mes("Sometimes 'Milk' comes out of 'PecoPeco's Egg.' Now..")
-          |> mes("I'm not sure how the cow's milk comes out of some bird's egg...")
-          |> next()
-          |> mes("[Dimitri]")
-          |> mes("I may not be a man of science, but how is that even possible?.")
-          |> mes(
-            "I mean, did the Milk come prepackaged with the egg, or did it get in there somehow?.."
-          )
-          |> mes("Oh, whatever.. It's just not the time for this.")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Dimitri]")
+            |> mes("Sometimes 'Milk' comes out of 'PecoPeco's Egg.' Now..")
+            |> mes("I'm not sure how the cow's milk comes out of some bird's egg...")
+            |> next()
+            |> mes("[Dimitri]")
+            |> mes("I may not be a man of science, but how is that even possible?.")
+            |> mes(
+              "I mean, did the Milk come prepackaged with the egg, or did it get in there somehow?.."
+            )
+            |> mes("Oh, whatever.. It's just not the time for this.")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

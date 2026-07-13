@@ -20,7 +20,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn02.HealthyLookingGuy do
     |> mes("hoarded item upgrade materials!")
     |> mes("I swear that I'm innocent!")
     |> close()
-
-    exit(:normal)
   end
 end

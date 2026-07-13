@@ -23,19 +23,20 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.Skyler do
 
     ctx =
       if v1 == 1 do
-        ctx
-        |> mes("[Skyler]")
-        |> mes(
-          "Oh, I see. He's just some guy in the room to the left of me. He's always working on some sort of project."
-        )
-        |> next()
-        |> mes("[Skyler]")
-        |> mes(
-          "Something to do with these magic sort of Ear Muffs. I guess he's been looking for investors to help him finish building whatever he's making."
-        )
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Skyler]")
+          |> mes(
+            "Oh, I see. He's just some guy in the room to the left of me. He's always working on some sort of project."
+          )
+          |> next()
+          |> mes("[Skyler]")
+          |> mes(
+            "Something to do with these magic sort of Ear Muffs. I guess he's been looking for investors to help him finish building whatever he's making."
+          )
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -54,7 +55,7 @@ defmodule Aesir.ZoneServer.Content.Npc.GeffenIn.Skyler do
     |> mes("[Skyler]")
     |> mes("I'm glad to hear you've come this way to help out that young fellow.")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

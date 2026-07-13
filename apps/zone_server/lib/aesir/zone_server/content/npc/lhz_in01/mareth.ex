@@ -25,7 +25,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Mareth do
     |> mes("Slather it all over me.")
     |> mes("Booyah. New life aspiration.")
     |> close()
-
-    exit(:normal)
   end
 end

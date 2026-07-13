@@ -110,30 +110,32 @@ defmodule Aesir.ZoneServer.Content.Npc.Comodo.Haith do
               |> next()
               |> select(["Where is this Niels person?"])
 
-            ctx
-            |> mes("[La Ed]")
-            |> mes("He's staying at the northern part")
-            |> mes("of this village.")
-            |> next()
-            |> mes("[Haith]")
-            |> mes("Since we gave you good information,")
-            |> mes("we expect that you pay us back!")
-            |> next()
-            |> mes("[La Ed, Haith]")
-            |> mes("Good luck!")
-            |> close()
+            ctx =
+              ctx
+              |> mes("[La Ed]")
+              |> mes("He's staying at the northern part")
+              |> mes("of this village.")
+              |> next()
+              |> mes("[Haith]")
+              |> mes("Since we gave you good information,")
+              |> mes("we expect that you pay us back!")
+              |> next()
+              |> mes("[La Ed, Haith]")
+              |> mes("Good luck!")
+              |> close()
 
-            exit(:normal)
+            throw({:script_end, ctx})
           else
             ctx
           end
 
-        ctx
-        |> mes("[La Ed]")
-        |> mes("Oh well~! If you don't have the money, then we can't give you the information~")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[La Ed]")
+          |> mes("Oh well~! If you don't have the money, then we can't give you the information~")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -144,7 +146,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Comodo.Haith do
     |> emotion(:scratch)
     |> emotion(:scratch)
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

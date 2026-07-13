@@ -27,7 +27,5 @@ defmodule Aesir.ZoneServer.Content.Npc.LhzIn01.Joshua do
     |> mes("I got my pheromone spray")
     |> mes("on and I'm ready to cruise~")
     |> close()
-
-    exit(:normal)
   end
 end

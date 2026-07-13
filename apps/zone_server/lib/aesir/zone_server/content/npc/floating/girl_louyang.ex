@@ -25,37 +25,38 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.GirlLouyang do
     ctx =
       case v1 do
         1 ->
-          ctx
-          |> mes("[Girl]")
-          |> mes("Oh, are you")
-          |> mes("interested in Luoyang?")
-          |> mes("It's a nice place to")
-          |> mes("visit for travelers.")
-          |> next()
-          |> mes("[Girl]")
-          |> mes("Luoyang has a long history")
-          |> mes(
-            "with stories of ancient magic and warriors. It's also rumored that many evil beasts roam the"
-          )
-          |> mes("Luoyang area.")
-          |> next()
-          |> mes("[Girl]")
-          |> mes("You can find cure-all medicines, mysterious occurrences, and")
-          |> mes("martial artists all in one place!")
-          |> next()
-          |> mes("[Girl]")
-          |> mes(
-            "I used to train in the martial arts every morning back when I was in Luoyang. I might not look like it, but I'm pretty strong!"
-          )
-          |> next()
-          |> mes("[Girl]")
-          |> mes("If you want to visit")
-          |> mes("Luoyang, feel free to")
-          |> mes("tell me. Just give me")
-          |> mes("some Zeny and we'll go~")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Girl]")
+            |> mes("Oh, are you")
+            |> mes("interested in Luoyang?")
+            |> mes("It's a nice place to")
+            |> mes("visit for travelers.")
+            |> next()
+            |> mes("[Girl]")
+            |> mes("Luoyang has a long history")
+            |> mes(
+              "with stories of ancient magic and warriors. It's also rumored that many evil beasts roam the"
+            )
+            |> mes("Luoyang area.")
+            |> next()
+            |> mes("[Girl]")
+            |> mes("You can find cure-all medicines, mysterious occurrences, and")
+            |> mes("martial artists all in one place!")
+            |> next()
+            |> mes("[Girl]")
+            |> mes(
+              "I used to train in the martial arts every morning back when I was in Luoyang. I might not look like it, but I'm pretty strong!"
+            )
+            |> next()
+            |> mes("[Girl]")
+            |> mes("If you want to visit")
+            |> mes("Luoyang, feel free to")
+            |> mes("tell me. Just give me")
+            |> mes("some Zeny and we'll go~")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         2 ->
           {ctx, v2} =
@@ -75,51 +76,56 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.GirlLouyang do
             if v2 == 1 do
               ctx =
                 if zeny(ctx) > 9999 do
-                  ctx
-                  |> mes("[Girl]")
-                  |> mes("Okay~")
-                  |> mes("Ready!")
-                  |> mes("Have fun!")
-                  |> close()
-                  |> pay_zeny(10000)
-                  |> warp("lou_fild01", 190, 101)
+                  ctx =
+                    ctx
+                    |> mes("[Girl]")
+                    |> mes("Okay~")
+                    |> mes("Ready!")
+                    |> mes("Have fun!")
+                    |> close()
+                    |> pay_zeny(10000)
+                    |> warp("lou_fild01", 190, 101)
 
-                  exit(:normal)
+                  throw({:script_end, ctx})
                 else
                   ctx
                 end
 
-              ctx
-              |> mes("[Girl]")
-              |> mes("...")
-              |> mes("You don't seem")
-              |> mes("to have 10,000 Zeny...")
-              |> mes("Go get some money first!")
-              |> close()
+              ctx =
+                ctx
+                |> mes("[Girl]")
+                |> mes("...")
+                |> mes("You don't seem")
+                |> mes("to have 10,000 Zeny...")
+                |> mes("Go get some money first!")
+                |> close()
 
-              exit(:normal)
+              throw({:script_end, ctx})
             else
               ctx
             end
 
-          ctx
-          |> mes("[Girl]")
-          |> mes("Oh...")
-          |> mes("It's so disappointing")
-          |> mes("to hear you say that.")
-          |> mes("Well, have a good day!")
-          |> close()
+          ctx =
+            ctx
+            |> mes("[Girl]")
+            |> mes("Oh...")
+            |> mes("It's so disappointing")
+            |> mes("to hear you say that.")
+            |> mes("Well, have a good day!")
+            |> close()
 
-          exit(:normal)
+          throw({:script_end, ctx})
 
         3 ->
-          ctx |> mes("[Girl]") |> mes("Oh...") |> mes("Have a good day!") |> close()
-          exit(:normal)
+          ctx = ctx |> mes("[Girl]") |> mes("Oh...") |> mes("Have a good day!") |> close()
+          throw({:script_end, ctx})
 
         _ ->
           ctx
       end
 
     ctx
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

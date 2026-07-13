@@ -23,7 +23,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Lighthalzen.GreedyLookingMan do
     |> mes("I don't have enough funds at the")
     |> mes("moment, but the day will come~")
     |> close()
-
-    exit(:normal)
   end
 end

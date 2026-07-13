@@ -42,23 +42,20 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.DomesticAirship do
   def on_event("OnTimer470000", ctx), do: ev_ontimer470000(ctx)
   def on_event("OnTimer480000", ctx), do: ev_ontimer480000(ctx)
   @impl true
-  def on_talk(_ctx) do
-    exit(:normal)
+  def on_talk(ctx) do
+    ctx
   end
 
   def ev_oninit(ctx) do
-    _ = initnpctimer(ctx)
-    exit(:normal)
+    initnpctimer(ctx)
   end
 
   def ev_ontimer20000(ctx) do
-    _ = mapannounce(ctx, "airplane", "We are heading to Einbroch.", 1, "0x00ff00")
-    exit(:normal)
+    mapannounce(ctx, "airplane", "We are heading to Einbroch.", 1, "0x00ff00")
   end
 
   def ev_ontimer50000(ctx) do
-    _ = mapannounce(ctx, "airplane", "We will arrive in Einbroch shortly.", 1, "0x00ff00")
-    exit(:normal)
+    mapannounce(ctx, "airplane", "We will arrive in Einbroch shortly.", 1, "0x00ff00")
   end
 
   def ev_ontimer60000(ctx) do
@@ -67,21 +64,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.DomesticAirship do
     |> donpcevent("#AirshipWarp-1::OnUnhide")
     |> donpcevent("#AirshipWarp-2::OnUnhide")
     |> mapannounce("airplane", "Welcome to Einbroch. Have a safe trip.", 1, "0x00ff00")
-
-    exit(:normal)
   end
 
   def ev_ontimer70000(ctx) do
-    _ =
-      mapannounce(
-        ctx,
-        "airplane",
-        "Currently we are in Einbroch. The Airship will take off shortly.",
-        1,
-        "0x00ff00"
-      )
-
-    exit(:normal)
+    mapannounce(
+      ctx,
+      "airplane",
+      "Currently we are in Einbroch. The Airship will take off shortly.",
+      1,
+      "0x00ff00"
+    )
   end
 
   def ev_ontimer80000(ctx) do
@@ -94,18 +86,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.DomesticAirship do
       1,
       "0x70dbdb"
     )
-
-    exit(:normal)
   end
 
   def ev_ontimer100000(ctx) do
-    _ = mapannounce(ctx, "airplane", "We are heading to Lighthalzen.", 1, "0x70dbdb")
-    exit(:normal)
+    mapannounce(ctx, "airplane", "We are heading to Lighthalzen.", 1, "0x70dbdb")
   end
 
   def ev_ontimer130000(ctx) do
-    _ = mapannounce(ctx, "airplane", "We will arrive in Lighthalzen shortly.", 1, "0x70dbdb")
-    exit(:normal)
+    mapannounce(ctx, "airplane", "We will arrive in Lighthalzen shortly.", 1, "0x70dbdb")
   end
 
   def ev_ontimer140000(ctx) do
@@ -114,21 +102,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.DomesticAirship do
     |> donpcevent("#AirshipWarp-1::OnUnhide")
     |> donpcevent("#AirshipWarp-2::OnUnhide")
     |> mapannounce("airplane", "Welcome to Lighthalzen. Have a safe trip.", 1, "0x70dbdb")
-
-    exit(:normal)
   end
 
   def ev_ontimer150000(ctx) do
-    _ =
-      mapannounce(
-        ctx,
-        "airplane",
-        "Currently we are in Lighthalzen. The Airship will leave shortly.",
-        1,
-        "0x70dbdb"
-      )
-
-    exit(:normal)
+    mapannounce(
+      ctx,
+      "airplane",
+      "Currently we are in Lighthalzen. The Airship will leave shortly.",
+      1,
+      "0x70dbdb"
+    )
   end
 
   def ev_ontimer160000(ctx) do
@@ -141,18 +124,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.DomesticAirship do
       1,
       "0x00ff00"
     )
-
-    exit(:normal)
   end
 
   def ev_ontimer180000(ctx) do
-    _ = mapannounce(ctx, "airplane", "We are heading to Einbroch.", 1, "0x00ff00")
-    exit(:normal)
+    mapannounce(ctx, "airplane", "We are heading to Einbroch.", 1, "0x00ff00")
   end
 
   def ev_ontimer210000(ctx) do
-    _ = mapannounce(ctx, "airplane", "We will arrive in Einbroch shortly.", 1, "0x00FF00")
-    exit(:normal)
+    mapannounce(ctx, "airplane", "We will arrive in Einbroch shortly.", 1, "0x00FF00")
   end
 
   def ev_ontimer220000(ctx) do
@@ -161,21 +140,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.DomesticAirship do
     |> donpcevent("#AirshipWarp-1::OnUnhide")
     |> donpcevent("#AirshipWarp-2::OnUnhide")
     |> mapannounce("airplane", "Welcome to Einbroch. Have a safe trip.", 1, "0x00ff00")
-
-    exit(:normal)
   end
 
   def ev_ontimer230000(ctx) do
-    _ =
-      mapannounce(
-        ctx,
-        "airplane",
-        "Currently we are in Einbroch. The Airship will take off shortly.",
-        1,
-        "0x00ff00"
-      )
-
-    exit(:normal)
+    mapannounce(
+      ctx,
+      "airplane",
+      "Currently we are in Einbroch. The Airship will take off shortly.",
+      1,
+      "0x00ff00"
+    )
   end
 
   def ev_ontimer240000(ctx) do
@@ -188,18 +162,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.DomesticAirship do
       1,
       "0xff8200"
     )
-
-    exit(:normal)
   end
 
   def ev_ontimer260000(ctx) do
-    _ = mapannounce(ctx, "airplane", "We are heading to Juno.", 1, "0xff8200")
-    exit(:normal)
+    mapannounce(ctx, "airplane", "We are heading to Juno.", 1, "0xff8200")
   end
 
   def ev_ontimer290000(ctx) do
-    _ = mapannounce(ctx, "airplane", "We will arrive in Juno shortly.", 1, "0xff8200")
-    exit(:normal)
+    mapannounce(ctx, "airplane", "We will arrive in Juno shortly.", 1, "0xff8200")
   end
 
   def ev_ontimer300000(ctx) do
@@ -208,21 +178,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.DomesticAirship do
     |> donpcevent("#AirshipWarp-1::OnUnhide")
     |> donpcevent("#AirshipWarp-2::OnUnhide")
     |> mapannounce("airplane", "Welcome to Juno. Have a safe trip.", 1, "0xff8200")
-
-    exit(:normal)
   end
 
   def ev_ontimer310000(ctx) do
-    _ =
-      mapannounce(
-        ctx,
-        "airplane",
-        "Currently we are in Juno. The Airship will leave shortly.",
-        1,
-        "0xff8200"
-      )
-
-    exit(:normal)
+    mapannounce(
+      ctx,
+      "airplane",
+      "Currently we are in Juno. The Airship will leave shortly.",
+      1,
+      "0xff8200"
+    )
   end
 
   def ev_ontimer320000(ctx) do
@@ -235,18 +200,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.DomesticAirship do
       1,
       "0xca4bf3"
     )
-
-    exit(:normal)
   end
 
   def ev_ontimer340000(ctx) do
-    _ = mapannounce(ctx, "airplane", "We are heading to Hugel.", 1, "0xca4bf3")
-    exit(:normal)
+    mapannounce(ctx, "airplane", "We are heading to Hugel.", 1, "0xca4bf3")
   end
 
   def ev_ontimer370000(ctx) do
-    _ = mapannounce(ctx, "airplane", "We will arrive in Hugel shortly.", 1, "0xca4bf3")
-    exit(:normal)
+    mapannounce(ctx, "airplane", "We will arrive in Hugel shortly.", 1, "0xca4bf3")
   end
 
   def ev_ontimer380000(ctx) do
@@ -255,21 +216,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.DomesticAirship do
     |> donpcevent("#AirshipWarp-1::OnUnhide")
     |> donpcevent("#AirshipWarp-2::OnUnhide")
     |> mapannounce("airplane", "Welcome to Hugel. Have a safe trip.", 1, "0xca4bf3")
-
-    exit(:normal)
   end
 
   def ev_ontimer390000(ctx) do
-    _ =
-      mapannounce(
-        ctx,
-        "airplane",
-        "Currently we are in Hugel. The Airship will leave shortly.",
-        1,
-        "0xca4bf3"
-      )
-
-    exit(:normal)
+    mapannounce(
+      ctx,
+      "airplane",
+      "Currently we are in Hugel. The Airship will leave shortly.",
+      1,
+      "0xca4bf3"
+    )
   end
 
   def ev_ontimer400000(ctx) do
@@ -282,18 +238,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.DomesticAirship do
       1,
       "0xff8200"
     )
-
-    exit(:normal)
   end
 
   def ev_ontimer420000(ctx) do
-    _ = mapannounce(ctx, "airplane", "We are heading to Juno.", 1, "0xff8200")
-    exit(:normal)
+    mapannounce(ctx, "airplane", "We are heading to Juno.", 1, "0xff8200")
   end
 
   def ev_ontimer450000(ctx) do
-    _ = mapannounce(ctx, "airplane", "We will arrive in Juno shortly.", 1, "0xff8200")
-    exit(:normal)
+    mapannounce(ctx, "airplane", "We will arrive in Juno shortly.", 1, "0xff8200")
   end
 
   def ev_ontimer460000(ctx) do
@@ -302,21 +254,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Airplane.DomesticAirship do
     |> donpcevent("#AirshipWarp-1::OnUnhide")
     |> donpcevent("#AirshipWarp-2::OnUnhide")
     |> mapannounce("airplane", "Welcome to Juno. Have a safe trip.", 1, "0xff8200")
-
-    exit(:normal)
   end
 
   def ev_ontimer470000(ctx) do
-    _ =
-      mapannounce(
-        ctx,
-        "airplane",
-        "Currently we are in Juno. The Airship will leave shortly.",
-        1,
-        "0xff8200"
-      )
-
-    exit(:normal)
+    mapannounce(
+      ctx,
+      "airplane",
+      "Currently we are in Juno. The Airship will leave shortly.",
+      1,
+      "0xff8200"
+    )
   end
 
   def ev_ontimer480000(ctx) do

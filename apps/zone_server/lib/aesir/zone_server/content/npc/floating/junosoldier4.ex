@@ -30,7 +30,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Junosoldier4 do
       "Goat's legs are so strong because it's always climbing cliffs when it's not busy slaughtering the innocent."
     )
     |> close()
-
-    exit(:normal)
   end
 end

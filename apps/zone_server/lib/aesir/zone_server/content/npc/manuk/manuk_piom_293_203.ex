@@ -13,23 +13,27 @@ defmodule Aesir.ZoneServer.Content.Npc.Manuk.ManukPiom293203 do
   @impl true
   def on_talk(ctx) do
     if is_equipped(ctx, 2782) == 1 and get_char_var(ctx, :ep13_2_rhea, 0) == 100 do
-      ctx
-      |> mes("[Manuk Piom]")
-      |> mes("Hey, Be careful!")
-      |> mes("This mineral is Bradium which is the life of our tribe.")
-      |> mes("If you don't handle the stone carefully, you'll be in trouble!")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Manuk Piom]")
+        |> mes("Hey, Be careful!")
+        |> mes("This mineral is Bradium which is the life of our tribe.")
+        |> mes("If you don't handle the stone carefully, you'll be in trouble!")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     else
-      ctx
-      |> mes("[Manuk Piom]")
-      |> mes("Bmm ish di sd")
-      |> mes("Fii sd ani s a d s k ds ")
-      |> mes("Ti h is so so pd")
-      |> close()
+      ctx =
+        ctx
+        |> mes("[Manuk Piom]")
+        |> mes("Bmm ish di sd")
+        |> mes("Fii sd ani s a d s k ds ")
+        |> mes("Ti h is so so pd")
+        |> close()
 
-      exit(:normal)
+      throw({:script_end, ctx})
     end
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

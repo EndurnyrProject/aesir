@@ -44,17 +44,18 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.Customer41106 do
             |> mes("You hear me?! A FOOL!")
           end
 
-        ctx
-        |> next()
-        |> mes("[Cage]")
-        |> mes("The single life is")
-        |> mes("what it's all about!")
-        |> mes("Women may break my")
-        |> mes("spirit, but they'll never take...")
-        |> mes("MY FREEDOM!")
-        |> close()
+        ctx =
+          ctx
+          |> next()
+          |> mes("[Cage]")
+          |> mes("The single life is")
+          |> mes("what it's all about!")
+          |> mes("Women may break my")
+          |> mes("spirit, but they'll never take...")
+          |> mes("MY FREEDOM!")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -73,7 +74,7 @@ defmodule Aesir.ZoneServer.Content.Npc.JawaiiIn.Customer41106 do
     |> mes("We are the sincere and")
     |> mes("competent singles...!")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

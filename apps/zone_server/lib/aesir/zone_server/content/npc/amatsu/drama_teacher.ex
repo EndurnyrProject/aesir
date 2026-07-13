@@ -24,22 +24,23 @@ defmodule Aesir.ZoneServer.Content.Npc.Amatsu.DramaTeacher do
 
     ctx =
       if sex(ctx) == get_char_var(ctx, :SEX_MALE, 0) do
-        ctx
-        |> mes("[Garakame sensei]")
-        |> mes("If you know a girl who is")
-        |> mes("talented in acting, please")
-        |> mes("bring her to me. I have been")
-        |> mes("searching for a girl who could")
-        |> mes("play the role as the 'White Dryad.'")
-        |> next()
-        |> mes("[Garakame sensei]")
-        |> mes("The 'White Dryad' is a nymph of")
-        |> mes("cherry tree... It has been hard to")
-        |> mes("find a girl who can perform")
-        |> mes("as the 'White Dryad...'")
-        |> close()
+        ctx =
+          ctx
+          |> mes("[Garakame sensei]")
+          |> mes("If you know a girl who is")
+          |> mes("talented in acting, please")
+          |> mes("bring her to me. I have been")
+          |> mes("searching for a girl who could")
+          |> mes("play the role as the 'White Dryad.'")
+          |> next()
+          |> mes("[Garakame sensei]")
+          |> mes("The 'White Dryad' is a nymph of")
+          |> mes("cherry tree... It has been hard to")
+          |> mes("find a girl who can perform")
+          |> mes("as the 'White Dryad...'")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -65,7 +66,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Amatsu.DramaTeacher do
     |> mes("as what you are and find me")
     |> mes("someday when you are ready.")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

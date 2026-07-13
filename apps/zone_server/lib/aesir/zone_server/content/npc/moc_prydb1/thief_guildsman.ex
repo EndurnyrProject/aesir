@@ -25,34 +25,35 @@ defmodule Aesir.ZoneServer.Content.Npc.MocPrydb1.ThiefGuildsman do
           |> next()
           |> mes("[Commander of Thief Guild]")
 
-        ctx
-        |> mes(Rathena.concat(Rathena.concat("'", char_name(ctx, 0)), ".'"))
-        |> mes(
-          "'For those who are ready, the moonlight shall open the way. Now you are fully ready, I now officially allow you to become a member of the Thief Guild.'"
-        )
-        |> jobchange(:thief)
-        |> set_char_var(:q_job_thief, 0)
-        |> give_item(13041, 1)
-        |> next()
-        |> mes("[Commander of Thief Guild]")
-        |> mes("'Congratulations on becoming a Thief.'")
-        |> mes("'From now on, keep the rules of our guild and be an honorable member.'")
-        |> mes(
-          "'If you bring us any disgrace by breaking our rules, you better watch your back.'"
-        )
-        |> mes("'Anyway, I expect you to be a great thief.'")
-        |> next()
-        |> mes("[Brad]")
-        |> mes("Heee~Yaaaa~! Congratulations! My friend.")
-        |> mes("My name is 'Brad'. I'm in charge of human resources here.")
-        |> mes("I'm not sure for now but you'll have more chances to see me later on.")
-        |> next()
-        |> mes("[Brad]")
-        |> mes("Okay, I've done what I can do to you, so go on your way. I'm quite a busy man.")
-        |> mes("See you again.")
-        |> close()
+        ctx =
+          ctx
+          |> mes(Rathena.concat(Rathena.concat("'", char_name(ctx, 0)), ".'"))
+          |> mes(
+            "'For those who are ready, the moonlight shall open the way. Now you are fully ready, I now officially allow you to become a member of the Thief Guild.'"
+          )
+          |> jobchange(:thief)
+          |> set_char_var(:q_job_thief, 0)
+          |> give_item(13041, 1)
+          |> next()
+          |> mes("[Commander of Thief Guild]")
+          |> mes("'Congratulations on becoming a Thief.'")
+          |> mes("'From now on, keep the rules of our guild and be an honorable member.'")
+          |> mes(
+            "'If you bring us any disgrace by breaking our rules, you better watch your back.'"
+          )
+          |> mes("'Anyway, I expect you to be a great thief.'")
+          |> next()
+          |> mes("[Brad]")
+          |> mes("Heee~Yaaaa~! Congratulations! My friend.")
+          |> mes("My name is 'Brad'. I'm in charge of human resources here.")
+          |> mes("I'm not sure for now but you'll have more chances to see me later on.")
+          |> next()
+          |> mes("[Brad]")
+          |> mes("Okay, I've done what I can do to you, so go on your way. I'm quite a busy man.")
+          |> mes("See you again.")
+          |> close()
 
-        exit(:normal)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -73,8 +74,8 @@ defmodule Aesir.ZoneServer.Content.Npc.MocPrydb1.ThiefGuildsman do
             )
           end
 
-        close(ctx)
-        exit(:normal)
+        ctx = close(ctx)
+        throw({:script_end, ctx})
       else
         ctx
       end
@@ -84,7 +85,7 @@ defmodule Aesir.ZoneServer.Content.Npc.MocPrydb1.ThiefGuildsman do
     |> mes("Ho? Why is a novice like you visiting here?")
     |> mes("If you are here to be a Thief, ask the nasty-tempered lady right next to me.")
     |> close()
-
-    exit(:normal)
+  catch
+    :throw, {:script_end, ctx} -> ctx
   end
 end

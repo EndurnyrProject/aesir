@@ -156,7 +156,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafra do
           ctx
         end
 
-      ctx |> set_local(:"menu$", Enum.join(get_local(ctx, :"K_Menu0$", []), ":")) |> loop_3(args)
+      ctx =
+        ctx
+        |> set_local(:"menu$", Enum.join(get_local(ctx, :"K_Menu0$", []), ":"))
+        |> loop_3(args)
+
+      {ctx, nil}
     catch
       :throw, {:script_return, result} -> result
     end
@@ -251,13 +256,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FKafra do
                           ctx =
                             if Enum.at(get_local(ctx, :"K_Menu0$", []), get_local(ctx, :j, 0), "") ==
                                  "Cancel" do
-                              _ =
+                              {ctx, _} =
                                 Aesir.ZoneServer.Content.Npc.Functions.FKafend.call(ctx, [
                                   get_local(ctx, :welcome, 0),
                                   0
                                 ])
 
-                              exit(:normal)
+                              throw({:script_end, ctx})
                             else
                               ctx =
                                 if Enum.at(

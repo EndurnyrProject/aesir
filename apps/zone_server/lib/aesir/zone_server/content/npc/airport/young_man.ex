@@ -29,7 +29,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Airport.YoungMan do
     |> mes("Now that I think about it, why")
     |> mes("did they need so much stuff?")
     |> close()
-
-    exit(:normal)
   end
 end

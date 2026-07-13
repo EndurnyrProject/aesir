@@ -13,198 +13,222 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FGetplural do
 
   @doc "Callable rAthena global function; returns `{ctx, return_value}`."
   def call(ctx, args) do
-    ctx = set_local(ctx, :"str$", Enum.at(args, 0, 0))
+    try do
+      ctx = set_local(ctx, :"str$", Enum.at(args, 0, 0))
 
-    ctx =
-      if Rathena.truthy?(Todo.call!(:countstr, [get_local(ctx, :"str$", ""), " "])) do
-        ctx = todo(ctx, :explode, [get_local(ctx, :"tmp$", ""), get_local(ctx, :"str$", ""), " "])
-        ctx = set_local(ctx, :size, length(get_local(ctx, :"tmp$", [])))
+      ctx =
+        if Rathena.truthy?(Todo.call!(:countstr, [get_local(ctx, :"str$", ""), " "])) do
+          ctx =
+            todo(ctx, :explode, [get_local(ctx, :"tmp$", ""), get_local(ctx, :"str$", ""), " "])
 
-        ctx =
-          if Rathena.truthy?(Todo.call!(:compare, [get_local(ctx, :"str$", ""), " of "])) or
-               Rathena.truthy?(Todo.call!(:compare, [get_local(ctx, :"str$", ""), " in "])) or
-               Rathena.truthy?(Todo.call!(:compare, [get_local(ctx, :"str$", ""), " on "])) do
-            ctx |> set_local(:i, 1) |> loop_1(args)
-          else
-            set_local(ctx, :index, get_local(ctx, :size, 0) - 1)
-          end
+          ctx = set_local(ctx, :size, length(get_local(ctx, :"tmp$", [])))
 
-        ctx =
-          set_local(
-            ctx,
-            :"str$",
-            Enum.at(get_local(ctx, :"tmp$", []), get_local(ctx, :index, 0), "")
+          ctx =
+            if Rathena.truthy?(Todo.call!(:compare, [get_local(ctx, :"str$", ""), " of "])) or
+                 Rathena.truthy?(Todo.call!(:compare, [get_local(ctx, :"str$", ""), " in "])) or
+                 Rathena.truthy?(Todo.call!(:compare, [get_local(ctx, :"str$", ""), " on "])) do
+              ctx |> set_local(:i, 1) |> loop_1(args)
+            else
+              set_local(ctx, :index, get_local(ctx, :size, 0) - 1)
+            end
+
+          ctx =
+            set_local(
+              ctx,
+              :"str$",
+              Enum.at(get_local(ctx, :"tmp$", []), get_local(ctx, :index, 0), "")
+            )
+
+          ctx =
+            set_local(
+              ctx,
+              :"tmp$",
+              Rathena.put_at(get_local(ctx, :"tmp$", []), get_local(ctx, :index, 0), "%s", "")
+            )
+
+          set_local(ctx, :"format$", Enum.join(get_local(ctx, :"tmp$", []), " "))
+        else
+          set_local(ctx, :"format$", "%s")
+        end
+
+      ctx = set_local(ctx, :strlen, Todo.call!(:getstrlen, [get_local(ctx, :"str$", "")]))
+
+      ctx =
+        if get_local(ctx, :strlen, 0) < 3 do
+          throw(
+            {:script_return,
+             {ctx,
+              if(Rathena.truthy?(Enum.at(args, 1, 0)),
+                do:
+                  Todo.call!(:strtoupper, [
+                    Todo.call!(:sprintf, [
+                      get_local(ctx, :"format$", ""),
+                      get_local(ctx, :"str$", "")
+                    ])
+                  ]),
+                else:
+                  Todo.call!(:sprintf, [
+                    get_local(ctx, :"format$", ""),
+                    get_local(ctx, :"str$", "")
+                  ])
+              )}}
           )
+        else
+          ctx
+        end
 
-        ctx =
-          set_local(
-            ctx,
-            :"tmp$",
-            Rathena.put_at(get_local(ctx, :"tmp$", []), get_local(ctx, :index, 0), "%s", "")
-          )
-
-        set_local(ctx, :"format$", Enum.join(get_local(ctx, :"tmp$", []), " "))
-      else
-        set_local(ctx, :"format$", "%s")
-      end
-
-    ctx = set_local(ctx, :strlen, Todo.call!(:getstrlen, [get_local(ctx, :"str$", "")]))
-
-    ctx =
-      if get_local(ctx, :strlen, 0) < 3 do
-        {ctx,
-         if(Rathena.truthy?(Enum.at(args, 1, 0)),
-           do:
-             Todo.call!(:strtoupper, [
-               Todo.call!(:sprintf, [get_local(ctx, :"format$", ""), get_local(ctx, :"str$", "")])
-             ]),
-           else:
-             Todo.call!(:sprintf, [get_local(ctx, :"format$", ""), get_local(ctx, :"str$", "")])
-         )}
-      else
-        ctx
-      end
-
-    ctx =
-      set_local(ctx, :"suffix$", [
-        Todo.call!(:charat, [get_local(ctx, :"str$", ""), get_local(ctx, :strlen, 0) - 1]),
-        Todo.call!(:substr, [
-          get_local(ctx, :"str$", ""),
-          get_local(ctx, :strlen, 0) - 2,
-          get_local(ctx, :strlen, 0) - 1
+      ctx =
+        set_local(ctx, :"suffix$", [
+          Todo.call!(:charat, [get_local(ctx, :"str$", ""), get_local(ctx, :strlen, 0) - 1]),
+          Todo.call!(:substr, [
+            get_local(ctx, :"str$", ""),
+            get_local(ctx, :strlen, 0) - 2,
+            get_local(ctx, :strlen, 0) - 1
+          ])
         ])
-      ])
 
-    ctx =
-      if not Rathena.truthy?(
-           Todo.call!(:compare, [
-             "abcdefghijklmnopqrstuvwxyz",
-             Enum.at(get_local(ctx, :"suffix$", []), 0, "")
-           ])
-         ) do
-        set_local(ctx, :"result$", get_local(ctx, :"str$", ""))
-      else
-        ctx =
-          if Rathena.truthy?(
-               Todo.call!(:compare, [
-                 "fish|glasses|sunglasses|clothes|boots|shoes|greaves|sandals|wings|ears",
-                 get_local(ctx, :"str$", "")
-               ])
-             ) do
-            set_local(ctx, :"result$", get_local(ctx, :"str$", ""))
-          else
-            ctx =
-              if Enum.at(get_local(ctx, :"suffix$", []), 0, "") == "s" or
-                   Enum.at(get_local(ctx, :"suffix$", []), 0, "") == "x" or
-                   Enum.at(get_local(ctx, :"suffix$", []), 0, "") == "z" or
-                   Enum.at(get_local(ctx, :"suffix$", []), 1, "") == "ch" or
-                   Enum.at(get_local(ctx, :"suffix$", []), 1, "") == "sh" do
-                set_local(ctx, :"result$", Rathena.concat(get_local(ctx, :"str$", ""), "es"))
-              else
-                ctx =
-                  if (Enum.at(get_local(ctx, :"suffix$", []), 0, "") == "f" or
-                        Enum.at(get_local(ctx, :"suffix$", []), 1, "") == "fe") and
-                       Enum.at(get_local(ctx, :"suffix$", []), 1, "") != "ff" do
-                    ctx =
-                      if Rathena.truthy?(
-                           Todo.call!(:compare, [
-                             "belief|cliff|chief|dwarf|grief|gulf|proof|roof",
-                             get_local(ctx, :"str$", "")
-                           ])
-                         ) do
-                        set_local(
-                          ctx,
-                          :"result$",
-                          Rathena.concat(get_local(ctx, :"str$", ""), "s")
-                        )
-                      else
-                        set_local(
-                          ctx,
-                          :"result$",
-                          Rathena.concat(
-                            Todo.call!(:substr, [
-                              get_local(ctx, :"str$", ""),
-                              0,
-                              get_local(ctx, :strlen, 0) - 2 -
-                                Rathena.bool_int(
-                                  Enum.at(get_local(ctx, :"suffix$", []), 1, "") == "fe"
-                                )
-                            ]),
-                            "ves"
-                          )
-                        )
-                      end
-
-                    ctx
-                  else
-                    ctx =
-                      if Enum.at(get_local(ctx, :"suffix$", []), 0, "") == "y" and
-                           not Rathena.truthy?(
+      ctx =
+        if not Rathena.truthy?(
+             Todo.call!(:compare, [
+               "abcdefghijklmnopqrstuvwxyz",
+               Enum.at(get_local(ctx, :"suffix$", []), 0, "")
+             ])
+           ) do
+          set_local(ctx, :"result$", get_local(ctx, :"str$", ""))
+        else
+          ctx =
+            if Rathena.truthy?(
+                 Todo.call!(:compare, [
+                   "fish|glasses|sunglasses|clothes|boots|shoes|greaves|sandals|wings|ears",
+                   get_local(ctx, :"str$", "")
+                 ])
+               ) do
+              set_local(ctx, :"result$", get_local(ctx, :"str$", ""))
+            else
+              ctx =
+                if Enum.at(get_local(ctx, :"suffix$", []), 0, "") == "s" or
+                     Enum.at(get_local(ctx, :"suffix$", []), 0, "") == "x" or
+                     Enum.at(get_local(ctx, :"suffix$", []), 0, "") == "z" or
+                     Enum.at(get_local(ctx, :"suffix$", []), 1, "") == "ch" or
+                     Enum.at(get_local(ctx, :"suffix$", []), 1, "") == "sh" do
+                  set_local(ctx, :"result$", Rathena.concat(get_local(ctx, :"str$", ""), "es"))
+                else
+                  ctx =
+                    if (Enum.at(get_local(ctx, :"suffix$", []), 0, "") == "f" or
+                          Enum.at(get_local(ctx, :"suffix$", []), 1, "") == "fe") and
+                         Enum.at(get_local(ctx, :"suffix$", []), 1, "") != "ff" do
+                      ctx =
+                        if Rathena.truthy?(
                              Todo.call!(:compare, [
-                               "aeiou",
-                               Todo.call!(:charat, [
-                                 Enum.at(get_local(ctx, :"suffix$", []), 1, ""),
-                                 0
-                               ])
+                               "belief|cliff|chief|dwarf|grief|gulf|proof|roof",
+                               get_local(ctx, :"str$", "")
                              ])
                            ) do
-                        set_local(
-                          ctx,
-                          :"result$",
-                          Rathena.concat(
-                            Todo.call!(:delchar, [
-                              get_local(ctx, :"str$", ""),
-                              get_local(ctx, :strlen, 0) - 1
-                            ]),
-                            "ies"
+                          set_local(
+                            ctx,
+                            :"result$",
+                            Rathena.concat(get_local(ctx, :"str$", ""), "s")
                           )
-                        )
-                      else
-                        ctx =
-                          if Enum.at(get_local(ctx, :"suffix$", []), 0, "") == "o" and
-                               Rathena.truthy?(
-                                 Todo.call!(:compare, [
-                                   "buffalo|domino|echo|grotto|halo|hero|mango|mosquito|potato|tomato|tornado|torpedo|veto|volcano",
-                                   get_local(ctx, :"str$", "")
+                        else
+                          set_local(
+                            ctx,
+                            :"result$",
+                            Rathena.concat(
+                              Todo.call!(:substr, [
+                                get_local(ctx, :"str$", ""),
+                                0,
+                                get_local(ctx, :strlen, 0) - 2 -
+                                  Rathena.bool_int(
+                                    Enum.at(get_local(ctx, :"suffix$", []), 1, "") == "fe"
+                                  )
+                              ]),
+                              "ves"
+                            )
+                          )
+                        end
+
+                      ctx
+                    else
+                      ctx =
+                        if Enum.at(get_local(ctx, :"suffix$", []), 0, "") == "y" and
+                             not Rathena.truthy?(
+                               Todo.call!(:compare, [
+                                 "aeiou",
+                                 Todo.call!(:charat, [
+                                   Enum.at(get_local(ctx, :"suffix$", []), 1, ""),
+                                   0
                                  ])
-                               ) do
-                            set_local(
-                              ctx,
-                              :"result$",
-                              Rathena.concat(get_local(ctx, :"str$", ""), "es")
+                               ])
+                             ) do
+                          set_local(
+                            ctx,
+                            :"result$",
+                            Rathena.concat(
+                              Todo.call!(:delchar, [
+                                get_local(ctx, :"str$", ""),
+                                get_local(ctx, :strlen, 0) - 1
+                              ]),
+                              "ies"
                             )
-                          else
-                            set_local(
-                              ctx,
-                              :"result$",
-                              Rathena.concat(get_local(ctx, :"str$", ""), "s")
-                            )
-                          end
+                          )
+                        else
+                          ctx =
+                            if Enum.at(get_local(ctx, :"suffix$", []), 0, "") == "o" and
+                                 Rathena.truthy?(
+                                   Todo.call!(:compare, [
+                                     "buffalo|domino|echo|grotto|halo|hero|mango|mosquito|potato|tomato|tornado|torpedo|veto|volcano",
+                                     get_local(ctx, :"str$", "")
+                                   ])
+                                 ) do
+                              set_local(
+                                ctx,
+                                :"result$",
+                                Rathena.concat(get_local(ctx, :"str$", ""), "es")
+                              )
+                            else
+                              set_local(
+                                ctx,
+                                :"result$",
+                                Rathena.concat(get_local(ctx, :"str$", ""), "s")
+                              )
+                            end
 
-                        ctx
-                      end
+                          ctx
+                        end
 
-                    ctx
-                  end
+                      ctx
+                    end
 
-                ctx
-              end
+                  ctx
+                end
 
-            ctx
-          end
+              ctx
+            end
 
-        ctx
-      end
+          ctx
+        end
 
-    {ctx,
-     if(Rathena.truthy?(Enum.at(args, 1, 0)),
-       do:
-         Todo.call!(:strtoupper, [
-           Todo.call!(:sprintf, [get_local(ctx, :"format$", ""), get_local(ctx, :"result$", "")])
-         ]),
-       else:
-         Todo.call!(:sprintf, [get_local(ctx, :"format$", ""), get_local(ctx, :"result$", "")])
-     )}
+      throw(
+        {:script_return,
+         {ctx,
+          if(Rathena.truthy?(Enum.at(args, 1, 0)),
+            do:
+              Todo.call!(:strtoupper, [
+                Todo.call!(:sprintf, [
+                  get_local(ctx, :"format$", ""),
+                  get_local(ctx, :"result$", "")
+                ])
+              ]),
+            else:
+              Todo.call!(:sprintf, [
+                get_local(ctx, :"format$", ""),
+                get_local(ctx, :"result$", "")
+              ])
+          )}}
+      )
+    catch
+      :throw, {:script_return, result} -> result
+    end
   end
 
   defp loop_1(ctx, args) do
