@@ -76,6 +76,8 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def route(%Aesir.Net.UnitStateChange{}), do: {:world, :unit_state_change}
   def route(%Aesir.Net.SpecialEffect{}), do: {:world, :special_effect}
   def route(%Aesir.Net.Viewpoint{}), do: {:world, :viewpoint}
+  def route(%Aesir.Net.Cutin{}), do: {:world, :cutin}
+  def route(%Aesir.Net.SoundEffect{}), do: {:world, :sound_effect}
   def route(%Aesir.Net.Emotion{}), do: {:world, :emotion}
   def route(%Aesir.Net.Announcement{}), do: {:world, :announcement}
   def route(%Aesir.Net.NpcDialog{}), do: {:world, :npc_dialog}
