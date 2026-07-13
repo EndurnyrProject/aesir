@@ -43,17 +43,33 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.AnalyzerTest do
     assert MapSet.equal?(a.assigned_names, MapSet.new(["sphmask_q", "questname$", "quests"]))
   end
 
+  test "natively-shaped and mapped buildins do not count as stubs" do
+    a =
+      analyze!("""
+      dispbottom "hi";
+      setcart;
+      openstorage;
+      deletearray quests[0];
+      .@n = getarraysize(.@a) + getcharid(0) + checkcart() + getskilllv(39);
+      .@s$ = implode(.@a$, ",");
+      close3;
+      """)
+
+    assert a.stubs == %{}
+    assert MapSet.member?(a.assigned_names, "quests")
+  end
+
   test "stubs count unsupported buildins by call site, in statements and expressions" do
     a =
       analyze!("""
       getitem 501, 1;
       showscript "hi";
       showscript "again";
-      if (getcharid(0) == 0) close;
+      if (getgmlevel() == 0) close;
       mes "item " + getitemname(501);
       """)
 
-    assert a.stubs == %{"showscript" => 2, "getcharid" => 1, "getitemname" => 1}
+    assert a.stubs == %{"showscript" => 2, "getgmlevel" => 1, "getitemname" => 1}
   end
 
   test "local functions are not stubs" do

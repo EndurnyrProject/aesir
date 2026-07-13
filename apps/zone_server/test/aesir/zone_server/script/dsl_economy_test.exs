@@ -158,6 +158,28 @@ defmodule Aesir.ZoneServer.Script.DslEconomyTest do
     end
   end
 
+  describe "setcart/1,2" do
+    test "routes {:setcart, 1} by default and folds the returned game_state" do
+      gs = build_game_state()
+      ctx = build_ctx(session: ok_session(gs))
+
+      result = Dsl.setcart(ctx)
+
+      assert result.status == :ok
+      assert_received {:script_apply, {:setcart, 1}}
+    end
+
+    test "routes {:setcart, 0} for cart removal" do
+      gs = build_game_state()
+      ctx = build_ctx(session: ok_session(gs))
+
+      result = Dsl.setcart(ctx, 0)
+
+      assert result.status == :ok
+      assert_received {:script_apply, {:setcart, 0}}
+    end
+  end
+
   describe "delitem/3" do
     test "routes {:delitem, id, qty} and folds the returned game_state" do
       gs = %{build_game_state() | inventory: %{}}

@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
@@ -48,6 +49,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:reset_skills}
           | {:set_save_point, String.t(), non_neg_integer(), non_neg_integer()}
           | {:openstorage}
+          | {:setcart, non_neg_integer()}
           | {:refine, non_neg_integer(), integer(), RefineDatabase.cost_type(), boolean()}
           | {:setquest, QuestLog.quest_id()}
           | {:erasequest, QuestLog.quest_id()}
@@ -182,6 +184,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   def apply_op({:openstorage}, state) do
     {:noreply, new_state} = StorageHandler.open(state)
     {{:ok, new_state.game_state}, new_state}
+  end
+
+  # rAthena `setcart`: type 0 removes the cart, any other type mounts it.
+  # Both delegate to `CartHandler`, which enforces the mount gates
+  # (MC_PUSHCART learned, empty cart on removal) and reports rejections to
+  # the client; a rejection leaves the state untouched but still replies
+  # `{:ok, gs}` so the script continues, matching rAthena's silent failure.
+  def apply_op({:setcart, 0}, state) do
+    {:noreply, new_state} = CartHandler.unmount(state)
+    {{:ok, new_state.game_state}, new_state}
+  end
+
+  def apply_op({:setcart, _type}, %{game_state: gs} = state) do
+    if gs.cart_type > 0 do
+      {{:ok, gs}, state}
+    else
+      {:noreply, new_state} = CartHandler.mount(state)
+      {{:ok, new_state.game_state}, new_state}
+    end
   end
 
   # ponytail: only the owner's inventory view is re-sent here (design step 5).

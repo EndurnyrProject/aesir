@@ -193,6 +193,35 @@ defmodule Aesir.ZoneServer.Script.DslAnnounceTest do
     end
   end
 
+  describe "dispbottom/2,3" do
+    test "sends a :LOCAL chat-box message to the invoking player, light green by default" do
+      ctx = attached_ctx(150, 150)
+
+      assert Dsl.dispbottom(ctx, "hi") == ctx
+
+      assert_receive {:to_self, char_id, opts}
+      assert char_id == ctx.char_id
+      assert opts == %{text: "hi", color: 0x00FF00, style: :LOCAL, source_name: ""}
+    end
+
+    test "a custom 0xRRGGBB color overrides the default" do
+      ctx = attached_ctx(150, 150)
+
+      assert Dsl.dispbottom(ctx, "hi", 0xFF0000) == ctx
+
+      assert_receive {:to_self, _char_id, opts}
+      assert opts.color == 0xFF0000
+    end
+
+    test "no-ops on a detached ctx" do
+      ctx = detached_ctx()
+
+      assert Dsl.dispbottom(ctx, "hi") == ctx
+
+      refute_received {:to_self, _, _}
+    end
+  end
+
   defp flag(name) do
     {:ok, value} = Flags.value(name)
     value

@@ -846,6 +846,16 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       refute Dsl.can_change_job?(build_ctx(learned_skills: %{}))
     end
 
+    test "getskilllv/2 reads the learned level by id or catalog name, 0 when unlearned" do
+      {:ok, %{id: nv_basic_id}} = Catalog.by_name(:nv_basic)
+      ctx = build_ctx(learned_skills: %{nv_basic_id => 5})
+
+      assert Dsl.getskilllv(ctx, nv_basic_id) == 5
+      assert Dsl.getskilllv(ctx, :nv_basic) == 5
+      assert Dsl.getskilllv(ctx, 9999) == 0
+      assert Dsl.getskilllv(ctx, :unknown_skill_name) == 0
+    end
+
     test "char_name/2 returns the character name for type 0 and map for type 3" do
       ctx = build_ctx(character_name: "Bob")
 

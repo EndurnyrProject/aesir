@@ -15,7 +15,9 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
     %PlayerState{
       character_id: 1,
       account_id: 100,
-      partner_id: Keyword.get(opts, :partner_id, 0)
+      partner_id: Keyword.get(opts, :partner_id, 0),
+      cart_type: Keyword.get(opts, :cart_type, 0),
+      party_id: Keyword.get(opts, :party_id, 0)
     }
   end
 
@@ -28,6 +30,39 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
       game_state: game_state(opts),
       source: {:npc, :test_npc}
     }
+  end
+
+  describe "checkcart/1" do
+    test "returns 1 when a cart is mounted, else 0" do
+      assert Dsl.checkcart(ctx(cart_type: 1)) == 1
+      assert Dsl.checkcart(ctx(cart_type: 3)) == 1
+      assert Dsl.checkcart(ctx()) == 0
+    end
+
+    test "raises on a detached ctx" do
+      assert_raise ArgumentError, fn -> Dsl.checkcart(%{ctx() | game_state: nil}) end
+    end
+  end
+
+  describe "getcharid/2" do
+    test "type 0 is the char id, 3 the account id" do
+      assert Dsl.getcharid(ctx(), 0) == 1
+      assert Dsl.getcharid(ctx(), 3) == 100
+    end
+
+    test "type 1 is the party id, 0 when partyless" do
+      assert Dsl.getcharid(ctx(party_id: 77), 1) == 77
+      assert Dsl.getcharid(ctx(), 1) == 0
+    end
+
+    test "guild (2) and unknown types return 0" do
+      assert Dsl.getcharid(ctx(), 2) == 0
+      assert Dsl.getcharid(ctx(), 9) == 0
+    end
+
+    test "raises on a detached ctx" do
+      assert_raise ArgumentError, fn -> Dsl.getcharid(%{ctx() | game_state: nil}, 0) end
+    end
   end
 
   describe "checkre/2 (Aesir is renewal-only)" do

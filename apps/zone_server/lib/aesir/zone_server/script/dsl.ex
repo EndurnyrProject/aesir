@@ -545,6 +545,26 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     ctx
   end
 
+  # rAthena's dispbottom default color (COLOR_LIGHT_GREEN).
+  @dispbottom_color 0x00FF00
+
+  @doc """
+  Shows `text` in the invoking player's chat box (rAthena `dispbottom`).
+  `color` is a `0xRRGGBB` value, defaulting to rAthena's light green.
+  Delivered through `Announcement.to_self/2` with the `:LOCAL` style — the
+  chat-box arm of the broadcast packet. Purely cosmetic, so a detached ctx
+  (no player to message) is a silent no-op rather than a halt.
+  """
+  @spec dispbottom(Ctx.t(), String.t(), non_neg_integer()) :: Ctx.t()
+  def dispbottom(ctx, text, color \\ @dispbottom_color)
+  def dispbottom(%Ctx{status: {:error, _}} = ctx, _text, _color), do: ctx
+  def dispbottom(%Ctx{char_id: nil} = ctx, _text, _color), do: ctx
+
+  def dispbottom(%Ctx{char_id: char_id} = ctx, text, color) do
+    Announcement.to_self(char_id, %{text: text, color: color, style: :LOCAL, source_name: ""})
+    ctx
+  end
+
   defp build_opts(text, color, scope) do
     %{text: text, color: color, style: Flags.style_for(scope), source_name: ""}
   end
@@ -1244,6 +1264,29 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   def openstorage(%Ctx{} = ctx), do: apply_op(ctx, {:openstorage})
 
   @doc """
+  Gives the player a cart (rAthena `setcart`): mounts the pushcart through the
+  session seam, or removes it when `type` is `0`. Mounting requires
+  `MC_PUSHCART` learned; a rejected mount reports to the client as a
+  `CartMountResult` and never halts the script, matching rAthena's silent
+  failure. Cart sprite tiers are not modelled — any non-zero `type` mounts the
+  first tier, and mounting while already mounted is a no-op. Removal with a
+  non-empty cart is also a no-op (Aesir never discards cart items). Halts
+  `:no_player` on a detached ctx.
+  """
+  @spec setcart(Ctx.t(), non_neg_integer()) :: Ctx.t()
+  def setcart(ctx, type \\ 1)
+  def setcart(%Ctx{status: {:error, _}} = ctx, _type), do: ctx
+  def setcart(%Ctx{} = ctx, type), do: apply_op(ctx, {:setcart, type})
+
+  @doc """
+  Whether the player has a cart mounted (rAthena `checkcart`): `1` when
+  `cart_type` is set, else `0`. Pure read over the ctx snapshot.
+  """
+  @spec checkcart(Ctx.t()) :: 0 | 1
+  def checkcart(%Ctx{game_state: nil}), do: no_player!("checkcart/1")
+  def checkcart(%Ctx{game_state: gs}), do: if(gs.cart_type > 0, do: 1, else: 0)
+
+  @doc """
   Fires `"Name::OnLabel"` as a detached, fire-and-forget event (rAthena
   `donpcevent`). Delegates to `Npc.Events.trigger/1`: an unresolved name or
   undeclared label logs a warning and no-ops. Returns `ctx` unchanged; valid
@@ -1682,6 +1725,22 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   end
 
   @doc """
+  The player's learned level of a skill (rAthena `getskilllv`), `0` when not
+  learned. `skill` is a skill id or its catalog name atom; an unknown skill
+  returns `0`, matching rAthena's unknown-skill result. Pure read over the
+  ctx snapshot.
+  """
+  @spec getskilllv(Ctx.t(), integer() | atom()) :: non_neg_integer()
+  def getskilllv(%Ctx{game_state: nil}, _skill), do: no_player!("getskilllv/2")
+
+  def getskilllv(%Ctx{game_state: gs}, skill) do
+    case resolve_skill_id(skill) do
+      {:ok, skill_id} -> Learned.learned_level(gs.stats.progression.learned_skills, skill_id)
+      {:error, _reason} -> 0
+    end
+  end
+
+  @doc """
   `strcharinfo(type)`: the character's name (type `0`) or current map (type `3`).
   rAthena's party/guild info types are not modelled and return an empty string.
   """
@@ -1916,6 +1975,19 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   @spec playerattached(Ctx.t()) :: non_neg_integer()
   def playerattached(%Ctx{account_id: nil}), do: 0
   def playerattached(%Ctx{account_id: account_id}), do: account_id
+
+  @doc """
+  An id of the attached player by `type` (rAthena `getcharid`): `0` the char
+  id, `1` the party id (`0` when partyless), `2` the guild id (no guild
+  system yet, always `0`), `3` the account id. Any other type returns `0`,
+  matching rAthena. Pure read over the ctx snapshot.
+  """
+  @spec getcharid(Ctx.t(), integer()) :: non_neg_integer()
+  def getcharid(%Ctx{game_state: nil}, _type), do: no_player!("getcharid/2")
+  def getcharid(%Ctx{char_id: char_id}, 0), do: char_id
+  def getcharid(%Ctx{game_state: gs}, 1), do: gs.party_id
+  def getcharid(%Ctx{account_id: account_id}, 3), do: account_id
+  def getcharid(%Ctx{}, _type), do: 0
 
   @doc """
   A field of the running NPC's info as a string (rAthena `strnpcinfo`):

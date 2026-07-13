@@ -29,9 +29,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Analyzer do
   alias Aesir.ZoneServer.Npc.Transpiler.CommandMap
 
   # Statements and expression calls the codegen shapes directly.
-  @native_cmds ~w(mes next close close2 end select prompt input menu setarray
-                  callsub callfunc getarg rand getnpctimer getnpcid
-                  playerattached strnpcinfo checkweight)
+  @native_cmds ~w(mes next close close2 close3 end select prompt input menu
+                  setarray deletearray callsub callfunc getarg rand getnpctimer
+                  getnpcid playerattached strnpcinfo checkweight getarraysize
+                  implode)
 
   @type analysis :: %{
           labels: [String.t()],
@@ -95,6 +96,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Analyzer do
 
   defp walk_stmt({:cmd, "setarray", [target | values]}, acc),
     do: walk_exprs(values, assign_target(acc, target))
+
+  defp walk_stmt({:cmd, "deletearray", [target | args]}, acc),
+    do: walk_exprs(args, assign_target(acc, target))
 
   defp walk_stmt({:cmd, name, args}, acc), do: walk_exprs(args, count_buildin(acc, name))
 

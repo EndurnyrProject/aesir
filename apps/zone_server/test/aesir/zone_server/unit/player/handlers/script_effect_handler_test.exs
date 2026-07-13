@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
   alias Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition
   alias Aesir.ZoneServer.Mmo.QuestManagement.Quests
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
@@ -313,6 +314,44 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
       assert {:ok, game_state} = reply
       assert game_state.storage == %{}
       assert new_state.game_state.storage == %{}
+    end
+  end
+
+  describe "{:setcart, type}" do
+    test "type 0 delegates to CartHandler.unmount/1" do
+      state = base_state()
+
+      Mimic.copy(CartHandler)
+      expect(CartHandler, :unmount, fn ^state -> {:noreply, state} end)
+
+      {reply, new_state} = ScriptEffectHandler.apply_op({:setcart, 0}, state)
+
+      assert reply == {:ok, state.game_state}
+      assert new_state == state
+    end
+
+    test "a non-zero type delegates to CartHandler.mount/1 when no cart is on" do
+      state = base_state()
+
+      Mimic.copy(CartHandler)
+      expect(CartHandler, :mount, fn ^state -> {:noreply, state} end)
+
+      {reply, _new_state} = ScriptEffectHandler.apply_op({:setcart, 1}, state)
+
+      assert reply == {:ok, state.game_state}
+    end
+
+    test "a non-zero type is a no-op success when already mounted" do
+      state = base_state()
+      state = %{state | game_state: %{state.game_state | cart_type: 2}}
+
+      Mimic.copy(CartHandler)
+      reject(&CartHandler.mount/1)
+
+      {reply, new_state} = ScriptEffectHandler.apply_op({:setcart, 1}, state)
+
+      assert reply == {:ok, state.game_state}
+      assert new_state == state
     end
   end
 

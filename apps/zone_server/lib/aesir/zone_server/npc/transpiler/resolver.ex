@@ -72,6 +72,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
     end
   end
 
+  @spec skill(String.t() | integer()) :: {:ok, integer()} | :error
+  def skill(symbol) do
+    case ItemResolver.resolve_skill(symbol) do
+      {:ok, id} -> {:ok, id}
+      {:error, _} -> :error
+    end
+  end
+
   @doc """
   Resolves an `emotion` buildin argument. An `ET_*` token maps to its
   `Mmo.Emotion` atom key (`ET_MONEY` -> `:money`), validated against

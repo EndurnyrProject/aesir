@@ -635,8 +635,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp emit_stmt({:cmd, "close", _}, _env), do: {["close(ctx)", "exit(:normal)"], :stop}
   defp emit_stmt({:cmd, "end", _}, _env), do: {["exit(:normal)"], :stop}
 
-  defp emit_stmt({:cmd, close2, _}, _env) when close2 in ["close2", "close3"],
-    do: {["ctx = close(ctx)"], :cont}
+  defp emit_stmt({:cmd, "close2", _}, _env), do: {["ctx = close(ctx)"], :cont}
+
+  # `close3` also clears any displayed cutin alongside the dialog window.
+  defp emit_stmt({:cmd, "close3", _}, _env),
+    do: {["ctx = close(ctx)", ~s[ctx = cutin(ctx, "", 255)]], :cont}
 
   defp emit_stmt({:cmd, select, args}, env) when select in ["select", "prompt"] do
     {pre, args} = hoist_all(args, env)
@@ -684,6 +687,30 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
       _ ->
         {pre ++ [set_var(target, rendered, env)], :cont}
+    end
+  end
+
+  # `deletearray <array>[<start>]{,<count>}`: removes `count` elements at
+  # `start`, shifting later values down; without a count it truncates from
+  # `start` to the end, so `[0]` with no count (or a bare name) wipes the array.
+  defp emit_stmt({:cmd, "deletearray", [target | count]}, env) do
+    {pre, count} = hoist_all(count, env)
+
+    case {target, count} do
+      {{:index, base, {:int, 0}}, []} ->
+        {pre ++ [set_var(base, "[]", env)], :cont}
+
+      {{:index, base, start}, count} ->
+        flag(:rathena)
+        count_arg = if count == [], do: ":rest", else: render(hd(count), env)
+
+        value =
+          "Rathena.delete_at(#{read_var(base, "[]", env)}, #{render(start, env)}, #{count_arg})"
+
+        {pre ++ [set_var(base, value, env)], :cont}
+
+      {base, _count} ->
+        {pre ++ [set_var(base, "[]", env)], :cont}
     end
   end
 
@@ -788,6 +815,22 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
   end
 
+  # An effect with one optional argument (`setcart {<type>}`): zero args →
+  # the DSL default, one arg → `name(ctx, arg)`; any longer form stays a stub.
+  defp emit_mapped(_name, %{shape: :opt1, dsl: dsl}, [], _env),
+    do: {["ctx = #{dsl}(ctx)"], :cont}
+
+  defp emit_mapped(_name, %{shape: :opt1, dsl: dsl}, [arg], env) do
+    {pre, [arg]} = hoist_all([arg], env)
+    {pre ++ ["ctx = #{dsl}(ctx, #{render(arg, env)})"], :cont}
+  end
+
+  defp emit_mapped(name, %{shape: :opt1}, args, env) do
+    {pre, args} = hoist_all(args, env)
+    rendered = Enum.map_join(args, ", ", &render(&1, env))
+    {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
+  end
+
   # `monster "<map>",<x>,<y>,"<display name>",<mob>,<amount>{,"<event>"{,<size>{,<ai>}}}`
   # → summon_mob. The display name is cosmetic (the engine renders the db
   # name) and the size/ai tail has no DSL equivalent; both are dropped.
@@ -885,6 +928,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     end
   end
 
+  defp typed_arg(arg, :skill, env) do
+    case arg do
+      {:str, s} -> resolve_or_const(&Resolver.skill/1, s)
+      {:name, s} -> resolve_or_const(&Resolver.skill/1, s)
+      other -> render(other, env)
+    end
+  end
+
   defp typed_arg({:name, s}, :status, _env) do
     case Resolver.status(s) do
       {:ok, atom} -> inspect(atom)
@@ -942,7 +993,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp emit_switch(expr, clauses, env) do
     {pre, expr} = hoist(expr, env)
     id = next_id()
-    effective = effective_clauses(clauses, env)
+    effective = clauses |> effective_clauses(env) |> default_last()
     nested_break? = Enum.any?(effective, fn {_, stmts} -> nested_break?(stmts) end)
 
     clause_env =
@@ -980,6 +1031,16 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   defp switch_body(case_lines, false, :stop, _id), do: case_lines
   defp switch_body(case_lines, false, :cont, _id), do: ["ctx ="] ++ case_lines
+
+  # rAthena matches switch values against their cases before the default no
+  # matter where `default:` sits in the source; Elixir's `case` matches top
+  # down, so a leading `default:` must sink to the end or its `_ ->` shadows
+  # every later clause. Runs after fall-through materialization, which has
+  # already merged each clause's continuation, so reordering is safe.
+  defp default_last(clauses) do
+    {defaults, rest} = Enum.split_with(clauses, fn {values, _} -> :default in values end)
+    rest ++ defaults
+  end
 
   # C fall-through: a clause body that does not end the flow continues into
   # the next clause's body; materialize that by appending it.
@@ -1545,6 +1606,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   defp render({:call, "getarraysize", [array]}, env),
     do: "length(#{read_var(array, "[]", env)})"
+
+  # rAthena implode(<array>{,<glue>}): joins a string array, with no
+  # separator when the glue is omitted.
+  defp render({:call, "implode", [array]}, env),
+    do: "Enum.join(#{read_var(array, "[]", env)})"
+
+  defp render({:call, "implode", [array, glue]}, env),
+    do: "Enum.join(#{read_var(array, "[]", env)}, #{render_str(glue, env)})"
 
   # rAthena getnpctimer(type{,"name"}): only TYPE 0 (elapsed ms) is supported;
   # types 1 (started?) and 2 (tick amount) have no DSL equivalent yet.

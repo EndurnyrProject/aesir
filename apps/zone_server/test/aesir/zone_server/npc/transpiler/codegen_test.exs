@@ -130,16 +130,33 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ "_ ->"
   end
 
+  test "a leading default: clause sinks below the value clauses" do
+    src =
+      gen!("""
+      switch (.@w) {
+      default:
+        mes "any";
+        break;
+      case 1:
+        mes "one";
+        break;
+      }
+      close;
+      """)
+
+    assert src =~ ~r/1 ->.*_ ->/s
+  end
+
   test "unsupported buildins become todo stubs, expressions become Todo.call!" do
     src =
       gen!("""
       showscript "hi";
-      if (getcharid(0) == 0) close;
+      if (getgmlevel() == 0) close;
       close;
       """)
 
     assert src =~ ~S|ctx = todo(ctx, :showscript, ["hi"])|
-    assert src =~ "Todo.call!(:getcharid, [0]) == 0"
+    assert src =~ "Todo.call!(:getgmlevel, []) == 0"
     assert src =~ "alias Aesir.ZoneServer.Script.Todo"
   end
 
@@ -258,6 +275,77 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ "|> set_temp_var(:step, 2)"
     assert src =~ "|> set_local(:list, [1, 2, 3])"
     assert src =~ "Enum.at(get_local(ctx, :list, []), 1, 0)"
+  end
+
+  test "close3 flushes the CLOSE frame and clears any displayed cutin" do
+    src =
+      gen!("""
+      mes "bye";
+      close3;
+      end;
+      """)
+
+    assert src =~ ~S{|> close() |> cutin("", 255)}
+  end
+
+  test "deletearray forms: wipe, tail truncate, and shifting delete" do
+    src =
+      gen!("""
+      deletearray .@a[0];
+      deletearray .@b[1];
+      deletearray .@c[1], 2;
+      deletearray bare;
+      close;
+      """)
+
+    assert src =~ ~r/set_local\((ctx, )?:a, \[\]\)/
+    assert src =~ ~S{Rathena.delete_at(get_local(ctx, :b, []), 1, :rest)}
+    assert src =~ ~S{Rathena.delete_at(get_local(ctx, :c, []), 1, 2)}
+    assert src =~ ~r/set_char_var\((ctx, )?:bare, \[\]\)/
+  end
+
+  test "implode joins a string array with an optional glue" do
+    src =
+      gen!("""
+      mes implode(.@n$, ", ");
+      mes implode(.@n$);
+      close;
+      """)
+
+    assert src =~ ~S{Enum.join(get_local(ctx, :"n$", []), ", ")}
+    assert src =~ ~S{Enum.join(get_local(ctx, :"n$", []))}
+  end
+
+  test "cart, storage and chat-box buildins map to their DSL ops" do
+    src =
+      gen!("""
+      if (checkcart() == 0) setcart;
+      setcart 0;
+      openstorage;
+      dispbottom "Hello";
+      dispbottom "Red", 16711680;
+      close;
+      """)
+
+    assert src =~ "checkcart(ctx) == 0"
+    assert src =~ ~r/setcart\((ctx)?\)/
+    assert src =~ ~r/setcart\((ctx, )?0\)/
+    assert src =~ ~r/openstorage\((ctx)?\)/
+    assert src =~ ~r/dispbottom\((ctx, )?"Hello"\)/
+    assert src =~ ~r/dispbottom\((ctx, )?"Red", 16_711_680\)/
+    refute src =~ "todo(ctx"
+  end
+
+  test "getcharid and getskilllv map to reads, resolving the skill constant" do
+    src =
+      gen!("""
+      mes "" + getcharid(0) + getskilllv(MC_PUSHCART) + getskilllv(39);
+      close;
+      """)
+
+    assert src =~ "getcharid(ctx, 0)"
+    assert src =~ "getskilllv(ctx, 39)"
+    refute src =~ "Todo.const!"
   end
 
   test "server and account scopes route to their store DSL ops" do
@@ -530,7 +618,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
         functions: functions
       )
 
-    assert piped =~ ~S{ctx |> mes("hi") |> Aesir.ZoneServer.Content.Npc.Functions.FCheck.call([1])}
+    assert piped =~
+             ~S{ctx |> mes("hi") |> Aesir.ZoneServer.Content.Npc.Functions.FCheck.call([1])}
+
     assert bare =~ "_ = Aesir.ZoneServer.Content.Npc.Functions.FCheck.call(ctx, [1])"
     refute piped =~ "{ctx, _}"
     refute bare =~ "{ctx, _}"

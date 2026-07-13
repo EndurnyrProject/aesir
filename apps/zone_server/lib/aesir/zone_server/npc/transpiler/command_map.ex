@@ -8,10 +8,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
   `todo(ctx, name, args)` in statement position, `Todo.call!(name, args)` in
   expression position.
 
-  Dialog primitives (`mes`, `next`, `close`, `close2`, `end`, `select`,
-  `prompt`, `input`, `menu`) and the subroutine machinery (`callfunc`,
-  `callsub`, `getarg`, `rand`, `getnpctimer`) are shaped directly by
-  `Codegen`, not listed here.
+  Dialog primitives (`mes`, `next`, `close`, `close2`, `close3`, `end`,
+  `select`, `prompt`, `input`, `menu`) and the subroutine machinery
+  (`callfunc`, `callsub`, `getarg`, `rand`, `getnpctimer`) are shaped directly
+  by `Codegen`, not listed here.
 
   Buildin lookups (`command/1`, `call_read/1`, `supported?/1`) are
   case-insensitive, matching rAthena's script engine — the corpus spells
@@ -21,7 +21,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
 
   - `%{dsl: name, args: types}` — positional DSL call `name(ctx, a0, …)`;
     each type (`:int`, `:string`, `:item`, `:status`, `:emote`, `:effect`,
-    `:equip_slot`) tells the codegen how to render/resolve the argument. A call
+    `:equip_slot`, `:skill`) tells the codegen how to render/resolve the argument. A call
     with more arguments than declared types is truncated to the declared arity
     (trailing/optional buildin args, e.g. `emotion`'s target, are dropped).
   - `%{shape: :nullary, dsl: name}` — a no-argument effect (`nude`) → `name(ctx)`;
@@ -34,12 +34,16 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
   - `%{shape: :timer, dsl: name}` — `initnpctimer`/`stopnpctimer`: zero args
     (self) → `name(ctx)`, one name arg → `name(ctx, arg)`; attach-flag
     variants stay a stub.
+  - `%{shape: :opt1, dsl: name}` — an effect with one optional argument
+    (`setcart {<type>}`): zero args → `name(ctx)` (the DSL default), one arg
+    → `name(ctx, arg)`; any longer form stays a stub.
   - `%{shape: :monster}` — `monster "map",x,y,"name",id,amount{,"event"...}`
     → `summon_mob(ctx, mob_id: _, map: _, at: _, ...)`; the display name and
     the size/ai tail are dropped.
   - `%{shape: :announce, dsl: name, fixed: n}` — the broadcast buildins
-    (`announce`/`mapannounce`/`areaannounce`/`broadcast`): keep the `n` fixed
-    prefix args plus an optional trailing color; the rAthena font tail
+    (`announce`/`mapannounce`/`areaannounce`/`broadcast`, plus `dispbottom`,
+    the self-scoped chat-box message): keep the `n` fixed prefix args plus an
+    optional trailing color; the rAthena font tail
     (fontType/fontSize/fontAlign/fontY) has no DSL equivalent and is dropped.
 
   ## Reads
@@ -93,6 +97,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "broadcast" => %{shape: :announce, dsl: "broadcast", fixed: 2},
     "mapannounce" => %{shape: :announce, dsl: "mapannounce", fixed: 3},
     "areaannounce" => %{shape: :announce, dsl: "areaannounce", fixed: 7},
+    "dispbottom" => %{shape: :announce, dsl: "dispbottom", fixed: 1},
+    "setcart" => %{shape: :opt1, dsl: "setcart"},
+    "openstorage" => %{shape: :nullary, dsl: "openstorage"},
     "setquest" => %{dsl: "setquest", args: [:int]},
     "erasequest" => %{dsl: "erasequest", args: [:int]},
     "completequest" => %{dsl: "completequest", args: [:int]},
@@ -139,7 +146,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "getpartnerid" => %{dsl: "getpartnerid", args: []},
     "gettimetick" => %{dsl: "gettimetick", args: [:int]},
     "checkre" => %{dsl: "checkre", args: [:int]},
-    "vip_status" => %{dsl: "vip_status", args: [:int]}
+    "vip_status" => %{dsl: "vip_status", args: [:int]},
+    "checkcart" => %{dsl: "checkcart", args: []},
+    "getskilllv" => %{dsl: "getskilllv", args: [:skill]},
+    "getcharid" => %{dsl: "getcharid", args: [:int]}
   }
 
   @spec command(String.t()) :: {:ok, rule()} | :error

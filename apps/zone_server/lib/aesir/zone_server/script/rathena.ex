@@ -39,6 +39,17 @@ defmodule Aesir.ZoneServer.Script.Rathena do
     do: list ++ List.duplicate(pad, index - length(list)) ++ [value]
 
   @doc """
+  Deletes `count` elements of a script array starting at `index`, shifting
+  later values down (rAthena `deletearray`); `:rest` deletes everything from
+  `index` to the end.
+  """
+  @spec delete_at(list(), non_neg_integer(), non_neg_integer() | :rest) :: list()
+  def delete_at(list, index, :rest), do: Enum.take(list, index)
+
+  def delete_at(list, index, count),
+    do: Enum.take(list, index) ++ Enum.drop(list, index + count)
+
+  @doc """
   Clamps an integer `input` result to `[min, max]`, returning `{status, value}`
   where status is rAthena's `input` return: `0` in range, `1` below min (value
   clamped to min), `2` above max (value clamped to max).
