@@ -153,6 +153,9 @@ message Envelope {
     QuestHuntProgress quest_hunt_progress = 133;
     // 134: minimap viewpoint marker (script viewpoint buildin)
     Viewpoint viewpoint = 134;
+    // 135-136: script cutscene image + sound effect (cutin/soundeffect buildins)
+    Cutin cutin = 135;
+    SoundEffect sound_effect = 136;
   }
 }
 
@@ -469,6 +472,20 @@ message Viewpoint {
   uint32 y = 4;
   uint32 id = 5;       // marker slot / point number
   uint32 color = 6;    // 0xRRGGBB
+}
+
+// Server -> client, a cutscene illustration overlay (replaces RO ZC_SHOW_IMAGE).
+// Sent only to the invoking player (script `cutin`).
+message Cutin {
+  string image = 1;   // illustration bitmap name; empty with type 255 clears all cutins
+  uint32 type = 2;    // position: 0 bottom-left / 1 bottom-mid / 2 bottom-right / 3-4 center / 255 clear
+}
+
+// Server -> client, a one-shot sound effect (replaces RO ZC_SOUND).
+// Sent only to the invoking player (script `soundeffect`).
+message SoundEffect {
+  string name = 1;    // wav filename played from the client's data/wav directory
+  uint32 type = 2;    // playback type (0 = data/wav)
 }
 
 // Client -> server, request an entity's name (replaces RO CZ_REQNAME2 0x0368).

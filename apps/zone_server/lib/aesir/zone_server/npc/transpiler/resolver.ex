@@ -4,8 +4,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
 
   Statuses, classes, elements, items and skills delegate to the item
   transpiler's curated `RathenaScript.Resolver`. On top of that this module
-  resolves bare constants (`true`/`false`, `Job_*`, `SC_*`, `Ele_*`) for
-  expression codegen, and NPC sprite constants (`4_F_KAFRA1`) via the
+  resolves bare constants (`true`/`false`, `VIP_STATUS_*`, `Job_*`, `SC_*`,
+  `Ele_*`) for expression codegen, and NPC sprite constants (`4_F_KAFRA1`) via the
   `e_job_types` enum parsed straight out of rAthena's `src/map/npc.hpp` — the
   same table rAthena itself uses (script sprite names are the enum entries
   minus their `JT_` prefix).
@@ -26,6 +26,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
   @spec constant(String.t()) :: {:ok, String.t()} | :error
   def constant("true"), do: {:ok, "1"}
   def constant("false"), do: {:ok, "0"}
+
+  def constant("VIP_STATUS_ACTIVE"), do: {:ok, "1"}
+  def constant("VIP_STATUS_EXPIRE"), do: {:ok, "2"}
+  def constant("VIP_STATUS_REMAINING"), do: {:ok, "3"}
 
   def constant(symbol) do
     with :error <- flag_constant(symbol) do

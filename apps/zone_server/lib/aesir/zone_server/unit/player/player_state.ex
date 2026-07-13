@@ -239,7 +239,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # Party membership (0 = none), sourced from the Character at spawn and
     # kept current by Party.Manager pushes (`characters.party_id` is the
     # source of truth; this mirrors it for the session's lifetime).
-    party_id: 0
+    party_id: 0,
+
+    # Marriage partner char id (0 = unmarried), sourced from the Character at
+    # spawn. Read-only for now (no marriage system); backs the `getpartnerid`
+    # script read.
+    partner_id: 0
   ]
 
   @doc """
@@ -253,6 +258,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       # Will be set later if needed
       process_pid: nil,
       party_id: character.party_id,
+      partner_id: character.partner_id,
       sex: character.sex,
       hair: character.hair,
       hair_color: character.hair_color,

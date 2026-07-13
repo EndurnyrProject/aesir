@@ -1544,7 +1544,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
           |> Enum.zip(types ++ List.duplicate(:int, max(length(args) - length(types), 0)))
           |> Enum.map(fn {arg, type} -> typed_arg(arg, type, env) end)
 
-        "#{dsl}(ctx, #{Enum.join(rendered, ", ")})"
+        "#{dsl}(#{Enum.join(["ctx" | rendered], ", ")})"
 
       :error ->
         flag(:todo_mod)

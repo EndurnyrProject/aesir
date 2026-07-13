@@ -773,4 +773,46 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ "num_suffix(ctx, get_local(ctx, :n, 0))"
     refute src =~ "Todo.call!(:callfunc"
   end
+
+  test "cutin and soundeffect map to their client-packet effect ops" do
+    src =
+      gen!("""
+      cutin "kafra_01",2;
+      cutin "",255;
+      soundeffect "bragis_poem.wav",0;
+      close;
+      """)
+
+    assert src =~ ~S{cutin("kafra_01", 2)}
+    assert src =~ ~S{cutin("", 255)}
+    assert src =~ ~S{soundeffect("bragis_poem.wav", 0)}
+    refute src =~ "todo(ctx, :cutin"
+    refute src =~ "todo(ctx, :soundeffect"
+  end
+
+  test "getpartnerid maps to a nullary read without a trailing comma" do
+    src =
+      gen!("""
+      if (getpartnerid() == 0) close;
+      close;
+      """)
+
+    assert src =~ "getpartnerid(ctx) == 0"
+    refute src =~ "getpartnerid(ctx, )"
+    refute src =~ "Todo.call!(:getpartnerid"
+  end
+
+  test "checkre and vip_status map to their reads, resolving VIP_STATUS_* constants" do
+    src =
+      gen!("""
+      if (checkre(0) && !vip_status(VIP_STATUS_ACTIVE)) close;
+      close;
+      """)
+
+    assert src =~ "checkre(ctx, 0)"
+    assert src =~ "vip_status(ctx, 1)"
+    refute src =~ "Todo.call!(:checkre"
+    refute src =~ "Todo.call!(:vip_status"
+    refute src =~ "Todo.const!(:VIP_STATUS_ACTIVE)"
+  end
 end

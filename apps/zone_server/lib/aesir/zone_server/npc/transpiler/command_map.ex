@@ -69,6 +69,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "emotion" => %{dsl: "emotion", args: [:emote]},
     "specialeffect" => %{dsl: "specialeffect", args: [:effect]},
     "specialeffect2" => %{dsl: "specialeffect2", args: [:effect]},
+    "cutin" => %{dsl: "cutin", args: [:string, :int]},
+    "soundeffect" => %{dsl: "soundeffect", args: [:string, :int]},
     "consumeitem" => %{dsl: "consumeitem", args: [:item]},
     "nude" => %{shape: :nullary, dsl: "nude"},
     "viewpoint" => %{dsl: "viewpoint", args: [:int, :int, :int, :int, :int]},
@@ -132,7 +134,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "jobname" => %{dsl: "job_name", args: [:int]},
     "isbegin_quest" => %{dsl: "isbegin_quest", args: [:int]},
     "checkquest" => %{shape: :quest_check, dsl: "checkquest"},
-    "questprogress" => %{shape: :quest_check, dsl: "questprogress"}
+    "questprogress" => %{shape: :quest_check, dsl: "questprogress"},
+    "getpartnerid" => %{dsl: "getpartnerid", args: []},
+    "checkre" => %{dsl: "checkre", args: [:int]},
+    "vip_status" => %{dsl: "vip_status", args: [:int]}
   }
 
   @spec command(String.t()) :: {:ok, rule()} | :error

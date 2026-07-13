@@ -19,8 +19,10 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.ChatMessage
+  alias Aesir.Net.Cutin
   alias Aesir.Net.NpcDialog
   alias Aesir.Net.NpcInteract
+  alias Aesir.Net.SoundEffect
   alias Aesir.Net.Viewpoint
   alias Aesir.ZoneServer.Announcement
   alias Aesir.ZoneServer.Announcement.Flags
@@ -366,6 +368,45 @@ defmodule Aesir.ZoneServer.Script.Dsl do
       color: color
     })
 
+    ctx
+  end
+
+  @doc """
+  Shows a cutscene illustration overlay on the invoking player's screen
+  (rAthena `cutin`, packet `ZC_SHOW_IMAGE`). `image` is the illustration
+  bitmap name (empty with `type` `255` clears every displayed cutin); `type`
+  is the position (`0` bottom-left / `1` bottom-mid / `2` bottom-right /
+  `3`-`4` centered / `255` clear).
+
+  Sent only to the invoking player, so a detached ctx (no player to send to)
+  is a silent no-op rather than a halt — a missing illustration must never
+  abort the surrounding script.
+  """
+  @spec cutin(Ctx.t(), String.t(), non_neg_integer()) :: Ctx.t()
+  def cutin(%Ctx{status: {:error, _}} = ctx, _image, _type), do: ctx
+  def cutin(%Ctx{char_id: nil} = ctx, _image, _type), do: ctx
+
+  def cutin(%Ctx{char_id: char_id} = ctx, image, type) do
+    Broadcast.to_player(char_id, %Cutin{image: image, type: type})
+    ctx
+  end
+
+  @doc """
+  Plays a one-shot sound effect for the invoking player (rAthena
+  `soundeffect`, packet `ZC_SOUND`). `name` is the `.wav` filename played from
+  the client's audio directory; `type` selects the playback source (`0` =
+  `data/wav`).
+
+  Sent only to the invoking player, so a detached ctx (no player to send to)
+  is a silent no-op rather than a halt — a missing sound must never abort the
+  surrounding script.
+  """
+  @spec soundeffect(Ctx.t(), String.t(), non_neg_integer()) :: Ctx.t()
+  def soundeffect(%Ctx{status: {:error, _}} = ctx, _name, _type), do: ctx
+  def soundeffect(%Ctx{char_id: nil} = ctx, _name, _type), do: ctx
+
+  def soundeffect(%Ctx{char_id: char_id} = ctx, name, type) do
+    Broadcast.to_player(char_id, %SoundEffect{name: name, type: type})
     ctx
   end
 
@@ -1691,6 +1732,36 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defp ordinal_suffix(n) when rem(n, 10) == 2 and n != 12, do: "nd"
   defp ordinal_suffix(n) when rem(n, 10) == 3 and n != 13, do: "rd"
   defp ordinal_suffix(_n), do: "th"
+
+  @doc """
+  The char id of the player's marriage partner (rAthena `getpartnerid`), or `0`
+  when unmarried. Aesir has no marriage system yet, so `partner_id` is sourced
+  once from the Character at spawn and is currently always `0`. Pure read over
+  the ctx snapshot.
+  """
+  @spec getpartnerid(Ctx.t()) :: non_neg_integer()
+  def getpartnerid(%Ctx{game_state: nil}), do: no_player!("getpartnerid/1")
+  def getpartnerid(%Ctx{game_state: gs}), do: gs.partner_id
+
+  @doc """
+  A renewal build-flag check (rAthena `checkre`): `1` when the feature is
+  compiled in, else `0`. Aesir is renewal-only, so every renewal feature
+  (`0` RENEWAL / `1` cast / `2` drop / `3` exp / `4` level-damage / `5` ASPD)
+  is on and returns `1`; any unknown type returns `0`, matching rAthena. Pure
+  read; the ctx is ignored.
+  """
+  @spec checkre(Ctx.t(), integer()) :: 0 | 1
+  def checkre(%Ctx{}, type) when type in 0..5, do: 1
+  def checkre(%Ctx{}, _type), do: 0
+
+  @doc """
+  A VIP status query (rAthena `vip_status`): active flag / expiry timestamp /
+  remaining seconds by `type`. Aesir has no VIP tier, so this mirrors
+  rAthena's non-VIP build and always returns `0` for every type. Pure read;
+  the ctx is ignored.
+  """
+  @spec vip_status(Ctx.t(), integer()) :: 0
+  def vip_status(%Ctx{}, _type), do: 0
 
   @doc """
   The unit id (gid) of the NPC running the script (rAthena `getnpcid`, type-0
