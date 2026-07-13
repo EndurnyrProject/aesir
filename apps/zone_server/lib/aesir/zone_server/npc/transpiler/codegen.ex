@@ -1578,8 +1578,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
         "#{dsl}(#{Enum.join(["ctx" | rendered], ", ")})"
 
       :error ->
-        flag(:todo_mod)
-        "Todo.call!(#{atom_lit(name)}, [#{Enum.map_join(args, ", ", &render(&1, env))}])"
+        render_global_read(name, args, env)
     end
   end
 
@@ -1588,6 +1587,20 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp render(other, _env) do
     flag(:todo_mod)
     "Todo.call!(:expr, [#{inspect(inspect(other))}])"
+  end
+
+  # A global rAthena function (`F_GetNumSuffix`, `F_CanChangeJob`) invoked with
+  # the direct-call syntax `Name(args)` rather than `callfunc "Name", args`.
+  # `:read` globals render inline like their callfunc form; anything else stubs.
+  defp render_global_read(name, args, env) do
+    case CommandMap.function(name) do
+      {:ok, %{kind: :read, dsl: dsl}} ->
+        read_fn_call(dsl, args, Enum.map_join(args, ", ", &render(&1, env)))
+
+      _ ->
+        flag(:todo_mod)
+        "Todo.call!(#{atom_lit(name)}, [#{Enum.map_join(args, ", ", &render(&1, env))}])"
+    end
   end
 
   # `checkquest`/`questprogress`: 1-arg form defaults the DSL's own

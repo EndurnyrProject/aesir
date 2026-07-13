@@ -776,6 +776,17 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "Todo.call!(:callfunc"
   end
 
+  test "a :read global called directly (F_GetNumSuffix(n)) maps like its callfunc form" do
+    src =
+      gen!("""
+      mes F_GetNumSuffix(.@n);
+      close;
+      """)
+
+    assert src =~ "num_suffix(ctx, get_local(ctx, :n, 0))"
+    refute src =~ "Todo.call!(:F_GetNumSuffix"
+  end
+
   test "cutin and soundeffect map to their client-packet effect ops" do
     src =
       gen!("""
