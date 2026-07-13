@@ -25,11 +25,16 @@ defmodule Aesir.Commons.Network.QuicListener do
     * `:alpn` - ALPN protocol id binary, default `"aesir/1"`
     * `:cert_dir` - directory holding `cert.der`/`key.der`, default the commons `priv/quic_cert`
     * `:max_datagram_frame_size` - default `65_535`
+    * `:idle_timeout` - max idle timeout in ms before the connection is closed, default `30_000`
+    * `:keep_alive_interval` - PING interval keeping quiet connections alive: `:auto` (half the
+      idle timeout, min 5s), an explicit ms value (min `5_000`), or `:disabled`. Default `:auto`
   """
   alias Aesir.Commons.Network.QuicConnection
 
   @default_alpn "aesir/1"
   @default_max_datagram_frame_size 65_535
+  @default_idle_timeout 30_000
+  @default_keep_alive_interval :auto
 
   @spec child_spec(keyword()) :: :supervisor.child_spec()
   def child_spec(opts) do
@@ -45,6 +50,8 @@ defmodule Aesir.Commons.Network.QuicListener do
       alpn: [Keyword.get(opts, :alpn, @default_alpn)],
       max_datagram_frame_size:
         Keyword.get(opts, :max_datagram_frame_size, @default_max_datagram_frame_size),
+      idle_timeout: Keyword.get(opts, :idle_timeout, @default_idle_timeout),
+      keep_alive_interval: Keyword.get(opts, :keep_alive_interval, @default_keep_alive_interval),
       connection_handler: connection_handler(conn_sup, impl_module)
     }
 
