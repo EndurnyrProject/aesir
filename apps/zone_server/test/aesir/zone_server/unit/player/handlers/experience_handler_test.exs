@@ -6,6 +6,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandlerTest do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Party.Manager
+  alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -147,9 +149,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandlerTest do
         {:ok, %{}}
       end)
 
-      ExperienceHandler.handle_gain_exp(100, 0, stub_level_up(200, 201))
+      {:noreply, new_state} =
+        ExperienceHandler.handle_gain_exp(100, 0, stub_level_up(200, 201))
 
-      assert_received {:persisted, %{trait_point: 3}}
+      stats = new_state.game_state.stats
+      assert_received {:persisted, attrs}
+
+      assert attrs == %{
+               base_level: stats.progression.base_level,
+               job_level: stats.progression.job_level,
+               base_exp: stats.progression.base_exp,
+               job_exp: stats.progression.job_exp,
+               hp: stats.current_state.hp,
+               max_hp: stats.derived_stats.max_hp,
+               sp: stats.current_state.sp,
+               max_sp: stats.derived_stats.max_sp,
+               ap: stats.current_state.ap,
+               max_ap: stats.derived_stats.max_ap,
+               skill_point: stats.progression.skill_point,
+               status_point: stats.progression.status_point,
+               trait_point: 3
+             }
     end
 
     test "trait_point is synced" do
@@ -164,6 +184,33 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandlerTest do
 
       trait_point = StatusParams.trait_point()
       assert_received {:synced, %{^trait_point => 3}}
+    end
+
+    test "publishes the final healed party snapshot after a base level gain" do
+      state = stub_level_up(50, 51)
+      game_state = %{state.game_state | party_id: 7}
+      state = %{state | game_state: game_state}
+
+      expect(Manager, :sync_member, fn 7, 1000, member ->
+        assert member == %Member{
+                 char_id: 1000,
+                 name: "Grinder",
+                 job_id: 1,
+                 base_level: 51,
+                 hp: game_state.stats.derived_stats.max_hp,
+                 max_hp: game_state.stats.derived_stats.max_hp,
+                 sp: game_state.stats.derived_stats.max_sp,
+                 max_sp: game_state.stats.derived_stats.max_sp,
+                 ap: game_state.stats.current_state.ap,
+                 max_ap: game_state.stats.derived_stats.max_ap,
+                 online: true,
+                 map_name: "prontera"
+               }
+
+        {:ok, %{}}
+      end)
+
+      assert {:noreply, _new_state} = ExperienceHandler.handle_gain_exp(100, 0, state)
     end
   end
 

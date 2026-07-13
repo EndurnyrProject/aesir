@@ -11,6 +11,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandlerTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Party.Manager
+  alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -71,14 +73,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandlerTest do
     test "decrements the point, raises the level, persists, and syncs the list + skill_point" do
       sword_id = catalog_id(:sm_sword)
       state = swordman_state(3, %{sword_id => 2})
+      test_pid = self()
 
       stub(PlayerStats, :calculate_stats, fn stats, 1000 -> stats end)
-      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, game_state ->
+        send(test_pid, {:registry_updated, game_state})
+        :ok
+      end)
+
+      reject(&Manager.sync_member/3)
       stub(StatusSync, :send_params, fn _conn, _params -> :ok end)
 
       expect(CharacterPersistence, :update_character, fn 1000, attrs, async: true ->
-        assert attrs.skill_point == 2
-        assert attrs.learned_skills == %{Integer.to_string(sword_id) => 3}
+        assert_received {:registry_updated, _game_state}
+        send(test_pid, {:persisted, attrs})
         {:ok, %{}}
       end)
 
@@ -93,7 +102,46 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandlerTest do
       assert new_state.game_state.stats.progression.skill_point == 2
       assert new_state.game_state.stats.progression.learned_skills[sword_id] == 3
 
+      stats = new_state.game_state.stats
+      assert_received {:persisted, attrs}
+
+      assert attrs == %{
+               learned_skills: %{Integer.to_string(sword_id) => 3},
+               skill_point: 2,
+               hp: stats.current_state.hp,
+               max_hp: stats.derived_stats.max_hp,
+               sp: stats.current_state.sp,
+               max_sp: stats.derived_stats.max_sp,
+               ap: stats.current_state.ap,
+               max_ap: stats.derived_stats.max_ap
+             }
+
       assert_received {:send, :bulk, {:skill_list, %SkillList{}}}
+    end
+
+    test "publishes party-visible maxima changed by learned-skill recalculation" do
+      sword_id = catalog_id(:sm_sword)
+      state = swordman_state(1, %{})
+      game_state = %{state.game_state | party_id: 7}
+      state = %{state | game_state: game_state}
+      max_hp = game_state.stats.derived_stats.max_hp + 100
+
+      stub(PlayerStats, :calculate_stats, fn stats, 1000 ->
+        derived = %{stats.derived_stats | max_hp: max_hp}
+        %{stats | derived_stats: derived}
+      end)
+
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(StatusSync, :send_params, fn _conn, _params -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+
+      expect(Manager, :sync_member, fn 7, 1000, member ->
+        assert %Member{char_id: 1000, max_hp: ^max_hp, online: true} = member
+        {:ok, %{}}
+      end)
+
+      assert {:noreply, _new_state} =
+               SkillLearningHandler.handle_learn_skill(sword_id, state)
     end
   end
 

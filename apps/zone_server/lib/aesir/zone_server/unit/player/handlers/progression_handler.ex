@@ -39,10 +39,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.SkillListView
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.Stats, as: UnitStats
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @mc_pushcart_id McPushcart.definition().id
 
@@ -237,6 +237,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   end
 
   defp do_reset_skills(state, game_state) do
+    previous_game_state = game_state
     progression = game_state.stats.progression
     new_progression = SkillTree.reset_skills(progression)
     dropped_ids = Map.keys(progression.learned_skills) -- Map.keys(new_progression.learned_skills)
@@ -247,7 +248,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
 
     %{state | game_state: %{game_state | stats: stats}}
     |> cleanup_dropped_skills(dropped_ids)
-    |> finish_reset_skills()
+    |> finish_reset_skills(previous_game_state)
   end
 
   defp do_apply_job_change(job_id, state, game_state) do
@@ -273,6 +274,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   # passives from dropped skills stop applying) BEFORE the cart/equipment/status
   # cleanup, then notify and persist.
   defp change_to_job(job_id, state) do
+    previous_game_state = state.game_state
     {:ok, closed_state} = VendingHandler.close_shop(state, :job_change)
     game_state = closed_state.game_state
     progression = game_state.stats.progression
@@ -300,7 +302,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     %{closed_state | game_state: %{game_state | stats: stats}}
     |> cleanup_dropped_skills(dropped_ids)
     |> recheck_equipment(job_id)
-    |> finish_job_change(job_id)
+    |> finish_job_change(job_id, previous_game_state)
   end
 
   @spec prune_skills(Learned.t(), non_neg_integer()) :: {Learned.t(), [non_neg_integer()]}
@@ -388,7 +390,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   # straight to StatusStorage without touching `game_state.stats`, so the modifier
   # snapshot is only correct after this recompute. Then full-heals so the
   # deliberate job-change heal reflects the new max HP/SP.
-  defp finish_job_change(%{game_state: game_state} = state, job_id) do
+  defp finish_job_change(%{game_state: game_state} = state, job_id, previous_game_state) do
     stats =
       game_state.stats
       |> Stats.calculate_stats(game_state.character_id)
@@ -404,7 +406,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     MessageRouter.send_to(state.connection_pid, SkillListView.build(progression))
 
     {:noreply, new_state} =
-      commit(state, game_state, progression,
+      commit_from(previous_game_state, state, game_state, progression,
         class: job_id,
         learned_skills: Learned.dump(progression.learned_skills)
       )
@@ -417,7 +419,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   # vitals are clamped in case a removed buff (e.g. Angelus) lowered max HP/SP
   # below the current values, then the recomputed stats are synced to the client
   # and persisted through the shared `commit/4` path.
-  defp finish_reset_skills(%{game_state: game_state} = state) do
+  defp finish_reset_skills(%{game_state: game_state} = state, previous_game_state) do
     stats =
       game_state.stats
       |> Stats.calculate_stats(game_state.character_id)
@@ -429,7 +431,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     MessageRouter.send_to(state.connection_pid, SkillListView.build(progression))
 
     {:noreply, new_state} =
-      commit(state, game_state, progression,
+      commit_from(previous_game_state, state, game_state, progression,
         learned_skills: Learned.dump(progression.learned_skills)
       )
 
@@ -449,11 +451,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   end
 
   defp commit(state, game_state, progression, extra_persist \\ []) do
+    commit_from(state.game_state, state, game_state, progression, extra_persist)
+  end
+
+  defp commit_from(previous_game_state, state, game_state, progression, extra_persist) do
     new_state = %{state | game_state: game_state}
 
     sync_client(new_state, progression)
     persist(game_state, extra_persist)
-    UnitRegistry.update_unit_state(:player, game_state.character_id, game_state)
+    new_state = StateCommit.commit(%{state | game_state: previous_game_state}, game_state)
 
     {:noreply, new_state}
   end

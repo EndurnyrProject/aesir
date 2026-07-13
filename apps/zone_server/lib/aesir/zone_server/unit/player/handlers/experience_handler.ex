@@ -14,10 +14,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.StatPoint
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
-  alias Aesir.ZoneServer.Party.Manager, as: PartyManager
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
   Applies gained base/job experience to the session, leveling up as needed.
@@ -57,22 +56,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
 
     sync_client(new_state, progression)
     persist(char_id, stats)
-    UnitRegistry.update_unit_state(:player, char_id, game_state)
-    push_base_level(game_state, base_gained)
+    new_state = StateCommit.commit(state, game_state)
 
     {:noreply, new_state}
   end
-
-  defp push_base_level(%{party_id: party_id} = game_state, base_gained)
-       when party_id > 0 and base_gained > 0 do
-    PartyManager.push_base_level(
-      party_id,
-      game_state.character_id,
-      game_state.stats.progression.base_level
-    )
-  end
-
-  defp push_base_level(_game_state, _base_gained), do: :ok
 
   defp boost_exp(amount, _pct) when amount <= 0, do: amount
   defp boost_exp(amount, pct), do: max(1, div(amount * pct, 100))
@@ -111,8 +98,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
         job_exp: stats.progression.job_exp,
         hp: stats.current_state.hp,
         sp: stats.current_state.sp,
+        ap: stats.current_state.ap,
         max_hp: stats.derived_stats.max_hp,
         max_sp: stats.derived_stats.max_sp,
+        max_ap: stats.derived_stats.max_ap,
         skill_point: stats.progression.skill_point,
         status_point: stats.progression.status_point,
         trait_point: stats.progression.trait_point

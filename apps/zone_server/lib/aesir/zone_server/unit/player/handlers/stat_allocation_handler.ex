@@ -13,9 +13,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.StatPoint
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   # status_id => {base-stat key, per-stat cost-indicator StatusParam id}
   @stats %{
@@ -83,11 +83,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler do
     stats =
       %{game_state.stats | base_stats: base_stats, progression: progression}
       |> Stats.calculate_stats(char_id)
+      |> clamp_resources()
 
     new_game_state = %{game_state | stats: stats}
-    new_state = %{state | game_state: new_game_state}
+    new_state = StateCommit.commit(state, new_game_state)
 
-    UnitRegistry.update_unit_state(:player, char_id, new_game_state)
     persist(char_id, stat, new_value, stats)
     sync(state.connection_pid, status_id, u_param, new_value, stats)
 
@@ -119,11 +119,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler do
     stats =
       %{game_state.stats | base_stats: base_stats, progression: progression}
       |> Stats.calculate_stats(char_id)
+      |> clamp_resources()
 
     new_game_state = %{game_state | stats: stats}
-    new_state = %{state | game_state: new_game_state}
+    new_state = StateCommit.commit(state, new_game_state)
 
-    UnitRegistry.update_unit_state(:player, char_id, new_game_state)
     persist_trait(char_id, stat, new_value, stats)
     sync_trait(state.connection_pid, status_id, u_param, new_value, stats)
 
@@ -161,8 +161,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler do
       %{
         stat => new_value,
         status_point: stats.progression.status_point,
+        hp: stats.current_state.hp,
+        sp: stats.current_state.sp,
+        ap: stats.current_state.ap,
         max_hp: stats.derived_stats.max_hp,
-        max_sp: stats.derived_stats.max_sp
+        max_sp: stats.derived_stats.max_sp,
+        max_ap: stats.derived_stats.max_ap
       },
       async: true
     )
@@ -189,10 +193,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler do
       %{
         stat => new_value,
         trait_point: stats.progression.trait_point,
+        hp: stats.current_state.hp,
+        sp: stats.current_state.sp,
+        ap: stats.current_state.ap,
         max_hp: stats.derived_stats.max_hp,
-        max_sp: stats.derived_stats.max_sp
+        max_sp: stats.derived_stats.max_sp,
+        max_ap: stats.derived_stats.max_ap
       },
       async: true
     )
+  end
+
+  defp clamp_resources(stats) do
+    current = %{
+      stats.current_state
+      | hp: min(stats.current_state.hp, stats.derived_stats.max_hp),
+        sp: min(stats.current_state.sp, stats.derived_stats.max_sp),
+        ap: min(stats.current_state.ap, stats.derived_stats.max_ap)
+    }
+
+    %{stats | current_state: current}
   end
 end

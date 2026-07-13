@@ -6,6 +6,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
   alias Aesir.Net.StatUpResult
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Party.Manager
+  alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -106,13 +108,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
         {:ok, %{}}
       end)
 
-      StatAllocationHandler.handle_status_up(
-        StatusParams.pow(),
-        1,
-        state(@trait_job, [pow: 10], trait_point: 5)
-      )
+      {:noreply, new_state} =
+        StatAllocationHandler.handle_status_up(
+          StatusParams.pow(),
+          1,
+          state(@trait_job, [pow: 10], trait_point: 5)
+        )
 
-      assert_received {:persisted, %{pow: 11, trait_point: 4}}
+      stats = new_state.game_state.stats
+      assert_received {:persisted, attrs}
+
+      assert attrs == %{
+               pow: 11,
+               trait_point: 4,
+               hp: stats.current_state.hp,
+               max_hp: stats.derived_stats.max_hp,
+               sp: stats.current_state.sp,
+               max_sp: stats.derived_stats.max_sp,
+               ap: stats.current_state.ap,
+               max_ap: stats.derived_stats.max_ap
+             }
     end
 
     test "cannot raise a trait stat past the cap of 100" do
@@ -157,6 +172,63 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
 
       assert new_state.game_state.stats.base_stats.str == 131
       assert new_state.game_state.stats.progression.status_point < 999
+    end
+
+    test "publishes recalculated maxima and post-clamp current resources" do
+      test_pid = self()
+      state = state(@trait_job, [vit: 10], status_point: 999)
+
+      stats = %{
+        state.game_state.stats
+        | current_state: struct(state.game_state.stats.current_state, hp: 500, sp: 400, ap: 300)
+      }
+
+      game_state = %{state.game_state | party_id: 7, stats: stats}
+      state = %{state | game_state: game_state}
+
+      stub(Stats, :calculate_stats, fn recalculated, 1000 ->
+        derived = struct(recalculated.derived_stats, max_hp: 250, max_sp: 200, max_ap: 100)
+        %{recalculated | derived_stats: derived}
+      end)
+
+      expect(Manager, :sync_member, fn 7, 1000, member ->
+        assert %Member{
+                 hp: 250,
+                 max_hp: 250,
+                 sp: 200,
+                 max_sp: 200,
+                 ap: 100,
+                 max_ap: 100
+               } = member
+
+        {:ok, %{}}
+      end)
+
+      stub(CharacterPersistence, :update_character, fn 1000, attrs, async: true ->
+        send(test_pid, {:persisted, attrs})
+        {:ok, %{}}
+      end)
+
+      assert {:noreply, new_state} =
+               StatAllocationHandler.handle_status_up(StatusParams.vit(), 1, state)
+
+      assert new_state.game_state.stats.current_state.hp == 250
+      assert new_state.game_state.stats.current_state.sp == 200
+      assert new_state.game_state.stats.current_state.ap == 100
+
+      stats = new_state.game_state.stats
+      assert_received {:persisted, attrs}
+
+      assert attrs == %{
+               vit: 11,
+               status_point: stats.progression.status_point,
+               hp: 250,
+               max_hp: 250,
+               sp: 200,
+               max_sp: 200,
+               ap: 100,
+               max_ap: 100
+             }
     end
   end
 end

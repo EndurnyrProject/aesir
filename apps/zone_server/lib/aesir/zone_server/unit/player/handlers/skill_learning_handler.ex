@@ -18,9 +18,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler do
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Player.SkillListView
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
   Processes a learn-skill request for the player session.
@@ -44,12 +44,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler do
       |> Stats.calculate_stats(char_id)
 
     new_game_state = %{game_state | stats: stats}
+    new_state = StateCommit.commit(state, new_game_state)
 
-    UnitRegistry.update_unit_state(:player, char_id, new_game_state)
-    persist(char_id, progression)
+    persist(char_id, stats)
     sync(state.connection_pid, progression)
 
-    {:noreply, %{state | game_state: new_game_state}}
+    {:noreply, new_state}
   end
 
   defp reject(skill_id, reason, %{connection_pid: connection_pid} = state) do
@@ -62,12 +62,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler do
     {:noreply, state}
   end
 
-  defp persist(char_id, progression) do
+  defp persist(char_id, stats) do
     CharacterPersistence.update_character(
       char_id,
       %{
-        learned_skills: Learned.dump(progression.learned_skills),
-        skill_point: progression.skill_point
+        learned_skills: Learned.dump(stats.progression.learned_skills),
+        skill_point: stats.progression.skill_point,
+        hp: stats.current_state.hp,
+        max_hp: stats.derived_stats.max_hp,
+        sp: stats.current_state.sp,
+        max_sp: stats.derived_stats.max_sp,
+        ap: stats.current_state.ap,
+        max_ap: stats.derived_stats.max_ap
       },
       async: true
     )

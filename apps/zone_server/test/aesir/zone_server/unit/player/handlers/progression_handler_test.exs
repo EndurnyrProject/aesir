@@ -13,10 +13,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.StatPoint
+  alias Aesir.ZoneServer.Party.Manager
+  alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
@@ -182,6 +185,55 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
       ProgressionHandler.apply_job_change(@knight_id, state())
 
       assert_received {:send, :bulk, {:skill_list, %SkillList{}}}
+    end
+
+    test "publishes the numeric job and final healed vitals to the party" do
+      state = state_with_gs([job_id: @swordman_id], party_id: 7)
+
+      expect(Manager, :sync_member, fn 7, 1000, member ->
+        assert %Member{
+                 char_id: 1000,
+                 name: "Swordy",
+                 job_id: @knight_id,
+                 base_level: 50,
+                 hp: hp,
+                 max_hp: max_hp,
+                 sp: sp,
+                 max_sp: max_sp,
+                 ap: ap,
+                 max_ap: max_ap,
+                 online: true,
+                 map_name: "prontera"
+               } = member
+
+        assert hp == max_hp
+        assert sp == max_sp
+        assert ap == max_ap
+        {:ok, %{}}
+      end)
+
+      assert {:ok, _new_state} = ProgressionHandler.apply_job_change(@knight_id, state)
+    end
+
+    test "publishes a job-only party transition" do
+      state = state_with_gs([job_id: @swordman_id], party_id: 7)
+      stats = state.game_state.stats
+
+      current = %{
+        stats.current_state
+        | hp: stats.derived_stats.max_hp,
+          sp: stats.derived_stats.max_sp,
+          ap: stats.derived_stats.max_ap
+      }
+
+      state = put_in(state.game_state.stats.current_state, current)
+      stub(Stats, :calculate_stats, fn unchanged, 1000 -> unchanged end)
+
+      expect(Manager, :sync_member, fn 7, 1000, %Member{job_id: @knight_id} ->
+        {:ok, %{}}
+      end)
+
+      assert {:ok, _new_state} = ProgressionHandler.apply_job_change(@knight_id, state)
     end
   end
 
@@ -358,6 +410,32 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
 
       aspd = StatusParams.aspd()
       assert_received {:send, _channel, {:param_change, %ParamChange{var_id: ^aspd}}}
+    end
+
+    test "publishes maxima changed by the refunded passive against the pre-reset snapshot" do
+      state =
+        state_with_gs(
+          [job_id: @swordman_id, learned_skills: %{catalog_id(:sm_bash) => 2}],
+          party_id: 7
+        )
+
+      stats = state.game_state.stats
+      derived = %{stats.derived_stats | max_hp: 500}
+      current = %{stats.current_state | hp: 500}
+
+      state =
+        put_in(state.game_state.stats, %{stats | derived_stats: derived, current_state: current})
+
+      stub(Stats, :calculate_stats, fn recalculated, 1000 ->
+        %{recalculated | derived_stats: %{recalculated.derived_stats | max_hp: 250}}
+      end)
+
+      expect(Manager, :sync_member, fn 7, 1000, member ->
+        assert %Member{hp: 250, max_hp: 250} = member
+        {:ok, %{}}
+      end)
+
+      assert {:ok, _new_state} = ProgressionHandler.reset_skills(state)
     end
 
     test "is blocked while a cart is mounted, mutating nothing" do
