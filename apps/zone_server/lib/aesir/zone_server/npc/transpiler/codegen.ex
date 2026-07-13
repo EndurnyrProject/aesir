@@ -640,12 +640,18 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["{ctx, _} = select(ctx, #{options(args, env)})"], :cont}
   end
 
-  defp emit_stmt({:cmd, "input", [target | _]}, env) do
+  defp emit_stmt({:cmd, "input", [target]}, env) do
     kind = if str_target?(target), do: ":string", else: ":int"
     tmp = tmp_var()
-    {input_line, :cont} = {["{ctx, #{tmp}} = input(ctx, #{kind})"], :cont}
     {assign_lines, :cont} = emit_assign(target, {:temp, tmp}, env)
-    {input_line ++ assign_lines, :cont}
+    {["{ctx, #{tmp}} = input(ctx, #{kind})" | assign_lines], :cont}
+  end
+
+  # `input <var>,<min>{,<max>}`: clamp the entry into range before writing it
+  # back; the discarded status is only meaningful in expression position.
+  defp emit_stmt({:cmd, "input", [target | bounds]}, env) do
+    {_status, lines} = input_lines(target, bounds, env)
+    {lines, :cont}
   end
 
   defp emit_stmt({:cmd, "setarray", [target | values]}, env) do
@@ -1363,6 +1369,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {{:temp, tmp}, ["{ctx, #{tmp}} = #{fn_name(env, label)}(ctx, [#{rendered}])" | pre]}
   end
 
+  # `input(<var>{,<min>{,<max>}})` in expression position: rAthena returns a
+  # range status (0 in range, 1 below min, 2 above max) while writing the
+  # clamped entry back to the var. The status temp becomes the expression.
+  defp hoist_walk({:call, "input", [target | bounds]}, env, pre) do
+    {status, lines} = input_lines(target, bounds, env)
+    {{:temp, status}, Enum.reverse(lines) ++ pre}
+  end
+
   defp hoist_walk({:call, name, args}, env, pre) do
     if MapSet.member?(env.a.local_functions, name) do
       {args, pre} = hoist_list(args, env, pre)
@@ -1418,6 +1432,34 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   # the zero-arg form calls `dsl(ctx)`, an arg-bearing one `dsl(ctx, args…)`.
   defp read_fn_call(dsl, [], _rendered), do: "#{dsl}(ctx)"
   defp read_fn_call(dsl, _args, rendered), do: "#{dsl}(ctx, #{rendered})"
+
+  # Shared codegen for `input <var>,<min>{,<max>}`: reads a value, clamps/length-
+  # checks it into range (rAthena `Rathena.input_int/3` / `input_str/3`), and
+  # writes the clamped value back to the var. Returns {status_temp, lines} in
+  # execution order; the status temp is only used in expression position.
+  defp input_lines(target, bounds, env) do
+    kind = if str_target?(target), do: ":string", else: ":int"
+    helper = if str_target?(target), do: "input_str", else: "input_int"
+    {min, max} = input_bounds(bounds, env)
+    raw = tmp_var()
+    status = tmp_var()
+    stored = tmp_var()
+    flag(:rathena)
+    {writeback, :cont} = emit_assign(target, {:temp, stored}, env)
+
+    lines =
+      [
+        "{ctx, #{raw}} = input(ctx, #{kind})",
+        "{#{status}, #{stored}} = Rathena.#{helper}(#{raw}, #{min}, #{max})"
+      ] ++ writeback
+
+    {status, lines}
+  end
+
+  # rAthena `input` bounds default to `[0, INT_MAX]`.
+  defp input_bounds([], _env), do: {"0", "2_147_483_647"}
+  defp input_bounds([min], env), do: {render(min, env), "2_147_483_647"}
+  defp input_bounds([min, max | _], env), do: {render(min, env), render(max, env)}
 
   defp hoist_list(exprs, env, pre) do
     Enum.reduce(exprs, {[], pre}, fn expr, {acc, pre} ->

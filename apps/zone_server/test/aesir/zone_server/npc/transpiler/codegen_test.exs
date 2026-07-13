@@ -787,6 +787,53 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "Todo.call!(:F_GetNumSuffix"
   end
 
+  test "F_InsertComma maps to insert_comma via both callfunc and direct-call forms" do
+    via_callfunc =
+      gen!("""
+      mes callfunc("F_InsertComma", .@cost);
+      close;
+      """)
+
+    direct =
+      gen!("""
+      mes F_InsertComma(.@cost);
+      close;
+      """)
+
+    assert via_callfunc =~ "insert_comma(ctx, get_local(ctx, :cost, 0))"
+    assert direct =~ "insert_comma(ctx, get_local(ctx, :cost, 0))"
+    refute via_callfunc =~ "Todo.call!(:callfunc"
+    refute direct =~ "Todo.call!(:F_InsertComma"
+  end
+
+  test "input with min/max clamps the entry back into range (statement form)" do
+    src =
+      gen!("""
+      input .@x, 1, 5;
+      close;
+      """)
+
+    assert src =~ "= input(ctx, :int)"
+    assert src =~ "Rathena.input_int("
+    assert src =~ ", 1, 5)"
+    assert src =~ "set_local(:x,"
+    refute src =~ "Todo.call!(:input"
+  end
+
+  test "input in expression position yields its range status (0/1/2)" do
+    src =
+      gen!("""
+      if (input(.@x, 1, 5) != 0) mes "out of range";
+      close;
+      """)
+
+    assert src =~ "= input(ctx, :string)" or src =~ "= input(ctx, :int)"
+    assert src =~ "Rathena.input_int("
+    assert src =~ "set_local(ctx, :x,"
+    assert src =~ "!= 0"
+    refute src =~ "Todo.call!(:input"
+  end
+
   test "cutin and soundeffect map to their client-packet effect ops" do
     src =
       gen!("""

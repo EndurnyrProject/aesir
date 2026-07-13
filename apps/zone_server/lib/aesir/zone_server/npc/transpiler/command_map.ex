@@ -105,7 +105,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
   @functions %{
     "Job_Change" => %{kind: :command, dsl: "jobchange"},
     "F_CanChangeJob" => %{kind: :read, dsl: "can_change_job?"},
-    "F_GetNumSuffix" => %{kind: :read, dsl: "num_suffix"}
+    "F_GetNumSuffix" => %{kind: :read, dsl: "num_suffix"},
+    "F_InsertComma" => %{kind: :read, dsl: "insert_comma"}
   }
 
   @warp_targets %{

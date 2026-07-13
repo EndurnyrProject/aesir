@@ -592,6 +592,18 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert Dsl.num_suffix(ctx, 22) == "22nd"
       assert Dsl.num_suffix(ctx, 23) == "23rd"
     end
+
+    test "insert_comma/2 groups digits in threes (matching rAthena F_InsertComma)" do
+      ctx = build_ctx()
+
+      assert Dsl.insert_comma(ctx, 1) == "1"
+      assert Dsl.insert_comma(ctx, 100) == "100"
+      assert Dsl.insert_comma(ctx, 1000) == "1,000"
+      assert Dsl.insert_comma(ctx, 10_000) == "10,000"
+      assert Dsl.insert_comma(ctx, 1_000_000) == "1,000,000"
+      assert Dsl.insert_comma(ctx, 1_234_567) == "1,234,567"
+      assert Dsl.insert_comma(ctx, -1000) == "-1,000"
+    end
   end
 
   describe "summon_mob/2" do

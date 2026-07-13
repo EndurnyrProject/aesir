@@ -1815,6 +1815,25 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defp ordinal_suffix(_n), do: "th"
 
   @doc """
+  Formats a number with comma thousands separators (rAthena `F_InsertComma`):
+  `1000000` -> `"1,000,000"`. Mirrors rAthena's algorithm — commas inserted
+  every three characters from the right of the string form, so a leading sign
+  counts as a character (`-1000` -> `"-1,000"`). A pure helper; ctx is ignored.
+  """
+  @spec insert_comma(Ctx.t(), integer() | String.t()) :: String.t()
+  def insert_comma(%Ctx{}, value), do: value |> to_string() |> group_thousands()
+
+  defp group_thousands(str) when byte_size(str) <= 3, do: str
+
+  defp group_thousands(str) do
+    (String.length(str) - 3)..1//-3
+    |> Enum.reduce(str, fn index, acc ->
+      {head, tail} = String.split_at(acc, index)
+      head <> "," <> tail
+    end)
+  end
+
+  @doc """
   The char id of the player's marriage partner (rAthena `getpartnerid`), or `0`
   when unmarried. Aesir has no marriage system yet, so `partner_id` is sourced
   once from the Character at spawn and is currently always `0`. Pure read over
