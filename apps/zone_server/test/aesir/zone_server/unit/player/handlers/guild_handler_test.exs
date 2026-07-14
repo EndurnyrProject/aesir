@@ -7,10 +7,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
   alias Aesir.Commons.ClusterTestHelper
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
+  alias Aesir.Commons.Models.Guild, as: GuildModel
   alias Aesir.Commons.Models.GuildExpulsion
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.GuildActionResult
   alias Aesir.Net.GuildCreateRequest
+  alias Aesir.Net.GuildEmblemData
+  alias Aesir.Net.GuildEmblemRequest
+  alias Aesir.Net.GuildEmblemUploadRequest
   alias Aesir.Net.GuildExpelRequest
   alias Aesir.Net.GuildInfo
   alias Aesir.Net.GuildInviteNotify
@@ -101,6 +105,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
 
   defp register_online(%Character{} = character, pid \\ self()) do
     UnitRegistry.register_player(PlayerState.new(character), pid)
+  end
+
+  defp bmp(width, height) do
+    "BM" <> <<0::size(16 * 8)>> <> <<width::little-signed-32, height::little-signed-32>>
   end
 
   describe "handle_create_request/2" do
@@ -634,6 +642,133 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
     end
   end
 
+  describe "handle_emblem_upload_request/2" do
+    test "the master uploads a valid emblem, bumping emblem_id and persisting the blob" do
+      {master, guild} = guild_fixture("Emil")
+      Phoenix.PubSub.subscribe(Aesir.PubSub, "guild:#{guild.guild_id}")
+      emblem = bmp(24, 24)
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_emblem_upload_request(
+                 %GuildEmblemUploadRequest{data: emblem},
+                 state_for(master)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{
+                          action: "emblem_upload",
+                          success: true,
+                          error: :GUILD_ERR_NONE
+                        }}}
+
+      assert_receive {:guild_emblem_changed, guild_id, 1}
+      assert guild_id == guild.guild_id
+
+      persisted = Repo.get(GuildModel, guild.guild_id)
+      assert persisted.emblem_id == 1
+      assert persisted.emblem_data == emblem
+    end
+
+    test "a non-master upload is rejected with NO_PERMISSION and leaves the emblem unchanged" do
+      {_master, guild} = guild_fixture("Fabio")
+      newbie = add_member(guild.guild_id, "Gina")
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_emblem_upload_request(
+                 %GuildEmblemUploadRequest{data: bmp(24, 24)},
+                 state_for(newbie)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{
+                          action: "emblem_upload",
+                          success: false,
+                          error: :GUILD_ERR_NO_PERMISSION
+                        }}}
+
+      persisted = Repo.get(GuildModel, guild.guild_id)
+      assert persisted.emblem_id == 0
+      assert is_nil(persisted.emblem_data)
+    end
+
+    test "an invalid emblem is rejected with INVALID_EMBLEM and leaves the emblem unchanged" do
+      {master, guild} = guild_fixture("Hilda")
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_emblem_upload_request(
+                 %GuildEmblemUploadRequest{data: bmp(32, 32)},
+                 state_for(master)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{
+                          action: "emblem_upload",
+                          success: false,
+                          error: :GUILD_ERR_INVALID_EMBLEM
+                        }}}
+
+      persisted = Repo.get(GuildModel, guild.guild_id)
+      assert persisted.emblem_id == 0
+      assert is_nil(persisted.emblem_data)
+    end
+  end
+
+  describe "handle_emblem_request/2" do
+    test "returns the stored emblem blob for an existing guild" do
+      {master, guild} = guild_fixture("Iris")
+      emblem = bmp(24, 24)
+
+      {:ok, emblem_id} = GuildManager.change_emblem(guild.guild_id, master.id, emblem)
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_emblem_request(
+                 %GuildEmblemRequest{guild_id: guild.guild_id, emblem_id: emblem_id},
+                 state_for(master)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_emblem_data,
+                        %GuildEmblemData{
+                          guild_id: guild_id,
+                          emblem_id: ^emblem_id,
+                          data: ^emblem
+                        }}}
+
+      assert guild_id == guild.guild_id
+    end
+
+    test "a request for a nonexistent guild acks an error without crashing" do
+      loner = character_fixture("Jonas", %{})
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_emblem_request(
+                 %GuildEmblemRequest{guild_id: 999_999, emblem_id: 0},
+                 state_for(loner)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{action: "emblem_request", success: false}}}
+    end
+
+    test "a guild without an emblem acks an error without crashing" do
+      {master, guild} = guild_fixture("Klaus")
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_emblem_request(
+                 %GuildEmblemRequest{guild_id: guild.guild_id, emblem_id: 0},
+                 state_for(master)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{action: "emblem_request", success: false}}}
+    end
+  end
+
   describe "PacketHandler routing" do
     setup do
       base = %{game_state: %PlayerState{character_id: 1}}
@@ -736,6 +871,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
       assert {:noreply, ^base} =
                PacketHandler.handle_message(
                  %GuildMemberPositionRequest{target_char_id: 2, index: 5},
+                 base
+               )
+    end
+
+    test "GuildEmblemUploadRequest dispatches to GuildHandler.handle_emblem_upload_request/2", %{
+      base: base
+    } do
+      expect(GuildHandler, :handle_emblem_upload_request, fn %GuildEmblemUploadRequest{}, ^base ->
+        {:noreply, base}
+      end)
+
+      assert {:noreply, ^base} =
+               PacketHandler.handle_message(%GuildEmblemUploadRequest{data: "BM"}, base)
+    end
+
+    test "GuildEmblemRequest dispatches to GuildHandler.handle_emblem_request/2", %{base: base} do
+      expect(GuildHandler, :handle_emblem_request, fn %GuildEmblemRequest{}, ^base ->
+        {:noreply, base}
+      end)
+
+      assert {:noreply, ^base} =
+               PacketHandler.handle_message(
+                 %GuildEmblemRequest{guild_id: 1, emblem_id: 0},
                  base
                )
     end

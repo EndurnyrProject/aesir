@@ -18,6 +18,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.EquipItem
   alias Aesir.Net.GroundSkillCast
   alias Aesir.Net.GuildCreateRequest
+  alias Aesir.Net.GuildEmblemRequest
+  alias Aesir.Net.GuildEmblemUploadRequest
   alias Aesir.Net.GuildExpelRequest
   alias Aesir.Net.GuildInviteRequest
   alias Aesir.Net.GuildInviteResponse
@@ -352,6 +354,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   # GuildMemberPositionRequest - Master assigns a member to a position slot.
   def handle_message(%GuildMemberPositionRequest{} = msg, state) do
     GuildHandler.handle_member_position_request(msg, state)
+  end
+
+  # GuildEmblemUploadRequest - Master uploads a new 24x24 BMP emblem.
+  def handle_message(%GuildEmblemUploadRequest{} = msg, state) do
+    GuildHandler.handle_emblem_upload_request(msg, state)
+  end
+
+  # GuildEmblemRequest - Client fetches a guild's current emblem blob.
+  def handle_message(%GuildEmblemRequest{} = msg, state) do
+    GuildHandler.handle_emblem_request(msg, state)
   end
 
   # NpcTalk - Player clicked an NPC unit (protobuf analogue of CZ_CONTACTNPC 0x0090).

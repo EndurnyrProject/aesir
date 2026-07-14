@@ -37,8 +37,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   require Logger
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.Commons.Models.Guild, as: GuildModel
   alias Aesir.Net.GuildActionResult
   alias Aesir.Net.GuildCreateRequest
+  alias Aesir.Net.GuildEmblemData
+  alias Aesir.Net.GuildEmblemRequest
+  alias Aesir.Net.GuildEmblemUploadRequest
   alias Aesir.Net.GuildExpelRequest
   alias Aesir.Net.GuildInviteNotify
   alias Aesir.Net.GuildInviteRequest
@@ -48,6 +52,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   alias Aesir.Net.GuildNoticeEditRequest
   alias Aesir.Net.GuildPositionEditRequest
   alias Aesir.Repo
+  alias Aesir.ZoneServer.Guild.EmblemValidator
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.Permissions
   alias Aesir.ZoneServer.Guild.State, as: GuildState
@@ -211,6 +216,49 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
       end
 
     ack_result(state, "member_position", result)
+  end
+
+  @doc """
+  Master-only (`:emblem`) emblem upload. Validates the blob as a 24x24 BMP via
+  `EmblemValidator.validate/1` before touching the DB, then hands it to
+  `Guild.Manager.change_emblem/3` (which bumps `emblem_id`, stores the blob, and
+  broadcasts `GuildEmblemChanged`). Invalid emblem -> `:GUILD_ERR_INVALID_EMBLEM`;
+  a non-master -> `:GUILD_ERR_NO_PERMISSION`; neither changes the stored data.
+  """
+  @spec handle_emblem_upload_request(GuildEmblemUploadRequest.t(), map()) :: {:noreply, map()}
+  def handle_emblem_upload_request(%GuildEmblemUploadRequest{data: data}, state) do
+    char_id = requester_char_id(state)
+
+    result =
+      with :ok <- EmblemValidator.validate(data),
+           {:ok, requester} <- fetch_character(char_id) do
+        GuildManager.change_emblem(requester.guild_id, char_id, data)
+      end
+
+    ack_result(state, "emblem_upload", result)
+  end
+
+  @doc """
+  Serves a guild's current emblem blob. Reads `emblem_data`/`emblem_id` straight
+  from Postgres (works from any node, the entry need not be running) and replies
+  with a `GuildEmblemData`. A missing guild or a guild without an emblem acks an
+  error instead of crashing.
+  """
+  @spec handle_emblem_request(GuildEmblemRequest.t(), map()) :: {:noreply, map()}
+  def handle_emblem_request(%GuildEmblemRequest{guild_id: guild_id}, state) do
+    case Repo.get(GuildModel, guild_id) do
+      %GuildModel{emblem_data: data, emblem_id: emblem_id} when is_binary(data) ->
+        MessageRouter.send_to(state.connection_pid, %GuildEmblemData{
+          guild_id: guild_id,
+          emblem_id: emblem_id,
+          data: data
+        })
+
+        {:noreply, state}
+
+      _ ->
+        ack_result(state, "emblem_request", {:error, :not_found})
+    end
   end
 
   @doc """
@@ -393,6 +441,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   defp map_error(:no_emperium), do: :GUILD_ERR_NO_EMPERIUM
   defp map_error(:guild_full), do: :GUILD_ERR_GUILD_FULL
   defp map_error(:no_permission), do: :GUILD_ERR_NO_PERMISSION
+  defp map_error(:invalid_emblem), do: :GUILD_ERR_INVALID_EMBLEM
   defp map_error(:cannot_target_master), do: :GUILD_ERR_CANNOT_TARGET_MASTER
   defp map_error(:invalid_position), do: :GUILD_ERR_INVALID_POSITION
   defp map_error(:target_offline), do: :GUILD_ERR_TARGET_OFFLINE
