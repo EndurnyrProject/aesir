@@ -16,18 +16,13 @@ defmodule Aesir.ZoneServer.Npc.Verifier do
 
   NPCs are objects, not walking units, so a spawn cell is **not** required to be
   walkable — official NPCs routinely sit on walls, edges, and decorative cells.
-  A placement on a map that is not loaded in `Aesir.ZoneServer.Map.MapCache` is
-  likewise non-fatal: `verify!/1` logs a warning for it (likely a typo or a
-  not-yet-imported map — the NPC is simply unreachable until that map is added).
 
   `verify/1` returns `:ok` or the list of detected collisions for programmatic
-  use; `verify!/1` logs both the unloaded-map and collision warnings and always
-  returns `:ok`.
+  use; `verify!/1` logs the collision warnings and always returns `:ok`.
   """
 
   require Logger
 
-  alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Npc.Placement
 
   @type entry :: {module(), Placement.t()}
@@ -47,14 +42,12 @@ defmodule Aesir.ZoneServer.Npc.Verifier do
   end
 
   @doc """
-  Boot-time verification: logs a warning for every placement on a map that is not
-  loaded and for every cell collision (mirroring
+  Boot-time verification: logs a warning for every cell collision (mirroring
   `Aesir.ZoneServer.Npc.Warps.sanitize/1`'s non-fatal handling), then always
   returns `:ok`. Invalid NPCs are dropped/shadowed, never fatal to boot.
   """
   @spec verify!([entry()]) :: :ok
   def verify!(entries) do
-    warn_unloaded_maps(entries)
     warn_collisions(entries)
 
     :ok
@@ -66,18 +59,6 @@ defmodule Aesir.ZoneServer.Npc.Verifier do
       Logger.warning(
         "NPC cell collision at #{inspect({map, x, y})}: #{inspect(modules)} share one cell; " <>
           "only one will be reachable, the rest are shadowed."
-      )
-    end
-
-    :ok
-  end
-
-  @spec warn_unloaded_maps([entry()]) :: :ok
-  defp warn_unloaded_maps(entries) do
-    for {module, %Placement{map: map}} <- entries, not MapCache.exists?(map) do
-      Logger.warning(
-        "NPC #{inspect(module)} is placed on map #{inspect(map)}, which is not loaded; " <>
-          "it will be unreachable until that map is added to the cache."
       )
     end
 

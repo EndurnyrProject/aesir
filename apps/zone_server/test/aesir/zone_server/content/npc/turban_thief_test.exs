@@ -13,9 +13,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Morocc.TurbanThiefTest do
   MAP NOTE: the Turban Thief spawns on the rAthena cell `morocc (208,90)`. Our
   map cache has no `morocc` town map yet, but the verifier no longer requires a
   walkable/loaded cell (NPCs are objects) — it only rejects cell collisions — so
-  the placement verifies fine and the boot path merely logs an unloaded-map
-  warning. The interaction scenarios below drive the runtime directly and don't
-  depend on the map being loaded.
+  the placement verifies fine. The interaction scenarios below drive the runtime
+  directly and don't depend on the map being loaded.
   """
 
   use ExUnit.Case, async: false

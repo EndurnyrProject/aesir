@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Npc.VerifierTest do
   import Mimic
   import ExUnit.CaptureLog
 
-  alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Verifier
 
@@ -38,26 +37,11 @@ defmodule Aesir.ZoneServer.Npc.VerifierTest do
   end
 
   describe "verify!/1" do
-    test "returns :ok for unique cells on loaded maps" do
-      stub(MapCache, :exists?, fn _ -> true end)
-
+    test "returns :ok for unique cells" do
       assert :ok = Verifier.verify!([{ModA, placement(x: 150, y: 150)}])
     end
 
-    test "warns but does not raise for a placement on an unloaded map" do
-      stub(MapCache, :exists?, fn _ -> false end)
-
-      log =
-        capture_log(fn ->
-          assert :ok = Verifier.verify!([{ModA, placement(map: "morocc", x: 208, y: 90)}])
-        end)
-
-      assert log =~ "not loaded"
-    end
-
     test "warns but does not raise at boot on a cell collision" do
-      stub(MapCache, :exists?, fn _ -> true end)
-
       log =
         capture_log(fn ->
           assert :ok =
