@@ -82,6 +82,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.TickManagerTest do
       assert untouched.state == %{}
     end
 
+    test "uses the reindexed deadline after an interval update" do
+      now = 10_000
+      :ok = Storage.insert(group(1, next_tick_at: now, interval: 450))
+
+      assert :ok = TickManager.process_tick(now)
+      assert :ok = TickManager.process_tick(now + 449)
+      assert Storage.get(1).state[:ticks] == 1
+
+      assert :ok = TickManager.process_tick(now + 450)
+      assert Storage.get(1).state[:ticks] == 2
+    end
+
     test "on_interval returning {:expire, _} deletes the group" do
       now = 10_000
 

@@ -3,7 +3,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.StorageTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
 
   setup :setup_ets_tables
@@ -28,6 +30,30 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.StorageTest do
     struct(base, attrs)
   end
 
+  test "a group carries bounded caster and target lifecycle actions" do
+    snapshot = %{matk: 500, element: :water}
+
+    policy = %LifecyclePolicy{
+      on_caster_loss: :persist_inert,
+      on_target_loss: {:continue_with_combat_snapshot, snapshot}
+    }
+
+    assert %Group{
+             lifecycle_policy: ^policy,
+             target_type: :mob,
+             target_id: 3000,
+             visible?: true,
+             created_at: 100
+           } =
+             group(1,
+               lifecycle_policy: policy,
+               target_type: :mob,
+               target_id: 3000,
+               visible?: true,
+               created_at: 100
+             )
+  end
+
   describe "insert/1 and get/1" do
     test "round-trips a group" do
       g = group(1)
@@ -39,6 +65,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.StorageTest do
     test "get/1 returns nil for an unknown group_id" do
       assert nil == Storage.get(999)
     end
+
+    test "replacing a group through insert/1 removes its old secondary keys" do
+      :ok = Storage.insert(group(1, target_type: :mob, target_id: 3000))
+
+      :ok =
+        Storage.insert(
+          group(1,
+            map_name: "geffen",
+            cells: [{20, 20}],
+            caster_id: 4000,
+            target_type: nil,
+            target_id: nil
+          )
+        )
+
+      assert [] == Storage.get_groups_at_cell("prontera", 100, 100)
+      assert [] == Storage.get_groups_by_caster(:player, 2000)
+      assert [] == Storage.get_groups_by_target(:mob, 3000)
+      assert [%Group{group_id: 1}] = Storage.get_groups_at_cell("geffen", 20, 20)
+    end
   end
 
   describe "delete/1" do
@@ -47,6 +93,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.StorageTest do
 
       assert :ok = Storage.delete(1)
       assert nil == Storage.get(1)
+    end
+
+    test "repeated delete and a late update leave no primary or secondary keys" do
+      original = group(1, target_type: :mob, target_id: 3000)
+      :ok = Storage.insert(original)
+
+      assert :ok = Storage.delete(1)
+      assert :ok = Storage.delete(1)
+      assert :ok = Storage.update(%{original | cells: [{20, 20}]})
+      assert nil == Storage.get(1)
+
+      for table <- [
+            :skill_unit_coordinate_index,
+            :skill_unit_due_index,
+            :skill_unit_expiry_index,
+            :skill_unit_caster_index,
+            :skill_unit_target_index
+          ] do
+        assert [] == :ets.tab2list(EtsTable.table_for(table))
+      end
     end
   end
 
@@ -69,6 +135,44 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.StorageTest do
 
       assert %Group{state: %{hit_counts: %{5 => 3}}} = Storage.get(1)
     end
+
+    test "moves every secondary key when indexed fields change" do
+      :ok =
+        Storage.insert(
+          group(1,
+            next_tick_at: 100,
+            expires_at: 200,
+            target_type: :mob,
+            target_id: 3000
+          )
+        )
+
+      :ok =
+        Storage.update(
+          group(1,
+            caster_type: :mob,
+            caster_id: 4000,
+            target_type: :player,
+            target_id: 5000,
+            map_name: "geffen",
+            cells: [{20, 20}],
+            next_tick_at: 300,
+            expires_at: 400
+          )
+        )
+
+      assert [] == Storage.get_groups_at_cell("prontera", 100, 100)
+      assert [] == Storage.get_groups_by_caster(:player, 2000)
+      assert [] == Storage.get_groups_by_target(:mob, 3000)
+      assert [] == Storage.get_due_groups(250)
+      assert [] == Storage.get_expired_groups(350)
+
+      assert [%Group{group_id: 1}] = Storage.get_groups_at_cell("geffen", 20, 20)
+      assert [%Group{group_id: 1}] = Storage.get_groups_by_caster(:mob, 4000)
+      assert [%Group{group_id: 1}] = Storage.get_groups_by_target(:player, 5000)
+      assert [%Group{group_id: 1}] = Storage.get_due_groups(300)
+      assert [%Group{group_id: 1}] = Storage.get_expired_groups(400)
+    end
   end
 
   describe "get_due_groups/1" do
@@ -83,6 +187,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.StorageTest do
 
       assert ids == [1, 2]
     end
+  end
+
+  test "coordinate and timing queries use secondary indexes instead of scanning groups" do
+    unindexed = group(99, cells: [{100, 100}], next_tick_at: 0, expires_at: 0)
+    :ets.insert(EtsTable.table_for(:skill_units), {99, unindexed})
+
+    assert [] == Storage.get_groups_at_cell("prontera", 100, 100)
+    assert [] == Storage.get_due_groups(100)
+    assert [] == Storage.get_expired_groups(100)
   end
 
   describe "get_expired_groups/1" do
@@ -135,6 +248,32 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.StorageTest do
 
       assert [%Group{group_id: 1}] = Storage.get_groups_at_cell("prontera", 11, 10)
       assert [] == Storage.get_groups_at_cell("prontera", 13, 10)
+    end
+  end
+
+  describe "caster and target queries" do
+    test "returns groups through their caster and optional target identities" do
+      :ok = Storage.insert(group(1, target_type: :mob, target_id: 3000))
+      :ok = Storage.insert(group(2))
+
+      :ok =
+        Storage.insert(
+          group(3,
+            caster_type: :mob,
+            caster_id: 4000,
+            target_type: :player,
+            target_id: 5000
+          )
+        )
+
+      caster_ids =
+        Storage.get_groups_by_caster(:player, 2000)
+        |> Enum.map(& &1.group_id)
+        |> Enum.sort()
+
+      assert caster_ids == [1, 2]
+      assert [%Group{group_id: 1}] = Storage.get_groups_by_target(:mob, 3000)
+      assert [] == Storage.get_groups_by_target(:mob, 9999)
     end
   end
 end

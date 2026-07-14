@@ -19,6 +19,17 @@ defmodule Aesir.TestEtsSetup do
       seed
     )
 
+    for table <- [
+          :skill_units,
+          :skill_unit_coordinate_index,
+          :skill_unit_due_index,
+          :skill_unit_expiry_index,
+          :skill_unit_caster_index,
+          :skill_unit_target_index
+        ] do
+      :ets.delete_all_objects(EtsTable.table_for(table))
+    end
+
     :ok = Interpreter.init()
     :ok = MapCache.init()
 

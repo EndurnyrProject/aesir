@@ -109,6 +109,36 @@ defmodule Aesir.ZoneServer.EtsTable do
         {:write_concurrency, true}
       ]
     )
+
+    for table <- [
+          :skill_unit_coordinate_index,
+          :skill_unit_caster_index,
+          :skill_unit_target_index
+        ] do
+      :ets.new(
+        table_for(table, seed),
+        [
+          :bag,
+          :public,
+          :named_table,
+          {:read_concurrency, true},
+          {:write_concurrency, true}
+        ]
+      )
+    end
+
+    for table <- [:skill_unit_due_index, :skill_unit_expiry_index] do
+      :ets.new(
+        table_for(table, seed),
+        [
+          :ordered_set,
+          :public,
+          :named_table,
+          {:read_concurrency, true},
+          {:write_concurrency, true}
+        ]
+      )
+    end
   end
 
   defp vending_registry_tables(seed) do
