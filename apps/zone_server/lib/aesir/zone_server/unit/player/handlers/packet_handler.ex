@@ -17,6 +17,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.EmoteRequest
   alias Aesir.Net.EquipItem
   alias Aesir.Net.GroundSkillCast
+  alias Aesir.Net.GuildCreateRequest
+  alias Aesir.Net.GuildExpelRequest
+  alias Aesir.Net.GuildInviteRequest
+  alias Aesir.Net.GuildInviteResponse
+  alias Aesir.Net.GuildLeaveRequest
+  alias Aesir.Net.GuildMemberPositionRequest
+  alias Aesir.Net.GuildNoticeEditRequest
+  alias Aesir.Net.GuildPositionEditRequest
   alias Aesir.Net.LearnSkill
   alias Aesir.Net.MapLoaded
   alias Aesir.Net.MoveFromCartRequest
@@ -55,6 +63,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EmoteHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler
@@ -302,6 +311,47 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   # PartyLeaderRequest - Leader transfers leadership to another member.
   def handle_message(%PartyLeaderRequest{} = msg, state) do
     PartyHandler.handle_leader_request(msg, state)
+  end
+
+  # GuildCreateRequest - Player creates a guild with themselves as master
+  # (consumes one Emperium on success).
+  def handle_message(%GuildCreateRequest{} = msg, state) do
+    GuildHandler.handle_create_request(msg, state)
+  end
+
+  # GuildInviteRequest - An INVITE-holder invites a character to the guild.
+  def handle_message(%GuildInviteRequest{} = msg, state) do
+    GuildHandler.handle_invite_request(msg, state)
+  end
+
+  # GuildInviteResponse - Invitee's accept/decline response to a pending invite.
+  def handle_message(%GuildInviteResponse{} = msg, state) do
+    GuildHandler.handle_invite_response(msg, state)
+  end
+
+  # GuildLeaveRequest - Player leaves their guild (master leaving disbands it).
+  def handle_message(%GuildLeaveRequest{} = msg, state) do
+    GuildHandler.handle_leave_request(msg, state)
+  end
+
+  # GuildExpelRequest - An EXPEL-holder removes a member from the guild.
+  def handle_message(%GuildExpelRequest{} = msg, state) do
+    GuildHandler.handle_expel_request(msg, state)
+  end
+
+  # GuildNoticeEditRequest - A :notice-holder edits the guild notice.
+  def handle_message(%GuildNoticeEditRequest{} = msg, state) do
+    GuildHandler.handle_notice_edit_request(msg, state)
+  end
+
+  # GuildPositionEditRequest - A :positions-holder edits one position slot.
+  def handle_message(%GuildPositionEditRequest{} = msg, state) do
+    GuildHandler.handle_position_edit_request(msg, state)
+  end
+
+  # GuildMemberPositionRequest - Master assigns a member to a position slot.
+  def handle_message(%GuildMemberPositionRequest{} = msg, state) do
+    GuildHandler.handle_member_position_request(msg, state)
   end
 
   # NpcTalk - Player clicked an NPC unit (protobuf analogue of CZ_CONTACTNPC 0x0090).
