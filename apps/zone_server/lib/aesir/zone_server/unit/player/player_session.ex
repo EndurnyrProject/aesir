@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.Skills.WzJupitel
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -477,6 +478,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_info({:cast_complete, token}, state) do
     SkillHandler.handle_cast_complete(state, token)
+  end
+
+  @impl true
+  def handle_info({:jupitel_impact, impact}, %{game_state: game_state} = state) do
+    _ = WzJupitel.impact(game_state, impact)
+    {:noreply, state}
   end
 
   # EXP for the kill is granted separately, per contributing attacker, via

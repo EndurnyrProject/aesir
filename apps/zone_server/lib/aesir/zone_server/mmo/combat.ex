@@ -391,6 +391,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     - `:skill_ratio` - percent of base MATK each hit deals (default `100`)
     - `:element` - the skill's magic element (default `:neutral`)
     - `:hit_count` - number of magic hits to deliver (default `1`)
+    - `:skip_range` - skip only the distance check for a previously validated,
+      delayed impact; map, life, and enemy-relation checks still run (default `false`)
 
   ## Returns
     - :ok if the skill connected
@@ -408,7 +410,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
          :ok <- ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
-         :ok <- validate_attack_with_combatants(attacker, target),
+         :ok <- validate_attack_with_combatants(attacker, target, opts),
          :ok <- Targeting.validate_enemy(attacker, target) do
       total = sum_magic_hits(attacker, target, element, skill_ratio, hits)
       {tx, ty} = target.position
@@ -1100,9 +1102,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   defp ensure_targetable(_target_state, :player), do: :ok
 
   # New combatant-based functions
-  defp validate_attack_with_combatants(attacker_combatant, target_combatant) do
+  defp validate_attack_with_combatants(attacker_combatant, target_combatant, opts \\ []) do
     if attacker_combatant.map_name == target_combatant.map_name do
-      validate_attack_range(attacker_combatant, target_combatant)
+      if Keyword.get(opts, :skip_range, false) do
+        :ok
+      else
+        validate_attack_range(attacker_combatant, target_combatant)
+      end
     else
       {:error, :different_map}
     end
