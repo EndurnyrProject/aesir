@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StateCommit do
 
   require Logger
 
+  alias Aesir.ZoneServer.Unit.Player.GuildSync
   alias Aesir.ZoneServer.Unit.Player.PartySync
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -13,8 +14,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StateCommit do
   Commits `game_state` to the unit registry and party view, then returns the
   session carrying that state.
 
-  Party synchronization is best-effort and never rolls back the authoritative
-  session or registry state.
+  Party and guild synchronization are best-effort and never roll back the
+  authoritative session or registry state.
   """
   @spec commit(map(), PlayerState.t()) :: map()
   def commit(%{game_state: %PlayerState{} = previous} = session, %PlayerState{} = game_state) do
@@ -27,6 +28,16 @@ defmodule Aesir.ZoneServer.Unit.Player.StateCommit do
       {:error, reason} ->
         Logger.warning(
           "Failed to synchronize party state for character #{game_state.character_id}: #{inspect(reason)}"
+        )
+    end
+
+    case GuildSync.sync(previous, game_state) do
+      :ok ->
+        :ok
+
+      {:error, reason} ->
+        Logger.warning(
+          "Failed to synchronize guild state for character #{game_state.character_id}: #{inspect(reason)}"
         )
     end
 

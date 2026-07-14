@@ -614,10 +614,13 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   end
 
   @doc """
-  Replaces one member's complete runtime snapshot in the live guild entry.
-  Changed snapshots emit `{:guild_member_updated, guild_id, member}`; identical
-  snapshots are a no-op. A snapshot whose `char_id` differs from the member key
-  is rejected with `{:error, :not_member}`.
+  Replaces one member's presence snapshot in the live guild entry. The stored
+  `position_index` is always preserved (position is authoritative in the guild
+  entry, never in the session presence projection), so only the presence fields
+  from `member` are applied. Changed snapshots emit
+  `{:guild_member_updated, guild_id, member}`; identical snapshots are a no-op.
+  A snapshot whose `char_id` differs from the member key is rejected with
+  `{:error, :not_member}`.
   """
   @spec sync_member(non_neg_integer(), non_neg_integer(), Member.t()) ::
           {:ok, State.t()} | {:error, :not_member | :not_found | term()}
@@ -626,8 +629,8 @@ defmodule Aesir.ZoneServer.Guild.Manager do
       {:ok, pid} ->
         try do
           case Entry.get_and_update(pid, &replace_member_reply(&1, char_id, member)) do
-            {:ok, :updated, state} ->
-              broadcast(guild_id, {:guild_member_updated, guild_id, member})
+            {:ok, :updated, merged, state} ->
+              broadcast(guild_id, {:guild_member_updated, guild_id, merged})
               {:ok, state}
 
             {:ok, :unchanged, state} ->
@@ -653,17 +656,20 @@ defmodule Aesir.ZoneServer.Guild.Manager do
     end
   end
 
-  defp replace_member(%State{} = state, char_id, member) do
+  defp replace_member(%State{} = state, char_id, %Member{} = member) do
     case Map.fetch(state.members, char_id) do
       :error ->
         {{:error, :not_member}, state}
 
-      {:ok, ^member} ->
-        {{:ok, :unchanged, state}, state}
+      {:ok, %Member{} = old_member} ->
+        merged = %Member{member | position_index: old_member.position_index}
 
-      {:ok, _old_member} ->
-        new_state = %State{state | members: Map.put(state.members, char_id, member)}
-        {{:ok, :updated, new_state}, new_state}
+        if merged == old_member do
+          {{:ok, :unchanged, state}, state}
+        else
+          new_state = %State{state | members: Map.put(state.members, char_id, merged)}
+          {{:ok, :updated, merged, new_state}, new_state}
+        end
     end
   end
 

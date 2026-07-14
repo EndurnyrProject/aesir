@@ -41,6 +41,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           account_id: integer(),
           process_pid: pid() | nil,
           party_id: non_neg_integer(),
+          guild_id: non_neg_integer(),
           sex: String.t(),
           hair: integer(),
           hair_color: integer(),
@@ -241,6 +242,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # source of truth; this mirrors it for the session's lifetime).
     party_id: 0,
 
+    # Guild membership (0 = none), sourced from the Character at spawn and
+    # kept current by Guild.Manager pushes (`characters.guild_id` is the
+    # source of truth; this mirrors it for the session's lifetime).
+    guild_id: 0,
+
     # Marriage partner char id (0 = unmarried), sourced from the Character at
     # spawn. Read-only for now (no marriage system); backs the `getpartnerid`
     # script read.
@@ -258,6 +264,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       # Will be set later if needed
       process_pid: nil,
       party_id: character.party_id,
+      guild_id: character.guild_id,
       partner_id: character.partner_id,
       sex: character.sex,
       hair: character.hair,

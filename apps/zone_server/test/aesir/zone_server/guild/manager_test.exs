@@ -541,6 +541,24 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
       assert_receive {:guild_member_updated, ^guild_id, ^member}
     end
 
+    test "preserves the stored position_index against a presence projection" do
+      {master, created} = guild_fixture("SyncPosition")
+      %Member{} = old = Map.fetch!(created.members, master.id)
+      assert old.position_index == 0
+
+      member = %Member{old | hp: 555, position_index: @newbie_position}
+
+      Phoenix.PubSub.subscribe(Aesir.PubSub, "guild:#{created.guild_id}")
+
+      assert {:ok, state} = Manager.sync_member(created.guild_id, master.id, member)
+      assert Map.fetch!(state.members, master.id).position_index == 0
+      assert Map.fetch!(state.members, master.id).hp == 555
+
+      guild_id = created.guild_id
+      assert_receive {:guild_member_updated, ^guild_id, broadcast_member}
+      assert broadcast_member.position_index == 0
+    end
+
     test "identical snapshots are a no-op" do
       {master, created} = guild_fixture("SyncNoop")
       member = Map.fetch!(created.members, master.id)

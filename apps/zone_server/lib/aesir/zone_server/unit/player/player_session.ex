@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.Appearance
+  alias Aesir.ZoneServer.Unit.Player.GuildSync
   alias Aesir.ZoneServer.Unit.Player.Handlers.BreakOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
@@ -305,6 +306,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # longer lists this character (kicked while offline) silently resets
     # `party_id` back to 0 instead of subscribing (design "Login/logout").
     state = subscribe_party(state)
+
+    # Push an online guild presence snapshot. Best-effort and a no-op when the
+    # player has no guild or the guild entry isn't running (mirrors party);
+    # `GuildSync.sync/2` self-guards on `guild_id == 0`.
+    GuildSync.sync(state.game_state, online: true)
 
     # Subscribe to mob despawns on this map so we can drop a combat target
     # when the mob we were attacking dies.
@@ -911,6 +917,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
     if game_state.party_id > 0 do
       PartySync.sync(game_state, online: false)
+    end
+
+    if game_state.guild_id > 0 do
+      GuildSync.sync(game_state, online: false)
     end
 
     WarpHandler.leave_current_map(game_state, DespawnReason.logged_out())
