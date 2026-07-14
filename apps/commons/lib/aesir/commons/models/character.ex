@@ -41,6 +41,7 @@ defmodule Aesir.Commons.Models.Character do
           manner: integer(),
           party_id: integer(),
           guild_id: integer(),
+          guild_position: integer(),
           pet_id: integer(),
           homun_id: integer(),
           elemental_id: integer(),
@@ -123,6 +124,7 @@ defmodule Aesir.Commons.Models.Character do
     field :manner, :integer, default: 0
     field :party_id, :integer, default: 0
     field :guild_id, :integer, default: 0
+    field :guild_position, :integer, default: 0
     field :pet_id, :integer, default: 0
     field :homun_id, :integer, default: 0
     field :elemental_id, :integer, default: 0
@@ -205,6 +207,7 @@ defmodule Aesir.Commons.Models.Character do
       :manner,
       :party_id,
       :guild_id,
+      :guild_position,
       :pet_id,
       :homun_id,
       :elemental_id,
