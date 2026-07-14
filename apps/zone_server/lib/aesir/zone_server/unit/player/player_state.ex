@@ -777,6 +777,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     Combatant.new!(%{
       unit_id: state.character_id,
       unit_type: :player,
+      party_id: state.party_id,
+      guild_id: state.guild_id,
       base_stats: state.stats.base_stats,
       combat_stats: state.stats.combat_stats,
       progression: state.stats.progression,

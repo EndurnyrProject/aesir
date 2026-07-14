@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
+  alias Aesir.ZoneServer.Mmo.Skills.WzEarthspike
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -122,14 +123,34 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   end
 
   describe "execute_magic_attack/3" do
-    test "applies hit_count magic hits, summing damage into one packet with div = hits" do
+    test "rejects a dead mob before calculating or applying magic damage" do
+      caster = build_caster()
+      dead_mob = %{build_mob_state(@target_id, 150, 150) | hp: 0}
+
+      stub(UnitRegistry, :get_unit, fn
+        :mob, @target_id -> {:ok, {MobState, dead_mob, self()}}
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :mob, @target_id -> {:ok, {150, 150, @map_name}}
+      end)
+
+      reject(&MagicDamageCalculator.calculate_magic_damage/3)
+      reject(&Broadcast.to_in_range/5)
+      reject(&MobSession.apply_damage/3)
+
+      assert {:error, :target_dead} =
+               WzEarthspike.cast(caster, {:unit, @target_id}, 1, WzEarthspike.definition())
+    end
+
+    test "Earth Spike level 1 damages a live mob through the magic pipeline" do
       caster = build_caster()
       test_pid = self()
       stub_single_target_mob()
 
       stub(MagicDamageCalculator, :calculate_magic_damage, fn _a, _t, opts ->
-        assert opts[:element] == :fire
-        assert opts[:skill_ratio] == 100
+        assert opts[:element] == :earth
+        assert opts[:skill_ratio] == 200
         {:ok, %{damage: 30, is_critical: false}}
       end)
 
@@ -143,17 +164,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
         :ok
       end)
 
-      assert :ok =
-               Combat.execute_magic_attack(caster, @target_id,
-                 skill_id: 19,
-                 skill_level: 3,
-                 skill_ratio: 100,
-                 element: :fire,
-                 hit_count: 3
-               )
+      assert {:ok, ^caster} =
+               WzEarthspike.cast(caster, {:unit, @target_id}, 1, WzEarthspike.definition())
 
-      assert_received {:packet, %SkillDamage{damage: 90, div: 3, skill_id: 19, level: 3}}
-      assert_received {:damage, 90}
+      assert_received {:packet, %SkillDamage{damage: 30, div: 1, skill_id: 90, level: 1}}
+      assert_received {:damage, 30}
     end
 
     test "each of a multi-hit cast rolls magic damage independently and sums" do
@@ -190,9 +205,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       assert_received {:damage, 90}
     end
 
-    test "returns {:error, :pvp_not_implemented} for a player target" do
+    test "applies direct magic damage to a live player target" do
       caster = build_caster()
-      target_player = spawn(fn -> Process.sleep(:infinity) end)
+      target_player = self()
+      test_pid = self()
 
       stub(UnitRegistry, :get_unit, fn :mob, @target_id -> {:error, :not_found} end)
       stub(UnitRegistry, :get_player_pid, fn @target_id -> {:ok, target_player} end)
@@ -202,12 +218,47 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
         %{game_state: %{build_caster() | character_id: @target_id, x: 150, y: 150}}
       end)
 
-      assert {:error, :pvp_not_implemented} =
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _a, _t, _opts ->
+        {:ok, %{damage: 30, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, %SkillDamage{} = packet ->
+        send(test_pid, {:packet, packet})
+        :ok
+      end)
+
+      stub(PlayerSession, :apply_damage, fn ^target_player, damage, @caster_id ->
+        send(test_pid, {:damage, damage})
+        :ok
+      end)
+
+      assert {:ok, ^caster} =
+               WzEarthspike.cast(caster, {:unit, @target_id}, 5, WzEarthspike.definition())
+
+      assert_received {:packet, %SkillDamage{damage: 150, div: 5, skill_id: 90, level: 5}}
+      assert_received {:damage, 150}
+    end
+
+    test "rejects direct magic damage against a player in the same party" do
+      caster = %{build_caster() | party_id: 10}
+      target_player = self()
+      target = %{build_caster() | character_id: @target_id, party_id: 10}
+
+      stub(UnitRegistry, :get_unit, fn :mob, @target_id -> {:error, :not_found} end)
+      stub(UnitRegistry, :get_player_pid, fn @target_id -> {:ok, target_player} end)
+      stub(PlayerSession, :get_current_stats, fn ^target_player -> target.stats end)
+      stub(PlayerSession, :get_state, fn ^target_player -> %{game_state: target} end)
+
+      reject(&MagicDamageCalculator.calculate_magic_damage/3)
+      reject(&Broadcast.to_in_range/5)
+      reject(&PlayerSession.apply_damage/3)
+
+      assert {:error, :invalid_target} =
                Combat.execute_magic_attack(caster, @target_id,
-                 skill_id: 19,
+                 skill_id: 90,
                  skill_level: 1,
-                 skill_ratio: 100,
-                 element: :fire,
+                 skill_ratio: 200,
+                 element: :earth,
                  hit_count: 1
                )
     end
@@ -228,6 +279,59 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   end
 
   describe "execute_magic_splash/4" do
+    test "includes an enemy player but excludes self and same-party players" do
+      caster = %{build_caster() | party_id: 10}
+      ally_id = 2002
+      enemy_id = 2003
+      self_pid = spawn(fn -> Process.sleep(:infinity) end)
+      ally_pid = spawn(fn -> Process.sleep(:infinity) end)
+      enemy_pid = spawn(fn -> Process.sleep(:infinity) end)
+
+      on_exit(fn ->
+        Enum.each([self_pid, ally_pid, enemy_pid], &Process.exit(&1, :kill))
+      end)
+
+      states = %{
+        self_pid => caster,
+        ally_pid => %{build_caster() | character_id: ally_id, party_id: 10, x: 151},
+        enemy_pid => %{build_caster() | character_id: enemy_id, party_id: 0, x: 152}
+      }
+
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+        [{:player, @caster_id}, {:player, ally_id}, {:player, enemy_id}]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn :mob, id when id in [@caster_id, ally_id, enemy_id] ->
+        {:error, :not_found}
+      end)
+
+      stub(UnitRegistry, :get_player_pid, fn
+        @caster_id -> {:ok, self_pid}
+        ^ally_id -> {:ok, ally_pid}
+        ^enemy_id -> {:ok, enemy_pid}
+      end)
+
+      stub(PlayerSession, :get_current_stats, fn pid -> states[pid].stats end)
+      stub(PlayerSession, :get_state, fn pid -> %{game_state: states[pid]} end)
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, target, _opts ->
+        assert target.unit_id == enemy_id
+        {:ok, %{damage: 40, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+      expect(PlayerSession, :apply_damage, fn ^enemy_pid, 40, @caster_id -> :ok end)
+
+      assert [^enemy_id] =
+               Combat.execute_magic_splash(caster, @center, 2,
+                 skill_id: 90,
+                 skill_level: 1,
+                 skill_ratio: 200,
+                 element: :earth
+               )
+    end
+
     test "hits each target for full damage without :split" do
       caster = build_caster()
       test_pid = self()

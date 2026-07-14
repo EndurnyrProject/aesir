@@ -197,9 +197,12 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
                )
     end
 
-    test "returns {:error, :pvp_not_implemented} for a player target" do
+    test "allows magic damage against another unaffiliated player" do
       caster = build_caster()
       target_player = spawn(fn -> Process.sleep(:infinity) end)
+      test_pid = self()
+
+      on_exit(fn -> Process.exit(target_player, :kill) end)
 
       stub(UnitRegistry, :get_unit, fn :mob, @target_id -> {:error, :not_found} end)
       stub(UnitRegistry, :get_player_pid, fn @target_id -> {:ok, target_player} end)
@@ -210,12 +213,25 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
         %{game_state: %{build_caster() | character_id: @target_id, x: 150, y: 150}}
       end)
 
-      assert {:error, :pvp_not_implemented} =
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+      stub(StatusInterpreter, :absorb_damage, fn :player, @target_id, damage, _hit_info ->
+        damage
+      end)
+
+      stub(PlayerSession, :apply_damage, fn ^target_player, damage, @caster_id ->
+        send(test_pid, {:damage, damage})
+        :ok
+      end)
+
+      assert :ok =
                Combat.execute_magic_damage(caster, @target_id, 100,
                  skill_id: @skill_id,
                  skill_level: @skill_level,
                  element: :holy
                )
+
+      assert_received {:damage, 100}
     end
 
     test "allows a mob caster to damage a player target (mob skills are not PvP)" do

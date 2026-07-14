@@ -94,6 +94,85 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
                MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5))
     end
 
+    test "target race and size select consecutive Renewal magic bonuses" do
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :player, 1001 ->
+          %{
+            {:magic_addsize, :large} => 20,
+            {:magic_addsize, :all} => 5,
+            {:magic_addrace, :demon} => 30,
+            {:magic_addrace, :all} => 5
+          }
+
+        _, _ ->
+          %{}
+      end)
+
+      target =
+        defender(0, 0)
+        |> Map.put(:size, :large)
+        |> Map.put(:race, :demon)
+
+      # Renewal applies size then race, flooring each stage:
+      # 100 * 125% = 125; 125 * 135% = 168.75 -> 168.
+      assert {:ok, %{damage: 168, is_critical: false}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker(100), target)
+    end
+
+    test "target size and race bonuses apply before S.MAtk and the skill ratio" do
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :player, 1001 ->
+          %{{:magic_addsize, :large} => 5, {:magic_addrace, :demon} => 5}
+
+        _, _ ->
+          %{}
+      end)
+
+      target =
+        defender(0, 0)
+        |> Map.put(:size, :large)
+        |> Map.put(:race, :demon)
+
+      # rAthena cardfix: 50 -> 52 (+5% size) -> 54 (+5% race), then 200% = 108.
+      # Applying cardfix after the ratio would incorrectly produce 110.
+      assert {:ok, %{damage: 108, is_critical: false}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker(50), target,
+                 skill_ratio: 200
+               )
+    end
+
+    test "negative magic cardfix truncates the removed amount like APPLY_CARDFIX_RE" do
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :player, 1001 -> %{{:magic_addsize, :large} => -5}
+        _, _ -> %{}
+      end)
+
+      target = defender(0, 0) |> Map.put(:size, :large) |> Map.put(:race, :formless)
+
+      # APPLY_CARDFIX_RE removes trunc(101 * 5 / 100) = 5, yielding 96.
+      # Multiplying by 95% and flooring would incorrectly yield 95.
+      assert {:ok, %{damage: 96, is_critical: false}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker(101), target)
+    end
+
+    test "race and size bonuses do not apply to a different target profile" do
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :player, 1001 ->
+          %{{:magic_addsize, :large} => 20, {:magic_addrace, :demon} => 30}
+
+        _, _ ->
+          %{}
+      end)
+
+      target =
+        defender(0, 0)
+        |> Map.put(:size, :small)
+        |> Map.put(:race, :brute)
+
+      assert {:ok, %{damage: 100, is_critical: false}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker(100), target)
+    end
+
     test "hard mdef of -100 uses -99 and does not crash" do
       # effective -99: 100 * (1000-99) / (1000-990) - 0 = 100 * 901 / 10 = 9010
       assert {:ok, %{damage: 9010, is_critical: false}} =

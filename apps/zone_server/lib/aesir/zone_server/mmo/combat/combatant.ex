@@ -42,6 +42,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
     # Unit identification
     field :unit_id, integer(), enforce: true
     field :unit_type, :player | :mob, enforce: true
+    field :party_id, non_neg_integer(), default: 0
+    field :guild_id, non_neg_integer(), default: 0
 
     # Base stats (STR, AGI, VIT, INT, DEX, LUK)
     field :base_stats,

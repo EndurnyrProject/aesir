@@ -12,20 +12,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
   1. Base MATK: a roll over the attacker's `matk_min`/`matk_max` band. rAthena
      rolls this per target inside `battle_calc_magic_attack` (battle.cpp:5969),
      so each call rolls independently.
-  2. S.MAtk: attacker's `smatk` combat stat added as a percentage of the
+  2. Target-aware Renewal magic size and race cardfix, each applied and
+     truncated consecutively (`magic_addsize`, then `magic_addrace`).
+  3. S.MAtk: attacker's `smatk` combat stat added as a percentage of the
      rolled base MATK, before the skill ratio (`battle.cpp:6016`).
-  3. Skill ratio + flat MATK bonus.
-  4. Attacker status `matk_rate` (percent delta on magic damage).
-  5. Element resistance (skill element vs defender element/level).
-  6. Generic status `damage_multiplier`.
-  7. MRes: defender's `mres` combat stat reduces damage on the same
+  4. Skill ratio + flat MATK bonus.
+  5. Attacker status `matk_rate` (percent delta on magic damage).
+  6. Element resistance (skill element vs defender element/level).
+  7. Generic status `damage_multiplier`.
+  8. MRes: defender's `mres` combat stat reduces damage on the same
      soft-capped curve as physical Res, before MDEF (`battle.cpp:6067`).
-  8. Renewal MDEF reduction (`battle.cpp:6105`), with the defender's status
+  9. Renewal MDEF reduction (`battle.cpp:6105`), with the defender's status
      `mdef_rate` scaling hard MDEF first:
      `dmg = matk * (1000 + hardMDEF) / (1000 + 10*hardMDEF) - softMDEF`.
-  9. Defender status `magic_damage_reduction` (percent of final magic damage
+  10. Defender status `magic_damage_reduction` (percent of final magic damage
      the target shrugs off, clamped 0..100).
-  10. Min-1 clamp.
+  11. Min-1 clamp.
 
   Hard MDEF folds the defender's status/equipment MDEF (players) or the mob's
   flat MDEF; the consumable `mdef_rate`/`magic_damage_reduction` status keys
@@ -100,9 +102,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
     # rAthena rolls MATK inside battle_calc_magic_attack, which runs per target
     # (battle.cpp:5969), so each call rolls its own MATK independently.
     base_matk = roll_matk(attacker.combat_stats)
+    modifiers = combatant_modifiers(attacker)
+    base_matk = apply_target_modifiers(base_matk, modifiers, defender)
     smatk = Map.get(attacker.combat_stats, :smatk, 0)
     base_matk = base_matk + div(base_matk * smatk, 100)
-    modifiers = combatant_modifiers(attacker)
     # :matk_rate is an additive percent delta on magic damage (SC_INCMATKRATE,
     # SC_COMBAT_PILL), applied to the skill-scaled MATK.
     matk_rate = Map.get(modifiers, :matk_rate, 0)
@@ -120,6 +123,33 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
       |> DamageShared.clamp_min_one()
 
     {:ok, %{damage: damage, is_critical: false}}
+  end
+
+  # Renewal cardfix applies target-size then target-race magic bonuses as
+  # separate integer stages before S.MAtk and the skill ratio (rAthena
+  # battle.cpp:807-828, 6008-6020). Tuple keys keep the modifier values numeric,
+  # so the existing ModifierCalculator can sum them.
+  @spec apply_target_modifiers(integer(), map(), map()) :: integer()
+  defp apply_target_modifiers(damage, modifiers, defender) do
+    size_bonus =
+      Map.get(modifiers, {:magic_addsize, Map.get(defender, :size)}, 0) +
+        Map.get(modifiers, {:magic_addsize, :all}, 0)
+
+    race_bonus =
+      Map.get(modifiers, {:magic_addrace, Map.get(defender, :race)}, 0) +
+        Map.get(modifiers, {:magic_addrace, :all}, 0)
+
+    damage
+    |> apply_cardfix(size_bonus)
+    |> apply_cardfix(race_bonus)
+  end
+
+  # Mirrors APPLY_CARDFIX_RE rather than multiplying by the final percentage.
+  # The removed/added amount is truncated toward zero first; this matters for
+  # reductions (101 at -5% removes 5 and yields 96, not floor(95.95) = 95).
+  defp apply_cardfix(damage, bonus) do
+    fix = max(0, 100 + bonus)
+    damage - div(damage * (100 - fix), 100)
   end
 
   @spec apply_mdef_formula(number(), map(), map()) :: number()

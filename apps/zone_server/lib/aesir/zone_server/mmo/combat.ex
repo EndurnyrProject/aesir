@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
   alias Aesir.ZoneServer.Mmo.Skill.Passives
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
@@ -260,7 +261,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   ## Returns
 
     - `:ok` on success.
-    - `{:error, reason}` when the target is invalid, out of range, or a player (PvP).
+    - `{:error, reason}` when the target is invalid, friendly, dead, or out of range.
   """
   @spec execute_magic_damage(struct(), integer(), non_neg_integer(), keyword()) ::
           :ok | {:error, atom()}
@@ -271,9 +272,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     element = Keyword.get(opts, :element, :neutral)
 
     with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
+         :ok <- ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- validate_attack_with_combatants(attacker, target),
-         :ok <- ensure_offensive_target(attacker, target_type) do
+         :ok <- Targeting.validate_enemy(attacker, target) do
       damage =
         amount
         |> DamageShared.apply_element(element, target)
@@ -392,7 +394,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
 
   ## Returns
     - :ok if the skill connected
-    - {:error, reason} if the target was invalid, out of range, or PvP
+    - {:error, reason} if the target was invalid, friendly, dead, or out of range
   """
   @spec execute_magic_attack(struct(), integer(), keyword()) :: :ok | {:error, atom()}
   def execute_magic_attack(caster_state, target_id, opts) do
@@ -404,9 +406,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     hits = Keyword.get(opts, :hit_count, 1)
 
     with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
+         :ok <- ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- validate_attack_with_combatants(attacker, target),
-         :ok <- ensure_offensive_target(attacker, target_type) do
+         :ok <- Targeting.validate_enemy(attacker, target) do
       total = sum_magic_hits(attacker, target, element, skill_ratio, hits)
       {tx, ty} = target.position
 
@@ -468,7 +471,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     element = Keyword.get(opts, :element, :neutral)
     split = Keyword.get(opts, :split, false)
 
-    targets = splash_targets(attacker.map_name, center, radius, attacker.unit_id)
+    targets = splash_targets(attacker.map_name, center, radius, attacker)
     divisor = if split, do: max(length(targets), 1), else: 1
 
     Enum.flat_map(targets, fn {_unit_type, target_id} ->
@@ -494,7 +497,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
          divisor
        ) do
     with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
+         :ok <- ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
+         :ok <- Targeting.validate_enemy(attacker, target),
          {:ok, %{damage: damage}} <-
            MagicDamageCalculator.calculate_magic_damage(attacker, target,
              element: element,
@@ -549,8 +554,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     element = Keyword.get(opts, :element, :neutral)
 
     with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
-         :ok <- ensure_offensive_target(attacker, target_type),
+         :ok <- ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
+         :ok <- Targeting.validate_enemy(attacker, target),
          {:ok, %{damage: damage}} <-
            MiscDamageCalculator.calculate_misc_damage(attacker, target,
              base_damage: base_damage,
@@ -600,7 +606,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     base_damage = Keyword.fetch!(opts, :base_damage)
     element = Keyword.get(opts, :element, :neutral)
 
-    targets = splash_targets(attacker.map_name, center, radius, attacker.unit_id)
+    targets = splash_targets(attacker.map_name, center, radius, attacker)
 
     Enum.flat_map(targets, fn {_unit_type, target_id} ->
       apply_misc_splash_hit(attacker, target_id, skill_id, skill_level, element, base_damage)
@@ -609,7 +615,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
 
   defp apply_misc_splash_hit(attacker, target_id, skill_id, skill_level, element, base_damage) do
     with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
+         :ok <- ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
+         :ok <- Targeting.validate_enemy(attacker, target),
          {:ok, %{damage: damage}} <-
            MiscDamageCalculator.calculate_misc_damage(attacker, target,
              base_damage: base_damage,
@@ -657,7 +665,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
 
   ## Returns
     - :ok if the skill connected
-    - {:error, reason} if the target was invalid, out of range, or PvP
+    - {:error, reason} if the target was invalid, friendly, dead, or out of range
   """
   @spec execute_skill_attack(struct(), integer(), keyword()) :: :ok | {:error, atom()}
   def execute_skill_attack(caster_state, target_id, opts) do
@@ -671,9 +679,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
 
     # NOTE: skills always connect here; skill miss/flee isn't modeled yet.
     with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
+         :ok <- ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- validate_attack_with_combatants(attacker, target),
-         :ok <- ensure_offensive_target(attacker, target_type) do
+         :ok <- Targeting.validate_enemy(attacker, target) do
       Enum.each(1..hits//1, fn _ ->
         apply_skill_damage(
           attacker,
@@ -694,8 +703,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   Executes a self/ground-centered splash skill against every offensive target in
   `radius` cells of `{x, y}`.
 
-  Resolves units via the spatial index, filters to valid offensive targets
-  (mobs only for now, excluding the caster), then runs each through the shared
+  Resolves units via the spatial index, filters to living enemies (excluding
+  the caster and same-party/guild players), then runs each through the shared
   single-target damage path **without** the per-target attack-range gate — the
   radius already bounds the hit set. Returns the list of hit target ids, consumed
   by knockback (#6).
@@ -720,7 +729,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     calc_opts = Keyword.take(opts, [:skill_ratio, :skip_crit])
 
     attacker.map_name
-    |> splash_targets(center, radius, attacker.unit_id)
+    |> splash_targets(center, radius, attacker)
     |> Enum.flat_map(fn {_unit_type, target_id} ->
       with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
            target <- target_state.__struct__.to_combatant(target_state),
@@ -745,35 +754,53 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   Selects the valid offensive targets for a center+radius splash/footprint.
 
   Returns the `{unit_type, unit_id}` units that are in the Chebyshev square of
-  `radius` cells around `{cx, cy}`, are offensive (mobs only for now, excluding
-  the caster and allies), and are alive (`hp > 0`). Shared by `execute_splash_attack`
+  `radius` cells around `{cx, cy}`, are living enemies of the caster, and are
+  alive. Shared by `execute_splash_attack`
   and ground skill-unit behaviours (e.g. Storm Gust) so the target filter — including
   the dead-mob guard — lives in one place.
 
   The spatial index filters by Manhattan distance (a diamond); we query a Manhattan
   radius of `2 * radius` so the full Chebyshev square is covered, then post-filter.
   """
-  @spec splash_targets(String.t(), {integer(), integer()}, non_neg_integer(), integer()) ::
+  @spec splash_targets(String.t(), {integer(), integer()}, non_neg_integer(), integer() | map()) ::
           [{atom(), integer()}]
-  def splash_targets(map_name, {cx, cy}, radius, _caster_id) do
+  def splash_targets(map_name, {cx, cy}, radius, caster) do
+    caster = resolve_splash_caster(caster)
+
     map_name
     |> SpatialIndex.get_all_units_in_range(cx, cy, radius * 2)
-    |> Enum.filter(fn {_unit_type, target_id} = unit ->
-      splash_target?(unit) and offensive_target_in_square?(target_id, cx, cy, radius)
+    |> Enum.filter(fn {_unit_type, target_id} ->
+      target_id != caster.unit_id and
+        offensive_target_in_square?(caster, target_id, cx, cy, radius)
     end)
   end
 
-  defp offensive_target_in_square?(target_id, cx, cy, radius) do
+  defp offensive_target_in_square?(caster, target_id, cx, cy, radius) do
     case get_target_unit_state(target_id) do
-      {:ok, _pid, target_state, _type} -> splash_hit?(target_state, cx, cy, radius)
-      _ -> false
+      {:ok, _pid, target_state, target_type} ->
+        target = target_state.__struct__.to_combatant(target_state)
+
+        ensure_targetable(target_state, target_type) == :ok and
+          splash_enemy?(caster, target) and splash_hit?(target_state, cx, cy, radius)
+
+      _ ->
+        false
     end
   end
 
-  # Mobs only for now; the caster (a player) is excluded by type, and PvP splash
-  # is deferred with PvP single-target.
-  defp splash_target?({:mob, _id}), do: true
-  defp splash_target?({:player, _id}), do: false
+  defp resolve_splash_caster(%{unit_type: _unit_type} = caster), do: caster
+
+  defp resolve_splash_caster(caster_id) do
+    case UnitRegistry.get_unit(:player, caster_id) do
+      {:ok, {module, state, _pid}} -> module.to_combatant(state)
+      _ -> %{unit_type: :player, unit_id: caster_id, relation_unavailable: true}
+    end
+  end
+
+  # If the caster's relation snapshot is unavailable, retain the old safe PvE
+  # fallback: mobs remain targetable, but players are not.
+  defp splash_enemy?(%{relation_unavailable: true}, %{unit_type: :player}), do: false
+  defp splash_enemy?(caster, target), do: Targeting.validate_enemy(caster, target) == :ok
 
   # Keeps the square (Chebyshev) AoE shape and drops dead mobs awaiting despawn.
   defp splash_hit?(%{hp: hp}, _x, _y, _radius) when hp <= 0, do: false
@@ -820,12 +847,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
       :ok
     end
   end
-
-  # PvP is the only forbidden pairing: a player attacking another player. Mob
-  # casters (mob skills) may target players.
-  defp ensure_offensive_target(_attacker, :mob), do: :ok
-  defp ensure_offensive_target(%{unit_type: :mob}, :player), do: :ok
-  defp ensure_offensive_target(_attacker, :player), do: {:error, :pvp_not_implemented}
 
   # Routes damage to the owning session by unit type, keeping the damage paths
   # free of concrete session-module knowledge. Targets with positive damage
