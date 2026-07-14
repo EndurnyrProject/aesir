@@ -11,6 +11,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerNameTest do
 
   alias Aesir.Net.NameRequest
   alias Aesir.Net.NameResponse
+  alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
+  alias Aesir.ZoneServer.Guild.Member, as: GuildMember
+  alias Aesir.ZoneServer.Guild.Position, as: GuildPosition
+  alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
@@ -30,8 +34,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerNameTest do
         character_id: @character_id,
         character_name: @char_name,
         party_id: Keyword.get(opts, :party_id, 0),
+        guild_id: Keyword.get(opts, :guild_id, 0),
         visible_players: Keyword.get(opts, :visible_players, MapSet.new()),
         visible_mobs: Keyword.get(opts, :visible_mobs, MapSet.new())
+      }
+    }
+  end
+
+  defp guild_state(char_id, position_index) do
+    %GuildState{
+      guild_id: 3,
+      name: "Aesir",
+      master_char_id: char_id,
+      positions: %{
+        0 => %GuildPosition{index: 0, name: "GuildMaster"},
+        19 => %GuildPosition{index: 19, name: "Newbie"}
+      },
+      members: %{
+        char_id => GuildMember.new(char_id, "Member", 99, true, position_index)
       }
     }
   end
@@ -68,7 +88,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerNameTest do
   test "visible player request replies with the player's name (party/guild empty)" do
     other_id = 42
     s = state(visible_players: MapSet.new([other_id]))
-    other_player_state = %{character_name: "OtherPlayer", party_id: 0}
+    other_player_state = %{character_name: "OtherPlayer", party_id: 0, guild_id: 0}
 
     expect(UnitRegistry, :get_unit, fn :player, ^other_id ->
       {:ok, {SomeMod, other_player_state, self()}}
@@ -90,7 +110,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerNameTest do
   test "visible player request replies with the party name when the player is in a party" do
     other_id = 42
     s = state(visible_players: MapSet.new([other_id]))
-    other_player_state = %{character_name: "OtherPlayer", party_id: 7}
+    other_player_state = %{character_name: "OtherPlayer", party_id: 7, guild_id: 0}
 
     expect(UnitRegistry, :get_unit, fn :player, ^other_id ->
       {:ok, {SomeMod, other_player_state, self()}}
@@ -105,6 +125,57 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerNameTest do
     assert_receive {:send, :world,
                     {:name_response,
                      %NameResponse{gid: ^other_id, name: "OtherPlayer", party_name: "Vanguard"}}}
+  end
+
+  test "self request replies with the guild name and position title when in a guild" do
+    s = state(guild_id: 3)
+
+    expect(GuildManager, :get, 2, fn 3 -> {:ok, guild_state(@character_id, 0)} end)
+
+    {:noreply, ^s} = PacketHandler.handle_message(%NameRequest{entity_id: @character_id}, s)
+
+    assert_receive {:send, :world,
+                    {:name_response,
+                     %NameResponse{
+                       gid: @character_id,
+                       guild_name: "Aesir",
+                       position_name: "GuildMaster"
+                     }}}
+  end
+
+  test "self request defaults guild fields when the guild entry is not live" do
+    s = state(guild_id: 3)
+
+    expect(GuildManager, :get, 2, fn 3 -> {:error, :not_found} end)
+
+    {:noreply, ^s} = PacketHandler.handle_message(%NameRequest{entity_id: @character_id}, s)
+
+    assert_receive {:send, :world,
+                    {:name_response,
+                     %NameResponse{gid: @character_id, guild_name: "", position_name: ""}}}
+  end
+
+  test "visible player request replies with the guild name and position of the other player" do
+    other_id = 42
+    s = state(visible_players: MapSet.new([other_id]))
+    other_player_state = %{character_name: "OtherPlayer", party_id: 0, guild_id: 8}
+
+    expect(UnitRegistry, :get_unit, fn :player, ^other_id ->
+      {:ok, {SomeMod, other_player_state, self()}}
+    end)
+
+    expect(GuildManager, :get, 2, fn 8 -> {:ok, guild_state(other_id, 19)} end)
+
+    {:noreply, ^s} = PacketHandler.handle_message(%NameRequest{entity_id: other_id}, s)
+
+    assert_receive {:send, :world,
+                    {:name_response,
+                     %NameResponse{
+                       gid: ^other_id,
+                       name: "OtherPlayer",
+                       guild_name: "Aesir",
+                       position_name: "Newbie"
+                     }}}
   end
 
   test "visible mob request replies with the mob name only" do

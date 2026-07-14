@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NameHandler do
   require Logger
 
   alias Aesir.Net.NameResponse
+  alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
+  alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
@@ -32,7 +34,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NameHandler do
         MessageRouter.send_to(connection_pid, %NameResponse{
           gid: game_state.character_id,
           name: game_state.character_name,
-          party_name: party_name(game_state.party_id)
+          party_name: party_name(game_state.party_id),
+          guild_name: guild_name(game_state.guild_id),
+          position_name: position_name(game_state.guild_id, game_state.character_id)
         })
 
       MapSet.member?(game_state.visible_players, entity_id) ->
@@ -41,7 +45,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NameHandler do
             MessageRouter.send_to(connection_pid, %NameResponse{
               gid: entity_id,
               name: player_state.character_name,
-              party_name: party_name(player_state.party_id)
+              party_name: party_name(player_state.party_id),
+              guild_name: guild_name(player_state.guild_id),
+              position_name: position_name(player_state.guild_id, entity_id)
             })
 
           {:error, :not_found} ->
@@ -79,6 +85,35 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NameHandler do
     case PartyManager.get(party_id) do
       {:ok, party_state} -> party_state.name
       {:error, :not_found} -> ""
+    end
+  end
+
+  # Resolves a guild_id to its guild name, defaulting to the proto3 zero-value
+  # for a guild-less player or a stale guild_id (entry not live).
+  defp guild_name(0), do: ""
+
+  defp guild_name(guild_id) do
+    case GuildManager.get(guild_id) do
+      {:ok, guild_state} -> guild_state.name
+      {:error, :not_found} -> ""
+    end
+  end
+
+  # Resolves a member's current position title within their guild, defaulting to
+  # the proto3 zero-value for a guild-less player, a stale guild_id, or a member
+  # whose position slot is unnamed/absent.
+  defp position_name(0, _char_id), do: ""
+
+  defp position_name(guild_id, char_id) do
+    case GuildManager.get(guild_id) do
+      {:ok, state} ->
+        case GuildState.position_of(state, char_id) do
+          nil -> ""
+          position -> position.name
+        end
+
+      {:error, :not_found} ->
+        ""
     end
   end
 

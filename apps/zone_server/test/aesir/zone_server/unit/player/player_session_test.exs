@@ -7,6 +7,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
+  alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Pathfinding
@@ -280,7 +282,82 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
                          aid: 200,
                          gid: 2,
                          name: "OtherPlayer",
+                         guild_id: 0,
+                         guild_name: "",
+                         emblem_id: 0,
                          moving: false
+                       }}}
+
+      Process.exit(other_pid, :kill)
+    end
+
+    test "player_entered_view spawn carries the unit's guild identity", %{character: character} do
+      other_character = %{character | id: 2, account_id: 200, name: "OtherPlayer"}
+
+      other_game_state = %{
+        PlayerState.new(other_character)
+        | movement_state: :standing,
+          guild_id: 7
+      }
+
+      expect(GuildManager, :get, fn 7 ->
+        {:ok, %GuildState{guild_id: 7, name: "Aesir", master_char_id: 2, emblem_id: 4}}
+      end)
+
+      other_pid = spawn(fn -> Process.sleep(1000) end)
+      UnitRegistry.register_player(other_game_state, other_pid)
+
+      state = %{
+        character: character,
+        game_state: PlayerState.new(character),
+        connection_pid: self()
+      }
+
+      {:noreply, _new_state} = PlayerSession.handle_cast({:player_entered_view, 2}, state)
+
+      assert_receive {:send, :world,
+                      {:unit_spawn,
+                       %Aesir.Net.UnitSpawn{
+                         gid: 2,
+                         guild_id: 7,
+                         guild_name: "Aesir",
+                         emblem_id: 4
+                       }}}
+
+      Process.exit(other_pid, :kill)
+    end
+
+    test "player_entered_view spawn defaults guild fields when the entry is not live", %{
+      character: character
+    } do
+      other_character = %{character | id: 2, account_id: 200, name: "OtherPlayer"}
+
+      other_game_state = %{
+        PlayerState.new(other_character)
+        | movement_state: :standing,
+          guild_id: 7
+      }
+
+      expect(GuildManager, :get, fn 7 -> {:error, :not_found} end)
+
+      other_pid = spawn(fn -> Process.sleep(1000) end)
+      UnitRegistry.register_player(other_game_state, other_pid)
+
+      state = %{
+        character: character,
+        game_state: PlayerState.new(character),
+        connection_pid: self()
+      }
+
+      {:noreply, _new_state} = PlayerSession.handle_cast({:player_entered_view, 2}, state)
+
+      assert_receive {:send, :world,
+                      {:unit_spawn,
+                       %Aesir.Net.UnitSpawn{
+                         gid: 2,
+                         guild_id: 7,
+                         guild_name: "",
+                         emblem_id: 0
                        }}}
 
       Process.exit(other_pid, :kill)

@@ -1257,6 +1257,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
     appearance = Appearance.spawn_fields(game_state.stats.equipment)
 
+    {guild_id, guild_name, emblem_id} = guild_identity(game_state)
+
     %UnitSpawn{
       object_type: ObjectType.pc(),
       aid: game_state.account_id,
@@ -1277,7 +1279,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       body_palette: game_state.clothes_color,
       head_dir: 0,
       robe: appearance.robe,
-      guild_id: 0,
+      guild_id: guild_id,
+      guild_name: guild_name,
+      emblem_id: emblem_id,
       sex: sex_to_int(game_state.sex),
       x: game_state.x,
       y: game_state.y,
@@ -1289,5 +1293,19 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       name: game_state.character_name,
       moving: false
     }
+  end
+
+  # Resolves a player's guild identity for a spawn packet as
+  # `{guild_id, guild_name, emblem_id}`. A guild-less player (guild_id 0) or a
+  # stale/non-live guild entry defaults to an empty name and emblem 0; the real
+  # guild_id is still carried for a member whose entry is not live.
+  @spec guild_identity(map()) :: {non_neg_integer(), String.t(), non_neg_integer()}
+  defp guild_identity(%{guild_id: 0}), do: {0, "", 0}
+
+  defp guild_identity(%{guild_id: guild_id}) do
+    case GuildManager.get(guild_id) do
+      {:ok, %GuildState{name: name, emblem_id: emblem_id}} -> {guild_id, name, emblem_id}
+      {:error, :not_found} -> {guild_id, "", 0}
+    end
   end
 end
