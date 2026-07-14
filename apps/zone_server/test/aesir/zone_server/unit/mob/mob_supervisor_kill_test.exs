@@ -14,7 +14,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisorKillTest do
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
 
-  @map "prontera"
+  # Not a real map: `MapManager` boots a `Coordinator` (and its `MobSupervisor`)
+  # for every real map shortly after app start, which would race this test's
+  # own `start_supervised!` for the same map name.
+  @map "test_mob_supervisor_kill"
 
   setup do
     start_supervised!(%{id: MobSupervisor, start: {MobSupervisor, :start_link, [@map]}})

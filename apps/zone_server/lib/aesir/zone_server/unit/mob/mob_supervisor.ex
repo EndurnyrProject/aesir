@@ -148,6 +148,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
   defp kill_match?(%MobState{}, _filter), do: false
 
   @doc """
+  Stops the mob supervisor for a map, if running.
+  """
+  @spec stop(String.t()) :: :ok
+  def stop(map_name) do
+    case GenServer.whereis(via_tuple(map_name)) do
+      nil -> :ok
+      pid -> DynamicSupervisor.stop(pid)
+    end
+  end
+
+  @doc """
   Gets supervisor info for debugging.
   """
   @spec get_supervisor_info(String.t()) :: map()

@@ -776,9 +776,11 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   def terminate(reason, state) do
     Logger.info("Map coordinator for #{state.map_name} terminating: #{inspect(reason)}")
 
-    # Terminate all mobs on this map
+    # Terminate all mobs on this map, then the (linked) supervisor itself so
+    # it doesn't outlive the coordinator and orphan its Registry entry.
     if state.mob_supervisor_pid do
       MobSupervisor.terminate_all_mobs(state.map_name)
+      MobSupervisor.stop(state.map_name)
     end
 
     :ok
