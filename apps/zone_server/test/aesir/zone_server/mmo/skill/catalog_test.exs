@@ -6,6 +6,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
   alias Aesir.ZoneServer.Mmo.Skills.SmBash
   alias Aesir.ZoneServer.Mmo.Skills.SmFatalblow
   alias Aesir.ZoneServer.Mmo.Skills.SmSword
+  alias Aesir.ZoneServer.Mmo.Skills.WzEarthspike
+  alias Aesir.ZoneServer.Mmo.Skills.WzFrostnova
+  alias Aesir.ZoneServer.Mmo.Skills.WzHeavendrive
+  alias Aesir.ZoneServer.Mmo.Skills.WzJupitel
+  alias Aesir.ZoneServer.Mmo.Skills.WzSightrasher
   alias Aesir.ZoneServer.Mmo.Skills.WzStormgust
 
   test "by_id/1 loads AL_INCAGI with correct structure" do
@@ -129,6 +134,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
       assert SmSword in modules
       assert SmFatalblow in modules
       refute SmBash in modules
+    end
+  end
+
+  describe "core Wizard skills" do
+    test "reload/0 registers each skill by id, name, and active capability" do
+      assert :ok = Catalog.reload()
+
+      for {id, name, module} <- [
+            {81, :wz_sightrasher, WzSightrasher},
+            {84, :wz_jupitel, WzJupitel},
+            {88, :wz_frostnova, WzFrostnova},
+            {90, :wz_earthspike, WzEarthspike},
+            {91, :wz_heavendrive, WzHeavendrive}
+          ] do
+        assert {:ok, %Definition{id: ^id, name: ^name}} = Catalog.by_id(id)
+        assert {:ok, %Definition{id: ^id, name: ^name}} = Catalog.by_name(name)
+        assert {:ok, ^module} = Catalog.active_module_for(name)
+      end
     end
   end
 end

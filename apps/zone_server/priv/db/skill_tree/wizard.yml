@@ -4,10 +4,37 @@
     - novice
     - mage
   tree:
+    - name: WZ_SIGHTRASHER
+      max_level: 10
+      requires:
+        - name: MG_LIGHTNINGBOLT
+          level: 1
+        - name: MG_SIGHT
+          level: 1
+    - name: WZ_JUPITEL
+      max_level: 10
+      requires:
+        - name: MG_NAPALMBEAT
+          level: 1
+        - name: MG_LIGHTNINGBOLT
+          level: 1
+    # Task 27 adds the canonical WZ_ICEWALL 1 edge atomically with Ice Wall registration.
+    - name: WZ_FROSTNOVA
+      max_level: 10
     - name: WZ_STORMGUST
       max_level: 10
       requires:
         - name: MG_FROSTDIVER
           level: 1
         - name: WZ_JUPITEL
+          level: 3
+    - name: WZ_EARTHSPIKE
+      max_level: 5
+      requires:
+        - name: MG_STONECURSE
+          level: 1
+    - name: WZ_HEAVENDRIVE
+      max_level: 5
+      requires:
+        - name: WZ_EARTHSPIKE
           level: 3
