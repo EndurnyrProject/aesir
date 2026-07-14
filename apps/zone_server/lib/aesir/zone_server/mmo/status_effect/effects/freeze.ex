@@ -2,8 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Freeze do
   @moduledoc """
   Freeze (SC_FREEZE).
 
-  Frozen solid: water element body, halved DEF and increased MDEF. Undead are
-  immune. Applying it ends Lex Aeterna.
+  Frozen solid: water element body, halved DEF and increased MDEF. Bosses,
+  undead and units with freeze immunity are immune. Applying it ends Lex Aeterna.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_freeze,
@@ -19,7 +19,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Freeze do
       :sc_burning,
       :sc_protection
     ],
-    immunity: [:undead],
+    immunity: [:boss, :freeze, :undead],
+    resistance_type: :magical,
+    duration_adjustment: 3_000,
     opt1: :freeze
 
   @impl true

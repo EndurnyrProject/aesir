@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     - `:immunity` - races/elements/special flags immune to this status
     - `:cleanse` - statuses that cure this one
     - `:resistance_type` - `:physical` or `:magical`
+    - `:duration_adjustment` - milliseconds added after resistance reduction
     - `:bypass_resistance` - skip resistance calculations entirely
     - `:initial_phase` - starting phase for multi-phase statuses
     - `:tick_interval` - default tick interval in milliseconds
@@ -146,6 +147,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
 
   @scalar_defaults %{
     resistance_type: nil,
+    duration_adjustment: 0,
     bypass_resistance: false,
     initial_phase: nil,
     tick_interval: nil,
@@ -172,6 +174,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     immunity: {:list, :atom},
     cleanse: {:list, :atom},
     resistance_type: {:enum, [:physical, :magical]},
+    duration_adjustment: :integer,
     bypass_resistance: :boolean,
     initial_phase: :atom,
     tick_interval: {:integer, {:gt, 0}},

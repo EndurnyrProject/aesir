@@ -5,6 +5,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   @moduletag :capture_log
 
   alias Aesir.Net.SkillDamage
+  alias Aesir.ZoneServer.Map.GatType
+  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
@@ -279,6 +282,117 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   end
 
   describe "execute_magic_splash/4" do
+    test "line-of-sight splash uses rAthena's diagonal integer traversal" do
+      caster = build_caster()
+      visible_id = 2001
+      blocked_id = 2002
+
+      map =
+        "prontera"
+        |> MapData.new(300, 300)
+        |> MapData.set_cell(151, 150, GatType.wall())
+
+      expect(MapCache, :get, fn @map_name -> {:ok, map} end)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 6 ->
+        [{:mob, visible_id}, {:mob, blocked_id}]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :mob, ^visible_id ->
+          {:ok, {MobState, build_mob_state(visible_id, 150, 153), self()}}
+
+        :mob, ^blocked_id ->
+          {:ok, {MobState, build_mob_state(blocked_id, 153, 152), self()}}
+      end)
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, defender, _opts ->
+        assert defender.unit_id == visible_id
+        {:ok, %{damage: 40, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      expect(MobSession, :apply_damage, fn _pid, 40, @caster_id -> :ok end)
+
+      assert [{:mob, ^visible_id}] =
+               Combat.execute_magic_splash(caster, @center, 3,
+                 skill_id: 88,
+                 skill_level: 1,
+                 skill_ratio: 110,
+                 element: :water,
+                 line_of_sight: true
+               )
+    end
+
+    test "preserves the spatial index unit type when mob and player ids collide" do
+      caster = build_caster()
+      target = %{build_caster() | character_id: @target_id, x: 151}
+      target_pid = self()
+
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+        [{:player, @target_id}]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :mob, @target_id ->
+          {:ok, {MobState, build_mob_state(@target_id, 151, 150), self()}}
+      end)
+
+      stub(UnitRegistry, :get_player_pid, fn @target_id -> {:ok, target_pid} end)
+      stub(PlayerSession, :get_current_stats, fn ^target_pid -> target.stats end)
+      stub(PlayerSession, :get_state, fn ^target_pid -> %{game_state: target} end)
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, defender, _opts ->
+        assert defender.unit_type == :player
+        {:ok, %{damage: 40, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      expect(PlayerSession, :apply_damage, fn ^target_pid, 40, @caster_id -> :ok end)
+      reject(&MobSession.apply_damage/3)
+
+      assert [{:player, @target_id}] =
+               Combat.execute_magic_splash(caster, @center, 2,
+                 skill_id: 88,
+                 skill_level: 1,
+                 skill_ratio: 110,
+                 element: :water
+               )
+    end
+
+    test "does not exclude a mob whose numeric id matches the player caster" do
+      caster = build_caster()
+      target_pid = self()
+
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+        [{:mob, @caster_id}]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn :mob, @caster_id ->
+        {:ok, {MobState, build_mob_state(@caster_id, 151, 150), target_pid}}
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :mob, @caster_id ->
+        {:ok, {151, 150, @map_name}}
+      end)
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, defender, _opts ->
+        assert defender.unit_type == :mob
+        {:ok, %{damage: 40, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      expect(MobSession, :apply_damage, fn ^target_pid, 40, @caster_id -> :ok end)
+
+      assert [{:mob, @caster_id}] =
+               Combat.execute_magic_splash(caster, @center, 2,
+                 skill_id: 88,
+                 skill_level: 1,
+                 skill_ratio: 110,
+                 element: :water
+               )
+    end
+
     test "includes an enemy player but excludes self and same-party players" do
       caster = %{build_caster() | party_id: 10}
       ally_id = 2002
@@ -323,7 +437,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
       expect(PlayerSession, :apply_damage, fn ^enemy_pid, 40, @caster_id -> :ok end)
 
-      assert [^enemy_id] =
+      assert [{:player, ^enemy_id}] =
                Combat.execute_magic_splash(caster, @center, 2,
                  skill_id: 90,
                  skill_level: 1,
@@ -364,7 +478,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
           element: :fire
         )
 
-      assert Enum.sort(hits) == [2001, 2002]
+      assert Enum.sort(hits) == [{:mob, 2001}, {:mob, 2002}]
       assert_received {:damage, 40}
       assert_received {:damage, 40}
     end
@@ -402,7 +516,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
           split: true
         )
 
-      assert Enum.sort(hits) == [2001, 2002]
+      assert Enum.sort(hits) == [{:mob, 2001}, {:mob, 2002}]
       assert_received {:damage, 50}
       assert_received {:damage, 50}
     end

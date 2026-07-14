@@ -24,6 +24,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
   - `phase`: Current phase for multi-phase status effects (defaults to nil)
   - `loaded`: Marks the restore of a persisted status, skipping the apply
     gates (defaults to false)
+  - `success_rate`: Base application chance as a percentage before resistance
+    (defaults to 100)
+  - `resistance_roll`: Injectable final-rate roll used by the resistance gate
+    (defaults to `Resistance.roll_success/1`)
   """
   @type status_params :: [
           val1: integer(),
@@ -37,7 +41,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
           source_id: integer() | nil,
           state: map(),
           phase: atom() | nil,
-          loaded: boolean()
+          loaded: boolean(),
+          success_rate: number(),
+          resistance_roll: (number() -> boolean())
         ]
 
   @type t :: %__MODULE__{

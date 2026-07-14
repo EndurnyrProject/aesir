@@ -22,8 +22,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzJupitel do
     fixed_cast_time: List.duplicate(500, 10),
     sp_cost: [20, 23, 26, 29, 32, 35, 38, 41, 44, 47]
 
+  alias Aesir.ZoneServer.Map.LineOfSight
   alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -65,7 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzJupitel do
     with {:ok, {target_x, target_y, ^map_name}} <-
            SpatialIndex.get_unit_position(unit_type, target_id),
          {:ok, map_data} <- MapCache.get(map_name),
-         true <- clear_line?(map_data, {x, y}, {target_x, target_y}),
+         true <- LineOfSight.clear?(map_data, {x, y}, {target_x, target_y}),
          :ok <- Combat.execute_magic_attack(caster, target_id, opts) do
       _ = Combat.knockback(unit_type, target_id, x, y, div(level, 2) + 2)
       :ok
@@ -75,34 +75,4 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzJupitel do
       {:error, _reason} = error -> error
     end
   end
-
-  defp clear_line?(map_data, {from_x, from_y}, {to_x, to_y}) do
-    {from_x, from_y, to_x, to_y, dx} =
-      if to_x < from_x,
-        do: {to_x, to_y, from_x, from_y, from_x - to_x},
-        else: {from_x, from_y, to_x, to_y, to_x - from_x}
-
-    dy = to_y - from_y
-    weight = max(dx, abs(dy))
-
-    clear_line_step?(map_data, {from_x, from_y}, {to_x, to_y}, {dx, dy}, {0, 0}, weight)
-  end
-
-  defp clear_line_step?(_map_data, destination, destination, _delta, _accumulated, _weight),
-    do: true
-
-  defp clear_line_step?(map_data, {x, y}, destination, {dx, dy} = delta, {wx, wy}, weight) do
-    {x, wx} = advance_x(x, wx + dx, weight)
-    {y, wy} = advance_y(y, wy + dy, weight)
-
-    ({x, y} == destination or not MapData.check_cell(map_data, x, y, :chk_noreach)) and
-      clear_line_step?(map_data, {x, y}, destination, delta, {wx, wy}, weight)
-  end
-
-  defp advance_x(x, wx, weight) when wx >= weight, do: {x + 1, wx - weight}
-  defp advance_x(x, wx, _weight), do: {x, wx}
-
-  defp advance_y(y, wy, weight) when wy >= weight, do: {y + 1, wy - weight}
-  defp advance_y(y, wy, weight) when wy < 0, do: {y - 1, wy + weight}
-  defp advance_y(y, wy, _weight), do: {y, wy}
 end

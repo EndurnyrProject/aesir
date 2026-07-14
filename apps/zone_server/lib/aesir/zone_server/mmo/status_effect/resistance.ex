@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Resistance do
 
   This module handles:
   - Success rate calculations for physical and magical status effects
-  - Duration reduction based on target stats (VIT/LUK)
+  - Duration reduction based on the status' resistance type
   - Integration with the status effect definition system
 
   This module works in conjunction with the status effect definitions
@@ -26,14 +26,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Resistance do
 
   ## Formula from rAthena
   - Physical: `success_rate = base_rate - (target_VIT * 100 / 100)`
-  - Magical: `success_rate = base_rate - (target_MDEF * 100 / 100)`
+  - Magical: `success_rate = base_rate * (100 - target_MDEF) / 100`
 
   ## Examples
       iex> calculate_success_rate(:physical, %{vit: 50}, 100)
       50.0
 
-      iex> calculate_success_rate(:magical, %{mdef: 30}, 100)
-      70.0
+      iex> calculate_success_rate(:magical, %{mdef: 30}, 80)
+      56.0
   """
   @spec calculate_success_rate(status_type(), map(), number()) :: float()
   def calculate_success_rate(:physical, %{vit: vit}, base_success_rate) when is_number(vit) do
@@ -44,10 +44,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Resistance do
   end
 
   def calculate_success_rate(:magical, target_stats, base_success_rate) do
-    # For magical resistance, we need MDEF which might be in different forms
     mdef = get_mdef_value(target_stats)
-    resistance = mdef * 1.0
-    max(0.0, base_success_rate - resistance)
+    base_success_rate * max(0, 100 - mdef) / 100
   end
 
   def calculate_success_rate(_, _, base_success_rate), do: base_success_rate
@@ -84,6 +82,25 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Resistance do
   end
 
   def calculate_duration(base_duration, _), do: base_duration
+
+  @doc """
+  Calculates duration reduction using the status' resistance type.
+
+  Physical statuses retain the VIT/LUK formula used by `calculate_duration/2`.
+  Magical statuses are reduced by MDEF.
+  """
+  @spec calculate_duration(status_type(), integer(), map()) :: integer()
+  def calculate_duration(:physical, base_duration, target_stats),
+    do: calculate_duration(base_duration, target_stats)
+
+  def calculate_duration(:magical, base_duration, target_stats) do
+    mdef = get_mdef_value(target_stats)
+    multiplier = max(0, 100 - mdef) / 100
+
+    round(base_duration * multiplier)
+  end
+
+  def calculate_duration(_, base_duration, _target_stats), do: base_duration
 
   @doc """
   Determines the resistance type of a status effect from its definition.
@@ -129,7 +146,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Resistance do
     status_type = get_resistance_type(definition)
 
     success_rate = calculate_success_rate(status_type, target_stats, base_success_rate)
-    duration = calculate_duration(base_duration, target_stats)
+
+    duration =
+      status_type
+      |> calculate_duration(base_duration, target_stats)
+      |> Kernel.+(Map.get(definition, :duration_adjustment, 0))
+      |> max(0)
 
     {success_rate, duration}
   end
@@ -165,12 +187,22 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Resistance do
   ## Returns
   `true` if the status should be applied, `false` if resisted
   """
-  @spec roll_success(float()) :: boolean()
-  def roll_success(success_rate) when success_rate <= 0, do: false
-  def roll_success(success_rate) when success_rate >= 100, do: true
+  @spec roll_success(number()) :: boolean()
+  def roll_success(success_rate), do: roll_success(success_rate, &:rand.uniform/1)
 
-  def roll_success(success_rate) do
-    :rand.uniform(100) <= success_rate
+  @doc """
+  Rolls a success rate using an injectable 1..10,000 sampler.
+
+  Fractional percentages are rounded up to the next 0.1% before sampling,
+  matching Aegis/rAthena status chance precision.
+  """
+  @spec roll_success(number(), (pos_integer() -> pos_integer())) :: boolean()
+  def roll_success(success_rate, _sampler) when success_rate <= 0, do: false
+  def roll_success(success_rate, _sampler) when success_rate >= 100, do: true
+
+  def roll_success(success_rate, sampler) do
+    threshold = success_rate |> Kernel.*(10) |> ceil() |> Kernel.*(10)
+    sampler.(10_000) <= threshold
   end
 
   # Private helper functions

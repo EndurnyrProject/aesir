@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Geometry
+  alias Aesir.ZoneServer.Map.LineOfSight
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
@@ -455,16 +456,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   broadcasts a `ZC_NOTIFY_SKILL` packet per target and applies the damage.
   With `:split` the total damage is divided evenly across the number of targets
   hit (Napalm Beat); without it each target takes the full per-target damage.
-  Returns the list of hit target ids.
+  Returns the typed `{unit_type, unit_id}` references that were hit.
 
   ## Options
     - `:skill_id` / `:skill_level` - identify the skill for the damage packet
     - `:skill_ratio` - percent of base MATK each target takes (default `100`)
     - `:element` - the skill's magic element (default `:neutral`)
     - `:split` - divide total damage by the number of targets hit (default `false`)
+    - `:line_of_sight` - require an unobstructed projectile path (default `false`)
   """
   @spec execute_magic_splash(struct(), {integer(), integer()}, non_neg_integer(), keyword()) ::
-          [integer()]
+          [{atom(), integer()}]
   def execute_magic_splash(caster_state, center, radius, opts) do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     skill_id = Keyword.fetch!(opts, :skill_id)
@@ -472,14 +474,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     skill_ratio = Keyword.get(opts, :skill_ratio, 100)
     element = Keyword.get(opts, :element, :neutral)
     split = Keyword.get(opts, :split, false)
+    line_of_sight = Keyword.get(opts, :line_of_sight, false)
 
-    targets = splash_targets(attacker.map_name, center, radius, attacker)
+    targets =
+      attacker.map_name
+      |> splash_targets(center, radius, attacker)
+      |> filter_splash_line_of_sight(attacker.map_name, center, line_of_sight)
+
     divisor = if split, do: max(length(targets), 1), else: 1
 
-    Enum.flat_map(targets, fn {_unit_type, target_id} ->
+    Enum.flat_map(targets, fn target_ref ->
       apply_magic_splash_hit(
         attacker,
-        target_id,
+        target_ref,
         skill_id,
         skill_level,
         element,
@@ -489,16 +496,37 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     end)
   end
 
+  defp filter_splash_line_of_sight(targets, _map_name, _center, false), do: targets
+
+  defp filter_splash_line_of_sight(targets, map_name, center, true) do
+    case MapCache.get(map_name) do
+      {:ok, map} -> Enum.filter(targets, &splash_target_visible?(map, center, &1))
+      _ -> []
+    end
+  end
+
+  defp splash_target_visible?(map, center, {unit_type, target_id}) do
+    case get_target_unit_state(unit_type, target_id) do
+      {:ok, _pid, target_state, _target_type} ->
+        target = target_state.__struct__.to_combatant(target_state)
+        LineOfSight.clear?(map, center, target.position)
+
+      _ ->
+        false
+    end
+  end
+
   defp apply_magic_splash_hit(
          attacker,
-         target_id,
+         {unit_type, target_id} = target_ref,
          skill_id,
          skill_level,
          element,
          skill_ratio,
          divisor
        ) do
-    with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
+    with {:ok, target_pid, target_state, target_type} <-
+           get_target_unit_state(unit_type, target_id),
          :ok <- ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- Targeting.validate_enemy(attacker, target),
@@ -526,7 +554,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
       Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
       hit_info = %{dmg_type: :magic, is_short: false, element: element}
       apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, attacker.unit_id)
-      [target_id]
+      [target_ref]
     else
       _ -> []
     end
@@ -771,14 +799,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
 
     map_name
     |> SpatialIndex.get_all_units_in_range(cx, cy, radius * 2)
-    |> Enum.filter(fn {_unit_type, target_id} ->
-      target_id != caster.unit_id and
-        offensive_target_in_square?(caster, target_id, cx, cy, radius)
+    |> Enum.filter(fn target_ref ->
+      target_ref != {caster.unit_type, caster.unit_id} and
+        offensive_target_in_square?(caster, target_ref, cx, cy, radius)
     end)
   end
 
-  defp offensive_target_in_square?(caster, target_id, cx, cy, radius) do
-    case get_target_unit_state(target_id) do
+  defp offensive_target_in_square?(caster, {unit_type, target_id}, cx, cy, radius) do
+    case get_target_unit_state(unit_type, target_id) do
       {:ok, _pid, target_state, target_type} ->
         target = target_state.__struct__.to_combatant(target_state)
 
@@ -1042,6 +1070,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   end
 
   # New function that returns actual unit states instead of maps
+  defp get_target_unit_state(:mob, target_id), do: get_mob_unit_state(target_id)
+  defp get_target_unit_state(:player, target_id), do: get_player_unit_state(target_id)
+
   defp get_target_unit_state(target_id) do
     case get_mob_unit_state(target_id) do
       {:ok, pid, mob_state, :mob} -> {:ok, pid, mob_state, :mob}

@@ -48,6 +48,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   the restore of a persisted status: it already passed every gate when first
   applied, so immunity, prevention, conflict and resistance checks are
   skipped and the given `duration` is used as-is.
+
+  A skill may pass `success_rate` and `resistance_roll` to combine its base
+  application chance with status resistance in one injectable final roll.
   """
   @spec apply_status(unit_type(), integer(), atom(), StatusEntry.status_params()) ::
           :ok | {:error, atom()}
@@ -73,7 +76,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     with :ok <- check_immunity(entity_info, definition),
          :ok <- check_prevented(unit_type, unit_id, definition),
          :ok <- check_conflicts(unit_type, unit_id, definition),
-         {:ok, duration} <- roll_resistance(definition, entity_info, duration_override) do
+         {:ok, duration} <-
+           roll_resistance(definition, entity_info, duration_override, status_params) do
       end_replaced_statuses(unit_type, unit_id, definition)
       create_and_store(unit_type, unit_id, status_id, status_params, definition, duration)
     end
@@ -306,19 +310,27 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     Enum.any?(status_ids, &StatusStorage.has_status?(unit_type, unit_id, &1))
   end
 
-  defp roll_resistance(%{permanent: true}, _entity_info, _duration_override), do: {:ok, nil}
+  defp roll_resistance(%{permanent: true}, _entity_info, _duration_override, _status_params),
+    do: {:ok, nil}
 
-  defp roll_resistance(definition, entity_info, duration_override) do
+  defp roll_resistance(definition, entity_info, duration_override, status_params) do
     base_duration = duration_override || definition.duration || 10_000
+    base_success_rate = Keyword.get(status_params, :success_rate, 100)
+    resistance_roll = Keyword.get(status_params, :resistance_roll, &Resistance.roll_success/1)
 
     {success_rate, adjusted_duration} =
       if Resistance.should_apply_resistance?(definition) do
-        Resistance.apply_resistance(definition, entity_info[:stats] || %{}, 100, base_duration)
+        Resistance.apply_resistance(
+          definition,
+          entity_info[:stats] || %{},
+          base_success_rate,
+          base_duration
+        )
       else
-        {100, base_duration}
+        {base_success_rate, base_duration}
       end
 
-    if Resistance.roll_success(success_rate) do
+    if resistance_roll.(success_rate) do
       {:ok, adjusted_duration}
     else
       {:error, :resisted}

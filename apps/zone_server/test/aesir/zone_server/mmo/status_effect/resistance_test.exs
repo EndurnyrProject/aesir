@@ -12,9 +12,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ResistanceTest do
     end
 
     test "calculates magical resistance based on MDEF" do
-      # MDEF reduces success rate by 1% per point
+      # MDEF reduces the base success rate by 1% per point
       assert Resistance.calculate_success_rate(:magical, %{mdef: 20}, 100) == 80.0
-      assert Resistance.calculate_success_rate(:magical, %{mdef: 50}, 75) == 25.0
+      assert Resistance.calculate_success_rate(:magical, %{mdef: 50}, 75) == 37.5
       assert Resistance.calculate_success_rate(:magical, %{mdef: 100}, 80) == 0.0
     end
 
@@ -102,7 +102,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ResistanceTest do
     end
 
     test "applies both success rate and duration reduction for magical status" do
-      definition = %{resistance_type: :magical}
+      definition = %{resistance_type: :magical, duration_adjustment: 3_000}
       stats = %{mdef: 25, vit: 30, luk: 60}
       base_success = 80
       base_duration = 20_000
@@ -110,12 +110,21 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ResistanceTest do
       {success_rate, duration} =
         Resistance.apply_resistance(definition, stats, base_success, base_duration)
 
-      # Success rate: 80 - 25 = 55%
-      assert success_rate == 55.0
+      # Success rate: 80% base chance reduced by 25% MDEF resistance
+      assert success_rate == 60.0
 
-      # Duration reduction: 30 + 60/3 = 50%
-      # Duration: 20_000 * (100 - 50) / 100 = 10_000ms
-      assert duration == 10_000
+      # Duration: 20_000 reduced by 25% MDEF, then the status' 3-second adjustment
+      assert duration == 18_000
+    end
+
+    test "adds the status duration adjustment after magical resistance" do
+      definition = %{resistance_type: :magical, duration_adjustment: 3_000}
+
+      assert Resistance.apply_resistance(definition, %{mdef: 0}, 38, 1_500) ==
+               {38.0, 4_500}
+
+      assert Resistance.apply_resistance(definition, %{mdef: 20}, 38, 1_500) ==
+               {30.4, 4_200}
     end
 
     test "handles complete resistance (0% success rate)" do
@@ -237,6 +246,28 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ResistanceTest do
       result = Resistance.roll_success(50)
       assert is_boolean(result)
     end
+
+    test "samples a fractional percent at 10,000-scale precision" do
+      assert Resistance.roll_success(30.4, fn 10_000 -> 3_040 end)
+      refute Resistance.roll_success(30.4, fn 10_000 -> 3_041 end)
+    end
+
+    test "rounds fractional rates up to the next Aegis tenth-percent" do
+      assert Resistance.roll_success(30.31, fn 10_000 -> 3_040 end)
+      refute Resistance.roll_success(30.31, fn 10_000 -> 3_041 end)
+    end
+
+    test "invokes the production sampler exactly once" do
+      test_pid = self()
+
+      assert Resistance.roll_success(30.4, fn scale ->
+               send(test_pid, {:sampled, scale})
+               3_040
+             end)
+
+      assert_received {:sampled, 10_000}
+      refute_received {:sampled, _scale}
+    end
   end
 
   describe "integration scenarios" do
@@ -260,10 +291,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ResistanceTest do
 
       {success_rate, duration} = Resistance.apply_resistance(definition, mage_stats, 100, 20_000)
 
-      # 25% chance to be affected
+      # 25% chance to be affected from a 100% base rate
       assert success_rate == 25.0
-      # Duration: 40 + 30/3 = 50% reduction
-      assert duration == 10_000
+      # Duration is reduced by MDEF for magical statuses
+      assert duration == 5000
     end
 
     test "balanced character has moderate resistance" do
@@ -286,10 +317,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ResistanceTest do
       {success_rate, duration} =
         Resistance.apply_resistance(definition, novice_stats, 100, 10_000)
 
-      # 95% chance to be affected
+      # 95% chance to be affected from a 100% base rate
       assert success_rate == 95.0
-      # Duration: 10 + 10/3 = 13.333% reduction
-      assert_in_delta duration, 8666, 1
+      # Duration is reduced by MDEF for magical statuses
+      assert duration == 9500
     end
   end
 end

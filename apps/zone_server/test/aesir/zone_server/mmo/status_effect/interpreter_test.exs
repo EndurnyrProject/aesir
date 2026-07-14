@@ -121,6 +121,61 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
       assert %{expires_at: nil} =
                StatusStorage.get_status(:player, target_id, :sc_test_permanent)
     end
+
+    test "Freeze rolls its final skill chance once and stores its MDEF-adjusted duration" do
+      target_id = 13
+      test_pid = self()
+
+      setup_player_mock(target_id, stats: %{mdef: 20})
+
+      resistance_roll = fn final_rate ->
+        send(test_pid, {:final_rate, final_rate})
+        true
+      end
+
+      before_ms = System.monotonic_time(:millisecond)
+
+      assert :ok =
+               Interpreter.apply_status(:player, target_id, :sc_freeze,
+                 duration: 1_500,
+                 success_rate: 38,
+                 resistance_roll: resistance_roll
+               )
+
+      after_ms = System.monotonic_time(:millisecond)
+      assert_received {:final_rate, 30.4}
+      refute_received {:final_rate, _rate}
+
+      assert %{expires_at: expires_at} =
+               StatusStorage.get_status(:player, target_id, :sc_freeze)
+
+      assert expires_at >= before_ms + 4_200
+      assert expires_at <= after_ms + 4_200
+    end
+
+    test "Freeze rejects bosses through status immunity" do
+      target_id = 14
+      setup_player_mock(target_id, boss_flag: true)
+
+      assert {:error, :immune} =
+               Interpreter.apply_status(:player, target_id, :sc_freeze,
+                 duration: 1_500,
+                 success_rate: 100,
+                 resistance_roll: fn _rate -> flunk("immune target must not roll") end
+               )
+    end
+
+    test "Freeze respects the unit's custom freeze immunity" do
+      target_id = 15
+      setup_player_mock(target_id, custom_immunities: [:freeze])
+
+      assert {:error, :immune} =
+               Interpreter.apply_status(:player, target_id, :sc_freeze,
+                 duration: 1_500,
+                 success_rate: 100,
+                 resistance_roll: fn _rate -> flunk("immune target must not roll") end
+               )
+    end
   end
 
   describe "apply_status/4 loaded (persisted restore)" do
@@ -258,38 +313,49 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
   end
 
   # Helper to set up player mock with stats
-  defp setup_player_mock(player_id) do
+  defp setup_player_mock(player_id, overrides \\ []) do
     # Copy and stub necessary modules
     Mimic.copy(Aesir.ZoneServer.Mmo.StatusEffect.Resistance)
     Mimic.copy(UnitRegistry)
 
     # Mock UnitRegistry to return entity info
+    stats =
+      Map.merge(
+        %{
+          max_hp: 1000,
+          max_sp: 100,
+          hp: 800,
+          sp: 80,
+          level: 50,
+          base_level: 50,
+          str: 10,
+          agi: 10,
+          vit: 10,
+          int: 10,
+          dex: 10,
+          luk: 10,
+          mdef: 5
+        },
+        Keyword.get(overrides, :stats, %{})
+      )
+
+    entity_info =
+      Map.merge(
+        %{
+          unit_id: player_id,
+          unit_type: :player,
+          race: :human,
+          element: :neutral,
+          element_level: 1,
+          boss_flag: false,
+          size: :medium,
+          stats: stats
+        },
+        Map.new(Keyword.delete(overrides, :stats))
+      )
+
     stub(UnitRegistry, :get_unit_info, fn _unit_type, _unit_id ->
-      {:ok,
-       %{
-         unit_id: player_id,
-         unit_type: :player,
-         race: :human,
-         element: :neutral,
-         element_level: 1,
-         boss_flag: false,
-         size: :medium,
-         stats: %{
-           max_hp: 1000,
-           max_sp: 100,
-           hp: 800,
-           sp: 80,
-           level: 50,
-           base_level: 50,
-           str: 10,
-           agi: 10,
-           vit: 10,
-           int: 10,
-           dex: 10,
-           luk: 10,
-           mdef: 5
-         }
-       }}
+      {:ok, entity_info}
     end)
 
     # Stub resistance roll to always succeed for predictable tests
