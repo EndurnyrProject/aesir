@@ -1,5 +1,5 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   import Mimic
 
   alias Aesir.Net.MapMove
@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
   alias Aesir.ZoneServer.Party.Manager
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Lifecycle
+  alias Aesir.ZoneServer.Unit.Lifecycle.Event
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -164,6 +166,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
       assert opts[:exclude_id] == 1000
     end
 
+    test "publishes exactly one normalized cross-map lifecycle event" do
+      :ok = Lifecycle.subscribe()
+      stub(Broadcast, :to_players, fn _visible, _packet, _opts -> :ok end)
+
+      assert {:ok, _new_state} = WarpHandler.warp(state(), "geffen", 100, 120)
+
+      assert_receive {:unit_lifecycle,
+                      %Event{
+                        unit_type: :player,
+                        unit_id: 1000,
+                        reason: :warp,
+                        old_map: "prontera",
+                        new_map: "geffen"
+                      } = event}
+
+      refute_receive {:unit_lifecycle, ^event}
+    end
+
     test "relocates the player and resets transient movement/combat/visibility state" do
       stub(Broadcast, :to_players, fn _visible, _packet, _opts -> :ok end)
 
@@ -279,6 +299,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
                WarpHandler.warp(state_with_storage(storage), "prontera", 100, 120)
 
       assert gs.storage == storage
+    end
+
+    test "same-map warp does not publish a map transition" do
+      :ok = Lifecycle.subscribe()
+
+      assert {:ok, _state} = WarpHandler.warp(state(), "prontera", 100, 120)
+
+      refute_receive {:unit_lifecycle, %Event{}}
     end
   end
 

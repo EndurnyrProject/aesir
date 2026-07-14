@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.KillExp
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -457,6 +458,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   @impl GenServer
   def terminate(_reason, state) do
+    unless state.is_dead do
+      Lifecycle.publish_departure(:mob, state.instance_id, state.map_name, :termination)
+    end
+
     SpatialIndex.remove_unit(:mob, state.instance_id)
     Broadcast.publish_mob_despawn(state.map_name, state.instance_id)
     :ok
@@ -538,6 +543,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
     # Notify nearby players of mob death
     notify_despawn(updated_state)
+    Lifecycle.publish_death(:mob, state.instance_id, state.map_name)
 
     announce_kill(state, attacker_id)
 

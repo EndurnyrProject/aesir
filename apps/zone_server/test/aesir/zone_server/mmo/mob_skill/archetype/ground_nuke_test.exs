@@ -31,7 +31,12 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
 
   setup do
     manager =
-      start_supervised!({Manager, name: nil, schedule_tick: fn _pid, _interval -> :ok end})
+      start_supervised!(
+        {Manager,
+         name: nil,
+         schedule_tick: fn _pid, _interval -> :ok end,
+         unit_available?: fn _unit_type, _unit_id, _map_name -> true end}
+      )
 
     Process.put({Manager, :server}, manager)
     %{manager: manager}

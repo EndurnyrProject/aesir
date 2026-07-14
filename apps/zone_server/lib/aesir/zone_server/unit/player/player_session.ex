@@ -42,6 +42,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Party.View, as: PartyView
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.Appearance
   alias Aesir.ZoneServer.Unit.Player.GuildSync
@@ -1023,7 +1024,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @impl true
   def terminate(
-        _reason,
+        reason,
         %{game_state: game_state, connection_monitor_ref: connection_monitor_ref} = state
       ) do
     Process.demonitor(connection_monitor_ref, [:flush])
@@ -1050,6 +1051,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
     WarpHandler.leave_current_map(game_state, DespawnReason.logged_out())
 
+    unless game_state.action_state == :dead do
+      Lifecycle.publish_departure(
+        :player,
+        game_state.character_id,
+        game_state.map_name,
+        departure_reason(reason)
+      )
+    end
+
     # Persist the survivable statuses, then drop them all from StatusStorage:
     # leaving entries behind for an unregistered unit would orphan them and
     # the tick manager would have to garbage-collect them.
@@ -1061,6 +1071,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
     :ok
   end
+
+  defp departure_reason(:normal), do: :disconnect
+  defp departure_reason(_reason), do: :termination
 
   # Rolls the slain mob's drop table from the killer's session (the only place
   # holding both the table and the killer's stats) and places any results as

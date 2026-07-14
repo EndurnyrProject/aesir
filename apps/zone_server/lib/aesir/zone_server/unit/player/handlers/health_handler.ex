@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
@@ -170,6 +171,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
     vanish = %UnitDespawn{gid: game_state.character_id, reason: DespawnReason.died()}
     Broadcast.to_visible_players(dead_state, vanish)
+    Lifecycle.publish_death(:player, game_state.character_id, game_state.map_name)
 
     SpatialIndex.remove_player(game_state.character_id)
     SpatialIndex.clear_visibility(game_state.character_id)

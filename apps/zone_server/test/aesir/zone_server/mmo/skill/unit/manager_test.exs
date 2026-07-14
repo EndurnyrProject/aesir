@@ -9,8 +9,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Unit.Lifecycle
 
   setup :setup_ets_tables
   setup :verify_on_exit!
@@ -105,10 +107,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     :ok
   end
 
-  defp start_manager(now) do
+  defp start_manager(now, opts \\ []) do
     manager =
       start_supervised!(
-        {Manager, name: nil, clock: fn -> now end, schedule_tick: fn _pid, _interval -> :ok end}
+        {Manager,
+         Keyword.merge(
+           [
+             name: nil,
+             clock: fn -> now end,
+             schedule_tick: fn _pid, _interval -> :ok end,
+             unit_available?: fn _unit_type, _unit_id, _map_name -> true end
+           ],
+           opts
+         )}
       )
 
     allow(Catalog, self(), manager)
@@ -304,6 +315,153 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       assert ^other = Storage.get(2)
       assert [] == Storage.get_due_groups(now)
       assert [%Group{group_id: 2}] = Storage.get_due_groups(now + 5_000)
+    end
+  end
+
+  describe "unit lifecycle events" do
+    test "caster death expires only indexed groups and duplicate events stay idempotent" do
+      now = 10_000
+      manager = start_manager(now)
+
+      affected =
+        group(1,
+          next_tick_at: now + 5_000,
+          expires_at: now + 10_000,
+          state: %{test_pid: self()},
+          lifecycle_policy: %LifecyclePolicy{on_caster_loss: :expire}
+        )
+
+      unrelated =
+        group(2,
+          caster_id: 2,
+          next_tick_at: now + 50_000,
+          expires_at: now + 100_000,
+          state: %{untouched: true}
+        )
+
+      :ok = Manager.register(manager, affected)
+      :ok = Manager.register(manager, unrelated)
+
+      :ok = Lifecycle.publish_death(:player, 1, "prontera")
+      assert :ok = Manager.tick(manager, now)
+
+      assert_received {:expired, 1}
+      assert nil == Storage.get(1)
+      assert ^unrelated = Storage.get(2)
+
+      :ok = Lifecycle.publish_death(:player, 1, "prontera")
+      assert :ok = Manager.tick(manager, now + 10_000)
+      refute_received {:expired, 1}
+      assert ^unrelated = Storage.get(2)
+    end
+
+    test "map loss skips, makes inert, or continues from snapshot only on the old map" do
+      now = 10_000
+
+      manager =
+        start_manager(now,
+          unit_available?: fn
+            :player, 1, "prontera" -> false
+            _unit_type, _unit_id, _map_name -> true
+          end
+        )
+
+      skip =
+        group(1,
+          next_tick_at: now,
+          lifecycle_policy: %LifecyclePolicy{on_caster_loss: :skip_action}
+        )
+
+      inert =
+        group(2,
+          next_tick_at: now,
+          lifecycle_policy: %LifecyclePolicy{on_caster_loss: :persist_inert}
+        )
+
+      snapshot =
+        group(3,
+          next_tick_at: now,
+          lifecycle_policy: %LifecyclePolicy{
+            on_caster_loss: {:continue_with_combat_snapshot, %{matk: 500}}
+          }
+        )
+
+      new_map =
+        group(4,
+          map_name: "geffen",
+          next_tick_at: now + 5_000,
+          lifecycle_policy: %LifecyclePolicy{on_caster_loss: :persist_inert}
+        )
+
+      Enum.each([skip, inert, snapshot, new_map], &Manager.register(manager, &1))
+
+      :ok = Lifecycle.publish_transition(:player, 1, "prontera", "geffen")
+      assert :ok = Manager.tick(manager, now)
+
+      assert %Group{next_tick_at: 10_450} = Storage.get(1)
+      assert Storage.get(1).state == %{}
+      assert %Group{next_tick_at: nil, state: %{lifecycle_inert: true}} = Storage.get(2)
+      assert %Group{next_tick_at: 10_450, state: %{ticks: 1}} = Storage.get(3)
+      assert ^new_map = Storage.get(4)
+    end
+
+    test "target disappearance expires only groups in the target index" do
+      now = 10_000
+      manager = start_manager(now)
+
+      affected =
+        group(1,
+          target_type: :mob,
+          target_id: 99,
+          next_tick_at: now + 5_000,
+          state: %{test_pid: self()},
+          lifecycle_policy: %LifecyclePolicy{on_target_loss: :expire}
+        )
+
+      unrelated =
+        group(2,
+          target_type: :mob,
+          target_id: 100,
+          next_tick_at: now + 5_000,
+          state: %{untouched: true},
+          lifecycle_policy: %LifecyclePolicy{on_target_loss: :expire}
+        )
+
+      :ok = Manager.register(manager, affected)
+      :ok = Manager.register(manager, unrelated)
+
+      :ok = Lifecycle.publish_departure(:mob, 99, "prontera", :termination)
+      assert :ok = Manager.tick(manager, now)
+
+      assert_received {:expired, 1}
+      assert nil == Storage.get(1)
+      assert ^unrelated = Storage.get(2)
+    end
+
+    test "tick revalidation applies loss policy when a lifecycle event was missed" do
+      now = 10_000
+
+      manager =
+        start_supervised!(
+          {Manager, name: nil, clock: fn -> now end, schedule_tick: fn _pid, _interval -> :ok end}
+        )
+
+      allow(Catalog, self(), manager)
+
+      :ok =
+        Manager.register(
+          manager,
+          group(1,
+            next_tick_at: now,
+            state: %{test_pid: self()},
+            lifecycle_policy: %LifecyclePolicy{on_caster_loss: :expire}
+          )
+        )
+
+      assert :ok = Manager.tick(manager, now)
+
+      assert_received {:expired, 1}
+      assert nil == Storage.get(1)
     end
   end
 

@@ -15,8 +15,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Lifecycle
+  alias Aesir.ZoneServer.Unit.Lifecycle.Event
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Phoenix.PubSub
 
   setup :verify_on_exit!
@@ -27,11 +30,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
     stub(Coordinator, :mob_died, fn _map, _id, _killer -> :ok end)
 
     :ok = PubSub.subscribe(Aesir.PubSub, "player:42")
+    :ok = Lifecycle.subscribe()
 
     drops = [%MobDrop{item: "Red_Potion", rate: 10_000}]
     state = build_mob_state(hp: 1, max_hp: 1000, drops: drops)
 
-    {:noreply, _state} = MobSession.handle_cast({:apply_damage, 100, 42}, state)
+    {:noreply, dead_state} = MobSession.handle_cast({:apply_damage, 100, 42}, state)
 
     assert_receive {:mob_killed, payload}
     assert payload.drops == drops
@@ -39,6 +43,21 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
     assert payload.map == "prontera"
     assert payload.x == 100
     assert payload.y == 100
+
+    assert_receive {:unit_lifecycle,
+                    %Event{
+                      unit_type: :mob,
+                      unit_id: 1,
+                      reason: :death,
+                      old_map: "prontera",
+                      new_map: nil
+                    } = event}
+
+    stub(SpatialIndex, :remove_unit, fn :mob, 1 -> :ok end)
+    stub(Broadcast, :publish_mob_despawn, fn "prontera", 1 -> :ok end)
+
+    assert :ok = MobSession.terminate(:normal, dead_state)
+    refute_receive {:unit_lifecycle, ^event}
   end
 
   test "a mob death with no killer broadcasts nothing" do
@@ -53,6 +72,25 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
     {:noreply, _state} = MobSession.handle_cast({:apply_damage, 100, nil}, state)
 
     refute_receive {:mob_killed, _payload}
+  end
+
+  test "non-death termination publishes exactly one normalized event" do
+    :ok = Lifecycle.subscribe()
+    stub(SpatialIndex, :remove_unit, fn :mob, 1 -> :ok end)
+    stub(Broadcast, :publish_mob_despawn, fn "prontera", 1 -> :ok end)
+
+    assert :ok = MobSession.terminate(:shutdown, build_mob_state(hp: 1, max_hp: 1, drops: []))
+
+    assert_receive {:unit_lifecycle,
+                    %Event{
+                      unit_type: :mob,
+                      unit_id: 1,
+                      reason: :termination,
+                      old_map: "prontera",
+                      new_map: nil
+                    } = event}
+
+    refute_receive {:unit_lifecycle, ^event}
   end
 
   defp build_mob_state(opts) do

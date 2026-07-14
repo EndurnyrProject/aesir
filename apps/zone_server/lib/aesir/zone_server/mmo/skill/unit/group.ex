@@ -31,7 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
     field :center, cell()
     field :cells, [cell()], default: []
     field :created_at, integer() | nil
-    field :next_tick_at, integer()
+    field :next_tick_at, integer() | nil
     field :expires_at, integer()
     field :interval, pos_integer()
     field :lifecycle_policy, LifecyclePolicy.t(), default: %LifecyclePolicy{}

@@ -1,5 +1,5 @@
 defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   use Mimic
 
   import Aesir.TestEtsSetup
@@ -14,6 +14,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
+  alias Aesir.ZoneServer.Unit.Lifecycle
+  alias Aesir.ZoneServer.Unit.Lifecycle.Event
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
@@ -799,6 +801,126 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       stub(CharacterPersistence, :update_position, fn _id, _x, _y, _map -> {:ok, %Character{}} end)
 
       :ok
+    end
+
+    test "publishes exactly one normalized disconnect event", %{character: character} do
+      :ok = Lifecycle.subscribe()
+      expect(SpatialIndex, :get_visible_players, fn 1 -> [] end)
+      expect(SpatialIndex, :remove_player, fn 1 -> :ok end)
+      expect(SpatialIndex, :clear_visibility, fn 1 -> :ok end)
+
+      state = %{
+        character: character,
+        game_state: PlayerState.new(character),
+        connection_pid: self(),
+        connection_monitor_ref: make_ref()
+      }
+
+      assert :ok = PlayerSession.terminate(:normal, state)
+
+      assert_receive {:unit_lifecycle,
+                      %Event{
+                        unit_type: :player,
+                        unit_id: 1,
+                        reason: :disconnect,
+                        old_map: "prontera",
+                        new_map: nil
+                      } = event}
+
+      refute_receive {:unit_lifecycle, ^event}
+    end
+
+    test "death followed by a normal stop publishes only the death event", %{
+      character: character
+    } do
+      :ok = Lifecycle.subscribe()
+      expect(SpatialIndex, :get_visible_players, fn 1 -> [] end)
+      expect(SpatialIndex, :remove_player, fn 1 -> :ok end)
+      expect(SpatialIndex, :clear_visibility, fn 1 -> :ok end)
+
+      game_state = %{PlayerState.new(character) | action_state: :dead}
+
+      state = %{
+        character: character,
+        game_state: game_state,
+        connection_pid: self(),
+        connection_monitor_ref: make_ref()
+      }
+
+      assert :ok = Lifecycle.publish_death(:player, 1, "prontera")
+
+      assert_receive {:unit_lifecycle,
+                      %Event{
+                        unit_type: :player,
+                        unit_id: 1,
+                        reason: :death,
+                        old_map: "prontera",
+                        new_map: nil
+                      }}
+
+      assert :ok = PlayerSession.terminate(:normal, state)
+
+      refute_receive {:unit_lifecycle, %Event{}}
+    end
+
+    test "publishes termination for an abnormal session stop", %{character: character} do
+      :ok = Lifecycle.subscribe()
+      expect(SpatialIndex, :get_visible_players, fn 1 -> [] end)
+      expect(SpatialIndex, :remove_player, fn 1 -> :ok end)
+      expect(SpatialIndex, :clear_visibility, fn 1 -> :ok end)
+
+      state = %{
+        character: character,
+        game_state: PlayerState.new(character),
+        connection_pid: self(),
+        connection_monitor_ref: make_ref()
+      }
+
+      assert :ok = PlayerSession.terminate(:shutdown, state)
+
+      assert_receive {:unit_lifecycle,
+                      %Event{
+                        unit_type: :player,
+                        unit_id: 1,
+                        reason: :termination,
+                        old_map: "prontera",
+                        new_map: nil
+                      } = event}
+
+      refute_receive {:unit_lifecycle, ^event}
+    end
+
+    test "death followed by an abnormal stop publishes only the death event", %{
+      character: character
+    } do
+      :ok = Lifecycle.subscribe()
+      expect(SpatialIndex, :get_visible_players, fn 1 -> [] end)
+      expect(SpatialIndex, :remove_player, fn 1 -> :ok end)
+      expect(SpatialIndex, :clear_visibility, fn 1 -> :ok end)
+
+      game_state = %{PlayerState.new(character) | action_state: :dead}
+
+      state = %{
+        character: character,
+        game_state: game_state,
+        connection_pid: self(),
+        connection_monitor_ref: make_ref()
+      }
+
+      assert :ok = Lifecycle.publish_death(:player, 1, "prontera")
+
+      assert_receive {:unit_lifecycle,
+                      %Event{
+                        unit_type: :player,
+                        unit_id: 1,
+                        reason: :death,
+                        old_map: "prontera",
+                        new_map: nil
+                      }}
+
+      assert :ok = PlayerSession.terminate(:shutdown, state)
+
+      refute_receive {:unit_lifecycle, %Event{}}
     end
 
     test "cleans up ETS entries", %{character: character} do

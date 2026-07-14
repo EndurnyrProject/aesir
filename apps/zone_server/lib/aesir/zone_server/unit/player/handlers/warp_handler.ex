@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -66,6 +67,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
         |> close_storage_on_cross_map(same_map?)
 
       state = StateCommit.commit(state, new_game_state)
+
+      unless same_map? do
+        Lifecycle.publish_transition(
+          :player,
+          game_state.character_id,
+          game_state.map_name,
+          dest_map
+        )
+      end
+
       MessageRouter.send_to(connection_pid, %MapMove{map_name: dest_map, x: fx, y: fy})
 
       Logger.debug(

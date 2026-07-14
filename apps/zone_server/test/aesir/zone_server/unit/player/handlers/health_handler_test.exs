@@ -1,5 +1,5 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   use Mimic
 
   @moduletag :capture_log
@@ -16,6 +16,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   alias Aesir.ZoneServer.Party.Manager
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Lifecycle
+  alias Aesir.ZoneServer.Unit.Lifecycle.Event
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
@@ -116,12 +118,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     end
 
     test "kills the player and marks them dead when HP reaches 0" do
+      :ok = Lifecycle.subscribe()
+
       {:noreply, %{game_state: game_state}} =
         HealthHandler.apply_damage(150, 2001, build_state(100, :idle))
 
       assert game_state.stats.current_state.hp == 0
       assert game_state.action_state == :dead
       assert_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_hp, value: 0}}}
+
+      assert_receive {:unit_lifecycle,
+                      %Event{
+                        unit_type: :player,
+                        unit_id: 1,
+                        reason: :death,
+                        old_map: "prontera",
+                        new_map: nil
+                      } = event}
+
+      refute_receive {:unit_lifecycle, ^event}
     end
 
     test "ignores damage on an already dead player" do

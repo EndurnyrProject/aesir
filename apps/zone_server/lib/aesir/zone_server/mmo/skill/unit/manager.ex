@@ -15,6 +15,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Unit.Lifecycle
+  alias Aesir.ZoneServer.Unit.Lifecycle.Event
+  alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @tick_interval 100
 
@@ -78,10 +83,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   @impl true
   def init(opts) do
+    :ok = Lifecycle.subscribe()
+
     state = %{
       clock: Keyword.get(opts, :clock, fn -> System.monotonic_time(:millisecond) end),
       schedule_tick: Keyword.get(opts, :schedule_tick, &Process.send_after(&1, :tick, &2)),
-      tick_interval: Keyword.get(opts, :tick_interval, @tick_interval)
+      tick_interval: Keyword.get(opts, :tick_interval, @tick_interval),
+      unit_available?: Keyword.get(opts, :unit_available?, &unit_available?/3)
     }
 
     schedule_tick(state)
@@ -117,18 +125,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   def handle_call(:tick, _from, state) do
-    process_tick(state.clock.())
+    process_tick(state.clock.(), state.unit_available?)
     {:reply, :ok, state}
   end
 
   def handle_call({:tick, now}, _from, state) do
-    process_tick(now)
+    process_tick(now, state.unit_available?)
     {:reply, :ok, state}
   end
 
   @impl true
+  def handle_info({:unit_lifecycle, %Event{} = event}, state) do
+    apply_lifecycle_event(event)
+    {:noreply, state}
+  end
+
   def handle_info(:tick, state) do
-    process_tick(state.clock.())
+    process_tick(state.clock.(), state.unit_available?)
     schedule_tick(state)
     {:noreply, state}
   end
@@ -138,22 +151,120 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     :ok
   end
 
-  defp process_tick(now) do
+  defp apply_lifecycle_event(%Event{unit_type: unit_type, unit_id: unit_id} = event) do
+    Storage.get_groups_by_caster(unit_type, unit_id)
+    |> Enum.each(&apply_lifecycle_event(&1.group_id, :caster, event))
+
+    Storage.get_groups_by_target(unit_type, unit_id)
+    |> Enum.each(&apply_lifecycle_event(&1.group_id, :target, event))
+  end
+
+  defp apply_lifecycle_event(group_id, relation, event) do
+    with %Group{} = group <- Storage.get(group_id),
+         true <- affects_group?(event, group) do
+      apply_lifecycle_policy(group, relation)
+    else
+      _ -> :ok
+    end
+  end
+
+  defp affects_group?(%Event{new_map: nil}, _group), do: true
+
+  defp affects_group?(%Event{old_map: old_map}, %Group{map_name: map_name}) do
+    old_map == map_name
+  end
+
+  defp apply_lifecycle_policy(%Group{lifecycle_policy: policy} = group, relation) do
+    case Map.fetch!(policy, policy_field(relation)) do
+      :expire -> cleanup(group)
+      :persist_inert -> persist_inert(group)
+      _action -> :ok
+    end
+  end
+
+  defp policy_field(:caster), do: :on_caster_loss
+  defp policy_field(:target), do: :on_target_loss
+
+  defp process_tick(now, unit_available?) do
     due = Storage.get_due_groups(now)
     expired = Storage.get_expired_groups(now)
 
-    Enum.each(due, &run_interval(&1, now))
+    Enum.each(due, &run_interval(&1, now, unit_available?))
     Enum.each(expired, &expire_if_live/1)
   end
 
-  defp run_interval(%Group{} = group, now) do
+  defp run_interval(%Group{} = group, now, unit_available?) do
+    case lifecycle_action(group, unit_available?) do
+      :continue -> run_interval_callback(group, now)
+      :expire -> cleanup(group)
+      :skip_action -> Storage.update(%{group | next_tick_at: now + group.interval})
+      :persist_inert -> persist_inert(group)
+    end
+  end
+
+  defp run_interval_callback(group, now) do
     case handler_for(group) do
-      {:ok, module} -> run_interval(module, group, now)
+      {:ok, module} -> invoke_interval(module, group, now)
       :error -> callback_failed(group, :on_interval, :missing_handler, nil)
     end
   end
 
-  defp run_interval(module, group, now) do
+  defp lifecycle_action(%Group{} = group, unit_available?) do
+    case loss_action(group, :caster, unit_available?) do
+      :continue -> loss_action(group, :target, unit_available?)
+      action -> action
+    end
+  end
+
+  defp loss_action(%Group{target_type: nil}, :target, _unit_available?), do: :continue
+  defp loss_action(%Group{target_id: nil}, :target, _unit_available?), do: :continue
+
+  defp loss_action(%Group{} = group, relation, unit_available?) do
+    {unit_type, unit_id} = unit_identity(group, relation)
+
+    if unit_available?.(unit_type, unit_id, group.map_name) do
+      :continue
+    else
+      group.lifecycle_policy
+      |> Map.fetch!(policy_field(relation))
+      |> normalize_loss_action()
+    end
+  end
+
+  defp unit_identity(group, :caster), do: {group.caster_type, group.caster_id}
+  defp unit_identity(group, :target), do: {group.target_type, group.target_id}
+
+  defp normalize_loss_action({:continue_with_combat_snapshot, _snapshot}), do: :continue
+  defp normalize_loss_action(action), do: action
+
+  defp unit_available?(:player, unit_id, map_name) do
+    case UnitRegistry.get_unit(:player, unit_id) do
+      {:ok, {_module, %PlayerState{map_name: ^map_name, action_state: action_state}, _pid}} ->
+        action_state != :dead
+
+      _other ->
+        false
+    end
+  end
+
+  defp unit_available?(:mob, unit_id, map_name) do
+    case UnitRegistry.get_unit(:mob, unit_id) do
+      {:ok, {_module, %MobState{map_name: ^map_name, is_dead: false}, _pid}} -> true
+      _other -> false
+    end
+  end
+
+  defp unit_available?(_unit_type, _unit_id, _map_name), do: false
+
+  defp persist_inert(%Group{} = group) do
+    Storage.update(%{
+      group
+      | next_tick_at: nil,
+        state: Map.put(group.state, :lifecycle_inert, true)
+    })
+  end
+
+  defp invoke_interval(module, group, now) do
     case invoke(module, :on_interval, [group, now]) do
       {:ok, {:ok, %Group{group_id: group_id} = updated}} when group_id == group.group_id ->
         Storage.update(%{updated | next_tick_at: now + updated.interval})
