@@ -27,6 +27,25 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.EquipResult
   alias Aesir.Net.GroundSkill
   alias Aesir.Net.GroundSkillCast
+  alias Aesir.Net.GuildActionResult
+  alias Aesir.Net.GuildCreateRequest
+  alias Aesir.Net.GuildDisbanded
+  alias Aesir.Net.GuildEmblemChanged
+  alias Aesir.Net.GuildEmblemData
+  alias Aesir.Net.GuildEmblemRequest
+  alias Aesir.Net.GuildEmblemUploadRequest
+  alias Aesir.Net.GuildExpelRequest
+  alias Aesir.Net.GuildInfo
+  alias Aesir.Net.GuildInviteNotify
+  alias Aesir.Net.GuildInviteRequest
+  alias Aesir.Net.GuildInviteResponse
+  alias Aesir.Net.GuildLeaveRequest
+  alias Aesir.Net.GuildMember
+  alias Aesir.Net.GuildMemberPositionRequest
+  alias Aesir.Net.GuildMemberUpdate
+  alias Aesir.Net.GuildNoticeEditRequest
+  alias Aesir.Net.GuildPosition
+  alias Aesir.Net.GuildPositionEditRequest
   alias Aesir.Net.InventoryItem
   alias Aesir.Net.InventoryList
   alias Aesir.Net.ItemAdded
@@ -1924,6 +1943,349 @@ defmodule Aesir.Commons.Network.ProtoTest do
               body: {:party_disbanded, %PartyDisbanded{party_id: 1, reason: "leader_left"}}
             }} =
              Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "guild_create_request round-trips through envelope oneof" do
+    env = %Envelope{seq: 1, body: {:guild_create_request, %GuildCreateRequest{name: "x"}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok, %Envelope{seq: 1, body: {:guild_create_request, %GuildCreateRequest{name: "x"}}}} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "guild_invite_request round-trips through envelope oneof" do
+    env = %Envelope{
+      body: {:guild_invite_request, %GuildInviteRequest{target_char_id: 10_002, target_name: ""}}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body: {:guild_invite_request, %GuildInviteRequest{target_char_id: 10_002}}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "guild_invite_response round-trips through envelope oneof" do
+    env = %Envelope{
+      body: {:guild_invite_response, %GuildInviteResponse{guild_id: 5, accept: true}}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body: {:guild_invite_response, %GuildInviteResponse{guild_id: 5, accept: true}}
+            }} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "guild_leave_request round-trips through envelope oneof" do
+    env = %Envelope{body: {:guild_leave_request, %GuildLeaveRequest{}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok, %Envelope{body: {:guild_leave_request, %GuildLeaveRequest{}}}} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "guild_expel_request round-trips through envelope oneof" do
+    env = %Envelope{
+      body: {:guild_expel_request, %GuildExpelRequest{target_char_id: 10_003, reason: "afk"}}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:guild_expel_request, %GuildExpelRequest{target_char_id: 10_003, reason: "afk"}}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "guild_position_edit_request round-trips through envelope oneof" do
+    env = %Envelope{
+      body:
+        {:guild_position_edit_request,
+         %GuildPositionEditRequest{index: 5, name: "Officer", can_invite: true, can_expel: false}}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:guild_position_edit_request,
+                 %GuildPositionEditRequest{
+                   index: 5,
+                   name: "Officer",
+                   can_invite: true,
+                   can_expel: false
+                 }}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "guild_member_position_request round-trips through envelope oneof" do
+    env = %Envelope{
+      body:
+        {:guild_member_position_request,
+         %GuildMemberPositionRequest{target_char_id: 10_004, index: 3}}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:guild_member_position_request,
+                 %GuildMemberPositionRequest{target_char_id: 10_004, index: 3}}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "guild_notice_edit_request round-trips through envelope oneof" do
+    env = %Envelope{
+      body:
+        {:guild_notice_edit_request, %GuildNoticeEditRequest{subject: "Raid", body: "Tonight"}}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:guild_notice_edit_request,
+                 %GuildNoticeEditRequest{subject: "Raid", body: "Tonight"}}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "guild_emblem_upload_request round-trips raw bytes through envelope oneof" do
+    data = <<0x42, 0x4D, 1, 2, 3, 4, 5>>
+    env = %Envelope{body: {:guild_emblem_upload_request, %GuildEmblemUploadRequest{data: data}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body: {:guild_emblem_upload_request, %GuildEmblemUploadRequest{data: ^data}}
+            }} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "guild_emblem_request round-trips through envelope oneof" do
+    env = %Envelope{body: {:guild_emblem_request, %GuildEmblemRequest{guild_id: 5, emblem_id: 3}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body: {:guild_emblem_request, %GuildEmblemRequest{guild_id: 5, emblem_id: 3}}
+            }} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "guild_action_result round-trips every GuildError value through envelope oneof" do
+    for error <- [
+          :GUILD_ERR_NONE,
+          :GUILD_ERR_NAME_TAKEN,
+          :GUILD_ERR_ALREADY_IN_GUILD,
+          :GUILD_ERR_GUILD_FULL,
+          :GUILD_ERR_NO_PERMISSION,
+          :GUILD_ERR_NOT_MEMBER,
+          :GUILD_ERR_TARGET_OFFLINE,
+          :GUILD_ERR_NO_EMPERIUM,
+          :GUILD_ERR_INVALID_EMBLEM,
+          :GUILD_ERR_CANNOT_TARGET_MASTER,
+          :GUILD_ERR_INVALID_POSITION
+        ] do
+      env = %Envelope{
+        body:
+          {:guild_action_result,
+           %GuildActionResult{action: "create", success: false, error: error}}
+      }
+
+      {:ok, iodata, _size} = Envelope.encode(env)
+
+      assert {:ok,
+              %Envelope{
+                body:
+                  {:guild_action_result,
+                   %GuildActionResult{action: "create", success: false, error: ^error}}
+              }} = Envelope.decode(IO.iodata_to_binary(iodata))
+    end
+  end
+
+  test "guild_invite_notify round-trips through envelope oneof" do
+    env = %Envelope{
+      body:
+        {:guild_invite_notify,
+         %GuildInviteNotify{guild_id: 5, guild_name: "Aesir", inviter_name: "Sigrid"}}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:guild_invite_notify,
+                 %GuildInviteNotify{guild_id: 5, guild_name: "Aesir", inviter_name: "Sigrid"}}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "guild_member round-trips exact state values" do
+    member = %GuildMember{
+      char_id: 10_001,
+      name: "Sigrid",
+      job_id: 4_012,
+      base_level: 99,
+      online: true,
+      map: "prontera",
+      position_index: 0,
+      hp: 4_000_000_000,
+      max_hp: 5_000_000_000,
+      sp: 6_000_000_000,
+      max_sp: 7_000_000_000,
+      ap: 150,
+      max_ap: 200
+    }
+
+    {:ok, iodata, _size} = GuildMember.encode(member)
+
+    assert {:ok, ^member} = GuildMember.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "guild_info with nested positions and members round-trips through envelope oneof" do
+    env = %Envelope{
+      body:
+        {:guild_info,
+         %GuildInfo{
+           guild_id: 5,
+           name: "Aesir",
+           master_char_id: 10_001,
+           emblem_id: 2,
+           notice_subject: "Raid",
+           notice_body: "Tonight at 8",
+           positions: [
+             %GuildPosition{
+               index: 0,
+               name: "GuildMaster",
+               can_invite: true,
+               can_expel: true,
+               can_storage: false,
+               tax: 0
+             }
+           ],
+           members: [
+             %GuildMember{
+               char_id: 10_001,
+               name: "Sigrid",
+               base_level: 99,
+               online: true,
+               map: "prontera",
+               position_index: 0
+             }
+           ]
+         }}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:guild_info,
+                 %GuildInfo{
+                   guild_id: 5,
+                   name: "Aesir",
+                   master_char_id: 10_001,
+                   emblem_id: 2,
+                   notice_subject: "Raid",
+                   notice_body: "Tonight at 8",
+                   positions: [
+                     %GuildPosition{
+                       index: 0,
+                       name: "GuildMaster",
+                       can_invite: true,
+                       can_expel: true
+                     }
+                   ],
+                   members: [
+                     %GuildMember{char_id: 10_001, name: "Sigrid", position_index: 0}
+                   ]
+                 }}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "guild_member_update round-trips through envelope oneof" do
+    update = %GuildMemberUpdate{
+      guild_id: 5,
+      member: %GuildMember{
+        char_id: 10_001,
+        name: "Sigrid",
+        position_index: 19,
+        hp: 999,
+        max_hp: 1_000
+      }
+    }
+
+    env = %Envelope{seq: 7, body: {:guild_member_update, update}}
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok, %Envelope{seq: 7, body: {:guild_member_update, ^update}}} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "guild_emblem_changed round-trips through envelope oneof" do
+    env = %Envelope{body: {:guild_emblem_changed, %GuildEmblemChanged{guild_id: 5, emblem_id: 3}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body: {:guild_emblem_changed, %GuildEmblemChanged{guild_id: 5, emblem_id: 3}}
+            }} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "guild_emblem_data round-trips raw bytes through envelope oneof" do
+    data = <<0x42, 0x4D, 9, 8, 7, 6>>
+
+    env = %Envelope{
+      body: {:guild_emblem_data, %GuildEmblemData{guild_id: 5, emblem_id: 3, data: data}}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body: {:guild_emblem_data, %GuildEmblemData{guild_id: 5, emblem_id: 3, data: ^data}}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "guild_disbanded round-trips through envelope oneof" do
+    env = %Envelope{body: {:guild_disbanded, %GuildDisbanded{guild_id: 5, reason: "master_left"}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body: {:guild_disbanded, %GuildDisbanded{guild_id: 5, reason: "master_left"}}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "unit_spawn carries guild identity fields through envelope oneof" do
+    env = %Envelope{
+      body: {:unit_spawn, %UnitSpawn{gid: 10_001, guild_id: 5, guild_name: "Aesir", emblem_id: 3}}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:unit_spawn,
+                 %UnitSpawn{gid: 10_001, guild_id: 5, guild_name: "Aesir", emblem_id: 3}}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
   end
 
   test "storage_opened with nested items round-trips through envelope oneof" do

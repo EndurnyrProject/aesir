@@ -158,6 +158,24 @@ message Envelope {
     SoundEffect sound_effect = 136;
     // 137: party member state delta
     PartyMemberUpdate party_member_update = 137;
+    // 138-154: guild (client intents + server->client roster/emblem/notice deltas)
+    GuildCreateRequest guild_create_request = 138;
+    GuildInviteRequest guild_invite_request = 139;
+    GuildInviteResponse guild_invite_response = 140;
+    GuildLeaveRequest guild_leave_request = 141;
+    GuildExpelRequest guild_expel_request = 142;
+    GuildPositionEditRequest guild_position_edit_request = 143;
+    GuildMemberPositionRequest guild_member_position_request = 144;
+    GuildNoticeEditRequest guild_notice_edit_request = 145;
+    GuildEmblemUploadRequest guild_emblem_upload_request = 146;
+    GuildEmblemRequest guild_emblem_request = 147;
+    GuildActionResult guild_action_result = 148;
+    GuildInviteNotify guild_invite_notify = 149;
+    GuildInfo guild_info = 150;
+    GuildMemberUpdate guild_member_update = 151;
+    GuildEmblemChanged guild_emblem_changed = 152;
+    GuildEmblemData guild_emblem_data = 153;
+    GuildDisbanded guild_disbanded = 154;
   }
 }
 
@@ -430,6 +448,8 @@ message UnitSpawn {
   uint32 dst_y = 31;
   uint64 move_start_time = 32;
   uint32 virtue = 33;
+  string guild_name = 34;
+  uint32 emblem_id = 35;
 }
 
 // Server -> client, an entity left view (replaces RO ZC_NOTIFY_VANISH 0x0080).
@@ -1217,6 +1237,168 @@ message PartyMemberUpdate {
 // Server -> client, the party was disbanded (leader left, or the last member left).
 message PartyDisbanded {
   uint32 party_id = 1;
+  string reason = 2;
+}
+
+// Client -> server, create a new guild with the requester as guild master.
+// Gated on holding an Emperium and not already being in a guild.
+message GuildCreateRequest {
+  string name = 1;
+}
+
+// Client -> server, invite a character to the sender's guild by id or by name
+// (char_id wins when both are set; name is resolved via a UnitRegistry reverse lookup).
+message GuildInviteRequest {
+  uint32 target_char_id = 1;
+  string target_name = 2;
+}
+
+// Client -> server, the invitee's accept/decline response to a GuildInviteNotify.
+message GuildInviteResponse {
+  uint32 guild_id = 1;
+  bool accept = 2;
+}
+
+// Client -> server, leave the sender's current guild. If the sender is the
+// guild master, the guild disbands instead.
+message GuildLeaveRequest {}
+
+// Client -> server, request (EXPEL permission) to remove a member from the guild.
+message GuildExpelRequest {
+  uint32 target_char_id = 1;
+  string reason = 2;
+}
+
+// Client -> server, edit one position's title and permission flags
+// (requires the :positions permission; index 0 is protected).
+message GuildPositionEditRequest {
+  uint32 index = 1;
+  string name = 2;
+  bool can_invite = 3;
+  bool can_expel = 4;
+}
+
+// Client -> server, master-only request to assign a member to a position slot.
+message GuildMemberPositionRequest {
+  uint32 target_char_id = 1;
+  uint32 index = 2;
+}
+
+// Client -> server, edit the guild notice (requires the :notice permission).
+message GuildNoticeEditRequest {
+  string subject = 1;
+  string body = 2;
+}
+
+// Client -> server, master-only upload of a new emblem bitmap (24x24 BMP <= 100 KB).
+message GuildEmblemUploadRequest {
+  bytes data = 1;
+}
+
+// Client -> server, on-demand fetch of a guild's current emblem blob by version.
+message GuildEmblemRequest {
+  uint32 guild_id = 1;
+  uint32 emblem_id = 2;
+}
+
+// Reason a guild request failed; NONE means it succeeded. Values are prefixed
+// because proto3 enum constants share the package namespace (C++ scoping rules),
+// and NONE/NAME_TAKEN/TARGET_OFFLINE/NOT_MEMBER already exist on PartyError.
+enum GuildError {
+  GUILD_ERR_NONE = 0;
+  GUILD_ERR_NAME_TAKEN = 1;
+  GUILD_ERR_ALREADY_IN_GUILD = 2;
+  GUILD_ERR_GUILD_FULL = 3;
+  GUILD_ERR_NO_PERMISSION = 4;
+  GUILD_ERR_NOT_MEMBER = 5;
+  GUILD_ERR_TARGET_OFFLINE = 6;
+  GUILD_ERR_NO_EMPERIUM = 7;
+  GUILD_ERR_INVALID_EMBLEM = 8;
+  GUILD_ERR_CANNOT_TARGET_MASTER = 9;
+  GUILD_ERR_INVALID_POSITION = 10;
+}
+
+// Server -> client, acknowledgement of a guild request. `action` names the
+// request being acked (e.g. "create", "invite", "expel"); `error` is
+// GuildError.GUILD_ERR_NONE on success.
+message GuildActionResult {
+  string action = 1;
+  bool success = 2;
+  GuildError error = 3;
+}
+
+// Server -> client, guild invite notification shown to the invitee.
+message GuildInviteNotify {
+  uint32 guild_id = 1;
+  string guild_name = 2;
+  string inviter_name = 3;
+}
+
+// One position slot within a GuildInfo. `can_storage` and `tax` are inert in phase 1.
+message GuildPosition {
+  uint32 index = 1;
+  string name = 2;
+  bool can_invite = 3;
+  bool can_expel = 4;
+  bool can_storage = 5;
+  uint32 tax = 6;
+}
+
+// One member entry within a GuildInfo snapshot.
+message GuildMember {
+  uint32 char_id = 1;
+  string name = 2;
+  uint32 job_id = 3;
+  uint32 base_level = 4;
+  bool online = 5;
+  string map = 6;
+  uint32 position_index = 7;
+  uint64 hp = 8;
+  uint64 max_hp = 9;
+  uint64 sp = 10;
+  uint64 max_sp = 11;
+  uint32 ap = 12;
+  uint32 max_ap = 13;
+}
+
+// Server -> client, full guild snapshot sent on any membership, position, or
+// notice change. The emblem blob is not inlined; clients fetch it via
+// GuildEmblemRequest keyed on emblem_id.
+message GuildInfo {
+  uint32 guild_id = 1;
+  string name = 2;
+  uint32 master_char_id = 3;
+  uint32 emblem_id = 4;
+  string notice_subject = 5;
+  string notice_body = 6;
+  repeated GuildPosition positions = 7;
+  repeated GuildMember members = 8;
+}
+
+// Server -> client, complete current snapshot for one guild member.
+message GuildMemberUpdate {
+  uint32 guild_id = 1;
+  GuildMember member = 2;
+}
+
+// Server -> client, the guild's emblem version changed; clients lacking this
+// emblem_id should issue a GuildEmblemRequest to fetch the new blob.
+message GuildEmblemChanged {
+  uint32 guild_id = 1;
+  uint32 emblem_id = 2;
+}
+
+// Server -> client, the emblem blob for a guild at a given version (reply to
+// GuildEmblemRequest). Served straight from Postgres from any node.
+message GuildEmblemData {
+  uint32 guild_id = 1;
+  uint32 emblem_id = 2;
+  bytes data = 3;
+}
+
+// Server -> client, the guild was disbanded (guild master left, or removed).
+message GuildDisbanded {
+  uint32 guild_id = 1;
   string reason = 2;
 }
 
