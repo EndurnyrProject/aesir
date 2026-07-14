@@ -2,8 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest.TouchPersist do
   @moduledoc false
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
 
-  def on_touch(%Group{group_id: gid} = group, mover) do
-    send(self(), {:touched, gid, mover})
+  def on_touch(%Group{group_id: gid, state: %{test_pid: test_pid}} = group, mover) do
+    send(test_pid, {:touched, gid, mover})
     {:ok, %{group | state: Map.put(group.state, :touched, mover)}}
   end
 
@@ -14,13 +14,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest.TouchExpire do
   @moduledoc false
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
 
-  def on_touch(%Group{group_id: gid}, mover) do
-    send(self(), {:touched, gid, mover})
+  def on_touch(%Group{group_id: gid, state: %{test_pid: test_pid}}, mover) do
+    send(test_pid, {:touched, gid, mover})
     :expire
   end
 
-  def on_expire(%Group{group_id: gid}) do
-    send(self(), {:expired, gid})
+  def on_expire(%Group{group_id: gid, state: %{test_pid: test_pid}}) do
+    send(test_pid, {:expired, gid})
     :ok
   end
 end
@@ -29,8 +29,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest.OutPersist do
   @moduledoc false
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
 
-  def on_out(%Group{group_id: gid} = group, mover) do
-    send(self(), {:out, gid, mover})
+  def on_out(%Group{group_id: gid, state: %{test_pid: test_pid}} = group, mover) do
+    send(test_pid, {:out, gid, mover})
     {:ok, group}
   end
 
@@ -38,7 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest.OutPersist do
 end
 
 defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   import Mimic
   import Aesir.TestEtsSetup
@@ -46,6 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
 
   alias __MODULE__.OutPersist
@@ -54,6 +55,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
 
   setup :setup_ets_tables
   setup :verify_on_exit!
+
+  setup do
+    manager =
+      start_supervised!({Manager, name: nil, schedule_tick: fn _pid, _interval -> :ok end})
+
+    Process.put({Manager, :server}, manager)
+    allow(Catalog, self(), manager)
+    :ok
+  end
 
   @mover {:player, 1000}
 
@@ -71,7 +81,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
       next_tick_at: 0,
       expires_at: 0,
       interval: 1_000,
-      state: %{}
+      state: %{test_pid: self()}
     }
 
     struct(base, attrs)

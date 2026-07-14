@@ -13,15 +13,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.Trigger do
   matching callback, and apply its result:
 
     - `{:ok, updated_group}` - the updated group is persisted.
-    - `:expire` - the group is torn down with the same teardown the central tick
-      manager uses for expiry (`on_expire` cleanup hook, then delete).
+    - `:expire` - the group is torn down with the manager's normal cleanup.
 
   The callback itself decides hostility (owner/ally exclusion); this trigger only
   invokes it for every mover and applies the result.
   """
 
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
 
   @typedoc "The unit that entered the cell: `{unit_type, unit_id}`."
@@ -68,23 +67,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.Trigger do
   defp maybe_out(group, mover), do: maybe_dispatch(group, mover, :on_out)
 
   @spec maybe_dispatch(Group.t(), mover(), atom()) :: :ok
-  defp maybe_dispatch(%Group{skill_name: skill_name} = group, mover, callback) do
-    with {:ok, module} <- Catalog.ground_module_for(skill_name),
-         true <- function_exported?(module, callback, 2) do
-      apply_result(apply(module, callback, [group, mover]), module, group)
-    else
-      _ -> :ok
-    end
-  end
-
-  @spec apply_result({:ok, Group.t()} | :expire, module(), Group.t()) :: :ok
-  defp apply_result({:ok, %Group{} = updated}, _module, _group), do: Storage.update(updated)
-  defp apply_result(:expire, module, group), do: expire(module, group)
-
-  # Mirrors the tick manager's expiry teardown: run the cleanup hook, then delete.
-  @spec expire(module(), Group.t()) :: :ok
-  defp expire(module, %Group{group_id: group_id} = group) do
-    module.on_expire(group)
-    Storage.delete(group_id)
+  defp maybe_dispatch(%Group{group_id: group_id}, mover, callback) do
+    Manager.trigger(group_id, mover, callback)
   end
 end

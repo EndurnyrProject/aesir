@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -40,6 +41,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
   end
 
   setup do
+    manager =
+      start_supervised!({Manager, name: nil, schedule_tick: fn _pid, _interval -> :ok end})
+
+    Process.put({Manager, :server}, manager)
+    allow(Catalog, self(), manager)
     Mimic.copy(Broadcast)
     stub(Catalog, :ground_module_for, fn @skill_name -> {:ok, FakeUnit} end)
     :ok
@@ -78,10 +84,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
       assert %Group{} = Storage.get(group.group_id)
     end
 
-    test "broadcasts exactly one GroundSkill at the target cell" do
+    test "commits the group before broadcasting exactly one GroundSkill" do
       test_pid = self()
 
       stub(Broadcast, :to_in_range, fn map_name, x, y, _range, packet ->
+        assert %Group{group_id: packet_group_id} =
+                 Storage.all() |> List.first()
+
+        assert packet_group_id > 0
         send(test_pid, {:broadcast, map_name, x, y, packet})
         :ok
       end)

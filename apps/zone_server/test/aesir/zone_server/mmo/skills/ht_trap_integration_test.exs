@@ -2,10 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HtTrapIntegrationTest.FakeMob do
   @moduledoc """
   A stand-in mob session that walks onto a trap from inside its OWN process.
 
-  This reproduces the real deadlock scenario: `on_touch` runs synchronously in
-  the mover's process inside `Movement.set_position`, and the trap damages that
-  same mover. Damage application must be a `cast` (not a self `call`), or the
-  `:walk_to` call below would deadlock.
+  This exercises the real callback path from movement through the serialized
+  skill-unit manager, including damage delivery back to the mover process.
   """
   use GenServer
 
@@ -40,6 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HtTrapIntegrationTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skills.HtTrapIntegrationTest.FakeMob
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -54,6 +53,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HtTrapIntegrationTest do
 
   setup :set_mimic_global
   setup :setup_ets_tables
+
+  setup do
+    manager =
+      start_supervised!({Manager, name: nil, schedule_tick: fn _pid, _interval -> :ok end})
+
+    Process.put({Manager, :server}, manager)
+    :ok
+  end
 
   @caster_id 1000
   @mob_id 2001
@@ -172,7 +179,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HtTrapIntegrationTest do
     {tx, ty} = @trap
     walked = %{mob_state | x: tx, y: ty, movement_state: :moving}
 
-    # Runs on_touch inside the mob's own process; must not deadlock.
+    # The movement call waits for the Manager callback and must not deadlock.
     assert :ok = GenServer.call(fake_mob, {:walk_to, walked})
 
     assert_receive {:applied, damage, @caster_id}, 1_000

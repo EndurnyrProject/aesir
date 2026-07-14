@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
   @moduledoc """
   Coverage for the mob ground-nuke archetype: `apply/4` builds and stores a
   mob-cast ground `Group` directly (no player `Skill.Unit.place/4`), the central
-  `TickManager` dispatches the group's interval to `GroundNuke.on_interval/2`
+  `Manager` dispatches the group's interval to `GroundNuke.on_interval/2`
   (mob-caster dispatch, not the player catalog), each tick damages player
   occupants of the footprint, and the group expires after its duration.
   """
@@ -20,14 +20,22 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.TickManager
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
   setup :setup_ets_tables
   setup :verify_on_exit!
+
+  setup do
+    manager =
+      start_supervised!({Manager, name: nil, schedule_tick: fn _pid, _interval -> :ok end})
+
+    Process.put({Manager, :server}, manager)
+    %{manager: manager}
+  end
 
   @caster_id 5001
   @target_id 42
@@ -95,6 +103,11 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
     group
   end
 
+  defp allow_tick_mocks(manager) do
+    allow(Combat, self(), manager)
+    allow(SpatialIndex, self(), manager)
+  end
+
   describe "apply/4" do
     test "inserts a mob-cast group with the area footprint and broadcasts GroundSkill" do
       stub_walkable_map()
@@ -133,19 +146,21 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
 
     test "returns an error when the map is not cached" do
       stub(MapCache, :get, fn @map -> {:error, :not_found} end)
-      reject(&Storage.insert/1)
 
       assert {:error, :unknown_map} =
                GroundNuke.apply(build_caster(), {:ground, 120, 120, :around}, params(), @level)
+
+      assert [] == Storage.all()
     end
 
     test "returns an error when no footprint cell is walkable" do
       stub(MapCache, :get, fn @map -> {:ok, :map_data} end)
       stub(MapData, :walkable?, fn :map_data, _x, _y -> false end)
-      reject(&Storage.insert/1)
 
       assert {:error, :no_walkable_cells} =
                GroundNuke.apply(build_caster(), {:ground, 120, 120, :around}, params(), @level)
+
+      assert [] == Storage.all()
     end
 
     test "returns an error for a non-ground target" do
@@ -154,13 +169,16 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
     end
   end
 
-  describe "ticking through TickManager" do
+  describe "ticking through Manager" do
     setup do
       stub_walkable_map()
       %{group: place!()}
     end
 
-    test "a due tick applies magic damage to a player standing on the footprint", %{group: group} do
+    test "a due tick applies magic damage to a player standing on the footprint", %{
+      group: group,
+      manager: manager
+    } do
       test_pid = self()
 
       stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
@@ -185,7 +203,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
         :ok
       end)
 
-      TickManager.process_tick(group.next_tick_at)
+      allow_tick_mocks(manager)
+      Manager.tick(manager, group.next_tick_at)
 
       assert_received {:hit, @target_id, ratio}
       assert is_integer(ratio) and ratio > 0
@@ -194,7 +213,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
       assert rearmed.next_tick_at == group.next_tick_at + group.interval
     end
 
-    test "a player outside the footprint is not hit", %{group: group} do
+    test "a player outside the footprint is not hit", %{group: group, manager: manager} do
       stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
 
       stub(SpatialIndex, :get_units_in_range, fn :player, @map, 120, 120, _range ->
@@ -207,23 +226,26 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
 
       reject(&Combat.apply_skill_unit_damage/7)
 
-      TickManager.process_tick(group.next_tick_at)
+      allow_tick_mocks(manager)
+      Manager.tick(manager, group.next_tick_at)
     end
 
-    test "a despawned caster skips the tick without damage", %{group: group} do
+    test "a despawned caster skips the tick without damage", %{group: group, manager: manager} do
       stub(Combat, :resolve_combatant, fn @caster_id -> {:error, :target_not_found} end)
       reject(&Combat.apply_skill_unit_damage/7)
       reject(&SpatialIndex.get_units_in_range/5)
 
-      TickManager.process_tick(group.next_tick_at)
+      allow_tick_mocks(manager)
+      Manager.tick(manager, group.next_tick_at)
 
       assert Storage.get(group.group_id)
     end
 
-    test "the group is reaped once expires_at passes", %{group: group} do
+    test "the group is reaped once expires_at passes", %{group: group, manager: manager} do
       stub(Combat, :resolve_combatant, fn @caster_id -> {:error, :target_not_found} end)
 
-      TickManager.process_tick(group.expires_at)
+      allow_tick_mocks(manager)
+      Manager.tick(manager, group.expires_at)
 
       assert Storage.get(group.group_id) == nil
     end

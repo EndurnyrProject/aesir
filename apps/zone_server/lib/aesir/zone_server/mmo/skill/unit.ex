@@ -5,9 +5,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
   A ground skill's auto-derived `cast/4` calls `place/4` instead of dealing
   damage directly: it resolves the skill's `Skill.Ground` module via
   `Skill.Catalog`, runs `on_place` to compute the footprint and timing, inserts
-  the resulting `Group` into `Skill.Unit.Storage` (where the central
-  `TickManager` picks it up), and broadcasts the ground-cast animation to nearby
-  players.
+  the resulting `Group` through `Skill.Unit.Manager`, and broadcasts the
+  ground-cast animation to nearby players after the state is committed.
   """
 
   alias Aesir.Commons.Utils.ServerTick
@@ -15,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -49,7 +49,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
           expires_at: now + placement.duration
       }
 
-      :ok = Storage.insert(group)
+      :ok = Manager.register(group)
       broadcast_groundskill(group)
 
       {:ok, group}
@@ -76,15 +76,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
   resurrects it.
   """
   @spec update_state(non_neg_integer(), map()) :: :ok
-  def update_state(group_id, state) do
-    case Storage.get(group_id) do
-      nil ->
-        :ok
-
-      %Group{state: existing} = group ->
-        Storage.update(%{group | state: Map.merge(existing, state)})
-    end
-  end
+  def update_state(group_id, state), do: Manager.update_state(group_id, state)
 
   @doc """
   Destroys a ground skill-unit group by `group_id` (rAthena `skill_delunitgroup`).
@@ -94,19 +86,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
   duration, e.g. a Safety Wall whose hit/shield budget is exhausted.
   """
   @spec destroy(non_neg_integer()) :: :ok
-  def destroy(group_id) do
-    case Storage.get(group_id) do
-      nil ->
-        :ok
-
-      %Group{skill_name: skill_name} = group ->
-        with {:ok, module} <- module_for(skill_name) do
-          module.on_expire(group)
-        end
-
-        Storage.delete(group_id)
-    end
-  end
+  def destroy(group_id), do: Manager.destroy(group_id)
 
   defp module_for(skill_name) do
     case Catalog.ground_module_for(skill_name) do

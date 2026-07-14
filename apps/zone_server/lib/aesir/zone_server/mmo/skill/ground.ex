@@ -9,7 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
   these skills are `target_type: :ground`, `use Skill` auto-derives the active
   `cast/4` that places the unit, so the skill needs no separate cast module.
 
-  `on_expire/1` is optional - the tick manager invokes it only when defined.
+  `on_expire/1` is optional - the unit manager invokes it only when defined.
 
   `on_touch/2` and `on_out/2` are optional movement-pipeline hooks fired when a
   unit steps onto / off a footprint cell (traps, Warp Portal, Fire Wall); the

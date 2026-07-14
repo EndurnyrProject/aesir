@@ -4,11 +4,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SafetywallTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Safetywall
   alias Aesir.ZoneServer.Mmo.StatusEntry
 
   setup :setup_ets_tables
+
+  setup do
+    manager =
+      start_supervised!({Manager, name: nil, schedule_tick: fn _pid, _interval -> :ok end})
+
+    Process.put({Manager, :server}, manager)
+    :ok
+  end
 
   @target {:player, 1000}
 

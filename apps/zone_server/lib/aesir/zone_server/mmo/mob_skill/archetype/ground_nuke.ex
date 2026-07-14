@@ -3,18 +3,18 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke do
   Ground-targeted AoE magic damage (`WZ_METEOR`, `WZ_STORMGUST`,
   `NPC_GROUNDATTACK`, ...).
 
-  `apply/4` builds a mob-cast `Skill.Unit.Group` directly and inserts it into
-  `Skill.Unit.Storage` — it cannot go through the player `Skill.Unit.place/4`,
+  `apply/4` builds a mob-cast `Skill.Unit.Group` directly and registers it with
+  `Skill.Unit.Manager` — it cannot go through the player `Skill.Unit.place/4`,
   which resolves per-skill modules from the player catalog. The stored group
   carries the constant `skill_name: :mob_ground_nuke`, so no player-catalog
   lookup (movement trigger, `Skill.Unit.destroy/1`) ever matches it.
 
-  This module is also the group's tick handler: `Skill.Unit.TickManager`
+  This module is also the group's tick handler: `Skill.Unit.Manager`
   dispatches every `caster_type: :mob` group here. `on_interval/2` follows the
   `Skill.Ground` contract (minus `on_place/1` — placement happens in `apply/4`):
   it resolves the mob caster once per tick, skipping the tick cleanly when the
   mob is gone, and applies renewal magic damage to every player standing on a
-  footprint cell. The group expires via the tick manager's normal reaping.
+  footprint cell. The group expires via the unit manager's normal reaping.
   """
 
   @behaviour Aesir.ZoneServer.Mmo.MobSkill.Archetype
@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -74,7 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke do
         state: %{element: params.element, radius: radius}
       }
 
-      :ok = Storage.insert(group)
+      :ok = Manager.register(group)
       broadcast_groundskill(group)
       :ok
     end
