@@ -73,18 +73,4 @@ defmodule Aesir.ZoneServer.GeometryTest do
       assert Geometry.in_tile_range?(0, 0, 3, 3, 2) == false
     end
   end
-
-  describe "distance calculation comparison" do
-    test "chebyshev vs euclidean distance for combat scenarios" do
-      # For RO tile-based movement, diagonal moves should count as 1
-      # Euclidean would give sqrt(2) ≈ 1.414, but Chebyshev gives 1
-      assert Geometry.chebyshev_distance(0, 0, 1, 1) == 1
-      assert Geometry.distance(0, 0, 1, 1) |> Float.round(3) == 1.414
-
-      # This demonstrates why Chebyshev is correct for RO:
-      # A player can move diagonally in one step
-      assert Geometry.chebyshev_distance(0, 0, 2, 2) == 2
-      assert Geometry.distance(0, 0, 2, 2) |> Float.round(3) == 2.828
-    end
-  end
 end

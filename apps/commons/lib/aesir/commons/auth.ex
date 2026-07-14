@@ -125,31 +125,4 @@ defmodule Aesir.Commons.Auth do
 
     updated_account
   end
-
-  @doc """
-  Gets account state description for debugging.
-  """
-  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
-  def get_account_state_description(state) do
-    case state do
-      0 -> "Normal"
-      1 -> "Unregistered ID"
-      2 -> "Incorrect Password"
-      3 -> "This ID is expired"
-      4 -> "Rejected from Server"
-      5 -> "Blocked by the GM Team"
-      6 -> "Your Game's EXE file is not the latest version"
-      7 -> "Banned until"
-      8 -> "Server is over populated"
-      9 -> "No more accounts may be connected from this company"
-      10 -> "MSI_REFUSE_BAN_BY_DBA"
-      11 -> "MSI_REFUSE_EMAIL_NOT_CONFIRMED"
-      12 -> "MSI_REFUSE_BAN_BY_GM"
-      13 -> "MSI_REFUSE_TEMP_BAN_FOR_DBWORK"
-      14 -> "MSI_REFUSE_SELF_LOCK"
-      15 -> "MSI_REFUSE_NOT_PERMITTED_GROUP"
-      99 -> "This ID has been totally erased"
-      _ -> "Unknown state"
-    end
-  end
 end

@@ -208,68 +208,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHitsTest do
     end
   end
 
-  describe "supports_critical?/1" do
-    test "returns true for valid stat maps" do
-      assert CriticalHits.supports_critical?(%{luk: 50})
-      assert CriticalHits.supports_critical?(%{luk: 0})
-      # Edge case but supported
-      assert CriticalHits.supports_critical?(%{luk: -5})
-    end
-
-    test "returns true for PlayerStats structs" do
-      player_stats = %PlayerStats{}
-      assert CriticalHits.supports_critical?(player_stats)
-    end
-
-    test "returns false for invalid inputs" do
-      assert CriticalHits.supports_critical?(%{str: 50}) == false
-      assert CriticalHits.supports_critical?(%{}) == false
-      assert CriticalHits.supports_critical?(nil) == false
-      assert CriticalHits.supports_critical?("invalid") == false
-    end
-  end
-
-  describe "get_critical_info/1" do
-    test "returns formatted critical information" do
-      # 100 critical rate = 10%
-      stats = %{luk: 30}
-
-      info = CriticalHits.get_critical_info(stats)
-
-      assert info.critical_rate == 100
-      assert info.critical_percentage == 10.0
-      assert info.max_critical_rate == 1000
-      assert info.max_critical_percentage == 100.0
-    end
-
-    test "handles edge cases" do
-      # Zero LUK
-      zero_info = CriticalHits.get_critical_info(%{luk: 0})
-      assert zero_info.critical_percentage == 0.0
-
-      # Max LUK (capped)
-      max_info = CriticalHits.get_critical_info(%{luk: 999})
-      assert max_info.critical_percentage == 100.0
-    end
-
-    test "works with PlayerStats" do
-      player_stats = %PlayerStats{
-        base_stats: %{luk: 60},
-        modifiers: %{
-          job_bonuses: %{luk: 10},
-          equipment: %{luk: 0},
-          status_effects: %{luk: 0}
-        }
-      }
-
-      info = CriticalHits.get_critical_info(player_stats)
-
-      # Effective LUK should be 70, so critical rate = 70 * 10/3 = 233
-      assert info.critical_rate == 233
-      assert abs(info.critical_percentage - 23.3) < 0.1
-    end
-  end
-
   describe "integration with rAthena formulas" do
     test "matches authentic rAthena critical calculations" do
       # Test cases based on rAthena source code

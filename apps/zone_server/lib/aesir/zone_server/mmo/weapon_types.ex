@@ -107,18 +107,6 @@ defmodule Aesir.ZoneServer.Mmo.WeaponTypes do
   end
 
   @doc """
-  Get all weapon types as a map.
-  """
-  @spec weapon_types() :: map()
-  def weapon_types, do: @weapon_types
-
-  @doc """
-  Get the maximum weapon type ID (shield).
-  """
-  @spec max_weapon_type() :: integer()
-  def max_weapon_type, do: 24
-
-  @doc """
   Get the attack range for a weapon type.
 
   - Melee weapons: 1 cell

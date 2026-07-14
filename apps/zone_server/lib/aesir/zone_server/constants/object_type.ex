@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Constants.ObjectType do
   Constants for entity object types used in network packets.
 
   These values determine how the client renders and handles different entity types.
-  Based on rAthena's objecttype definitions for ZC_NOTIFY packets.
   """
 
   @doc """

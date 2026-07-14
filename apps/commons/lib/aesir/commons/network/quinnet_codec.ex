@@ -40,7 +40,6 @@ defmodule Aesir.Commons.Network.QuinnetCodec do
       0 control | 1 gameplay | 2 world | 3 bulk | 4 snapshots
   """
 
-  @reliable_length_field_bytes 4
   @max_reliable_frame 8 * 1_024 * 1_024
   @client_id_byte_size 8
 
@@ -120,8 +119,4 @@ defmodule Aesir.Commons.Network.QuinnetCodec do
   @spec decode_datagram(binary()) :: {:ok, channel_id(), binary()} | {:error, :empty_datagram}
   def decode_datagram(<<channel_id::8, payload::binary>>), do: {:ok, channel_id, payload}
   def decode_datagram(<<>>), do: {:error, :empty_datagram}
-
-  @doc "Size of the reliable frame length prefix in bytes."
-  @spec reliable_length_field_bytes() :: pos_integer()
-  def reliable_length_field_bytes, do: @reliable_length_field_bytes
 end
