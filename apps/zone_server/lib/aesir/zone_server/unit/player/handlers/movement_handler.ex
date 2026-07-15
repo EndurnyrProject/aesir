@@ -664,6 +664,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         &send_item_vanish_packet_to(game_state.character_id, &1)
       )
 
+    new_visible_skill_units = update_skill_unit_visibility(game_state)
+
     # Update game state with new visibility info
     # Keep last_visibility_cell for potential optimization later
     current_cell = {div(game_state.x, 8), div(game_state.y, 8)}
@@ -676,11 +678,35 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         visible_npcs: new_visible_npcs,
         visible_shops: new_visible_shops,
         visible_items: new_visible_items,
+        visible_skill_units: new_visible_skill_units,
         last_visibility_cell: current_cell
     }
   end
 
   defp manhattan(x1, y1, x2, y2), do: abs(x2 - x1) + abs(y2 - y1)
+
+  defp update_skill_unit_visibility(game_state) do
+    visible_groups =
+      game_state.map_name
+      |> SkillUnitManager.in_range(game_state.x, game_state.y, game_state.view_range)
+      |> MapSet.new(& &1.group_id)
+
+    visible_groups =
+      visible_groups
+      |> MapSet.difference(game_state.visible_skill_units)
+      |> Enum.reduce(visible_groups, fn group_id, visible_groups ->
+        case SkillUnitManager.enter_view(game_state.character_id, group_id) do
+          :ok -> visible_groups
+          :not_found -> MapSet.delete(visible_groups, group_id)
+        end
+      end)
+
+    game_state.visible_skill_units
+    |> MapSet.difference(visible_groups)
+    |> Enum.each(&SkillUnitManager.leave_view(game_state.character_id, &1))
+
+    visible_groups
+  end
 
   defp send_spawn_packet_about(to_char_id, about_char_id) do
     # Get the player session for the target

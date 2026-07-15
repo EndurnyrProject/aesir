@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerWarpTest do
         map_name: "geffen",
         x: 100,
         y: 120,
+        view_range: 14,
         pending_map_load: :warp
       }
 
@@ -57,6 +58,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerWarpTest do
         map_name: "geffen",
         x: 100,
         y: 120,
+        view_range: 14,
         pending_map_load: :warp,
         last_warp_at: System.monotonic_time(:millisecond)
       }
@@ -75,6 +77,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerWarpTest do
         map_name: "geffen",
         x: 100,
         y: 120,
+        view_range: 14,
         pending_map_load: :warp
       }
 

@@ -147,6 +147,44 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   def in_range(server, map_name, x, y, range),
     do: GenServer.call(server, {:in_range, map_name, x, y, range})
 
+  @doc "Publishes an authoritative visible-group snapshot to one observer."
+  @spec snapshot_for(integer(), String.t(), integer(), integer(), non_neg_integer()) :: MapSet.t()
+  def snapshot_for(observer_id, map_name, x, y, range),
+    do: snapshot_for(default_server(), observer_id, map_name, x, y, range)
+
+  @doc false
+  @spec snapshot_for(server(), integer(), String.t(), integer(), integer(), non_neg_integer()) ::
+          MapSet.t()
+  def snapshot_for(server, observer_id, map_name, x, y, range),
+    do: GenServer.call(server, {:snapshot_for, observer_id, map_name, x, y, range})
+
+  @doc "Publishes a visible group's current state to one observer."
+  @spec enter_view(integer(), non_neg_integer()) :: :ok | :not_found
+  def enter_view(observer_id, group_id), do: enter_view(default_server(), observer_id, group_id)
+
+  @doc false
+  @spec enter_view(server(), integer(), non_neg_integer()) :: :ok | :not_found
+  def enter_view(server, observer_id, group_id),
+    do: GenServer.call(server, {:enter_view, observer_id, group_id})
+
+  @doc "Publishes a last-cell visibility removal to one observer."
+  @spec leave_view(integer(), non_neg_integer()) :: :ok
+  def leave_view(observer_id, group_id), do: leave_view(default_server(), observer_id, group_id)
+
+  @doc false
+  @spec leave_view(server(), integer(), non_neg_integer()) :: :ok
+  def leave_view(server, observer_id, group_id),
+    do: GenServer.call(server, {:leave_view, observer_id, group_id})
+
+  @doc "Drops all tracked skill-unit visibility for one observer."
+  @spec clear_observer(integer()) :: :ok
+  def clear_observer(observer_id), do: clear_observer(default_server(), observer_id)
+
+  @doc false
+  @spec clear_observer(server(), integer()) :: :ok
+  def clear_observer(server, observer_id),
+    do: GenServer.call(server, {:clear_observer, observer_id})
+
   @doc "Claims a consumable source cell exactly once."
   @spec claim_cell(non_neg_integer()) :: {:ok, Cell.t()} | {:error, :not_claimable | :not_found}
   def claim_cell(cell_id), do: claim_cell(default_server(), cell_id)
@@ -299,6 +337,59 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   def handle_call({:in_range, map_name, x, y, range}, _from, state) do
     {:reply, Storage.get_visible_groups_in_range(map_name, x, y, range), state}
+  end
+
+  def handle_call({:snapshot_for, observer_id, map_name, x, y, range}, _from, state) do
+    groups = Storage.get_visible_groups_in_range(map_name, x, y, range)
+
+    snapshot =
+      groups
+      |> Enum.map(&{&1, Storage.get_cells_by_group(&1.group_id)})
+      |> View.snapshot(ServerTick.now())
+
+    Broadcast.to_player(observer_id, snapshot)
+    :ok = Storage.replace_observer_groups(observer_id, Enum.map(groups, & &1.group_id))
+    {:reply, MapSet.new(groups, & &1.group_id), state}
+  end
+
+  def handle_call({:enter_view, observer_id, group_id}, _from, state) do
+    result =
+      case Storage.get(group_id) do
+        %Group{visible?: true} = group ->
+          packet = %SkillUnitSpawn{group: View.group(group, Storage.get_cells_by_group(group_id))}
+          Broadcast.to_player(observer_id, packet)
+          :ok = Storage.add_observer_group(observer_id, group_id)
+          :ok
+
+        _ ->
+          :not_found
+      end
+
+    {:reply, result, state}
+  end
+
+  def handle_call({:leave_view, observer_id, group_id}, _from, state) do
+    case Storage.get(group_id) do
+      %Group{visible?: true} = group ->
+        Broadcast.to_player(observer_id, %SkillUnitDespawn{
+          group_id: group_id,
+          cell_ids: group.cell_ids |> Enum.sort(),
+          reason: :SKILL_UNIT_DESPAWN_REASON_LEFT_VIEW,
+          server_tick: ServerTick.now()
+        })
+
+        :ok = Storage.remove_observer_group(observer_id, group_id)
+
+      _ ->
+        :ok
+    end
+
+    {:reply, :ok, state}
+  end
+
+  def handle_call({:clear_observer, observer_id}, _from, state) do
+    :ok = Storage.replace_observer_groups(observer_id, [])
+    {:reply, :ok, state}
   end
 
   def handle_call({:claim_cell, cell_id}, _from, state) do
@@ -754,12 +845,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp publish_group_despawn(%Group{visible?: false}, _reason), do: :ok
 
   defp publish_group_despawn(%Group{} = group, reason) do
-    publish(group.map_name, elem(group.center, 0), elem(group.center, 1), %SkillUnitDespawn{
+    packet = %SkillUnitDespawn{
       group_id: group.group_id,
       cell_ids: Enum.sort(group.cell_ids),
       reason: reason,
       server_tick: ServerTick.now()
-    })
+    }
+
+    group.group_id
+    |> Storage.take_group_observers()
+    |> Enum.each(&Broadcast.to_player(&1, packet))
   end
 
   defp publish(map_name, x, y, packet),
@@ -830,10 +925,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       nil ->
         :ok
 
-      _group ->
+      group ->
         :ok = FieldSupport.release_group(group_id)
         group_id |> Storage.get_cells_by_group() |> Enum.each(&remove_terrain/1)
-        Storage.delete(group_id)
+        :ok = Storage.delete(group_id)
+        publish_group_despawn(group, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
     end
   end
 

@@ -149,6 +149,42 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Storage do
     |> Enum.sort_by(& &1.group_id)
   end
 
+  @doc false
+  @spec replace_observer_groups(integer(), Enumerable.t()) :: :ok
+  def replace_observer_groups(observer_id, group_ids) do
+    clear_observer_groups(observer_id)
+    Enum.each(group_ids, &add_observer_group(observer_id, &1))
+    :ok
+  end
+
+  @doc false
+  @spec add_observer_group(integer(), non_neg_integer()) :: :ok
+  def add_observer_group(observer_id, group_id) do
+    :ets.insert(table_for(:skill_unit_observer_groups), {{observer_id, group_id}, true})
+    :ets.insert(table_for(:skill_unit_group_observers), {group_id, observer_id})
+    :ok
+  end
+
+  @doc false
+  @spec remove_observer_group(integer(), non_neg_integer()) :: :ok
+  def remove_observer_group(observer_id, group_id) do
+    :ets.delete(table_for(:skill_unit_observer_groups), {observer_id, group_id})
+    :ets.delete_object(table_for(:skill_unit_group_observers), {group_id, observer_id})
+    :ok
+  end
+
+  @doc false
+  @spec take_group_observers(non_neg_integer()) :: [integer()]
+  def take_group_observers(group_id) do
+    observers =
+      table_for(:skill_unit_group_observers)
+      |> :ets.lookup(group_id)
+      |> Enum.map(fn {^group_id, observer_id} -> observer_id end)
+
+    Enum.each(observers, &remove_observer_group(&1, group_id))
+    observers
+  end
+
   @doc """
   Deletes a group by `group_id`.
   """
@@ -411,5 +447,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Storage do
          {:"=<", :"$2", y + range}
        ], [:"$3"]}
     ])
+    |> Enum.uniq()
+  end
+
+  defp clear_observer_groups(observer_id) do
+    table_for(:skill_unit_observer_groups)
+    |> :ets.match({{observer_id, :"$1"}, :_})
+    |> Enum.each(fn [group_id] -> remove_observer_group(observer_id, group_id) end)
   end
 end

@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandlerTest do
   alias Aesir.Net.StatusChange
   alias Aesir.Net.UnitStateChange
   alias Aesir.ZoneServer.Mmo.Option
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler
@@ -30,6 +31,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandlerTest do
   @char_id 7100
 
   setup do
+    Mimic.copy(SkillUnitManager)
+
+    stub(SkillUnitManager, :snapshot_for, fn _observer_id, _map, _x, _y, _range ->
+      MapSet.new()
+    end)
+
     Registry.load_definitions()
     :ok
   end
@@ -110,5 +117,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandlerTest do
     {:noreply, _state} = MapLoadHandler.handle_map_loaded(session_state())
 
     assert_received {:send, _channel, {:quest_list, %QuestList{quests: []}}}
+  end
+
+  test "the initial load replaces visible skill units with the manager snapshot" do
+    expect(SkillUnitManager, :snapshot_for, fn @char_id, "prontera", 150, 150, range ->
+      assert is_integer(range)
+      MapSet.new([11, 12])
+    end)
+
+    {:noreply, state} = MapLoadHandler.handle_map_loaded(session_state())
+
+    assert state.game_state.visible_skill_units == MapSet.new([11, 12])
   end
 end

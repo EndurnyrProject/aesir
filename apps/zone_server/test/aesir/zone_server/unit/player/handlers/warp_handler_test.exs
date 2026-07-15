@@ -103,7 +103,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
 
       stub(Broadcast, :to_players, fn _visible, _packet, _opts -> :ok end)
 
-      assert {:ok, %{game_state: gs}} = WarpHandler.warp(state(), "geffen", 100, 120)
+      state = %{
+        state()
+        | game_state: %{state().game_state | visible_skill_units: MapSet.new([77])}
+      }
+
+      assert {:ok, %{game_state: gs}} = WarpHandler.warp(state, "geffen", 100, 120)
 
       assert gs.x == 101
       assert gs.y == 120
@@ -199,6 +204,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
       assert gs.combat_target_id == nil
       assert gs.visible_players == MapSet.new()
       assert gs.visible_mobs == MapSet.new()
+      assert gs.visible_skill_units == MapSet.new()
       assert gs.last_visibility_cell == nil
     end
 

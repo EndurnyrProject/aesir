@@ -12,6 +12,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Npc.Warp
@@ -39,6 +41,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
     Mimic.copy(Warps)
     Mimic.copy(StatusDisplay)
     Mimic.copy(Interpreter)
+    Mimic.copy(SkillUnitManager)
 
     stub(MapCache, :get, fn "prontera" -> {:ok, %{width: 200, height: 200}} end)
     stub(Cell, :traversable?, fn "prontera", _x, _y -> true end)
@@ -55,6 +58,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
 
     stub(StatusDisplay, :active_icons, fn _type, _id -> [] end)
     stub(Interpreter, :can_move?, fn _type, _id -> true end)
+    stub(SkillUnitManager, :in_range, fn _map, _x, _y, _range -> [] end)
+    stub(SkillUnitManager, :enter_view, fn _observer_id, _group_id -> :ok end)
+    stub(SkillUnitManager, :leave_view, fn _observer_id, _group_id -> :ok end)
 
     :ok
   end
@@ -433,6 +439,65 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
         end)
 
       assert Enum.sort(gids) == Enum.sort([id_a, id_b])
+    end
+  end
+
+  describe "handle_visibility_update/1 skill-unit lifecycle" do
+    test "enters, leaves, and re-enters a multi-cell group once per visibility transition" do
+      test_pid = self()
+
+      group = %Group{
+        group_id: 77,
+        skill_id: 12,
+        skill_name: :wz_icewall,
+        level: 1,
+        caster_id: 2,
+        caster_type: :player,
+        map_name: "prontera",
+        center: {50, 50},
+        cells: [{50, 50}, {51, 50}, {52, 50}]
+      }
+
+      stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [] end)
+      stub(SpatialIndex, :get_units_in_range, fn :mob, _, _, _, _ -> [] end)
+      stub(SpatialIndex, :update_visibility, fn _, _, _ -> :ok end)
+
+      stub(SkillUnitManager, :in_range, fn _map, x, _y, _range ->
+        if x == 50, do: [group], else: []
+      end)
+
+      stub(SkillUnitManager, :enter_view, fn observer_id, group_id ->
+        send(test_pid, {:enter_view, observer_id, group_id})
+        :ok
+      end)
+
+      stub(SkillUnitManager, :leave_view, fn observer_id, group_id ->
+        send(test_pid, {:leave_view, observer_id, group_id})
+        :ok
+      end)
+
+      entered = MovementHandler.handle_visibility_update(idle_state().game_state)
+      assert_received {:enter_view, 1, 77}
+      assert entered.visible_skill_units == MapSet.new([77])
+
+      _still_visible = MovementHandler.handle_visibility_update(entered)
+      refute_received {:enter_view, 1, 77}
+
+      hidden =
+        entered
+        |> PlayerState.update_position(200, 50)
+        |> MovementHandler.handle_visibility_update()
+
+      assert_received {:leave_view, 1, 77}
+      assert hidden.visible_skill_units == MapSet.new()
+
+      reentered =
+        hidden
+        |> PlayerState.update_position(50, 50)
+        |> MovementHandler.handle_visibility_update()
+
+      assert_received {:enter_view, 1, 77}
+      assert reentered.visible_skill_units == MapSet.new([77])
     end
   end
 

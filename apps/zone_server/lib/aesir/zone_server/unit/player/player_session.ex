@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.Net.GuildEmblemChanged
   alias Aesir.Net.ItemVanished
   alias Aesir.Net.PartyDisbanded
+  alias Aesir.Net.SkillUnitDespawn
   alias Aesir.Net.UnitDespawn
   alias Aesir.Net.UnitSpawn
   alias Aesir.Net.VendingBoardShown
@@ -32,6 +33,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage, as: SkillUnitStorage
   alias Aesir.ZoneServer.Mmo.Skills.WzJupitel
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
@@ -902,6 +904,28 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     game_state = %{game_state | visible_items: MapSet.delete(game_state.visible_items, ground_id)}
 
     {:noreply, %{state | game_state: game_state}}
+  end
+
+  @impl true
+  def handle_cast(
+        {:send_packet, %SkillUnitDespawn{group_id: group_id} = packet},
+        %{game_state: game_state, connection_pid: connection_pid} = state
+      ) do
+    if connection_pid do
+      MessageRouter.send_to(connection_pid, packet)
+    end
+
+    game_state =
+      if SkillUnitStorage.get(group_id) do
+        game_state
+      else
+        %{
+          game_state
+          | visible_skill_units: MapSet.delete(game_state.visible_skill_units, group_id)
+        }
+      end
+
+    {:noreply, update_game_state(state, game_state)}
   end
 
   @impl true

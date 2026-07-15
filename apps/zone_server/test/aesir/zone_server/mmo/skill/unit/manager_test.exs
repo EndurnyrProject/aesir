@@ -678,6 +678,111 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
              Manager.in_range(manager, "prontera", 100, 100, 0)
   end
 
+  test "publishes observer-specific snapshots and visibility transitions with current cells" do
+    test_pid = self()
+
+    stub(Broadcast, :to_player, fn observer_id, packet ->
+      send(test_pid, {observer_id, packet})
+    end)
+
+    manager = start_manager(10_000)
+
+    :ok =
+      Manager.register(
+        manager,
+        group(1,
+          visible?: true,
+          cells: [{100, 100}, {101, 100}],
+          created_at: 10_000
+        )
+      )
+
+    :ok = Manager.register(manager, group(2, visible?: false, cells: [{100, 100}]))
+    [damaged | _] = Storage.get_cells_by_group(1)
+    assert {:ok, damaged} = Manager.update_cell(manager, damaged.cell_id, %{hp: 100, max_hp: 100})
+    assert {:ok, _} = Manager.damage_cell(manager, damaged.cell_id, 40)
+
+    assert MapSet.new([1]) == Manager.snapshot_for(manager, 99, "prontera", 100, 100, 1)
+
+    assert_receive {99,
+                    %Aesir.Net.SkillUnitSnapshot{
+                      groups: [%{group_id: 1, cells: cells}]
+                    }}
+
+    assert Enum.find(cells, &(&1.cell_id == damaged.cell_id)).hp == 60
+
+    assert :ok = Manager.enter_view(manager, 99, 1)
+    assert_receive {99, %Aesir.Net.SkillUnitSpawn{group: %{group_id: 1, cells: cells}}}
+    assert Enum.find(cells, &(&1.cell_id == damaged.cell_id)).hp == 60
+
+    assert :ok = Manager.leave_view(manager, 99, 1)
+
+    assert_receive {99,
+                    %Aesir.Net.SkillUnitDespawn{
+                      group_id: 1,
+                      cell_ids: cell_ids,
+                      reason: :SKILL_UNIT_DESPAWN_REASON_LEFT_VIEW
+                    }}
+
+    assert Enum.sort(cell_ids) == Enum.sort(Enum.map(cells, & &1.cell_id))
+
+    assert :not_found = Manager.enter_view(manager, 99, 999)
+  end
+
+  test "despawns a destroyed multi-cell group for a movement-edge observer outside its center range" do
+    test_pid = self()
+
+    stub(Broadcast, :to_player, fn observer_id, packet ->
+      send(test_pid, {observer_id, packet})
+    end)
+
+    manager = start_manager(10_000)
+
+    assert :ok =
+             Manager.register(
+               manager,
+               group(1,
+                 visible?: true,
+                 center: {100, 100},
+                 cells: [{100, 100}, {115, 100}],
+                 created_at: 10_000
+               )
+             )
+
+    assert :ok = Manager.enter_view(manager, 99, 1)
+    assert_receive {99, %Aesir.Net.SkillUnitSpawn{group: %{group_id: 1}}}
+
+    assert :ok = Manager.destroy(manager, 1)
+
+    assert_receive {99,
+                    %Aesir.Net.SkillUnitDespawn{
+                      group_id: 1,
+                      reason: :SKILL_UNIT_DESPAWN_REASON_CANCELED
+                    }}
+  end
+
+  test "despawns a group destroyed immediately after its map-load snapshot" do
+    test_pid = self()
+
+    stub(Broadcast, :to_player, fn observer_id, packet ->
+      send(test_pid, {observer_id, packet})
+    end)
+
+    manager = start_manager(10_000)
+    assert :ok = Manager.register(manager, group(1, visible?: true, created_at: 10_000))
+
+    assert MapSet.new([1]) == Manager.snapshot_for(manager, 99, "prontera", 100, 100, 0)
+    assert_receive {99, %Aesir.Net.SkillUnitSnapshot{groups: [%{group_id: 1}]}}
+
+    assert :ok = Manager.destroy(manager, 1)
+
+    assert_receive {99,
+                    %Aesir.Net.SkillUnitDespawn{
+                      group_id: 1,
+                      reason: :SKILL_UNIT_DESPAWN_REASON_CANCELED
+                    }}
+  end
+
   test "leaves explicitly invisible group-only fields unmaterialized" do
     manager = start_manager(10_000)
     invisible = group(1, visible?: false, cells: [{100, 100}], created_at: 10_000)

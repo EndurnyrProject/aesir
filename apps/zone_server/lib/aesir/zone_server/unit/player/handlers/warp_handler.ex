@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
@@ -102,6 +103,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
 
     SpatialIndex.remove_player(char_id)
     SpatialIndex.clear_visibility(char_id)
+    :ok = SkillUnitManager.clear_observer(char_id)
     :ok
   end
 

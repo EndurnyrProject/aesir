@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
 
   alias Aesir.Commons.StatusParams
   alias Aesir.ZoneServer.Mmo.Leveling
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.StatPoint
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -36,10 +37,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
     # a warp only needs to re-enter the player on the destination map.
     send(self(), :respawn_after_warp)
 
+    visible_skill_units = send_skill_unit_snapshot(game_state)
     cleared_game_state = PlayerState.clear_warp_cooldown(game_state)
     maybe_fire_spawn_warp(cleared_game_state)
 
-    {:noreply, %{state | game_state: %{cleared_game_state | pending_map_load: nil}}}
+    {:noreply,
+     %{
+       state
+       | game_state: %{
+           cleared_game_state
+           | pending_map_load: nil,
+             visible_skill_units: visible_skill_units
+         }
+     }}
   end
 
   def handle_map_loaded(%{connection_pid: connection_pid, game_state: game_state} = state) do
@@ -77,12 +87,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
     skill_list = SkillListView.build(game_state.stats.progression)
     MessageRouter.send_to(connection_pid, skill_list)
 
+    visible_skill_units = send_skill_unit_snapshot(game_state)
+
     send(self(), :spawn_player)
 
     cleared_game_state = PlayerState.clear_warp_cooldown(game_state)
     maybe_fire_spawn_warp(cleared_game_state)
 
-    {:noreply, %{state | game_state: cleared_game_state}}
+    {:noreply,
+     %{state | game_state: %{cleared_game_state | visible_skill_units: visible_skill_units}}}
   end
 
   # On-spawn entry trigger (rAthena `OnTouch` on-spawn): if the spawn cell sits
@@ -128,5 +141,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
 
   defp maybe_send_cart_info(connection_pid, %{cart: cart}) do
     MessageRouter.send_to(connection_pid, InventoryView.cart_info(cart))
+  end
+
+  defp send_skill_unit_snapshot(game_state) do
+    SkillUnitManager.snapshot_for(
+      game_state.character_id,
+      game_state.map_name,
+      game_state.x,
+      game_state.y,
+      game_state.view_range
+    )
   end
 end

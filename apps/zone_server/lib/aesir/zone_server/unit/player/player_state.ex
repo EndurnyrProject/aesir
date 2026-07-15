@@ -70,6 +70,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           visible_npcs: MapSet.t(),
           visible_shops: MapSet.t(),
           visible_items: MapSet.t(),
+          visible_skill_units: MapSet.t(),
           last_visibility_cell: {integer(), integer()} | nil,
           inside_npc_areas: MapSet.t(),
           target_id: integer() | nil,
@@ -176,6 +177,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     :visible_shops,
     # MapSet of ground-item ids currently visible (ephemeral, not persisted)
     :visible_items,
+    # MapSet of visible skill-unit group ids (ephemeral, not persisted)
+    :visible_skill_units,
     # Last grid cell for visibility check
     :last_visibility_cell,
 
@@ -302,6 +305,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       visible_npcs: MapSet.new(),
       visible_shops: MapSet.new(),
       visible_items: MapSet.new(),
+      visible_skill_units: MapSet.new(),
       last_visibility_cell: nil,
 
       # Combat defaults
@@ -359,6 +363,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
         visible_npcs: MapSet.new(),
         visible_shops: MapSet.new(),
         visible_items: MapSet.new(),
+        visible_skill_units: MapSet.new(),
         last_visibility_cell: nil,
         inside_npc_areas: MapSet.new()
     }
