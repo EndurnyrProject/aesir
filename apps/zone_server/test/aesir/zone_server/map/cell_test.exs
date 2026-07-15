@@ -77,6 +77,17 @@ defmodule Aesir.ZoneServer.Map.CellTest do
     assert Cell.traversable?("cell_test.gat", 0, 0)
   end
 
+  test "samples canonical map aliases and rejects exhausted or non-positive attempt budgets" do
+    :ets.insert(EtsTable.table_for(:map_cache), {"single_cell", MapData.new("single_cell", 1, 1)})
+
+    assert {:ok, {0, 0}} = Cell.random_traversable("single_cell.gat", 1)
+    assert {:error, :no_walkable_cell} = Cell.random_traversable("single_cell", 0)
+    assert {:error, :no_walkable_cell} = Cell.random_traversable("single_cell", -1)
+
+    :ok = Cell.put("single_cell", 0, 0, :test_blocker, 1, blocks_movement: true)
+    assert {:error, :no_walkable_cell} = Cell.random_traversable("single_cell", 1)
+  end
+
   test "requires a valid base coordinate for dynamic water and validates its cell ID" do
     :ok = Cell.put("missing", 0, 0, :deluge, 1, consumable_water: 1)
     :ok = Cell.put("cell_test", 99, 99, :deluge, 2, consumable_water: 2)

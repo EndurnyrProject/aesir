@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   alias Aesir.Net.SnapshotEntity
   alias Aesir.ZoneServer.Announcement
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
@@ -329,9 +330,14 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   def handle_call({:summon_mob, mob_id, x, y, opts}, _from, state) do
     case MobManagement.get_mob_by_id(mob_id) do
       {:ok, mob_data} ->
-        position = summon_position({x, y}, state.map_data)
-        {result, new_state} = place_mob(mob_data, position, opts, state)
-        {:reply, result, new_state}
+        case summon_position({x, y}, state.map_data) do
+          {:ok, position} ->
+            {result, new_state} = place_mob(mob_data, position, opts, state)
+            {:reply, result, new_state}
+
+          {:error, :no_walkable_cell} = error ->
+            {:reply, error, state}
+        end
 
       {:error, reason} ->
         {:reply, {:error, reason}, state}
@@ -607,9 +613,14 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   end
 
   defp do_spawn_single_mob(spawn_config, mob_data, state) do
-    {x, y} = calculate_spawn_position(spawn_config.spawn_area, state.map_data)
-    {_result, new_state} = place_mob(mob_data, {x, y}, [spawn_ref: spawn_config], state)
-    new_state
+    case calculate_spawn_position(spawn_config.spawn_area, state.map_data) do
+      {:ok, {x, y}} ->
+        {_result, new_state} = place_mob(mob_data, {x, y}, [spawn_ref: spawn_config], state)
+        new_state
+
+      {:error, :no_walkable_cell} ->
+        state
+    end
   end
 
   # NOTE: `:aggressive` is accepted but deferred — forcing aggressive AI means
@@ -691,8 +702,8 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     random_walkable_cell(map_data, @spawn_position_attempts)
   end
 
-  defp calculate_spawn_position(%MobSpawn.SpawnArea{xs: 0, ys: 0} = spawn_area, _map_data) do
-    {max(spawn_area.x, 0), max(spawn_area.y, 0)}
+  defp calculate_spawn_position(%MobSpawn.SpawnArea{xs: 0, ys: 0} = spawn_area, map_data) do
+    fixed_position(map_data, max(spawn_area.x, 0), max(spawn_area.y, 0))
   end
 
   defp calculate_spawn_position(spawn_area, map_data) do
@@ -702,28 +713,40 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   defp summon_position({x, y}, %MapData{} = map_data) when x <= 0 or y <= 0,
     do: random_walkable_cell(map_data, @spawn_position_attempts)
 
-  defp summon_position({x, y}, _map_data), do: {max(x, 0), max(y, 0)}
+  defp summon_position({x, y}, map_data), do: fixed_position(map_data, max(x, 0), max(y, 0))
+
+  defp fixed_position(%MapData{name: map_name}, x, y) do
+    if Cell.dynamically_blocked?(map_name, x, y),
+      do: {:error, :no_walkable_cell},
+      else: {:ok, {x, y}}
+  end
+
+  defp fixed_position(_map_data, x, y), do: {:ok, {x, y}}
+
+  defp random_walkable_cell(_map_data, 0), do: {:error, :no_walkable_cell}
 
   defp random_walkable_cell(%MapData{xs: width, ys: height} = map_data, attempts) do
     x = :rand.uniform(width) - 1
     y = :rand.uniform(height) - 1
 
     cond do
-      MapData.walkable?(map_data, x, y) -> {x, y}
+      Cell.traversable?(map_data.name, x, y) -> {:ok, {x, y}}
       attempts > 1 -> random_walkable_cell(map_data, attempts - 1)
-      true -> {div(width, 2), div(height, 2)}
+      true -> {:error, :no_walkable_cell}
     end
   end
+
+  defp random_area_cell(_spawn_area, _map_data, 0), do: {:error, :no_walkable_cell}
 
   defp random_area_cell(spawn_area, map_data, attempts) do
     x = spawn_area.x + :rand.uniform(spawn_area.xs * 2 + 1) - spawn_area.xs - 1
     y = spawn_area.y + :rand.uniform(spawn_area.ys * 2 + 1) - spawn_area.ys - 1
 
     cond do
-      not match?(%MapData{}, map_data) -> {max(x, 0), max(y, 0)}
-      MapData.walkable?(map_data, x, y) -> {x, y}
+      not match?(%MapData{}, map_data) -> {:error, :no_walkable_cell}
+      Cell.traversable?(map_data.name, x, y) -> {:ok, {x, y}}
       attempts > 1 -> random_area_cell(spawn_area, map_data, attempts - 1)
-      true -> {max(spawn_area.x, 0), max(spawn_area.y, 0)}
+      true -> {:error, :no_walkable_cell}
     end
   end
 

@@ -1,9 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
+  import Aesir.TestEtsSetup
   import Mimic
 
   alias Aesir.Commons.Models.InventoryItem
-  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -16,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
+  setup :setup_ets_tables
   setup :verify_on_exit!
 
   defp game_state(sp, learned) do
@@ -294,10 +297,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     }
   end
 
-  test "ground cast succeeds for a target_type: :ground definition" do
+  defp put_walkable_map do
+    map = MapData.new("prontera", 20, 20)
+    :ets.insert(EtsTable.table_for(:map_cache), {"prontera", map})
+  end
+
+  test "ground casts reject active blockers and recover after removal" do
+    put_walkable_map()
     stub(Catalog, :by_id, fn 6 -> {:ok, ground_definition(9)} end)
-    stub(MapCache, :get, fn "prontera" -> {:ok, %MapData{}} end)
-    stub(MapData, :walkable?, fn _map, 12, 12 -> true end)
+    stub(SmProvoke, :cast, fn caster, {:ground, 12, 12}, 1, _definition -> {:ok, caster} end)
+
+    gs = game_state(100, %{6 => 1})
+    :ok = Cell.put("prontera", 12, 12, :test_blocker, 1, blocks_movement: true)
+
+    assert {:error, :invalid_target} = Interpreter.cast(gs, 6, 1, {:ground, 12, 12})
+
+    :ok = Cell.delete("prontera", 12, 12, :test_blocker, 1)
+    assert {:ok, _} = Interpreter.cast(gs, 6, 1, {:ground, 12, 12})
+  end
+
+  test "ground cast succeeds for a target_type: :ground definition" do
+    put_walkable_map()
+    stub(Catalog, :by_id, fn 6 -> {:ok, ground_definition(9)} end)
     stub(SmProvoke, :cast, fn caster, {:ground, 12, 12}, 1, _definition -> {:ok, caster} end)
 
     gs = game_state(100, %{6 => 1})
@@ -319,9 +340,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   end
 
   test "ground cast onto a non-walkable cell returns :invalid_target" do
+    put_walkable_map()
     stub(Catalog, :by_id, fn 6 -> {:ok, ground_definition(9)} end)
-    stub(MapCache, :get, fn "prontera" -> {:ok, %MapData{}} end)
-    stub(MapData, :walkable?, fn _map, 12, 12 -> false end)
+    :ok = Cell.put("prontera", 12, 12, :test_blocker, 1, blocks_movement: true)
 
     gs = game_state(100, %{6 => 1})
     assert {:error, :invalid_target} = Interpreter.cast(gs, 6, 1, {:ground, 12, 12})

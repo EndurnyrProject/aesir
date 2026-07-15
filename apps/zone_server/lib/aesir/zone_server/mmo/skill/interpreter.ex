@@ -18,8 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   behavior inline through `complete_cast/4`.
   """
   alias Aesir.ZoneServer.Geometry
-  alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.CastTime
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -330,11 +329,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   end
 
   defp check_ground_walkable(map_name, x, y) do
-    with {:ok, map} <- MapCache.get(map_name),
-         true <- MapData.walkable?(map, x, y) do
+    if Cell.placeable?(map_name, x, y) do
       :ok
     else
-      _ -> {:error, :invalid_target}
+      {:error, :invalid_target}
     end
   end
 

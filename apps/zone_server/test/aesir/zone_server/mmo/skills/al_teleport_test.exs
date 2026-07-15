@@ -2,12 +2,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlTeleportTest do
   use ExUnit.Case, async: true
   import Mimic
 
-  alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.AlTeleport
   alias Aesir.ZoneServer.Mmo.SkillTree
+
+  setup do
+    Mimic.copy(Cell)
+    :ok
+  end
 
   setup :verify_on_exit!
 
@@ -48,10 +52,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlTeleportTest do
   describe "cast/4 (lv1 — random cell on current map)" do
     test "stages pending_warp to a random walkable cell on the current map" do
       {:ok, definition} = Catalog.by_id(26)
-      map_data = %{}
-
-      stub(MapCache, :get, fn "morocc" -> {:ok, map_data} end)
-      stub(MapData, :random_walkable_cell, fn ^map_data -> {:ok, {42, 77}} end)
+      stub(Cell, :random_traversable, fn "morocc" -> {:ok, {42, 77}} end)
 
       assert {:ok, updated} = AlTeleport.cast(@caster, :self, 1, definition)
       assert updated.pending_warp == {"morocc", 42, 77}
@@ -59,10 +60,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlTeleportTest do
 
     test "degrades gracefully when no walkable cell is found" do
       {:ok, definition} = Catalog.by_id(26)
-      map_data = %{}
-
-      stub(MapCache, :get, fn "morocc" -> {:ok, map_data} end)
-      stub(MapData, :random_walkable_cell, fn ^map_data -> {:error, :no_walkable_cell} end)
+      stub(Cell, :random_traversable, fn "morocc" -> {:error, :no_walkable_cell} end)
 
       assert {:ok, updated} = AlTeleport.cast(@caster, :self, 1, definition)
       assert updated.pending_warp == nil
@@ -71,7 +69,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlTeleportTest do
     test "degrades gracefully when map is not found" do
       {:ok, definition} = Catalog.by_id(26)
 
-      stub(MapCache, :get, fn "morocc" -> {:error, :not_found} end)
+      stub(Cell, :random_traversable, fn "morocc" -> {:error, :not_found} end)
 
       assert {:ok, updated} = AlTeleport.cast(@caster, :self, 1, definition)
       assert updated.pending_warp == nil

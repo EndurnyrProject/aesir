@@ -4,6 +4,8 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -47,11 +49,10 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
     test "non-positive coordinates pick a random walkable cell (rAthena 0,0 semantics)" do
       stub(MobSupervisor, :spawn_mob, fn _map, %MobState{}, _opts -> {:ok, self()} end)
 
-      state = %Coordinator{
-        map_name: "prontera",
-        map_data: MapData.new("prontera", 40, 40),
-        next_mob_id: 1
-      }
+      map_data = MapData.new("prontera", 40, 40)
+      :ets.insert(EtsTable.table_for(:map_cache), {"prontera", map_data})
+
+      state = %Coordinator{map_name: "prontera", map_data: map_data, next_mob_id: 1}
 
       {:reply, {:ok, instance_id}, _new_state} =
         Coordinator.handle_call({:summon_mob, @poring_id, 0, 0, []}, {self(), nil}, state)
@@ -89,6 +90,22 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
 
       assert {:ok, {MobState, %MobState{master_id: nil}, _pid}} =
                UnitRegistry.get_unit(:mob, instance_id)
+    end
+
+    test "rejects a fixed summon cell occupied by an active movement blocker" do
+      map_data = MapData.new("prontera", 300, 300)
+      :ets.insert(EtsTable.table_for(:map_cache), {"prontera", map_data})
+      :ok = Cell.put("prontera", 150, 100, :test_blocker, 1, blocks_movement: true)
+      reject(&MobSupervisor.spawn_mob/3)
+
+      state = %Coordinator{map_name: "prontera", map_data: map_data, next_mob_id: 1}
+
+      assert {:reply, {:error, :no_walkable_cell}, ^state} =
+               Coordinator.handle_call(
+                 {:summon_mob, @poring_id, 150, 100, []},
+                 {self(), nil},
+                 state
+               )
     end
 
     test "replies with the error when the mob id is unknown" do

@@ -1,11 +1,13 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
   use ExUnit.Case, async: false
+  import Aesir.TestEtsSetup
   import Mimic
 
   alias Aesir.Net.MapMove
   alias Aesir.Net.UnitDespawn
   alias Aesir.ZoneServer.Constants.DespawnReason
-  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Party.Manager
   alias Aesir.ZoneServer.Party.Member
@@ -21,7 +23,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
   alias Aesir.ZoneServer.Unit.Stats.DerivedStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  setup :setup_ets_tables
   setup :verify_on_exit!
+
+  setup do
+    for map_name <- ["geffen", "prontera"] do
+      :ets.insert(EtsTable.table_for(:map_cache), {map_name, MapData.new(map_name, 300, 300)})
+    end
+
+    :ok
+  end
 
   defp state do
     game_state = %PlayerState{
@@ -61,40 +72,34 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
 
   describe "warp/4 validation" do
     test "unknown destination map returns :map_not_found and leaves the session untouched" do
-      stub(MapCache, :get, fn "nowhere" -> {:error, :not_found} end)
       reject(&SpatialIndex.remove_player/1)
 
       assert {:error, :map_not_found} = WarpHandler.warp(state(), "nowhere", 100, 120)
       refute_received {:send, :control, {:map_move, _}}
     end
 
-    test "non-walkable destination with no walkable neighbour still warps to the requested cell" do
-      stub(MapCache, :get, fn "geffen" -> {:ok, %MapData{name: "geffen"}} end)
-      stub(MapData, :walkable?, fn _, _, _ -> false end)
-      stub_teardown()
-      stub(Broadcast, :to_players, fn _visible, _packet, _opts -> :ok end)
+    test "blocked destination with no walkable neighbour returns :map_not_found without moving" do
+      for x <- 95..105, y <- 115..125 do
+        :ok = Cell.put("geffen", x, y, :test_blocker, x * 1_000 + y + 1, blocks_movement: true)
+      end
 
-      assert {:ok, %{game_state: gs}} = WarpHandler.warp(state(), "geffen", 100, 120)
+      reject(&SpatialIndex.remove_player/1)
 
-      assert gs.x == 100
-      assert gs.y == 120
-      assert_received {:send, :control, {:map_move, %MapMove{map_name: "geffen", x: 100, y: 120}}}
+      assert {:error, :map_not_found} = WarpHandler.warp(state(), "geffen", 100, 120)
+      refute_received {:send, :control, {:map_move, _}}
     end
   end
 
   describe "warp/4 destination walkable fallback" do
     setup do
-      stub(MapCache, :get, fn "geffen" -> {:ok, %MapData{name: "geffen"}} end)
       stub_teardown()
       :ok
     end
 
     test "blocked destination with a walkable neighbour at radius 1 rewrites to it and succeeds" do
-      stub(MapData, :walkable?, fn
-        _, 100, 120 -> false
-        _, 101, 120 -> true
-        _, _, _ -> false
-      end)
+      for x <- 99..101, y <- 119..121, {x, y} != {101, 120} do
+        :ok = Cell.put("geffen", x, y, :test_blocker, x * 1_000 + y + 1, blocks_movement: true)
+      end
 
       stub(Broadcast, :to_players, fn _visible, _packet, _opts -> :ok end)
 
@@ -107,11 +112,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
     end
 
     test "blocked destination with a walkable neighbour at radius 5 (search edge) rewrites and succeeds" do
-      stub(MapData, :walkable?, fn
-        _, 100, 120 -> false
-        _, 105, 125 -> true
-        _, _, _ -> false
-      end)
+      for x <- 95..105, y <- 115..125, {x, y} != {105, 125} do
+        :ok = Cell.put("geffen", x, y, :test_blocker, x * 1_000 + y + 1, blocks_movement: true)
+      end
 
       stub(Broadcast, :to_players, fn _visible, _packet, _opts -> :ok end)
 
@@ -123,19 +126,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
       assert_received {:send, :control, {:map_move, %MapMove{map_name: "geffen", x: 105, y: 125}}}
     end
 
-    test "destination blocked beyond radius 5 falls back to the requested cell and succeeds" do
-      stub(MapData, :walkable?, fn _, _, _ -> false end)
-      stub(Broadcast, :to_players, fn _visible, _packet, _opts -> :ok end)
+    test "destination blocked beyond radius 5 returns :map_not_found without moving" do
+      for x <- 95..105, y <- 115..125 do
+        :ok = Cell.put("geffen", x, y, :test_blocker, x * 1_000 + y + 1, blocks_movement: true)
+      end
 
-      assert {:ok, %{game_state: gs}} = WarpHandler.warp(state(), "geffen", 100, 120)
+      reject(&SpatialIndex.remove_player/1)
 
-      assert gs.x == 100
-      assert gs.y == 120
-      assert_received {:send, :control, {:map_move, %MapMove{map_name: "geffen", x: 100, y: 120}}}
+      assert {:error, :map_not_found} = WarpHandler.warp(state(), "geffen", 100, 120)
+      refute_received {:send, :control, {:map_move, _}}
     end
 
     test "walkable destination is unchanged — fallback search is not invoked" do
-      expect(MapData, :walkable?, 1, fn _, 100, 120 -> true end)
       stub(Broadcast, :to_players, fn _visible, _packet, _opts -> :ok end)
 
       assert {:ok, %{game_state: gs}} = WarpHandler.warp(state(), "geffen", 100, 120)
@@ -147,8 +149,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
 
   describe "warp/4 success" do
     setup do
-      stub(MapCache, :get, fn "geffen" -> {:ok, %MapData{name: "geffen"}} end)
-      stub(MapData, :walkable?, fn _map, 100, 120 -> true end)
       stub_teardown()
       :ok
     end
@@ -267,12 +267,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
 
   describe "warp/4 storage window" do
     setup do
-      stub(MapCache, :get, fn
-        "geffen" -> {:ok, %MapData{name: "geffen"}}
-        "prontera" -> {:ok, %MapData{name: "prontera"}}
-      end)
-
-      stub(MapData, :walkable?, fn _map, _x, _y -> true end)
       stub_teardown()
       stub(Broadcast, :to_players, fn _visible, _packet, _opts -> :ok end)
       :ok

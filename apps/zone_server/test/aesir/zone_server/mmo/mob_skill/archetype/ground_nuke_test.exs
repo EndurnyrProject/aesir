@@ -12,7 +12,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
   import Mimic
 
   alias Aesir.Net.GroundSkill
-  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
@@ -20,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -86,8 +88,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
   end
 
   defp stub_walkable_map do
-    stub(MapCache, :get, fn @map -> {:ok, :map_data} end)
-    stub(MapData, :walkable?, fn :map_data, _x, _y -> true end)
+    map = MapData.new(@map, 250, 250)
+    :ets.insert(EtsTable.table_for(:map_cache), {@map, map})
   end
 
   defp params do
@@ -141,8 +143,11 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
     end
 
     test "clamps the footprint to walkable cells" do
-      stub(MapCache, :get, fn @map -> {:ok, :map_data} end)
-      stub(MapData, :walkable?, fn :map_data, x, y -> {x, y} == @center end)
+      stub_walkable_map()
+
+      for {x, y} <- Layout.square(@center, 2), {x, y} != @center do
+        :ok = Cell.put(@map, x, y, :test_blocker, x * 1_000 + y + 1, blocks_movement: true)
+      end
 
       group = place!()
 
@@ -150,7 +155,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
     end
 
     test "returns an error when the map is not cached" do
-      stub(MapCache, :get, fn @map -> {:error, :not_found} end)
+      :ets.delete(EtsTable.table_for(:map_cache), @map)
 
       assert {:error, :unknown_map} =
                GroundNuke.apply(build_caster(), {:ground, 120, 120, :around}, params(), @level)
@@ -159,8 +164,11 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
     end
 
     test "returns an error when no footprint cell is walkable" do
-      stub(MapCache, :get, fn @map -> {:ok, :map_data} end)
-      stub(MapData, :walkable?, fn :map_data, _x, _y -> false end)
+      stub_walkable_map()
+
+      for {x, y} <- Layout.square(@center, 2) do
+        :ok = Cell.put(@map, x, y, :test_blocker, x * 1_000 + y + 1, blocks_movement: true)
+      end
 
       assert {:error, :no_walkable_cells} =
                GroundNuke.apply(build_caster(), {:ground, 120, 120, :around}, params(), @level)

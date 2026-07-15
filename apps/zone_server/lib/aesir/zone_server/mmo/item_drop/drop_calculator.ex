@@ -15,7 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   modifiers, so no status lookups happen here.
   """
 
-  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
@@ -105,15 +105,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   defp scatter(items, map_name, x, y) do
     items
     |> Enum.with_index()
-    |> Enum.map(fn {{nameid, amount}, index} ->
-      {cx, cy} = resolve_cell(index, map_name, x, y)
-      {nameid, amount, cx, cy}
+    |> Enum.flat_map(fn {{nameid, amount}, index} ->
+      case resolve_cell(index, map_name, x, y) do
+        {:ok, {cx, cy}} -> [{nameid, amount, cx, cy}]
+        :error -> []
+      end
     end)
   end
 
   @spec resolve_cell(non_neg_integer(), String.t(), integer(), integer()) ::
-          {integer(), integer()}
-  defp resolve_cell(0, _map_name, x, y), do: {x, y}
+          {:ok, {integer(), integer()}} | :error
+  defp resolve_cell(0, map_name, x, y), do: nearest_walkable({x, y}, map_name, x, y)
 
   defp resolve_cell(index, map_name, x, y) do
     {dx, dy} = Enum.at(@scatter_offsets, rem(index - 1, length(@scatter_offsets)))
@@ -121,8 +123,22 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   end
 
   @spec nearest_walkable({integer(), integer()}, String.t(), integer(), integer()) ::
-          {integer(), integer()}
-  defp nearest_walkable({cx, cy}, map_name, x, y) do
-    if MapCache.walkable?(map_name, cx, cy), do: {cx, cy}, else: {x, y}
+          {:ok, {integer(), integer()}} | :error
+  defp nearest_walkable({cx, cy}, map_name, _x, _y) do
+    [{cx, cy} | nearby_cells(cx, cy)]
+    |> Enum.find(&Cell.traversable?(map_name, elem(&1, 0), elem(&1, 1)))
+    |> case do
+      nil -> :error
+      cell -> {:ok, cell}
+    end
+  end
+
+  defp nearby_cells(x, y) do
+    for radius <- 1..5,
+        dy <- -radius..radius,
+        dx <- -radius..radius,
+        max(abs(dx), abs(dy)) == radius do
+      {x + dx, y + dy}
+    end
   end
 end

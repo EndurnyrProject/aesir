@@ -1,13 +1,17 @@
 defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
+  import Aesir.TestEtsSetup
   import Mimic
 
-  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
 
+  setup :setup_ets_tables
   setup :verify_on_exit!
 
   setup do
@@ -77,7 +81,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
   describe "roll/8" do
     setup do
       stub(LevelPenalty, :drop, fn _, _ -> 100 end)
-      stub(MapCache, :walkable?, fn _, _, _ -> true end)
+      :ets.insert(EtsTable.table_for(:map_cache), {"prontera", MapData.new("prontera", 300, 300)})
 
       stub(ItemManagement, :get_item_by_aegis, fn "Red_Potion" ->
         {:ok, %{id: 501}}
@@ -104,20 +108,27 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
 
       assert [{501, 1, x0, y0}, {501, 1, x1, y1}] = result
       assert {x0, y0} == {150, 150}
-      assert Enum.all?(result, fn {_, _, x, y} -> MapCache.walkable?("prontera", x, y) end)
+      assert Enum.all?(result, fn {_, _, x, y} -> Cell.traversable?("prontera", x, y) end)
       refute {x1, y1} == {x0, y0}
     end
 
-    test "falls back to the death cell when the scatter target is unwalkable" do
-      stub(MapCache, :walkable?, fn
-        _map, 150, 150 -> true
-        _map, _, _ -> false
-      end)
+    test "avoids active movement blockers when scattering drops" do
+      :ok = Cell.put("prontera", 151, 149, :test_blocker, 1, blocks_movement: true)
 
-      drops = [drop(10_000), drop(10_000)]
+      assert [{501, 1, 150, 150}, {501, 1, x, y}] =
+               DropCalculator.roll([drop(10_000), drop(10_000)], 0, 1, 1, 0, "prontera", 150, 150)
 
-      assert [{501, 1, 150, 150}, {501, 1, 150, 150}] =
-               DropCalculator.roll(drops, 0, 1, 1, 0, "prontera", 150, 150)
+      refute {x, y} == {151, 149}
+      assert Cell.traversable?("prontera", x, y)
+    end
+
+    test "omits drops when no nearby traversable cell exists" do
+      for x <- 140..160, y <- 140..160 do
+        :ok = Cell.put("prontera", x, y, :test_blocker, x * 1_000 + y + 1, blocks_movement: true)
+      end
+
+      assert [] =
+               DropCalculator.roll([drop(10_000), drop(10_000)], 0, 1, 1, 0, "prontera", 150, 150)
     end
   end
 end

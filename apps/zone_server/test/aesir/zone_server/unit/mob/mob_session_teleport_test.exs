@@ -10,14 +10,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
   use ExUnit.Case, async: true
   use Mimic
 
-  alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Movement
+
+  setup do
+    Mimic.copy(Cell)
+    :ok
+  end
 
   setup :verify_on_exit!
 
@@ -65,11 +69,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
   end
 
   test "repositions to a walkable cell, drops the target and resets to idle" do
-    map_data = %MapData{xs: 400, ys: 400}
     test_pid = self()
 
-    stub(MapCache, :get, fn "prontera" -> {:ok, map_data} end)
-    stub(MapData, :random_walkable_cell, fn ^map_data -> {:ok, {150, 160}} end)
+    stub(Cell, :random_traversable, fn "prontera" -> {:ok, {150, 160}} end)
 
     expect(Movement, :set_position, fn :mob, 1, updated_state, "prontera" ->
       send(test_pid, {:reposition, updated_state.x, updated_state.y})
@@ -88,10 +90,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
   end
 
   test "is a clean no-op when no walkable cell is available" do
-    map_data = %MapData{xs: 400, ys: 400}
-
-    stub(MapCache, :get, fn "prontera" -> {:ok, map_data} end)
-    stub(MapData, :random_walkable_cell, fn ^map_data -> {:error, :no_walkable_cell} end)
+    stub(Cell, :random_traversable, fn "prontera" -> {:error, :no_walkable_cell} end)
     reject(&Movement.set_position/4)
 
     state = build_mob_state()
@@ -100,7 +99,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
   end
 
   test "is a clean no-op when the map is not cached" do
-    stub(MapCache, :get, fn "prontera" -> {:error, :not_found} end)
+    stub(Cell, :random_traversable, fn "prontera" -> {:error, :not_found} end)
     reject(&Movement.set_position/4)
 
     state = build_mob_state()

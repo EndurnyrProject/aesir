@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   alias Aesir.Net.ParamChange
   alias Aesir.Net.Viewpoint
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
@@ -45,6 +46,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     Mimic.copy(WarpHandler)
     Mimic.copy(SkillInterpreter)
     Mimic.copy(Coordinator)
+    Mimic.copy(Cell)
     Mimic.copy(MapCache)
     Mimic.copy(MapData)
     Mimic.copy(SpecialEffect)
@@ -433,8 +435,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     test "relocates the player to a random walkable cell on the current map" do
       relocated = %{build_game_state() | map_name: "prontera", x: 33, y: 44}
 
-      expect(MapCache, :get, fn "prontera" -> {:ok, :map_data} end)
-      expect(MapData, :random_walkable_cell, fn :map_data -> {:ok, {33, 44}} end)
+      expect(Cell, :random_traversable, fn "prontera" -> {:ok, {33, 44}} end)
 
       expect(WarpHandler, :warp, fn _session, "prontera", 33, 44 ->
         {:ok, %{game_state: relocated}}
@@ -447,7 +448,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
 
     test "halts when no walkable cell can be resolved" do
-      stub(MapCache, :get, fn _map -> {:error, :not_found} end)
+      stub(Cell, :random_traversable, fn _map -> {:error, :not_found} end)
 
       result = Dsl.warp(build_ctx(), :random)
 

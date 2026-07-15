@@ -22,8 +22,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke do
   alias Aesir.Commons.Utils.ServerTick
   alias Aesir.Net.GroundSkill
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
@@ -116,15 +116,15 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke do
   end
 
   defp footprint(map_name, center, radius) do
-    with {:ok, map_data} <- map_data(map_name) do
-      case Enum.filter(Layout.square(center, radius), &walkable?(map_data, &1)) do
+    with {:ok, _map_data} <- map_data(map_name) do
+      case Enum.filter(Layout.square(center, radius), &placeable?(map_name, &1)) do
         [] -> {:error, :no_walkable_cells}
         cells -> {:ok, cells}
       end
     end
   end
 
-  defp walkable?(map_data, {x, y}), do: MapData.walkable?(map_data, x, y)
+  defp placeable?(map_name, {x, y}), do: Cell.placeable?(map_name, x, y)
 
   defp map_data(map_name) do
     case MapCache.get(map_name) do

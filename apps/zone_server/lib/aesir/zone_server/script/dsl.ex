@@ -28,9 +28,8 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Announcement.Flags
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.Coordinator
-  alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.CompiledItemScripts
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
@@ -658,10 +657,8 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   def warp(%Ctx{game_state: nil} = ctx, :random), do: Ctx.halt(ctx, :no_player)
 
   def warp(%Ctx{game_state: game_state} = ctx, :random) do
-    with {:ok, map_data} <- MapCache.get(game_state.map_name),
-         {:ok, {x, y}} <- MapData.random_walkable_cell(map_data) do
-      warp(ctx, game_state.map_name, x, y)
-    else
+    case Cell.random_traversable(game_state.map_name) do
+      {:ok, {x, y}} -> warp(ctx, game_state.map_name, x, y)
       {:error, reason} -> Ctx.halt(ctx, reason)
     end
   end

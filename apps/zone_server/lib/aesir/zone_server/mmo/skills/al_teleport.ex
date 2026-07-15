@@ -21,8 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlTeleport do
     target_type: :self,
     sp_cost: [10, 9]
 
-  alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -33,11 +32,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlTeleport do
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(caster, :self, 1, _definition) do
-    with {:ok, map_data} <- MapCache.get(caster.map_name),
-         {:ok, {x, y}} <- MapData.random_walkable_cell(map_data) do
-      {:ok, %{caster | pending_warp: {caster.map_name, x, y}}}
-    else
-      _ -> {:ok, caster}
+    case Cell.random_traversable(caster.map_name) do
+      {:ok, {x, y}} -> {:ok, %{caster | pending_warp: {caster.map_name, x, y}}}
+      {:error, _reason} -> {:ok, caster}
     end
   end
 

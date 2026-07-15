@@ -106,6 +106,32 @@ defmodule Aesir.ZoneServer.Map.Cell do
   @spec placeable?(String.t(), integer(), integer()) :: boolean()
   def placeable?(map_name, x, y), do: traversable?(map_name, x, y)
 
+  @doc "Returns a random traversable cell within the map's bounds."
+  @spec random_traversable(String.t(), integer()) ::
+          {:ok, {non_neg_integer(), non_neg_integer()}} | {:error, :no_walkable_cell | :not_found}
+  def random_traversable(map_name, max_attempts \\ 100)
+
+  def random_traversable(_map_name, max_attempts)
+      when not is_integer(max_attempts) or max_attempts <= 0,
+      do: {:error, :no_walkable_cell}
+
+  def random_traversable(map_name, max_attempts) do
+    map_name = canonical_map_name(map_name)
+
+    with {:ok, %MapData{xs: xs, ys: ys}} <- MapCache.get(map_name) do
+      random_traversable(map_name, xs, ys, max_attempts)
+    end
+  end
+
+  @doc "Returns whether an active terrain contribution blocks movement at a cell."
+  @spec dynamically_blocked?(String.t(), integer(), integer()) :: boolean()
+  def dynamically_blocked?(map_name, x, y) do
+    map_name
+    |> canonical_map_name()
+    |> contributions(x, y)
+    |> Enum.any?(&Map.get(&1, :blocks_movement, false))
+  end
+
   @doc "Returns a permanent base-water or consumable skill-unit-water source at the cell."
   @spec water_source(String.t(), integer(), integer()) :: WaterSource.t() | nil
   def water_source(map_name, x, y) do
@@ -134,6 +160,19 @@ defmodule Aesir.ZoneServer.Map.Cell do
   defp contributions(map_name, x, y) do
     :ets.match_object(table_for(:dynamic_cell_contributions), {{map_name, x, y, :_, :_}, :_})
     |> Enum.map(fn {_key, contribution} -> contribution end)
+  end
+
+  defp random_traversable(_map_name, _xs, _ys, 0), do: {:error, :no_walkable_cell}
+
+  defp random_traversable(map_name, xs, ys, attempts) do
+    x = :rand.uniform(xs) - 1
+    y = :rand.uniform(ys) - 1
+
+    if traversable?(map_name, x, y) do
+      {:ok, {x, y}}
+    else
+      random_traversable(map_name, xs, ys, attempts - 1)
+    end
   end
 
   defp base?(map_name, x, y, predicate) do

@@ -17,7 +17,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
   alias Aesir.ZoneServer.Mmo.MobSkill.Db, as: MobSkillDb
@@ -371,25 +370,26 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     # Instant flee reposition (AL_TELEPORT): reuse the :knocked_back position-set
     # path (spatial-index update + delta-snapshot broadcast), not the walking
     # move_to. A missing cache entry or a fully-blocked map is a benign no-op.
-    with {:ok, map_data} <- MapCache.get(state.map_name),
-         {:ok, {x, y}} <- MapData.random_walkable_cell(map_data) do
-      updated_state =
-        state
-        |> MobState.update_position(x, y)
-        |> MobState.stop_movement()
-        |> MobState.set_target(nil)
-        |> MobState.set_ai_state(:idle)
+    case Cell.random_traversable(state.map_name) do
+      {:ok, {x, y}} ->
+        updated_state =
+          state
+          |> MobState.update_position(x, y)
+          |> MobState.stop_movement()
+          |> MobState.set_target(nil)
+          |> MobState.set_ai_state(:idle)
 
-      Movement.set_position(
-        :mob,
-        updated_state.instance_id,
-        updated_state,
-        updated_state.map_name
-      )
+        Movement.set_position(
+          :mob,
+          updated_state.instance_id,
+          updated_state,
+          updated_state.map_name
+        )
 
-      {:noreply, updated_state}
-    else
-      _ -> {:noreply, state}
+        {:noreply, updated_state}
+
+      {:error, _reason} ->
+        {:noreply, state}
     end
   end
 

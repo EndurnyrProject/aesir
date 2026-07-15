@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorActivityTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.GatType
   alias Aesir.ZoneServer.Map.MapData
@@ -26,6 +27,11 @@ defmodule Aesir.ZoneServer.Map.CoordinatorActivityTest do
   setup :verify_on_exit!
 
   setup do
+    :ets.insert(
+      EtsTable.table_for(:map_cache),
+      {@map_name, MapData.new(@map_name, 200, 200)}
+    )
+
     test_pid = self()
 
     stub(MobSupervisor, :spawn_mob, fn _map, %MobState{} = mob_state, opts ->
@@ -51,6 +57,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorActivityTest do
       %Coordinator{
         map_name: @map_name,
         spawn_data: [spawn_config()],
+        map_data: MapData.new(@map_name, 200, 200),
         respawn_timers: %{},
         next_mob_id: 1,
         recently_stopped: %{}
@@ -147,6 +154,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorActivityTest do
       }
 
       state = base_state(map_data: map_data, mobs_spawned: true, mobs_awake: true)
+      :ets.insert(EtsTable.table_for(:map_cache), {@map_name, map_data})
 
       {:noreply, _new_state} = Coordinator.handle_info({:respawn_mob, config}, state)
 

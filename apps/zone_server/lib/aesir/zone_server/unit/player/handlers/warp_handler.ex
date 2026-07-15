@@ -16,8 +16,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   alias Aesir.Net.MapMove
   alias Aesir.Net.UnitDespawn
   alias Aesir.ZoneServer.Constants.DespawnReason
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
@@ -39,8 +39,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   If the destination cell is blocked, a spiral search for the nearest walkable
   cell within `#{@fallback_radius}` (Chebyshev distance) is attempted; the
   warp rewrites to that cell on hit. Real warp data and save-point respawn
-  occasionally target a slightly-off cell. When no walkable cell is found the
-  warp still proceeds to the requested cell.
+   occasionally target a slightly-off cell. When no walkable cell is found the
+   warp fails without changing the session.
 
   Returns `{:ok, new_state}` with the player relocated and a `MapMove` sent, or
   `{:error, :map_not_found}` leaving the session untouched. An open storage
@@ -54,8 +54,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
     dest_map = normalize_map(dest_map)
     same_map? = dest_map == game_state.map_name
 
-    with {:ok, map_data} <- fetch_map(dest_map),
-         {:ok, {fx, fy}} <- ensure_walkable(map_data, x, y) do
+    with :ok <- fetch_map(dest_map),
+         {:ok, {fx, fy}} <- ensure_walkable(dest_map, x, y) do
       leave_current_map(game_state, DespawnReason.teleport())
       Broadcast.unsubscribe_mob_despawns(game_state.map_name)
       Broadcast.subscribe_mob_despawns(dest_map)
@@ -110,28 +110,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   defp close_storage_on_cross_map(game_state, false), do: %{game_state | storage: nil}
 
   defp fetch_map(map_name) do
-    with {:error, :not_found} <- MapCache.get(map_name) do
-      {:error, :map_not_found}
+    case MapCache.get(map_name) do
+      {:ok, _map_data} -> :ok
+      {:error, :not_found} -> {:error, :map_not_found}
     end
   end
 
-  defp ensure_walkable(map_data, x, y) do
-    if MapData.walkable?(map_data, x, y) do
+  defp ensure_walkable(map_name, x, y) do
+    if Cell.traversable?(map_name, x, y) do
       {:ok, {x, y}}
     else
-      case nearest_walkable(map_data, x, y) do
+      case nearest_walkable(map_name, x, y) do
         {nx, ny} -> {:ok, {nx, ny}}
-        nil -> {:ok, {x, y}}
+        nil -> {:error, :map_not_found}
       end
     end
   end
 
-  @spec nearest_walkable(MapData.t(), integer(), integer()) ::
+  @spec nearest_walkable(String.t(), integer(), integer()) ::
           {integer(), integer()} | nil
-  defp nearest_walkable(map_data, x, y) do
+  defp nearest_walkable(map_name, x, y) do
     Enum.find_value(1..@fallback_radius, fn radius ->
       Enum.find(ring_cells(x, y, radius), fn {cx, cy} ->
-        MapData.walkable?(map_data, cx, cy)
+        Cell.traversable?(map_name, cx, cy)
       end)
     end)
   end
