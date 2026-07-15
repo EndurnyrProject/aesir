@@ -3,8 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
   import Mimic
 
   alias Aesir.Net.Knockback
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -12,6 +12,12 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
+
+  setup do
+    Mimic.copy(Cell)
+    Mimic.copy(MapCache)
+    :ok
+  end
 
   @map_name "prontera"
   @mob_id 2001
@@ -45,7 +51,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     stub(MapCache, :get, fn @map_name -> {:ok, :map} end)
 
     # A wall at x == 154: cells 152 and 153 are walkable, 154 is not.
-    stub(MapData, :walkable?, fn :map, x, _y -> x < 154 end)
+    stub(Cell, :traversable?, fn @map_name, x, _y -> x < 154 end)
 
     # The owning session is the single writer: knockback routes the landing cell
     # to it via a {:knocked_back, x, y} cast (received by this test process).
@@ -71,9 +77,21 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     end)
 
     stub(MapCache, :get, fn @map_name -> {:ok, :map} end)
-    stub(MapData, :walkable?, fn :map, _x, _y -> false end)
+
+    stub(Cell, :traversable?, fn @map_name, _x, _y -> false end)
 
     {from_x, from_y} = @from
     assert {:ok, {151, 150}} = Combat.knockback(:mob, @mob_id, from_x, from_y, 5)
+  end
+
+  test "knockback returns an error when the unit map is unavailable" do
+    stub(SpatialIndex, :get_unit_position, fn :mob, @mob_id ->
+      {:ok, {151, 150, "missing"}}
+    end)
+
+    stub(MapCache, :get, fn "missing" -> {:error, :not_found} end)
+
+    {from_x, from_y} = @from
+    assert {:error, :not_found} = Combat.knockback(:mob, @mob_id, from_x, from_y, 5)
   end
 end

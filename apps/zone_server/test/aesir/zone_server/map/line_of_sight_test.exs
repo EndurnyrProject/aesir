@@ -1,9 +1,15 @@
 defmodule Aesir.ZoneServer.Map.LineOfSightTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
+  import Aesir.TestEtsSetup
+
+  alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.GatType
   alias Aesir.ZoneServer.Map.LineOfSight
   alias Aesir.ZoneServer.Map.MapData
+
+  setup :setup_ets_tables
 
   test "rAthena integer traversal catches the diagonal cell symmetric Bresenham skips" do
     map =
@@ -14,13 +20,12 @@ defmodule Aesir.ZoneServer.Map.LineOfSightTest do
     refute LineOfSight.clear?(map, {50, 60}, {54, 62})
   end
 
-  test "dynamic Ice Wall blocks a traversed diagonal cell" do
-    map =
-      "prontera"
-      |> MapData.new(100, 100)
-      |> MapData.set_cell_flag(51, 60, :icewall, true)
+  test "a dynamic projectile blocker stops a traversed diagonal cell" do
+    map = MapData.new("line_of_sight", 100, 100)
+    :ets.insert(EtsTable.table_for(:map_cache), {"line_of_sight", map})
+    :ok = Cell.put("line_of_sight", 51, 60, :barrier, 1, blocks_projectiles: true)
 
-    refute LineOfSight.clear?(map, {50, 60}, {54, 62})
+    refute LineOfSight.clear?("line_of_sight", {50, 60}, {54, 62})
   end
 
   test "a blocked destination cell is not counted as an intervening obstruction" do

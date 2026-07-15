@@ -10,9 +10,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Geometry
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.LineOfSight
   alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
@@ -601,17 +601,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   defp filter_splash_line_of_sight(targets, _map_name, _center, false), do: targets
 
   defp filter_splash_line_of_sight(targets, map_name, center, true) do
-    case MapCache.get(map_name) do
-      {:ok, map} -> Enum.filter(targets, &splash_target_visible?(map, center, &1))
-      _ -> []
-    end
+    Enum.filter(targets, &splash_target_visible?(map_name, center, &1))
   end
 
-  defp splash_target_visible?(map, center, {unit_type, target_id}) do
+  defp splash_target_visible?(map_name, center, {unit_type, target_id}) do
     case get_target_unit_state(unit_type, target_id) do
       {:ok, _pid, target_state, _target_type} ->
         target = target_state.__struct__.to_combatant(target_state)
-        LineOfSight.clear?(map, center, target.position)
+        LineOfSight.clear?(map_name, center, target.position)
 
       _ ->
         false
@@ -1015,9 +1012,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
           {:ok, {integer(), integer()}} | {:error, atom()}
   def knockback(unit_type, unit_id, from_x, from_y, distance) do
     with {:ok, {x, y, map_name}} <- SpatialIndex.get_unit_position(unit_type, unit_id),
-         {:ok, map} <- MapCache.get(map_name) do
+         {:ok, _map} <- MapCache.get(map_name) do
       {dx, dy} = {sign(x - from_x), sign(y - from_y)}
-      {dst_x, dst_y} = blow_path(map, x, y, dx, dy, distance)
+      {dst_x, dst_y} = blow_path(map_name, x, y, dx, dy, distance)
 
       if {dst_x, dst_y} != {x, y} do
         move_unit(unit_type, unit_id, dst_x, dst_y, map_name)
@@ -1033,14 +1030,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   defp sign(_), do: 0
 
   # No direction (unit on top of source): nowhere to blow.
-  defp blow_path(_map, x, y, 0, 0, _distance), do: {x, y}
+  defp blow_path(_map_name, x, y, 0, 0, _distance), do: {x, y}
 
   # Step outward, keeping the last walkable cell reached.
-  defp blow_path(map, x, y, dx, dy, distance) do
+  defp blow_path(map_name, x, y, dx, dy, distance) do
     Enum.reduce_while(1..distance//1, {x, y}, fn _step, {cx, cy} ->
       {nx, ny} = {cx + dx, cy + dy}
 
-      if MapData.walkable?(map, nx, ny) do
+      if Cell.traversable?(map_name, nx, ny) do
         {:cont, {nx, ny}}
       else
         {:halt, {cx, cy}}

@@ -15,8 +15,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Constants.ObjectType
   alias Aesir.ZoneServer.Geometry
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
@@ -84,7 +84,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   defp step_walk_path(state, game_state) do
     case game_state.walk_path do
       [{next_x, next_y} | _] = walk_path ->
-        if next_cell_walkable?(game_state.map_name, next_x, next_y) do
+        if segment_traversable?(
+             game_state.map_name,
+             {game_state.x, game_state.y},
+             {next_x, next_y}
+           ) do
           step_player(state, game_state, {next_x, next_y}, tl(walk_path))
         else
           handle_blocked_player(state, game_state, List.last(walk_path))
@@ -268,7 +272,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     with {:ok, map_data} <- MapCache.get(game_state.map_name),
          {:ok, [_ | _] = path} <-
            Pathfinding.find_path(map_data, {game_state.x, game_state.y}, destination) do
-      game_state = PlayerState.set_path(game_state, Pathfinding.simplify_path(path))
+      game_state =
+        PlayerState.set_path(game_state, Pathfinding.simplify_path(path, game_state.map_name))
+
       Process.send_after(self(), :movement_tick, 0)
       {:noreply, %{state | game_state: game_state}}
     else
@@ -285,11 +291,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   end
 
   defp next_cell_walkable?(map_name, x, y) do
-    case MapCache.get(map_name) do
-      {:ok, map_data} -> MapData.walkable?(map_data, x, y)
-      {:error, _} -> false
-    end
+    Cell.traversable?(map_name, x, y)
   end
+
+  defp segment_traversable?(_map_name, {x, y}, {x, y}), do: true
+
+  defp segment_traversable?(map_name, {x, y}, {next_x, next_y}) do
+    steps = max(abs(next_x - x), abs(next_y - y))
+    dx = sign(next_x - x)
+    dy = sign(next_y - y)
+
+    Enum.all?(1..steps, fn step -> next_cell_walkable?(map_name, x + dx * step, y + dy * step) end)
+  end
+
+  defp sign(n) when n > 0, do: 1
+  defp sign(n) when n < 0, do: -1
+  defp sign(_), do: 0
 
   @doc """
   Handles a movement request from the client.
@@ -335,7 +352,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
              {dest_x, dest_y}
            ) do
       # Simplify path to reduce network traffic
-      simplified_path = Pathfinding.simplify_path(path)
+      simplified_path = Pathfinding.simplify_path(path, game_state.map_name)
 
       # A manual move (no combat_initiated:/pickup_initiated: flag) while heading
       # to a target or item cancels that pending intent so the player can walk away.

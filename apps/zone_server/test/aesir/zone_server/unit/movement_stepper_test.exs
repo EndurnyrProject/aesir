@@ -11,9 +11,7 @@ defmodule Aesir.ZoneServer.Unit.MovementStepperTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.MoveStop
-  alias Aesir.ZoneServer.Map.GatType
-  alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -22,8 +20,6 @@ defmodule Aesir.ZoneServer.Unit.MovementStepperTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
-
-  import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
   @map_name "prontera"
 
@@ -71,6 +67,27 @@ defmodule Aesir.ZoneServer.Unit.MovementStepperTest do
       refute {51, 50} in new_state.game_state.walk_path
     end
 
+    test "a blocker added between an active simplified path's waypoints prevents crossing it" do
+      block_cell(51, 50)
+
+      game_state = %{
+        PlayerState.new(character())
+        | walk_path: [{52, 50}],
+          movement_state: :moving
+      }
+
+      char_id = game_state.character_id
+      UnitRegistry.register_unit(:player, char_id, MovementHandler, game_state, nil)
+      SpatialIndex.add_unit(:player, char_id, 50, 50, @map_name)
+
+      {:noreply, new_state} =
+        MovementHandler.handle_movement_tick(%{game_state: game_state, connection_pid: self()})
+
+      assert {new_state.game_state.x, new_state.game_state.y} == {50, 50}
+      assert new_state.game_state.movement_state == :moving
+      refute {51, 50} in new_state.game_state.walk_path
+    end
+
     test "a blocked next cell with no path stops the player and sends MoveStop" do
       block_cell(51, 50)
 
@@ -94,6 +111,26 @@ defmodule Aesir.ZoneServer.Unit.MovementStepperTest do
 
       assert {:player, ^char_id, _move_state} =
                @map_name |> Movement.drain_dirty() |> find_unit(:player, char_id)
+    end
+
+    test "a player resumes stepping after a movement blocker is removed" do
+      source_id = block_cell(51, 50)
+      :ok = Cell.delete(@map_name, 51, 50, :barrier, source_id)
+
+      game_state = %{
+        PlayerState.new(character())
+        | walk_path: [{51, 50}],
+          movement_state: :moving
+      }
+
+      char_id = game_state.character_id
+      UnitRegistry.register_unit(:player, char_id, MovementHandler, game_state, nil)
+      SpatialIndex.add_unit(:player, char_id, 50, 50, @map_name)
+
+      {:noreply, new_state} =
+        MovementHandler.handle_movement_tick(%{game_state: game_state, connection_pid: self()})
+
+      assert {new_state.game_state.x, new_state.game_state.y} == {51, 50}
     end
   end
 
@@ -143,13 +180,26 @@ defmodule Aesir.ZoneServer.Unit.MovementStepperTest do
       assert {:mob, ^instance_id, _move_state} =
                @map_name |> Movement.drain_dirty() |> find_unit(:mob, instance_id)
     end
+
+    test "a mob resumes stepping after a movement blocker is removed" do
+      source_id = block_cell(101, 100)
+      :ok = Cell.delete(@map_name, 101, 100, :barrier, source_id)
+
+      mob_state = %{mob_state() | walk_path: [{101, 100}], movement_state: :moving}
+      instance_id = mob_state.instance_id
+      SpatialIndex.add_unit(:mob, instance_id, 100, 100, @map_name)
+
+      {:noreply, new_state} = MobSession.handle_info(:movement_tick, mob_state)
+
+      assert {new_state.x, new_state.y} == {101, 100}
+    end
   end
 
   defp block_cell(x, y) do
-    {:ok, map_data} = MapCache.get(@map_name)
-    blocked = MapData.set_cell(map_data, x, y, GatType.wall())
-    :ets.insert(table_for(:map_cache), {map_data.name, blocked})
-    refute MapData.walkable?(blocked, x, y)
+    source_id = x * 1_000 + y
+    :ok = Cell.put(@map_name, x, y, :barrier, source_id, blocks_movement: true)
+    refute Cell.traversable?(@map_name, x, y)
+    source_id
   end
 
   defp find_unit(drained, unit_type, unit_id) do

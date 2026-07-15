@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzJupitelTest do
   import Mimic
 
   alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.GatType
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
@@ -280,9 +281,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzJupitelTest do
     refute_receive {:session_cast, {:knocked_back, _x, _y}}, 20
   end
 
-  test "impact line of sight treats an intervening Ice Wall as unreachable" do
-    map = MapData.new("prontera", 100, 100) |> MapData.set_cell_flag(58, 60, :icewall, true)
-    true = put_test_map(map)
+  test "impact line of sight treats an intervening dynamic projectile blocker as unreachable" do
+    true = put_test_map()
+    :ok = Cell.put("prontera", 58, 60, :barrier, 1, blocks_projectiles: true)
     {_mob, _pid} = register_mob()
 
     assert {:error, :blocked_line_of_sight} =
@@ -304,9 +305,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzJupitelTest do
     refute_receive {:session_cast, {:knocked_back, _x, _y}}, 20
   end
 
-  test "diagonal line of sight ignores Ice Wall cells outside rAthena traversal" do
-    map = MapData.new("prontera", 100, 100) |> MapData.set_cell_flag(51, 61, :icewall, true)
-    true = put_test_map(map)
+  test "diagonal line of sight ignores dynamic projectile blockers outside rAthena traversal" do
+    true = put_test_map()
+    :ok = Cell.put("prontera", 51, 61, :barrier, 1, blocks_projectiles: true)
     {_mob, _pid} = register_mob(x: 54, y: 62)
 
     assert :ok =

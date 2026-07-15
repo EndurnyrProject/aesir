@@ -1,10 +1,22 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.AttackPositioningTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
+  import Aesir.TestEtsSetup
+
+  alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat.AttackPositioning
 
   defp walkable, do: fn _x, _y -> true end
   defp free, do: fn _x, _y -> false end
+
+  setup :setup_ets_tables
+
+  setup do
+    :ets.insert(EtsTable.table_for(:map_cache), {"approach", MapData.new("approach", 20, 20)})
+    :ok
+  end
 
   describe "adjacent_attack_cell/5" do
     test "melee range 1 returns a cell adjacent to the target, never the target cell" do
@@ -28,6 +40,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AttackPositioningTest do
 
       assert AttackPositioning.adjacent_attack_cell({5, 10}, {10, 10}, 1, walkable(), occupied) ==
                {9, 9}
+    end
+
+    test "skips an approach cell blocked by dynamic terrain" do
+      :ok = Cell.put("approach", 9, 10, :barrier, 1, blocks_movement: true)
+      traversable? = &Cell.traversable?("approach", &1, &2)
+
+      assert AttackPositioning.adjacent_attack_cell(
+               {5, 10},
+               {10, 10},
+               1,
+               traversable?,
+               free()
+             ) == {9, 9}
     end
 
     test "returns nil when all in-range cells are blocked or occupied" do

@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Constants.ObjectType
   alias Aesir.ZoneServer.Geometry
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
@@ -763,10 +764,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   defp next_cell_walkable?(map_name, x, y) do
-    case MapCache.get(map_name) do
-      {:ok, map_data} -> MapData.walkable?(map_data, x, y)
-      {:error, _} -> false
-    end
+    Cell.traversable?(map_name, x, y)
   end
 
   # AI logic is now handled by AIStateMachine module

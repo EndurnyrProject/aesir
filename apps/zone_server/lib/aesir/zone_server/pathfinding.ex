@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Pathfinding do
   Handles path calculation considering map obstacles from GAT data.
   """
 
-  alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Unit.MovementEngine
 
   defmodule Node do
@@ -185,7 +185,7 @@ defmodule Aesir.ZoneServer.Pathfinding do
   end
 
   defp walkable?(map_data, x, y) do
-    MapData.walkable?(map_data, x, y)
+    Cell.traversable?(map_data.name, x, y)
   end
 
   @doc """
@@ -214,6 +214,16 @@ defmodule Aesir.ZoneServer.Pathfinding do
       result ++ [List.last(path)]
     else
       result
+    end
+  end
+
+  @doc "Simplifies only paths whose cells remain traversable on effective terrain."
+  @spec simplify_path([{integer(), integer()}], String.t()) :: [{integer(), integer()}]
+  def simplify_path(path, map_name) do
+    if Enum.all?(path, fn {x, y} -> Cell.traversable?(map_name, x, y) end) do
+      simplify_path(path)
+    else
+      path
     end
   end
 

@@ -64,8 +64,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzJupitel do
 
     with {:ok, {target_x, target_y, ^map_name}} <-
            SpatialIndex.get_unit_position(unit_type, target_id),
-         {:ok, map_data} <- MapCache.get(map_name),
-         true <- LineOfSight.clear?(map_data, {x, y}, {target_x, target_y}),
+         {:ok, _map_data} <- MapCache.get(map_name),
+         true <- LineOfSight.clear?(map_name, {x, y}, {target_x, target_y}),
          :ok <- Combat.execute_magic_attack(caster, target_id, opts) do
       _ = Combat.knockback(unit_type, target_id, x, y, div(level, 2) + 2)
       :ok

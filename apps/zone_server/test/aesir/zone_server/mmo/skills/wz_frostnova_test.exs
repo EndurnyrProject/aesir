@@ -2,9 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzFrostnovaTest do
   use ExUnit.Case, async: true
   import Mimic
 
-  alias Aesir.ZoneServer.Map.GatType
-  alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
@@ -197,12 +195,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzFrostnovaTest do
 
       on_exit(fn -> Enum.each(pids, fn {_id, pid} -> Process.exit(pid, :kill) end) end)
 
-      map =
-        "prontera"
-        |> MapData.new(300, 300)
-        |> MapData.set_cell(151, 150, GatType.wall())
-
-      expect(MapCache, :get, fn "prontera" -> {:ok, map} end)
+      Mimic.copy(Cell)
+      stub(Cell, :blocks_projectiles?, fn "prontera", x, y -> {x, y} == {151, 150} end)
 
       stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 150, 150, 6 ->
         [

@@ -16,8 +16,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   require Logger
 
   alias Aesir.ZoneServer.Geometry
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackPositioning
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
@@ -143,8 +143,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
     attack_range = MobState.get_attack_range(state)
 
     case MapCache.get(state.map_name) do
-      {:ok, map_data} ->
-        walkable? = fn x, y -> MapData.walkable?(map_data, x, y) end
+      {:ok, _map_data} ->
+        walkable? = &Cell.traversable?(state.map_name, &1, &2)
         occupied? = build_occupied?(state, {target_x, target_y}, attack_range)
 
         AttackPositioning.adjacent_attack_cell(

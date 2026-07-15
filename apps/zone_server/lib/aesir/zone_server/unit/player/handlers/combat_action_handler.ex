@@ -11,8 +11,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   alias Aesir.Net.MoveStop
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Geometry
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackPositioning
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
@@ -568,30 +568,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
     game_state = state.game_state
     from = {game_state.x, game_state.y}
 
-    case MapCache.get(game_state.map_name) do
-      {:ok, map_data} ->
-        walkable? = fn x, y -> MapData.walkable?(map_data, x, y) end
+    walkable? = &Cell.traversable?(game_state.map_name, &1, &2)
 
-        occupied? =
-          build_occupied?(
-            game_state.map_name,
-            {target_x, target_y},
-            attack_range,
-            game_state.character_id,
-            target_id
-          )
+    occupied? =
+      build_occupied?(
+        game_state.map_name,
+        {target_x, target_y},
+        attack_range,
+        game_state.character_id,
+        target_id
+      )
 
-        AttackPositioning.adjacent_attack_cell(
-          from,
-          {target_x, target_y},
-          attack_range,
-          walkable?,
-          occupied?
-        ) || get_optimal_attack_position(from, {target_x, target_y}, attack_range)
-
-      {:error, _reason} ->
-        get_optimal_attack_position(from, {target_x, target_y}, attack_range)
-    end
+    AttackPositioning.adjacent_attack_cell(
+      from,
+      {target_x, target_y},
+      attack_range,
+      walkable?,
+      occupied?
+    ) || get_optimal_attack_position(from, {target_x, target_y}, attack_range)
   end
 
   # Builds an `(x, y) -> bool` occupancy predicate from currently-known nearby

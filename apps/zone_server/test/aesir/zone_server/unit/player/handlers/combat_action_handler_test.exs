@@ -656,8 +656,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
   end
 
   describe "move-to-attack adjacency and re-pick on arrival" do
+    alias Aesir.ZoneServer.Map.Cell
     alias Aesir.ZoneServer.Map.MapCache
-    alias Aesir.ZoneServer.Map.MapData
     alias Aesir.ZoneServer.Pathfinding
     alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
 
@@ -680,8 +680,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
     end
 
     defp stub_open_terrain do
+      Mimic.copy(Cell)
       stub(MapCache, :get, fn "prontera" -> {:ok, :map_data} end)
-      stub(MapData, :walkable?, fn _map, _x, _y -> true end)
+      stub(Cell, :traversable?, fn "prontera", _x, _y -> true end)
       stub(Pathfinding, :find_path, fn _map, _from, to -> {:ok, [to]} end)
     end
 

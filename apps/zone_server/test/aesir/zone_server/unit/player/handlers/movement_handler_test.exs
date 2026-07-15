@@ -9,8 +9,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
   alias Aesir.Net.SelfMove
   alias Aesir.Net.UnitDespawn
   alias Aesir.Net.UnitSpawn
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
 
   setup do
     Mimic.copy(MapCache)
+    Mimic.copy(Cell)
     Mimic.copy(Pathfinding)
     Mimic.copy(SpatialIndex)
     Mimic.copy(Broadcast)
@@ -40,6 +41,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
     Mimic.copy(Interpreter)
 
     stub(MapCache, :get, fn "prontera" -> {:ok, %{width: 200, height: 200}} end)
+    stub(Cell, :traversable?, fn "prontera", _x, _y -> true end)
     stub(Pathfinding, :find_path, fn _map, {50, 50}, {51, 50} -> {:ok, [{50, 50}, {51, 50}]} end)
     stub(SpatialIndex, :get_visible_players, fn _ -> [] end)
     stub(Broadcast, :to_player, fn _, _ -> :ok end)
@@ -153,9 +155,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
     end
 
     test "an unafflicted moving player is not stopped by the gate" do
-      Mimic.copy(MapData)
       Mimic.copy(Movement)
-      stub(MapData, :walkable?, fn _map, _x, _y -> true end)
       stub(Movement, :set_position, fn _type, _id, _state, _map -> :ok end)
 
       stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [] end)
@@ -164,6 +164,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
       {:noreply, _new_state} = MovementHandler.handle_movement_tick(moving_state())
 
       refute_received {:send, :gameplay, {:move_stop, %MoveStop{}}}
+    end
+
+    test "a dynamic movement blocker stops the player before it steps into the cell" do
+      Mimic.copy(Movement)
+      stub(Cell, :traversable?, fn "prontera", 51, 50 -> false end)
+      stub(Pathfinding, :find_path, fn _map, _from, _destination -> {:error, :no_path} end)
+      stub(Movement, :set_position, fn _type, _id, _state, _map -> :ok end)
+
+      {:noreply, new_state} = MovementHandler.handle_movement_tick(moving_state())
+
+      assert {new_state.game_state.x, new_state.game_state.y} == {50, 50}
+      assert new_state.game_state.movement_state == :standing
+      assert_received {:send, :gameplay, {:move_stop, %MoveStop{gid: 1, x: 50, y: 50}}}
     end
   end
 

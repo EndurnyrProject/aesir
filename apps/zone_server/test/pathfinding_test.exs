@@ -1,13 +1,21 @@
 defmodule Aesir.ZoneServer.PathfindingTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
+  import Aesir.TestEtsSetup
+
+  alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.GatType
+  alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Pathfinding
 
   describe "find_path/3" do
+    setup :setup_ets_tables
+
     setup do
       map_data = MapData.new("test_map", 10, 10)
+      :ets.insert(EtsTable.table_for(:map_cache), {"test_map", map_data})
       {:ok, map_data: map_data}
     end
 
@@ -50,6 +58,8 @@ defmodule Aesir.ZoneServer.PathfindingTest do
         |> MapData.set_cell(5, 5, GatType.wall())
         |> MapData.set_cell(6, 5, GatType.wall())
 
+      cache(map_data)
+
       assert {:ok, path} = Pathfinding.find_path(map_data, {0, 5}, {9, 5})
 
       # Path should go around the wall (above or below)
@@ -73,11 +83,14 @@ defmodule Aesir.ZoneServer.PathfindingTest do
         |> MapData.set_cell(6, 5, GatType.wall())
         |> MapData.set_cell(6, 6, GatType.wall())
 
+      cache(map_data)
+
       assert {:error, :no_path} = Pathfinding.find_path(map_data, {0, 0}, {5, 5})
     end
 
     test "returns error when goal is not walkable", %{map_data: map_data} do
       map_data = MapData.set_cell(map_data, 5, 5, GatType.wall())
+      cache(map_data)
       assert {:error, :goal_not_walkable} = Pathfinding.find_path(map_data, {0, 0}, {5, 5})
     end
 
@@ -87,6 +100,8 @@ defmodule Aesir.ZoneServer.PathfindingTest do
         |> MapData.set_cell(3, 5, GatType.water())
         |> MapData.set_cell(4, 5, GatType.water())
 
+      cache(map_data)
+
       assert {:ok, path} = Pathfinding.find_path(map_data, {0, 5}, {5, 5})
       assert {3, 5} in path
       assert {4, 5} in path
@@ -94,13 +109,35 @@ defmodule Aesir.ZoneServer.PathfindingTest do
 
     test "prefers straight paths over diagonal when equal distance" do
       map_data = MapData.new("test_map", 20, 20)
+      cache(map_data)
 
       assert {:ok, path} = Pathfinding.find_path(map_data, {0, 0}, {10, 0})
       assert Enum.all?(path, fn {_x, y} -> y == 0 end)
     end
+
+    test "avoids an active dynamic blocker and uses the base cell after removal", %{
+      map_data: map_data
+    } do
+      :ok = Cell.put("test_map", 1, 0, :barrier, 1, blocks_movement: true)
+
+      assert {:ok, blocked_path} = Pathfinding.find_path(map_data, {0, 0}, {2, 0})
+      refute {1, 0} in blocked_path
+
+      :ok = Cell.delete("test_map", 1, 0, :barrier, 1)
+
+      assert {:ok, [{1, 0}, {2, 0}]} = Pathfinding.find_path(map_data, {0, 0}, {2, 0})
+      assert {:ok, ^map_data} = MapCache.get("test_map")
+    end
   end
 
   describe "simplify_path/1" do
+    setup :setup_ets_tables
+
+    setup do
+      :ets.insert(EtsTable.table_for(:map_cache), {"test_map", MapData.new("test_map", 10, 10)})
+      :ok
+    end
+
     test "returns path as-is when 2 or fewer points" do
       assert [] = Pathfinding.simplify_path([])
       assert [{1, 1}] = Pathfinding.simplify_path([{1, 1}])
@@ -136,6 +173,16 @@ defmodule Aesir.ZoneServer.PathfindingTest do
       assert [{0, 0}, {3, 0}, {3, 3}] = simplified
     end
 
+    test "keeps a path unsimplified while it contains a dynamic blocker" do
+      path = [{0, 0}, {1, 0}, {2, 0}]
+      :ok = Cell.put("test_map", 1, 0, :barrier, 2, blocks_movement: true)
+
+      assert Pathfinding.simplify_path(path, "test_map") == path
+
+      :ok = Cell.delete("test_map", 1, 0, :barrier, 2)
+      assert Pathfinding.simplify_path(path, "test_map") == [{0, 0}, {2, 0}]
+    end
+
     test "handles complex path with multiple turns" do
       # Zigzag path
       path = [
@@ -159,5 +206,9 @@ defmodule Aesir.ZoneServer.PathfindingTest do
 
       assert [{0, 0}, {2, 0}, {2, 2}, {4, 2}, {4, 5}] = simplified
     end
+  end
+
+  defp cache(map_data) do
+    :ets.insert(EtsTable.table_for(:map_cache), {map_data.name, map_data})
   end
 end
