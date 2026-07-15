@@ -86,6 +86,47 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     end
   end
 
+  @doc """
+  Resolves a target's type and authoritative spatial position.
+
+  Player IDs take precedence over mob IDs when they collide.
+  """
+  @spec resolve_target_position(integer()) ::
+          {:ok, :player | :mob | :skill_unit, {integer(), integer(), String.t()}}
+          | {:error, :target_not_found}
+  def resolve_target_position(target_id) do
+    if SkillUnitId.skill_unit?(target_id) do
+      resolve_skill_unit_position(target_id)
+    else
+      resolve_standard_target_position(target_id)
+    end
+  end
+
+  defp resolve_standard_target_position(target_id) do
+    case SpatialIndex.get_unit_position(:player, target_id) do
+      {:ok, position} -> {:ok, :player, position}
+      {:error, :not_found} -> resolve_mob_target_position(target_id)
+    end
+  end
+
+  defp resolve_mob_target_position(target_id) do
+    case SpatialIndex.get_unit_position(:mob, target_id) do
+      {:ok, position} -> {:ok, :mob, position}
+      {:error, :not_found} -> {:error, :target_not_found}
+    end
+  end
+
+  defp resolve_skill_unit_position(target_id) do
+    with {:ok, {_module, _cell, manager_pid}} when is_pid(manager_pid) <-
+           UnitRegistry.get_unit(:skill_unit, target_id),
+         {:ok, _cell} <- SkillUnitManager.targetable_cell(manager_pid, target_id),
+         {:ok, position} <- SpatialIndex.get_unit_position(:skill_unit, target_id) do
+      {:ok, :skill_unit, position}
+    else
+      _ -> {:error, :target_not_found}
+    end
+  end
+
   defp resolve_player_attack(
          {:miss},
          _player_state,
@@ -1327,11 +1368,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     if SkillUnitId.skill_unit?(target_id) do
       get_skill_unit_state(target_id)
     else
-      case get_mob_unit_state(target_id) do
-        {:ok, pid, mob_state, :mob} -> {:ok, pid, mob_state, :mob}
-        {:error, :not_found} -> get_player_unit_state(target_id)
-        {:error, :target_no_pid} -> {:error, :target_no_pid}
+      case get_player_unit_state(target_id) do
+        {:ok, pid, player_state, :player} ->
+          {:ok, pid, player_state, :player}
+
+        {:error, :target_not_found} ->
+          get_standard_mob_unit_state(target_id)
       end
+    end
+  end
+
+  defp get_standard_mob_unit_state(target_id) do
+    case get_mob_unit_state(target_id) do
+      {:error, :not_found} -> {:error, :target_not_found}
+      result -> result
     end
   end
 

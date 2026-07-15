@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
   alias Aesir.Net.MoveStop
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Id, as: SkillUnitId
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Unit.Inventory.Ammo
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
@@ -20,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @nv_basic_id 1
 
@@ -28,6 +31,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
   setup do
     Mimic.copy(Interpreter)
     Mimic.copy(Ammo)
+    Mimic.copy(SkillUnitManager)
+    Mimic.copy(UnitRegistry)
     stub(Interpreter, :can_attack?, fn _type, _id -> true end)
     :ok
   end
@@ -256,6 +261,123 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
 
       assert_received :done
       refute_received {:send, :gameplay, {:move_stop, _}}
+    end
+  end
+
+  describe "combat target resolution" do
+    test "resolves player targets before colliding mob IDs" do
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:ok, {10, 11, "prontera"}}
+        :mob, 2000 -> {:ok, {50, 50, "geffen"}}
+      end)
+
+      assert {:ok, :player, {10, 11, "prontera"}} = Combat.resolve_target_position(2000)
+    end
+
+    test "resolves mob targets when no player has the target ID" do
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:error, :not_found}
+        :mob, 2000 -> {:ok, {10, 11, "prontera"}}
+      end)
+
+      assert {:ok, :mob, {10, 11, "prontera"}} = Combat.resolve_target_position(2000)
+    end
+
+    test "resolves targetable skill-unit targets" do
+      target_id = SkillUnitId.first()
+
+      stub(UnitRegistry, :get_unit, fn :skill_unit, ^target_id ->
+        {:ok, {nil, nil, self()}}
+      end)
+
+      stub(SkillUnitManager, :targetable_cell, fn manager_pid, ^target_id
+                                                  when manager_pid == self() ->
+        {:ok, :cell}
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :skill_unit, ^target_id ->
+        {:ok, {10, 11, "prontera"}}
+      end)
+
+      assert {:ok, :skill_unit, {10, 11, "prontera"}} =
+               Combat.resolve_target_position(target_id)
+    end
+
+    test "rejects stale skill-unit targets" do
+      target_id = SkillUnitId.first()
+
+      stub(UnitRegistry, :get_unit, fn :skill_unit, ^target_id -> {:error, :not_found} end)
+
+      assert {:error, :target_not_found} = Combat.resolve_target_position(target_id)
+    end
+
+    test "rejects non-targetable skill-unit targets" do
+      target_id = SkillUnitId.first()
+
+      stub(UnitRegistry, :get_unit, fn :skill_unit, ^target_id ->
+        {:ok, {nil, nil, self()}}
+      end)
+
+      stub(SkillUnitManager, :targetable_cell, fn manager_pid, ^target_id
+                                                  when manager_pid == self() ->
+        {:error, :not_targetable}
+      end)
+
+      assert {:error, :target_not_found} = Combat.resolve_target_position(target_id)
+    end
+
+    test "rejects skill-unit targets missing from the spatial index" do
+      target_id = SkillUnitId.first()
+
+      stub(UnitRegistry, :get_unit, fn :skill_unit, ^target_id ->
+        {:ok, {nil, nil, self()}}
+      end)
+
+      stub(SkillUnitManager, :targetable_cell, fn manager_pid, ^target_id
+                                                  when manager_pid == self() ->
+        {:ok, :cell}
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :skill_unit, ^target_id ->
+        {:error, :not_found}
+      end)
+
+      assert {:error, :target_not_found} = Combat.resolve_target_position(target_id)
+    end
+
+    test "the attack handler preserves in-range attacks for every target type" do
+      skill_unit_id = SkillUnitId.first()
+
+      stub(UnitRegistry, :get_unit, fn :skill_unit, ^skill_unit_id ->
+        {:ok, {nil, nil, self()}}
+      end)
+
+      stub(SkillUnitManager, :targetable_cell, fn manager_pid, ^skill_unit_id
+                                                  when manager_pid == self() ->
+        {:ok, :cell}
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:ok, {10, 11, "prontera"}}
+        :player, 2001 -> {:error, :not_found}
+        :mob, 2001 -> {:ok, {10, 11, "prontera"}}
+        :skill_unit, ^skill_unit_id -> {:ok, {10, 11, "prontera"}}
+      end)
+
+      stub(Combat, :execute_attack, fn _stats, _game_state, target_id ->
+        send(self(), {:attacked, target_id})
+        :ok
+      end)
+
+      state = acquire_state("prontera")
+
+      for target_id <- [2000, 2001, skill_unit_id] do
+        assert {:noreply, returned} =
+                 CombatActionHandler.handle_attack_request(state, target_id, 0)
+
+        assert returned.game_state.action_state == :idle
+        assert_received {:attacked, ^target_id}
+      end
     end
   end
 
