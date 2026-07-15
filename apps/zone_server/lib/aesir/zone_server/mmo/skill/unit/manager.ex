@@ -204,6 +204,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
           {:ok, Cell.t()} | {:error, :not_claimable | :not_found}
   def claim_cell(server, cell_id), do: GenServer.call(server, {:claim_cell, cell_id})
 
+  @doc "Registers an invisible Water Ball sequence from ordered water-source cells."
+  @spec register_water_ball_sequence(Group.t(), [Group.cell()]) ::
+          {:ok, Group.t()} | {:error, :no_water_source | term()}
+  def register_water_ball_sequence(%Group{} = group, cells),
+    do: register_water_ball_sequence(default_server(), group, cells)
+
+  @doc false
+  @spec register_water_ball_sequence(server(), Group.t(), [Group.cell()]) ::
+          {:ok, Group.t()} | {:error, :no_water_source | term()}
+  def register_water_ball_sequence(server, %Group{} = group, cells),
+    do: GenServer.call(server, {:register_water_ball_sequence, group, cells})
+
   @doc "Removes one cell idempotently."
   @spec destroy_cell(non_neg_integer()) :: :ok
   def destroy_cell(cell_id), do: destroy_cell(default_server(), cell_id)
@@ -436,6 +448,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     {:reply, result, state}
   end
 
+  def handle_call({:register_water_ball_sequence, group, cells}, _from, state) do
+    result = register_water_ball_sequence_now(group, cells)
+    {:reply, result, state}
+  end
+
   def handle_call({:destroy_cell, cell_id}, _from, state) do
     if cell = Storage.get_cell(cell_id) do
       :ok = remove_cell(cell)
@@ -528,12 +545,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     reconcile_group(group)
 
     case lifecycle_action(group, unit_available?) do
-      :continue -> run_interval_callback(group, now)
+      :continue -> run_sequence_interval(group, now)
       :expire -> cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_LIFECYCLE)
       :skip_action -> Storage.update(%{group | next_tick_at: now + group.interval})
       :persist_inert -> persist_inert(group)
     end
   end
+
+  defp run_sequence_interval(%Group{state: %{water_ball_sequence: true}} = group, now) do
+    case claim_next_sequence_cell(group) do
+      {:ok, group} -> run_interval_callback(group, now)
+      :empty -> cleanup(group)
+    end
+  end
+
+  defp run_sequence_interval(group, now), do: run_interval_callback(group, now)
 
   defp run_interval_callback(group, now) do
     case handler_for(group) do
@@ -909,13 +935,100 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp update_reason(:damage), do: :SKILL_UNIT_UPDATE_REASON_DAMAGE
   defp update_reason(:decay), do: :SKILL_UNIT_UPDATE_REASON_DECAY
 
-  defp register_group(%Group{visible?: false} = group) do
+  defp register_invisible_group(%Group{} = group) do
     :ok = remove_replaced_group(group.group_id)
     :ok = Storage.insert(group)
     {:ok, group}
   end
 
-  defp register_group(%Group{} = group) do
+  defp register_water_ball_sequence_now(%Group{visible?: false} = group, cells) do
+    with {:ok, _group} <- register_invisible_group(group),
+         {:ok, cell_ids} <- materialize_water_ball_cells(group, cells),
+         true <- cell_ids != [] do
+      group = %{group | cell_ids: cell_ids}
+      :ok = Storage.update(group)
+      {:ok, group}
+    else
+      false ->
+        :ok = Storage.delete(group.group_id)
+        {:error, :no_water_source}
+
+      {:error, _reason} = error ->
+        rollback_visible_cells(group.group_id)
+        error
+    end
+  end
+
+  defp register_water_ball_sequence_now(_group, _cells), do: {:error, :visible_sequence}
+
+  defp materialize_water_ball_cells(group, cells) do
+    Enum.reduce_while(cells, {:ok, []}, fn {x, y}, {:ok, cell_ids} ->
+      case materialize_water_ball_cell(group, x, y) do
+        {:ok, cell_id} -> {:cont, {:ok, [cell_id | cell_ids]}}
+        :skip -> {:cont, {:ok, cell_ids}}
+        {:error, _reason} = error -> {:halt, error}
+      end
+    end)
+    |> case do
+      {:ok, cell_ids} -> {:ok, Enum.reverse(cell_ids)}
+      error -> error
+    end
+  end
+
+  defp materialize_water_ball_cell(group, x, y) do
+    with :ok <- consume_water_source(MapCell.water_source(group.map_name, x, y)),
+         {:ok, cell} <- create_water_ball_cell(group, x, y) do
+      {:ok, cell.cell_id}
+    end
+  end
+
+  defp consume_water_source(%MapCell.WaterSource{origin: :base}), do: :ok
+
+  defp consume_water_source(%MapCell.WaterSource{origin: :skill_unit, cell_id: source_id}) do
+    case Storage.get_cell(source_id) do
+      %Cell{} = source -> remove_cell(source)
+      nil -> :skip
+    end
+  end
+
+  defp consume_water_source(%MapCell.WaterSource{origin: :water_ball}), do: :skip
+  defp consume_water_source(nil), do: :skip
+
+  defp create_water_ball_cell(group, x, y) do
+    with {:ok, cell_id} <- Id.allocate(),
+         {:ok, cell} <-
+           Cell.new(%{
+             cell_id: cell_id,
+             group_id: group.group_id,
+             map_name: group.map_name,
+             x: x,
+             y: y,
+             flags: [:consumable_water],
+             state: %{water_ball_token: true}
+           }),
+         :ok <- Storage.insert_cell(cell),
+         :ok <- commit_terrain(cell) do
+      {:ok, cell}
+    end
+  end
+
+  defp claim_next_sequence_cell(%Group{cell_ids: [cell_id | remaining]} = group) do
+    case Storage.get_cell(cell_id) do
+      %Cell{} = cell ->
+        :ok = remove_cell(cell)
+        {:ok, %{group | cell_ids: remaining}}
+
+      nil ->
+        claim_next_sequence_cell(%{group | cell_ids: remaining})
+    end
+  end
+
+  defp claim_next_sequence_cell(%Group{}), do: :empty
+
+  defp register_group(%Group{visible?: false} = group), do: register_invisible_group(group)
+  defp register_group(%Group{} = group), do: register_visible_group(group)
+
+  defp register_visible_group(%Group{} = group) do
     group = %{group | cell_ids: []}
     :ok = remove_replaced_group(group.group_id)
     :ok = Storage.insert(group)
@@ -1072,8 +1185,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     []
     |> maybe_put(:blocks_movement, Cell.flag?(cell, :blocks_movement))
     |> maybe_put(:blocks_projectiles, Cell.flag?(cell, :blocks_projectiles))
-    |> maybe_put(:consumable_water, Cell.flag?(cell, :consumable_water), cell.cell_id)
+    |> maybe_put(
+      :consumable_water,
+      Cell.flag?(cell, :consumable_water),
+      consumable_water_source(cell)
+    )
   end
+
+  defp consumable_water_source(%Cell{state: %{water_ball_token: true}, cell_id: cell_id}),
+    do: {:water_ball, cell_id}
+
+  defp consumable_water_source(%Cell{cell_id: cell_id}), do: cell_id
 
   defp maybe_put(traits, _key, false), do: traits
   defp maybe_put(traits, key, true), do: Keyword.put(traits, key, true)

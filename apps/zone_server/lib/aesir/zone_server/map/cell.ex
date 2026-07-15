@@ -15,7 +15,7 @@ defmodule Aesir.ZoneServer.Map.Cell do
     use TypedStruct
 
     typedstruct do
-      field :origin, :base | :skill_unit, enforce: true
+      field :origin, :base | :skill_unit | :water_ball, enforce: true
       field :cell_id, non_neg_integer() | nil, enforce: true
     end
   end
@@ -23,7 +23,7 @@ defmodule Aesir.ZoneServer.Map.Cell do
   @type contribution :: %{
           optional(:blocks_movement) => boolean(),
           optional(:blocks_projectiles) => boolean(),
-          optional(:consumable_water) => non_neg_integer()
+          optional(:consumable_water) => non_neg_integer() | {:water_ball, non_neg_integer()}
         }
 
   @doc "Adds or replaces one source-owned terrain contribution."
@@ -132,7 +132,7 @@ defmodule Aesir.ZoneServer.Map.Cell do
     |> Enum.any?(&Map.get(&1, :blocks_movement, false))
   end
 
-  @doc "Returns a permanent base-water or consumable skill-unit-water source at the cell."
+  @doc "Returns a permanent, temporary, or Water Ball token source at the cell."
   @spec water_source(String.t(), integer(), integer()) :: WaterSource.t() | nil
   def water_source(map_name, x, y) do
     map_name = canonical_map_name(map_name)
@@ -183,9 +183,12 @@ defmodule Aesir.ZoneServer.Map.Cell do
   end
 
   defp water_source_for_gat(map_name, x, y, gat_type) do
-    case Enum.find_value(contributions(map_name, x, y), &Map.get(&1, :consumable_water)) do
+    sources = contributions(map_name, x, y) |> Enum.map(&Map.get(&1, :consumable_water))
+
+    case Enum.find(sources, &is_integer/1) || Enum.find(sources, &match?({:water_ball, _}, &1)) do
       nil -> if GatType.is_water?(gat_type), do: %WaterSource{origin: :base, cell_id: nil}
-      cell_id -> %WaterSource{origin: :skill_unit, cell_id: cell_id}
+      cell_id when is_integer(cell_id) -> %WaterSource{origin: :skill_unit, cell_id: cell_id}
+      {:water_ball, cell_id} -> %WaterSource{origin: :water_ball, cell_id: cell_id}
     end
   end
 
@@ -230,9 +233,13 @@ defmodule Aesir.ZoneServer.Map.Cell do
              [] and
              is_boolean(Map.get(contribution, :blocks_movement, false)) and
              is_boolean(Map.get(contribution, :blocks_projectiles, false)) and
-             (not Map.has_key?(contribution, :consumable_water) or
-                contribution.consumable_water in 1..@uint32_max) do
+             valid_consumable_water?(Map.get(contribution, :consumable_water)) do
       raise ArgumentError, "invalid dynamic terrain contribution"
     end
   end
+
+  defp valid_consumable_water?(nil), do: true
+  defp valid_consumable_water?(cell_id) when cell_id in 1..@uint32_max, do: true
+  defp valid_consumable_water?({:water_ball, cell_id}) when cell_id in 1..@uint32_max, do: true
+  defp valid_consumable_water?(_value), do: false
 end

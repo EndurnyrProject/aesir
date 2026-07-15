@@ -59,6 +59,18 @@ defmodule Aesir.ZoneServer.Map.CellTest do
     assert %Cell.WaterSource{origin: :base, cell_id: nil} = Cell.water_source("cell_test", 2, 0)
   end
 
+  test "distinguishes Water Ball tokens from eligible temporary water" do
+    :ok = Cell.put("cell_test", 0, 1, :skill_unit, 42, consumable_water: {:water_ball, 42})
+
+    assert %Cell.WaterSource{origin: :water_ball, cell_id: 42} =
+             Cell.water_source("cell_test", 0, 1)
+
+    :ok = Cell.put("cell_test", 0, 1, :deluge, 43, consumable_water: 43)
+
+    assert %Cell.WaterSource{origin: :skill_unit, cell_id: 43} =
+             Cell.water_source("cell_test", 0, 1)
+  end
+
   test "detects only Ice Wall overlap" do
     :ok = Cell.put("cell_test", 0, 0, :barrier, 1, blocks_movement: true)
     refute Cell.ice_wall_overlap?("cell_test", 0, 0)

@@ -102,12 +102,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     end
   end
 
+  defmodule WaterBallSequenceUnit do
+    alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+
+    def on_interval(%Group{state: %{test_pid: test_pid}} = group, _now) do
+      send(test_pid, :water_ball_hit)
+      {:ok, group}
+    end
+  end
+
   setup do
     stub(Catalog, :ground_module_for, fn
       :fake_unit -> {:ok, FakeUnit}
       :serialized_unit -> {:ok, SerializedUnit}
       :failing_unit -> {:ok, FailingUnit}
       :foreign_id_unit -> {:ok, ForeignIdUnit}
+      :water_ball_sequence -> {:ok, WaterBallSequenceUnit}
     end)
 
     :ok
@@ -199,6 +209,67 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       assert {:error, :not_found} = UnitRegistry.get_unit(:skill_unit, cell.cell_id)
       assert {:error, :not_found} = SpatialIndex.get_unit_position(:skill_unit, cell.cell_id)
       assert {:error, :not_targetable} = Manager.targetable_cell(manager, cell.cell_id)
+    end
+  end
+
+  describe "Water Ball sequences" do
+    test "uses each claimed water cell once and expires when the sequence is empty" do
+      manager = start_manager(10_000)
+      :ok = Manager.register(manager, group(1, visible?: false, cells: []))
+
+      assert {:ok, _source} =
+               Manager.create_cell(manager, 1, %{x: 100, y: 100, flags: [:consumable_water]})
+
+      sequence =
+        group(2,
+          skill_name: :water_ball_sequence,
+          visible?: false,
+          cells: [],
+          cell_ids: [],
+          next_tick_at: 10_000,
+          state: %{water_ball_sequence: true, test_pid: self()}
+        )
+
+      assert {:ok, %Group{cell_ids: [claimed_id]}} =
+               Manager.register_water_ball_sequence(manager, sequence, [{100, 100}])
+
+      assert %Cell{cell_id: ^claimed_id, group_id: 2} = Storage.get_cell(claimed_id)
+
+      assert :ok = Manager.tick(manager, 10_000)
+      assert_received :water_ball_hit
+      assert nil == Storage.get_cell(claimed_id)
+
+      assert :ok = Manager.tick(manager, 10_450)
+      assert nil == Storage.get(2)
+      refute_received :water_ball_hit
+    end
+
+    test "concurrent casts cannot convert another Water Ball token into a source" do
+      manager = start_manager(10_000)
+      :ok = Manager.register(manager, group(1, visible?: false, cells: []))
+
+      assert {:ok, _source} =
+               Manager.create_cell(manager, 1, %{x: 100, y: 100, flags: [:consumable_water]})
+
+      results =
+        [2, 3]
+        |> Task.async_stream(fn group_id ->
+          Manager.register_water_ball_sequence(
+            manager,
+            group(group_id,
+              skill_name: :water_ball_sequence,
+              visible?: false,
+              cells: [],
+              cell_ids: [],
+              state: %{water_ball_sequence: true}
+            ),
+            [{100, 100}]
+          )
+        end)
+        |> Enum.map(fn {:ok, result} -> result end)
+
+      assert Enum.count(results, &match?({:ok, _}, &1)) == 1
+      assert Enum.count(results, &(&1 == {:error, :no_water_source})) == 1
     end
   end
 

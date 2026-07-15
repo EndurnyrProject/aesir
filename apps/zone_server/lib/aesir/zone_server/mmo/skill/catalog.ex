@@ -101,6 +101,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
     Skills.WzQuagmire,
     Skills.WzSightrasher,
     Skills.WzStormgust,
+    Skills.WzWaterball,
     Skills.WzVermilion
   ]
 
