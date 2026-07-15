@@ -100,6 +100,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   @doc "Invoked when the unit holding this status takes damage."
   @callback on_damage(target(), StatusEntry.t(), map(), context()) :: hook_result()
 
+  @doc "Invoked when the status holder makes movement contact with another unit."
+  @callback on_contact(target(), StatusEntry.t(), target(), context()) :: hook_result()
+
   @doc """
   Pre-damage hook that may reduce or block an incoming hit before HP is applied.
 
@@ -220,6 +223,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       def on_damage(_target, instance, _damage_info, _context), do: {:ok, instance}
 
       @impl true
+      def on_contact(_target, instance, _contact, _context), do: {:ok, instance}
+
+      @impl true
       def absorb_damage(_target, instance, %{damage: damage}, _context),
         do: {:ok, damage, instance}
 
@@ -231,6 +237,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
                      on_expire: 3,
                      on_tick: 3,
                      on_damage: 4,
+                     on_contact: 4,
                      absorb_damage: 4,
                      dynamic_option: 1
     end

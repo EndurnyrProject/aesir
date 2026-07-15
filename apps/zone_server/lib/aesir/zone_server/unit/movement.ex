@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Movement do
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
   alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -53,6 +54,7 @@ defmodule Aesir.ZoneServer.Unit.Movement do
     mover = {unit_type, unit_id}
     fire_on_leave(mover, previous, map_name, updated_state.x, updated_state.y)
     Trigger.on_enter_cell(mover, map_name, updated_state.x, updated_state.y)
+    fire_movement_contact(mover, previous, map_name, updated_state.x, updated_state.y)
   end
 
   @spec fire_on_leave(
@@ -68,6 +70,25 @@ defmodule Aesir.ZoneServer.Unit.Movement do
   end
 
   defp fire_on_leave(_mover, _previous, _new_map, _new_x, _new_y), do: :ok
+
+  defp fire_movement_contact(
+         {unit_type, unit_id} = mover,
+         {:ok, {old_x, old_y, old_map}},
+         map_name,
+         x,
+         y
+       )
+       when old_map != map_name or old_x != x or old_y != y do
+    map_name
+    |> SpatialIndex.get_all_units_in_range(x, y, 1)
+    |> Enum.reject(&(&1 == mover))
+    |> Enum.each(fn contact = {contact_type, contact_id} ->
+      StatusInterpreter.on_movement_contact(unit_type, unit_id, contact)
+      StatusInterpreter.on_movement_contact(contact_type, contact_id, mover)
+    end)
+  end
+
+  defp fire_movement_contact(_mover, _previous, _map_name, _x, _y), do: :ok
 
   @doc """
   Records a unit in its map's dirty set with the given `move_state`.

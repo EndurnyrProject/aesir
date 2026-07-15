@@ -131,6 +131,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     end)
   end
 
+  @doc "Notifies active statuses that their holder made movement contact with a unit."
+  @spec on_movement_contact(unit_type(), integer(), {unit_type(), integer()}) :: :ok
+  def on_movement_contact(unit_type, unit_id, contact) do
+    unit_type
+    |> StatusStorage.get_unit_statuses(unit_id)
+    |> Enum.each(&dispatch_contact(unit_type, unit_id, &1, contact))
+  end
+
   @doc """
   Folds the target's active statuses over an incoming hit before HP is reduced.
 
@@ -427,6 +435,27 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
           {:error, reason} ->
             Logger.warning("Status #{instance.type} on_damage failed: #{inspect(reason)}")
             []
+        end
+    end
+  end
+
+  defp dispatch_contact(unit_type, unit_id, instance, contact) do
+    case Registry.get_definition(instance.type) do
+      nil ->
+        :ok
+
+      definition ->
+        context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
+
+        case definition.module.on_contact({unit_type, unit_id}, instance, contact, context) do
+          {:ok, new_instance} ->
+            store_instance_changes(unit_type, unit_id, instance.type, new_instance)
+
+          :remove ->
+            remove_status(unit_type, unit_id, instance.type)
+
+          {:error, reason} ->
+            Logger.warning("Status #{instance.type} on_contact failed: #{inspect(reason)}")
         end
     end
   end

@@ -110,6 +110,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects do
     Effects.Rwc2011Scroll,
     Effects.Safetywall,
     Effects.SavageSteak,
+    Effects.Sightblaster,
     Effects.SignumCrucis,
     Effects.Sight,
     Effects.Silence,
