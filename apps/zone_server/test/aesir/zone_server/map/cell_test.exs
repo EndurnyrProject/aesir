@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Map.CellTest do
   use ExUnit.Case, async: false
 
   import Aesir.TestEtsSetup
+  import Mimic
 
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.Cell
@@ -10,6 +11,7 @@ defmodule Aesir.ZoneServer.Map.CellTest do
   alias Aesir.ZoneServer.Map.MapData
 
   setup :setup_ets_tables
+  setup :verify_on_exit!
 
   setup do
     map =
@@ -30,6 +32,34 @@ defmodule Aesir.ZoneServer.Map.CellTest do
     refute Cell.placeable?("cell_test", 1, 0)
     assert %Cell.WaterSource{origin: :base, cell_id: nil} = Cell.water_source("cell_test", 2, 0)
     assert Cell.water_source("cell_test", 0, 0) == nil
+  end
+
+  test "delegates base terrain checks to MapData" do
+    map = MapData.new("delegated", 1, 1)
+
+    stub(MapCache, :get, fn "delegated" -> {:ok, map} end)
+
+    expect(MapData, :walkable?, 2, fn ^map, 0, 0 -> true end)
+    expect(MapData, :blocks_projectile?, fn ^map, 0, 0 -> false end)
+
+    assert Cell.traversable?("delegated", 0, 0)
+    assert Cell.placeable?("delegated", 0, 0)
+    refute Cell.blocks_projectiles?("delegated", 0, 0)
+  end
+
+  test "fails closed for projectiles outside known base terrain" do
+    assert Cell.blocks_projectiles?("missing", 0, 0)
+    assert Cell.blocks_projectiles?("cell_test", 3, 0)
+  end
+
+  test "delegates base water detection to MapData" do
+    map = MapData.new("water_delegate", 1, 1)
+
+    stub(MapCache, :get, fn "water_delegate" -> {:ok, map} end)
+    expect(MapData, :water?, fn ^map, 0, 0 -> true end)
+
+    assert %Cell.WaterSource{origin: :base, cell_id: nil} =
+             Cell.water_source("water_delegate", 0, 0)
   end
 
   test "merges independent source contributions and restores exact base terrain", %{map: map} do

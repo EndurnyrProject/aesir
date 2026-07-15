@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Map.Cell do
 
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
-  alias Aesir.ZoneServer.Map.GatType
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
 
@@ -89,7 +88,7 @@ defmodule Aesir.ZoneServer.Map.Cell do
   def traversable?(map_name, x, y) do
     map_name = canonical_map_name(map_name)
 
-    base?(map_name, x, y, &GatType.is_walkable?/1) and
+    base?(map_name, x, y, &MapData.walkable?/3) and
       not Enum.any?(contributions(map_name, x, y), &Map.get(&1, :blocks_movement, false))
   end
 
@@ -98,7 +97,7 @@ defmodule Aesir.ZoneServer.Map.Cell do
   def blocks_projectiles?(map_name, x, y) do
     map_name = canonical_map_name(map_name)
 
-    not base?(map_name, x, y, fn gat_type -> not GatType.blocks_projectile?(gat_type) end) or
+    base?(map_name, x, y, &MapData.blocks_projectile?/3, true) or
       Enum.any?(contributions(map_name, x, y), &Map.get(&1, :blocks_projectiles, false))
   end
 
@@ -107,7 +106,7 @@ defmodule Aesir.ZoneServer.Map.Cell do
   def placeable?(map_name, x, y) do
     map_name
     |> canonical_map_name()
-    |> base?(x, y, &GatType.is_walkable?/1)
+    |> base?(x, y, &MapData.walkable?/3)
   end
 
   @doc "Returns a random traversable cell within the map's bounds."
@@ -141,12 +140,12 @@ defmodule Aesir.ZoneServer.Map.Cell do
   def water_source(map_name, x, y) do
     map_name = canonical_map_name(map_name)
 
-    case base_cell(map_name, x, y) do
+    case base_map(map_name, x, y) do
       nil ->
         nil
 
-      gat_type ->
-        water_source_for_gat(map_name, x, y, gat_type)
+      map ->
+        water_source_for_map(map_name, x, y, map)
     end
   end
 
@@ -179,18 +178,18 @@ defmodule Aesir.ZoneServer.Map.Cell do
     end
   end
 
-  defp base?(map_name, x, y, predicate) do
-    case base_cell(map_name, x, y) do
-      gat_type when is_integer(gat_type) -> predicate.(gat_type)
-      nil -> false
+  defp base?(map_name, x, y, predicate, fallback \\ false) do
+    case MapCache.get(map_name) do
+      {:ok, %MapData{} = map} -> predicate.(map, x, y)
+      _ -> fallback
     end
   end
 
-  defp water_source_for_gat(map_name, x, y, gat_type) do
+  defp water_source_for_map(map_name, x, y, map) do
     sources = contributions(map_name, x, y) |> Enum.map(&Map.get(&1, :consumable_water))
 
     case Enum.find(sources, &is_integer/1) || Enum.find(sources, &match?({:water_ball, _}, &1)) do
-      nil -> if GatType.is_water?(gat_type), do: %WaterSource{origin: :base, cell_id: nil}
+      nil -> if MapData.water?(map, x, y), do: %WaterSource{origin: :base, cell_id: nil}
       cell_id when is_integer(cell_id) -> %WaterSource{origin: :skill_unit, cell_id: cell_id}
       {:water_ball, cell_id} -> %WaterSource{origin: :water_ball, cell_id: cell_id}
     end
@@ -217,10 +216,10 @@ defmodule Aesir.ZoneServer.Map.Cell do
     :ok
   end
 
-  defp base_cell(map_name, x, y) do
+  defp base_map(map_name, x, y) do
     with {:ok, %MapData{} = map} <- MapCache.get(map_name),
-         gat_type when is_integer(gat_type) <- MapData.get_cell(map, x, y) do
-      gat_type
+         cell when not is_nil(cell) <- MapData.get_cell(map, x, y) do
+      map
     else
       _ -> nil
     end

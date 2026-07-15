@@ -116,6 +116,15 @@ defmodule Aesir.ZoneServer.Map.MapData do
     end
   end
 
+  @doc "Checks if a position contains water terrain."
+  @spec water?(t(), integer(), integer()) :: boolean()
+  def water?(map, x, y) do
+    case get_cell(map, x, y) do
+      nil -> false
+      gat_type -> GatType.is_water?(gat_type)
+    end
+  end
+
   @doc """
   Checks various cell properties.
   Based on rAthena's map_getcellp function.
