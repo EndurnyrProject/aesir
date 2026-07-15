@@ -31,7 +31,8 @@ defmodule Aesir.TestEtsSetup do
           :skill_unit_target_index,
           :field_supports,
           :dynamic_cell_contributions,
-          :dynamic_cell_source_index
+          :dynamic_cell_source_index,
+          :dynamic_cell_coordinate_index
         ] do
       :ets.delete_all_objects(EtsTable.table_for(table))
     end

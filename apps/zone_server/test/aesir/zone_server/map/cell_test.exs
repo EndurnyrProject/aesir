@@ -153,8 +153,17 @@ defmodule Aesir.ZoneServer.Map.CellTest do
 
     source_index = EtsTable.table_for(:dynamic_cell_source_index)
     contribution_index = EtsTable.table_for(:dynamic_cell_contributions)
+    coordinate_index = EtsTable.table_for(:dynamic_cell_coordinate_index)
 
     assert :ets.lookup(source_index, {:skill_unit, 9}) |> length() == 2
+
+    assert :ets.lookup(coordinate_index, {"cell_test", 0, 0}) == [
+             {{"cell_test", 0, 0}, {"cell_test", 0, 0, :skill_unit, 9}}
+           ]
+
+    assert :ets.lookup(coordinate_index, {"cell_test", 0, 1}) == [
+             {{"cell_test", 0, 1}, {"cell_test", 0, 1, :skill_unit, 9}}
+           ]
 
     assert :ets.lookup(contribution_index, {"cell_test", 0, 0, :skill_unit, 9}) == [
              {{"cell_test", 0, 0, :skill_unit, 9}, %{blocks_projectiles: true}}
@@ -172,6 +181,59 @@ defmodule Aesir.ZoneServer.Map.CellTest do
     |> Task.async_stream(& &1.())
     |> Enum.each(fn {:ok, :ok} -> :ok end)
 
+    assert [] == :ets.tab2list(source_index)
+    assert [] == :ets.tab2list(contribution_index)
+    assert [] == :ets.tab2list(coordinate_index)
+  end
+
+  test "indexes contributions by coordinate without duplicating replacements" do
+    :ok = Cell.put("cell_test", 0, 0, :icewall, 1, blocks_movement: true)
+    :ok = Cell.put("cell_test", 0, 0, :barrier, 2, blocks_projectiles: true)
+    :ok = Cell.put("cell_test", 0, 0, :icewall, 1, blocks_projectiles: true)
+
+    coordinate_index = EtsTable.table_for(:dynamic_cell_coordinate_index)
+
+    assert :ets.lookup(coordinate_index, {"cell_test", 0, 0}) |> Enum.sort() == [
+             {{"cell_test", 0, 0}, {"cell_test", 0, 0, :barrier, 2}},
+             {{"cell_test", 0, 0}, {"cell_test", 0, 0, :icewall, 1}}
+           ]
+
+    assert Cell.traversable?("cell_test", 0, 0)
+    assert Cell.blocks_projectiles?("cell_test", 0, 0)
+  end
+
+  test "removes coordinate index entries through every contribution cleanup path" do
+    :ok = Cell.put("cell_test", 0, 0, :skill_unit, 1, blocks_movement: true)
+    :ok = Cell.put("cell_test", 1, 0, :skill_unit, 1, blocks_projectiles: true)
+    :ok = Cell.put("cell_test", 2, 0, :icewall, 2, blocks_movement: true)
+
+    coordinate_index = EtsTable.table_for(:dynamic_cell_coordinate_index)
+    source_index = EtsTable.table_for(:dynamic_cell_source_index)
+    contribution_index = EtsTable.table_for(:dynamic_cell_contributions)
+
+    :ok = Cell.delete("cell_test", 0, 0, :skill_unit, 1)
+    :ok = Cell.delete("cell_test", 0, 0, :skill_unit, 1)
+    assert [] == :ets.lookup(coordinate_index, {"cell_test", 0, 0})
+    assert [] == :ets.lookup(contribution_index, {"cell_test", 0, 0, :skill_unit, 1})
+
+    assert :ets.lookup(source_index, {:skill_unit, 1}) == [
+             {{:skill_unit, 1}, {"cell_test", 1, 0, :skill_unit, 1}}
+           ]
+
+    :ok = Cell.delete_source(:skill_unit, 1)
+    :ok = Cell.delete_source(:skill_unit, 1)
+    assert [] == :ets.lookup(coordinate_index, {"cell_test", 1, 0})
+    assert [] == :ets.lookup(source_index, {:skill_unit, 1})
+    assert [] == :ets.lookup(contribution_index, {"cell_test", 1, 0, :skill_unit, 1})
+
+    :ok = Cell.prune_source_kind(:icewall, [])
+    assert [] == :ets.lookup(coordinate_index, {"cell_test", 2, 0})
+    assert [] == :ets.lookup(source_index, {:icewall, 2})
+    assert [] == :ets.lookup(contribution_index, {"cell_test", 2, 0, :icewall, 2})
+
+    :ok = Cell.put("cell_test", 0, 0, :barrier, 3, blocks_projectiles: true)
+    :ok = Cell.clear()
+    assert [] == :ets.tab2list(coordinate_index)
     assert [] == :ets.tab2list(source_index)
     assert [] == :ets.tab2list(contribution_index)
   end

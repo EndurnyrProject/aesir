@@ -75,6 +75,11 @@ defmodule Aesir.ZoneServer.EtsTable do
       table_for(:dynamic_cell_source_index, seed),
       [:bag, :public, :named_table, read_concurrency: true, write_concurrency: true]
     )
+
+    :ets.new(
+      table_for(:dynamic_cell_coordinate_index, seed),
+      [:bag, :public, :named_table, read_concurrency: true, write_concurrency: true]
+    )
   end
 
   defp status_tables(seed) do

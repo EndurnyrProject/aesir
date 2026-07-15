@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Map.Cell do
     transaction(fn ->
       :ets.insert(table_for(:dynamic_cell_contributions), {key, contribution})
       :ets.insert(table_for(:dynamic_cell_source_index), {{source_kind, source_id}, key})
+      :ets.insert(table_for(:dynamic_cell_coordinate_index), {{map_name, x, y}, key})
       :ok
     end)
   end
@@ -62,6 +63,7 @@ defmodule Aesir.ZoneServer.Map.Cell do
     transaction(fn ->
       :ets.delete_all_objects(table_for(:dynamic_cell_contributions))
       :ets.delete_all_objects(table_for(:dynamic_cell_source_index))
+      :ets.delete_all_objects(table_for(:dynamic_cell_coordinate_index))
       :ok
     end)
   end
@@ -161,8 +163,15 @@ defmodule Aesir.ZoneServer.Map.Cell do
   end
 
   defp contributions(map_name, x, y) do
-    :ets.match_object(table_for(:dynamic_cell_contributions), {{map_name, x, y, :_, :_}, :_})
-    |> Enum.map(fn {_key, contribution} -> contribution end)
+    contribution_table = table_for(:dynamic_cell_contributions)
+
+    :ets.lookup(table_for(:dynamic_cell_coordinate_index), {map_name, x, y})
+    |> Enum.flat_map(fn {_coordinate, key} ->
+      case :ets.lookup(contribution_table, key) do
+        [{^key, contribution}] -> [contribution]
+        [] -> []
+      end
+    end)
   end
 
   defp random_traversable(_map_name, _xs, _ys, 0), do: {:error, :no_walkable_cell}
@@ -201,6 +210,7 @@ defmodule Aesir.ZoneServer.Map.Cell do
     transaction(fn ->
       :ets.delete(table_for(:dynamic_cell_contributions), key)
       :ets.delete_object(table_for(:dynamic_cell_source_index), {{source_kind, source_id}, key})
+      :ets.delete_object(table_for(:dynamic_cell_coordinate_index), {{map_name, x, y}, key})
       :ok
     end)
   end
@@ -211,6 +221,8 @@ defmodule Aesir.ZoneServer.Map.Cell do
     |> Enum.each(fn {{^source_kind, ^source_id}, key} ->
       :ets.delete(table_for(:dynamic_cell_contributions), key)
       :ets.delete_object(table_for(:dynamic_cell_source_index), {{source_kind, source_id}, key})
+      {map_name, x, y, ^source_kind, ^source_id} = key
+      :ets.delete_object(table_for(:dynamic_cell_coordinate_index), {{map_name, x, y}, key})
     end)
 
     :ok
