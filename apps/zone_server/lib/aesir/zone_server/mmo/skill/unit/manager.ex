@@ -13,8 +13,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   alias Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Id
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Lifecycle.Event
@@ -64,6 +66,63 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   @doc false
   @spec destroy(server(), non_neg_integer()) :: :ok
   def destroy(server, group_id), do: GenServer.call(server, {:destroy, group_id})
+
+  @doc "Creates an independently indexed cell owned by an existing group."
+  @spec create_cell(non_neg_integer(), map()) :: {:ok, Cell.t()} | {:error, term()}
+  def create_cell(group_id, attrs), do: create_cell(default_server(), group_id, attrs)
+
+  @doc false
+  @spec create_cell(server(), non_neg_integer(), map()) :: {:ok, Cell.t()} | {:error, term()}
+  def create_cell(server, group_id, attrs),
+    do: GenServer.call(server, {:create_cell, group_id, attrs})
+
+  @doc "Updates one live cell."
+  @spec update_cell(non_neg_integer(), map()) :: {:ok, Cell.t()} | {:error, :not_found | term()}
+  def update_cell(cell_id, attrs), do: update_cell(default_server(), cell_id, attrs)
+
+  @doc false
+  @spec update_cell(server(), non_neg_integer(), map()) ::
+          {:ok, Cell.t()} | {:error, :not_found | term()}
+  def update_cell(server, cell_id, attrs),
+    do: GenServer.call(server, {:update_cell, cell_id, attrs})
+
+  @doc "Applies damage once against the current cell HP."
+  @spec damage_cell(non_neg_integer(), pos_integer()) ::
+          {:ok, Cell.t()} | {:destroyed, Cell.t()} | {:error, term()}
+  def damage_cell(cell_id, amount), do: damage_cell(default_server(), cell_id, amount)
+
+  @doc false
+  @spec damage_cell(server(), non_neg_integer(), pos_integer()) ::
+          {:ok, Cell.t()} | {:destroyed, Cell.t()} | {:error, term()}
+  def damage_cell(server, cell_id, amount),
+    do: GenServer.call(server, {:damage_cell, cell_id, amount})
+
+  @doc "Applies natural decay through the same serialized damage operation."
+  @spec decay_cell(non_neg_integer(), pos_integer()) ::
+          {:ok, Cell.t()} | {:destroyed, Cell.t()} | {:error, term()}
+  def decay_cell(cell_id, amount), do: damage_cell(cell_id, amount)
+
+  @doc false
+  @spec decay_cell(server(), non_neg_integer(), pos_integer()) ::
+          {:ok, Cell.t()} | {:destroyed, Cell.t()} | {:error, term()}
+  def decay_cell(server, cell_id, amount), do: damage_cell(server, cell_id, amount)
+
+  @doc "Claims a consumable source cell exactly once."
+  @spec claim_cell(non_neg_integer()) :: {:ok, Cell.t()} | {:error, :not_claimable | :not_found}
+  def claim_cell(cell_id), do: claim_cell(default_server(), cell_id)
+
+  @doc false
+  @spec claim_cell(server(), non_neg_integer()) ::
+          {:ok, Cell.t()} | {:error, :not_claimable | :not_found}
+  def claim_cell(server, cell_id), do: GenServer.call(server, {:claim_cell, cell_id})
+
+  @doc "Removes one cell idempotently."
+  @spec destroy_cell(non_neg_integer()) :: :ok
+  def destroy_cell(cell_id), do: destroy_cell(default_server(), cell_id)
+
+  @doc false
+  @spec destroy_cell(server(), non_neg_integer()) :: :ok
+  def destroy_cell(server, cell_id), do: GenServer.call(server, {:destroy_cell, cell_id})
 
   @doc "Serially invokes a movement callback against the latest live group."
   @spec trigger(non_neg_integer(), mover(), :on_touch | :on_out) :: :ok
@@ -133,6 +192,69 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   def handle_call({:destroy, group_id}, _from, state) do
     if group = Storage.get(group_id), do: cleanup(group)
+    {:reply, :ok, state}
+  end
+
+  def handle_call({:create_cell, group_id, attrs}, _from, state) do
+    result =
+      with %Group{} = group <- Storage.get(group_id),
+           {:ok, cell_id} <- Id.allocate(),
+           {:ok, cell} <-
+             Cell.new(
+               attrs
+               |> Map.put(:cell_id, cell_id)
+               |> Map.put(:group_id, group_id)
+               |> Map.put(:map_name, group.map_name)
+             ),
+           :ok <- Storage.insert_cell(cell),
+           :ok <- Storage.update(%{group | cell_ids: [cell_id | group.cell_ids]}) do
+        {:ok, cell}
+      else
+        nil -> {:error, :group_not_found}
+        {:error, _reason} = error -> error
+      end
+
+    {:reply, result, state}
+  end
+
+  def handle_call({:update_cell, cell_id, attrs}, _from, state) do
+    result =
+      case Storage.get_cell(cell_id) do
+        nil ->
+          {:error, :not_found}
+
+        cell ->
+          update_cell_now(cell, attrs)
+      end
+
+    {:reply, result, state}
+  end
+
+  def handle_call({:damage_cell, cell_id, amount}, _from, state) do
+    result = damage_cell_now(cell_id, amount)
+    {:reply, result, state}
+  end
+
+  def handle_call({:claim_cell, cell_id}, _from, state) do
+    result =
+      case Storage.get_cell(cell_id) do
+        %Cell{} = cell ->
+          if Cell.flag?(cell, :consumable_water) do
+            :ok = remove_cell(cell)
+            {:ok, cell}
+          else
+            {:error, :not_claimable}
+          end
+
+        nil ->
+          {:error, :not_found}
+      end
+
+    {:reply, result, state}
+  end
+
+  def handle_call({:destroy_cell, cell_id}, _from, state) do
+    if cell = Storage.get_cell(cell_id), do: remove_cell(cell)
     {:reply, :ok, state}
   end
 
@@ -425,6 +547,57 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
 
     Storage.delete(group_id)
+  end
+
+  defp damage_cell_now(_cell_id, amount) when not is_integer(amount) or amount <= 0,
+    do: {:error, :invalid_damage}
+
+  defp damage_cell_now(cell_id, amount) do
+    case Storage.get_cell(cell_id) do
+      nil ->
+        {:error, :not_found}
+
+      %Cell{max_hp: 0} ->
+        {:error, :not_destructible}
+
+      %Cell{hp: hp} = cell when amount < hp ->
+        updated = %{cell | hp: hp - amount}
+        :ok = Storage.update_cell(updated)
+        {:ok, updated}
+
+      %Cell{} = cell ->
+        :ok = remove_cell(cell)
+        {:destroyed, cell}
+    end
+  end
+
+  defp update_cell_now(_cell, attrs)
+       when is_map_key(attrs, :cell_id) or is_map_key(attrs, :group_id) or
+              is_map_key(attrs, :map_name) or is_map_key(attrs, :x) or is_map_key(attrs, :y),
+       do: {:error, :immutable_cell_field}
+
+  defp update_cell_now(cell, attrs) do
+    case Cell.new(Map.merge(Map.from_struct(cell), attrs)) do
+      {:ok, updated} ->
+        :ok = Storage.update_cell(updated)
+        {:ok, updated}
+
+      error ->
+        error
+    end
+  end
+
+  defp remove_cell(%Cell{} = cell) do
+    :ok = Storage.delete_cell(cell.cell_id)
+
+    case Storage.get(cell.group_id) do
+      nil ->
+        :ok
+
+      %Group{} = group ->
+        remaining = List.delete(group.cell_ids, cell.cell_id)
+        :ok = Storage.update(%{group | cell_ids: remaining})
+    end
   end
 
   defp callback_failed(group, callback, reason, module) do

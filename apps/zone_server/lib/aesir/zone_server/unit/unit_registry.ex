@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
   def register_unit(unit_type, unit_id, module, state, pid \\ nil) do
     key = {unit_type, unit_id}
     :ets.insert(table_for(:unit_registry), {key, module, state, pid})
+    :ets.insert(table_for(:unit_registry_id_index), {unit_id, unit_type})
     :ok
   end
 
@@ -43,6 +44,7 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
   def unregister_unit(unit_type, unit_id) do
     key = {unit_type, unit_id}
     :ets.delete(table_for(:unit_registry), key)
+    :ets.delete_object(table_for(:unit_registry_id_index), {unit_id, unit_type})
 
     Logger.debug("Unregistered #{unit_type} unit with ID #{unit_id}")
 
@@ -106,6 +108,12 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
     end
   end
 
+  @doc "Checks whether any registered unit owns `unit_id` through the ID index."
+  @spec unit_id_exists?(unit_id()) :: boolean()
+  def unit_id_exists?(unit_id) do
+    :ets.member(table_for(:unit_registry_id_index), unit_id)
+  end
+
   @doc """
   Lists all units of a specific type.
   """
@@ -150,8 +158,9 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
 
     keys_to_delete = :ets.select(table_for(:unit_registry), match_spec)
 
-    Enum.each(keys_to_delete, fn key ->
+    Enum.each(keys_to_delete, fn {unit_type, unit_id} = key ->
       :ets.delete(table_for(:unit_registry), key)
+      :ets.delete_object(table_for(:unit_registry_id_index), {unit_id, unit_type})
       Logger.debug("Cleaned up unit #{inspect(key)} due to process death")
     end)
 

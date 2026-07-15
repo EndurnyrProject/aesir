@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Ground
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
@@ -536,5 +537,69 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         ] do
       assert [] == :ets.tab2list(EtsTable.table_for(table))
     end
+  end
+
+  test "serializes damage, decay, claim, and group cleanup for owned cells" do
+    manager = start_manager(10_000)
+    :ok = Manager.register(manager, group(1, cell_ids: []))
+
+    assert {:ok, wall} =
+             Manager.create_cell(manager, 1, %{
+               x: 100,
+               y: 100,
+               hp: 100,
+               max_hp: 100,
+               flags: [:targetable, :visible]
+             })
+
+    assert {:ok, %Cell{hp: 60}} = Manager.damage_cell(manager, wall.cell_id, 40)
+    wall_id = wall.cell_id
+    assert {:destroyed, %Cell{cell_id: ^wall_id}} = Manager.decay_cell(manager, wall_id, 60)
+    assert {:error, :not_found} = Manager.damage_cell(manager, wall.cell_id, 1)
+
+    assert {:ok, water} =
+             Manager.create_cell(manager, 1, %{x: 101, y: 100, flags: [:consumable_water]})
+
+    claims =
+      1..2
+      |> Task.async_stream(fn _ -> Manager.claim_cell(manager, water.cell_id) end)
+      |> Enum.map(fn {:ok, result} -> result end)
+
+    assert Enum.count(claims, &match?({:ok, _}, &1)) == 1
+    assert Enum.count(claims, &(&1 == {:error, :not_found})) == 1
+
+    assert :ok = Manager.destroy(manager, 1)
+    assert [] == Storage.get_cells_by_group(1)
+  end
+
+  test "rejects identity updates and binds cells to their group's map" do
+    manager = start_manager(10_000)
+    :ok = Manager.register(manager, group(1, map_name: "prontera"))
+    assert {:ok, cell} = Manager.create_cell(manager, 1, %{map_name: "geffen", x: 1, y: 1})
+    assert cell.map_name == "prontera"
+
+    assert {:error, :immutable_cell_field} = Manager.update_cell(manager, cell.cell_id, %{x: 2})
+
+    assert {:ok, %Cell{state: %{changed: true}}} =
+             Manager.update_cell(manager, cell.cell_id, %{state: %{changed: true}})
+  end
+
+  test "serializes damage, decay, cell destroy, and group destroy races" do
+    manager = start_manager(10_000)
+    :ok = Manager.register(manager, group(1, []))
+    assert {:ok, cell} = Manager.create_cell(manager, 1, %{x: 1, y: 1, hp: 100, max_hp: 100})
+
+    [
+      fn -> Manager.damage_cell(manager, cell.cell_id, 50) end,
+      fn -> Manager.decay_cell(manager, cell.cell_id, 50) end,
+      fn -> Manager.destroy_cell(manager, cell.cell_id) end,
+      fn -> Manager.destroy(manager, 1) end
+    ]
+    |> Task.async_stream(& &1.())
+    |> Enum.each(fn {:ok, _result} -> :ok end)
+
+    assert nil == Storage.get(1)
+    assert nil == Storage.get_cell(cell.cell_id)
+    assert [] == Storage.get_cells_by_group(1)
   end
 end

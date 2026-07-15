@@ -96,6 +96,14 @@ defmodule Aesir.ZoneServer.EtsTable do
         write_concurrency: true
       ]
     )
+
+    :ets.new(table_for(:unit_registry_id_index, seed), [
+      :bag,
+      :public,
+      :named_table,
+      read_concurrency: true,
+      write_concurrency: true
+    ])
   end
 
   defp skill_unit_tables(seed) do
@@ -121,10 +129,17 @@ defmodule Aesir.ZoneServer.EtsTable do
       ]
     )
 
+    :ets.new(
+      table_for(:skill_unit_cells, seed),
+      [:set, :public, :named_table, read_concurrency: true, write_concurrency: true]
+    )
+
     for table <- [
           :skill_unit_coordinate_index,
           :skill_unit_caster_index,
-          :skill_unit_target_index
+          :skill_unit_target_index,
+          :skill_unit_cell_coordinate_index,
+          :skill_unit_group_cells_index
         ] do
       :ets.new(
         table_for(table, seed),
@@ -148,6 +163,17 @@ defmodule Aesir.ZoneServer.EtsTable do
           {:read_concurrency, true},
           {:write_concurrency, true}
         ]
+      )
+    end
+
+    for table <- [
+          :skill_unit_map_index,
+          :skill_unit_cell_map_index,
+          :skill_unit_visible_cell_map_index
+        ] do
+      :ets.new(
+        table_for(table, seed),
+        [:ordered_set, :public, :named_table, read_concurrency: true, write_concurrency: true]
       )
     end
   end

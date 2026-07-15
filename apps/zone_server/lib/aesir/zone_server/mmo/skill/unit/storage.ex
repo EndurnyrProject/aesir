@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Storage do
   """
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
 
   @doc """
@@ -65,14 +66,91 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Storage do
     end
   end
 
+  @doc "Stores a cell and its read indexes."
+  @spec insert_cell(Cell.t()) :: :ok
+  def insert_cell(%Cell{} = cell) do
+    case get_cell(cell.cell_id) do
+      nil -> :ok
+      old_cell -> delete_cell_indexes(old_cell)
+    end
+
+    store_cell(cell)
+  end
+
+  @doc "Updates an existing cell without resurrecting a removed cell."
+  @spec update_cell(Cell.t()) :: :ok
+  def update_cell(%Cell{cell_id: cell_id} = cell) do
+    case get_cell(cell_id) do
+      nil ->
+        :ok
+
+      old_cell ->
+        :ok = delete_cell_indexes(old_cell)
+        store_cell(cell)
+    end
+  end
+
+  @doc "Fetches a cell by its stable runtime ID."
+  @spec get_cell(non_neg_integer()) :: Cell.t() | nil
+  def get_cell(cell_id) do
+    case :ets.lookup(table_for(:skill_unit_cells), cell_id) do
+      [{^cell_id, cell}] -> cell
+      [] -> nil
+    end
+  end
+
+  @doc "Deletes a cell and every secondary key."
+  @spec delete_cell(non_neg_integer()) :: :ok
+  def delete_cell(cell_id) do
+    if cell = get_cell(cell_id), do: delete_cell_indexes(cell)
+    :ets.delete(table_for(:skill_unit_cells), cell_id)
+    :ok
+  end
+
+  @doc "Returns cells at a coordinate without scanning group rows."
+  @spec get_cells_at_cell(String.t(), integer(), integer()) :: [Cell.t()]
+  def get_cells_at_cell(map_name, x, y) do
+    table_for(:skill_unit_cell_coordinate_index)
+    |> :ets.lookup({map_name, x, y})
+    |> Enum.map(fn {_key, cell_id} -> get_cell(cell_id) end)
+    |> Enum.reject(&is_nil/1)
+  end
+
+  @doc "Returns every cell owned by a group."
+  @spec get_cells_by_group(non_neg_integer()) :: [Cell.t()]
+  def get_cells_by_group(group_id) do
+    table_for(:skill_unit_group_cells_index)
+    |> :ets.lookup(group_id)
+    |> Enum.map(fn {^group_id, cell_id} -> get_cell(cell_id) end)
+    |> Enum.reject(&is_nil/1)
+  end
+
+  @doc "Returns cells in an inclusive square range using the map index."
+  @spec get_cells_in_range(String.t(), integer(), integer(), non_neg_integer()) :: [Cell.t()]
+  def get_cells_in_range(map_name, x, y, range) do
+    indexed_cells_in_range(:skill_unit_cell_map_index, map_name, x, y, range)
+  end
+
+  @doc "Returns visible cells in an inclusive square range using the visible map index."
+  @spec get_visible_cells_in_range(String.t(), integer(), integer(), non_neg_integer()) :: [
+          Cell.t()
+        ]
+  def get_visible_cells_in_range(map_name, x, y, range) do
+    indexed_cells_in_range(:skill_unit_visible_cell_map_index, map_name, x, y, range)
+  end
+
   @doc """
   Deletes a group by `group_id`.
   """
   @spec delete(non_neg_integer()) :: :ok
   def delete(group_id) do
     case get(group_id) do
-      nil -> :ok
-      group -> delete_indexes(group)
+      nil ->
+        :ok
+
+      group ->
+        delete_indexes(group)
+        group.group_id |> get_cells_by_group() |> Enum.each(&delete_cell(&1.cell_id))
     end
 
     :ets.delete(table_for(:skill_units), group_id)
@@ -139,6 +217,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Storage do
         {{group.map_name, x, y}, group.group_id}
       )
     end)
+
+    if group.visible? do
+      Enum.each(group.cells, fn {x, y} ->
+        :ets.insert(
+          table_for(:skill_unit_map_index),
+          {{group.map_name, x, y, group.group_id}, true}
+        )
+      end)
+    end
   end
 
   defp insert_timing_indexes(%Group{} = group) do
@@ -176,6 +263,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Storage do
         table_for(:skill_unit_coordinate_index),
         {{group.map_name, x, y}, group.group_id}
       )
+    end)
+
+    Enum.each(group.cells, fn {x, y} ->
+      :ets.delete(table_for(:skill_unit_map_index), {group.map_name, x, y, group.group_id})
     end)
 
     delete_timing_index(:due, group.next_tick_at, group.group_id)
@@ -238,4 +329,65 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Storage do
 
   defp timing_table(:due), do: :skill_unit_due_index
   defp timing_table(:expiry), do: :skill_unit_expiry_index
+
+  defp store_cell(%Cell{} = cell) do
+    :ets.insert(table_for(:skill_unit_cells), {cell.cell_id, cell})
+
+    :ets.insert(
+      table_for(:skill_unit_cell_coordinate_index),
+      {{cell.map_name, cell.x, cell.y}, cell.cell_id}
+    )
+
+    :ets.insert(table_for(:skill_unit_group_cells_index), {cell.group_id, cell.cell_id})
+
+    :ets.insert(
+      table_for(:skill_unit_cell_map_index),
+      {{cell.map_name, cell.x, cell.y, cell.cell_id}, true}
+    )
+
+    if Cell.flag?(cell, :visible) do
+      :ets.insert(
+        table_for(:skill_unit_visible_cell_map_index),
+        {{cell.map_name, cell.x, cell.y, cell.cell_id}, true}
+      )
+    end
+
+    :ok
+  end
+
+  defp delete_cell_indexes(%Cell{} = cell) do
+    :ets.delete_object(
+      table_for(:skill_unit_cell_coordinate_index),
+      {{cell.map_name, cell.x, cell.y}, cell.cell_id}
+    )
+
+    :ets.delete_object(table_for(:skill_unit_group_cells_index), {cell.group_id, cell.cell_id})
+
+    :ets.delete(
+      table_for(:skill_unit_cell_map_index),
+      {cell.map_name, cell.x, cell.y, cell.cell_id}
+    )
+
+    :ets.delete(
+      table_for(:skill_unit_visible_cell_map_index),
+      {cell.map_name, cell.x, cell.y, cell.cell_id}
+    )
+
+    :ok
+  end
+
+  defp indexed_cells_in_range(table, map_name, x, y, range) do
+    keys =
+      :ets.select(table_for(table), [
+        {{{map_name, :"$1", :"$2", :"$3"}, :_},
+         [
+           {:>=, :"$1", x - range},
+           {:"=<", :"$1", x + range},
+           {:>=, :"$2", y - range},
+           {:"=<", :"$2", y + range}
+         ], [:"$3"]}
+      ])
+
+    keys |> Enum.map(&get_cell/1) |> Enum.reject(&is_nil/1)
+  end
 end
