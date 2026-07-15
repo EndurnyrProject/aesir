@@ -96,6 +96,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
     Skills.WzFirepillar,
     Skills.WzFrostnova,
     Skills.WzHeavendrive,
+    Skills.WzIcewall,
     Skills.WzJupitel,
     Skills.WzMeteor,
     Skills.WzQuagmire,

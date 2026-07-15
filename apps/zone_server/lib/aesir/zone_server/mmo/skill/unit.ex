@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -38,7 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
          {:ok, definition} <- skill_definition(skill_name) do
       group = build_group(caster_state, definition.id, skill_name, level, {x, y})
       {:ok, placement} = module.on_place(group)
-      register_placement(group, caster_state.map_name, placement)
+      register_placement(group, caster_state, placement)
     end
   end
 
@@ -109,31 +110,38 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
     }
   end
 
-  defp accepted_cells(map_name, cells) do
+  defp accepted_cells(map_name, cells, origin, path_check?) do
     case MapCache.get(map_name) do
       {:ok, %{xs: width, ys: height}} ->
-        Enum.filter(cells, fn {x, y} -> x >= 0 and x < width and y >= 0 and y < height end)
+        Enum.filter(cells, fn {x, y} = cell ->
+          x >= 0 and x < width and y >= 0 and y < height and
+            (not path_check? or reachable?(map_name, origin, cell))
+        end)
 
       {:error, :not_found} ->
         []
     end
   end
 
-  defp register_placement(group, map_name, placement) do
-    case accepted_cells(map_name, placement.cells) do
+  defp register_placement(%Group{} = group, %PlayerState{} = caster_state, placement) do
+    map_name = caster_state.map_name
+    origin = {caster_state.x, caster_state.y}
+
+    case accepted_cells(map_name, placement.cells, origin, Map.get(placement, :path_check, false)) do
       [] ->
         {:error, :no_walkable_cells}
 
       cells ->
         now = System.monotonic_time(:millisecond)
         initial_delay = Map.get(placement, :initial_delay, placement.interval)
+        state = placement_state(placement)
 
         group = %{
           group
           | cells: cells,
             created_at: now,
             visible?: true,
-            state: placement.state,
+            state: state,
             interval: placement.interval,
             lifecycle_policy: Map.get(placement, :lifecycle_policy, group.lifecycle_policy),
             next_tick_at: now + initial_delay,
@@ -150,6 +158,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
         end
     end
   end
+
+  defp reachable?(map_name, origin, cell) do
+    with {:ok, map_data} <- MapCache.get(map_name),
+         {:ok, _path} <- Pathfinding.find_path(map_data, origin, cell) do
+      true
+    else
+      _ -> false
+    end
+  end
+
+  defp placement_state(%{cell_attrs: cell_attrs, state: state}),
+    do: Map.put(state, :cell_attrs, cell_attrs)
+
+  defp placement_state(%{state: state}), do: state
 
   defp broadcast_groundskill(%Group{center: {x, y}} = group) do
     packet = %GroundSkill{

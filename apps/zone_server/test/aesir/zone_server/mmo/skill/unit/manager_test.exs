@@ -164,6 +164,42 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
   end
 
   describe "targetable cells" do
+    test "materializes terrain and target indexes from a ground unit's cell attributes and publishes decayed HP in snapshots" do
+      now = 10_000
+      manager = start_manager(now)
+
+      :ok =
+        Manager.register(
+          manager,
+          group(1,
+            visible?: true,
+            next_tick_at: now,
+            interval: 1_000,
+            state: %{
+              cell_decay: 50,
+              cell_attrs: %{
+                {100, 100} => %{
+                  hp: 100,
+                  max_hp: 100,
+                  flags: [:targetable, :blocks_movement, :blocks_projectiles],
+                  state: %{terrain_source: :icewall}
+                }
+              }
+            }
+          )
+        )
+
+      [cell] = Storage.get_cells_by_group(1)
+      assert MapCell.dynamically_blocked?("prontera", 100, 100)
+      assert {:ok, {_module, ^cell, ^manager}} = UnitRegistry.get_unit(:skill_unit, cell.cell_id)
+
+      assert :ok = Manager.tick(manager, now)
+      assert %Cell{hp: 50, max_hp: 100} = Storage.get_cell(cell.cell_id)
+
+      assert [%{cells: [%{hp: 50, max_hp: 100}]}] =
+               Manager.snapshot(manager, "prontera", 1).groups
+    end
+
     test "registers a live targetable cell through its manager and removes every index on destruction" do
       manager = start_manager(10_000)
       :ok = Manager.register(manager, group(1, visible?: false, cells: []))

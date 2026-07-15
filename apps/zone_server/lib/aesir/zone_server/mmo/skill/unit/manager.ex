@@ -626,7 +626,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp invoke_interval(module, group, now) do
     case invoke(module, :on_interval, [group, now]) do
       {:ok, {:ok, %Group{group_id: group_id} = updated}} when group_id == group.group_id ->
-        Storage.update(%{updated | next_tick_at: now + updated.interval})
+        update_after_interval(updated, now, module)
 
       {:ok, {:ok, %Group{group_id: group_id}}} ->
         callback_failed(group, :on_interval, {:foreign_group_id, group_id}, module)
@@ -1070,15 +1070,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp materialize_visible_cells(%Group{cells: cells} = group, stored) do
     Enum.reduce_while(cells, {:ok, stored}, fn {x, y}, {:ok, stored} ->
       with {:ok, cell_id} <- Id.allocate(),
+           :ok <- ensure_cell_available(group, x, y),
            {:ok, cell} <-
-             Cell.new(%{
-               cell_id: cell_id,
-               group_id: group.group_id,
-               map_name: group.map_name,
-               x: x,
-               y: y,
-               flags: [:visible]
-             }),
+             Cell.new(
+               %{
+                 cell_id: cell_id,
+                 group_id: group.group_id,
+                 map_name: group.map_name,
+                 x: x,
+                 y: y
+               }
+               |> Map.merge(cell_attrs(group, {x, y}))
+               |> Map.put(:flags, [
+                 :visible | List.wrap(Map.get(cell_attrs(group, {x, y}), :flags))
+               ])
+             ),
            :ok <- Storage.insert_cell(cell),
            :ok <- commit_terrain(cell),
            :ok <- register_target(cell) do
@@ -1097,6 +1103,47 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     group_id |> Storage.get_cells_by_group() |> Enum.each(&remove_cell_indexes/1)
     :ok = Storage.delete(group_id)
   end
+
+  defp update_after_interval(%Group{} = updated, now, module) do
+    updated = %{updated | next_tick_at: now + updated.interval}
+    decay_cells(updated)
+
+    case Storage.get(updated.group_id) do
+      nil ->
+        :ok
+
+      %Group{cell_ids: []} = live when updated.visible? ->
+        cleanup(live, module, :SKILL_UNIT_DESPAWN_REASON_DESTROYED)
+
+      %Group{} = live ->
+        Storage.update(%{updated | cell_ids: live.cell_ids})
+    end
+  end
+
+  defp decay_cells(%Group{state: %{cell_decay: amount}} = group)
+       when is_integer(amount) and amount > 0 do
+    group.cell_ids
+    |> Enum.each(&damage_cell_now(&1, amount, nil, :decay))
+  end
+
+  defp decay_cells(_group), do: :ok
+
+  defp cell_attrs(%Group{state: %{cell_attrs: attrs}}, cell) when is_map(attrs) do
+    Map.get(attrs, cell, %{})
+  end
+
+  defp cell_attrs(_group, _cell), do: %{}
+
+  defp ensure_cell_available(%Group{} = group, x, y) do
+    if ice_wall?(group) and MapCell.ice_wall_overlap?(group.map_name, x, y) do
+      {:error, :ice_wall_overlap}
+    else
+      :ok
+    end
+  end
+
+  defp ice_wall?(%Group{state: %{terrain_source: :icewall}}), do: true
+  defp ice_wall?(_group), do: false
 
   defp remove_replaced_group(group_id) do
     case Storage.get(group_id) do
@@ -1155,7 +1202,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
     case traits do
       [] -> :ok
-      _ -> MapCell.put(cell.map_name, cell.x, cell.y, :skill_unit, cell.cell_id, traits)
+      _ -> MapCell.put(cell.map_name, cell.x, cell.y, terrain_source(cell), cell.cell_id, traits)
     end
   end
 
@@ -1177,7 +1224,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
   end
 
-  defp remove_terrain(%Cell{} = cell), do: MapCell.delete_source(:skill_unit, cell.cell_id)
+  defp remove_terrain(%Cell{} = cell),
+    do: MapCell.delete_source(terrain_source(cell), cell.cell_id)
+
+  defp terrain_source(%Cell{state: %{terrain_source: source}}) when is_atom(source), do: source
+  defp terrain_source(_cell), do: :skill_unit
 
   defp terrain_cell?(cell), do: terrain_traits(cell) != []
 

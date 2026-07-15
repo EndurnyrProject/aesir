@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
   alias Aesir.Net.GroundSkill
   alias Aesir.Net.SkillUnitGroupState
   alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Ground
@@ -15,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skill.Unit.View
+  alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -74,6 +76,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
        %{
          cells: [{-1, -1}, {-1, 0}, {0, -1}, {0, 0}, {0, 1}, {1, 0}, {1, 1}],
          state: %{},
+         interval: 450,
+         duration: 5_000
+       }}
+    end
+
+    @impl Ground
+    def on_interval(group, _now), do: {:ok, group}
+  end
+
+  defmodule PathCheckedUnit do
+    @behaviour Ground
+
+    @impl Ground
+    def on_place(_group) do
+      {:ok,
+       %{
+         cells: [{49, 60}, {50, 60}, {51, 60}],
+         state: %{},
+         path_check: true,
          interval: 450,
          duration: 5_000
        }}
@@ -167,6 +188,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
 
       assert group.next_tick_at >= before
       assert group.next_tick_at < before + @interval
+    end
+
+    test "skips impassable and unreachable PathCheck cells" do
+      stub(Catalog, :ground_module_for, fn @skill_name -> {:ok, PathCheckedUnit} end)
+      stub(Broadcast, :to_in_range, fn _, _, _, _, _ -> :ok end)
+
+      stub(MapCache, :get, fn "prontera" ->
+        {:ok, %MapData{name: "prontera", xs: 100, ys: 100}}
+      end)
+
+      stub(Pathfinding, :find_path, fn
+        _map, {50, 60}, {50, 60} -> {:ok, []}
+        _map, {50, 60}, _cell -> {:error, :no_path}
+      end)
+
+      assert {:ok, %Group{cells: [{50, 60}]}} = Unit.place(caster(), @skill_name, 1, {50, 60})
     end
 
     test "filters a border layout to in-bounds cells before registering it" do

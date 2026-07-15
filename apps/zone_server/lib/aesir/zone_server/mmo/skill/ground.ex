@@ -35,6 +35,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
   @type placement :: %{
           optional(:lifecycle_policy) => LifecyclePolicy.t(),
           optional(:initial_delay) => non_neg_integer(),
+          optional(:cell_attrs) => %{cell() => map()},
+          optional(:path_check) => boolean(),
           cells: [cell()],
           state: map(),
           interval: pos_integer(),
