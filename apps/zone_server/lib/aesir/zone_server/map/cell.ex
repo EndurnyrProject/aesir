@@ -22,7 +22,8 @@ defmodule Aesir.ZoneServer.Map.Cell do
   @type contribution :: %{
           optional(:blocks_movement) => boolean(),
           optional(:blocks_projectiles) => boolean(),
-          optional(:consumable_water) => non_neg_integer() | {:water_ball, non_neg_integer()}
+          optional(:consumable_water) => non_neg_integer() | {:water_ball, non_neg_integer()},
+          optional(:exclusive) => boolean()
         }
 
   @doc "Adds or replaces one source-owned terrain contribution."
@@ -151,15 +152,12 @@ defmodule Aesir.ZoneServer.Map.Cell do
     end
   end
 
-  @doc "Returns whether another Ice Wall already owns the coordinate."
-  @spec ice_wall_overlap?(String.t(), integer(), integer()) :: boolean()
-  def ice_wall_overlap?(map_name, x, y) do
+  @doc "Returns whether an exclusive terrain contribution owns the coordinate."
+  @spec exclusive_contribution?(String.t(), integer(), integer()) :: boolean()
+  def exclusive_contribution?(map_name, x, y) do
     map_name = canonical_map_name(map_name)
 
-    :ets.match_object(
-      table_for(:dynamic_cell_contributions),
-      {{map_name, x, y, :icewall, :_}, :_}
-    ) != []
+    Enum.any?(contributions(map_name, x, y), &Map.get(&1, :exclusive, false))
   end
 
   defp contributions(map_name, x, y) do
@@ -244,10 +242,11 @@ defmodule Aesir.ZoneServer.Map.Cell do
   end
 
   defp validate_contribution!(contribution) do
-    unless Map.keys(contribution) -- [:blocks_movement, :blocks_projectiles, :consumable_water] ==
-             [] and
+    unless Map.keys(contribution) --
+             [:blocks_movement, :blocks_projectiles, :consumable_water, :exclusive] == [] and
              is_boolean(Map.get(contribution, :blocks_movement, false)) and
              is_boolean(Map.get(contribution, :blocks_projectiles, false)) and
+             is_boolean(Map.get(contribution, :exclusive, false)) and
              valid_consumable_water?(Map.get(contribution, :consumable_water)) do
       raise ArgumentError, "invalid dynamic terrain contribution"
     end

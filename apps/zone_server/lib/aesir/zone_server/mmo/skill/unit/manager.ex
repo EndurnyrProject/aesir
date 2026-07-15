@@ -976,15 +976,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp cell_attrs(_group, _cell), do: %{}
 
   defp ensure_cell_available(%Group{} = group, x, y) do
-    if ice_wall?(group) and MapCell.ice_wall_overlap?(group.map_name, x, y) do
-      {:error, :ice_wall_overlap}
+    if exclusive_terrain?(group) and MapCell.exclusive_contribution?(group.map_name, x, y) do
+      {:error, :exclusive_terrain_overlap}
     else
       :ok
     end
   end
 
-  defp ice_wall?(%Group{state: %{terrain_source: :icewall}}), do: true
-  defp ice_wall?(_group), do: false
+  defp exclusive_terrain?(%Group{state: %{exclusive_terrain: true}}), do: true
+  defp exclusive_terrain?(_group), do: false
 
   defp remove_replaced_group(group_id) do
     case Storage.get(group_id) do
@@ -1077,6 +1077,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     []
     |> maybe_put(:blocks_movement, Cell.flag?(cell, :blocks_movement))
     |> maybe_put(:blocks_projectiles, Cell.flag?(cell, :blocks_projectiles))
+    |> maybe_put(:exclusive, exclusive_terrain_cell?(cell))
     |> maybe_put(
       :consumable_water,
       Cell.flag?(cell, :consumable_water),
@@ -1088,6 +1089,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     do: {:water_ball, cell_id}
 
   defp consumable_water_source(%Cell{cell_id: cell_id}), do: cell_id
+
+  defp exclusive_terrain_cell?(%Cell{state: %{exclusive_terrain: true}}), do: true
+  defp exclusive_terrain_cell?(_cell), do: false
 
   defp maybe_put(traits, _key, false), do: traits
   defp maybe_put(traits, key, true), do: Keyword.put(traits, key, true)

@@ -118,6 +118,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       :failing_unit -> {:ok, FailingUnit}
       :foreign_id_unit -> {:ok, ForeignIdUnit}
       :water_ball_sequence -> {:ok, WaterBallSequenceUnit}
+      :other_exclusive_unit -> {:ok, FakeUnit}
+      :barrier_unit -> {:ok, FakeUnit}
     end)
 
     :ok
@@ -182,7 +184,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                   hp: 100,
                   max_hp: 100,
                   flags: [:targetable, :blocks_movement, :blocks_projectiles],
-                  state: %{terrain_source: :icewall}
+                  state: %{exclusive_terrain: true}
                 }
               }
             }
@@ -249,6 +251,54 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       assert {:error, :not_found} = UnitRegistry.get_unit(:skill_unit, cell.cell_id)
       assert {:error, :not_found} = SpatialIndex.get_unit_position(:skill_unit, cell.cell_id)
       assert {:error, :not_targetable} = Manager.targetable_cell(manager, cell.cell_id)
+    end
+  end
+
+  describe "exclusive terrain" do
+    test "rejects a synthetic exclusive skill while allowing nonexclusive terrain contributions" do
+      manager = start_manager(10_000)
+
+      exclusive =
+        group(1,
+          visible?: true,
+          state: %{
+            exclusive_terrain: true,
+            cell_attrs: %{
+              {100, 100} => %{
+                flags: [:blocks_movement],
+                state: %{exclusive_terrain: true}
+              }
+            }
+          }
+        )
+
+      other_exclusive =
+        group(2,
+          skill_name: :other_exclusive_unit,
+          visible?: true,
+          state: %{
+            exclusive_terrain: true,
+            cell_attrs: %{
+              {100, 100} => %{
+                flags: [:blocks_projectiles],
+                state: %{exclusive_terrain: true}
+              }
+            }
+          }
+        )
+
+      nonexclusive =
+        group(3,
+          skill_name: :barrier_unit,
+          visible?: true,
+          state: %{cell_attrs: %{{100, 100} => %{flags: [:blocks_projectiles]}}}
+        )
+
+      assert :ok = Manager.register(manager, exclusive)
+      assert {:error, :exclusive_terrain_overlap} = Manager.register(manager, other_exclusive)
+      assert :ok = Manager.register(manager, nonexclusive)
+      assert MapCell.dynamically_blocked?("prontera", 100, 100)
+      assert MapCell.blocks_projectiles?("prontera", 100, 100)
     end
   end
 

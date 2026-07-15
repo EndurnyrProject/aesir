@@ -64,12 +64,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzIcewallTest do
     assert placement.interval == 1_000
     assert placement.duration == 16_000
     assert placement.path_check
-    assert placement.state == %{cell_decay: 50, terrain_source: :icewall}
+    assert placement.state == %{cell_decay: 50, exclusive_terrain: true}
 
     assert Enum.all?(placement.cell_attrs, fn {_cell, attrs} ->
              attrs.hp == 800 and attrs.max_hp == 800 and
                attrs.flags == [:targetable, :blocks_movement, :blocks_projectiles] and
-               attrs.state == %{terrain_source: :icewall}
+               attrs.state == %{exclusive_terrain: true}
            end)
   end
 

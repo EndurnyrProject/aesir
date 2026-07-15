@@ -251,7 +251,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
           hp: 400,
           max_hp: 400,
           flags: [:targetable, :blocks_movement, :blocks_projectiles],
-          state: %{terrain_source: :icewall}
+          state: %{exclusive_terrain: true}
         })
 
       cell_id = cell.cell_id

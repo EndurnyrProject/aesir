@@ -47,10 +47,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzIcewall do
               hp: hp,
               max_hp: hp,
               flags: [:targetable, :blocks_movement, :blocks_projectiles],
-              state: %{terrain_source: :icewall}
+              state: %{exclusive_terrain: true}
             }}
          end),
-       state: %{cell_decay: @cell_decay, terrain_source: :icewall},
+       state: %{cell_decay: @cell_decay, exclusive_terrain: true},
        path_check: true,
        interval: definition.hit_interval,
        duration: Enum.at(definition.unit_duration, level - 1)

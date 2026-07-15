@@ -63,14 +63,14 @@ defmodule Aesir.ZoneServer.Map.CellTest do
   end
 
   test "merges independent source contributions and restores exact base terrain", %{map: map} do
-    :ok = Cell.put("cell_test", 0, 0, :icewall, 1, blocks_movement: true)
+    :ok = Cell.put("cell_test", 0, 0, :wall, 1, blocks_movement: true)
     :ok = Cell.put("cell_test", 0, 0, :barrier, 2, blocks_projectiles: true)
 
     refute Cell.traversable?("cell_test", 0, 0)
     assert Cell.blocks_projectiles?("cell_test", 0, 0)
     assert Cell.placeable?("cell_test", 0, 0)
 
-    :ok = Cell.delete("cell_test", 0, 0, :icewall, 1)
+    :ok = Cell.delete("cell_test", 0, 0, :wall, 1)
     assert Cell.traversable?("cell_test", 0, 0)
     assert Cell.blocks_projectiles?("cell_test", 0, 0)
 
@@ -101,12 +101,12 @@ defmodule Aesir.ZoneServer.Map.CellTest do
              Cell.water_source("cell_test", 0, 1)
   end
 
-  test "detects only Ice Wall overlap" do
+  test "detects exclusive terrain contributions through the coordinate index" do
     :ok = Cell.put("cell_test", 0, 0, :barrier, 1, blocks_movement: true)
-    refute Cell.ice_wall_overlap?("cell_test", 0, 0)
+    refute Cell.exclusive_contribution?("cell_test", 0, 0)
 
-    :ok = Cell.put("cell_test", 0, 0, :icewall, 2, blocks_movement: true)
-    assert Cell.ice_wall_overlap?("cell_test", 0, 0)
+    :ok = Cell.put("cell_test", 0, 0, :wall, 2, blocks_movement: true, exclusive: true)
+    assert Cell.exclusive_contribution?("cell_test", 0, 0)
   end
 
   test "canonicalizes .gat aliases for contributions and lookups" do
@@ -187,15 +187,15 @@ defmodule Aesir.ZoneServer.Map.CellTest do
   end
 
   test "indexes contributions by coordinate without duplicating replacements" do
-    :ok = Cell.put("cell_test", 0, 0, :icewall, 1, blocks_movement: true)
+    :ok = Cell.put("cell_test", 0, 0, :wall, 1, blocks_movement: true)
     :ok = Cell.put("cell_test", 0, 0, :barrier, 2, blocks_projectiles: true)
-    :ok = Cell.put("cell_test", 0, 0, :icewall, 1, blocks_projectiles: true)
+    :ok = Cell.put("cell_test", 0, 0, :wall, 1, blocks_projectiles: true)
 
     coordinate_index = EtsTable.table_for(:dynamic_cell_coordinate_index)
 
     assert :ets.lookup(coordinate_index, {"cell_test", 0, 0}) |> Enum.sort() == [
              {{"cell_test", 0, 0}, {"cell_test", 0, 0, :barrier, 2}},
-             {{"cell_test", 0, 0}, {"cell_test", 0, 0, :icewall, 1}}
+             {{"cell_test", 0, 0}, {"cell_test", 0, 0, :wall, 1}}
            ]
 
     assert Cell.traversable?("cell_test", 0, 0)
@@ -205,7 +205,7 @@ defmodule Aesir.ZoneServer.Map.CellTest do
   test "removes coordinate index entries through every contribution cleanup path" do
     :ok = Cell.put("cell_test", 0, 0, :skill_unit, 1, blocks_movement: true)
     :ok = Cell.put("cell_test", 1, 0, :skill_unit, 1, blocks_projectiles: true)
-    :ok = Cell.put("cell_test", 2, 0, :icewall, 2, blocks_movement: true)
+    :ok = Cell.put("cell_test", 2, 0, :wall, 2, blocks_movement: true)
 
     coordinate_index = EtsTable.table_for(:dynamic_cell_coordinate_index)
     source_index = EtsTable.table_for(:dynamic_cell_source_index)
@@ -226,10 +226,10 @@ defmodule Aesir.ZoneServer.Map.CellTest do
     assert [] == :ets.lookup(source_index, {:skill_unit, 1})
     assert [] == :ets.lookup(contribution_index, {"cell_test", 1, 0, :skill_unit, 1})
 
-    :ok = Cell.prune_source_kind(:icewall, [])
+    :ok = Cell.prune_source_kind(:wall, [])
     assert [] == :ets.lookup(coordinate_index, {"cell_test", 2, 0})
-    assert [] == :ets.lookup(source_index, {:icewall, 2})
-    assert [] == :ets.lookup(contribution_index, {"cell_test", 2, 0, :icewall, 2})
+    assert [] == :ets.lookup(source_index, {:wall, 2})
+    assert [] == :ets.lookup(contribution_index, {"cell_test", 2, 0, :wall, 2})
 
     :ok = Cell.put("cell_test", 0, 0, :barrier, 3, blocks_projectiles: true)
     :ok = Cell.clear()
