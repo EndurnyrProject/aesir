@@ -11,6 +11,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   require Logger
 
+  alias Aesir.Commons.Utils.ServerTick
+  alias Aesir.Net.SkillUnitDespawn
+  alias Aesir.Net.SkillUnitSpawn
+  alias Aesir.Net.SkillUnitUpdate
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.Cell, as: MapCell
   alias Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -19,6 +24,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Id
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.View
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Lifecycle.Event
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -43,11 +50,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   @doc "Registers a fully prepared group before its placement is published."
-  @spec register(Group.t()) :: :ok
+  @spec register(Group.t()) :: :ok | {:error, term()}
   def register(%Group{} = group), do: register(default_server(), group)
 
   @doc false
-  @spec register(server(), Group.t()) :: :ok
+  @spec register(server(), Group.t()) :: :ok | {:error, term()}
   def register(server, %Group{} = group), do: GenServer.call(server, {:register, group})
 
   @doc "Merges skill-owned state into a live group without resurrecting a deleted one."
@@ -92,21 +99,53 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
           {:ok, Cell.t()} | {:destroyed, Cell.t()} | {:error, term()}
   def damage_cell(cell_id, amount), do: damage_cell(default_server(), cell_id, amount)
 
+  @doc "Applies damage and records the actor that caused it."
+  @spec damage_cell(non_neg_integer(), pos_integer(), mover()) ::
+          {:ok, Cell.t()} | {:destroyed, Cell.t()} | {:error, term()}
+  def damage_cell(cell_id, amount, source) when is_integer(cell_id),
+    do: damage_cell(default_server(), cell_id, amount, source)
+
   @doc false
   @spec damage_cell(server(), non_neg_integer(), pos_integer()) ::
           {:ok, Cell.t()} | {:destroyed, Cell.t()} | {:error, term()}
   def damage_cell(server, cell_id, amount),
     do: GenServer.call(server, {:damage_cell, cell_id, amount})
 
+  @doc false
+  @spec damage_cell(server(), non_neg_integer(), pos_integer(), mover()) ::
+          {:ok, Cell.t()} | {:destroyed, Cell.t()} | {:error, term()}
+  def damage_cell(server, cell_id, amount, source),
+    do: GenServer.call(server, {:damage_cell, cell_id, amount, source, :damage})
+
   @doc "Applies natural decay through the same serialized damage operation."
   @spec decay_cell(non_neg_integer(), pos_integer()) ::
           {:ok, Cell.t()} | {:destroyed, Cell.t()} | {:error, term()}
-  def decay_cell(cell_id, amount), do: damage_cell(cell_id, amount)
+  def decay_cell(cell_id, amount),
+    do: GenServer.call(default_server(), {:damage_cell, cell_id, amount, nil, :decay})
 
   @doc false
   @spec decay_cell(server(), non_neg_integer(), pos_integer()) ::
           {:ok, Cell.t()} | {:destroyed, Cell.t()} | {:error, term()}
-  def decay_cell(server, cell_id, amount), do: damage_cell(server, cell_id, amount)
+  def decay_cell(server, cell_id, amount),
+    do: GenServer.call(server, {:damage_cell, cell_id, amount, nil, :decay})
+
+  @doc "Builds the complete visible skill-unit snapshot for one map."
+  @spec snapshot(String.t(), non_neg_integer()) :: Aesir.Net.SkillUnitSnapshot.t()
+  def snapshot(map_name, server_tick), do: snapshot(default_server(), map_name, server_tick)
+
+  @doc false
+  @spec snapshot(server(), String.t(), non_neg_integer()) :: Aesir.Net.SkillUnitSnapshot.t()
+  def snapshot(server, map_name, server_tick),
+    do: GenServer.call(server, {:snapshot, map_name, server_tick})
+
+  @doc "Returns visible groups whose footprints intersect a square range."
+  @spec in_range(String.t(), integer(), integer(), non_neg_integer()) :: [Group.t()]
+  def in_range(map_name, x, y, range), do: in_range(default_server(), map_name, x, y, range)
+
+  @doc false
+  @spec in_range(server(), String.t(), integer(), integer(), non_neg_integer()) :: [Group.t()]
+  def in_range(server, map_name, x, y, range),
+    do: GenServer.call(server, {:in_range, map_name, x, y, range})
 
   @doc "Claims a consumable source cell exactly once."
   @spec claim_cell(non_neg_integer()) :: {:ok, Cell.t()} | {:error, :not_claimable | :not_found}
@@ -175,9 +214,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   @impl true
   def handle_call({:register, group}, _from, state) do
-    result = Storage.insert(group)
-    reconcile_group(group)
-    {:reply, result, state}
+    case register_group(group) do
+      {:ok, group} ->
+        reconcile_group(group)
+        publish_spawn(group)
+        {:reply, :ok, state}
+
+      {:error, _reason} = error ->
+        {:reply, error, state}
+    end
   end
 
   def handle_call({:update_state, group_id, new_state}, _from, state) do
@@ -193,7 +238,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   def handle_call({:destroy, group_id}, _from, state) do
-    if group = Storage.get(group_id), do: cleanup(group)
+    if group = Storage.get(group_id), do: cleanup(group, nil, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
     {:reply, :ok, state}
   end
 
@@ -234,8 +279,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   def handle_call({:damage_cell, cell_id, amount}, _from, state) do
-    result = damage_cell_now(cell_id, amount)
+    result = damage_cell_now(cell_id, amount, nil, :damage)
     {:reply, result, state}
+  end
+
+  def handle_call({:damage_cell, cell_id, amount, source, reason}, _from, state) do
+    result = damage_cell_now(cell_id, amount, source, reason)
+    {:reply, result, state}
+  end
+
+  def handle_call({:snapshot, map_name, server_tick}, _from, state) do
+    groups =
+      Storage.all()
+      |> Enum.filter(&(&1.map_name == map_name and &1.visible?))
+      |> Enum.map(&{&1, Storage.get_cells_by_group(&1.group_id)})
+
+    {:reply, View.snapshot(groups, server_tick), state}
+  end
+
+  def handle_call({:in_range, map_name, x, y, range}, _from, state) do
+    {:reply, Storage.get_visible_groups_in_range(map_name, x, y, range), state}
   end
 
   def handle_call({:claim_cell, cell_id}, _from, state) do
@@ -244,6 +307,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
         %Cell{} = cell ->
           if Cell.flag?(cell, :consumable_water) do
             :ok = remove_cell(cell)
+            publish_despawn(cell, :SKILL_UNIT_DESPAWN_REASON_SOURCE_CONSUMED)
             {:ok, cell}
           else
             {:error, :not_claimable}
@@ -257,7 +321,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   def handle_call({:destroy_cell, cell_id}, _from, state) do
-    if cell = Storage.get_cell(cell_id), do: remove_cell(cell)
+    if cell = Storage.get_cell(cell_id) do
+      :ok = remove_cell(cell)
+      publish_despawn(cell, :SKILL_UNIT_DESPAWN_REASON_DESTROYED)
+    end
+
     {:reply, :ok, state}
   end
 
@@ -323,7 +391,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp apply_lifecycle_policy(%Group{lifecycle_policy: policy} = group, relation) do
     case Map.fetch!(policy, policy_field(relation)) do
-      :expire -> cleanup(group)
+      :expire -> cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_LIFECYCLE)
       :persist_inert -> persist_inert(group)
       _action -> :ok
     end
@@ -345,7 +413,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
     case lifecycle_action(group, unit_available?) do
       :continue -> run_interval_callback(group, now)
-      :expire -> cleanup(group)
+      :expire -> cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_LIFECYCLE)
       :skip_action -> Storage.update(%{group | next_tick_at: now + group.interval})
       :persist_inert -> persist_inert(group)
     end
@@ -535,10 +603,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
         :error -> nil
       end
 
-    cleanup(group, module)
+    cleanup(group, module, :SKILL_UNIT_DESPAWN_REASON_EXPIRED)
   end
 
-  defp cleanup(%Group{group_id: group_id} = group, module) do
+  defp cleanup_with_reason(%Group{} = group, despawn_reason) do
+    module =
+      case handler_for(group) do
+        {:ok, handler} -> handler
+        :error -> nil
+      end
+
+    cleanup(group, module, despawn_reason)
+  end
+
+  defp cleanup(%Group{} = group, module) do
+    cleanup(group, module, :SKILL_UNIT_DESPAWN_REASON_EXPIRED)
+  end
+
+  defp cleanup(%Group{group_id: group_id} = group, module, despawn_reason) do
     FieldSupport.release_group(group_id)
     group_id |> Storage.get_cells_by_group() |> Enum.each(&remove_terrain/1)
 
@@ -551,12 +633,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
 
     Storage.delete(group_id)
+    publish_group_despawn(group, despawn_reason)
   end
 
-  defp damage_cell_now(_cell_id, amount) when not is_integer(amount) or amount <= 0,
-    do: {:error, :invalid_damage}
+  defp damage_cell_now(_cell_id, amount, _source, _reason)
+       when not is_integer(amount) or amount <= 0,
+       do: {:error, :invalid_damage}
 
-  defp damage_cell_now(cell_id, amount) do
+  defp damage_cell_now(cell_id, amount, nil, reason),
+    do: damage_cell_now_valid(cell_id, amount, nil, reason)
+
+  defp damage_cell_now(cell_id, amount, {source_type, source_id} = source, reason)
+       when source_type in [:player, :mob, :npc] and is_integer(source_id) and source_id >= 0 do
+    damage_cell_now_valid(cell_id, amount, source, reason)
+  end
+
+  defp damage_cell_now(_cell_id, _amount, _source, _reason), do: {:error, :invalid_source}
+
+  defp damage_cell_now_valid(cell_id, amount, source, reason) do
     case Storage.get_cell(cell_id) do
       nil ->
         {:error, :not_found}
@@ -567,10 +661,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       %Cell{hp: hp} = cell when amount < hp ->
         updated = %{cell | hp: hp - amount}
         :ok = Storage.update_cell(updated)
+        publish_update(updated, -amount, source, reason)
         {:ok, updated}
 
-      %Cell{} = cell ->
+      %Cell{hp: hp} = cell ->
+        updated = %{cell | hp: 0}
         :ok = remove_cell(cell)
+        publish_update(updated, -hp, source, reason)
+        publish_despawn(cell, :SKILL_UNIT_DESPAWN_REASON_DESTROYED)
         {:destroyed, cell}
     end
   end
@@ -604,6 +702,138 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       %Group{} = group ->
         remaining = List.delete(group.cell_ids, cell.cell_id)
         :ok = Storage.update(%{group | cell_ids: remaining})
+    end
+  end
+
+  defp publish_spawn(%Group{visible?: false}), do: :ok
+
+  defp publish_spawn(%Group{} = group) do
+    packet = %SkillUnitSpawn{group: View.group(group, Storage.get_cells_by_group(group.group_id))}
+    publish(group.map_name, elem(group.center, 0), elem(group.center, 1), packet)
+  end
+
+  defp publish_update(%Cell{} = cell, hp_delta, source, reason) do
+    case Storage.get(cell.group_id) do
+      %Group{visible?: true} = group ->
+        {source_type, source_id} = source_fields(source)
+
+        packet = %SkillUnitUpdate{
+          group_id: group.group_id,
+          cell_id: cell.cell_id,
+          hp: cell.hp,
+          max_hp: cell.max_hp,
+          hp_delta: hp_delta,
+          source_type: source_type,
+          source_id: source_id,
+          reason: update_reason(reason),
+          server_tick: ServerTick.now()
+        }
+
+        publish(cell.map_name, cell.x, cell.y, packet)
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp publish_despawn(%Cell{} = cell, reason) do
+    case Storage.get(cell.group_id) do
+      %Group{visible?: true} ->
+        publish(cell.map_name, cell.x, cell.y, %SkillUnitDespawn{
+          group_id: cell.group_id,
+          cell_ids: [cell.cell_id],
+          reason: reason,
+          server_tick: ServerTick.now()
+        })
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp publish_group_despawn(%Group{visible?: false}, _reason), do: :ok
+
+  defp publish_group_despawn(%Group{} = group, reason) do
+    publish(group.map_name, elem(group.center, 0), elem(group.center, 1), %SkillUnitDespawn{
+      group_id: group.group_id,
+      cell_ids: Enum.sort(group.cell_ids),
+      reason: reason,
+      server_tick: ServerTick.now()
+    })
+  end
+
+  defp publish(map_name, x, y, packet),
+    do: Broadcast.to_in_range(map_name, x, y, Config.view_range(), packet)
+
+  defp source_fields({:player, source_id}), do: {:SKILL_UNIT_OWNER_TYPE_PLAYER, source_id}
+  defp source_fields({:mob, source_id}), do: {:SKILL_UNIT_OWNER_TYPE_MOB, source_id}
+  defp source_fields({:npc, source_id}), do: {:SKILL_UNIT_OWNER_TYPE_NPC, source_id}
+  defp source_fields(nil), do: {:SKILL_UNIT_OWNER_TYPE_UNSPECIFIED, 0}
+  defp update_reason(:damage), do: :SKILL_UNIT_UPDATE_REASON_DAMAGE
+  defp update_reason(:decay), do: :SKILL_UNIT_UPDATE_REASON_DECAY
+
+  defp register_group(%Group{visible?: false} = group) do
+    :ok = remove_replaced_group(group.group_id)
+    :ok = Storage.insert(group)
+    {:ok, group}
+  end
+
+  defp register_group(%Group{} = group) do
+    group = %{group | cell_ids: []}
+    :ok = remove_replaced_group(group.group_id)
+    :ok = Storage.insert(group)
+
+    case materialize_visible_cells(group, []) do
+      {:ok, cells} ->
+        group = %{group | cell_ids: Enum.map(cells, & &1.cell_id)}
+        :ok = Storage.update(group)
+        {:ok, group}
+
+      {:error, _reason} = error ->
+        rollback_visible_cells(group.group_id)
+        error
+    end
+  end
+
+  defp materialize_visible_cells(%Group{cells: cells} = group, stored) do
+    Enum.reduce_while(cells, {:ok, stored}, fn {x, y}, {:ok, stored} ->
+      with {:ok, cell_id} <- Id.allocate(),
+           {:ok, cell} <-
+             Cell.new(%{
+               cell_id: cell_id,
+               group_id: group.group_id,
+               map_name: group.map_name,
+               x: x,
+               y: y,
+               flags: [:visible]
+             }),
+           :ok <- Storage.insert_cell(cell),
+           :ok <- commit_terrain(cell) do
+        {:cont, {:ok, [cell | stored]}}
+      else
+        {:error, _reason} = error -> {:halt, error}
+      end
+    end)
+    |> case do
+      {:ok, stored} -> {:ok, Enum.reverse(stored)}
+      error -> error
+    end
+  end
+
+  defp rollback_visible_cells(group_id) do
+    group_id |> Storage.get_cells_by_group() |> Enum.each(&remove_terrain/1)
+    :ok = Storage.delete(group_id)
+  end
+
+  defp remove_replaced_group(group_id) do
+    case Storage.get(group_id) do
+      nil ->
+        :ok
+
+      _group ->
+        :ok = FieldSupport.release_group(group_id)
+        group_id |> Storage.get_cells_by_group() |> Enum.each(&remove_terrain/1)
+        Storage.delete(group_id)
     end
   end
 

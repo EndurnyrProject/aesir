@@ -10,10 +10,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
 
   setup :setup_ets_tables
@@ -125,6 +127,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       )
 
     allow(Catalog, self(), manager)
+    allow(Broadcast, self(), manager)
     manager
   end
 
@@ -571,6 +574,164 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
     assert :ok = Manager.destroy(manager, 1)
     assert [] == Storage.get_cells_by_group(1)
+  end
+
+  test "publishes committed visible HP state and removal with authoritative metadata" do
+    test_pid = self()
+
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+      case packet do
+        %Aesir.Net.SkillUnitUpdate{cell_id: cell_id, hp: 60} ->
+          assert %Cell{hp: 60} = Storage.get_cell(cell_id)
+
+        %Aesir.Net.SkillUnitUpdate{cell_id: cell_id, hp: 0} ->
+          assert nil == Storage.get_cell(cell_id)
+          refute cell_id in Storage.get(1).cell_ids
+
+        %Aesir.Net.SkillUnitDespawn{cell_ids: [cell_id]} ->
+          assert nil == Storage.get_cell(cell_id)
+          refute cell_id in Storage.get(1).cell_ids
+
+        _ ->
+          :ok
+      end
+
+      send(test_pid, packet)
+    end)
+
+    manager = start_manager(10_000)
+
+    :ok =
+      Manager.register(
+        manager,
+        group(1, visible?: true, cells: [], cell_ids: [], created_at: 10_000)
+      )
+
+    assert_receive %Aesir.Net.SkillUnitSpawn{group: %{group_id: 1, cells: []}}
+
+    assert {:ok, wall} =
+             Manager.create_cell(manager, 1, %{
+               x: 100,
+               y: 100,
+               hp: 100,
+               max_hp: 100,
+               flags: [:visible]
+             })
+
+    assert {:ok, _} = Manager.damage_cell(manager, wall.cell_id, 40, {:player, 99})
+    wall_id = wall.cell_id
+
+    assert_receive %Aesir.Net.SkillUnitUpdate{
+      group_id: 1,
+      cell_id: ^wall_id,
+      hp: 60,
+      max_hp: 100,
+      hp_delta: -40,
+      source_type: :SKILL_UNIT_OWNER_TYPE_PLAYER,
+      source_id: 99,
+      reason: :SKILL_UNIT_UPDATE_REASON_DAMAGE,
+      server_tick: server_tick
+    }
+
+    assert is_integer(server_tick)
+    assert {:destroyed, _} = Manager.decay_cell(manager, wall.cell_id, 60)
+
+    assert_receive %Aesir.Net.SkillUnitUpdate{
+      cell_id: ^wall_id,
+      hp: 0,
+      hp_delta: -60,
+      source_type: :SKILL_UNIT_OWNER_TYPE_UNSPECIFIED,
+      source_id: 0,
+      reason: :SKILL_UNIT_UPDATE_REASON_DECAY
+    }
+
+    assert_receive %Aesir.Net.SkillUnitDespawn{
+      group_id: 1,
+      cell_ids: [^wall_id],
+      reason: :SKILL_UNIT_DESPAWN_REASON_DESTROYED
+    }
+  end
+
+  test "builds complete snapshots and range results from visible groups only" do
+    manager = start_manager(10_000)
+    visible = group(1, visible?: true, cells: [{100, 100}], cell_ids: [], created_at: 10_000)
+    later_visible = group(3, visible?: true, cells: [{100, 100}], created_at: 10_000)
+    invisible = group(2, visible?: false, cells: [{100, 100}])
+    Enum.each([later_visible, visible, invisible], &Manager.register(manager, &1))
+
+    [cell] = Storage.get_cells_by_group(1)
+    [later_cell] = Storage.get_cells_by_group(3)
+
+    assert %Aesir.Net.SkillUnitSnapshot{
+             server_tick: 123,
+             groups: [
+               %{group_id: 1, cells: [%{cell_id: cell_id}]},
+               %{group_id: 3, cells: [%{cell_id: later_cell_id}]}
+             ]
+           } =
+             Manager.snapshot(manager, "prontera", 123)
+
+    assert cell_id == cell.cell_id
+    assert later_cell_id == later_cell.cell_id
+
+    assert [%Group{group_id: 1}, %Group{group_id: 3}] =
+             Manager.in_range(manager, "prontera", 100, 100, 0)
+  end
+
+  test "leaves explicitly invisible group-only fields unmaterialized" do
+    manager = start_manager(10_000)
+    invisible = group(1, visible?: false, cells: [{100, 100}], created_at: 10_000)
+
+    assert :ok = Manager.register(manager, invisible)
+    assert [] == Storage.get_cells_by_group(1)
+    assert %Group{cell_ids: []} = Storage.get(1)
+    assert %Aesir.Net.SkillUnitSnapshot{groups: []} = Manager.snapshot(manager, "prontera", 123)
+    assert [] == Manager.in_range(manager, "prontera", 100, 100, 0)
+  end
+
+  test "re-registering a visible group replaces every owned cell and index" do
+    manager = start_manager(10_000)
+
+    original =
+      group(1,
+        visible?: true,
+        cells: [{100, 100}, {101, 100}],
+        created_at: 10_000
+      )
+
+    replacement =
+      group(1,
+        visible?: true,
+        cells: [{102, 100}],
+        created_at: 10_000
+      )
+
+    assert :ok = Manager.register(manager, original)
+    assert :ok = Manager.register(manager, replacement)
+
+    assert [%Cell{x: 102, y: 100}] = Storage.get_cells_by_group(1)
+    assert [] == Storage.get_cells_at_cell("prontera", 100, 100)
+    assert [] == Storage.get_cells_at_cell("prontera", 101, 100)
+
+    assert %Aesir.Net.SkillUnitSnapshot{groups: [%{group_id: 1, cells: [%{x: 102, y: 100}]}]} =
+             Manager.snapshot(manager, "prontera", 123)
+  end
+
+  test "re-registering releases field support owned by the replaced group" do
+    manager = start_manager(10_000)
+    original = group(1, visible?: false, cells: [{100, 100}])
+    replacement = group(1, visible?: false, cells: [{101, 100}])
+
+    assert :ok = Manager.register(manager, original)
+
+    :ets.insert(
+      EtsTable.table_for(:field_supports),
+      {{:player, 99, :sc_quagmire, 1}, %{params: [], aggregate: nil}}
+    )
+
+    assert FieldSupport.sources_for_group(1) != []
+    assert :ok = Manager.register(manager, replacement)
+    assert [] == FieldSupport.sources_for_group(1)
   end
 
   test "commits, removes, and reconciles terrain contributions owned by cells" do

@@ -12,6 +12,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
   import Mimic
 
   alias Aesir.Net.GroundSkill
+  alias Aesir.Net.SkillUnitSnapshot
+  alias Aesir.Net.SkillUnitSpawn
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapData
@@ -41,6 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
       )
 
     Process.put({Manager, :server}, manager)
+    allow(Broadcast, self(), manager)
     %{manager: manager}
   end
 
@@ -140,6 +143,23 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
                          x: 120,
                          y: 120
                        }}
+    end
+
+    test "publishes and snapshots stable cells for a mob ground nuke" do
+      stub_walkable_map()
+      group = place!()
+
+      assert %Group{visible?: true, created_at: created_at, cell_ids: cell_ids} = group
+      assert is_integer(created_at)
+      assert length(cell_ids) == length(group.cells)
+      assert_receive {:packet, %SkillUnitSpawn{group: %{group_id: group_id, cells: spawn_cells}}}
+      assert group_id == group.group_id
+      assert Enum.sort(Enum.map(spawn_cells, & &1.cell_id)) == Enum.sort(cell_ids)
+
+      assert %SkillUnitSnapshot{groups: [%{group_id: ^group_id, cells: snapshot_cells}]} =
+               Manager.snapshot("prontera", 123)
+
+      assert Enum.sort(Enum.map(snapshot_cells, & &1.cell_id)) == Enum.sort(cell_ids)
     end
 
     test "clamps the footprint to walkable cells" do

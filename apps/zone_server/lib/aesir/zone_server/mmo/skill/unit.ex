@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
   alias Aesir.Commons.Utils.ServerTick
   alias Aesir.Net.GroundSkill
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
@@ -31,30 +32,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
   in the catalog.
   """
   @spec place(PlayerState.t(), atom(), non_neg_integer(), {integer(), integer()}) ::
-          {:ok, Group.t()} | {:error, :no_skill_unit_behaviour | :unknown_skill}
+          {:ok, Group.t()} | {:error, term()}
   def place(%PlayerState{} = caster_state, skill_name, level, {x, y}) do
     with {:ok, module} <- module_for(skill_name),
          {:ok, definition} <- skill_definition(skill_name) do
       group = build_group(caster_state, definition.id, skill_name, level, {x, y})
       {:ok, placement} = module.on_place(group)
-
-      now = System.monotonic_time(:millisecond)
-      initial_delay = Map.get(placement, :initial_delay, placement.interval)
-
-      group = %{
-        group
-        | cells: placement.cells,
-          state: placement.state,
-          interval: placement.interval,
-          lifecycle_policy: Map.get(placement, :lifecycle_policy, group.lifecycle_policy),
-          next_tick_at: now + initial_delay,
-          expires_at: now + placement.duration
-      }
-
-      :ok = Manager.register(group)
-      broadcast_groundskill(group)
-
-      {:ok, group}
+      register_placement(group, caster_state.map_name, placement)
     end
   end
 
@@ -90,6 +74,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
   @spec destroy(non_neg_integer()) :: :ok
   def destroy(group_id), do: Manager.destroy(group_id)
 
+  @doc "Builds the complete visible skill-unit snapshot for a map."
+  @spec snapshot(String.t()) :: Aesir.Net.SkillUnitSnapshot.t()
+  def snapshot(map_name), do: Manager.snapshot(map_name, ServerTick.now())
+
+  @doc "Returns visible groups whose footprints intersect a square range."
+  @spec in_range(String.t(), integer(), integer(), non_neg_integer()) :: [Group.t()]
+  def in_range(map_name, x, y, range), do: Manager.in_range(map_name, x, y, range)
+
   defp module_for(skill_name) do
     case Catalog.ground_module_for(skill_name) do
       {:ok, module} -> {:ok, module}
@@ -115,6 +107,48 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
       map_name: caster_state.map_name,
       center: {x, y}
     }
+  end
+
+  defp accepted_cells(map_name, cells) do
+    case MapCache.get(map_name) do
+      {:ok, %{xs: width, ys: height}} ->
+        Enum.filter(cells, fn {x, y} -> x >= 0 and x < width and y >= 0 and y < height end)
+
+      {:error, :not_found} ->
+        []
+    end
+  end
+
+  defp register_placement(group, map_name, placement) do
+    case accepted_cells(map_name, placement.cells) do
+      [] ->
+        {:error, :no_walkable_cells}
+
+      cells ->
+        now = System.monotonic_time(:millisecond)
+        initial_delay = Map.get(placement, :initial_delay, placement.interval)
+
+        group = %{
+          group
+          | cells: cells,
+            created_at: now,
+            visible?: true,
+            state: placement.state,
+            interval: placement.interval,
+            lifecycle_policy: Map.get(placement, :lifecycle_policy, group.lifecycle_policy),
+            next_tick_at: now + initial_delay,
+            expires_at: now + placement.duration
+        }
+
+        case Manager.register(group) do
+          :ok ->
+            broadcast_groundskill(group)
+            {:ok, group}
+
+          {:error, _reason} = error ->
+            error
+        end
+    end
   end
 
   defp broadcast_groundskill(%Group{center: {x, y}} = group) do

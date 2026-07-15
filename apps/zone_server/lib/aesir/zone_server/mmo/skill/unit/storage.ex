@@ -139,6 +139,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Storage do
     indexed_cells_in_range(:skill_unit_visible_cell_map_index, map_name, x, y, range)
   end
 
+  @doc "Returns visible groups whose footprint intersects an inclusive square range."
+  @spec get_visible_groups_in_range(String.t(), integer(), integer(), non_neg_integer()) :: [
+          Group.t()
+        ]
+  def get_visible_groups_in_range(map_name, x, y, range) do
+    indexed_group_ids_in_range(map_name, x, y, range)
+    |> indexed_groups()
+    |> Enum.sort_by(& &1.group_id)
+  end
+
   @doc """
   Deletes a group by `group_id`.
   """
@@ -389,5 +399,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Storage do
       ])
 
     keys |> Enum.map(&get_cell/1) |> Enum.reject(&is_nil/1)
+  end
+
+  defp indexed_group_ids_in_range(map_name, x, y, range) do
+    :ets.select(table_for(:skill_unit_map_index), [
+      {{{map_name, :"$1", :"$2", :"$3"}, :_},
+       [
+         {:>=, :"$1", x - range},
+         {:"=<", :"$1", x + range},
+         {:>=, :"$2", y - range},
+         {:"=<", :"$2", y + range}
+       ], [:"$3"]}
+    ])
   end
 end

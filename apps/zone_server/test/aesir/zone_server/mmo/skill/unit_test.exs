@@ -5,12 +5,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
   import Mimic
 
   alias Aesir.Net.GroundSkill
+  alias Aesir.Net.SkillUnitGroupState
+  alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.View
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -61,6 +65,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
     def on_interval(group, _now), do: {:ok, group}
   end
 
+  defmodule BorderFakeUnit do
+    @behaviour Ground
+
+    @impl Ground
+    def on_place(_group) do
+      {:ok,
+       %{
+         cells: [{-1, -1}, {-1, 0}, {0, -1}, {0, 0}, {0, 1}, {1, 0}, {1, 1}],
+         state: %{},
+         interval: 450,
+         duration: 5_000
+       }}
+    end
+
+    @impl Ground
+    def on_interval(group, _now), do: {:ok, group}
+  end
+
   setup do
     manager =
       start_supervised!({Manager, name: nil, schedule_tick: fn _pid, _interval -> :ok end})
@@ -68,6 +90,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
     Process.put({Manager, :server}, manager)
     allow(Catalog, self(), manager)
     Mimic.copy(Broadcast)
+    allow(Broadcast, self(), manager)
     stub(Catalog, :ground_module_for, fn @skill_name -> {:ok, FakeUnit} end)
     :ok
   end
@@ -105,6 +128,36 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
       assert %Group{} = Storage.get(group.group_id)
     end
 
+    test "maps placement deadlines to non-negative server ticks" do
+      stub(Broadcast, :to_in_range, fn _, _, _, _, _ -> :ok end)
+
+      {:ok, group} = Unit.place(caster(), @skill_name, 7, {100, 120})
+      packet = View.group(group, [])
+
+      assert packet.created_tick in 0..0xFFFF_FFFF
+      assert packet.expires_tick in 0..0xFFFF_FFFF
+      assert {:ok, _iodata, _size} = SkillUnitGroupState.encode(packet)
+    end
+
+    test "publishes and snapshots stable cells for a player ground cast" do
+      test_pid = self()
+      stub(Broadcast, :to_in_range, fn _, _, _, _, packet -> send(test_pid, packet) end)
+
+      {:ok, group} = Unit.place(caster(), @skill_name, 7, {100, 120})
+
+      assert_receive %Aesir.Net.SkillUnitSpawn{group: %{group_id: group_id, cells: [spawn_cell]}}
+      assert group_id == group.group_id
+      assert %Group{visible?: true, cell_ids: [cell_id]} = Storage.get(group.group_id)
+      assert spawn_cell.cell_id == cell_id
+
+      assert %Aesir.Net.SkillUnitSnapshot{
+               groups: [%{group_id: ^group_id, cells: [snapshot_cell]}]
+             } =
+               Unit.snapshot("prontera")
+
+      assert snapshot_cell.cell_id == cell_id
+    end
+
     test "makes a ground field with an immediate first tick due on the next manager cadence" do
       stub(Catalog, :ground_module_for, fn @skill_name -> {:ok, ImmediateFakeUnit} end)
       stub(Broadcast, :to_in_range, fn _, _, _, _, _ -> :ok end)
@@ -114,6 +167,29 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
 
       assert group.next_tick_at >= before
       assert group.next_tick_at < before + @interval
+    end
+
+    test "filters a border layout to in-bounds cells before registering it" do
+      stub(Catalog, :ground_module_for, fn @skill_name -> {:ok, BorderFakeUnit} end)
+      stub(Broadcast, :to_in_range, fn _, _, _, _, _ -> :ok end)
+      :ets.insert(EtsTable.table_for(:map_cache), {"border", MapData.new("border", 2, 2)})
+
+      caster = %{caster() | map_name: "border"}
+      assert {:ok, group} = Unit.place(caster, @skill_name, 7, {0, 0})
+
+      assert group.cells == [{0, 0}, {0, 1}, {1, 0}, {1, 1}]
+
+      assert Storage.get_cells_by_group(group.group_id) |> Enum.map(&{&1.x, &1.y}) |> Enum.sort() ==
+               group.cells
+    end
+
+    test "rejects a border layout when its map is unavailable" do
+      stub(Catalog, :ground_module_for, fn @skill_name -> {:ok, BorderFakeUnit} end)
+      stub(Broadcast, :to_in_range, fn _, _, _, _, _ -> flunk("must not broadcast") end)
+
+      caster = %{caster() | map_name: "missing_border"}
+      assert {:error, :no_walkable_cells} = Unit.place(caster, @skill_name, 7, {0, 0})
+      assert [] == Storage.all()
     end
 
     test "commits the group before broadcasting exactly one GroundSkill" do
@@ -137,7 +213,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
       assert packet.x == 100
       assert packet.y == 120
 
-      refute_received {:broadcast, _, _, _, _}
+      assert_received {:broadcast, "prontera", 100, 120, %Aesir.Net.SkillUnitSpawn{}}
+      refute_received {:broadcast, "prontera", 100, 120, %GroundSkill{}}
     end
 
     test "resolves the skill_id from the catalog and renders a valid ground-cast packet" do

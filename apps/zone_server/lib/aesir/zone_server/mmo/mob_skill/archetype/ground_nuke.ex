@@ -68,9 +68,11 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke do
         map_name: caster.map_name,
         center: {x, y},
         cells: cells,
+        created_at: now,
         next_tick_at: now + @interval,
         expires_at: now + @duration,
         interval: @interval,
+        visible?: true,
         state: %{element: params.element, radius: radius}
       }
 
