@@ -13,6 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeWizardTest do
   {:ok, wizard_id} = AvailableJobs.job_name_to_id(:wizard)
   @wizard_id wizard_id
 
+  @rathena_wizard_tree "rAthena db/re/skill_tree.yml:475-550"
+
   defp catalog_id(name) do
     {:ok, definition} = Catalog.by_name(name)
     definition.id
@@ -45,7 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeWizardTest do
     :ok = SkillTree.reload()
   end
 
-  test "Wizard tree exposes the six staged skills with available canonical prerequisites" do
+  test "Wizard tree exposes the nine staged skills with canonical prerequisites" do
     mage_ids = @mage_id |> SkillTree.tree_for() |> Map.keys() |> MapSet.new()
     wizard_tree = SkillTree.tree_for(@wizard_id)
 
@@ -55,16 +57,21 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeWizardTest do
       |> Map.new(fn {skill_id, entry} -> {skill_id, {entry.max_level, entry.requires}} end)
 
     assert own_entries == %{
+             catalog_id(:wz_firepillar) => {10, [{catalog_id(:mg_firewall), 1}]},
              catalog_id(:wz_sightrasher) =>
                {10, [{catalog_id(:mg_lightningbolt), 1}, {catalog_id(:mg_sight), 1}]},
              catalog_id(:wz_jupitel) =>
                {10, [{catalog_id(:mg_napalmbeat), 1}, {catalog_id(:mg_lightningbolt), 1}]},
+             catalog_id(:wz_vermilion) =>
+               {10, [{catalog_id(:mg_thunderstorm), 1}, {catalog_id(:wz_jupitel), 5}]},
              catalog_id(:wz_frostnova) => {10, []},
              catalog_id(:wz_stormgust) =>
                {10, [{catalog_id(:mg_frostdiver), 1}, {catalog_id(:wz_jupitel), 3}]},
              catalog_id(:wz_earthspike) => {5, [{catalog_id(:mg_stonecurse), 1}]},
-             catalog_id(:wz_heavendrive) => {5, [{catalog_id(:wz_earthspike), 3}]}
-           }
+             catalog_id(:wz_heavendrive) => {5, [{catalog_id(:wz_earthspike), 3}]},
+             catalog_id(:wz_quagmire) => {5, [{catalog_id(:wz_heavendrive), 1}]}
+           },
+           @rathena_wizard_tree
   end
 
   test "every staged Wizard entry and prerequisite name resolves through the catalog" do
@@ -72,12 +79,15 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeWizardTest do
 
     assert MapSet.new(entries, & &1["name"]) ==
              MapSet.new(~w(
+               WZ_FIREPILLAR
                WZ_SIGHTRASHER
                WZ_JUPITEL
+               WZ_VERMILION
                WZ_FROSTNOVA
                WZ_STORMGUST
                WZ_EARTHSPIKE
                WZ_HEAVENDRIVE
+               WZ_QUAGMIRE
              ))
 
     catalog_names = MapSet.new(Catalog.all(), &(Atom.to_string(&1.name) |> String.upcase()))

@@ -7,11 +7,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
   alias Aesir.ZoneServer.Mmo.Skills.SmFatalblow
   alias Aesir.ZoneServer.Mmo.Skills.SmSword
   alias Aesir.ZoneServer.Mmo.Skills.WzEarthspike
+  alias Aesir.ZoneServer.Mmo.Skills.WzFirepillar
   alias Aesir.ZoneServer.Mmo.Skills.WzFrostnova
   alias Aesir.ZoneServer.Mmo.Skills.WzHeavendrive
   alias Aesir.ZoneServer.Mmo.Skills.WzJupitel
+  alias Aesir.ZoneServer.Mmo.Skills.WzQuagmire
   alias Aesir.ZoneServer.Mmo.Skills.WzSightrasher
   alias Aesir.ZoneServer.Mmo.Skills.WzStormgust
+  alias Aesir.ZoneServer.Mmo.Skills.WzVermilion
 
   test "by_id/1 loads AL_INCAGI with correct structure" do
     assert {:ok, %Definition{} = def} = Catalog.by_id(29)
@@ -138,19 +141,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
   end
 
   describe "core Wizard skills" do
-    test "reload/0 registers each skill by id, name, and active capability" do
+    test "reload/0 registers staged skills by id, name, and active or ground capability" do
       assert :ok = Catalog.reload()
 
-      for {id, name, module} <- [
-            {81, :wz_sightrasher, WzSightrasher},
-            {84, :wz_jupitel, WzJupitel},
-            {88, :wz_frostnova, WzFrostnova},
-            {90, :wz_earthspike, WzEarthspike},
-            {91, :wz_heavendrive, WzHeavendrive}
+      for {id, name, module, capability} <- [
+            {80, :wz_firepillar, WzFirepillar, :ground},
+            {81, :wz_sightrasher, WzSightrasher, :active},
+            {84, :wz_jupitel, WzJupitel, :active},
+            {85, :wz_vermilion, WzVermilion, :ground},
+            {88, :wz_frostnova, WzFrostnova, :active},
+            {90, :wz_earthspike, WzEarthspike, :active},
+            {91, :wz_heavendrive, WzHeavendrive, :active},
+            {92, :wz_quagmire, WzQuagmire, :ground}
           ] do
         assert {:ok, %Definition{id: ^id, name: ^name}} = Catalog.by_id(id)
         assert {:ok, %Definition{id: ^id, name: ^name}} = Catalog.by_name(name)
         assert {:ok, ^module} = Catalog.active_module_for(name)
+
+        if capability == :ground do
+          assert {:ok, ^module} = Catalog.ground_module_for(name)
+        else
+          assert :error = Catalog.ground_module_for(name)
+        end
       end
     end
   end

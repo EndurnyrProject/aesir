@@ -93,11 +93,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
     Skills.TfSteal,
     Skills.TfThrowstone,
     Skills.WzEarthspike,
+    Skills.WzFirepillar,
     Skills.WzFrostnova,
     Skills.WzHeavendrive,
     Skills.WzJupitel,
+    Skills.WzQuagmire,
     Skills.WzSightrasher,
-    Skills.WzStormgust
+    Skills.WzStormgust,
+    Skills.WzVermilion
   ]
 
   @typep index :: %{
