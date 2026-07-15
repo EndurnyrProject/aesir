@@ -200,18 +200,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                Manager.snapshot(manager, "prontera", 1).groups
     end
 
-    test "registers a live targetable cell through its manager and removes every index on destruction" do
+    test "registers targetable group cells and removes every index on destruction" do
       manager = start_manager(10_000)
-      :ok = Manager.register(manager, group(1, visible?: false, cells: []))
 
-      assert {:ok, cell} =
-               Manager.create_cell(manager, 1, %{
-                 x: 100,
-                 y: 101,
-                 hp: 20,
-                 max_hp: 20,
-                 flags: [:targetable]
-               })
+      :ok =
+        Manager.register(
+          manager,
+          group(1,
+            visible?: true,
+            cells: [{100, 101}],
+            state: %{cell_attrs: %{{100, 101} => %{hp: 20, max_hp: 20, flags: [:targetable]}}}
+          )
+        )
+
+      [cell] = Storage.get_cells_by_group(1)
 
       assert {:ok, {_module, ^cell, ^manager}} = UnitRegistry.get_unit(:skill_unit, cell.cell_id)
 
@@ -231,16 +233,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
     test "does not expose non-targetable cells as combat targets" do
       manager = start_manager(10_000)
-      :ok = Manager.register(manager, group(1, visible?: false, cells: []))
 
-      assert {:ok, cell} =
-               Manager.create_cell(manager, 1, %{
-                 x: 100,
-                 y: 101,
-                 hp: 20,
-                 max_hp: 20,
-                 flags: []
-               })
+      :ok =
+        Manager.register(
+          manager,
+          group(1,
+            visible?: true,
+            cells: [{100, 101}],
+            state: %{cell_attrs: %{{100, 101} => %{hp: 20, max_hp: 20, flags: []}}}
+          )
+        )
+
+      [cell] = Storage.get_cells_by_group(1)
 
       assert {:error, :not_found} = UnitRegistry.get_unit(:skill_unit, cell.cell_id)
       assert {:error, :not_found} = SpatialIndex.get_unit_position(:skill_unit, cell.cell_id)
@@ -251,10 +255,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
   describe "Water Ball sequences" do
     test "uses each claimed water cell once and expires when the sequence is empty" do
       manager = start_manager(10_000)
-      :ok = Manager.register(manager, group(1, visible?: false, cells: []))
 
-      assert {:ok, _source} =
-               Manager.create_cell(manager, 1, %{x: 100, y: 100, flags: [:consumable_water]})
+      :ok =
+        Manager.register(
+          manager,
+          group(1,
+            visible?: true,
+            state: %{cell_attrs: %{{100, 100} => %{flags: [:consumable_water]}}}
+          )
+        )
 
       sequence =
         group(2,
@@ -282,10 +291,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
     test "concurrent casts cannot convert another Water Ball token into a source" do
       manager = start_manager(10_000)
-      :ok = Manager.register(manager, group(1, visible?: false, cells: []))
 
-      assert {:ok, _source} =
-               Manager.create_cell(manager, 1, %{x: 100, y: 100, flags: [:consumable_water]})
+      :ok =
+        Manager.register(
+          manager,
+          group(1,
+            visible?: true,
+            state: %{cell_attrs: %{{100, 100} => %{flags: [:consumable_water]}}}
+          )
+        )
 
       results =
         [2, 3]
@@ -701,115 +715,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     end
   end
 
-  test "serializes damage, decay, claim, and group cleanup for owned cells" do
-    manager = start_manager(10_000)
-    :ok = Manager.register(manager, group(1, cell_ids: []))
-
-    assert {:ok, wall} =
-             Manager.create_cell(manager, 1, %{
-               x: 100,
-               y: 100,
-               hp: 100,
-               max_hp: 100,
-               flags: [:targetable, :visible]
-             })
-
-    assert {:ok, %Cell{hp: 60}} = Manager.damage_cell(manager, wall.cell_id, 40)
-    wall_id = wall.cell_id
-    assert {:destroyed, %Cell{cell_id: ^wall_id}} = Manager.decay_cell(manager, wall_id, 60)
-    assert {:error, :not_found} = Manager.damage_cell(manager, wall.cell_id, 1)
-
-    assert {:ok, water} =
-             Manager.create_cell(manager, 1, %{x: 101, y: 100, flags: [:consumable_water]})
-
-    claims =
-      1..2
-      |> Task.async_stream(fn _ -> Manager.claim_cell(manager, water.cell_id) end)
-      |> Enum.map(fn {:ok, result} -> result end)
-
-    assert Enum.count(claims, &match?({:ok, _}, &1)) == 1
-    assert Enum.count(claims, &(&1 == {:error, :not_found})) == 1
-
-    assert :ok = Manager.destroy(manager, 1)
-    assert [] == Storage.get_cells_by_group(1)
-  end
-
-  test "publishes committed visible HP state and removal with authoritative metadata" do
-    test_pid = self()
-
-    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
-      case packet do
-        %Aesir.Net.SkillUnitUpdate{cell_id: cell_id, hp: 60} ->
-          assert %Cell{hp: 60} = Storage.get_cell(cell_id)
-
-        %Aesir.Net.SkillUnitUpdate{cell_id: cell_id, hp: 0} ->
-          assert nil == Storage.get_cell(cell_id)
-          refute cell_id in Storage.get(1).cell_ids
-
-        %Aesir.Net.SkillUnitDespawn{cell_ids: [cell_id]} ->
-          assert nil == Storage.get_cell(cell_id)
-          refute cell_id in Storage.get(1).cell_ids
-
-        _ ->
-          :ok
-      end
-
-      send(test_pid, packet)
-    end)
-
-    manager = start_manager(10_000)
-
-    :ok =
-      Manager.register(
-        manager,
-        group(1, visible?: true, cells: [], cell_ids: [], created_at: 10_000)
-      )
-
-    assert_receive %Aesir.Net.SkillUnitSpawn{group: %{group_id: 1, cells: []}}
-
-    assert {:ok, wall} =
-             Manager.create_cell(manager, 1, %{
-               x: 100,
-               y: 100,
-               hp: 100,
-               max_hp: 100,
-               flags: [:visible]
-             })
-
-    assert {:ok, _} = Manager.damage_cell(manager, wall.cell_id, 40, {:player, 99})
-    wall_id = wall.cell_id
-
-    assert_receive %Aesir.Net.SkillUnitUpdate{
-      group_id: 1,
-      cell_id: ^wall_id,
-      hp: 60,
-      max_hp: 100,
-      hp_delta: -40,
-      source_type: :SKILL_UNIT_OWNER_TYPE_PLAYER,
-      source_id: 99,
-      reason: :SKILL_UNIT_UPDATE_REASON_DAMAGE,
-      server_tick: server_tick
-    }
-
-    assert is_integer(server_tick)
-    assert {:destroyed, _} = Manager.decay_cell(manager, wall.cell_id, 60)
-
-    assert_receive %Aesir.Net.SkillUnitUpdate{
-      cell_id: ^wall_id,
-      hp: 0,
-      hp_delta: -60,
-      source_type: :SKILL_UNIT_OWNER_TYPE_UNSPECIFIED,
-      source_id: 0,
-      reason: :SKILL_UNIT_UPDATE_REASON_DECAY
-    }
-
-    assert_receive %Aesir.Net.SkillUnitDespawn{
-      group_id: 1,
-      cell_ids: [^wall_id],
-      reason: :SKILL_UNIT_DESPAWN_REASON_DESTROYED
-    }
-  end
-
   test "builds complete snapshots and range results from visible groups only" do
     manager = start_manager(10_000)
     visible = group(1, visible?: true, cells: [{100, 100}], cell_ids: [], created_at: 10_000)
@@ -851,14 +756,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         group(1,
           visible?: true,
           cells: [{100, 100}, {101, 100}],
-          created_at: 10_000
+          created_at: 10_000,
+          state: %{cell_attrs: %{{100, 100} => %{hp: 60, max_hp: 100}}}
         )
       )
 
     :ok = Manager.register(manager, group(2, visible?: false, cells: [{100, 100}]))
     [damaged | _] = Storage.get_cells_by_group(1)
-    assert {:ok, damaged} = Manager.update_cell(manager, damaged.cell_id, %{hp: 100, max_hp: 100})
-    assert {:ok, _} = Manager.damage_cell(manager, damaged.cell_id, 40)
 
     assert MapSet.new([1]) == Manager.snapshot_for(manager, 99, "prontera", 100, 100, 1)
 
@@ -997,31 +901,41 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     assert [] == FieldSupport.sources_for_group(1)
   end
 
-  test "commits, removes, and reconciles terrain contributions owned by cells" do
+  test "commits, removes, and reconciles terrain contributions owned by groups" do
     manager = start_unmanaged_manager(10_000)
-    :ok = Manager.register(manager, group(1, cell_ids: []))
     :ok = MapCell.put("prontera", 102, 100, :other_owner, 1, blocks_movement: true)
 
-    assert {:ok, wall} =
-             Manager.create_cell(manager, 1, %{
-               x: 100,
-               y: 100,
-               flags: [:blocks_movement, :blocks_projectiles]
-             })
+    :ok =
+      Manager.register(
+        manager,
+        group(1,
+          visible?: true,
+          cells: [{100, 100}],
+          state: %{cell_attrs: %{{100, 100} => %{flags: [:blocks_movement, :blocks_projectiles]}}}
+        )
+      )
 
     refute MapCell.traversable?("prontera", 100, 100)
     assert MapCell.blocks_projectiles?("prontera", 100, 100)
 
-    assert :ok = Manager.destroy_cell(manager, wall.cell_id)
+    assert :ok = Manager.destroy(manager, 1)
     assert MapCell.traversable?("prontera", 100, 100)
     refute MapCell.blocks_projectiles?("prontera", 100, 100)
 
-    assert {:ok, water} =
-             Manager.create_cell(manager, 1, %{x: 101, y: 100, flags: [:consumable_water]})
+    :ok =
+      Manager.register(
+        manager,
+        group(2,
+          visible?: true,
+          cells: [{101, 100}],
+          state: %{cell_attrs: %{{101, 100} => %{flags: [:consumable_water]}}}
+        )
+      )
 
     :ok = MapCell.put("prontera", 103, 100, :skill_unit, 999, blocks_movement: true)
     assert :ok = GenServer.stop(manager)
 
+    [water] = Storage.get_cells_by_group(2)
     water_id = water.cell_id
 
     assert %MapCell.WaterSource{origin: :skill_unit, cell_id: ^water_id} =
@@ -1035,40 +949,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     refute MapCell.traversable?("prontera", 102, 100)
     assert MapCell.traversable?("prontera", 103, 100)
 
-    assert :ok = Manager.destroy(restarted_manager, 1)
+    assert :ok = Manager.destroy(restarted_manager, 2)
     assert MapCell.water_source("prontera", 101, 100) == nil
     refute MapCell.traversable?("prontera", 102, 100)
-  end
-
-  test "rejects identity updates and binds cells to their group's map" do
-    manager = start_manager(10_000)
-    :ok = Manager.register(manager, group(1, map_name: "prontera"))
-    assert {:ok, cell} = Manager.create_cell(manager, 1, %{map_name: "geffen", x: 1, y: 1})
-    assert cell.map_name == "prontera"
-
-    assert {:error, :immutable_cell_field} = Manager.update_cell(manager, cell.cell_id, %{x: 2})
-
-    assert {:ok, %Cell{state: %{changed: true}}} =
-             Manager.update_cell(manager, cell.cell_id, %{state: %{changed: true}})
-  end
-
-  test "serializes damage, decay, cell destroy, and group destroy races" do
-    manager = start_manager(10_000)
-    :ok = Manager.register(manager, group(1, []))
-    assert {:ok, cell} = Manager.create_cell(manager, 1, %{x: 1, y: 1, hp: 100, max_hp: 100})
-
-    [
-      fn -> Manager.damage_cell(manager, cell.cell_id, 50) end,
-      fn -> Manager.decay_cell(manager, cell.cell_id, 50) end,
-      fn -> Manager.destroy_cell(manager, cell.cell_id) end,
-      fn -> Manager.destroy(manager, 1) end
-    ]
-    |> Task.async_stream(& &1.())
-    |> Enum.each(fn {:ok, _result} -> :ok end)
-
-    assert nil == Storage.get(1)
-    assert nil == Storage.get_cell(cell.cell_id)
-    assert [] == Storage.get_cells_by_group(1)
   end
 
   test "logs and survives an unknown cast" do

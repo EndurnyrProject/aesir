@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.CombatTargetTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables
@@ -31,17 +32,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.CombatTargetTest do
          unit_available?: fn _unit_type, _unit_id, _map_name -> true end}
       )
 
-    :ok = Manager.register(manager, group())
+    :ok =
+      Manager.register(
+        manager,
+        group(
+          visible?: true,
+          cells: [{10, 10}],
+          state: %{cell_attrs: %{{10, 10} => targetable_cell_attrs()}}
+        )
+      )
 
-    assert {:ok, cell} =
-             Manager.create_cell(manager, 1, %{
-               x: 10,
-               y: 10,
-               hp: 10,
-               max_hp: 10,
-               flags: [:targetable],
-               state: %{combat: %{def: 30, element: {:water, 1}}}
-             })
+    [cell] = Storage.get_cells_by_group(1)
 
     assert %{unit_type: :skill_unit, combat_stats: %{def: 30}, element: {:water, 1}} =
              CombatTarget.to_combatant(cell)
@@ -67,22 +68,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.CombatTargetTest do
          unit_available?: fn _unit_type, _unit_id, _map_name -> true end}
       )
 
-    :ok = Manager.register(manager, group())
+    :ok =
+      Manager.register(
+        manager,
+        group(
+          visible?: true,
+          cells: [{10, 10}],
+          state: %{cell_attrs: %{{10, 10} => targetable_cell_attrs()}}
+        )
+      )
 
-    assert {:ok, cell} =
-             Manager.create_cell(manager, 1, %{
-               x: 10,
-               y: 10,
-               hp: 10,
-               max_hp: 10,
-               flags: [:targetable]
-             })
+    [cell] = Storage.get_cells_by_group(1)
 
     attacker = attacker()
     player = %FakePlayer{combatant: attacker, stats: attacker}
 
     stub(DamageCalculator, :calculate_damage, fn _attacker, _target ->
-      :ok = Manager.destroy_cell(manager, cell.cell_id)
+      :ok = Manager.destroy(manager, 1)
       {:ok, %{damage: 10, is_critical: false}}
     end)
 
@@ -107,6 +109,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.CombatTargetTest do
       interval: 1_000,
       visible?: false,
       state: %{}
+    }
+  end
+
+  defp group(attrs), do: struct(group(), attrs)
+
+  defp targetable_cell_attrs do
+    %{
+      hp: 10,
+      max_hp: 10,
+      flags: [:targetable],
+      state: %{combat: %{def: 30, element: {:water, 1}}}
     }
   end
 

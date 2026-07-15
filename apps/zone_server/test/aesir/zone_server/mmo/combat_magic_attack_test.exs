@@ -138,6 +138,14 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
          unit_available?: fn _unit_type, _unit_id, _map_name -> true end}
       )
 
+    cell_attrs =
+      Map.merge(
+        %{hp: 20, max_hp: 20, flags: [:targetable]},
+        Map.drop(attrs, [:x, :y])
+      )
+
+    cell_position = {Map.get(attrs, :x, 151), Map.get(attrs, :y, 150)}
+
     :ok =
       Manager.register(
         manager,
@@ -150,28 +158,16 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
           caster_type: :player,
           map_name: @map_name,
           center: @center,
-          cells: [],
+          cells: [cell_position],
           next_tick_at: 0,
           expires_at: 1_000_000,
           interval: 1_000,
-          visible?: false,
-          state: %{}
+          visible?: true,
+          state: %{cell_attrs: %{cell_position => cell_attrs}}
         }
       )
 
-    attrs =
-      Map.merge(
-        %{
-          x: 151,
-          y: 150,
-          hp: 20,
-          max_hp: 20,
-          flags: [:targetable]
-        },
-        attrs
-      )
-
-    {:ok, cell} = Manager.create_cell(manager, 1, attrs)
+    [cell] = Storage.get_cells_by_group(1)
 
     {manager, cell}
   end
