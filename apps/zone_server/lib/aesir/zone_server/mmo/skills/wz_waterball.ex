@@ -88,6 +88,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzWaterball do
     else
       false -> {:ok, group}
       {:error, _reason} -> {:expire, group}
+      {:ok, {_x, _y, _other_map}} -> {:expire, group}
     end
   end
 

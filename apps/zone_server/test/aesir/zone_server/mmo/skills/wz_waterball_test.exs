@@ -61,6 +61,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzWaterballTest do
     assert {:expire, %Group{}} = WzWaterball.on_interval(group(), 0)
   end
 
+  test "expires when its target leaves the map" do
+    stub(Combat, :resolve_combatant, fn 100 -> {:ok, %{unit_id: 100}} end)
+    stub(SpatialIndex, :get_unit_position, fn :mob, 200 -> {:ok, {101, 100, "geffen"}} end)
+    reject(&Combat.apply_skill_unit_damage/7)
+
+    assert {:expire, %Group{}} = WzWaterball.on_interval(group(), 0)
+  end
+
   test "rejects a cast when the caster is not in a water state" do
     stub(Combat, :resolve_combatant, fn 200 -> {:ok, %{unit_type: :mob}} end)
     stub(MapCell, :water_source, fn "prontera", 100, 100 -> nil end)
