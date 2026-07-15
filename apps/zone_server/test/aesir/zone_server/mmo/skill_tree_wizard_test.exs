@@ -47,7 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeWizardTest do
     :ok = SkillTree.reload()
   end
 
-  test "Wizard tree exposes the nine staged skills with canonical prerequisites" do
+  test "Wizard tree exposes the twelve normal skills with canonical prerequisites" do
     mage_ids = @mage_id |> SkillTree.tree_for() |> Map.keys() |> MapSet.new()
     wizard_tree = SkillTree.tree_for(@wizard_id)
 
@@ -60,11 +60,17 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeWizardTest do
              catalog_id(:wz_firepillar) => {10, [{catalog_id(:mg_firewall), 1}]},
              catalog_id(:wz_sightrasher) =>
                {10, [{catalog_id(:mg_lightningbolt), 1}, {catalog_id(:mg_sight), 1}]},
+             catalog_id(:wz_meteor) =>
+               {10, [{catalog_id(:wz_sightrasher), 2}, {catalog_id(:mg_thunderstorm), 1}]},
              catalog_id(:wz_jupitel) =>
                {10, [{catalog_id(:mg_napalmbeat), 1}, {catalog_id(:mg_lightningbolt), 1}]},
              catalog_id(:wz_vermilion) =>
                {10, [{catalog_id(:mg_thunderstorm), 1}, {catalog_id(:wz_jupitel), 5}]},
-             catalog_id(:wz_frostnova) => {10, []},
+             catalog_id(:wz_waterball) =>
+               {5, [{catalog_id(:mg_coldbolt), 1}, {catalog_id(:mg_lightningbolt), 1}]},
+             catalog_id(:wz_icewall) =>
+               {10, [{catalog_id(:mg_stonecurse), 1}, {catalog_id(:mg_frostdiver), 1}]},
+             catalog_id(:wz_frostnova) => {10, [{catalog_id(:wz_icewall), 1}]},
              catalog_id(:wz_stormgust) =>
                {10, [{catalog_id(:mg_frostdiver), 1}, {catalog_id(:wz_jupitel), 3}]},
              catalog_id(:wz_earthspike) => {5, [{catalog_id(:mg_stonecurse), 1}]},
@@ -74,16 +80,19 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeWizardTest do
            @rathena_wizard_tree
   end
 
-  test "every staged Wizard entry and prerequisite name resolves through the catalog" do
+  test "every normal Wizard entry and prerequisite name resolves through the catalog" do
     entries = wizard_source()["tree"]
 
     assert MapSet.new(entries, & &1["name"]) ==
              MapSet.new(~w(
-               WZ_FIREPILLAR
-               WZ_SIGHTRASHER
-               WZ_JUPITEL
-               WZ_VERMILION
-               WZ_FROSTNOVA
+                WZ_FIREPILLAR
+                WZ_SIGHTRASHER
+                WZ_METEOR
+                WZ_JUPITEL
+                WZ_VERMILION
+                WZ_WATERBALL
+                WZ_ICEWALL
+                WZ_FROSTNOVA
                WZ_STORMGUST
                WZ_EARTHSPIKE
                WZ_HEAVENDRIVE
@@ -102,11 +111,15 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeWizardTest do
     assert :error = Catalog.by_name(:wz_sightblaster)
   end
 
-  test "Frost Nova defers WZ_ICEWALL 1 until Task 27 registers both atomically" do
-    assert SkillTree.tree_for(@wizard_id)[catalog_id(:wz_frostnova)].requires == []
+  test "Frost Nova requires Ice Wall level 1" do
+    frost_nova = catalog_id(:wz_frostnova)
+    ice_wall = catalog_id(:wz_icewall)
 
-    frost_nova = Enum.find(wizard_source()["tree"], &(&1["name"] == "WZ_FROSTNOVA"))
-    refute Map.has_key?(frost_nova, "requires")
+    assert {:error, :missing_prerequisite} =
+             SkillTree.can_learn(wizard_progression(learned_skills: %{ice_wall => 0}), frost_nova)
+
+    assert :ok =
+             SkillTree.can_learn(wizard_progression(learned_skills: %{ice_wall => 1}), frost_nova)
   end
 
   test "Heaven's Drive requires Earth Spike level 3" do

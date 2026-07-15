@@ -16,6 +16,13 @@
           level: 1
         - name: MG_SIGHT
           level: 1
+    - name: WZ_METEOR
+      max_level: 10
+      requires:
+        - name: WZ_SIGHTRASHER
+          level: 2
+        - name: MG_THUNDERSTORM
+          level: 1
     - name: WZ_JUPITEL
       max_level: 10
       requires:
@@ -30,9 +37,25 @@
           level: 1
         - name: WZ_JUPITEL
           level: 5
-    # Task 27 adds the canonical WZ_ICEWALL 1 edge atomically with Ice Wall registration.
+    - name: WZ_WATERBALL
+      max_level: 5
+      requires:
+        - name: MG_COLDBOLT
+          level: 1
+        - name: MG_LIGHTNINGBOLT
+          level: 1
+    - name: WZ_ICEWALL
+      max_level: 10
+      requires:
+        - name: MG_STONECURSE
+          level: 1
+        - name: MG_FROSTDIVER
+          level: 1
     - name: WZ_FROSTNOVA
       max_level: 10
+      requires:
+        - name: WZ_ICEWALL
+          level: 1
     - name: WZ_STORMGUST
       max_level: 10
       requires:
