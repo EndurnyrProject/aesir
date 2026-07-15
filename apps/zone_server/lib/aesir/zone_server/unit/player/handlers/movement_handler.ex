@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -129,6 +130,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       updated_game_state,
       updated_game_state.map_name
     )
+
+    SkillUnitManager.reconcile_unit({:player, updated_game_state.character_id})
 
     # Handle visibility updates
     updated_game_state = handle_visibility_update(updated_game_state)

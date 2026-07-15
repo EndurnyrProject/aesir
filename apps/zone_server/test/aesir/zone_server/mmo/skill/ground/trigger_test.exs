@@ -37,6 +37,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest.OutPersist do
   def on_expire(_group), do: :ok
 end
 
+defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest.FieldTouch do
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+
+  def field_support(%Group{}) do
+    %{status_type: :sc_quagmire, params: [level: 3, val2: 15]}
+  end
+
+  def on_touch(group, _mover), do: {:ok, group}
+
+  def on_expire(_group), do: :ok
+end
+
 defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
   use ExUnit.Case, async: false
 
@@ -45,9 +57,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
 
   alias __MODULE__.OutPersist
   alias __MODULE__.TouchExpire
@@ -62,6 +77,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
 
     Process.put({Manager, :server}, manager)
     allow(Catalog, self(), manager)
+    Mimic.copy(Interpreter)
+    allow(Interpreter, self(), manager)
     :ok
   end
 
@@ -88,6 +105,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
   end
 
   describe "on_enter_cell/4" do
+    test "propagates the source group identity into field support" do
+      stub(Interpreter, :apply_status, fn unit_type, unit_id, status_type, params ->
+        StatusStorage.apply_status(unit_type, unit_id, status_type, params)
+        :ok
+      end)
+
+      :ok =
+        Storage.insert(
+          group(1,
+            skill_name: :wz_stormgust,
+            state: %{field_support: %{status_type: :sc_quagmire, params: [level: 3, val2: 15]}}
+          )
+        )
+
+      assert :ok = Trigger.on_enter_cell(@mover, "prontera", 5, 5)
+
+      assert FieldSupport.sources(:player, 1000, :sc_quagmire) ==
+               [[level: 3, val2: 15]]
+    end
+
     test "invokes on_touch for a covering group and persists {:ok, updated}" do
       stub(Catalog, :ground_module_for, fn :test_trap -> {:ok, TouchPersist} end)
       :ok = Storage.insert(group(1))

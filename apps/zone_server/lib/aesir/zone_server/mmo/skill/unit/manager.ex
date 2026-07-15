@@ -13,12 +13,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   alias Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Lifecycle.Event
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @tick_interval 100
@@ -73,6 +75,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     GenServer.call(server, {:trigger, group_id, mover, callback})
   end
 
+  @doc "Reconciles field support for a unit at its current indexed position."
+  @spec reconcile_unit(mover()) :: :ok
+  def reconcile_unit(mover) do
+    case ProcessTree.get({__MODULE__, :server}) || Process.whereis(__MODULE__) do
+      nil -> :ok
+      server -> reconcile_unit(server, mover)
+    end
+  end
+
+  @doc false
+  @spec reconcile_unit(server(), mover()) :: :ok
+  def reconcile_unit(server, mover), do: GenServer.call(server, {:reconcile_unit, mover})
+
   @doc "Processes one cadence tick using the configured clock."
   @spec tick(server()) :: :ok
   def tick(server \\ default_server()), do: GenServer.call(server, :tick)
@@ -99,7 +114,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   @impl true
   def handle_call({:register, group}, _from, state) do
-    {:reply, Storage.insert(group), state}
+    result = Storage.insert(group)
+    reconcile_group(group)
+    {:reply, result, state}
   end
 
   def handle_call({:update_state, group_id, new_state}, _from, state) do
@@ -121,6 +138,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   def handle_call({:trigger, group_id, mover, callback}, _from, state) do
     if group = Storage.get(group_id), do: run_trigger(group, mover, callback)
+    {:reply, :ok, state}
+  end
+
+  def handle_call({:reconcile_unit, mover}, _from, state) do
+    reconcile_unit_support(mover)
     {:reply, :ok, state}
   end
 
@@ -194,6 +216,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp run_interval(%Group{} = group, now, unit_available?) do
+    reconcile_group(group)
+
     case lifecycle_action(group, unit_available?) do
       :continue -> run_interval_callback(group, now)
       :expire -> cleanup(group)
@@ -291,28 +315,86 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp run_trigger(%Group{} = group, mover, callback) do
-    with {:ok, module} <- handler_for(group),
-         true <- function_exported?(module, callback, 2) do
-      case invoke(module, callback, [group, mover]) do
-        {:ok, {:ok, %Group{group_id: group_id} = updated}} when group_id == group.group_id ->
-          Storage.update(updated)
+    case handler_for(group) do
+      {:ok, module} ->
+        run_callback_trigger(group, mover, callback, module)
 
-        {:ok, {:ok, %Group{group_id: group_id}}} ->
-          callback_failed(group, callback, {:foreign_group_id, group_id}, module)
-
-        {:ok, :expire} ->
-          cleanup(group, module)
-
-        {:ok, result} ->
-          callback_failed(group, callback, {:invalid_return, result}, module)
-
-        {:error, reason} ->
-          callback_failed(group, callback, reason, module)
-      end
-    else
-      _ -> :ok
+      _ ->
+        apply_field_support_action(group, mover, callback)
     end
   end
+
+  defp run_callback_trigger(group, mover, callback, module) do
+    if function_exported?(module, callback, 2) do
+      invoke_trigger(group, mover, callback, module)
+    else
+      apply_field_support_action(group, mover, callback)
+    end
+  end
+
+  defp invoke_trigger(group, mover, callback, module) do
+    case invoke(module, callback, [group, mover]) do
+      {:ok, {:ok, %Group{group_id: group_id} = updated}} when group_id == group.group_id ->
+        Storage.update(updated)
+        apply_field_support_action(updated, mover, callback)
+
+      {:ok, {:ok, %Group{group_id: group_id}}} ->
+        callback_failed(group, callback, {:foreign_group_id, group_id}, module)
+
+      {:ok, :expire} ->
+        cleanup(group, module)
+
+      {:ok, result} ->
+        callback_failed(group, callback, {:invalid_return, result}, module)
+
+      {:error, reason} ->
+        callback_failed(group, callback, reason, module)
+    end
+  end
+
+  defp apply_field_support_action(%Group{} = group, {unit_type, unit_id}, :on_touch) do
+    with {:ok, spec} <- field_support_spec(group) do
+      FieldSupport.acquire(
+        unit_type,
+        unit_id,
+        spec.status_type,
+        group.group_id,
+        spec.params,
+        aggregate: spec.aggregate
+      )
+      |> log_field_support_failure(group, :acquire)
+    end
+
+    :ok
+  end
+
+  defp apply_field_support_action(%Group{} = group, {unit_type, unit_id}, :on_out) do
+    with {:ok, spec} <- field_support_spec(group) do
+      FieldSupport.release(
+        unit_type,
+        unit_id,
+        spec.status_type,
+        group.group_id,
+        aggregate: spec.aggregate
+      )
+      |> log_field_support_failure(group, :release)
+    end
+
+    :ok
+  end
+
+  defp apply_field_support_action(_group, _mover, _callback), do: :ok
+
+  defp log_field_support_failure({:error, reason} = result, group, action) do
+    Logger.error(
+      "Skill.Unit.Manager field_support=#{action} failed skill=#{group.skill_name} " <>
+        "group_id=#{group.group_id}: #{inspect(reason)}"
+    )
+
+    result
+  end
+
+  defp log_field_support_failure(result, _group, _action), do: result
 
   defp cleanup(%Group{} = group) do
     module =
@@ -325,6 +407,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp cleanup(%Group{group_id: group_id} = group, module) do
+    FieldSupport.release_group(group_id)
+
     if module && function_exported?(module, :on_expire, 1) do
       case invoke(module, :on_expire, [group]) do
         {:ok, :ok} -> :ok
@@ -357,6 +441,105 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp default_server, do: ProcessTree.get({__MODULE__, :server}) || __MODULE__
+
+  defp reconcile_group(%Group{} = group) do
+    with {:ok, spec} <- field_support_spec(group) do
+      occupants = occupants(group)
+      acquire_occupants(group, spec, occupants)
+      release_missing(group, spec, occupants)
+    end
+
+    :ok
+  end
+
+  defp occupants(%Group{} = group) do
+    group.cells
+    |> Enum.flat_map(fn {x, y} ->
+      SpatialIndex.get_all_units_in_range(group.map_name, x, y, 0)
+    end)
+    |> Enum.uniq()
+  end
+
+  defp acquire_occupants(group, spec, occupants) do
+    Enum.each(occupants, fn {unit_type, unit_id} ->
+      FieldSupport.acquire(
+        unit_type,
+        unit_id,
+        spec.status_type,
+        group.group_id,
+        spec.params,
+        aggregate: spec.aggregate
+      )
+    end)
+  end
+
+  defp release_missing(group, spec, occupants) do
+    occupied = MapSet.new(occupants)
+
+    group.group_id
+    |> FieldSupport.sources_for_group()
+    |> Enum.each(fn {unit_type, unit_id, status_type, _params} ->
+      if not MapSet.member?(occupied, {unit_type, unit_id}) do
+        FieldSupport.release(unit_type, unit_id, status_type, group.group_id,
+          aggregate: spec.aggregate
+        )
+      end
+    end)
+  end
+
+  defp reconcile_unit_support({unit_type, unit_id}) do
+    current_groups =
+      case SpatialIndex.get_unit_position(unit_type, unit_id) do
+        {:ok, {x, y, map_name}} -> Storage.get_groups_at_cell(map_name, x, y)
+        _ -> []
+      end
+
+    current_ids = MapSet.new(current_groups, & &1.group_id)
+
+    Enum.each(current_groups, &apply_field_support_action(&1, {unit_type, unit_id}, :on_touch))
+
+    FieldSupport.sources_for_unit(unit_type, unit_id)
+    |> Enum.each(fn {_, _, status_type, group_id, _params} ->
+      if not MapSet.member?(current_ids, group_id) do
+        FieldSupport.release(unit_type, unit_id, status_type, group_id)
+      end
+    end)
+  end
+
+  defp field_support_spec(%Group{} = group) do
+    with {:ok, module} <- handler_for(group),
+         true <- function_exported?(module, :field_support, 1),
+         {:ok, spec} <- normalize_field_support(module.field_support(group)) do
+      {:ok, spec}
+    else
+      _ -> normalize_field_support(Map.get(group.state, :field_support))
+    end
+  end
+
+  defp normalize_field_support({:ok, spec}), do: normalize_field_support(spec)
+  defp normalize_field_support(nil), do: :error
+
+  defp normalize_field_support(%{status_type: status_type, params: params} = spec) do
+    {:ok,
+     %{
+       status_type: status_type,
+       params: params,
+       aggregate: Map.get(spec, :aggregate)
+     }}
+  end
+
+  defp normalize_field_support(%{status: status_type, params: params} = spec) do
+    normalize_field_support(%{
+      status_type: status_type,
+      params: params,
+      aggregate: Map.get(spec, :aggregate)
+    })
+  end
+
+  defp normalize_field_support({status_type, params}),
+    do: normalize_field_support(%{status_type: status_type, params: params})
+
+  defp normalize_field_support(_spec), do: :error
 
   defp handler_for(%Group{caster_type: :mob}), do: {:ok, GroundNuke}
   defp handler_for(%Group{skill_name: skill_name}), do: Catalog.ground_module_for(skill_name)

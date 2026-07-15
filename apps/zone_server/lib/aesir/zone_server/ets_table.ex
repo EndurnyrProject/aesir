@@ -100,6 +100,17 @@ defmodule Aesir.ZoneServer.EtsTable do
 
   defp skill_unit_tables(seed) do
     :ets.new(
+      table_for(:field_supports, seed),
+      [
+        :set,
+        :public,
+        :named_table,
+        {:read_concurrency, true},
+        {:write_concurrency, true}
+      ]
+    )
+
+    :ets.new(
       table_for(:skill_units, seed),
       [
         :set,

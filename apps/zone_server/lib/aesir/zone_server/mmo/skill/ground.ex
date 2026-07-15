@@ -69,5 +69,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
   """
   @callback on_out(Group.t(), mover :: {atom(), integer()}) :: {:ok, Group.t()} | :expire
 
-  @optional_callbacks on_expire: 1, on_touch: 2, on_out: 2
+  @doc "Describes the source-owned status granted while a mover occupies the field."
+  @callback field_support(Group.t()) ::
+              {:ok, map()} | map() | nil
+
+  @optional_callbacks on_expire: 1, on_touch: 2, on_out: 2, field_support: 1
 end

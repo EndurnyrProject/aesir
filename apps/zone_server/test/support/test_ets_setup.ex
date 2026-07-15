@@ -25,7 +25,8 @@ defmodule Aesir.TestEtsSetup do
           :skill_unit_due_index,
           :skill_unit_expiry_index,
           :skill_unit_caster_index,
-          :skill_unit_target_index
+          :skill_unit_target_index,
+          :field_supports
         ] do
       :ets.delete_all_objects(EtsTable.table_for(table))
     end
