@@ -107,15 +107,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Storage do
     :ok
   end
 
-  @doc "Returns cells at a coordinate without scanning group rows."
-  @spec get_cells_at_cell(String.t(), integer(), integer()) :: [Cell.t()]
-  def get_cells_at_cell(map_name, x, y) do
-    table_for(:skill_unit_cell_coordinate_index)
-    |> :ets.lookup({map_name, x, y})
-    |> Enum.map(fn {_key, cell_id} -> get_cell(cell_id) end)
-    |> Enum.reject(&is_nil/1)
-  end
-
   @doc "Returns every cell owned by a group."
   @spec get_cells_by_group(non_neg_integer()) :: [Cell.t()]
   def get_cells_by_group(group_id) do
@@ -123,20 +114,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Storage do
     |> :ets.lookup(group_id)
     |> Enum.map(fn {^group_id, cell_id} -> get_cell(cell_id) end)
     |> Enum.reject(&is_nil/1)
-  end
-
-  @doc "Returns cells in an inclusive square range using the map index."
-  @spec get_cells_in_range(String.t(), integer(), integer(), non_neg_integer()) :: [Cell.t()]
-  def get_cells_in_range(map_name, x, y, range) do
-    indexed_cells_in_range(:skill_unit_cell_map_index, map_name, x, y, range)
-  end
-
-  @doc "Returns visible cells in an inclusive square range using the visible map index."
-  @spec get_visible_cells_in_range(String.t(), integer(), integer(), non_neg_integer()) :: [
-          Cell.t()
-        ]
-  def get_visible_cells_in_range(map_name, x, y, range) do
-    indexed_cells_in_range(:skill_unit_visible_cell_map_index, map_name, x, y, range)
   end
 
   @doc "Returns visible groups whose footprint intersects an inclusive square range."
@@ -379,62 +356,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Storage do
   defp store_cell(%Cell{} = cell) do
     :ets.insert(table_for(:skill_unit_cells), {cell.cell_id, cell})
 
-    :ets.insert(
-      table_for(:skill_unit_cell_coordinate_index),
-      {{cell.map_name, cell.x, cell.y}, cell.cell_id}
-    )
-
     :ets.insert(table_for(:skill_unit_group_cells_index), {cell.group_id, cell.cell_id})
-
-    :ets.insert(
-      table_for(:skill_unit_cell_map_index),
-      {{cell.map_name, cell.x, cell.y, cell.cell_id}, true}
-    )
-
-    if Cell.flag?(cell, :visible) do
-      :ets.insert(
-        table_for(:skill_unit_visible_cell_map_index),
-        {{cell.map_name, cell.x, cell.y, cell.cell_id}, true}
-      )
-    end
 
     :ok
   end
 
   defp delete_cell_indexes(%Cell{} = cell) do
-    :ets.delete_object(
-      table_for(:skill_unit_cell_coordinate_index),
-      {{cell.map_name, cell.x, cell.y}, cell.cell_id}
-    )
-
     :ets.delete_object(table_for(:skill_unit_group_cells_index), {cell.group_id, cell.cell_id})
 
-    :ets.delete(
-      table_for(:skill_unit_cell_map_index),
-      {cell.map_name, cell.x, cell.y, cell.cell_id}
-    )
-
-    :ets.delete(
-      table_for(:skill_unit_visible_cell_map_index),
-      {cell.map_name, cell.x, cell.y, cell.cell_id}
-    )
-
     :ok
-  end
-
-  defp indexed_cells_in_range(table, map_name, x, y, range) do
-    keys =
-      :ets.select(table_for(table), [
-        {{{map_name, :"$1", :"$2", :"$3"}, :_},
-         [
-           {:>=, :"$1", x - range},
-           {:"=<", :"$1", x + range},
-           {:>=, :"$2", y - range},
-           {:"=<", :"$2", y + range}
-         ], [:"$3"]}
-      ])
-
-    keys |> Enum.map(&get_cell/1) |> Enum.reject(&is_nil/1)
   end
 
   defp indexed_group_ids_in_range(map_name, x, y, range) do

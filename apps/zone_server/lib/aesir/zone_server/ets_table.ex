@@ -148,7 +148,6 @@ defmodule Aesir.ZoneServer.EtsTable do
           :skill_unit_coordinate_index,
           :skill_unit_caster_index,
           :skill_unit_target_index,
-          :skill_unit_cell_coordinate_index,
           :skill_unit_group_cells_index,
           :skill_unit_group_observers
         ] do
@@ -179,9 +178,7 @@ defmodule Aesir.ZoneServer.EtsTable do
 
     for table <- [
           :skill_unit_observer_groups,
-          :skill_unit_map_index,
-          :skill_unit_cell_map_index,
-          :skill_unit_visible_cell_map_index
+          :skill_unit_map_index
         ] do
       :ets.new(
         table_for(table, seed),

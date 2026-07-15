@@ -877,8 +877,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     assert :ok = Manager.register(manager, replacement)
 
     assert [%Cell{x: 102, y: 100}] = Storage.get_cells_by_group(1)
-    assert [] == Storage.get_cells_at_cell("prontera", 100, 100)
-    assert [] == Storage.get_cells_at_cell("prontera", 101, 100)
 
     assert %Aesir.Net.SkillUnitSnapshot{groups: [%{group_id: 1, cells: [%{x: 102, y: 100}]}]} =
              Manager.snapshot(manager, "prontera", 123)

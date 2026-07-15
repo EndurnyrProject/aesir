@@ -278,7 +278,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.StorageTest do
     end
   end
 
-  test "indexes cells by id, group, coordinate, and visible range" do
+  test "indexes cells by id and group" do
     cell = %Cell{
       cell_id: 5,
       group_id: 1,
@@ -292,33 +292,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.StorageTest do
 
     assert ^cell = Storage.get_cell(5)
     assert [^cell] = Storage.get_cells_by_group(1)
-    assert [^cell] = Storage.get_cells_at_cell("prontera", 100, 101)
-    assert [^cell] = Storage.get_cells_in_range("prontera", 100, 100, 1)
-    assert [^cell] = Storage.get_visible_cells_in_range("prontera", 100, 100, 1)
 
     assert :ok = Storage.delete_cell(5)
     assert nil == Storage.get_cell(5)
-    assert [] == Storage.get_cells_at_cell("prontera", 100, 101)
-  end
-
-  test "keeps group and cell range indexes independent at one coordinate" do
-    :ok = Storage.insert(group(1, visible?: true))
-
-    cell = %Cell{
-      cell_id: 5,
-      group_id: 1,
-      map_name: "prontera",
-      x: 100,
-      y: 100,
-      flags: Cell.visible()
-    }
-
-    :ok = Storage.insert_cell(cell)
-
-    assert [%Group{group_id: 1}] = Storage.get_groups_at_cell("prontera", 100, 100)
-    assert [^cell] = Storage.get_cells_in_range("prontera", 100, 100, 0)
-    assert :ok = Storage.delete(1)
-    assert [] == Storage.get_cells_in_range("prontera", 100, 100, 0)
-    assert :ok = Storage.delete(1)
+    assert [] == Storage.get_cells_by_group(1)
   end
 end
