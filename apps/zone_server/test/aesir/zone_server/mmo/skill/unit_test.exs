@@ -40,6 +40,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
     def on_expire(_group), do: :ok
   end
 
+  defmodule ImmediateFakeUnit do
+    @behaviour Ground
+
+    alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+
+    @impl Ground
+    def on_place(%Group{center: {x, y}}) do
+      {:ok,
+       %{
+         cells: [{x, y}],
+         state: %{seeded: true},
+         interval: 450,
+         duration: 5_000,
+         initial_delay: 0
+       }}
+    end
+
+    @impl Ground
+    def on_interval(group, _now), do: {:ok, group}
+  end
+
   setup do
     manager =
       start_supervised!({Manager, name: nil, schedule_tick: fn _pid, _interval -> :ok end})
@@ -82,6 +103,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
       assert group.next_tick_at + (@duration - @interval) == group.expires_at
 
       assert %Group{} = Storage.get(group.group_id)
+    end
+
+    test "makes a ground field with an immediate first tick due on the next manager cadence" do
+      stub(Catalog, :ground_module_for, fn @skill_name -> {:ok, ImmediateFakeUnit} end)
+      stub(Broadcast, :to_in_range, fn _, _, _, _, _ -> :ok end)
+
+      before = System.monotonic_time(:millisecond)
+      {:ok, group} = Unit.place(caster(), @skill_name, 7, {100, 120})
+
+      assert group.next_tick_at >= before
+      assert group.next_tick_at < before + @interval
     end
 
     test "commits the group before broadcasting exactly one GroundSkill" do

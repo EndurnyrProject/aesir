@@ -333,6 +333,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     - `skill_id` / `skill_level` - identify the skill for the damage packet
     - `element` - the skill's magic element (element resistance + damage context)
     - `skill_ratio` - percent of base MATK the skill deals this hit
+    - `hit_divisions` - number of equal client-visible divisions for the one resolved hit.
+      A negative value mirrors rAthena's negative `HitCount`: the total is
+      floored to equal divisions before it is applied and sent as a positive
+      client division count.
   """
   @spec apply_skill_unit_damage(
           struct(),
@@ -342,6 +346,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
           integer(),
           atom(),
           non_neg_integer()
+        ) :: :ok | {:error, atom()}
+  @spec apply_skill_unit_damage(
+          struct(),
+          atom(),
+          integer(),
+          integer(),
+          integer(),
+          atom(),
+          non_neg_integer(),
+          pos_integer() | neg_integer()
         ) :: :ok | {:error, atom()}
   def apply_skill_unit_damage(
         caster,
@@ -361,6 +375,29 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
       element,
       skill_ratio,
       []
+    )
+  end
+
+  def apply_skill_unit_damage(
+        caster,
+        unit_type,
+        target_id,
+        skill_id,
+        skill_level,
+        element,
+        skill_ratio,
+        hit_divisions
+      )
+      when is_integer(hit_divisions) do
+    apply_skill_unit_damage(
+      caster,
+      unit_type,
+      target_id,
+      skill_id,
+      skill_level,
+      element,
+      skill_ratio,
+      hit_divisions: hit_divisions
     )
   end
 
@@ -391,7 +428,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
         element,
         skill_ratio,
         opts
-      ) do
+      )
+      when is_list(opts) do
     hit_count = Keyword.get(opts, :hit_count, 1)
     bonus_matk = Keyword.get(opts, :bonus_matk, 0)
     dst_delay = Keyword.get(opts, :dst_delay, 0)
@@ -403,6 +441,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
          damage <- if(divide_hits?, do: div(damage, hit_count), else: damage),
          {:ok, target_pid, _target_state, _target_type} <-
            get_target_unit_state(unit_type, target_id) do
+      {damage, packet_divisions} =
+        case Keyword.fetch(opts, :hit_divisions) do
+          {:ok, hit_divisions} -> normalize_hit_divisions(damage, hit_divisions)
+          :error -> {damage, if(divide_hits?, do: -hit_count, else: hit_count)}
+        end
+
       packet = %SkillDamage{
         skill_id: skill_id,
         level: skill_level,
@@ -412,7 +456,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
         src_delay: 0,
         dst_delay: dst_delay,
         damage: damage,
-        div: if(divide_hits?, do: -hit_count, else: hit_count),
+        div: packet_divisions,
         type: @dmg_splash
       }
 
@@ -426,6 +470,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
       :ok
     end
   end
+
+  defp normalize_hit_divisions(damage, hit_divisions) when hit_divisions < 0 do
+    divisions = abs(hit_divisions)
+    {div(damage, divisions) * divisions, divisions}
+  end
+
+  defp normalize_hit_divisions(damage, hit_divisions), do: {damage, hit_divisions}
 
   @doc """
   Executes a direct single-target magic skill from a caster against a target.

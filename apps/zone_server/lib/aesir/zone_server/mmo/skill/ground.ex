@@ -29,8 +29,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
   @typedoc "A single map cell occupied by a skill-unit footprint."
   @type cell :: {integer(), integer()}
 
-  @typedoc "The placement result: footprint, initial per-skill state, and timing."
+  @typedoc "The placement result: footprint, initial per-skill state, timing, and optional lifecycle policy."
   @type placement :: %{
+          optional(:lifecycle_policy) => LifecyclePolicy.t(),
+          optional(:initial_delay) => non_neg_integer(),
           cells: [cell()],
           state: map(),
           interval: pos_integer(),

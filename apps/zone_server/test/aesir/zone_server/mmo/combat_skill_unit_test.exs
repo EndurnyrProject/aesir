@@ -142,6 +142,100 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     assert damage > 0
   end
 
+  test "preserves total damage while reporting requested skill-unit hit divisions" do
+    test_pid = self()
+    mob_state = build_mob_state(10)
+
+    stub(UnitRegistry, :get_unit, fn :mob, @target_id ->
+      {:ok, {MobState, mob_state, test_pid}}
+    end)
+
+    stub(SpatialIndex, :get_unit_position, fn :mob, @target_id ->
+      {:ok, {150, 150, @map_name}}
+    end)
+
+    stub(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, packet ->
+      send(test_pid, {:broadcast, packet.damage, packet.div})
+      :ok
+    end)
+
+    stub(MobSession, :apply_damage, fn ^test_pid, damage, nil ->
+      send(test_pid, {:damage, damage})
+      :ok
+    end)
+
+    assert :ok =
+             Combat.apply_skill_unit_damage(
+               caster(100),
+               :mob,
+               @target_id,
+               85,
+               10,
+               :wind,
+               1_400,
+               20
+             )
+
+    assert_received {:broadcast, damage, 20}
+    assert_received {:damage, ^damage}
+    assert damage > 0
+  end
+
+  test "negative hit divisions floor the total before reporting equal client hits" do
+    test_pid = self()
+    mob_state = build_mob_state(10)
+
+    stub(UnitRegistry, :get_unit, fn :mob, @target_id ->
+      {:ok, {MobState, mob_state, test_pid}}
+    end)
+
+    stub(SpatialIndex, :get_unit_position, fn :mob, @target_id ->
+      {:ok, {150, 150, @map_name}}
+    end)
+
+    stub(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, packet ->
+      send(test_pid, {:broadcast, packet.damage, packet.div})
+      :ok
+    end)
+
+    stub(MobSession, :apply_damage, fn ^test_pid, damage, nil ->
+      send(test_pid, {:damage, damage})
+      :ok
+    end)
+
+    assert :ok =
+             Combat.apply_skill_unit_damage(
+               caster(100),
+               :mob,
+               @target_id,
+               85,
+               10,
+               :wind,
+               1_400,
+               20
+             )
+
+    assert_received {:broadcast, raw_damage, 20}
+    assert_received {:damage, ^raw_damage}
+    assert rem(raw_damage, 20) != 0
+
+    assert :ok =
+             Combat.apply_skill_unit_damage(
+               caster(100),
+               :mob,
+               @target_id,
+               85,
+               10,
+               :wind,
+               1_400,
+               -20
+             )
+
+    assert_received {:broadcast, rounded_damage, 20}
+    assert_received {:damage, ^rounded_damage}
+    assert rounded_damage == div(raw_damage, 20) * 20
+  end
+
   test "skips cleanly when the target cannot be resolved" do
     stub(UnitRegistry, :get_unit, fn :mob, @target_id -> {:error, :not_found} end)
     stub(UnitRegistry, :get_player_pid, fn @target_id -> {:error, :not_found} end)

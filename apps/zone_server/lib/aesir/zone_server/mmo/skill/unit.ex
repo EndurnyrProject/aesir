@@ -39,13 +39,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
       {:ok, placement} = module.on_place(group)
 
       now = System.monotonic_time(:millisecond)
+      initial_delay = Map.get(placement, :initial_delay, placement.interval)
 
       group = %{
         group
         | cells: placement.cells,
           state: placement.state,
           interval: placement.interval,
-          next_tick_at: now + placement.interval,
+          lifecycle_policy: Map.get(placement, :lifecycle_policy, group.lifecycle_policy),
+          next_tick_at: now + initial_delay,
           expires_at: now + placement.duration
       }
 
