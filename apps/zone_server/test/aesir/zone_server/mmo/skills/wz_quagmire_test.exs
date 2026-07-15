@@ -5,7 +5,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzQuagmireTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skill.Unit, as: SkillUnit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
@@ -52,6 +51,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzQuagmireTest do
       assert placement.interval == 1_000
       assert placement.initial_delay == 0
       assert placement.duration == 25_000
+      assert placement.lifecycle_policy.max_instances_per_caster == 3
     end
   end
 
@@ -220,19 +220,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzQuagmireTest do
 
       assert Storage.get(1) == nil
       refute FieldSupport.supported?(:mob, 200, :sc_quagmire)
-    end
-
-    test "removes the earliest field before placing a fourth active instance" do
-      caster = %Aesir.ZoneServer.Unit.Player.PlayerState{character_id: 100}
-
-      for {group_id, expires_at} <- [{1, 1_000}, {2, 2_000}, {3, 3_000}] do
-        :ok = Storage.insert(live_group(group_id: group_id, expires_at: expires_at))
-      end
-
-      expect(SkillUnit, :destroy, fn 1 -> :ok end)
-      stub(SkillUnit, :place, fn ^caster, :wz_quagmire, 1, {10, 20} -> {:ok, live_group()} end)
-
-      assert {:ok, ^caster} = WzQuagmire.cast(caster, {:ground, 10, 20}, 1, %{})
     end
   end
 

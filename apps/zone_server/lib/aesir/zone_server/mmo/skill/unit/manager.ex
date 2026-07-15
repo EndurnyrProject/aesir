@@ -206,8 +206,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   def handle_call({:register, group}, _from, state) do
     with {:ok, group} <- schedule_group(group, state.rng),
          {:ok, group} <- register_group(group) do
-      reconcile_group(group)
-      publish_spawn(group)
+      :ok = enforce_instance_limit(group)
+
+      if Storage.get(group.group_id) do
+        reconcile_group(group)
+        publish_spawn(group)
+      end
+
       {:reply, :ok, state}
     else
       {:error, _reason} = error ->
@@ -843,6 +848,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp register_group(%Group{visible?: false} = group), do: register_invisible_group(group)
   defp register_group(%Group{} = group), do: register_visible_group(group)
+
+  defp enforce_instance_limit(%Group{
+         lifecycle_policy: %{max_instances_per_caster: nil}
+       }),
+       do: :ok
+
+  defp enforce_instance_limit(
+         %Group{
+           lifecycle_policy: %{max_instances_per_caster: max_instances_per_caster}
+         } = group
+       )
+       when is_integer(max_instances_per_caster) and max_instances_per_caster > 0 do
+    group.skill_name
+    |> Storage.get_groups_by_skill_and_caster(group.caster_type, group.caster_id)
+    |> Enum.sort_by(&{&1.expires_at, &1.group_id})
+    |> Enum.drop(-max_instances_per_caster)
+    |> Enum.each(&cleanup_with_reason(&1, :SKILL_UNIT_DESPAWN_REASON_CANCELED))
+
+    :ok
+  end
 
   defp register_visible_group(%Group{} = group) do
     group = %{group | cell_ids: []}

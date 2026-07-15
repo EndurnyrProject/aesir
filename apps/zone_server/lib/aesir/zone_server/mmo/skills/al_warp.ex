@@ -46,9 +46,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlWarp do
     item_cost: [%{id: 717, amount: 1}]
 
   alias Aesir.ZoneServer.Mmo.Skill.Ground
-  alias Aesir.ZoneServer.Mmo.Skill.Unit, as: SkillUnit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -56,21 +55,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlWarp do
   @behaviour Ground
 
   @open_delay 2_000
-  @max_instances 3
-
-  # Custom ground cast (replaces the auto-derived one) to enforce rAthena's
-  # ActiveInstance cap before placing the new portal.
-  @spec cast(PlayerState.t(), {:ground, integer(), integer()}, pos_integer(), term()) ::
-          {:ok, PlayerState.t()} | {:error, atom()}
-  def cast(caster, {:ground, x, y}, level, _definition) do
-    trim_active_portals(caster.character_id)
-
-    case SkillUnit.place(caster, :al_warp, level, {x, y}) do
-      {:ok, _group} -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
-  end
-
   @impl Ground
   @spec on_place(Group.t()) :: {:ok, Ground.placement()}
   def on_place(%Group{center: center, level: level, caster_type: ct, caster_id: cid}) do
@@ -87,7 +71,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlWarp do
          opens_at: now + @open_delay
        },
        interval: definition.hit_interval,
-       duration: @open_delay + Enum.at(definition.unit_duration, level - 1)
+       duration: @open_delay + Enum.at(definition.unit_duration, level - 1),
+       lifecycle_policy: %LifecyclePolicy{max_instances_per_caster: 3}
      }}
   end
 
@@ -148,16 +133,4 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlWarp do
   end
 
   defp consume_warp(%Group{} = group, _player_id), do: group
-
-  @spec trim_active_portals(integer()) :: :ok
-  defp trim_active_portals(caster_id) do
-    Storage.all()
-    |> Enum.filter(fn %Group{} = group ->
-      group.skill_name == :al_warp and group.caster_type == :player and
-        group.caster_id == caster_id
-    end)
-    |> Enum.sort_by(& &1.expires_at)
-    |> Enum.drop(-(@max_instances - 1))
-    |> Enum.each(&SkillUnit.destroy(&1.group_id))
-  end
 end

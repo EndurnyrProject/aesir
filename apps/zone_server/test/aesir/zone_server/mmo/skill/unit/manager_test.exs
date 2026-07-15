@@ -323,6 +323,119 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     end
   end
 
+  describe "per-caster instance limits" do
+    test "removes the oldest matching group when a fourth group is registered" do
+      manager = start_manager(10_000)
+      policy = %LifecyclePolicy{max_instances_per_caster: 3}
+
+      for {group_id, expires_at} <- [{1, 1_000}, {2, 2_000}, {3, 3_000}, {4, 4_000}] do
+        assert :ok =
+                 Manager.register(
+                   manager,
+                   group(group_id,
+                     skill_name: :fake_unit,
+                     expires_at: expires_at,
+                     lifecycle_policy: policy
+                   )
+                 )
+      end
+
+      assert Storage.get(1) == nil
+
+      assert Enum.map(Storage.get_groups_by_caster(:player, 1), & &1.group_id) |> Enum.sort() == [
+               2,
+               3,
+               4
+             ]
+    end
+
+    test "uses group ID to break same-expiry ties when evicting an overflow group" do
+      manager = start_manager(10_000)
+      policy = %LifecyclePolicy{max_instances_per_caster: 2}
+
+      for group_id <- [3, 2, 1] do
+        assert :ok =
+                 Manager.register(
+                   manager,
+                   group(group_id,
+                     skill_name: :fake_unit,
+                     expires_at: 1_000,
+                     lifecycle_policy: policy
+                   )
+                 )
+      end
+
+      assert Storage.get(1) == nil
+
+      assert Enum.map(Storage.get_groups_by_caster(:player, 1), & &1.group_id) |> Enum.sort() == [
+               2,
+               3
+             ]
+    end
+
+    test "does not evict groups from another caster or skill" do
+      manager = start_manager(10_000)
+      policy = %LifecyclePolicy{max_instances_per_caster: 1}
+
+      assert :ok =
+               Manager.register(
+                 manager,
+                 group(1, skill_name: :fake_unit, expires_at: 1_000, lifecycle_policy: policy)
+               )
+
+      assert :ok =
+               Manager.register(
+                 manager,
+                 group(2,
+                   skill_name: :serialized_unit,
+                   expires_at: 1_000,
+                   lifecycle_policy: policy
+                 )
+               )
+
+      assert :ok =
+               Manager.register(
+                 manager,
+                 group(3,
+                   skill_name: :fake_unit,
+                   caster_id: 2,
+                   expires_at: 1_000,
+                   lifecycle_policy: policy
+                 )
+               )
+
+      assert :ok =
+               Manager.register(
+                 manager,
+                 group(4, skill_name: :fake_unit, expires_at: 2_000, lifecycle_policy: policy)
+               )
+
+      assert Storage.get(1) == nil
+      assert %Group{} = Storage.get(2)
+      assert %Group{} = Storage.get(3)
+      assert %Group{} = Storage.get(4)
+    end
+
+    test "leaves uncapped groups active" do
+      manager = start_manager(10_000)
+
+      for group_id <- 1..4 do
+        assert :ok =
+                 Manager.register(
+                   manager,
+                   group(group_id, skill_name: :fake_unit, expires_at: group_id * 1_000)
+                 )
+      end
+
+      assert Enum.map(Storage.get_groups_by_caster(:player, 1), & &1.group_id) |> Enum.sort() == [
+               1,
+               2,
+               3,
+               4
+             ]
+    end
+  end
+
   describe "tick/1" do
     test "runs only due groups, re-arms their deadline, and uses the injected clock" do
       now = 10_000

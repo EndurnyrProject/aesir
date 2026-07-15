@@ -3,9 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlWarpTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skill.Unit, as: SkillUnit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skills.AlWarp
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -86,6 +84,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlWarpTest do
       assert placement.state.opens_at <= now_ms() + 2_000
       # 2s opening phase + Duration1 for level 2
       assert placement.duration == 2_000 + 15_000
+      assert placement.lifecycle_policy.max_instances_per_caster == 3
     end
   end
 
@@ -157,41 +156,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlWarpTest do
 
       state = open_state(%{opens_at: now_ms() + 10_000})
       assert {:ok, %Group{state: %{uses: 8}}} = AlWarp.on_interval(group(state), now_ms())
-    end
-  end
-
-  describe "cast/4 instance cap" do
-    test "destroys the earliest-expiring portal when the caster already has 3" do
-      caster = %PlayerState{character_id: @caster_id}
-
-      portals =
-        for {id, expires} <- [{11, 5_000}, {12, 9_000}, {13, 7_000}] do
-          group(%{}, group_id: id, expires_at: expires)
-        end
-
-      other = group(%{}, group_id: 14, caster_id: 9999, expires_at: 1_000)
-      stub(Storage, :all, fn -> [other | portals] end)
-
-      expect(SkillUnit, :destroy, fn 11 -> :ok end)
-
-      expect(SkillUnit, :place, fn ^caster, :al_warp, 2, {100, 100} ->
-        {:ok, group(open_state())}
-      end)
-
-      assert {:ok, ^caster} = AlWarp.cast(caster, {:ground, 100, 100}, 2, AlWarp.definition())
-    end
-
-    test "places without destroying anything below the cap" do
-      caster = %PlayerState{character_id: @caster_id}
-
-      stub(Storage, :all, fn -> [group(%{}, group_id: 11)] end)
-      reject(&SkillUnit.destroy/1)
-
-      expect(SkillUnit, :place, fn ^caster, :al_warp, 1, {100, 100} ->
-        {:ok, group(open_state())}
-      end)
-
-      assert {:ok, ^caster} = AlWarp.cast(caster, {:ground, 100, 100}, 1, AlWarp.definition())
     end
   end
 end

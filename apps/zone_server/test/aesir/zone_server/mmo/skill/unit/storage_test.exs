@@ -197,6 +197,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.StorageTest do
     assert [] == Storage.get_expired_groups(100)
   end
 
+  test "skill-and-caster lookup uses the caster index and filters by skill" do
+    :ok = Storage.insert(group(1, skill_name: :wz_quagmire, caster_id: 100))
+    :ok = Storage.insert(group(2, skill_name: :al_warp, caster_id: 100))
+    :ok = Storage.insert(group(3, skill_name: :wz_quagmire, caster_id: 200))
+
+    unindexed = group(4, skill_name: :wz_quagmire, caster_id: 100)
+    :ets.insert(EtsTable.table_for(:skill_units), {4, unindexed})
+
+    assert [%Group{group_id: 1}] =
+             Storage.get_groups_by_skill_and_caster(:wz_quagmire, :player, 100)
+  end
+
   describe "get_expired_groups/1" do
     test "returns only groups whose expires_at <= now" do
       now = 1_000

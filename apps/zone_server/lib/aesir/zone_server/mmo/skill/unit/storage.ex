@@ -211,6 +211,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Storage do
     indexed_groups(:skill_unit_caster_index, caster_type, caster_id)
   end
 
+  @doc "Returns every group for a skill owned by the given caster."
+  @spec get_groups_by_skill_and_caster(atom(), atom(), integer()) :: [Group.t()]
+  def get_groups_by_skill_and_caster(skill_name, caster_type, caster_id) do
+    caster_type
+    |> get_groups_by_caster(caster_id)
+    |> Enum.filter(&(&1.skill_name == skill_name))
+  end
+
   @doc "Returns every group associated with the given optional target."
   @spec get_groups_by_target(atom(), integer()) :: [Group.t()]
   def get_groups_by_target(target_type, target_id) do

@@ -28,28 +28,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzQuagmire do
 
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
-  alias Aesir.ZoneServer.Mmo.Skill.Unit, as: SkillUnit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
-  @max_instances 3
   @reconcile_interval 1_000
 
   @behaviour Ground
-
-  @spec cast(PlayerState.t(), {:ground, integer(), integer()}, pos_integer(), term()) ::
-          {:ok, PlayerState.t()} | {:error, atom()}
-  def cast(caster, {:ground, x, y}, level, _definition) do
-    trim_active_fields(caster.character_id)
-
-    case SkillUnit.place(caster, :wz_quagmire, level, {x, y}) do
-      {:ok, _group} -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
-  end
 
   @impl Ground
   @spec on_place(Group.t()) :: {:ok, Ground.placement()}
@@ -62,7 +48,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzQuagmire do
        state: %{},
        interval: @reconcile_interval,
        initial_delay: 0,
-       duration: Enum.at(definition.unit_duration, level - 1)
+       duration: Enum.at(definition.unit_duration, level - 1),
+       lifecycle_policy: %LifecyclePolicy{max_instances_per_caster: 3}
      }}
   end
 
@@ -92,17 +79,5 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzQuagmire do
     else
       _ -> false
     end
-  end
-
-  @spec trim_active_fields(integer()) :: :ok
-  defp trim_active_fields(caster_id) do
-    Storage.all()
-    |> Enum.filter(fn %Group{} = group ->
-      group.skill_name == :wz_quagmire and group.caster_type == :player and
-        group.caster_id == caster_id
-    end)
-    |> Enum.sort_by(& &1.expires_at)
-    |> Enum.drop(-(@max_instances - 1))
-    |> Enum.each(&SkillUnit.destroy(&1.group_id))
   end
 end
