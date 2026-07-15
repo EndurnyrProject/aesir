@@ -32,11 +32,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.StorageTest do
   end
 
   test "a group carries bounded caster and target lifecycle actions" do
-    snapshot = %{matk: 500, element: :water}
-
     policy = %LifecyclePolicy{
-      on_caster_loss: :persist_inert,
-      on_target_loss: {:continue_with_combat_snapshot, snapshot}
+      on_caster_loss: :skip_action,
+      on_target_loss: :expire
     }
 
     assert %Group{

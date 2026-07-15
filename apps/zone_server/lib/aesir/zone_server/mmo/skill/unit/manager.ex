@@ -385,8 +385,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp apply_lifecycle_policy(%Group{lifecycle_policy: policy} = group, relation) do
     case Map.fetch!(policy, policy_field(relation)) do
       :expire -> cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_LIFECYCLE)
-      :persist_inert -> persist_inert(group)
-      _action -> :ok
+      :skip_action -> :ok
     end
   end
 
@@ -408,7 +407,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       :continue -> run_sequence_interval(group, now)
       :expire -> cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_LIFECYCLE)
       :skip_action -> Storage.update(%{group | next_tick_at: now + group.interval})
-      :persist_inert -> persist_inert(group)
     end
   end
 
@@ -444,17 +442,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     if unit_available?.(unit_type, unit_id, group.map_name) do
       :continue
     else
-      group.lifecycle_policy
-      |> Map.fetch!(policy_field(relation))
-      |> normalize_loss_action()
+      Map.fetch!(group.lifecycle_policy, policy_field(relation))
     end
   end
 
   defp unit_identity(group, :caster), do: {group.caster_type, group.caster_id}
   defp unit_identity(group, :target), do: {group.target_type, group.target_id}
-
-  defp normalize_loss_action({:continue_with_combat_snapshot, _snapshot}), do: :continue
-  defp normalize_loss_action(action), do: action
 
   defp unit_available?(:player, unit_id, map_name) do
     case UnitRegistry.get_unit(:player, unit_id) do
@@ -474,14 +467,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp unit_available?(_unit_type, _unit_id, _map_name), do: false
-
-  defp persist_inert(%Group{} = group) do
-    Storage.update(%{
-      group
-      | next_tick_at: nil,
-        state: Map.put(group.state, :lifecycle_inert, true)
-    })
-  end
 
   defp invoke_interval(module, group, now) do
     case invoke(module, :on_interval, [group, now]) do
@@ -555,14 +540,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
           unit_id,
           spec.status_type,
           group.group_id,
-          params_for(spec, unit_type, unit_id),
-          aggregate: spec.aggregate
+          params_for(spec, unit_type, unit_id)
         )
         |> log_field_support_failure(group, :acquire)
       else
-        FieldSupport.release(unit_type, unit_id, spec.status_type, group.group_id,
-          aggregate: spec.aggregate
-        )
+        FieldSupport.release(unit_type, unit_id, spec.status_type, group.group_id)
         |> log_field_support_failure(group, :release)
       end
     end
@@ -572,13 +554,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp apply_field_support_action(%Group{} = group, {unit_type, unit_id}, :on_out) do
     with {:ok, spec} <- field_support_spec(group) do
-      FieldSupport.release(
-        unit_type,
-        unit_id,
-        spec.status_type,
-        group.group_id,
-        aggregate: spec.aggregate
-      )
+      FieldSupport.release(unit_type, unit_id, spec.status_type, group.group_id)
       |> log_field_support_failure(group, :release)
     end
 
@@ -1119,8 +1095,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
           unit_id,
           spec.status_type,
           group.group_id,
-          params_for(spec, unit_type, unit_id),
-          aggregate: spec.aggregate
+          params_for(spec, unit_type, unit_id)
         )
       end
     end)
@@ -1134,9 +1109,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     |> Enum.each(fn {unit_type, unit_id, status_type, _params} ->
       if not MapSet.member?(occupied, {unit_type, unit_id}) or
            not supports_target?(spec, {unit_type, unit_id}) do
-        FieldSupport.release(unit_type, unit_id, status_type, group.group_id,
-          aggregate: spec.aggregate
-        )
+        FieldSupport.release(unit_type, unit_id, status_type, group.group_id)
       end
     end)
   end
@@ -1170,50 +1143,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp field_support_spec(%Group{} = group) do
     with {:ok, module} <- handler_for(group),
-         true <- function_exported?(module, :field_support, 1),
-         {:ok, spec} <- normalize_field_support(module.field_support(group)) do
-      {:ok, spec}
+         true <- function_exported?(module, :field_support, 1) do
+      {:ok, %{status_type: _, params: _, target?: _} = module.field_support(group)}
     else
-      _ -> normalize_field_support(Map.get(group.state, :field_support))
+      _ -> :error
     end
   end
-
-  defp normalize_field_support({:ok, spec}), do: normalize_field_support(spec)
-  defp normalize_field_support(nil), do: :error
-
-  defp normalize_field_support(%{status_type: status_type, params: params} = spec) do
-    {:ok,
-     %{
-       status_type: status_type,
-       params: params,
-       aggregate: Map.get(spec, :aggregate),
-       target?: Map.get(spec, :target?)
-     }}
-  end
-
-  defp normalize_field_support(%{status: status_type, params: params} = spec) do
-    normalize_field_support(%{
-      status_type: status_type,
-      params: params,
-      aggregate: Map.get(spec, :aggregate),
-      target?: Map.get(spec, :target?)
-    })
-  end
-
-  defp normalize_field_support({status_type, params}),
-    do: normalize_field_support(%{status_type: status_type, params: params})
-
-  defp normalize_field_support(_spec), do: :error
 
   defp params_for(%{params: params}, unit_type, unit_id) when is_function(params, 2),
     do: params.(unit_type, unit_id)
 
   defp params_for(%{params: params}, _unit_type, _unit_id), do: params
 
-  defp supports_target?(%{target?: target?}, target) when is_function(target?, 1),
-    do: target?.(target)
-
-  defp supports_target?(_spec, _target), do: true
+  defp supports_target?(%{target?: target?}, target), do: target?.(target)
 
   defp handler_for(%Group{caster_type: :mob}), do: {:ok, GroundNuke}
   defp handler_for(%Group{skill_name: skill_name}), do: Catalog.ground_module_for(skill_name)

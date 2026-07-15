@@ -9,7 +9,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportTest do
   alias Aesir.ZoneServer.Mmo.StatusStorage
 
   defmodule StationaryField do
-    def field_support(_group), do: %{status_type: :sc_quagmire, params: [level: 2, val2: 10]}
+    def field_support(_group),
+      do: %{status_type: :sc_quagmire, params: [level: 2, val2: 10], target?: fn _ -> true end}
+
     def on_interval(group, _now), do: {:ok, group}
   end
 

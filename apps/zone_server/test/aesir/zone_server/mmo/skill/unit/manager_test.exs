@@ -532,7 +532,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       assert ^unrelated = Storage.get(2)
     end
 
-    test "map loss skips, makes inert, or continues from snapshot only on the old map" do
+    test "map loss skips scheduled actions only on the old map" do
       now = 10_000
 
       manager =
@@ -549,37 +549,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
           lifecycle_policy: %LifecyclePolicy{on_caster_loss: :skip_action}
         )
 
-      inert =
-        group(2,
-          next_tick_at: now,
-          lifecycle_policy: %LifecyclePolicy{on_caster_loss: :persist_inert}
-        )
-
-      snapshot =
-        group(3,
-          next_tick_at: now,
-          lifecycle_policy: %LifecyclePolicy{
-            on_caster_loss: {:continue_with_combat_snapshot, %{matk: 500}}
-          }
-        )
-
       new_map =
-        group(4,
+        group(2,
           map_name: "geffen",
           next_tick_at: now + 5_000,
-          lifecycle_policy: %LifecyclePolicy{on_caster_loss: :persist_inert}
+          lifecycle_policy: %LifecyclePolicy{on_caster_loss: :skip_action}
         )
 
-      Enum.each([skip, inert, snapshot, new_map], &Manager.register(manager, &1))
+      Enum.each([skip, new_map], &Manager.register(manager, &1))
 
       :ok = Lifecycle.publish_transition(:player, 1, "prontera", "geffen")
       assert :ok = Manager.tick(manager, now)
 
       assert %Group{next_tick_at: 10_450} = Storage.get(1)
       assert Storage.get(1).state == %{}
-      assert %Group{next_tick_at: nil, state: %{lifecycle_inert: true}} = Storage.get(2)
-      assert %Group{next_tick_at: 10_450, state: %{ticks: 1}} = Storage.get(3)
-      assert ^new_map = Storage.get(4)
+      assert ^new_map = Storage.get(2)
     end
 
     test "target disappearance expires only groups in the target index" do
