@@ -17,6 +17,8 @@ defmodule Aesir.ZoneServer.MechanicsSupervisorTest do
   alias Aesir.ZoneServer.Npc.Warps
 
   test "item scripts are compiled at zone boot" do
+    assert {:ok, _spec} = Aesir.ZoneServer.MechanicsSupervisor.init([])
+
     assert Code.ensure_loaded?(CompiledItemScripts)
     assert function_exported?(CompiledItemScripts, :on_use, 2)
   end
