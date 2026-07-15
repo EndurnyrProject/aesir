@@ -25,6 +25,7 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.Envelope
   alias Aesir.Net.EquipItem
   alias Aesir.Net.EquipResult
+  alias Aesir.Net.EstimationResult
   alias Aesir.Net.GroundSkill
   alias Aesir.Net.GroundSkillCast
   alias Aesir.Net.GuildActionResult
@@ -105,6 +106,12 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.SkillEffect
   alias Aesir.Net.SkillInfo
   alias Aesir.Net.SkillList
+  alias Aesir.Net.SkillUnitCellState
+  alias Aesir.Net.SkillUnitDespawn
+  alias Aesir.Net.SkillUnitGroupState
+  alias Aesir.Net.SkillUnitSnapshot
+  alias Aesir.Net.SkillUnitSpawn
+  alias Aesir.Net.SkillUnitUpdate
   alias Aesir.Net.Snapshot
   alias Aesir.Net.SnapshotEntity
   alias Aesir.Net.SpecialEffect
@@ -2435,5 +2442,182 @@ defmodule Aesir.Commons.Network.ProtoTest do
       assert {:ok, %Envelope{seq: 1, body: {:announcement, ^announcement}}} =
                Envelope.decode(IO.iodata_to_binary(iodata))
     end
+  end
+
+  test "skill_unit_snapshot round-trips complete group and cell state through envelope oneof" do
+    snapshot = %SkillUnitSnapshot{
+      server_tick: 4_294_967_296,
+      groups: [
+        %SkillUnitGroupState{
+          group_id: 18_446_744_073_709_551_615,
+          skill_id: 87,
+          skill_level: 5,
+          owner_type: :SKILL_UNIT_OWNER_TYPE_PLAYER,
+          owner_id: 42,
+          center_x: 150,
+          center_y: 100,
+          created_tick: 4_294_967_296,
+          expires_tick: 4_294_977_296,
+          cells: [
+            %SkillUnitCellState{
+              cell_id: 4_294_967_295,
+              x: -10,
+              y: 20,
+              hp: 1_200,
+              max_hp: 1_200,
+              flags: 31
+            },
+            %SkillUnitCellState{
+              cell_id: 4_294_967_294,
+              x: 11,
+              y: -21,
+              hp: 0,
+              max_hp: 0,
+              flags: 16
+            }
+          ]
+        }
+      ]
+    }
+
+    env = %Envelope{seq: 1, body: {:skill_unit_snapshot, snapshot}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok, %Envelope{seq: 1, body: {:skill_unit_snapshot, decoded}}} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+
+    assert decoded == snapshot
+
+    assert decoded.groups |> hd() |> Map.fetch!(:cells) |> Enum.map(& &1.cell_id) ==
+             [4_294_967_295, 4_294_967_294]
+  end
+
+  test "persistent skill-unit and Estimation oneof fields occupy 155 through 159" do
+    fields = Envelope.schema().fields
+
+    assert fields.skill_unit_snapshot.tag == 155
+    assert fields.skill_unit_spawn.tag == 156
+    assert fields.skill_unit_update.tag == 157
+    assert fields.skill_unit_despawn.tag == 158
+    assert fields.estimation_result.tag == 159
+  end
+
+  test "skill_unit_spawn round-trips complete state through envelope oneof" do
+    spawn = %SkillUnitSpawn{
+      group: %SkillUnitGroupState{
+        group_id: 1,
+        skill_id: 85,
+        skill_level: 10,
+        owner_type: :SKILL_UNIT_OWNER_TYPE_MOB,
+        owner_id: 99,
+        center_x: 10,
+        center_y: -20,
+        created_tick: 100,
+        expires_tick: 200,
+        cells: []
+      }
+    }
+
+    assert_round_trip(:skill_unit_spawn, spawn)
+  end
+
+  test "skill_unit owner types round-trip through envelope oneof" do
+    for owner_type <- [
+          :SKILL_UNIT_OWNER_TYPE_UNSPECIFIED,
+          :SKILL_UNIT_OWNER_TYPE_PLAYER,
+          :SKILL_UNIT_OWNER_TYPE_MOB,
+          :SKILL_UNIT_OWNER_TYPE_NPC
+        ] do
+      spawn = %SkillUnitSpawn{
+        group: %SkillUnitGroupState{owner_type: owner_type, owner_id: 42}
+      }
+
+      assert_round_trip(:skill_unit_spawn, spawn)
+    end
+  end
+
+  test "skill_unit_update round-trips every reason and signed delta through envelope oneof" do
+    for {reason, source_type, source_id} <- [
+          {:SKILL_UNIT_UPDATE_REASON_UNSPECIFIED, :SKILL_UNIT_OWNER_TYPE_UNSPECIFIED, 0},
+          {:SKILL_UNIT_UPDATE_REASON_DAMAGE, :SKILL_UNIT_OWNER_TYPE_PLAYER, 42},
+          {:SKILL_UNIT_UPDATE_REASON_DECAY, :SKILL_UNIT_OWNER_TYPE_UNSPECIFIED, 0}
+        ] do
+      update = %SkillUnitUpdate{
+        group_id: 18_446_744_073_709_551_615,
+        cell_id: 4_294_967_295,
+        hp: 900,
+        max_hp: 1_200,
+        hp_delta: -300,
+        source_type: source_type,
+        source_id: source_id,
+        reason: reason,
+        server_tick: 4_294_967_296
+      }
+
+      decoded = assert_round_trip(:skill_unit_update, update)
+      assert decoded.source_type == source_type
+      assert decoded.source_id == source_id
+    end
+  end
+
+  test "skill_unit_despawn round-trips every reason and repeated cell IDs through envelope oneof" do
+    for reason <- [
+          :SKILL_UNIT_DESPAWN_REASON_UNSPECIFIED,
+          :SKILL_UNIT_DESPAWN_REASON_EXPIRED,
+          :SKILL_UNIT_DESPAWN_REASON_DESTROYED,
+          :SKILL_UNIT_DESPAWN_REASON_SOURCE_CONSUMED,
+          :SKILL_UNIT_DESPAWN_REASON_LIFECYCLE,
+          :SKILL_UNIT_DESPAWN_REASON_MAP_SHUTDOWN,
+          :SKILL_UNIT_DESPAWN_REASON_LEFT_VIEW,
+          :SKILL_UNIT_DESPAWN_REASON_CANCELED
+        ] do
+      despawn = %SkillUnitDespawn{
+        group_id: 18_446_744_073_709_551_615,
+        cell_ids: [1, 4_294_967_295],
+        reason: reason,
+        server_tick: 4_294_967_296
+      }
+
+      assert_round_trip(:skill_unit_despawn, despawn)
+    end
+  end
+
+  test "estimation_result round-trips complete target information through envelope oneof" do
+    result = %EstimationResult{
+      target_id: 1,
+      class_id: 1_001,
+      level: 99,
+      size: 2,
+      hp: 1_000_000,
+      def: 250,
+      race: 6,
+      mdef: 175,
+      element: 3,
+      water_modifier: 25,
+      earth_modifier: -50,
+      fire_modifier: 100,
+      wind_modifier: 0,
+      poison_modifier: 75,
+      holy_modifier: -25,
+      shadow_modifier: 50,
+      ghost_modifier: 125,
+      undead_modifier: -100,
+      server_tick: 4_294_967_296
+    }
+
+    assert_round_trip(:estimation_result, result)
+  end
+
+  defp assert_round_trip(tag, message) do
+    env = %Envelope{seq: 1, body: {tag, message}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok, %Envelope{seq: 1, body: {^tag, decoded}}} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+
+    assert decoded == message
+    decoded
   end
 end

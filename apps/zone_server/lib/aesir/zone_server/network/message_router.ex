@@ -94,6 +94,11 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def route(%Aesir.Net.ItemOnGround{}), do: {:world, :item_on_ground}
   def route(%Aesir.Net.ItemVanished{}), do: {:world, :item_vanished}
   def route(%Aesir.Net.PickupResult{}), do: {:world, :pickup_result}
+  def route(%Aesir.Net.SkillUnitSnapshot{}), do: {:world, :skill_unit_snapshot}
+  def route(%Aesir.Net.SkillUnitSpawn{}), do: {:world, :skill_unit_spawn}
+  def route(%Aesir.Net.SkillUnitUpdate{}), do: {:world, :skill_unit_update}
+  def route(%Aesir.Net.SkillUnitDespawn{}), do: {:world, :skill_unit_despawn}
+  def route(%Aesir.Net.EstimationResult{}), do: {:world, :estimation_result}
 
   def route(%Aesir.Net.SkillList{}), do: {:bulk, :skill_list}
   def route(%Aesir.Net.InventoryList{}), do: {:bulk, :inventory_list}

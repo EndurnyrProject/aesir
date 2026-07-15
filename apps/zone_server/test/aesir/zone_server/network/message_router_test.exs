@@ -42,6 +42,11 @@ defmodule Aesir.ZoneServer.Network.MessageRouterTest do
     {%Aesir.Net.UnitStateChange{}, {:world, :unit_state_change}},
     {%Aesir.Net.SpecialEffect{}, {:world, :special_effect}},
     {%Aesir.Net.Announcement{}, {:world, :announcement}},
+    {%Aesir.Net.SkillUnitSnapshot{}, {:world, :skill_unit_snapshot}},
+    {%Aesir.Net.SkillUnitSpawn{}, {:world, :skill_unit_spawn}},
+    {%Aesir.Net.SkillUnitUpdate{}, {:world, :skill_unit_update}},
+    {%Aesir.Net.SkillUnitDespawn{}, {:world, :skill_unit_despawn}},
+    {%Aesir.Net.EstimationResult{}, {:world, :estimation_result}},
     {%Aesir.Net.SkillList{}, {:bulk, :skill_list}},
     {%Aesir.Net.InventoryList{}, {:bulk, :inventory_list}},
     {%Aesir.Net.Snapshot{}, {:snapshots, :snapshot}}

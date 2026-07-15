@@ -176,6 +176,12 @@ message Envelope {
     GuildEmblemChanged guild_emblem_changed = 152;
     GuildEmblemData guild_emblem_data = 153;
     GuildDisbanded guild_disbanded = 154;
+    // 155-159: persistent skill-unit state and caster-only Estimation results
+    SkillUnitSnapshot skill_unit_snapshot = 155;
+    SkillUnitSpawn skill_unit_spawn = 156;
+    SkillUnitUpdate skill_unit_update = 157;
+    SkillUnitDespawn skill_unit_despawn = 158;
+    EstimationResult estimation_result = 159;
   }
 }
 
@@ -1532,4 +1538,122 @@ message QuestHuntProgress {
   uint32 objective_index = 2;
   uint32 count = 3;
   uint32 needed = 4;
+}
+
+// The identity kind for an actor that owns a persistent skill-unit group or
+// causes a skill-unit update. In group state it identifies the caster/owner;
+// in update state it identifies the damage source. UNSPECIFIED with ID zero
+// means no actor applies, such as an automatic DECAY update.
+enum SkillUnitOwnerType {
+  SKILL_UNIT_OWNER_TYPE_UNSPECIFIED = 0;
+  SKILL_UNIT_OWNER_TYPE_PLAYER = 1;
+  SKILL_UNIT_OWNER_TYPE_MOB = 2;
+  SKILL_UNIT_OWNER_TYPE_NPC = 3;
+}
+
+// A persistent skill-unit cell's client-visible traits. Flags may be combined:
+// bit 0 targetable, bit 1 blocks movement, bit 2 blocks projectiles, bit 3
+// consumable water, bit 4 visible. HP values are zero for non-destructible cells.
+message SkillUnitCellState {
+  uint32 cell_id = 1;
+  int32 x = 2;
+  int32 y = 3;
+  uint32 hp = 4;
+  uint32 max_hp = 5;
+  uint32 flags = 6;
+}
+
+// Complete authoritative state for one persistent skill-unit cast. The stream
+// is scoped to the observer's current map, so no map identifier is required.
+message SkillUnitGroupState {
+  uint64 group_id = 1;
+  uint32 skill_id = 2;
+  uint32 skill_level = 3;
+  SkillUnitOwnerType owner_type = 4;
+  uint32 owner_id = 5;
+  int32 center_x = 6;
+  int32 center_y = 7;
+  uint64 created_tick = 8;
+  uint64 expires_tick = 9;
+  repeated SkillUnitCellState cells = 10;
+}
+
+// Server -> client, an authoritative replacement for the observer's complete
+// active visible skill-unit set.
+message SkillUnitSnapshot {
+  uint64 server_tick = 1;
+  repeated SkillUnitGroupState groups = 2;
+}
+
+// Server -> client, complete current state for a group entering visibility.
+message SkillUnitSpawn {
+  SkillUnitGroupState group = 1;
+}
+
+// Why a skill-unit cell's authoritative HP changed.
+enum SkillUnitUpdateReason {
+  SKILL_UNIT_UPDATE_REASON_UNSPECIFIED = 0;
+  SKILL_UNIT_UPDATE_REASON_DAMAGE = 1;
+  SKILL_UNIT_UPDATE_REASON_DECAY = 2;
+}
+
+// Server -> client, an authoritative HP change for one persistent skill-unit cell.
+// `hp_delta` is signed. `source_type` and `source_id` identify the actor that
+// caused DAMAGE; automatic updates use UNSPECIFIED and zero.
+message SkillUnitUpdate {
+  uint64 group_id = 1;
+  uint32 cell_id = 2;
+  uint32 hp = 3;
+  uint32 max_hp = 4;
+  sint32 hp_delta = 5;
+  SkillUnitOwnerType source_type = 6;
+  uint32 source_id = 7;
+  SkillUnitUpdateReason reason = 8;
+  uint64 server_tick = 9;
+}
+
+// Why one or more skill-unit cells were removed. Selected cell IDs do not
+// imply that their parent group or its other cells were removed.
+enum SkillUnitDespawnReason {
+  SKILL_UNIT_DESPAWN_REASON_UNSPECIFIED = 0;
+  SKILL_UNIT_DESPAWN_REASON_EXPIRED = 1;
+  SKILL_UNIT_DESPAWN_REASON_DESTROYED = 2;
+  SKILL_UNIT_DESPAWN_REASON_SOURCE_CONSUMED = 3;
+  SKILL_UNIT_DESPAWN_REASON_LIFECYCLE = 4;
+  SKILL_UNIT_DESPAWN_REASON_MAP_SHUTDOWN = 5;
+  SKILL_UNIT_DESPAWN_REASON_LEFT_VIEW = 6;
+  SKILL_UNIT_DESPAWN_REASON_CANCELED = 7;
+}
+
+// Server -> client, removes the listed cells from a persistent group.
+message SkillUnitDespawn {
+  uint64 group_id = 1;
+  repeated uint32 cell_ids = 2;
+  SkillUnitDespawnReason reason = 3;
+  uint64 server_tick = 4;
+}
+
+// Server -> client, caster-only result for Estimation. Element modifiers are
+// signed percentages for Water, Earth, Fire, Wind, Poison, Holy, Shadow,
+// Ghost, and Undead respectively.
+message EstimationResult {
+  uint32 target_id = 1;
+  uint32 class_id = 2;
+  uint32 level = 3;
+  uint32 size = 4;
+  uint32 hp = 5;
+  uint32 def = 6;
+  uint32 race = 7;
+  uint32 mdef = 8;
+  uint32 element = 9;
+  sint32 water_modifier = 10;
+  sint32 earth_modifier = 11;
+  sint32 fire_modifier = 12;
+  sint32 wind_modifier = 13;
+  sint32 poison_modifier = 14;
+  sint32 holy_modifier = 15;
+  sint32 shadow_modifier = 16;
+  sint32 ghost_modifier = 17;
+  sint32 undead_modifier = 18;
+  uint64 server_tick = 19;
 }
