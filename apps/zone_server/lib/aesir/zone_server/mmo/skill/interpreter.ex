@@ -25,7 +25,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Learned
-  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.WeaponTypes
@@ -34,7 +33,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @typedoc """
   Scheduling info for a timed cast, returned by `begin_cast/4` when the skill
@@ -248,12 +246,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   end
 
   # A target that cannot be resolved falls through so `check_range` reports it
-  # as `:target_not_found`. Player relations need the registered state so party
-  # and guild membership use the same shared policy as direct/splash combat.
-  defp check_target(game_state, {:unit, target_id}, %{target_type: :target_enemy}) do
+  # as `:target_not_found`.
+  defp check_target(_game_state, {:unit, target_id}, %{target_type: :target_enemy}) do
     case unit_type_of(target_id) do
       :mob -> :ok
-      :player -> validate_player_enemy(game_state, target_id)
+      :player -> {:error, :invalid_target}
       :not_found -> :ok
     end
   end
@@ -267,13 +264,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp check_target(_game_state, :self, _definition), do: :ok
   defp check_target(%{character_id: caster_id}, {:unit, caster_id}, _definition), do: :ok
   defp check_target(_game_state, _target, _definition), do: {:error, :invalid_target}
-
-  defp validate_player_enemy(game_state, target_id) do
-    case UnitRegistry.get_unit(:player, target_id) do
-      {:ok, {_module, target_state, _pid}} -> Targeting.validate_enemy(game_state, target_state)
-      {:error, :not_found} -> {:error, :invalid_target}
-    end
-  end
 
   defp check_range(_game_state, :self, _definition), do: :ok
 
@@ -344,13 +334,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   end
 
   defp unit_type_of(unit_id) do
-    case SpatialIndex.get_unit_position(:mob, unit_id) do
+    case SpatialIndex.get_unit_position(:player, unit_id) do
       {:ok, _} ->
-        :mob
+        :player
 
       {:error, :not_found} ->
-        case SpatialIndex.get_unit_position(:player, unit_id) do
-          {:ok, _} -> :player
+        case SpatialIndex.get_unit_position(:mob, unit_id) do
+          {:ok, _} -> :mob
           {:error, :not_found} -> :not_found
         end
     end

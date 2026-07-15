@@ -214,6 +214,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     assert {:error, :invalid_target} = Interpreter.cast(gs, 6, 1, {:unit, 9999})
   end
 
+  test "an enemy skill rejects a player target when a mob shares its ID" do
+    stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(9)} end)
+
+    stub(SpatialIndex, :get_unit_position, fn
+      :mob, 9999 -> {:ok, {12, 10, "prontera"}}
+      :player, 9999 -> {:ok, {12, 10, "prontera"}}
+    end)
+
+    gs = game_state(100, %{6 => 1})
+    assert {:error, :invalid_target} = Interpreter.cast(gs, 6, 1, {:unit, 9999})
+  end
+
   test "an enemy skill targeting a mob on another map returns :different_map" do
     stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(9)} end)
 

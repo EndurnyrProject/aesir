@@ -11,7 +11,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzEarthspikeTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
   setup :setup_ets_tables
@@ -126,9 +125,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzEarthspikeTest do
   end
 
   describe "Skill.Interpreter target_enemy path" do
-    test "casts Earth Spike at another unaffiliated living player" do
+    test "rejects Earth Spike on another player" do
       caster = interpreter_caster()
-      target = %{interpreter_caster() | character_id: 2000, x: 12}
 
       stub(Catalog, :by_id, fn 90 -> {:ok, WzEarthspike.definition()} end)
       stub(Catalog, :active_module_for, fn :wz_earthspike -> {:ok, WzEarthspike} end)
@@ -138,19 +136,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzEarthspikeTest do
         :player, 2000 -> {:ok, {12, 10, "prontera"}}
       end)
 
-      stub(UnitRegistry, :get_unit, fn :player, 2000 ->
-        {:ok, {PlayerState, target, self()}}
-      end)
-
-      expect(Combat, :execute_magic_attack, fn ^caster, 2000, opts ->
-        assert opts[:skill_id] == 90
-        assert opts[:skill_level] == 5
-        assert opts[:hit_count] == 5
-        :ok
-      end)
-
-      assert {:ok, updated} = Interpreter.cast(caster, 90, 5, {:unit, 2000})
-      assert updated.stats.current_state.sp == 70
+      assert {:error, :invalid_target} = Interpreter.cast(caster, 90, 5, {:unit, 2000})
     end
   end
 end
