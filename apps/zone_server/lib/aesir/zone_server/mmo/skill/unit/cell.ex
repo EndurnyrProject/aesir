@@ -4,6 +4,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Cell do
   import Bitwise
   use TypedStruct
 
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
+
   @targetable 1
   @blocks_movement 2
   @blocks_projectiles 4
@@ -58,6 +60,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Cell do
   def consumable_water, do: @consumable_water
   @spec visible() :: pos_integer()
   def visible, do: @visible
+
+  @doc false
+  @spec to_combatant(t()) :: map()
+  def to_combatant(%__MODULE__{} = cell), do: CombatTarget.to_combatant(cell)
 
   defp normalize_flags(%{flags: flags} = attrs) when is_list(flags) do
     Map.put(

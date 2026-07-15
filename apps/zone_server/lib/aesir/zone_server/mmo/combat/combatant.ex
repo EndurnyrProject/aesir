@@ -41,7 +41,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
   typedstruct do
     # Unit identification
     field :unit_id, integer(), enforce: true
-    field :unit_type, :player | :mob, enforce: true
+    field :unit_type, :player | :mob | :skill_unit, enforce: true
     field :party_id, non_neg_integer(), default: 0
     field :guild_id, non_neg_integer(), default: 0
 
@@ -152,8 +152,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
       combatant.unit_id <= 0 ->
         {:error, "Invalid unit_id: must be positive integer"}
 
-      combatant.unit_type not in [:player, :mob] ->
-        {:error, "Invalid unit_type: must be :player or :mob"}
+      combatant.unit_type not in [:player, :mob, :skill_unit] ->
+        {:error, "Invalid unit_type"}
 
       not is_map(combatant.base_stats) ->
         {:error, "Invalid base_stats: must be map"}

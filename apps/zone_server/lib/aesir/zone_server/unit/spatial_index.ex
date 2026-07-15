@@ -226,6 +226,16 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
     end
   end
 
+  @doc "Indexes a targetable skill-unit cell at its authoritative map position."
+  @spec add_skill_unit(Aesir.ZoneServer.Mmo.Skill.Unit.Cell.t()) :: :ok
+  def add_skill_unit(%Aesir.ZoneServer.Mmo.Skill.Unit.Cell{} = cell) do
+    add_unit(:skill_unit, cell.cell_id, cell.x, cell.y, cell.map_name)
+  end
+
+  @doc "Removes a skill-unit cell from spatial queries."
+  @spec remove_skill_unit(non_neg_integer()) :: :ok
+  def remove_skill_unit(cell_id), do: remove_unit(:skill_unit, cell_id)
+
   @doc """
   Gets all units of a specific type on a map.
 

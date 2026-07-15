@@ -16,6 +16,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackPositioning
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Id, as: SkillUnitId
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -28,6 +30,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
   Handles an attack request, initiating move-to-range if necessary.
@@ -107,15 +110,36 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   end
 
   defp get_target_location(target_id) do
+    if SkillUnitId.skill_unit?(target_id),
+      do: get_skill_unit_location(target_id),
+      else: get_standard_target_location(target_id)
+  end
+
+  defp get_standard_target_location(target_id) do
     case SpatialIndex.get_unit_position(:player, target_id) do
       {:ok, {x, y, map}} ->
         {:ok, {map, x, y}}
 
       {:error, :not_found} ->
-        case SpatialIndex.get_unit_position(:mob, target_id) do
-          {:ok, {x, y, map}} -> {:ok, {map, x, y}}
-          {:error, :not_found} -> {:error, :target_not_found}
-        end
+        get_mob_target_location(target_id)
+    end
+  end
+
+  defp get_mob_target_location(target_id) do
+    case SpatialIndex.get_unit_position(:mob, target_id) do
+      {:ok, {x, y, map}} -> {:ok, {map, x, y}}
+      {:error, :not_found} -> {:error, :target_not_found}
+    end
+  end
+
+  defp get_skill_unit_location(target_id) do
+    with {:ok, {_module, _cell, manager_pid}} when is_pid(manager_pid) <-
+           UnitRegistry.get_unit(:skill_unit, target_id),
+         {:ok, _cell} <- SkillUnitManager.targetable_cell(manager_pid, target_id),
+         {:ok, {x, y, map}} <- SpatialIndex.get_unit_position(:skill_unit, target_id) do
+      {:ok, {map, x, y}}
+    else
+      _ -> {:error, :target_not_found}
     end
   end
 
@@ -367,20 +391,32 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   end
 
   defp get_target_position(target_id) do
-    # Try to get position from spatial index (could be player or mob)
+    if SkillUnitId.skill_unit?(target_id),
+      do: get_skill_unit_position(target_id),
+      else: get_standard_target_position(target_id)
+  end
+
+  defp get_skill_unit_position(target_id) do
+    case get_skill_unit_location(target_id) do
+      {:ok, {_map, x, y}} -> {:ok, {x, y}}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp get_standard_target_position(target_id) do
     case SpatialIndex.get_unit_position(:player, target_id) do
       {:ok, {x, y, _map}} ->
         {:ok, {x, y}}
 
       {:error, :not_found} ->
-        # Try mob
-        case SpatialIndex.get_unit_position(:mob, target_id) do
-          {:ok, {x, y, _map}} ->
-            {:ok, {x, y}}
+        get_mob_target_position(target_id)
+    end
+  end
 
-          {:error, :not_found} ->
-            {:error, :target_not_found}
-        end
+  defp get_mob_target_position(target_id) do
+    case SpatialIndex.get_unit_position(:mob, target_id) do
+      {:ok, {x, y, _map}} -> {:ok, {x, y}}
+      {:error, :not_found} -> {:error, :target_not_found}
     end
   end
 

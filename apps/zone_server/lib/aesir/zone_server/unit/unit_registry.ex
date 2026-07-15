@@ -11,6 +11,8 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
 
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -166,6 +168,16 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
 
     :ok
   end
+
+  @doc "Registers a targetable skill-unit cell under its owning manager process."
+  @spec register_skill_unit(Cell.t(), pid()) :: :ok
+  def register_skill_unit(%Cell{} = cell, manager_pid) when is_pid(manager_pid) do
+    register_unit(:skill_unit, cell.cell_id, CombatTarget, cell, manager_pid)
+  end
+
+  @doc "Removes a skill-unit cell from the generic unit registry."
+  @spec unregister_skill_unit(non_neg_integer()) :: :ok
+  def unregister_skill_unit(cell_id), do: unregister_unit(:skill_unit, cell_id)
 
   # Player-specific helper functions
 

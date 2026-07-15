@@ -22,6 +22,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Id, as: SkillUnitId
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
@@ -64,44 +67,97 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
          :ok <- ensure_targetable(target_state, target_type),
          target_combatant <- target_state.__struct__.to_combatant(target_state),
-         :ok <- validate_attack_with_combatants(attacker_combatant, target_combatant),
+         :ok <-
+           validate_attack_with_combatants(attacker_combatant, target_combatant,
+             projectile?: true
+           ),
          {:ok, combat_result} <-
            check_hit_and_calculate_damage_with_combatants(attacker_combatant, target_combatant) do
-      case combat_result do
-        {:miss} ->
-          Logger.debug(
-            "Combat: Player #{attacker_combatant.unit_id} attack missed #{target_type} #{target_id}"
-          )
+      resolve_player_attack(
+        combat_result,
+        player_state,
+        target_state,
+        attacker_combatant,
+        target_combatant,
+        target_pid,
+        target_type,
+        target_id
+      )
+    end
+  end
 
-          # Broadcast miss packet to nearby players
-          miss_packet = PacketFactory.build_miss_packet(attacker_combatant, target_combatant)
-          broadcast_to_nearby_players(target_combatant, miss_packet)
+  defp resolve_player_attack(
+         {:miss},
+         _player_state,
+         _target_state,
+         attacker,
+         target,
+         _target_pid,
+         target_type,
+         target_id
+       ) do
+    Logger.debug("Combat: Player #{attacker.unit_id} attack missed #{target_type} #{target_id}")
+    broadcast_to_nearby_players(target, PacketFactory.build_miss_packet(attacker, target))
+    :ok
+  end
 
-        {:perfect_dodge} ->
-          Logger.debug(
-            "Combat: Player #{attacker_combatant.unit_id} attack perfect dodged by #{target_type} #{target_id}"
-          )
+  defp resolve_player_attack(
+         {:perfect_dodge},
+         _player_state,
+         _target_state,
+         attacker,
+         target,
+         _target_pid,
+         target_type,
+         target_id
+       ) do
+    Logger.debug(
+      "Combat: Player #{attacker.unit_id} attack perfect dodged #{target_type} #{target_id}"
+    )
 
-          # Broadcast perfect dodge packet to nearby players
-          dodge_packet =
-            PacketFactory.build_perfect_dodge_packet(attacker_combatant, target_combatant)
+    broadcast_to_nearby_players(
+      target,
+      PacketFactory.build_perfect_dodge_packet(attacker, target)
+    )
 
-          broadcast_to_nearby_players(target_combatant, dodge_packet)
+    :ok
+  end
 
-        {:hit, damage_result} ->
-          handle_player_attack_hit(
-            damage_result,
-            attacker_combatant,
-            target_combatant,
-            target_pid,
-            target_type,
-            target_id,
-            attack_hits(player_state)
-          )
+  defp resolve_player_attack(
+         {:hit, damage_result},
+         _player_state,
+         _target_state,
+         attacker,
+         target,
+         target_pid,
+         :player,
+         target_id
+       ) do
+    handle_player_attack_hit(damage_result, attacker, target, target_pid, :player, target_id, 1)
+    :ok
+  end
 
-          roll_equipment_breaks(player_state, target_state, target_type, target_pid)
-      end
-
+  defp resolve_player_attack(
+         {:hit, damage_result},
+         player_state,
+         target_state,
+         attacker,
+         target,
+         target_pid,
+         target_type,
+         target_id
+       ) do
+    with :ok <-
+           handle_player_attack_hit(
+             damage_result,
+             attacker,
+             target,
+             target_pid,
+             target_type,
+             target_id,
+             attack_hits(player_state)
+           ) do
+      roll_equipment_breaks(player_state, target_state, target_type, target_pid)
       :ok
     end
   end
@@ -195,22 +251,58 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
           )
         end)
 
-        :ok
+        broadcast_basic_attack(attacker_combatant, target_combatant, damage_result, hits)
 
       :player ->
         Logger.warning("PvP combat not yet implemented")
         {:error, :pvp_not_implemented}
+
+      :skill_unit ->
+        apply_skill_unit_target_damage(
+          target_pid,
+          target_id,
+          damage,
+          attacker_combatant.unit_id,
+          attacker_combatant,
+          target_combatant,
+          damage_result
+        )
     end
+  end
 
-    attack_packet =
-      PacketFactory.build_attack_packet(
-        attacker_combatant,
-        target_combatant,
-        damage_result,
-        hits
-      )
+  defp broadcast_basic_attack(attacker, target, damage_result, hits) do
+    broadcast_to_nearby_players(
+      target,
+      PacketFactory.build_attack_packet(attacker, target, damage_result, hits)
+    )
 
-    broadcast_to_nearby_players(target_combatant, attack_packet)
+    :ok
+  end
+
+  defp apply_skill_unit_target_damage(
+         manager_pid,
+         target_id,
+         damage,
+         attacker_id,
+         attacker,
+         target,
+         damage_result
+       ) do
+    case SkillUnitManager.damage_targetable_cell(
+           manager_pid,
+           target_id,
+           damage,
+           {:player, attacker_id}
+         ) do
+      {:ok, _cell} -> broadcast_skill_unit_attack(attacker, target, damage_result)
+      {:destroyed, _cell} -> broadcast_skill_unit_attack(attacker, target, damage_result)
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp broadcast_skill_unit_attack(attacker, target, damage_result) do
+    packet = PacketFactory.build_attack_packet(attacker, target, damage_result)
+    broadcast_to_nearby_players(target, packet)
   end
 
   @doc """
@@ -904,6 +996,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     end)
   end
 
+  defp offensive_target_in_square?(_caster, {:skill_unit, _target_id}, _cx, _cy, _radius),
+    do: false
+
   defp offensive_target_in_square?(caster, {unit_type, target_id}, cx, cy, radius) do
     case get_target_unit_state(unit_type, target_id) do
       {:ok, _pid, target_state, target_type} ->
@@ -1171,12 +1266,27 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   # New function that returns actual unit states instead of maps
   defp get_target_unit_state(:mob, target_id), do: get_mob_unit_state(target_id)
   defp get_target_unit_state(:player, target_id), do: get_player_unit_state(target_id)
+  defp get_target_unit_state(:skill_unit, target_id), do: get_skill_unit_state(target_id)
 
   defp get_target_unit_state(target_id) do
-    case get_mob_unit_state(target_id) do
-      {:ok, pid, mob_state, :mob} -> {:ok, pid, mob_state, :mob}
-      {:error, :not_found} -> get_player_unit_state(target_id)
-      {:error, :target_no_pid} -> {:error, :target_no_pid}
+    if SkillUnitId.skill_unit?(target_id) do
+      get_skill_unit_state(target_id)
+    else
+      case get_mob_unit_state(target_id) do
+        {:ok, pid, mob_state, :mob} -> {:ok, pid, mob_state, :mob}
+        {:error, :not_found} -> get_player_unit_state(target_id)
+        {:error, :target_no_pid} -> {:error, :target_no_pid}
+      end
+    end
+  end
+
+  defp get_skill_unit_state(target_id) do
+    with {:ok, {CombatTarget, _cell, manager_pid}} when is_pid(manager_pid) <-
+           UnitRegistry.get_unit(:skill_unit, target_id),
+         {:ok, cell} <- SkillUnitManager.targetable_cell(manager_pid, target_id) do
+      {:ok, manager_pid, cell, :skill_unit}
+    else
+      _ -> {:error, :target_not_found}
     end
   end
 
@@ -1230,17 +1340,39 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   defp ensure_targetable(_target_state, :mob), do: :ok
   defp ensure_targetable(%{action_state: :dead}, :player), do: {:error, :target_dead}
   defp ensure_targetable(_target_state, :player), do: :ok
+  defp ensure_targetable(%{hp: hp}, :skill_unit) when hp > 0, do: :ok
+  defp ensure_targetable(_target_state, :skill_unit), do: {:error, :target_dead}
 
   # New combatant-based functions
   defp validate_attack_with_combatants(attacker_combatant, target_combatant, opts \\ []) do
-    if attacker_combatant.map_name == target_combatant.map_name do
-      if Keyword.get(opts, :skip_range, false) do
-        :ok
-      else
-        validate_attack_range(attacker_combatant, target_combatant)
-      end
+    with :ok <- validate_same_map(attacker_combatant, target_combatant),
+         :ok <- validate_attack_distance(attacker_combatant, target_combatant, opts) do
+      validate_projectile_path(attacker_combatant, target_combatant, opts)
+    end
+  end
+
+  defp validate_same_map(%{map_name: map_name}, %{map_name: map_name}), do: :ok
+  defp validate_same_map(_attacker, _target), do: {:error, :different_map}
+
+  defp validate_attack_distance(attacker, target, opts) do
+    if Keyword.get(opts, :skip_range, false),
+      do: :ok,
+      else: validate_attack_range(attacker, target)
+  end
+
+  defp validate_projectile_path(attacker, target, opts) do
+    if Keyword.get(opts, :projectile?, false) and attacker.attack_range > 1 do
+      validate_projectile_line(attacker, target)
     else
-      {:error, :different_map}
+      :ok
+    end
+  end
+
+  defp validate_projectile_line(attacker, target) do
+    if LineOfSight.clear?(attacker.map_name, attacker.position, target.position) do
+      :ok
+    else
+      {:error, :projectile_blocked}
     end
   end
 

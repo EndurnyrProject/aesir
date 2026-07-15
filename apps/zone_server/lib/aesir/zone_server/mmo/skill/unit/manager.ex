@@ -99,6 +99,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
           {:ok, Cell.t()} | {:destroyed, Cell.t()} | {:error, term()}
   def damage_cell(cell_id, amount), do: damage_cell(default_server(), cell_id, amount)
 
+  @doc "Returns a live targetable cell, revalidating it inside the owning manager."
+  @spec targetable_cell(server(), non_neg_integer()) :: {:ok, Cell.t()} | {:error, atom()}
+  def targetable_cell(server, cell_id), do: GenServer.call(server, {:targetable_cell, cell_id})
+
+  @doc "Applies a basic attack only if the cell remains targetable."
+  @spec damage_targetable_cell(server(), non_neg_integer(), pos_integer(), mover()) ::
+          {:ok, Cell.t()} | {:destroyed, Cell.t()} | {:error, term()}
+  def damage_targetable_cell(server, cell_id, amount, source),
+    do: GenServer.call(server, {:damage_targetable_cell, cell_id, amount, source})
+
   @doc "Applies damage and records the actor that caused it."
   @spec damage_cell(non_neg_integer(), pos_integer(), mover()) ::
           {:ok, Cell.t()} | {:destroyed, Cell.t()} | {:error, term()}
@@ -293,7 +303,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
              ),
            :ok <- Storage.insert_cell(cell),
            :ok <- Storage.update(%{group | cell_ids: [cell_id | group.cell_ids]}),
-           :ok <- commit_terrain(cell) do
+           :ok <- commit_terrain(cell),
+           :ok <- register_target(cell) do
         {:ok, cell}
       else
         nil -> {:error, :group_not_found}
@@ -318,6 +329,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   def handle_call({:damage_cell, cell_id, amount}, _from, state) do
     result = damage_cell_now(cell_id, amount, nil, :damage)
+    {:reply, result, state}
+  end
+
+  def handle_call({:targetable_cell, cell_id}, _from, state) do
+    {:reply, fetch_targetable_cell(cell_id), state}
+  end
+
+  def handle_call({:damage_targetable_cell, cell_id, amount, source}, _from, state) do
+    result =
+      with {:ok, _cell} <- fetch_targetable_cell(cell_id) do
+        damage_cell_now(cell_id, amount, source, :damage)
+      end
+
     {:reply, result, state}
   end
 
@@ -713,7 +737,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp cleanup(%Group{group_id: group_id} = group, module, despawn_reason) do
     FieldSupport.release_group(group_id)
-    group_id |> Storage.get_cells_by_group() |> Enum.each(&remove_terrain/1)
+    group_id |> Storage.get_cells_by_group() |> Enum.each(&remove_cell_indexes/1)
 
     if module && function_exported?(module, :on_expire, 1) do
       case invoke(module, :on_expire, [group]) do
@@ -764,6 +788,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
   end
 
+  defp fetch_targetable_cell(cell_id) do
+    case Storage.get_cell(cell_id) do
+      %Cell{} = cell when cell.hp > 0 ->
+        if Cell.flag?(cell, :targetable), do: {:ok, cell}, else: {:error, :not_targetable}
+
+      _ ->
+        {:error, :not_found}
+    end
+  end
+
   defp update_cell_now(_cell, attrs)
        when is_map_key(attrs, :cell_id) or is_map_key(attrs, :group_id) or
               is_map_key(attrs, :map_name) or is_map_key(attrs, :x) or is_map_key(attrs, :y),
@@ -773,8 +807,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     case Cell.new(Map.merge(Map.from_struct(cell), attrs)) do
       {:ok, updated} ->
         :ok = remove_terrain(cell)
+        :ok = remove_target(cell)
         :ok = Storage.update_cell(updated)
         :ok = commit_terrain(updated)
+        :ok = register_target(updated)
         {:ok, updated}
 
       error ->
@@ -783,7 +819,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp remove_cell(%Cell{} = cell) do
-    :ok = remove_terrain(cell)
+    :ok = remove_cell_indexes(cell)
     :ok = Storage.delete_cell(cell.cell_id)
 
     case Storage.get(cell.group_id) do
@@ -794,6 +830,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
         remaining = List.delete(group.cell_ids, cell.cell_id)
         :ok = Storage.update(%{group | cell_ids: remaining})
     end
+  end
+
+  defp remove_cell_indexes(%Cell{} = cell) do
+    :ok = remove_terrain(cell)
+    :ok = remove_target(cell)
   end
 
   defp publish_spawn(%Group{visible?: false}), do: :ok
@@ -903,7 +944,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
                flags: [:visible]
              }),
            :ok <- Storage.insert_cell(cell),
-           :ok <- commit_terrain(cell) do
+           :ok <- commit_terrain(cell),
+           :ok <- register_target(cell) do
         {:cont, {:ok, [cell | stored]}}
       else
         {:error, _reason} = error -> {:halt, error}
@@ -916,7 +958,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp rollback_visible_cells(group_id) do
-    group_id |> Storage.get_cells_by_group() |> Enum.each(&remove_terrain/1)
+    group_id |> Storage.get_cells_by_group() |> Enum.each(&remove_cell_indexes/1)
     :ok = Storage.delete(group_id)
   end
 
@@ -927,7 +969,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
       group ->
         :ok = FieldSupport.release_group(group_id)
-        group_id |> Storage.get_cells_by_group() |> Enum.each(&remove_terrain/1)
+        group_id |> Storage.get_cells_by_group() |> Enum.each(&remove_cell_indexes/1)
         :ok = Storage.delete(group_id)
         publish_group_despawn(group, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
     end
@@ -962,6 +1004,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       |> Enum.filter(&terrain_cell?/1)
 
     Enum.each(cells, &commit_terrain/1)
+
+    Storage.all()
+    |> Enum.flat_map(&Storage.get_cells_by_group(&1.group_id))
+    |> Enum.each(&register_target/1)
+
     :ok = MapCell.prune_source_kind(:skill_unit, Enum.map(cells, & &1.cell_id))
 
     :ok
@@ -973,6 +1020,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     case traits do
       [] -> :ok
       _ -> MapCell.put(cell.map_name, cell.x, cell.y, :skill_unit, cell.cell_id, traits)
+    end
+  end
+
+  defp register_target(%Cell{} = cell) do
+    if Cell.flag?(cell, :targetable) and cell.hp > 0 do
+      :ok = UnitRegistry.register_skill_unit(cell, self())
+      SpatialIndex.add_skill_unit(cell)
+    else
+      :ok
+    end
+  end
+
+  defp remove_target(%Cell{} = cell) do
+    if Cell.flag?(cell, :targetable) do
+      :ok = UnitRegistry.unregister_skill_unit(cell.cell_id)
+      SpatialIndex.remove_skill_unit(cell.cell_id)
+    else
+      :ok
     end
   end
 

@@ -454,6 +454,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       refute_received :stats_recalced
     end
 
+    test "a stale target failure does not consume ammo, set cooldown, or arm auto-attack" do
+      stub(Stats, :weapon_type, fn _equipment -> :bow end)
+      stub_target_in_range()
+
+      stub(Combat, :execute_attack, fn _stats, _game_state, 2000 ->
+        {:error, :target_not_found}
+      end)
+
+      reject(&Ammo.consume_one/1)
+      reject(&InventoryOps.apply_change/4)
+
+      arrow = %InventoryItem{nameid: 1750, amount: 1, equip: @ammo_bit}
+      state = combat_state(%{0 => arrow})
+      state = %{state | game_state: %{state.game_state | combat_action_type: 7}}
+
+      capture_log(fn ->
+        assert {:noreply, returned} = CombatActionHandler.handle_attack_request(state, 2000, 7)
+        assert returned.game_state.inventory == state.game_state.inventory
+        assert returned.game_state.last_attack_timestamp == 0
+        assert returned.game_state.continuous_attack_timer == nil
+        assert returned.game_state.combat_target_id == nil
+      end)
+    end
+
     test "a bow attack consuming the last arrow recalcs stats and clears the slot" do
       stub(Stats, :weapon_type, fn _equipment -> :bow end)
 

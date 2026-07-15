@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Unit do
           | :ghost
           | :undead
   @type entity_size :: :small | :medium | :large
-  @type unit_type :: :player | :mob | :npc | :pet | :homunculus | :mercenary
+  @type unit_type :: :player | :mob | :npc | :pet | :homunculus | :mercenary | :skill_unit
 
   @doc """
   Returns the entity's race type.

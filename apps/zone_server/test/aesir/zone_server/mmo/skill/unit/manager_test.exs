@@ -17,6 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
+  alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables
   setup :verify_on_exit!
@@ -149,6 +151,55 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     }
 
     struct(base, attrs)
+  end
+
+  describe "targetable cells" do
+    test "registers a live targetable cell through its manager and removes every index on destruction" do
+      manager = start_manager(10_000)
+      :ok = Manager.register(manager, group(1, visible?: false, cells: []))
+
+      assert {:ok, cell} =
+               Manager.create_cell(manager, 1, %{
+                 x: 100,
+                 y: 101,
+                 hp: 20,
+                 max_hp: 20,
+                 flags: [:targetable]
+               })
+
+      assert {:ok, {_module, ^cell, ^manager}} = UnitRegistry.get_unit(:skill_unit, cell.cell_id)
+
+      assert {:ok, {100, 101, "prontera"}} =
+               SpatialIndex.get_unit_position(:skill_unit, cell.cell_id)
+
+      assert [cell.cell_id] ==
+               SpatialIndex.get_units_in_range(:skill_unit, "prontera", 100, 101, 0)
+
+      assert {:destroyed, ^cell} =
+               Manager.damage_targetable_cell(manager, cell.cell_id, 20, {:player, 1})
+
+      assert {:error, :not_found} = UnitRegistry.get_unit(:skill_unit, cell.cell_id)
+      assert {:error, :not_found} = SpatialIndex.get_unit_position(:skill_unit, cell.cell_id)
+      assert {:error, :not_found} = Manager.targetable_cell(manager, cell.cell_id)
+    end
+
+    test "does not expose non-targetable cells as combat targets" do
+      manager = start_manager(10_000)
+      :ok = Manager.register(manager, group(1, visible?: false, cells: []))
+
+      assert {:ok, cell} =
+               Manager.create_cell(manager, 1, %{
+                 x: 100,
+                 y: 101,
+                 hp: 20,
+                 max_hp: 20,
+                 flags: []
+               })
+
+      assert {:error, :not_found} = UnitRegistry.get_unit(:skill_unit, cell.cell_id)
+      assert {:error, :not_found} = SpatialIndex.get_unit_position(:skill_unit, cell.cell_id)
+      assert {:error, :not_targetable} = Manager.targetable_cell(manager, cell.cell_id)
+    end
   end
 
   describe "tick/1" do
