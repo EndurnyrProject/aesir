@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     field :movement_state, movement_state(), default: :standing
     field :walk_path, list(), default: []
     field :walk_speed, integer(), default: 200
+    field :walk_delay_until, integer(), default: 0
     field :target_position, {integer(), integer()} | nil, default: nil
 
     # AI state machine
@@ -328,6 +329,21 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
         last_movement_end_time: System.system_time(:millisecond)
     }
   end
+
+  @spec apply_walk_delay(t(), non_neg_integer(), integer()) :: t()
+  def apply_walk_delay(%__MODULE__{} = state, duration, now) do
+    %{
+      state
+      | walk_delay_until: max(active_walk_delay(state.walk_delay_until, now), now + duration)
+    }
+  end
+
+  @spec walk_delayed?(t(), integer()) :: boolean()
+  def walk_delayed?(%__MODULE__{walk_delay_until: 0}, _now), do: false
+  def walk_delayed?(%__MODULE__{walk_delay_until: until}, now), do: until > now
+
+  defp active_walk_delay(0, now), do: now
+  defp active_walk_delay(until, _now), do: until
 
   @doc """
   Sets the AI state.

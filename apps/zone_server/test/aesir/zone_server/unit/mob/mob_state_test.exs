@@ -88,6 +88,29 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     end
   end
 
+  describe "walk delays" do
+    test "block movement until their monotonic expiry without shortening an existing delay" do
+      state = build_mob_state()
+      delayed = MobState.apply_walk_delay(state, 1_600, 10_000)
+      extended = MobState.apply_walk_delay(delayed, 500, 10_500)
+
+      assert extended.walk_delay_until == 11_600
+      assert MobState.walk_delayed?(extended, 11_599)
+      refute MobState.walk_delayed?(extended, 11_600)
+    end
+
+    test "the zero sentinel does not block a negative monotonic clock" do
+      state = build_mob_state()
+      now = System.monotonic_time(:millisecond)
+
+      refute MobState.walk_delayed?(state, now)
+
+      delayed = MobState.apply_walk_delay(state, 1_600, now)
+      assert delayed.walk_delay_until == now + 1_600
+      assert MobState.walk_delayed?(delayed, now)
+    end
+  end
+
   describe "rude attacks" do
     test "a freshly built mob state has no rude attacks recorded" do
       state = build_mob_state()

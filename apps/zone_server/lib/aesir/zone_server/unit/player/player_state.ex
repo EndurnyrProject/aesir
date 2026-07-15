@@ -156,6 +156,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # Movement state
     :walk_path,
     :walk_speed,
+    :walk_delay_until,
 
     # Movement intent - why are we moving?
     # :none | :normal | :combat | :skill | :pickup
@@ -454,6 +455,23 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
         movement_state: :standing
     }
   end
+
+  @spec apply_walk_delay(t(), non_neg_integer(), integer()) :: t()
+  def apply_walk_delay(%__MODULE__{} = state, duration, now) do
+    %{
+      state
+      | walk_delay_until: max(active_walk_delay(state.walk_delay_until, now), now + duration)
+    }
+  end
+
+  @spec walk_delayed?(t(), integer()) :: boolean()
+  def walk_delayed?(%__MODULE__{walk_delay_until: nil}, _now), do: false
+  def walk_delayed?(%__MODULE__{walk_delay_until: 0}, _now), do: false
+  def walk_delayed?(%__MODULE__{walk_delay_until: until}, now), do: until > now
+
+  defp active_walk_delay(nil, now), do: now
+  defp active_walk_delay(0, now), do: now
+  defp active_walk_delay(until, _now), do: until
 
   @doc """
   Mark spawn as complete. No-op now that we start in :standing state.

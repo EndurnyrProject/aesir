@@ -72,7 +72,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
   def handle_movement_tick(%{game_state: game_state} = state)
       when game_state.movement_state == :moving do
-    if Interpreter.can_move?(:player, game_state.character_id) do
+    if Interpreter.can_move?(:player, game_state.character_id) and
+         not PlayerState.walk_delayed?(game_state, System.monotonic_time(:millisecond)) do
       step_walk_path(state, game_state)
     else
       stop_restricted_walk(state, game_state)
@@ -312,7 +313,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         dest_y,
         opts
       ) do
-    if Interpreter.can_move?(:player, game_state.character_id) do
+    if Interpreter.can_move?(:player, game_state.character_id) and
+         not PlayerState.walk_delayed?(game_state, System.monotonic_time(:millisecond)) do
       do_request_move(state, game_state, connection_pid, dest_x, dest_y, opts)
     else
       packet = %MoveStop{gid: game_state.character_id, x: game_state.x, y: game_state.y}

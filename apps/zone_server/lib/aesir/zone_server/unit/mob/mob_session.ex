@@ -57,6 +57,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     GenServer.cast(pid, {:apply_damage, damage, attacker_id})
   end
 
+  @spec apply_walk_delay(pid(), non_neg_integer()) :: :ok
+  def apply_walk_delay(pid, duration), do: GenServer.cast(pid, {:apply_walk_delay, duration})
+
   @doc """
   Heals the mob.
   """
@@ -239,6 +242,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
       :dead ->
         handle_death(updated_mob, attacker_id)
     end
+  end
+
+  def handle_cast({:apply_walk_delay, duration}, state) do
+    now = System.monotonic_time(:millisecond)
+    {:noreply, state |> MobState.apply_walk_delay(duration, now) |> MobState.stop_movement()}
   end
 
   @impl GenServer
@@ -661,15 +669,23 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     |> MobState.clear_casting()
   end
 
-  defp process_movement_tick(%{movement_state: :standing} = state) do
+  defp process_movement_tick(%{} = state) do
+    if MobState.walk_delayed?(state, System.monotonic_time(:millisecond)) do
+      MobState.stop_movement(state)
+    else
+      process_unblocked_movement_tick(state)
+    end
+  end
+
+  defp process_unblocked_movement_tick(%{movement_state: :standing} = state) do
     state
   end
 
-  defp process_movement_tick(%{movement_state: :moving, walk_path: []} = state) do
+  defp process_unblocked_movement_tick(%{movement_state: :moving, walk_path: []} = state) do
     MobState.stop_movement(state)
   end
 
-  defp process_movement_tick(%{movement_state: :moving} = state) do
+  defp process_unblocked_movement_tick(%{movement_state: :moving} = state) do
     case state.walk_path do
       [{next_x, next_y} | _] = walk_path ->
         if next_cell_walkable?(state.map_name, next_x, next_y) do

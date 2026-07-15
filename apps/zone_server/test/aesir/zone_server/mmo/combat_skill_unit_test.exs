@@ -152,4 +152,35 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     assert {:error, :target_not_found} =
              Combat.apply_skill_unit_damage(caster(100), :mob, @target_id, 89, 10, :water, 600)
   end
+
+  test "supports Fire Pillar's flat MATK, multi-hit, and target walk delay" do
+    test_pid = self()
+    mob_state = build_mob_state(0)
+
+    stub(UnitRegistry, :get_unit, fn :mob, @target_id ->
+      {:ok, {MobState, mob_state, test_pid}}
+    end)
+
+    stub(SpatialIndex, :get_unit_position, fn :mob, @target_id -> {:ok, {150, 150, @map_name}} end)
+
+    stub(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, packet ->
+      send(test_pid, {:broadcast, packet.damage, packet.div, packet.dst_delay})
+      :ok
+    end)
+
+    stub(MobSession, :apply_damage, fn ^test_pid, _damage, nil -> :ok end)
+    stub(MobSession, :apply_walk_delay, fn ^test_pid, 600 -> send(test_pid, :walk_delayed) end)
+
+    assert :ok =
+             Combat.apply_skill_unit_damage(caster(100), :mob, @target_id, 80, 1, :fire, 60,
+               bonus_matk: 150,
+               hit_count: 3,
+               dst_delay: 600,
+               divide_hits_for_player?: true
+             )
+
+    assert_received {:broadcast, damage, 3, 600}
+    assert_received :walk_delayed
+    assert damage > 150
+  end
 end

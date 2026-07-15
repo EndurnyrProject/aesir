@@ -143,6 +143,25 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       assert state.regen_accumulators == %{hp_acc: 0, sp_acc: 0, skill_hp_acc: 0, skill_sp_acc: 0}
     end
 
+    test "walk delays block movement until their monotonic expiry", %{state: state} do
+      delayed = PlayerState.apply_walk_delay(state, 1_600, 10_000)
+      extended = PlayerState.apply_walk_delay(delayed, 500, 10_500)
+
+      assert extended.walk_delay_until == 11_600
+      assert PlayerState.walk_delayed?(extended, 11_599)
+      refute PlayerState.walk_delayed?(extended, 11_600)
+    end
+
+    test "an unset delay does not block a negative monotonic clock", %{state: state} do
+      now = System.monotonic_time(:millisecond)
+
+      refute PlayerState.walk_delayed?(state, now)
+
+      delayed = PlayerState.apply_walk_delay(state, 1_600, now)
+      assert delayed.walk_delay_until == now + 1_600
+      assert PlayerState.walk_delayed?(delayed, now)
+    end
+
     test "can transition from idle to moving", %{state: state} do
       assert {:ok, new_state} = PlayerState.transition_to(state, :moving)
       assert new_state.action_state == :moving

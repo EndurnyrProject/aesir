@@ -352,13 +352,57 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
         element,
         skill_ratio
       ) do
+    apply_skill_unit_damage(
+      caster,
+      unit_type,
+      target_id,
+      skill_id,
+      skill_level,
+      element,
+      skill_ratio,
+      []
+    )
+  end
+
+  @doc """
+  Applies a magic ground-unit hit with optional multi-hit, flat-MATK, and target
+  walk-delay traits.
+
+  `:divide_hits_for_player?` mirrors Renewal Fire Pillar's negative `div`
+  behavior for player targets: its total damage is divided by the hit count while
+  the client receives the multi-hit animation.
+  """
+  @spec apply_skill_unit_damage(
+          struct(),
+          atom(),
+          integer(),
+          integer(),
+          integer(),
+          atom(),
+          non_neg_integer(),
+          keyword()
+        ) :: :ok | {:error, atom()}
+  def apply_skill_unit_damage(
+        caster,
+        unit_type,
+        target_id,
+        skill_id,
+        skill_level,
+        element,
+        skill_ratio,
+        opts
+      ) do
+    hit_count = Keyword.get(opts, :hit_count, 1)
+    bonus_matk = Keyword.get(opts, :bonus_matk, 0)
+    dst_delay = Keyword.get(opts, :dst_delay, 0)
+    divide_hits? = unit_type == :player and Keyword.get(opts, :divide_hits_for_player?, false)
+
     with {:ok, target} <- resolve_combatant(target_id),
          {:ok, {tx, ty, map_name}} <- SpatialIndex.get_unit_position(unit_type, target_id),
-         {:ok, %{damage: damage}} <-
-           MagicDamageCalculator.calculate_magic_damage(caster, target,
-             element: element,
-             skill_ratio: skill_ratio
-           ) do
+         damage <- sum_magic_hits(caster, target, element, skill_ratio, hit_count, bonus_matk),
+         damage <- if(divide_hits?, do: div(damage, hit_count), else: damage),
+         {:ok, target_pid, _target_state, _target_type} <-
+           get_target_unit_state(unit_type, target_id) do
       packet = %SkillDamage{
         skill_id: skill_id,
         level: skill_level,
@@ -366,14 +410,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
         target_id: target_id,
         server_tick: ServerTick.now(),
         src_delay: 0,
-        dst_delay: 0,
+        dst_delay: dst_delay,
         damage: damage,
-        div: 1,
+        div: if(divide_hits?, do: -hit_count, else: hit_count),
         type: @dmg_splash
       }
 
       Broadcast.to_in_range(map_name, tx, ty, Config.view_range(), packet)
       deal_damage(target_id, damage, element, :skill_unit)
+
+      if dst_delay > 0 do
+        unit_session(unit_type).apply_walk_delay(target_pid, dst_delay)
+      end
+
+      :ok
     end
   end
 
@@ -436,12 +486,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     end
   end
 
-  defp sum_magic_hits(attacker, target, element, skill_ratio, hits) do
+  defp sum_magic_hits(attacker, target, element, skill_ratio, hits, bonus_matk \\ 0) do
     Enum.reduce(1..hits//1, 0, fn _hit, acc ->
       {:ok, %{damage: damage}} =
         MagicDamageCalculator.calculate_magic_damage(attacker, target,
           element: element,
-          skill_ratio: skill_ratio
+          skill_ratio: skill_ratio,
+          bonus_matk: bonus_matk
         )
 
       acc + damage
