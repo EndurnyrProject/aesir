@@ -354,15 +354,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp apply_field_support_action(%Group{} = group, {unit_type, unit_id}, :on_touch) do
     with {:ok, spec} <- field_support_spec(group) do
-      FieldSupport.acquire(
-        unit_type,
-        unit_id,
-        spec.status_type,
-        group.group_id,
-        spec.params,
-        aggregate: spec.aggregate
-      )
-      |> log_field_support_failure(group, :acquire)
+      if supports_target?(spec, {unit_type, unit_id}) do
+        FieldSupport.acquire(
+          unit_type,
+          unit_id,
+          spec.status_type,
+          group.group_id,
+          params_for(spec, unit_type, unit_id),
+          aggregate: spec.aggregate
+        )
+        |> log_field_support_failure(group, :acquire)
+      else
+        FieldSupport.release(unit_type, unit_id, spec.status_type, group.group_id,
+          aggregate: spec.aggregate
+        )
+        |> log_field_support_failure(group, :release)
+      end
     end
 
     :ok
@@ -462,14 +469,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp acquire_occupants(group, spec, occupants) do
     Enum.each(occupants, fn {unit_type, unit_id} ->
-      FieldSupport.acquire(
-        unit_type,
-        unit_id,
-        spec.status_type,
-        group.group_id,
-        spec.params,
-        aggregate: spec.aggregate
-      )
+      if supports_target?(spec, {unit_type, unit_id}) do
+        FieldSupport.acquire(
+          unit_type,
+          unit_id,
+          spec.status_type,
+          group.group_id,
+          params_for(spec, unit_type, unit_id),
+          aggregate: spec.aggregate
+        )
+      end
     end)
   end
 
@@ -479,7 +488,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     group.group_id
     |> FieldSupport.sources_for_group()
     |> Enum.each(fn {unit_type, unit_id, status_type, _params} ->
-      if not MapSet.member?(occupied, {unit_type, unit_id}) do
+      if not MapSet.member?(occupied, {unit_type, unit_id}) or
+           not supports_target?(spec, {unit_type, unit_id}) do
         FieldSupport.release(unit_type, unit_id, status_type, group.group_id,
           aggregate: spec.aggregate
         )
@@ -494,7 +504,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
         _ -> []
       end
 
-    current_ids = MapSet.new(current_groups, & &1.group_id)
+    current_ids =
+      current_groups
+      |> Enum.filter(fn group ->
+        case field_support_spec(group) do
+          {:ok, spec} -> supports_target?(spec, {unit_type, unit_id})
+          :error -> false
+        end
+      end)
+      |> MapSet.new(& &1.group_id)
 
     Enum.each(current_groups, &apply_field_support_action(&1, {unit_type, unit_id}, :on_touch))
 
@@ -524,7 +542,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
      %{
        status_type: status_type,
        params: params,
-       aggregate: Map.get(spec, :aggregate)
+       aggregate: Map.get(spec, :aggregate),
+       target?: Map.get(spec, :target?)
      }}
   end
 
@@ -532,7 +551,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     normalize_field_support(%{
       status_type: status_type,
       params: params,
-      aggregate: Map.get(spec, :aggregate)
+      aggregate: Map.get(spec, :aggregate),
+      target?: Map.get(spec, :target?)
     })
   end
 
@@ -540,6 +560,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     do: normalize_field_support(%{status_type: status_type, params: params})
 
   defp normalize_field_support(_spec), do: :error
+
+  defp params_for(%{params: params}, unit_type, unit_id) when is_function(params, 2),
+    do: params.(unit_type, unit_id)
+
+  defp params_for(%{params: params}, _unit_type, _unit_id), do: params
+
+  defp supports_target?(%{target?: target?}, target) when is_function(target?, 1),
+    do: target?.(target)
+
+  defp supports_target?(_spec, _target), do: true
 
   defp handler_for(%Group{caster_type: :mob}), do: {:ok, GroundNuke}
   defp handler_for(%Group{skill_name: skill_name}), do: Catalog.ground_module_for(skill_name)
