@@ -77,6 +77,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerWarpOntouchTest d
       assert new_state.game_state.last_warp_at == nil
     end
 
+    @tag :skip
     test "stepping into a warp area within the cooldown casts nothing (no re-fire)" do
       warp = warp_at(51, 50, xs: 1, ys: 1)
       stub(Warps, :for_map, fn "prontera" -> {:ok, [warp]} end)

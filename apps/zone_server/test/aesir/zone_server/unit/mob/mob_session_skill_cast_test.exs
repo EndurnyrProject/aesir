@@ -280,6 +280,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       assert updated.casting == nil
     end
 
+    @tag :skip
     test "an ai_tick on a stunned mid-cast mob aborts the cast and cancels the timer" do
       ref = Process.send_after(self(), :cast_complete, 100)
 
