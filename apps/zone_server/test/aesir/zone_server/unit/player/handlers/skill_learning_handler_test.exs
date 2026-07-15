@@ -25,17 +25,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandlerTest do
   {:ok, swordman_id} = AvailableJobs.job_name_to_id(:swordman)
   @swordman_id swordman_id
 
+  {:ok, wizard_id} = AvailableJobs.job_name_to_id(:wizard)
+  @wizard_id wizard_id
+
   defp catalog_id(name) do
     {:ok, definition} = Catalog.by_name(name)
     definition.id
   end
 
   defp swordman_state(skill_point, learned_skills) do
+    player_state(@swordman_id, skill_point, learned_skills)
+  end
+
+  defp player_state(job_id, skill_point, learned_skills) do
     base = PlayerState.new(character())
 
     stats =
       base.stats
-      |> put_in([Access.key!(:progression), Access.key!(:job_id)], @swordman_id)
+      |> put_in([Access.key!(:progression), Access.key!(:job_id)], job_id)
       |> put_in([Access.key!(:progression), Access.key!(:skill_point)], skill_point)
       |> put_in([Access.key!(:progression), Access.key!(:learned_skills)], learned_skills)
 
@@ -157,6 +164,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandlerTest do
       assert_received {:send, :gameplay,
                        {:learn_skill_result,
                         %LearnSkillResult{skill_id: ^sword_id, ok: false, reason: 2}}}
+    end
+
+    test "rejects active quest skills outside the normal Wizard tree" do
+      state = player_state(@wizard_id, 1, %{})
+
+      reject(&CharacterPersistence.update_character/3)
+
+      for skill_name <- [:wz_estimation, :wz_sightblaster] do
+        skill_id = catalog_id(skill_name)
+
+        assert {:noreply, ^state} = SkillLearningHandler.handle_learn_skill(skill_id, state)
+
+        assert_received {:send, :gameplay,
+                         {:learn_skill_result,
+                          %LearnSkillResult{skill_id: ^skill_id, ok: false, reason: 1}}}
+      end
     end
   end
 

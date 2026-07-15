@@ -80,7 +80,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeWizardTest do
            @rathena_wizard_tree
   end
 
-  test "every normal Wizard entry and prerequisite name resolves through the catalog" do
+  test "normal Wizard entries resolve through the catalog without adding quest skills to the tree" do
     entries = wizard_source()["tree"]
 
     assert MapSet.new(entries, & &1["name"]) ==
@@ -107,8 +107,8 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeWizardTest do
     end
 
     refute Enum.any?(entries, &(&1["name"] in ["WZ_ESTIMATION", "WZ_SIGHTBLASTER"]))
-    assert :error = Catalog.by_name(:wz_estimation)
-    assert :error = Catalog.by_name(:wz_sightblaster)
+    assert {:ok, _} = Catalog.by_name(:wz_estimation)
+    assert {:ok, _} = Catalog.by_name(:wz_sightblaster)
   end
 
   test "Frost Nova requires Ice Wall level 1" do

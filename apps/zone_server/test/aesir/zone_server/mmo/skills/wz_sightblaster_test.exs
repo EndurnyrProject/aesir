@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzSightblasterTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.WzSightblaster
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -41,6 +42,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzSightblasterTest do
     assert definition.fixed_cast_time == [320]
     assert definition.duration == [900_000]
     assert definition.sp_cost == [80]
+  end
+
+  test "is available to the active skill interpreter through the catalog" do
+    assert {:ok, WzSightblaster} = Catalog.active_module_for(:wz_sightblaster)
   end
 
   test "cast applies the self status" do

@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzEstimationTest do
   alias Aesir.Net.EstimationResult
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.EstimationView
   alias Aesir.ZoneServer.Mmo.Skills.WzEstimation
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -27,6 +28,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzEstimationTest do
       assert definition.damage_type == :no_damage
       assert definition.range == 9
       assert definition.sp_cost == [10]
+    end
+
+    test "is available to the active skill interpreter through the catalog" do
+      assert {:ok, WzEstimation} = Catalog.active_module_for(:wz_estimation)
     end
   end
 

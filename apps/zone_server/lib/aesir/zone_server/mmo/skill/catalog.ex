@@ -93,6 +93,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
     Skills.TfSteal,
     Skills.TfThrowstone,
     Skills.WzEarthspike,
+    Skills.WzEstimation,
     Skills.WzFirepillar,
     Skills.WzFrostnova,
     Skills.WzHeavendrive,
@@ -101,6 +102,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
     Skills.WzMeteor,
     Skills.WzQuagmire,
     Skills.WzSightrasher,
+    Skills.WzSightblaster,
     Skills.WzStormgust,
     Skills.WzWaterball,
     Skills.WzVermilion
