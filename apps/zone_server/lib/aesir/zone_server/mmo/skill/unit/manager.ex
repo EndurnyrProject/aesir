@@ -483,6 +483,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   @impl true
+  def handle_cast(message, state) do
+    Logger.warning("Ignoring unknown skill-unit manager cast: #{inspect(message)}")
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_info({:unit_lifecycle, %Event{} = event}, state) do
     apply_lifecycle_event(event)
     {:noreply, state}

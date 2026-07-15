@@ -84,6 +84,27 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     assert {:ok, {151, 150}} = Combat.knockback(:mob, @mob_id, from_x, from_y, 5)
   end
 
+  test "knockback ignores skill-unit cells without casting to their manager" do
+    test_pid = self()
+
+    stub(SpatialIndex, :get_unit_position, fn :skill_unit, @mob_id ->
+      {:ok, {151, 150, @map_name}}
+    end)
+
+    stub(MapCache, :get, fn @map_name -> {:ok, :map} end)
+    stub(Cell, :traversable?, fn _map_name, _x, _y -> true end)
+
+    stub(UnitRegistry, :get_unit, fn :skill_unit, @mob_id ->
+      {:ok, {__MODULE__, %{}, test_pid}}
+    end)
+
+    reject(&Broadcast.to_in_range/5)
+
+    {from_x, from_y} = @from
+    assert :ok = Combat.knockback(:skill_unit, @mob_id, from_x, from_y, 5)
+    refute_received {:"$gen_cast", {:knocked_back, _, _}}
+  end
+
   test "knockback returns an error when the unit map is unavailable" do
     stub(SpatialIndex, :get_unit_position, fn :mob, @mob_id ->
       {:ok, {151, 150, "missing"}}

@@ -1152,11 +1152,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   and the registry, then broadcasts `Knockback` to nearby players so they slide
   the unit to its landing cell.
 
-  Returns `{:ok, {dst_x, dst_y}}` with the final cell (unchanged if it could not
-  move), or `{:error, reason}` if the unit or its map could not be resolved.
+  Returns `:ok` for skill units, `{:ok, {dst_x, dst_y}}` with the final cell
+  (unchanged if it could not move), or `{:error, reason}` if the unit or its
+  map could not be resolved.
   """
   @spec knockback(atom(), integer(), integer(), integer(), non_neg_integer()) ::
-          {:ok, {integer(), integer()}} | {:error, atom()}
+          :ok | {:ok, {integer(), integer()}} | {:error, atom()}
+  def knockback(:skill_unit, _unit_id, _from_x, _from_y, _distance), do: :ok
+
   def knockback(unit_type, unit_id, from_x, from_y, distance) do
     with {:ok, {x, y, map_name}} <- SpatialIndex.get_unit_position(unit_type, unit_id),
          {:ok, _map} <- MapCache.get(map_name) do

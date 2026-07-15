@@ -1071,6 +1071,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     assert [] == Storage.get_cells_by_group(1)
   end
 
+  test "logs and survives an unknown cast" do
+    manager = start_manager(10_000)
+
+    log =
+      capture_log(fn ->
+        GenServer.cast(manager, :unexpected)
+        assert :ok = Manager.tick(manager)
+      end)
+
+    assert Process.alive?(manager)
+    assert log =~ "Ignoring unknown skill-unit manager cast: :unexpected"
+  end
+
   defp start_unmanaged_manager(now) do
     {:ok, manager} =
       Manager.start_link(

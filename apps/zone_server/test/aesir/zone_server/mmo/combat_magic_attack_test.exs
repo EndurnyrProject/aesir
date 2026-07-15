@@ -129,7 +129,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
     end)
   end
 
-  defp targetable_cell do
+  defp targetable_cell(attrs \\ %{}) do
     manager =
       start_supervised!(
         {Manager,
@@ -159,14 +159,19 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
         }
       )
 
-    {:ok, cell} =
-      Manager.create_cell(manager, 1, %{
-        x: 151,
-        y: 150,
-        hp: 20,
-        max_hp: 20,
-        flags: [:targetable]
-      })
+    attrs =
+      Map.merge(
+        %{
+          x: 151,
+          y: 150,
+          hp: 20,
+          max_hp: 20,
+          flags: [:targetable]
+        },
+        attrs
+      )
+
+    {:ok, cell} = Manager.create_cell(manager, 1, attrs)
 
     {manager, cell}
   end
@@ -242,9 +247,17 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       assert %{hp: 10} = Storage.get_cell(cell.cell_id)
     end
 
-    test "Sight Blaster contact damages a targetable skill-unit cell" do
+    test "Sight Blaster damages an Ice Wall cell without knocking it back" do
       caster = build_caster()
-      {_manager, cell} = targetable_cell()
+
+      {manager, cell} =
+        targetable_cell(%{
+          hp: 400,
+          max_hp: 400,
+          flags: [:targetable, :blocks_movement, :blocks_projectiles],
+          state: %{terrain_source: :icewall}
+        })
+
       cell_id = cell.cell_id
 
       :ok = UnitRegistry.register_unit(:player, @caster_id, PlayerState, caster, self())
@@ -255,7 +268,6 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       end)
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-      expect(Combat, :knockback, fn :skill_unit, ^cell_id, 150, 150, 3 -> :ok end)
 
       assert :remove =
                Sightblaster.on_contact(
@@ -265,7 +277,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
                  %{}
                )
 
-      assert %{hp: 10} = Storage.get_cell(cell.cell_id)
+      assert %{hp: 390} = Storage.get_cell(cell.cell_id)
+      assert :ok = Manager.tick(manager)
+      assert Process.alive?(manager)
     end
 
     test "rejects a dead mob before calculating or applying magic damage" do
