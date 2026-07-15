@@ -126,7 +126,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke do
     end
   end
 
-  defp placeable?(map_name, {x, y}), do: Cell.placeable?(map_name, x, y)
+  defp placeable?(map_name, {x, y}), do: Cell.traversable?(map_name, x, y)
 
   defp map_data(map_name) do
     case MapCache.get(map_name) do

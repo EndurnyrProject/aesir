@@ -38,7 +38,7 @@ defmodule Aesir.ZoneServer.Map.CellTest do
 
     refute Cell.traversable?("cell_test", 0, 0)
     assert Cell.blocks_projectiles?("cell_test", 0, 0)
-    refute Cell.placeable?("cell_test", 0, 0)
+    assert Cell.placeable?("cell_test", 0, 0)
 
     :ok = Cell.delete("cell_test", 0, 0, :icewall, 1)
     assert Cell.traversable?("cell_test", 0, 0)

@@ -102,9 +102,13 @@ defmodule Aesir.ZoneServer.Map.Cell do
       Enum.any?(contributions(map_name, x, y), &Map.get(&1, :blocks_projectiles, false))
   end
 
-  @doc "Returns whether a skill-unit may be placed on the effective terrain."
+  @doc "Returns whether a skill-unit may be placed on base terrain."
   @spec placeable?(String.t(), integer(), integer()) :: boolean()
-  def placeable?(map_name, x, y), do: traversable?(map_name, x, y)
+  def placeable?(map_name, x, y) do
+    map_name
+    |> canonical_map_name()
+    |> base?(x, y, &GatType.is_walkable?/1)
+  end
 
   @doc "Returns a random traversable cell within the map's bounds."
   @spec random_traversable(String.t(), integer()) ::
