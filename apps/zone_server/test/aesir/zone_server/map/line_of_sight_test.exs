@@ -11,13 +11,17 @@ defmodule Aesir.ZoneServer.Map.LineOfSightTest do
 
   setup :setup_ets_tables
 
+  defp cache_map(map_name, map), do: :ets.insert(EtsTable.table_for(:map_cache), {map_name, map})
+
   test "rAthena integer traversal catches the diagonal cell symmetric Bresenham skips" do
     map =
-      "prontera"
+      "line_of_sight"
       |> MapData.new(100, 100)
       |> MapData.set_cell(51, 60, GatType.wall())
 
-    refute LineOfSight.clear?(map, {50, 60}, {54, 62})
+    true = cache_map("line_of_sight", map)
+
+    refute LineOfSight.clear?("line_of_sight", {50, 60}, {54, 62})
   end
 
   test "a dynamic projectile blocker stops a traversed diagonal cell" do
@@ -29,12 +33,10 @@ defmodule Aesir.ZoneServer.Map.LineOfSightTest do
   end
 
   test "a blocked destination cell is not counted as an intervening obstruction" do
-    map =
-      "prontera"
-      |> MapData.new(100, 100)
-      |> MapData.set_cell(54, 62, GatType.wall())
-      |> MapData.set_cell_flag(54, 62, :icewall, true)
+    map = MapData.new("line_of_sight", 100, 100)
+    true = cache_map("line_of_sight", map)
+    :ok = Cell.put("line_of_sight", 54, 62, :barrier, 1, blocks_projectiles: true)
 
-    assert LineOfSight.clear?(map, {50, 60}, {54, 62})
+    assert LineOfSight.clear?("line_of_sight", {50, 60}, {54, 62})
   end
 end

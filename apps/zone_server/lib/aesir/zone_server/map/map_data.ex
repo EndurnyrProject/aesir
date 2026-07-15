@@ -154,14 +154,6 @@ defmodule Aesir.ZoneServer.Map.MapData do
       :chk_nopass ->
         gat_type == nil or not GatType.is_walkable?(gat_type) or Map.get(dynamic, :npc, false)
 
-      :chk_reach ->
-        gat_type != nil and not GatType.blocks_projectile?(gat_type) and
-          not Map.get(dynamic, :icewall, false)
-
-      :chk_noreach ->
-        gat_type == nil or GatType.blocks_projectile?(gat_type) or
-          Map.get(dynamic, :icewall, false)
-
       :chk_npc ->
         Map.get(dynamic, :npc, false)
 
@@ -179,9 +171,6 @@ defmodule Aesir.ZoneServer.Map.MapData do
 
       :chk_maelstrom ->
         Map.get(dynamic, :maelstrom, false)
-
-      :chk_icewall ->
-        Map.get(dynamic, :icewall, false)
 
       :chk_nobuyingstore ->
         Map.get(dynamic, :nobuyingstore, false)
