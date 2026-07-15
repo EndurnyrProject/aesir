@@ -250,6 +250,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
     state = %{
       clock: Keyword.get(opts, :clock, fn -> System.monotonic_time(:millisecond) end),
+      rng: Keyword.get(opts, :rng, fn upper -> :rand.uniform(upper) - 1 end),
       schedule_tick: Keyword.get(opts, :schedule_tick, &Process.send_after(&1, :tick, &2)),
       tick_interval: Keyword.get(opts, :tick_interval, @tick_interval),
       unit_available?: Keyword.get(opts, :unit_available?, &unit_available?/3)
@@ -262,12 +263,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   @impl true
   def handle_call({:register, group}, _from, state) do
-    case register_group(group) do
-      {:ok, group} ->
-        reconcile_group(group)
-        publish_spawn(group)
-        {:reply, :ok, state}
-
+    with {:ok, group} <- schedule_group(group, state.rng),
+         {:ok, group} <- register_group(group) do
+      reconcile_group(group)
+      publish_spawn(group)
+      {:reply, :ok, state}
+    else
       {:error, _reason} = error ->
         {:reply, error, state}
     end
@@ -928,6 +929,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       {:error, _reason} = error ->
         rollback_visible_cells(group.group_id)
         error
+    end
+  end
+
+  defp schedule_group(%Group{} = group, rng) do
+    with {:ok, module} <- handler_for(group),
+         true <- function_exported?(module, :schedule, 2) do
+      case invoke(module, :schedule, [group, rng]) do
+        {:ok, {:ok, %Group{group_id: group_id} = scheduled}} when group_id == group.group_id ->
+          {:ok, scheduled}
+
+        {:ok, {:ok, %Group{group_id: group_id}}} ->
+          {:error, {:schedule_foreign_group_id, group_id}}
+
+        {:ok, result} ->
+          {:error, {:invalid_schedule_return, result}}
+
+        {:error, reason} ->
+          {:error, {:schedule_failed, reason}}
+      end
+    else
+      :error -> {:ok, group}
+      false -> {:ok, group}
     end
   end
 

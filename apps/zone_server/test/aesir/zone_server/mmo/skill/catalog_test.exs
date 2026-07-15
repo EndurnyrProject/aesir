@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
   alias Aesir.ZoneServer.Mmo.Skills.WzFrostnova
   alias Aesir.ZoneServer.Mmo.Skills.WzHeavendrive
   alias Aesir.ZoneServer.Mmo.Skills.WzJupitel
+  alias Aesir.ZoneServer.Mmo.Skills.WzMeteor
   alias Aesir.ZoneServer.Mmo.Skills.WzQuagmire
   alias Aesir.ZoneServer.Mmo.Skills.WzSightrasher
   alias Aesir.ZoneServer.Mmo.Skills.WzStormgust
@@ -148,6 +149,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
             {80, :wz_firepillar, WzFirepillar, :ground},
             {81, :wz_sightrasher, WzSightrasher, :active},
             {84, :wz_jupitel, WzJupitel, :active},
+            {83, :wz_meteor, WzMeteor, :ground},
             {85, :wz_vermilion, WzVermilion, :ground},
             {88, :wz_frostnova, WzFrostnova, :active},
             {90, :wz_earthspike, WzEarthspike, :active},
