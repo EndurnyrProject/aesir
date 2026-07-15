@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
   import Mimic
 
   alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Map.Cell, as: MapCell
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
@@ -572,6 +573,49 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     assert [] == Storage.get_cells_by_group(1)
   end
 
+  test "commits, removes, and reconciles terrain contributions owned by cells" do
+    manager = start_unmanaged_manager(10_000)
+    :ok = Manager.register(manager, group(1, cell_ids: []))
+    :ok = MapCell.put("prontera", 102, 100, :other_owner, 1, blocks_movement: true)
+
+    assert {:ok, wall} =
+             Manager.create_cell(manager, 1, %{
+               x: 100,
+               y: 100,
+               flags: [:blocks_movement, :blocks_projectiles]
+             })
+
+    refute MapCell.traversable?("prontera", 100, 100)
+    assert MapCell.blocks_projectiles?("prontera", 100, 100)
+
+    assert :ok = Manager.destroy_cell(manager, wall.cell_id)
+    assert MapCell.traversable?("prontera", 100, 100)
+    refute MapCell.blocks_projectiles?("prontera", 100, 100)
+
+    assert {:ok, water} =
+             Manager.create_cell(manager, 1, %{x: 101, y: 100, flags: [:consumable_water]})
+
+    :ok = MapCell.put("prontera", 103, 100, :skill_unit, 999, blocks_movement: true)
+    assert :ok = GenServer.stop(manager)
+
+    water_id = water.cell_id
+
+    assert %MapCell.WaterSource{origin: :skill_unit, cell_id: ^water_id} =
+             MapCell.water_source("prontera", 101, 100)
+
+    restarted_manager = start_unmanaged_manager(10_000)
+
+    assert %MapCell.WaterSource{origin: :skill_unit, cell_id: ^water_id} =
+             MapCell.water_source("prontera", 101, 100)
+
+    refute MapCell.traversable?("prontera", 102, 100)
+    assert MapCell.traversable?("prontera", 103, 100)
+
+    assert :ok = Manager.destroy(restarted_manager, 1)
+    assert MapCell.water_source("prontera", 101, 100) == nil
+    refute MapCell.traversable?("prontera", 102, 100)
+  end
+
   test "rejects identity updates and binds cells to their group's map" do
     manager = start_manager(10_000)
     :ok = Manager.register(manager, group(1, map_name: "prontera"))
@@ -601,5 +645,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     assert nil == Storage.get(1)
     assert nil == Storage.get_cell(cell.cell_id)
     assert [] == Storage.get_cells_by_group(1)
+  end
+
+  defp start_unmanaged_manager(now) do
+    {:ok, manager} =
+      Manager.start_link(
+        name: nil,
+        clock: fn -> now end,
+        schedule_tick: fn _pid, _interval -> :ok end,
+        unit_available?: fn _unit_type, _unit_id, _map_name -> true end
+      )
+
+    allow(Catalog, self(), manager)
+    on_exit(fn -> if Process.alive?(manager), do: GenServer.stop(manager) end)
+    manager
   end
 end

@@ -1,7 +1,10 @@
 defmodule Aesir.ZoneServer.Map.MapData do
   @moduledoc """
-  Map data structure holding map dimensions and cell information.
-  Cells are stored as raw binary GAT types for maximum performance.
+  Immutable base map terrain and legacy coordinator-local flags.
+
+  Cells are stored as raw binary GAT types for maximum performance. Runtime
+  terrain belongs to `Map.Cell`; `dynamic_cells` remains only for legacy
+  coordinator flags until their consumers migrate.
   """
 
   alias Aesir.ZoneServer.Map.GatType
@@ -25,7 +28,7 @@ defmodule Aesir.ZoneServer.Map.MapData do
   xs: Width of the map in cells
   ys: Height of the map in cells
   cells: Raw binary data representing GAT types for each cell
-  dynamic_cells: Map of dynamic flags for each cell (e.g. NPCs, ice walls)
+  dynamic_cells: Legacy coordinator flags; never runtime terrain contributions
   npcs: List of NPCs on the map
   users: Number of users currently on the map
   instance_id: Optional instance ID if this map is part of an instance

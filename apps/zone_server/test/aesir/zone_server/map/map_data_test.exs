@@ -212,6 +212,13 @@ defmodule Aesir.ZoneServer.Map.MapDataTest do
 
       assert MapData.check_cell(updated_map, 5, 5, :chk_npc) == false
     end
+
+    test "leaves immutable base GAT terrain unchanged", %{map: map} do
+      updated_map = MapData.set_cell_flag(map, 5, 5, :icewall, true)
+
+      assert MapData.get_cell(updated_map, 5, 5) == GatType.walkable()
+      assert MapData.get_cell(map, 5, 5) == GatType.walkable()
+    end
   end
 
   describe "random_walkable_cell/2" do

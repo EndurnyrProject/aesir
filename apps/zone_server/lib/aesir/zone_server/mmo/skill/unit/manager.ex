@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   require Logger
 
+  alias Aesir.ZoneServer.Map.Cell, as: MapCell
   alias Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
@@ -158,6 +159,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   @impl true
   def init(opts) do
     :ok = Lifecycle.subscribe()
+    :ok = reconcile_terrain()
 
     state = %{
       clock: Keyword.get(opts, :clock, fn -> System.monotonic_time(:millisecond) end),
@@ -207,7 +209,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
                |> Map.put(:map_name, group.map_name)
              ),
            :ok <- Storage.insert_cell(cell),
-           :ok <- Storage.update(%{group | cell_ids: [cell_id | group.cell_ids]}) do
+           :ok <- Storage.update(%{group | cell_ids: [cell_id | group.cell_ids]}),
+           :ok <- commit_terrain(cell) do
         {:ok, cell}
       else
         nil -> {:error, :group_not_found}
@@ -537,6 +540,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp cleanup(%Group{group_id: group_id} = group, module) do
     FieldSupport.release_group(group_id)
+    group_id |> Storage.get_cells_by_group() |> Enum.each(&remove_terrain/1)
 
     if module && function_exported?(module, :on_expire, 1) do
       case invoke(module, :on_expire, [group]) do
@@ -579,7 +583,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp update_cell_now(cell, attrs) do
     case Cell.new(Map.merge(Map.from_struct(cell), attrs)) do
       {:ok, updated} ->
+        :ok = remove_terrain(cell)
         :ok = Storage.update_cell(updated)
+        :ok = commit_terrain(updated)
         {:ok, updated}
 
       error ->
@@ -588,6 +594,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp remove_cell(%Cell{} = cell) do
+    :ok = remove_terrain(cell)
     :ok = Storage.delete_cell(cell.cell_id)
 
     case Storage.get(cell.group_id) do
@@ -621,6 +628,43 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp default_server, do: ProcessTree.get({__MODULE__, :server}) || __MODULE__
+
+  defp reconcile_terrain do
+    cells =
+      Storage.all()
+      |> Enum.flat_map(&Storage.get_cells_by_group(&1.group_id))
+      |> Enum.filter(&terrain_cell?/1)
+
+    Enum.each(cells, &commit_terrain/1)
+    :ok = MapCell.prune_source_kind(:skill_unit, Enum.map(cells, & &1.cell_id))
+
+    :ok
+  end
+
+  defp commit_terrain(%Cell{} = cell) do
+    traits = terrain_traits(cell)
+
+    case traits do
+      [] -> :ok
+      _ -> MapCell.put(cell.map_name, cell.x, cell.y, :skill_unit, cell.cell_id, traits)
+    end
+  end
+
+  defp remove_terrain(%Cell{} = cell), do: MapCell.delete_source(:skill_unit, cell.cell_id)
+
+  defp terrain_cell?(cell), do: terrain_traits(cell) != []
+
+  defp terrain_traits(cell) do
+    []
+    |> maybe_put(:blocks_movement, Cell.flag?(cell, :blocks_movement))
+    |> maybe_put(:blocks_projectiles, Cell.flag?(cell, :blocks_projectiles))
+    |> maybe_put(:consumable_water, Cell.flag?(cell, :consumable_water), cell.cell_id)
+  end
+
+  defp maybe_put(traits, _key, false), do: traits
+  defp maybe_put(traits, key, true), do: Keyword.put(traits, key, true)
+  defp maybe_put(traits, key, true, value), do: Keyword.put(traits, key, value)
+  defp maybe_put(traits, _key, false, _value), do: traits
 
   defp reconcile_group(%Group{} = group) do
     with {:ok, spec} <- field_support_spec(group) do

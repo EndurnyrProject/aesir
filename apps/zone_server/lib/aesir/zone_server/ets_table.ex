@@ -65,6 +65,16 @@ defmodule Aesir.ZoneServer.EtsTable do
 
   defp map_cache_tables(seed) do
     :ets.new(table_for(:map_cache, seed), [:set, :public, :named_table, read_concurrency: true])
+
+    :ets.new(
+      table_for(:dynamic_cell_contributions, seed),
+      [:set, :public, :named_table, read_concurrency: true, write_concurrency: true]
+    )
+
+    :ets.new(
+      table_for(:dynamic_cell_source_index, seed),
+      [:bag, :public, :named_table, read_concurrency: true, write_concurrency: true]
+    )
   end
 
   defp status_tables(seed) do
