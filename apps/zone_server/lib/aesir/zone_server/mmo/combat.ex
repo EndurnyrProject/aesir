@@ -288,14 +288,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
          target,
          damage_result
        ) do
-    case SkillUnitManager.damage_targetable_cell(
-           manager_pid,
-           target_id,
-           damage,
-           {:player, attacker_id}
-         ) do
-      {:ok, _cell} -> broadcast_skill_unit_attack(attacker, target, damage_result)
-      {:destroyed, _cell} -> broadcast_skill_unit_attack(attacker, target, damage_result)
+    with :ok <-
+           apply_skill_unit_target_damage(manager_pid, target_id, damage, {:player, attacker_id}) do
+      broadcast_skill_unit_attack(attacker, target, damage_result)
+    end
+  end
+
+  defp apply_skill_unit_target_damage(manager_pid, target_id, damage, source) do
+    case SkillUnitManager.damage_targetable_cell(manager_pid, target_id, damage, source) do
+      {:ok, _cell} -> :ok
+      {:destroyed, _cell} -> :ok
       {:error, reason} -> {:error, reason}
     end
   end
@@ -318,9 +320,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
         "Combat: Dealing #{damage} #{element} damage to #{target_type} #{target_id} from #{source_type}"
       )
 
-      hit_info = %{dmg_type: :magic, is_short: false, element: element}
-      apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, nil)
-      :ok
+      apply_magic_damage(target_type, target_pid, target_id, damage, element, nil)
     end
   end
 
@@ -374,8 +374,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
         |> DamageShared.apply_element(element, target)
         |> DamageShared.clamp_min_one()
 
-      {tx, ty} = target.position
-
       packet = %SkillDamage{
         skill_id: skill_id,
         level: skill_level,
@@ -389,10 +387,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
         type: @dmg_splash
       }
 
-      Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
-      hit_info = %{dmg_type: :magic, is_short: false, element: element}
-      apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, attacker.unit_id)
-      :ok
+      apply_and_broadcast_magic_damage(
+        target_type,
+        target_pid,
+        target_id,
+        damage,
+        element,
+        attacker,
+        target,
+        packet
+      )
     end
   end
 
@@ -607,7 +611,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
          :ok <- validate_attack_with_combatants(attacker, target, opts),
          :ok <- Targeting.validate_enemy(attacker, target) do
       total = sum_magic_hits(attacker, target, element, skill_ratio, hits)
-      {tx, ty} = target.position
 
       packet = %SkillDamage{
         skill_id: skill_id,
@@ -622,10 +625,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
         type: @dmg_splash
       }
 
-      Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
-      hit_info = %{dmg_type: :magic, is_short: false, element: element}
-      apply_unit_damage(target_type, target_pid, target_id, total, hit_info, attacker.unit_id)
-      :ok
+      apply_and_broadcast_magic_damage(
+        target_type,
+        target_pid,
+        target_id,
+        total,
+        element,
+        attacker,
+        target,
+        packet
+      )
     end
   end
 
@@ -640,6 +649,49 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
 
       acc + damage
     end)
+  end
+
+  defp apply_magic_damage(:skill_unit, manager_pid, target_id, damage, _element, attacker) do
+    source = if attacker, do: {attacker.unit_type, attacker.unit_id}
+    apply_skill_unit_target_damage(manager_pid, target_id, damage, source)
+  end
+
+  defp apply_magic_damage(target_type, target_pid, target_id, damage, element, attacker) do
+    hit_info = %{dmg_type: :magic, is_short: false, element: element}
+    attacker_id = if attacker, do: attacker.unit_id
+    apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, attacker_id)
+    :ok
+  end
+
+  defp apply_and_broadcast_magic_damage(
+         :skill_unit,
+         target_pid,
+         target_id,
+         damage,
+         element,
+         attacker,
+         target,
+         packet
+       ) do
+    with :ok <- apply_magic_damage(:skill_unit, target_pid, target_id, damage, element, attacker) do
+      {tx, ty} = target.position
+      Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
+    end
+  end
+
+  defp apply_and_broadcast_magic_damage(
+         target_type,
+         target_pid,
+         target_id,
+         damage,
+         element,
+         attacker,
+         target,
+         packet
+       ) do
+    {tx, ty} = target.position
+    Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
+    apply_magic_damage(target_type, target_pid, target_id, damage, element, attacker)
   end
 
   @doc """

@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   import Mimic
+  import Aesir.TestEtsSetup
 
   @moduletag :capture_log
 
@@ -10,7 +11,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skills.WzEarthspike
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -23,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   alias Aesir.ZoneServer.Unit.Stats.BaseStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  setup :setup_ets_tables
   setup :verify_on_exit!
 
   @caster_id 1000
@@ -123,7 +129,145 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
     end)
   end
 
+  defp targetable_cell do
+    manager =
+      start_supervised!(
+        {Manager,
+         name: nil,
+         schedule_tick: fn _pid, _interval -> :ok end,
+         unit_available?: fn _unit_type, _unit_id, _map_name -> true end}
+      )
+
+    :ok =
+      Manager.register(
+        manager,
+        %Group{
+          group_id: 1,
+          skill_id: 0,
+          skill_name: :fixture,
+          level: 1,
+          caster_id: @caster_id,
+          caster_type: :player,
+          map_name: @map_name,
+          center: @center,
+          cells: [],
+          next_tick_at: 0,
+          expires_at: 1_000_000,
+          interval: 1_000,
+          visible?: false,
+          state: %{}
+        }
+      )
+
+    {:ok, cell} =
+      Manager.create_cell(manager, 1, %{
+        x: 151,
+        y: 150,
+        hp: 20,
+        max_hp: 20,
+        flags: [:targetable]
+      })
+
+    {manager, cell}
+  end
+
   describe "execute_magic_attack/3" do
+    test "damages a targetable skill-unit cell through its manager" do
+      caster = build_caster()
+      {_manager, cell} = targetable_cell()
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 10, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+      assert :ok =
+               Combat.execute_magic_attack(caster, cell.cell_id,
+                 skill_id: 19,
+                 skill_level: 1,
+                 skill_ratio: 100,
+                 element: :fire
+               )
+
+      assert %{hp: 10} = Storage.get_cell(cell.cell_id)
+    end
+
+    test "does not broadcast when a targetable skill-unit cell disappears before damage" do
+      caster = build_caster()
+      {manager, cell} = targetable_cell()
+
+      Mimic.copy(Manager)
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 10, is_critical: false}}
+      end)
+
+      expect(Manager, :damage_targetable_cell, fn ^manager, cell_id, 10, {:player, @caster_id} ->
+        assert cell_id == cell.cell_id
+        {:error, :not_found}
+      end)
+
+      reject(&Broadcast.to_in_range/5)
+
+      assert {:error, :not_found} =
+               Combat.execute_magic_attack(caster, cell.cell_id,
+                 skill_id: 19,
+                 skill_level: 1,
+                 skill_ratio: 100,
+                 element: :fire
+               )
+    end
+
+    test "applies explicit magic damage to a targetable skill-unit cell" do
+      caster = build_caster()
+      {_manager, cell} = targetable_cell()
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+      assert :ok =
+               Combat.execute_magic_damage(caster, cell.cell_id, 10,
+                 skill_id: 28,
+                 skill_level: 1,
+                 element: :neutral
+               )
+
+      assert %{hp: 10} = Storage.get_cell(cell.cell_id)
+    end
+
+    test "routes status-effect magic damage to a targetable skill-unit cell" do
+      {_manager, cell} = targetable_cell()
+
+      assert :ok = Combat.deal_damage(cell.cell_id, 10, :neutral)
+      assert %{hp: 10} = Storage.get_cell(cell.cell_id)
+    end
+
+    test "Sight Blaster contact damages a targetable skill-unit cell" do
+      caster = build_caster()
+      {_manager, cell} = targetable_cell()
+      cell_id = cell.cell_id
+
+      :ok = UnitRegistry.register_unit(:player, @caster_id, PlayerState, caster, self())
+      :ok = SpatialIndex.add_unit(:player, @caster_id, caster.x, caster.y, caster.map_name)
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 10, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      expect(Combat, :knockback, fn :skill_unit, ^cell_id, 150, 150, 3 -> :ok end)
+
+      assert :remove =
+               Sightblaster.on_contact(
+                 {:player, @caster_id},
+                 %{val1: 1},
+                 {:skill_unit, cell_id},
+                 %{}
+               )
+
+      assert %{hp: 10} = Storage.get_cell(cell.cell_id)
+    end
+
     test "rejects a dead mob before calculating or applying magic damage" do
       caster = build_caster()
       dead_mob = %{build_mob_state(@target_id, 150, 150) | hp: 0}
