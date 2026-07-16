@@ -7,7 +7,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   the 90% drop-rate cap (only for items not already above it), the renewal
   level-penalty modifier, and a floor at 1 (0.01%). Items that pass are scattered
   onto walkable cells around the death position (death cell first, then the
-  rAthena SE -> W -> N cycle).
+  rAthena SE -> W -> N cycle). Placement is guaranteed: a scatter cell whose
+  spiral search finds no traversable cell falls back to the death cell, and
+  the death cell itself falls back to its own requested coordinates when its
+  spiral search comes up empty. No item is ever silently dropped from the
+  result.
 
   Pure: only persistent_term/ETS-backed reads (`ItemManagement`, `MapCache`,
   `LevelPenalty`); no process state, no side effects. The drop bonus arrives as a
@@ -105,26 +109,36 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   defp scatter(items, map_name, x, y) do
     items
     |> Enum.with_index()
-    |> Enum.flat_map(fn {{nameid, amount}, index} ->
-      case resolve_cell(index, map_name, x, y) do
-        {:ok, {cx, cy}} -> [{nameid, amount, cx, cy}]
-        :error -> []
-      end
+    |> Enum.map(fn {{nameid, amount}, index} ->
+      {cx, cy} = resolve_cell(index, map_name, x, y)
+      {nameid, amount, cx, cy}
     end)
   end
 
+  # Guarantees a cell for every drop slot: the death cell slot (index 0)
+  # falls back to its own requested coordinates when its spiral search finds
+  # nothing walkable; every other scatter slot falls back to the death cell.
   @spec resolve_cell(non_neg_integer(), String.t(), integer(), integer()) ::
-          {:ok, {integer(), integer()}} | :error
-  defp resolve_cell(0, map_name, x, y), do: nearest_walkable({x, y}, map_name, x, y)
+          {integer(), integer()}
+  defp resolve_cell(0, map_name, x, y) do
+    case nearest_walkable({x, y}, map_name) do
+      {:ok, cell} -> cell
+      :error -> {x, y}
+    end
+  end
 
   defp resolve_cell(index, map_name, x, y) do
     {dx, dy} = Enum.at(@scatter_offsets, rem(index - 1, length(@scatter_offsets)))
-    nearest_walkable({x + dx, y + dy}, map_name, x, y)
+
+    case nearest_walkable({x + dx, y + dy}, map_name) do
+      {:ok, cell} -> cell
+      :error -> resolve_cell(0, map_name, x, y)
+    end
   end
 
-  @spec nearest_walkable({integer(), integer()}, String.t(), integer(), integer()) ::
+  @spec nearest_walkable({integer(), integer()}, String.t()) ::
           {:ok, {integer(), integer()}} | :error
-  defp nearest_walkable({cx, cy}, map_name, _x, _y) do
+  defp nearest_walkable({cx, cy}, map_name) do
     [{cx, cy} | nearby_cells(cx, cy)]
     |> Enum.find(&Cell.traversable?(map_name, elem(&1, 0), elem(&1, 1)))
     |> case do

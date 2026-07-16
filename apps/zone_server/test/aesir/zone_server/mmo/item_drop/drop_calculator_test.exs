@@ -122,12 +122,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
       assert Cell.traversable?("prontera", x, y)
     end
 
-    test "omits drops when no nearby traversable cell exists" do
+    test "falls back to the death cell for every item when no nearby traversable cell exists" do
       for x <- 140..160, y <- 140..160 do
         :ok = Cell.put("prontera", x, y, :test_blocker, x * 1_000 + y + 1, blocks_movement: true)
       end
 
-      assert [] =
+      assert [{501, 1, 150, 150}, {501, 1, 150, 150}] =
                DropCalculator.roll([drop(10_000), drop(10_000)], 0, 1, 1, 0, "prontera", 150, 150)
     end
   end
