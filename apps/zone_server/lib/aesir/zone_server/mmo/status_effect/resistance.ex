@@ -24,8 +24,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Resistance do
   ## Returns
   The adjusted success rate (0-100) after resistance calculations.
 
-  ## Formula from rAthena
-  - Physical: `success_rate = base_rate - (target_VIT * 100 / 100)`
+  ## Formula from rAthena (Renewal)
+  - Physical: `success_rate = base_rate * (100 - target_VIT) / 100`
+    (rAthena: `sc_def = VIT * 100` capped to 0..10000, `rate -= rate * sc_def / 10000`)
   - Magical: `success_rate = base_rate * (100 - target_MDEF) / 100`
 
   ## Examples
@@ -37,10 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Resistance do
   """
   @spec calculate_success_rate(status_type(), map(), number()) :: float()
   def calculate_success_rate(:physical, %{vit: vit}, base_success_rate) when is_number(vit) do
-    # Physical status resistance formula from rAthena
-    # success_rate = base_rate - (target_VIT * 100 / 100)
-    resistance = vit * 1.0
-    max(0.0, base_success_rate - resistance)
+    base_success_rate * max(0, 100 - vit) / 100
   end
 
   def calculate_success_rate(:magical, target_stats, base_success_rate) do

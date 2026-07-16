@@ -5,10 +5,22 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ResistanceTest do
 
   describe "calculate_success_rate/3" do
     test "calculates physical resistance based on VIT" do
-      # VIT reduces success rate by 1% per point
+      # VIT reduces success rate multiplicatively: rate * (100 - vit) / 100
       assert Resistance.calculate_success_rate(:physical, %{vit: 50}, 100) == 50.0
-      assert Resistance.calculate_success_rate(:physical, %{vit: 30}, 80) == 50.0
+      assert Resistance.calculate_success_rate(:physical, %{vit: 30}, 80) == 56.0
       assert Resistance.calculate_success_rate(:physical, %{vit: 100}, 90) == 0.0
+    end
+
+    test "multiplicative reduction never zeroes out a low base rate at moderate VIT" do
+      # A subtractive formula would clamp any base rate <= VIT to 0%, making
+      # low-rate stuns (e.g. Meteor Storm's 3x level, max 30%) impossible
+      # against any target with VIT >= 30. The renewal formula reduces the
+      # rate proportionally instead: 30 * (100 - 50) / 100 = 15.0
+      assert Resistance.calculate_success_rate(:physical, %{vit: 50}, 30) == 15.0
+    end
+
+    test "VIT 0 leaves the success rate unchanged" do
+      assert Resistance.calculate_success_rate(:physical, %{vit: 0}, 45) == 45.0
     end
 
     test "calculates magical resistance based on MDEF" do
@@ -155,8 +167,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ResistanceTest do
         Resistance.apply_resistance(definition, stats, base_success, base_duration)
 
       # No resistance type defaults to physical (uses VIT)
-      # Success rate: 75 - 50 = 25%
-      assert success_rate == 25.0
+      # Success rate: 75 * (100 - 50) / 100 = 37.5%
+      assert success_rate == 37.5
 
       # Duration reduction: 50 + 30/3 = 60%
       # Duration: 15_000 * (100 - 60) / 100 = 6000ms
