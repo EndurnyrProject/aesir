@@ -281,6 +281,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.StorageTest do
     end
   end
 
+  describe "get_visible_groups_in_range/4" do
+    test "returns visible groups intersecting the range in group ID order" do
+      :ok = Storage.insert(group(3, visible?: true, cells: [{100, 100}]))
+      :ok = Storage.insert(group(1, visible?: true, cells: [{101, 100}]))
+      :ok = Storage.insert(group(2, visible?: false, cells: [{100, 100}]))
+      :ok = Storage.insert(group(4, visible?: true, cells: [{102, 100}]))
+
+      assert [%Group{group_id: 1}, %Group{group_id: 3}] =
+               Storage.get_visible_groups_in_range("prontera", 100, 100, 1)
+    end
+  end
+
   describe "caster and target queries" do
     test "returns groups through their caster and optional target identities" do
       :ok = Storage.insert(group(1, target_type: :mob, target_id: 3000))

@@ -85,24 +85,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   def damage_targetable_cell(server, cell_id, amount, source),
     do: GenServer.call(server, {:damage_targetable_cell, cell_id, amount, source})
 
-  @doc "Builds the complete visible skill-unit snapshot for one map."
-  @spec snapshot(String.t(), non_neg_integer()) :: Aesir.Net.SkillUnitSnapshot.t()
-  def snapshot(map_name, server_tick), do: snapshot(default_server(), map_name, server_tick)
-
-  @doc false
-  @spec snapshot(server(), String.t(), non_neg_integer()) :: Aesir.Net.SkillUnitSnapshot.t()
-  def snapshot(server, map_name, server_tick),
-    do: GenServer.call(server, {:snapshot, map_name, server_tick})
-
-  @doc "Returns visible groups whose footprints intersect a square range."
-  @spec in_range(String.t(), integer(), integer(), non_neg_integer()) :: [Group.t()]
-  def in_range(map_name, x, y, range), do: in_range(default_server(), map_name, x, y, range)
-
-  @doc false
-  @spec in_range(server(), String.t(), integer(), integer(), non_neg_integer()) :: [Group.t()]
-  def in_range(server, map_name, x, y, range),
-    do: GenServer.call(server, {:in_range, map_name, x, y, range})
-
   @doc "Publishes an authoritative visible-group snapshot to one observer."
   @spec snapshot_for(integer(), String.t(), integer(), integer(), non_neg_integer()) :: MapSet.t()
   def snapshot_for(observer_id, map_name, x, y, range),
@@ -248,19 +230,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       end
 
     {:reply, result, state}
-  end
-
-  def handle_call({:snapshot, map_name, server_tick}, _from, state) do
-    groups =
-      Storage.all()
-      |> Enum.filter(&(&1.map_name == map_name and &1.visible?))
-      |> Enum.map(&{&1, Storage.get_cells_by_group(&1.group_id)})
-
-    {:reply, View.snapshot(groups, server_tick), state}
-  end
-
-  def handle_call({:in_range, map_name, x, y, range}, _from, state) do
-    {:reply, Storage.get_visible_groups_in_range(map_name, x, y, range), state}
   end
 
   def handle_call({:snapshot_for, observer_id, map_name, x, y, range}, _from, state) do

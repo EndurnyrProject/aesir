@@ -52,4 +52,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ViewTest do
              ]
            } = View.group(group, cells, {1_000, 10_000})
   end
+
+  test "builds snapshots in group ID order" do
+    first = %Group{
+      group_id: 1,
+      skill_id: 89,
+      skill_name: :wz_stormgust,
+      level: 10,
+      caster_id: 42,
+      caster_type: :player,
+      map_name: "prontera",
+      center: {100, 100}
+    }
+
+    later = %{first | group_id: 3}
+
+    assert %{server_tick: 123, groups: [%{group_id: 1}, %{group_id: 3}]} =
+             View.snapshot([{later, []}, {first, []}], 123)
+  end
 end

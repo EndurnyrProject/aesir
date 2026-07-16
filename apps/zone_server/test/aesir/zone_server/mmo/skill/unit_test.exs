@@ -296,4 +296,30 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
       assert :ok = Unit.destroy(999_999)
     end
   end
+
+  describe "read facade" do
+    test "reads visible snapshots and ranges from storage without the manager" do
+      Process.delete({Manager, :server})
+
+      visible = %Group{
+        group_id: 1,
+        skill_id: 1,
+        skill_name: :sm_bash,
+        level: 1,
+        caster_id: 2_000,
+        caster_type: :player,
+        map_name: "prontera",
+        center: {100, 100},
+        cells: [{100, 100}],
+        visible?: true
+      }
+
+      invisible = %{visible | group_id: 2, visible?: false}
+      :ok = Storage.insert(visible)
+      :ok = Storage.insert(invisible)
+
+      assert %{groups: [%{group_id: 1}]} = Unit.snapshot("prontera")
+      assert [%Group{group_id: 1}] = Unit.in_range("prontera", 100, 100, 0)
+    end
+  end
 end

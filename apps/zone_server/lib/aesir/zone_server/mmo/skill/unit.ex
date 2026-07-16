@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.View
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -77,11 +78,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
 
   @doc "Builds the complete visible skill-unit snapshot for a map."
   @spec snapshot(String.t()) :: Aesir.Net.SkillUnitSnapshot.t()
-  def snapshot(map_name), do: Manager.snapshot(map_name, ServerTick.now())
+  def snapshot(map_name) do
+    groups =
+      Storage.all()
+      |> Enum.filter(&(&1.map_name == map_name and &1.visible?))
+      |> Enum.map(&{&1, Storage.get_cells_by_group(&1.group_id)})
+
+    View.snapshot(groups, ServerTick.now())
+  end
 
   @doc "Returns visible groups whose footprints intersect a square range."
   @spec in_range(String.t(), integer(), integer(), non_neg_integer()) :: [Group.t()]
-  def in_range(map_name, x, y, range), do: Manager.in_range(map_name, x, y, range)
+  def in_range(map_name, x, y, range),
+    do: Storage.get_visible_groups_in_range(map_name, x, y, range)
 
   defp module_for(skill_name) do
     case Catalog.ground_module_for(skill_name) do

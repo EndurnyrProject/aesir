@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
+  alias Aesir.ZoneServer.Mmo.Skill.Unit, as: SkillUnit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
@@ -41,6 +42,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
     Mimic.copy(Warps)
     Mimic.copy(StatusDisplay)
     Mimic.copy(Interpreter)
+    Mimic.copy(SkillUnit)
     Mimic.copy(SkillUnitManager)
 
     stub(MapCache, :get, fn "prontera" -> {:ok, %{width: 200, height: 200}} end)
@@ -58,7 +60,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
 
     stub(StatusDisplay, :active_icons, fn _type, _id -> [] end)
     stub(Interpreter, :can_move?, fn _type, _id -> true end)
-    stub(SkillUnitManager, :in_range, fn _map, _x, _y, _range -> [] end)
+    stub(SkillUnit, :in_range, fn _map, _x, _y, _range -> [] end)
     stub(SkillUnitManager, :enter_view, fn _observer_id, _group_id -> :ok end)
     stub(SkillUnitManager, :leave_view, fn _observer_id, _group_id -> :ok end)
 
@@ -462,7 +464,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
       stub(SpatialIndex, :get_units_in_range, fn :mob, _, _, _, _ -> [] end)
       stub(SpatialIndex, :update_visibility, fn _, _, _ -> :ok end)
 
-      stub(SkillUnitManager, :in_range, fn _map, x, _y, _range ->
+      stub(SkillUnit, :in_range, fn _map, x, _y, _range ->
         if x == 50, do: [group], else: []
       end)
 

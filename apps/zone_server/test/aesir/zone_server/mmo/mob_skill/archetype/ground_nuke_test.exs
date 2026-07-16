@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke
+  alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
@@ -158,7 +159,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
       assert Enum.sort(Enum.map(spawn_cells, & &1.cell_id)) == Enum.sort(cell_ids)
 
       assert %SkillUnitSnapshot{groups: [%{group_id: ^group_id, cells: snapshot_cells}]} =
-               Manager.snapshot("prontera", 123)
+               Unit.snapshot("prontera")
 
       assert Enum.sort(Enum.map(snapshot_cells, & &1.cell_id)) == Enum.sort(cell_ids)
     end

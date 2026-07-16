@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore
+  alias Aesir.ZoneServer.Mmo.Skill.Unit, as: SkillUnit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
@@ -688,7 +689,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   defp update_skill_unit_visibility(game_state) do
     visible_groups =
       game_state.map_name
-      |> SkillUnitManager.in_range(game_state.x, game_state.y, game_state.view_range)
+      |> SkillUnit.in_range(game_state.x, game_state.y, game_state.view_range)
       |> MapSet.new(& &1.group_id)
 
     visible_groups =

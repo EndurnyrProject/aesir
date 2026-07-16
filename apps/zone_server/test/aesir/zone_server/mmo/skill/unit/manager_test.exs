@@ -206,9 +206,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
       assert :ok = Manager.tick(manager, now)
       assert %Cell{hp: 50, max_hp: 100} = Storage.get_cell(cell.cell_id)
-
-      assert [%{cells: [%{hp: 50, max_hp: 100}]}] =
-               Manager.snapshot(manager, "prontera", 1).groups
     end
 
     test "registers targetable group cells and removes every index on destruction" do
@@ -908,30 +905,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     end
   end
 
-  test "builds complete snapshots and range results from visible groups only" do
+  test "materializes visible groups and excludes invisible groups from the range index" do
     manager = start_manager(10_000)
     visible = group(1, visible?: true, cells: [{100, 100}], created_at: 10_000)
     later_visible = group(3, visible?: true, cells: [{100, 100}], created_at: 10_000)
     invisible = group(2, visible?: false, cells: [{100, 100}])
     Enum.each([later_visible, visible, invisible], &Manager.register(manager, &1))
 
-    [cell] = Storage.get_cells_by_group(1)
-    [later_cell] = Storage.get_cells_by_group(3)
-
-    assert %Aesir.Net.SkillUnitSnapshot{
-             server_tick: 123,
-             groups: [
-               %{group_id: 1, cells: [%{cell_id: cell_id}]},
-               %{group_id: 3, cells: [%{cell_id: later_cell_id}]}
-             ]
-           } =
-             Manager.snapshot(manager, "prontera", 123)
-
-    assert cell_id == cell.cell_id
-    assert later_cell_id == later_cell.cell_id
-
     assert [%Group{group_id: 1}, %Group{group_id: 3}] =
-             Manager.in_range(manager, "prontera", 100, 100, 0)
+             Storage.get_visible_groups_in_range("prontera", 100, 100, 0)
   end
 
   test "publishes observer-specific snapshots and visibility transitions with current cells" do
@@ -1083,8 +1065,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     assert :ok = Manager.register(manager, invisible)
     assert [] == Storage.get_cells_by_group(1)
     refute Map.has_key?(Storage.get(1), :cell_ids)
-    assert %Aesir.Net.SkillUnitSnapshot{groups: []} = Manager.snapshot(manager, "prontera", 123)
-    assert [] == Manager.in_range(manager, "prontera", 100, 100, 0)
   end
 
   test "re-registering a visible group replaces every owned cell and index" do
@@ -1108,9 +1088,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     assert :ok = Manager.register(manager, replacement)
 
     assert [%Cell{x: 102, y: 100}] = Storage.get_cells_by_group(1)
-
-    assert %Aesir.Net.SkillUnitSnapshot{groups: [%{group_id: 1, cells: [%{x: 102, y: 100}]}]} =
-             Manager.snapshot(manager, "prontera", 123)
   end
 
   test "re-registering releases field support owned by the replaced group" do
