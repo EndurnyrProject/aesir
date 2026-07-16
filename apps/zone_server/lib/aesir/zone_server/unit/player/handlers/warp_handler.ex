@@ -40,14 +40,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   If the destination cell is blocked, a spiral search for the nearest walkable
   cell within `#{@fallback_radius}` (Chebyshev distance) is attempted; the
   warp rewrites to that cell on hit. Real warp data and save-point respawn
-   occasionally target a slightly-off cell. When no walkable cell is found the
-   warp fails without changing the session.
+  occasionally target a slightly-off cell. When the spiral search finds no
+  traversable cell either, the warp still proceeds to the requested cell
+  (mirrors rAthena's `pc_setpos`, which always delivers the player).
 
   Returns `{:ok, new_state}` with the player relocated and a `MapMove` sent, or
-  `{:error, :map_not_found}` leaving the session untouched. An open storage
-  window is force-closed only on a cross-map warp (design "Storage window
-  lifecycle": it stays open across same-map movement); a same-map warp (e.g.
-  `AL_TELEPORT` level 1) leaves it untouched.
+  `{:error, :map_not_found}` when the destination map itself does not exist,
+  leaving the session untouched. An open storage window is force-closed only
+  on a cross-map warp (design "Storage window lifecycle": it stays open
+  across same-map movement); a same-map warp (e.g. `AL_TELEPORT` level 1)
+  leaves it untouched.
   """
   @spec warp(session_state(), String.t(), non_neg_integer(), non_neg_integer()) ::
           {:ok, session_state()} | {:error, :map_not_found}
@@ -124,7 +126,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
     else
       case nearest_walkable(map_name, x, y) do
         {nx, ny} -> {:ok, {nx, ny}}
-        nil -> {:error, :map_not_found}
+        nil -> {:ok, {x, y}}
       end
     end
   end

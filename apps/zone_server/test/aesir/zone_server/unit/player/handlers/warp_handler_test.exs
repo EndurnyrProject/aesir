@@ -77,17 +77,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
       assert {:error, :map_not_found} = WarpHandler.warp(state(), "nowhere", 100, 120)
       refute_received {:send, :control, {:map_move, _}}
     end
-
-    test "blocked destination with no walkable neighbour returns :map_not_found without moving" do
-      for x <- 95..105, y <- 115..125 do
-        :ok = Cell.put("geffen", x, y, :test_blocker, x * 1_000 + y + 1, blocks_movement: true)
-      end
-
-      reject(&SpatialIndex.remove_player/1)
-
-      assert {:error, :map_not_found} = WarpHandler.warp(state(), "geffen", 100, 120)
-      refute_received {:send, :control, {:map_move, _}}
-    end
   end
 
   describe "warp/4 destination walkable fallback" do
@@ -131,15 +120,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
       assert_received {:send, :control, {:map_move, %MapMove{map_name: "geffen", x: 105, y: 125}}}
     end
 
-    test "destination blocked beyond radius 5 returns :map_not_found without moving" do
+    test "destination blocked beyond radius 5 falls back to the requested cell and succeeds" do
       for x <- 95..105, y <- 115..125 do
         :ok = Cell.put("geffen", x, y, :test_blocker, x * 1_000 + y + 1, blocks_movement: true)
       end
 
-      reject(&SpatialIndex.remove_player/1)
+      stub(Broadcast, :to_players, fn _visible, _packet, _opts -> :ok end)
 
-      assert {:error, :map_not_found} = WarpHandler.warp(state(), "geffen", 100, 120)
-      refute_received {:send, :control, {:map_move, _}}
+      assert {:ok, %{game_state: gs}} = WarpHandler.warp(state(), "geffen", 100, 120)
+
+      assert gs.x == 100
+      assert gs.y == 120
+
+      assert_received {:send, :control, {:map_move, %MapMove{map_name: "geffen", x: 100, y: 120}}}
     end
 
     test "walkable destination is unchanged — fallback search is not invoked" do
