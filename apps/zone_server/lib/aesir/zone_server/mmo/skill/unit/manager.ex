@@ -665,8 +665,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       server_tick: ServerTick.now()
     }
 
-    group.group_id
-    |> Storage.take_group_observers()
+    {cx, cy} = group.center
+    observers = Storage.take_group_observers(group.group_id)
+    in_range = SpatialIndex.get_players_in_range(group.map_name, cx, cy, Config.view_range())
+
+    observers
+    |> Enum.concat(in_range)
+    |> Enum.uniq()
     |> Enum.each(&Broadcast.to_player(&1, packet))
   end
 

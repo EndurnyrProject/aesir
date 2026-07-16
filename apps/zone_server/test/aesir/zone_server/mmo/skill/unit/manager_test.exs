@@ -1054,6 +1054,34 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                     }}
   end
 
+  test "despawns an early-torn-down group for a view-range player that never registered as observer" do
+    test_pid = self()
+
+    stub(Broadcast, :to_player, fn observer_id, packet ->
+      send(test_pid, {observer_id, packet})
+    end)
+
+    manager = start_manager(10_000)
+
+    :ok = SpatialIndex.add_unit(:player, 42, 100, 100, "prontera")
+
+    assert :ok =
+             Manager.register(
+               manager,
+               group(1, visible?: true, center: {100, 100}, created_at: 10_000)
+             )
+
+    assert MapSet.new() == Storage.get_observer_groups(42)
+
+    assert :ok = Manager.destroy(manager, 1)
+
+    assert_receive {42,
+                    %Aesir.Net.SkillUnitDespawn{
+                      group_id: 1,
+                      reason: :SKILL_UNIT_DESPAWN_REASON_CANCELED
+                    }}
+  end
+
   test "tears down post-registration cells and despawns every captured ID" do
     test_pid = self()
 
