@@ -2,10 +2,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   @moduledoc """
   Shared enemy-target relation for skills and combat.
 
-  A living mob is an enemy. A living player is an enemy unless it is the
-  caster or shares the caster's nonzero party or guild. This is deliberately
-  only a relation check; map-mode-specific PvP policy can be layered here when
-  the server gains one.
+  A living mob is an enemy. A living player is an enemy of a mob. A player,
+  however, is never a valid target for another player until the server gains
+  PvP map modes: `pvp_enabled?/1` is the single seam that flips that policy.
+  Beyond PvP, players sharing the caster's nonzero party or guild are never
+  enemies.
   """
 
   @doc """
@@ -16,10 +17,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
     cond do
       not alive?(target) -> {:error, :target_dead}
       same_unit?(attacker, target) -> {:error, :invalid_target}
+      pvp_blocked?(attacker, target) -> {:error, :invalid_target}
       allied_players?(attacker, target) -> {:error, :invalid_target}
       true -> :ok
     end
   end
+
+  # A player attacking another player is rejected until PvP map modes exist.
+  # Mob-vs-player and player-vs-mob are unaffected because at least one side is
+  # not a player. Flipping `pvp_enabled?/1` to true reopens player-vs-player and
+  # hands the alliance decision to `allied_players?/2`.
+  defp pvp_blocked?(attacker, target) do
+    unit_type(attacker) == :player and unit_type(target) == :player and
+      not pvp_enabled?(attacker)
+  end
+
+  defp pvp_enabled?(_attacker), do: false
 
   defp same_unit?(attacker, target) do
     unit_type(attacker) == unit_type(target) and unit_id(attacker) == unit_id(target)

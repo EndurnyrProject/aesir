@@ -163,7 +163,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzFrostnovaTest do
   end
 
   describe "real splash integration" do
-    test "hits living enemies through the 7x7 boundary while excluding caster, allies, dead, outside and blocked units" do
+    test "hits living enemy mobs through the 7x7 boundary while excluding caster, allies, players, dead, outside and blocked units" do
       caster = %{build_player(1_000, 150, 150) | party_id: 10, guild_id: 20}
       inner_id = 2_001
       boundary_id = 2_002
@@ -228,7 +228,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzFrostnovaTest do
       end)
 
       stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, defender, opts ->
-        assert defender.unit_id in [inner_id, boundary_id, enemy_id]
+        assert defender.unit_id in [inner_id, boundary_id]
         assert opts[:skill_ratio] == 110
         assert opts[:element] == :water
         {:ok, %{damage: 40, is_critical: false}}
@@ -267,7 +267,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzFrostnovaTest do
                  resistance_roll
                )
 
-      expected = [{:mob, inner_id}, {:mob, boundary_id}, {:player, enemy_id}]
+      expected = [{:mob, inner_id}, {:mob, boundary_id}]
 
       Enum.each(expected, fn target ->
         assert_received {:damage, ^target}

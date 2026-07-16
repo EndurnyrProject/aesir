@@ -328,7 +328,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzSightrasherTest do
     refute StatusStorage.has_status?(:player, @caster.character_id, :sc_sight)
   end
 
-  test "real splash damages and knocks back only mixed hostile targets in the radius-7 square" do
+  test "real splash damages and knocks back only hostile mobs in the radius-7 square, excluding players" do
     collision_id = 2_000
     outside_id = 2_001
     party_ally_id = 3_001
@@ -365,15 +365,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzSightrasherTest do
     assert_receive {:session_cast, {:mob, ^collision_id}, {:apply_damage, mob_damage, 1_000}}
     assert mob_damage > 0
 
-    assert_receive {:session_cast, {:player, ^collision_id},
-                    {:apply_damage, player_damage, 1_000}}
-
-    assert player_damage > 0
     assert_receive {:session_cast, {:mob, ^collision_id}, {:knocked_back, 62, 60}}
-    assert_receive {:session_cast, {:player, ^collision_id}, {:knocked_back, 50, 56}}
 
     excluded = [
       {:player, caster.character_id},
+      {:player, collision_id},
       {:mob, outside_id},
       {:player, party_ally_id},
       {:player, guild_ally_id}

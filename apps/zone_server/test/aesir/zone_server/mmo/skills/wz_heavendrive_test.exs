@@ -205,7 +205,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzHeavendriveTest do
                WzHeavendrive.cast(caster, {:ground, 150, 150}, 1, definition)
     end
 
-    test "same numeric mob and hostile-player ids damage and clean up the typed player" do
+    test "excludes a hostile player from the splash until PvP exists" do
       caster = fake_unit(1_000, :player, 150, 150)
       target_id = 3_001
       target = fake_unit(target_id, :player, 149, 150)
@@ -230,24 +230,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzHeavendriveTest do
       stub(PlayerSession, :get_current_stats, fn ^player_pid -> target.stats end)
       stub(PlayerSession, :get_state, fn ^player_pid -> %{game_state: target} end)
 
-      stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, defender, _opts ->
-        assert defender.unit_type == :player
-        assert defender.unit_id == target_id
-        {:ok, %{damage: 40, is_critical: false}}
-      end)
-
-      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-
-      stub(StatusInterpreter, :absorb_damage, fn :player, ^target_id, damage, _hit_info ->
-        damage
-      end)
-
-      expect(PlayerSession, :apply_damage, fn ^player_pid, 40, 1_000 -> :ok end)
+      reject(&MagicDamageCalculator.calculate_magic_damage/3)
+      reject(&PlayerSession.apply_damage/3)
       reject(&MobSession.apply_damage/3)
-
-      expect(StatusInterpreter, :remove_status, fn :player, ^target_id, :sc_sv_roottwist ->
-        :ok
-      end)
+      reject(&StatusInterpreter.remove_status/3)
 
       assert {:ok, ^caster} =
                WzHeavendrive.cast(
@@ -259,7 +245,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzHeavendriveTest do
     end
 
     @tag :relation_dependency
-    test "production path hits inner, edge, and hostile-player targets only" do
+    test "production path hits inner and edge mob targets only, excluding players" do
       caster = fake_unit(1_000, :player, 150, 150, party_id: 7, guild_id: 9)
 
       units = %{
@@ -338,7 +324,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzHeavendriveTest do
       stub(StatusInterpreter, :absorb_damage, fn _type, _id, damage, _hit_info -> damage end)
 
       expect(MobSession, :apply_damage, 2, fn _pid, 40, 1_000 -> :ok end)
-      expect(PlayerSession, :apply_damage, fn _pid, 40, 1_000 -> :ok end)
+      reject(&PlayerSession.apply_damage/3)
 
       test_pid = self()
 
@@ -352,10 +338,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzHeavendriveTest do
 
       assert_received {:root_twist_removed, :mob, 2_001}
       assert_received {:root_twist_removed, :mob, 2_002}
-      assert_received {:root_twist_removed, :player, 3_001}
       refute_received {:root_twist_removed, _, 2_003}
-      refute_received {:root_twist_removed, _, 3_002}
-      refute_received {:root_twist_removed, _, 3_003}
+      refute_received {:root_twist_removed, :player, _}
       refute_received {:root_twist_removed, _, 1_000}
     end
   end

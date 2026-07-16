@@ -20,8 +20,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
     Map.merge(%{instance_id: id, hp: 100, is_dead: false}, attrs)
   end
 
-  test "another unaffiliated living player is an enemy" do
-    assert :ok = Targeting.validate_enemy(player(1000), player(2000))
+  test "another player is not a valid target until PvP map modes exist" do
+    assert {:error, :invalid_target} = Targeting.validate_enemy(player(1000), player(2000))
   end
 
   test "self is never an enemy" do
@@ -36,10 +36,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
              )
   end
 
-  test "party id zero does not make unrelated players allies" do
-    assert :ok = Targeting.validate_enemy(player(1000), player(2000))
-  end
-
   test "members of the same nonzero guild are not enemies" do
     assert {:error, :invalid_target} =
              Targeting.validate_enemy(
@@ -48,8 +44,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
              )
   end
 
-  test "a living mob is an enemy" do
+  test "a living mob is an enemy of a player" do
     assert :ok = Targeting.validate_enemy(player(1000), mob(2000))
+  end
+
+  test "a mob may still target a living player" do
+    assert :ok = Targeting.validate_enemy(mob(1000), player(2000))
   end
 
   test "dead players and mobs are not enemies" do

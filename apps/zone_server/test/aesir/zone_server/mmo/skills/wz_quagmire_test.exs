@@ -159,7 +159,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzQuagmireTest do
   end
 
   describe "manager trigger and lifecycle flow" do
-    test "acquires and releases player and mob support through on_touch and on_out" do
+    test "acquires and releases mob support through on_touch and on_out while excluding players" do
       stub(Catalog, :ground_module_for, fn :wz_quagmire -> {:ok, WzQuagmire} end)
       stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, 0 -> [] end)
 
@@ -176,13 +176,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzQuagmireTest do
       assert :ok = Manager.trigger(manager, 1, {:player, 101}, :on_touch)
       assert :ok = Manager.trigger(manager, 1, {:mob, 200}, :on_touch)
 
-      assert FieldSupport.supported?(:player, 101, :sc_quagmire)
+      refute FieldSupport.supported?(:player, 101, :sc_quagmire)
       assert FieldSupport.supported?(:mob, 200, :sc_quagmire)
 
-      assert :ok = Manager.trigger(manager, 1, {:player, 101}, :on_out)
       assert :ok = Manager.trigger(manager, 1, {:mob, 200}, :on_out)
 
-      refute FieldSupport.supported?(:player, 101, :sc_quagmire)
       refute FieldSupport.supported?(:mob, 200, :sc_quagmire)
     end
 

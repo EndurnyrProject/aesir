@@ -318,16 +318,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzJupitelTest do
     assert_receive {:session_cast, {:knocked_back, 56, 64}}
   end
 
-  test "impact accepts a living enemy player after the central relation check" do
+  test "impact rejects an unaffiliated player through the central relation check until PvP exists" do
     true = put_test_map()
     {_player, _pid} = register_player()
 
-    assert :ok =
+    assert {:error, :invalid_target} =
              WzJupitel.impact(caster(), %{target: {:player, @target_id}, skill_level: 1})
 
-    assert_receive {:session_cast, {:apply_damage, damage, 1000}}
-    assert damage > 0
-    assert_receive {:session_cast, {:knocked_back, 67, 60}}
+    refute_receive {:session_cast, {:apply_damage, _damage, _attacker_id}}, 20
+    refute_receive {:session_cast, {:knocked_back, _x, _y}}, 20
   end
 
   test "impact rejects a same-party player through the central relation check" do
