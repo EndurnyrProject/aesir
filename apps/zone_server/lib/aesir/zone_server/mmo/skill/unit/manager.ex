@@ -294,10 +294,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   def handle_call({:leave_view, observer_id, group_id}, _from, state) do
     case Storage.get(group_id) do
-      %Group{visible?: true} = group ->
+      %Group{visible?: true} ->
+        cell_ids =
+          group_id
+          |> Storage.get_cells_by_group()
+          |> Enum.map(& &1.cell_id)
+          |> Enum.sort()
+
         Broadcast.to_player(observer_id, %SkillUnitDespawn{
           group_id: group_id,
-          cell_ids: group.cell_ids |> Enum.sort(),
+          cell_ids: cell_ids,
           reason: :SKILL_UNIT_DESPAWN_REASON_LEFT_VIEW,
           server_tick: ServerTick.now()
         })
@@ -605,7 +611,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp cleanup(%Group{group_id: group_id} = group, module, despawn_reason) do
     FieldSupport.release_group(group_id)
-    group_id |> Storage.get_cells_by_group() |> Enum.each(&remove_cell_indexes/1)
+    cells = Storage.get_cells_by_group(group_id)
+    Enum.each(cells, &remove_cell_indexes/1)
 
     if module && function_exported?(module, :on_expire, 1) do
       case invoke(module, :on_expire, [group]) do
@@ -616,7 +623,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
 
     Storage.delete(group_id)
-    publish_group_despawn(group, despawn_reason)
+    publish_group_despawn(group, Enum.map(cells, & &1.cell_id), despawn_reason)
   end
 
   defp damage_cell_now(_cell_id, amount, _source, _reason)
@@ -669,15 +676,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp remove_cell(%Cell{} = cell) do
     :ok = remove_cell_indexes(cell)
     :ok = Storage.delete_cell(cell.cell_id)
-
-    case Storage.get(cell.group_id) do
-      nil ->
-        :ok
-
-      %Group{} = group ->
-        remaining = List.delete(group.cell_ids, cell.cell_id)
-        :ok = Storage.update(%{group | cell_ids: remaining})
-    end
   end
 
   defp remove_cell_indexes(%Cell{} = cell) do
@@ -731,12 +729,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
   end
 
-  defp publish_group_despawn(%Group{visible?: false}, _reason), do: :ok
+  defp publish_group_despawn(%Group{visible?: false}, _cell_ids, _reason), do: :ok
 
-  defp publish_group_despawn(%Group{} = group, reason) do
+  defp publish_group_despawn(%Group{} = group, cell_ids, reason) do
     packet = %SkillUnitDespawn{
       group_id: group.group_id,
-      cell_ids: Enum.sort(group.cell_ids),
+      cell_ids: Enum.sort(cell_ids),
       reason: reason,
       server_tick: ServerTick.now()
     }
@@ -764,10 +762,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp register_water_ball_sequence_now(%Group{visible?: false} = group, cells) do
     with {:ok, _group} <- register_invisible_group(group),
-         {:ok, cell_ids} <- materialize_water_ball_cells(group, cells),
-         true <- cell_ids != [] do
-      group = %{group | cell_ids: cell_ids}
-      :ok = Storage.update(group)
+         {:ok, cell_count} <- materialize_water_ball_cells(group, cells),
+         true <- cell_count > 0 do
       {:ok, group}
     else
       false ->
@@ -783,23 +779,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp register_water_ball_sequence_now(_group, _cells), do: {:error, :visible_sequence}
 
   defp materialize_water_ball_cells(group, cells) do
-    Enum.reduce_while(cells, {:ok, []}, fn {x, y}, {:ok, cell_ids} ->
-      case materialize_water_ball_cell(group, x, y) do
-        {:ok, cell_id} -> {:cont, {:ok, [cell_id | cell_ids]}}
-        :skip -> {:cont, {:ok, cell_ids}}
+    cells
+    |> Enum.with_index()
+    |> Enum.reduce_while({:ok, 0}, fn {{x, y}, sequence_index}, {:ok, cell_count} ->
+      case materialize_water_ball_cell(group, x, y, sequence_index) do
+        {:ok, _cell} -> {:cont, {:ok, cell_count + 1}}
+        :skip -> {:cont, {:ok, cell_count}}
         {:error, _reason} = error -> {:halt, error}
       end
     end)
-    |> case do
-      {:ok, cell_ids} -> {:ok, Enum.reverse(cell_ids)}
-      error -> error
-    end
   end
 
-  defp materialize_water_ball_cell(group, x, y) do
-    with :ok <- consume_water_source(MapCell.water_source(group.map_name, x, y)),
-         {:ok, cell} <- create_water_ball_cell(group, x, y) do
-      {:ok, cell.cell_id}
+  defp materialize_water_ball_cell(group, x, y, sequence_index) do
+    with :ok <- consume_water_source(MapCell.water_source(group.map_name, x, y)) do
+      create_water_ball_cell(group, x, y, sequence_index)
     end
   end
 
@@ -815,7 +808,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp consume_water_source(%MapCell.WaterSource{origin: :water_ball}), do: :skip
   defp consume_water_source(nil), do: :skip
 
-  defp create_water_ball_cell(group, x, y) do
+  defp create_water_ball_cell(group, x, y, sequence_index) do
     with {:ok, cell_id} <- Id.allocate(),
          {:ok, cell} <-
            Cell.new(%{
@@ -825,7 +818,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
              x: x,
              y: y,
              flags: [:consumable_water],
-             state: %{water_ball_token: true}
+             state: %{water_ball_token: true, water_ball_sequence_index: sequence_index}
            }),
          :ok <- Storage.insert_cell(cell),
          :ok <- commit_terrain(cell) do
@@ -833,18 +826,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
   end
 
-  defp claim_next_sequence_cell(%Group{cell_ids: [cell_id | remaining]} = group) do
-    case Storage.get_cell(cell_id) do
+  defp claim_next_sequence_cell(%Group{} = group) do
+    case Enum.min_by(
+           Storage.get_cells_by_group(group.group_id),
+           &water_ball_sequence_index/1,
+           fn -> nil end
+         ) do
       %Cell{} = cell ->
         :ok = remove_cell(cell)
-        {:ok, %{group | cell_ids: remaining}}
+        {:ok, group}
 
       nil ->
-        claim_next_sequence_cell(%{group | cell_ids: remaining})
+        :empty
     end
   end
 
-  defp claim_next_sequence_cell(%Group{}), do: :empty
+  defp water_ball_sequence_index(%Cell{state: %{water_ball_sequence_index: sequence_index}}),
+    do: sequence_index
 
   defp register_group(%Group{visible?: false} = group), do: register_invisible_group(group)
   defp register_group(%Group{} = group), do: register_visible_group(group)
@@ -870,14 +868,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp register_visible_group(%Group{} = group) do
-    group = %{group | cell_ids: []}
     :ok = remove_replaced_group(group.group_id)
     :ok = Storage.insert(group)
 
     case materialize_visible_cells(group, []) do
-      {:ok, cells} ->
-        group = %{group | cell_ids: Enum.map(cells, & &1.cell_id)}
-        :ok = Storage.update(group)
+      {:ok, _cells} ->
         {:ok, group}
 
       {:error, _reason} = error ->
@@ -953,18 +948,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       nil ->
         :ok
 
-      %Group{cell_ids: []} = live when updated.visible? ->
-        cleanup(live, module, :SKILL_UNIT_DESPAWN_REASON_DESTROYED)
+      %Group{} = live when updated.visible? ->
+        if Storage.get_cells_by_group(live.group_id) == [] do
+          cleanup(live, module, :SKILL_UNIT_DESPAWN_REASON_DESTROYED)
+        else
+          Storage.update(updated)
+        end
 
-      %Group{} = live ->
-        Storage.update(%{updated | cell_ids: live.cell_ids})
+      %Group{} ->
+        Storage.update(updated)
     end
   end
 
   defp decay_cells(%Group{state: %{cell_decay: amount}} = group)
        when is_integer(amount) and amount > 0 do
-    group.cell_ids
-    |> Enum.each(&damage_cell_now(&1, amount, nil, :decay))
+    group.group_id
+    |> Storage.get_cells_by_group()
+    |> Enum.each(&damage_cell_now(&1.cell_id, amount, nil, :decay))
   end
 
   defp decay_cells(_group), do: :ok
@@ -993,9 +993,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
       group ->
         :ok = FieldSupport.release_group(group_id)
-        group_id |> Storage.get_cells_by_group() |> Enum.each(&remove_cell_indexes/1)
+        cells = Storage.get_cells_by_group(group_id)
+        Enum.each(cells, &remove_cell_indexes/1)
         :ok = Storage.delete(group_id)
-        publish_group_despawn(group, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
+
+        publish_group_despawn(
+          group,
+          Enum.map(cells, & &1.cell_id),
+          :SKILL_UNIT_DESPAWN_REASON_CANCELED
+        )
     end
   end
 

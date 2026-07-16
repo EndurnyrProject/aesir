@@ -166,6 +166,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
   end
 
   describe "targetable cells" do
+    test "keeps visible group membership only in storage" do
+      manager = start_manager(10_000)
+
+      assert :ok = Manager.register(manager, group(1, visible?: true))
+
+      refute Map.has_key?(Storage.get(1), :cell_ids)
+      assert [%Cell{group_id: 1}] = Storage.get_cells_by_group(1)
+    end
+
     test "materializes terrain and target indexes from a ground unit's cell attributes and publishes decayed HP in snapshots" do
       now = 10_000
       manager = start_manager(now)
@@ -303,6 +312,44 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
   end
 
   describe "Water Ball sequences" do
+    test "claims water sources in caller order when source cell IDs are reused" do
+      manager = start_manager(10_000)
+
+      second_source =
+        group(1,
+          visible?: true,
+          cells: [{101, 100}],
+          next_tick_at: 20_000,
+          state: %{cell_attrs: %{{101, 100} => %{flags: [:consumable_water]}}}
+        )
+
+      first_source =
+        group(2,
+          visible?: true,
+          cells: [{100, 100}],
+          next_tick_at: 20_000,
+          state: %{cell_attrs: %{{100, 100} => %{flags: [:consumable_water]}}}
+        )
+
+      assert :ok = Manager.register(manager, second_source)
+      assert :ok = Manager.register(manager, first_source)
+
+      sequence =
+        group(3,
+          skill_name: :water_ball_sequence,
+          visible?: false,
+          cells: [],
+          next_tick_at: 10_000,
+          state: %{water_ball_sequence: true, test_pid: self()}
+        )
+
+      assert {:ok, %Group{}} =
+               Manager.register_water_ball_sequence(manager, sequence, [{100, 100}, {101, 100}])
+
+      assert :ok = Manager.tick(manager, 10_000)
+      assert [%Cell{x: 101, y: 100}] = Storage.get_cells_by_group(sequence.group_id)
+    end
+
     test "uses each claimed water cell once and expires when the sequence is empty" do
       manager = start_manager(10_000)
 
@@ -320,14 +367,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
           skill_name: :water_ball_sequence,
           visible?: false,
           cells: [],
-          cell_ids: [],
           next_tick_at: 10_000,
           state: %{water_ball_sequence: true, test_pid: self()}
         )
 
-      assert {:ok, %Group{cell_ids: [claimed_id]}} =
+      assert {:ok, %Group{}} =
                Manager.register_water_ball_sequence(manager, sequence, [{100, 100}])
 
+      [%Cell{cell_id: claimed_id}] = Storage.get_cells_by_group(2)
       assert %Cell{cell_id: ^claimed_id, group_id: 2} = Storage.get_cell(claimed_id)
 
       assert :ok = Manager.tick(manager, 10_000)
@@ -360,7 +407,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
               skill_name: :water_ball_sequence,
               visible?: false,
               cells: [],
-              cell_ids: [],
               state: %{water_ball_sequence: true}
             ),
             [{100, 100}]
@@ -864,7 +910,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
   test "builds complete snapshots and range results from visible groups only" do
     manager = start_manager(10_000)
-    visible = group(1, visible?: true, cells: [{100, 100}], cell_ids: [], created_at: 10_000)
+    visible = group(1, visible?: true, cells: [{100, 100}], created_at: 10_000)
     later_visible = group(3, visible?: true, cells: [{100, 100}], created_at: 10_000)
     invisible = group(2, visible?: false, cells: [{100, 100}])
     Enum.each([later_visible, visible, invisible], &Manager.register(manager, &1))
@@ -970,6 +1016,44 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                     }}
   end
 
+  test "tears down post-registration cells and despawns every captured ID" do
+    test_pid = self()
+
+    stub(Broadcast, :to_player, fn observer_id, packet ->
+      send(test_pid, {observer_id, packet})
+    end)
+
+    manager = start_manager(10_000)
+    assert :ok = Manager.register(manager, group(1, visible?: true, created_at: 10_000))
+    [initial] = Storage.get_cells_by_group(1)
+
+    post_registration = %Cell{
+      cell_id: initial.cell_id + 1,
+      group_id: 1,
+      map_name: "prontera",
+      x: 101,
+      y: 100,
+      flags: Cell.visible()
+    }
+
+    assert :ok = Storage.insert_cell(post_registration)
+    assert :ok = Manager.enter_view(manager, 99, 1)
+    assert_receive {99, %Aesir.Net.SkillUnitSpawn{}}
+
+    assert :ok = Manager.destroy(manager, 1)
+
+    assert_receive {99,
+                    %Aesir.Net.SkillUnitDespawn{
+                      group_id: 1,
+                      cell_ids: cell_ids,
+                      reason: :SKILL_UNIT_DESPAWN_REASON_CANCELED
+                    }}
+
+    assert Enum.sort(cell_ids) == Enum.sort([initial.cell_id, post_registration.cell_id])
+    assert nil == Storage.get_cell(initial.cell_id)
+    assert nil == Storage.get_cell(post_registration.cell_id)
+  end
+
   test "despawns a group destroyed immediately after its map-load snapshot" do
     test_pid = self()
 
@@ -998,7 +1082,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
     assert :ok = Manager.register(manager, invisible)
     assert [] == Storage.get_cells_by_group(1)
-    assert %Group{cell_ids: []} = Storage.get(1)
+    refute Map.has_key?(Storage.get(1), :cell_ids)
     assert %Aesir.Net.SkillUnitSnapshot{groups: []} = Manager.snapshot(manager, "prontera", 123)
     assert [] == Manager.in_range(manager, "prontera", 100, 100, 0)
   end

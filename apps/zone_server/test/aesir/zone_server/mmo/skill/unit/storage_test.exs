@@ -113,6 +113,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.StorageTest do
         assert [] == :ets.tab2list(EtsTable.table_for(table))
       end
     end
+
+    test "removes cells through the group-cell index" do
+      cell = %Cell{
+        cell_id: 5,
+        group_id: 1,
+        map_name: "prontera",
+        x: 100,
+        y: 101,
+        flags: Cell.visible()
+      }
+
+      :ok = Storage.insert(group(1))
+      :ok = Storage.insert_cell(cell)
+
+      assert :ok = Storage.delete(1)
+      assert nil == Storage.get_cell(cell.cell_id)
+      assert [] == Storage.get_cells_by_group(1)
+      assert [] == :ets.tab2list(EtsTable.table_for(:skill_unit_group_cells_index))
+    end
   end
 
   describe "all/0" do
@@ -306,5 +325,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.StorageTest do
     assert :ok = Storage.delete_cell(5)
     assert nil == Storage.get_cell(5)
     assert [] == Storage.get_cells_by_group(1)
+  end
+
+  test "moves group membership only when a stored cell changes owner" do
+    cell = %Cell{
+      cell_id: 5,
+      group_id: 1,
+      map_name: "prontera",
+      x: 100,
+      y: 101,
+      flags: Cell.visible()
+    }
+
+    :ok = Storage.insert_cell(cell)
+    :ok = Storage.update_cell(%{cell | group_id: 2})
+
+    assert [] == Storage.get_cells_by_group(1)
+    assert [%Cell{cell_id: 5, group_id: 2}] = Storage.get_cells_by_group(2)
   end
 end

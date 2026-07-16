@@ -158,7 +158,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WizardIntegrationTest do
     [sequence] = Storage.all()
 
     refute sequence.visible?
-    assert sequence.cell_ids != []
+    [sequence_cell | _] = Storage.get_cells_by_group(sequence.group_id)
     assert %SkillUnitSnapshot{groups: []} = SkillUnit.snapshot(@map)
 
     expect(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
@@ -176,7 +176,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WizardIntegrationTest do
     allow(Combat, self(), Process.get({Manager, :server}))
 
     assert :ok = Manager.tick(Process.get({Manager, :server}), sequence.next_tick_at)
-    assert Storage.get_cell(hd(sequence.cell_ids)) == nil
+    assert Storage.get_cell(sequence_cell.cell_id) == nil
 
     assert :ok =
              Manager.tick(
@@ -212,7 +212,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WizardIntegrationTest do
     [cell | _] = Storage.get_cells_by_group(wall.group_id)
 
     assert wall.visible?
-    assert length(wall.cell_ids) == 5
+    assert length(Storage.get_cells_by_group(wall.group_id)) == 5
     assert {:ok, ^cell} = Manager.targetable_cell(manager, cell.cell_id)
     refute MapCell.traversable?(@map, cell.x, cell.y)
     assert MapCell.blocks_projectiles?(@map, cell.x, cell.y)

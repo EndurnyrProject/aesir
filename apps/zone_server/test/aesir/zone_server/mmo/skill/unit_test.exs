@@ -168,7 +168,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
 
       assert_receive %Aesir.Net.SkillUnitSpawn{group: %{group_id: group_id, cells: [spawn_cell]}}
       assert group_id == group.group_id
-      assert %Group{visible?: true, cell_ids: [cell_id]} = Storage.get(group.group_id)
+      assert %Group{visible?: true} = Storage.get(group.group_id)
+      [%{cell_id: cell_id}] = Storage.get_cells_by_group(group.group_id)
       assert spawn_cell.cell_id == cell_id
 
       assert %Aesir.Net.SkillUnitSnapshot{

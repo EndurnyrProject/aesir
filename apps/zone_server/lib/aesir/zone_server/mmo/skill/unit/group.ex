@@ -30,7 +30,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
     field :map_name, String.t()
     field :center, cell()
     field :cells, [cell()], default: []
-    field :cell_ids, [non_neg_integer()], default: []
     field :created_at, integer() | nil
     field :next_tick_at, integer() | nil
     field :expires_at, integer()

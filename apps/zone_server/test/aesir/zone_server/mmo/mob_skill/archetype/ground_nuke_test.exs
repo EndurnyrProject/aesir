@@ -149,8 +149,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
       stub_walkable_map()
       group = place!()
 
-      assert %Group{visible?: true, created_at: created_at, cell_ids: cell_ids} = group
+      assert %Group{visible?: true, created_at: created_at} = group
       assert is_integer(created_at)
+      cell_ids = Storage.get_cells_by_group(group.group_id) |> Enum.map(& &1.cell_id)
       assert length(cell_ids) == length(group.cells)
       assert_receive {:packet, %SkillUnitSpawn{group: %{group_id: group_id, cells: spawn_cells}}}
       assert group_id == group.group_id
