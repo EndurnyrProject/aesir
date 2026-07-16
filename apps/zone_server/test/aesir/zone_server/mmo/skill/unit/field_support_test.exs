@@ -4,9 +4,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportTest do
   import Aesir.TestEtsSetup
   import Mimic
 
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.SpatialIndex
 
   defmodule StationaryField do
     def field_support(_group),
@@ -164,11 +169,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportTest do
 
   test "manager registration seeds stationary occupants and reconciliation restores support" do
     test_pid = self()
-    alias Aesir.ZoneServer.Mmo.Skill.Catalog
-    alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
-    alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
-    alias Aesir.ZoneServer.Unit.SpatialIndex
-
     Mimic.copy(Catalog)
     Mimic.copy(SpatialIndex)
     Mimic.copy(Interpreter)
@@ -207,6 +207,54 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportTest do
 
     assert :ok = Manager.register(manager, group)
     assert FieldSupport.supported?(:player, 11, :sc_quagmire)
+  end
+
+  test "movement reconciliation updates cached field occupants while acquiring and releasing support" do
+    Mimic.copy(Catalog)
+    stub(Catalog, :ground_module_for, fn :stationary_field -> {:ok, StationaryField} end)
+
+    stub(Interpreter, :apply_status, fn unit_type, unit_id, status_type, params ->
+      StatusStorage.apply_status(unit_type, unit_id, status_type, params)
+      :ok
+    end)
+
+    manager =
+      start_supervised!({Manager, name: nil, schedule_tick: fn _pid, _interval -> :ok end})
+
+    allow(Catalog, self(), manager)
+    allow(Interpreter, self(), manager)
+
+    :ok = SpatialIndex.add_unit(:player, 11, 8, 8, "prontera")
+
+    group = %Group{
+      group_id: 100,
+      skill_id: 999,
+      skill_name: :stationary_field,
+      level: 2,
+      caster_id: 1,
+      caster_type: :player,
+      map_name: "prontera",
+      center: {5, 5},
+      cells: [{5, 5}],
+      next_tick_at: 1_000,
+      expires_at: System.monotonic_time(:millisecond) + 100_000,
+      interval: 1_000
+    }
+
+    assert :ok = Manager.register(manager, group)
+    refute FieldSupport.supported?(:player, 11, :sc_quagmire)
+
+    assert :ok = SpatialIndex.remove_unit(:player, 11)
+    assert :ok = SpatialIndex.add_unit(:player, 11, 5, 5, "prontera")
+    assert :ok = Manager.reconcile_unit(manager, {:player, 11})
+    assert FieldSupport.supported?(:player, 11, :sc_quagmire)
+    assert Storage.get(100).state.field_support_occupants == MapSet.new([{:player, 11}])
+
+    assert :ok = SpatialIndex.remove_unit(:player, 11)
+    assert :ok = SpatialIndex.add_unit(:player, 11, 8, 8, "prontera")
+    assert :ok = Manager.reconcile_unit(manager, {:player, 11})
+    refute FieldSupport.supported?(:player, 11, :sc_quagmire)
+    assert Storage.get(100).state.field_support_occupants == MapSet.new()
   end
 end
 

@@ -184,8 +184,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       :ok = enforce_instance_limit(group)
 
       if Storage.get(group.group_id) do
-        reconcile_group(group)
-        publish_spawn(group)
+        group
+        |> reconcile_group()
+        |> publish_spawn()
       end
 
       {:reply, :ok, state}
@@ -337,7 +338,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp run_interval(%Group{} = group, now, unit_available?) do
-    reconcile_group(group)
+    group = reconcile_group(group)
 
     case lifecycle_action(group, unit_available?) do
       :continue -> run_sequence_interval(group, now)
@@ -1089,21 +1090,50 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp maybe_put(traits, _key, false, _value), do: traits
 
   defp reconcile_group(%Group{} = group) do
-    with {:ok, spec} <- field_support_spec(group) do
-      occupants = occupants(group)
-      acquire_occupants(group, spec, occupants)
-      release_missing(group, spec, occupants)
-    end
+    case field_support_spec(group) do
+      {:ok, spec} ->
+        occupants = occupants(group, spec)
 
-    :ok
+        if occupants != cached_occupants(group) or
+             not field_support_current?(group, spec, occupants) do
+          acquire_occupants(group, spec, occupants)
+          release_missing(group, spec, occupants)
+
+          group = %{group | state: Map.put(group.state, :field_support_occupants, occupants)}
+          Storage.update(group)
+          group
+        else
+          group
+        end
+
+      :error ->
+        group
+    end
   end
 
-  defp occupants(%Group{} = group) do
+  defp occupants(%Group{} = group, spec) do
     group.cells
     |> Enum.flat_map(fn {x, y} ->
       SpatialIndex.get_all_units_in_range(group.map_name, x, y, 0)
     end)
-    |> Enum.uniq()
+    |> Enum.filter(&supports_target?(spec, &1))
+    |> MapSet.new()
+  end
+
+  defp cached_occupants(%Group{state: state}),
+    do: Map.get(state, :field_support_occupants, MapSet.new())
+
+  defp field_support_current?(group, spec, occupants) do
+    expected = MapSet.new(occupants, &{elem(&1, 0), elem(&1, 1), spec.status_type})
+
+    actual =
+      group.group_id
+      |> FieldSupport.sources_for_group()
+      |> MapSet.new(fn {unit_type, unit_id, status_type, _params} ->
+        {unit_type, unit_id, status_type}
+      end)
+
+    expected == actual
   end
 
   defp acquire_occupants(group, spec, occupants) do
@@ -1150,14 +1180,41 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       end)
       |> MapSet.new(& &1.group_id)
 
-    Enum.each(current_groups, &apply_field_support_action(&1, {unit_type, unit_id}, :on_touch))
+    Enum.each(current_groups, fn group ->
+      apply_field_support_action(group, {unit_type, unit_id}, :on_touch)
+
+      update_cached_occupant(
+        group.group_id,
+        {unit_type, unit_id},
+        MapSet.member?(current_ids, group.group_id)
+      )
+    end)
 
     FieldSupport.sources_for_unit(unit_type, unit_id)
     |> Enum.each(fn {_, _, status_type, group_id, _params} ->
       if not MapSet.member?(current_ids, group_id) do
         FieldSupport.release(unit_type, unit_id, status_type, group_id)
+        update_cached_occupant(group_id, {unit_type, unit_id}, false)
       end
     end)
+  end
+
+  defp update_cached_occupant(group_id, occupant, present?) do
+    case Storage.get(group_id) do
+      %Group{} = group ->
+        occupants =
+          if present?,
+            do: MapSet.put(cached_occupants(group), occupant),
+            else: MapSet.delete(cached_occupants(group), occupant)
+
+        Storage.update(%{
+          group
+          | state: Map.put(group.state, :field_support_occupants, occupants)
+        })
+
+      nil ->
+        :ok
+    end
   end
 
   defp field_support_spec(%Group{} = group) do

@@ -205,6 +205,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzQuagmireTest do
       assert Storage.get(1) == nil
     end
 
+    test "skips field support acquisition when interval occupants are unchanged" do
+      test_pid = self()
+      Mimic.copy(FieldSupport)
+      stub(Catalog, :ground_module_for, fn :wz_quagmire -> {:ok, WzQuagmire} end)
+      stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 10, 20, 0 -> [{:mob, 200}] end)
+      stub_unit_registry(%{{:player, 100} => player(100), {:mob, 200} => mob(200)})
+
+      stub(FieldSupport, :acquire, fn _type, _id, _status, _group_id, _params ->
+        send(test_pid, :acquire)
+      end)
+
+      stub(FieldSupport, :sources_for_group, fn _group_id ->
+        [{:mob, 200, :sc_quagmire, [level: 1, val1: 1, val2: 10]}]
+      end)
+
+      manager = start_manager()
+      allow(FieldSupport, self(), manager)
+
+      assert :ok = Manager.register(manager, live_group(next_tick_at: 1_000))
+      assert_received :acquire
+
+      assert :ok = Manager.tick(manager, 1_000)
+      refute_received :acquire
+    end
+
     test "expires the field and releases its support when its caster changes maps" do
       stub(Catalog, :ground_module_for, fn :wz_quagmire -> {:ok, WzQuagmire} end)
       stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 10, 20, 0 -> [{:mob, 200}] end)
