@@ -68,6 +68,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlPneuma do
 
     map_name
     |> SpatialIndex.get_all_units_in_range(cx, cy, definition.splash_radius)
+    |> Enum.filter(fn {unit_type, _unit_id} -> unit_type in [:player, :mob] end)
     |> Enum.reject(fn {unit_type, unit_id} ->
       StatusStorage.has_status?(unit_type, unit_id, :sc_pneuma)
     end)

@@ -100,6 +100,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlPneumaTest do
       assert_received {:granted, :player, 2001, _params}
     end
 
+    test "ignores targetable skill-unit cells sharing the footprint" do
+      test_pid = self()
+
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 1 ->
+        [{:skill_unit, 777}, {:player, 2001}]
+      end)
+
+      stub(StatusStorage, :has_status?, fn _unit_type, _unit_id, :sc_pneuma -> false end)
+
+      stub(StatusInterpreter, :apply_status, fn unit_type, target_id, :sc_pneuma, _params ->
+        send(test_pid, {:granted, unit_type, target_id})
+        :ok
+      end)
+
+      assert {:ok, %Group{}} = AlPneuma.on_interval(group(1, 9), 0)
+
+      assert_received {:granted, :player, 2001}
+      refute_received {:granted, :skill_unit, _}
+    end
+
     test "does not re-grant to an occupant who already carries the buff" do
       stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 1 ->
         [{:player, @caster_id}]
