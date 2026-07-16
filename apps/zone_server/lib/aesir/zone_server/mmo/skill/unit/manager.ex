@@ -844,14 +844,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp enforce_instance_limit(
          %Group{
+           group_id: new_group_id,
            lifecycle_policy: %{max_instances_per_caster: max_instances_per_caster}
          } = group
        )
        when is_integer(max_instances_per_caster) and max_instances_per_caster > 0 do
     group.skill_name
     |> Storage.get_groups_by_skill_and_caster(group.caster_type, group.caster_id)
-    |> Enum.sort_by(&{&1.expires_at, &1.group_id})
-    |> Enum.drop(-max_instances_per_caster)
+    |> Enum.reject(&(&1.group_id == new_group_id))
+    |> Enum.sort_by(&{&1.created_at, &1.group_id})
+    |> Enum.drop(-(max_instances_per_caster - 1))
     |> Enum.each(&cleanup_with_reason(&1, :SKILL_UNIT_DESPAWN_REASON_CANCELED))
 
     :ok

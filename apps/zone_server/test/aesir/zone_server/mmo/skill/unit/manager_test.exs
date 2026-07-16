@@ -442,27 +442,70 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
              ]
     end
 
-    test "uses group ID to break same-expiry ties when evicting an overflow group" do
+    test "keeps the newly cast group and evicts the oldest existing one on overflow" do
       manager = start_manager(10_000)
       policy = %LifecyclePolicy{max_instances_per_caster: 2}
 
-      for group_id <- [3, 2, 1] do
+      for {group_id, created_at, expires_at} <- [
+            {10, 1_000, 9_000},
+            {20, 2_000, 8_000},
+            {30, 3_000, 7_000}
+          ] do
         assert :ok =
                  Manager.register(
                    manager,
                    group(group_id,
                      skill_name: :fake_unit,
-                     expires_at: 1_000,
+                     created_at: created_at,
+                     expires_at: expires_at,
                      lifecycle_policy: policy
                    )
                  )
       end
 
+      assert Storage.get(10) == nil
+
+      assert Enum.map(Storage.get_groups_by_caster(:player, 1), & &1.group_id) |> Enum.sort() == [
+               20,
+               30
+             ]
+    end
+
+    test "keeps a short-lived new cast and destroys the oldest long-lived instance" do
+      manager = start_manager(10_000)
+      policy = %LifecyclePolicy{max_instances_per_caster: 3}
+
+      for {group_id, created_at} <- [{1, 1_000}, {2, 2_000}, {3, 3_000}] do
+        assert :ok =
+                 Manager.register(
+                   manager,
+                   group(group_id,
+                     skill_name: :fake_unit,
+                     created_at: created_at,
+                     expires_at: 1_000_000,
+                     lifecycle_policy: policy
+                   )
+                 )
+      end
+
+      assert :ok =
+               Manager.register(
+                 manager,
+                 group(4,
+                   skill_name: :fake_unit,
+                   created_at: 4_000,
+                   expires_at: 20_000,
+                   lifecycle_policy: policy
+                 )
+               )
+
+      assert %Group{} = Storage.get(4)
       assert Storage.get(1) == nil
 
       assert Enum.map(Storage.get_groups_by_caster(:player, 1), & &1.group_id) |> Enum.sort() == [
                2,
-               3
+               3,
+               4
              ]
     end
 
