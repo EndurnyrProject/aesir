@@ -1116,9 +1116,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     |> Enum.flat_map(fn {x, y} ->
       SpatialIndex.get_all_units_in_range(group.map_name, x, y, 0)
     end)
-    |> Enum.filter(&supports_target?(spec, &1))
+    |> Enum.filter(&(combat_unit?(&1) and supports_target?(spec, &1)))
     |> MapSet.new()
   end
+
+  defp combat_unit?({unit_type, _unit_id}), do: unit_type in [:player, :mob]
 
   defp cached_occupants(%Group{state: state}),
     do: Map.get(state, :field_support_occupants, MapSet.new())

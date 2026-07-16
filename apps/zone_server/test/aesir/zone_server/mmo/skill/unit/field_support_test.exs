@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
@@ -18,6 +19,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportTest do
       do: %{status_type: :sc_quagmire, params: [level: 2, val2: 10], target?: fn _ -> true end}
 
     def on_interval(group, _now), do: {:ok, group}
+  end
+
+  defmodule CombatOnlyField do
+    def field_support(_group),
+      do: %{status_type: :sc_quagmire, params: [level: 1, val2: 5], target?: &combat_target?/1}
+
+    def on_interval(group, _now), do: {:ok, group}
+
+    defp combat_target?({unit_type, _unit_id}) when unit_type in [:player, :mob], do: true
   end
 
   setup :setup_ets_tables
@@ -207,6 +217,53 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportTest do
 
     assert :ok = Manager.register(manager, group)
     assert FieldSupport.supported?(:player, 11, :sc_quagmire)
+  end
+
+  test "reconciliation skips a targetable skill-unit cell sharing the footprint" do
+    Mimic.copy(Catalog)
+    stub(Catalog, :ground_module_for, fn :combat_only_field -> {:ok, CombatOnlyField} end)
+
+    stub(Interpreter, :apply_status, fn unit_type, unit_id, status_type, params ->
+      StatusStorage.apply_status(unit_type, unit_id, status_type, params)
+      :ok
+    end)
+
+    manager =
+      start_supervised!({Manager, name: nil, schedule_tick: fn _pid, _interval -> :ok end})
+
+    allow(Catalog, self(), manager)
+    allow(Interpreter, self(), manager)
+
+    :ok = SpatialIndex.add_unit(:player, 11, 5, 5, "prontera")
+
+    :ok =
+      SpatialIndex.add_skill_unit(%Cell{
+        cell_id: 500,
+        group_id: 0,
+        map_name: "prontera",
+        x: 5,
+        y: 5
+      })
+
+    group = %Group{
+      group_id: 101,
+      skill_id: 999,
+      skill_name: :combat_only_field,
+      level: 1,
+      caster_id: 1,
+      caster_type: :player,
+      map_name: "prontera",
+      center: {5, 5},
+      cells: [{5, 5}],
+      next_tick_at: 1_000,
+      expires_at: System.monotonic_time(:millisecond) + 100_000,
+      interval: 1_000
+    }
+
+    assert :ok = Manager.register(manager, group)
+    assert Process.alive?(manager)
+    assert FieldSupport.supported?(:player, 11, :sc_quagmire)
+    refute FieldSupport.supported?(:skill_unit, 500, :sc_quagmire)
   end
 
   test "movement reconciliation updates cached field occupants while acquiring and releasing support" do
