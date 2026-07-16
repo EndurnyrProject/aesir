@@ -13,8 +13,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Unit, as: SkillUnit
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Npc.Warp
@@ -44,6 +46,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
     Mimic.copy(Interpreter)
     Mimic.copy(SkillUnit)
     Mimic.copy(SkillUnitManager)
+    Mimic.copy(Storage)
+    Mimic.copy(FieldSupport)
 
     stub(MapCache, :get, fn "prontera" -> {:ok, %{width: 200, height: 200}} end)
     stub(Cell, :traversable?, fn "prontera", _x, _y -> true end)
@@ -61,8 +65,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
     stub(StatusDisplay, :active_icons, fn _type, _id -> [] end)
     stub(Interpreter, :can_move?, fn _type, _id -> true end)
     stub(SkillUnit, :in_range, fn _map, _x, _y, _range -> [] end)
-    stub(SkillUnitManager, :enter_view, fn _observer_id, _group_id -> :ok end)
-    stub(SkillUnitManager, :leave_view, fn _observer_id, _group_id -> :ok end)
+    stub(Storage, :get_groups_at_cell, fn _map, _x, _y -> [] end)
+    stub(FieldSupport, :sources_for_unit, fn _type, _id -> [] end)
+
+    stub(SkillUnitManager, :sync_view, fn _observer_id, _enter_ids, _leave_ids ->
+      MapSet.new()
+    end)
 
     :ok
   end
@@ -172,6 +180,53 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
       {:noreply, _new_state} = MovementHandler.handle_movement_tick(moving_state())
 
       refute_received {:send, :gameplay, {:move_stop, %MoveStop{}}}
+    end
+
+    test "makes no manager calls when the destination has no groups or support" do
+      Mimic.copy(Movement)
+      stub(Movement, :set_position, fn _type, _id, _state, _map -> :ok end)
+      expect(Storage, :get_groups_at_cell, fn "prontera", 51, 50 -> [] end)
+      expect(FieldSupport, :sources_for_unit, fn :player, 1 -> [] end)
+      reject(&SkillUnitManager.reconcile_unit/1)
+      reject(&SkillUnitManager.sync_view/3)
+
+      {:noreply, _new_state} = MovementHandler.handle_movement_tick(moving_state())
+    end
+
+    test "reconciles support when leaving its group for an empty destination" do
+      test_pid = self()
+      Mimic.copy(Movement)
+      stub(Movement, :set_position, fn _type, _id, _state, _map -> :ok end)
+      expect(Storage, :get_groups_at_cell, fn "prontera", 51, 50 -> [] end)
+
+      expect(FieldSupport, :sources_for_unit, fn :player, 1 ->
+        [{:player, 1, :sc_quagmire, 77, []}]
+      end)
+
+      expect(SkillUnitManager, :reconcile_unit, fn {:player, 1} ->
+        send(test_pid, :reconciled)
+        :ok
+      end)
+
+      {:noreply, _new_state} = MovementHandler.handle_movement_tick(moving_state())
+
+      assert_received :reconciled
+    end
+
+    test "reconciles field support when the destination has skill-unit groups" do
+      test_pid = self()
+      Mimic.copy(Movement)
+      stub(Movement, :set_position, fn _type, _id, _state, _map -> :ok end)
+      expect(Storage, :get_groups_at_cell, fn "prontera", 51, 50 -> [:group] end)
+
+      expect(SkillUnitManager, :reconcile_unit, fn {:player, 1} ->
+        send(test_pid, :reconciled)
+        :ok
+      end)
+
+      {:noreply, _new_state} = MovementHandler.handle_movement_tick(moving_state())
+
+      assert_received :reconciled
     end
 
     test "a dynamic movement blocker stops the player before it steps into the cell" do
@@ -445,9 +500,85 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
   end
 
   describe "handle_visibility_update/1 skill-unit lifecycle" do
-    test "enters, leaves, and re-enters a multi-cell group once per visibility transition" do
+    test "syncs all skill-unit visibility changes with one manager call" do
       test_pid = self()
 
+      groups = [
+        %Group{
+          group_id: 77,
+          skill_id: 12,
+          skill_name: :wz_icewall,
+          level: 1,
+          caster_id: 2,
+          caster_type: :player,
+          map_name: "prontera",
+          center: {50, 50},
+          cells: [{50, 50}, {51, 50}, {52, 50}]
+        },
+        %Group{
+          group_id: 78,
+          skill_id: 12,
+          skill_name: :wz_icewall,
+          level: 1,
+          caster_id: 2,
+          caster_type: :player,
+          map_name: "prontera",
+          center: {50, 50},
+          cells: [{50, 50}]
+        }
+      ]
+
+      stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [] end)
+      stub(SpatialIndex, :get_units_in_range, fn :mob, _, _, _, _ -> [] end)
+      stub(SpatialIndex, :update_visibility, fn _, _, _ -> :ok end)
+
+      stub(SkillUnit, :in_range, fn _map, x, _y, _range ->
+        if x == 50, do: groups, else: []
+      end)
+
+      stub(SkillUnitManager, :sync_view, fn observer_id, enter_ids, leave_ids ->
+        send(test_pid, {:sync_view, observer_id, enter_ids, leave_ids})
+        MapSet.new(enter_ids -- leave_ids)
+      end)
+
+      entered = MovementHandler.handle_visibility_update(idle_state().game_state)
+      assert_received {:sync_view, 1, [77, 78], []}
+      assert entered.visible_skill_units == MapSet.new([77, 78])
+
+      _still_visible = MovementHandler.handle_visibility_update(entered)
+      refute_received {:sync_view, _, _, _}
+
+      hidden =
+        entered
+        |> PlayerState.update_position(200, 50)
+        |> MovementHandler.handle_visibility_update()
+
+      assert_received {:sync_view, 1, [], [77, 78]}
+      assert hidden.visible_skill_units == MapSet.new()
+
+      reentered =
+        hidden
+        |> PlayerState.update_position(50, 50)
+        |> MovementHandler.handle_visibility_update()
+
+      assert_received {:sync_view, 1, [77, 78], []}
+      assert reentered.visible_skill_units == MapSet.new([77, 78])
+    end
+
+    test "does not call the manager when the range diff is empty" do
+      test_pid = self()
+
+      stub(SkillUnitManager, :sync_view, fn _observer_id, _enter_ids, _leave_ids ->
+        send(test_pid, :synced)
+      end)
+
+      updated = MovementHandler.handle_visibility_update(idle_state().game_state)
+
+      assert updated.visible_skill_units == MapSet.new()
+      refute_received :synced
+    end
+
+    test "keeps only manager-accepted groups when an entered group has expired" do
       group = %Group{
         group_id: 77,
         skill_id: 12,
@@ -457,49 +588,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
         caster_type: :player,
         map_name: "prontera",
         center: {50, 50},
-        cells: [{50, 50}, {51, 50}, {52, 50}]
+        cells: [{50, 50}]
       }
 
       stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [] end)
       stub(SpatialIndex, :get_units_in_range, fn :mob, _, _, _, _ -> [] end)
       stub(SpatialIndex, :update_visibility, fn _, _, _ -> :ok end)
+      stub(SkillUnit, :in_range, fn _, _, _, _ -> [group] end)
+      stub(SkillUnitManager, :sync_view, fn _observer_id, [77], [] -> MapSet.new() end)
 
-      stub(SkillUnit, :in_range, fn _map, x, _y, _range ->
-        if x == 50, do: [group], else: []
-      end)
+      updated = MovementHandler.handle_visibility_update(idle_state().game_state)
 
-      stub(SkillUnitManager, :enter_view, fn observer_id, group_id ->
-        send(test_pid, {:enter_view, observer_id, group_id})
-        :ok
-      end)
-
-      stub(SkillUnitManager, :leave_view, fn observer_id, group_id ->
-        send(test_pid, {:leave_view, observer_id, group_id})
-        :ok
-      end)
-
-      entered = MovementHandler.handle_visibility_update(idle_state().game_state)
-      assert_received {:enter_view, 1, 77}
-      assert entered.visible_skill_units == MapSet.new([77])
-
-      _still_visible = MovementHandler.handle_visibility_update(entered)
-      refute_received {:enter_view, 1, 77}
-
-      hidden =
-        entered
-        |> PlayerState.update_position(200, 50)
-        |> MovementHandler.handle_visibility_update()
-
-      assert_received {:leave_view, 1, 77}
-      assert hidden.visible_skill_units == MapSet.new()
-
-      reentered =
-        hidden
-        |> PlayerState.update_position(50, 50)
-        |> MovementHandler.handle_visibility_update()
-
-      assert_received {:enter_view, 1, 77}
-      assert reentered.visible_skill_units == MapSet.new([77])
+      assert updated.visible_skill_units == MapSet.new()
     end
   end
 

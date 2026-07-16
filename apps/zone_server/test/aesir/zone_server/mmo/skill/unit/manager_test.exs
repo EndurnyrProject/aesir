@@ -948,11 +948,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
     assert Enum.find(cells, &(&1.cell_id == damaged.cell_id)).hp == 60
 
-    assert :ok = Manager.enter_view(manager, 99, 1)
+    assert MapSet.new() == Manager.sync_view(manager, 99, [], [1])
+
+    assert_receive {99,
+                    %Aesir.Net.SkillUnitDespawn{
+                      group_id: 1,
+                      reason: :SKILL_UNIT_DESPAWN_REASON_LEFT_VIEW
+                    }}
+
+    assert MapSet.new([1]) == Manager.sync_view(manager, 99, [1], [])
     assert_receive {99, %Aesir.Net.SkillUnitSpawn{group: %{group_id: 1, cells: cells}}}
     assert Enum.find(cells, &(&1.cell_id == damaged.cell_id)).hp == 60
 
-    assert :ok = Manager.leave_view(manager, 99, 1)
+    assert MapSet.new() == Manager.sync_view(manager, 99, [], [1])
 
     assert_receive {99,
                     %Aesir.Net.SkillUnitDespawn{
@@ -963,7 +971,55 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
     assert Enum.sort(cell_ids) == Enum.sort(Enum.map(cells, & &1.cell_id))
 
-    assert :not_found = Manager.enter_view(manager, 99, 999)
+    assert MapSet.new() == Manager.sync_view(manager, 99, [999], [])
+  end
+
+  test "syncs multiple visibility transitions once, in order, and idempotently" do
+    test_pid = self()
+
+    stub(Broadcast, :to_player, fn observer_id, packet ->
+      send(test_pid, {observer_id, packet})
+    end)
+
+    manager = start_manager(10_000)
+
+    assert :ok = Manager.register(manager, group(1, visible?: true, created_at: 10_000))
+    assert :ok = Manager.register(manager, group(2, visible?: true, created_at: 10_000))
+
+    assert MapSet.new([1, 2]) == Manager.sync_view(manager, 99, [2, 1, 2], [])
+
+    assert_receive {99, %Aesir.Net.SkillUnitSpawn{group: %{group_id: 1}}}
+    assert_receive {99, %Aesir.Net.SkillUnitSpawn{group: %{group_id: 2}}}
+    refute_receive {99, %Aesir.Net.SkillUnitSpawn{}}
+
+    assert MapSet.new([1, 2]) == Manager.sync_view(manager, 99, [1, 2], [])
+    refute_receive {99, %Aesir.Net.SkillUnitSpawn{}}
+
+    assert MapSet.new() == Manager.sync_view(manager, 99, [2], [1, 1, 2])
+
+    assert_receive {99,
+                    %Aesir.Net.SkillUnitDespawn{
+                      group_id: 1,
+                      reason: :SKILL_UNIT_DESPAWN_REASON_LEFT_VIEW
+                    }}
+
+    assert_receive {99,
+                    %Aesir.Net.SkillUnitDespawn{
+                      group_id: 2,
+                      reason: :SKILL_UNIT_DESPAWN_REASON_LEFT_VIEW
+                    }}
+
+    assert :ok = Manager.destroy(manager, 1)
+    assert :ok = Manager.destroy(manager, 2)
+    refute_receive {99, %Aesir.Net.SkillUnitDespawn{}}
+  end
+
+  test "returns current visibility when an entered group expires before sync" do
+    manager = start_manager(10_000)
+    assert :ok = Manager.register(manager, group(1, visible?: true, created_at: 10_000))
+    assert :ok = Manager.destroy(manager, 1)
+
+    assert MapSet.new() == Manager.sync_view(manager, 99, [1], [])
   end
 
   test "despawns a destroyed multi-cell group for a movement-edge observer outside its center range" do
@@ -986,7 +1042,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                )
              )
 
-    assert :ok = Manager.enter_view(manager, 99, 1)
+    assert MapSet.new([1]) == Manager.sync_view(manager, 99, [1], [])
     assert_receive {99, %Aesir.Net.SkillUnitSpawn{group: %{group_id: 1}}}
 
     assert :ok = Manager.destroy(manager, 1)
@@ -1019,7 +1075,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     }
 
     assert :ok = Storage.insert_cell(post_registration)
-    assert :ok = Manager.enter_view(manager, 99, 1)
+    assert MapSet.new([1]) == Manager.sync_view(manager, 99, [1], [])
     assert_receive {99, %Aesir.Net.SkillUnitSpawn{}}
 
     assert :ok = Manager.destroy(manager, 1)

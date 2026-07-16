@@ -135,6 +135,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Storage do
   end
 
   @doc false
+  @spec get_observer_groups(integer()) :: MapSet.t(non_neg_integer())
+  def get_observer_groups(observer_id) do
+    table_for(:skill_unit_observer_groups)
+    |> :ets.match({{observer_id, :"$1"}, :_})
+    |> MapSet.new(fn [group_id] -> group_id end)
+  end
+
+  @doc false
   @spec add_observer_group(integer(), non_neg_integer()) :: :ok
   def add_observer_group(observer_id, group_id) do
     :ets.insert(table_for(:skill_unit_observer_groups), {{observer_id, group_id}, true})

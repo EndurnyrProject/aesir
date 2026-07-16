@@ -20,7 +20,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore
   alias Aesir.ZoneServer.Mmo.Skill.Unit, as: SkillUnit
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport, as: SkillUnitFieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage, as: SkillUnitStorage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -136,7 +138,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       updated_game_state.map_name
     )
 
-    SkillUnitManager.reconcile_unit({:player, updated_game_state.character_id})
+    destination_groups =
+      SkillUnitStorage.get_groups_at_cell(
+        updated_game_state.map_name,
+        updated_game_state.x,
+        updated_game_state.y
+      )
+
+    if destination_groups != [] or
+         SkillUnitFieldSupport.sources_for_unit(:player, updated_game_state.character_id) != [] do
+      SkillUnitManager.reconcile_unit({:player, updated_game_state.character_id})
+    end
 
     # Handle visibility updates
     updated_game_state = handle_visibility_update(updated_game_state)
@@ -692,21 +704,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       |> SkillUnit.in_range(game_state.x, game_state.y, game_state.view_range)
       |> MapSet.new(& &1.group_id)
 
-    visible_groups =
+    enter_ids = visible_groups |> MapSet.difference(game_state.visible_skill_units) |> Enum.sort()
+    leave_ids = game_state.visible_skill_units |> MapSet.difference(visible_groups) |> Enum.sort()
+
+    if enter_ids == [] and leave_ids == [] do
       visible_groups
-      |> MapSet.difference(game_state.visible_skill_units)
-      |> Enum.reduce(visible_groups, fn group_id, visible_groups ->
-        case SkillUnitManager.enter_view(game_state.character_id, group_id) do
-          :ok -> visible_groups
-          :not_found -> MapSet.delete(visible_groups, group_id)
-        end
-      end)
-
-    game_state.visible_skill_units
-    |> MapSet.difference(visible_groups)
-    |> Enum.each(&SkillUnitManager.leave_view(game_state.character_id, &1))
-
-    visible_groups
+    else
+      SkillUnitManager.sync_view(game_state.character_id, enter_ids, leave_ids)
+    end
   end
 
   defp send_spawn_packet_about(to_char_id, about_char_id) do

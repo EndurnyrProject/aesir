@@ -216,8 +216,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportRealInterpreterTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   defmodule Entity do
@@ -249,5 +251,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportRealInterpreterTest do
     refute StatusStorage.has_status?(:player, 77, :sc_quagmire)
 
     assert Interpreter.can_move?(:player, 77)
+  end
+
+  test "manager reconciliation releases Quagmire support after leaving for an empty cell" do
+    :ok = UnitRegistry.register_unit(:player, 77, Entity, %{})
+    :ok = SpatialIndex.add_unit(:player, 77, 20, 20, "prontera")
+    assert :ok = FieldSupport.acquire(:player, 77, :sc_quagmire, 70, level: 1, val2: 5)
+    assert StatusStorage.has_status?(:player, 77, :sc_quagmire)
+
+    manager =
+      start_supervised!({Manager, name: nil, schedule_tick: fn _pid, _interval -> :ok end})
+
+    assert :ok = Manager.reconcile_unit(manager, {:player, 77})
+    assert FieldSupport.sources_for_unit(:player, 77) == []
+    refute StatusStorage.has_status?(:player, 77, :sc_quagmire)
   end
 end

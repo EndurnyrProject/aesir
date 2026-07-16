@@ -96,23 +96,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   def snapshot_for(server, observer_id, map_name, x, y, range),
     do: GenServer.call(server, {:snapshot_for, observer_id, map_name, x, y, range})
 
-  @doc "Publishes a visible group's current state to one observer."
-  @spec enter_view(integer(), non_neg_integer()) :: :ok | :not_found
-  def enter_view(observer_id, group_id), do: enter_view(default_server(), observer_id, group_id)
+  @doc "Applies one serialized ground-skill visibility diff for an observer."
+  @spec sync_view(integer(), Enumerable.t(), Enumerable.t()) :: MapSet.t(non_neg_integer())
+  def sync_view(observer_id, enter_ids, leave_ids),
+    do: sync_view(default_server(), observer_id, enter_ids, leave_ids)
 
   @doc false
-  @spec enter_view(server(), integer(), non_neg_integer()) :: :ok | :not_found
-  def enter_view(server, observer_id, group_id),
-    do: GenServer.call(server, {:enter_view, observer_id, group_id})
-
-  @doc "Publishes a last-cell visibility removal to one observer."
-  @spec leave_view(integer(), non_neg_integer()) :: :ok
-  def leave_view(observer_id, group_id), do: leave_view(default_server(), observer_id, group_id)
-
-  @doc false
-  @spec leave_view(server(), integer(), non_neg_integer()) :: :ok
-  def leave_view(server, observer_id, group_id),
-    do: GenServer.call(server, {:leave_view, observer_id, group_id})
+  @spec sync_view(server(), integer(), Enumerable.t(), Enumerable.t()) ::
+          MapSet.t(non_neg_integer())
+  def sync_view(server, observer_id, enter_ids, leave_ids),
+    do: GenServer.call(server, {:sync_view, observer_id, enter_ids, leave_ids})
 
   @doc "Drops all tracked skill-unit visibility for one observer."
   @spec clear_observer(integer()) :: :ok
@@ -245,45 +238,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     {:reply, MapSet.new(groups, & &1.group_id), state}
   end
 
-  def handle_call({:enter_view, observer_id, group_id}, _from, state) do
-    result =
-      case Storage.get(group_id) do
-        %Group{visible?: true} = group ->
-          packet = %SkillUnitSpawn{group: View.group(group, Storage.get_cells_by_group(group_id))}
-          Broadcast.to_player(observer_id, packet)
-          :ok = Storage.add_observer_group(observer_id, group_id)
-          :ok
-
-        _ ->
-          :not_found
-      end
-
-    {:reply, result, state}
-  end
-
-  def handle_call({:leave_view, observer_id, group_id}, _from, state) do
-    case Storage.get(group_id) do
-      %Group{visible?: true} ->
-        cell_ids =
-          group_id
-          |> Storage.get_cells_by_group()
-          |> Enum.map(& &1.cell_id)
-          |> Enum.sort()
-
-        Broadcast.to_player(observer_id, %SkillUnitDespawn{
-          group_id: group_id,
-          cell_ids: cell_ids,
-          reason: :SKILL_UNIT_DESPAWN_REASON_LEFT_VIEW,
-          server_tick: ServerTick.now()
-        })
-
-        :ok = Storage.remove_observer_group(observer_id, group_id)
-
-      _ ->
-        :ok
-    end
-
-    {:reply, :ok, state}
+  def handle_call({:sync_view, observer_id, enter_ids, leave_ids}, _from, state) do
+    {:reply, sync_observer_view(observer_id, enter_ids, leave_ids), state}
   end
 
   def handle_call({:clear_observer, observer_id}, _from, state) do
@@ -715,6 +671,65 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp publish(map_name, x, y, packet),
     do: Broadcast.to_in_range(map_name, x, y, Config.view_range(), packet)
+
+  defp sync_observer_view(observer_id, enter_ids, leave_ids) do
+    leave_ids = leave_ids |> MapSet.new() |> MapSet.to_list() |> Enum.sort()
+
+    enter_ids =
+      enter_ids
+      |> MapSet.new()
+      |> MapSet.difference(MapSet.new(leave_ids))
+      |> MapSet.to_list()
+      |> Enum.sort()
+
+    observer_groups = Storage.get_observer_groups(observer_id)
+
+    Enum.each(enter_ids, fn group_id ->
+      if not MapSet.member?(observer_groups, group_id),
+        do: enter_observer_view(observer_id, group_id)
+    end)
+
+    Enum.each(leave_ids, fn group_id ->
+      if MapSet.member?(observer_groups, group_id), do: leave_observer_view(observer_id, group_id)
+    end)
+
+    Storage.get_observer_groups(observer_id)
+  end
+
+  defp enter_observer_view(observer_id, group_id) do
+    case Storage.get(group_id) do
+      %Group{visible?: true} = group ->
+        packet = %SkillUnitSpawn{group: View.group(group, Storage.get_cells_by_group(group_id))}
+        Broadcast.to_player(observer_id, packet)
+        Storage.add_observer_group(observer_id, group_id)
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp leave_observer_view(observer_id, group_id) do
+    case Storage.get(group_id) do
+      %Group{visible?: true} ->
+        cell_ids =
+          group_id
+          |> Storage.get_cells_by_group()
+          |> Enum.map(& &1.cell_id)
+          |> Enum.sort()
+
+        Broadcast.to_player(observer_id, %SkillUnitDespawn{
+          group_id: group_id,
+          cell_ids: cell_ids,
+          reason: :SKILL_UNIT_DESPAWN_REASON_LEFT_VIEW,
+          server_tick: ServerTick.now()
+        })
+
+      _ ->
+        :ok
+    end
+
+    Storage.remove_observer_group(observer_id, group_id)
+  end
 
   defp source_fields({:player, source_id}), do: {:SKILL_UNIT_OWNER_TYPE_PLAYER, source_id}
   defp source_fields({:mob, source_id}), do: {:SKILL_UNIT_OWNER_TYPE_MOB, source_id}
