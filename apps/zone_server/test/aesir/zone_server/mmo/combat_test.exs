@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
   import ExUnit.CaptureLog
 
   alias Aesir.Net.DamageDealt
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
@@ -49,9 +50,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       race: :formless,
       size: :medium,
       weapon: %{type: :fist, element: :neutral, size: :medium},
-      attack_range: 5,
+      attack_range: Keyword.get(opts, :attack_range, 5),
       attack_delay_ms: Keyword.get(opts, :attack_delay_ms, 500),
-      position: {150, 150},
+      position: Keyword.get(opts, :position, {150, 150}),
       map_name: Keyword.get(opts, :map_name, "prontera")
     })
   end
@@ -483,6 +484,102 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
                  skill_ratio: 100,
                  hit_count: 1
                )
+    end
+  end
+
+  describe "execute_skill_attack/3 projectile line of sight" do
+    test "a ranged physical skill blocked by a projectile-blocking cell fails" do
+      Mimic.copy(Cell)
+      stub(Cell, :blocks_projectiles?, fn "prontera", x, y -> {x, y} == {150, 151} end)
+
+      attacker = combatant(1001, :player, attack_range: 5, position: {150, 150})
+      target = combatant(2001, :mob, position: {150, 153})
+      player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
+      target_state = %FakeUnit{combatant: target, x: 150, y: 153}
+
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
+      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 153, "prontera"}} end)
+      reject(&MobSession.apply_damage/3)
+
+      assert {:error, :projectile_blocked} =
+               Combat.execute_skill_attack(player_state, 2001,
+                 skill_id: 7,
+                 skill_level: 1,
+                 skill_ratio: 100
+               )
+    end
+
+    test "a melee physical skill on an adjacent target ignores projectile blocking" do
+      Mimic.copy(Cell)
+      stub(Cell, :blocks_projectiles?, fn _map, _x, _y -> true end)
+
+      attacker = combatant(1001, :player, attack_range: 1, position: {150, 150})
+      target = combatant(2001, :mob, position: {151, 150})
+      player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
+      target_state = %FakeUnit{combatant: target, x: 151, y: 150}
+
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
+      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {151, 150, "prontera"}} end)
+
+      stub(DamageCalculator, :calculate_damage, fn _a, _d, _opts ->
+        {:ok, %{damage: 50, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      stub(MobSession, :apply_damage, fn _pid, _damage, _attacker_id -> :ok end)
+
+      assert :ok =
+               Combat.execute_skill_attack(player_state, 2001,
+                 skill_id: 7,
+                 skill_level: 1,
+                 skill_ratio: 100
+               )
+    end
+  end
+
+  describe "execute_mob_attack/2 projectile line of sight" do
+    setup do
+      target = combatant(2001, :player, position: {150, 153})
+      target_state = %FakeUnit{combatant: target, stats: target, x: 150, y: 153}
+
+      stub(UnitRegistry, :get_player_pid, fn 2001 -> {:ok, self()} end)
+      stub(PlayerSession, :get_current_stats, fn _pid -> target end)
+      stub(PlayerSession, :get_state, fn _pid -> %{game_state: target_state} end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      :ok
+    end
+
+    test "a ranged mob attack blocked by a projectile-blocking cell fails" do
+      Mimic.copy(Cell)
+      stub(Cell, :blocks_projectiles?, fn "prontera", x, y -> {x, y} == {150, 151} end)
+
+      mob = combatant(3001, :mob, attack_range: 5, position: {150, 150})
+      mob_state = %FakeUnit{combatant: mob, x: 150, y: 150}
+
+      reject(&PlayerSession.apply_damage/3)
+
+      assert {:error, :projectile_blocked} = Combat.execute_mob_attack(mob_state, 2001)
+    end
+
+    test "a melee mob attack on an adjacent target ignores projectile blocking" do
+      Mimic.copy(Cell)
+      stub(Cell, :blocks_projectiles?, fn _map, _x, _y -> true end)
+
+      adjacent = combatant(2001, :player, position: {151, 150})
+      adjacent_state = %FakeUnit{combatant: adjacent, stats: adjacent, x: 151, y: 150}
+      stub(PlayerSession, :get_state, fn _pid -> %{game_state: adjacent_state} end)
+      stub(PlayerSession, :get_current_stats, fn _pid -> adjacent end)
+
+      stub(DamageCalculator, :calculate_damage, fn _a, _d ->
+        {:ok, %{damage: 10, is_critical: false}}
+      end)
+
+      stub(PlayerSession, :apply_damage, fn _pid, _damage, _attacker_id -> :ok end)
+
+      mob = combatant(3001, :mob, attack_range: 1, position: {150, 150})
+      mob_state = %FakeUnit{combatant: mob, x: 150, y: 150}
+
+      assert :ok = Combat.execute_mob_attack(mob_state, 2001)
     end
   end
 end

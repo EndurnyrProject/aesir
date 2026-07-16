@@ -995,7 +995,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
          :ok <- ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
-         :ok <- validate_attack_with_combatants(attacker, target),
+         :ok <- validate_attack_with_combatants(attacker, target, projectile?: true),
          :ok <- Targeting.validate_enemy(attacker, target) do
       Enum.each(1..hits//1, fn _ ->
         apply_skill_damage(
@@ -1499,9 +1499,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     end
   end
 
+  # Ranged mob attacks (attack_range > 1) respect terrain the same way player
+  # ranged autos do: a wall between attacker and target blocks the shot (rAthena
+  # `battle_check_range` path-searches once the target is not adjacent). Melee
+  # mobs (attack_range == 1) can only reach adjacent cells, so the seam is a no-op
+  # for them.
   defp validate_mob_attack_with_combatants(attacker_combatant, target_combatant) do
-    # Validate mob attack range using combatant positions
-    # Get attack range from the mob data via the combatant
+    with :ok <- validate_mob_attack_range(attacker_combatant, target_combatant) do
+      validate_projectile_path(attacker_combatant, target_combatant, projectile?: true)
+    end
+  end
+
+  defp validate_mob_attack_range(attacker_combatant, target_combatant) do
     attack_range = attacker_combatant.attack_range
     {attacker_x, attacker_y} = attacker_combatant.position
     {target_x, target_y} = target_combatant.position
