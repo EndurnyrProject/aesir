@@ -52,6 +52,13 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   # hopping between adjacent maps don't churn sleep/wake sweeps.
   @mob_sleep_grace 30_000
 
+  # Retry delay when a spawn attempt finds no walkable/unblocked cell (e.g. a
+  # fixed spawn point temporarily vetoed by a dynamic blocker like an Ice
+  # Wall). Short and fixed rather than the spawn's own respawn_time, so the
+  # mob comes back as soon as the blocker clears instead of after a possibly
+  # long respawn window.
+  @spawn_retry_delay 5_000
+
   defstruct [
     :map_name,
     :map_data,
@@ -619,6 +626,12 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
         new_state
 
       {:error, :no_walkable_cell} ->
+        Logger.warning(
+          "No walkable cell for mob #{inspect(spawn_config.mob)} spawn on #{state.map_name}; " <>
+            "retrying in #{spawn_retry_delay()}ms"
+        )
+
+        Process.send_after(self(), {:respawn_mob, spawn_config}, spawn_retry_delay())
         state
     end
   end
@@ -794,6 +807,11 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   @spec mob_sleep_grace() :: pos_integer()
   def mob_sleep_grace,
     do: Application.get_env(:zone_server, :mob_sleep_grace_ms, @mob_sleep_grace)
+
+  @doc "Retry delay when a spawn attempt finds no walkable/unblocked cell."
+  @spec spawn_retry_delay() :: pos_integer()
+  def spawn_retry_delay,
+    do: Application.get_env(:zone_server, :spawn_retry_delay_ms, @spawn_retry_delay)
 
   @impl true
   def terminate(reason, state) do

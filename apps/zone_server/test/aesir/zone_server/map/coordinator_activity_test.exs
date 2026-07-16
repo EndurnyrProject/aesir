@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorActivityTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.GatType
   alias Aesir.ZoneServer.Map.MapData
@@ -186,6 +187,58 @@ defmodule Aesir.ZoneServer.Map.CoordinatorActivityTest do
       state = base_state(mobs_spawned: true, mobs_awake: true)
 
       {:noreply, _new_state} = Coordinator.handle_info({:respawn_mob, config}, state)
+
+      assert_received {:spawned, %MobState{x: 42, y: 43}, true}
+    end
+  end
+
+  describe "spawn retry when the target cell is blocked" do
+    setup do
+      prev = Application.get_env(:zone_server, :spawn_retry_delay_ms)
+      Application.put_env(:zone_server, :spawn_retry_delay_ms, 10)
+
+      on_exit(fn ->
+        case prev do
+          nil -> Application.delete_env(:zone_server, :spawn_retry_delay_ms)
+          value -> Application.put_env(:zone_server, :spawn_retry_delay_ms, value)
+        end
+      end)
+
+      config = %MobSpawn{
+        mob: @poring_id,
+        amount: 1,
+        respawn_time: 5_000,
+        spawn_area: %MobSpawn.SpawnArea{x: 42, y: 43, xs: 0, ys: 0}
+      }
+
+      %{config: config}
+    end
+
+    test "reschedules the respawn instead of losing the mob", %{config: config} do
+      reject(&MobSupervisor.spawn_mob/3)
+      :ok = Cell.put(@map_name, 42, 43, :test_blocker, 1, blocks_movement: true)
+
+      state = base_state(mobs_spawned: true, mobs_awake: true)
+
+      {:noreply, new_state} = Coordinator.handle_info({:respawn_mob, config}, state)
+
+      refute_received {:spawned, _, _}
+      assert new_state == state
+      assert_receive {:respawn_mob, ^config}, 200
+    end
+
+    test "a later retry with the cell free spawns the mob", %{config: config} do
+      :ok = Cell.put(@map_name, 42, 43, :test_blocker, 1, blocks_movement: true)
+
+      state = base_state(mobs_spawned: true, mobs_awake: true)
+      {:noreply, _state} = Coordinator.handle_info({:respawn_mob, config}, state)
+
+      refute_received {:spawned, _, _}
+
+      Cell.delete(@map_name, 42, 43, :test_blocker, 1)
+      assert_receive {:respawn_mob, ^config}, 200
+
+      {:noreply, _state} = Coordinator.handle_info({:respawn_mob, config}, state)
 
       assert_received {:spawned, %MobState{x: 42, y: 43}, true}
     end
