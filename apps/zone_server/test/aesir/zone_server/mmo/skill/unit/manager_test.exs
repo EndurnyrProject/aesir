@@ -111,6 +111,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     end
   end
 
+  defmodule BlockedWaterBallUnit do
+    alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+
+    def on_interval(%Group{state: state} = group, _now) do
+      {:ok, %{group | state: Map.put(state, :water_ball_fired, false)}}
+    end
+  end
+
   setup do
     stub(Catalog, :ground_module_for, fn
       :fake_unit -> {:ok, FakeUnit}
@@ -118,6 +126,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       :failing_unit -> {:ok, FailingUnit}
       :foreign_id_unit -> {:ok, ForeignIdUnit}
       :water_ball_sequence -> {:ok, WaterBallSequenceUnit}
+      :blocked_water_ball -> {:ok, BlockedWaterBallUnit}
       :other_exclusive_unit -> {:ok, FakeUnit}
       :barrier_unit -> {:ok, FakeUnit}
     end)
@@ -381,6 +390,39 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       assert :ok = Manager.tick(manager, 10_450)
       assert nil == Storage.get(2)
       refute_received :water_ball_hit
+    end
+
+    test "retains the claimed water charge when a blocked shot does not fire" do
+      manager = start_manager(10_000)
+
+      :ok =
+        Manager.register(
+          manager,
+          group(1,
+            visible?: true,
+            state: %{cell_attrs: %{{100, 100} => %{flags: [:consumable_water]}}}
+          )
+        )
+
+      sequence =
+        group(2,
+          skill_name: :blocked_water_ball,
+          visible?: false,
+          cells: [],
+          interval: 150,
+          next_tick_at: 10_000,
+          state: %{water_ball_sequence: true}
+        )
+
+      assert {:ok, %Group{}} =
+               Manager.register_water_ball_sequence(manager, sequence, [{100, 100}])
+
+      assert [%Cell{cell_id: claimed_id}] = Storage.get_cells_by_group(2)
+
+      assert :ok = Manager.tick(manager, 10_000)
+
+      assert [%Cell{cell_id: ^claimed_id}] = Storage.get_cells_by_group(2)
+      assert %Group{next_tick_at: 10_150} = Storage.get(2)
     end
 
     test "concurrent casts cannot convert another Water Ball token into a source" do

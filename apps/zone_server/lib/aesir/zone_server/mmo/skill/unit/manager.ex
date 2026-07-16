@@ -348,13 +348,54 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp run_sequence_interval(%Group{state: %{water_ball_sequence: true}} = group, now) do
-    case claim_next_sequence_cell(group) do
-      {:ok, group} -> run_interval_callback(group, now)
-      :empty -> cleanup(group)
+    if Storage.get_cells_by_group(group.group_id) == [] do
+      cleanup(group)
+    else
+      dispatch_sequence_interval(group, now)
     end
   end
 
   defp run_sequence_interval(group, now), do: run_interval_callback(group, now)
+
+  defp dispatch_sequence_interval(group, now) do
+    case handler_for(group) do
+      {:ok, module} -> invoke_sequence_interval(module, group, now)
+      :error -> callback_failed(group, :on_interval, :missing_handler, nil)
+    end
+  end
+
+  defp invoke_sequence_interval(module, group, now) do
+    case invoke(module, :on_interval, [group, now]) do
+      {:ok, {:ok, %Group{group_id: group_id} = updated}} when group_id == group.group_id ->
+        advance_sequence(updated, now, module)
+
+      {:ok, {:ok, %Group{group_id: group_id}}} ->
+        callback_failed(group, :on_interval, {:foreign_group_id, group_id}, module)
+
+      {:ok, {:expire, %Group{group_id: group_id} = updated}} when group_id == group.group_id ->
+        cleanup(updated, module)
+
+      {:ok, {:expire, %Group{group_id: group_id}}} ->
+        callback_failed(group, :on_interval, {:foreign_group_id, group_id}, module)
+
+      {:ok, result} ->
+        callback_failed(group, :on_interval, {:invalid_return, result}, module)
+
+      {:error, reason} ->
+        callback_failed(group, :on_interval, reason, module)
+    end
+  end
+
+  defp advance_sequence(%Group{state: %{water_ball_fired: false}} = group, now, _module) do
+    Storage.update(%{group | next_tick_at: now + group.interval})
+  end
+
+  defp advance_sequence(group, now, module) do
+    case claim_next_sequence_cell(group) do
+      {:ok, group} -> update_after_interval(group, now, module)
+      :empty -> cleanup(group, module)
+    end
+  end
 
   defp run_interval_callback(group, now) do
     case handler_for(group) do

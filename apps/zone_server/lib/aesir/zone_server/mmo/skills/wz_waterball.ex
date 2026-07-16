@@ -84,13 +84,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzWaterball do
         100 + 30 * group.level
       )
 
-      {:ok, group}
+      {:ok, mark_shot(group, true)}
     else
-      false -> {:ok, group}
+      false -> {:ok, mark_shot(group, false)}
       {:error, _reason} -> {:expire, group}
       {:ok, {_x, _y, _other_map}} -> {:expire, group}
     end
   end
+
+  defp mark_shot(%Group{state: state} = group, fired?),
+    do: %{group | state: Map.put(state, :water_ball_fired, fired?)}
 
   defp require_water(map_name, x, y) do
     case MapCell.water_source(map_name, x, y) do

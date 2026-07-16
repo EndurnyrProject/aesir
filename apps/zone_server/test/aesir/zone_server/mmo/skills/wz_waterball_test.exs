@@ -98,12 +98,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzWaterballTest do
              )
   end
 
-  test "consumes its already-claimed source without dealing damage when line of sight is blocked" do
+  test "signals a skipped shot without dealing damage when line of sight is blocked" do
     stub(Combat, :resolve_combatant, fn 100 -> {:ok, %{unit_id: 100}} end)
     stub(SpatialIndex, :get_unit_position, fn :mob, 200 -> {:ok, {101, 100, "prontera"}} end)
     stub(LineOfSight, :clear?, fn "prontera", {100, 100}, {101, 100} -> false end)
     reject(&Combat.apply_skill_unit_damage/7)
 
-    assert {:ok, %Group{}} = WzWaterball.on_interval(group(), 0)
+    assert {:ok, %Group{state: %{water_ball_fired: false}}} = WzWaterball.on_interval(group(), 0)
+  end
+
+  test "marks a fired shot so the manager consumes exactly one charge" do
+    stub(Combat, :resolve_combatant, fn 100 -> {:ok, %{unit_id: 100}} end)
+    stub(SpatialIndex, :get_unit_position, fn :mob, 200 -> {:ok, {101, 100, "prontera"}} end)
+    stub(LineOfSight, :clear?, fn "prontera", {100, 100}, {101, 100} -> true end)
+    stub(Combat, :apply_skill_unit_damage, fn _, _, _, _, _, _, _ -> :ok end)
+
+    assert {:ok, %Group{state: %{water_ball_fired: true}}} = WzWaterball.on_interval(group(), 0)
   end
 end
