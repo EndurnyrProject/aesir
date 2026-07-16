@@ -141,7 +141,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
     cell_attrs =
       Map.merge(
         %{hp: 20, max_hp: 20, flags: [:targetable]},
-        Map.drop(attrs, [:x, :y])
+        Map.drop(attrs, [:x, :y, :caster_id, :caster_type])
       )
 
     cell_position = {Map.get(attrs, :x, 151), Map.get(attrs, :y, 150)}
@@ -154,8 +154,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
           skill_id: 0,
           skill_name: :fixture,
           level: 1,
-          caster_id: @caster_id,
-          caster_type: :player,
+          caster_id: Map.get(attrs, :caster_id, @caster_id),
+          caster_type: Map.get(attrs, :caster_type, :player),
           map_name: @map_name,
           center: @center,
           cells: [cell_position],
@@ -243,13 +243,46 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       assert %{hp: 10} = Storage.get_cell(cell.cell_id)
     end
 
-    test "Sight Blaster damages an Ice Wall cell without knocking it back" do
+    test "Sight Blaster leaves the caster's own Ice Wall cell untouched and stays armed" do
       caster = build_caster()
 
       {manager, cell} =
         targetable_cell(%{
           hp: 400,
           max_hp: 400,
+          flags: [:targetable, :blocks_movement, :blocks_projectiles],
+          state: %{exclusive_terrain: true}
+        })
+
+      cell_id = cell.cell_id
+
+      :ok = UnitRegistry.register_unit(:player, @caster_id, PlayerState, caster, self())
+      :ok = SpatialIndex.add_unit(:player, @caster_id, caster.x, caster.y, caster.map_name)
+
+      reject(&MagicDamageCalculator.calculate_magic_damage/3)
+
+      assert {:ok, %{val1: 1}} =
+               Sightblaster.on_contact(
+                 {:player, @caster_id},
+                 %{val1: 1},
+                 {:skill_unit, cell_id},
+                 %{}
+               )
+
+      assert %{hp: 400} = Storage.get_cell(cell.cell_id)
+      assert :ok = Manager.tick(manager)
+      assert Process.alive?(manager)
+    end
+
+    test "Sight Blaster detonates on a mob-owned ground unit and consumes the status" do
+      caster = build_caster()
+
+      {_manager, cell} =
+        targetable_cell(%{
+          hp: 400,
+          max_hp: 400,
+          caster_type: :mob,
+          caster_id: 5_000,
           flags: [:targetable, :blocks_movement, :blocks_projectiles],
           state: %{exclusive_terrain: true}
         })
@@ -274,8 +307,6 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
                )
 
       assert %{hp: 390} = Storage.get_cell(cell.cell_id)
-      assert :ok = Manager.tick(manager)
-      assert Process.alive?(manager)
     end
 
     test "rejects a dead mob before calculating or applying magic damage" do

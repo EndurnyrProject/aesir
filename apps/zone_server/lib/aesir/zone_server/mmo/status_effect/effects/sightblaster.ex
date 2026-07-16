@@ -17,6 +17,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
     option: :sight
 
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -31,22 +35,46 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
   def on_tick(target, instance, _context), do: trigger_nearby(target, instance)
 
   @impl true
-  def on_contact({:player, caster_id}, instance, {target_type, target_id}, _context) do
-    with {:ok, {_module, caster, _pid}} <- UnitRegistry.get_unit(:player, caster_id),
-         {:ok, {x, y, _map_name}} <- SpatialIndex.get_unit_position(:player, caster_id),
-         :ok <-
-           Combat.execute_magic_attack(caster, target_id,
-             skill_id: @skill_id,
-             skill_level: instance.val1,
-             skill_ratio: @skill_ratio,
-             element: :fire
-           ) do
-      _ = Combat.knockback(target_type, target_id, x, y, @knockback)
-      :remove
+  def on_contact({:player, caster_id}, instance, {target_type, target_id} = contact, _context) do
+    if hostile_contact?(caster_id, contact) do
+      with {:ok, {_module, caster, _pid}} <- UnitRegistry.get_unit(:player, caster_id),
+           {:ok, {x, y, _map_name}} <- SpatialIndex.get_unit_position(:player, caster_id),
+           :ok <-
+             Combat.execute_magic_attack(caster, target_id,
+               skill_id: @skill_id,
+               skill_level: instance.val1,
+               skill_ratio: @skill_ratio,
+               element: :fire
+             ) do
+        _ = Combat.knockback(target_type, target_id, x, y, @knockback)
+        :remove
+      else
+        {:error, _reason} -> {:ok, instance}
+      end
     else
-      {:error, _reason} -> {:ok, instance}
+      {:ok, instance}
     end
   end
+
+  # rAthena gates the trigger on `battle_check_target(..., BCT_ENEMY)`, so a
+  # friendly ground unit (the caster's own or an ally's Ice Wall) is never a
+  # target. A `CombatTarget` cell carries no caster identity, so its owning
+  # group's caster relation is resolved here; mob and player contacts fall
+  # through to the relation check inside `execute_magic_attack`. Under the
+  # current pre-PvP relation policy only mob-owned ground units are enemies of
+  # the (always player) Sight Blaster caster.
+  defp hostile_contact?(caster_id, {:skill_unit, cell_id}) do
+    with %Cell{group_id: group_id} <- Storage.get_cell(cell_id),
+         %Group{caster_type: owner_type, caster_id: owner_id} <- Storage.get(group_id) do
+      attacker = %{unit_type: :player, unit_id: caster_id, party_id: 0, guild_id: 0}
+      owner = %{unit_type: owner_type, unit_id: owner_id, party_id: 0, guild_id: 0}
+      Targeting.validate_enemy(attacker, owner) == :ok
+    else
+      _ -> false
+    end
+  end
+
+  defp hostile_contact?(_caster_id, _contact), do: true
 
   @spec trigger_nearby({:player, integer()}, struct()) :: {:ok, struct()} | :remove
   defp trigger_nearby({:player, caster_id} = caster, instance) do
