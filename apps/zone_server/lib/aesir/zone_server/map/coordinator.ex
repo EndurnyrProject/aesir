@@ -763,28 +763,22 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     end
   end
 
+  # Range: 2 to 1,999,999 (following rAthena's MIN_FLOORITEM to MAX_FLOORITEM).
+  # This range overlaps character_ids (Postgres auto-increment), so dedup
+  # checks the cross-type unit id index, not just other mobs -- otherwise a
+  # collision with an online player's character_id makes the mob untargetable
+  # by player-first skill-target resolution.
   defp generate_mob_instance_id do
-    # Generate a random ID in the safe range and check if it's already in use globally
-    # Range: 2 to 1,999,999 (following rAthena's MIN_FLOORITEM to MAX_FLOORITEM)
-    min_id = 2
-    max_id = 1_999_999
-
-    find_unused_mob_id(min_id, max_id)
+    find_unused_mob_id(2, 1_999_999)
   end
 
   defp find_unused_mob_id(min_id, max_id) do
-    # Generate random ID in range
     candidate_id = :rand.uniform(max_id - min_id) + min_id
 
-    # Check if this ID is already registered as a mob globally
-    case UnitRegistry.get_unit(:mob, candidate_id) do
-      {:error, :not_found} ->
-        # ID is free globally, use it
-        candidate_id
-
-      {:ok, _} ->
-        # ID is taken, try again
-        find_unused_mob_id(min_id, max_id)
+    if UnitRegistry.unit_id_exists?(candidate_id) do
+      find_unused_mob_id(min_id, max_id)
+    else
+      candidate_id
     end
   end
 

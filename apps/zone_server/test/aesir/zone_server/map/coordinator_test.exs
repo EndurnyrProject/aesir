@@ -120,4 +120,34 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
                Coordinator.summon_mob("no_such_map_registered", @poring_id, 10, 10)
     end
   end
+
+  describe "mob instance id allocation" do
+    setup :setup_ets_tables
+
+    test "retries until the cross-type unit id index reports the candidate free" do
+      stub(MobSupervisor, :spawn_mob, fn _map, %MobState{}, _opts -> {:ok, self()} end)
+
+      {:ok, counter} = Agent.start_link(fn -> 0 end)
+      test_pid = self()
+
+      # Simulates the id colliding with an already-registered unit of any type
+      # (e.g. an online player's character_id) for the first three attempts.
+      stub(UnitRegistry, :unit_id_exists?, fn candidate ->
+        attempt = Agent.get_and_update(counter, fn n -> {n, n + 1} end)
+        send(test_pid, {:checked, candidate})
+        attempt < 3
+      end)
+
+      state = %Coordinator{map_name: "prontera", next_mob_id: 1}
+
+      {:reply, {:ok, _instance_id}, _new_state} =
+        Coordinator.handle_call({:summon_mob, @poring_id, 150, 100, []}, {self(), nil}, state)
+
+      assert_received {:checked, _}
+      assert_received {:checked, _}
+      assert_received {:checked, _}
+      assert_received {:checked, _}
+      refute_received {:checked, _}
+    end
+  end
 end
