@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   """
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.CastTime
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -32,7 +33,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Unit.Inventory.Ammo
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
-  alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @typedoc """
   Scheduling info for a timed cast, returned by `begin_cast/4` when the skill
@@ -246,10 +246,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   end
 
   # A target that cannot be resolved falls through so `check_range` reports it
-  # as `:target_not_found`.
+  # as `:target_not_found`. A skill-unit cell (Ice Wall, etc.) is accepted
+  # without a `Targeting.validate_enemy` call: `unit_type_of/1` only reports
+  # `:skill_unit` for a cell the registry already confirmed is targetable, so
+  # it is a valid enemy target by construction.
   defp check_target(_game_state, {:unit, target_id}, %{target_type: :target_enemy}) do
     case unit_type_of(target_id) do
       :mob -> :ok
+      :skill_unit -> :ok
       :player -> {:error, :invalid_target}
       :not_found -> :ok
     end
@@ -326,23 +330,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
+  # Resolves player, mob, and skill-unit (Ice Wall, etc.) target ids alike
+  # through `Combat.resolve_target_position/1`, the single source of truth for
+  # target-position resolution shared with basic-attack targeting.
   defp resolve_unit_position(unit_id) do
-    case SpatialIndex.get_unit_position(:player, unit_id) do
-      {:ok, _} = result -> result
-      {:error, :not_found} -> SpatialIndex.get_unit_position(:mob, unit_id)
+    case Combat.resolve_target_position(unit_id) do
+      {:ok, _type, position} -> {:ok, position}
+      {:error, _reason} = error -> error
     end
   end
 
   defp unit_type_of(unit_id) do
-    case SpatialIndex.get_unit_position(:player, unit_id) do
-      {:ok, _} ->
-        :player
-
-      {:error, :not_found} ->
-        case SpatialIndex.get_unit_position(:mob, unit_id) do
-          {:ok, _} -> :mob
-          {:error, :not_found} -> :not_found
-        end
+    case Combat.resolve_target_position(unit_id) do
+      {:ok, type, _position} -> type
+      {:error, :target_not_found} -> :not_found
     end
   end
 

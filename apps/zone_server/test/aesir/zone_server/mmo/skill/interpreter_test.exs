@@ -8,9 +8,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.GatType
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Id, as: SkillUnitId
   alias Aesir.ZoneServer.Mmo.Skills.SmProvoke
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
@@ -237,6 +239,50 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
     gs = game_state(100, %{6 => 1})
     assert {:error, :different_map} = Interpreter.cast(gs, 6, 1, {:unit, 9999})
+  end
+
+  describe "skill-unit targets (Ice Wall, etc.)" do
+    test "an enemy skill accepts a targetable skill-unit cell and proceeds to behavior" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(9)} end)
+
+      target_id = SkillUnitId.first()
+
+      stub(Combat, :resolve_target_position, fn ^target_id ->
+        {:ok, :skill_unit, {14, 10, "prontera"}}
+      end)
+
+      stub(StatusInterpreter, :apply_status, fn _type, _id, _status, _params -> :ok end)
+
+      gs = game_state(100, %{6 => 1})
+      assert {:ok, _} = Interpreter.cast(gs, 6, 1, {:unit, target_id})
+    end
+
+    test "an enemy skill fizzles with :target_not_found for an unresolved skill-unit id" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(9)} end)
+
+      target_id = SkillUnitId.first()
+      stub(Combat, :resolve_target_position, fn ^target_id -> {:error, :target_not_found} end)
+
+      gs = game_state(100, %{6 => 1})
+      assert {:error, :target_not_found} = Interpreter.cast(gs, 6, 1, {:unit, target_id})
+    end
+
+    test "an enemy skill still accepts a mob target routed through Combat.resolve_target_position" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(9)} end)
+      stub(Combat, :resolve_target_position, fn 9999 -> {:ok, :mob, {14, 10, "prontera"}} end)
+      stub(StatusInterpreter, :apply_status, fn _type, _id, _status, _params -> :ok end)
+
+      gs = game_state(100, %{6 => 1})
+      assert {:ok, _} = Interpreter.cast(gs, 6, 1, {:unit, 9999})
+    end
+
+    test "an enemy skill still rejects a player target routed through Combat.resolve_target_position" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(9)} end)
+      stub(Combat, :resolve_target_position, fn 9999 -> {:ok, :player, {14, 10, "prontera"}} end)
+
+      gs = game_state(100, %{6 => 1})
+      assert {:error, :invalid_target} = Interpreter.cast(gs, 6, 1, {:unit, 9999})
+    end
   end
 
   test ":self skills bypass the range check" do
