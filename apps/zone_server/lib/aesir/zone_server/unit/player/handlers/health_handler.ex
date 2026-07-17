@@ -150,6 +150,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   def consume_sp(_amount, state), do: {:noreply, state}
 
   @doc """
+  Restores SP to the player, clamped at `max_sp`.
+
+  The mirror of `consume_sp/2`; no-op for a non-positive amount.
+  """
+  @spec restore_sp(integer(), map()) :: {:noreply, map()}
+  def restore_sp(amount, state) when is_integer(amount) and amount > 0 do
+    stats = state.game_state.stats
+    new_sp = min(stats.current_state.sp + amount, stats.derived_stats.max_sp)
+    char_id = state.game_state.character_id
+
+    updated_stats = %{stats | current_state: %{stats.current_state | sp: new_sp}}
+    game_state = %{state.game_state | stats: updated_stats}
+    state = StatsManager.update_game_state(state, game_state)
+
+    StatusSync.send_param(state.connection_pid, StatusParams.sp(), new_sp)
+    CharacterPersistence.update_stats(char_id, %{sp: new_sp}, async: true)
+
+    {:noreply, state}
+  end
+
+  def restore_sp(_amount, state), do: {:noreply, state}
+
+  @doc """
   Handles a CZ_RESTART request.
 
   Type 0 respawns a dead player; type 1 (return to character select) disconnects

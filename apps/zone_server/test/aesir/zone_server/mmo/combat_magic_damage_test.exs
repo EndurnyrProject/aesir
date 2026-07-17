@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
 
   alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -256,6 +257,96 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
                )
 
       assert_received {:damage, 100}
+    end
+  end
+
+  # The `hit_info` handed to `absorb_damage/4`. `from_caster?` mirrors rAthena's
+  # `src == dsrc` — the damage came from the caster, not from a placed skill
+  # unit — and is what keeps Magic Rod from swallowing ground ticks while still
+  # catching a direct cast's splash. Asserted at the boundary rather than trusted.
+  describe "absorb_damage hit_info contract" do
+    defp stub_player_target(target_player, test_pid) do
+      stub(UnitRegistry, :get_unit, fn :mob, @target_id -> {:error, :not_found} end)
+      stub(UnitRegistry, :get_player_pid, fn @target_id -> {:ok, target_player} end)
+      stub(PlayerSession, :get_current_stats, fn ^target_player -> build_caster().stats end)
+
+      stub(PlayerSession, :get_state, fn ^target_player ->
+        %{game_state: %{build_caster() | character_id: @target_id, x: 150, y: 150}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, _p -> :ok end)
+      stub(PlayerSession, :apply_damage, fn ^target_player, _damage, _attacker -> :ok end)
+
+      stub(StatusInterpreter, :absorb_damage, fn :player, @target_id, damage, hit_info ->
+        send(test_pid, {:hit_info, hit_info})
+        damage
+      end)
+    end
+
+    test "a direct single-target cast carries skill_id, level and from_caster?: true" do
+      target_player = spawn(fn -> Process.sleep(:infinity) end)
+      on_exit(fn -> Process.exit(target_player, :kill) end)
+      stub_player_target(target_player, self())
+
+      assert :ok =
+               Combat.execute_magic_damage(
+                 build_mob_state(@caster_id, 150, 150, {:neutral, 1}),
+                 @target_id,
+                 100,
+                 skill_id: @skill_id,
+                 skill_level: @skill_level,
+                 element: :fire
+               )
+
+      assert_received {:hit_info, hit_info}
+
+      assert %{
+               dmg_type: :magic,
+               from_caster?: true,
+               skill_id: @skill_id,
+               skill_level: @skill_level,
+               element: :fire
+             } = hit_info
+    end
+
+    # rAthena absorbs a direct cast's splash too: only `dsrc` being a placed unit
+    # breaks the equality. Fireball splash therefore reaches Magic Rod.
+    test "a direct cast's splash is still flagged from_caster?: true (Fireball)" do
+      target_player = spawn(fn -> Process.sleep(:infinity) end)
+      on_exit(fn -> Process.exit(target_player, :kill) end)
+      stub_player_target(target_player, self())
+
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+        [{:player, @target_id}]
+      end)
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 100, is_critical: false}}
+      end)
+
+      assert [{:player, @target_id}] =
+               Combat.execute_magic_splash(
+                 build_mob_state(@caster_id, 150, 150, {:neutral, 1}),
+                 {150, 150},
+                 2,
+                 skill_id: 17,
+                 skill_level: 10,
+                 element: :fire
+               )
+
+      assert_received {:hit_info, hit_info}
+      assert %{dmg_type: :magic, from_caster?: true, skill_id: 17, skill_level: 10} = hit_info
+    end
+
+    test "ground skill-unit and status damage is never flagged from_caster?" do
+      target_player = spawn(fn -> Process.sleep(:infinity) end)
+      on_exit(fn -> Process.exit(target_player, :kill) end)
+      stub_player_target(target_player, self())
+
+      assert :ok = Combat.deal_damage(@target_id, 100, :water, :skill_unit)
+
+      assert_received {:hit_info, hit_info}
+      assert %{dmg_type: :magic, from_caster?: false, skill_id: nil} = hit_info
     end
   end
 end

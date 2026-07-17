@@ -65,6 +65,22 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Helpers do
   def consume_sp(_target, _amount), do: :ok
 
   @doc """
+  Restores SP to a player target, fire-and-forget.
+
+  The mirror of `consume_sp/2`: resolves the player's session and casts the SP
+  gain, clamped at max SP by the session. Non-player targets are a no-op.
+  """
+  @spec restore_sp(Definition.target(), non_neg_integer()) :: :ok
+  def restore_sp({:player, unit_id}, amount) when amount > 0 do
+    case UnitRegistry.get_unit(:player, unit_id) do
+      {:ok, {_module, _state, pid}} -> PlayerSession.restore_sp(pid, amount)
+      {:error, :not_found} -> :ok
+    end
+  end
+
+  def restore_sp(_target, _amount), do: :ok
+
+  @doc """
   Returns true when the target is a player.
   """
   @spec player?(Definition.target()) :: boolean()

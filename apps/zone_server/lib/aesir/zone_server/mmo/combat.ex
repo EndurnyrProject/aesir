@@ -307,7 +307,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
         hit_info = %{
           dmg_type: :physical,
           is_short: true,
-          element: attacker_combatant.weapon.element
+          element: attacker_combatant.weapon.element,
+          skill_id: nil,
+          skill_level: nil,
+          from_caster?: true
         }
 
         Enum.each(1..hits//1, fn _ ->
@@ -390,7 +393,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
         "Combat: Dealing #{damage} #{element} damage to #{target_type} #{target_id} from #{source_type}"
       )
 
-      apply_magic_damage(target_type, target_pid, target_id, damage, element, nil)
+      apply_magic_damage(
+        target_type,
+        target_pid,
+        target_id,
+        damage,
+        magic_hit_info(element, []),
+        nil
+      )
     end
   end
 
@@ -462,7 +472,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
         target_pid,
         target_id,
         damage,
-        element,
+        magic_hit_info(element,
+          skill_id: skill_id,
+          skill_level: skill_level,
+          from_caster?: true
+        ),
         attacker,
         target,
         packet
@@ -700,7 +714,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
         target_pid,
         target_id,
         total,
-        element,
+        magic_hit_info(element,
+          skill_id: skill_id,
+          skill_level: skill_level,
+          from_caster?: true
+        ),
         attacker,
         target,
         packet
@@ -721,16 +739,33 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     end)
   end
 
-  defp apply_magic_damage(:skill_unit, manager_pid, target_id, damage, _element, attacker) do
+  defp apply_magic_damage(:skill_unit, manager_pid, target_id, damage, _hit_info, attacker) do
     source = if attacker, do: {attacker.unit_type, attacker.unit_id}
     apply_skill_unit_target_damage(manager_pid, target_id, damage, source)
   end
 
-  defp apply_magic_damage(target_type, target_pid, target_id, damage, element, attacker) do
-    hit_info = %{dmg_type: :magic, is_short: false, element: element}
+  defp apply_magic_damage(target_type, target_pid, target_id, damage, hit_info, attacker) do
     attacker_id = if attacker, do: attacker.unit_id
     apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, attacker_id)
     :ok
+  end
+
+  # The `hit_info` a defending status' `absorb_damage/4` hook receives. `skill_id`
+  # / `skill_level` identify the incoming skill (nil for a basic attack), and
+  # `from_caster?` marks a hit whose damage source is the caster themselves —
+  # rAthena's `src == dsrc`. It is true for a direct cast including its splash,
+  # and false for a placed skill unit's tick or a status DoT. Statuses that must
+  # not over-absorb (Magic Rod) match on it positively, so a caller that cannot
+  # assert the origin should leave it false.
+  defp magic_hit_info(element, opts) do
+    %{
+      dmg_type: :magic,
+      is_short: false,
+      element: element,
+      skill_id: Keyword.get(opts, :skill_id),
+      skill_level: Keyword.get(opts, :skill_level),
+      from_caster?: Keyword.get(opts, :from_caster?, false)
+    }
   end
 
   defp apply_and_broadcast_magic_damage(
@@ -738,12 +773,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
          target_pid,
          target_id,
          damage,
-         element,
+         hit_info,
          attacker,
          target,
          packet
        ) do
-    with :ok <- apply_magic_damage(:skill_unit, target_pid, target_id, damage, element, attacker) do
+    with :ok <- apply_magic_damage(:skill_unit, target_pid, target_id, damage, hit_info, attacker) do
       {tx, ty} = target.position
       Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
     end
@@ -754,14 +789,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
          target_pid,
          target_id,
          damage,
-         element,
+         hit_info,
          attacker,
          target,
          packet
        ) do
     {tx, ty} = target.position
     Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
-    apply_magic_damage(target_type, target_pid, target_id, damage, element, attacker)
+    apply_magic_damage(target_type, target_pid, target_id, damage, hit_info, attacker)
   end
 
   @doc """
@@ -865,7 +900,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
       }
 
       Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
-      hit_info = %{dmg_type: :magic, is_short: false, element: element}
+
+      hit_info =
+        magic_hit_info(element,
+          skill_id: skill_id,
+          skill_level: skill_level,
+          from_caster?: true
+        )
+
       apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, attacker.unit_id)
       [target_ref]
     else
@@ -921,7 +963,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
       }
 
       Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
-      hit_info = %{dmg_type: :misc, is_short: false, element: element}
+
+      hit_info = %{
+        dmg_type: :misc,
+        is_short: false,
+        element: element,
+        skill_id: skill_id,
+        skill_level: skill_level
+      }
+
       apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, attacker.unit_id)
       :ok
     end
@@ -982,7 +1032,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
       }
 
       Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
-      hit_info = %{dmg_type: :misc, is_short: false, element: element}
+
+      hit_info = %{
+        dmg_type: :misc,
+        is_short: false,
+        element: element,
+        skill_id: skill_id,
+        skill_level: skill_level
+      }
+
       apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, attacker.unit_id)
       [target_id]
     else
@@ -1176,7 +1234,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
       hit_info = %{
         dmg_type: :physical,
         is_short: attacker.attack_range <= 3,
-        element: :neutral
+        element: :neutral,
+        skill_id: skill_id,
+        skill_level: skill_level
       }
 
       apply_unit_damage(

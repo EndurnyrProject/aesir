@@ -120,6 +120,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @doc """
+  Restores SP to this player (fire-and-forget), clamping at max SP.
+
+  Used by SP-gaining status effects such as Magic Rod.
+  """
+  @spec restore_sp(pid(), non_neg_integer()) :: :ok
+  def restore_sp(pid, amount) do
+    GenServer.cast(pid, {:restore_sp, amount})
+  end
+
+  @doc """
   Runs an attached NPC event for this player session on `module`'s `gid`
   (currently only `Map.Coordinator`'s OnMyMobDead owner-event dispatch, fired
   when a mob tagged with `event:` dies to this player).
@@ -877,6 +887,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:consume_sp, amount}, state) do
     HealthHandler.consume_sp(amount, state)
+  end
+
+  @impl true
+  def handle_cast({:restore_sp, amount}, state) do
+    HealthHandler.restore_sp(amount, state)
   end
 
   @impl true

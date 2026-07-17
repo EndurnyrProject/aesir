@@ -145,6 +145,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   Receives the running `damage` (already reduced by statuses folded before it) in
   `hit_info` and returns the (possibly lowered) damage plus an updated instance, or
   `:remove` to both pass the hit through unchanged and expire the status.
+
+  `hit_info` describes the hit:
+
+    * `:damage` - the running damage, injected by the interpreter;
+    * `:dmg_type` - `:physical`, `:magic` or `:misc` (rAthena's `BF_*` flag);
+    * `:is_short` - whether the hit is melee-ranged;
+    * `:element` - the hit's attack element;
+    * `:skill_id` / `:skill_level` - the incoming skill, `nil` for a basic attack;
+    * `:from_caster?` - true when the damage source is the caster themselves
+      (rAthena's `src == dsrc`): a direct cast including its splash, or a basic
+      attack. False for a placed skill unit's tick and status DoTs. Asserted on
+      the magic and physical paths; absent on the misc paths, where traps and
+      direct throws share one entry point. A hook that must not over-absorb
+      should match it positively rather than assume it.
+
+  Implementations must tolerate absent keys: match the hits they act on and let
+  everything else fall through a catch-all clause.
   """
   @callback absorb_damage(target(), StatusEntry.t(), map(), context()) ::
               {:ok, integer(), StatusEntry.t()} | :remove
