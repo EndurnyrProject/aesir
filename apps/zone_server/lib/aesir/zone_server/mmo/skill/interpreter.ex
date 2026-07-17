@@ -163,6 +163,71 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   def complete_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
 
+  @doc """
+  Runs a status-driven auto-cast: the restricted entry SA_AUTOSPELL's proc uses.
+
+  Deliberately not `complete_cast/4`. rAthena's proc jumps straight to
+  `skill_castend_*` (battle.cpp:7502-7526) and so skips everything a player cast
+  earns: no cast time, no learned/range/cooldown/act-delay check, no catalyst or
+  ammo consumption, and no cooldown written. What it keeps is the SP charge -
+  fixed at 2/3 of the bolt's raw cost, with `skill_get_sp` read straight from the
+  db, so caster `sp_cost_rate` sources deliberately do not apply - and the bolt's
+  aftercast delay.
+
+  Insufficient SP returns `{:error, :insufficient_sp}` and runs nothing, which the
+  caller drops silently: rAthena's `status_charge` failing simply skips the proc,
+  with no message to the player.
+
+  A ground bolt (Thunderstorm, Heaven's Drive) is cast at the victim's cell,
+  mirroring rAthena's `skill_get_casttype` switch to `skill_castend_pos2`.
+  """
+  @spec auto_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
+          {:ok, PlayerState.t()} | {:error, atom()}
+  def auto_cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
+    now = System.monotonic_time(:millisecond)
+
+    with {:ok, definition} <- fetch_definition(skill_id),
+         :ok <- check_max_level(definition, level),
+         {:ok, module} <- fetch_active_module(definition),
+         {:ok, resolved} <- resolve_auto_cast_target(definition, target),
+         cost = auto_cast_sp_cost(definition, level),
+         :ok <- check_sp(game_state, cost),
+         {:ok, game_state} <- run_auto_cast(module, game_state, resolved, level, definition) do
+      {:ok,
+       game_state
+       |> deduct_sp(cost)
+       |> put_act_delay(definition, level, now)}
+    end
+  end
+
+  def auto_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
+
+  # rAthena: `skill_get_sp(skill_id, skill_lv) * 2 / 3`, C integer division.
+  @spec auto_cast_sp_cost(Definition.t(), pos_integer()) :: non_neg_integer()
+  defp auto_cast_sp_cost(definition, level) do
+    div(Enum.at(definition.sp_cost, level - 1) * 2, 3)
+  end
+
+  defp resolve_auto_cast_target(%{target_type: :ground}, {:unit, target_id}) do
+    case Combat.resolve_target_position(target_id) do
+      {:ok, _type, {x, y, _map}} -> {:ok, {:ground, x, y}}
+      {:error, _reason} = error -> error
+    end
+  end
+
+  defp resolve_auto_cast_target(_definition, target), do: {:ok, target}
+
+  # Runs the bolt without `run_cast/5`'s catalyst consumption: the auto-cast is
+  # free of the skill's declared requirements by construction, not by the bolts
+  # happening to declare none today.
+  defp run_auto_cast(module, game_state, target, level, definition) do
+    case module.cast(game_state, target, level, definition) do
+      {:ok, game_state} -> {:ok, game_state}
+      {:ok, game_state, :no_consume} -> {:ok, game_state}
+      {:error, _reason} = error -> error
+    end
+  end
+
   @spec validate_cast(PlayerState.t(), integer(), pos_integer(), Active.target(), integer()) ::
           {:ok, Definition.t(), module()} | {:error, atom()}
   defp validate_cast(game_state, skill_id, level, target, now) do

@@ -12,6 +12,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill do
       `regen_contribution/2`, `skill_rider/4`)
     * `Skill.Ground` - the skill places a persistent ground unit (`on_place/1`,
       `on_interval/2`, optional `on_expire/1`)
+    * `Skill.Menu` - the skill's cast opens a `SkillMenu` and acts on the reply
+      (`on_menu_reply/3`)
 
   A skill declares only the behaviours it needs and can mix several at once.
   `use Skill` builds and stores the validated definition, exposes `skill_name/0`
@@ -54,11 +56,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill do
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Ground
+  alias Aesir.ZoneServer.Mmo.Skill.Menu
   alias Aesir.ZoneServer.Mmo.Skill.Passive
   alias Aesir.ZoneServer.Mmo.Skill.Unit
 
   @typedoc "A capability a skill module provides, derived from its declared behaviours."
-  @type capability :: :active | :passive | :ground
+  @type capability :: :active | :passive | :ground | :menu
 
   defmacro __using__(opts) do
     quote bind_quoted: [opts: opts] do
@@ -81,10 +84,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill do
 
     ground? = Ground in behaviours
     passive? = Passive in behaviours
+    menu? = Menu in behaviours
     active? = Active in behaviours or ground?
 
     capabilities =
-      Enum.filter([active? && :active, passive? && :passive, ground? && :ground], & &1)
+      Enum.filter(
+        [active? && :active, passive? && :passive, ground? && :ground, menu? && :menu],
+        & &1
+      )
 
     fragments =
       [auto_cast_default(mod, definition, ground?), validate_default(mod, active?, behaviours)] ++

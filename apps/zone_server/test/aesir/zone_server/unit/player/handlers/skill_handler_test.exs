@@ -227,6 +227,61 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert_receive {:send, _, {:npc_dialog, %Aesir.Net.NpcDialog{expect: :CLOSE}}}
     end
 
+    # SA_AUTOSPELL (279) is the first skill whose cast/4 stages a SkillMenu offer.
+    # Its real 3s fixed cast is stubbed away so the instant path exercises the
+    # drain; the offer is sent and parked only after the cast commits its SP.
+    test "a staged pending_menu_offer sends the SkillMenu and parks it on the session" do
+      autospell =
+        struct!(%Definition{
+          id: 279,
+          name: :sa_autospell,
+          display_name: "Hindsight",
+          max_level: 10,
+          target_type: :self,
+          sp_cost: List.duplicate(35, 10)
+        })
+
+      stub(Catalog, :by_id, fn 279 -> {:ok, autospell} end)
+      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+
+      state =
+        instant_state(50)
+        |> Map.put(:pending_skill_menu, nil)
+        |> put_in(
+          [
+            :game_state,
+            Access.key!(:stats),
+            Access.key!(:progression),
+            Access.key!(:learned_skills)
+          ],
+          %{279 => 10, 19 => 10, 14 => 10}
+        )
+
+      assert {:noreply, new_state} = SkillHandler.handle_use_skill(state, 279, 10, 1000)
+
+      assert_receive {:send, :world,
+                      {:skill_menu,
+                       %Aesir.Net.SkillMenu{
+                         src_skill_id: 279,
+                         kind: :SKILLS,
+                         entry_ids: [19, 14]
+                       }}}
+
+      assert new_state.pending_skill_menu == %{
+               skill_id: 279,
+               kind: :SKILLS,
+               entry_ids: [19, 14],
+               level: 10
+             }
+
+      assert new_state.game_state.pending_menu_offer == nil
+      assert new_state.game_state.stats.current_state.sp == 15
+    end
+
     test "applies the effect, recalculates stats, persists, syncs and broadcasts" do
       stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
       stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)

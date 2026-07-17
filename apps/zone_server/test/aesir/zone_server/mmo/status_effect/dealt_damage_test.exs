@@ -82,7 +82,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DealtDamageTest do
     # The hottest loop in the server: with nothing implementing the hook the
     # dispatch must not even read the attacker's statuses, let alone build a
     # context per status. Only the registry read is allowed.
+    #
+    # The empty set is stubbed rather than taken from the real registry, which
+    # SC_AUTOSPELL has implemented the hook in since Task 25 - so the branch is
+    # no longer reachable through the loaded definitions, only through a registry
+    # that indexes no implementer.
     test "costs one registry read and nothing else when no status implements the hook" do
+      stub(Registry, :statuses_implementing, fn :on_dealt_damage -> MapSet.new() end)
       reject(&StatusStorage.get_unit_statuses/2)
 
       assert Interpreter.on_dealt_damage(:player, 1, %{target: {:mob, 2001}, damage: 50}) == []

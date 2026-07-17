@@ -7,8 +7,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
     * by definition - `by_id/1`, `by_name/1`, `all/0` for the interpreter and
       packet builders;
     * by capability - `active_module_for/1`, `ground_module_for/1`,
-      `passive_module_for/1`, `passive_modules/0` from each module's
-      `__skill_capabilities__/0`.
+      `passive_module_for/1`, `passive_modules/0`, `menu_module_for/1` from each
+      module's `__skill_capabilities__/0`.
 
   Discovery walks the `:zone_server` application manifest and keeps the modules
   exporting `__skill_capabilities__/0`, which `use Skill` injects. Reading the
@@ -32,7 +32,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
            by_name: %{atom() => Definition.t()},
            active: %{atom() => module()},
            ground: %{atom() => module()},
-           passive: %{atom() => module()}
+           passive: %{atom() => module()},
+           menu: %{atom() => module()}
          }
 
   @spec all() :: [Definition.t()]
@@ -55,6 +56,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
 
   @spec passive_modules() :: [module()]
   def passive_modules, do: Map.values(index().passive)
+
+  @spec menu_module_for(atom()) :: {:ok, module()} | :error
+  def menu_module_for(name), do: Map.fetch(index().menu, name)
 
   @doc """
   Rebuilds the cached index after adding or editing skills in a running session.
@@ -89,7 +93,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
       by_name: Map.new(definitions, &{&1.name, &1}),
       active: modules_with_capability(modules, :active),
       ground: modules_with_capability(modules, :ground),
-      passive: modules_with_capability(modules, :passive)
+      passive: modules_with_capability(modules, :passive),
+      menu: modules_with_capability(modules, :menu)
     }
   end
 

@@ -796,4 +796,102 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert updated.pending_inventory_persist == []
     end
   end
+
+  # The restricted entry SA_AUTOSPELL's proc casts through (battle.cpp:7502-7526):
+  # no cast time, no catalyst, SP fixed at 2/3 of the bolt's, aftercast delay
+  # applied. MG_FIREBOLT (19) costs 12 SP at level 1 and delays 1400ms.
+  describe "auto_cast/4" do
+    setup do
+      stub(Combat, :execute_magic_attack, fn _caster, _target_id, _opts -> :ok end)
+      :ok
+    end
+
+    test "charges two thirds of the bolt's SP, rounded down" do
+      gs = game_state(100, %{})
+
+      assert {:ok, updated} = Interpreter.auto_cast(gs, 19, 1, {:unit, 2001})
+      assert updated.stats.current_state.sp == 92
+    end
+
+    test "the SP cost tracks the proc level, not the caster's" do
+      gs = game_state(100, %{})
+
+      assert {:ok, updated} = Interpreter.auto_cast(gs, 19, 10, {:unit, 2001})
+      assert updated.stats.current_state.sp == 80
+    end
+
+    test "applies the bolt's aftercast delay" do
+      gs = game_state(100, %{})
+      before = System.monotonic_time(:millisecond)
+
+      assert {:ok, updated} = Interpreter.auto_cast(gs, 19, 1, {:unit, 2001})
+      assert updated.act_delay_until >= before + 1400
+    end
+
+    test "sets no cooldown of its own" do
+      gs = game_state(100, %{})
+
+      assert {:ok, updated} = Interpreter.auto_cast(gs, 19, 1, {:unit, 2001})
+      assert updated.skill_cooldowns == %{}
+    end
+
+    # rAthena's `status_charge` simply fails and the whole proc is skipped: no
+    # message, no delay, no cast.
+    test "fizzles silently when SP is short, spending nothing and casting nothing" do
+      reject(&Combat.execute_magic_attack/3)
+      gs = game_state(7, %{})
+
+      assert {:error, :insufficient_sp} = Interpreter.auto_cast(gs, 19, 1, {:unit, 2001})
+    end
+
+    test "exactly enough SP still procs" do
+      gs = game_state(8, %{})
+
+      assert {:ok, updated} = Interpreter.auto_cast(gs, 19, 1, {:unit, 2001})
+      assert updated.stats.current_state.sp == 0
+    end
+
+    # The proc arms a bolt the caster learned, but rAthena re-checks nothing at
+    # proc time - and neither do the act delay and cooldown that gate a real cast.
+    test "runs while the caster is act-delayed and without a learned check" do
+      gs = %{game_state(100, %{}) | act_delay_until: System.monotonic_time(:millisecond) + 10_000}
+
+      assert {:ok, _} = Interpreter.auto_cast(gs, 19, 1, {:unit, 2001})
+    end
+
+    test "an unknown skill id is refused rather than cast" do
+      assert {:error, :unknown_skill} =
+               Interpreter.auto_cast(game_state(100, %{}), 999_999, 1, {:unit, 2001})
+    end
+
+    test "a level of zero is refused rather than read off the end of the cost table" do
+      assert {:error, :invalid_level} =
+               Interpreter.auto_cast(game_state(100, %{}), 19, 0, {:unit, 2001})
+    end
+  end
+
+  # rAthena switches on `skill_get_casttype` and sends a ground bolt to the
+  # victim's cell via `skill_castend_pos2` (battle.cpp:7508-7510).
+  describe "auto_cast/4 with a ground bolt" do
+    test "casts WZ_HEAVENDRIVE at the victim's cell" do
+      stub(Combat, :resolve_target_position, fn 2001 -> {:ok, :mob, {14, 12, "prontera"}} end)
+
+      test_pid = self()
+
+      stub(Combat, :execute_magic_splash, fn _caster, center, _radius, _opts ->
+        send(test_pid, {:splash_at, center})
+        []
+      end)
+
+      assert {:ok, _} = Interpreter.auto_cast(game_state(100, %{}), 91, 1, {:unit, 2001})
+      assert_received {:splash_at, {14, 12}}
+    end
+
+    test "fizzles when the victim's position cannot be resolved" do
+      stub(Combat, :resolve_target_position, fn 2001 -> {:error, :target_not_found} end)
+
+      assert {:error, :target_not_found} =
+               Interpreter.auto_cast(game_state(100, %{}), 91, 1, {:unit, 2001})
+    end
+  end
 end

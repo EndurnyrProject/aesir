@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
+  alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
@@ -31,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
@@ -535,7 +537,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # any pending warp directive staged by the skill's cast/4. Returns the full
   # session state so that a warp (which mutates session-level fields) is
   # threaded back to the caller cleanly.
-  defp commit_cast(%{connection_pid: connection_pid} = state, new_game_state, skill_id, level) do
+  # `postdelay?` is false for the auto-cast path only: the SkillCooldown packet
+  # announces the cooldown the interpreter just wrote, and `auto_cast/4` writes
+  # none, so sending it would grey out a bolt the server still considers ready.
+  defp commit_cast(
+         %{connection_pid: connection_pid} = state,
+         new_game_state,
+         skill_id,
+         level,
+         postdelay? \\ true
+       ) do
     new_game_state = persist_catalysts(new_game_state)
     new_game_state = notify_inventory(connection_pid, new_game_state)
 
@@ -559,11 +570,50 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     StatusSync.send_stat_updates(connection_pid, updated_stats)
     StatusSync.send_param(connection_pid, StatusParams.zeny(), new_game_state.zeny)
 
-    maybe_send_postdelay(connection_pid, skill_id, level)
+    if postdelay?, do: maybe_send_postdelay(connection_pid, skill_id, level)
 
     StateCommit.commit(state, new_game_state)
     |> drain_warp()
     |> drain_interaction()
+    |> drain_menu_offer()
+  end
+
+  # Sends the SkillMenu a cast staged on pending_menu_offer (SA_AUTOSPELL's bolt
+  # list) and parks it on the session. Drained after the cast commits, so the SP
+  # is already spent by the time the client can answer - and a reply that never
+  # comes simply leaves the offer to be cleared by death, warp or disconnect.
+  defp drain_menu_offer(%{game_state: %{pending_menu_offer: nil}} = state), do: state
+
+  defp drain_menu_offer(%{game_state: game_state} = state) do
+    %{skill_id: skill_id, kind: kind, entry_ids: entry_ids, level: level} =
+      game_state.pending_menu_offer
+
+    %{state | game_state: %{game_state | pending_menu_offer: nil}}
+    |> SkillMenuHandler.open(skill_id, kind, entry_ids, level)
+  end
+
+  @doc """
+  Runs a bolt SA_AUTOSPELL's proc armed, cast to this session by the combat path
+  once the triggering weapon hit committed.
+
+  The restricted interpreter entry does the mechanics (2/3 SP, no cast time, no
+  catalyst, aftercast delay); this commits the result the way a real cast does, so
+  the drained SP is persisted and synced. A proc that fizzles - almost always
+  insufficient SP - leaves the session untouched and tells the player nothing,
+  which is rAthena's behaviour.
+  """
+  @spec handle_auto_cast(map(), integer(), pos_integer(), Active.target()) ::
+          {:noreply, map()}
+  def handle_auto_cast(%{game_state: game_state} = state, skill_id, level, target) do
+    case Interpreter.auto_cast(game_state, skill_id, level, target) do
+      {:ok, new_game_state} ->
+        new_state = commit_cast(state, new_game_state, skill_id, level, false)
+        broadcast_skill_use(new_state.game_state, skill_id, level, target)
+        {:noreply, new_state}
+
+      {:error, _reason} ->
+        {:noreply, state}
+    end
   end
 
   # Synthetic gid stamped on skill-triggered dialogs (AC_MAKINGARROW's crafting

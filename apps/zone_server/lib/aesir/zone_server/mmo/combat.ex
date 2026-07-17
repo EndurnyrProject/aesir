@@ -257,9 +257,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   # `execute_attack/3` runs inside the attacker's own `PlayerSession`, so the
   # auto-cast is a cast to `self()` (like a `:self` equipment break): it runs
   # after the current message finishes, on state the session has already
-  # committed. No status implements the hook yet, so nothing casts this today;
-  # the first one to do so brings the session's `{:auto_cast, ...}` handler with
-  # it, and until then an unhandled cast crashes the session loudly.
+  # committed. `SC_AUTOSPELL` is the only producer today; the session's
+  # `{:auto_cast, ...}` handler routes it to the interpreter's restricted entry.
+  #
+  # This is also why the proc cannot recurse: the bolt it casts is magic, and
+  # only the weapon-attack path above ever reaches `dispatch_dealt_damage/4`.
   defp drain_auto_cast({:auto_cast, skill_name, level, target}) do
     case Catalog.by_name(skill_name) do
       {:ok, definition} ->

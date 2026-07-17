@@ -1,17 +1,23 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandlerTest do
   use ExUnit.Case, async: true
+  import Mimic
 
   @moduletag :capture_log
 
   alias Aesir.Net.SkillMenu
   alias Aesir.Net.SkillMenuReply
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
-  # SA_AUTOSPELL, one of the two Sage menus this transport exists for.
-  @src_skill 380
-  @entry_ids [11, 17, 21]
+  setup :verify_on_exit!
+
+  # SA_AUTOSPELL, one of the two Sage menus this transport exists for. An
+  # accepted reply routes into its real Skill.Menu implementation, so the ids
+  # here are its real bolts (Fire/Cold/Lightning Bolt).
+  @src_skill 279
+  @entry_ids [19, 14, 20]
 
   describe "open/5" do
     test "sends the offer to the client and records it as the pending menu" do
@@ -31,16 +37,38 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandlerTest do
   end
 
   describe "handle_reply/2 with a matching pending menu" do
-    test "accepts an offered id and clears the pending menu" do
+    test "accepts an offered id, runs the skill, and clears the pending menu" do
       state = pending_state()
+      expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_autospell, _params -> :ok end)
 
       assert {:noreply, new_state} =
                SkillMenuHandler.handle_reply(
-                 %SkillMenuReply{src_skill_id: @src_skill, selected_id: 17},
+                 %SkillMenuReply{src_skill_id: @src_skill, selected_id: 14},
                  state
                )
 
       assert new_state.pending_skill_menu == nil
+    end
+
+    # A cancel must not reach the skill: nothing is armed and no SP moves.
+    test "a cancel does not run the skill" do
+      reject(&StatusInterpreter.apply_status/4)
+
+      assert {:noreply, _} =
+               SkillMenuHandler.handle_reply(
+                 %SkillMenuReply{src_skill_id: @src_skill, selected_id: 0},
+                 pending_state()
+               )
+    end
+
+    test "an id outside the offered set does not run the skill" do
+      reject(&StatusInterpreter.apply_status/4)
+
+      assert {:noreply, _} =
+               SkillMenuHandler.handle_reply(
+                 %SkillMenuReply{src_skill_id: @src_skill, selected_id: 999},
+                 pending_state()
+               )
     end
 
     test "cancels silently on selected_id 0" do
@@ -63,7 +91,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandlerTest do
 
       assert {:noreply, ^state} =
                SkillMenuHandler.handle_reply(
-                 %SkillMenuReply{src_skill_id: @src_skill, selected_id: 17},
+                 %SkillMenuReply{src_skill_id: @src_skill, selected_id: 14},
                  state
                )
     end
@@ -73,7 +101,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandlerTest do
 
       assert {:noreply, ^state} =
                SkillMenuHandler.handle_reply(
-                 %SkillMenuReply{src_skill_id: 381, selected_id: 17},
+                 %SkillMenuReply{src_skill_id: 381, selected_id: 14},
                  state
                )
 
@@ -106,10 +134,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandlerTest do
   describe "PacketHandler routing" do
     test "routes an injected SkillMenuReply to the pending-menu handler" do
       state = pending_state()
+      expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_autospell, _params -> :ok end)
 
       assert {:noreply, new_state} =
                PacketHandler.handle_message(
-                 %SkillMenuReply{src_skill_id: @src_skill, selected_id: 21},
+                 %SkillMenuReply{src_skill_id: @src_skill, selected_id: 20},
                  state
                )
 
@@ -138,7 +167,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandlerTest do
 
   defp build_state do
     %{
-      game_state: %PlayerState{character_id: 1, map_name: "prontera"},
+      game_state: %PlayerState{
+        character_id: 1,
+        map_name: "prontera",
+        stats: %{progression: %{learned_skills: %{19 => 10, 14 => 10, 20 => 10}}}
+      },
       connection_pid: self(),
       pending_skill_menu: nil
     }

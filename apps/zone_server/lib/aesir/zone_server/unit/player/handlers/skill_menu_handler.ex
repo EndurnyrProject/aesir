@@ -14,14 +14,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
   The menu is per-session, not persisted: it is cleared on death and on warp
   (`clear/1`), and disconnect discards it with the session process.
 
-  This module owns the transport only. Acting on an accepted selection is the
-  job of the skill that opened the menu.
+  This module owns the transport only. An accepted selection is routed back to
+  the skill that opened the menu through its `Skill.Menu` capability, which does
+  the acting.
   """
 
   require Logger
 
   alias Aesir.Net.SkillMenu
   alias Aesir.Net.SkillMenuReply
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Network.MessageRouter
 
   @typedoc "The offer parked on the session while the client is deciding."
@@ -71,7 +73,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
   Handles a client `SkillMenuReply` against the pending menu.
 
   Validates that the reply answers the parked offer and that the selection is one
-  of the offered ids; `selected_id: 0` cancels. Always returns `{:noreply, state}`.
+  of the offered ids, then hands the selection to the skill that opened the menu;
+  `selected_id: 0` cancels without running it. Always returns `{:noreply, state}`.
   """
   @spec handle_reply(SkillMenuReply.t(), map()) :: {:noreply, map()}
   def handle_reply(%SkillMenuReply{} = reply, %{pending_skill_menu: nil} = state) do
@@ -97,10 +100,45 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
         %{pending_skill_menu: %{entry_ids: entry_ids}} = state
       ) do
     if selected_id in entry_ids do
-      {:noreply, clear(state)}
+      {:noreply, accept(state, selected_id)}
     else
       debug_drop(state, "#{selected_id} was not offered", reply)
       {:noreply, state}
+    end
+  end
+
+  # The offer is cleared before the skill runs, so a skill that reopens a menu
+  # from its own reply parks the new offer rather than having it wiped.
+  #
+  # The pending `skill_id` was written by the server when it opened the menu, so
+  # an unresolvable skill or one lacking the `Skill.Menu` capability is a server
+  # bug, not client input, and fails loudly. Only `on_menu_reply/3` returning an
+  # error is a real runtime outcome (the selection stopped being valid while the
+  # client was deciding); it leaves the session untouched beyond the clear.
+  defp accept(%{pending_skill_menu: %{skill_id: skill_id, level: level}} = state, selected_id) do
+    cleared = clear(state)
+
+    case menu_module(skill_id).on_menu_reply(state.game_state, selected_id, level) do
+      {:ok, game_state} ->
+        %{cleared | game_state: game_state}
+
+      {:error, reason} ->
+        Logger.debug(
+          "Skill #{skill_id} rejected menu selection #{selected_id} for player " <>
+            "#{state.game_state.character_id}: #{inspect(reason)}"
+        )
+
+        cleared
+    end
+  end
+
+  defp menu_module(skill_id) do
+    with {:ok, definition} <- Catalog.by_id(skill_id),
+         {:ok, module} <- Catalog.menu_module_for(definition.name) do
+      module
+    else
+      :error ->
+        raise "skill #{skill_id} parked a SkillMenu but provides no Skill.Menu capability"
     end
   end
 

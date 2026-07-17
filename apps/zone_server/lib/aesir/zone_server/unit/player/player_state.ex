@@ -106,7 +106,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           cart_type: non_neg_integer(),
           storage: nil | %{non_neg_integer() => InventoryItem.t()},
           pending_warp: {String.t(), non_neg_integer(), non_neg_integer()} | nil,
-          pending_interaction: module() | nil
+          pending_interaction: module() | nil,
+          pending_menu_offer: map() | nil
         }
 
   @client_index_offset 2
@@ -235,6 +236,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # `on_talk/1` (e.g. AC_MAKINGARROW's crafting menu). The handler starts a
     # Script.Interaction for it after the cast commits, then clears this field.
     pending_interaction: nil,
+    # SkillMenu offer staged by a skill cast (SA_AUTOSPELL's bolt list). The
+    # pending menu itself lives on the session, which owns the connection, so a
+    # cast - which only ever sees this state - stages the offer here and the
+    # handler opens it after the cast commits, then clears this field.
+    pending_menu_offer: nil,
     # In-flight timed-cast descriptor (mirrors MobState.casting). Written by
     # transition_to/3 on entering :casting and cleared on leaving it; nil when
     # no cast is in flight. Cast handlers key off this field, not state_context.

@@ -862,6 +862,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     end
   end
 
+  # A bolt SA_AUTOSPELL armed, procced by one of this player's weapon hits. Cast
+  # to self() by the combat path from inside this very session, so it runs after
+  # the triggering hit has fully committed, on state this session already wrote.
+  @impl true
+  def handle_cast({:auto_cast, skill_id, level, target}, state) do
+    SkillHandler.handle_auto_cast(state, skill_id, level, target)
+  end
+
   @impl true
   def handle_cast({:apply_damage, damage, attacker_id}, state) do
     HealthHandler.apply_damage(damage, attacker_id, state)
