@@ -59,6 +59,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           dir: direction(),
           action_state: action_state(),
           state_context: map(),
+          casting: map() | nil,
           movement_state: movement_state(),
           walk_path: list({integer(), integer()}),
           walk_speed: integer(),
@@ -234,6 +235,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # `on_talk/1` (e.g. AC_MAKINGARROW's crafting menu). The handler starts a
     # Script.Interaction for it after the cast commits, then clears this field.
     pending_interaction: nil,
+    # In-flight timed-cast descriptor (mirrors MobState.casting). Written by
+    # transition_to/3 on entering :casting and cleared on leaving it; nil when
+    # no cast is in flight. Cast handlers key off this field, not state_context.
+    casting: nil,
     skill_cooldowns: %{},
     last_attack_timestamp: 0,
     act_delay_until: 0,
@@ -501,7 +506,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   Transitions to a new action state.
   Validates the transition and updates state context as needed.
 
-  When transitioning to `:casting`, `context` carries the cast lifecycle map:
+  When transitioning to `:casting`, `context` carries the cast lifecycle map,
+  which is also stored in the dedicated `casting` field (cleared on any
+  transition away from `:casting`):
 
       %{
         skill_id: integer(),
@@ -522,7 +529,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       updated_state = %{
         state
         | action_state: new_state,
-          state_context: context
+          state_context: context,
+          casting: if(new_state == :casting, do: context, else: nil)
       }
 
       # Handle state-specific setup

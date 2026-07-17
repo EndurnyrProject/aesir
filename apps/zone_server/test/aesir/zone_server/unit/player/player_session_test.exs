@@ -1171,7 +1171,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       interruptible: true
     }
 
-    game_state = %{base | action_state: :casting, state_context: context, stats: stats}
+    {:ok, game_state} = PlayerState.transition_to(%{base | stats: stats}, :casting, context)
 
     %{
       character: character,

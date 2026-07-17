@@ -66,7 +66,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   """
   @spec handle_cast_complete(map(), reference()) :: {:noreply, map()}
   def handle_cast_complete(
-        %{game_state: %{action_state: :casting, state_context: %{token: token} = ctx}} = state,
+        %{game_state: %{action_state: :casting, casting: %{token: token} = ctx}} = state,
         token
       ) do
     game_state = state.game_state
@@ -101,9 +101,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   long as it is flagged interruptible. Anything else passes through unchanged.
   """
   @spec interrupt_cast_on_damage(map()) :: map()
-  def interrupt_cast_on_damage(
-        %{game_state: %{action_state: :casting, state_context: ctx}} = state
-      ) do
+  def interrupt_cast_on_damage(%{game_state: %{action_state: :casting, casting: ctx}} = state) do
     now = System.monotonic_time(:millisecond)
 
     if now >= ctx.fixed_until and ctx.interruptible do
@@ -121,7 +119,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   """
   @spec cancel_cast(map(), atom()) :: map()
   def cancel_cast(
-        %{game_state: %{action_state: :casting, state_context: ctx} = game_state} = state,
+        %{game_state: %{action_state: :casting, casting: ctx} = game_state} = state,
         reason
       ) do
     Process.cancel_timer(ctx.timer_ref)
@@ -332,7 +330,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # A cast may only begin from idle. A moving player is stopped first (using a
   # skill ends movement); any other busy state (casting, attacking, sitting,
   # trading, vending) aborts so a player can't act while a cast is in flight or
-  # stack a second action on top of a busy one.
+  # stack a second action on top of a busy one. An in-flight cast descriptor
+  # rejects regardless of action_state, so a cast that overlays another state
+  # can never stack a second cast.
+  defp ensure_idle_for_cast(%{game_state: %{casting: casting}}) when not is_nil(casting),
+    do: :busy
+
   defp ensure_idle_for_cast(%{game_state: %{action_state: :idle}} = state), do: {:ok, state}
 
   defp ensure_idle_for_cast(%{game_state: %{action_state: moving}} = state)
