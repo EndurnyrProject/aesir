@@ -34,6 +34,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.SaDelugeTest do
       assert placement.lifecycle_policy.inherit_family_duration
     end
 
+    test "marks every field cell as a consumable Water Ball source" do
+      assert {:ok, placement} = SaDeluge.on_place(group(level: 1))
+
+      assert Map.keys(placement.cell_attrs) |> Enum.sort() == Enum.sort(placement.cells)
+
+      assert Enum.all?(placement.cell_attrs, fn {_cell, attrs} ->
+               attrs == %{flags: [:consumable_water]}
+             end)
+    end
+
     test "schedule/2 makes the group tickless" do
       assert {:ok, %Group{next_tick_at: nil}} =
                SaDeluge.schedule(group(next_tick_at: 1_000), fn _ -> 0 end)

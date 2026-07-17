@@ -11,6 +11,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.SaDeluge do
   field, so `field_support/1` filters nothing. Per-caster exclusivity against the
   rest of the element-field family is declared through the lifecycle policy and
   enforced centrally by `Skill.Unit.Manager`.
+
+  Every cell is flagged `:consumable_water`, which the manager commits as a
+  `Map.Cell` water contribution: `WZ_WATERBALL` counts a Deluge cell as water
+  (`src/map/skill.cpp:6259-6263`) and claiming one consumes that single cell.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 286,
@@ -37,8 +41,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.SaDeluge do
 
   @impl Ground
   @spec on_place(Group.t()) :: {:ok, Ground.placement()}
-  def on_place(%Group{center: center, level: level}),
-    do: {:ok, ElementField.placement(center, level)}
+  def on_place(%Group{center: center, level: level}) do
+    placement = ElementField.placement(center, level)
+    cell_attrs = Map.new(placement.cells, &{&1, %{flags: [:consumable_water]}})
+
+    {:ok, Map.put(placement, :cell_attrs, cell_attrs)}
+  end
 
   @impl Ground
   @spec schedule(Group.t(), (pos_integer() -> non_neg_integer())) :: {:ok, Group.t()}

@@ -979,8 +979,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp consume_water_source(%MapCell.WaterSource{origin: :base}), do: :ok
 
   defp consume_water_source(%MapCell.WaterSource{origin: :skill_unit, cell_id: source_id}) do
-    case Storage.get_cell(source_id) do
-      %Cell{} = source -> remove_cell(source)
+    with %Cell{} = source <- Storage.get_cell(source_id),
+         %Group{} = owner <- Storage.get(source.group_id) do
+      remove_group_cells(owner, MapSet.new([{source.x, source.y}]))
+      :ok
+    else
       nil -> :skip
     end
   end
