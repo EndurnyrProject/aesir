@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -46,6 +47,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     def on_expire(%Group{group_id: group_id, state: state}) do
       if test_pid = state[:test_pid], do: send(test_pid, {:expired, group_id})
       :ok
+    end
+  end
+
+  defmodule FieldUnit do
+    @behaviour Ground
+
+    alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+
+    @impl Ground
+    def on_place(%Group{center: center}) do
+      {:ok, %{cells: [center], state: %{}, interval: 450, duration: 5_000}}
+    end
+
+    @impl Ground
+    def on_interval(group, _now), do: {:ok, group}
+
+    @impl Ground
+    def on_expire(_group), do: :ok
+
+    @impl Ground
+    def field_support(_group) do
+      %{status_type: :sc_quagmire, params: [], target?: fn _target -> true end}
     end
   end
 
@@ -125,6 +148,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       :serialized_unit -> {:ok, SerializedUnit}
       :failing_unit -> {:ok, FailingUnit}
       :foreign_id_unit -> {:ok, ForeignIdUnit}
+      :field_unit -> {:ok, FieldUnit}
       :water_ball_sequence -> {:ok, WaterBallSequenceUnit}
       :blocked_water_ball -> {:ok, BlockedWaterBallUnit}
       :other_exclusive_unit -> {:ok, FakeUnit}
@@ -1340,6 +1364,129 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
     assert Process.alive?(manager)
     assert log =~ "Ignoring unknown skill-unit manager cast: :unexpected"
+  end
+
+  describe "remove_cells/3" do
+    test "despawns only the removed coordinates and keeps the surviving cells live" do
+      test_pid = self()
+
+      stub(Broadcast, :to_in_range, fn _map_name, _x, _y, _range, packet ->
+        send(test_pid, {:in_range, packet})
+      end)
+
+      manager = start_manager(10_000)
+
+      :ok =
+        Manager.register(
+          manager,
+          group(1, visible?: true, cells: [{100, 100}, {101, 100}], next_tick_at: 10_000)
+        )
+
+      removed = Enum.find(Storage.get_cells_by_group(1), &(&1.x == 101))
+
+      assert :ok = Manager.remove_cells(manager, 1, [{101, 100}])
+
+      assert_receive {:in_range,
+                      %Aesir.Net.SkillUnitDespawn{
+                        group_id: 1,
+                        cell_ids: cell_ids,
+                        reason: :SKILL_UNIT_DESPAWN_REASON_DESTROYED
+                      }}
+
+      assert cell_ids == [removed.cell_id]
+
+      assert %Group{cells: [{100, 100}]} = Storage.get(1)
+      assert [%Cell{x: 100}] = Storage.get_cells_by_group(1)
+      assert [] == Storage.get_groups_at_cell("prontera", 101, 100)
+      assert [%Group{group_id: 1}] = Storage.get_groups_at_cell("prontera", 100, 100)
+
+      assert :ok = Manager.remove_cells(manager, 1, [{101, 100}])
+      refute_received {:in_range, %Aesir.Net.SkillUnitDespawn{}}
+      assert %Group{cells: [{100, 100}]} = Storage.get(1)
+
+      assert :ok = Manager.tick(manager, 10_000)
+      assert %Group{state: %{ticks: 1}} = Storage.get(1)
+    end
+
+    test "expires the group through the cleanup path when its last cell goes" do
+      test_pid = self()
+
+      stub(Broadcast, :to_player, fn observer_id, packet ->
+        send(test_pid, {observer_id, packet})
+      end)
+
+      manager = start_manager(10_000)
+
+      :ok =
+        Manager.register(
+          manager,
+          group(1, visible?: true, cells: [{100, 100}], state: %{test_pid: test_pid})
+        )
+
+      :ok = Storage.add_observer_group(99, 1)
+      [cell] = Storage.get_cells_by_group(1)
+
+      assert :ok = Manager.remove_cells(manager, 1, [{100, 100}])
+
+      assert_received {:expired, 1}
+
+      assert_received {99,
+                       %Aesir.Net.SkillUnitDespawn{
+                         group_id: 1,
+                         cell_ids: [cell_id],
+                         reason: :SKILL_UNIT_DESPAWN_REASON_DESTROYED
+                       }}
+
+      assert cell_id == cell.cell_id
+      assert nil == Storage.get(1)
+      assert [] == Storage.get_cells_by_group(1)
+      assert [] == Storage.get_groups_at_cell("prontera", 100, 100)
+    end
+
+    test "releases field support for occupants of removed cells only" do
+      stub(Interpreter, :apply_status, fn _unit_type, _unit_id, _status_type, _params -> :ok end)
+      stub(Interpreter, :remove_status, fn _unit_type, _unit_id, _status_type -> :ok end)
+
+      manager = start_manager(10_000)
+      allow(Interpreter, self(), manager)
+
+      :ok = SpatialIndex.add_unit(:player, 42, 100, 100, "prontera")
+      :ok = SpatialIndex.add_unit(:player, 43, 101, 100, "prontera")
+
+      :ok =
+        Manager.register(
+          manager,
+          group(1, skill_name: :field_unit, cells: [{100, 100}, {101, 100}])
+        )
+
+      assert [{:player, 42, :sc_quagmire, []}, {:player, 43, :sc_quagmire, []}] =
+               Enum.sort(FieldSupport.sources_for_group(1))
+
+      assert :ok = Manager.remove_cells(manager, 1, [{101, 100}])
+
+      assert [{:player, 42, :sc_quagmire, []}] = FieldSupport.sources_for_group(1)
+    end
+
+    test "ignores coordinates the group does not own and leaves the group untouched" do
+      test_pid = self()
+
+      stub(Broadcast, :to_in_range, fn _map_name, _x, _y, _range, packet ->
+        send(test_pid, {:in_range, packet})
+      end)
+
+      manager = start_manager(10_000)
+      :ok = Manager.register(manager, group(1, visible?: true, cells: [{100, 100}]))
+      cells = Storage.get_cells_by_group(1)
+
+      assert :ok = Manager.remove_cells(manager, 1, [{101, 100}])
+      assert :ok = Manager.remove_cells(manager, 1, [])
+      assert :ok = Manager.remove_cells(manager, 404, [{100, 100}])
+
+      refute_received {:in_range, %Aesir.Net.SkillUnitDespawn{}}
+      assert %Group{cells: [{100, 100}]} = Storage.get(1)
+      assert cells == Storage.get_cells_by_group(1)
+      assert [%Group{group_id: 1}] = Storage.get_groups_at_cell("prontera", 100, 100)
+    end
   end
 
   defp start_unmanaged_manager(now) do

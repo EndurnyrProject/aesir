@@ -189,6 +189,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Storage do
   end
 
   @doc """
+  Drops coordinates from a live group and from every coordinate index.
+
+  Coordinates the group does not own are ignored. Returns the shrunken group,
+  which the caller keeps using as the authoritative row.
+  """
+  @spec remove_cells(Group.t(), [Group.cell()]) :: Group.t()
+  def remove_cells(%Group{} = group, cells) do
+    removed = MapSet.new(cells)
+    shrunken = %{group | cells: Enum.reject(group.cells, &MapSet.member?(removed, &1))}
+    :ok = update(shrunken)
+    shrunken
+  end
+
+  @doc """
   Returns every stored group.
   """
   @spec all() :: [Group.t()]

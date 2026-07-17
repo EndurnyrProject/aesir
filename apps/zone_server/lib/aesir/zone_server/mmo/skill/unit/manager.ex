@@ -66,6 +66,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     GenServer.call(server, {:update_state, group_id, state})
   end
 
+  @doc """
+  Removes coordinates from a live group, expiring the group with its last cell.
+
+  Coordinates the group no longer owns are ignored, so repeated removals
+  converge instead of failing.
+  """
+  @spec remove_cells(non_neg_integer(), [Group.cell()]) :: :ok
+  def remove_cells(group_id, cells), do: remove_cells(default_server(), group_id, cells)
+
+  @doc false
+  @spec remove_cells(server(), non_neg_integer(), [Group.cell()]) :: :ok
+  def remove_cells(server, group_id, cells),
+    do: GenServer.call(server, {:remove_cells, group_id, cells})
+
   @doc "Runs cleanup and destroys a live group."
   @spec destroy(non_neg_integer()) :: :ok
   def destroy(group_id), do: destroy(default_server(), group_id)
@@ -204,6 +218,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
         Storage.update(%{group | state: Map.merge(current, new_state)})
     end
 
+    {:reply, :ok, state}
+  end
+
+  def handle_call({:remove_cells, group_id, cells}, _from, state) do
+    if group = Storage.get(group_id), do: remove_group_cells(group, MapSet.new(cells))
     {:reply, :ok, state}
   end
 
@@ -592,6 +611,31 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     publish_group_despawn(group, Enum.map(cells, & &1.cell_id), despawn_reason)
   end
 
+  defp remove_group_cells(%Group{} = group, coordinates) do
+    case Enum.split_with(group.cells, &MapSet.member?(coordinates, &1)) do
+      {[], _survivors} -> :ok
+      {_removed, []} -> cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_DESTROYED)
+      {removed, _survivors} -> shrink_group(group, removed)
+    end
+  end
+
+  defp shrink_group(%Group{} = group, removed) do
+    coordinates = MapSet.new(removed)
+
+    cells =
+      group.group_id
+      |> Storage.get_cells_by_group()
+      |> Enum.filter(&MapSet.member?(coordinates, {&1.x, &1.y}))
+
+    Enum.each(cells, &remove_cell/1)
+
+    group
+    |> Storage.remove_cells(removed)
+    |> reconcile_group()
+
+    publish_cells_despawn(group, Enum.map(cells, & &1.cell_id))
+  end
+
   defp damage_cell_now(_cell_id, amount, _source, _reason)
        when not is_integer(amount) or amount <= 0,
        do: {:error, :invalid_damage}
@@ -693,6 +737,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       _ ->
         :ok
     end
+  end
+
+  defp publish_cells_despawn(%Group{visible?: false}, _cell_ids), do: :ok
+  defp publish_cells_despawn(%Group{}, []), do: :ok
+
+  defp publish_cells_despawn(%Group{} = group, cell_ids) do
+    packet = %SkillUnitDespawn{
+      group_id: group.group_id,
+      cell_ids: Enum.sort(cell_ids),
+      reason: :SKILL_UNIT_DESPAWN_REASON_DESTROYED,
+      server_tick: ServerTick.now()
+    }
+
+    {cx, cy} = group.center
+    publish(group.map_name, cx, cy, packet)
   end
 
   defp publish_group_despawn(%Group{visible?: false}, _cell_ids, _reason), do: :ok
