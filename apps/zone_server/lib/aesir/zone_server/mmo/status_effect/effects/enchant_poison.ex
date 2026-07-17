@@ -17,11 +17,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoison do
       :sc_windweapon,
       :sc_earthweapon,
       :sc_shadowweapon,
-      :sc_ghostweapon
+      :sc_ghostweapon,
+      :sc_watk_element
     ],
     prevented_by: [:sc_refresh, :sc_inspiration],
     icon: :enchantpoison
 
   @impl true
-  def modifiers(_instance, _context), do: %{atk_ele: :poison}
+  def modifiers(_instance, _context), do: %{attack_element: :poison}
 end

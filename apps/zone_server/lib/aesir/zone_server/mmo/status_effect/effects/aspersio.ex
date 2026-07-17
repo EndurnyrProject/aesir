@@ -16,11 +16,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Aspersio do
       :sc_earthweapon,
       :sc_shadowweapon,
       :sc_ghostweapon,
-      :sc_enchantarms
+      :sc_watk_element
     ],
     prevented_by: [:sc_refresh, :sc_inspiration],
     icon: :aspersio
 
   @impl true
-  def modifiers(_instance, _context), do: %{atk_ele: :holy}
+  def modifiers(_instance, _context), do: %{attack_element: :holy}
 end

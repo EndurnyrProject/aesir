@@ -7,10 +7,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WatkElement do
   element in `battle_attr_fix`. Here `val1` is the rAthena element id and is
   mapped to the codebase's element atom, exposed via the `attack_element`
   modifier that the damage calculator prefers over the weapon's base element.
+
+  Every endow contributes that same modifier and aggregation sums colliding
+  keys, so the endows list each other in `end_on_start` (replace-on-cast) to
+  keep two of them from ever being live at once.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_watk_element,
     properties: [:buff],
+    end_on_start: [:sc_aspersio, :sc_encpoison],
     no_save: true
 
   @elements %{
