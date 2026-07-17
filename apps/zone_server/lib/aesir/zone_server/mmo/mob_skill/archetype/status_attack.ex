@@ -24,7 +24,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.StatusAttack do
     with :ok <- ElementalNuke.apply(caster, target, params, level) do
       StatusInterpreter.apply_status(:player, target_id, params.status,
         caster_id: caster.instance_id,
-        source_id: caster.instance_id
+        source_id: caster.instance_id,
+        source_type: :mob
       )
     end
   end

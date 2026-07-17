@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Stone do
 
   @impl true
   def modifiers(%{phase: :wait}, _context), do: %{mdef: 25}
+
   def modifiers(%{phase: :stone}, _context),
     do: %{element_override: {:earth, 1}, def: -50, mdef: 25}
 

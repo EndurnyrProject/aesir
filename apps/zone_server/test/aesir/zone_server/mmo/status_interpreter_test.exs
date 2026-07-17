@@ -95,7 +95,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
 
       # Check modifiers
       modifiers = Interpreter.get_all_modifiers(:player, player_id)
-      assert modifiers[:def2] == -25
+      assert modifiers[:def2_rate] == -25
     end
 
     test "applies curse status with stat penalties", %{player_id: player_id} do

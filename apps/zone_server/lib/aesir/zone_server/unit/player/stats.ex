@@ -63,9 +63,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   end
 
   typedstruct module: Modifiers do
-    field :equipment, map()
-    field :status_effects, map()
-    field :job_bonuses, map()
+    field :equipment, map(), default: %{}
+    field :status_effects, map(), default: %{}
+    field :job_bonuses, map(), default: %{}
     field :passive, map(), default: %{}
   end
 

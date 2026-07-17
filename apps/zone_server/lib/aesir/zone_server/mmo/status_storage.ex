@@ -66,6 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
       tick: tick,
       flag: flag,
       source_id: caster_id || unit_id,
+      source_type: StatusEntry.resolve_source_type(unit_type, unit_id, caster_id, status_params),
       state: state,
       phase: phase,
       started_at: now_ms,

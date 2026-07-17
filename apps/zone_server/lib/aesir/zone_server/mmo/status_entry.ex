@@ -39,6 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
           caster_id: integer() | nil,
           duration: integer() | nil,
           source_id: integer() | nil,
+          source_type: atom(),
           state: map(),
           phase: atom() | nil,
           loaded: boolean(),
@@ -55,6 +56,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
           tick: integer(),
           flag: integer(),
           source_id: integer(),
+          source_type: atom() | nil,
           state: map(),
           phase: atom() | nil,
           started_at: integer(),
@@ -80,6 +82,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
     :flag,
     # ID of the entity that applied the status
     :source_id,
+    # Unit type of the entity that applied the status (nil = same as target)
+    :source_type,
     # Custom state map for complex statuses
     :state,
     # Current phase for multi-phase statuses
@@ -238,5 +242,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
       params[:state],
       params[:phase]
     }
+  end
+
+  @doc """
+  Resolves the unit type of a status' caster.
+
+  An explicit `:source_type` in the params always wins. Without one, a status
+  whose caster is the target itself (or has no caster) shares the target's
+  type; a cross-unit caster defaults to `:player`, since players are the only
+  casters that do not pass `:source_type` explicitly (the mob skill archetypes
+  do).
+  """
+  @spec resolve_source_type(atom(), integer(), integer() | nil, status_params()) :: atom()
+  def resolve_source_type(unit_type, unit_id, caster_id, status_params) do
+    case Keyword.get(status_params, :source_type) do
+      nil when caster_id in [nil, unit_id] -> unit_type
+      nil -> :player
+      source_type -> source_type
+    end
   end
 end

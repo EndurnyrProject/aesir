@@ -850,7 +850,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       base_stats: state.stats.base_stats,
       combat_stats: state.stats.combat_stats,
       progression: state.stats.progression,
-      element: Map.get(state.stats.modifiers.status_effects, :element_override, {:neutral, 1}),
+      element: defense_element(state.stats),
       race: :demi_human,
       size: :medium,
       weapon: %{
@@ -873,6 +873,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   defp passive_range(modifiers) do
     modifiers |> Map.get(:passive, %{}) |> Map.get(:range, 0)
   end
+
+  defp defense_element(%{modifiers: %{status_effects: %{} = status_effects}}) do
+    Map.get(status_effects, :element_override, {:neutral, 1})
+  end
+
+  defp defense_element(_stats), do: {:neutral, 1}
 
   defp weapon_element(%PlayerStats.Equipment{ammo: nil}), do: :neutral
 

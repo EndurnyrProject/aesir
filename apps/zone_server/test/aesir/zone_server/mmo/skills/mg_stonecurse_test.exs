@@ -1,10 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.MgStonecurseTest do
   use ExUnit.Case, async: true
   import Mimic
+  import Aesir.TestEtsSetup
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.MgStonecurse
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -87,6 +90,63 @@ defmodule Aesir.ZoneServer.Mmo.Skills.MgStonecurseTest do
 
       assert {:ok, ^caster, :no_consume} =
                MgStonecurse.cast(caster, {:unit, @target_id}, 6, definition)
+    end
+  end
+
+  describe "cast/4 against a live mob (real apply_status, no boundary stub)" do
+    setup :setup_ets_tables
+
+    setup do
+      Mimic.copy(Resistance)
+
+      stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
+
+      stub(UnitRegistry, :get_unit_info, fn
+        :mob, @target_id ->
+          {:ok,
+           %{
+             unit_id: @target_id,
+             unit_type: :mob,
+             race: :formless,
+             element: :neutral,
+             element_level: 1,
+             boss_flag: false,
+             size: :medium,
+             stats: %{
+               max_hp: 1000,
+               hp: 1000,
+               level: 10,
+               base_level: 10,
+               str: 10,
+               agi: 10,
+               vit: 10,
+               int: 10,
+               dex: 10,
+               luk: 10,
+               mdef: 5
+             }
+           }}
+
+        _unit_type, _unit_id ->
+          {:error, :not_found}
+      end)
+
+      stub(Resistance, :roll_success, fn _success_rate -> true end)
+      :ok
+    end
+
+    test "petrifies the mob without crashing on the player caster id" do
+      # Seed {1,2,3} yields :rand.uniform(100) == 27, below every success chance.
+      # The caster's character_id is deliberately not registered as a mob:
+      # ContextBuilder used to resolve the caster with the *target's* unit type
+      # and raise on the missing unit.
+      :rand.seed(:exsss, {1, 2, 3})
+      caster = caster()
+
+      assert {:ok, ^caster} = MgStonecurse.cast(caster, {:unit, @target_id}, 4, definition())
+
+      assert %{val1: 4, source_id: 1000, source_type: :player} =
+               StatusStorage.get_status(:mob, @target_id, :sc_stone)
     end
   end
 end

@@ -77,6 +77,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlPneuma do
       StatusInterpreter.apply_status(unit_type, unit_id, :sc_pneuma,
         val1: 1,
         caster_id: group.caster_id,
+        source_type: group.caster_type,
         duration: duration
       )
     end)

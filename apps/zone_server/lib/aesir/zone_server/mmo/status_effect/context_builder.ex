@@ -36,12 +36,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder do
     # Get the unit stats for the target
     target_stats = get_unit_stats(unit_type, unit_id)
 
-    # Get the caster stats if available
-    # Note: We assume caster is same type as target for now
-    # This could be enhanced to track caster type separately
+    # The caster is looked up with its own unit type (a player can curse a mob
+    # and vice versa) and tolerantly: a caster may legitimately despawn while
+    # its status lives on, which must not crash the target.
     caster_stats =
       if caster_id && caster_id != unit_id do
-        get_unit_stats(unit_type, caster_id)
+        get_caster_stats(instance.source_type || unit_type, caster_id)
       else
         # If no caster_id or it's the same as target, use empty map
         %{}
@@ -87,6 +87,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder do
       {:error, :not_found} ->
         # Unit not found - critical error
         raise "#{unit_type} #{unit_id} not found in UnitRegistry"
+    end
+  end
+
+  @spec get_caster_stats(atom(), integer()) :: map()
+  defp get_caster_stats(caster_type, caster_id) do
+    case UnitRegistry.get_unit_info(caster_type, caster_id) do
+      {:ok, entity_info} -> entity_info[:stats] || %{}
+      {:error, :not_found} -> %{}
     end
   end
 end

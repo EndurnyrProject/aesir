@@ -29,9 +29,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.ElementChange do
 
   `val1` is the element level and `val2` the rAthena element id, mirroring
   `sc_start2(src, target, type, 100, skill_lv, skill_get_ele(...))`. The
-  reference's `src` is not carried: `sc_elementalchange` reads no context, and
-  `ContextBuilder.build_context/4` resolves `caster_id` as a unit of the
-  *target's* type, so a player caster id on a mob target raises.
+  reference's `src` is not carried because `sc_elementalchange` reads no
+  caster context.
   """
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()}

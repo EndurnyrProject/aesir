@@ -391,6 +391,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
     tick = resolve_tick(tick, definition)
     now_ms = System.monotonic_time(:millisecond)
+    source_type = StatusEntry.resolve_source_type(unit_type, unit_id, caster_id, status_params)
 
     instance = %StatusEntry{
       type: status_id,
@@ -401,6 +402,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       tick: tick,
       flag: flag,
       source_id: caster_id,
+      source_type: source_type,
       state: state,
       phase: phase || definition.initial_phase,
       started_at: now_ms,
@@ -422,6 +424,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
           flag: flag,
           duration: duration,
           caster_id: caster_id,
+          source_type: source_type,
           state: new_instance.state || %{},
           phase: new_instance.phase
         )

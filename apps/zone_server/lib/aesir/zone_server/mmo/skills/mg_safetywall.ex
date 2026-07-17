@@ -74,7 +74,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.MgSafetywall do
       StatusInterpreter.apply_status(unit_type, unit_id, :sc_safetywall,
         val1: level,
         val2: group.group_id,
-        caster_id: group.caster_id
+        caster_id: group.caster_id,
+        source_type: group.caster_type
       )
     end)
 
