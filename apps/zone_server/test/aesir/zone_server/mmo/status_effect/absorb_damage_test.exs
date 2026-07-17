@@ -13,12 +13,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
   defmodule PassThroughStatus do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_passthrough,
+      no_dispel: false,
       properties: [:buff]
   end
 
   defmodule HalfStatus do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_half,
+      no_dispel: false,
       properties: [:buff]
 
     @impl true
@@ -30,6 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
   defmodule BlockOnceStatus do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_block_once,
+      no_dispel: false,
       properties: [:buff]
 
     import Aesir.ZoneServer.Mmo.StatusEffect.Helpers

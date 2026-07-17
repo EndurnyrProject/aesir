@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.LifeForceF do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_life_force_f,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:max_sp_rate],
     icon: :life_force_f

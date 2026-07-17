@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Rwc2011Scroll do
   #   autospell modifier exists.
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_2011rwc_scroll,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:atk, :matk, :aspd_rate, :max_hp_rate, :max_sp_rate, :varcast_rate],
     icon: :"2011rwc_scroll"

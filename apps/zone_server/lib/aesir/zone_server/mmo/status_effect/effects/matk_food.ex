@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MatkFood do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_matkfood,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:matk]
 

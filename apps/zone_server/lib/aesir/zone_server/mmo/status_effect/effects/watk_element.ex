@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WatkElement do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_watk_element,
+    no_dispel: false,
     properties: [:buff],
     end_on_start: [:sc_aspersio, :sc_encpoison],
     no_save: true

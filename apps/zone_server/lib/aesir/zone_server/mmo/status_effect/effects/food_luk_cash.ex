@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FoodLukCash do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_food_luk_cash,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:luk],
     icon: :food_luk_cash,

@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Angelus do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_angelus,
+    no_dispel: false,
     properties: [:buff],
     calc_flags: [:def2, :maxhp],
     prevented_by: [:sc_refresh, :sc_inspiration],

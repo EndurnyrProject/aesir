@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DexFood do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_dexfood,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:dex],
     icon: :food_dex,

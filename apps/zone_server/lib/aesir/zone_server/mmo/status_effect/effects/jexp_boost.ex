@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.JexpBoost do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_jexpboost,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:job_exp_rate],
     icon: :cash_plusonlyjobexp

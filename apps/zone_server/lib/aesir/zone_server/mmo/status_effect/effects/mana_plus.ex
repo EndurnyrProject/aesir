@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ManaPlus do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_mana_plus,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:matk],
     icon: :mana_plus

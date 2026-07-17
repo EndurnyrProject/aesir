@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CriFood do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_crifood,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:critical],
     icon: :food_criticalsuccessvalue

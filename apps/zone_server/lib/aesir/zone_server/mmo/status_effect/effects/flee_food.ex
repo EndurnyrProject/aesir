@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FleeFood do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_fleefood,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:flee],
     icon: :food_basicavoidance

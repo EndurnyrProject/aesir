@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SparkCandy do
   #   modifier exists.
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_sparkcandy,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:atk, :aspd_rate],
     icon: :steampack,

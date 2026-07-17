@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Quagmire do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_quagmire,
+    no_dispel: false,
     properties: [:debuff],
     calc_flags: [:agi, :dex, :aspd, :speed],
     end_on_start: [

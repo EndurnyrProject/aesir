@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Curse do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_curse,
+    no_dispel: false,
     properties: [:debuff],
     calc_flags: [:luk, :atk, :speed],
     prevented_by: [:sc_refresh, :sc_inspiration, :sc_curse, :sc_protection],

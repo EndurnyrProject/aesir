@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Freeze do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_freeze,
+    no_dispel: false,
     properties: [:debuff, :prevents_movement, :prevents_skills, :prevents_attack],
     calc_flags: [:def_ele, :def_rate, :mdef_rate],
     flags: [:no_move, :no_attack, :no_skill],

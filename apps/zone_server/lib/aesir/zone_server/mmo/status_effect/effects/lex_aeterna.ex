@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.LexAeterna do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_aeterna,
+    no_dispel: false,
     properties: [:debuff],
     conflicts_with: [:sc_freeze],
     prevented_by: [:sc_refresh, :sc_inspiration]

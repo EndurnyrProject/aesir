@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MagicCandy do
   #   once a fixed-cast-rate modifier key exists.
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_magiccandy,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:matk],
     icon: :magic_candy,

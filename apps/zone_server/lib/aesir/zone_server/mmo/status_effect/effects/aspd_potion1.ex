@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AspdPotion1 do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_aspdpotion1,
+    no_dispel: false,
     properties: [:buff],
     calc_flags: [:aspd],
     icon: :atthaste_potion2,

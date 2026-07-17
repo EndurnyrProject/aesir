@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ExpBoost do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_expboost,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:exp_rate],
     icon: :cash_plusexp

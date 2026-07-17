@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.LifeInsurance do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_lifeinsurance,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:no_death_penalty],
     icon: :cash_deathpenalty

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PuttiTailsNoodles do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_putti_tails_noodles,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:luk],
     icon: :putti_tails_noodles

@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Suffragium do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_suffragium,
+    no_dispel: false,
     properties: [:buff],
     prevented_by: [:sc_refresh, :sc_inspiration],
     icon: :suffragium

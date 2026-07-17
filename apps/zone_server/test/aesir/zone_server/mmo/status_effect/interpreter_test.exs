@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
   defmodule PermanentStatus do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_permanent,
+      no_dispel: false,
       properties: [:buff],
       permanent: true
   end
@@ -19,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
   defmodule FollowUpStatus do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_followup,
+      no_dispel: false,
       properties: [:buff]
 
     @impl true

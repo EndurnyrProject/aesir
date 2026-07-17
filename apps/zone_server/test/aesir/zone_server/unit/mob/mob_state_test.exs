@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     @moduledoc false
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_mob_atk_buff,
+      no_dispel: false,
       properties: [:buff]
 
     @impl true

@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BeefRibStew do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_beef_rib_stew,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:varcast_rate, :sp_cost_rate],
     icon: :beef_rib_stew

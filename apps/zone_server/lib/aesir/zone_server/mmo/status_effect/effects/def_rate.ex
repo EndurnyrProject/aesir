@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DefRate do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_def_rate,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:phys_damage_reduction],
     icon: :protect_def

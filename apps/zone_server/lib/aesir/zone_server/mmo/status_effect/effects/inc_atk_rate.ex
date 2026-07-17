@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncAtkRate do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_incatkrate,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:atk_rate]
 

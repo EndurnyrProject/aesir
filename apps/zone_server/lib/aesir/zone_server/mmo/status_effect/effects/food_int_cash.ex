@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FoodIntCash do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_food_int_cash,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:int],
     icon: :food_int_cash,

@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AtkPotion do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_atkpotion,
+    no_dispel: false,
     properties: [:buff],
     calc_flags: [:atk],
     icon: :plusattackpower

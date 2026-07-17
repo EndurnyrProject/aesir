@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AgiFood do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_agifood,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:agi],
     icon: :food_agi,

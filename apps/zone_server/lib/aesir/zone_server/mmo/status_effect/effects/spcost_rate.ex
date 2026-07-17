@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SpcostRate do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_spcost_rate,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:sp_cost_rate],
     icon: :atker_blood

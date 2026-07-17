@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Speedup1 do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_speedup1,
+    no_dispel: false,
     properties: [:buff],
     calc_flags: [:speed],
     icon: :movhaste_potion

@@ -4,12 +4,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
   alias Aesir.ZoneServer.Mmo.StatusEntry
 
   defmodule MinimalStatus do
-    use Aesir.ZoneServer.Mmo.StatusEffect.Definition, id: :sc_test_minimal
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition, id: :sc_test_minimal, no_dispel: false
   end
 
   defmodule FullStatus do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_full,
+      no_dispel: false,
       properties: [:debuff, :damage_over_time],
       calc_flags: [:def],
       flags: [:no_move],
@@ -154,6 +155,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
         defmodule UnknownKey do
           use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
             id: :sc_bad,
+            no_dispel: false,
             phases: %{wait: %{}}
         end
       end
@@ -164,6 +166,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
         defmodule BadProperty do
           use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
             id: :sc_bad_prop,
+            no_dispel: false,
             properties: [:debuf]
         end
       end
@@ -174,6 +177,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
         defmodule BadTick do
           use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
             id: :sc_bad_tick,
+            no_dispel: false,
             tick_interval: 0
         end
       end

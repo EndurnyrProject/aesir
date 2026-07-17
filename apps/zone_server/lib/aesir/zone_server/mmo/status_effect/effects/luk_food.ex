@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.LukFood do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_lukfood,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:luk],
     icon: :food_luk,

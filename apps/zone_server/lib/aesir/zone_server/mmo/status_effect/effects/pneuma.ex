@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Pneuma do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_pneuma,
+    no_dispel: true,
     properties: [:buff],
     no_save: true
 

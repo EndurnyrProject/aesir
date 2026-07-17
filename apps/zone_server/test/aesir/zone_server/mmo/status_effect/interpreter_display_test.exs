@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterDisplayTest do
   defmodule TickExpiringStatus do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_tick_expiring,
+      no_dispel: false,
       properties: [:debuff],
       icon: :provoke
 
@@ -23,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterDisplayTest do
   defmodule AbsorbExpiringStatus do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_absorb_expiring,
+      no_dispel: false,
       properties: [:buff],
       icon: :provoke
 
@@ -33,6 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterDisplayTest do
   defmodule DamageExpiringStatus do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_damage_expiring,
+      no_dispel: false,
       properties: [:debuff],
       icon: :provoke
 
@@ -43,6 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterDisplayTest do
   defmodule VetoStatus do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_veto,
+      no_dispel: false,
       properties: [:buff],
       icon: :provoke
 

@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatDealtDamageTest do
     @moduledoc false
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_proc,
+      no_dispel: false,
       properties: [:buff]
 
     @impl true
@@ -51,6 +52,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatDealtDamageTest do
     @moduledoc false
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_unknown_skill,
+      no_dispel: false,
       properties: [:buff]
 
     @impl true

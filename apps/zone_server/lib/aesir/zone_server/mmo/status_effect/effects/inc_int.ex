@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncInt do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_incint,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:int]
 

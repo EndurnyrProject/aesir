@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AddAtkDamage do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_add_atk_damage,
+    no_dispel: false,
     properties: [:buff],
     calc_flags: [:atk_rate],
     icon: :add_atk_damage

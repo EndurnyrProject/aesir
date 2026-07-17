@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StrFood do
   #   foods must survive dispel/clearbuff but end on death.
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_strfood,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:str],
     icon: :food_str,

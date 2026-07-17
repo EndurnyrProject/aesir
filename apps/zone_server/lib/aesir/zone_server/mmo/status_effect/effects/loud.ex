@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Loud do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_loud,
+    no_dispel: false,
     properties: [:buff],
     calc_flags: [:str, :watk]
 

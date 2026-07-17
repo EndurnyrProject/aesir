@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SavageSteak do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_savage_steak,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:str],
     icon: :savage_steak

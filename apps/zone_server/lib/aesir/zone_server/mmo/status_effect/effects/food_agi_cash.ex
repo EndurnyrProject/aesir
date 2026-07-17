@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FoodAgiCash do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_food_agi_cash,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:agi],
     icon: :food_agi_cash,

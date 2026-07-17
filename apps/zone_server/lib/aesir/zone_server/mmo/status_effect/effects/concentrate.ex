@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Concentrate do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_concentrate,
+    no_dispel: false,
     properties: [:buff],
     calc_flags: [:agi, :dex],
     end_on_start: [:sc_poison, :sc_truesight],

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DroceraHerbSteamed do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_drocera_herb_steamed,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:agi],
     icon: :drocera_herb_steamed

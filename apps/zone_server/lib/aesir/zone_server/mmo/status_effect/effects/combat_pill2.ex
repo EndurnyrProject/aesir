@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CombatPill2 do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_combat_pill2,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:atk_rate, :matk_rate, :max_hp_rate, :max_sp_rate],
     icon: :gm_battle2

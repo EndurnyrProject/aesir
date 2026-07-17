@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncreaseMaxSp do
   #   is dropped. Restore it if 4-arg sc_start codegen ever lands.
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_increase_maxsp,
+    no_dispel: false,
     properties: [:buff],
     calc_flags: [:max_sp_rate],
     icon: :atker_movespeed

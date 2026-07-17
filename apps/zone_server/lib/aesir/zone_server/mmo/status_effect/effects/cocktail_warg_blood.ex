@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CocktailWargBlood do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_cocktail_warg_blood,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:int],
     icon: :cocktail_warg_blood

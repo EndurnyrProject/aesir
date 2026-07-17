@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.VitalizePotion do
   #   add them once heal-power / item-heal modifier keys exist.
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_vitalize_potion,
+    no_dispel: false,
     properties: [:buff],
     calc_flags: [:atk_rate, :matk_rate],
     icon: :vitalize_potion

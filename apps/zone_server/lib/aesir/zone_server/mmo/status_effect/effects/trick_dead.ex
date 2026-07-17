@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.TrickDead do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_trickdead,
+    no_dispel: false,
     properties: [:prevents_movement, :prevents_skills, :prevents_attack, :untargetable],
     flags: [:no_move, :no_attack, :no_skill],
     permanent: true,

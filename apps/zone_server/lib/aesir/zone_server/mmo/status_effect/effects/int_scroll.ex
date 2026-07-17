@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IntScroll do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_int_scroll,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:int],
     icon: :int_scroll

@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Blind do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_blind,
+    no_dispel: false,
     properties: [:debuff],
     calc_flags: [:hit, :flee],
     prevented_by: [:sc_refresh, :sc_inspiration, :sc_protection],

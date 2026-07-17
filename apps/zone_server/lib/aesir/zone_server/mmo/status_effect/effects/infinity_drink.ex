@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.InfinityDrink do
   #   corresponding keys exist.
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_infinity_drink,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:max_hp_rate, :max_sp_rate],
     icon: :infinity_drink

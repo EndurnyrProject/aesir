@@ -49,6 +49,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     - `:no_save` - when true, the status is not persisted across logout (mirrors
       rAthena's `NoSave` status flag); use it for session-bound statuses that are
       rebuilt from other state or tied to live world objects
+    - `:no_dispel` - **required**; when true, the status survives Dispel (mirrors
+      rAthena's `SCF_NODISPELL` status flag). There is no default: dispel
+      disposition is a per-status gameplay decision that must be made
+      deliberately, so a new status cannot silently become dispellable. Note
+      that this is *not* a buff/debuff distinction - rAthena's `SA_DISPELL`
+      walks every entry in `status_db` and ends everything that lacks the flag,
+      so Poison, Stun, Curse, Silence, Blind, Bleeding, Freeze and Stone are all
+      dispellable. Mirror the `NoDispell` flag of the matching entry in
+      rAthena's `db/re/status.yml`; a status with no rAthena counterpart records
+      its disposition with a one-line rationale.
     - `:icon` - `:efst` id atom for the buff/debuff icon bar (resolved via `Mmo.Efst`)
     - `:opt1` - sprite body state, e.g. `:stone | :freeze` (`Mmo.Opt1`, single-valued)
     - `:opt2` - sprite health state, e.g. `:poison | :curse` (`Mmo.Opt2`, bitmask)
@@ -210,6 +220,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     duration: {:integer, {:gt, 0}},
     permanent: :boolean,
     no_save: :boolean,
+    no_dispel: {:required, :boolean},
     icon: :atom,
     opt1: :atom,
     opt2: :atom,

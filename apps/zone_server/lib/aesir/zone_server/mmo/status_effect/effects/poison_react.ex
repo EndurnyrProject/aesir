@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PoisonReact do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_poisonreact,
+    no_dispel: false,
     properties: [:buff],
     calc_flags: [:atk],
     icon: :poisonreact,

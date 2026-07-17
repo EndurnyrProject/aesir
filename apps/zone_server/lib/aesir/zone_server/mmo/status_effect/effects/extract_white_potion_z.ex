@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ExtractWhitePotionZ do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_extract_white_potion_z,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:hp_regen],
     icon: :extract_white_potion_z

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MustleM do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_mustle_m,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:max_hp_rate],
     icon: :mustle_m

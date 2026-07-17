@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Impositio do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_impositio,
+    no_dispel: false,
     properties: [:buff],
     calc_flags: [:watk, :matk],
     prevented_by: [:sc_refresh, :sc_inspiration],

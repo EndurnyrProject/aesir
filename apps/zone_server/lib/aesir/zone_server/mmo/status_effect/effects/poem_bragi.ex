@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PoemBragi do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_poembragi,
+    no_dispel: true,
     properties: [:buff],
     icon: :poembragi
 

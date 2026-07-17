@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DealtDamageTest do
     @moduledoc false
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_proc,
+      no_dispel: false,
       properties: [:buff]
 
     @impl true
@@ -26,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DealtDamageTest do
     @moduledoc false
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_inert,
+      no_dispel: false,
       properties: [:buff]
   end
 

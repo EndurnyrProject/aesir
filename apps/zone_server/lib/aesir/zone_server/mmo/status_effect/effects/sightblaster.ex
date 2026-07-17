@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_sightblaster,
+    no_dispel: true,
     properties: [:buff],
     duration: 900_000,
     tick_interval: 20,

@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SkfCast do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_skf_cast,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:varcast_rate],
     icon: :skf_cast

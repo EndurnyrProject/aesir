@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sight do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_sight,
+    no_dispel: true,
     properties: [:buff],
     duration: 10_000,
     no_save: true,

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AddMatkDamage do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_add_matk_damage,
+    no_dispel: false,
     properties: [:buff],
     calc_flags: [:matk_rate],
     icon: :add_matk_damage

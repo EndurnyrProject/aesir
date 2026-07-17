@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.TwoHandQuicken do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_twohandquicken,
+    no_dispel: false,
     properties: [:buff],
     calc_flags: [:aspd, :hit, :cri],
     flags: [:require_weapon],

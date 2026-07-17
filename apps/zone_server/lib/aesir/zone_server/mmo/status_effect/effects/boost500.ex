@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Boost500 do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_boost500,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:aspd],
     icon: :boost500

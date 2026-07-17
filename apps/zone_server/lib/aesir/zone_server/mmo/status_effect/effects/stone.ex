@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Stone do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_stone,
+    no_dispel: false,
     properties: [:debuff, :prevents_movement, :prevents_skills, :prevents_attack],
     calc_flags: [:def_ele, :def, :mdef],
     flags: [:no_move, :no_attack, :no_skill, :no_magic],

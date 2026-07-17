@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PorkRibStew do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_pork_rib_stew,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:aspd_rate, :sp_cost_rate],
     icon: :pork_rib_stew

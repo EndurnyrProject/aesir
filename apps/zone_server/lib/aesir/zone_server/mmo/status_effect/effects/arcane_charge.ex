@@ -5,9 +5,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ArcaneCharge do
   Accumulates a charge every time the holder takes damage, granting +10 MATK
   per charge. At 3 charges the energy discharges, damaging the holder based on
   the caster's INT and resetting the counter.
+
+  Dispel: no rAthena counterpart; a plain damage-triggered MATK buff, and
+  rAthena dispels every status not flagged `NoDispell`.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_arcane_charge,
+    no_dispel: false,
     properties: [:buff],
     calc_flags: [:matk]
 

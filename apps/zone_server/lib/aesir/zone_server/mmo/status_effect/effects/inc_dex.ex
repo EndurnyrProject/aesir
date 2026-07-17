@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncDex do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_incdex,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:dex]
 

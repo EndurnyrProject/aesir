@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Blessing do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_blessing,
+    no_dispel: false,
     properties: [:buff],
     calc_flags: [:str, :int, :dex, :hit],
     prevented_by: [:sc_refresh, :sc_inspiration],

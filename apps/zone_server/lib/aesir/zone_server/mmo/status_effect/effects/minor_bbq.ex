@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MinorBbq do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_minor_bbq,
+    no_dispel: true,
     properties: [:buff],
     calc_flags: [:vit],
     icon: :minor_bbq

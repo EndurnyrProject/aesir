@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Provoke do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_provoke,
+    no_dispel: false,
     properties: [:debuff],
     calc_flags: [:atk, :def, :def2, :hit],
     end_on_start: [:sc_freeze, :sc_stone, :sc_sleep, :sc_trickdead],

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.RegistryTest do
   defmodule TestStatus do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_registry_test,
+      no_dispel: false,
       properties: [:debuff],
       immunity: [:boss],
       icon: :provoke,

@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DecreaseAgi do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_decreaseagi,
+    no_dispel: false,
     properties: [:debuff],
     calc_flags: [:agi, :speed],
     end_on_start: [

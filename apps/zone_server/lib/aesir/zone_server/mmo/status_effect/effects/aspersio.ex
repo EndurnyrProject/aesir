@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Aspersio do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_aspersio,
+    no_dispel: false,
     properties: [:buff],
     calc_flags: [:atk_ele],
     end_on_start: [

@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Safetywall do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_safetywall,
+    no_dispel: true,
     properties: [:buff],
     no_save: true
 
