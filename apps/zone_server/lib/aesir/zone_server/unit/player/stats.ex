@@ -212,17 +212,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   end
 
   @doc """
-  Aggregates the DEX/HIT/range bonuses from learned passive skills into
+  Aggregates the DEX/INT/HIT/range bonuses from learned passive skills into
   `modifiers.passive`.
 
-  Runs before `calculate_derived_stats/1` so the passive DEX feeds every
-  DEX-derived stat (HIT, ASPD, MATK) just like a real stat point, matching
-  rAthena (e.g. Owl's Eye).
+  Runs before `calculate_derived_stats/1` so the passive DEX/INT feed every
+  DEX/INT-derived stat (HIT, ASPD, MATK, max SP) just like a real stat point,
+  matching rAthena (e.g. Owl's Eye).
   """
   @spec apply_passive_modifiers(t()) :: t()
   def apply_passive_modifiers(%__MODULE__{} = stats) do
     passive = %{
       dex: Passives.dex_bonus(stats),
+      int: Passives.int_bonus(stats),
       hit: Passives.hit_bonus(stats),
       range: Passives.range_bonus(stats),
       max_weight_bonus: Passives.max_weight_bonus(stats)
@@ -779,9 +780,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
         # ASPD = (2000 - amotion) / 10
         final_aspd = div(2000 - amotion, 10)
 
-        # Apply ASPD rate modifiers, then the flat status ASPD bonus
+        # Apply ASPD rate modifiers, then the flat status and passive ASPD bonuses
         final_aspd = apply_aspd_rate_modifiers(final_aspd, stats)
-        final_aspd = final_aspd + get_status_modifier(stats, :aspd)
+        final_aspd = final_aspd + get_status_modifier(stats, :aspd) + Passives.aspd_bonus(stats)
 
         # Cap ASPD between 0 and 193
         min(max(final_aspd, 0), 193)

@@ -9,8 +9,29 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
+
+  defmodule AspdIntPassive do
+    @moduledoc false
+    use Aesir.ZoneServer.Mmo.Skill,
+      id: 9_900_010,
+      name: :test_aspd_int_passive,
+      display_name: "Test ASPD/INT Passive",
+      max_level: 10,
+      target_type: :passive
+
+    alias Aesir.ZoneServer.Mmo.Skill.Passive
+
+    @behaviour Passive
+
+    @impl Passive
+    def aspd_bonus(level, _ctx), do: level
+
+    @impl Passive
+    def int_bonus(level, _ctx), do: 2 * level
+  end
 
   setup :setup_ets_tables
   setup :verify_on_exit!
@@ -1441,6 +1462,40 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     test "no aspd_rate status leaves ASPD at the 100 baseline" do
       assert status_stats(%{aspd_rate: 0}).derived_stats.aspd ==
                status_stats(%{}).derived_stats.aspd
+    end
+  end
+
+  describe "passive aspd_bonus and int_bonus" do
+    defp learned_skills_stats(learned_skills) do
+      %Stats{
+        base_stats: %{str: 10, agi: 30, vit: 25, int: 30, dex: 20, luk: 10},
+        progression: %{
+          base_level: 50,
+          job_level: 25,
+          base_exp: 0,
+          job_exp: 0,
+          job_id: 0,
+          learned_skills: learned_skills
+        },
+        current_state: %{hp: 1, sp: 1},
+        equipment: %Equipment{},
+        modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
+      }
+      |> Stats.calculate_stats()
+    end
+
+    test "a learned aspd_bonus/int_bonus passive reaches ASPD and effective INT" do
+      stub(Catalog, :by_id, fn 9_900_010 -> {:ok, AspdIntPassive.definition()} end)
+
+      stub(Catalog, :passive_module_for, fn :test_aspd_int_passive ->
+        {:ok, AspdIntPassive}
+      end)
+
+      base = learned_skills_stats(%{})
+      boosted = learned_skills_stats(%{9_900_010 => 5})
+
+      assert boosted.derived_stats.aspd == min(base.derived_stats.aspd + 5, 193)
+      assert Stats.get_effective_stat(boosted, :int) == Stats.get_effective_stat(base, :int) + 10
     end
   end
 

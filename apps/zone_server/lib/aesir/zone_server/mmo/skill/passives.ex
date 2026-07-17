@@ -124,6 +124,38 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   end
 
   @doc """
+  Sums the flat ASPD bonus contributed by every learned passive for the player.
+  """
+  @spec aspd_bonus(PlayerState.t() | PlayerStats.t()) :: integer()
+  def aspd_bonus(%PlayerState{stats: stats}), do: aspd_bonus(stats)
+
+  def aspd_bonus(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
+    |> learned_passives()
+    |> Enum.reduce(0, fn {module, level}, acc ->
+      acc + module.aspd_bonus(level, ctx)
+    end)
+  end
+
+  @doc """
+  Sums the flat INT bonus contributed by every learned passive for the player.
+  """
+  @spec int_bonus(PlayerState.t() | PlayerStats.t()) :: integer()
+  def int_bonus(%PlayerState{stats: stats}), do: int_bonus(stats)
+
+  def int_bonus(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
+    |> learned_passives()
+    |> Enum.reduce(0, fn {module, level}, acc ->
+      acc + module.int_bonus(level, ctx)
+    end)
+  end
+
+  @doc """
   Folds the on-normal-attack procs of every learned passive into one map.
 
   Keeps the proc with the highest `:multi_hit` (carrying its own `:chance`
