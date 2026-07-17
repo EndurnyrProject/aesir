@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
   alias Aesir.Net.SkillMenuReply
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryStaging
 
   @typedoc "The offer parked on the session while the client is deciding."
   @type pending :: %{
@@ -120,7 +121,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
 
     case menu_module(skill_id).on_menu_reply(state.game_state, selected_id, level) do
       {:ok, game_state} ->
-        %{cleared | game_state: game_state}
+        %{cleared | game_state: InventoryStaging.drain(state.connection_pid, game_state)}
 
       {:error, reason} ->
         Logger.debug(

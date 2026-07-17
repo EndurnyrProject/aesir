@@ -4,9 +4,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandlerTest do
 
   @moduletag :capture_log
 
+  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.SkillMenu
   alias Aesir.Net.SkillMenuReply
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -131,6 +135,34 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandlerTest do
     end
   end
 
+  # SA_CREATECON is the menu skill whose reply mutates the inventory rather than
+  # applying a status, so the reply path has to write those changes through the
+  # same way a cast's `commit_cast` does. Without the drain the brewed converter
+  # exists only in memory: it is never persisted and the client is never told.
+  describe "handle_reply/2 drains the inventory a skill staged" do
+    test "persists the consumed materials and notifies the granted converter" do
+      expect(InventoryOps, :add, fn _char_id, inventory, _stats, item_def, amount ->
+        {:ok, new_inventory, change} = Inventory.add(inventory, item_def, amount)
+        {:ok, new_inventory, change}
+      end)
+
+      expect(InventoryOps, :apply_change, 2, fn _char_id, _old, new_inventory, _change ->
+        {:ok, new_inventory}
+      end)
+
+      expect(InventoryManager, :notify_added, fn _pid, _inventory, _change -> :ok end)
+
+      assert {:noreply, new_state} =
+               SkillMenuHandler.handle_reply(
+                 %SkillMenuReply{src_skill_id: 1007, selected_id: 12_114},
+                 createcon_state()
+               )
+
+      assert new_state.game_state.pending_inventory_persist == []
+      assert new_state.game_state.pending_inventory_notify == []
+    end
+  end
+
   describe "PacketHandler routing" do
     test "routes an injected SkillMenuReply to the pending-menu handler" do
       state = pending_state()
@@ -151,6 +183,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandlerTest do
       assert SkillMenuHandler.clear(pending_state()).pending_skill_menu == nil
       assert SkillMenuHandler.clear(build_state()).pending_skill_menu == nil
     end
+  end
+
+  defp createcon_state do
+    inventory = %{
+      0 => %InventoryItem{nameid: 7433, amount: 1, equip: 0},
+      1 => %InventoryItem{nameid: 990, amount: 1, equip: 0}
+    }
+
+    state = build_state()
+
+    %{
+      state
+      | game_state: %{state.game_state | inventory: inventory},
+        pending_skill_menu: %{skill_id: 1007, kind: :ITEMS, entry_ids: [12_114], level: 1}
+    }
   end
 
   defp pending_state do
