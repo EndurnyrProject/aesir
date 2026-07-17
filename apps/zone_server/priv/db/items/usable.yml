@@ -3485,24 +3485,28 @@
   buy: 2
   id: 12114
   name: Elemental Converter
+  on_use: sc_start(ctx, :sc_watk_element, 1200000, 3)
   type: delay_consume
   weight: 10
 - aegis_name: Elemental_Water
   buy: 2
   id: 12115
   name: Elemental Converter
+  on_use: sc_start(ctx, :sc_watk_element, 1200000, 1)
   type: delay_consume
   weight: 10
 - aegis_name: Elemental_Earth
   buy: 2
   id: 12116
   name: Elemental Converter
+  on_use: sc_start(ctx, :sc_watk_element, 1200000, 2)
   type: delay_consume
   weight: 10
 - aegis_name: Elemental_Wind
   buy: 2
   id: 12117
   name: Elemental Converter
+  on_use: sc_start(ctx, :sc_watk_element, 1200000, 4)
   type: delay_consume
   weight: 10
 - aegis_name: Resist_Fire
