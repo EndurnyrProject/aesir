@@ -6,6 +6,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzIcewall do
   matching rAthena's skill-unit timer. The unit manager owns the cell mutation,
   visibility updates, target indexes, and terrain cleanup; this skill only
   describes its placement.
+
+  rAthena forbids casting Ice Wall while the caster is under Volcano
+  (`status.cpp:2194`); `validate/4` rejects it before SP is charged.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 87,
@@ -26,10 +29,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzIcewall do
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
+  alias Aesir.ZoneServer.Mmo.StatusStorage
 
   @behaviour Ground
   @cell_decay 50
   @wall_half 2
+
+  @doc false
+  @spec validate(map(), term(), pos_integer(), struct()) :: :ok | {:error, :volcano_active}
+  def validate(%{character_id: caster_id}, _target, _level, _definition) do
+    if StatusStorage.has_status?(:player, caster_id, :sc_volcano),
+      do: {:error, :volcano_active},
+      else: :ok
+  end
 
   @impl Ground
   def on_place(%Group{center: center, level: level} = group) do

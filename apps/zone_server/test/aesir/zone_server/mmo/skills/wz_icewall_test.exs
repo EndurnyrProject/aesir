@@ -1,16 +1,20 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.WzIcewallTest do
   use ExUnit.Case, async: true
 
+  import Aesir.TestEtsSetup
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.WzIcewall
+  alias Aesir.ZoneServer.Mmo.StatusStorage
 
+  setup :setup_ets_tables
   setup :verify_on_exit!
 
   @caster_id 1000
+  @other_caster_id 1001
   @center {150, 150}
 
   defp group(level) do
@@ -81,4 +85,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzIcewallTest do
     assert {:ok, %{cells: cells}} = WzIcewall.on_place(group(1))
     assert cells == [{148, 150}, {149, 150}, {150, 150}, {151, 150}, {152, 150}]
   end
+
+  test "validate rejects the cast while the caster is under Volcano" do
+    :ok = StatusStorage.apply_status(:player, @caster_id, :sc_volcano, caster_id: @caster_id)
+
+    assert WzIcewall.validate(%{character_id: @caster_id}, {:ground, 150, 150}, 1, definition()) ==
+             {:error, :volcano_active}
+  end
+
+  test "validate allows the cast when the caster is not under Volcano" do
+    assert WzIcewall.validate(%{character_id: @caster_id}, {:ground, 150, 150}, 1, definition()) ==
+             :ok
+  end
+
+  test "validate is keyed on the caster's own status, not a Volcano field elsewhere on the map" do
+    :ok =
+      StatusStorage.apply_status(:player, @other_caster_id, :sc_volcano,
+        caster_id: @other_caster_id
+      )
+
+    assert WzIcewall.validate(%{character_id: @caster_id}, {:ground, 150, 150}, 1, definition()) ==
+             :ok
+  end
+
+  defp definition, do: WzIcewall.definition()
 end
