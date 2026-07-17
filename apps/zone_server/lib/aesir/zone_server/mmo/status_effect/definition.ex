@@ -68,14 +68,25 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   @type context :: map()
 
   @typedoc """
+  A skill the status asks the engine to cast on its holder's behalf, naming the
+  skill by its catalog name. Drained by the combat path that fired the hook.
+  """
+  @type auto_cast :: {:auto_cast, atom(), pos_integer(), {:unit, integer()}}
+
+  @typedoc "A follow-up action a lifecycle callback asks the engine to run after it returns."
+  @type follow_up :: {atom(), keyword()} | auto_cast()
+
+  @typedoc """
   Result of a lifecycle callback.
 
-  The 3-element form lets `on_damage` request follow-up status applications
-  (`[{status_id, params}]`) that the interpreter drains after the damage settles.
+  The 3-element form lets a hook request follow-ups the engine drains once the
+  triggering event has settled: `{status_id, params}` applies another status
+  (`on_damage`), `{:auto_cast, skill_name, level, target}` casts a skill for the
+  holder (`on_dealt_damage`).
   """
   @type hook_result ::
           {:ok, StatusEntry.t()}
-          | {:ok, StatusEntry.t(), [{atom(), keyword()}]}
+          | {:ok, StatusEntry.t(), [follow_up()]}
           | :remove
           | {:error, term()}
 
@@ -102,6 +113,21 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
 
   @doc "Invoked when the status holder makes movement contact with another unit."
   @callback on_contact(target(), StatusEntry.t(), target(), context()) :: hook_result()
+
+  @doc """
+  Invoked on the attacker holding this status after one of its weapon hits commits.
+
+  The attacker-side counterpart of `c:on_damage/4`, fired only for basic/weapon
+  attacks - never for magic or skill damage. `hit_info` carries the `:target`,
+  the `:damage` dealt and the weapon `:element`. Returning
+  `{:auto_cast, skill_name, level, target}` follow-ups makes the engine cast
+  those skills for the holder once the triggering hit has settled.
+
+  Statuses that do not implement it are excluded from dispatch entirely: the
+  registry indexes the implementers (`__status_capabilities__/0`), so a hit by
+  an attacker holding no implementing status costs one registry read.
+  """
+  @callback on_dealt_damage(target(), StatusEntry.t(), map(), context()) :: hook_result()
 
   @doc """
   Pre-damage hook that may reduce or block an incoming hit before HP is applied.
@@ -192,9 +218,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     on_apply_effect: :atom
   }
 
+  @typedoc """
+  A hook a status module opts into by implementing it, published for the
+  registry to index. Only hooks whose dispatch is on a hot path are tracked;
+  the rest are called unconditionally through their no-op defaults.
+  """
+  @type capability :: :on_dealt_damage
+
   defmacro __using__(opts) do
     quote bind_quoted: [opts: opts] do
       @behaviour Aesir.ZoneServer.Mmo.StatusEffect.Definition
+      @before_compile Aesir.ZoneServer.Mmo.StatusEffect.Definition
 
       @status_effect_metadata Aesir.ZoneServer.Mmo.StatusEffect.Definition.validate_metadata!(
                                 opts,
@@ -240,6 +274,28 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
                      on_contact: 4,
                      absorb_damage: 4,
                      dynamic_option: 1
+    end
+  end
+
+  @doc false
+  defmacro __before_compile__(env) do
+    implements? = Module.defines?(env.module, {:on_dealt_damage, 4})
+
+    default =
+      unless implements? do
+        quote do
+          @impl true
+          def on_dealt_damage(_target, instance, _hit_info, _context), do: {:ok, instance}
+        end
+      end
+
+    capabilities = if implements?, do: [:on_dealt_damage], else: []
+
+    quote do
+      unquote(default)
+
+      @doc false
+      def __status_capabilities__, do: unquote(capabilities)
     end
   end
 

@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
@@ -187,6 +188,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
              attack_hits(player_state)
            ) do
       roll_equipment_breaks(player_state, target_state, target_type, target_pid)
+      dispatch_dealt_damage(attacker, target_type, target_id, damage_result)
       :ok
     end
   end
@@ -229,6 +231,45 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
 
   defp break_slot(:weapon), do: :right_hand
   defp break_slot(:armor), do: :armor
+
+  # Fires the attacker's `on_dealt_damage` statuses once per confirmed weapon
+  # swing (never per multi-hit), the attacker-side counterpart of the victim's
+  # `on_damage`. Sited after the damage casts, the attack broadcast and the
+  # break roll, so every effect of the triggering hit is already queued on the
+  # victim's mailbox ahead of anything an auto-cast sends it.
+  #
+  # Skill units are excluded: they are not living targets and hold no state a
+  # proc could act on (rAthena procs autospell against `bl` units only).
+  defp dispatch_dealt_damage(_attacker, :skill_unit, _target_id, _damage_result), do: :ok
+
+  defp dispatch_dealt_damage(attacker, target_type, target_id, damage_result) do
+    hit_info = %{
+      target: {target_type, target_id},
+      damage: damage_result.damage,
+      element: attacker.weapon.element
+    }
+
+    :player
+    |> StatusInterpreter.on_dealt_damage(attacker.unit_id, hit_info)
+    |> Enum.each(&drain_auto_cast/1)
+  end
+
+  # `execute_attack/3` runs inside the attacker's own `PlayerSession`, so the
+  # auto-cast is a cast to `self()` (like a `:self` equipment break): it runs
+  # after the current message finishes, on state the session has already
+  # committed. No status implements the hook yet, so nothing casts this today;
+  # the first one to do so brings the session's `{:auto_cast, ...}` handler with
+  # it, and until then an unhandled cast crashes the session loudly.
+  defp drain_auto_cast({:auto_cast, skill_name, level, target}) do
+    case Catalog.by_name(skill_name) do
+      {:ok, definition} ->
+        GenServer.cast(self(), {:auto_cast, definition.id, level, target})
+
+      :error ->
+        raise "auto-cast of unknown skill #{inspect(skill_name)} at level #{level}: " <>
+                "a status named a skill absent from the catalog"
+    end
+  end
 
   # The number of basic-attack hits to deliver, driven by passive procs (e.g.
   # Double Attack's `%{multi_hit: 2, chance: 7 * level}`). The proc's `:chance`

@@ -11,7 +11,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Registry do
 
   require Logger
 
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects
+
+  # Reserved row in the definitions table holding `%{capability => MapSet.t(id)}`.
+  # An atom key, so `get_definition_by_name/1`'s scan can stringify it, and one
+  # no status id can collide with.
+  @capabilities_key :__status_capabilities__
+
+  @no_statuses MapSet.new()
 
   @doc """
   Gets a status effect definition by ID.
@@ -65,6 +73,46 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Registry do
   def register_module(module) do
     definition = Map.put(module.metadata(), :module, module)
     :ets.insert(table_for(:status_effect_definitions), {module.id(), definition})
+    index_capabilities(module)
     :ok
+  end
+
+  @doc """
+  Returns the ids of every registered status implementing `capability`.
+
+  Precomputed at registration so a per-event dispatch is one ETS read plus a
+  set intersection against the unit's active statuses, rather than a callback
+  call per status. Returns an empty set when nothing implements it - the common
+  case on the combat hot path.
+  """
+  @spec statuses_implementing(Definition.capability()) :: MapSet.t(atom())
+  def statuses_implementing(capability) do
+    case :ets.lookup(table_for(:status_effect_definitions), @capabilities_key) do
+      [{_, capabilities}] -> Map.get(capabilities, capability, @no_statuses)
+      [] -> @no_statuses
+    end
+  end
+
+  defp index_capabilities(module) do
+    case module.__status_capabilities__() do
+      [] ->
+        :ok
+
+      capabilities ->
+        indexed =
+          Enum.reduce(capabilities, current_capabilities(), fn capability, acc ->
+            Map.update(acc, capability, MapSet.new([module.id()]), &MapSet.put(&1, module.id()))
+          end)
+
+        :ets.insert(table_for(:status_effect_definitions), {@capabilities_key, indexed})
+        :ok
+    end
+  end
+
+  defp current_capabilities do
+    case :ets.lookup(table_for(:status_effect_definitions), @capabilities_key) do
+      [{_, capabilities}] -> capabilities
+      [] -> %{}
+    end
   end
 end

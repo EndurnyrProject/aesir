@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   require Logger
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
@@ -129,6 +130,37 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     Enum.each(follow_ups, fn {status_id, params} ->
       apply_status(unit_type, unit_id, status_id, params)
     end)
+  end
+
+  @doc """
+  Notifies the attacker's implementing statuses that one of its weapon hits landed.
+
+  Only statuses implementing `c:Definition.on_dealt_damage/4` are dispatched -
+  the registry indexes them, so an attacker holding none (and, today, every
+  attacker) costs one registry read and nothing else. Status follow-ups are
+  applied here; `{:auto_cast, ...}` follow-ups are returned for the combat path
+  to drain once the triggering hit has settled.
+  """
+  @spec on_dealt_damage(unit_type(), integer(), map()) :: [Definition.auto_cast()]
+  def on_dealt_damage(unit_type, unit_id, hit_info) do
+    implementing = Registry.statuses_implementing(:on_dealt_damage)
+
+    if MapSet.size(implementing) == 0 do
+      []
+    else
+      {auto_casts, status_follow_ups} =
+        unit_type
+        |> StatusStorage.get_unit_statuses(unit_id)
+        |> Enum.filter(&MapSet.member?(implementing, &1.type))
+        |> Enum.flat_map(&dispatch_dealt_damage(unit_type, unit_id, &1, hit_info))
+        |> Enum.split_with(&match?({:auto_cast, _, _, _}, &1))
+
+      Enum.each(status_follow_ups, fn {status_id, params} ->
+        apply_status(unit_type, unit_id, status_id, params)
+      end)
+
+      auto_casts
+    end
   end
 
   @doc "Notifies active statuses that their holder made movement contact with a unit."
@@ -411,7 +443,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   defp resolve_tick(_tick, %{tick_interval: interval}) when is_integer(interval), do: interval
   defp resolve_tick(tick, _definition), do: tick
 
-  defp dispatch_damage(unit_type, unit_id, instance, damage_info) do
+  defp dispatch_damage(unit_type, unit_id, instance, damage_info),
+    do: dispatch_hook(:on_damage, unit_type, unit_id, instance, damage_info)
+
+  defp dispatch_dealt_damage(unit_type, unit_id, instance, hit_info),
+    do: dispatch_hook(:on_dealt_damage, unit_type, unit_id, instance, hit_info)
+
+  # Shared body of the two damage-driven hooks: both take the event map as their
+  # third argument and return follow-ups for their caller to drain.
+  defp dispatch_hook(hook, unit_type, unit_id, instance, event) do
     case Registry.get_definition(instance.type) do
       nil ->
         []
@@ -419,7 +459,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       definition ->
         context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
 
-        case definition.module.on_damage({unit_type, unit_id}, instance, damage_info, context) do
+        case apply(definition.module, hook, [{unit_type, unit_id}, instance, event, context]) do
           {:ok, new_instance} ->
             store_instance_changes(unit_type, unit_id, instance.type, new_instance)
             []
@@ -433,7 +473,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
             []
 
           {:error, reason} ->
-            Logger.warning("Status #{instance.type} on_damage failed: #{inspect(reason)}")
+            Logger.warning("Status #{instance.type} #{hook} failed: #{inspect(reason)}")
             []
         end
     end
