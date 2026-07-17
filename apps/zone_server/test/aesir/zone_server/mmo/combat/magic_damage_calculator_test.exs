@@ -299,4 +299,75 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
                MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5))
     end
   end
+
+  describe "Dragonology magic race modifier (vs Dragon race)" do
+    test "raises magic damage vs a Dragon-race target by 2*lv percent, levels 1 and 5" do
+      target = defender(0, 0) |> Map.put(:race, :dragon)
+
+      lv0 = attacker(100) |> Map.put(:dragonology_level, 0)
+      lv1 = attacker(100) |> Map.put(:dragonology_level, 1)
+      lv5 = attacker(100) |> Map.put(:dragonology_level, 5)
+
+      assert {:ok, %{damage: 100}} = MagicDamageCalculator.calculate_magic_damage(lv0, target)
+      assert {:ok, %{damage: 102}} = MagicDamageCalculator.calculate_magic_damage(lv1, target)
+      assert {:ok, %{damage: 110}} = MagicDamageCalculator.calculate_magic_damage(lv5, target)
+    end
+
+    test "leaves magic damage unchanged vs a non-Dragon target" do
+      target = defender(0, 0) |> Map.put(:race, :brute)
+      with_skill = attacker(100) |> Map.put(:dragonology_level, 5)
+      without_skill = attacker(100) |> Map.put(:dragonology_level, 0)
+
+      assert {:ok, %{damage: with_dmg}} =
+               MagicDamageCalculator.calculate_magic_damage(with_skill, target)
+
+      assert {:ok, %{damage: without_dmg}} =
+               MagicDamageCalculator.calculate_magic_damage(without_skill, target)
+
+      assert with_dmg == without_dmg
+    end
+
+    test "reduces magic damage taken from a Dragon-race attacker by 4*lv percent" do
+      dragon_attacker = attacker(100) |> Map.put(:race, :dragon)
+      no_resist = defender(0, 0) |> Map.put(:dragonology_level, 0)
+      resisted = defender(0, 0) |> Map.put(:dragonology_level, 5)
+
+      assert {:ok, %{damage: 100}} =
+               MagicDamageCalculator.calculate_magic_damage(dragon_attacker, no_resist)
+
+      assert {:ok, %{damage: 80}} =
+               MagicDamageCalculator.calculate_magic_damage(dragon_attacker, resisted)
+    end
+
+    test "resist applies before MDEF's soft-MDEF subtraction, not after" do
+      # Regression test: subtraction does not commute with a later percentage
+      # multiply. rAthena runs the defender's subrace cardfix inside the same
+      # early battle_calc_cardfix as magic_addrace, well before the MDEF
+      # formula's `- soft` term (battle.cpp:809-914).
+      #
+      # matk 1000, hard_mdef 0, soft_mdef 50, resist 20% (Dragonology lv5):
+      #   correct (resist folded into the pre-MDEF cardfix): 1000*0.80 - 50 = 750
+      #   wrong (resist applied as a late percentage multiply after MDEF):
+      #     (1000 - 50) * 0.80 = 760
+      dragon_attacker = attacker(1000) |> Map.put(:race, :dragon)
+      resisted = defender(0, 50) |> Map.put(:dragonology_level, 5)
+
+      assert {:ok, %{damage: 750}} =
+               MagicDamageCalculator.calculate_magic_damage(dragon_attacker, resisted)
+    end
+
+    test "leaves magic damage unchanged from a non-Dragon attacker" do
+      brute_attacker = attacker(100) |> Map.put(:race, :brute)
+      with_skill = defender(0, 0) |> Map.put(:dragonology_level, 5)
+      without_skill = defender(0, 0) |> Map.put(:dragonology_level, 0)
+
+      assert {:ok, %{damage: with_dmg}} =
+               MagicDamageCalculator.calculate_magic_damage(brute_attacker, with_skill)
+
+      assert {:ok, %{damage: without_dmg}} =
+               MagicDamageCalculator.calculate_magic_damage(brute_attacker, without_skill)
+
+      assert with_dmg == without_dmg
+    end
+  end
 end

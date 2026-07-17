@@ -1499,6 +1499,85 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     end
   end
 
+  describe "SA_ADVANCEDBOOK weapon gating" do
+    defp advancedbook_stats(learned_skills, equipped_items) do
+      %Stats{
+        base_stats: %{str: 10, agi: 30, vit: 25, int: 30, dex: 20, luk: 10},
+        progression: %{
+          base_level: 50,
+          job_level: 25,
+          base_exp: 0,
+          job_exp: 0,
+          # Sage (job_id 16): the only class with a `book` entry in its base
+          # ASPD table, needed to compute ASPD for a book-wielding combatant.
+          job_id: 16,
+          learned_skills: learned_skills
+        },
+        current_state: %{hp: 1, sp: 1},
+        equipment: %Equipment{},
+        modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
+      }
+      |> Stats.calculate_stats(nil, equipped_items)
+    end
+
+    test "atk_bonus and aspd_bonus apply only with a book, tested both ways" do
+      book = %ItemDefinition{
+        id: 92_001,
+        aegis_name: "test_book",
+        name: "Test Book",
+        type: :weapon,
+        subtype: :book,
+        weapon_level: 1
+      }
+
+      stub(ItemManagement, :get_item_by_id, fn 92_001 -> {:ok, book} end)
+
+      learned = %{274 => 5}
+
+      fist_no_skill = advancedbook_stats(%{}, [])
+      fist_with_skill = advancedbook_stats(learned, [])
+      book_no_skill = advancedbook_stats(%{}, [equipped(92_001, @right_hand)])
+      book_with_skill = advancedbook_stats(learned, [equipped(92_001, @right_hand)])
+
+      assert fist_with_skill.combat_stats.atk == fist_no_skill.combat_stats.atk
+      assert fist_with_skill.derived_stats.aspd == fist_no_skill.derived_stats.aspd
+
+      assert book_with_skill.combat_stats.atk == book_no_skill.combat_stats.atk + 15
+
+      assert book_with_skill.derived_stats.aspd ==
+               min(book_no_skill.derived_stats.aspd + 3, 193)
+    end
+  end
+
+  describe "SA_DRAGONOLOGY int_bonus" do
+    defp dragonology_stats(learned_skills) do
+      %Stats{
+        base_stats: %{str: 10, agi: 30, vit: 25, int: 30, dex: 20, luk: 10},
+        progression: %{
+          base_level: 50,
+          job_level: 25,
+          base_exp: 0,
+          job_exp: 0,
+          job_id: 0,
+          learned_skills: learned_skills
+        },
+        current_state: %{hp: 1, sp: 1},
+        equipment: %Equipment{},
+        modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
+      }
+      |> Stats.calculate_stats()
+    end
+
+    test "raises effective INT by (level + 1) / 2, levels 1 and 5" do
+      base = dragonology_stats(%{})
+      lv1 = dragonology_stats(%{284 => 1})
+      lv5 = dragonology_stats(%{284 => 5})
+
+      assert Stats.get_effective_stat(lv1, :int) == Stats.get_effective_stat(base, :int) + 1
+      assert Stats.get_effective_stat(lv5, :int) == Stats.get_effective_stat(base, :int) + 3
+    end
+  end
+
   describe "status max HP/SP rate modifiers" do
     test "max_hp_rate/max_sp_rate scale the computed max" do
       base = status_stats(%{})

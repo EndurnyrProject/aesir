@@ -826,7 +826,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       position: {state.x, state.y},
       map_name: state.map_name,
       divine_protection_level: Learned.learned_level(learned, 22),
-      demon_bane_level: Learned.learned_level(learned, 23)
+      demon_bane_level: Learned.learned_level(learned, 23),
+      dragonology_level: Learned.learned_level(learned, 284)
     })
   end
 

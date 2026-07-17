@@ -228,6 +228,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     total_atk =
       base_damage
       |> apply_size_modifier(attacker, defender)
+      |> apply_race_modifier(attacker, defender)
       |> apply_element_modifier(attacker, defender, attacker_modifiers, forced_element)
       |> apply_status_effect_damage_modifiers(attacker_modifiers)
 
@@ -361,6 +362,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
     modifier = SizeModifiers.get_modifier(attacker_size, defender_size)
     damage * modifier
+  end
+
+  # Dragonology (SA_DRAGONOLOGY): the attacker's percentage ATK bonus vs the
+  # defender's race, and the defender's percentage damage-taken reduction vs
+  # the attacker's race (both `status.cpp:4682-4700`, Dragon race today).
+  defp apply_race_modifier(damage, attacker, defender) do
+    atk_rate = RaceModifiers.dragonology_atk_rate(attacker, defender.race)
+    resist_rate = RaceModifiers.dragonology_resist_rate(defender, attacker.race)
+    damage * (100 + atk_rate) / 100 * (100 - resist_rate) / 100
   end
 
   defp apply_status_effect_damage_modifiers(damage, modifiers) do

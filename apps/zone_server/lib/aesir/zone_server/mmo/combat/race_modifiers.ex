@@ -2,11 +2,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   @moduledoc """
   Race-based combat modifiers based on the rAthena implementation.
 
-  Currently covers the two racial skill bonuses that have a live source of
-  truth: Demon Bane (`demon_bane_atk/2`) and Divine Protection
-  (`divine_protection_def/2`), plus the race taxonomy and predicates. Card /
-  equipment race bonuses (`bonus2 bAddRace, ...`) belong to the scripted
-  item-bonus engine, which does not exist yet.
+  Currently covers the racial skill bonuses that have a live source of truth:
+  Demon Bane (`demon_bane_atk/2`), Divine Protection
+  (`divine_protection_def/2`), and Dragonology (`dragonology_atk_rate/2`,
+  `dragonology_matk_rate/2`, `dragonology_resist_rate/2`), plus the race
+  taxonomy and predicates. Card / equipment race bonuses (`bonus2 bAddRace, ...`)
+  belong to the scripted item-bonus engine, which does not exist yet.
 
   Race types in Ragnarok Online:
   - :formless - Slimes, plants, and other basic life forms
@@ -78,6 +79,43 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   end
 
   def divine_protection_def(_defender, _attacker_race), do: 0
+
+  @doc """
+  Dragonology (SA_DRAGONOLOGY) percentage physical ATK bonus vs Dragon-race
+  targets, matching renewal rAthena `status_calc_pc_additional`
+  (`status.cpp:4682-4700`): `level * 4` added to `right_weapon.addrace[RC_DRAGON]`
+  (and `left_weapon.addrace[RC_DRAGON]` when `!battle_config.left_cardfix_to_right`
+  — Aesir does not split dual-wield hands, so both collapse into this one rate).
+  Returns `0` when the attacker has no Dragonology level or the target is not
+  Dragon race.
+  """
+  @spec dragonology_atk_rate(map(), race()) :: non_neg_integer()
+  def dragonology_atk_rate(%{dragonology_level: level}, :dragon) when level > 0, do: level * 4
+  def dragonology_atk_rate(_attacker, _defender_race), do: 0
+
+  @doc """
+  Dragonology percentage MATK bonus vs Dragon-race targets
+  (`indexed_bonus.magic_addrace[RC_DRAGON]`, `level * 2`,
+  `status.cpp:4682-4700`). Returns `0` when the attacker has no Dragonology
+  level or the target is not Dragon race.
+  """
+  @spec dragonology_matk_rate(map(), race()) :: non_neg_integer()
+  def dragonology_matk_rate(%{dragonology_level: level}, :dragon) when level > 0, do: level * 2
+  def dragonology_matk_rate(_attacker, _defender_race), do: 0
+
+  @doc """
+  Dragonology percentage damage-taken reduction from Dragon-race attackers
+  (`indexed_bonus.subrace[RC_DRAGON]`, `level * 4`, `status.cpp:4682-4700`).
+  rAthena's `subrace` cardfix (`battle_calc_damage`) is shared by the physical
+  and magic pipelines, so this rate applies uniformly to both. Returns `0`
+  when the defender has no Dragonology level or the attacker is not Dragon
+  race.
+  """
+  @spec dragonology_resist_rate(map(), race()) :: non_neg_integer()
+  def dragonology_resist_rate(%{dragonology_level: level}, :dragon) when level > 0,
+    do: level * 4
+
+  def dragonology_resist_rate(_defender, _attacker_race), do: 0
 
   @doc """
   Gets the default race for players.

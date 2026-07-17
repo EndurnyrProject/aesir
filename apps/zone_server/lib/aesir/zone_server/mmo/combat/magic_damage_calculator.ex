@@ -13,7 +13,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
      rolls this per target inside `battle_calc_magic_attack` (battle.cpp:5969),
      so each call rolls independently.
   2. Target-aware Renewal magic size and race cardfix, each applied and
-     truncated consecutively (`magic_addsize`, then `magic_addrace`).
+     truncated consecutively (`magic_addsize`, then `magic_addrace`; the race
+     term folds in Dragonology's precomputed `+2*lv%` vs Dragon race and
+     `-4*lv%` resist from a Dragon-race attacker, `status.cpp:4682-4700` —
+     both run inside rAthena's early `battle_calc_cardfix`, ahead of MDEF).
   3. S.MAtk: attacker's `smatk` combat stat added as a percentage of the
      rolled base MATK, before the skill ratio (`battle.cpp:6016`).
   4. Skill ratio + flat MATK bonus.
@@ -43,6 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
 
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
+  alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
 
   @typedoc """
@@ -103,7 +107,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
     # (battle.cpp:5969), so each call rolls its own MATK independently.
     base_matk = roll_matk(attacker.combat_stats)
     modifiers = combatant_modifiers(attacker)
-    base_matk = apply_target_modifiers(base_matk, modifiers, defender)
+    base_matk = apply_target_modifiers(base_matk, modifiers, attacker, defender)
     smatk = Map.get(attacker.combat_stats, :smatk, 0)
     base_matk = base_matk + div(base_matk * smatk, 100)
     # :matk_rate is an additive percent delta on magic damage (SC_INCMATKRATE,
@@ -128,16 +132,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
   # Renewal cardfix applies target-size then target-race magic bonuses as
   # separate integer stages before S.MAtk and the skill ratio (rAthena
   # battle.cpp:807-828, 6008-6020). Tuple keys keep the modifier values numeric,
-  # so the existing ModifierCalculator can sum them.
-  @spec apply_target_modifiers(integer(), map(), map()) :: integer()
-  defp apply_target_modifiers(damage, modifiers, defender) do
+  # so the existing ModifierCalculator can sum them. Dragonology's percentage
+  # MATK bonus (attacker, `status.cpp:4682-4700`) and its percentage
+  # damage-taken resistance (defender, same block) both fold into this same
+  # race cardfix term, net of each other, since rAthena runs both inside the
+  # same early `battle_calc_cardfix` — well before the MDEF formula's
+  # subtractive `- soft` term, which does not commute with a later percentage
+  # multiply.
+  @spec apply_target_modifiers(integer(), map(), map(), map()) :: integer()
+  defp apply_target_modifiers(damage, modifiers, attacker, defender) do
     size_bonus =
       Map.get(modifiers, {:magic_addsize, Map.get(defender, :size)}, 0) +
         Map.get(modifiers, {:magic_addsize, :all}, 0)
 
     race_bonus =
       Map.get(modifiers, {:magic_addrace, Map.get(defender, :race)}, 0) +
-        Map.get(modifiers, {:magic_addrace, :all}, 0)
+        Map.get(modifiers, {:magic_addrace, :all}, 0) +
+        RaceModifiers.dragonology_matk_rate(attacker, Map.get(defender, :race)) -
+        RaceModifiers.dragonology_resist_rate(defender, Map.get(attacker, :race))
 
     damage
     |> apply_cardfix(size_bonus)

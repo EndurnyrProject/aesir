@@ -68,4 +68,52 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiersTest do
       assert RaceModifiers.divine_protection_def(defender, :undead) == 27
     end
   end
+
+  describe "dragonology_atk_rate/2" do
+    test "is level * 4 vs Dragon race" do
+      attacker = %{dragonology_level: 5}
+      assert RaceModifiers.dragonology_atk_rate(attacker, :dragon) == 20
+      assert RaceModifiers.dragonology_atk_rate(%{dragonology_level: 1}, :dragon) == 4
+    end
+
+    test "is zero vs non-Dragon races" do
+      attacker = %{dragonology_level: 5}
+      assert RaceModifiers.dragonology_atk_rate(attacker, :brute) == 0
+      assert RaceModifiers.dragonology_atk_rate(attacker, :demi_human) == 0
+    end
+
+    test "is zero when the attacker has no Dragonology level" do
+      assert RaceModifiers.dragonology_atk_rate(%{dragonology_level: 0}, :dragon) == 0
+    end
+  end
+
+  describe "dragonology_matk_rate/2" do
+    test "is level * 2 vs Dragon race" do
+      assert RaceModifiers.dragonology_matk_rate(%{dragonology_level: 5}, :dragon) == 10
+      assert RaceModifiers.dragonology_matk_rate(%{dragonology_level: 1}, :dragon) == 2
+    end
+
+    test "is zero vs non-Dragon races" do
+      assert RaceModifiers.dragonology_matk_rate(%{dragonology_level: 5}, :brute) == 0
+    end
+
+    test "is zero when the attacker has no Dragonology level" do
+      assert RaceModifiers.dragonology_matk_rate(%{dragonology_level: 0}, :dragon) == 0
+    end
+  end
+
+  describe "dragonology_resist_rate/2" do
+    test "is level * 4 vs a Dragon-race attacker" do
+      assert RaceModifiers.dragonology_resist_rate(%{dragonology_level: 5}, :dragon) == 20
+      assert RaceModifiers.dragonology_resist_rate(%{dragonology_level: 1}, :dragon) == 4
+    end
+
+    test "is zero vs a non-Dragon attacker" do
+      assert RaceModifiers.dragonology_resist_rate(%{dragonology_level: 5}, :brute) == 0
+    end
+
+    test "is zero when the defender has no Dragonology level" do
+      assert RaceModifiers.dragonology_resist_rate(%{dragonology_level: 0}, :dragon) == 0
+    end
+  end
 end

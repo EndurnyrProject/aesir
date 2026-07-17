@@ -761,6 +761,67 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
   end
 
+  describe "Dragonology physical race modifier (vs Dragon race)" do
+    setup do
+      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+      :ok
+    end
+
+    test "raises physical damage vs a Dragon-race mob by 4*lv percent, levels 1 and 5" do
+      dragon = CombatTestHelper.create_mob_combatant(race: :dragon)
+      attacker_lv0 = %{CombatTestHelper.create_player_combatant() | dragonology_level: 0}
+      attacker_lv1 = %{CombatTestHelper.create_player_combatant() | dragonology_level: 1}
+      attacker_lv5 = %{CombatTestHelper.create_player_combatant() | dragonology_level: 5}
+
+      {:ok, base} = DamageCalculator.apply_modifier_pipeline(1000, attacker_lv0, dragon)
+      {:ok, lv1} = DamageCalculator.apply_modifier_pipeline(1000, attacker_lv1, dragon)
+      {:ok, lv5} = DamageCalculator.apply_modifier_pipeline(1000, attacker_lv5, dragon)
+
+      assert lv1 == base * 1.04
+      assert lv5 == base * 1.20
+    end
+
+    test "leaves physical damage unchanged vs a non-Dragon mob" do
+      brute = CombatTestHelper.create_mob_combatant(race: :brute)
+      attacker = %{CombatTestHelper.create_player_combatant() | dragonology_level: 5}
+      no_skill = %{attacker | dragonology_level: 0}
+
+      {:ok, with_skill_dmg} = DamageCalculator.apply_modifier_pipeline(1000, attacker, brute)
+      {:ok, without_skill_dmg} = DamageCalculator.apply_modifier_pipeline(1000, no_skill, brute)
+
+      assert with_skill_dmg == without_skill_dmg
+    end
+
+    test "reduces physical damage taken from a Dragon-race attacker by 4*lv percent" do
+      dragon_attacker = CombatTestHelper.create_mob_combatant(race: :dragon)
+      defender_lv0 = %{CombatTestHelper.create_player_combatant() | dragonology_level: 0}
+      defender_lv5 = %{CombatTestHelper.create_player_combatant() | dragonology_level: 5}
+
+      {:ok, base} = DamageCalculator.apply_modifier_pipeline(1000, dragon_attacker, defender_lv0)
+
+      {:ok, resisted} =
+        DamageCalculator.apply_modifier_pipeline(1000, dragon_attacker, defender_lv5)
+
+      assert resisted == base * 0.80
+    end
+
+    test "leaves physical damage unchanged from a non-Dragon attacker" do
+      brute_attacker = CombatTestHelper.create_mob_combatant(race: :brute)
+      defender = %{CombatTestHelper.create_player_combatant() | dragonology_level: 5}
+      no_skill = %{defender | dragonology_level: 0}
+
+      {:ok, with_skill_dmg} =
+        DamageCalculator.apply_modifier_pipeline(1000, brute_attacker, defender)
+
+      {:ok, without_skill_dmg} =
+        DamageCalculator.apply_modifier_pipeline(1000, brute_attacker, no_skill)
+
+      assert with_skill_dmg == without_skill_dmg
+    end
+  end
+
   describe "Divine Protection / Demon Bane do not affect magic" do
     test "magic damage is identical regardless of DP / Demon Bane levels" do
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
