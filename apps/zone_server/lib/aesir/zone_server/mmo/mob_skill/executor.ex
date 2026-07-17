@@ -11,12 +11,14 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
 
   Packet ownership: the combat primitives the archetypes call (e.g.
   `Combat.execute_magic_damage/4`) broadcast their own `SkillDamage` packets, so
-  this module broadcasts only the `SkillCasting` cast bar via
-  `broadcast_casting/2`.
+  this module broadcasts only the mob cast bar — `SkillCasting` via
+  `broadcast_casting/2` and its `CastCancel` counterpart via
+  `broadcast_cast_cancel/1`.
   """
 
   require Logger
 
+  alias Aesir.Net.CastCancel
   alias Aesir.Net.SkillCasting
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
@@ -119,6 +121,21 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
       property: property(row.skill),
       cast_time: row.cast_time
     }
+
+    Broadcast.to_in_range(state.map_name, state.x, state.y, Config.view_range(), packet)
+  end
+
+  @doc """
+  Broadcasts the `CastCancel` that clears the cast bar `broadcast_casting/2` put up.
+
+  Every mob cast abort routes here (silence/stun interrupts and the forced
+  `MobSession.interrupt_cast/1`), so an aborted cast never leaves the bar
+  running on the client. Unlike the player cancel there is no separate
+  self-directed send: a mob has no session of its own to notify.
+  """
+  @spec broadcast_cast_cancel(MobState.t()) :: :ok
+  def broadcast_cast_cancel(%MobState{} = state) do
+    packet = %CastCancel{gid: state.instance_id}
 
     Broadcast.to_in_range(state.map_name, state.x, state.y, Config.view_range(), packet)
   end

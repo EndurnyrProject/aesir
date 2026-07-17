@@ -117,6 +117,28 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   @doc """
+  Force-cancels this mob's in-flight cast and reports what was cancelled.
+
+  Unconditional: it ignores the row's `cancelable` flag, mirroring rAthena's
+  forced `unit_skillcastcancel(target, 0)` (`spellbreaker.cpp:47`), so no
+  interruptibility model is needed. Returns the interrupted skill's identity so
+  the caller can bill the cast synchronously (SA_SPELLBREAKER's SP math).
+
+  Running in the mob's own process serializes it against that mob's pending
+  `:cast_complete`: a cast that completed first has already cleared `casting`,
+  so this reports `{:error, :not_casting}` rather than billing a cast that
+  already fired. A dead mob is likewise never casting as far as callers are
+  concerned (its process outlives death briefly, and `handle_death/2` leaves the
+  descriptor intact).
+  """
+  @spec interrupt_cast(pid()) ::
+          {:ok, %{skill: String.t(), skill_id: integer(), level: pos_integer()}}
+          | {:error, :not_casting}
+  def interrupt_cast(pid) do
+    GenServer.call(pid, :interrupt_cast)
+  end
+
+  @doc """
   Suspends the mob's AI loop while its map has no players.
 
   The mob keeps its full state (HP, aggro history, position) but stops ticking,
@@ -190,6 +212,23 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   @impl GenServer
   def handle_call(:get_state, _from, state) do
     {:reply, state, state}
+  end
+
+  @impl GenServer
+  def handle_call(:interrupt_cast, _from, %{is_dead: true} = state) do
+    # A dying mob keeps its cast descriptor (handle_death/2 does not clear it)
+    # and its process lingers until :terminate, so guard the same way
+    # :cast_complete does rather than let a corpse report a live cast.
+    {:reply, {:error, :not_casting}, state}
+  end
+
+  def handle_call(:interrupt_cast, _from, %{casting: nil} = state) do
+    {:reply, {:error, :not_casting}, state}
+  end
+
+  def handle_call(:interrupt_cast, _from, %{casting: %{row: row}} = state) do
+    identity = %{skill: row.skill, skill_id: row.skill_id, level: row.level}
+    {:reply, {:ok, identity}, abort_cast(state)}
   end
 
   @impl GenServer
@@ -654,14 +693,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   # Aborts an in-flight cast cleanly: cancels the pending :cast_complete timer so
-  # a stale one cannot fire against a later cast, writes the skill's delay
-  # cooldown (mirroring the target-invalidation abort so there is no instant
-  # re-roll), and clears the cast descriptor. No damage/effect/packet fires.
+  # a stale one cannot fire against a later cast, tears down the client's cast
+  # bar, writes the skill's delay cooldown (mirroring the target-invalidation
+  # abort so there is no instant re-roll), and clears the cast descriptor. No
+  # damage or effect fires. Every abort path (silence/stun and the forced
+  # interrupt_cast/1) funnels through here, so the CastCancel is unconditional.
   defp abort_cast(%{casting: %{row: row} = casting} = state) do
     case Map.get(casting, :timer_ref) do
       nil -> :ok
       ref -> Process.cancel_timer(ref)
     end
+
+    MobSkillExecutor.broadcast_cast_cancel(state)
 
     now = System.system_time(:millisecond)
 
