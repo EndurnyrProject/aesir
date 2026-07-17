@@ -302,6 +302,42 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
     end
   end
 
+  describe "zap_sp/2" do
+    test "drains the requested SP" do
+      state = build_mob_state(%{sp: 50, max_sp: 100})
+
+      {:noreply, updated} = MobSession.handle_cast({:zap_sp, 20}, state)
+
+      assert updated.sp == 30
+    end
+
+    test "clamps the drain at 0 rather than going negative" do
+      state = build_mob_state(%{sp: 5, max_sp: 100})
+
+      {:noreply, updated} = MobSession.handle_cast({:zap_sp, 20}, state)
+
+      assert updated.sp == 0
+    end
+
+    test "a dead mob is left untouched" do
+      # The zap lands as a cast after the interrupt's reply, so the mob can die
+      # in between; a corpse must not be billed.
+      state = build_mob_state(%{sp: 50, max_sp: 100, is_dead: true})
+
+      {:noreply, updated} = MobSession.handle_cast({:zap_sp, 20}, state)
+
+      assert updated.sp == 50
+    end
+
+    test "a zero drain is a no-op" do
+      state = build_mob_state(%{sp: 50, max_sp: 100})
+
+      {:noreply, updated} = MobSession.handle_cast({:zap_sp, 0}, state)
+
+      assert updated.sp == 50
+    end
+  end
+
   describe "interrupt_cast/1 against a live mob process" do
     # The mailbox ordering these assert can only be observed through a real
     # process. The mob is dormant so no AI tick can re-select mid-test, and its

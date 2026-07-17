@@ -69,6 +69,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   @doc """
+  Drains `amount` SP from the mob, clamped at 0.
+
+  Mobs spend no SP to cast; their SP pool exists only so drains
+  (`SA_SPELLBREAKER`) have something real to take. A dead mob is skipped, like
+  `apply_damage/3`.
+  """
+  @spec zap_sp(pid(), non_neg_integer()) :: :ok
+  def zap_sp(pid, amount) do
+    GenServer.cast(pid, {:zap_sp, amount})
+  end
+
+  @doc """
   Gets the current mob state.
   """
   @spec get_state(pid()) :: MobState.t()
@@ -287,6 +299,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     now = System.monotonic_time(:millisecond)
     {:noreply, state |> MobState.apply_walk_delay(duration, now) |> MobState.stop_movement()}
   end
+
+  def handle_cast({:zap_sp, _amount}, %{is_dead: true} = state), do: {:noreply, state}
+
+  def handle_cast({:zap_sp, amount}, state) when amount > 0 do
+    {:noreply, %{state | sp: max(0, state.sp - amount)}}
+  end
+
+  def handle_cast({:zap_sp, _amount}, state), do: {:noreply, state}
 
   @impl GenServer
   def handle_cast({:heal, amount}, state) do
