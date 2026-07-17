@@ -1,146 +1,38 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects do
   @moduledoc """
-  Registry of status effect implementations.
+  Discovery of status effect implementations.
 
-  Each entry is a module implementing `Aesir.ZoneServer.Mmo.StatusEffect.Definition`.
   New status effects are added by creating a module under
-  `Aesir.ZoneServer.Mmo.StatusEffect.Effects` and listing it here.
+  `Aesir.ZoneServer.Mmo.StatusEffect.Effects` that uses
+  `Aesir.ZoneServer.Mmo.StatusEffect.Definition`. There is no registration
+  step — the module is found on its own.
   """
 
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
 
-  @modules [
-    Effects.AddAtkDamage,
-    Effects.AddMatkDamage,
-    Effects.AgiFood,
-    Effects.Almighty,
-    Effects.Angelus,
-    Effects.ArcaneCharge,
-    Effects.Aspersio,
-    Effects.AspdPotion0,
-    Effects.AspdPotion1,
-    Effects.AspdPotion2,
-    Effects.AspdPotion3,
-    Effects.AtkPotion,
-    Effects.AtthasteCash,
-    Effects.Autoberserk,
-    Effects.BatkFood,
-    Effects.BeefRibStew,
-    Effects.Benedictio,
-    Effects.Bleeding,
-    Effects.Blessing,
-    Effects.Blind,
-    Effects.Boost500,
-    Effects.Cloaking,
-    Effects.CocktailWargBlood,
-    Effects.CombatPill,
-    Effects.CombatPill2,
-    Effects.Concentrate,
-    Effects.Confusion,
-    Effects.CriFood,
-    Effects.CupOfBoza,
-    Effects.Curse,
-    Effects.DeadlyPoison,
-    Effects.DecreaseAgi,
-    Effects.DefRate,
-    Effects.DexFood,
-    Effects.DroceraHerbSteamed,
-    Effects.EnchantPoison,
-    Effects.Endure,
-    Effects.EnergyCoat,
-    Effects.ExpBoost,
-    Effects.ExtractSalamineJuice,
-    Effects.ExtractWhitePotionZ,
-    Effects.FleeFood,
-    Effects.FoodAgiCash,
-    Effects.FoodDexCash,
-    Effects.FoodIntCash,
-    Effects.FoodLukCash,
-    Effects.FoodStrCash,
-    Effects.FoodVitCash,
-    Effects.Freeze,
-    Effects.FullSwingK,
-    Effects.Gloria,
-    Effects.Hiding,
-    Effects.HitFood,
-    Effects.Impositio,
-    Effects.IncAllStatus,
-    Effects.IncAtkRate,
-    Effects.IncCri,
-    Effects.IncDex,
-    Effects.IncFlee2,
-    Effects.IncHealRate,
-    Effects.IncInt,
-    Effects.IncLuk,
-    Effects.IncMatkRate,
-    Effects.IncStr,
-    Effects.IncreaseAgi,
-    Effects.IncreaseMaxSp,
-    Effects.InfinityDrink,
-    Effects.IntFood,
-    Effects.IntScroll,
-    Effects.ItemBoost,
-    Effects.JexpBoost,
-    Effects.Kyrie,
-    Effects.LexAeterna,
-    Effects.LifeForceF,
-    Effects.LifeInsurance,
-    Effects.Loud,
-    Effects.LukFood,
-    Effects.MagicCandy,
-    Effects.Magnificat,
-    Effects.ManaPlus,
-    Effects.MatkFood,
-    Effects.MatkPotion,
-    Effects.MdefRate,
-    Effects.MentalPotion,
-    Effects.MinorBbq,
-    Effects.MustleM,
-    Effects.Mysticpowder,
-    Effects.Pneuma,
-    Effects.PoemBragi,
-    Effects.Poison,
-    Effects.PoisonReact,
-    Effects.PorkRibStew,
-    Effects.Provoke,
-    Effects.PushCart,
-    Effects.PuttiTailsNoodles,
-    Effects.Quagmire,
-    Effects.Ruwach,
-    Effects.Rwc2011Scroll,
-    Effects.Safetywall,
-    Effects.SavageSteak,
-    Effects.Sightblaster,
-    Effects.SignumCrucis,
-    Effects.Sight,
-    Effects.Silence,
-    Effects.SiromaIceTea,
-    Effects.SkfAspd,
-    Effects.SkfCast,
-    Effects.Sleep,
-    Effects.Slowdown,
-    Effects.SlowPoison,
-    Effects.SparkCandy,
-    Effects.SpcostRate,
-    Effects.Speedup0,
-    Effects.Speedup1,
-    Effects.Stone,
-    Effects.StrFood,
-    Effects.StrScroll,
-    Effects.Stun,
-    Effects.Suffragium,
-    Effects.TrickDead,
-    Effects.TwoHandQuicken,
-    Effects.UltimateCook,
-    Effects.VitFood,
-    Effects.VitalizePotion,
-    Effects.WatkElement,
-    Effects.WatkFood
-  ]
+  @namespace "Elixir.Aesir.ZoneServer.Mmo.StatusEffect.Effects."
 
   @doc """
   Returns all status effect implementations.
+
+  Candidates come from the `:zone_server` application manifest rather than the
+  code server, so modules compiled from test files are structurally excluded
+  and their ids cannot collide with real ones.
+
+  The order follows the manifest and is not guaranteed stable; no caller
+  depends on it, as status ids are unique and every consumer either iterates or
+  keys by id.
   """
   @spec all() :: [module()]
-  def all, do: @modules
+  def all do
+    {:ok, modules} = :application.get_key(:zone_server, :modules)
+
+    Enum.filter(modules, &effect_module?/1)
+  end
+
+  defp effect_module?(module) do
+    String.starts_with?(Atom.to_string(module), @namespace) and
+      Code.ensure_loaded?(module) and
+      Definition in List.wrap(module.__info__(:attributes)[:behaviour])
+  end
 end
