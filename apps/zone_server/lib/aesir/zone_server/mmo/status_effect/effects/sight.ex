@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sight do
     no_save: true,
     option: :sight
 
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
@@ -25,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sight do
       {:ok, {x, y, map_name}} ->
         map_name
         |> SpatialIndex.get_all_units_in_range(x, y, @reveal_radius)
+        |> Enum.filter(&CombatTarget.combat_unit?/1)
         |> Enum.each(&reveal/1)
 
       {:error, :not_found} ->

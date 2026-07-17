@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Ruwach do
     option: :ruwach
 
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
@@ -60,6 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Ruwach do
   defp reveal_concealed(map_name, x, y, caster) do
     map_name
     |> SpatialIndex.get_all_units_in_range(x, y, @radius)
+    |> Enum.filter(&CombatTarget.combat_unit?/1)
     |> Enum.reject(&(&1 == caster))
     |> Enum.each(&Helpers.remove_statuses(&1, @hidden_statuses))
   end

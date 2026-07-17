@@ -23,7 +23,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Id, as: SkillUnitId
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -95,8 +94,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
           {:ok, :player | :mob | :skill_unit, {integer(), integer(), String.t()}}
           | {:error, :target_not_found}
   def resolve_target_position(target_id) do
-    if SkillUnitId.skill_unit?(target_id) do
-      resolve_skill_unit_position(target_id)
+    if CombatTarget.target?(target_id) do
+      CombatTarget.resolve_position(target_id)
     else
       resolve_standard_target_position(target_id)
     end
@@ -113,17 +112,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     case SpatialIndex.get_unit_position(:mob, target_id) do
       {:ok, position} -> {:ok, :mob, position}
       {:error, :not_found} -> {:error, :target_not_found}
-    end
-  end
-
-  defp resolve_skill_unit_position(target_id) do
-    with {:ok, {_module, _cell, manager_pid}} when is_pid(manager_pid) <-
-           UnitRegistry.get_unit(:skill_unit, target_id),
-         {:ok, _cell} <- SkillUnitManager.targetable_cell(manager_pid, target_id),
-         {:ok, position} <- SpatialIndex.get_unit_position(:skill_unit, target_id) do
-      {:ok, :skill_unit, position}
-    else
-      _ -> {:error, :target_not_found}
     end
   end
 
@@ -1084,13 +1072,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     map_name
     |> SpatialIndex.get_all_units_in_range(cx, cy, radius * 2)
     |> Enum.filter(fn target_ref ->
-      target_ref != {caster.unit_type, caster.unit_id} and
+      CombatTarget.combat_unit?(target_ref) and
+        target_ref != {caster.unit_type, caster.unit_id} and
         offensive_target_in_square?(caster, target_ref, cx, cy, radius)
     end)
   end
-
-  defp offensive_target_in_square?(_caster, {:skill_unit, _target_id}, _cx, _cy, _radius),
-    do: false
 
   defp offensive_target_in_square?(caster, {unit_type, target_id}, cx, cy, radius) do
     case get_target_unit_state(unit_type, target_id) do
@@ -1362,11 +1348,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   # New function that returns actual unit states instead of maps
   defp get_target_unit_state(:mob, target_id), do: get_mob_unit_state(target_id)
   defp get_target_unit_state(:player, target_id), do: get_player_unit_state(target_id)
-  defp get_target_unit_state(:skill_unit, target_id), do: get_skill_unit_state(target_id)
+  defp get_target_unit_state(:skill_unit, target_id), do: CombatTarget.resolve(target_id)
 
   defp get_target_unit_state(target_id) do
-    if SkillUnitId.skill_unit?(target_id) do
-      get_skill_unit_state(target_id)
+    if CombatTarget.target?(target_id) do
+      CombatTarget.resolve(target_id)
     else
       case get_player_unit_state(target_id) do
         {:ok, pid, player_state, :player} ->
@@ -1382,16 +1368,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     case get_mob_unit_state(target_id) do
       {:error, :not_found} -> {:error, :target_not_found}
       result -> result
-    end
-  end
-
-  defp get_skill_unit_state(target_id) do
-    with {:ok, {CombatTarget, _cell, manager_pid}} when is_pid(manager_pid) <-
-           UnitRegistry.get_unit(:skill_unit, target_id),
-         {:ok, cell} <- SkillUnitManager.targetable_cell(manager_pid, target_id) do
-      {:ok, manager_pid, cell, :skill_unit}
-    else
-      _ -> {:error, :target_not_found}
     end
   end
 

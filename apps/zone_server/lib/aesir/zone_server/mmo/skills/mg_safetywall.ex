@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.MgSafetywall do
     item_cost: [%{id: 717, amount: 1}]
 
   alias Aesir.ZoneServer.Mmo.Skill.Ground
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -65,7 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.MgSafetywall do
     # spending the wall's shared budget instead of re-granting it each tick.
     map_name
     |> SpatialIndex.get_all_units_in_range(cx, cy, 0)
-    |> Enum.filter(fn {unit_type, _unit_id} -> unit_type in [:player, :mob] end)
+    |> Enum.filter(&CombatTarget.combat_unit?/1)
     |> Enum.reject(fn {unit_type, unit_id} ->
       StatusStorage.has_status?(unit_type, unit_id, :sc_safetywall)
     end)
