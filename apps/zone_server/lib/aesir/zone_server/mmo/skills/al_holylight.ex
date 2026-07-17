@@ -38,7 +38,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHolylight do
       skill_level: level,
       skill_ratio: 125,
       hit_count: 1,
-      element: definition.element
+      element: definition.element,
+      skip_range: true
     ]
 
     case Combat.execute_magic_attack(caster, target_id, opts) do

@@ -35,7 +35,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.MgFrostdiver do
       skill_level: level,
       skill_ratio: 100 + 10 * level,
       hit_count: 1,
-      element: definition.element
+      element: definition.element,
+      skip_range: true
     ]
 
     case Combat.execute_magic_attack(caster, target_id, opts) do

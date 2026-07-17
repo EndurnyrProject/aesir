@@ -77,7 +77,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHeal do
         case Combat.execute_magic_damage(caster, target_id, heal_value,
                skill_id: 28,
                skill_level: level,
-               element: :holy
+               element: :holy,
+               skip_range: true
              ) do
           :ok -> {:ok, caster}
           {:error, _} = error -> error

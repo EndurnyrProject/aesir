@@ -35,7 +35,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.MgSoulstrike do
       skill_level: level,
       skill_ratio: skill_ratio(target_id, level),
       hit_count: div(level + 1, 2),
-      element: definition.element
+      element: definition.element,
+      skip_range: true
     ]
 
     case Combat.execute_magic_attack(caster, target_id, opts) do

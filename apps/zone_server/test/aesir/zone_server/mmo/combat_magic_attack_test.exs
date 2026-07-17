@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.Skills.MgFirebolt
   alias Aesir.ZoneServer.Mmo.Skills.WzEarthspike
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -433,6 +434,60 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
                  element: :earth,
                  hit_count: 1
                )
+    end
+
+    test "Fire Bolt lands on a target inside skill range but beyond weapon range" do
+      caster = build_caster()
+      test_pid = self()
+      stub_single_target_mob(155, 150)
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _a, _t, opts ->
+        assert opts[:element] == :fire
+        {:ok, %{damage: 30, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn @map_name, 155, 150, _range, %SkillDamage{} = packet ->
+        send(test_pid, {:packet, packet})
+        :ok
+      end)
+
+      stub(MobSession, :apply_damage, fn _pid, damage, @caster_id ->
+        send(test_pid, {:damage, damage})
+        :ok
+      end)
+
+      assert {:ok, ^caster} =
+               MgFirebolt.cast(caster, {:unit, @target_id}, 1, MgFirebolt.definition())
+
+      assert_received {:packet, %SkillDamage{skill_id: 19, damage: 30}}
+      assert_received {:damage, 30}
+    end
+
+    test "explicit magic damage honors :skip_range for an interpreter-validated cast" do
+      caster = build_caster()
+      test_pid = self()
+      stub_single_target_mob(155, 150)
+
+      stub(Broadcast, :to_in_range, fn @map_name, 155, 150, _range, %SkillDamage{} = packet ->
+        send(test_pid, {:packet, packet})
+        :ok
+      end)
+
+      stub(MobSession, :apply_damage, fn _pid, damage, @caster_id ->
+        send(test_pid, {:damage, damage})
+        :ok
+      end)
+
+      assert :ok =
+               Combat.execute_magic_damage(caster, @target_id, 100,
+                 skill_id: 28,
+                 skill_level: 1,
+                 element: :holy,
+                 skip_range: true
+               )
+
+      assert_received {:packet, %SkillDamage{skill_id: 28}}
+      assert_received {:damage, _}
     end
 
     test "returns an error when the target is out of range" do

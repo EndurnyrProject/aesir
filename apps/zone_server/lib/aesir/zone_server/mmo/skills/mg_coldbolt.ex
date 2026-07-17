@@ -33,7 +33,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.MgColdbolt do
       skill_level: level,
       skill_ratio: 100,
       hit_count: level,
-      element: definition.element
+      element: definition.element,
+      skip_range: true
     ]
 
     case Combat.execute_magic_attack(caster, target_id, opts) do

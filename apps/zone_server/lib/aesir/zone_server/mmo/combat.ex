@@ -432,6 +432,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     - `:skill_id` / `:skill_level` — identify the skill for the damage packet (required).
     - `:element` — attack element applied against the target's element resistance
       (default `:neutral`).
+    - `:skip_range` — skip only the distance check (which gates on the caster's
+      *weapon* attack range) for a cast whose skill range the interpreter already
+      validated; map, life, and enemy-relation checks still run (default `false`).
 
   ## Returns
 
@@ -449,7 +452,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
          :ok <- ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
-         :ok <- validate_attack_with_combatants(attacker, target),
+         :ok <- validate_attack_with_combatants(attacker, target, opts),
          :ok <- Targeting.validate_enemy(attacker, target) do
       damage =
         amount
@@ -675,8 +678,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     - `:skill_ratio` - percent of base MATK each hit deals (default `100`)
     - `:element` - the skill's magic element (default `:neutral`)
     - `:hit_count` - number of magic hits to deliver (default `1`)
-    - `:skip_range` - skip only the distance check for a previously validated,
-      delayed impact; map, life, and enemy-relation checks still run (default `false`)
+    - `:skip_range` - skip only the distance check, which gates on the caster's
+      *weapon* attack range. Direct nukes must pass it: their skill range is
+      validated by the interpreter at cast start and castend, and the weapon-range
+      gate would fizzle any cast beyond melee reach. Map, life, and enemy-relation
+      checks still run (default `false`)
 
   ## Returns
     - :ok if the skill connected
