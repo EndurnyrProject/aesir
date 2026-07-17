@@ -1141,17 +1141,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       {:ok, spec} ->
         occupants = occupants(group, spec)
 
-        if occupants != cached_occupants(group) or
-             not field_support_current?(group, spec, occupants) do
+        if not field_support_current?(group, spec, occupants) do
           acquire_occupants(group, spec, occupants)
           release_missing(group, spec, occupants)
-
-          group = %{group | state: Map.put(group.state, :field_support_occupants, occupants)}
-          Storage.update(group)
-          group
-        else
-          group
         end
+
+        group
 
       :error ->
         group
@@ -1168,9 +1163,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp combat_unit?({unit_type, _unit_id}), do: unit_type in [:player, :mob]
-
-  defp cached_occupants(%Group{state: state}),
-    do: Map.get(state, :field_support_occupants, MapSet.new())
 
   defp field_support_current?(group, spec, occupants) do
     expected = MapSet.new(occupants, &{elem(&1, 0), elem(&1, 1), spec.status_type})
@@ -1231,39 +1223,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
     Enum.each(current_groups, fn group ->
       apply_field_support_action(group, {unit_type, unit_id}, :on_touch)
-
-      update_cached_occupant(
-        group.group_id,
-        {unit_type, unit_id},
-        MapSet.member?(current_ids, group.group_id)
-      )
     end)
 
     FieldSupport.sources_for_unit(unit_type, unit_id)
     |> Enum.each(fn {_, _, status_type, group_id, _params} ->
       if not MapSet.member?(current_ids, group_id) do
         FieldSupport.release(unit_type, unit_id, status_type, group_id)
-        update_cached_occupant(group_id, {unit_type, unit_id}, false)
       end
     end)
-  end
-
-  defp update_cached_occupant(group_id, occupant, present?) do
-    case Storage.get(group_id) do
-      %Group{} = group ->
-        occupants =
-          if present?,
-            do: MapSet.put(cached_occupants(group), occupant),
-            else: MapSet.delete(cached_occupants(group), occupant)
-
-        Storage.update(%{
-          group
-          | state: Map.put(group.state, :field_support_occupants, occupants)
-        })
-
-      nil ->
-        :ok
-    end
   end
 
   defp field_support_spec(%Group{} = group) do

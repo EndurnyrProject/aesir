@@ -205,17 +205,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzQuagmireTest do
 
     test "skips field support acquisition when interval occupants are unchanged" do
       test_pid = self()
+      {:ok, sources} = Agent.start_link(fn -> [] end)
       Mimic.copy(FieldSupport)
       stub(Catalog, :ground_module_for, fn :wz_quagmire -> {:ok, WzQuagmire} end)
       stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 10, 20, 0 -> [{:mob, 200}] end)
       stub_unit_registry(%{{:player, 100} => player(100), {:mob, 200} => mob(200)})
 
-      stub(FieldSupport, :acquire, fn _type, _id, _status, _group_id, _params ->
+      stub(FieldSupport, :acquire, fn type, id, status, _group_id, params ->
+        Agent.update(sources, &[{type, id, status, params} | &1])
         send(test_pid, :acquire)
+        :ok
       end)
 
       stub(FieldSupport, :sources_for_group, fn _group_id ->
-        [{:mob, 200, :sc_quagmire, [level: 1, val1: 1, val2: 10]}]
+        Agent.get(sources, & &1)
       end)
 
       manager = start_manager()

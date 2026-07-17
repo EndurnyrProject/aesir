@@ -154,7 +154,9 @@ defmodule Aesir.ZoneServer.EtsTable do
           :skill_unit_caster_index,
           :skill_unit_target_index,
           :skill_unit_group_cells_index,
-          :skill_unit_group_observers
+          :skill_unit_group_observers,
+          :field_support_unit_index,
+          :field_support_group_index
         ] do
       :ets.new(
         table_for(table, seed),

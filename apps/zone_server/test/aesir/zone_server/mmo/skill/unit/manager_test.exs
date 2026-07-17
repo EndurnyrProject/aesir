@@ -1266,10 +1266,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
     assert :ok = Manager.register(manager, original)
 
-    :ets.insert(
-      EtsTable.table_for(:field_supports),
-      {{:player, 99, :sc_quagmire, 1}, %{params: [], aggregate: nil}}
-    )
+    key = {:player, 99, :sc_quagmire, 1}
+    :ets.insert(EtsTable.table_for(:field_supports), {key, %{params: [], aggregate: nil}})
+    :ets.insert(EtsTable.table_for(:field_support_unit_index), {{:player, 99}, key})
+    :ets.insert(EtsTable.table_for(:field_support_group_index), {1, key})
 
     assert FieldSupport.sources_for_group(1) != []
     assert :ok = Manager.register(manager, replacement)

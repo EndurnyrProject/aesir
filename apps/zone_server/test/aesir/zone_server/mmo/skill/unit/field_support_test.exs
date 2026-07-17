@@ -9,7 +9,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -266,7 +265,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportTest do
     refute FieldSupport.supported?(:skill_unit, 500, :sc_quagmire)
   end
 
-  test "movement reconciliation updates cached field occupants while acquiring and releasing support" do
+  test "movement reconciliation acquires and releases support as a unit enters and leaves" do
     Mimic.copy(Catalog)
     stub(Catalog, :ground_module_for, fn :stationary_field -> {:ok, StationaryField} end)
 
@@ -305,13 +304,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportTest do
     assert :ok = SpatialIndex.add_unit(:player, 11, 5, 5, "prontera")
     assert :ok = Manager.reconcile_unit(manager, {:player, 11})
     assert FieldSupport.supported?(:player, 11, :sc_quagmire)
-    assert Storage.get(100).state.field_support_occupants == MapSet.new([{:player, 11}])
+
+    assert FieldSupport.sources_for_group(100) == [
+             {:player, 11, :sc_quagmire, [level: 2, val2: 10]}
+           ]
 
     assert :ok = SpatialIndex.remove_unit(:player, 11)
     assert :ok = SpatialIndex.add_unit(:player, 11, 8, 8, "prontera")
     assert :ok = Manager.reconcile_unit(manager, {:player, 11})
     refute FieldSupport.supported?(:player, 11, :sc_quagmire)
-    assert Storage.get(100).state.field_support_occupants == MapSet.new()
+    assert FieldSupport.sources_for_group(100) == []
   end
 end
 

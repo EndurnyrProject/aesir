@@ -34,7 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport do
         end
 
       _ ->
-        :ets.insert(table_for(:field_supports), {key, %{params: params, aggregate: aggregate}})
+        put_row(key, %{params: params, aggregate: aggregate})
         reconcile(unit_type, unit_id, status_type, opts)
     end
   end
@@ -42,22 +42,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport do
   @doc "Releases one source contribution and recalculates the effective status."
   @spec release(atom(), integer(), atom(), integer(), keyword()) :: :ok | {:error, atom()}
   def release(unit_type, unit_id, status_type, source_group_id, opts \\ []) do
-    :ets.delete(table_for(:field_supports), {unit_type, unit_id, status_type, source_group_id})
+    delete_row({unit_type, unit_id, status_type, source_group_id})
     reconcile(unit_type, unit_id, status_type, opts)
   end
 
   @doc "Releases all contributions owned by a field group."
   @spec release_group(integer(), keyword()) :: :ok
   def release_group(source_group_id, opts \\ []) do
-    rows =
-      :ets.match_object(table_for(:field_supports), {{:_, :_, :_, source_group_id}, :_})
+    keys = group_keys(source_group_id)
 
-    Enum.each(rows, fn {{unit_type, unit_id, status_type, ^source_group_id}, _row} ->
-      :ets.delete(table_for(:field_supports), {unit_type, unit_id, status_type, source_group_id})
-    end)
+    Enum.each(keys, &delete_row/1)
 
-    rows
-    |> Enum.map(fn {{unit_type, unit_id, status_type, _}, _} ->
+    keys
+    |> Enum.map(fn {unit_type, unit_id, status_type, _} ->
       {unit_type, unit_id, status_type}
     end)
     |> Enum.uniq()
@@ -89,15 +86,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport do
   @doc "Returns source rows for a unit/status pair."
   @spec sources(atom(), integer(), atom()) :: [params()]
   def sources(unit_type, unit_id, status_type) do
-    :ets.match_object(table_for(:field_supports), {{unit_type, unit_id, status_type, :_}, :_})
+    unit_type
+    |> unit_status_rows(unit_id, status_type)
     |> Enum.map(fn {_key, %{params: params}} -> params end)
   end
 
   @doc "Returns all support keys owned by a field group."
   @spec sources_for_group(integer()) :: [{atom(), integer(), atom(), params()}]
   def sources_for_group(source_group_id) do
-    :ets.match_object(table_for(:field_supports), {{:_, :_, :_, source_group_id}, :_})
-    |> Enum.map(fn {{unit_type, unit_id, status_type, ^source_group_id}, %{params: params}} ->
+    source_group_id
+    |> group_keys()
+    |> lookup_rows()
+    |> Enum.map(fn {{unit_type, unit_id, status_type, _}, %{params: params}} ->
       {unit_type, unit_id, status_type, params}
     end)
   end
@@ -105,7 +105,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport do
   @doc "Returns all support keys owned for a unit."
   @spec sources_for_unit(atom(), integer()) :: [{atom(), integer(), atom(), integer(), params()}]
   def sources_for_unit(unit_type, unit_id) do
-    :ets.match_object(table_for(:field_supports), {{unit_type, unit_id, :_, :_}, :_})
+    unit_type
+    |> unit_keys(unit_id)
+    |> lookup_rows()
     |> Enum.map(fn {{^unit_type, ^unit_id, status_type, source_group_id}, %{params: params}} ->
       {unit_type, unit_id, status_type, source_group_id, params}
     end)
@@ -114,8 +116,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport do
   @doc "Returns whether at least one source supports the status."
   @spec supported?(atom(), integer(), atom()) :: boolean()
   def supported?(unit_type, unit_id, status_type) do
-    :ets.match_object(table_for(:field_supports), {{unit_type, unit_id, status_type, :_}, :_}) !=
-      []
+    unit_status_rows(unit_type, unit_id, status_type) != []
   end
 
   @doc "Returns whether the materialized status is owned by this registry."
@@ -140,8 +141,53 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport do
   end
 
   defp stored_rows(unit_type, unit_id, status_type) do
-    :ets.match_object(table_for(:field_supports), {{unit_type, unit_id, status_type, :_}, :_})
+    unit_type
+    |> unit_status_rows(unit_id, status_type)
     |> Enum.map(fn {_key, row} -> row end)
+  end
+
+  defp put_row({unit_type, unit_id, _status_type, source_group_id} = key, row) do
+    :ets.insert(table_for(:field_supports), {key, row})
+    :ets.insert(table_for(:field_support_unit_index), {{unit_type, unit_id}, key})
+    :ets.insert(table_for(:field_support_group_index), {source_group_id, key})
+    :ok
+  end
+
+  defp delete_row({unit_type, unit_id, _status_type, source_group_id} = key) do
+    :ets.delete(table_for(:field_supports), key)
+    :ets.delete_object(table_for(:field_support_unit_index), {{unit_type, unit_id}, key})
+    :ets.delete_object(table_for(:field_support_group_index), {source_group_id, key})
+    :ok
+  end
+
+  defp unit_keys(unit_type, unit_id) do
+    table_for(:field_support_unit_index)
+    |> :ets.lookup({unit_type, unit_id})
+    |> Enum.map(fn {_identity, key} -> key end)
+  end
+
+  defp group_keys(source_group_id) do
+    table_for(:field_support_group_index)
+    |> :ets.lookup(source_group_id)
+    |> Enum.map(fn {_source_group_id, key} -> key end)
+  end
+
+  defp unit_status_rows(unit_type, unit_id, status_type) do
+    unit_type
+    |> unit_keys(unit_id)
+    |> Enum.filter(fn {_unit_type, _unit_id, key_status_type, _} ->
+      key_status_type == status_type
+    end)
+    |> lookup_rows()
+  end
+
+  defp lookup_rows(keys) do
+    Enum.flat_map(keys, fn key ->
+      case :ets.lookup(table_for(:field_supports), key) do
+        [{^key, row}] -> [{key, row}]
+        [] -> []
+      end
+    end)
   end
 
   defp aggregate_from_rows(rows) do

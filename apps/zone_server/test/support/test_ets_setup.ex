@@ -30,6 +30,8 @@ defmodule Aesir.TestEtsSetup do
           :skill_unit_caster_index,
           :skill_unit_target_index,
           :field_supports,
+          :field_support_unit_index,
+          :field_support_group_index,
           :dynamic_cell_contributions,
           :dynamic_cell_source_index,
           :dynamic_cell_coordinate_index
