@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
   """
 
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
 
   @typedoc "A single map cell occupied by a skill-unit footprint."
   @type cell :: {integer(), integer()}

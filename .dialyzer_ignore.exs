@@ -25,5 +25,13 @@
   # it does not exist at compile/analysis time. The call is guarded with
   # @compile {:no_warn_undefined, CompiledItemScripts}, which dialyzer does not honor.
   {"lib/aesir/zone_server/unit/player/handlers/item_handler.ex", :unknown_function},
-  {"lib/aesir/zone_server/script/dsl.ex", :unknown_function}
+  {"lib/aesir/zone_server/script/dsl.ex", :unknown_function},
+
+  # The equipment-break enemy wiring in `roll_equipment_breaks/4` is built but
+  # deliberately unreachable: `handle_player_attack_hit/7` stubs out player victims
+  # with `{:error, :pvp_not_implemented}`, so `target_type` is only ever
+  # `:mob | :skill_unit` and the `:player` clauses can never match. Both the clauses
+  # and this entry go away together when PvP removes that stub — see the NOTE in
+  # combat.ex.
+  {"lib/aesir/zone_server/mmo/combat.ex", :pattern_match}
 ]
