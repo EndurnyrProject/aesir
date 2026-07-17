@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
   describe "calculate_damage/2" do
     test "calculates basic player vs mob damage" do
-      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
       stub(RaceModifiers, :player_race, fn -> :human end)
@@ -50,7 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "calculates mob vs player damage" do
-      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
       stub(RaceModifiers, :player_race, fn -> :human end)
@@ -71,7 +71,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "handles critical hits" do
-      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
       stub(RaceModifiers, :player_race, fn -> :human end)
@@ -90,7 +90,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "CRate reaches the crit path: a player with crate>0 crits harder (real CriticalHits)" do
-      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
       stub(RaceModifiers, :player_race, fn -> :human end)
@@ -118,9 +118,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     test "applies element modifiers" do
       stub(ElementModifiers, :get_modifier, fn
         # Fire strong vs Earth
-        :fire, :earth, _ -> 1.5
+        :fire, :earth, _, _ -> 1.5
         # Default neutral modifier
-        _, _, _ -> 1.0
+        _, _, _, _ -> 1.0
       end)
 
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
@@ -148,7 +148,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "applies size modifiers" do
-      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
       # All size weapons vs Large
       stub(SizeModifiers, :get_modifier, fn :all, :large -> 1.25 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
@@ -179,7 +179,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
   describe "calculate_damage/2 attack element resolution" do
     setup do
-      stub(ElementModifiers, :get_modifier, fn attack_element, _, _ ->
+      stub(ElementModifiers, :get_modifier, fn attack_element, _, _, _ ->
         send(self(), {:attack_element, attack_element})
         1.0
       end)
@@ -295,7 +295,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.1 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
       stub(RaceModifiers, :player_race, fn -> :human end)
-      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.5 end)
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.5 end)
 
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ ->
         %{damage_bonus: 10, damage_multiplier: 0.1}
@@ -316,7 +316,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
       stub(RaceModifiers, :player_race, fn -> :human end)
-      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
 
       attacker = CombatTestHelper.create_player_combatant()
@@ -331,7 +331,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
       stub(RaceModifiers, :player_race, fn -> :human end)
-      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{watk: 30} end)
 
       attacker = CombatTestHelper.create_player_combatant()
@@ -448,7 +448,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
   describe "integration scenarios" do
     test "high level vs low level combat" do
-      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
       stub(RaceModifiers, :player_race, fn -> :human end)
@@ -468,7 +468,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "boss fight scenario" do
-      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
       stub(RaceModifiers, :player_race, fn -> :human end)
@@ -494,7 +494,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "ranged combat scenario" do
-      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
       stub(RaceModifiers, :player_race, fn -> :human end)
@@ -515,7 +515,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
   describe "calculate_damage/3 with skill modifiers" do
     setup do
-      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
       stub(RaceModifiers, :player_race, fn -> :human end)
@@ -600,7 +600,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
   describe "mob status modifier lookup key" do
     setup do
-      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
       stub(RaceModifiers, :player_race, fn -> :human end)
@@ -635,7 +635,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
   describe "Demon Bane additive ATK (vs undead/demon)" do
     setup do
-      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
       stub(RaceModifiers, :player_race, fn -> :demi_human end)
@@ -763,7 +763,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
   describe "Dragonology physical race modifier (vs Dragon race)" do
     setup do
-      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
       :ok
@@ -825,7 +825,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   describe "Divine Protection / Demon Bane do not affect magic" do
     test "magic damage is identical regardless of DP / Demon Bane levels" do
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
-      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
 
       attacker = %{
         unit_type: :player,
@@ -932,7 +932,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
   describe "P.Atk / Res physical integration" do
     setup do
-      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
       stub(RaceModifiers, :player_race, fn -> :human end)
@@ -1004,7 +1004,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
   describe "status combat modifiers (atk_rate / def_rate / phys_damage_reduction)" do
     setup do
-      stub(ElementModifiers, :get_modifier, fn _, _, _ -> 1.0 end)
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
       stub(RaceModifiers, :player_race, fn -> :human end)

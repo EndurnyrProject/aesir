@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder do
   It abstracts away player stats retrieval and context construction logic.
 
   The context includes:
+  - The target's unit type, for statuses whose modifiers split by unit type
   - Target and caster stats (str, agi, vit, etc.)
   - State data from the status effect instance
   - Values from the status effect (val1-val4)
@@ -49,6 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder do
     %{
       # Include IDs for custom functions to access
       target_id: unit_id,
+      unit_type: unit_type,
       caster_id: caster_id,
       # Stats for formula calculations
       target: target_stats,

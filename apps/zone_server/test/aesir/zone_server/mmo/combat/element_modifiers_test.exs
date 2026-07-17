@@ -67,4 +67,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementModifiersTest do
       assert ElementModifiers.id(:invalid) == 0
     end
   end
+
+  describe "get_modifier/4 ratio bonus" do
+    # rAthena battle.cpp:531-551 (renewal): the field's enchant points are added
+    # to the element table's ratio, after the defense-level scaling.
+    test "adds the bonus percentage points on top of the element ratio" do
+      assert ElementModifiers.get_modifier(:fire, :earth, 1, 20) == 2.2
+    end
+
+    test "a zero bonus leaves the ratio untouched" do
+      assert ElementModifiers.get_modifier(:fire, :earth, 1, 0) ==
+               ElementModifiers.get_modifier(:fire, :earth, 1)
+    end
+
+    test "the bonus applies after the defense-level scaling, not before" do
+      # fire vs water is 0.9 at level 1; level 4 scales it to 0.36, then +0.20.
+      assert_in_delta ElementModifiers.get_modifier(:fire, :water, 4, 20), 0.56, 0.0001
+    end
+  end
 end

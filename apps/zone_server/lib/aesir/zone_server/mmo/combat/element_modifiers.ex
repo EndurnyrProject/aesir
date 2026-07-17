@@ -57,14 +57,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementModifiers do
     - attack_element: The element of the attack
     - defense_element: The element of the defending target
     - defense_level: The level of the defense element (1-4)
+    - ratio_bonus: Percentage points added to the resulting ratio, granted by
+      the attacker's element fields (Volcano, Deluge, Violent Gale). Mirrors
+      rAthena's renewal `ratio += sc->getSCE(SC_VOLCANO)->val3`
+      (`battle.cpp:531-551`): the field's points are added to the table ratio
+      *after* the defense-level scaling, rather than multiplied into the damage
+      as pre-renewal did. Defaults to `0`.
 
   ## Returns
     - Float representing the damage modifier
   """
-  @spec get_modifier(element(), element(), element_level()) :: float()
-  def get_modifier(attack_element, defense_element, defense_level \\ 1) do
+  @spec get_modifier(element(), element(), element_level(), number()) :: float()
+  def get_modifier(attack_element, defense_element, defense_level \\ 1, ratio_bonus \\ 0) do
     base_modifier = element_table(attack_element, defense_element)
-    apply_level_scaling(base_modifier, defense_level)
+
+    apply_level_scaling(base_modifier, defense_level) + ratio_bonus / 100
   end
 
   # Element interaction table from rAthena

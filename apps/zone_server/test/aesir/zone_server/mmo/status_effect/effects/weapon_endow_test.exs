@@ -37,13 +37,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WeaponEndowTest do
       %{damage: damage, is_critical: false}
     end)
 
-    stub(ElementModifiers, :get_modifier, fn attack_element, defense_element, defense_level ->
+    stub(ElementModifiers, :get_modifier, fn attack_element,
+                                             defense_element,
+                                             defense_level,
+                                             ratio_bonus ->
       send(self(), {:attack_element, attack_element})
 
       call_original(ElementModifiers, :get_modifier, [
         attack_element,
         defense_element,
-        defense_level
+        defense_level,
+        ratio_bonus
       ])
     end)
 

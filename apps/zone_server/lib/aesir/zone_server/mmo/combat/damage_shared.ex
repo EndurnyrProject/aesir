@@ -16,15 +16,30 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageShared do
   Applies the defender's element resistance to `damage`.
 
   Reads the defender element (`{element, level}`, defaulting to `{:neutral, 1}`)
-  and multiplies `damage` by `ElementModifiers.get_modifier/3` for the given
+  and multiplies `damage` by `ElementModifiers.get_modifier/4` for the given
   `attack_element`. A defender whose `:element` is not an `{element, level}`
   tuple passes through unchanged.
+
+  `attacker_modifiers` carries the attacker's status modifiers. An
+  `{:element_ratio, element}` entry matching `attack_element` adds its
+  percentage points to the element ratio — the seam through which the Sage
+  element fields (Volcano, Deluge, Violent Gale) reach the damage pipeline,
+  mirroring rAthena's src-side `battle_attr_fix` bonus (`battle.cpp:529-551`).
   """
-  @spec apply_element(number(), ElementModifiers.element(), map()) :: number()
-  def apply_element(damage, attack_element, defender) do
+  @spec apply_element(number(), ElementModifiers.element(), map(), map()) :: number()
+  def apply_element(damage, attack_element, defender, attacker_modifiers \\ %{}) do
     case Map.get(defender, :element, {:neutral, 1}) do
       {defender_element, defender_level} ->
-        modifier = ElementModifiers.get_modifier(attack_element, defender_element, defender_level)
+        ratio_bonus = Map.get(attacker_modifiers, {:element_ratio, attack_element}, 0)
+
+        modifier =
+          ElementModifiers.get_modifier(
+            attack_element,
+            defender_element,
+            defender_level,
+            ratio_bonus
+          )
+
         damage * modifier
 
       _ ->

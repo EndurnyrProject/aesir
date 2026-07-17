@@ -119,7 +119,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
 
     damage =
       skilled
-      |> DamageShared.apply_element(element, defender)
+      |> DamageShared.apply_element(element, defender, modifiers)
       |> DamageShared.apply_damage_multiplier(modifiers)
       |> DamageShared.res_reduction(mres)
       |> apply_mdef_formula(defender, defender_modifiers)

@@ -347,7 +347,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   defp apply_element_modifier(damage, attacker, defender, attacker_modifiers, forced_element) do
     attack_element = forced_element || resolve_attack_element(attacker, attacker_modifiers)
-    DamageShared.apply_element(damage, attack_element, defender)
+    DamageShared.apply_element(damage, attack_element, defender, attacker_modifiers)
   end
 
   defp resolve_attack_element(attacker, attacker_modifiers) do
