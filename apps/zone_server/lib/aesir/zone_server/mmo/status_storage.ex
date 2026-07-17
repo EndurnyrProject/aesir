@@ -68,7 +68,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
       source_id: caster_id || unit_id,
       state: state,
       phase: phase,
-      started_at: System.system_time(:millisecond),
+      started_at: now_ms,
       expires_at: expires_at,
       next_tick_at: if(tick > 0, do: now_ms + tick, else: nil),
       tick_count: 0

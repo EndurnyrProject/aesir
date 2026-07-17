@@ -33,7 +33,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplayTest do
 
   defp timed_instance(type, overrides \\ []) do
     now_mono = System.monotonic_time(:millisecond)
-    now_sys = System.system_time(:millisecond)
 
     base = %StatusEntry{
       type: type,
@@ -46,7 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplayTest do
       source_id: 1,
       state: %{},
       phase: nil,
-      started_at: now_sys,
+      started_at: now_mono,
       expires_at: now_mono + 30_000,
       next_tick_at: now_mono + 1_000,
       tick_count: 0

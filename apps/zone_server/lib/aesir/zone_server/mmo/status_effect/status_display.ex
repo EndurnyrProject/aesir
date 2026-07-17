@@ -251,8 +251,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay do
   defp timers(%StatusEntry{expires_at: nil}), do: {0, 0}
 
   defp timers(%StatusEntry{expires_at: expires_at, started_at: started_at}) do
-    remain_ms = max(expires_at - System.monotonic_time(:millisecond), 0)
-    elapsed_ms = max(System.system_time(:millisecond) - started_at, 0)
+    now_ms = System.monotonic_time(:millisecond)
+    remain_ms = max(expires_at - now_ms, 0)
+    elapsed_ms = max(now_ms - started_at, 0)
     {elapsed_ms + remain_ms, remain_ms}
   end
 

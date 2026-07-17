@@ -403,7 +403,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       source_id: caster_id,
       state: state,
       phase: phase || definition.initial_phase,
-      started_at: System.system_time(:millisecond),
+      started_at: now_ms,
       next_tick_at: if(tick > 0, do: now_ms + tick, else: nil),
       tick_count: 0,
       expires_at: nil

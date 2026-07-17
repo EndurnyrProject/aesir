@@ -144,7 +144,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
       source_id: source_id,
       state: state || %{},
       phase: phase,
-      started_at: System.system_time(:millisecond),
+      started_at: now_ms,
       expires_at: expires_at,
       next_tick_at: if(tick > 0, do: now_ms + tick, else: nil),
       tick_count: 0

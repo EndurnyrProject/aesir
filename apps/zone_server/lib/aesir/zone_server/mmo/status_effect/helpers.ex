@@ -108,6 +108,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Helpers do
   """
   @spec elapsed_ms(StatusEntry.t()) :: integer()
   def elapsed_ms(%StatusEntry{started_at: started_at}) do
-    System.system_time(:millisecond) - started_at
+    System.monotonic_time(:millisecond) - started_at
   end
 end
