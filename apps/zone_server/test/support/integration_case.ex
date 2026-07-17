@@ -11,8 +11,49 @@ defmodule Aesir.ZoneServer.IntegrationCase do
 
   use ExUnit.CaseTemplate
 
+  alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.PacketHelpers
   alias Ecto.Adapters.SQL.Sandbox
+
+  # Runtime ETS tables that hold per-unit / per-test state. Integration tests run
+  # against the app-boot (seed `nil`) tables shared by every test in the beam, so
+  # they must be wiped between tests. Leaving them dirty leaks units across files:
+  # e.g. a player registered as `{:player, 2001}` by one test is later resolved
+  # (with a now-dead pid) when another test's combat code scans the registry.
+  # Definition/cache tables (`:map_cache`, `:status_effect_definitions`) are loaded
+  # once at boot and deliberately preserved.
+  @runtime_tables [
+    :unit_registry,
+    :unit_registry_id_index,
+    :player_positions,
+    :spatial_index,
+    :visibility_pairs,
+    :map_units,
+    :movement_dirty,
+    :status_instances,
+    :player_statuses,
+    :dynamic_cell_contributions,
+    :dynamic_cell_source_index,
+    :dynamic_cell_coordinate_index,
+    :field_supports,
+    :skill_units,
+    :skill_unit_cells,
+    :skill_unit_coordinate_index,
+    :skill_unit_caster_index,
+    :skill_unit_target_index,
+    :skill_unit_group_cells_index,
+    :skill_unit_group_observers,
+    :field_support_unit_index,
+    :field_support_group_index,
+    :skill_unit_due_index,
+    :skill_unit_expiry_index,
+    :skill_unit_observer_groups,
+    :skill_unit_map_index,
+    :vending_registry,
+    :ground_items,
+    :server_temp_vars,
+    :npc_vars
+  ]
 
   using do
     quote do
@@ -64,19 +105,30 @@ defmodule Aesir.ZoneServer.IntegrationCase do
   defp restore_inline_persistence(value),
     do: Application.put_env(:zone_server, :inline_persistence, value)
 
-  # Import the ETS setup helper
+  # Wipe the shared runtime ETS tables so each integration test starts from a
+  # clean world. Integration tests do not seed their own `EtsTable`; they read
+  # and write the app-boot (seed `nil`) tables, which persist for the whole beam.
   def setup_ets_tables(_tags) do
-    # Create the ETS tables needed for UnitRegistry and SpatialIndex
-    :ets.new(UnitRegistry, [:set, :public, :named_table])
-    :ets.new(SpatialIndex, [:set, :public, :named_table])
-
-    # Also create any map-specific spatial index tables as needed
-    :ets.new(:spatial_index_prontera, [:bag, :public, :named_table])
+    clear_runtime_tables()
 
     # Pre-warm an empty warp index so `Warps.for_map/1` returns `:error`
     # without triggering the lazy loader (which would otherwise sanitize the
     # real warp files against the un-stubbed MapCache). Mirrors TestEtsSetup.
     :persistent_term.put(Aesir.ZoneServer.Npc.Warps, %{by_map: %{}})
+
+    :ok
+  end
+
+  @doc false
+  def clear_runtime_tables do
+    Enum.each(@runtime_tables, fn table ->
+      resolved = EtsTable.table_for(table)
+
+      case :ets.whereis(resolved) do
+        :undefined -> :ok
+        _tid -> :ets.delete_all_objects(resolved)
+      end
+    end)
 
     :ok
   end

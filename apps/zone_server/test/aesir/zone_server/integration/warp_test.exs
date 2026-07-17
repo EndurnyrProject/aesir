@@ -39,6 +39,7 @@ defmodule Aesir.ZoneServer.Integration.WarpTest do
       movement_state: :standing,
       movement_intent: :none,
       walk_path: [],
+      view_range: 14,
       visible_players: MapSet.new([2001]),
       visible_mobs: MapSet.new()
     }

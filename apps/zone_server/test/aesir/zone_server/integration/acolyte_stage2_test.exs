@@ -310,11 +310,11 @@ defmodule Aesir.ZoneServer.Integration.AcolyteStage2Test do
       learn(player.pid, teleport)
       flush_packets()
 
-      # The warp path is real; only the empty map cache is faked, plus a
-      # deterministic random-cell pick so the destination is assertable.
-      stub(MapCache, :get, fn _map -> {:ok, %MapData{name: "prontera"}} end)
+      # The warp path is real; only the map cache is faked. `Cell.random_traversable`
+      # picks a random in-bounds cell via `:rand.uniform(xs/ys)`, so a 1x1 map makes
+      # the destination deterministic at {0, 0} with every cell stubbed walkable.
+      stub(MapCache, :get, fn _map -> {:ok, %MapData{name: "prontera", xs: 1, ys: 1}} end)
       stub(MapData, :walkable?, fn _map, _x, _y -> true end)
-      stub(MapData, :random_walkable_cell, fn _map -> {:ok, {180, 200}} end)
       Mimic.allow(MapCache, self(), player.pid)
       Mimic.allow(MapData, self(), player.pid)
 
@@ -324,10 +324,10 @@ defmodule Aesir.ZoneServer.Integration.AcolyteStage2Test do
         target_id: player.character.id
       })
 
-      assert_receive {:packet_sent, %MapMove{map_name: "prontera", x: 180, y: 200}, _}, 1_000
+      assert_receive {:packet_sent, %MapMove{map_name: "prontera", x: 0, y: 0}, _}, 1_000
 
       state = get_player_state(player.pid)
-      assert {state.x, state.y} == {180, 200}
+      assert {state.x, state.y} == {0, 0}
       assert state.map_name == "prontera"
     end
 
