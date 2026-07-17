@@ -1445,7 +1445,23 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     # NOTE: no equipment-break roll on the mob path — mob attackers carry no break
     # bonuses and natural break is player-only; this is the future hook for
     # mob-skill-driven breaks (rAthena `skill_break_equip`) once those exist.
-    PlayerSession.apply_damage(target_pid, damage, attacker_combatant.unit_id)
+    hit_info = %{
+      dmg_type: :physical,
+      is_short: attacker_combatant.attack_range <= 3,
+      element: attacker_combatant.weapon.element,
+      skill_id: nil,
+      skill_level: nil,
+      from_caster?: true
+    }
+
+    apply_unit_damage(
+      :player,
+      target_pid,
+      target_id,
+      damage,
+      hit_info,
+      attacker_combatant.unit_id
+    )
   end
 
   # New function that returns actual unit states instead of maps

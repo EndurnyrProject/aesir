@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.Skill.Passives
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -580,6 +581,71 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       mob_state = %FakeUnit{combatant: mob, x: 150, y: 150}
 
       assert :ok = Combat.execute_mob_attack(mob_state, 2001)
+    end
+  end
+
+  describe "execute_mob_attack/2 pre-damage absorption" do
+    setup do
+      target = combatant(2001, :player, position: {151, 150})
+      target_state = %FakeUnit{combatant: target, stats: target, x: 151, y: 150}
+
+      stub(UnitRegistry, :get_player_pid, fn 2001 -> {:ok, self()} end)
+      stub(PlayerSession, :get_current_stats, fn _pid -> target end)
+      stub(PlayerSession, :get_state, fn _pid -> %{game_state: target_state} end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+      stub(DamageCalculator, :calculate_damage, fn _a, _d ->
+        {:ok, %{damage: 10, is_critical: false}}
+      end)
+
+      :ok
+    end
+
+    test "mob melee runs through the absorb_damage hook before HP loss" do
+      test_pid = self()
+
+      expect(StatusInterpreter, :absorb_damage, fn :player, 2001, 10, hit_info ->
+        send(test_pid, {:hit_info, hit_info})
+        3
+      end)
+
+      expect(PlayerSession, :apply_damage, fn _pid, damage, 3001 ->
+        send(test_pid, {:applied, damage})
+        :ok
+      end)
+
+      mob = combatant(3001, :mob, attack_range: 1, position: {150, 150})
+      mob_state = %FakeUnit{combatant: mob, x: 150, y: 150}
+
+      assert :ok = Combat.execute_mob_attack(mob_state, 2001)
+
+      assert_received {:applied, 3}
+
+      assert_received {:hit_info,
+                       %{
+                         dmg_type: :physical,
+                         is_short: true,
+                         skill_id: nil,
+                         from_caster?: true
+                       }}
+    end
+
+    test "a ranged mob attack is marked long-range in hit_info" do
+      test_pid = self()
+
+      expect(StatusInterpreter, :absorb_damage, fn :player, 2001, 10, hit_info ->
+        send(test_pid, {:hit_info, hit_info})
+        10
+      end)
+
+      stub(PlayerSession, :apply_damage, fn _pid, _damage, _attacker_id -> :ok end)
+
+      mob = combatant(3001, :mob, attack_range: 5, position: {150, 150})
+      mob_state = %FakeUnit{combatant: mob, x: 150, y: 150}
+
+      assert :ok = Combat.execute_mob_attack(mob_state, 2001)
+
+      assert_received {:hit_info, %{is_short: false, dmg_type: :physical}}
     end
   end
 end
