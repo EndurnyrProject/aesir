@@ -272,6 +272,54 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       assert {:error, :not_found} = Manager.targetable_cell(manager, cell.cell_id)
     end
 
+    test "expires the group immediately when damage destroys its last cell" do
+      manager = start_manager(10_000)
+
+      :ok =
+        Manager.register(
+          manager,
+          group(1,
+            visible?: true,
+            cells: [{100, 101}],
+            state: %{cell_attrs: %{{100, 101} => %{hp: 20, max_hp: 20, flags: [:targetable]}}}
+          )
+        )
+
+      [cell] = Storage.get_cells_by_group(1)
+
+      assert {:destroyed, ^cell} =
+               Manager.damage_targetable_cell(manager, cell.cell_id, 20, {:player, 1})
+
+      assert Storage.get(1) == nil
+    end
+
+    test "keeps the group alive when damage destroys a non-last cell" do
+      manager = start_manager(10_000)
+
+      :ok =
+        Manager.register(
+          manager,
+          group(1,
+            visible?: true,
+            cells: [{100, 101}, {100, 102}],
+            state: %{
+              cell_attrs: %{
+                {100, 101} => %{hp: 20, max_hp: 20, flags: [:targetable]},
+                {100, 102} => %{hp: 20, max_hp: 20, flags: [:targetable]}
+              }
+            }
+          )
+        )
+
+      [first | _] = Storage.get_cells_by_group(1)
+
+      assert {:destroyed, ^first} =
+               Manager.damage_targetable_cell(manager, first.cell_id, 20, {:player, 1})
+
+      assert %{group_id: 1} = Storage.get(1)
+      assert [_survivor] = Storage.get_cells_by_group(1)
+    end
+
     test "does not expose non-targetable cells as combat targets" do
       manager = start_manager(10_000)
 

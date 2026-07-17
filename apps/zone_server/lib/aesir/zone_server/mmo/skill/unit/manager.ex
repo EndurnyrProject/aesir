@@ -760,7 +760,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
         :ok = remove_cell(cell)
         publish_update(updated, -hp, source, reason)
         publish_despawn(cell, :SKILL_UNIT_DESPAWN_REASON_DESTROYED)
+        expire_if_empty(cell.group_id)
         {:destroyed, cell}
+    end
+  end
+
+  # Destroying a group's last cell must expire the group immediately, matching
+  # the structural-removal path (`remove_group_cells`); otherwise the empty
+  # group lingers until the next interval tick reaps it.
+  defp expire_if_empty(group_id) do
+    with [] <- Storage.get_cells_by_group(group_id),
+         %Group{} = group <- Storage.get(group_id) do
+      cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_DESTROYED)
+    else
+      _ -> :ok
     end
   end
 
