@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.WzWaterballTest do
   use ExUnit.Case, async: false
 
+  import Aesir.TestEtsSetup
   import Mimic
 
   alias Aesir.ZoneServer.Map.Cell, as: MapCell
@@ -8,13 +9,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzWaterballTest do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skills.WzWaterball
   alias Aesir.ZoneServer.Unit.SpatialIndex
+
+  setup :setup_ets_tables
 
   setup do
     Mimic.copy(MapCell)
     Mimic.copy(LineOfSight)
     verify_on_exit!()
+  end
+
+  defp start_manager do
+    start_supervised!(
+      {Manager,
+       [
+         name: nil,
+         schedule_tick: fn _pid, _interval -> :ok end,
+         unit_available?: fn _unit_type, _unit_id, _map_name -> true end
+       ]}
+    )
   end
 
   defp group do
@@ -67,6 +83,81 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzWaterballTest do
     reject(&Combat.apply_skill_unit_damage/7)
 
     assert {:expire, %Group{}} = WzWaterball.on_interval(group(), 0)
+  end
+
+  test "excludes water sources standing on a land protector" do
+    manager = start_manager()
+    Process.put({Manager, :server}, manager)
+
+    :ok =
+      Storage.insert(%Group{
+        group_id: 99,
+        skill_id: 288,
+        skill_name: :sa_landprotector,
+        level: 1,
+        caster_id: 500,
+        caster_type: :player,
+        map_name: "prontera",
+        center: {99, 100},
+        cells: for(y <- 99..101, do: {99, y}),
+        interval: 1_000,
+        expires_at: 1_000_000,
+        state: %{land_protector: true}
+      })
+
+    stub(Combat, :resolve_combatant, fn 200 -> {:ok, %{unit_type: :mob}} end)
+
+    stub(MapCell, :water_source, fn "prontera", _x, _y ->
+      %MapCell.WaterSource{origin: :base, cell_id: nil}
+    end)
+
+    allow(MapCell, self(), manager)
+
+    assert {:ok, _caster} =
+             WzWaterball.cast(
+               %{character_id: 100, map_name: "prontera", x: 100, y: 100},
+               {:unit, 200},
+               2,
+               %{}
+             )
+
+    [%Group{group_id: group_id, skill_name: :wz_waterball}] =
+      Storage.all() |> Enum.reject(&(&1.group_id == 99))
+
+    sources = group_id |> Storage.get_cells_by_group() |> Enum.map(&{&1.x, &1.y})
+    assert Enum.sort(sources) == for(x <- 100..101, y <- 99..101, do: {x, y})
+  end
+
+  test "rejects a cast when the caster's water cell sits on a land protector" do
+    :ok =
+      Storage.insert(%Group{
+        group_id: 99,
+        skill_id: 288,
+        skill_name: :sa_landprotector,
+        level: 1,
+        caster_id: 500,
+        caster_type: :player,
+        map_name: "prontera",
+        center: {100, 100},
+        cells: [{100, 100}],
+        interval: 1_000,
+        expires_at: 1_000_000,
+        state: %{land_protector: true}
+      })
+
+    stub(Combat, :resolve_combatant, fn 200 -> {:ok, %{unit_type: :mob}} end)
+
+    stub(MapCell, :water_source, fn "prontera", 100, 100 ->
+      %MapCell.WaterSource{origin: :base, cell_id: nil}
+    end)
+
+    assert {:error, :water_required} =
+             WzWaterball.cast(
+               %{character_id: 100, map_name: "prontera", x: 100, y: 100},
+               {:unit, 200},
+               1,
+               %{}
+             )
   end
 
   test "rejects a cast when the caster is not in a water state" do

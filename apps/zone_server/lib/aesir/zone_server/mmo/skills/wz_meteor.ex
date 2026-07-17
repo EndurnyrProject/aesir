@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzMeteor do
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
 
   @hit_counts [2, 3, 3, 4, 4, 5, 5, 6, 6, 7]
@@ -48,7 +49,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzMeteor do
     {:ok,
      %{
        cells: [center],
-       state: %{},
+       state: %{ignore_land_protector: true},
        interval: definition.hit_interval,
        initial_delay: 700,
        duration: Enum.at(definition.duration, level - 1),
@@ -88,10 +89,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzMeteor do
   end
 
   @spec impact(Group.t(), struct(), struct(), {integer(), integer()}) :: :ok
-  defp impact(group, definition, caster, position) do
-    group.map_name
-    |> Combat.splash_targets(position, definition.splash_radius, group.caster_id)
-    |> Enum.each(&hit(group, definition, caster, &1))
+  defp impact(group, definition, caster, {x, y} = position) do
+    if Storage.land_protected?(group.map_name, x, y) do
+      :ok
+    else
+      group.map_name
+      |> Combat.splash_targets(position, definition.splash_radius, group.caster_id)
+      |> Enum.each(&hit(group, definition, caster, &1))
+    end
   end
 
   @spec hit(Group.t(), struct(), struct(), {atom(), integer()}) :: :ok

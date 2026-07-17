@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzWaterball do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @behaviour Active
@@ -59,7 +60,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzWaterball do
                visible?: false,
                state: %{water_ball_sequence: true}
              },
-             Layout.square({x, y}, water_radius(level))
+             unprotected_sources(map_name, {x, y}, level)
            ) do
       {:ok, caster}
     end
@@ -97,9 +98,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzWaterball do
 
   defp require_water(map_name, x, y) do
     case MapCell.water_source(map_name, x, y) do
-      %MapCell.WaterSource{origin: origin} when origin in [:base, :skill_unit] -> :ok
-      _ -> {:error, :water_required}
+      %MapCell.WaterSource{origin: origin} when origin in [:base, :skill_unit] ->
+        if Storage.land_protected?(map_name, x, y),
+          do: {:error, :water_required},
+          else: :ok
+
+      _ ->
+        {:error, :water_required}
     end
+  end
+
+  defp unprotected_sources(map_name, center, level) do
+    center
+    |> Layout.square(water_radius(level))
+    |> Enum.reject(fn {x, y} -> Storage.land_protected?(map_name, x, y) end)
   end
 
   defp water_radius(1), do: 0

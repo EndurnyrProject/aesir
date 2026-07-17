@@ -97,6 +97,42 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzMeteorTest do
     assert placement.initial_delay == 700
     assert placement.duration == 2_000
     assert placement.lifecycle_policy.on_caster_loss == :skip_action
+    assert placement.state == %{ignore_land_protector: true}
+  end
+
+  test "skips impacts scheduled onto land protector cells" do
+    :ok =
+      Storage.insert(
+        group(
+          group_id: 99,
+          skill_id: 288,
+          skill_name: :sa_landprotector,
+          cells: [{151, 149}],
+          expires_at: 10_000,
+          state: %{land_protector: true}
+        )
+      )
+
+    stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
+    stub(Combat, :splash_targets, fn @map_name, {148, 148}, 3, @caster_id -> [{:mob, 2001}] end)
+
+    expect(Combat, :apply_skill_unit_damage, fn
+      %{unit_id: @caster_id}, :mob, 2001, 83, 1, :fire, 125 -> :ok
+    end)
+
+    stub(StatusInterpreter, :apply_status, fn :mob, 2001, :sc_stun, _params -> :ok end)
+
+    group =
+      group(
+        state: %{
+          meteor_schedule: [
+            %{at: 700, position: {151, 149}},
+            %{at: 700, position: {148, 148}}
+          ]
+        }
+      )
+
+    assert {:ok, %Group{state: %{meteor_schedule: []}}} = WzMeteor.on_interval(group, 700)
   end
 
   test "uses the exact Renewal HitCount table for each level" do

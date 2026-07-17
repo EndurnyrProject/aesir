@@ -1489,6 +1489,197 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     end
   end
 
+  describe "land protector" do
+    test "placement destroys overlapping foreign cells per cell, not per group" do
+      manager = start_manager(10_000)
+
+      :ok = Manager.register(manager, group(1, visible?: true, cells: [{100, 100}, {101, 100}]))
+
+      :ok =
+        Manager.register(
+          manager,
+          group(2,
+            visible?: true,
+            cells: [{101, 100}, {102, 100}],
+            state: %{land_protector: true}
+          )
+        )
+
+      assert %Group{cells: [{100, 100}]} = Storage.get(1)
+      assert [%Cell{x: 100}] = Storage.get_cells_by_group(1)
+      assert Enum.sort(Storage.get(2).cells) == [{101, 100}, {102, 100}]
+      assert [%Group{group_id: 2}] = Storage.get_groups_at_cell("prontera", 101, 100)
+    end
+
+    test "land protector on land protector destroys both overlapping cells" do
+      manager = start_manager(10_000)
+
+      :ok =
+        Manager.register(
+          manager,
+          group(1,
+            visible?: true,
+            cells: [{100, 100}, {101, 100}],
+            state: %{land_protector: true}
+          )
+        )
+
+      :ok =
+        Manager.register(
+          manager,
+          group(2,
+            visible?: true,
+            cells: [{101, 100}, {102, 100}],
+            state: %{land_protector: true}
+          )
+        )
+
+      assert %Group{cells: [{100, 100}]} = Storage.get(1)
+      assert %Group{cells: [{102, 100}]} = Storage.get(2)
+      assert [] == Storage.get_groups_at_cell("prontera", 101, 100)
+    end
+
+    test "a fully overlapping land protector destroys the old one and fails placement" do
+      manager = start_manager(10_000)
+
+      :ok =
+        Manager.register(
+          manager,
+          group(1, visible?: true, cells: [{100, 100}], state: %{land_protector: true})
+        )
+
+      assert {:error, :land_protector} =
+               Manager.register(
+                 manager,
+                 group(2, visible?: true, cells: [{100, 100}], state: %{land_protector: true})
+               )
+
+      assert nil == Storage.get(1)
+      assert nil == Storage.get(2)
+      assert [] == Storage.get_groups_at_cell("prontera", 100, 100)
+    end
+
+    test "drops a later placement's candidate cells that fall on a land protector" do
+      manager = start_manager(10_000)
+
+      :ok =
+        Manager.register(
+          manager,
+          group(1, visible?: true, cells: [{100, 100}], state: %{land_protector: true})
+        )
+
+      :ok = Manager.register(manager, group(2, visible?: true, cells: [{100, 100}, {101, 100}]))
+
+      assert %Group{cells: [{101, 100}]} = Storage.get(2)
+      assert [%Cell{x: 101}] = Storage.get_cells_by_group(2)
+      assert [%Group{group_id: 1}] = Storage.get_groups_at_cell("prontera", 100, 100)
+    end
+
+    test "fails a later placement whose footprint falls entirely on a land protector" do
+      manager = start_manager(10_000)
+
+      :ok =
+        Manager.register(
+          manager,
+          group(1,
+            visible?: true,
+            cells: [{100, 100}, {101, 100}],
+            state: %{land_protector: true}
+          )
+        )
+
+      assert {:error, :land_protector} =
+               Manager.register(
+                 manager,
+                 group(2, visible?: true, cells: [{100, 100}, {101, 100}])
+               )
+
+      assert nil == Storage.get(2)
+      assert Enum.sort(Storage.get(1).cells) == [{100, 100}, {101, 100}]
+    end
+
+    test "leaves ignore-flagged groups alone in both directions" do
+      manager = start_manager(10_000)
+
+      :ok =
+        Manager.register(
+          manager,
+          group(1, visible?: true, cells: [{100, 100}], state: %{ignore_land_protector: true})
+        )
+
+      :ok =
+        Manager.register(
+          manager,
+          group(2, visible?: true, cells: [{100, 100}], state: %{land_protector: true})
+        )
+
+      :ok =
+        Manager.register(
+          manager,
+          group(3, visible?: true, cells: [{100, 100}], state: %{ignore_land_protector: true})
+        )
+
+      assert %Group{cells: [{100, 100}]} = Storage.get(1)
+      assert %Group{cells: [{100, 100}]} = Storage.get(2)
+      assert %Group{cells: [{100, 100}]} = Storage.get(3)
+    end
+
+    test "no live unit cell ever sits on a land protector cell" do
+      manager = start_manager(10_000)
+
+      :ok =
+        Manager.register(
+          manager,
+          group(1, visible?: true, cells: for(x <- 100..102, do: {x, 100}))
+        )
+
+      :ok =
+        Manager.register(
+          manager,
+          group(2,
+            visible?: true,
+            cells: for(x <- 101..103, do: {x, 100}),
+            state: %{land_protector: true}
+          )
+        )
+
+      _ = Manager.register(manager, group(3, visible?: true, cells: [{102, 100}, {104, 100}]))
+      _ = Manager.register(manager, group(4, visible?: true, cells: [{103, 100}]))
+
+      :ok =
+        Manager.register(
+          manager,
+          group(5,
+            visible?: true,
+            cells: for(x <- 103..105, do: {x, 100}),
+            state: %{land_protector: true}
+          )
+        )
+
+      groups = Storage.all()
+
+      protected =
+        for %Group{} = lp <- groups,
+            Group.land_protector?(lp),
+            cell <- lp.cells,
+            into: MapSet.new() do
+          {lp.map_name, cell}
+        end
+
+      occupied =
+        for %Group{} = other <- groups,
+            not Group.land_protector?(other),
+            cell <- other.cells,
+            into: MapSet.new() do
+          {other.map_name, cell}
+        end
+
+      assert MapSet.disjoint?(protected, occupied)
+      refute Enum.empty?(protected)
+      refute Enum.empty?(occupied)
+    end
+  end
+
   defp start_unmanaged_manager(now) do
     {:ok, manager} =
       Manager.start_link(

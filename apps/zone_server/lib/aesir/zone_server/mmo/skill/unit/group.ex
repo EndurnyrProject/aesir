@@ -43,4 +43,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
     field :state, map(), default: %{}
     field :handler, module() | nil, default: nil
   end
+
+  @doc "Whether this group is a Land Protector field (suppresses other ground units)."
+  @spec land_protector?(t()) :: boolean()
+  def land_protector?(%__MODULE__{state: %{land_protector: true}}), do: true
+  def land_protector?(%__MODULE__{}), do: false
+
+  @doc """
+  Whether this group is exempt from Land Protector destruction and suppression.
+
+  Set by skills whose group is scheduling bookkeeping rather than a real ground
+  unit (Meteor Storm's impact marker), which rAthena never materializes as
+  skill units at all.
+  """
+  @spec ignores_land_protector?(t()) :: boolean()
+  def ignores_land_protector?(%__MODULE__{state: %{ignore_land_protector: true}}), do: true
+  def ignores_land_protector?(%__MODULE__{}), do: false
 end

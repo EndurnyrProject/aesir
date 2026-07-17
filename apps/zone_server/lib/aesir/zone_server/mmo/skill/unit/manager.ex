@@ -192,7 +192,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   @impl true
   def handle_call({:register, group}, _from, state) do
-    with {:ok, group} <- schedule_group(group, state.rng),
+    with {:ok, group} <- apply_land_protector(group),
+         {:ok, group} <- schedule_group(group, state.rng),
          {:ok, group} <- register_group(group) do
       :ok = enforce_instance_limit(group)
 
@@ -609,6 +610,56 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
     Storage.delete(group_id)
     publish_group_despawn(group, Enum.map(cells, & &1.cell_id), despawn_reason)
+  end
+
+  # Land Protector's central placement rules (rAthena skill_cell_overlap /
+  # skill_unitsetting): a Land Protector group destroys overlapping foreign
+  # cells per cell (mutually with an existing Land Protector), and any other
+  # placement drops candidate cells that fall on a Land Protector. A group
+  # reduced to zero cells fails registration with `:land_protector`.
+  defp apply_land_protector(%Group{} = group) do
+    cond do
+      Group.land_protector?(group) -> sweep_protected_overlap(group)
+      Group.ignores_land_protector?(group) -> {:ok, group}
+      true -> drop_protected_cells(group)
+    end
+  end
+
+  defp drop_protected_cells(%Group{cells: []} = group), do: {:ok, group}
+
+  defp drop_protected_cells(%Group{} = group) do
+    case Enum.reject(group.cells, fn {x, y} -> Storage.land_protected?(group.map_name, x, y) end) do
+      [] -> {:error, :land_protector}
+      cells -> {:ok, %{group | cells: cells}}
+    end
+  end
+
+  defp sweep_protected_overlap(%Group{} = group) do
+    {kept, removals} =
+      Enum.reduce(group.cells, {[], %{}}, fn {x, y} = cell, {kept, removals} ->
+        overlapping =
+          group.map_name
+          |> Storage.get_groups_at_cell(x, y)
+          |> Enum.reject(&Group.ignores_land_protector?/1)
+
+        removals =
+          Enum.reduce(overlapping, removals, fn victim, acc ->
+            Map.update(acc, victim.group_id, [cell], &[cell | &1])
+          end)
+
+        if Enum.any?(overlapping, &Group.land_protector?/1),
+          do: {kept, removals},
+          else: {[cell | kept], removals}
+      end)
+
+    Enum.each(removals, fn {victim_id, cells} ->
+      if victim = Storage.get(victim_id), do: remove_group_cells(victim, MapSet.new(cells))
+    end)
+
+    case kept do
+      [] -> {:error, :land_protector}
+      kept -> {:ok, %{group | cells: Enum.reverse(kept)}}
+    end
   end
 
   defp remove_group_cells(%Group{} = group, coordinates) do
