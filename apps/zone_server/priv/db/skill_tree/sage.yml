@@ -1,0 +1,117 @@
+---
+- job: sage
+  inherit:
+    - novice
+    - mage
+  tree:
+    - name: WZ_ESTIMATION
+      max_level: 1
+    - name: WZ_EARTHSPIKE
+      max_level: 5
+      requires:
+        - name: SA_SEISMICWEAPON
+          level: 1
+    - name: WZ_HEAVENDRIVE
+      max_level: 5
+      requires:
+        - name: WZ_EARTHSPIKE
+          level: 1
+    - name: SA_ADVANCEDBOOK
+      max_level: 10
+    - name: SA_CASTCANCEL
+      max_level: 5
+      requires:
+        - name: SA_ADVANCEDBOOK
+          level: 2
+    - name: SA_MAGICROD
+      max_level: 5
+      requires:
+        - name: SA_ADVANCEDBOOK
+          level: 4
+    - name: SA_SPELLBREAKER
+      max_level: 5
+      requires:
+        - name: SA_MAGICROD
+          level: 1
+    - name: SA_FREECAST
+      max_level: 10
+      requires:
+        - name: SA_CASTCANCEL
+          level: 1
+    - name: SA_AUTOSPELL
+      max_level: 10
+      requires:
+        - name: SA_FREECAST
+          level: 4
+    - name: SA_FLAMELAUNCHER
+      max_level: 5
+      requires:
+        - name: MG_FIREBOLT
+          level: 1
+        - name: SA_ADVANCEDBOOK
+          level: 5
+    - name: SA_FROSTWEAPON
+      max_level: 5
+      requires:
+        - name: MG_COLDBOLT
+          level: 1
+        - name: SA_ADVANCEDBOOK
+          level: 5
+    - name: SA_LIGHTNINGLOADER
+      max_level: 5
+      requires:
+        - name: MG_LIGHTNINGBOLT
+          level: 1
+        - name: SA_ADVANCEDBOOK
+          level: 5
+    - name: SA_SEISMICWEAPON
+      max_level: 5
+      requires:
+        - name: MG_STONECURSE
+          level: 1
+        - name: SA_ADVANCEDBOOK
+          level: 5
+    - name: SA_DRAGONOLOGY
+      max_level: 5
+      requires:
+        - name: SA_ADVANCEDBOOK
+          level: 9
+    - name: SA_VOLCANO
+      max_level: 5
+      requires:
+        - name: SA_FLAMELAUNCHER
+          level: 2
+    - name: SA_DELUGE
+      max_level: 5
+      requires:
+        - name: SA_FROSTWEAPON
+          level: 2
+    - name: SA_VIOLENTGALE
+      max_level: 5
+      requires:
+        - name: SA_LIGHTNINGLOADER
+          level: 2
+    - name: SA_LANDPROTECTOR
+      max_level: 5
+      requires:
+        - name: SA_VOLCANO
+          level: 3
+        - name: SA_DELUGE
+          level: 3
+        - name: SA_VIOLENTGALE
+          level: 3
+    - name: SA_DISPELL
+      max_level: 5
+      requires:
+        - name: SA_SPELLBREAKER
+          level: 3
+    - name: SA_CREATECON
+      max_level: 1
+    - name: SA_ELEMENTWATER
+      max_level: 1
+    - name: SA_ELEMENTGROUND
+      max_level: 1
+    - name: SA_ELEMENTFIRE
+      max_level: 1
+    - name: SA_ELEMENTWIND
+      max_level: 1
