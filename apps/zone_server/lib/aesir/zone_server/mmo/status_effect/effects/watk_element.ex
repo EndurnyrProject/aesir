@@ -16,7 +16,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WatkElement do
     id: :sc_watk_element,
     no_dispel: false,
     properties: [:buff],
-    end_on_start: [:sc_aspersio, :sc_encpoison],
+    end_on_start: [
+      :sc_aspersio,
+      :sc_encpoison,
+      :sc_fireweapon,
+      :sc_waterweapon,
+      :sc_windweapon,
+      :sc_earthweapon
+    ],
     no_save: true
 
   @elements %{

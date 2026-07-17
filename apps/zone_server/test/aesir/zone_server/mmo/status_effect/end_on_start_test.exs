@@ -16,11 +16,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.EndOnStartTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
 
-  # The elemental endows are being added by the task running alongside this
-  # one; both endow statuses forward-reference them. Drop this list with that
-  # task.
-  @pending_endows [:sc_fireweapon, :sc_waterweapon, :sc_windweapon, :sc_earthweapon]
-
   # Real statuses that no module implements yet. Every reference to one is a
   # correct forward reference and starts working the day the status lands.
   @unimplemented [
@@ -42,7 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.EndOnStartTest do
     :sc_windwalk
   ]
 
-  @allowed @pending_endows ++ @unimplemented
+  @allowed @unimplemented
 
   setup do
     Aesir.TestEtsSetup.setup_ets_tables(%{})

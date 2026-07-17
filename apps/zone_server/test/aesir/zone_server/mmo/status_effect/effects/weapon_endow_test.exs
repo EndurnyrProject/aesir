@@ -61,23 +61,32 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WeaponEndowTest do
     assert {:ok, _} = DamageCalculator.calculate_damage(attacker, defender)
   end
 
-  describe "sc_aspersio" do
-    test "endows the weapon with the holy element" do
-      :ok = StatusStorage.apply_status(:player, @attacker_id, :sc_aspersio, duration: 30_000)
+  # Every weapon endow, with the element it must hand the element table.
+  # `val1` is only read by :sc_watk_element (rAthena element id 3 => fire); the
+  # rest carry a fixed element and ignore it.
+  @endows [
+    {:sc_aspersio, :holy},
+    {:sc_encpoison, :poison},
+    {:sc_watk_element, :fire},
+    {:sc_fireweapon, :fire},
+    {:sc_waterweapon, :water},
+    {:sc_windweapon, :wind},
+    {:sc_earthweapon, :earth}
+  ]
 
-      attack_undead()
+  describe "a single endow" do
+    for {status_id, element} <- @endows do
+      test "#{status_id} endows the weapon with the #{element} element" do
+        :ok =
+          StatusStorage.apply_status(:player, @attacker_id, unquote(status_id),
+            duration: 30_000,
+            val1: 3
+          )
 
-      assert_received {:attack_element, :holy}
-    end
-  end
+        attack_undead()
 
-  describe "sc_encpoison" do
-    test "endows the weapon with the poison element" do
-      :ok = StatusStorage.apply_status(:player, @attacker_id, :sc_encpoison, duration: 30_000)
-
-      attack_undead()
-
-      assert_received {:attack_element, :poison}
+        assert_received {:attack_element, unquote(element)}
+      end
     end
   end
 
@@ -94,13 +103,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WeaponEndowTest do
     # aggregation sums colliding keys. Two live endows would therefore add two
     # atoms and crash the carrier's session, so each endow has to displace the
     # others whichever order they arrive in.
-    endows = [
-      {:sc_aspersio, :holy},
-      {:sc_encpoison, :poison},
-      {:sc_watk_element, :fire}
-    ]
-
-    for {first, _} <- endows, {second, expected} <- endows, first != second do
+    # `end_on_start` only fires for the status being applied, so exclusion has
+    # to be declared in both directions. Every ordered pair is exercised: a
+    # missing direction leaves both endows live and the summed atoms raise.
+    for {first, _} <- @endows, {second, expected} <- @endows, first != second do
       test "#{second} replaces #{first}" do
         :ok =
           Interpreter.apply_status(:player, @attacker_id, unquote(first),
