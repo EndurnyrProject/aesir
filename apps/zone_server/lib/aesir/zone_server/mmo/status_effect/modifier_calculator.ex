@@ -3,8 +3,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator do
   Aggregates stat modifiers from all active statuses on a unit.
 
   Each status module computes its own modifiers from its instance and context;
-  this module merges them, summing values for modifiers contributed by more
-  than one status.
+  this module merges them, summing numeric values for modifiers contributed by
+  more than one status. Non-numeric modifiers (e.g. the atom-valued
+  `attack_element`) cannot be summed — the newer status wins, mirroring
+  rAthena's latest-status-overwrites semantics.
   """
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder
@@ -31,10 +33,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator do
   end
 
   @doc """
-  Merges two modifier maps, summing values present in both.
+  Merges two modifier maps, summing numeric values present in both.
+
+  When either colliding value is non-numeric the value from `new` wins.
   """
   @spec merge_modifiers(map(), map()) :: map()
   def merge_modifiers(base, new) do
-    Map.merge(base, new, fn _key, v1, v2 -> v1 + v2 end)
+    Map.merge(base, new, fn
+      _key, v1, v2 when is_number(v1) and is_number(v2) -> v1 + v2
+      _key, _v1, v2 -> v2
+    end)
   end
 end
