@@ -38,15 +38,74 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
+  # SA_CASTCANCEL cancels the caster's own in-flight cast, so it is the one skill
+  # that must run while the player is busy in :casting. It is intercepted ahead of
+  # `drive_cast/4` (and therefore ahead of `ensure_idle_for_cast/1`, which would
+  # reject it) and never takes the ordinary cast path.
+  @cast_cancel_id 275
+
   @spec handle_use_skill(map(), integer(), pos_integer(), integer()) :: {:noreply, map()}
   def handle_use_skill(%{game_state: game_state} = state, skill_id, level, target_id) do
     if StatusInterpreter.can_use_skill?(:player, game_state.character_id, skill_id) do
-      target = resolve_target(game_state, target_id)
-      drive_cast(state, skill_id, level, target)
+      dispatch_use_skill(state, skill_id, level, target_id)
     else
       broadcast_cast_cancel(game_state)
       {:noreply, state}
     end
+  end
+
+  defp dispatch_use_skill(state, @cast_cancel_id, level, _target_id),
+    do: cast_cancel(state, level)
+
+  defp dispatch_use_skill(%{game_state: game_state} = state, skill_id, level, target_id) do
+    drive_cast(state, skill_id, level, resolve_target(game_state, target_id))
+  end
+
+  # Mirrors rAthena's ordering (`skills/mage/castcancel.cpp`): the requirement is
+  # consumed first, then the cast is aborted, then the penalty is zapped. Running
+  # `begin_cast/4` up front validates Cast Cancel (learned, cooldown, its own 2 SP)
+  # and charges it against a state that still carries the descriptor, so a Cast
+  # Cancel the player cannot afford aborts nothing. With no cast in flight,
+  # `SaCastcancel.validate/4` rejects `:not_casting` here and charges nothing.
+  #
+  # `begin_cast/4` only reads the cast descriptor, so it is safe to run before the
+  # abort; the cancel then invalidates the token before the zap is applied, and a
+  # single `commit_cast/4` publishes both SP deltas at once.
+  defp cast_cancel(%{game_state: game_state} = state, level) do
+    case Interpreter.begin_cast(game_state, @cast_cancel_id, level, :self) do
+      {:instant, charged_game_state} ->
+        penalty = cast_cancel_penalty(game_state.casting, level)
+
+        cancelled_state = cancel_cast(%{state | game_state: charged_game_state}, :castcancel)
+        zapped_game_state = zap_sp(cancelled_state.game_state, penalty)
+
+        new_state = commit_cast(cancelled_state, zapped_game_state, @cast_cancel_id, level)
+        broadcast_skill_use(new_state.game_state, @cast_cancel_id, level, :self)
+        {:noreply, new_state}
+
+      {:error, reason} ->
+        log_cast_failure(@cast_cancel_id, game_state.character_id, reason)
+        {:noreply, state}
+    end
+  end
+
+  # `sp_cost(cancelled_skill, cancelled_level) * (90 - 20*(lv-1)) / 100`, the raw
+  # catalog cost (rAthena's `skill_get_sp`, before any `sp_cost_rate` modifier).
+  # Higher Cast Cancel levels pay less: 90% down to 10% at level 5. A skill in
+  # flight is by construction a castable catalog skill, so a lookup miss is a
+  # broken invariant and crashes rather than silently cancelling for free.
+  defp cast_cancel_penalty(%{skill_id: skill_id, skill_level: skill_level}, level) do
+    {:ok, definition} = Catalog.by_id(skill_id)
+    cost = Enum.at(definition.sp_cost, skill_level - 1)
+    max(div(cost * (90 - 20 * (level - 1)), 100), 0)
+  end
+
+  defp zap_sp(game_state, 0), do: game_state
+
+  defp zap_sp(game_state, penalty) do
+    stats = game_state.stats
+    current = %{stats.current_state | sp: max(stats.current_state.sp - penalty, 0)}
+    %{game_state | stats: %{stats | current_state: current}}
   end
 
   @spec handle_use_skill_ground(map(), integer(), pos_integer(), integer(), integer()) ::

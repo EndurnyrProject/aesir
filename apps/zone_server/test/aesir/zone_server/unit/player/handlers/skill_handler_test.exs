@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
+  alias Aesir.ZoneServer.Mmo.Skills.SaCastcancel
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Party.Manager
   alias Aesir.ZoneServer.Party.Member
@@ -644,6 +645,85 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     end
   end
 
+  describe "SA_CASTCANCEL" do
+    test "cancels the in-flight cast, charges its own 2 SP and zaps the penalty" do
+      stub_commit()
+
+      state = cast_cancel_state(45)
+
+      assert {:noreply, new_state} = SkillHandler.handle_use_skill(state, 275, 1, 1000)
+
+      gs = new_state.game_state
+      assert gs.action_state == :idle
+      assert gs.casting == nil
+      # 45 - 2 (Cast Cancel's own cost) - 16 (AL_INCAGI lv1: 18 * 90 / 100).
+      assert gs.stats.current_state.sp == 27
+    end
+
+    test "the cancelled skill never fires: its timer is dead and its token is inert" do
+      stub_commit()
+      # AL_INCAGI's effect must never land, before or after the replay below.
+      reject(&StatusInterpreter.apply_status/4)
+
+      state = cast_cancel_state(45)
+      token = state.game_state.casting.token
+      timer_ref = state.game_state.casting.timer_ref
+
+      assert {:noreply, cancelled} = SkillHandler.handle_use_skill(state, 275, 1, 1000)
+
+      # The cast timer was cancelled, so it can never deliver its message.
+      assert Process.cancel_timer(timer_ref) == false
+
+      # Belt and braces: even replaying the exact token (as an already-queued
+      # {:cast_complete, token} in the mailbox would) resolves nothing.
+      assert {:noreply, replayed} = SkillHandler.handle_cast_complete(cancelled, token)
+
+      assert replayed == cancelled
+      assert replayed.game_state.stats.current_state.sp == 27
+    end
+
+    test "cancelling with no cast in flight fails through the normal path, charging nothing" do
+      reject(&Broadcast.to_player/2)
+      reject(&CharacterPersistence.update_character/3)
+
+      state = cast_cancel_state(45)
+      idle = %{state | game_state: %{state.game_state | action_state: :idle, casting: nil}}
+
+      assert {:noreply, unchanged} = SkillHandler.handle_use_skill(idle, 275, 1, 1000)
+
+      assert unchanged == idle
+      assert unchanged.game_state.stats.current_state.sp == 45
+    end
+
+    test "SaCastcancel.validate/4 rejects :not_casting when no cast is in flight" do
+      definition = SaCastcancel.definition()
+
+      assert SaCastcancel.validate(%PlayerState{casting: nil}, :self, 1, definition) ==
+               {:error, :not_casting}
+
+      assert SaCastcancel.validate(%PlayerState{casting: %{skill_id: 29}}, :self, 1, definition) ==
+               :ok
+    end
+
+    test "a higher Cast Cancel level zaps a smaller penalty, at every level" do
+      stub_commit()
+
+      # AL_INCAGI lv1 costs 18 SP: 18 * (90 - 20*(lv-1)) / 100, floored.
+      penalties =
+        for level <- 1..5 do
+          assert {:noreply, new_state} =
+                   SkillHandler.handle_use_skill(cast_cancel_state(45), 275, level, 1000)
+
+          # Back out the zap from Cast Cancel's own 2 SP.
+          45 - 2 - new_state.game_state.stats.current_state.sp
+        end
+
+      assert penalties == [16, 12, 9, 5, 1]
+      assert penalties == Enum.sort(penalties, :desc)
+      assert Enum.uniq(penalties) == penalties
+    end
+  end
+
   describe "skill action-gating" do
     test "a no_skill player calling handle_use_skill gets a CastCancel and no cast is driven" do
       stub(StatusInterpreter, :can_use_skill?, fn :player, 1000, _skill -> false end)
@@ -861,6 +941,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   defp locked_attacking_state(sp) do
     s = casting_state(sp, :attacking)
     %{s | game_state: %{s.game_state | combat_target_id: 2000, combat_action_type: 7}}
+  end
+
+  # A live AL_INCAGI lv1 cast (18 SP at that level) with SA_CASTCANCEL learned to
+  # its max, so the zap is measured against a real catalog SP cost.
+  defp cast_cancel_state(sp) do
+    state = interrupting_state(sp, fixed_offset: -100)
+
+    learned = %{29 => 10, 275 => 5}
+
+    game_state =
+      put_in(
+        state.game_state,
+        [Access.key!(:stats), Access.key!(:progression), Access.key!(:learned_skills)],
+        learned
+      )
+
+    %{state | game_state: game_state}
   end
 
   defp stub_commit do
