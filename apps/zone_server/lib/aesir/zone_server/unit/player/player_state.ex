@@ -353,6 +353,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   leave/re-enter hysteresis is per-map — a warp can't be a re-entry) and resets
   transient movement/combat state so the player lands idle on the destination
   map.
+
+  Drops any in-flight cast: this sets `action_state` directly rather than going
+  through `transition_to/3`, so nothing else would clear it, and a Free Cast
+  caster warped mid-walk would otherwise land holding a descriptor whose timer
+  fires against a stale target — and whose presence blocks every later cast.
   """
   @spec relocate(t(), String.t(), non_neg_integer(), non_neg_integer()) :: t()
   def relocate(%__MODULE__{} = state, map_name, x, y) do
@@ -362,6 +367,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
         x: x,
         y: y,
         action_state: :idle,
+        casting: nil,
         visible_players: MapSet.new(),
         visible_mobs: MapSet.new(),
         visible_warps: MapSet.new(),
@@ -530,7 +536,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
         state
         | action_state: new_state,
           state_context: context,
-          casting: if(new_state == :casting, do: context, else: nil)
+          casting: next_casting(state, current, new_state, context)
       }
 
       # Handle state-specific setup
@@ -540,6 +546,28 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       {:error, :invalid_transition}
     end
   end
+
+  # A cast is owned by its own lifecycle, not by `action_state`: Free Cast
+  # overlays one on `:moving` and `:attacking`, so a transition is not on its own
+  # evidence the cast ended. Entering `:casting` starts one; death ends one; the
+  # hard-cancel edge (`:casting -> :idle`, taken by every non-Free-Cast flow)
+  # ends one. Every other transition leaves it alone, so an overlaid cast
+  # survives arriving at the destination and swinging mid-walk. The cast's own
+  # resolution points call `clear_casting/1` explicitly.
+  defp next_casting(_state, _current, :casting, context), do: context
+  defp next_casting(_state, _current, :dead, _context), do: nil
+  defp next_casting(_state, :casting, :idle, _context), do: nil
+  defp next_casting(state, _current, _new_state, _context), do: state.casting
+
+  @doc """
+  Ends the in-flight cast (mirrors `MobState.clear_casting/1`).
+
+  Called at a cast's resolution points — completion, cancellation, interruption —
+  which under Free Cast can land on any action state, so clearing cannot be left
+  to a `transition_to/3` edge.
+  """
+  @spec clear_casting(t()) :: t()
+  def clear_casting(%__MODULE__{} = state), do: %{state | casting: nil}
 
   @doc """
   Sets combat intent for move-to-attack behavior.
@@ -730,7 +758,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   defp valid_from_skill_moving?(to), do: to in [:idle, :moving]
   defp valid_from_moving_to_item?(to), do: to in [:idle, :moving, :combat_moving, :attacking]
   defp valid_from_attacking?(to), do: to in [:idle, :moving, :combat_moving, :moving_to_item]
-  defp valid_from_casting?(to), do: to == :idle
+  # `:moving` is Free Cast's overlay edge: the caster walks and the cast keeps
+  # running (see `Mmo.Skills.SaFreecast`). `MovementHandler` only takes it for a
+  # caster who knows the skill; everyone else is hard-cancelled to `:idle` first.
+  defp valid_from_casting?(to), do: to in [:idle, :moving]
   defp valid_from_sitting?(to), do: to == :idle
   defp valid_from_trading?(to), do: to == :idle
   defp valid_from_vending?(to), do: to == :idle

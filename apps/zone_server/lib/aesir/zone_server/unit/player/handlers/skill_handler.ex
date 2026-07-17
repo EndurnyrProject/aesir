@@ -125,7 +125,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   """
   @spec handle_cast_complete(map(), reference()) :: {:noreply, map()}
   def handle_cast_complete(
-        %{game_state: %{action_state: :casting, casting: %{token: token} = ctx}} = state,
+        %{game_state: %{casting: %{token: token} = ctx}} = state,
         token
       ) do
     game_state = state.game_state
@@ -134,7 +134,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       complete_cast(state, game_state, ctx)
     else
       broadcast_cast_cancel(game_state)
-      {:noreply, %{state | game_state: to_idle(game_state)}}
+      {:noreply, %{state | game_state: end_cast(game_state)}}
     end
   end
 
@@ -145,12 +145,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       {:ok, new_game_state} ->
         new_state = commit_cast(state, new_game_state, ctx.skill_id, ctx.skill_level)
         broadcast_skill_use(new_state.game_state, ctx.skill_id, ctx.skill_level, ctx.target)
-        idle_state = %{new_state | game_state: to_idle(new_state.game_state)}
-        {:noreply, maybe_resume_lock(idle_state, Map.get(ctx, :combat_target_id))}
+        resolved_state = %{new_state | game_state: end_cast(new_state.game_state)}
+        {:noreply, maybe_resume_lock(resolved_state, Map.get(ctx, :combat_target_id))}
 
       {:error, reason} ->
         log_cast_failure(ctx.skill_id, game_state.character_id, reason)
-        {:noreply, %{state | game_state: to_idle(game_state)}}
+        {:noreply, %{state | game_state: end_cast(game_state)}}
     end
   end
 
@@ -160,7 +160,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   long as it is flagged interruptible. Anything else passes through unchanged.
   """
   @spec interrupt_cast_on_damage(map()) :: map()
-  def interrupt_cast_on_damage(%{game_state: %{action_state: :casting, casting: ctx}} = state) do
+  def interrupt_cast_on_damage(
+        %{game_state: %{casting: %{fixed_until: _, interruptible: _} = ctx}} = state
+      ) do
     now = System.monotonic_time(:millisecond)
 
     if now >= ctx.fixed_until and ctx.interruptible do
@@ -173,24 +175,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   def interrupt_cast_on_damage(state), do: state
 
   @doc """
-  Forced cancel, phase-agnostic (used by movement). Cancels any in-flight cast
-  and returns the player to idle; a non-casting state is returned unchanged.
+  Forced cancel, phase-agnostic (used by movement). Cancels any in-flight cast;
+  a player with no cast in flight is returned unchanged.
+
+  A standing cast returns the player to idle. A cast overlaid on a walking or
+  attacking Free Caster leaves that action running — only the cast is cancelled
+  (see `end_cast/1`).
   """
   @spec cancel_cast(map(), atom()) :: map()
   def cancel_cast(
-        %{game_state: %{action_state: :casting, casting: ctx} = game_state} = state,
+        %{game_state: %{casting: %{timer_ref: _} = ctx} = game_state} = state,
         reason
       ) do
     Process.cancel_timer(ctx.timer_ref)
     broadcast_cast_cancel(game_state)
 
-    idle_state =
-      case PlayerState.transition_to(game_state, :idle) do
-        {:ok, idle_game_state} -> %{state | game_state: idle_game_state}
-        {:error, _reason} -> %{state | game_state: game_state}
-      end
+    cancelled_state = %{state | game_state: end_cast(game_state)}
 
-    maybe_resume_on_cancel(idle_state, reason, Map.get(ctx, :combat_target_id))
+    maybe_resume_on_cancel(cancelled_state, reason, Map.get(ctx, :combat_target_id))
   end
 
   def cancel_cast(state, _reason), do: state
@@ -485,6 +487,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       {:error, _reason} -> game_state
     end
   end
+
+  # A cast's resolution point: completion, cancellation, interruption.
+  #
+  # The descriptor is cleared explicitly rather than left to a `transition_to/3`
+  # edge — Free Cast overlays a cast on `:moving` or `:attacking`, so no single
+  # edge owns the clearing.
+  #
+  # A standing cast *is* the player's action, so resolving it returns them to
+  # `:idle`. An overlaid one is not: the walk or the auto-attack loop underneath
+  # it is the player's actual action and outlives the cast, so the action state is
+  # left alone. Dropping it to `:idle` there would silently stop the walk and
+  # clear the combat intent the loop runs on.
+  defp end_cast(%{action_state: :casting} = game_state) do
+    game_state |> to_idle() |> PlayerState.clear_casting()
+  end
+
+  defp end_cast(game_state), do: PlayerState.clear_casting(game_state)
 
   # Skills count as engaging in combat: after a cast the player keeps attacking
   # the target that was locked when the cast began. Re-set combat intent and hand

@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport, as: SkillUnitFieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage, as: SkillUnitStorage
+  alias Aesir.ZoneServer.Mmo.Skills.SaFreecast
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -99,6 +100,43 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     end
   end
 
+  @doc """
+  How long, in milliseconds, this player's step from `from` to `to` takes.
+
+  The base delay comes from the live `walk_speed` and the per-cell movement cost
+  (`MovementEngine.step_delay/3`). A caster walking under Free Cast pays
+  `SaFreecast.speed_rate/1` percent of that (rAthena `speed = speed * speed_rate / 100`,
+  `status.cpp:8040-8044,8213`).
+
+  The penalty is applied here, at the point of use, rather than folded into
+  `walk_speed`: rAthena scopes it to the cast (`sd->ud.skilltimer != INVALID_TIMER`)
+  rather than to a status, so there is no recalculation to trigger when a cast
+  starts or ends, and the remaining cells retime themselves the moment the cast
+  resolves.
+  """
+  @spec step_delay(PlayerState.t(), {integer(), integer()}, {integer(), integer()}) ::
+          non_neg_integer()
+  def step_delay(game_state, from, to) do
+    base = MovementEngine.step_delay(game_state.walk_speed, from, to)
+
+    case cast_speed_rate(game_state) do
+      100 -> base
+      rate -> div(base * rate, 100)
+    end
+  end
+
+  # rAthena gates the rate on a cast being in flight *and* Free Cast being known
+  # (`status.cpp:8040`) — the skill only ever grants the slow walk, never a plain
+  # walk-speed penalty.
+  defp cast_speed_rate(%{casting: nil}), do: 100
+
+  defp cast_speed_rate(game_state) do
+    case SaFreecast.level(game_state) do
+      0 -> 100
+      level -> SaFreecast.speed_rate(level)
+    end
+  end
+
   defp stop_restricted_walk(state, game_state) do
     stopped = PlayerState.stop_walking(game_state)
 
@@ -111,13 +149,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   end
 
   defp step_player(state, game_state, {next_x, next_y}, remaining_path) do
-    # Timer interval from the live walk_speed and the per-cell movement cost.
-    interval =
-      MovementEngine.step_delay(
-        game_state.walk_speed,
-        {game_state.x, game_state.y},
-        {next_x, next_y}
-      )
+    interval = step_delay(game_state, {game_state.x, game_state.y}, {next_x, next_y})
 
     # Facing toward the cell we are stepping into.
     dir = Geometry.calculate_direction(game_state.x, game_state.y, next_x, next_y)
@@ -334,10 +366,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   """
   def handle_request_move(state, dest_x, dest_y, opts \\ [])
 
-  def handle_request_move(%{game_state: %{action_state: :casting}} = state, dest_x, dest_y, opts) do
-    state
-    |> SkillHandler.cancel_cast(:move)
-    |> handle_request_move(dest_x, dest_y, opts)
+  # Moving mid-cast. Free Cast turns the cast into an overlay: transition to
+  # `:moving` keeping the `casting` descriptor, so the timer keeps running and the
+  # skill fires mid-walk (`Mmo.Skills.SaFreecast`). Without it, moving is still a
+  # hard cancel. An invalid transition can only mean the state machine and this
+  # clause have drifted apart, so fall back to the cancel rather than walking with
+  # a cast nothing will ever resolve.
+  def handle_request_move(
+        %{game_state: %{action_state: :casting} = game_state} = state,
+        dest_x,
+        dest_y,
+        opts
+      ) do
+    with true <- SaFreecast.known?(game_state),
+         {:ok, moving_game_state} <- PlayerState.transition_to(game_state, :moving) do
+      handle_request_move(%{state | game_state: moving_game_state}, dest_x, dest_y, opts)
+    else
+      _ ->
+        state
+        |> SkillHandler.cancel_cast(:move)
+        |> handle_request_move(dest_x, dest_y, opts)
+    end
   end
 
   def handle_request_move(
