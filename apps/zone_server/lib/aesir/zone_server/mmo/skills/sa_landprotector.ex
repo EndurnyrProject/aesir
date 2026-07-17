@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.SaLandprotector do
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
+  alias Aesir.ZoneServer.Mmo.Skills.ElementField
 
   @layout_radii [3, 3, 4, 4, 5]
 
@@ -42,7 +43,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.SaLandprotector do
        state: %{land_protector: true},
        interval: 1_000,
        duration: Enum.at(definition().unit_duration, level - 1),
-       path_check: true
+       path_check: true,
+       lifecycle_policy: ElementField.policy()
      }}
   end
 

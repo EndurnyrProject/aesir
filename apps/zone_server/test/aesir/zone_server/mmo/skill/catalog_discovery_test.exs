@@ -150,6 +150,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
     @skills_dir Path.expand("../../../../../lib/aesir/zone_server/mmo/skills", __DIR__)
 
     @non_skill_modules [
+      Aesir.ZoneServer.Mmo.Skills.ElementField,
       Aesir.ZoneServer.Mmo.Skills.EstimationView,
       Aesir.ZoneServer.Mmo.Skills.Trap
     ]

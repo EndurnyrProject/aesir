@@ -192,7 +192,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   @impl true
   def handle_call({:register, group}, _from, state) do
-    with {:ok, group} <- apply_land_protector(group),
+    with {:ok, group} <- apply_exclusive_family(group, state.clock.()),
+         {:ok, group} <- apply_land_protector(group),
          {:ok, group} <- schedule_group(group, state.rng),
          {:ok, group} <- register_group(group) do
       :ok = enforce_instance_limit(group)
@@ -611,6 +612,45 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     Storage.delete(group_id)
     publish_group_despawn(group, Enum.map(cells, & &1.cell_id), despawn_reason)
   end
+
+  # Per-caster family exclusivity (rAthena skill_unitsetting,
+  # src/map/skill.cpp:5883-5907): placing a member of an exclusive family clears
+  # the caster's existing member first, and only the caster's - other casters'
+  # fields are untouched. A swap between two groups that both opt into
+  # inherit_family_duration carries the replaced group's *remaining* duration, so
+  # recasting never refreshes it.
+  defp apply_exclusive_family(%Group{lifecycle_policy: %{exclusive_family: nil}} = group, _now),
+    do: {:ok, group}
+
+  defp apply_exclusive_family(%Group{} = group, now) do
+    case family_groups(group) do
+      [] ->
+        {:ok, group}
+
+      [replaced | _] = groups ->
+        Enum.each(groups, &cleanup_with_reason(&1, :SKILL_UNIT_DESPAWN_REASON_CANCELED))
+        {:ok, inherit_family_duration(group, replaced, now)}
+    end
+  end
+
+  defp family_groups(%Group{lifecycle_policy: %{exclusive_family: family}} = group) do
+    group.caster_type
+    |> Storage.get_groups_by_caster(group.caster_id)
+    |> Enum.filter(
+      &(&1.group_id != group.group_id and &1.lifecycle_policy.exclusive_family == family)
+    )
+    |> Enum.sort_by(&{&1.created_at, &1.group_id})
+  end
+
+  defp inherit_family_duration(
+         %Group{lifecycle_policy: %{inherit_family_duration: true}} = group,
+         %Group{lifecycle_policy: %{inherit_family_duration: true}, expires_at: expires_at},
+         now
+       )
+       when expires_at > now,
+       do: %{group | expires_at: expires_at}
+
+  defp inherit_family_duration(%Group{} = group, %Group{}, _now), do: group
 
   # Land Protector's central placement rules (rAthena skill_cell_overlap /
   # skill_unitsetting): a Land Protector group destroys overlapping foreign
