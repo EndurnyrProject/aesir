@@ -10,7 +10,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.ElementalChange
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Mob.CombatCalculations, as: MobCombatCalc
 
@@ -138,8 +140,20 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     mob_data.race
   end
 
+  # Reads the `:sc_elementalchange` entry directly instead of going through
+  # `Interpreter.get_all_modifiers/2`: that path builds a context for every
+  # active status via `ContextBuilder.get_unit_stats/2`, which calls back into
+  # `UnitRegistry.get_unit_info/2` -> `get_entity_info/1` ->
+  # `Unit.build_entity_info/2` -> this very function. Routing through the
+  # aggregator here would recurse forever the moment the mob carries any
+  # active status at all.
   @impl Aesir.ZoneServer.Unit
-  def get_element(%__MODULE__{mob_data: %{element: element}}), do: element
+  def get_element(%__MODULE__{instance_id: instance_id, mob_data: %{element: element}}) do
+    case StatusStorage.get_status(:mob, instance_id, :sc_elementalchange) do
+      nil -> element
+      instance -> ElementalChange.modifiers(instance, %{}).element_override
+    end
+  end
 
   @impl Aesir.ZoneServer.Unit
   def is_boss?(%__MODULE__{mob_data: mob_data}) do
@@ -254,7 +268,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
         base_level: mob_data.level,
         job_level: 1
       },
-      element: mob_data.element,
+      element: Map.get(modifiers, :element_override, mob_data.element),
       race: mob_data.race,
       size: mob_data.size,
       weapon: %{

@@ -301,4 +301,77 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
       assert stats.str == 40
     end
   end
+
+  describe "sc_elementalchange defense element override" do
+    test "to_combatant/1 uses the base element with no override present" do
+      state = build_mob_state()
+      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
+
+      combatant = MobState.to_combatant(state)
+
+      assert combatant.element == {:neutral, 1}
+    end
+
+    test "get_element/1 returns the base element with no override present" do
+      state = build_mob_state()
+      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
+
+      assert MobState.get_element(state) == {:neutral, 1}
+    end
+
+    test "to_combatant/1 folds an active override into the element field" do
+      state = build_mob_state()
+      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
+
+      StatusStorage.apply_status(:mob, state.instance_id, :sc_elementalchange, val1: 2, val2: 3)
+
+      combatant = MobState.to_combatant(state)
+
+      assert combatant.element == {:fire, 2}
+    end
+
+    test "get_element/1 folds an active override" do
+      state = build_mob_state()
+      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
+
+      StatusStorage.apply_status(:mob, state.instance_id, :sc_elementalchange, val1: 2, val2: 3)
+
+      assert MobState.get_element(state) == {:fire, 2}
+    end
+
+    test "the override never changes the mob's own attack element" do
+      state = build_mob_state()
+      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
+
+      StatusStorage.apply_status(:mob, state.instance_id, :sc_elementalchange, val1: 2, val2: 3)
+
+      combatant = MobState.to_combatant(state)
+
+      assert combatant.weapon.element == :neutral
+      assert combatant.weapon.element == elem(state.mob_data.element, 0)
+    end
+
+    test "re-applying the status replaces the override instead of stacking" do
+      state = build_mob_state()
+      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
+
+      StatusStorage.apply_status(:mob, state.instance_id, :sc_elementalchange, val1: 1, val2: 3)
+      StatusStorage.apply_status(:mob, state.instance_id, :sc_elementalchange, val1: 1, val2: 6)
+
+      combatant = MobState.to_combatant(state)
+
+      assert combatant.element == {:holy, 1}
+    end
+
+    test "a mob with an active status but no override on the mob keeps the base element" do
+      state = build_mob_state()
+      Registry.register_module(TestAtkBuff)
+      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
+
+      StatusStorage.apply_status(:mob, state.instance_id, :sc_test_mob_atk_buff, val1: 30)
+
+      assert MobState.get_element(state) == {:neutral, 1}
+      assert MobState.to_combatant(state).element == {:neutral, 1}
+    end
+  end
 end
