@@ -375,6 +375,7 @@ defmodule Aesir.ZoneServer.SessionHelpers do
       max_sp: opts[:max_sp] || 50,
       status_point: opts[:status_point] || 0,
       skill_point: opts[:skill_point] || 0,
+      learned_skills: opts[:learned_skills] || %{},
       last_map: opts[:last_map] || opts[:map_name] || "prontera",
       last_x: opts[:last_x] || elem(opts[:position] || {150, 150}, 0),
       last_y: opts[:last_y] || elem(opts[:position] || {150, 150}, 1),
