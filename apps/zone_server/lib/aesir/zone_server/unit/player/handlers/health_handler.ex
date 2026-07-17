@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -176,7 +177,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     SpatialIndex.remove_player(game_state.character_id)
     SpatialIndex.clear_visibility(game_state.character_id)
 
-    {:noreply, apply_death_penalty(state)}
+    {:noreply, state |> SkillMenuHandler.clear() |> apply_death_penalty()}
   end
 
   # Renewal death EXP penalty (rAthena exp.conf death_penalty_base/job). Skipped

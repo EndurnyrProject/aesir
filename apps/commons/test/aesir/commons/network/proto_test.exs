@@ -106,6 +106,8 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.SkillEffect
   alias Aesir.Net.SkillInfo
   alias Aesir.Net.SkillList
+  alias Aesir.Net.SkillMenu
+  alias Aesir.Net.SkillMenuReply
   alias Aesir.Net.SkillUnitCellState
   alias Aesir.Net.SkillUnitDespawn
   alias Aesir.Net.SkillUnitGroupState
@@ -2607,6 +2609,25 @@ defmodule Aesir.Commons.Network.ProtoTest do
     }
 
     assert_round_trip(:estimation_result, result)
+  end
+
+  test "skill_menu round-trips both kinds and its entry ids through envelope oneof" do
+    for {kind, entry_ids} <- [{:SKILLS, [11, 17, 21]}, {:ITEMS, [12_115, 12_116]}] do
+      menu = %SkillMenu{src_skill_id: 380, kind: kind, entry_ids: entry_ids}
+
+      decoded = assert_round_trip(:skill_menu, menu)
+      assert decoded.kind == kind
+      assert decoded.entry_ids == entry_ids
+    end
+  end
+
+  test "skill_menu round-trips an empty entry list" do
+    assert_round_trip(:skill_menu, %SkillMenu{src_skill_id: 380, kind: :SKILLS, entry_ids: []})
+  end
+
+  test "skill_menu_reply round-trips a selection and the cancel sentinel" do
+    assert_round_trip(:skill_menu_reply, %SkillMenuReply{src_skill_id: 380, selected_id: 21})
+    assert_round_trip(:skill_menu_reply, %SkillMenuReply{src_skill_id: 380, selected_id: 0})
   end
 
   defp assert_round_trip(tag, message) do

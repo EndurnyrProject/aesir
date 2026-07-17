@@ -61,6 +61,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
     %{game_state: game_state, connection_pid: self()}
   end
 
+  defp menu_state do
+    Map.put(state(), :pending_skill_menu, %{
+      skill_id: 380,
+      kind: :SKILLS,
+      entry_ids: [11],
+      level: 1
+    })
+  end
+
   defp stub_teardown do
     stub(SpatialIndex, :get_visible_players, fn 1000 -> [2001] end)
     stub(SpatialIndex, :remove_player, fn 1000 -> :ok end)
@@ -76,6 +85,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
 
       assert {:error, :map_not_found} = WarpHandler.warp(state(), "nowhere", 100, 120)
       refute_received {:send, :control, {:map_move, _}}
+    end
+  end
+
+  describe "warp/4 pending skill menu" do
+    setup do
+      stub_teardown()
+      stub(Broadcast, :to_players, fn _visible, _packet, _opts -> :ok end)
+      :ok
+    end
+
+    test "a cross-map warp clears the pending skill menu" do
+      assert {:ok, new_state} = WarpHandler.warp(menu_state(), "geffen", 100, 120)
+      assert new_state.pending_skill_menu == nil
+    end
+
+    # rAthena clears menuskill_id in pc_setpos regardless of the destination map,
+    # so a same-map teleport invalidates the menu too.
+    test "a same-map warp clears the pending skill menu" do
+      assert {:ok, new_state} = WarpHandler.warp(menu_state(), "prontera", 100, 120)
+      assert new_state.pending_skill_menu == nil
     end
   end
 

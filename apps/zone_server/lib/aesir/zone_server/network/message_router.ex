@@ -99,6 +99,7 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def route(%Aesir.Net.SkillUnitUpdate{}), do: {:world, :skill_unit_update}
   def route(%Aesir.Net.SkillUnitDespawn{}), do: {:world, :skill_unit_despawn}
   def route(%Aesir.Net.EstimationResult{}), do: {:world, :estimation_result}
+  def route(%Aesir.Net.SkillMenu{}), do: {:world, :skill_menu}
 
   def route(%Aesir.Net.SkillList{}), do: {:bulk, :skill_list}
   def route(%Aesir.Net.InventoryList{}), do: {:bulk, :inventory_list}

@@ -103,6 +103,34 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       assert {:ok, {_module, %{account_id: 100}, _pid}} = UnitRegistry.get_unit(:player, 1)
     end
 
+    test "starts with no pending skill menu", %{character: character} do
+      {:ok, state} =
+        PlayerSession.init(%{character: character, connection_pid: self()})
+
+      assert state.pending_skill_menu == nil
+    end
+
+    # The pending menu is process-local session state with no ETS/DB backing, so
+    # a disconnect drops it with the session rather than orphaning it (contrast
+    # StatusStorage, which terminate/2 has to clean up explicitly). Disconnecting
+    # with a menu open must still tear the session down cleanly.
+    test "a disconnect tears down a session holding a pending skill menu", %{
+      character: character
+    } do
+      Mimic.copy(CharacterPersistence)
+      stub(CharacterPersistence, :update_position, fn _, _, _, _ -> {:ok, %Character{}} end)
+
+      {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
+
+      state = %{
+        state
+        | pending_skill_menu: %{skill_id: 380, kind: :SKILLS, entry_ids: [11], level: 1}
+      }
+
+      assert :ok = PlayerSession.terminate(:normal, state)
+      assert {:error, :not_found} = UnitRegistry.get_unit(:player, character.id)
+    end
+
     test "sends spawn_player message on init", %{character: character} do
       connection_pid = self()
 

@@ -47,6 +47,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.PickupItemRequest
   alias Aesir.Net.Respawn
   alias Aesir.Net.SkillCast
+  alias Aesir.Net.SkillMenuReply
   alias Aesir.Net.StatUp
   alias Aesir.Net.StorageCloseRequest
   alias Aesir.Net.StorageDepositRequest
@@ -77,6 +78,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.PickupHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
@@ -374,6 +376,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   # NpcInteract - Player's response to the pending NpcDialog.
   def handle_message(%NpcInteract{} = msg, state) do
     NpcInteractionHandler.handle_interact(msg, state)
+  end
+
+  # SkillMenuReply - Player's choice from the pending SkillMenu. Validated
+  # against the parked offer; a stale or forged reply is dropped there.
+  def handle_message(%SkillMenuReply{} = msg, state) do
+    SkillMenuHandler.handle_reply(msg, state)
   end
 
   # NpcBuyRequest - Player buys items from a clicked NPC shop. The buyer is the

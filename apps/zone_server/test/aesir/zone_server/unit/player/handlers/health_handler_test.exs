@@ -139,6 +139,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       refute_receive {:unit_lifecycle, ^event}
     end
 
+    test "clears a pending skill menu on death" do
+      state =
+        Map.put(build_state(100, :idle), :pending_skill_menu, %{
+          skill_id: 380,
+          kind: :SKILLS,
+          entry_ids: [11],
+          level: 1
+        })
+
+      assert {:noreply, new_state} = HealthHandler.apply_damage(150, 2001, state)
+      assert new_state.pending_skill_menu == nil
+    end
+
     test "ignores damage on an already dead player" do
       state = build_state(0, :dead)
 

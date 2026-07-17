@@ -324,7 +324,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       game_state: final_game_state,
       connection_pid: connection_pid,
       connection_monitor_ref: connection_monitor_ref,
-      interaction_lock: nil
+      interaction_lock: nil,
+      pending_skill_menu: nil
     }
 
     register_player(final_game_state)
