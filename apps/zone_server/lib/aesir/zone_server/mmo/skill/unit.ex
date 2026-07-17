@@ -36,11 +36,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
   @spec place(PlayerState.t(), atom(), non_neg_integer(), {integer(), integer()}) ::
           {:ok, Group.t()} | {:error, term()}
   def place(%PlayerState{} = caster_state, skill_name, level, {x, y}) do
-    with {:ok, module} <- module_for(skill_name),
+    with {:ok, _module} <- module_for(skill_name),
          {:ok, definition} <- skill_definition(skill_name) do
-      group = build_group(caster_state, definition.id, skill_name, level, {x, y})
+      caster_state
+      |> build_group(definition.id, skill_name, level, {x, y})
+      |> place_group({caster_state.x, caster_state.y})
+    end
+  end
+
+  @doc """
+  Runs a prepared group's `on_place/1` and registers the resulting placement.
+
+  The seam `place/4` shares with casters that have no `PlayerState` — the mob
+  ground-field archetype builds its own `Group` (`caster_type: :mob`) and gets
+  the identical footprint, path check, registration and cast broadcast.
+  `origin` is the caster's cell, used for the placement's optional path check.
+  """
+  @spec place_group(Group.t(), {integer(), integer()}) :: {:ok, Group.t()} | {:error, term()}
+  def place_group(%Group{} = group, origin) do
+    with {:ok, module} <- module_for(group.skill_name) do
       {:ok, placement} = module.on_place(group)
-      register_placement(group, caster_state, placement)
+      register_placement(group, origin, placement)
     end
   end
 
@@ -132,10 +148,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
     end
   end
 
-  defp register_placement(%Group{} = group, %PlayerState{} = caster_state, placement) do
-    map_name = caster_state.map_name
-    origin = {caster_state.x, caster_state.y}
-
+  defp register_placement(%Group{map_name: map_name} = group, origin, placement) do
     case accepted_cells(map_name, placement.cells, origin, Map.get(placement, :path_check, false)) do
       [] ->
         {:error, :no_walkable_cells}

@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Catalog do
   @moduledoc """
   Static skill-name -> `{archetype, params}` table for mob skills.
 
-  Maps each rAthena mob-skill name to one of the six Phase-2 archetypes and its
+  Maps each rAthena mob-skill name to one of the archetypes below and its
   static parameters, or `:stub` for anything not (yet) modelled. A pure lookup:
   no runtime loading, no `:persistent_term`.
 
@@ -18,6 +18,10 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Catalog do
     * `:teleport`       - `%{}`
     * `:self_buff`      - `%{status: sc_atom}` where `status` equals the `id:`
       declared by the matching module under `status_effect/effects/`
+    * `:dispel`         - `%{}`
+    * `:ground_field`   - `%{skill_name: atom}` where `skill_name` is a player
+      skill implementing `Skill.Ground`; the mob cast reuses that module's
+      `on_place/1` rather than modelling the field twice
 
   Mapping is driven by a skill's *element* and *status*, not its rAthena
   damage `Type`: the archetypes deliberately flavor attacks by element (an
@@ -81,7 +85,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Catalog do
     "NPC_CALLSLAVE" => {:summon_slave, %{}},
     "AL_TELEPORT" => {:teleport, %{}},
     "NPC_AGIUP" => {:self_buff, %{status: :sc_increaseagi}},
-    "SM_ENDURE" => {:self_buff, %{status: :sc_endure}}
+    "SM_ENDURE" => {:self_buff, %{status: :sc_endure}},
+    "SA_DISPELL" => {:dispel, %{}},
+    "SA_LANDPROTECTOR" => {:ground_field, %{skill_name: :sa_landprotector}}
   }
 
   @doc """

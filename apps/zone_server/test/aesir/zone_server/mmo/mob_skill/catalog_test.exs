@@ -100,6 +100,17 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.CatalogTest do
     end
   end
 
+  describe "archetype_for/1 - dispel and ground fields" do
+    test "maps SA_DISPELL to :dispel" do
+      assert Catalog.archetype_for("SA_DISPELL") == {:dispel, %{}}
+    end
+
+    test "maps SA_LANDPROTECTOR to the ground-field dispatch of the real skill module" do
+      assert Catalog.archetype_for("SA_LANDPROTECTOR") ==
+               {:ground_field, %{skill_name: :sa_landprotector}}
+    end
+  end
+
   describe "archetype_for/1 - self buffs" do
     test "maps self-buffs with a matching status module to :self_buff" do
       assert Catalog.archetype_for("NPC_AGIUP") ==
@@ -157,7 +168,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.CatalogTest do
       end
     end
 
-    test "every archetype is one of the six Phase-2 archetypes" do
+    test "every archetype is a built archetype module" do
       valid =
         MapSet.new([
           :elemental_nuke,
@@ -166,7 +177,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.CatalogTest do
           :heal,
           :summon_slave,
           :teleport,
-          :self_buff
+          :self_buff,
+          :dispel,
+          :ground_field
         ])
 
       for {_skill, {archetype, params}} <- Catalog.entries() do
