@@ -4,6 +4,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Endure do
 
   Grants MDEF (val1) and uninterrupted movement while taking hits. Wears off
   after 7 hits unless val4 marks it as infinite.
+
+  The no-flinch half of the status has no modifier: Aesir has no hit-stun
+  mechanic yet, so there is nothing for an `endure` flag to disable. Wire a
+  flag through `modifiers/2` when hit-stun lands.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_endure,
@@ -18,7 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Endure do
   @max_hits 7
 
   @impl true
-  def modifiers(instance, _context), do: %{mdef: instance.val1, endure: true}
+  def modifiers(instance, _context), do: %{mdef: instance.val1}
 
   @impl true
   def on_apply(_target, instance, _context) do

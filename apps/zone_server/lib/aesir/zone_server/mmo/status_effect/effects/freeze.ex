@@ -27,6 +27,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Freeze do
 
   @impl true
   def modifiers(_instance, _context) do
-    %{def_ele: :water1, def_rate: -50, mdef_rate: 25}
+    %{element_override: {:water, 1}, def_rate: -50, mdef_rate: 25}
   end
 end

@@ -585,8 +585,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       hit: PlayerCombatCalc.calculate_hit(stats),
       flee: PlayerCombatCalc.calculate_flee(stats),
       critical:
-        base_critical + get_status_modifier(stats, :critical) +
-          get_equipment_modifier(stats, :critical),
+        trunc(
+          (base_critical + get_status_modifier(stats, :critical) +
+             get_equipment_modifier(stats, :critical)) *
+            (100 + get_status_modifier(stats, :critical_rate)) / 100
+        ),
       perfect_dodge: PlayerCombatCalc.calculate_perfect_dodge(stats),
       atk:
         base_atk + get_status_modifier(stats, :atk) + get_equipment_modifier(stats, :atk) +

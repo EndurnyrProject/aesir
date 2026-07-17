@@ -850,7 +850,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       base_stats: state.stats.base_stats,
       combat_stats: state.stats.combat_stats,
       progression: state.stats.progression,
-      element: {:neutral, 1},
+      element: Map.get(state.stats.modifiers.status_effects, :element_override, {:neutral, 1}),
       race: :demi_human,
       size: :medium,
       weapon: %{

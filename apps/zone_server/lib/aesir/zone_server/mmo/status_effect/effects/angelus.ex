@@ -15,6 +15,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Angelus do
 
   @impl true
   def modifiers(instance, _context) do
-    %{def2_rate: instance.val2, maxhp_rate: 5}
+    %{def2_rate: instance.val2, max_hp_rate: 5}
   end
 end

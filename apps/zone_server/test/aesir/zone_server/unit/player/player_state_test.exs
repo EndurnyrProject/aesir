@@ -498,6 +498,17 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       assert combatant.attack_range == 3
     end
 
+    test "defaults the defense element to neutral 1", %{state: state} do
+      assert PlayerState.to_combatant(state).element == {:neutral, 1}
+    end
+
+    test "an element_override status modifier changes the defense element", %{state: state} do
+      state =
+        put_in(state.stats.modifiers.status_effects, %{element_override: {:holy, 1}})
+
+      assert PlayerState.to_combatant(state).element == {:holy, 1}
+    end
+
     test "carries the player's attack delay as attack_delay_ms", %{state: state} do
       combatant = PlayerState.to_combatant(state)
 

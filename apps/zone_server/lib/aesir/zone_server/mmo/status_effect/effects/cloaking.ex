@@ -37,8 +37,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Cloaking do
   alias Aesir.ZoneServer.Mmo.StatusEntry
 
   @impl true
-  def modifiers(%StatusEntry{val1: level}, context) do
-    %{cri: Map.get(context.target, :cri, 0), movement_speed: speed_penalty(level)}
+  def modifiers(%StatusEntry{val1: level}, _context) do
+    %{critical_rate: 100, movement_speed: speed_penalty(level)}
   end
 
   @spec speed_penalty(integer() | nil) :: non_neg_integer()

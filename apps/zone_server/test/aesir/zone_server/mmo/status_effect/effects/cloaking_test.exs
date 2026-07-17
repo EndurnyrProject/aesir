@@ -20,8 +20,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CloakingTest do
       assert %{movement_speed: 0} = Cloaking.modifiers(entry(val1: 10), %{target: %{}})
     end
 
-    test "doubles CRIT from the target's current value" do
-      assert %{cri: 42} = Cloaking.modifiers(entry(val1: 1), %{target: %{cri: 42}})
+    test "doubles CRIT via the critical_rate percent channel" do
+      assert %{critical_rate: 100} = Cloaking.modifiers(entry(val1: 1), %{target: %{}})
     end
   end
 end

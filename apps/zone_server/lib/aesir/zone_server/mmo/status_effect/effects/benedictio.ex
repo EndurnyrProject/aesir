@@ -14,5 +14,5 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Benedictio do
     icon: :benedictio
 
   @impl true
-  def modifiers(_instance, _context), do: %{def_ele: :holy1}
+  def modifiers(_instance, _context), do: %{element_override: {:holy, 1}}
 end

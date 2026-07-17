@@ -19,7 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Poison do
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
 
   @impl true
-  def modifiers(_instance, _context), do: %{def2: -25}
+  def modifiers(_instance, _context), do: %{def2_rate: -25}
 
   @impl true
   def on_tick(target, instance, context) do

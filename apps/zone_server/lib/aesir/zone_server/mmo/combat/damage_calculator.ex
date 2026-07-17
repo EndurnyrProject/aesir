@@ -394,14 +394,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     soft_def_bonus = Map.get(modifiers, :vit_bonus, 0)
     # :def_rate is an additive percent delta on hard DEF (Freeze's -50, Provoke,
     # SignumCrucis, DeadlyPoison); the skill-status family scales eDEF.
+    # :def2_rate is the soft-DEF analogue (rAthena status_calc_def2 percent
+    # statuses: Angelus, Provoke, Poison).
     def_rate = Map.get(modifiers, :def_rate, 0)
+    def2_rate = Map.get(modifiers, :def2_rate, 0)
 
     defense_multiplier = 1.0 + Map.get(modifiers, :defense_multiplier, 0.0)
 
     modified_hard_def =
       trunc((hard_def + hard_def_bonus) * defense_multiplier * (100 + def_rate) / 100)
 
-    modified_soft_def = trunc((soft_def + soft_def_bonus) * defense_multiplier)
+    modified_soft_def =
+      trunc((soft_def + soft_def_bonus) * defense_multiplier * (100 + def2_rate) / 100)
 
     {modified_hard_def, modified_soft_def}
   end

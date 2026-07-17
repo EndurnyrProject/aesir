@@ -21,7 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.TwoHandQuicken do
     %{
       aspd: instance.val2,
       hit: instance.val1 * 2,
-      cri: (2 + instance.val1) * 10
+      critical: (2 + instance.val1) * 10
     }
   end
 end

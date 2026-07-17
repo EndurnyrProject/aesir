@@ -82,7 +82,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
 
       # Check for expected modifiers
       # Water element level 1
-      assert modifiers[:def_ele] == :water1
+      assert modifiers[:element_override] == {:water, 1}
       assert modifiers[:def_rate] == -50
       assert modifiers[:mdef_rate] == 25
     end
