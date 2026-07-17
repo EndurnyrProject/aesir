@@ -17,7 +17,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   alias Aesir.Net.SkillUnitUpdate
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.Cell, as: MapCell
-  alias Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
@@ -1283,6 +1282,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp supports_target?(%{target?: target?}, target), do: target?.(target)
 
-  defp handler_for(%Group{caster_type: :mob}), do: {:ok, GroundNuke}
+  defp handler_for(%Group{handler: handler}) when not is_nil(handler), do: {:ok, handler}
   defp handler_for(%Group{skill_name: skill_name}), do: Catalog.ground_module_for(skill_name)
 end

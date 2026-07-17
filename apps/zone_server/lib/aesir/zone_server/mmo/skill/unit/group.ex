@@ -9,6 +9,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
 
   One row per cast is stored in the `:skill_units` ETS table keyed by `group_id`;
   `Skill.Unit.Storage` keeps its secondary keys synchronized.
+
+  `handler` carries the group's tick/trigger module for casters that bypass
+  `Skill.Catalog` (e.g. mob archetypes). When `nil`, `Skill.Unit.Manager`
+  resolves the handler from `skill_name` via `Skill.Catalog.ground_module_for/1`.
   """
   use TypedStruct
 
@@ -37,5 +41,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
     field :lifecycle_policy, LifecyclePolicy.t(), default: %LifecyclePolicy{}
     field :visible?, boolean(), default: false
     field :state, map(), default: %{}
+    field :handler, module() | nil, default: nil
   end
 end

@@ -9,12 +9,14 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke do
   carries the constant `skill_name: :mob_ground_nuke`, so no player-catalog
   lookup (movement trigger, `Skill.Unit.destroy/1`) ever matches it.
 
-  This module is also the group's tick handler: `Skill.Unit.Manager`
-  dispatches every `caster_type: :mob` group here. `on_interval/2` follows the
-  `Skill.Ground` contract (minus `on_place/1` — placement happens in `apply/4`):
-  it resolves the mob caster once per tick, skipping the tick cleanly when the
-  mob is gone, and applies renewal magic damage to every player standing on a
-  footprint cell. The group expires via the unit manager's normal reaping.
+  This module is also the group's tick handler: it stamps `handler: __MODULE__`
+  on the group it builds, and `Skill.Unit.Manager` dispatches to that field
+  directly instead of resolving it from the catalog. `on_interval/2` follows
+  the `Skill.Ground` contract (minus `on_place/1` — placement happens in
+  `apply/4`): it resolves the mob caster once per tick, skipping the tick
+  cleanly when the mob is gone, and applies renewal magic damage to every
+  player standing on a footprint cell. The group expires via the unit
+  manager's normal reaping.
   """
 
   @behaviour Aesir.ZoneServer.Mmo.MobSkill.Archetype
@@ -65,6 +67,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke do
         level: level,
         caster_id: caster.instance_id,
         caster_type: :mob,
+        handler: __MODULE__,
         map_name: caster.map_name,
         center: {x, y},
         cells: cells,
