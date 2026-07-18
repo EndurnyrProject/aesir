@@ -23,11 +23,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
   @mob_id 2001
   @from {150, 150}
 
-  defp mob_state(x, y) do
+  defp mob_state(x, y, modes \\ []) do
     %MobState{
       instance_id: @mob_id,
       mob_id: 1002,
-      mob_data: %{},
+      mob_data: %{modes: modes},
       spawn_ref: %{},
       x: x,
       y: y,
@@ -69,6 +69,25 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
 
     assert_received {:"$gen_cast", {:knocked_back, 153, 150}}
     assert_received {:broadcast, %Knockback{unit_id: @mob_id, dst_x: 153, dst_y: 150}}
+  end
+
+  test "knockback leaves a boss mob's position unchanged and broadcasts nothing" do
+    stub(SpatialIndex, :get_unit_position, fn :mob, @mob_id ->
+      {:ok, {151, 150, @map_name}}
+    end)
+
+    stub(MapCache, :get, fn @map_name -> {:ok, :map} end)
+
+    stub(UnitRegistry, :get_unit, fn :mob, @mob_id ->
+      {:ok, {MobState, mob_state(151, 150, [:boss]), self()}}
+    end)
+
+    reject(&Cell.traversable?/3)
+    reject(&Broadcast.to_in_range/5)
+
+    {from_x, from_y} = @from
+    assert {:ok, {151, 150}} = Combat.knockback(:mob, @mob_id, from_x, from_y, 5)
+    refute_received {:"$gen_cast", {:knocked_back, _, _}}
   end
 
   test "knockback with no walkable cell leaves the unit in place" do

@@ -1288,9 +1288,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   and the registry, then broadcasts `Knockback` to nearby players so they slide
   the unit to its landing cell.
 
+  Bosses are immune: their position is resolved and returned unchanged, with
+  no movement and no broadcast.
+
   Returns `:ok` for skill units, `{:ok, {dst_x, dst_y}}` with the final cell
-  (unchanged if it could not move), or `{:error, reason}` if the unit or its
-  map could not be resolved.
+  (unchanged if it could not move, or if the defender is a boss), or
+  `{:error, reason}` if the unit or its map could not be resolved.
   """
   @spec knockback(atom(), integer(), integer(), integer(), non_neg_integer()) ::
           :ok | {:ok, {integer(), integer()}} | {:error, atom()}
@@ -1299,15 +1302,30 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   def knockback(unit_type, unit_id, from_x, from_y, distance) do
     with {:ok, {x, y, map_name}} <- SpatialIndex.get_unit_position(unit_type, unit_id),
          {:ok, _map} <- MapCache.get(map_name) do
-      {dx, dy} = {sign(x - from_x), sign(y - from_y)}
-      {dst_x, dst_y} = blow_path(map_name, x, y, dx, dy, distance)
-
-      if {dst_x, dst_y} != {x, y} do
-        move_unit(unit_type, unit_id, dst_x, dst_y, map_name)
-        broadcast_blownback(unit_id, dst_x, dst_y, map_name)
+      if boss?(unit_type, unit_id) do
+        {:ok, {x, y}}
+      else
+        do_knockback(unit_type, unit_id, x, y, from_x, from_y, distance, map_name)
       end
+    end
+  end
 
-      {:ok, {dst_x, dst_y}}
+  defp do_knockback(unit_type, unit_id, x, y, from_x, from_y, distance, map_name) do
+    {dx, dy} = {sign(x - from_x), sign(y - from_y)}
+    {dst_x, dst_y} = blow_path(map_name, x, y, dx, dy, distance)
+
+    if {dst_x, dst_y} != {x, y} do
+      move_unit(unit_type, unit_id, dst_x, dst_y, map_name)
+      broadcast_blownback(unit_id, dst_x, dst_y, map_name)
+    end
+
+    {:ok, {dst_x, dst_y}}
+  end
+
+  defp boss?(unit_type, unit_id) do
+    case UnitRegistry.get_unit(unit_type, unit_id) do
+      {:ok, {module, state, _pid}} -> module.is_boss?(state)
+      {:error, :not_found} -> false
     end
   end
 
