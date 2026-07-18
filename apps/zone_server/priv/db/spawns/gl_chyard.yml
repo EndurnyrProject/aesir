@@ -9,6 +9,7 @@
         ys: 0
       mob: 2861
       respawn_time: 180000
+      respawn_variance: 0
     - amount: 95
       area:
         x: 0
@@ -17,6 +18,7 @@
         ys: 0
       mob: 1198
       respawn_time: 5000
+      respawn_variance: 0
     - amount: 55
       area:
         x: 0
@@ -25,6 +27,7 @@
         ys: 0
       mob: 1192
       respawn_time: 5000
+      respawn_variance: 0
     - amount: 15
       area:
         x: 0
@@ -33,6 +36,7 @@
         ys: 0
       mob: 1117
       respawn_time: 5000
+      respawn_variance: 0
     - amount: 4
       area:
         x: 0
@@ -41,6 +45,7 @@
         ys: 0
       mob: 1191
       respawn_time: 5000
+      respawn_variance: 0
     - amount: 4
       area:
         x: 0
@@ -49,6 +54,16 @@
         ys: 0
       mob: 1035
       respawn_time: 5000
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1272
+      respawn_time: 3600000
+      respawn_variance: 600000
     - amount: 1
       area:
         x: 0
@@ -57,3 +72,4 @@
         ys: 0
       mob: 1302
       respawn_time: 3600000
+      respawn_variance: 1800000

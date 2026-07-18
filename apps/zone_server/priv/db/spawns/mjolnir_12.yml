@@ -9,6 +9,7 @@
         ys: 0
       mob: 2842
       respawn_time: 180000
+      respawn_variance: 0
     - amount: 162
       area:
         x: 0
@@ -17,6 +18,7 @@
         ys: 0
       mob: 1114
       respawn_time: 5000
+      respawn_variance: 0
     - amount: 43
       area:
         x: 0
@@ -25,6 +27,7 @@
         ys: 0
       mob: 1035
       respawn_time: 5000
+      respawn_variance: 0
     - amount: 43
       area:
         x: 0
@@ -33,3 +36,4 @@
         ys: 0
       mob: 1139
       respawn_time: 5000
+      respawn_variance: 0

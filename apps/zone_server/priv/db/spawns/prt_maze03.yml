@@ -9,6 +9,7 @@
         ys: 0
       mob: 2701
       respawn_time: 180000
+      respawn_variance: 0
     - amount: 2
       area:
         x: 0
@@ -17,6 +18,7 @@
         ys: 0
       mob: 2764
       respawn_time: 180000
+      respawn_variance: 0
     - amount: 52
       area:
         x: 0
@@ -25,6 +27,7 @@
         ys: 0
       mob: 1031
       respawn_time: 5000
+      respawn_variance: 0
     - amount: 30
       area:
         x: 0
@@ -33,6 +36,7 @@
         ys: 0
       mob: 1035
       respawn_time: 5000
+      respawn_variance: 0
     - amount: 30
       area:
         x: 170
@@ -41,6 +45,7 @@
         ys: 70
       mob: 1139
       respawn_time: 60000
+      respawn_variance: 30000
     - amount: 25
       area:
         x: 100
@@ -49,6 +54,7 @@
         ys: 80
       mob: 1101
       respawn_time: 5000
+      respawn_variance: 0
     - amount: 20
       area:
         x: 150
@@ -57,6 +63,7 @@
         ys: 70
       mob: 1037
       respawn_time: 300000
+      respawn_variance: 150000
     - amount: 20
       area:
         x: 50
@@ -65,6 +72,7 @@
         ys: 70
       mob: 1215
       respawn_time: 300000
+      respawn_variance: 150000
     - amount: 10
       area:
         x: 0
@@ -73,6 +81,7 @@
         ys: 0
       mob: 1037
       respawn_time: 5000
+      respawn_variance: 0
     - amount: 1
       area:
         x: 0
@@ -81,6 +90,7 @@
         ys: 0
       mob: 1294
       respawn_time: 5000
+      respawn_variance: 0
     - amount: 1
       area:
         x: 170
@@ -89,6 +99,7 @@
         ys: 70
       mob: 1093
       respawn_time: 1920000
+      respawn_variance: 150000
     - amount: 1
       area:
         x: 23
@@ -97,6 +108,7 @@
         ys: 70
       mob: 1090
       respawn_time: 1920000
+      respawn_variance: 150000
     - amount: 1
       area:
         x: 50
@@ -105,6 +117,7 @@
         ys: 70
       mob: 1092
       respawn_time: 1920000
+      respawn_variance: 150000
     - amount: 1
       area:
         x: 150
@@ -113,6 +126,7 @@
         ys: 70
       mob: 1088
       respawn_time: 1920000
+      respawn_variance: 1500000
     - amount: 1
       area:
         x: 0
@@ -121,6 +135,16 @@
         ys: 0
       mob: 1120
       respawn_time: 6800000
+      respawn_variance: 3400000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1039
+      respawn_time: 7200000
+      respawn_variance: 600000
     - amount: 1
       area:
         x: 61
@@ -129,6 +153,7 @@
         ys: 10
       mob: 1083
       respawn_time: 1800000
+      respawn_variance: 900000
     - amount: 1
       area:
         x: 61
@@ -137,6 +162,7 @@
         ys: 10
       mob: 1079
       respawn_time: 1800000
+      respawn_variance: 900000
     - amount: 1
       area:
         x: 61
@@ -145,6 +171,7 @@
         ys: 10
       mob: 1081
       respawn_time: 1800000
+      respawn_variance: 900000
     - amount: 1
       area:
         x: 57
@@ -153,6 +180,7 @@
         ys: 10
       mob: 1083
       respawn_time: 1800000
+      respawn_variance: 900000
     - amount: 1
       area:
         x: 15
@@ -161,6 +189,7 @@
         ys: 10
       mob: 1083
       respawn_time: 1800000
+      respawn_variance: 900000
     - amount: 1
       area:
         x: 137
@@ -169,6 +198,7 @@
         ys: 3
       mob: 1083
       respawn_time: 1800000
+      respawn_variance: 900000
     - amount: 1
       area:
         x: 17
@@ -177,6 +207,7 @@
         ys: 10
       mob: 1083
       respawn_time: 1800000
+      respawn_variance: 900000
     - amount: 1
       area:
         x: 17
@@ -185,6 +216,7 @@
         ys: 10
       mob: 1079
       respawn_time: 1800000
+      respawn_variance: 900000
     - amount: 2
       area:
         x: 99
@@ -193,6 +225,7 @@
         ys: 10
       mob: 1079
       respawn_time: 1800000
+      respawn_variance: 900000
     - amount: 1
       area:
         x: 99
@@ -201,6 +234,7 @@
         ys: 10
       mob: 1079
       respawn_time: 1800000
+      respawn_variance: 900000
     - amount: 5
       area:
         x: 0
@@ -209,6 +243,7 @@
         ys: 0
       mob: 1078
       respawn_time: 180000
+      respawn_variance: 90000
     - amount: 3
       area:
         x: 99
@@ -217,6 +252,7 @@
         ys: 10
       mob: 1084
       respawn_time: 180000
+      respawn_variance: 90000
     - amount: 3
       area:
         x: 54
@@ -225,6 +261,7 @@
         ys: 10
       mob: 1084
       respawn_time: 180000
+      respawn_variance: 90000
     - amount: 2
       area:
         x: 171
@@ -233,6 +270,7 @@
         ys: 3
       mob: 1085
       respawn_time: 180000
+      respawn_variance: 90000
     - amount: 3
       area:
         x: 174
@@ -241,3 +279,4 @@
         ys: 3
       mob: 1085
       respawn_time: 180000
+      respawn_variance: 90000

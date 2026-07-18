@@ -7,8 +7,8 @@ defmodule Mix.Tasks.Aesir.Import.Spawns do
 
       mix aesir.import.spawns [<rathena_root>]
 
-  `<rathena_root>` defaults to `../rathena`. Only `monster` lines are imported
-  (`boss_monster` is skipped - no MVP model yet). Every spawn is checked against
+  `<rathena_root>` defaults to `../rathena`. Both `monster` and `boss_monster`
+  lines are imported. Every spawn is checked against
   the live `maps.mcache` and `Mobs`: a spawn on an unknown map, referencing an
   unknown mob id, or a fixed single-cell spawn on a non-walkable cell is dropped
   at import so `Spawns.load` stays boot-safe. The run prints how many spawns were
@@ -155,6 +155,8 @@ defmodule Mix.Tasks.Aesir.Import.Spawns do
     Mix.shell().info("spawns: parsed #{length(spawns)} from #{length(files)} files")
     Mix.shell().info("  wrote #{length(kept)} across #{maps} maps -> #{@out_dir}")
 
+    report_boss_density(kept)
+
     unless skipped == [] do
       freq = skipped |> Enum.map(fn {_spawn, reason} -> reason end) |> Enum.frequencies()
       Mix.shell().info("  skipped #{length(skipped)} to keep boot safe: #{inspect(freq)}")
@@ -166,6 +168,27 @@ defmodule Mix.Tasks.Aesir.Import.Spawns do
 
     :ok
   end
+
+  # Boss-classified spawns are worth calling out on every import: they are the
+  # entries that grant MVP rewards and carry long respawn timers, so a sudden
+  # change in their number after a rAthena sync is something to look at.
+  @spec report_boss_density([Importer.spawn_map()]) :: :ok
+  defp report_boss_density(kept) do
+    boss_spawns = Enum.filter(kept, &boss_spawn?/1)
+    maps = boss_spawns |> Enum.map(& &1["map"]) |> Enum.uniq() |> length()
+
+    Mix.shell().info("  #{length(boss_spawns)} boss-classified spawns across #{maps} maps")
+  end
+
+  @spec boss_spawn?(Importer.spawn_map()) :: boolean()
+  defp boss_spawn?(%{"spawns" => [%{"mob" => mob} | _]}) when is_integer(mob) do
+    case Mobs.by_id(mob) do
+      {:ok, %{modes: modes}} -> :boss in modes
+      _ -> false
+    end
+  end
+
+  defp boss_spawn?(_spawn_map), do: false
 
   @spec report_error(Path.t(), pos_integer(), term()) :: :ok
   defp report_error(file, line, reason) do

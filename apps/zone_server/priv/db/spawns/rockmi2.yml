@@ -9,3 +9,4 @@
         ys: 20
       mob: 3742
       respawn_time: 0
+      respawn_variance: 0

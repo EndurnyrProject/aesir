@@ -38,14 +38,28 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Spawns.ImporterTest do
               }} = Importer.parse_line(line)
     end
 
-    test "drops trailing delay2/event/size/ai fields" do
+    test "retains delay2 as respawn_variance and drops trailing event/size/ai fields" do
       line =
-        "lhz_dun_n,0,0\tmonster\tEremes Guille\t3208,20,5000,0,\"lhz_dun_n::OnRegularDead3208\""
+        "lhz_dun_n,0,0\tmonster\tEremes Guille\t3208,20,5000,120000,\"lhz_dun_n::OnRegularDead3208\""
 
       assert {:ok,
               %{
-                "spawns" => [%{"mob" => 3208, "amount" => 20, "respawn_time" => 5000}]
+                "spawns" => [
+                  %{
+                    "mob" => 3208,
+                    "amount" => 20,
+                    "respawn_time" => 5000,
+                    "respawn_variance" => 120_000
+                  }
+                ]
               }} = Importer.parse_line(line)
+    end
+
+    test "defaults respawn_variance to 0 when delay2 is omitted" do
+      line = "prt_fild00,0,0\tmonster\tRoda Frog\t1012,169,5000"
+
+      assert {:ok, %{"spawns" => [%{"respawn_time" => 5000, "respawn_variance" => 0}]}} =
+               Importer.parse_line(line)
     end
 
     test "parses a bare-map location as whole-map 0,0 spawn" do
@@ -102,10 +116,16 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Spawns.ImporterTest do
                Importer.parse_line(line)
     end
 
-    test "skips boss_monster lines" do
+    test "imports boss_monster lines instead of skipping them" do
       line = "gl_cas02_,0,0\tboss_monster\tBaphomet\t1039,1,7200000,0,0"
 
-      assert :skip = Importer.parse_line(line)
+      assert {:ok,
+              %{
+                "map" => "gl_cas02_",
+                "spawns" => [
+                  %{"mob" => 1039, "amount" => 1, "respawn_time" => 7_200_000}
+                ]
+              }} = Importer.parse_line(line)
     end
 
     test "skips blank lines and comments" do

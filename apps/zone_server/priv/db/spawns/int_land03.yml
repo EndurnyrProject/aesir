@@ -9,3 +9,4 @@
         ys: 0
       mob: 2401
       respawn_time: 5000
+      respawn_variance: 0

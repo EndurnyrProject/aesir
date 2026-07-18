@@ -12,7 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Spawns.Loader do
 
   @type index :: %{by_map: %{String.t() => [MobSpawn.t()]}}
 
-  @cache_file "spawns.etf"
+  @cache_file "spawns_v2.etf"
 
   @spec load(Path.t()) :: index()
   def load(dir), do: dir |> DataLoader.load(@cache_file, &build/1) |> index()
@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Spawns.Loader do
       mob: Map.fetch!(spawn, "mob"),
       amount: Map.fetch!(spawn, "amount"),
       respawn_time: Map.fetch!(spawn, "respawn_time"),
+      respawn_variance: Map.get(spawn, "respawn_variance", 0),
       spawn_area: %MobSpawn.SpawnArea{
         x: Map.fetch!(area, "x"),
         y: Map.fetch!(area, "y"),

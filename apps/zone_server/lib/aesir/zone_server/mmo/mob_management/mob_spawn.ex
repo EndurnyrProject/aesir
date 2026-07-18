@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobSpawn do
     field :mob, integer(), enforce: true
     field :amount, integer(), enforce: true
     field :respawn_time, integer(), enforce: true
+    field :respawn_variance, integer(), default: 0
     field :spawn_area, SpawnArea.t(), enforce: true
   end
 end
