@@ -53,7 +53,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListView do
       max_level: view_entry.max_level,
       requires: Enum.map(view_entry.requires, &to_requirement/1),
       req_base_level: view_entry.base_level,
-      req_job_level: view_entry.job_level
+      req_job_level: view_entry.job_level,
+      splash_radius: definition.splash_radius
     }
   end
 

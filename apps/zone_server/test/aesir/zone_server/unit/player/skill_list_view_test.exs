@@ -16,6 +16,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListViewTest do
   @sm_bash_id 5
   @acolyte_job_id 4
   @al_heal_id 28
+  @mage_job_id 2
+  @mg_thunderstorm_id 21
 
   defp progression(fields) do
     struct!(
@@ -110,6 +112,20 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListViewTest do
         |> by_id(@al_heal_id)
 
       assert %SkillInfo{name: "AL_HEAL", type: 16} = heal
+    end
+
+    test "an area skill (MG_THUNDERSTORM) carries its splash_radius" do
+      thunderstorm =
+        progression(job_id: @mage_job_id)
+        |> SkillListView.build()
+        |> by_id(@mg_thunderstorm_id)
+
+      assert %SkillInfo{splash_radius: 2} = thunderstorm
+    end
+
+    test "a non-area skill (SM_SWORD) reports splash_radius 0" do
+      sword = SkillListView.build(progression(skill_point: 0)) |> by_id(@sm_sword_id)
+      assert sword.splash_radius == 0
     end
   end
 end
