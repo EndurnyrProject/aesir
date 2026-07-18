@@ -149,8 +149,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   end
 
   defp step_player(state, game_state, {next_x, next_y}, remaining_path) do
-    interval = step_delay(game_state, {game_state.x, game_state.y}, {next_x, next_y})
-
     # Facing toward the cell we are stepping into.
     dir = Geometry.calculate_direction(game_state.x, game_state.y, next_x, next_y)
 
@@ -192,8 +190,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       :no_warp ->
         touched_state = maybe_trigger_touch(%{state | game_state: updated_game_state})
 
-        # Schedule next movement tick with appropriate interval
+        # Schedule the next tick priced by the step it will take, so entering
+        # each cell lines up with the client's per-cell interpolation.
         if remaining_path != [] do
+          interval =
+            step_delay(touched_state.game_state, {next_x, next_y}, hd(remaining_path))
+
           Process.send_after(self(), :movement_tick, interval)
           {:noreply, touched_state}
         else
@@ -317,10 +319,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     with {:ok, map_data} <- MapCache.get(game_state.map_name),
          {:ok, [_ | _] = path} <-
            Pathfinding.find_path(map_data, {game_state.x, game_state.y}, destination) do
-      game_state =
-        PlayerState.set_path(game_state, Pathfinding.simplify_path(path, game_state.map_name))
+      game_state = PlayerState.set_path(game_state, path)
 
-      Process.send_after(self(), :movement_tick, 0)
+      first_delay = step_delay(game_state, {game_state.x, game_state.y}, hd(path))
+      Process.send_after(self(), :movement_tick, first_delay)
       {:noreply, %{state | game_state: game_state}}
     else
       _ ->
@@ -412,15 +414,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
              {game_state.x, game_state.y},
              {dest_x, dest_y}
            ) do
-      # Simplify path to reduce network traffic
-      simplified_path = Pathfinding.simplify_path(path, game_state.map_name)
-
       # A manual move (no combat_initiated:/pickup_initiated: flag) while heading
       # to a target or item cancels that pending intent so the player can walk away.
       game_state = maybe_clear_action_intent(game_state, opts)
 
-      # Update game state with new path
-      game_state = PlayerState.set_path(game_state, simplified_path)
+      # The full per-cell path is walked, never a simplified one: step_delay/3
+      # prices one adjacent step, so hopping a collapsed straight segment in a
+      # single tick would cross it at many times walk speed, racing far ahead of
+      # the client's interpolation (and skipping over warp/trap cells).
+      game_state = PlayerState.set_path(game_state, path)
 
       # Send movement confirmation to the client
       walk_start_time = System.monotonic_time(:millisecond)
@@ -435,8 +437,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
       MessageRouter.send_to(connection_pid, packet)
 
-      # Schedule first movement tick immediately to start movement
-      Process.send_after(self(), :movement_tick, 0)
+      # The first tick fires after the first step's cost, not immediately: a
+      # unit enters a cell when the step completes, keeping the server position
+      # in lockstep with the client's interpolation instead of one cell ahead.
+      first_delay = step_delay(game_state, {game_state.x, game_state.y}, hd(path))
+      Process.send_after(self(), :movement_tick, first_delay)
 
       {:noreply, %{state | game_state: game_state}}
     else

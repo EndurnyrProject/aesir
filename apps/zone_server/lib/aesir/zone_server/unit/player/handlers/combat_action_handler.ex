@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Pathfinding
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Ammo
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
@@ -368,8 +369,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   end
 
   defp execute_immediate_attack(state, target_id) do
+    prev_action_state = state.game_state.action_state
+
     case PlayerState.transition_to(state.game_state, :attacking) do
       {:ok, transitioned_state} ->
+        transitioned_state = anchor_swing_position(state, prev_action_state, transitioned_state)
         handle_attack_execution(state, target_id, transitioned_state)
 
       {:error, :invalid_transition} ->
@@ -378,6 +382,35 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
         )
 
         {:noreply, state}
+    end
+  end
+
+  # Clients root a unit's sprite in place the moment its swing animation starts,
+  # trusting the server position. The server steps into cells at the start of
+  # each walk interval, so a swing that begins right after an approach (or that
+  # cuts a walk short) lands while clients are still interpolating the walk,
+  # stranding the sprite cells away from the target. Anchor the swing instead:
+  # halt any in-flight walk and send the authoritative cell to the attacker and
+  # nearby viewers. Steady auto-attack swings start from :attacking while
+  # standing and stay silent.
+  defp anchor_swing_position(state, prev_action_state, game_state) do
+    if game_state.movement_state == :moving or prev_action_state == :combat_moving do
+      halted = PlayerState.stop_walking(game_state)
+      packet = %MoveStop{gid: halted.character_id, x: halted.x, y: halted.y}
+      MessageRouter.send_to(state.connection_pid, packet)
+
+      Broadcast.to_in_range(
+        halted.map_name,
+        halted.x,
+        halted.y,
+        halted.view_range,
+        packet,
+        exclude_id: halted.character_id
+      )
+
+      halted
+    else
+      game_state
     end
   end
 

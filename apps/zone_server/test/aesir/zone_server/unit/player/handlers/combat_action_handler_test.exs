@@ -969,4 +969,87 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       assert {:noreply, ^state} = CombatActionHandler.handle_target_movement(state, {22, 21})
     end
   end
+
+  describe "swing position anchoring" do
+    alias Aesir.ZoneServer.Unit.Broadcast
+
+    defp anchor_state(extra) do
+      game_state =
+        %PlayerState{
+          character_id: 1000,
+          x: 21,
+          y: 20,
+          map_name: "prontera",
+          view_range: 14,
+          action_state: :idle,
+          movement_state: :standing,
+          walk_path: [],
+          last_attack_timestamp: 0,
+          act_delay_until: 0,
+          combat_action_type: 7,
+          combat_target_id: 2000,
+          stats: %{derived_stats: %{aspd: 150}, equipment: %Equipment{}}
+        }
+        |> Map.merge(Map.new(extra))
+
+      %{game_state: game_state, connection_pid: self()}
+    end
+
+    defp stub_swing_at_adjacent_target do
+      stub(Stats, :weapon_type, fn _equipment -> :fist end)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:error, :not_found}
+        :mob, 2000 -> {:ok, {20, 20, "prontera"}}
+      end)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _r -> [] end)
+      stub(Combat, :execute_attack, fn _stats, _gs, 2000 -> :ok end)
+    end
+
+    test "a swing on arrival from a combat approach sends the authoritative cell" do
+      stub_swing_at_adjacent_target()
+
+      stub(Broadcast, :to_in_range, fn "prontera", 21, 20, _range, packet, _opts ->
+        send(self(), {:broadcast, packet})
+        :ok
+      end)
+
+      state = anchor_state(%{action_state: :combat_moving})
+
+      {:noreply, _returned} = CombatActionHandler.handle_reached_attack_position(state)
+
+      assert_received {:send, :gameplay, {:move_stop, %MoveStop{gid: 1000, x: 21, y: 20}}}
+      assert_received {:broadcast, %MoveStop{gid: 1000, x: 21, y: 20}}
+    end
+
+    test "a swing cutting a walk short halts the walk at the current cell" do
+      stub_swing_at_adjacent_target()
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet, _opts -> :ok end)
+
+      state =
+        anchor_state(%{
+          action_state: :moving,
+          movement_state: :moving,
+          walk_path: [{22, 20}, {23, 20}]
+        })
+
+      {:noreply, returned} = CombatActionHandler.handle_attack_request(state, 2000, 7)
+
+      assert returned.game_state.movement_state == :standing
+      assert returned.game_state.walk_path == []
+      assert_received {:send, :gameplay, {:move_stop, %MoveStop{gid: 1000, x: 21, y: 20}}}
+    end
+
+    test "a steady auto-attack swing sends no position packet" do
+      stub_swing_at_adjacent_target()
+      reject(&Broadcast.to_in_range/6)
+
+      state = anchor_state(%{action_state: :attacking})
+
+      {:noreply, _returned} = CombatActionHandler.handle_auto_attack(state, 2000)
+
+      refute_received {:send, :gameplay, {:move_stop, _}}
+    end
+  end
 end

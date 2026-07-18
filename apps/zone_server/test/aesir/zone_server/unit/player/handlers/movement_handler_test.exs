@@ -96,6 +96,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
                        {:self_move, %SelfMove{src_x: 50, src_y: 50, dst_x: 51, dst_y: 50}}}
     end
 
+    test "walks the full per-cell path and delays the first tick by one step" do
+      stub(Pathfinding, :find_path, fn _map, {50, 50}, {54, 50} ->
+        {:ok, [{51, 50}, {52, 50}, {53, 50}, {54, 50}]}
+      end)
+
+      {:noreply, new_state} = MovementHandler.handle_request_move(idle_state(), 54, 50)
+
+      # A collapsed straight segment would cross at many times walk speed; the
+      # stepper must consume every cell, one step delay at a time.
+      assert new_state.game_state.walk_path == [{51, 50}, {52, 50}, {53, 50}, {54, 50}]
+
+      # The first tick lands after the first step's cost (150ms at base speed),
+      # never immediately: stepping at schedule time would lead the client.
+      refute_receive :movement_tick, 50
+      assert_receive :movement_tick, 300
+    end
+
     test "does not broadcast a movement UnitSpawn to nearby players" do
       # Movement now reaches observers via per-map delta snapshots
       # (see Map.CoordinatorFlushTest), not a reliable UnitSpawn{moving: true}.

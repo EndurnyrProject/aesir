@@ -332,8 +332,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
              ) do
         updated_state = MobState.set_path(state, path)
 
-        # Schedule first movement tick immediately to start movement
-        Process.send_after(self(), :movement_tick, 0)
+        # The first tick fires after the first step's cost: a unit enters a
+        # cell when the step completes, keeping the server position in
+        # lockstep with the clients' interpolation instead of one cell ahead.
+        first_delay = MovementEngine.step_delay(state.walk_speed, {state.x, state.y}, hd(path))
+        Process.send_after(self(), :movement_tick, first_delay)
 
         {:noreply, updated_state}
       else
@@ -761,10 +764,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   defp step_mob(state, {next_x, next_y}, remaining_path) do
-    # Timer interval from the live walk_speed and the per-cell movement cost.
-    interval =
-      MovementEngine.step_delay(state.walk_speed, {state.x, state.y}, {next_x, next_y})
-
     # Facing toward the cell we are stepping into.
     dir = Geometry.calculate_direction(state.x, state.y, next_x, next_y)
 
@@ -784,8 +783,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
       updated_state.map_name
     )
 
-    # Schedule next movement tick with appropriate interval
+    # Schedule the next tick priced by the step it will take, so entering each
+    # cell lines up with the clients' per-cell interpolation.
     if remaining_path != [] do
+      interval =
+        MovementEngine.step_delay(state.walk_speed, {next_x, next_y}, hd(remaining_path))
+
       Process.send_after(self(), :movement_tick, interval)
       updated_state
     else
@@ -809,7 +812,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
          {:ok, [_ | _] = path} <-
            Pathfinding.find_path(map_data, {state.x, state.y}, destination) do
       updated_state = MobState.set_path(state, path)
-      Process.send_after(self(), :movement_tick, 0)
+
+      first_delay = MovementEngine.step_delay(state.walk_speed, {state.x, state.y}, hd(path))
+      Process.send_after(self(), :movement_tick, first_delay)
       updated_state
     else
       _ ->
