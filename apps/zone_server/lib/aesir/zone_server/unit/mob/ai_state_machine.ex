@@ -256,8 +256,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
       target_id ->
         cond do
-          not Interpreter.targetable?(:player, target_id) ->
-            # Target went untargetable (trick-dead), shed aggro
+          not can_target?(state, target_id) ->
+            # Target went untargetable (trick-dead) or concealed, shed aggro
             state
             |> MobState.set_target(nil)
             |> MobState.set_ai_state(:idle)
@@ -293,8 +293,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
       target_id ->
         cond do
-          not Interpreter.targetable?(:player, target_id) ->
-            # Target went untargetable (trick-dead), shed aggro and return to spawn
+          not can_target?(state, target_id) ->
+            # Target went untargetable (trick-dead) or concealed, shed aggro and return to spawn
             state
             |> MobState.set_target(nil)
             |> MobState.set_ai_state(:return)
@@ -346,9 +346,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   defp find_nearby_targets(state) do
     view_range = state.view_range
 
-    # Find players in range (primary targets), excluding untargetable (trick-dead) players
+    # Find players in range (primary targets), excluding untargetable (trick-dead)
+    # and concealed players
     SpatialIndex.get_units_in_range(:player, state.map_name, state.x, state.y, view_range)
-    |> Enum.filter(&Interpreter.targetable?(:player, &1))
+    |> Enum.filter(&can_target?(state, &1))
+  end
+
+  # Single predicate shared by the aggro scan and the combat/chase validity
+  # checks. Concealment (Hiding, Cloaking) hides a player from every mob except
+  # bosses, which act as detectors.
+  defp can_target?(%MobState{} = state, target_id) do
+    Interpreter.targetable?(:player, target_id) and
+      (MobState.is_boss?(state) or not Interpreter.concealed?(:player, target_id))
   end
 
   defp select_closest_target(state, targets) when is_list(targets) do

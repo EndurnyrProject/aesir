@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     stub(Interpreter, :can_move?, fn _type, _id -> true end)
     stub(Interpreter, :can_attack?, fn _type, _id -> true end)
     stub(Interpreter, :targetable?, fn _type, _id -> true end)
+    stub(Interpreter, :concealed?, fn _type, _id -> false end)
     stub(MapCache, :get, fn _map -> {:ok, :map_data} end)
     stub(Cell, :traversable?, fn "prontera", _x, _y -> true end)
     stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _range -> [] end)
@@ -155,6 +156,126 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       assert result.target_id == 2
       assert result.ai_state == :alert
       assert result.initiated_by_self? == true
+    end
+  end
+
+  describe "find_nearby_targets/1 concealment filter" do
+    test "a concealed player is not acquired by a normal mob" do
+      stub(Interpreter, :concealed?, fn :player, 2 -> true end)
+
+      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
+        [2]
+      end)
+
+      result = AIStateMachine.process_ai(aggressive_idle_mob_state())
+
+      assert result.target_id == nil
+      assert result.ai_state == :idle
+    end
+
+    test "a concealed player is acquired by a boss mob, which acts as a detector" do
+      stub(Interpreter, :concealed?, fn :player, 2 -> true end)
+
+      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
+        [2]
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
+        {:ok, {101, 101, "prontera"}}
+      end)
+
+      base = base_mob_state(modes: [:aggressive, :boss])
+      state = %MobState{base | x: 100, y: 100, ai_state: :idle, target_id: nil}
+
+      result = AIStateMachine.process_ai(state)
+
+      assert result.target_id == 2
+      assert result.ai_state == :alert
+    end
+
+    test "a player who un-conceals is acquirable again by a normal mob" do
+      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
+        [2]
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
+        {:ok, {101, 101, "prontera"}}
+      end)
+
+      stub(Interpreter, :concealed?, fn :player, 2 -> true end)
+
+      concealed = AIStateMachine.process_ai(aggressive_idle_mob_state())
+
+      assert concealed.target_id == nil
+
+      stub(Interpreter, :concealed?, fn :player, 2 -> false end)
+
+      revealed = AIStateMachine.process_ai(aggressive_idle_mob_state())
+
+      assert revealed.target_id == 2
+      assert revealed.ai_state == :alert
+    end
+  end
+
+  describe "concealment while already targeted" do
+    test "a mob in combat drops a target that concealed itself" do
+      test_pid = self()
+      stub(Interpreter, :concealed?, fn :player, 2 -> true end)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
+        {:ok, {100, 100, "prontera"}}
+      end)
+
+      stub(Combat, :execute_mob_attack, fn _state, _target ->
+        send(test_pid, :attacked)
+        :ok
+      end)
+
+      result = AIStateMachine.process_ai(combat_mob_state())
+
+      assert result.target_id == nil
+      assert result.ai_state == :idle
+      refute_received :attacked
+    end
+
+    test "a mob in chase drops a target that concealed itself" do
+      stub(Interpreter, :concealed?, fn :player, 2 -> true end)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
+        {:ok, {105, 105, "prontera"}}
+      end)
+
+      stub(MobSession, :move_to, fn _pid, _x, _y -> :ok end)
+
+      result = AIStateMachine.process_ai(chase_mob_state())
+
+      assert result.target_id == nil
+      assert result.ai_state == :return
+    end
+
+    test "a boss in combat keeps a target that concealed itself" do
+      stub(Interpreter, :concealed?, fn :player, 2 -> true end)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
+        {:ok, {100, 100, "prontera"}}
+      end)
+
+      stub(Combat, :execute_mob_attack, fn _state, _target -> :ok end)
+
+      base = base_mob_state(modes: [:boss])
+
+      state = %MobState{
+        base
+        | x: 100,
+          y: 100,
+          ai_state: :combat,
+          target_id: 2,
+          last_attack_time: nil
+      }
+
+      result = AIStateMachine.process_ai(state)
+
+      assert result.target_id == 2
     end
   end
 
