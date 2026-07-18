@@ -11,8 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.SpawnsTest do
 
   import Aesir.TestEtsSetup
 
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.Spawns
 
   setup :setup_ets_tables

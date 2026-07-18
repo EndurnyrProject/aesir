@@ -45,5 +45,21 @@ defmodule Mix.Tasks.Aesir.Import.LevelPenaltyTest do
       refute Map.has_key?(exp_table, 16)
       refute Map.has_key?(exp_table, 5)
     end
+
+    test "extracts the Mvp_Drop breakpoints as a flat difference => rate map" do
+      assert Task.table_for(@body, "Mvp_Drop") == %{5 => 100}
+    end
+
+    test "returns an empty map when an optional MVP type is absent from the body" do
+      assert Task.table_for(@body, "Mvp_Exp") == %{}
+    end
+
+    test "raises when a required type is absent, rather than emitting an empty table" do
+      body_without_exp = %{"Body" => Enum.reject(@body["Body"], &(&1["Type"] == "Exp"))}
+
+      assert_raise RuntimeError, ~r/required table Exp missing/, fn ->
+        Task.table_for(body_without_exp, "Exp")
+      end
+    end
   end
 end

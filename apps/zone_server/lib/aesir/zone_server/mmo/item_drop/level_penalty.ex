@@ -1,15 +1,19 @@
 defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty do
   @moduledoc """
   Renewal level-penalty tables, loaded as data from `priv/db/level_penalty.yml`
-  (item drops) and `priv/db/level_penalty_exp.yml` (experience).
+  (item drops), `priv/db/level_penalty_exp.yml` (experience),
+  `priv/db/level_penalty_mvp_drop.yml` (MVP item drops) and
+  `priv/db/level_penalty_mvp_exp.yml` (MVP experience).
 
   Each `level_difference => percent` map is cached once in `:persistent_term`;
-  `reload/0` rebuilds both after the data files change in a long-running
+  `reload/0` rebuilds all four after the data files change in a long-running
   session. Mirrors the lazy-build pattern in `Mmo.ItemManagement.Items`.
   """
 
   @pt_key_drop __MODULE__
   @pt_key_exp {__MODULE__, :exp}
+  @pt_key_mvp_drop {__MODULE__, :mvp_drop}
+  @pt_key_mvp_exp {__MODULE__, :mvp_exp}
   @no_penalty 100
 
   @doc """
@@ -35,6 +39,24 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty do
     lookup(table(@pt_key_exp, "level_penalty_exp.yml"), mob_level - killer_base_level)
   end
 
+  @doc """
+  Returns the MVP drop-rate percent for `mob_level - killer_base_level`. Same
+  carry-forward semantics as `drop/2`, scaled from `level_penalty_mvp_drop.yml`.
+  """
+  @spec mvp_drop(integer(), integer()) :: integer()
+  def mvp_drop(mob_level, killer_base_level) do
+    lookup(table(@pt_key_mvp_drop, "level_penalty_mvp_drop.yml"), mob_level - killer_base_level)
+  end
+
+  @doc """
+  Returns the MVP EXP-rate percent for `mob_level - killer_base_level`. Same
+  carry-forward semantics as `exp/2`, scaled from `level_penalty_mvp_exp.yml`.
+  """
+  @spec mvp_exp(integer(), integer()) :: integer()
+  def mvp_exp(mob_level, killer_base_level) do
+    lookup(table(@pt_key_mvp_exp, "level_penalty_mvp_exp.yml"), mob_level - killer_base_level)
+  end
+
   @spec lookup(%{integer() => integer()}, integer()) :: integer()
   defp lookup(table, diff) do
     table
@@ -53,6 +75,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty do
   def reload do
     :persistent_term.put(@pt_key_drop, load("level_penalty.yml"))
     :persistent_term.put(@pt_key_exp, load("level_penalty_exp.yml"))
+    :persistent_term.put(@pt_key_mvp_drop, load("level_penalty_mvp_drop.yml"))
+    :persistent_term.put(@pt_key_mvp_exp, load("level_penalty_mvp_exp.yml"))
     :ok
   end
 
