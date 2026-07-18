@@ -61,5 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobDefinition do
     field :ai_type, integer(), default: 0
     field :modes, [atom()], default: []
     field :drops, [MobDrop.t()], default: []
+    field :mvp_exp, integer(), default: 0
+    field :mvp_drops, [MobDrop.t()], default: []
   end
 end

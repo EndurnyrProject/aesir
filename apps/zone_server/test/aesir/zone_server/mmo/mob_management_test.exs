@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagementTest do
 
   alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
 
   setup :setup_ets_tables
 
@@ -112,6 +113,35 @@ defmodule Aesir.ZoneServer.Mmo.MobManagementTest do
       assert MobManagement.calculate_drop_rate(1000, 1.0) == 1000
       assert MobManagement.calculate_drop_rate(1000, 2.0) == 2000
       assert MobManagement.calculate_drop_rate(1000, 0.5) == 500
+    end
+  end
+
+  describe "MVP reward fields at runtime" do
+    test "loads mvp_drops as MobDrop structs, not raw maps" do
+      assert {:ok, baphomet} = MobManagement.get_mob_by_id(1039)
+
+      assert baphomet.mvp_exp == 109_044
+      assert [%MobDrop{} | _] = baphomet.mvp_drops
+
+      assert Enum.all?(baphomet.mvp_drops, &match?(%MobDrop{}, &1))
+
+      assert %MobDrop{item: "Bs_Making_S", rate: 5000} = hd(baphomet.mvp_drops)
+    end
+
+    test "a non-MVP mob carries the field defaults" do
+      assert {:ok, poring} = MobManagement.get_mob_by_id(1002)
+
+      assert poring.mvp_exp == 0
+      assert poring.mvp_drops == []
+    end
+
+    test "mvp_drops and drops stay separate at runtime" do
+      assert {:ok, baphomet} = MobManagement.get_mob_by_id(1039)
+
+      mvp_items = MapSet.new(baphomet.mvp_drops, & &1.item)
+      drop_items = MapSet.new(baphomet.drops, & &1.item)
+
+      assert MapSet.disjoint?(mvp_items, drop_items)
     end
   end
 

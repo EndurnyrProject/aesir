@@ -1626,6 +1626,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Seed_Of_Yggdrasil
+      rate: 3000
+    - item: Osiris_Doll
+      rate: 500
+  mvp_exp: 61380
   name: Osiris
   race: undead
   size: medium
@@ -1683,6 +1691,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Baphomet_Doll
+      rate: 2500
+    - item: Evil_Horn
+      rate: 5000
+  mvp_exp: 109044
   name: Baphomet
   race: demon
   size: large
@@ -2004,6 +2020,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Cardinal_Jewel_
+      rate: 1500
+    - item: Blue_Potion
+      rate: 6000
+    - item: Bs_Making_S
+      rate: 5000
+  mvp_exp: 86130
   name: Doppelganger
   race: demon
   size: medium
@@ -2664,6 +2688,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Royal_Jelly
+      rate: 4000
+    - item: Scarlet_Jewel
+      rate: 3000
+  mvp_exp: 92070
   name: Mistress
   race: insect
   size: small
@@ -3963,6 +3995,14 @@
     - assist
     - can_attack
     - change_target_melee
+  mvp_drops:
+    - item: Gold_Ring
+      rate: 2000
+    - item: Ora_Ora
+      rate: 1000
+    - item: Bs_Making_S
+      rate: 5000
+  mvp_exp: 51030
   name: Golden Thief Bug
   race: insect
   size: large
@@ -4020,6 +4060,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Red_Jewel
+      rate: 2000
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Steel
+      rate: 5000
+  mvp_exp: 26730
   name: Orc Hero
   race: demihuman
   size: large
@@ -5356,6 +5404,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: White_Potion
+      rate: 5000
+    - item: Violet_Jewel
+      rate: 500
+    - item: Bs_Making_S
+      rate: 5000
+  mvp_exp: 154548
   name: Drake
   race: undead
   size: medium
@@ -5512,6 +5568,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Tiger's_Skin
+      rate: 5000
+    - item: Tiger_Footskin
+      rate: 1000
+    - item: Bs_Making_S
+      rate: 5000
+  mvp_exp: 51975
   name: Eddga
   race: brute
   size: large
@@ -7206,6 +7270,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Crystal_Jewel
+      rate: 2000
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 2000
+  mvp_exp: 44640
   name: Maya
   race: insect
   size: large
@@ -7373,6 +7445,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Fox_Tail
+      rate: 5000
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Golden_Jewel
+      rate: 500
+  mvp_exp: 91872
   name: Moonlight Flower
   race: demon
   size: medium
@@ -7747,6 +7827,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Royal_Jelly
+      rate: 5000
+    - item: Crystal_Jewel__
+      rate: 5000
+  mvp_exp: 104400
   name: Pharaoh
   race: demihuman
   size: large
@@ -7855,6 +7943,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Frozen_Heart
+      rate: 500
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Star_Crumb
+      rate: 4000
+  mvp_exp: 31900
   name: Phreeoni
   race: brute
   size: large
@@ -9114,6 +9210,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Voucher_Of_Orcish_Hero
+      rate: 5500
+    - item: Old_Violet_Box
+      rate: 2000
+    - item: Bs_Making_S
+      rate: 5000
+  mvp_exp: 15553
   name: Orc Lord
   race: demihuman
   size: large
@@ -11751,6 +11855,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Skyblue_Jewel
+      rate: 4500
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Mistic_Frozen
+      rate: 3000
+  mvp_exp: 124140
   name: Stormy Knight
   race: formless
   size: large
@@ -11808,6 +11920,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Fang_Of_Garm
+      rate: 1000
+    - item: Old_Blue_Box
+      rate: 3000
+    - item: Bs_Making_S
+      rate: 5000
+  mvp_exp: 227664
   name: Hatii
   race: brute
   size: large
@@ -12884,6 +13004,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Skull
+      rate: 6000
+    - item: Blue_Coif_
+      rate: 500
+    - item: Bs_Making_S
+      rate: 5000
+  mvp_exp: 214272
   name: Dark Lord
   race: demon
   size: large
@@ -14938,6 +15066,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Yggdrasilberry
+      rate: 1500
+    - item: Old_Violet_Box
+      rate: 2000
+  mvp_exp: 279936
   name: Turtle General
   race: brute
   size: large
@@ -17758,6 +17894,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Crystal_Jewel__
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Bs_Making_S
+      rate: 5000
+  mvp_exp: 131136
   name: Lord of the Dead
   race: demon
   size: large
@@ -18591,6 +18735,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Crystal_Jewel__
+      rate: 5000
+    - item: Fruit_Of_Mastela
+      rate: 5000
+  mvp_exp: 85932
   name: Dracula
   race: demon
   size: large
@@ -19052,6 +19204,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Yggdrasilberry
+      rate: 5500
+    - item: Royal_Jelly
+      rate: 5000
+    - item: Crystal_Jewel__
+      rate: 5000
+  mvp_exp: 68709
   name: Baphomet
   race: demon
   size: large
@@ -19895,6 +20055,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Elunium
+      rate: 5500
+  mvp_exp: 46872
   name: Evil Snake Lord
   race: brute
   size: large
@@ -22441,6 +22609,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Seed_Of_Yggdrasil
+      rate: 3500
+    - item: Elunium
+      rate: 5500
+  mvp_exp: 225504
   name: Samurai Specter
   race: demihuman
   size: large
@@ -22861,6 +23037,14 @@
     - angry
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Sword_Of_Grave_Keeper
+      rate: 1000
+    - item: Poring__Card
+      rate: 100
+    - item: Elven_Ears
+      rate: 200
+  mvp_exp: 26177
   name: Bring it on!
   race: plant
   size: medium
@@ -23338,6 +23522,14 @@
     - boss
     - aggressive
     - can_attack
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 1000
+    - item: Seed_Of_Yggdrasil
+      rate: 3500
+    - item: Crystal_Jewel__
+      rate: 5500
+  mvp_exp: 60030
   name: Amon Ra
   race: demihuman
   size: large
@@ -23689,6 +23881,13 @@
     - angry
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Yggdrasilberry
+      rate: 5500
+    - item: Celestial_Robe
+      rate: 2000
+    - item: Old_Violet_Box
+      rate: 5000
   name: White Lady
   race: demihuman
   size: large
@@ -25937,6 +26136,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 3000
+    - item: Blue_Potion
+      rate: 6000
+  mvp_exp: 270000
   name: Tao Gunka
   race: demon
   size: large
@@ -27624,6 +27831,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Dark_Blindfold
+      rate: 3500
+    - item: Crystal_Jewel__
+      rate: 5500
+  mvp_exp: 216000
   name: RSX-0806
   race: formless
   size: large
@@ -27935,6 +28150,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Celestial_Robe
+      rate: 2000
+    - item: Old_Violet_Box
+      rate: 5000
+  mvp_exp: 200448
   name: White Lady
   race: demihuman
   size: large
@@ -28727,6 +28950,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
+    - item: Goast_Chill
+      rate: 5000
+    - item: Crystal_Jewel__
+      rate: 2000
+  mvp_exp: 1508832
   name: Lord Knight Seyren
   race: demon
   size: medium
@@ -28784,6 +29015,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
+    - item: Goast_Chill
+      rate: 5000
+    - item: Crystal_Jewel__
+      rate: 2000
+  mvp_exp: 1360125
   name: Assassin Cross Eremes
   race: demon
   size: medium
@@ -28841,6 +29080,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
+    - item: Goast_Chill
+      rate: 5000
+    - item: Crystal_Jewel__
+      rate: 2000
+  mvp_exp: 1155375
   name: Whitesmith Howard
   race: demihuman
   size: medium
@@ -28898,6 +29145,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
+    - item: Goast_Chill
+      rate: 5000
+    - item: Crystal_Jewel__
+      rate: 2000
+  mvp_exp: 1126125
   name: High Priest Margaretha
   race: demihuman
   size: medium
@@ -28955,6 +29210,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
+    - item: Goast_Chill
+      rate: 5000
+    - item: Luna_Bow
+      rate: 2000
+  mvp_exp: 1334736
   name: Sniper Cecil
   race: demihuman
   size: medium
@@ -29012,6 +29275,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
+    - item: Goast_Chill
+      rate: 5000
+    - item: Crystal_Jewel__
+      rate: 2000
+  mvp_exp: 1053000
   name: High Wizard Kathryne
   race: demihuman
   size: medium
@@ -29394,6 +29665,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
+    - item: Goast_Chill
+      rate: 5000
+    - item: Crystal_Jewel__
+      rate: 2000
+  mvp_exp: 342680
   name: Egnigem Cenia
   race: demihuman
   size: medium
@@ -30620,6 +30899,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Crystal_Jewel__
+      rate: 2000
+  mvp_exp: 64935
   name: Vesper
   race: brute
   size: large
@@ -30776,6 +31063,14 @@
     - boss
     - aggressive
     - can_attack
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Dex_Dish10
+      rate: 5000
+    - item: Crystal_Jewel__
+      rate: 2000
+  mvp_exp: 91872
   name: Lady Tanee
   race: plant
   size: large
@@ -31808,6 +32103,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Old_Blue_Box
+      rate: 5000
+    - item: Crystal_Jewel__
+      rate: 2000
+  mvp_exp: 389820
   name: Thanatos Phantom
   race: demon
   size: large
@@ -32345,6 +32648,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Crystal_Jewel__
+      rate: 2000
+  mvp_exp: 1404000
   name: Detardeurus
   race: dragon
   size: large
@@ -32913,6 +33224,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Old_Card_Album
+      rate: 2000
+  mvp_exp: 585000
   name: Kiel D-01
   race: formless
   size: medium
@@ -33594,6 +33913,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Old_Card_Album
+      rate: 2000
+  mvp_exp: 650000
   name: Valkyrie Randgris
   race: angel
   size: large
@@ -34220,6 +34547,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Jellopy
+      rate: 5000
+    - item: Jellopy
+      rate: 5000
+    - item: Poring_Doll
+      rate: 5000
   name: Angeling
   race: angel
   size: small
@@ -34257,6 +34591,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Jellopy
+      rate: 5000
+    - item: Jellopy
+      rate: 5000
+    - item: Poring_Doll
+      rate: 5000
   name: Deviling
   race: angel
   size: small
@@ -34314,6 +34655,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Bs_Making_S
+      rate: 5000
+  mvp_exp: 702000
   name: Gloom Under Night
   race: formless
   size: large
@@ -34908,6 +35257,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+  mvp_exp: 310672
   name: Ktullanux
   race: brute
   size: large
@@ -35217,6 +35574,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5500
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+  mvp_exp: 351000
   name: Atroce
   race: brute
   size: large
@@ -36388,6 +36753,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
+    - item: Old_Blue_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5500
   name: Hydrolancer
   race: angel
   size: large
@@ -36508,6 +36880,13 @@
   mdef: 99
   modes:
     - boss
+  mvp_drops:
+    - item: Fatty_Chubby_Earthworm
+      rate: 5000
+    - item: Fatty_Chubby_Earthworm
+      rate: 5000
+    - item: Fatty_Chubby_Earthworm
+      rate: 5000
   name: Gourd
   race: formless
   size: medium
@@ -36561,6 +36940,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bloody_Dead_Branch
+      rate: 5500
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5500
   name: Detardeurus
   race: angel
   size: large
@@ -37196,6 +37582,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Carnium
+      rate: 5000
+    - item: Old_Card_Album
+      rate: 2000
+  mvp_exp: 2176200
   name: Ifrit
   race: formless
   size: large
@@ -38918,6 +39312,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Seed_Of_Yggdrasil
+      rate: 3500
+    - item: Crystal_Jewel__
+      rate: 2000
+  mvp_exp: 877500
   name: Falling Bishop
   race: demon
   size: medium
@@ -39050,6 +39452,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Box_Of_Grudge
+      rate: 5500
+  mvp_exp: 2291250
   name: Beelzebub
   race: demon
   size: large
@@ -39132,6 +39542,10 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Helm_Of_Sun
+      rate: 10000
+  mvp_exp: 35462
   name: Lord of the Dead
   race: demon
   size: large
@@ -39558,6 +39972,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+  mvp_exp: 214272
   name: Gopinich
   race: brute
   size: large
@@ -40627,6 +41049,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+  mvp_exp: 1316250
   name: Wounded Morocc
   race: demon
   size: large
@@ -42240,6 +42670,9 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
   name: Naght Sieger
   race: demon
   size: large
@@ -42293,6 +42726,9 @@
     - boss
     - aggressive
     - can_attack
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
   name: Entweihen Crothen
   race: demon
   size: medium
@@ -43306,6 +43742,10 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Pickaxe
+      rate: 10000
+  mvp_exp: 24750
   name: Kublin
   race: demihuman
   size: medium
@@ -45192,6 +45632,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Card_Album
+      rate: 2000
+  mvp_exp: 1404000
   name: Nidhoggur's Shadow
   race: dragon
   size: large
@@ -46175,6 +46623,14 @@
     - boss
     - can_move
     - can_attack
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+  mvp_exp: 214272
   name: Dark Lord
   race: demon
   size: large
@@ -46365,6 +46821,9 @@
   modes:
     - can_move
     - can_attack
+  mvp_drops:
+    - item: Mosquito_Coil
+      rate: 10000
   name: Anopheles
   race: insect
   size: small
@@ -46460,6 +46919,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Card_Album
+      rate: 2000
+  mvp_exp: 37144
   name: Boitata
   race: brute
   size: large
@@ -46808,6 +47275,13 @@
   mdef: 32
   modes:
     - boss
+  mvp_drops:
+    - item: Valhalla_Flower
+      rate: 10000
+    - item: Valhalla_Flower
+      rate: 10000
+    - item: Valhalla_Flower
+      rate: 10000
   name: Ragunta
   race: formless
   size: large
@@ -47326,6 +47800,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Old_Card_Album
+      rate: 5000
+    - item: Old_Card_Album
+      rate: 2000
+  mvp_exp: 133321
   name: Scaraba Queen
   race: insect
   size: large
@@ -47633,6 +48115,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Red_Jewel
+      rate: 2000
+    - item: Yggdrasilberry
+      rate: 5000
+    - item: Yggdrasilberry
+      rate: 5000
+  mvp_exp: 502
   name: Orc Hero
   race: demihuman
   size: large
@@ -47690,6 +48180,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Tiger's_Skin
+      rate: 5000
+    - item: Tiger_Footskin
+      rate: 3000
+    - item: Tiger_Footskin
+      rate: 3000
+  mvp_exp: 502
   name: Eddga
   race: brute
   size: large
@@ -47747,6 +48245,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Blue_Box
+      rate: 4000
+    - item: Seed_Of_Yggdrasil
+      rate: 500
+    - item: Seed_Of_Yggdrasil
+      rate: 500
+  mvp_exp: 502
   name: Osiris
   race: undead
   size: medium
@@ -47804,6 +48310,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Yggdrasilberry
+      rate: 5500
+    - item: Crystal_Jewel__
+      rate: 5000
+    - item: Crystal_Jewel__
+      rate: 5000
+  mvp_exp: 502
   name: Dracula
   race: demon
   size: large
@@ -47861,6 +48375,10 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Cardinal_Jewel_
+      rate: 1500
+  mvp_exp: 502
   name: Doppelganger
   race: demon
   size: medium
@@ -47918,6 +48436,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Rough_Wind
+      rate: 1500
+    - item: Royal_Jelly
+      rate: 3000
+    - item: Royal_Jelly
+      rate: 3000
+  mvp_exp: 502
   name: Mistress
   race: insect
   size: small
@@ -47973,6 +48499,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Yggdrasilberry
+      rate: 2000
+    - item: Baphomet_Doll
+      rate: 5000
+    - item: Baphomet_Doll
+      rate: 5000
+  mvp_exp: 502
   name: Baphomet
   race: demon
   size: large
@@ -48030,6 +48564,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Yggdrasilberry
+      rate: 5500
+    - item: Crystal_Jewel__
+      rate: 5000
+    - item: Crystal_Jewel__
+      rate: 5000
+  mvp_exp: 603
   name: Lord of the Dead
   race: demon
   size: large
@@ -48087,6 +48629,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Skull
+      rate: 6000
+    - item: Blue_Coif_
+      rate: 2000
+    - item: Blue_Coif_
+      rate: 2000
   name: Dark Lord
   race: demon
   size: large
@@ -48144,6 +48693,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Yggdrasilberry
+      rate: 5500
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+  mvp_exp: 603
   name: Ktullanux
   race: brute
   size: large
@@ -48201,6 +48758,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Yggdrasilberry
+      rate: 5500
+    - item: Old_Violet_Box
+      rate: 5500
+    - item: Old_Violet_Box
+      rate: 5500
+  mvp_exp: 603
   name: Evil Snake Lord
   race: brute
   size: large
@@ -48258,6 +48823,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Turtle_Shell
+      rate: 5500
+    - item: Yggdrasilberry
+      rate: 2000
+    - item: Yggdrasilberry
+      rate: 2000
+  mvp_exp: 603
   name: Turtle General
   race: brute
   size: large
@@ -48315,6 +48888,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
+    - item: Old_Blue_Box
+      rate: 2000
+    - item: Old_Blue_Box
+      rate: 2000
+  mvp_exp: 653
   name: Vesper
   race: brute
   size: large
@@ -48372,6 +48953,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Yggdrasilberry
+      rate: 5500
+    - item: Seed_Of_Yggdrasil
+      rate: 2000
+    - item: Seed_Of_Yggdrasil
+      rate: 2000
+  mvp_exp: 653
   name: Fallen Bishop Hibram
   race: demon
   size: medium
@@ -48429,6 +49018,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Yggdrasilberry
+      rate: 5500
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+  mvp_exp: 653
   name: Gloom Under Night
   race: formless
   size: large
@@ -48486,6 +49083,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
+    - item: Old_Blue_Box
+      rate: 2000
+    - item: Old_Blue_Box
+      rate: 2000
+  mvp_exp: 653
   name: Valkyrie Randgris
   race: angel
   size: large
@@ -48543,6 +49148,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
+    - item: Carnium
+      rate: 2000
+    - item: Carnium
+      rate: 2000
+  mvp_exp: 653
   name: Ifrit
   race: formless
   size: large
@@ -48600,6 +49213,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
+    - item: Old_Blue_Box
+      rate: 2000
+    - item: Old_Blue_Box
+      rate: 2000
+  mvp_exp: 653
   name: Whitesmith Howard
   race: demihuman
   size: medium
@@ -48654,6 +49275,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
+    - item: Old_Blue_Box
+      rate: 2000
+    - item: Old_Blue_Box
+      rate: 2000
+  mvp_exp: 653
   name: Lord Knight Seyren
   race: demihuman
   size: medium
@@ -48711,6 +49340,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
+    - item: Old_Blue_Box
+      rate: 2000
+    - item: Old_Blue_Box
+      rate: 2000
+  mvp_exp: 653
   name: Assassin Cross Eremes
   race: demihuman
   size: medium
@@ -48883,6 +49520,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Card_Album
+      rate: 500
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+  mvp_exp: 9750
   name: Lost Dragon
   race: dragon
   size: large
@@ -49830,6 +50475,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+  mvp_exp: 118200
   name: Leak
   race: demon
   size: large
@@ -50221,6 +50874,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Old_Card_Album
+      rate: 5000
+    - item: Bs_Making_S
+      rate: 5000
+  mvp_exp: 302555
   name: Gold Queen Scaraba
   race: insect
   size: large
@@ -51280,6 +51941,9 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
   name: Gloomy Coelacanth
   race: fish
   size: large
@@ -51337,6 +52001,9 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
   name: Weird Coelacanth
   race: fish
   size: large
@@ -51394,6 +52061,9 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
   name: Mutant Coelacanth
   race: fish
   size: large
@@ -51451,6 +52121,9 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
   name: Violent Coelacanth
   race: fish
   size: large
@@ -51627,6 +52300,9 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
   name: Giant Octopus
   race: fish
   size: large
@@ -51998,6 +52674,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Old_Card_Album
+      rate: 5000
+    - item: Treasure_Box
+      rate: 5000
+  mvp_exp: 491666
   name: Kraken
   race: fish
   size: large
@@ -52388,6 +53072,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
   name: Stormy Knight
   race: formless
   size: large
@@ -53424,6 +54115,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Goast_Chill
+      rate: 5000
+  mvp_exp: 1837244
   name: Paladin Randel
   race: demihuman
   size: medium
@@ -53481,6 +54180,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Goast_Chill
+      rate: 5000
+  mvp_exp: 1305892
   name: Creator Flamel
   race: demihuman
   size: medium
@@ -53534,6 +54241,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Goast_Chill
+      rate: 5000
+  mvp_exp: 1256827
   name: Professor Celia
   race: demihuman
   size: medium
@@ -53589,6 +54304,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Goast_Chill
+      rate: 5000
+  mvp_exp: 1278392
   name: Champion Chen
   race: demon
   size: medium
@@ -53645,6 +54368,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Goast_Chill
+      rate: 5000
+  mvp_exp: 1105174
   name: Stalker Gertie
   race: demon
   size: medium
@@ -53698,6 +54429,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Goast_Chill
+      rate: 5000
+  mvp_exp: 1056509
   name: Clown Alphoccio
   race: demihuman
   size: medium
@@ -53753,6 +54492,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Goast_Chill
+      rate: 5000
+  mvp_exp: 1115939
   name: Gypsy Trentini
   race: demihuman
   size: medium
@@ -54084,6 +54831,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+  mvp_exp: 750061
   name: Angry Student Pyuriel
   race: demihuman
   size: medium
@@ -54198,6 +54953,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+  mvp_exp: 751725
   name: Gioia
   race: formless
   size: large
@@ -54312,6 +55075,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+  mvp_exp: 750780
   name: General Daehyun
   race: demihuman
   size: large
@@ -54426,6 +55197,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Bs_Making_S
+      rate: 5000
+  mvp_exp: 802000
   name: Dark Guardian Kades
   race: formless
   size: large
@@ -56261,6 +57040,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
   name: Golden Thief Bug
   race: insect
   size: large
@@ -56849,6 +57635,10 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
+  mvp_exp: 1500006
   name: Buwaya
   race: dragon
   size: large
@@ -56953,6 +57743,9 @@
     - boss
     - aggressive
     - can_attack
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
   name: Bakonawa
   race: dragon
   size: large
@@ -57167,6 +57960,9 @@
   mdef: 95
   modes:
     - boss
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
   name: Bangungot
   race: demon
   size: medium
@@ -57647,6 +58443,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Magic_Card_Album
+      rate: 5000
+  mvp_exp: 650000
   name: 2011 RWC Boss
   race: angel
   size: large
@@ -57976,6 +58780,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Treasure_Box
+      rate: 10000
+    - item: Treasure_Box
+      rate: 10000
+    - item: Valhalla_Flower
+      rate: 10000
   name: RSX 0805
   race: formless
   size: large
@@ -58470,6 +59281,14 @@
     - boss
     - aggressive
     - can_attack
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Seed_Of_Yggdrasil
+      rate: 3500
+    - item: Crystal_Jewel__
+      rate: 5500
+  mvp_exp: 813243
   name: Amon Ra (Nightmare)
   race: demihuman
   size: large
@@ -61033,6 +61852,10 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
+  mvp_exp: 53133
   name: The Last One
   race: demihuman
   size: medium
@@ -61085,6 +61908,10 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
+  mvp_exp: 54405
   name: King of the Alley
   race: demihuman
   size: medium
@@ -62561,6 +63388,9 @@
     - boss
     - aggressive
     - can_attack
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
   name: Corrupted Soul
   race: demon
   size: large
@@ -62617,6 +63447,9 @@
     - change_target_melee
     - change_target_chase
     - random_target
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5500
   name: Amdarais
   race: undead
   size: large
@@ -62924,6 +63757,14 @@
     - change_target_melee
     - change_target_chase
     - random_target
+  mvp_drops:
+    - item: Yggdrasilberry
+      rate: 2000
+    - item: Baphomet_Doll
+      rate: 500
+    - item: Evil_Horn
+      rate: 5000
+  mvp_exp: 198262
   name: Nightmare Baphomet
   race: demon
   size: large
@@ -63113,6 +63954,14 @@
     - change_target_melee
     - change_target_chase
     - random_target
+  mvp_drops:
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+  mvp_exp: 90909
   name: Faceworm Queen
   race: insect
   size: large
@@ -63245,6 +64094,14 @@
     - change_target_melee
     - change_target_chase
     - random_target
+  mvp_drops:
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+  mvp_exp: 90909
   name: Red Faceworm Queen
   race: insect
   size: large
@@ -63295,6 +64152,14 @@
     - change_target_melee
     - change_target_chase
     - random_target
+  mvp_drops:
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+  mvp_exp: 90909
   name: Green Faceworm Queen
   race: insect
   size: large
@@ -63345,6 +64210,14 @@
     - change_target_melee
     - change_target_chase
     - random_target
+  mvp_drops:
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+  mvp_exp: 90909
   name: Blue Faceworm Queen
   race: insect
   size: large
@@ -63395,6 +64268,14 @@
     - change_target_melee
     - change_target_chase
     - random_target
+  mvp_drops:
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+  mvp_exp: 90909
   name: Yellow Faceworm Queen
   race: insect
   size: large
@@ -64497,6 +65378,13 @@
     - angry
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 100
+    - item: Old_Violet_Box
+      rate: 100
   name: Fenrir
   race: demihuman
   size: medium
@@ -83080,6 +83968,11 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Yggdrasilberry
+      rate: 5000
+    - item: Seed_Of_Yggdrasil
+      rate: 5000
   name: Evil Fanatics
   race: demon
   size: large
@@ -84179,6 +85072,14 @@
     - change_target_melee
     - change_target_chase
     - random_target
+  mvp_drops:
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Magic_Card_Album
+      rate: 5000
+  mvp_exp: 444444
   name: Celine Kimi
   race: undead
   size: large
@@ -84355,6 +85256,11 @@
     - boss
     - aggressive
     - can_attack
+  mvp_drops:
+    - item: Yggdrasilberry
+      rate: 5000
+    - item: Seed_Of_Yggdrasil
+      rate: 5000
   name: Morocc Necromancer
   race: demihuman
   size: medium
@@ -85446,6 +86352,11 @@
     - angry
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Yggdrasilberry
+      rate: 2000
+    - item: Seed_Of_Yggdrasil
+      rate: 2000
   name: Reaper Yanku
   race: undead
   size: large
@@ -85879,6 +86790,11 @@
     - aggressive
     - can_attack
     - change_target_chase
+  mvp_drops:
+    - item: Yggdrasilberry
+      rate: 5000
+    - item: Seed_Of_Yggdrasil
+      rate: 5000
   name: Awakened Ferre
   race: demon
   size: large
@@ -85934,6 +86850,14 @@
     - angry
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Yggdrasilberry
+      rate: 5000
+    - item: Key_Of_Twisted_Time
+      rate: 2000
+  mvp_exp: 2291250
   name: Time Holder
   race: demon
   size: large
@@ -86654,6 +87578,11 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Yggdrasilberry
+      rate: 5000
+    - item: Seed_Of_Yggdrasil
+      rate: 5000
   name: Despair God Morroc
   race: demon
   size: medium
@@ -87118,6 +88047,11 @@
     - angry
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Yggdrasilberry
+      rate: 5000
+    - item: Seed_Of_Yggdrasil
+      rate: 5000
   name: Charleston 3
   race: demon
   size: large
@@ -88033,6 +88967,11 @@
     - boss
     - can_move
     - can_attack
+  mvp_drops:
+    - item: Yggdrasilberry
+      rate: 5000
+    - item: Seed_Of_Yggdrasil
+      rate: 5000
   name: Captain Ferlock
   race: dragon
   size: large
@@ -88070,6 +89009,11 @@
     - boss
     - aggressive
     - can_attack
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Blue_Box
+      rate: 5000
   name: Sarah Irene
   race: demihuman
   size: medium
@@ -89204,6 +90148,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Soul_Of_Thief
+      rate: 5000
+    - item: Soul_Of_Thief
+      rate: 5000
+    - item: Soul_Of_Thief
+      rate: 5000
   name: Guillotine Cross Eremes
   race: demihuman
   size: medium
@@ -89261,6 +90212,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Soul_Of_Acolyte
+      rate: 5000
+    - item: Soul_Of_Acolyte
+      rate: 5000
+    - item: Soul_Of_Acolyte
+      rate: 5000
   name: Arch Bishop Margaretha
   race: demihuman
   size: medium
@@ -89318,6 +90276,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Soul_Of_Archer
+      rate: 5000
+    - item: Soul_Of_Archer
+      rate: 5000
+    - item: Soul_Of_Archer
+      rate: 5000
   name: Ranger Cecil
   race: demihuman
   size: medium
@@ -89375,6 +90340,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Soul_Of_Merchant
+      rate: 5000
+    - item: Soul_Of_Merchant
+      rate: 5000
+    - item: Soul_Of_Merchant
+      rate: 5000
   name: Mechanic Howard
   race: demihuman
   size: medium
@@ -89432,6 +90404,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Soul_Of_Magicion
+      rate: 5000
+    - item: Soul_Of_Magicion
+      rate: 5000
+    - item: Soul_Of_Magicion
+      rate: 5000
   name: Warlock Kathryne
   race: demihuman
   size: medium
@@ -89489,6 +90468,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Soul_Of_Swordman
+      rate: 5000
+    - item: Soul_Of_Swordman
+      rate: 5000
+    - item: Soul_Of_Swordman
+      rate: 5000
   name: Rune Knight Seyren
   race: demihuman
   size: medium
@@ -90178,6 +91164,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Soul_Of_Swordman
+      rate: 5000
+    - item: Soul_Of_Swordman
+      rate: 5000
+    - item: Soul_Of_Swordman
+      rate: 5000
   name: Royal Guard Randel
   race: demihuman
   size: medium
@@ -90235,6 +91228,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Soul_Of_Merchant
+      rate: 5000
+    - item: Soul_Of_Merchant
+      rate: 5000
+    - item: Soul_Of_Merchant
+      rate: 5000
   name: Genetic Flamel
   race: demihuman
   size: medium
@@ -90292,6 +91292,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Soul_Of_Magicion
+      rate: 5000
+    - item: Soul_Of_Magicion
+      rate: 5000
+    - item: Soul_Of_Magicion
+      rate: 5000
   name: Sorcerer Celia
   race: demihuman
   size: medium
@@ -90349,6 +91356,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Soul_Of_Acolyte
+      rate: 5000
+    - item: Soul_Of_Acolyte
+      rate: 5000
+    - item: Soul_Of_Acolyte
+      rate: 5000
   name: Sura Chen
   race: demihuman
   size: medium
@@ -90406,6 +91420,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Soul_Of_Thief
+      rate: 5000
+    - item: Soul_Of_Thief
+      rate: 5000
+    - item: Soul_Of_Thief
+      rate: 5000
   name: Shadow Chaser Gertie
   race: demihuman
   size: medium
@@ -90463,6 +91484,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Soul_Of_Archer
+      rate: 5000
+    - item: Soul_Of_Archer
+      rate: 5000
+    - item: Soul_Of_Archer
+      rate: 5000
   name: Minstrel Alphoccio
   race: demihuman
   size: medium
@@ -90520,6 +91548,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Soul_Of_Archer
+      rate: 5000
+    - item: Soul_Of_Archer
+      rate: 5000
+    - item: Soul_Of_Archer
+      rate: 5000
   name: Wanderer Trentini
   race: demihuman
   size: medium
@@ -90920,6 +91955,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 2000
+    - item: Old_Violet_Box
+      rate: 2000
+    - item: Problematical_Part
+      rate: 10000
   name: T_W_O
   race: demon
   size: large
@@ -93293,6 +94335,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Tiger's_Skin
+      rate: 5000
+    - item: Tiger_Footskin
+      rate: 1000
+    - item: Flame_Heart
+      rate: 3000
+  mvp_exp: 100000
   name: Infinite Eddga
   race: brute
   size: large
@@ -93350,6 +94400,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Blue_Box
+      rate: 4000
+    - item: Seed_Of_Yggdrasil
+      rate: 3000
+    - item: Osiris_Doll
+      rate: 500
+  mvp_exp: 100000
   name: Infinite Osiris
   race: undead
   size: medium
@@ -93407,6 +94465,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Frozen_Heart
+      rate: 500
+    - item: Crystal_Jewel
+      rate: 1000
+    - item: Star_Crumb
+      rate: 4000
+  mvp_exp: 100000
   name: Infinite Phreeoni
   race: brute
   size: large
@@ -93464,6 +94530,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Red_Jewel
+      rate: 2000
+    - item: Yggdrasilberry
+      rate: 1500
+    - item: Steel
+      rate: 5000
+  mvp_exp: 100000
   name: Infinite Orc Hero
   race: demihuman
   size: large
@@ -93521,6 +94595,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Oridecon
+      rate: 6000
+    - item: Old_Violet_Box
+      rate: 3000
+    - item: Blue_Potion
+      rate: 6000
+  mvp_exp: 100000
   name: Infinite Tao Gunka
   race: demon
   size: large
@@ -94282,6 +95364,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Card_Album
+      rate: 2000
+    - item: White_Potion_Box
+      rate: 3000
+  mvp_exp: 2000
   name: Bijou
   race: undead
   size: large
@@ -94512,6 +95602,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Blue_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Card_Album
+      rate: 2000
+  mvp_exp: 5000
   name: Stefan.J.E.Wolf
   race: undead
   size: large
@@ -95912,6 +97010,13 @@
     - can_move
     - cast_sensor_idle
     - can_attack
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Blue_Box
+      rate: 5000
+    - item: Royal_Jelly
+      rate: 5000
   name: Big Eggring
   race: plant
   size: medium
@@ -97001,6 +98106,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Blue_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Yggdrasilberry
+      rate: 5000
+  mvp_exp: 5000
   name: Pet Child
   race: brute
   size: large
@@ -97299,6 +98412,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Blue_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Yggdrasilberry
+      rate: 5000
+  mvp_exp: 5000
   name: Heart Hunter Ebel
   race: demihuman
   size: medium
@@ -97533,6 +98654,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Bs_Making_S
+      rate: 5000
+  mvp_exp: 5000
   name: Venomous Chimera
   race: brute
   size: large
@@ -98594,6 +99723,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Magic_Card_Album
+      rate: 50
+    - item: Magic_Card_Album
+      rate: 50
+  mvp_exp: 10000
   name: Lich Lord
   race: demon
   size: large
@@ -98651,6 +99788,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Magic_Card_Album
+      rate: 5000
+  mvp_exp: 100000
   name: Lich Lord
   race: demon
   size: large
@@ -99450,6 +100595,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 5000
   name: Spider Chariot
   race: formless
   size: large
@@ -100184,6 +101336,12 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: IllusionStone
+      rate: 500
+  mvp_exp: 1341376
   name: Dracula of Rage
   race: demon
   size: large
@@ -100239,6 +101397,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Yggdrasilberry
+      rate: 2000
+    - item: IllusionStone
+      rate: 500
+  mvp_exp: 701619
   name: Angry Moonlight Flower
   race: demon
   size: medium
@@ -101001,6 +102167,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: IllusionStone
+      rate: 3000
+    - item: Yggdrasilberry
+      rate: 5000
+    - item: Yggdrasilberry
+      rate: 5000
   name: Awakened Ktullanux
   race: brute
   size: large
@@ -101388,6 +102561,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: IllusionStone
+      rate: 2000
+    - item: Old_Violet_Box
+      rate: 2000
+    - item: Old_Violet_Box
+      rate: 2000
   name: Ominous Turtle General
   race: brute
   size: large
@@ -101442,6 +102622,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Seed_Of_Yggdrasil
+      rate: 3000
+    - item: PoringTownOnion
+      rate: 1000
+    - item: PoringTownCarrot
+      rate: 10
   name: King Poring
   race: formless
   size: large
@@ -102611,6 +103798,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Oridecon
+      rate: 6000
+    - item: Old_Violet_Box
+      rate: 3000
+    - item: Elunium
+      rate: 6000
   name: Ancient Tao Gunka
   race: demon
   size: large
@@ -102828,6 +104022,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Elunium
+      rate: 6000
+    - item: Old_Violet_Box
+      rate: 3000
+    - item: Oridecon
+      rate: 6000
   name: Ancient Wootan Defender
   race: demihuman
   size: large
@@ -102974,6 +104175,11 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Yggdrasilberry
+      rate: 5000
+    - item: Seed_Of_Yggdrasil
+      rate: 5000
   name: EL1-A17T
   race: formless
   size: large
@@ -103224,6 +104430,11 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Yggdrasilberry
+      rate: 5000
+    - item: Seed_Of_Yggdrasil
+      rate: 5000
   name: Miguel
   race: demihuman
   size: medium
@@ -104949,6 +106160,14 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: EP17_1_EVT01
+      rate: 2000
+    - item: Bs_Making_S
+      rate: 5000
+    - item: Magic_Card_Album
+      rate: 4000
+  mvp_exp: 4001500
   name: R48-85-Bestia
   race: brute
   size: large
@@ -105037,6 +106256,11 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Card_Album
+      rate: 1000
+    - item: Flame_Heart
+      rate: 5000
   name: Rigid Muspellskoll
   race: demon
   size: medium
@@ -105146,6 +106370,11 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Card_Album
+      rate: 1000
+    - item: Mistic_Frozen
+      rate: 5000
   name: Corrupted Spider Queen
   race: demon
   size: large
@@ -105197,6 +106426,11 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Blue_Coif_
+      rate: 500
+    - item: Skull
+      rate: 6000
   name: Corrupted Dark Lord
   race: undead
   size: large
@@ -105809,6 +107043,11 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Ein_UNDIUM
+      rate: 5000
+    - item: Ein_DYNITE
+      rate: 10000
   name: Jewel Ungoliant
   race: insect
   size: large
@@ -105965,6 +107204,12 @@
     - angry
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Blue_Box
+      rate: 5000
+    - item: Old_Card_Album
+      rate: 500
+  mvp_exp: 11700000
   name: Red Pepper
   race: formless
   size: medium
@@ -106016,6 +107261,12 @@
     - angry
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Card_Album
+      rate: 1000
+  mvp_exp: 11700000
   name: Senior Red Pepper
   race: formless
   size: medium
@@ -107075,6 +108326,12 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Old_Card_Album
+      rate: 500
+  mvp_exp: 15600000
   name: Sweety
   race: demihuman
   size: medium
@@ -107387,6 +108644,12 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Fruit_Basket
+      rate: 5000
+    - item: Yggdrasilberry
+      rate: 1000
+  mvp_exp: 20328244
   name: Boss Meow
   race: plant
   size: small
@@ -107865,6 +109128,12 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Fruit_Basket
+      rate: 5000
+    - item: Yggdrasilberry
+      rate: 1000
+  mvp_exp: 20328244
   name: Pitaya Boss
   race: plant
   size: small
@@ -108270,6 +109539,11 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Yggdrasilberry
+      rate: 250
   name: Silva Papilia
   race: plant
   size: large
@@ -108321,6 +109595,11 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Violet_Box
+      rate: 5000
+    - item: Yggdrasilberry
+      rate: 1000
   name: Gran Papilia
   race: plant
   size: large
@@ -110296,6 +111575,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Card_Album
+      rate: 4000
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 3000
   name: Deep Sea Kraken
   race: fish
   size: large
@@ -110469,6 +111755,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Old_Card_Album
+      rate: 4000
+    - item: Old_Violet_Box
+      rate: 3000
   name: Deep Sea Witch
   race: demon
   size: large
@@ -111124,6 +112417,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Shadowdecon
+      rate: 4000
+    - item: Zelunium
+      rate: 4000
+    - item: Old_Violet_Box
+      rate: 4000
   name: The One
   race: formless
   size: large
@@ -111445,6 +112745,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Shadowdecon
+      rate: 4000
+    - item: Yggdrasilberry
+      rate: 4000
+    - item: Zelunium
+      rate: 4000
   name: R001-Bestia
   race: brute
   size: large
@@ -111930,6 +113237,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Shadowdecon
+      rate: 4000
+    - item: Zelunium
+      rate: 4000
+    - item: Old_Violet_Box
+      rate: 4000
   name: Death Witch
   race: demihuman
   size: medium
@@ -113043,6 +114357,11 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Card_Album
+      rate: 2000
+    - item: Yggdrasilberry
+      rate: 2500
   name: Burning Fang
   race: brute
   size: large
@@ -113662,6 +114981,11 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Yggdrasilberry
+      rate: 500
+    - item: Old_Violet_Box
+      rate: 1500
   name: Schulang
   race: demon
   size: medium
@@ -113703,6 +115027,11 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Yggdrasilberry
+      rate: 2500
+    - item: Old_Violet_Box
+      rate: 1000
   name: Twisted God Freyja
   race: angel
   size: medium
@@ -114024,6 +115353,11 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Yggdrasilberry
+      rate: 1500
+    - item: Old_Card_Album
+      rate: 500
   name: Schulang
   race: demon
   size: medium
@@ -114065,6 +115399,11 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Yggdrasilberry
+      rate: 5000
+    - item: Old_Card_Album
+      rate: 1000
   name: Twisted God Freyja
   race: angel
   size: medium
@@ -114675,6 +116014,13 @@
     - change_chase
     - change_target_melee
     - change_target_chase
+  mvp_drops:
+    - item: Old_Card_Album
+      rate: 4000
+    - item: Magic_Card_Album
+      rate: 5000
+    - item: Old_Violet_Box
+      rate: 3000
   name: Silent Maya
   race: insect
   size: large

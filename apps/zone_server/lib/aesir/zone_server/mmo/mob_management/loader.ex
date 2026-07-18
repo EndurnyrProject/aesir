@@ -17,7 +17,10 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Loader do
           by_name: %{String.t() => MobDefinition.t()}
         }
 
-  @cache_file "mobs.etf"
+  # Version-suffixed: the cache stores built structs, so a shape change (new
+  # field, new convert/2 clause) must invalidate every existing cache. Freshness
+  # is mtime-based and cannot detect that the cache was built by older code.
+  @cache_file "mobs_v2.etf"
 
   @field_names MobDefinition
                |> struct(%{})
@@ -72,6 +75,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Loader do
   defp convert(:modes, v), do: Enum.map(v, &String.to_atom/1)
   defp convert(:stats, v), do: Map.new(v, fn {k, n} -> {String.to_atom(k), n} end)
   defp convert(:drops, v), do: Enum.map(v, &to_drop!/1)
+  defp convert(:mvp_drops, v), do: Enum.map(v, &to_drop!/1)
   defp convert(_key, v), do: v
 
   @spec to_drop!(map()) :: MobDrop.t()

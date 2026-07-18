@@ -6,8 +6,10 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
 
   Modes come from three sources, unioned and deduped: `Class: Boss` (`:boss`),
   an explicit `Modes.Aggressive` flag (`:aggressive`), and the mode set derived
-  from the `Ai` value via `MobMode`. `MvpDrops`, `RaceGroups`, resistances and
-  `DamageTaken` are still dropped - they have no consumer yet.
+  from the `Ai` value via `MobMode`. `MvpExp` and `MvpDrops` are parsed onto
+  `mvp_exp`/`mvp_drops` and stay strictly separate from the normal `drops`
+  list. `RaceGroups`, resistances and `DamageTaken` are still dropped - they
+  have no consumer yet.
   """
 
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
@@ -67,7 +69,10 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
   defp encode_value(field, value) when field in [:size, :race], do: Atom.to_string(value)
   defp encode_value(:modes, value), do: Enum.map(value, &Atom.to_string/1)
   defp encode_value(:stats, value), do: Map.new(value, fn {k, v} -> {Atom.to_string(k), v} end)
-  defp encode_value(:drops, value), do: Enum.map(value, &drop_to_map/1)
+
+  defp encode_value(field, value) when field in [:drops, :mvp_drops],
+    do: Enum.map(value, &drop_to_map/1)
+
   defp encode_value(_field, value), do: value
 
   @spec drop_to_map(MobDrop.t()) :: map()
@@ -112,7 +117,9 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
          damage_motion: Map.get(entry, "DamageMotion", 0),
          ai_type: parse_ai(Map.get(entry, "Ai")),
          modes: parse_modes(entry),
-         drops: parse_drops(Map.get(entry, "Drops"))
+         drops: parse_drops(Map.get(entry, "Drops")),
+         mvp_exp: Map.get(entry, "MvpExp", 0),
+         mvp_drops: parse_mvp_drops(Map.get(entry, "MvpDrops"))
        }}
     end
   end
@@ -183,4 +190,23 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
   end
 
   defp parse_drop(_), do: nil
+
+  @spec parse_mvp_drops(term()) :: [MobDrop.t()]
+  defp parse_mvp_drops(drops) when is_list(drops) do
+    drops |> Enum.map(&parse_mvp_drop/1) |> Enum.reject(&is_nil/1)
+  end
+
+  defp parse_mvp_drops(_), do: []
+
+  @spec parse_mvp_drop(map()) :: MobDrop.t() | nil
+  defp parse_mvp_drop(%{"Item" => item, "Rate" => rate} = drop)
+       when is_integer(rate) and rate > 0 do
+    %MobDrop{
+      item: item,
+      rate: rate,
+      random_option_group: Map.get(drop, "RandomOptionGroup")
+    }
+  end
+
+  defp parse_mvp_drop(_), do: nil
 end

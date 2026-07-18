@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.ImporterTest do
   use ExUnit.Case, async: true
 
   alias Aesir.ZoneServer.Mmo.MobManagement.Importer
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
 
   defp entry(overrides) do
     Map.merge(%{"Id" => 1001, "AegisName" => "TEST", "Name" => "Test Mob"}, overrides)
@@ -41,6 +42,56 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.ImporterTest do
       {:ok, definition} = Importer.to_definition(entry(%{}))
 
       assert definition.modes == []
+    end
+  end
+
+  describe "to_definition/1 MVP reward fields" do
+    test "MvpExp parses to mvp_exp" do
+      {:ok, definition} = Importer.to_definition(entry(%{"MvpExp" => 109_044}))
+
+      assert definition.mvp_exp == 109_044
+    end
+
+    test "missing MvpExp defaults mvp_exp to 0" do
+      {:ok, definition} = Importer.to_definition(entry(%{}))
+
+      assert definition.mvp_exp == 0
+    end
+
+    test "MvpDrops parses into MobDrop structs" do
+      {:ok, definition} =
+        Importer.to_definition(
+          entry(%{
+            "MvpDrops" => [
+              %{"Item" => "Bs_Making_S", "Rate" => 5000},
+              %{"Item" => "Baphomet_Doll", "Rate" => 2500, "RandomOptionGroup" => "some_group"}
+            ]
+          })
+        )
+
+      assert definition.mvp_drops == [
+               %MobDrop{item: "Bs_Making_S", rate: 5000},
+               %MobDrop{item: "Baphomet_Doll", rate: 2500, random_option_group: "some_group"}
+             ]
+    end
+
+    test "missing MvpDrops defaults mvp_drops to []" do
+      {:ok, definition} = Importer.to_definition(entry(%{}))
+
+      assert definition.mvp_drops == []
+    end
+
+    test "MvpDrops and Drops stay strictly separate" do
+      {:ok, definition} =
+        Importer.to_definition(
+          entry(%{
+            "Drops" => [%{"Item" => "Jellopy", "Rate" => 7000}],
+            "MvpDrops" => [%{"Item" => "Bs_Making_S", "Rate" => 5000}]
+          })
+        )
+
+      assert definition.drops == [%MobDrop{item: "Jellopy", rate: 7000}]
+      assert definition.mvp_drops == [%MobDrop{item: "Bs_Making_S", rate: 5000}]
     end
   end
 end
