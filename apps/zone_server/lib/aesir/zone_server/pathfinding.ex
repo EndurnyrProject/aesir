@@ -86,7 +86,7 @@ defmodule Aesir.ZoneServer.Pathfinding do
        ) do
     neighbor_pos = {nx, ny}
 
-    if should_skip_neighbor?(neighbor_pos, closed_set, map_data, nx, ny) do
+    if should_skip_neighbor?(neighbor_pos, closed_set, map_data, current, nx, ny) do
       {open_acc, g_acc}
     else
       update_neighbor_if_better(
@@ -100,10 +100,10 @@ defmodule Aesir.ZoneServer.Pathfinding do
     end
   end
 
-  defp should_skip_neighbor?(neighbor_pos, closed_set, map_data, nx, ny) do
+  defp should_skip_neighbor?(neighbor_pos, closed_set, map_data, current, nx, ny) do
     MapSet.member?(closed_set, neighbor_pos) or
       not valid_position?(map_data, nx, ny) or
-      not walkable?(map_data, nx, ny)
+      not Cell.step_traversable?(map_data.name, {current.x, current.y}, {nx, ny})
   end
 
   defp update_neighbor_if_better(

@@ -50,10 +50,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
   The seam `place/4` shares with casters that have no `PlayerState` — the mob
   ground-field archetype builds its own `Group` (`caster_type: :mob`) and gets
   the identical footprint, path check, registration and cast broadcast.
-  `origin` is the caster's cell, used for the placement's optional path check.
+  `origin` is the caster's cell: it is stamped onto the group before `on_place/1`
+  runs (so directional skills read it without calling back into the caster's
+  process) and drives the placement's optional path check.
   """
   @spec place_group(Group.t(), {integer(), integer()}) :: {:ok, Group.t()} | {:error, term()}
   def place_group(%Group{} = group, origin) do
+    group = %{group | origin: origin}
+
     with {:ok, module} <- module_for(group.skill_name) do
       {:ok, placement} = module.on_place(group)
       register_placement(group, origin, placement)

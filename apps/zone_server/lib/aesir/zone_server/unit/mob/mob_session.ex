@@ -752,7 +752,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   defp process_unblocked_movement_tick(%{movement_state: :moving} = state) do
     case state.walk_path do
       [{next_x, next_y} | _] = walk_path ->
-        if next_cell_walkable?(state.map_name, next_x, next_y) do
+        if Cell.step_traversable?(state.map_name, {state.x, state.y}, {next_x, next_y}) do
           step_mob(state, {next_x, next_y}, tl(walk_path))
         else
           handle_blocked_mob(state, List.last(walk_path))
@@ -824,10 +824,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
         stopped_state
     end
-  end
-
-  defp next_cell_walkable?(map_name, x, y) do
-    Cell.traversable?(map_name, x, y)
   end
 
   # AI logic is now handled by AIStateMachine module

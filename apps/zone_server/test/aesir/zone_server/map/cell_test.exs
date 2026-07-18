@@ -62,6 +62,18 @@ defmodule Aesir.ZoneServer.Map.CellTest do
              Cell.water_source("water_delegate", 0, 0)
   end
 
+  test "step_traversable? forbids diagonal corner cutting between blocked cells" do
+    assert Cell.step_traversable?("cell_test", {0, 1}, {1, 2})
+
+    :ok = Cell.put("cell_test", 1, 1, :skill_unit, 10, blocks_movement: true)
+    :ok = Cell.put("cell_test", 2, 2, :skill_unit, 11, blocks_movement: true)
+
+    refute Cell.step_traversable?("cell_test", {1, 2}, {2, 2})
+    assert Cell.step_traversable?("cell_test", {1, 2}, {0, 2})
+    refute Cell.step_traversable?("cell_test", {1, 2}, {2, 1})
+    refute Cell.step_traversable?("cell_test", {0, 1}, {1, 2})
+  end
+
   test "merges independent source contributions and restores exact base terrain", %{map: map} do
     :ok = Cell.put("cell_test", 0, 0, :wall, 1, blocks_movement: true)
     :ok = Cell.put("cell_test", 0, 0, :barrier, 2, blocks_projectiles: true)

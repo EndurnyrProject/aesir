@@ -201,9 +201,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WizardIntegrationTest do
        %{
          manager: manager
        } do
-    Mimic.copy(Combat)
-    expect(Combat, :resolve_combatant, fn @caster_id -> {:error, :not_found} end)
-
     caster = caster()
     register_player(@caster_id, caster, 120, 120)
 

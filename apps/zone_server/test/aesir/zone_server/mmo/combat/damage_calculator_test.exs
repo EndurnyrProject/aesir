@@ -13,6 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
 
   setup :set_mimic_from_context
@@ -371,6 +373,28 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       # Mobs have no soft defense in our implementation
       # Expected: 150 * (4000 + 15) / (4000 + 150) - 0
+      assert final_damage > 0
+      assert final_damage < 150
+    end
+
+    test "applies renewal defense formula to a skill-unit cell defender" do
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+
+      cell = %Cell{
+        cell_id: 1,
+        group_id: 1,
+        map_name: "prt_fild01",
+        x: 163,
+        y: 55,
+        hp: 400,
+        state: %{combat: %{def: 30, soft_def: 5}}
+      }
+
+      wall = CombatTarget.to_combatant(cell)
+
+      assert {:ok, final_damage} = DamageCalculator.apply_defense_formula(150, wall)
+
+      # Expected: 150 * (4000 + 30) / (4000 + 300) - 5
       assert final_damage > 0
       assert final_damage < 150
     end

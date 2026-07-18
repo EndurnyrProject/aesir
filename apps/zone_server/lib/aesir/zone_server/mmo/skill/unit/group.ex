@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
     field :target_type, Unit.unit_type() | nil
     field :map_name, String.t()
     field :center, cell()
+    field :origin, cell() | nil, default: nil
     field :cells, [cell()], default: []
     field :created_at, integer() | nil
     field :next_tick_at, integer() | nil

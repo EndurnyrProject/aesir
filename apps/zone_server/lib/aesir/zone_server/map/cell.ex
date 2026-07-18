@@ -104,6 +104,25 @@ defmodule Aesir.ZoneServer.Map.Cell do
       Enum.any?(contributions(map_name, x, y), &Map.get(&1, :blocks_projectiles, false))
   end
 
+  @doc """
+  Returns whether a single-cell step from `from` to `to` is traversable.
+
+  A diagonal step additionally requires both orthogonal side cells to be
+  traversable, matching rAthena's no-corner-cut rule (`path.cpp`): a unit may
+  not slip between two diagonally-adjacent blocked cells (e.g. a diagonal
+  Ice Wall).
+  """
+  @spec step_traversable?(String.t(), {integer(), integer()}, {integer(), integer()}) :: boolean()
+  def step_traversable?(map_name, {from_x, from_y}, {to_x, to_y}) do
+    dx = to_x - from_x
+    dy = to_y - from_y
+
+    traversable?(map_name, to_x, to_y) and
+      (dx == 0 or dy == 0 or
+         (traversable?(map_name, from_x + dx, from_y) and
+            traversable?(map_name, from_x, from_y + dy)))
+  end
+
   @doc "Returns whether a skill-unit may be placed on base terrain."
   @spec placeable?(String.t(), integer(), integer()) :: boolean()
   def placeable?(map_name, x, y) do

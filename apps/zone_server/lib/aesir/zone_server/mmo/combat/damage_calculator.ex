@@ -334,6 +334,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     0
   end
 
+  defp calculate_soft_defense(%{unit_type: :skill_unit} = defender) do
+    defender.combat_stats.soft_def
+  end
+
   # Divine Protection (AL_DP): flat soft-DEF added to the defender when the
   # attacker is undead/demon. nil attacker (e.g. the legacy 2-arity call) means
   # no attacker context, so no Divine Protection is applied.

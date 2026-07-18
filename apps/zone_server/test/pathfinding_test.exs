@@ -71,6 +71,23 @@ defmodule Aesir.ZoneServer.PathfindingTest do
       refute Enum.any?(path, fn {x, y} -> y == 5 and x in [4, 5, 6] end)
     end
 
+    test "does not cut diagonally through a diagonal wall", %{map_data: map_data} do
+      # A diagonal Ice Wall: dynamic movement blockers on (4,4), (5,5), (6,6).
+      :ok = Cell.put("test_map", 4, 4, :skill_unit, 1, blocks_movement: true)
+      :ok = Cell.put("test_map", 5, 5, :skill_unit, 2, blocks_movement: true)
+      :ok = Cell.put("test_map", 6, 6, :skill_unit, 3, blocks_movement: true)
+
+      assert {:ok, path} = Pathfinding.find_path(map_data, {5, 4}, {5, 6})
+
+      refute Enum.any?(path, &(&1 in [{4, 4}, {5, 5}, {6, 6}]))
+
+      steps = Enum.zip([{5, 4} | path], path)
+
+      assert Enum.all?(steps, fn {from, to} ->
+               Cell.step_traversable?("test_map", from, to)
+             end)
+    end
+
     test "returns no_path when completely blocked", %{map_data: map_data} do
       map_data =
         map_data

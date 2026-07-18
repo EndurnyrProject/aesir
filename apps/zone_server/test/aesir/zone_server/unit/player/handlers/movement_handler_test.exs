@@ -51,6 +51,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
 
     stub(MapCache, :get, fn "prontera" -> {:ok, %{width: 200, height: 200}} end)
     stub(Cell, :traversable?, fn "prontera", _x, _y -> true end)
+    stub(Cell, :step_traversable?, fn "prontera", _from, _to -> true end)
     stub(Pathfinding, :find_path, fn _map, {50, 50}, {51, 50} -> {:ok, [{50, 50}, {51, 50}]} end)
     stub(SpatialIndex, :get_visible_players, fn _ -> [] end)
     stub(Broadcast, :to_player, fn _, _ -> :ok end)
@@ -231,7 +232,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
 
     test "a dynamic movement blocker stops the player before it steps into the cell" do
       Mimic.copy(Movement)
-      stub(Cell, :traversable?, fn "prontera", 51, 50 -> false end)
+      stub(Cell, :step_traversable?, fn "prontera", {50, 50}, {51, 50} -> false end)
       stub(Pathfinding, :find_path, fn _map, _from, _destination -> {:error, :no_path} end)
       stub(Movement, :set_position, fn _type, _id, _state, _map -> :ok end)
 

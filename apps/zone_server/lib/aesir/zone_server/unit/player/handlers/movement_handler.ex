@@ -335,10 +335,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     end
   end
 
-  defp next_cell_walkable?(map_name, x, y) do
-    Cell.traversable?(map_name, x, y)
-  end
-
   defp segment_traversable?(_map_name, {x, y}, {x, y}), do: true
 
   defp segment_traversable?(map_name, {x, y}, {next_x, next_y}) do
@@ -346,7 +342,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     dx = sign(next_x - x)
     dy = sign(next_y - y)
 
-    Enum.all?(1..steps, fn step -> next_cell_walkable?(map_name, x + dx * step, y + dy * step) end)
+    Enum.all?(1..steps, fn step ->
+      from = {x + dx * (step - 1), y + dy * (step - 1)}
+      Cell.step_traversable?(map_name, from, {x + dx * step, y + dy * step})
+    end)
   end
 
   defp sign(n) when n > 0, do: 1

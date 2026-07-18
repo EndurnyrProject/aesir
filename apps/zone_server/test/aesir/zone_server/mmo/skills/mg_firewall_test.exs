@@ -18,7 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.MgFirewallTest do
   # Renewal MG_FIREWALL ratio: base 100 - 50 = 50% per hit.
   @expected_ratio 50
 
-  defp group(level, state \\ %{hits_remaining: nil}) do
+  defp group(level, state \\ %{hits_remaining: nil}, origin \\ @caster_pos) do
     %Group{
       group_id: 1,
       skill_id: 18,
@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.MgFirewallTest do
       caster_type: :player,
       map_name: @map_name,
       center: @center,
+      origin: origin,
       cells: [],
       interval: 20,
       state: state
@@ -69,8 +70,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.MgFirewallTest do
 
   describe "on_place/1" do
     test "lays a 3-cell line perpendicular to caster->target facing and seeds the hit budget" do
-      stub_caster()
-
       assert {:ok, placement} = MgFirewall.on_place(group(3))
       # Caster->center faces +y (north); wall runs along the x axis through center.
       assert Enum.sort(placement.cells) == [{149, 150}, {150, 150}, {151, 150}]
@@ -80,12 +79,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.MgFirewallTest do
     end
 
     test "defaults to a horizontal line when caster sits on the target cell" do
-      stub(Combat, :resolve_combatant, fn @caster_id ->
-        {:ok, %{unit_id: @caster_id, position: @center}}
-      end)
+      assert {:ok, %{cells: cells}} =
+               MgFirewall.on_place(group(1, %{hits_remaining: nil}, @center))
 
-      assert {:ok, %{cells: cells}} = MgFirewall.on_place(group(1))
       assert length(cells) == 3
+    end
+
+    test "defaults to a horizontal line when the group has no origin" do
+      assert {:ok, %{cells: cells}} = MgFirewall.on_place(group(1, %{hits_remaining: nil}, nil))
+      assert cells == [{149, 150}, {150, 150}, {151, 150}]
     end
   end
 

@@ -4,9 +4,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.MgFirewall do
 
   As a `target_type: :ground` skill, `use Skill` auto-derives the `cast/4` that
   places this unit at the target cell. The wall is a 3-cell line (renewal) laid
-  perpendicular to the caster->target facing: `on_place` resolves the caster's
-  position once, takes the sign of the caster->center vector as the facing, rotates
-  it 90 degrees and lays the line through the center along that axis.
+  perpendicular to the caster->target facing: `on_place` reads the caster's cell
+  from the group's `origin`, takes the sign of the origin->center vector as the
+  facing, rotates it 90 degrees and lays the line through the center along that axis.
 
   Unlike a per-target counter, the wall shares a single hit budget of `4 + level`
   hits across all of its cells (rAthena `skill_unit_group->val2`). Each tick the
@@ -145,22 +145,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.MgFirewall do
   end
 
   # The wall lies perpendicular to the caster->center facing. We take the sign of
-  # that vector as the facing (8-dir), rotate it 90 degrees ({fx, fy} -> {-fy, fx})
-  # and lay the line along the result. A caster standing on the center has no
-  # facing, so we default to a horizontal (east-west) wall.
+  # the origin->center vector as the facing (8-dir), rotate it 90 degrees
+  # ({fx, fy} -> {-fy, fx}) and lay the line along the result. A caster standing
+  # on the center has no facing, so we default to a horizontal (east-west) wall.
+  # The origin is read from the group (stamped at placement) because on_place
+  # runs inside the caster's own session process, where a caster lookup deadlocks.
   @spec wall_direction(Group.t()) :: {integer(), integer()}
-  defp wall_direction(%Group{center: {cx, cy}, caster_id: caster_id}) do
-    case Combat.resolve_combatant(caster_id) do
-      {:ok, %{position: {px, py}}} ->
-        case {sign(cx - px), sign(cy - py)} do
-          {0, 0} -> {1, 0}
-          {fx, fy} -> {-fy, fx}
-        end
-
-      {:error, _reason} ->
-        {1, 0}
+  defp wall_direction(%Group{center: {cx, cy}, origin: {px, py}}) do
+    case {sign(cx - px), sign(cy - py)} do
+      {0, 0} -> {1, 0}
+      {fx, fy} -> {-fy, fx}
     end
   end
+
+  defp wall_direction(%Group{origin: nil}), do: {1, 0}
 
   @spec sign(integer()) :: -1 | 0 | 1
   defp sign(n) when n > 0, do: 1

@@ -25,7 +25,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzIcewall do
     fixed_cast_time: List.duplicate(0, 10),
     sp_cost: List.duplicate(20, 10)
 
-  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
@@ -73,18 +72,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzIcewall do
   def on_interval(%Group{} = group, _now), do: {:ok, group}
 
   @spec wall_direction(Group.t()) :: {integer(), integer()}
-  defp wall_direction(%Group{center: {cx, cy}, caster_id: caster_id}) do
-    case Combat.resolve_combatant(caster_id) do
-      {:ok, %{position: {px, py}}} ->
-        case {sign(cx - px), sign(cy - py)} do
-          {0, 0} -> {1, 0}
-          {fx, fy} -> {-fy, fx}
-        end
-
-      {:error, _reason} ->
-        {1, 0}
+  defp wall_direction(%Group{center: {cx, cy}, origin: {px, py}}) do
+    case {sign(cx - px), sign(cy - py)} do
+      {0, 0} -> {1, 0}
+      {fx, fy} -> {-fy, fx}
     end
   end
+
+  defp wall_direction(%Group{origin: nil}), do: {1, 0}
 
   @spec sign(integer()) :: -1 | 0 | 1
   defp sign(n) when n > 0, do: 1

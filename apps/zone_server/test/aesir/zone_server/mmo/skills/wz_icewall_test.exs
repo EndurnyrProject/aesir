@@ -4,7 +4,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzIcewallTest do
   import Aesir.TestEtsSetup
   import Mimic
 
-  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.WzIcewall
@@ -17,7 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzIcewallTest do
   @other_caster_id 1001
   @center {150, 150}
 
-  defp group(level) do
+  defp group(level, origin) do
     %Group{
       group_id: 1,
       skill_id: 87,
@@ -27,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzIcewallTest do
       caster_type: :player,
       map_name: "prontera",
       center: @center,
+      origin: origin,
       cells: [],
       state: %{}
     }
@@ -58,11 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzIcewallTest do
   end
 
   test "places five directional targetable terrain cells with canonical HP and decay" do
-    stub(Combat, :resolve_combatant, fn @caster_id ->
-      {:ok, %{position: {148, 148}}}
-    end)
-
-    assert {:ok, placement} = WzIcewall.on_place(group(3))
+    assert {:ok, placement} = WzIcewall.on_place(group(3, {148, 148}))
 
     assert placement.cells == [{152, 148}, {151, 149}, {150, 150}, {149, 151}, {148, 152}]
     assert placement.interval == 1_000
@@ -78,11 +74,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzIcewallTest do
   end
 
   test "defaults to a horizontal wall when the caster targets its own cell" do
-    stub(Combat, :resolve_combatant, fn @caster_id ->
-      {:ok, %{position: @center}}
-    end)
+    assert {:ok, %{cells: cells}} = WzIcewall.on_place(group(1, @center))
+    assert cells == [{148, 150}, {149, 150}, {150, 150}, {151, 150}, {152, 150}]
+  end
 
-    assert {:ok, %{cells: cells}} = WzIcewall.on_place(group(1))
+  test "defaults to a horizontal wall when the group has no origin" do
+    assert {:ok, %{cells: cells}} = WzIcewall.on_place(group(1, nil))
     assert cells == [{148, 150}, {149, 150}, {150, 150}, {151, 150}, {152, 150}]
   end
 
