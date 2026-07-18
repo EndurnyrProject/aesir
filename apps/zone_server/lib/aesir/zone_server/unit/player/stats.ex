@@ -743,15 +743,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     Map.get(stats.modifiers.status_effects, flag, false)
   end
 
+  @ranged_weapons [:bow, :musical, :whip, :revolver, :rifle, :gatling, :shotgun, :grenade]
+
   @doc """
-  Calculates ASPD (Attack Speed) following rAthena's renewal formula.
+  Calculates ASPD (Attack Speed) following the renewal formula.
 
-  ASPD in renewal is displayed as: 200 - (delay / 10)
-  The actual attack delay in milliseconds is: (200 - ASPD) * 10
+  The stat contribution is:
+  - Ranged weapons: sqrt(DEX² / 7 + AGI² / 2) / 4
+  - Other weapons: sqrt(DEX² / 5 + AGI² / 2) / 4
 
-  Formula varies based on weapon type:
-  - Ranged weapons: sqrt(DEX² / 7 + AGI² * 0.5)
-  - Other weapons: sqrt(DEX² / 5 + AGI²)
+  added to a base of 196, minus the job's per-weapon delay (plus the shield
+  penalty). Flat ASPD bonuses (potions, passive skills) scale with AGI / 200;
+  percentage bonuses grant their share of the distance to 195 ASPD:
+  max(195 - aspd, 2) * percent / 100.
   """
   @spec calculate_aspd(t()) :: integer()
   def calculate_aspd(%__MODULE__{} = stats) do
@@ -762,32 +766,32 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
     case AvailableJobs.job_id_to_name(stats.progression.job_id) do
       {:ok, job_name} ->
-        base_aspd = get_weapon_aspd(job_name, weapon_atom)
+        weapon_delay = get_weapon_aspd(job_name, weapon_atom)
 
-        base_aspd =
+        weapon_delay =
           if has_shield do
-            apply_shield_penalty(base_aspd, job_name)
+            apply_shield_penalty(weapon_delay, job_name)
           else
-            base_aspd
+            weapon_delay
           end
 
-        # Convert base ASPD to amotion (attack motion delay in milliseconds)
-        # Stores base values as amotion/10, so base_aspd of 40 = 400ms amotion
-        base_amotion = base_aspd * 10
+        stat_term =
+          if weapon_atom in @ranged_weapons do
+            effective_dex * effective_dex / 7 + effective_agi * effective_agi / 2
+          else
+            effective_dex * effective_dex / 5 + effective_agi * effective_agi / 2
+          end
 
-        # amotion = base_amotion - (base_amotion * (4 * agi + dex) / 1000)
-        stat_reduction = div(base_amotion * (4 * effective_agi + effective_dex), 1000)
-        amotion = base_amotion - stat_reduction
+        base_aspd = :math.sqrt(stat_term) * 0.25 + 196
 
-        # Convert amotion back to ASPD display value
-        # ASPD = (2000 - amotion) / 10
-        final_aspd = div(2000 - amotion, 10)
+        flat_bonus = get_status_modifier(stats, :aspd) + Passives.aspd_bonus(stats)
 
-        # Apply ASPD rate modifiers, then the flat status and passive ASPD bonuses
-        final_aspd = apply_aspd_rate_modifiers(final_aspd, stats)
-        final_aspd = final_aspd + get_status_modifier(stats, :aspd) + Passives.aspd_bonus(stats)
+        final_aspd =
+          trunc(base_aspd + flat_bonus * effective_agi / 200) - min(weapon_delay, 200)
 
-        # Cap ASPD between 0 and 193
+        final_aspd =
+          final_aspd + div(max(195 - final_aspd, 2) * aspd_percent_bonus(stats), 100)
+
         min(max(final_aspd, 0), 193)
 
       err ->
@@ -863,23 +867,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     end
   end
 
-  @spec apply_aspd_rate_modifiers(integer(), t()) :: integer()
-  defp apply_aspd_rate_modifiers(aspd, stats) do
-    aspd_rate = get_aspd_rate(stats)
+  # Equipment stores :aspd_rate as a full rate (100 = neutral), status effects
+  # as a summable percent delta; both sum into one renewal percent.
+  defp aspd_percent_bonus(%__MODULE__{modifiers: modifiers}) do
+    equipment_percent = Map.get(modifiers.equipment, :aspd_rate, 100) - 100
+    status_percent = Map.get(modifiers.status_effects, :aspd_rate, 0)
 
-    if aspd_rate != 100 do
-      trunc(aspd * aspd_rate / 100)
-    else
-      aspd
-    end
-  end
-
-  defp get_aspd_rate(%__MODULE__{modifiers: modifiers}) do
-    equipment_rate = Map.get(modifiers.equipment, :aspd_rate, 100)
-    status_rate = 100 + Map.get(modifiers.status_effects, :aspd_rate, 0)
-
-    # Multiplicative stacking
-    trunc(equipment_rate * status_rate / 100)
+    equipment_percent + status_percent
   end
 
   defp get_hp_bonus_flat(%__MODULE__{}) do

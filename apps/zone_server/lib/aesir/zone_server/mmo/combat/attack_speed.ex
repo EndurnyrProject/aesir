@@ -6,13 +6,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AttackSpeed do
   which are used by the combat system to enforce proper attack rate limiting.
 
   Renewal formula:
-  - ASPD is displayed as: 200 - (delay / 10)
-  - The actual attack delay in milliseconds is: (200 - ASPD) * 10
-  - ASPD ranges from 0 (slowest) to 193 (fastest)
+  - ASPD is displayed as: 200 - (amotion / 10)
+  - amotion (the attack animation delay) is: (200 - ASPD) * 10 milliseconds
+  - The interval between player attacks is adelay, twice the amotion:
+    (200 - ASPD) * 20
+  - ASPD ranges from 0 (slowest) to 193 (fastest); 190 ASPD is 5 attacks/s
   """
 
   @doc """
-  Calculates the attack delay in milliseconds from an ASPD value.
+  Calculates the attack delay (adelay) in milliseconds from an ASPD value.
 
   ## Parameters
     - aspd: The ASPD value (0-193, where higher is faster)
@@ -22,17 +24,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AttackSpeed do
 
   ## Examples
       iex> AttackSpeed.calculate_delay(150)
-      500
+      1000
 
       iex> AttackSpeed.calculate_delay(193)
-      70
+      140
 
       iex> AttackSpeed.calculate_delay(100)
-      1000
+      2000
   """
   @spec calculate_delay(integer()) :: integer()
   def calculate_delay(aspd) when aspd >= 0 and aspd <= 193 do
-    (200 - aspd) * 10
+    (200 - aspd) * 20
   end
 
   def calculate_delay(aspd) when aspd > 193 do

@@ -5,35 +5,39 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AttackSpeedTest do
 
   describe "calculate_delay/1" do
     test "calculates correct delay for ASPD 150" do
-      # ASPD 150 should give (200 - 150) * 10 = 500ms delay
-      assert AttackSpeed.calculate_delay(150) == 500
+      # ASPD 150 should give (200 - 150) * 20 = 1000ms delay
+      assert AttackSpeed.calculate_delay(150) == 1000
     end
 
     test "calculates correct delay for maximum ASPD 193" do
-      # Maximum ASPD should give (200 - 193) * 10 = 70ms delay
-      assert AttackSpeed.calculate_delay(193) == 70
+      # Maximum ASPD should give (200 - 193) * 20 = 140ms delay
+      assert AttackSpeed.calculate_delay(193) == 140
     end
 
     test "calculates correct delay for minimum ASPD 0" do
-      # Minimum ASPD should give (200 - 0) * 10 = 2000ms delay
-      assert AttackSpeed.calculate_delay(0) == 2000
+      # Minimum ASPD should give (200 - 0) * 20 = 4000ms delay
+      assert AttackSpeed.calculate_delay(0) == 4000
     end
 
     test "calculates correct delay for mid-range ASPD 100" do
-      # ASPD 100 should give (200 - 100) * 10 = 1000ms delay
-      assert AttackSpeed.calculate_delay(100) == 1000
+      # ASPD 100 should give (200 - 100) * 20 = 2000ms delay
+      assert AttackSpeed.calculate_delay(100) == 2000
+    end
+
+    test "190 ASPD is the classic 5 attacks per second" do
+      assert AttackSpeed.calculate_delay(190) == 200
     end
 
     test "caps ASPD above 193 to maximum" do
       # Should treat ASPD > 193 as 193
-      assert AttackSpeed.calculate_delay(200) == 70
-      assert AttackSpeed.calculate_delay(999) == 70
+      assert AttackSpeed.calculate_delay(200) == 140
+      assert AttackSpeed.calculate_delay(999) == 140
     end
 
     test "caps ASPD below 0 to minimum" do
       # Should treat ASPD < 0 as 0
-      assert AttackSpeed.calculate_delay(-10) == 2000
-      assert AttackSpeed.calculate_delay(-999) == 2000
+      assert AttackSpeed.calculate_delay(-10) == 4000
+      assert AttackSpeed.calculate_delay(-999) == 4000
     end
   end
 
@@ -45,7 +49,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AttackSpeedTest do
         }
       }
 
-      expected_delay = (200 - 160) * 10
+      expected_delay = (200 - 160) * 20
       assert AttackSpeed.calculate_delay_from_stats(stats) == expected_delay
     end
 
@@ -56,7 +60,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AttackSpeedTest do
         }
       }
 
-      assert AttackSpeed.calculate_delay_from_stats(stats) == 70
+      assert AttackSpeed.calculate_delay_from_stats(stats) == 140
     end
   end
 
@@ -95,9 +99,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AttackSpeedTest do
 
     test "handles very fast ASPD correctly" do
       # Fast ASPD with small delay
-      last_attack = System.monotonic_time(:millisecond) - 100
+      last_attack = System.monotonic_time(:millisecond) - 200
       # Max ASPD delay
-      attack_delay = 70
+      attack_delay = 140
 
       assert AttackSpeed.can_attack?(last_attack, attack_delay) == true
     end
@@ -106,7 +110,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AttackSpeedTest do
       # Slow ASPD with large delay
       last_attack = System.monotonic_time(:millisecond) - 1500
       # Min ASPD delay
-      attack_delay = 2000
+      attack_delay = 4000
 
       assert AttackSpeed.can_attack?(last_attack, attack_delay) == false
     end
@@ -139,24 +143,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AttackSpeedTest do
   describe "integration with common ASPD values" do
     test "novice barehand ASPD ~156 gives reasonable delay" do
       delay = AttackSpeed.calculate_delay(156)
-      # Should be around 440ms delay
-      assert delay == 440
-      assert delay > 400
-      assert delay < 500
+      # Should be around 880ms delay, a bit above one attack per second
+      assert delay == 880
     end
 
     test "high-level character ASPD ~180 gives fast delay" do
       delay = AttackSpeed.calculate_delay(180)
-      # Should be 200ms delay
-      assert delay == 200
-      assert delay < 300
+      # Should be 400ms delay, 2.5 attacks per second
+      assert delay == 400
     end
 
     test "slow weapon ASPD ~120 gives slow delay" do
       delay = AttackSpeed.calculate_delay(120)
-      # Should be 800ms delay
-      assert delay == 800
-      assert delay > 700
+      # Should be 1600ms delay
+      assert delay == 1600
     end
   end
 

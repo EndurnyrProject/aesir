@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     @behaviour Passive
 
     @impl Passive
-    def aspd_bonus(level, _ctx), do: level
+    def aspd_bonus(level, _ctx), do: 40 * level
 
     @impl Passive
     def int_bonus(level, _ctx), do: 2 * level
@@ -1440,22 +1440,27 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   end
 
   describe "status ASPD modifiers" do
-    test "flat :aspd status raises ASPD by that amount" do
-      base = status_stats(%{}).derived_stats.aspd
-      boosted = status_stats(%{aspd: 10}).derived_stats.aspd
+    test "flat :aspd status scales with AGI / 200" do
+      base_stats = status_stats(%{})
+      base = base_stats.derived_stats.aspd
+      agi = Stats.get_effective_stat(base_stats, :agi)
 
-      assert boosted == base + 10
+      # A flat bonus of 200 contributes exactly 200 * AGI / 200 = AGI points.
+      boosted = status_stats(%{aspd: 200}).derived_stats.aspd
+
+      assert boosted == min(base + agi, 193)
+      assert boosted > base
     end
 
     test "flat :aspd is clamped at 193" do
-      assert status_stats(%{aspd: 500}).derived_stats.aspd == 193
+      assert status_stats(%{aspd: 2000}).derived_stats.aspd == 193
     end
 
-    test "aspd_rate status applies as a summable delta over 100" do
+    test "aspd_rate status grants its percent of the distance to 195" do
       base = status_stats(%{}).derived_stats.aspd
       boosted = status_stats(%{aspd_rate: 5}).derived_stats.aspd
 
-      assert boosted == min(trunc(base * 105 / 100), 193)
+      assert boosted == base + div(max(195 - base, 2) * 5, 100)
       assert boosted > base
     end
 
@@ -1494,15 +1499,22 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       base = learned_skills_stats(%{})
       boosted = learned_skills_stats(%{9_900_010 => 5})
 
-      assert boosted.derived_stats.aspd == min(base.derived_stats.aspd + 5, 193)
+      # The passive's flat 200 ASPD at level 5 scales by AGI / 200, so the
+      # boost lands as exactly the effective AGI.
+      agi = Stats.get_effective_stat(base, :agi)
+
+      assert boosted.derived_stats.aspd == min(base.derived_stats.aspd + agi, 193)
+      assert boosted.derived_stats.aspd > base.derived_stats.aspd
       assert Stats.get_effective_stat(boosted, :int) == Stats.get_effective_stat(base, :int) + 10
     end
   end
 
   describe "SA_ADVANCEDBOOK weapon gating" do
     defp advancedbook_stats(learned_skills, equipped_items) do
+      # AGI 200 makes the AGI / 200 scaling of flat ASPD bonuses exactly 1,
+      # so the skill's +3 lands as +3 on the final ASPD.
       %Stats{
-        base_stats: %{str: 10, agi: 30, vit: 25, int: 30, dex: 20, luk: 10},
+        base_stats: %{str: 10, agi: 200, vit: 25, int: 30, dex: 20, luk: 10},
         progression: %{
           base_level: 50,
           job_level: 25,
