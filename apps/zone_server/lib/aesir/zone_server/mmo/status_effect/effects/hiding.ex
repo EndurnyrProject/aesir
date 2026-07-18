@@ -8,7 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Hiding do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_hiding,
     no_dispel: true,
-    properties: [:buff],
+    properties: [:buff, :conceals],
     calc_flags: [:speed],
     flags: [:hide, :no_pick_item, :no_consume_item, :stop_attacking],
     end_on_start: [:sc_closeconfine, :sc_closeconfine2],

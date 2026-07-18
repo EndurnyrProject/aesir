@@ -24,7 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Cloaking do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_cloaking,
     no_dispel: true,
-    properties: [:buff],
+    properties: [:buff, :conceals],
     calc_flags: [:cri, :speed],
     flags: [:cloak, :no_pick_item, :stop_attacking],
     prevented_by: [:sc_refresh, :sc_inspiration],
