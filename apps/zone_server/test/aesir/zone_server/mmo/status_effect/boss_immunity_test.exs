@@ -13,14 +13,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.BossImmunityTest do
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Unit.Mob.MobState
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables
 
   defp start_mob(opts) do
-    %{unit_id: unit_id, mob_state: mob_state, pid: pid} = start_mob_session(opts)
-    UnitRegistry.register_unit(:mob, unit_id, MobState, mob_state, pid)
+    %{unit_id: unit_id} = start_mob_session(opts)
     unit_id
   end
 

@@ -179,8 +179,10 @@ defmodule Aesir.ZoneServer.SessionHelpers do
     awake = Keyword.get(opts, :awake, false)
     {:ok, pid} = MobSession.start_link(%{state: mob_state, awake: awake})
 
-    # Register in UnitRegistry with proper format
-    UnitRegistry.register_unit(:mob, unit_id, MobSession, mob_state, pid)
+    # Register the MobState module, matching production (Map.Coordinator). The
+    # registry's module/state pair drives Unit behaviour dispatch (to_combatant,
+    # update_position, build_entity_info); MobSession implements none of it.
+    UnitRegistry.register_unit(:mob, unit_id, MobState, mob_state, pid)
 
     # Register in SpatialIndex
     SpatialIndex.add_unit(:mob, unit_id, x, y, map_name)
