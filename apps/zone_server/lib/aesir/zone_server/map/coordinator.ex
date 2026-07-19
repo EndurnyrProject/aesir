@@ -269,7 +269,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
       {:error, :not_found} ->
         {:noreply, state}
 
-      {:ok, {_module, mob, _pid}} ->
+      {:ok, {module, mob, _pid}} ->
         # Unregister from UnitRegistry
         UnitRegistry.unregister_unit(:mob, instance_id)
 
@@ -280,20 +280,14 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
         # Schedule respawn with spawn config
         spawn_config = mob.spawn_ref
+        delay = respawn_delay(spawn_config, module.is_boss?(mob))
 
-        timer_ref =
-          Process.send_after(
-            self(),
-            {:respawn_mob, spawn_config},
-            spawn_config.respawn_time
-          )
+        timer_ref = Process.send_after(self(), {:respawn_mob, spawn_config}, delay)
 
         # Store timer with spawn config for cleanup
         new_timers = Map.put(state.respawn_timers, instance_id, {timer_ref, spawn_config})
 
-        Logger.debug(
-          "Mob #{instance_id} died on #{state.map_name}, respawning in #{spawn_config.respawn_time}ms"
-        )
+        Logger.debug("Mob #{instance_id} died on #{state.map_name}, respawning in #{delay}ms")
 
         {:noreply, %{state | respawn_timers: new_timers}}
     end
@@ -693,6 +687,26 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
         :ok
     end
   end
+
+  # Boss respawn delay: base + a uniform random offset in `0..respawn_variance`,
+  # scaled by the configured boss percentage, floored at 1000 ms. Non-boss mobs
+  # keep their current fixed `respawn_time`, ignoring the variance field
+  # entirely -- applying variance game-wide is a deliberately deferred decision
+  # (architecture doc, boss-monsters spec).
+  #
+  @spec respawn_delay(MobSpawn.t(), boolean()) :: pos_integer()
+  defp respawn_delay(%MobSpawn{respawn_time: respawn_time}, false), do: respawn_time
+
+  defp respawn_delay(%MobSpawn{respawn_time: respawn_time, respawn_variance: variance}, true) do
+    (respawn_time + random_variance(variance))
+    |> Kernel.*(Config.boss_respawn_delay_percentage())
+    |> div(100)
+    |> max(1000)
+  end
+
+  @spec random_variance(non_neg_integer()) :: non_neg_integer()
+  defp random_variance(0), do: 0
+  defp random_variance(variance) when variance > 0, do: :rand.uniform(variance + 1) - 1
 
   # NOTE: summoned mobs (Dead Branch etc.) have no map spawn config; we fabricate
   # a minimal MobSpawn with respawn_time 0 so they are not re-spawned on death.

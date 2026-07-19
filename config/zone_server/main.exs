@@ -28,6 +28,10 @@ config :zone_server, death_penalty_job: 1
 # multipliers into this single knob.
 config :zone_server, natural_break_rate: 0
 
+# Percentage applied to a boss's randomized respawn delay (base + rand(variance))
+# before the 1000 ms floor. 100 leaves the imported delay unchanged.
+config :zone_server, boss_respawn_delay_percentage: 100
+
 # Require a valid single-use zone-entry token (issued by the char server on
 # character selection) in SessionAuth before admitting a client to the zone.
 # Set to false only during a client rollout that does not yet echo the token;

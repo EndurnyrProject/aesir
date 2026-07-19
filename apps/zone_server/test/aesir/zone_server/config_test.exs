@@ -27,6 +27,12 @@ defmodule Aesir.ZoneServer.ConfigTest do
     end
   end
 
+  describe "boss_respawn_delay_percentage/0" do
+    test "returns the configured default when unset" do
+      assert Config.boss_respawn_delay_percentage() == 100
+    end
+  end
+
   describe "exp_bonus_max_attacker/0" do
     test "returns the configured default when unset" do
       assert Config.exp_bonus_max_attacker() == 12

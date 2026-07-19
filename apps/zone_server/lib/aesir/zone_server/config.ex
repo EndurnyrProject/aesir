@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Config do
   @default_death_penalty_base 1
   @default_death_penalty_job 1
   @default_natural_break_rate 0
+  @default_boss_respawn_delay_percentage 100
 
   @doc """
   Player view range (rAthena `AREA_SIZE`): the cell radius a client is told about.
@@ -96,4 +97,19 @@ defmodule Aesir.ZoneServer.Config do
   @spec natural_break_rate() :: non_neg_integer()
   def natural_break_rate,
     do: Application.get_env(:zone_server, :natural_break_rate, @default_natural_break_rate)
+
+  @doc """
+  Percentage applied to a boss's randomized respawn delay
+  (`respawn_time + rand(respawn_variance)`) before the 1000 ms floor. Default
+  100 leaves the imported delay unchanged; a value below 100 shortens boss
+  respawns, above 100 lengthens them. Not applied to non-boss mobs.
+  """
+  @spec boss_respawn_delay_percentage() :: pos_integer()
+  def boss_respawn_delay_percentage,
+    do:
+      Application.get_env(
+        :zone_server,
+        :boss_respawn_delay_percentage,
+        @default_boss_respawn_delay_percentage
+      )
 end
