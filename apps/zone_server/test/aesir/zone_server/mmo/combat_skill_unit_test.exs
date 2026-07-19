@@ -50,7 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
       },
       progression: %{base_level: 1, job_level: 1},
       element: {:neutral, 1},
-      race: :demi_human,
+      race: :player_human,
       size: :medium,
       weapon: %{type: :fist, element: :neutral, size: :medium},
       attack_range: 1,

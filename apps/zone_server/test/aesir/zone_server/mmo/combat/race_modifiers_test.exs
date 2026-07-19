@@ -102,6 +102,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiersTest do
     end
   end
 
+  describe "player_race/0" do
+    test "returns :player_human" do
+      assert RaceModifiers.player_race() == :player_human
+    end
+  end
+
   describe "dragonology_resist_rate/2" do
     test "is level * 4 vs a Dragon-race attacker" do
       assert RaceModifiers.dragonology_resist_rate(%{dragonology_level: 5}, :dragon) == 20

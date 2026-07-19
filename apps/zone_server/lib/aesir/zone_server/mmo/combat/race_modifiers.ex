@@ -12,12 +12,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   Race types in Ragnarok Online:
   - :formless - Slimes, plants, and other basic life forms
   - :undead - Undead monsters and players
-  - :brute - Animal-like monsters  
+  - :brute - Animal-like monsters
   - :plant - Plant monsters
   - :insect - Bug-type monsters
   - :fish - Aquatic monsters
   - :demon - Demonic monsters
-  - :demi_human - Human-like monsters and players
+  - :demi_human - Human-like monsters
+  - :player_human - Player combatants (renewal `RC_Player_Human`)
   - :angel - Holy/angelic monsters
   - :dragon - Dragon-type monsters
   - :boss - Special boss monsters (receives different modifiers)
@@ -32,6 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
           | :fish
           | :demon
           | :demi_human
+          | :player_human
           | :angel
           | :dragon
           | :boss
@@ -121,7 +123,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   Gets the default race for players.
   """
   @spec player_race() :: race()
-  def player_race, do: :demi_human
+  def player_race, do: :player_human
 
   @doc """
   Checks if a race is considered undead.

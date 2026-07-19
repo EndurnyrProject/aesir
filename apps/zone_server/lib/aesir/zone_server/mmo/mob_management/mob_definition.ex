@@ -23,7 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobDefinition do
           | :insect
           | :fish
           | :demon
-          | :demihuman
+          | :demi_human
           | :angel
           | :dragon
           | :player

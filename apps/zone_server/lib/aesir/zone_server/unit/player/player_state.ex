@@ -851,7 +851,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       combat_stats: state.stats.combat_stats,
       progression: state.stats.progression,
       element: defense_element(state.stats),
-      race: :demi_human,
+      race: :player_human,
       size: :medium,
       weapon: %{
         type: weapon_type,

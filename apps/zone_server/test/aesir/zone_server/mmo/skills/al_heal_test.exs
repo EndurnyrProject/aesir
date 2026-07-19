@@ -31,7 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHealTest do
       end)
 
       stub(Combat, :resolve_combatant, fn _id ->
-        {:ok, %{race: :demi_human}}
+        {:ok, %{race: :player_human}}
       end)
 
       {:ok, definition} = Catalog.by_id(28)
@@ -99,7 +99,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHealTest do
 
   describe "heal amount formula (renewal: base = div(lv+int,5)*30*lv/10 + matk)" do
     setup do
-      stub(Combat, :resolve_combatant, fn _id -> {:ok, %{race: :demi_human}} end)
+      stub(Combat, :resolve_combatant, fn _id -> {:ok, %{race: :player_human}} end)
       {:ok, definition} = Catalog.by_id(28)
       {:ok, definition: definition}
     end
@@ -157,7 +157,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHealTest do
 
   describe "hplus heal boost (row 14: heal + div(heal * hplus, 100))" do
     setup do
-      stub(Combat, :resolve_combatant, fn _id -> {:ok, %{race: :demi_human}} end)
+      stub(Combat, :resolve_combatant, fn _id -> {:ok, %{race: :player_human}} end)
       {:ok, definition} = Catalog.by_id(28)
       {:ok, definition: definition}
     end

@@ -45,7 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.EstimationView do
   defp race_id(:plant), do: 3
   defp race_id(:insect), do: 4
   defp race_id(:fish), do: 5
-  defp race_id(:demihuman), do: 6
+  defp race_id(:demi_human), do: 6
   defp race_id(:angel), do: 7
   defp race_id(:demon), do: 8
   defp race_id(:dragon), do: 9

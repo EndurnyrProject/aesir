@@ -662,7 +662,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
       stub(SizeModifiers, :player_size, fn -> :medium end)
-      stub(RaceModifiers, :player_race, fn -> :demi_human end)
+      stub(RaceModifiers, :player_race, fn -> :player_human end)
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
       :ok
     end

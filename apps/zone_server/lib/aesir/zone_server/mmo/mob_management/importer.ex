@@ -26,7 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
     "insect" => :insect,
     "fish" => :fish,
     "demon" => :demon,
-    "demihuman" => :demihuman,
+    "demihuman" => :demi_human,
     "angel" => :angel,
     "dragon" => :dragon,
     "player" => :player,

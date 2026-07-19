@@ -21,6 +21,11 @@ defmodule Aesir.ZoneServer.Mmo.MobManagementTest do
       assert poring.element == {:water, 1}
     end
 
+    test "normalizes the on-disk demihuman spelling to :demi_human" do
+      assert {:ok, orc_warrior} = MobManagement.get_mob_by_id(1023)
+      assert orc_warrior.race == :demi_human
+    end
+
     test "loads mob by aegis name" do
       assert {:ok, poring} = MobManagement.get_mob_by_name("PORING")
       assert poring.id == 1002
