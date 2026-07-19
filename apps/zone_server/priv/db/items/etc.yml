@@ -1566,6 +1566,7 @@
   locations:
     - ammo
   name: Silver Arrow
+  on_equip: set(ctx, :atk_ele, :holy)
   subtype: arrow
   type: ammo
   weight: 1
@@ -1585,6 +1586,7 @@
   locations:
     - ammo
   name: Fire Arrow
+  on_equip: set(ctx, :atk_ele, :fire)
   subtype: arrow
   type: ammo
   weight: 1
@@ -1622,6 +1624,7 @@
   locations:
     - ammo
   name: Crystal Arrow
+  on_equip: set(ctx, :atk_ele, :water)
   subtype: arrow
   type: ammo
   weight: 1
@@ -1641,6 +1644,7 @@
   locations:
     - ammo
   name: Arrow of Wind
+  on_equip: set(ctx, :atk_ele, :wind)
   subtype: arrow
   type: ammo
   weight: 1
@@ -1660,6 +1664,7 @@
   locations:
     - ammo
   name: Stone Arrow
+  on_equip: set(ctx, :atk_ele, :earth)
   subtype: arrow
   type: ammo
   weight: 1
@@ -1679,6 +1684,7 @@
   locations:
     - ammo
   name: Immaterial Arrow
+  on_equip: set(ctx, :atk_ele, :ghost)
   subtype: arrow
   type: ammo
   weight: 1
@@ -1717,6 +1723,10 @@
   locations:
     - ammo
   name: Frozen Arrow
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :water)
+    ctx = bonus(ctx, {:add_eff, :sc_freeze}, 1000)
+    ctx
   subtype: arrow
   type: ammo
   weight: 1
@@ -1774,6 +1784,7 @@
   locations:
     - ammo
   name: Rusty Arrow
+  on_equip: set(ctx, :atk_ele, :poison)
   subtype: arrow
   type: ammo
   weight: 1
@@ -1793,6 +1804,10 @@
   locations:
     - ammo
   name: Poison Arrow
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :poison)
+    ctx = bonus(ctx, {:add_eff, :sc_poison}, 2000)
+    ctx
   subtype: arrow
   type: ammo
   weight: 1
@@ -1848,6 +1863,7 @@
   locations:
     - ammo
   name: Arrow of Counter Evil
+  on_equip: set(ctx, :atk_ele, :holy)
   subtype: arrow
   type: ammo
   weight: 3
@@ -1867,6 +1883,7 @@
   locations:
     - ammo
   name: Arrow of Shadow
+  on_equip: set(ctx, :atk_ele, :shadow)
   subtype: arrow
   type: ammo
   weight: 1
@@ -1955,6 +1972,10 @@
   locations:
     - ammo
   name: Holy Arrow
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :holy)
+    ctx = bonus(ctx, {:addrace, :demon}, 5)
+    ctx
   subtype: arrow
   type: ammo
   weight: 1
@@ -19791,6 +19812,7 @@
   locations:
     - ammo
   name: Surplus Silver Bullet
+  on_equip: set(ctx, :atk_ele, :holy)
   subtype: bullet
   type: ammo
   weight: 2
@@ -19817,6 +19839,7 @@
   locations:
     - ammo
   name: Surplus Flare Sphere
+  on_equip: set(ctx, :atk_ele, :fire)
   subtype: grenade
   type: ammo
   weight: 5
@@ -19828,6 +19851,7 @@
   locations:
     - ammo
   name: Surplus Lightning Sphere
+  on_equip: set(ctx, :atk_ele, :wind)
   subtype: grenade
   type: ammo
   weight: 5
@@ -19839,6 +19863,10 @@
   locations:
     - ammo
   name: Surplus Poison Sphere
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :poison)
+    ctx = bonus(ctx, {:add_eff, :sc_poison}, 500)
+    ctx
   subtype: grenade
   type: ammo
   weight: 5
@@ -19850,6 +19878,10 @@
   locations:
     - ammo
   name: Surplus Blind Sphere
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :shadow)
+    ctx = bonus(ctx, {:add_eff, :sc_blind}, 500)
+    ctx
   subtype: grenade
   type: ammo
   weight: 5
@@ -19861,6 +19893,7 @@
   locations:
     - ammo
   name: Surplus Freezing Sphere
+  on_equip: set(ctx, :atk_ele, :water)
   subtype: grenade
   type: ammo
   weight: 5
@@ -19940,6 +19973,7 @@
   locations:
     - ammo
   name: Armor-Piercing Bullet
+  on_equip: set(ctx, :atk_ele, :neutral)
   subtype: bullet
   type: ammo
   weight: 1
@@ -19955,6 +19989,7 @@
   locations:
     - ammo
   name: Blazing Bullet
+  on_equip: set(ctx, :atk_ele, :fire)
   subtype: bullet
   type: ammo
   weight: 1
@@ -19970,6 +20005,7 @@
   locations:
     - ammo
   name: Freezing Bullet
+  on_equip: set(ctx, :atk_ele, :water)
   subtype: bullet
   type: ammo
   weight: 1
@@ -19985,6 +20021,7 @@
   locations:
     - ammo
   name: Lightning Bullet
+  on_equip: set(ctx, :atk_ele, :wind)
   subtype: bullet
   type: ammo
   weight: 1
@@ -20000,6 +20037,7 @@
   locations:
     - ammo
   name: Magic Stone Bullet
+  on_equip: set(ctx, :atk_ele, :earth)
   subtype: bullet
   type: ammo
   weight: 1
@@ -20015,6 +20053,7 @@
   locations:
     - ammo
   name: Purifying Bullet
+  on_equip: set(ctx, :atk_ele, :holy)
   subtype: bullet
   type: ammo
   weight: 1
@@ -20030,6 +20069,7 @@
   locations:
     - ammo
   name: Silver Bullet
+  on_equip: set(ctx, :atk_ele, :holy)
   subtype: bullet
   type: ammo
   weight: 1
@@ -20056,6 +20096,7 @@
   locations:
     - ammo
   name: Flare Sphere
+  on_equip: set(ctx, :atk_ele, :fire)
   subtype: grenade
   type: ammo
   weight: 5
@@ -20067,6 +20108,7 @@
   locations:
     - ammo
   name: Lightning Sphere
+  on_equip: set(ctx, :atk_ele, :wind)
   subtype: grenade
   type: ammo
   weight: 5
@@ -20078,6 +20120,7 @@
   locations:
     - ammo
   name: Poison Sphere
+  on_equip: set(ctx, :atk_ele, :poison)
   subtype: grenade
   type: ammo
   weight: 5
@@ -20089,6 +20132,7 @@
   locations:
     - ammo
   name: Blind Sphere
+  on_equip: set(ctx, :atk_ele, :shadow)
   subtype: grenade
   type: ammo
   weight: 5
@@ -20100,6 +20144,7 @@
   locations:
     - ammo
   name: Freezing Sphere
+  on_equip: set(ctx, :atk_ele, :water)
   subtype: grenade
   type: ammo
   weight: 5
@@ -20115,6 +20160,7 @@
   locations:
     - ammo
   name: Flare Bullet
+  on_equip: set(ctx, :atk_ele, :fire)
   subtype: bullet
   type: ammo
   weight: 1
@@ -20130,6 +20176,7 @@
   locations:
     - ammo
   name: Lightning Bullet
+  on_equip: set(ctx, :atk_ele, :wind)
   subtype: bullet
   type: ammo
   weight: 1
@@ -20145,6 +20192,7 @@
   locations:
     - ammo
   name: Ice Bullet
+  on_equip: set(ctx, :atk_ele, :water)
   subtype: bullet
   type: ammo
   weight: 1
@@ -20160,6 +20208,10 @@
   locations:
     - ammo
   name: Poison Bullet
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :poison)
+    ctx = bonus(ctx, {:add_eff, :sc_poison}, 500)
+    ctx
   subtype: bullet
   type: ammo
   weight: 1
@@ -20175,6 +20227,10 @@
   locations:
     - ammo
   name: Blind Bullet
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :shadow)
+    ctx = bonus(ctx, {:add_eff, :sc_blind}, 500)
+    ctx
   subtype: bullet
   type: ammo
   weight: 1
@@ -20260,6 +20316,7 @@
   locations:
     - ammo
   name: Icicle Kunai
+  on_equip: set(ctx, :atk_ele, :water)
   subtype: kunai
   type: ammo
   weight: 1
@@ -20275,6 +20332,7 @@
   locations:
     - ammo
   name: Black Earth Kunai
+  on_equip: set(ctx, :atk_ele, :earth)
   subtype: kunai
   type: ammo
   weight: 1
@@ -20290,6 +20348,7 @@
   locations:
     - ammo
   name: High Wind Kunai
+  on_equip: set(ctx, :atk_ele, :wind)
   subtype: kunai
   type: ammo
   weight: 1
@@ -20305,6 +20364,7 @@
   locations:
     - ammo
   name: Heat Wave Kunai
+  on_equip: set(ctx, :atk_ele, :fire)
   subtype: kunai
   type: ammo
   weight: 1
@@ -20320,6 +20380,10 @@
   locations:
     - ammo
   name: Fell Poison Kunai
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :poison)
+    ctx = bonus(ctx, {:add_eff, :sc_poison}, 500)
+    ctx
   subtype: kunai
   type: ammo
   weight: 1
@@ -20706,6 +20770,10 @@
   locations:
     - ammo
   name: Starfish
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :neutral)
+    ctx = bonus(ctx, {:add_eff, :sc_stun}, 1000)
+    ctx
   subtype: shuriken
   type: ammo
   weight: 5
@@ -20721,6 +20789,10 @@
   locations:
     - ammo
   name: Dried Squid
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :neutral)
+    ctx = bonus(ctx, {:add_eff, :sc_stun}, 1000)
+    ctx
   subtype: kunai
   type: ammo
   weight: 20
@@ -20751,6 +20823,7 @@
   locations:
     - ammo
   name: Explosive Kunai
+  on_equip: set(ctx, :atk_ele, :neutral)
   subtype: kunai
   type: ammo
   weight: 1
@@ -20793,6 +20866,7 @@
   locations:
     - ammo
   name: Holy Cannon Ball
+  on_equip: set(ctx, :atk_ele, :holy)
   subtype: cannonball
   type: ammo
   weight: 1
@@ -20808,6 +20882,7 @@
   locations:
     - ammo
   name: Dark Cannon Ball
+  on_equip: set(ctx, :atk_ele, :shadow)
   subtype: cannonball
   type: ammo
   weight: 1
@@ -20823,6 +20898,7 @@
   locations:
     - ammo
   name: Soul Cannon Ball
+  on_equip: set(ctx, :atk_ele, :ghost)
   subtype: cannonball
   type: ammo
   weight: 1
@@ -20852,6 +20928,7 @@
   locations:
     - ammo
   name: Ice Cannon Ball
+  on_equip: set(ctx, :atk_ele, :water)
   subtype: cannonball
   type: ammo
   weight: 1
@@ -20867,6 +20944,7 @@
   locations:
     - ammo
   name: Lightning Cannon Ball
+  on_equip: set(ctx, :atk_ele, :wind)
   subtype: cannonball
   type: ammo
   weight: 1
@@ -20882,6 +20960,7 @@
   locations:
     - ammo
   name: Stone Cannon Ball
+  on_equip: set(ctx, :atk_ele, :earth)
   subtype: cannonball
   type: ammo
   weight: 1
@@ -20897,6 +20976,7 @@
   locations:
     - ammo
   name: Fire Cannon Ball
+  on_equip: set(ctx, :atk_ele, :fire)
   subtype: cannonball
   type: ammo
   weight: 1
@@ -20911,6 +20991,7 @@
   locations:
     - ammo
   name: Poison Cannon Ball
+  on_equip: set(ctx, :atk_ele, :poison)
   subtype: cannonball
   type: ammo
   weight: 1
@@ -56291,6 +56372,7 @@
   locations:
     - ammo
   name: Kunai Of Nothing
+  on_equip: set(ctx, :atk_ele, :ghost)
   subtype: kunai
   type: ammo
   weight: 1
@@ -56306,6 +56388,7 @@
   locations:
     - ammo
   name: Kunai Of Shadow
+  on_equip: set(ctx, :atk_ele, :shadow)
   subtype: kunai
   type: ammo
   weight: 1
@@ -56321,6 +56404,7 @@
   locations:
     - ammo
   name: Kunai Of Hamaya
+  on_equip: set(ctx, :atk_ele, :holy)
   subtype: kunai
   type: ammo
   weight: 1
