@@ -1697,6 +1697,7 @@
   locations:
     - ammo
   name: Stun Arrow
+  on_equip: bonus(ctx, {:add_eff, :sc_stun}, 1000)
   subtype: arrow
   type: ammo
   weight: 1
@@ -1734,6 +1735,7 @@
   locations:
     - ammo
   name: Flash Arrow
+  on_equip: bonus(ctx, {:add_eff, :sc_blind}, 1000)
   subtype: arrow
   type: ammo
   weight: 1
@@ -1752,6 +1754,7 @@
   locations:
     - ammo
   name: Cursed Arrow
+  on_equip: bonus(ctx, {:add_eff, :sc_curse}, 1000)
   subtype: arrow
   type: ammo
   weight: 1
@@ -1882,6 +1885,7 @@
   locations:
     - ammo
   name: Sleep Arrow
+  on_equip: bonus(ctx, {:add_eff, :sc_sleep}, 2000)
   subtype: arrow
   type: ammo
   weight: 1
@@ -1900,6 +1904,7 @@
   locations:
     - ammo
   name: Mute Arrow
+  on_equip: bonus(ctx, {:add_eff, :sc_silence}, 1000)
   subtype: arrow
   type: ammo
   weight: 1
@@ -19800,6 +19805,7 @@
   locations:
     - ammo
   name: Surplus Bloody Shell
+  on_equip: bonus(ctx, {:add_eff, :sc_bleeding}, 100)
   subtype: bullet
   type: ammo
   weight: 2
@@ -19868,6 +19874,7 @@
   locations:
     - ammo
   name: Sow Bug
+  on_equip: bonus(ctx, {:add_eff, :sc_stun}, 1000)
   subtype: bullet
   type: ammo
   weight: 5
@@ -20037,6 +20044,7 @@
   locations:
     - ammo
   name: Bloody Shell
+  on_equip: bonus(ctx, {:add_eff, :sc_bleeding}, 100)
   subtype: bullet
   type: ammo
   weight: 1

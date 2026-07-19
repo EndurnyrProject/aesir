@@ -3462,6 +3462,7 @@
   locations:
     - right_hand
   name: Cursed Dagger
+  on_equip: bonus(ctx, {:add_eff, :sc_curse}, 5000)
   range: 1
   refineable: true
   subtype: dagger
@@ -3882,6 +3883,7 @@
   locations:
     - both_hand
   name: Loki's Nail
+  on_equip: bonus(ctx, {:add_eff, :sc_bleeding}, 300)
   range: 1
   refineable: true
   subtype: katar
@@ -8807,6 +8809,7 @@
   locations:
     - right_hand
   name: Stunner
+  on_equip: bonus(ctx, {:add_eff, :sc_stun}, 1000)
   range: 1
   refineable: true
   subtype: mace
@@ -8979,6 +8982,12 @@
   locations:
     - right_hand
   name: Wrench
+  on_equip: |-
+    ctx = bonus(ctx, {:add_eff, :sc_blind}, 100)
+    ctx = bonus(ctx, {:add_eff, :sc_stun}, 100)
+    ctx = bonus(ctx, {:add_eff, :sc_poison}, 100)
+    ctx = bonus(ctx, {:add_eff, :sc_freeze}, 100)
+    ctx
   range: 1
   refineable: true
   subtype: mace
@@ -8997,6 +9006,7 @@
   locations:
     - right_hand
   name: Stunner
+  on_equip: bonus(ctx, {:add_eff, :sc_stun}, 1000)
   range: 1
   refineable: true
   slots: 2
@@ -9029,6 +9039,12 @@
   locations:
     - right_hand
   name: Wrench
+  on_equip: |-
+    ctx = bonus(ctx, {:add_eff, :sc_blind}, 100)
+    ctx = bonus(ctx, {:add_eff, :sc_stun}, 100)
+    ctx = bonus(ctx, {:add_eff, :sc_poison}, 100)
+    ctx = bonus(ctx, {:add_eff, :sc_freeze}, 100)
+    ctx
   range: 1
   subtype: mace
   type: weapon
@@ -13037,6 +13053,7 @@
   locations:
     - both_hand
   name: Frozen Bow
+  on_equip: bonus(ctx, {:add_eff, :sc_freeze}, 1000)
   range: 5
   refineable: true
   slots: 1
@@ -13226,6 +13243,10 @@
   locations:
     - both_hand
   name: Cursed Lyre
+  on_equip: |-
+    ctx = bonus(ctx, :luk, -2)
+    ctx = bonus(ctx, {:add_eff, :sc_curse}, 400)
+    ctx
   range: 5
   refineable: true
   slots: 1
@@ -15699,6 +15720,7 @@
   locations:
     - right_hand
   name: Blade Whip
+  on_equip: bonus(ctx, {:add_eff, :sc_bleeding}, 300)
   range: 2
   refineable: true
   subtype: whip
@@ -18048,6 +18070,11 @@
   locations:
     - left_hand
   name: Magic Bible Vol1
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 3)
+    ctx = bonus(ctx, :int, 2)
+    ctx = bonus(ctx, {:add_eff_when_hit, :sc_stun}, 1000)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -19162,6 +19189,7 @@
   locations:
     - head_mid
   name: Sunglasses
+  on_equip: bonus(ctx, {:res_eff, :sc_blind}, 500)
   type: armor
   view: 12
   weight: 100
@@ -19172,6 +19200,7 @@
   locations:
     - head_mid
   name: Sunglasses
+  on_equip: bonus(ctx, {:res_eff, :sc_blind}, 500)
   slots: 1
   type: armor
   view: 12
@@ -19367,6 +19396,7 @@
   locations:
     - head_low
   name: Flu Mask
+  on_equip: bonus(ctx, {:res_eff, :sc_silence}, 1000)
   type: armor
   view: 8
   weight: 100
@@ -19377,6 +19407,7 @@
   locations:
     - head_low
   name: Flu Mask
+  on_equip: bonus(ctx, {:res_eff, :sc_silence}, 1000)
   type: armor
   view: 8
   weight: 100
@@ -19757,6 +19788,7 @@
   locations:
     - head_mid
   name: Purple Glasses
+  on_equip: bonus(ctx, {:res_eff, :sc_blind}, 1000)
   type: armor
   view: 26
   weight: 100
@@ -19768,6 +19800,7 @@
   locations:
     - head_mid
   name: Geek Glasses
+  on_equip: bonus(ctx, {:res_eff, :sc_blind}, 1500)
   type: armor
   view: 27
   weight: 100
@@ -20086,6 +20119,7 @@
   locations:
     - head_low
   name: Gangster Mask
+  on_equip: bonus(ctx, {:res_eff, :sc_silence}, 1500)
   type: armor
   view: 52
   weight: 100
@@ -20307,6 +20341,7 @@
   locations:
     - head_top
   name: Ear Muffs
+  on_equip: bonus(ctx, {:res_eff, :sc_curse}, 1000)
   refineable: true
   type: armor
   view: 70
@@ -20460,6 +20495,7 @@
   locations:
     - head_mid
   name: Blinker
+  on_equip: bonus(ctx, {:res_eff, :sc_blind}, 10000)
   type: armor
   view: 82
   weight: 100
@@ -20802,6 +20838,10 @@
   locations:
     - armor
   name: Glittering Jacket
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 5)
+    ctx = bonus(ctx, {:add_eff, :sc_blind}, 300)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -21426,6 +21466,10 @@
   locations:
     - armor
   name: Blessed Holy Robe
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 5)
+    ctx = bonus(ctx, {:res_eff, :sc_blind}, 8000)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -21564,6 +21608,10 @@
   locations:
     - armor
   name: Meteo Plate Armor
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_stun}, 3000)
+    ctx = bonus(ctx, {:res_eff, :sc_freeze}, 3000)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -21628,6 +21676,13 @@
   locations:
     - armor
   name: Divine Cloth
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_curse}, 500)
+    ctx = bonus(ctx, {:res_eff, :sc_silence}, 500)
+    ctx = bonus(ctx, {:res_eff, :sc_stun}, 500)
+    ctx = bonus(ctx, {:res_eff, :sc_stone}, 500)
+    ctx = bonus(ctx, {:res_eff, :sc_sleep}, 500)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -25521,6 +25576,11 @@
   locations:
     - both_accessory
   name: Eye of Dullahan
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_poison}, 10000)
+    ctx = bonus(ctx, {:subrace, :undead}, 4)
+    ctx = bonus(ctx, {:subrace, :demon}, 4)
+    ctx
   type: armor
   weight: 100
 - aegis_name: Safety_Ring
@@ -26212,6 +26272,10 @@
   locations:
     - both_accessory
   name: Lantern of Hope
+  on_equip: |-
+    ctx = bonus(ctx, :str, 2)
+    ctx = bonus(ctx, {:res_eff, :sc_blind}, 1000)
+    ctx
   type: armor
   weight: 100
 - aegis_name: Glove_Of_Archer
@@ -30255,6 +30319,7 @@
   locations:
     - head_top
   name: Headset
+  on_equip: bonus(ctx, {:res_eff, :sc_curse}, 1000)
   refineable: true
   type: armor
   view: 87
@@ -30310,6 +30375,7 @@
   locations:
     - head_low
   name: Oxygen Mask
+  on_equip: bonus(ctx, {:res_eff, :sc_poison}, 2000)
   type: armor
   view: 90
   weight: 200
@@ -30322,6 +30388,7 @@
     - head_low
     - head_mid
   name: Gas Mask
+  on_equip: bonus(ctx, {:res_eff, :sc_poison}, 3000)
   type: armor
   view: 91
   weight: 100
@@ -31077,6 +31144,10 @@
   locations:
     - head_top
   name: Drooping Cat
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 15)
+    ctx = bonus(ctx, {:res_eff, :sc_curse}, 3000)
+    ctx
   refineable: true
   type: armor
   view: 142
@@ -31422,6 +31493,7 @@
   locations:
     - head_top
   name: Lazy Smokie
+  on_equip: bonus(ctx, {:res_eff, :sc_sleep}, 2000)
   refineable: true
   type: armor
   view: 168
@@ -31447,6 +31519,7 @@
     - head_low
     - head_mid
   name: Alarm Mask
+  on_equip: bonus(ctx, {:res_eff, :sc_blind}, 5000)
   type: armor
   view: 170
   weight: 100
@@ -31698,6 +31771,10 @@
   locations:
     - head_mid
   name: Dark Blinder
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_blind}, 10000)
+    ctx = bonus(ctx, {:res_eff, :sc_stun}, 200)
+    ctx
   type: armor
   view: 187
   weight: 100
@@ -31836,6 +31913,7 @@
   locations:
     - head_top
   name: Winter Hat
+  on_equip: bonus(ctx, {:res_eff, :sc_freeze}, 1000)
   refineable: true
   type: armor
   view: 196
@@ -32072,6 +32150,10 @@
     - head_mid
     - head_top
   name: Lion Mask
+  on_equip: |-
+    ctx = bonus(ctx, {:add_eff_when_hit, :sc_silence}, 500)
+    ctx = bonus(ctx, :mdef, 1)
+    ctx
   refineable: true
   type: armor
   view: 202
@@ -32278,6 +32360,7 @@
     - head_mid
     - head_top
   name: Kabuki Mask
+  on_equip: bonus(ctx, {:res_eff, :sc_silence}, 3000)
   refineable: true
   slots: 1
   type: armor
@@ -32371,6 +32454,11 @@
     - head_mid
     - head_top
   name: Note Headphones
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 3)
+    ctx = bonus(ctx, {:res_eff, :sc_stun}, 1000)
+    ctx = bonus(ctx, {:res_eff, :sc_freeze}, 1000)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -32386,6 +32474,10 @@
     - head_mid
     - head_top
   name: Chinese Crown
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_stun}, 1000)
+    ctx = bonus(ctx, :int, 1)
+    ctx
   refineable: true
   type: armor
   view: 221
@@ -32770,6 +32862,11 @@
   locations:
     - head_mid
   name: Censor Bar
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_curse}, 500)
+    ctx = bonus(ctx, :mdef, 1)
+    ctx = bonus(ctx, :hit, -5)
+    ctx
   type: armor
   view: 229
   weight: 100
@@ -32883,6 +32980,11 @@
   locations:
     - head_top
   name: Bird Nest Hat
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 1)
+    ctx = bonus(ctx, :agi, 1)
+    ctx = bonus(ctx, {:res_eff, :sc_stun}, 1000)
+    ctx
   refineable: true
   type: armor
   view: 235
@@ -32910,6 +33012,11 @@
   locations:
     - head_top
   name: Laurel Wreath
+  on_equip: |-
+    ctx = bonus(ctx, :luk, 3)
+    ctx = bonus(ctx, {:res_eff, :sc_blind}, 500)
+    ctx = bonus(ctx, {:res_eff, :sc_curse}, 500)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -33529,6 +33636,10 @@
   locations:
     - head_top
   name: Gray Drooping Cat
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_curse}, 3000)
+    ctx = bonus(ctx, :mdef, 15)
+    ctx
   refineable: true
   type: armor
   view: 274
@@ -33541,6 +33652,10 @@
   locations:
     - head_top
   name: Brown Drooping Cat
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_curse}, 3000)
+    ctx = bonus(ctx, :mdef, 15)
+    ctx
   refineable: true
   type: armor
   view: 275
@@ -33553,6 +33668,10 @@
   locations:
     - head_top
   name: Pink Drooping Cat
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_curse}, 3000)
+    ctx = bonus(ctx, :mdef, 15)
+    ctx
   refineable: true
   type: armor
   view: 276
@@ -33565,6 +33684,10 @@
   locations:
     - head_top
   name: Blue Drooping Cat
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_curse}, 3000)
+    ctx = bonus(ctx, :mdef, 15)
+    ctx
   refineable: true
   type: armor
   view: 277
@@ -33577,6 +33700,10 @@
   locations:
     - head_top
   name: Yellow Drooping Cat
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_curse}, 3000)
+    ctx = bonus(ctx, :mdef, 15)
+    ctx
   refineable: true
   type: armor
   view: 278
@@ -33714,6 +33841,7 @@
     - head_mid
     - head_top
   name: Shafka
+  on_equip: bonus(ctx, {:res_eff, :sc_freeze}, 1000)
   refineable: true
   slots: 1
   type: armor
@@ -33727,6 +33855,7 @@
   locations:
     - head_mid
   name: Elven Blindfold
+  on_equip: bonus(ctx, {:res_eff, :sc_blind}, 10000)
   type: armor
   view: 288
   weight: 200
@@ -33738,6 +33867,7 @@
   locations:
     - head_mid
   name: Elven Sunglasses
+  on_equip: bonus(ctx, {:res_eff, :sc_blind}, 500)
   type: armor
   view: 289
   weight: 200
@@ -33785,6 +33915,7 @@
   locations:
     - head_mid
   name: Robotic Blindfold
+  on_equip: bonus(ctx, {:res_eff, :sc_blind}, 10000)
   type: armor
   view: 292
   weight: 200
@@ -33796,6 +33927,7 @@
   locations:
     - head_mid
   name: Human Blindfold
+  on_equip: bonus(ctx, {:res_eff, :sc_blind}, 10000)
   type: armor
   view: 293
   weight: 200
@@ -33977,6 +34109,12 @@
     - head_mid
     - head_top
   name: Pagdayaw
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :water}, 1)
+    ctx = bonus(ctx, {:subele, :fire}, 1)
+    ctx = bonus(ctx, {:subele, :wind}, 1)
+    ctx = bonus(ctx, {:add_eff, :sc_curse}, 300)
+    ctx
   refineable: true
   type: armor
   view: 303
@@ -34191,6 +34329,10 @@
   locations:
     - head_top
   name: Refined Drooping Cat
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 15)
+    ctx = bonus(ctx, {:res_eff, :sc_curse}, 3000)
+    ctx
   type: armor
   view: 142
 - aegis_name: Magestic_Goat_C
@@ -34839,6 +34981,10 @@
   locations:
     - head_mid
   name: Dark Blindfold C
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_blind}, 10000)
+    ctx = bonus(ctx, {:res_eff, :sc_stun}, 500)
+    ctx
   type: armor
   view: 187
 - aegis_name: kRO_Drooping_Kitty_C
@@ -35615,6 +35761,17 @@
   locations:
     - head_top
   name: Neko Mimi Kafra
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 5)
+    ctx = bonus(ctx, {:add_eff_when_hit, :sc_silence}, 1000)
+    ctx = bonus(ctx, {:add_eff_when_hit, :sc_poison}, 1000)
+    ctx = bonus(ctx, {:add_eff_when_hit, :sc_curse}, 1000)
+    ctx = bonus(ctx, {:add_eff_when_hit, :sc_blind}, 1000)
+    ctx = bonus(ctx, {:add_eff_when_hit, :sc_stone}, 1000)
+    ctx = bonus(ctx, {:add_eff_when_hit, :sc_freeze}, 1000)
+    ctx = bonus(ctx, {:add_eff_when_hit, :sc_stun}, 1000)
+    ctx = bonus(ctx, {:add_eff_when_hit, :sc_sleep}, 1000)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -35656,6 +35813,7 @@
   locations:
     - head_top
   name: Frozen Twin Pompom
+  on_equip: bonus(ctx, {:res_eff, :sc_freeze}, 3000)
   refineable: true
   type: armor
   view: 395
@@ -35756,6 +35914,12 @@
   locations:
     - head_top
   name: Bone Head
+  on_equip: |-
+    ctx = bonus(ctx, :str, 2)
+    ctx = bonus(ctx, :mdef, 5)
+    ctx = bonus(ctx, {:res_eff, :sc_stun}, 500)
+    ctx = bonus(ctx, {:res_eff, :sc_bleeding}, 500)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -36726,6 +36890,10 @@
   locations:
     - head_mid
   name: Eye Of Darkness
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 1)
+    ctx = bonus(ctx, {:res_eff, :sc_blind}, 10000)
+    ctx
   type: armor
   view: 467
   weight: 100
@@ -41396,6 +41564,11 @@
     - head_mid
     - head_top
   name: Dark Bacilium
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_stone}, (2000 + (refine(ctx) * 200)))
+    ctx = bonus(ctx, {:res_eff, :sc_freeze}, (2000 + (refine(ctx) * 200)))
+    ctx = bonus(ctx, {:res_eff, :sc_stun}, (2000 + (refine(ctx) * 200)))
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -44741,6 +44914,7 @@
   locations:
     - right_hand
   name: Scalpel
+  on_equip: bonus(ctx, {:add_eff, :sc_bleeding}, 500)
   range: 1
   refineable: true
   slots: 3
@@ -47296,6 +47470,10 @@
   locations:
     - both_hand
   name: Altair Ares
+  on_equip: |-
+    ctx = bonus(ctx, :hit, -10)
+    ctx = bonus(ctx, {:add_eff, :sc_stun}, 2000)
+    ctx
   range: 7
   refineable: true
   slots: 1
@@ -48382,6 +48560,7 @@
   locations:
     - both_hand
   name: Huuma Giant Wheel Shuriken
+  on_equip: bonus(ctx, {:add_eff, :sc_bleeding}, 100)
   range: 1
   refineable: true
   slots: 3
@@ -48400,6 +48579,7 @@
   locations:
     - both_hand
   name: Huuma Giant Wheel Shuriken
+  on_equip: bonus(ctx, {:add_eff, :sc_bleeding}, 100)
   range: 1
   refineable: true
   slots: 4
@@ -48516,6 +48696,10 @@
   locations:
     - both_hand
   name: Huuma Giant Wheel Shuriken
+  on_equip: |-
+    ctx = bonus(ctx, {:add_eff, :sc_bleeding}, 100)
+    ctx = bonus(ctx, {:addsize, :all}, 80)
+    ctx
   range: 1
   subtype: huuma
   type: weapon
@@ -57527,6 +57711,12 @@
   locations:
     - right_hand
   name: Spanner
+  on_equip: |-
+    ctx = bonus(ctx, {:add_eff, :sc_stun}, 100)
+    ctx = bonus(ctx, {:add_eff, :sc_blind}, 100)
+    ctx = bonus(ctx, {:add_eff, :sc_freeze}, 100)
+    ctx = bonus(ctx, {:add_eff, :sc_poison}, 100)
+    ctx
   range: 1
   subtype: mace
   type: weapon
@@ -59664,6 +59854,7 @@
   locations:
     - both_hand
   name: Frozen Bow
+  on_equip: bonus(ctx, {:add_eff, :sc_freeze}, 1000)
   range: 5
   refineable: true
   slots: 2
@@ -61997,6 +62188,10 @@
   locations:
     - head_mid
   name: Dark Blinder
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_blind}, 10000)
+    ctx = bonus(ctx, {:res_eff, :sc_stun}, 200)
+    ctx
   slots: 1
   type: armor
   view: 187
@@ -62508,6 +62703,7 @@
   locations:
     - head_top
   name: Star Eyepatch
+  on_equip: bonus(ctx, {:res_eff, :sc_stun}, 1500)
   type: armor
   view: 800
   weight: 100
@@ -62727,6 +62923,10 @@
   locations:
     - head_mid
   name: Stunner Shades
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_stun}, 1000)
+    ctx = bonus(ctx, {:res_eff, :sc_freeze}, 1000)
+    ctx
   type: armor
   view: 813
   weight: 400
@@ -63230,6 +63430,7 @@
   locations:
     - head_low
   name: Stem In Mouth
+  on_equip: bonus(ctx, {:res_eff, :sc_poison}, 2000)
   type: armor
   view: 848
   weight: 50
@@ -63718,6 +63919,10 @@
   locations:
     - head_mid
   name: Eyes Of Ifrit
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 1)
+    ctx = bonus(ctx, {:res_eff, :sc_curse}, 2500)
+    ctx
   slots: 1
   type: armor
   view: 886
@@ -65219,6 +65424,10 @@
   locations:
     - head_top
   name: Curupira Hat
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 3)
+    ctx = bonus(ctx, {:add_eff_when_hit, :sc_confusion}, 600)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -67301,6 +67510,7 @@
   locations:
     - head_mid
   name: Blinker
+  on_equip: bonus(ctx, {:res_eff, :sc_blind}, 5000)
   slots: 1
   type: armor
   view: 82
@@ -67314,6 +67524,7 @@
     - head_low
     - head_mid
   name: Alarm Mask
+  on_equip: bonus(ctx, {:res_eff, :sc_blind}, 2500)
   slots: 1
   type: armor
   view: 170
@@ -67352,6 +67563,7 @@
   locations:
     - head_mid
   name: Geek Glasses
+  on_equip: bonus(ctx, {:res_eff, :sc_blind}, 800)
   slots: 1
   type: armor
   view: 27
@@ -69707,6 +69919,11 @@
   locations:
     - head_low
   name: Sparkler Stick
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :undead}, 20)
+    ctx = bonus(ctx, {:magic_addrace, :undead}, 20)
+    ctx = bonus(ctx, {:res_eff, :sc_poison}, 10000)
+    ctx
   type: armor
   view: 1747
   weight: 300
@@ -70206,6 +70423,10 @@
   locations:
     - head_mid
   name: Star Eyepatch
+  on_equip: |-
+    ctx = bonus(ctx, :vit, 3)
+    ctx = bonus(ctx, {:res_eff, :sc_stun}, 3000)
+    ctx
   type: armor
   view: 800
   weight: 300
@@ -70217,6 +70438,10 @@
   locations:
     - head_mid
   name: Star Eyepatch
+  on_equip: |-
+    ctx = bonus(ctx, :vit, 3)
+    ctx = bonus(ctx, {:res_eff, :sc_stun}, 3000)
+    ctx
   slots: 1
   type: armor
   view: 800
@@ -70331,6 +70556,11 @@
   locations:
     - head_low
   name: Siam Cat in mouth
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :brute}, 20)
+    ctx = bonus(ctx, {:magic_addrace, :brute}, 20)
+    ctx = bonus(ctx, {:res_eff, :sc_bleeding}, 10000)
+    ctx
   type: armor
   view: 1689
   weight: 300
@@ -88687,6 +88917,12 @@
   locations:
     - shadow_weapon
   name: Unfreezing Shadow Weapon
+  on_equip: |-
+    ctx = bonus(ctx, :atk, refine(ctx))
+    ctx = bonus(ctx, :matk, refine(ctx))
+    ctx = bonus(ctx, :def, 1)
+    ctx = bonus(ctx, {:res_eff, :sc_freeze}, (refine(ctx) * 100))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: Unfreeze_Earing_S
@@ -88731,6 +88967,12 @@
   locations:
     - shadow_weapon
   name: Neutral Shadow Weapon
+  on_equip: |-
+    ctx = bonus(ctx, :atk, refine(ctx))
+    ctx = bonus(ctx, :matk, refine(ctx))
+    ctx = bonus(ctx, :def, 1)
+    ctx = bonus(ctx, {:res_eff, :sc_stun}, div(refine(ctx), 2))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Neutral_Earring
@@ -91039,6 +91281,12 @@
   locations:
     - shadow_weapon
   name: Unfreezing Shadow Weapon II
+  on_equip: |-
+    ctx = bonus(ctx, :atk, refine(ctx))
+    ctx = bonus(ctx, :matk, refine(ctx))
+    ctx = bonus(ctx, :def, 1)
+    ctx = bonus(ctx, {:res_eff, :sc_freeze}, (100 * refine(ctx)))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: Vitality_Earing_S2
@@ -91055,6 +91303,12 @@
   locations:
     - shadow_weapon
   name: Neutral Shadow Weapon II
+  on_equip: |-
+    ctx = bonus(ctx, :atk, refine(ctx))
+    ctx = bonus(ctx, :matk, refine(ctx))
+    ctx = bonus(ctx, :def, 1)
+    ctx = bonus(ctx, {:res_eff, :sc_stun}, (100 * div(refine(ctx), 2)))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S2_Curse_Lift_Pendent
@@ -125944,6 +126198,7 @@
   locations:
     - head_mid
   name: Illusionary Lens
+  on_equip: bonus(ctx, {:res_eff, :sc_blind}, 10000)
   slots: 1
   type: armor
   view: 1490
@@ -126784,6 +127039,11 @@
   locations:
     - head_low
   name: Fox Hair
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demon}, 20)
+    ctx = bonus(ctx, {:magic_addrace, :demon}, 20)
+    ctx = bonus(ctx, {:res_eff, :sc_blind}, 10000)
+    ctx
   type: armor
   view: 1884
   weight: 300
