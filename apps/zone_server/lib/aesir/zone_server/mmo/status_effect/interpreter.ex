@@ -86,7 +86,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
          :ok <- check_prevented(unit_type, unit_id, definition),
          :ok <- check_conflicts(unit_type, unit_id, definition),
          {:ok, duration} <-
-           roll_resistance(definition, entity_info, duration_override, status_params) do
+           roll_resistance(status_id, definition, entity_info, duration_override, status_params) do
       end_replaced_statuses(unit_type, unit_id, definition)
       create_and_store(unit_type, unit_id, status_id, status_params, definition, duration)
     end
@@ -384,10 +384,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     Enum.any?(status_ids, &StatusStorage.has_status?(unit_type, unit_id, &1))
   end
 
-  defp roll_resistance(%{permanent: true}, _entity_info, _duration_override, _status_params),
+  defp roll_resistance(_status_id, %{permanent: true}, _entity_info, _duration_override, _params),
     do: {:ok, nil}
 
-  defp roll_resistance(definition, entity_info, duration_override, status_params) do
+  defp roll_resistance(status_id, definition, entity_info, duration_override, status_params) do
     base_duration = duration_override || definition.duration || 10_000
     base_success_rate = Keyword.get(status_params, :success_rate, 100)
     resistance_roll = Keyword.get(status_params, :resistance_roll, &Resistance.roll_success/1)
@@ -404,10 +404,32 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
         {base_success_rate, base_duration}
       end
 
+    success_rate = apply_res_eff_tolerance(success_rate, entity_info, status_id, status_params)
+
     if resistance_roll.(success_rate) do
       {:ok, adjusted_duration}
     else
       {:error, :resisted}
+    end
+  end
+
+  # Equipment `bResEff` tolerance (per-10000) subtracts from the final infliction
+  # rate before the roll, floored at zero. The target's equipment slice rides its
+  # published UnitRegistry entry (`entity_info[:equip_modifiers]`), so this reaches
+  # every infliction source without a call into the target's session. Mobs and
+  # players without the key are unaffected. Callers that already subtracted the
+  # tolerance at their own roll (item on-hit procs) pass `res_eff_exempt: true`
+  # so the reduction applies exactly once per infliction.
+  defp apply_res_eff_tolerance(success_rate, entity_info, status_id, status_params) do
+    if Keyword.get(status_params, :res_eff_exempt, false) do
+      success_rate
+    else
+      tolerance =
+        entity_info
+        |> Map.get(:equip_modifiers, %{})
+        |> Map.get({:res_eff, status_id}, 0)
+
+      max(success_rate - tolerance / 100, 0)
     end
   end
 

@@ -4,6 +4,8 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistryTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.Models.Character
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   # Mock module for testing
@@ -209,6 +211,28 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistryTest do
     end
   end
 
+  describe "get_unit_info/2 equipment publish" do
+    test "player entity info carries the equipment modifier slice" do
+      state = player_state_with_equipment(%{{:res_eff, :sc_freeze} => 500})
+      UnitRegistry.register_player(state, self())
+
+      assert {:ok, info} = UnitRegistry.get_unit_info(:player, state.character_id)
+      assert info.equip_modifiers == %{{:res_eff, :sc_freeze} => 500}
+    end
+
+    test "a stats recompute with new equipment refreshes the published slice" do
+      state = player_state_with_equipment(%{{:res_eff, :sc_freeze} => 500})
+      char_id = state.character_id
+      UnitRegistry.register_player(state, self())
+
+      recomputed = put_in(state.stats.modifiers.equipment, %{{:res_eff, :sc_stun} => 300})
+      assert :ok = UnitRegistry.update_unit_state(:player, char_id, recomputed)
+
+      assert {:ok, info} = UnitRegistry.get_unit_info(:player, char_id)
+      assert info.equip_modifiers == %{{:res_eff, :sc_stun} => 300}
+    end
+  end
+
   describe "cleanup_units_for_pid/1" do
     test "removes all units associated with a specific pid" do
       pid = self()
@@ -233,5 +257,35 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistryTest do
       assert :ok = UnitRegistry.cleanup_units_for_pid(self())
       assert {:ok, _} = UnitRegistry.get_unit(:player, 1)
     end
+  end
+
+  defp player_state_with_equipment(equipment) do
+    character = %Character{
+      id: 5001,
+      account_id: 500,
+      name: "Publisher",
+      last_map: "prontera",
+      last_x: 50,
+      last_y: 50,
+      sex: "M",
+      hair: 1,
+      hair_color: 0,
+      clothes_color: 0,
+      head_mid: 0,
+      head_bottom: 0,
+      robe: 0,
+      str: 1,
+      agi: 1,
+      vit: 1,
+      int: 1,
+      dex: 1,
+      luk: 1,
+      base_level: 1,
+      job_level: 1,
+      class: 0
+    }
+
+    state = PlayerState.new(character)
+    put_in(state.stats.modifiers.equipment, equipment)
   end
 end

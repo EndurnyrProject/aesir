@@ -178,6 +178,107 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
                  resistance_roll: fn _rate -> flunk("immune target must not roll") end
                )
     end
+
+    test "res_eff equipment tolerance lowers the final infliction rate below the roll threshold" do
+      target_id = 16
+      test_pid = self()
+
+      setup_player_mock(target_id,
+        stats: %{mdef: 20},
+        equip_modifiers: %{{:res_eff, :sc_freeze} => 500}
+      )
+
+      resistance_roll = fn final_rate ->
+        send(test_pid, {:final_rate, final_rate})
+        final_rate >= 30
+      end
+
+      assert {:error, :resisted} =
+               Interpreter.apply_status(:player, target_id, :sc_freeze,
+                 duration: 1_500,
+                 success_rate: 38,
+                 resistance_roll: resistance_roll
+               )
+
+      assert_received {:final_rate, rate}
+      assert_in_delta rate, 25.4, 0.0001
+      refute StatusStorage.has_status?(:player, target_id, :sc_freeze)
+    end
+
+    test "res_eff_exempt: true skips the tolerance for sources that already subtracted it" do
+      target_id = 19
+      test_pid = self()
+
+      setup_player_mock(target_id,
+        stats: %{mdef: 20},
+        equip_modifiers: %{{:res_eff, :sc_freeze} => 500}
+      )
+
+      resistance_roll = fn final_rate ->
+        send(test_pid, {:final_rate, final_rate})
+        final_rate >= 30
+      end
+
+      assert :ok =
+               Interpreter.apply_status(:player, target_id, :sc_freeze,
+                 duration: 1_500,
+                 success_rate: 38,
+                 res_eff_exempt: true,
+                 resistance_roll: resistance_roll
+               )
+
+      assert_received {:final_rate, rate}
+      assert_in_delta rate, 30.4, 0.0001
+      assert StatusStorage.has_status?(:player, target_id, :sc_freeze)
+    end
+
+    test "the same rate with no res_eff tolerance clears the roll threshold" do
+      target_id = 17
+      test_pid = self()
+
+      setup_player_mock(target_id, stats: %{mdef: 20})
+
+      resistance_roll = fn final_rate ->
+        send(test_pid, {:final_rate, final_rate})
+        final_rate >= 30
+      end
+
+      assert :ok =
+               Interpreter.apply_status(:player, target_id, :sc_freeze,
+                 duration: 1_500,
+                 success_rate: 38,
+                 resistance_roll: resistance_roll
+               )
+
+      assert_received {:final_rate, rate}
+      assert_in_delta rate, 30.4, 0.0001
+      assert StatusStorage.has_status?(:player, target_id, :sc_freeze)
+    end
+
+    test "a res_eff for a different status leaves Freeze unaffected" do
+      target_id = 18
+      test_pid = self()
+
+      setup_player_mock(target_id,
+        stats: %{mdef: 20},
+        equip_modifiers: %{{:res_eff, :sc_stun} => 5_000}
+      )
+
+      resistance_roll = fn final_rate ->
+        send(test_pid, {:final_rate, final_rate})
+        true
+      end
+
+      assert :ok =
+               Interpreter.apply_status(:player, target_id, :sc_freeze,
+                 duration: 1_500,
+                 success_rate: 38,
+                 resistance_roll: resistance_roll
+               )
+
+      assert_received {:final_rate, rate}
+      assert_in_delta rate, 30.4, 0.0001
+    end
   end
 
   describe "apply_status/4 loaded (persisted restore)" do

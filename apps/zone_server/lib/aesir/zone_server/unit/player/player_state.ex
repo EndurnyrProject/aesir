@@ -834,6 +834,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   def get_entity_info(%__MODULE__{} = state) do
     Unit.build_entity_info(__MODULE__, state)
     |> Map.put(:entity_type, :player)
+    |> Map.put(:equip_modifiers, state.stats.modifiers.equipment)
   end
 
   @impl Aesir.ZoneServer.Unit
