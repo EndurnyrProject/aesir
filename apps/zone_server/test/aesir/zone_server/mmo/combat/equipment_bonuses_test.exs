@@ -256,6 +256,67 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
     end
   end
 
+  describe "short_atk_rate/1" do
+    test "reads :short_atk_rate when the attacker wields a melee weapon" do
+      attacker =
+        CombatTestHelper.create_player_combatant(weapon_type: :sword)
+        |> with_equip_modifiers(%{short_atk_rate: 15})
+
+      assert EquipmentBonuses.short_atk_rate(attacker) == 15
+    end
+
+    test "returns 0 for a ranged attacker carrying the same bonus" do
+      attacker =
+        CombatTestHelper.create_player_combatant(weapon_type: :bow)
+        |> with_equip_modifiers(%{short_atk_rate: 15})
+
+      assert EquipmentBonuses.short_atk_rate(attacker) == 0
+    end
+
+    test "returns 0 for a melee attacker without the bonus" do
+      attacker = CombatTestHelper.create_player_combatant(weapon_type: :sword)
+
+      assert EquipmentBonuses.short_atk_rate(attacker) == 0
+    end
+
+    test "returns 0 for mobs, which carry no equipment" do
+      assert EquipmentBonuses.short_atk_rate(CombatTestHelper.create_mob_combatant()) == 0
+    end
+
+    test "is mutually exclusive with long_atk_rate on the same attacker" do
+      bow =
+        CombatTestHelper.create_player_combatant(weapon_type: :bow)
+        |> with_equip_modifiers(%{short_atk_rate: 15, long_atk_rate: 20})
+
+      sword =
+        CombatTestHelper.create_player_combatant(weapon_type: :sword)
+        |> with_equip_modifiers(%{short_atk_rate: 15, long_atk_rate: 20})
+
+      assert {EquipmentBonuses.short_atk_rate(bow), EquipmentBonuses.long_atk_rate(bow)} ==
+               {0, 20}
+
+      assert {EquipmentBonuses.short_atk_rate(sword), EquipmentBonuses.long_atk_rate(sword)} ==
+               {15, 0}
+    end
+  end
+
+  describe "perfect_hit_rate/1" do
+    test "reads :perfect_hit regardless of weapon range" do
+      for weapon_type <- [:sword, :bow] do
+        attacker =
+          CombatTestHelper.create_player_combatant(weapon_type: weapon_type)
+          |> with_equip_modifiers(%{perfect_hit: 30})
+
+        assert EquipmentBonuses.perfect_hit_rate(attacker) == 30
+      end
+    end
+
+    test "returns 0 without the bonus and for mobs" do
+      assert EquipmentBonuses.perfect_hit_rate(CombatTestHelper.create_player_combatant()) == 0
+      assert EquipmentBonuses.perfect_hit_rate(CombatTestHelper.create_mob_combatant()) == 0
+    end
+  end
+
   defp with_equip_modifiers(combatant, modifiers) do
     %{combatant | equip_modifiers: modifiers}
   end

@@ -206,6 +206,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
       assert {:ok, [{:bonus, :heal_power, 5}]} = compile("bonus bHealPower,5;")
     end
 
+    test "damage-side rate keys pass their amount through unscaled" do
+      assert {:ok, [{:bonus, :crit_atk_rate, 20}]} = compile("bonus bCritAtkRate,20;")
+      assert {:ok, [{:bonus, :short_atk_rate, 15}]} = compile("bonus bShortAtkRate,15;")
+      assert {:ok, [{:bonus, :short_atk_rate, -10}]} = compile("bonus bShortAtkRate,-10;")
+      assert {:ok, [{:bonus, :perfect_hit, 50}]} = compile("bonus bPerfectHitAddRate,50;")
+    end
+
+    test "bCritAtkRate compiles to its own destination, never the crit rate one" do
+      assert {:ok, [{:bonus, :crit_atk_rate, 10}]} = compile("bonus bCritAtkRate,10;")
+      assert {:ok, [{:bonus, :critical, 10}]} = compile("bonus bCritical,10;")
+    end
+
     test "bSpeedRate compiles to the non-stackable movement-speed destination" do
       assert {:ok, [{:bonus, :movement_speed, 25}]} = compile("bonus bSpeedRate,25;")
     end

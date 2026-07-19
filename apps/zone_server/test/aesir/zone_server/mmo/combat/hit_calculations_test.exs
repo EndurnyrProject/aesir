@@ -47,6 +47,36 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculationsTest do
       assert result == :perfect_dodge
     end
 
+    test "perfect hit lands through a flee that would otherwise always miss" do
+      attacker = %{hit: 0, char_id: 1, perfect_hit: 100}
+      target = %{flee: 999, perfect_dodge: 0, unit_id: 2}
+
+      assert HitCalculations.calculate_hit_result(attacker, target) == :hit
+    end
+
+    test "perfect dodge wins over perfect hit" do
+      attacker = %{hit: 999, char_id: 1, perfect_hit: 100}
+      target = %{flee: 0, perfect_dodge: 1000, unit_id: 2}
+
+      assert HitCalculations.calculate_hit_result(attacker, target) == :perfect_dodge
+    end
+
+    test "an attacker without the perfect hit key still misses against high flee" do
+      attacker = %{hit: 0, char_id: 1}
+      target = %{flee: 999, perfect_dodge: 0, unit_id: 2}
+
+      assert HitCalculations.calculate_hit_result(attacker, target) == :miss
+    end
+
+    test "a zero perfect hit chance never bypasses the accuracy roll" do
+      attacker = %{hit: 0, char_id: 1, perfect_hit: 0}
+      target = %{flee: 999, perfect_dodge: 0, unit_id: 2}
+
+      results = for _ <- 1..100, do: HitCalculations.calculate_hit_result(attacker, target)
+
+      assert Enum.uniq(results) == [:miss]
+    end
+
     test "handles balanced hit/flee scenarios" do
       attacker = %{hit: 100, char_id: 1}
       target = %{flee: 100, perfect_dodge: 0, unit_id: 2}
@@ -137,6 +167,31 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculationsTest do
         assert result == expected,
                "Expected #{expected} for hit: #{attacker.hit}, flee: #{target.flee}, got: #{result}"
       end
+    end
+  end
+
+  describe "perfect_hit_triggered?/1" do
+    test "never triggers without the key, at 0, or with a negative chance" do
+      for attacker <- [%{hit: 10}, %{perfect_hit: 0}, %{perfect_hit: -10}] do
+        results = for _ <- 1..100, do: HitCalculations.perfect_hit_triggered?(attacker)
+
+        assert Enum.uniq(results) == [false]
+      end
+    end
+
+    test "always triggers at the full percent chance" do
+      results = for _ <- 1..50, do: HitCalculations.perfect_hit_triggered?(%{perfect_hit: 100})
+
+      assert Enum.uniq(results) == [true]
+    end
+
+    test "rolls against a percent scale" do
+      results = for _ <- 1..2000, do: HitCalculations.perfect_hit_triggered?(%{perfect_hit: 50})
+
+      triggered = Enum.count(results, & &1)
+
+      assert triggered > 800
+      assert triggered < 1200
     end
   end
 

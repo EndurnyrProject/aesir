@@ -125,6 +125,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHitsTest do
       assert CriticalHits.apply_critical_damage(1000, %{combat_stats: %{}}) == 1400
     end
 
+    test "applies bCritAtkRate as a percent step over the critical factor" do
+      assert CriticalHits.apply_critical_damage(1000, %{equip_modifiers: %{crit_atk_rate: 50}}) ==
+               2100
+
+      assert CriticalHits.apply_critical_damage(1000, %{equip_modifiers: %{crit_atk_rate: -20}}) ==
+               1120
+    end
+
+    test "bCritAtkRate compounds with crate instead of summing into it" do
+      attacker = %{combat_stats: %{crate: 30}, equip_modifiers: %{crit_atk_rate: 20}}
+
+      assert CriticalHits.apply_critical_damage(1000, attacker) == 2040
+      refute CriticalHits.apply_critical_damage(1000, attacker) == 1700 + 200
+    end
+
+    test "defaults the equipment critical percent to 0 without the key" do
+      assert CriticalHits.apply_critical_damage(1000, %{equip_modifiers: %{}}) == 1400
+      assert CriticalHits.apply_critical_damage(1000, %{}) == 1400
+    end
+
     test "handles edge cases" do
       assert CriticalHits.apply_critical_damage(0, %{}) == 0
       assert CriticalHits.apply_critical_damage(-10, %{}) == -14
@@ -188,6 +208,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHitsTest do
       # 200 * 1.4 (renewal factor, crate defaults to 0)
       assert result.damage == 280
       assert result.critical_rate == 1000
+    end
+
+    test "bCritAtkRate only reaches damage that actually rolled a critical" do
+      base_damage = 200
+      equip = %{crit_atk_rate: 50}
+
+      always_crit = %{luk: 300, equip_modifiers: equip}
+      never_crit = %{luk: 0, equip_modifiers: equip}
+
+      crit_result = CriticalHits.calculate_critical_hit(always_crit, base_damage)
+      assert crit_result.is_critical
+      assert crit_result.damage == 420
+
+      non_crit_result = CriticalHits.calculate_critical_hit(never_crit, base_damage)
+      refute non_crit_result.is_critical
+      assert non_crit_result.damage == base_damage
     end
 
     test "maintains consistency across multiple calls with same input" do

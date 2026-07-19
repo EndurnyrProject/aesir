@@ -96,7 +96,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bflee2" => :perfect_dodge,
     "bspeedrate" => :movement_speed,
     "bfixedcast" => :fixed_cast,
-    "bhealpower" => :heal_power
+    "bhealpower" => :heal_power,
+    "bcritatkrate" => :crit_atk_rate,
+    "bshortatkrate" => :short_atk_rate,
+    "bperfecthitaddrate" => :perfect_hit
   }
 
   @max_destinations MapSet.new([:movement_speed])

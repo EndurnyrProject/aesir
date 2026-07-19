@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
+  alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
@@ -1167,6 +1168,41 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       assert boosted_bow == base_bow * 1.2
       assert boosted_sword == base_sword
+    end
+
+    test "bShortAtkRate boosts a sword attacker and is inert on the same bow attacker" do
+      target = CombatTestHelper.create_mob_combatant()
+
+      bow = CombatTestHelper.create_player_combatant(weapon_type: :bow)
+      sword = CombatTestHelper.create_player_combatant(weapon_type: :sword)
+
+      {:ok, base_bow} = DamageCalculator.apply_modifier_pipeline(1000, bow, target)
+      {:ok, base_sword} = DamageCalculator.apply_modifier_pipeline(1000, sword, target)
+
+      {:ok, boosted_bow} =
+        DamageCalculator.apply_modifier_pipeline(
+          1000,
+          %{bow | equip_modifiers: %{short_atk_rate: 20}},
+          target
+        )
+
+      {:ok, boosted_sword} =
+        DamageCalculator.apply_modifier_pipeline(
+          1000,
+          %{sword | equip_modifiers: %{short_atk_rate: 20}},
+          target
+        )
+
+      assert boosted_sword == base_sword * 1.2
+      assert boosted_bow == base_bow
+    end
+
+    test "a mob attacker carries no equipment, so both range families read zero" do
+      attacker = CombatTestHelper.create_mob_combatant()
+
+      assert attacker.equip_modifiers == %{}
+      assert EquipmentBonuses.short_atk_rate(attacker) == 0
+      assert EquipmentBonuses.long_atk_rate(attacker) == 0
     end
 
     test "a +20% race family and a +20% size family stack multiplicatively to exactly 1.44" do

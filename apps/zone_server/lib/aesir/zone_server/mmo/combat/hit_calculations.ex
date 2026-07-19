@@ -2,11 +2,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
   @moduledoc """
   Hit/Miss calculation system
 
-  This module handles accuracy vs flee calculations, perfect dodge mechanics,
-  and determines whether attacks hit or miss following the authentic rAthena formulas:
+  This module handles accuracy vs flee calculations, perfect dodge and perfect
+  hit mechanics, and determines whether attacks hit or miss:
 
   - Base hit rate: 80 + attacker.hit - target.flee
   - Perfect dodge: rand(1000) < target.perfect_dodge
+  - Perfect hit: rand(100) < attacker.perfect_hit, ignoring the target's flee
   - Hit rate is clamped to 0-100% range
   """
 
@@ -17,10 +18,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
 
   @typedoc """
   Attacker stats required for hit calculations.
+
+  `perfect_hit` is the equipment-granted percent chance to bypass the accuracy
+  roll; call sites that carry no equipment context may omit it and it reads
+  as 0.
   """
   @type attacker_stats :: %{
-          hit: non_neg_integer(),
-          char_id: integer()
+          :hit => non_neg_integer(),
+          :char_id => integer(),
+          optional(:perfect_hit) => non_neg_integer()
         }
 
   @typedoc """
@@ -39,15 +45,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
   Base hit rate = 80 + attacker.hit - target.flee
 
   ## Priority Order
-  1. Perfect dodge check (highest priority)
-  2. Regular hit/miss calculation
+  1. Perfect dodge check (highest priority) — the defender's evasion takes
+     precedence over the attacker's perfect hit
+  2. Perfect hit check — bypasses the accuracy roll entirely
+  3. Regular hit/miss calculation
 
   ## Parameters
-    - attacker_stats: Map containing attacker's hit stat and char_id
+    - attacker_stats: Map containing attacker's hit stat, char_id and optional
+      perfect_hit chance
     - target_stats: Map containing target's flee and perfect_dodge stats
 
   ## Returns
-    - :hit - Attack hits normally
+    - :hit - Attack hits normally, or lands through a perfect hit
     - :miss - Attack misses due to insufficient hit rate
     - :perfect_dodge - Attack dodged perfectly (highest priority)
 
@@ -64,16 +73,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
   """
   @spec calculate_hit_result(attacker_stats(), target_stats()) :: hit_result()
   def calculate_hit_result(attacker_stats, target_stats) do
-    if perfect_dodge_triggered?(target_stats) do
-      :perfect_dodge
-    else
-      hit_rate = calculate_hit_rate(attacker_stats, target_stats)
-
-      if hit_successful?(hit_rate) do
-        :hit
-      else
-        :miss
-      end
+    cond do
+      perfect_dodge_triggered?(target_stats) -> :perfect_dodge
+      perfect_hit_triggered?(attacker_stats) -> :hit
+      hit_successful?(calculate_hit_rate(attacker_stats, target_stats)) -> :hit
+      true -> :miss
     end
   end
 
@@ -144,6 +148,35 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
     else
       random_roll = :rand.uniform(1000) - 1
       random_roll < perfect_dodge_chance
+    end
+  end
+
+  @doc """
+  Checks if a perfect hit is triggered.
+
+  A perfect hit makes the attack land regardless of the accuracy roll, ignoring
+  the target's flee entirely. The chance is the attacker's equipment-granted
+  percent `perfect_hit` value and triggers when rand(100) < that value.
+
+  Attackers without the key — mobs and any call site with no equipment context
+  — never trigger it.
+
+  ## Examples
+      iex> Aesir.ZoneServer.Mmo.Combat.HitCalculations.perfect_hit_triggered?(%{hit: 10})
+      false
+
+      iex> Aesir.ZoneServer.Mmo.Combat.HitCalculations.perfect_hit_triggered?(%{perfect_hit: 100})
+      true
+  """
+  @spec perfect_hit_triggered?(attacker_stats()) :: boolean()
+  def perfect_hit_triggered?(attacker_stats) do
+    perfect_hit_chance = Map.get(attacker_stats, :perfect_hit, 0)
+
+    if perfect_hit_chance <= 0 do
+      false
+    else
+      random_roll = :rand.uniform(100) - 1
+      random_roll < perfect_hit_chance
     end
   end
 

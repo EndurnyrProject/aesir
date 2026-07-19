@@ -100,6 +100,36 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   end
 
   @doc """
+  Percent damage bonus the attacker's equipment grants to close-range physical
+  attacks (`bShortAtkRate`).
+
+  The exact counterpart of `long_atk_rate/1`: the bonus belongs to the melee
+  damage class, so it is read only when the attacker swings a non-ranged
+  weapon. Ranged attackers — and every mob, which carries no equipment — read
+  zero.
+  """
+  @spec short_atk_rate(Combatant.t()) :: rate()
+  def short_atk_rate(%Combatant{} = attacker) do
+    if attacker.weapon |> Map.get(:type) |> WeaponTypes.is_ranged?() do
+      0
+    else
+      Map.get(attacker.equip_modifiers, :short_atk_rate, 0)
+    end
+  end
+
+  @doc """
+  Per-mille chance the attacker's equipment grants to land a perfect hit
+  (`bPerfectHitAddRate`), an attack that ignores the defender's flee entirely.
+
+  Ungated by weapon or target: any attacker's equipment can carry it, and mobs
+  read zero.
+  """
+  @spec perfect_hit_rate(Combatant.t()) :: rate()
+  def perfect_hit_rate(%Combatant{} = attacker) do
+    Map.get(attacker.equip_modifiers, :perfect_hit, 0)
+  end
+
+  @doc """
   Percent of the defender's hard DEF ignored by the attacker's equipment,
   capped at 100.
   """

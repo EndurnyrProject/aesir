@@ -117,31 +117,54 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHits do
 
   Renewal critical damage is `1.4 + 0.01 * CRate` of base damage, where CRate
   is the attacker's `combat_stats.crate` slot. Attackers without a `crate`
-  slot (e.g. mobs) default to 0, landing exactly on rAthena's non-player
-  `x1.4` branch.
+  slot (e.g. mobs) default to 0, landing on the flat `x1.4` factor.
+
+  Equipment-granted critical damage (`equip_modifiers.crit_atk_rate`) is a
+  separate percent step applied over that factor, never folded into CRate: the
+  two are distinct channels and must not compound inside the same accumulator.
+  Because the step lives here, it only ever reaches damage that already rolled
+  a critical.
 
   ## Parameters
   - base_damage: Base damage before critical multiplier
   - attacker: Stats map or struct; `combat_stats.crate` supplies CRate (default 0)
+    and `equip_modifiers.crit_atk_rate` the equipment percent (default 0)
 
   ## Returns
-  Damage multiplied by the Renewal critical factor, truncated to an integer
+  Damage multiplied by the Renewal critical factor and the equipment critical
+  damage percent, truncated to an integer
 
   ## Examples
       iex> CriticalHits.apply_critical_damage(1000, %{})
       1400
       iex> CriticalHits.apply_critical_damage(1000, %{combat_stats: %{crate: 30}})
       1700
+      iex> CriticalHits.apply_critical_damage(1000, %{equip_modifiers: %{crit_atk_rate: 50}})
+      2100
   """
   @spec apply_critical_damage(integer(), map() | PlayerStats.t()) :: integer()
   def apply_critical_damage(base_damage, attacker) when is_integer(base_damage) do
     crate = crate_from(attacker)
-    trunc(base_damage * (1.4 + 0.01 * crate))
+
+    base_damage
+    |> Kernel.*(1.4 + 0.01 * crate)
+    |> trunc()
+    |> apply_crit_atk_rate(crit_atk_rate_from(attacker))
   end
+
+  defp apply_crit_atk_rate(damage, 0), do: damage
+  defp apply_crit_atk_rate(damage, rate), do: div(damage * (100 + rate), 100)
 
   defp crate_from(attacker) do
     case Map.get(attacker, :combat_stats) do
       %{crate: crate} when is_integer(crate) -> crate
+      _ -> 0
+    end
+  end
+
+  defp crit_atk_rate_from(attacker) do
+    case Map.get(attacker, :equip_modifiers) do
+      %{crit_atk_rate: rate} when is_integer(rate) -> rate
       _ -> 0
     end
   end

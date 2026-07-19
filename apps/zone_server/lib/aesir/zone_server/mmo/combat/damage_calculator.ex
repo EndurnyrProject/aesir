@@ -292,9 +292,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   @spec apply_critical_hit(integer(), combatant()) :: {:ok, CriticalHits.critical_result()}
   def apply_critical_hit(base_damage, attacker) do
     # Carry combat_stats so CriticalHits can read `crate` (renewal crit-damage
-    # scaling). Non-player attackers lack a crate key -> CriticalHits defaults
-    # it to 0, landing on the x1.4 non-player branch.
-    attacker_for_crit = %{luk: attacker.base_stats.luk, combat_stats: attacker.combat_stats}
+    # scaling) and equip_modifiers for the equipment critical damage percent.
+    # Non-player attackers lack a crate key and carry no equipment -> CriticalHits
+    # defaults both to 0, landing on the x1.4 non-player branch.
+    attacker_for_crit = %{
+      luk: attacker.base_stats.luk,
+      combat_stats: attacker.combat_stats,
+      equip_modifiers: attacker.equip_modifiers
+    }
+
     critical_result = CriticalHits.calculate_critical_hit(attacker_for_crit, base_damage)
 
     Logger.debug(
@@ -374,7 +380,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   end
 
   # Attacker percent damage families. Each family (race+class, element, size,
-  # skill, long-attack) is one sequential multiplicative step; every contributor to a family
+  # skill, long-attack, short-attack) is one sequential multiplicative step. The
+  # two range families are mutually exclusive — the weapon is either ranged or
+  # not — so only one of them is ever non-zero. Every contributor to a family
   # sums into a single accumulator before the multiply, so passives (Dragonology)
   # and equipment never compound against each other — mirroring the magic
   # pipeline's cardfix model. A family summing to 0 is identity, preserving the
@@ -391,6 +399,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     |> apply_family_step(size)
     |> apply_family_step(skill)
     |> apply_family_step(EquipmentBonuses.long_atk_rate(attacker))
+    |> apply_family_step(EquipmentBonuses.short_atk_rate(attacker))
   end
 
   # Defender percent damage-taken families, read off the defender's own

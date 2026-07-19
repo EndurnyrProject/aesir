@@ -55,7 +55,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :perfect_dodge,
     :movement_speed,
     :fixed_cast,
-    :heal_power
+    :heal_power,
+    :crit_atk_rate,
+    :short_atk_rate,
+    :perfect_hit
   ]
 
   describe "destination/1" do
@@ -153,6 +156,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
       assert BonusKeys.destination("bLongAtkRate") == {:ok, :long_atk_rate}
     end
 
+    test "resolves the damage-side rate keys" do
+      assert BonusKeys.destination("bCritAtkRate") == {:ok, :crit_atk_rate}
+      assert BonusKeys.destination("bShortAtkRate") == {:ok, :short_atk_rate}
+      assert BonusKeys.destination("bPerfectHitAddRate") == {:ok, :perfect_hit}
+    end
+
+    test "bCritAtkRate is a destination of its own, never the trait crit rate" do
+      assert BonusKeys.destination("bCritAtkRate") == {:ok, :crit_atk_rate}
+      assert BonusKeys.destination("bCritical") == {:ok, :critical}
+      assert BonusKeys.destination("bCrt") == {:ok, :crt}
+    end
+
     test "bVariableCastrate resolves independently in the flat and bonus2 tables" do
       assert BonusKeys.destination("bVariableCastrate") == {:ok, :varcast_rate}
 
@@ -169,6 +184,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     test "ordinary destinations stack" do
       refute BonusKeys.max_destination?(:atk)
       refute BonusKeys.max_destination?(:perfect_dodge)
+      refute BonusKeys.max_destination?(:perfect_hit)
+      refute BonusKeys.max_destination?(:crit_atk_rate)
+      refute BonusKeys.max_destination?(:short_atk_rate)
       refute BonusKeys.max_destination?({:skill_use_sp_rate, 28})
     end
   end
@@ -181,6 +199,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     test "unscaled destinations report a factor of 1" do
       assert BonusKeys.destination_scale(:atk) == 1
       assert BonusKeys.destination_scale(:movement_speed) == 1
+      assert BonusKeys.destination_scale(:perfect_hit) == 1
+      assert BonusKeys.destination_scale(:crit_atk_rate) == 1
+      assert BonusKeys.destination_scale(:short_atk_rate) == 1
     end
   end
 

@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
+  alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
@@ -444,7 +445,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   defp check_hit_and_calculate_damage(attacker_combatant, defender_combatant) do
     attacker_stats = %{
       hit: attacker_combatant.combat_stats.hit,
-      char_id: attacker_combatant.unit_id
+      char_id: attacker_combatant.unit_id,
+      perfect_hit: EquipmentBonuses.perfect_hit_rate(attacker_combatant)
     }
 
     defender_stats = %{
