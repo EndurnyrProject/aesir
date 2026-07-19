@@ -41,7 +41,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     hits = Keyword.get(opts, :hit_count, 1)
 
     calc_opts =
-      Keyword.take(opts, [:skill_ratio, :skip_crit, :bonus_atk, :fixed_damage, :element])
+      Keyword.take(opts, [
+        :skill_ratio,
+        :skip_crit,
+        :bonus_atk,
+        :fixed_damage,
+        :element,
+        :skill_id
+      ])
 
     # NOTE: skills always connect here; skill miss/flee isn't modeled yet.
     with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),

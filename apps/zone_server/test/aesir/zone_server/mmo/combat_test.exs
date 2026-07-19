@@ -443,7 +443,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
       stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
 
-      stub(DamageCalculator, :calculate_damage, fn _a, _d, _opts ->
+      stub(DamageCalculator, :calculate_damage, fn _a, _d, opts ->
+        assert opts[:skill_id] == 7
         {:ok, %{damage: 50, is_critical: false}}
       end)
 

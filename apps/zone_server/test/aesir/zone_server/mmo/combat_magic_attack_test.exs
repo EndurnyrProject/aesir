@@ -365,7 +365,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
       # The MATK roll now lives inside the calculator (per call); a stubbed
       # calculator just confirms each hit is a separate calculate call summed.
-      stub(MagicDamageCalculator, :calculate_magic_damage, fn _a, _t, _opts ->
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _a, _t, opts ->
+        assert opts[:skill_id] == 19
         {:ok, %{damage: 30, is_critical: false}}
       end)
 

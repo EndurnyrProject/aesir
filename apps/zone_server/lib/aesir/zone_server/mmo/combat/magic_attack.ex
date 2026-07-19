@@ -233,7 +233,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
 
     with {:ok, target} <- TargetResolver.resolve_combatant(target_id),
          {:ok, {tx, ty, map_name}} <- SpatialIndex.get_unit_position(unit_type, target_id),
-         damage <- sum_magic_hits(caster, target, element, skill_ratio, hit_count, bonus_matk),
+         damage <-
+           sum_magic_hits(caster, target, element, skill_ratio, hit_count, bonus_matk, nil),
          damage <- if(divide_hits?, do: div(damage, hit_count), else: damage),
          {:ok, target_pid, _target_state, _target_type} <-
            TargetResolver.resolve(unit_type, target_id) do
@@ -304,7 +305,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- AttackValidator.validate(attacker, target, opts),
          :ok <- Targeting.validate_enemy(attacker, target) do
-      total = sum_magic_hits(attacker, target, element, skill_ratio, hits)
+      total = sum_magic_hits(attacker, target, element, skill_ratio, hits, 0, skill_id)
 
       packet =
         PacketFactory.build_splash_damage_packet(
@@ -388,13 +389,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
 
   defp normalize_hit_divisions(damage, hit_divisions), do: {damage, hit_divisions}
 
-  defp sum_magic_hits(attacker, target, element, skill_ratio, hits, bonus_matk \\ 0) do
+  defp sum_magic_hits(attacker, target, element, skill_ratio, hits, bonus_matk, skill_id) do
     Enum.reduce(1..hits//1, 0, fn _hit, acc ->
       {:ok, %{damage: damage}} =
         MagicDamageCalculator.calculate_magic_damage(attacker, target,
           element: element,
           skill_ratio: skill_ratio,
-          bonus_matk: bonus_matk
+          bonus_matk: bonus_matk,
+          skill_id: skill_id
         )
 
       acc + damage
