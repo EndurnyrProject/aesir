@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
@@ -234,6 +235,33 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     assert_received {:broadcast, rounded_damage, 20}
     assert_received {:damage, ^rounded_damage}
     assert rounded_damage == div(raw_damage, 20) * 20
+  end
+
+  test "threads the skill id into the ground-unit magic calculation" do
+    Mimic.copy(MagicDamageCalculator)
+    test_pid = self()
+    mob_state = build_mob_state(10)
+
+    stub(UnitRegistry, :get_unit, fn :mob, @target_id ->
+      {:ok, {MobState, mob_state, test_pid}}
+    end)
+
+    stub(SpatialIndex, :get_unit_position, fn :mob, @target_id ->
+      {:ok, {150, 150, @map_name}}
+    end)
+
+    stub(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, _packet -> :ok end)
+    stub(MobSession, :apply_damage, fn ^test_pid, _damage, nil -> :ok end)
+
+    stub(MagicDamageCalculator, :calculate_magic_damage, fn _a, _t, opts ->
+      send(test_pid, {:skill_id, opts[:skill_id]})
+      {:ok, %{damage: 10, is_critical: false}}
+    end)
+
+    assert :ok =
+             Combat.apply_skill_unit_damage(caster(100), :mob, @target_id, 89, 10, :water, 600)
+
+    assert_received {:skill_id, 89}
   end
 
   test "skips cleanly when the target cannot be resolved" do

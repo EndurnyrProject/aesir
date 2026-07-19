@@ -234,7 +234,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     with {:ok, target} <- TargetResolver.resolve_combatant(target_id),
          {:ok, {tx, ty, map_name}} <- SpatialIndex.get_unit_position(unit_type, target_id),
          damage <-
-           sum_magic_hits(caster, target, element, skill_ratio, hit_count, bonus_matk, nil),
+           sum_magic_hits(caster, target, element, skill_ratio, hit_count, bonus_matk, skill_id),
          damage <- if(divide_hits?, do: div(damage, hit_count), else: damage),
          {:ok, target_pid, _target_state, _target_type} <-
            TargetResolver.resolve(unit_type, target_id) do
@@ -506,7 +506,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          {:ok, %{damage: damage}} <-
            MagicDamageCalculator.calculate_magic_damage(attacker, target,
              element: element,
-             skill_ratio: skill_ratio
+             skill_ratio: skill_ratio,
+             skill_id: skill_id
            ) do
       damage = div(damage, divisor)
       {tx, ty} = target.position

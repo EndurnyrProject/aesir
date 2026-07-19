@@ -654,6 +654,37 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
                )
     end
 
+    test "threads the cast skill id into each splash target's magic calculation" do
+      caster = build_caster()
+      test_pid = self()
+
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+        [{:mob, 2001}]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :mob, 2001 -> {:ok, {MobState, build_mob_state(2001, 150, 150), self()}}
+      end)
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _a, _t, opts ->
+        send(test_pid, {:skill_id, opts[:skill_id]})
+        {:ok, %{damage: 40, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, _p -> :ok end)
+      stub(MobSession, :apply_damage, fn _pid, 40, @caster_id -> :ok end)
+
+      assert [{:mob, 2001}] =
+               Combat.execute_magic_splash(caster, @center, 2,
+                 skill_id: 17,
+                 skill_level: 5,
+                 skill_ratio: 240,
+                 element: :fire
+               )
+
+      assert_received {:skill_id, 17}
+    end
+
     test "hits each target for full damage without :split" do
       caster = build_caster()
       test_pid = self()

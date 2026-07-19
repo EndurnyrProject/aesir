@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
 
@@ -41,6 +42,50 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
       combat_stats: Map.merge(%{mdef: hard_mdef, soft_mdef: soft_mdef}, extra),
       element: element
     }
+  end
+
+  # Equipment reads require a real `%Combatant{}` (only those carry an
+  # `equip_modifiers` map); the plain-map fixtures above exercise the
+  # equipment-inert path.
+  defp full_combatant(overrides) do
+    defaults = %{
+      unit_id: 1,
+      unit_type: :player,
+      base_stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
+      combat_stats: %{matk: 100, matk_min: 100, matk_max: 100, mdef: 0, soft_mdef: 0},
+      progression: %{base_level: 1, job_level: 1},
+      element: {:neutral, 1},
+      race: :formless,
+      size: :medium,
+      weapon: %{type: :fist, element: :neutral, size: :medium},
+      attack_range: 1,
+      attack_delay_ms: 1000,
+      class: :normal,
+      equip_modifiers: %{}
+    }
+
+    struct!(Combatant, Map.merge(defaults, Map.new(overrides)))
+  end
+
+  defp c_attacker(matk, equip, extra \\ []) do
+    full_combatant(
+      [
+        unit_id: 1001,
+        unit_type: :player,
+        combat_stats: %{matk: matk, matk_min: matk, matk_max: matk, mdef: 0, soft_mdef: 0},
+        equip_modifiers: equip
+      ] ++ extra
+    )
+  end
+
+  defp c_defender(hard_mdef, soft_mdef, extra \\ []) do
+    full_combatant(
+      [
+        unit_id: 2001,
+        unit_type: :mob,
+        combat_stats: %{matk: 0, matk_min: 0, matk_max: 0, mdef: hard_mdef, soft_mdef: soft_mdef}
+      ] ++ extra
+    )
   end
 
   describe "calculate_magic_damage/3" do
@@ -368,6 +413,103 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
                MagicDamageCalculator.calculate_magic_damage(brute_attacker, without_skill)
 
       assert with_dmg == without_dmg
+    end
+  end
+
+  describe "equipment magic damage families" do
+    test "status and equipment magic_addrace sum once into a single cardfix step" do
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :player, 1001 -> %{{:magic_addrace, :demon} => 10}
+        _, _ -> %{}
+      end)
+
+      attacker = c_attacker(100, %{{:magic_addrace, :demon} => 10})
+      defender = c_defender(0, 0, race: :demon)
+
+      # One step summing both sources: 100 * (100 + 20)% = 120, not two x1.1
+      # steps (which would yield 121).
+      assert {:ok, %{damage: 120, is_critical: false}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker, defender)
+    end
+
+    test "magic_atk_ele boosts only spells cast with the keyed element" do
+      attacker = c_attacker(100, %{{:magic_atk_ele, :fire} => 50})
+      defender = c_defender(0, 0)
+
+      assert {:ok, %{damage: 150}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker, defender, element: :fire)
+
+      assert {:ok, %{damage: 100}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker, defender, element: :water)
+    end
+
+    test "skill_atk applies only when the cast skill id matches" do
+      attacker = c_attacker(100, %{{:skill_atk, 42} => 30})
+      defender = c_defender(0, 0)
+
+      assert {:ok, %{damage: 130}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker, defender, skill_id: 42)
+
+      assert {:ok, %{damage: 100}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker, defender, skill_id: 99)
+
+      assert {:ok, %{damage: 100}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker, defender)
+    end
+
+    test "ignore_mdef bypasses a percent of hard MDEF; zero rate is identical to baseline" do
+      defender = c_defender(10, 5, race: :formless)
+
+      full_ignore = c_attacker(100, %{{:ignore_mdef_race, :formless} => 100})
+      no_ignore = c_attacker(100, %{})
+
+      # ignore 100: hard MDEF 10 -> 0, so 100 * 1000/1000 - 5 = 95.
+      assert {:ok, %{damage: 95}} =
+               MagicDamageCalculator.calculate_magic_damage(full_ignore, defender)
+
+      # ignore 0: unchanged 86, matching the plain-map baseline.
+      assert {:ok, %{damage: 86}} =
+               MagicDamageCalculator.calculate_magic_damage(no_ignore, defender)
+    end
+
+    test "defender subele reduces magic damage keyed on the spell element" do
+      attacker = c_attacker(100, %{}, unit_type: :mob, race: :formless)
+      defender = c_defender(0, 0, unit_type: :player, equip_modifiers: %{{:subele, :fire} => 20})
+
+      # fire vs neutral = 1.0, then -20% damage taken: 100 * 0.8 = 80.
+      assert {:ok, %{damage: 80}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker, defender, element: :fire)
+
+      # a non-matching spell element gets no reduction.
+      assert {:ok, %{damage: 100}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker, defender, element: :neutral)
+    end
+
+    test "defender subrace reduces magic damage keyed on the attacker race" do
+      attacker = c_attacker(100, %{}, unit_type: :mob, race: :formless)
+
+      defender =
+        c_defender(0, 0, unit_type: :player, equip_modifiers: %{{:subrace, :formless} => 25})
+
+      # -25% damage taken vs a formless attacker: 100 * 0.75 = 75.
+      assert {:ok, %{damage: 75}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker, defender)
+    end
+
+    test "defender subclass reduces magic damage from a boss-class attacker" do
+      defender =
+        c_defender(0, 0, unit_type: :player, equip_modifiers: %{{:subclass, :boss} => 20})
+
+      boss = c_attacker(100, %{}, unit_type: :mob, race: :formless, class: :boss)
+      normal = c_attacker(100, %{}, unit_type: :mob, race: :formless, class: :normal)
+
+      assert {:ok, %{damage: 80}} =
+               MagicDamageCalculator.calculate_magic_damage(boss, defender)
+
+      # the class family lives only on the damage-taken side; a normal-class
+      # attacker triggers no reduction.
+      assert {:ok, %{damage: 100}} =
+               MagicDamageCalculator.calculate_magic_damage(normal, defender)
     end
   end
 end
