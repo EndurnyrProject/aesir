@@ -18,7 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
 
   @type destination :: atom()
   @type param :: :race | :element | :size | :class | :skill
-  @type param_schema :: %{family: atom(), param: param(), unit: :percent}
+  @type param_schema :: %{family: atom(), param: param(), unit: :percent | :ms | :sp}
 
   @keys %{
     "bstr" => :str,
@@ -71,7 +71,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bmagicatkele" => %{family: :magic_atk_ele, param: :element, unit: :percent},
     "bskillatk" => %{family: :skill_atk, param: :skill, unit: :percent},
     "bignoredefracerate" => %{family: :ignore_def_race, param: :race, unit: :percent},
-    "bignoremdefracerate" => %{family: :ignore_mdef_race, param: :race, unit: :percent}
+    "bignoremdefracerate" => %{family: :ignore_mdef_race, param: :race, unit: :percent},
+    "bskillcooldown" => %{family: :skill_cooldown, param: :skill, unit: :ms},
+    "bskillusesp" => %{family: :skill_use_sp, param: :skill, unit: :sp},
+    "bvariablecastrate" => %{family: :skill_varcast_rate, param: :skill, unit: :percent}
   }
 
   @race_domain [
@@ -118,7 +121,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   def destinations, do: @keys |> Map.values() |> Enum.uniq()
 
   @doc """
-  Resolves a rAthena `bonus2` damage-tier key (any case) to its param schema:
+  Resolves a rAthena `bonus2` parameterized key (any case) to its param schema:
   the `modifiers.equipment` family it stores into, the domain its param comes
   from, and its unit. Returns `:error` for out-of-vocabulary keys.
   """

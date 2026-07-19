@@ -118,6 +118,27 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus2 bSkillAtk,#{firebolt_id},15;")
     end
 
+    test "skill_cooldown by skill name resolves through the catalog to its integer id" do
+      assert {:ok, %{id: firebolt_id}} = Catalog.by_name(:mg_firebolt)
+
+      assert {:ok, [{:bonus, {:skill_cooldown, ^firebolt_id}, -500}]} =
+               compile("bonus2 bSkillCooldown,MG_FIREBOLT,-500;")
+    end
+
+    test "skill_use_sp by skill name resolves through the catalog to its integer id" do
+      assert {:ok, %{id: firebolt_id}} = Catalog.by_name(:mg_firebolt)
+
+      assert {:ok, [{:bonus, {:skill_use_sp, ^firebolt_id}, -5}]} =
+               compile("bonus2 bSkillUseSP,MG_FIREBOLT,-5;")
+    end
+
+    test "skill_varcast_rate by raw skill id" do
+      assert {:ok, %{id: firebolt_id}} = Catalog.by_name(:mg_firebolt)
+
+      assert {:ok, [{:bonus, {:skill_varcast_rate, ^firebolt_id}, -10}]} =
+               compile("bonus2 bVariableCastrate,#{firebolt_id},-10;")
+    end
+
     test "refine-expression amount" do
       assert {:ok, [{:bonus, {:addrace, :brute}, {:*, :refine, 2}}]} =
                compile("bonus2 bAddRace,RC_Brute,getrefine()*2;")

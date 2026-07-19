@@ -71,6 +71,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       ],
       tuple_dest: [{:bonus, {:addrace, :brute}, 20}],
       tuple_skill_dest: [{:bonus, {:skill_atk, 152}, 30}],
+      tuple_skill_cooldown_dest: [{:bonus, {:skill_cooldown, 152}, -500}],
+      tuple_skill_use_sp_dest: [{:bonus, {:skill_use_sp, 152}, -5}],
+      tuple_skill_varcast_rate_dest: [{:bonus, {:skill_varcast_rate, 152}, -10}],
       mixed_flat_and_tuple: [
         {:bonus, :vit, 5},
         {:bonus, {:subele, :fire}, 10},

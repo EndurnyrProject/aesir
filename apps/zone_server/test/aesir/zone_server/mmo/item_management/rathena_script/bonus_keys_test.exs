@@ -88,6 +88,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     test "returns :error for an out-of-vocabulary key" do
       assert BonusKeys.destination("bMaxHP") == :error
     end
+
+    test "returns :error for bVariableCastrate, the flat form is out of scope" do
+      assert BonusKeys.destination("bVariableCastrate") == :error
+    end
   end
 
   describe "destinations/0" do
@@ -112,11 +116,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     "bmagicatkele" => %{family: :magic_atk_ele, param: :element, unit: :percent},
     "bskillatk" => %{family: :skill_atk, param: :skill, unit: :percent},
     "bignoredefracerate" => %{family: :ignore_def_race, param: :race, unit: :percent},
-    "bignoremdefracerate" => %{family: :ignore_mdef_race, param: :race, unit: :percent}
+    "bignoremdefracerate" => %{family: :ignore_mdef_race, param: :race, unit: :percent},
+    "bskillcooldown" => %{family: :skill_cooldown, param: :skill, unit: :ms},
+    "bskillusesp" => %{family: :skill_use_sp, param: :skill, unit: :sp},
+    "bvariablecastrate" => %{family: :skill_varcast_rate, param: :skill, unit: :percent}
   }
 
   describe "param_schema/1" do
-    test "resolves every documented bonus2 damage-tier key" do
+    test "resolves every documented bonus2 parameterized key" do
       for {key, schema} <- @param_schemas do
         assert BonusKeys.param_schema(key) == {:ok, schema}
       end
@@ -127,8 +134,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
       assert BonusKeys.param_schema("BADDRACE") == {:ok, @param_schemas["baddrace"]}
     end
 
+    test "resolves the skill-economy keys case-insensitively" do
+      assert BonusKeys.param_schema("bSkillCooldown") == {:ok, @param_schemas["bskillcooldown"]}
+      assert BonusKeys.param_schema("bSkillUseSP") == {:ok, @param_schemas["bskillusesp"]}
+
+      assert BonusKeys.param_schema("bVariableCastrate") ==
+               {:ok, @param_schemas["bvariablecastrate"]}
+    end
+
     test "returns :error for not-yet-supported bonus2 keys" do
-      assert BonusKeys.param_schema("bskillcooldown") == :error
       assert BonusKeys.param_schema("baddeff") == :error
     end
 
