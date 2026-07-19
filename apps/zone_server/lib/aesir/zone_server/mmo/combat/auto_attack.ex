@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
+  alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -204,6 +205,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
            ) do
       roll_equipment_breaks(player_state, target_state, target_type, target_pid)
       dispatch_dealt_damage(attacker, target_type, target_id, damage_result)
+      OnHitEffects.after_hit(attacker, target, damage_result)
       :ok
     end
   end
@@ -435,6 +437,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       hit_info,
       attacker_combatant.unit_id
     )
+
+    OnHitEffects.after_hit(attacker_combatant, target_combatant, damage_result)
   end
 
   defp check_hit_and_calculate_damage(attacker_combatant, defender_combatant) do

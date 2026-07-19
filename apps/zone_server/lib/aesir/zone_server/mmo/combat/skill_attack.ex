@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
+  alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
@@ -253,6 +254,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         hit_info,
         attacker.unit_id
       )
+
+      OnHitEffects.after_hit(attacker, target, damage_result)
 
       :ok
     end

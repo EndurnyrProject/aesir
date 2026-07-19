@@ -649,4 +649,79 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       assert_received {:hit_info, %{is_short: false, dmg_type: :physical}}
     end
   end
+
+  describe "on-hit equipment status infliction wiring" do
+    test "a landed player auto-attack rolls the attacker's bAddEff against the mob" do
+      test_pid = self()
+
+      attacker =
+        1001
+        |> combatant(:player)
+        |> Map.put(:equip_modifiers, %{{:add_eff, :sc_stun} => 10_000})
+
+      target = combatant(2001, :mob)
+      player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
+      target_state = %FakeUnit{combatant: target, x: 150, y: 150}
+
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
+      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
+
+      stub(DamageCalculator, :calculate_damage, fn _a, _d ->
+        {:ok, %{damage: 50, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, _p -> :ok end)
+      stub(Passives, :attack_procs, fn _ -> %{} end)
+      stub(MobSession, :apply_damage, fn _pid, _d, _a -> :ok end)
+
+      expect(StatusInterpreter, :apply_status, fn :mob, 2001, :sc_stun, params ->
+        send(test_pid, {:on_hit, params})
+        :ok
+      end)
+
+      capture_log(fn ->
+        assert Combat.execute_attack(attacker, player_state, 2001) == :ok
+      end)
+
+      assert_received {:on_hit, params}
+      assert params[:caster_id] == 1001
+      assert params[:source_type] == :player
+    end
+
+    test "a landed mob attack rolls the player's bAddEffWhenHit back against the mob" do
+      test_pid = self()
+
+      target =
+        2001
+        |> combatant(:player, position: {151, 150})
+        |> Map.put(:equip_modifiers, %{{:add_eff_when_hit, :sc_freeze} => 10_000})
+
+      target_state = %FakeUnit{combatant: target, stats: target, x: 151, y: 150}
+
+      stub(UnitRegistry, :get_player_pid, fn 2001 -> {:ok, self()} end)
+      stub(PlayerSession, :get_current_stats, fn _pid -> target end)
+      stub(PlayerSession, :get_state, fn _pid -> %{game_state: target_state} end)
+      stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, _p -> :ok end)
+      stub(StatusInterpreter, :absorb_damage, fn :player, 2001, dmg, _hit_info -> dmg end)
+      stub(PlayerSession, :apply_damage, fn _pid, _d, _a -> :ok end)
+
+      stub(DamageCalculator, :calculate_damage, fn _a, _d ->
+        {:ok, %{damage: 10, is_critical: false}}
+      end)
+
+      expect(StatusInterpreter, :apply_status, fn :mob, 3001, :sc_freeze, params ->
+        send(test_pid, {:on_hit, params})
+        :ok
+      end)
+
+      mob = combatant(3001, :mob, attack_range: 1, position: {150, 150})
+      mob_state = %FakeUnit{combatant: mob, x: 150, y: 150}
+
+      assert :ok = Combat.execute_mob_attack(mob_state, 2001)
+
+      assert_received {:on_hit, params}
+      assert params[:caster_id] == 2001
+      assert params[:source_type] == :player
+    end
+  end
 end
