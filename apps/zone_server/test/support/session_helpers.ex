@@ -94,6 +94,9 @@ defmodule Aesir.ZoneServer.SessionHelpers do
   - :dex - Mob DEX stat (default 10)
   - :modes - Mob mode list, e.g. `[:boss]` (default `[]`)
   - :drops - Mob drop table (default `[]`)
+  - :mvp_exp - MVP experience (default `0`; a non-zero value makes the mob MVP-tier)
+  - :mvp_drops - MVP drop table (default `[]`; a non-empty list makes the mob MVP-tier)
+  - :respawn_time - Spawn config respawn delay in ms (default `5_000`)
   - :awake - Whether to start the AI tick loop (default `false`). Test mobs are
     stationary targets; an awake mob's jittered idle tick can wander it off its
     cell and put it out of attack range, making combat tests flaky. Pass
@@ -142,13 +145,15 @@ defmodule Aesir.ZoneServer.SessionHelpers do
       damage_motion: 400,
       ai_type: 0,
       modes: opts[:modes] || [],
-      drops: opts[:drops] || []
+      drops: opts[:drops] || [],
+      mvp_exp: opts[:mvp_exp] || 0,
+      mvp_drops: opts[:mvp_drops] || []
     }
 
     mob_spawn = %MobSpawn{
       mob: mob_id,
       amount: 1,
-      respawn_time: 5_000,
+      respawn_time: opts[:respawn_time] || 5_000,
       spawn_area: %MobSpawn.SpawnArea{
         x: x,
         y: y,
