@@ -135,6 +135,7 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
       element: opts[:element],
       race: opts[:race],
       size: opts[:size],
+      class: Keyword.get(opts, :class, :normal),
       weapon: %{
         type: :claw,
         element: :neutral,
@@ -185,6 +186,7 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
       element: :dark,
       race: :demon,
       size: :large,
+      class: :boss,
       atk: 200,
       def: 50
     ]

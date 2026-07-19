@@ -864,7 +864,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       map_name: state.map_name,
       divine_protection_level: Learned.learned_level(learned, 22),
       demon_bane_level: Learned.learned_level(learned, 23),
-      dragonology_level: Learned.learned_level(learned, 284)
+      dragonology_level: Learned.learned_level(learned, 284),
+      class: :normal,
+      equip_modifiers: state.stats.modifiers.equipment
     })
   end
 

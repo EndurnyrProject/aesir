@@ -117,6 +117,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
     field :divine_protection_level, integer(), default: 0
     field :demon_bane_level, integer(), default: 0
     field :dragonology_level, integer(), default: 0
+
+    # Mob-class axis for bAddClass/bSubClass-style equipment bonuses. Players
+    # are always :normal; mobs are :boss when tagged with the :boss mode.
+    field :class, :normal | :boss, default: :normal
+
+    # Folded equipment bonus map (players: `stats.modifiers.equipment`;
+    # mobs: empty, since mobs carry no equipment).
+    field :equip_modifiers, map(), default: %{}
   end
 
   @doc """

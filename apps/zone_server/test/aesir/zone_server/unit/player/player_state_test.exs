@@ -552,6 +552,17 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
 
       assert combatant.dragonology_level == 5
     end
+
+    test "player combatant class is always :normal", %{state: state} do
+      assert PlayerState.to_combatant(state).class == :normal
+    end
+
+    test "carries the live equipment modifier map as equip_modifiers", %{state: state} do
+      state = put_in(state.stats.modifiers.equipment, %{atk: 10, addrace_brute: 20})
+      combatant = PlayerState.to_combatant(state)
+
+      assert combatant.equip_modifiers == %{atk: 10, addrace_brute: 20}
+    end
   end
 
   describe "to_combatant/1 weapon element resolution" do

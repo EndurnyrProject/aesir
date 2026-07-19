@@ -262,6 +262,34 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     end
   end
 
+  describe "to_combatant/1 class and equip_modifiers" do
+    test "a normal mob (no :boss mode) combatant has class :normal" do
+      state = build_mob_state()
+
+      combatant = MobState.to_combatant(state)
+
+      assert combatant.class == :normal
+    end
+
+    test "a mob with the :boss mode has combatant class :boss" do
+      base = build_mob_state()
+      mob_data = %{base.mob_data | modes: [:boss]}
+      state = %MobState{base | mob_data: mob_data}
+
+      combatant = MobState.to_combatant(state)
+
+      assert combatant.class == :boss
+    end
+
+    test "mob combatant equip_modifiers is always an empty map" do
+      state = build_mob_state()
+
+      combatant = MobState.to_combatant(state)
+
+      assert combatant.equip_modifiers == %{}
+    end
+  end
+
   describe "to_combatant/1 status modifiers" do
     test "an ATK-raising status on the mob raises combat_stats.atk" do
       state = build_mob_state()

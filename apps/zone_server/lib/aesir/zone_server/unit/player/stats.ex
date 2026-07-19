@@ -1,3 +1,22 @@
+defmodule Aesir.ZoneServer.Unit.Player.Stats.Modifiers do
+  @moduledoc """
+  The per-source stat modifier maps carried by `Aesir.ZoneServer.Unit.Player.Stats`.
+
+  Defined outside the `Stats` module so `%Modifiers{}` can serve as the struct
+  default for `stats.modifiers` — a nested module's struct cannot be used as a
+  field default within the module that defines it.
+  """
+
+  use TypedStruct
+
+  typedstruct do
+    field :equipment, map(), default: %{}
+    field :status_effects, map(), default: %{}
+    field :job_bonuses, map(), default: %{}
+    field :passive, map(), default: %{}
+  end
+end
+
 defmodule Aesir.ZoneServer.Unit.Player.Stats do
   @moduledoc """
   Player statistics management for individual character sessions.
@@ -29,6 +48,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.WeaponTypes
+  alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
   alias Aesir.ZoneServer.Unit.Stats
 
   typedstruct module: PlayerProgression do
@@ -62,13 +82,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     field :ammo, non_neg_integer()
   end
 
-  typedstruct module: Modifiers do
-    field :equipment, map(), default: %{}
-    field :status_effects, map(), default: %{}
-    field :job_bonuses, map(), default: %{}
-    field :passive, map(), default: %{}
-  end
-
   typedstruct do
     @typedoc """
     Player-specific stats structure extending the base unit stats.
@@ -88,7 +101,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     # Player-specific fields
     field :progression, PlayerProgression.t()
     field :equipment, Equipment.t()
-    field :modifiers, Modifiers.t()
+    field :modifiers, Modifiers.t(), default: %Modifiers{}
   end
 
   @doc """
