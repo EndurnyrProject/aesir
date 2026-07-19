@@ -109,6 +109,31 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManagerTest do
     end
   end
 
+  describe "walk_speed_for/1 with equipment movement speed" do
+    test "an equipment bonus speeds the player up (positive = faster)", %{state: state} do
+      stats = with_equipment_speed(state.game_state.stats, 25)
+
+      assert StatusManager.walk_speed_for(stats) == 112
+    end
+
+    test "no equipment bonus leaves the base speed", %{state: state} do
+      assert StatusManager.walk_speed_for(state.game_state.stats) == 150
+    end
+
+    test "the equipment bonus offsets a status slow", %{state: state} do
+      stats =
+        state.game_state.stats
+        |> with_equipment_speed(25)
+        |> put_in([Access.key!(:modifiers), Access.key!(:status_effects)], %{movement_speed: 25})
+
+      assert StatusManager.walk_speed_for(stats) == 150
+    end
+
+    defp with_equipment_speed(stats, bonus) do
+      put_in(stats, [Access.key!(:modifiers), Access.key!(:equipment)], %{movement_speed: bonus})
+    end
+  end
+
   describe "statuses without a :speed flag" do
     test "leave walk_speed at 150 and emit no speed ParamChange", %{state: state} do
       {:reply, :ok, applied} = StatusManager.handle_apply_status(:sc_poison, [val1: 5], state)

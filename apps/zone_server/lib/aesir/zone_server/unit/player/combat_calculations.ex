@@ -80,11 +80,10 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculations do
   def calculate_perfect_dodge(%Stats{} = stats) do
     effective_luk = Stats.get_effective_stat(stats, :luk)
 
-    # Base perfect dodge calculation
     base_perfect_dodge = trunc(effective_luk / 5)
 
-    # Add modifiers from status effects and equipment
-    base_perfect_dodge + Stats.get_status_modifier(stats, :perfect_dodge)
+    base_perfect_dodge + Stats.get_status_modifier(stats, :perfect_dodge) +
+      Stats.get_equipment_modifier(stats, :perfect_dodge)
   end
 
   @doc """

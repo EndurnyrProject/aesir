@@ -1483,6 +1483,43 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       both = with_equipped_items([equipped(90_216, @right_hand), equipped(90_217, @left_hand)])
       assert both.modifiers.equipment.atk_ele == :wind
     end
+
+    test "bSpeedRate does not stack across items — the strongest one wins" do
+      boots = scripted_item(90_218, on_equip: [{:bonus, :movement_speed, 25}])
+      cape = scripted_item(90_219, on_equip: [{:bonus, :movement_speed, 10}])
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_218 -> {:ok, boots}
+        90_219 -> {:ok, cape}
+      end)
+
+      both = with_equipped_items([equipped(90_218, @right_hand), equipped(90_219, @left_hand)])
+      assert both.modifiers.equipment.movement_speed == 25
+
+      reversed =
+        with_equipped_items([equipped(90_219, @left_hand), equipped(90_218, @right_hand)])
+
+      assert reversed.modifiers.equipment.movement_speed == 25
+    end
+
+    test "bFlee2 reaches perfect dodge in the per-mille units the roll uses" do
+      item = scripted_item(90_220, on_equip: [{:bonus, :perfect_dodge, 30}])
+      stub(ItemManagement, :get_item_by_id, fn 90_220 -> {:ok, item} end)
+
+      result = with_equipped(equipped(90_220, @armor_pos))
+
+      assert result.combat_stats.perfect_dodge == 30
+    end
+
+    test "bHealPower lands on its own equipment key, separate from hplus" do
+      item = scripted_item(90_221, on_equip: [{:bonus, :heal_power, 15}])
+      stub(ItemManagement, :get_item_by_id, fn 90_221 -> {:ok, item} end)
+
+      result = with_equipped(equipped(90_221, @armor_pos))
+
+      assert Stats.get_equipment_modifier(result, :heal_power) == 15
+      assert result.combat_stats.hplus == 0
+    end
   end
 
   describe "hp/sp capacity equipment bonuses" do

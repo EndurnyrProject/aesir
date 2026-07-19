@@ -94,8 +94,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   @doc """
   Evaluates a program against a refine level, folding every `:bonus` into a
   `%{destination => integer}` accumulator. `:set` instructions store their
-  constant instead, overwriting rather than summing. Pure and deterministic in
-  `(program, refine)`.
+  constant instead, overwriting rather than summing, and the non-stackable
+  destinations (`BonusKeys.max_destination?/1`) keep the largest contribution
+  instead of summing. Pure and deterministic in `(program, refine)`.
   """
   @spec eval(program(), integer()) :: %{dest() => integer() | value()}
   def eval(program, refine) when is_list(program) and is_integer(refine) do
@@ -236,7 +237,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp eval_instr({:bonus, key, expr}, refine, acc) do
     value = eval_expr(expr, refine)
-    Map.update(acc, key, value, &(&1 + value))
+
+    if BonusKeys.max_destination?(key) do
+      Map.update(acc, key, value, &max(&1, value))
+    else
+      Map.update(acc, key, value, &(&1 + value))
+    end
   end
 
   defp eval_instr({:set, key, value}, _refine, acc), do: Map.put(acc, key, value)

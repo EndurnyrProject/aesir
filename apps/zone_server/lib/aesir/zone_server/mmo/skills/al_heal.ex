@@ -30,6 +30,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHeal do
   not the combat `matk_min`/`matk_max`. With no MATK weapon the band collapses
   and the heal is deterministic, equal to `base + base_matk`.
 
+  The caster's equipment heal-power bonus (`bonus bHealPower`) is a further
+  percent step applied after the HPlus one, and is deliberately kept separate
+  from the trait-derived HPlus rather than summed into it.
+
   The cast computes the base heal amount only. The recipient's `received_heal_rate`
   bonus (SC_INCHEALRATE) is applied downstream on the generic `HealthHandler.apply_heal`
   path that every `Combat.apply_heal` flows through. Still deferred here: Meditatio's
@@ -96,6 +100,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHeal do
     matk_max = Map.get(stats, :heal_matk_max, stats.matk)
     heal = base + DamageShared.roll(matk_min, matk_max)
     hplus = Map.get(stats, :hplus, 0)
-    heal + div(heal * hplus, 100)
+    heal_power = Map.get(stats, :heal_power, 0)
+
+    heal
+    |> then(&(&1 + div(&1 * hplus, 100)))
+    |> then(&(&1 + div(&1 * heal_power, 100)))
   end
 end

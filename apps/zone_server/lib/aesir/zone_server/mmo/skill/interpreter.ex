@@ -78,7 +78,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   integer, keeping `CastTime` pure. The additive `varcast_rate` channel folds the
   caster's status `:varcast_rate` with the per-skill equipment
   `{:skill_varcast_rate, id}` bonus (items carry negatives) at this single call
-  site, so `CastTime` never reads state.
+  site, so `CastTime` never reads state. The caster's equipment `:fixed_cast`
+  bonus is passed the same way: a flat millisecond delta on the fixed portion.
 
   NOTE: cast-time reduction uses base DEX/INT only; effective/buffed DEX/INT is a
   documented later refinement.
@@ -101,7 +102,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           varcast_rate:
             merged_modifier(game_state.character_id, :varcast_rate) +
               equip_modifier(game_state, :varcast_rate) +
-              equip_modifier(game_state, {:skill_varcast_rate, skill_id})
+              equip_modifier(game_state, {:skill_varcast_rate, skill_id}),
+          fixed_cast: equip_modifier(game_state, :fixed_cast)
         })
 
       schedule(timing, game_state, skill_id, level, target, definition)
@@ -476,8 +478,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     if game_state.stats.current_state.sp >= cost, do: :ok, else: {:error, :insufficient_sp}
   end
 
-  # SP cost after the caster's summed `sp_cost_rate` delta (rAthena `dsprate`,
-  # negative = cheaper) and the caster's per-skill equipment `{:skill_use_sp, id}`
+  # SP cost after the caster's summed `sp_cost_rate` delta (negative = cheaper,
+  # summing the status sources with the global and per-skill equipment rates)
+  # and the caster's per-skill equipment `{:skill_use_sp, id}`
   # flat reduction. The rate floors the multiplier at 0 so a stacked over-100%
   # reduction cannot invert the cost; the flat reduction is subtracted after the
   # percent step and the final cost is floored at 0. Computed once per cast site
@@ -485,7 +488,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   @spec skill_sp_cost(PlayerState.t(), Definition.t(), pos_integer()) :: non_neg_integer()
   defp skill_sp_cost(game_state, definition, level) do
     cost = Enum.at(definition.sp_cost, level - 1)
-    rate = merged_modifier(game_state.character_id, :sp_cost_rate)
+
+    rate =
+      merged_modifier(game_state.character_id, :sp_cost_rate) +
+        equip_modifier(game_state, :sp_cost_rate) +
+        equip_modifier(game_state, {:skill_use_sp_rate, definition.id})
+
     reduced = div(cost * max(0, 100 + rate), 100)
     flat = equip_modifier(game_state, {:skill_use_sp, definition.id})
     max(0, reduced - flat)

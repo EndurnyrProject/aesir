@@ -108,14 +108,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
     StateCommit.commit(state, updated_game_state)
   end
 
-  # Mirrors rAthena `status_calc_speed`: the aggregated `:movement_speed`
-  # modifier is a percentage adjustment to the speed rate (positive = slower,
-  # negative = faster). The rate is floored at 40 and the resulting walk speed
-  # is clamped to the engine's MIN/MAX_WALK_SPEED bounds. With no speed-flagged
-  # status active the modifier is 0, so the speed stays exactly the base 150.
+  @doc """
+  The player's walk speed (ms per straight cell) for a stats snapshot.
+
+  The status-sourced `:movement_speed` modifier is a percentage adjustment to
+  the speed rate (positive = slower, negative = faster). The equipment-sourced
+  one uses the opposite, non-stackable convention of the `bonus bSpeedRate`
+  vocabulary — positive = faster — so it is subtracted, and only the strongest
+  equipped source contributes (the max-merge happens when the equipment
+  modifiers are folded).
+
+  The rate is floored at 40 and the resulting walk speed is clamped to the
+  engine's MIN/MAX walk-speed bounds. With no speed modifier from either source
+  the speed stays exactly the base 150.
+  """
   @spec walk_speed_for(Stats.t()) :: pos_integer()
-  defp walk_speed_for(stats) do
-    speed_rate = max(100 + Stats.get_status_modifier(stats, :movement_speed), @min_speed_rate)
+  def walk_speed_for(stats) do
+    speed_delta =
+      Stats.get_status_modifier(stats, :movement_speed) -
+        Stats.get_equipment_modifier(stats, :movement_speed)
+
+    speed_rate = max(100 + speed_delta, @min_speed_rate)
 
     @base_walk_speed
     |> Kernel.*(speed_rate)

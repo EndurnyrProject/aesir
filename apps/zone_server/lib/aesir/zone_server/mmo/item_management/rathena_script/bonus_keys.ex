@@ -24,6 +24,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   argument is a **constant** rather than an amount (`bonus bAtkEle,Ele_Fire;`).
   These compile to an `EquipScript` `:set` instruction — last writer wins —
   instead of a summed `:bonus`.
+
+  Two per-destination rules also live here rather than in the evaluator, so the
+  data table stays the single extension point:
+
+  - `@max_destinations` — destinations that do NOT stack. Both fold points
+    (`EquipScript.eval/2` within one item, `Stats` across items) keep the
+    largest contribution instead of summing.
+  - `@destination_scales` — destinations whose consumer works in finer units
+    than the script argument (`bFlee2` is written in percent but rolled against
+    a per-mille random). The codegen scales the emitted **expression**, so a
+    refine-dependent amount is scaled too.
   """
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
@@ -78,8 +89,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bunbreakablehelm" => :unbreakable_helm,
     "bunbreakableshield" => :unbreakable_shield,
     "bunbreakablegarment" => :unbreakable_garment,
-    "bunbreakableshoes" => :unbreakable_shoes
+    "bunbreakableshoes" => :unbreakable_shoes,
+    "bhprecovrate" => :hp_regen,
+    "bsprecovrate" => :sp_regen,
+    "busesprate" => :sp_cost_rate,
+    "bflee2" => :perfect_dodge,
+    "bspeedrate" => :movement_speed,
+    "bfixedcast" => :fixed_cast,
+    "bhealpower" => :heal_power
   }
+
+  @max_destinations MapSet.new([:movement_speed])
+
+  @destination_scales %{perfect_dodge: 10}
 
   @param_keys %{
     "baddrace" => %{family: :addrace, param: :race, unit: :percent},
@@ -100,6 +122,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bskillcooldown" => %{family: :skill_cooldown, param: :skill, unit: :ms},
     "bskillusesp" => %{family: :skill_use_sp, param: :skill, unit: :sp},
     "bvariablecastrate" => %{family: :skill_varcast_rate, param: :skill, unit: :percent},
+    "bskillusesprate" => %{family: :skill_use_sp_rate, param: :skill, unit: :percent},
     "baddeff" => %{family: :add_eff, param: :status, unit: :per10k},
     "baddeffwhenhit" => %{family: :add_eff_when_hit, param: :status, unit: :per10k},
     "breseff" => %{family: :res_eff, param: :status, unit: :per10k}
@@ -151,6 +174,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   """
   @spec destinations() :: [destination()]
   def destinations, do: @keys |> Map.values() |> Enum.uniq()
+
+  @doc """
+  Whether a destination is non-stackable: the strongest single contribution
+  applies instead of the sum. Both equip-bonus fold points consult this — the
+  per-item `EquipScript.eval/2` and the across-items merge in the player stats
+  recompute.
+  """
+  @spec max_destination?(destination() | {atom(), atom() | pos_integer()}) :: boolean()
+  def max_destination?(dest), do: MapSet.member?(@max_destinations, dest)
+
+  @doc """
+  The multiplier the codegen applies to a key's amount expression, for
+  destinations whose consumer reads finer units than the script writes. Returns
+  `1` for the destinations that need no conversion.
+  """
+  @spec destination_scale(destination()) :: pos_integer()
+  def destination_scale(dest) when is_atom(dest), do: Map.get(@destination_scales, dest, 1)
 
   @doc """
   Resolves a rAthena `bonus2` parameterized key (any case) to its param schema:

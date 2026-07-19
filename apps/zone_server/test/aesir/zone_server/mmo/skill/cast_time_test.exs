@@ -134,4 +134,42 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTimeTest do
                %{fixed: 200, variable: 800, total: 1_000}
     end
   end
+
+  describe "compute/3 fixed_cast delta" do
+    test "a negative delta shortens the fixed cast in flat milliseconds" do
+      assert CastTime.compute(definition([1_000], [350]), 1, %{
+               dex: 0,
+               int: 0,
+               fixed_cast: -100
+             }) == %{fixed: 250, variable: 650, total: 900}
+    end
+
+    test "a positive delta lengthens the fixed cast" do
+      assert CastTime.compute(definition([1_000], [350]), 1, %{dex: 0, int: 0, fixed_cast: 150}) ==
+               %{fixed: 500, variable: 650, total: 1_150}
+    end
+
+    test "the fixed cast floors at 0 and the variable portion is unaffected" do
+      assert CastTime.compute(definition([1_000], [350]), 1, %{
+               dex: 0,
+               int: 0,
+               fixed_cast: -5_000
+             }) == %{fixed: 0, variable: 650, total: 650}
+    end
+
+    test "the delta also applies to the default 20% fixed portion" do
+      assert CastTime.compute(definition([1_000]), 1, %{dex: 0, int: 0, fixed_cast: -50}) ==
+               %{fixed: 150, variable: 800, total: 950}
+    end
+
+    test "an instant skill stays instant" do
+      assert CastTime.compute(definition([0]), 1, %{dex: 0, int: 0, fixed_cast: 500}) ==
+               %{fixed: 0, variable: 0, total: 0}
+    end
+
+    test "fixed_cast defaults to 0 when absent" do
+      assert CastTime.compute(definition([1_000], [350]), 1, %{dex: 0, int: 0}) ==
+               %{fixed: 350, variable: 650, total: 1_000}
+    end
+  end
 end

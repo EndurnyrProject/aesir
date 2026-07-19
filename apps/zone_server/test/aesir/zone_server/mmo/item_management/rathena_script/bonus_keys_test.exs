@@ -48,7 +48,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :unbreakable_helm,
     :unbreakable_shield,
     :unbreakable_garment,
-    :unbreakable_shoes
+    :unbreakable_shoes,
+    :hp_regen,
+    :sp_regen,
+    :sp_cost_rate,
+    :perfect_dodge,
+    :movement_speed,
+    :fixed_cast,
+    :heal_power
   ]
 
   describe "destination/1" do
@@ -99,7 +106,21 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     end
 
     test "returns :error for an out-of-vocabulary key" do
-      assert BonusKeys.destination("bHealPower") == :error
+      assert BonusKeys.destination("bSplashRange") == :error
+    end
+
+    test "resolves the regen and sp-economy keys case-insensitively" do
+      assert BonusKeys.destination("bHPrecovRate") == {:ok, :hp_regen}
+      assert BonusKeys.destination("bhprecovrate") == {:ok, :hp_regen}
+      assert BonusKeys.destination("bSPrecovRate") == {:ok, :sp_regen}
+      assert BonusKeys.destination("bUseSPrate") == {:ok, :sp_cost_rate}
+    end
+
+    test "resolves the dodge, speed, fixed-cast and heal-power keys" do
+      assert BonusKeys.destination("bFlee2") == {:ok, :perfect_dodge}
+      assert BonusKeys.destination("bSpeedRate") == {:ok, :movement_speed}
+      assert BonusKeys.destination("bFixedCast") == {:ok, :fixed_cast}
+      assert BonusKeys.destination("bHealPower") == {:ok, :heal_power}
     end
 
     test "resolves the capacity, rate and all-stats keys" do
@@ -140,6 +161,29 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     end
   end
 
+  describe "max_destination?/1" do
+    test "movement speed does not stack" do
+      assert BonusKeys.max_destination?(:movement_speed)
+    end
+
+    test "ordinary destinations stack" do
+      refute BonusKeys.max_destination?(:atk)
+      refute BonusKeys.max_destination?(:perfect_dodge)
+      refute BonusKeys.max_destination?({:skill_use_sp_rate, 28})
+    end
+  end
+
+  describe "destination_scale/1" do
+    test "perfect dodge is scaled to per-mille units" do
+      assert BonusKeys.destination_scale(:perfect_dodge) == 10
+    end
+
+    test "unscaled destinations report a factor of 1" do
+      assert BonusKeys.destination_scale(:atk) == 1
+      assert BonusKeys.destination_scale(:movement_speed) == 1
+    end
+  end
+
   describe "destinations/0" do
     test "returns exactly the documented section-3 destination set" do
       assert Enum.sort(Enum.uniq(BonusKeys.destinations())) ==
@@ -166,6 +210,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     "bskillcooldown" => %{family: :skill_cooldown, param: :skill, unit: :ms},
     "bskillusesp" => %{family: :skill_use_sp, param: :skill, unit: :sp},
     "bvariablecastrate" => %{family: :skill_varcast_rate, param: :skill, unit: :percent},
+    "bskillusesprate" => %{family: :skill_use_sp_rate, param: :skill, unit: :percent},
     "baddeff" => %{family: :add_eff, param: :status, unit: :per10k},
     "baddeffwhenhit" => %{family: :add_eff_when_hit, param: :status, unit: :per10k},
     "breseff" => %{family: :res_eff, param: :status, unit: :per10k}
@@ -186,6 +231,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     test "resolves the skill-economy keys case-insensitively" do
       assert BonusKeys.param_schema("bSkillCooldown") == {:ok, @param_schemas["bskillcooldown"]}
       assert BonusKeys.param_schema("bSkillUseSP") == {:ok, @param_schemas["bskillusesp"]}
+
+      assert BonusKeys.param_schema("bSkillUseSPrate") ==
+               {:ok, @param_schemas["bskillusesprate"]}
 
       assert BonusKeys.param_schema("bVariableCastrate") ==
                {:ok, @param_schemas["bvariablecastrate"]}

@@ -188,6 +188,38 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
       assert {:ok, [{:bonus, :long_atk_rate, 15}]} = compile("bonus bLongAtkRate,15;")
     end
 
+    test "regen and sp-economy keys" do
+      assert {:ok, [{:bonus, :hp_regen, 10}]} = compile("bonus bHPrecovRate,10;")
+      assert {:ok, [{:bonus, :sp_regen, 15}]} = compile("bonus bSPrecovRate,15;")
+      assert {:ok, [{:bonus, :sp_cost_rate, -5}]} = compile("bonus bUseSPrate,-5;")
+    end
+
+    test "bSkillUseSPrate is a per-skill sp-cost percentage" do
+      assert {:ok, %{id: heal_id}} = Catalog.by_name(:al_heal)
+
+      assert {:ok, [{:bonus, {:skill_use_sp_rate, ^heal_id}, -25}]} =
+               compile("bonus2 bSkillUseSPrate,#{heal_id},-25;")
+    end
+
+    test "fixed-cast and heal-power keys pass their amount through" do
+      assert {:ok, [{:bonus, :fixed_cast, -500}]} = compile("bonus bFixedCast,-500;")
+      assert {:ok, [{:bonus, :heal_power, 5}]} = compile("bonus bHealPower,5;")
+    end
+
+    test "bSpeedRate compiles to the non-stackable movement-speed destination" do
+      assert {:ok, [{:bonus, :movement_speed, 25}]} = compile("bonus bSpeedRate,25;")
+    end
+
+    test "bFlee2 is scaled x10 into per-mille perfect dodge" do
+      assert {:ok, [{:bonus, :perfect_dodge, 30}]} = compile("bonus bFlee2,3;")
+      assert {:ok, [{:bonus, :perfect_dodge, -20}]} = compile("bonus bFlee2,-2;")
+    end
+
+    test "bFlee2 scales the whole expression, not just literals" do
+      assert {:ok, [{:bonus, :perfect_dodge, {:*, {:*, :refine, 2}, 10}}]} =
+               compile(".@r = getrefine(); bonus bFlee2,.@r*2;")
+    end
+
     test "status infliction/resist keys" do
       assert {:ok, [{:bonus, {:add_eff, :sc_stun}, 500}]} =
                compile("bonus2 bAddEff,Eff_Stun,500;")
@@ -273,8 +305,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     end
 
     test "unknown bonus key" do
-      assert {:error, {:unsupported, {:unknown_bonus_key, "bHealPower"}}} =
-               compile("bonus bHealPower,10;")
+      assert {:error, {:unsupported, {:unknown_bonus_key, "bSplashRange"}}} =
+               compile("bonus bSplashRange,2;")
     end
 
     test "non-refine conditional read is rejected" do
@@ -297,8 +329,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     end
 
     test "the first violation aborts the whole item" do
-      assert {:error, {:unsupported, {:unknown_bonus_key, "bHealPower"}}} =
-               compile("bonus bStr,5; bonus bHealPower,10; bonus bAgi,3;")
+      assert {:error, {:unsupported, {:unknown_bonus_key, "bSplashRange"}}} =
+               compile("bonus bStr,5; bonus bSplashRange,2; bonus bAgi,3;")
     end
 
     test "bonus with a non-two-arg shape is rejected" do

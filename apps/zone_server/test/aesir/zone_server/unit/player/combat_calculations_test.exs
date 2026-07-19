@@ -256,6 +256,17 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
       assert perfect_dodge == 15
     end
 
+    test "includes the equipment modifier (bFlee2, already in per-mille units)" do
+      stats =
+        create_test_stats(%{
+          base_stats: %{luk: 50},
+          modifiers: %{equipment: %{perfect_dodge: 30}}
+        })
+
+      # Base 10 + 30 per-mille from equipment
+      assert CombatCalculations.calculate_perfect_dodge(stats) == 40
+    end
+
     test "high LUK scenario" do
       stats =
         create_test_stats(%{

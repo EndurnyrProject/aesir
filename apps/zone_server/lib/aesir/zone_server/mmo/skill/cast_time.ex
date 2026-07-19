@@ -25,6 +25,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTime do
   once as `* max(0, 100 + varcast_rate) / 100` over the already-reduced variable
   cast, after the multiplicative `varcast_reductions` factor - matching rAthena's
   distinct additive pass in `skill_vfcastfix`.
+
+  `fixed_cast` is a FLAT millisecond delta on the fixed portion only (equipment
+  fixed-cast bonuses are overwhelmingly negative). It is applied after the
+  skill's own fixed cast is resolved and floored at 0; the variable portion is
+  derived from the unmodified fixed cast, so shortening the fixed portion never
+  silently lengthens the variable one.
   """
 
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -41,7 +47,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTime do
           required(:dex) => non_neg_integer(),
           required(:int) => non_neg_integer(),
           optional(:varcast_reductions) => [non_neg_integer()],
-          optional(:varcast_rate) => integer()
+          optional(:varcast_rate) => integer(),
+          optional(:fixed_cast) => integer()
         }
 
   @typedoc "Computed cast-time breakdown in milliseconds."
@@ -58,31 +65,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTime do
   definition has no base cast time for the level (empty list) or the base is `0`.
   """
   @spec compute(Definition.t(), pos_integer(), stats()) :: result()
-  def compute(%Definition{} = definition, level, %{dex: dex, int: int} = stats) do
+  def compute(%Definition{} = definition, level, %{dex: _dex, int: _int} = stats) do
     base = Enum.at(definition.cast_time, level - 1)
-    varcast_reductions = Map.get(stats, :varcast_reductions, [])
-    varcast_rate = Map.get(stats, :varcast_rate, 0)
-    compute_for_base(base, definition, level, dex, int, varcast_reductions, varcast_rate)
+    compute_for_base(base, definition, level, stats)
   end
 
-  @spec compute_for_base(
-          nil | non_neg_integer(),
-          Definition.t(),
-          pos_integer(),
-          integer(),
-          integer(),
-          [non_neg_integer()],
-          integer()
-        ) ::
+  @spec compute_for_base(nil | non_neg_integer(), Definition.t(), pos_integer(), stats()) ::
           result()
-  defp compute_for_base(base, _definition, _level, _dex, _int, _varcast_reductions, _varcast_rate)
-       when base in [nil, 0] do
+  defp compute_for_base(base, _definition, _level, _stats) when base in [nil, 0] do
     %{fixed: 0, variable: 0, total: 0}
   end
 
-  defp compute_for_base(base, definition, level, dex, int, varcast_reductions, varcast_rate) do
-    fct = fixed_cast(definition, level, base)
-    vct_base = max(0, base - fct)
+  defp compute_for_base(base, definition, level, stats) do
+    %{dex: dex, int: int} = stats
+    varcast_reductions = Map.get(stats, :varcast_reductions, [])
+    varcast_rate = Map.get(stats, :varcast_rate, 0)
+
+    fct_base = fixed_cast(definition, level, base)
+    fct = max(0, fct_base + Map.get(stats, :fixed_cast, 0))
+    vct_base = max(0, base - fct_base)
     reduction = max(0.0, 1 - :math.sqrt((2 * dex + int) / @vcast_stat_scale))
     vct_after_stat = round(vct_base * reduction)
 

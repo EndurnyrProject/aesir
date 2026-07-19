@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.Appearance
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
+  alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -133,12 +134,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
     end
   end
 
-  # Advances the in-memory state: install the persisted inventory and recompute
-  # stats from the now-current equipped items.
+  # Advances the in-memory state: install the persisted inventory, recompute
+  # stats from the now-current equipped items, and refresh the walk speed, which
+  # equipment can change through the `bSpeedRate` bonus.
   defp advance(game_state, persisted) do
     equipped = Map.values(Inventory.equipped_items(persisted))
     stats = Stats.calculate_stats(game_state.stats, game_state.character_id, equipped)
-    %{game_state | inventory: persisted, stats: stats}
+
+    %{
+      game_state
+      | inventory: persisted,
+        stats: stats,
+        walk_speed: StatusManager.walk_speed_for(stats)
+    }
   end
 
   defp sync_after_change(game_state, %{connection_pid: connection_pid}) do
@@ -146,7 +154,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
 
     StatusSync.send_params(connection_pid, %{
       StatusParams.weight() => Weight.current_weight(game_state.inventory),
-      StatusParams.max_weight() => Weight.max_weight(game_state.stats)
+      StatusParams.max_weight() => Weight.max_weight(game_state.stats),
+      StatusParams.speed() => game_state.walk_speed
     })
   end
 

@@ -28,7 +28,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     emit nothing.
   - `bonus bKey,amount` — `{:bonus, destination, expr}` when `bKey` resolves via
     `BonusKeys` (miss -> `{:unknown_bonus_key, key}`); any other command name and
-    any other `bonus` shape is unsupported.
+    any other `bonus` shape is unsupported. Destinations carrying a
+    `BonusKeys.destination_scale/1` factor emit the amount **expression**
+    multiplied by it, so a refine-dependent amount converts units too.
   - `bonus bKey,CONST` — `{:set, destination, const}` for the constant-valued
     keys in `BonusKeys.value_schema/1` (`bAtkEle`), whose argument is an element
     constant rather than an amount. An unresolvable constant is
@@ -152,7 +154,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   defp compile_amount_bonus(key, amount, env) do
     with {:ok, dest} <- destination(key),
          {:ok, expr} <- compile_expr(amount, env) do
-      {:ok, {:bonus, dest, expr}}
+      {:ok, {:bonus, dest, scale(dest, expr)}}
+    end
+  end
+
+  # Destinations whose consumer reads finer units than the script writes carry a
+  # `BonusKeys.destination_scale/1` factor. Scaling the whole expression (rather
+  # than a literal) keeps refine-dependent amounts correct.
+  @spec scale(atom(), EquipScript.expr()) :: EquipScript.expr()
+  defp scale(dest, expr) do
+    case BonusKeys.destination_scale(dest) do
+      1 -> expr
+      factor when is_integer(expr) -> expr * factor
+      factor -> {:*, expr, factor}
     end
   end
 

@@ -195,4 +195,41 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHealTest do
       AlHeal.cast(@caster, :self, 5, definition)
     end
   end
+
+  describe "heal_power (equipment bHealPower)" do
+    setup do
+      stub(Combat, :resolve_combatant, fn _id -> {:ok, %{race: :player_human}} end)
+      {:ok, definition} = Catalog.by_id(28)
+      {:ok, definition: definition}
+    end
+
+    test "heal_power 20 boosts a 350 base heal to 420", %{definition: definition} do
+      stub(PlayerState, :get_stats, fn _ ->
+        %{base_level: 50, int: 50, matk: 50, heal_power: 20}
+      end)
+
+      expect(Combat, :apply_heal, fn 1000, 420, 1000 -> :ok end)
+      AlHeal.cast(@caster, :self, 5, definition)
+    end
+
+    test "heal_power applies after hplus, as a separate percent step",
+         %{definition: definition} do
+      stub(PlayerState, :get_stats, fn _ ->
+        %{base_level: 50, int: 50, matk: 50, hplus: 10, heal_power: 20}
+      end)
+
+      # 350 -> hplus 10% -> 385 -> heal_power 20% -> 385 + 77 = 462
+      expect(Combat, :apply_heal, fn 1000, 462, 1000 -> :ok end)
+      AlHeal.cast(@caster, :self, 5, definition)
+    end
+
+    test "an absent heal_power leaves the heal unchanged", %{definition: definition} do
+      stub(PlayerState, :get_stats, fn _ ->
+        %{base_level: 50, int: 50, matk: 50}
+      end)
+
+      expect(Combat, :apply_heal, fn 1000, 350, 1000 -> :ok end)
+      AlHeal.cast(@caster, :self, 5, definition)
+    end
+  end
 end

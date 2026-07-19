@@ -3,9 +3,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
   Drives the per-session natural HP/SP regeneration tick.
 
   On each tick it gathers the inputs the pure `NaturalHeal` module needs — the
-  player's stats and action/movement state, the aggregated status regen
-  modifiers (`hp_regen`/`sp_regen`), and the passive regen contribution from
-  learned skills — applies the resulting clamped deltas to current HP/SP, carries
+  player's stats and action/movement state, the aggregated regen modifiers
+  (`hp_regen`/`sp_regen`, statuses plus equipment), and the passive regen
+  contribution from learned skills — applies the resulting clamped deltas to current HP/SP, carries
   the updated accumulators back onto the player state, and (only when a delta is
   non-zero) pushes `SP_HP`/`SP_SP` to the client and persists asynchronously.
 
@@ -38,7 +38,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
     if full?(stats) do
       {:noreply, state}
     else
-      regen_modifiers = ModifierCalculator.get_all_modifiers(:player, game_state.character_id)
+      regen_modifiers = regen_modifiers(game_state)
       passive_regen = Passives.regen(game_state)
 
       accumulators = Map.put(game_state.regen_accumulators, :elapsed_ms, elapsed_ms)
@@ -70,6 +70,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
 
       {:noreply, state}
     end
+  end
+
+  # Regen percentages come from two independent sources that add: the caster's
+  # active statuses and the equipped items' `hp_regen`/`sp_regen` bonuses.
+  @spec regen_modifiers(map()) :: NaturalHeal.regen_modifiers()
+  defp regen_modifiers(game_state) do
+    status_modifiers = ModifierCalculator.get_all_modifiers(:player, game_state.character_id)
+    equipment = game_state.stats.modifiers.equipment
+
+    Enum.reduce([:hp_regen, :sp_regen], status_modifiers, fn key, acc ->
+      case Map.get(equipment, key, 0) do
+        0 -> acc
+        bonus -> Map.update(acc, key, bonus, &(&1 + bonus))
+      end
+    end)
   end
 
   defp apply_regen(_state, 0, 0, _new_hp, _new_sp), do: :ok

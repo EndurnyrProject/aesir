@@ -677,6 +677,89 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     end
   end
 
+  describe "equipment :sp_cost_rate and {:skill_use_sp_rate, id}" do
+    setup do
+      stub(Catalog, :by_id, fn 6 -> {:ok, instant_definition()} end)
+      stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{} end)
+      :ok
+    end
+
+    test "the global equipment rate lowers every skill's cost" do
+      gs = game_state(100, %{6 => 1}, %{sp_cost_rate: -50})
+
+      # base 9, -50% -> div(9 * 50, 100) = 4
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+      assert updated.stats.current_state.sp == 100 - 4
+    end
+
+    test "a per-skill rate lowers only the named skill's cost" do
+      gs = game_state(100, %{6 => 1}, %{{:skill_use_sp_rate, 6} => -50})
+
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+      assert updated.stats.current_state.sp == 100 - 4
+    end
+
+    test "a per-skill rate keyed on another skill leaves this skill's cost untouched" do
+      gs = game_state(100, %{6 => 1}, %{{:skill_use_sp_rate, 999} => -50})
+
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+      assert updated.stats.current_state.sp == 100 - 9
+    end
+
+    test "status, global and per-skill rates all sum into one percent step" do
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{sp_cost_rate: -20} end)
+
+      gs =
+        game_state(100, %{6 => 1}, %{{:skill_use_sp_rate, 6} => -20, sp_cost_rate: -20})
+
+      # base 9 at -60% -> div(9 * 40, 100) = 3
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+      assert updated.stats.current_state.sp == 100 - 3
+    end
+
+    test "a stacked over-100% reduction floors the cost at 0 instead of inverting it" do
+      gs = game_state(100, %{6 => 1}, %{{:skill_use_sp_rate, 6} => -150})
+
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+      assert updated.stats.current_state.sp == 100
+    end
+  end
+
+  describe "equipment :fixed_cast" do
+    test "a negative delta shortens the fixed portion and leaves the variable one alone" do
+      reject(&StatusInterpreter.apply_status/4)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{} end)
+
+      assert {:casting, _gs, baseline} =
+               Interpreter.begin_cast(game_state(100, %{29 => 1}), 29, 1, :self)
+
+      gs = game_state(100, %{29 => 1}, %{fixed_cast: -100})
+
+      assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
+
+      assert reduced.fixed == baseline.fixed - 100
+      assert reduced.total == baseline.total - 100
+    end
+
+    test "an over-large negative delta floors the fixed portion at 0" do
+      reject(&StatusInterpreter.apply_status/4)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{} end)
+
+      assert {:casting, _gs, baseline} =
+               Interpreter.begin_cast(game_state(100, %{29 => 1}), 29, 1, :self)
+
+      gs = game_state(100, %{29 => 1}, %{fixed_cast: -100_000})
+
+      assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
+
+      assert reduced.fixed == 0
+      assert reduced.total == baseline.total - baseline.fixed
+    end
+  end
+
   describe "equipment :varcast_rate" do
     test "a negative global rate speeds every skill's cast" do
       reject(&StatusInterpreter.apply_status/4)

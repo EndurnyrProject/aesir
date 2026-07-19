@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.Stats.BaseStats
   alias Aesir.ZoneServer.Unit.Stats.CurrentState
@@ -124,6 +125,46 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
       assert final.game_state.stats.current_state.sp > 50
     end
 
+    test "an equipment hp_regen bonus shortens the HP interval" do
+      baseline = build_state(hp: 100, sp: 50, action: :idle, movement: :standing)
+
+      equipped =
+        build_state(
+          hp: 100,
+          sp: 50,
+          action: :idle,
+          movement: :standing,
+          equipment: %{hp_regen: 100}
+        )
+
+      {:noreply, plain} = NaturalHealHandler.handle_tick(baseline, 6_000)
+      {:noreply, boosted} = NaturalHealHandler.handle_tick(equipped, 6_000)
+
+      # amount = vit/5 + max(1, max_hp/200) = 12; +100% halves the interval, so
+      # the same 6s elapsed crosses it twice.
+      assert plain.game_state.stats.current_state.hp == 112
+      assert boosted.game_state.stats.current_state.hp == 124
+    end
+
+    test "equipment and status regen bonuses sum into one rate" do
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{sp_regen: 100} end)
+
+      state =
+        build_state(
+          hp: 500,
+          sp: 50,
+          action: :idle,
+          movement: :standing,
+          equipment: %{sp_regen: 100}
+        )
+
+      {:noreply, updated} = NaturalHealHandler.handle_tick(state, 8_000)
+
+      # amount = 1 + int/6 + max_sp/100 = 1 + 8 + 5 = 14; rate 300 -> interval
+      # 8000*100/300 = 2666, crossed 3 times in 8s.
+      assert updated.game_state.stats.current_state.sp == 50 + 3 * 14
+    end
+
     test "regens HP while moving when SM_MOVINGRECOVERY is known" do
       stub(Passives, :regen, fn _ ->
         %{skill_hp_regen: 0, skill_sp_regen: 0, allow_while_moving: true}
@@ -199,7 +240,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
       base_stats: %BaseStats{str: 10, agi: 10, vit: 50, int: 50, dex: 10, luk: 10},
       derived_stats: %DerivedStats{max_hp: 500, max_sp: 500, max_ap: 0, aspd: 150},
       current_state: %CurrentState{hp: opts[:hp], sp: opts[:sp], ap: 0},
-      progression: %PlayerProgression{job_id: 0, base_level: 1}
+      progression: %PlayerProgression{job_id: 0, base_level: 1},
+      modifiers: %Modifiers{equipment: Keyword.get(opts, :equipment, %{})}
     }
 
     game_state = %PlayerState{

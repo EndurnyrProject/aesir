@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.JobManagement.TraitJobs
@@ -200,6 +201,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       flee: stats.combat_stats.flee,
       critical: stats.combat_stats.critical,
       hplus: stats.combat_stats.hplus,
+      heal_power: get_equipment_modifier(stats, :heal_power),
       aspd: stats.derived_stats.aspd
     }
   end
@@ -972,8 +974,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   # merged with `Map.update/4` rather than a struct-style update; downstream
   # readers all use `Map.get(..., 0)`.
   #
-  # Numeric bonuses sum. Constant-valued ones (`:atk_ele` from `bonus bAtkEle`)
-  # are not summable, so the last equipped item to set one wins.
+  # Numeric bonuses sum, except for the non-stackable destinations
+  # (`BonusKeys.max_destination?/1`), where the strongest single item wins.
+  # Constant-valued ones (`:atk_ele` from `bonus bAtkEle`) are not summable, so
+  # the last equipped item to set one wins.
   defp apply_equip_script(acc, nil, _refine), do: acc
 
   defp apply_equip_script(acc, program, refine) do
@@ -983,7 +987,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   end
 
   defp merge_equip_bonus(acc, key, value) when is_number(value) do
-    Map.update(acc, key, value, &(&1 + value))
+    if BonusKeys.max_destination?(key) do
+      Map.update(acc, key, value, &max(&1, value))
+    else
+      Map.update(acc, key, value, &(&1 + value))
+    end
   end
 
   defp merge_equip_bonus(acc, key, value), do: Map.put(acc, key, value)

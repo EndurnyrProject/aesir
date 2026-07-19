@@ -333,6 +333,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       assert EquipScript.eval(program, 6) == %{str: 5}
     end
 
+    test "a non-stackable destination keeps the largest contribution" do
+      program = [{:bonus, :movement_speed, 25}, {:bonus, :movement_speed, 10}]
+
+      assert EquipScript.eval(program, 0) == %{movement_speed: 25}
+      assert EquipScript.eval(Enum.reverse(program), 0) == %{movement_speed: 25}
+    end
+
     test "sums repeated tuple destinations into one key" do
       program = [
         {:bonus, {:addrace, :brute}, 20},
