@@ -9,9 +9,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   lookups downcase their input. This is the equip-side sibling of `CommandSet`
   and the single extension point for the vocabulary: adding a supported key is
   a data edit here, not a change to `EquipCodegen`.
+
+  Parameterized `bonus2` keys live in `@param_keys`, mapping each key to a
+  `t:param_schema/0` (`family` + `param` kind + `unit`); `param_schema/1`,
+  `families/0`, and `param_domain/1` expose them to the codegen and to
+  `EquipScript.parse!/1` destination validation.
   """
 
   @type destination :: atom()
+  @type param :: :race | :element | :size | :class | :skill
+  @type param_schema :: %{family: atom(), param: param(), unit: :percent}
 
   @keys %{
     "bstr" => :str,
@@ -49,6 +56,54 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bunbreakableshoes" => :unbreakable_shoes
   }
 
+  @param_keys %{
+    "baddrace" => %{family: :addrace, param: :race, unit: :percent},
+    "baddele" => %{family: :addele, param: :element, unit: :percent},
+    "baddsize" => %{family: :addsize, param: :size, unit: :percent},
+    "baddclass" => %{family: :addclass, param: :class, unit: :percent},
+    "bsubrace" => %{family: :subrace, param: :race, unit: :percent},
+    "bsubele" => %{family: :subele, param: :element, unit: :percent},
+    "bsubsize" => %{family: :subsize, param: :size, unit: :percent},
+    "bsubclass" => %{family: :subclass, param: :class, unit: :percent},
+    "bmagicaddrace" => %{family: :magic_addrace, param: :race, unit: :percent},
+    "bmagicaddele" => %{family: :magic_addele, param: :element, unit: :percent},
+    "bmagicaddsize" => %{family: :magic_addsize, param: :size, unit: :percent},
+    "bmagicatkele" => %{family: :magic_atk_ele, param: :element, unit: :percent},
+    "bskillatk" => %{family: :skill_atk, param: :skill, unit: :percent},
+    "bignoredefracerate" => %{family: :ignore_def_race, param: :race, unit: :percent},
+    "bignoremdefracerate" => %{family: :ignore_mdef_race, param: :race, unit: :percent}
+  }
+
+  @race_domain [
+    :formless,
+    :undead,
+    :brute,
+    :plant,
+    :insect,
+    :fish,
+    :demon,
+    :demi_human,
+    :angel,
+    :dragon,
+    :player_human,
+    :all
+  ]
+  @element_domain [
+    :neutral,
+    :water,
+    :earth,
+    :fire,
+    :wind,
+    :poison,
+    :holy,
+    :shadow,
+    :ghost,
+    :undead,
+    :all
+  ]
+  @size_domain [:small, :medium, :large, :all]
+  @class_domain [:normal, :boss, :all]
+
   @doc """
   Resolves a rAthena `bonus` key (any case) to its `modifiers.equipment`
   destination atom. Returns `:error` for out-of-vocabulary keys.
@@ -61,4 +116,28 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   """
   @spec destinations() :: [destination()]
   def destinations, do: @keys |> Map.values() |> Enum.uniq()
+
+  @doc """
+  Resolves a rAthena `bonus2` damage-tier key (any case) to its param schema:
+  the `modifiers.equipment` family it stores into, the domain its param comes
+  from, and its unit. Returns `:error` for out-of-vocabulary keys.
+  """
+  @spec param_schema(String.t()) :: {:ok, param_schema()} | :error
+  def param_schema(name) when is_binary(name), do: Map.fetch(@param_keys, String.downcase(name))
+
+  @doc """
+  The deduplicated set of family atoms every recognized `bonus2` key maps to.
+  """
+  @spec families() :: [atom()]
+  def families, do: @param_keys |> Map.values() |> Enum.map(& &1.family) |> Enum.uniq()
+
+  @doc """
+  The valid atom values for a `bonus2` param domain, used to validate `bonus2`
+  arguments at `EquipScript.parse!` time.
+  """
+  @spec param_domain(:race | :element | :size | :class) :: [atom()]
+  def param_domain(:race), do: @race_domain
+  def param_domain(:element), do: @element_domain
+  def param_domain(:size), do: @size_domain
+  def param_domain(:class), do: @class_domain
 end

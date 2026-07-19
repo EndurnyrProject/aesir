@@ -96,4 +96,95 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
                Enum.sort(Enum.uniq(@documented_destinations))
     end
   end
+
+  @param_schemas %{
+    "baddrace" => %{family: :addrace, param: :race, unit: :percent},
+    "baddele" => %{family: :addele, param: :element, unit: :percent},
+    "baddsize" => %{family: :addsize, param: :size, unit: :percent},
+    "baddclass" => %{family: :addclass, param: :class, unit: :percent},
+    "bsubrace" => %{family: :subrace, param: :race, unit: :percent},
+    "bsubele" => %{family: :subele, param: :element, unit: :percent},
+    "bsubsize" => %{family: :subsize, param: :size, unit: :percent},
+    "bsubclass" => %{family: :subclass, param: :class, unit: :percent},
+    "bmagicaddrace" => %{family: :magic_addrace, param: :race, unit: :percent},
+    "bmagicaddele" => %{family: :magic_addele, param: :element, unit: :percent},
+    "bmagicaddsize" => %{family: :magic_addsize, param: :size, unit: :percent},
+    "bmagicatkele" => %{family: :magic_atk_ele, param: :element, unit: :percent},
+    "bskillatk" => %{family: :skill_atk, param: :skill, unit: :percent},
+    "bignoredefracerate" => %{family: :ignore_def_race, param: :race, unit: :percent},
+    "bignoremdefracerate" => %{family: :ignore_mdef_race, param: :race, unit: :percent}
+  }
+
+  describe "param_schema/1" do
+    test "resolves every documented bonus2 damage-tier key" do
+      for {key, schema} <- @param_schemas do
+        assert BonusKeys.param_schema(key) == {:ok, schema}
+      end
+    end
+
+    test "resolves case-insensitively" do
+      assert BonusKeys.param_schema("bAddRace") == {:ok, @param_schemas["baddrace"]}
+      assert BonusKeys.param_schema("BADDRACE") == {:ok, @param_schemas["baddrace"]}
+    end
+
+    test "returns :error for not-yet-supported bonus2 keys" do
+      assert BonusKeys.param_schema("bskillcooldown") == :error
+      assert BonusKeys.param_schema("baddeff") == :error
+    end
+
+    test "returns :error for flat keys" do
+      assert BonusKeys.param_schema("bstr") == :error
+    end
+  end
+
+  describe "families/0" do
+    test "returns exactly the documented param-key families" do
+      expected = @param_schemas |> Map.values() |> Enum.map(& &1.family) |> Enum.uniq()
+
+      assert Enum.sort(BonusKeys.families()) == Enum.sort(expected)
+    end
+  end
+
+  describe "param_domain/1" do
+    test "race domain" do
+      assert BonusKeys.param_domain(:race) == [
+               :formless,
+               :undead,
+               :brute,
+               :plant,
+               :insect,
+               :fish,
+               :demon,
+               :demi_human,
+               :angel,
+               :dragon,
+               :player_human,
+               :all
+             ]
+    end
+
+    test "element domain" do
+      assert BonusKeys.param_domain(:element) == [
+               :neutral,
+               :water,
+               :earth,
+               :fire,
+               :wind,
+               :poison,
+               :holy,
+               :shadow,
+               :ghost,
+               :undead,
+               :all
+             ]
+    end
+
+    test "size domain" do
+      assert BonusKeys.param_domain(:size) == [:small, :medium, :large, :all]
+    end
+
+    test "class domain" do
+      assert BonusKeys.param_domain(:class) == [:normal, :boss, :all]
+    end
+  end
 end
