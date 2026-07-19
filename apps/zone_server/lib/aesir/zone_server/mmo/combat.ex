@@ -5,8 +5,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
 
   require Logger
 
-  alias Aesir.Commons.Utils.ServerTick
-  alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.LineOfSight
@@ -30,9 +28,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
-
-  # ZC_NOTIFY_SKILL `type` for a splash/area skill hit (e_damage_type DMG_SPLASH).
-  @dmg_splash 5
 
   @doc """
   Executes an attack from player to target.
@@ -456,18 +451,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
         |> DamageShared.apply_element(element, target)
         |> DamageShared.clamp_min_one()
 
-      packet = %SkillDamage{
-        skill_id: skill_id,
-        level: skill_level,
-        src_id: attacker.unit_id,
-        target_id: target_id,
-        server_tick: ServerTick.now(),
-        src_delay: 0,
-        dst_delay: 0,
-        damage: damage,
-        div: 1,
-        type: @dmg_splash
-      }
+      packet =
+        PacketFactory.build_splash_damage_packet(
+          attacker.unit_id,
+          target_id,
+          skill_id,
+          skill_level,
+          damage
+        )
 
       apply_and_broadcast_magic_damage(
         target_type,
@@ -629,18 +620,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
           :error -> {damage, if(divide_hits?, do: -hit_count, else: hit_count)}
         end
 
-      packet = %SkillDamage{
-        skill_id: skill_id,
-        level: skill_level,
-        src_id: caster.unit_id,
-        target_id: target_id,
-        server_tick: ServerTick.now(),
-        src_delay: 0,
-        dst_delay: dst_delay,
-        damage: damage,
-        div: packet_divisions,
-        type: @dmg_splash
-      }
+      packet =
+        PacketFactory.build_splash_damage_packet(
+          caster.unit_id,
+          target_id,
+          skill_id,
+          skill_level,
+          damage,
+          div: packet_divisions,
+          dst_delay: dst_delay
+        )
 
       Broadcast.to_in_range(map_name, tx, ty, Config.view_range(), packet)
       deal_damage(target_id, damage, element, :skill_unit)
@@ -701,18 +690,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
          :ok <- Targeting.validate_enemy(attacker, target) do
       total = sum_magic_hits(attacker, target, element, skill_ratio, hits)
 
-      packet = %SkillDamage{
-        skill_id: skill_id,
-        level: skill_level,
-        src_id: attacker.unit_id,
-        target_id: target_id,
-        server_tick: ServerTick.now(),
-        src_delay: 0,
-        dst_delay: 0,
-        damage: total,
-        div: hits,
-        type: @dmg_splash
-      }
+      packet =
+        PacketFactory.build_splash_damage_packet(
+          attacker.unit_id,
+          target_id,
+          skill_id,
+          skill_level,
+          total,
+          div: hits
+        )
 
       apply_and_broadcast_magic_damage(
         target_type,
@@ -891,18 +877,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
       damage = div(damage, divisor)
       {tx, ty} = target.position
 
-      packet = %SkillDamage{
-        skill_id: skill_id,
-        level: skill_level,
-        src_id: attacker.unit_id,
-        target_id: target_id,
-        server_tick: ServerTick.now(),
-        src_delay: 0,
-        dst_delay: 0,
-        damage: damage,
-        div: 1,
-        type: @dmg_splash
-      }
+      packet =
+        PacketFactory.build_splash_damage_packet(
+          attacker.unit_id,
+          target_id,
+          skill_id,
+          skill_level,
+          damage
+        )
 
       Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
 
@@ -954,18 +936,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
            ) do
       {tx, ty} = target.position
 
-      packet = %SkillDamage{
-        skill_id: skill_id,
-        level: skill_level,
-        src_id: attacker.unit_id,
-        target_id: target_id,
-        server_tick: ServerTick.now(),
-        src_delay: 0,
-        dst_delay: 0,
-        damage: damage,
-        div: 1,
-        type: @dmg_splash
-      }
+      packet =
+        PacketFactory.build_splash_damage_packet(
+          attacker.unit_id,
+          target_id,
+          skill_id,
+          skill_level,
+          damage
+        )
 
       Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
 
@@ -1023,18 +1001,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
            ) do
       {tx, ty} = target.position
 
-      packet = %SkillDamage{
-        skill_id: skill_id,
-        level: skill_level,
-        src_id: attacker.unit_id,
-        target_id: target_id,
-        server_tick: ServerTick.now(),
-        src_delay: 0,
-        dst_delay: 0,
-        damage: damage,
-        div: 1,
-        type: @dmg_splash
-      }
+      packet =
+        PacketFactory.build_splash_damage_packet(
+          attacker.unit_id,
+          target_id,
+          skill_id,
+          skill_level,
+          damage
+        )
 
       Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
 

@@ -33,6 +33,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
   # e_damage_type: single-hit skill display (rAthena DMG_SINGLE).
   @dmg_single 6
 
+  # e_damage_type: splash/area skill hit display (rAthena DMG_SPLASH).
+  @dmg_splash 5
+
   # ZC_NOTIFY_ACT attack types (rAthena clif e_damage_type for basic attacks).
   @attack_type_normal 0
   @attack_type_multi_hit 4
@@ -139,6 +142,41 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
       damage: damage_result.damage,
       div: 1,
       type: @dmg_single
+    }
+  end
+
+  @doc """
+  Builds a splash-type skill-damage packet (ZC_NOTIFY_SKILL, DMG_SPLASH display).
+
+  Used by every skill path that broadcasts its own damage number without the
+  single-hit skill animation: magic nukes and splashes, ground skill-unit ticks,
+  and misc (trap) hits. `src_delay` is always 0 for these.
+
+  ## Options
+    - `:div` - client-visible hit divisions (default `1`)
+    - `:dst_delay` - target animation delay in ms (default `0`)
+  """
+  @spec build_splash_damage_packet(
+          integer(),
+          integer(),
+          integer(),
+          integer(),
+          integer(),
+          keyword()
+        ) ::
+          SkillDamage.t()
+  def build_splash_damage_packet(src_id, target_id, skill_id, skill_level, damage, opts \\ []) do
+    %SkillDamage{
+      skill_id: skill_id,
+      level: skill_level,
+      src_id: src_id,
+      target_id: target_id,
+      server_tick: ServerTick.now(),
+      src_delay: 0,
+      dst_delay: Keyword.get(opts, :dst_delay, 0),
+      damage: damage,
+      div: Keyword.get(opts, :div, 1),
+      type: @dmg_splash
     }
   end
 
