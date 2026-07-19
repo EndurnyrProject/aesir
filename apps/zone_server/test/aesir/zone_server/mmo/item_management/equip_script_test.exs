@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
   use ExUnit.Case, async: true
 
+  alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
 
   describe "to_source/1" do
@@ -99,6 +100,25 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
           |> EquipScript.parse!()
 
         assert parsed == program
+      end
+    end
+  end
+
+  describe "corpus round-trip over the imported equip.yml" do
+    test "every on_equip program round-trips through to_source |> parse! and evals cleanly for refine 0..20" do
+      programs =
+        ItemManagement.get_all_items()
+        |> Enum.filter(&(&1.on_equip != nil))
+        |> Enum.map(& &1.on_equip)
+
+      assert programs != []
+
+      for program <- programs do
+        assert program |> EquipScript.to_source() |> EquipScript.parse!() == program
+
+        for refine <- 0..20 do
+          assert is_map(EquipScript.eval(program, refine))
+        end
       end
     end
   end

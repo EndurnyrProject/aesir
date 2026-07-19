@@ -1367,6 +1367,36 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert unrefined.combat_stats.critical == 0
       assert refined_7.combat_stats.critical == 7
     end
+
+    defp with_equipped_items(items) do
+      swordman(%Equipment{}, %{})
+      |> Stats.apply_equipment_modifiers(items)
+      |> Stats.calculate_combat_stats()
+    end
+
+    test "two items granting the same tuple bonus stack additively" do
+      weapon = scripted_item(90_206, on_equip: [{:bonus, {:addrace, :brute}, 20}])
+      shield = scripted_item(90_207, on_equip: [{:bonus, {:addrace, :brute}, 15}])
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_206 -> {:ok, weapon}
+        90_207 -> {:ok, shield}
+      end)
+
+      both =
+        with_equipped_items([
+          equipped(90_206, @right_hand),
+          equipped(90_207, @left_hand)
+        ])
+
+      assert both.modifiers.equipment[{:addrace, :brute}] == 35
+
+      weapon_only = with_equipped_items([equipped(90_206, @right_hand)])
+      assert weapon_only.modifiers.equipment[{:addrace, :brute}] == 20
+
+      unequipped = with_equipped_items([])
+      refute Map.has_key?(unequipped.modifiers.equipment, {:addrace, :brute})
+    end
   end
 
   describe "view extractors" do
