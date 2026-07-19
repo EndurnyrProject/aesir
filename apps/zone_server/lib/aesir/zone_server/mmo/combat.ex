@@ -1568,7 +1568,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   defp ensure_targetable(_target_state, :skill_unit), do: {:error, :target_dead}
 
   # New combatant-based functions
-  defp validate_attack_with_combatants(attacker_combatant, target_combatant, opts \\ []) do
+  defp validate_attack_with_combatants(attacker_combatant, target_combatant, opts) do
     with :ok <- validate_same_map(attacker_combatant, target_combatant),
          :ok <- validate_attack_distance(attacker_combatant, target_combatant, opts) do
       validate_projectile_path(attacker_combatant, target_combatant, opts)
