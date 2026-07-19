@@ -28,8 +28,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     emit nothing.
   - `bonus bKey,amount` — `{:bonus, destination, expr}` when `bKey` resolves via
     `BonusKeys` (miss -> `{:unknown_bonus_key, key}`); any other command name and
-    any other `bonus` shape (`bonus2`..`bonus5` parse as ordinary commands) is
-    unsupported.
+    any other `bonus` shape is unsupported.
+  - `bonus2 bKey,param,amount` — `{:bonus, {family, param}, expr}` when `bKey`
+    resolves via `BonusKeys.param_schema/1` and `param` resolves through
+    `Resolver` according to the schema's param kind (race/element/size/class via
+    a `{:name, const}` constant, skill via a `{:name, const}` name or an
+    `{:int, id}` literal). `RC_Boss` is a sentinel: on an `:addrace`/`:subrace`
+    family it redirects to `:addclass`/`:subclass`; on any other family it is
+    unsupported. A non-constant or unresolvable param is
+    `{:unresolved_param, detail}`; any other shape is unsupported.
+    `bonus3`..`bonus5` parse as ordinary commands and stay unsupported.
   - `if (cond) then [else]` — `{:if, cond, then, else}` when `cond` is a
     refine-pure boolean over comparisons / `&&` / `||`; a non-refine read such as
     `BaseLevel` is unsupported.
@@ -44,8 +52,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
 
   @type detail :: term()
+  @type dest :: atom() | {atom(), atom() | integer()}
 
   @arith_ops [:+, :-, :*, :/]
   @compare_ops [:>, :<, :>=, :<=, :==, :!=]
@@ -112,6 +122,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   defp compile_instr({:cmd, "bonus", args}, _env), do: unsupported({:bonus_shape, args})
 
+  defp compile_instr({:cmd, "bonus2", [{:name, key}, param_ast, amount]}, env) do
+    with {:ok, schema} <- param_schema(key),
+         {:ok, dest} <- resolve_param(schema, param_ast),
+         {:ok, expr} <- compile_expr(amount, env) do
+      {:ok, {:bonus, dest, expr}}
+    end
+  end
+
+  defp compile_instr({:cmd, "bonus2", args}, _env), do: unsupported({:bonus_shape, args})
+
   defp compile_instr({:if, cond_expr, then_stmts, else_stmts}, env) do
     with {:ok, condition} <- compile_cond(cond_expr, env),
          {:ok, then_instrs} <- reduce_branch(then_stmts, env),
@@ -128,6 +148,67 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     case BonusKeys.destination(key) do
       {:ok, dest} -> {:ok, dest}
       :error -> unsupported({:unknown_bonus_key, key})
+    end
+  end
+
+  @spec param_schema(String.t()) ::
+          {:ok, BonusKeys.param_schema()} | {:error, {:unsupported, detail()}}
+  defp param_schema(key) do
+    case BonusKeys.param_schema(key) do
+      {:ok, schema} -> {:ok, schema}
+      :error -> unsupported({:unknown_bonus_key, key})
+    end
+  end
+
+  @spec resolve_param(BonusKeys.param_schema(), term()) ::
+          {:ok, dest()} | {:error, {:unsupported, detail()}}
+  defp resolve_param(%{family: family, param: :race}, {:name, const}) do
+    with {:ok, race} <- resolve(&Resolver.resolve_race/1, const), do: race_dest(family, race)
+  end
+
+  defp resolve_param(%{family: family, param: :element}, {:name, const}) do
+    with {:ok, element} <- resolve(&Resolver.resolve_element/1, const),
+         do: {:ok, {family, element}}
+  end
+
+  defp resolve_param(%{family: family, param: :size}, {:name, const}) do
+    with {:ok, size} <- resolve(&Resolver.resolve_size/1, const), do: {:ok, {family, size}}
+  end
+
+  defp resolve_param(%{family: family, param: :class}, {:name, const}) do
+    with {:ok, class} <- resolve(&Resolver.resolve_mob_class/1, const), do: {:ok, {family, class}}
+  end
+
+  defp resolve_param(%{family: family, param: :skill}, {:name, const}) do
+    with {:ok, id} <- resolve(&Resolver.resolve_skill/1, const), do: {:ok, {family, id}}
+  end
+
+  defp resolve_param(%{family: family, param: :skill}, {:int, id}) do
+    with {:ok, id} <- resolve(&Resolver.resolve_skill/1, id), do: {:ok, {family, id}}
+  end
+
+  defp resolve_param(_schema, param_ast), do: unsupported({:unresolved_param, param_ast})
+
+  @spec race_dest(atom(), atom() | {:class, :boss}) ::
+          {:ok, dest()} | {:error, {:unsupported, detail()}}
+  defp race_dest(family, {:class, :boss}) when family in [:addrace, :subrace],
+    do: {:ok, {class_family(family), :boss}}
+
+  defp race_dest(_family, {:class, :boss} = sentinel),
+    do: unsupported({:unresolved_param, sentinel})
+
+  defp race_dest(family, race), do: {:ok, {family, race}}
+
+  @spec class_family(:addrace | :subrace) :: :addclass | :subclass
+  defp class_family(:addrace), do: :addclass
+  defp class_family(:subrace), do: :subclass
+
+  @spec resolve((term() -> {:ok, term()} | Resolver.error()), term()) ::
+          {:ok, term()} | {:error, {:unsupported, detail()}}
+  defp resolve(resolver_fun, symbol) do
+    case resolver_fun.(symbol) do
+      {:ok, value} -> {:ok, value}
+      {:error, {:unknown_symbol, s}} -> unsupported({:unresolved_param, s})
     end
   end
 
