@@ -5,7 +5,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
 
   require Logger
 
-  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
@@ -13,15 +12,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.Combat.MagicAttack
-  alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
+  alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Passives
-  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Unit.Broadcast
 
   @doc """
   Executes an attack from player to target.
@@ -425,230 +422,32 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   @doc """
   Executes a single-target BF_MISC skill (trap) from a caster against a target.
 
-  Routes the caller-supplied `:base_damage` through `MiscDamageCalculator`
-  (element + hard-DEF, soft-DEF/MDEF ignored), broadcasts a `ZC_NOTIFY_SKILL`
-  packet, then applies the misc damage. Unlike the magic path there is no
-  caster-target range check: a trap fires on contact regardless of where its
-  owner stands. Hostility (owner/ally exclusion) is decided by the trap's
-  `on_touch` before this is called.
-
-  ## Options
-    - `:skill_id` / `:skill_level` - identify the skill for the damage packet
-    - `:base_damage` - the skill's per-level base damage (required)
-    - `:element` - the skill's attack element (default `:neutral`)
+  See `Aesir.ZoneServer.Mmo.Combat.SkillAttack.execute_misc_attack/3`.
   """
-  @spec execute_misc_attack(struct(), integer(), keyword()) :: :ok | {:error, atom()}
-  def execute_misc_attack(caster_state, target_id, opts) do
-    attacker = caster_state.__struct__.to_combatant(caster_state)
-    skill_id = Keyword.fetch!(opts, :skill_id)
-    skill_level = Keyword.fetch!(opts, :skill_level)
-    base_damage = Keyword.fetch!(opts, :base_damage)
-    element = Keyword.get(opts, :element, :neutral)
-
-    with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
-         :ok <- ensure_targetable(target_state, target_type),
-         target <- target_state.__struct__.to_combatant(target_state),
-         :ok <- Targeting.validate_enemy(attacker, target),
-         {:ok, %{damage: damage}} <-
-           MiscDamageCalculator.calculate_misc_damage(attacker, target,
-             base_damage: base_damage,
-             element: element
-           ) do
-      {tx, ty} = target.position
-
-      packet =
-        PacketFactory.build_splash_damage_packet(
-          attacker.unit_id,
-          target_id,
-          skill_id,
-          skill_level,
-          damage
-        )
-
-      Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
-
-      hit_info = %{
-        dmg_type: :misc,
-        is_short: false,
-        element: element,
-        skill_id: skill_id,
-        skill_level: skill_level
-      }
-
-      apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, attacker.unit_id)
-      :ok
-    end
-  end
+  defdelegate execute_misc_attack(caster_state, target_id, opts), to: SkillAttack
 
   @doc """
   Executes a center+radius BF_MISC splash (Blast Mine) against every offensive
   target in range.
 
-  Mirrors `execute_magic_splash/4` but routes each target through
-  `MiscDamageCalculator` with the caller-supplied `:base_damage`. Returns the
-  list of hit target ids.
-
-  ## Options
-    - `:skill_id` / `:skill_level` - identify the skill for the damage packet
-    - `:base_damage` - the skill's per-level base damage (required)
-    - `:element` - the skill's attack element (default `:neutral`)
+  See `Aesir.ZoneServer.Mmo.Combat.SkillAttack.execute_misc_splash/4`.
   """
-  @spec execute_misc_splash(struct(), {integer(), integer()}, non_neg_integer(), keyword()) ::
-          [integer()]
-  def execute_misc_splash(caster_state, center, radius, opts) do
-    attacker = caster_state.__struct__.to_combatant(caster_state)
-    skill_id = Keyword.fetch!(opts, :skill_id)
-    skill_level = Keyword.fetch!(opts, :skill_level)
-    base_damage = Keyword.fetch!(opts, :base_damage)
-    element = Keyword.get(opts, :element, :neutral)
-
-    targets = splash_targets(attacker.map_name, center, radius, attacker)
-
-    Enum.flat_map(targets, fn {_unit_type, target_id} ->
-      apply_misc_splash_hit(attacker, target_id, skill_id, skill_level, element, base_damage)
-    end)
-  end
-
-  defp apply_misc_splash_hit(attacker, target_id, skill_id, skill_level, element, base_damage) do
-    with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
-         :ok <- ensure_targetable(target_state, target_type),
-         target <- target_state.__struct__.to_combatant(target_state),
-         :ok <- Targeting.validate_enemy(attacker, target),
-         {:ok, %{damage: damage}} <-
-           MiscDamageCalculator.calculate_misc_damage(attacker, target,
-             base_damage: base_damage,
-             element: element
-           ) do
-      {tx, ty} = target.position
-
-      packet =
-        PacketFactory.build_splash_damage_packet(
-          attacker.unit_id,
-          target_id,
-          skill_id,
-          skill_level,
-          damage
-        )
-
-      Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
-
-      hit_info = %{
-        dmg_type: :misc,
-        is_short: false,
-        element: element,
-        skill_id: skill_id,
-        skill_level: skill_level
-      }
-
-      apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, attacker.unit_id)
-      [target_id]
-    else
-      _ -> []
-    end
-  end
+  defdelegate execute_misc_splash(caster_state, center, radius, opts), to: SkillAttack
 
   @doc """
   Executes a single-target offensive skill from a caster against a target.
 
-  Reuses the melee range check and the unified damage calculator (passing the
-  skill's ratio), broadcasts a ZC_NOTIFY_SKILL packet, then applies damage.
-
-  ## Options
-    - `:skill_id` / `:skill_level` - identify the skill for the damage packet
-    - `:skill_ratio` - percent of base attack the skill deals
-    - `:skip_crit` - skip the critical roll (most skills don't crit)
-    - `:bonus_atk` - flat ATK added after the skill ratio, before defense
-    - `:fixed_damage` - deal exactly this value, bypassing weapon/defense/flee
-    - `:hit_count` - number of hits to deliver, each rolling its own damage (default `1`)
-    - `:element` - forces the attack element for this hit, overriding the
-      weapon element (e.g. Envenom's poison, Sand Attack's earth)
-
-  ## Returns
-    - :ok if the skill connected
-    - {:error, reason} if the target was invalid, friendly, dead, or out of range
+  See `Aesir.ZoneServer.Mmo.Combat.SkillAttack.execute_skill_attack/3`.
   """
-  @spec execute_skill_attack(struct(), integer(), keyword()) :: :ok | {:error, atom()}
-  def execute_skill_attack(caster_state, target_id, opts) do
-    attacker = caster_state.__struct__.to_combatant(caster_state)
-    skill_id = Keyword.fetch!(opts, :skill_id)
-    skill_level = Keyword.fetch!(opts, :skill_level)
-    hits = Keyword.get(opts, :hit_count, 1)
-
-    calc_opts =
-      Keyword.take(opts, [:skill_ratio, :skip_crit, :bonus_atk, :fixed_damage, :element])
-
-    # NOTE: skills always connect here; skill miss/flee isn't modeled yet.
-    with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
-         :ok <- ensure_targetable(target_state, target_type),
-         target <- target_state.__struct__.to_combatant(target_state),
-         :ok <- validate_attack_with_combatants(attacker, target, projectile?: true),
-         :ok <- Targeting.validate_enemy(attacker, target) do
-      Enum.each(1..hits//1, fn _ ->
-        apply_skill_damage(
-          attacker,
-          target_type,
-          target_pid,
-          target,
-          skill_id,
-          skill_level,
-          calc_opts
-        )
-      end)
-
-      :ok
-    end
-  end
+  defdelegate execute_skill_attack(caster_state, target_id, opts), to: SkillAttack
 
   @doc """
   Executes a self/ground-centered splash skill against every offensive target in
   `radius` cells of `{x, y}`.
 
-  Resolves units via the spatial index, filters to living enemies (excluding
-  the caster and same-party/guild players), then runs each through the shared
-  single-target damage path **without** the per-target attack-range gate — the
-  radius already bounds the hit set. Returns the list of hit target ids, consumed
-  by knockback (#6).
-
-  The spatial index filters by Manhattan distance (a diamond), but skill splash
-  AoE is a Chebyshev square. We query a Manhattan radius of `2 * radius` so the
-  full square is covered (a corner cell at `{radius, radius}` has Manhattan
-  `2 * radius`), then post-filter to the Chebyshev square. Dead mobs (hp <= 0)
-  are excluded so they receive no phantom damage or broadcast.
-
-  ## Options
-    - `:skill_id` / `:skill_level` - identify the skill for the damage packet
-    - `:skill_ratio` - percent of base attack the skill deals
-    - `:skip_crit` - skip the critical roll
+  See `Aesir.ZoneServer.Mmo.Combat.SkillAttack.execute_splash_attack/4`.
   """
-  @spec execute_splash_attack(struct(), {integer(), integer()}, non_neg_integer(), keyword()) ::
-          [integer()]
-  def execute_splash_attack(caster_state, center, radius, opts) do
-    attacker = caster_state.__struct__.to_combatant(caster_state)
-    skill_id = Keyword.fetch!(opts, :skill_id)
-    skill_level = Keyword.fetch!(opts, :skill_level)
-    calc_opts = Keyword.take(opts, [:skill_ratio, :skip_crit])
-
-    attacker.map_name
-    |> splash_targets(center, radius, attacker)
-    |> Enum.flat_map(fn {_unit_type, target_id} ->
-      with {:ok, target_pid, target_state, target_type} <- get_target_unit_state(target_id),
-           target <- target_state.__struct__.to_combatant(target_state),
-           :ok <-
-             apply_skill_damage(
-               attacker,
-               target_type,
-               target_pid,
-               target,
-               skill_id,
-               skill_level,
-               calc_opts
-             ) do
-        [target_id]
-      else
-        _ -> []
-      end
-    end)
-  end
+  defdelegate execute_splash_attack(caster_state, center, radius, opts), to: SkillAttack
 
   @doc """
   Selects the valid offensive targets for a center+radius splash/footprint.
@@ -656,48 +455,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   See `Aesir.ZoneServer.Mmo.Combat.SplashTargets.select/4`.
   """
   defdelegate splash_targets(map_name, center, radius, caster), to: SplashTargets, as: :select
-
-  defp apply_skill_damage(
-         attacker,
-         target_type,
-         target_pid,
-         target,
-         skill_id,
-         skill_level,
-         calc_opts
-       ) do
-    with {:ok, damage_result} <- DamageCalculator.calculate_damage(attacker, target, calc_opts) do
-      packet =
-        PacketFactory.build_skill_damage_packet(
-          attacker,
-          target,
-          skill_id,
-          skill_level,
-          damage_result
-        )
-
-      broadcast_to_nearby_players(target, packet)
-
-      hit_info = %{
-        dmg_type: :physical,
-        is_short: attacker.attack_range <= 3,
-        element: :neutral,
-        skill_id: skill_id,
-        skill_level: skill_level
-      }
-
-      apply_unit_damage(
-        target_type,
-        target_pid,
-        target.unit_id,
-        damage_result.damage,
-        hit_info,
-        attacker.unit_id
-      )
-
-      :ok
-    end
-  end
 
   # Transitional wrappers over DamageApplication; removed as the attack paths
   # move into their own modules.
