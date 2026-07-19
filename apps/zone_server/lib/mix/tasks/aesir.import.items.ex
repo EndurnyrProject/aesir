@@ -17,7 +17,10 @@ defmodule Mix.Tasks.Aesir.Import.Items do
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Transpiler
 
   @equip_types [:armor, :weapon, :shadow_gear, :ammo]
-  @usable_types [:usable, :healing]
+  # A delay-consume item (converters, boxes, cast-on-use consumables) carries the
+  # same `Script` an ordinary usable does - it only differs in the cast delay -
+  # so it transpiles to `on_use` alongside them.
+  @usable_types [:usable, :healing, :delay_consume]
 
   @sources ~w(usable equip etc)
   @out_dir Path.join(~w(apps zone_server priv db items))

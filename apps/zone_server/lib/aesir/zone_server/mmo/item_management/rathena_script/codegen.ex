@@ -241,6 +241,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   defp render_arg(:skill, {:name, name}),
     do: resolved(Resolver.resolve_skill(name), &Integer.to_string/1)
 
+  # A skill argument is written as a quoted name just as often as a bare
+  # constant ("ITEM_ENCHANTARMS"); both resolve against the same catalog.
+  defp render_arg(:skill, {:str, name}),
+    do: resolved(Resolver.resolve_skill(name), &Integer.to_string/1)
+
   defp render_arg(:skill, {:int, id}),
     do: resolved(Resolver.resolve_skill(id), &Integer.to_string/1)
 

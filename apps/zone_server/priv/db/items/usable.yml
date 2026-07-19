@@ -688,12 +688,14 @@
   buy: 250
   id: 601
   name: Fly Wing
+  on_use: 'itemskill(ctx, 26, level: 1)'
   type: delay_consume
   weight: 50
 - aegis_name: Wing_Of_Butterfly
   buy: 1000
   id: 602
   name: Butterfly Wing
+  on_use: 'itemskill(ctx, 26, level: 3)'
   type: delay_consume
   weight: 50
 - aegis_name: Old_Blue_Box
@@ -712,6 +714,7 @@
   buy: 2000
   id: 605
   name: Anodyne
+  on_use: 'itemskill(ctx, 8, level: 1)'
   type: delay_consume
   weight: 100
 - aegis_name: Aloebera
@@ -1167,90 +1170,105 @@
   buy: 1000
   id: 686
   name: Level 3 Earth Spike
+  on_use: 'itemskill(ctx, 90, level: 3)'
   type: delay_consume
   weight: 10
 - aegis_name: Earth_Scroll_1_5
   buy: 2000
   id: 687
   name: Level 5 Earth Spike
+  on_use: 'itemskill(ctx, 90, level: 5)'
   type: delay_consume
   weight: 10
 - aegis_name: Cold_Scroll_1_3
   buy: 1000
   id: 688
   name: Level 3 Cold Bolt
+  on_use: 'itemskill(ctx, 14, level: 3)'
   type: delay_consume
   weight: 10
 - aegis_name: Cold_Scroll_1_5
   buy: 2000
   id: 689
   name: Level 5 Cold Bolt
+  on_use: 'itemskill(ctx, 14, level: 5)'
   type: delay_consume
   weight: 10
 - aegis_name: Fire_Scroll_1_3
   buy: 1000
   id: 690
   name: Level 3 Fire Bolt
+  on_use: 'itemskill(ctx, 19, level: 3)'
   type: delay_consume
   weight: 10
 - aegis_name: Fire_Scroll_1_5
   buy: 2000
   id: 691
   name: Level 5 Fire Bolt
+  on_use: 'itemskill(ctx, 19, level: 5)'
   type: delay_consume
   weight: 10
 - aegis_name: Wind_Scroll_1_3
   buy: 1000
   id: 692
   name: Level 3 Lightening Bolt
+  on_use: 'itemskill(ctx, 20, level: 3)'
   type: delay_consume
   weight: 10
 - aegis_name: Wind_Scroll_1_5
   buy: 2000
   id: 693
   name: Level 5 Lightening Bolt
+  on_use: 'itemskill(ctx, 20, level: 5)'
   type: delay_consume
   weight: 10
 - aegis_name: Ghost_Scroll_1_3
   buy: 1000
   id: 694
   name: Level 3 Soul Strike
+  on_use: 'itemskill(ctx, 13, level: 3)'
   type: delay_consume
   weight: 10
 - aegis_name: Ghost_Scroll_1_5
   buy: 2000
   id: 695
   name: Level 5 Soul Strike
+  on_use: 'itemskill(ctx, 13, level: 5)'
   type: delay_consume
   weight: 10
 - aegis_name: Fire_Scroll_2_1
   buy: 1000
   id: 696
   name: Level 1 Fire Ball
+  on_use: 'itemskill(ctx, 17, level: 1)'
   type: delay_consume
   weight: 10
 - aegis_name: Fire_Scroll_2_5
   buy: 2000
   id: 697
   name: Level 5 Fire Ball
+  on_use: 'itemskill(ctx, 17, level: 5)'
   type: delay_consume
   weight: 10
 - aegis_name: Fire_Scroll_3_1
   buy: 1000
   id: 698
   name: Level 1 Fire Wall
+  on_use: 'itemskill(ctx, 18, level: 1)'
   type: delay_consume
   weight: 10
 - aegis_name: Fire_Scroll_3_5
   buy: 2000
   id: 699
   name: Level 5 Fire Wall
+  on_use: 'itemskill(ctx, 18, level: 5)'
   type: delay_consume
   weight: 10
 - aegis_name: Cold_Scroll_2_1
   buy: 1000
   id: 700
   name: Level 1 Frost Diver
+  on_use: 'itemskill(ctx, 15, level: 1)'
   type: delay_consume
   weight: 10
 - aegis_name: Trade_Coupon
@@ -2545,24 +2563,28 @@
   buy: 2000
   id: 12000
   name: Level 5 Frost Diver
+  on_use: 'itemskill(ctx, 15, level: 5)'
   type: delay_consume
   weight: 10
 - aegis_name: Holy_Scroll_1_3
   buy: 2000
   id: 12001
   name: Level 3 Heal
+  on_use: 'itemskill(ctx, 28, level: 3)'
   type: delay_consume
   weight: 10
 - aegis_name: Holy_Scroll_1_5
   buy: 2000
   id: 12002
   name: Level 5 Heal
+  on_use: 'itemskill(ctx, 28, level: 5)'
   type: delay_consume
   weight: 10
 - aegis_name: Holy_Scroll_2_1
   buy: 1000
   id: 12003
   name: Level 1 Teleport
+  on_use: 'itemskill(ctx, 26, level: 1)'
   type: delay_consume
   weight: 10
 - aegis_name: Arrow_Container
@@ -2679,6 +2701,7 @@
   buy: 2
   id: 12020
   name: Cursed Water
+  on_use: 'itemskill(ctx, 492, level: 8)'
   type: delay_consume
   weight: 30
 - aegis_name: Pork_Belly
@@ -2736,6 +2759,7 @@
   buy: 1000
   id: 12029
   name: Box of Gloom
+  on_use: 'itemskill(ctx, 45, level: 1)'
   type: delay_consume
   weight: 200
 - aegis_name: Box_Of_Grudge
@@ -2756,6 +2780,7 @@
   buy: 1000
   id: 12032
   name: Box of Storms
+  on_use: 'itemskill(ctx, 492, level: 2)'
   type: delay_consume
   weight: 200
 - aegis_name: Box_Of_Sunlight
@@ -3489,24 +3514,28 @@
   buy: 2
   id: 12114
   name: Elemental Converter
+  on_use: 'itemskill(ctx, 492, level: 4)'
   type: delay_consume
   weight: 10
 - aegis_name: Elemental_Water
   buy: 2
   id: 12115
   name: Elemental Converter
+  on_use: 'itemskill(ctx, 492, level: 2)'
   type: delay_consume
   weight: 10
 - aegis_name: Elemental_Earth
   buy: 2
   id: 12116
   name: Elemental Converter
+  on_use: 'itemskill(ctx, 492, level: 3)'
   type: delay_consume
   weight: 10
 - aegis_name: Elemental_Wind
   buy: 2
   id: 12117
   name: Elemental Converter
+  on_use: 'itemskill(ctx, 492, level: 5)'
   type: delay_consume
   weight: 10
 - aegis_name: Resist_Fire
@@ -4311,6 +4340,10 @@
   buy: 20
   id: 12236
   name: Chocolate Tart
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 5)
+    ctx = itemskill(ctx, 33, level: 5)
+    ctx
   type: delay_consume
   weight: 100
 - aegis_name: Choco_Lump
@@ -4853,10 +4886,12 @@
 - aegis_name: N_Fly_Wing
   id: 12323
   name: Novice Fly Wing
+  on_use: 'itemskill(ctx, 26, level: 1)'
   type: delay_consume
 - aegis_name: N_Butterfly_Wing
   id: 12324
   name: Novice Butterfly Wing
+  on_use: 'itemskill(ctx, 26, level: 3)'
   type: delay_consume
 - aegis_name: N_Magnifier
   id: 12325
@@ -5012,6 +5047,7 @@
   buy: 20
   id: 12351
   name: Scream Megaphone
+  on_use: 'itemskill(ctx, 155, level: 1)'
   type: delay_consume
   weight: 50
 - aegis_name: Dun_Tele_Scroll3_fr
@@ -5728,12 +5764,14 @@
   buy: 2
   id: 12466
   name: F Blessing 10 Scroll
+  on_use: 'itemskill(ctx, 34, level: 10)'
   type: delay_consume
   weight: 10
 - aegis_name: F_Inc_Agi_10_Scroll
   buy: 2
   id: 12467
   name: F Inc Agi 10 Scroll
+  on_use: 'itemskill(ctx, 29, level: 10)'
   type: delay_consume
   weight: 10
 - aegis_name: F_Aspersio_5_Scroll
@@ -6046,12 +6084,14 @@
   buy: 2
   id: 12522
   name: Blessing Scroll Lv 10
+  on_use: 'itemskill(ctx, 34, level: 10)'
   type: delay_consume
   weight: 10
 - aegis_name: E_Inc_Agi_10_Scroll
   buy: 2
   id: 12523
   name: Increase Agility Scroll Lv 10
+  on_use: 'itemskill(ctx, 29, level: 10)'
   type: delay_consume
   weight: 10
 - aegis_name: E_Aspersio_5_Scroll
@@ -8146,20 +8186,24 @@
   buy: 10
   id: 12884
   name: Infinite Concentration Potion
+  on_use: sc_start(ctx, :sc_aspdpotion0, 1800000, 4)
   type: delay_consume
 - aegis_name: Ifn_Awakening_Potion
   buy: 10
   id: 12885
   name: Infinite Awakening Potion
+  on_use: sc_start(ctx, :sc_aspdpotion1, 1800000, 6)
   type: delay_consume
 - aegis_name: Infinite_Berserk_Potion
   buy: 10
   id: 12886
   name: Infinite Berserk Potion
+  on_use: sc_start(ctx, :sc_aspdpotion2, 1800000, 9)
   type: delay_consume
 - aegis_name: C_Wing_Of_Fly
   id: 12887
   name: Infinite Flywing
+  on_use: 'itemskill(ctx, 26, level: 1)'
   type: usable
 - aegis_name: Siege_Kit_Box
   id: 12888
@@ -14829,16 +14873,19 @@
 - aegis_name: Meteor_10_Scroll
   id: 14512
   name: Meteor Storm Scroll
+  on_use: 'itemskill(ctx, 83, level: 10)'
   type: delay_consume
   weight: 10
 - aegis_name: Storm_10_Scroll
   id: 14513
   name: Storm Gust Scroll
+  on_use: 'itemskill(ctx, 89, level: 10)'
   type: delay_consume
   weight: 10
 - aegis_name: Vermilion_10_Scroll
   id: 14514
   name: Lord of Vermilion Scroll
+  on_use: 'itemskill(ctx, 85, level: 10)'
   type: delay_consume
   weight: 10
 - aegis_name: Lex_Aeterna_Scroll
@@ -15413,6 +15460,7 @@
 - aegis_name: Quagmire_Scroll
   id: 14594
   name: Quagmire Scroll
+  on_use: 'itemskill(ctx, 92, level: 5)'
   type: delay_consume
   weight: 10
 - aegis_name: Unsealed_Magic_Spell
@@ -15510,11 +15558,19 @@
 - aegis_name: M_Def_Potion
   id: 14611
   name: M Def Potion
+  on_use: |-
+    ctx = specialeffect2(ctx, :guard)
+    ctx = sc_start(ctx, :sc_def_rate, 120000, 3)
+    ctx
   type: delay_consume
   weight: 10
 - aegis_name: M_Mdef_Potion
   id: 14612
   name: M Mdef Potion
+  on_use: |-
+    ctx = specialeffect2(ctx, :spellbreaker)
+    ctx = sc_start(ctx, :sc_mdef_rate, 120000, 3)
+    ctx
   type: delay_consume
   weight: 10
 - aegis_name: RWC_Scroll_2012
@@ -15922,12 +15978,14 @@
   buy: 2
   id: 14845
   name: '[Scroll] Blessing Lv.10 Scroll'
+  on_use: 'itemskill(ctx, 34, level: 10)'
   type: delay_consume
   weight: 10
 - aegis_name: DF_Inc_Agi_10_Scroll
   buy: 2
   id: 14846
   name: '[Scroll] Increase Agility Lv.10 Scroll'
+  on_use: 'itemskill(ctx, 29, level: 10)'
   type: delay_consume
   weight: 10
 - aegis_name: DF_Small_Life_Potion
@@ -24037,6 +24095,10 @@
   buy: 20
   id: 22559
   name: Mock Strawberry
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 50, sp: 50)
+    ctx = itemskill(ctx, 8, level: 3)
+    ctx
   type: delay_consume
   weight: 100
 - aegis_name: Lucky_Bag_Of_New_Era
@@ -24110,6 +24172,7 @@
   buy: 10
   id: 22613
   name: Contaminated Reagents
+  on_use: ctx
   type: delay_consume
   weight: 50
 - aegis_name: Premium_Manual
@@ -25037,6 +25100,10 @@
   buy: 20
   id: 22899
   name: Parchment City
+  on_use: |-
+    ctx = itemskill(ctx, 29, level: 1)
+    ctx = heal(ctx, hp: -15)
+    ctx
   type: delay_consume
 - aegis_name: BlueboxOfQuestions
   buy: 20
@@ -25571,6 +25638,10 @@
 - aegis_name: Mont_Blanc_Cake
   id: 23045
   name: Mont Blanc
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 20, sp: 20)
+    ctx = itemskill(ctx, 45, level: 5)
+    ctx
   type: delay_consume
   weight: 50
 - aegis_name: Comp_Mystic_Powder
@@ -26496,6 +26567,7 @@
   equip_level_min: 1
   id: 23280
   name: Novice Fly Wing
+  on_use: 'itemskill(ctx, 26, level: 1)'
   type: delay_consume
 - aegis_name: RaceShadow_Mix
   id: 23281
@@ -26536,6 +26608,7 @@
   buy: 1000
   id: 23288
   name: Compressed Fly Wing
+  on_use: 'itemskill(ctx, 26, level: 1)'
   type: delay_consume
   weight: 10
 - aegis_name: Candy_Bag_Scroll_Melee
@@ -26718,6 +26791,7 @@
 - aegis_name: Comp_Wing_Of_Fly
   id: 23338
   name: Compressed Fly Wing
+  on_use: 'itemskill(ctx, 26, level: 1)'
   type: delay_consume
 - aegis_name: Comp_Megaphone
   id: 23340
@@ -30122,6 +30196,7 @@
 - aegis_name: Shadow_Mix_Recipe_TH
   id: 100623
   name: Lapine Box (Shadow)
+  on_use: ctx
   type: delay_consume
   weight: 10
 - aegis_name: GrayWolf_7_Ticket
@@ -31448,6 +31523,7 @@
 - aegis_name: BlessOfRabbit
   id: 101357
   name: Rabbit's Blessed Egg
+  on_use: 'itemskill(ctx, 34, level: 10)'
   type: delay_consume
 - aegis_name: MajorAutoSpell_Up
   id: 101359
@@ -36388,6 +36464,10 @@
   equip_level_min: 120
   id: 1100013
   name: Southern Style Pork Head Meat
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 30, sp: 30)
+    ctx = itemskill(ctx, 45, level: 5)
+    ctx
   type: healing
   weight: 20
 - aegis_name: Grilled_Fish
