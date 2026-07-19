@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.KillExp
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Mob.MvpReward
   alias Aesir.ZoneServer.Unit.Mob.QuestHuntCredit
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.MovementEngine
@@ -629,7 +630,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   # Distributes EXP to every attacker who damaged the mob, proportional to
   # damage dealt (`KillExp.distribute/5`, design "Damage-based EXP share"),
-  # then publishes the drop-rolling payload to the killing blow's own session
+  # grants the MVP reward for an MVP-tier boss (`MvpReward.grant/5`, a no-op
+  # for every other mob), then publishes the drop-rolling payload to the
+  # killing blow's own session
   # (the only place holding both the drop table and the killer's stats). The
   # mob stays ignorant of who listens; an absent killer simply has no
   # subscriber.
@@ -643,6 +646,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
       mob_data.level,
       state.map_name
     )
+
+    MvpReward.grant(aggro_list, mob_data, state.map_name, state.x, state.y)
 
     QuestHuntCredit.credit(attacker_id, mob_data.id, state.map_name, {state.x, state.y})
 
