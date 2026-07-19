@@ -507,10 +507,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # (per-skill `bonus2` keys), both produced by the equip-script eval fold.
   @spec equip_modifier(PlayerState.t(), atom() | {atom(), integer()}) :: integer()
   defp equip_modifier(game_state, key) do
-    game_state.stats
-    |> Map.get(:modifiers, %{})
-    |> Map.get(:equipment, %{})
-    |> Map.get(key, 0)
+    case Map.get(game_state, :stats) do
+      nil ->
+        0
+
+      stats ->
+        stats
+        |> Map.get(:modifiers, %{})
+        |> Map.get(:equipment, %{})
+        |> Map.get(key, 0)
+    end
   end
 
   # A zero cost is always allowed without reading game_state.zeny: every skill
@@ -624,20 +630,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # Cooldown is the definition's per-level duration plus the caster's per-skill
   # equipment `{:skill_cooldown, id}` delta (rAthena bSkillCooldown, ms, negative
   # shortens). The final duration is floored at 0; a duration that collapses to 0
-  # writes no entry, matching a zero-cooldown skill.
-  #
-  # A skill with no cooldown short-circuits before any equipment is read: there
-  # is nothing to modify, and the common path must not require a `:stats` key
-  # (bare-map game_state fixtures in the test suite would otherwise raise, same
-  # as `check_zeny/2`).
+  # writes no entry, matching a zero-cooldown skill. The delta is read even for a
+  # skill with no base cooldown, so a bonus can give one to a skill that has none.
   defp put_cooldown(game_state, skill_id, definition, level, now) do
-    case Cooldown.duration(definition, level) do
-      0 -> game_state
-      base -> apply_cooldown(game_state, skill_id, base, now)
-    end
-  end
-
-  defp apply_cooldown(game_state, skill_id, base, now) do
+    base = Cooldown.duration(definition, level)
     delta = equip_modifier(game_state, {:skill_cooldown, skill_id})
 
     case max(0, base + delta) do
