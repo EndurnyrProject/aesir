@@ -38,4 +38,11 @@ config :zone_server, boss_respawn_delay_percentage: 100
 # while disabled, missing/invalid tokens are logged but still admitted.
 config :zone_server, enforce_zone_auth_token: true
 
+# Reconcile persisted boss respawn deadlines during MechanicsSupervisor boot.
+# Disabled under test: the OTP app starts before ExUnit installs the Ecto
+# sandbox, so a boot-time query runs unsandboxed against the real test database
+# and its orphan cleanup would permanently delete rows. Tests call
+# BossRespawn.reconcile/0 explicitly inside their own sandboxed connection.
+config :zone_server, boss_respawn_reconcile_on_boot: config_env() != :test
+
 import_config "network.exs"

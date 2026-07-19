@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Config do
   @default_death_penalty_job 1
   @default_natural_break_rate 0
   @default_boss_respawn_delay_percentage 100
+  @default_boss_respawn_reconcile_on_boot true
 
   @doc """
   Player view range (rAthena `AREA_SIZE`): the cell radius a client is told about.
@@ -111,5 +112,21 @@ defmodule Aesir.ZoneServer.Config do
         :zone_server,
         :boss_respawn_delay_percentage,
         @default_boss_respawn_delay_percentage
+      )
+
+  @doc """
+  Whether persisted boss respawn deadlines are reconciled during boot.
+
+  Disabled under test, where the OTP application starts before ExUnit installs
+  the Ecto sandbox: a boot-time query would run unsandboxed against the real
+  test database and its orphan cleanup would delete rows permanently.
+  """
+  @spec boss_respawn_reconcile_on_boot?() :: boolean()
+  def boss_respawn_reconcile_on_boot?,
+    do:
+      Application.get_env(
+        :zone_server,
+        :boss_respawn_reconcile_on_boot,
+        @default_boss_respawn_reconcile_on_boot
       )
 end

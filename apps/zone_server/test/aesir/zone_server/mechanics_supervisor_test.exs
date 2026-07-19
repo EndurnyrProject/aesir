@@ -1,5 +1,10 @@
 defmodule Aesir.ZoneServer.MechanicsSupervisorTest do
-  use ExUnit.Case, async: false
+  # DataCase, not a bare ExUnit case: boot may reconcile pending boss respawn
+  # deadlines, so `init/1` can need a checked-out sandbox connection. Under test
+  # the reconciliation is config-gated off, but a test that enables it needs the
+  # sandbox present.
+  use Aesir.DataCase, async: false
+
   import Mimic
 
   alias Aesir.ZoneServer.Map.MapCache

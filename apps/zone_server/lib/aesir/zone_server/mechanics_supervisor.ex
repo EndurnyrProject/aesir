@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.MechanicsSupervisor do
   use Supervisor
 
+  alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Map.BossRespawn
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
   alias Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler
@@ -26,6 +28,11 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
     :ok = LevelPenalty.reload()
     :ok = RefineDatabase.reload()
     :ok = ShopVerifier.verify!(Shops.all())
+    # Runs before any coordinator starts, as a single grouped query. It records
+    # deadlines only: spawning or arming anything here would be duplicated by
+    # each map's lazy first spawn. Spawn data is read lazily by `Spawns`, so it
+    # needs no explicit load ahead of this call.
+    if Config.boss_respawn_reconcile_on_boot?(), do: :ok = BossRespawn.reconcile()
 
     children =
       [

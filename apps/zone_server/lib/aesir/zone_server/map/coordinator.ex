@@ -72,10 +72,14 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     :pk_enabled,
     :mob_supervisor_pid,
     :empty_since,
+    boss_deadlines: %{},
     mobs_spawned: false,
     mobs_awake: false,
     recently_stopped: %{}
   ]
+
+  @typedoc "Per-map coordinator state."
+  @type t :: %__MODULE__{}
 
   @doc """
   Starts a map coordinator.
@@ -161,7 +165,10 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
       pvp_enabled: Keyword.get(opts, :pvp_enabled, false),
       pk_enabled: Keyword.get(opts, :pk_enabled, false),
       mob_supervisor_pid: mob_supervisor_pid,
-      recently_stopped: %{}
+      recently_stopped: %{},
+      # Boot-reconciled boss deadlines, consulted (never acted on) by this
+      # map's first spawn. See `spawn_initial_mob/2`.
+      boss_deadlines: BossRespawn.deadlines_for(map_name)
     }
 
     # Mobs are spawned lazily on the first tick that sees a player on this map
@@ -602,8 +609,49 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
   defp spawn_mob_group(spawn_config, state) do
     Enum.reduce(1..spawn_config.amount, state, fn _i, acc_state ->
-      spawn_single_mob(spawn_config, acc_state)
+      spawn_initial_mob(spawn_config, acc_state)
     end)
+  end
+
+  # The consumption side of boot reconciliation, and the only place a
+  # reconciled deadline is read. A boss with no pending deadline, or one whose
+  # deadline has already passed, spawns as part of the map's normal first
+  # spawn; a deadline still in the future skips the spawn entirely -- leaving
+  # the durable row intact -- and arms a timer for the remaining interval, so
+  # every path yields exactly one boss.
+  #
+  # Deadlines are consumed one per spawned instance, so two pending rows for
+  # the same mob id resolve to two skipped spawns rather than one.
+  @spec spawn_initial_mob(MobSpawn.t(), t()) :: t()
+  defp spawn_initial_mob(spawn_config, state) do
+    case pop_deadline(state.boss_deadlines, spawn_config.mob) do
+      :none ->
+        spawn_single_mob(spawn_config, state)
+
+      {deadline, boss_deadlines} ->
+        state = %{state | boss_deadlines: boss_deadlines}
+        remaining_ms = DateTime.diff(deadline, DateTime.utc_now(), :millisecond)
+
+        if remaining_ms > 0 do
+          Logger.debug(
+            "Boss #{spawn_config.mob} on #{state.map_name} still pending, respawning in #{remaining_ms}ms"
+          )
+
+          Process.send_after(self(), {:respawn_mob, spawn_config}, remaining_ms)
+          state
+        else
+          spawn_single_mob(spawn_config, state)
+        end
+    end
+  end
+
+  @spec pop_deadline(BossRespawn.deadlines(), integer()) ::
+          :none | {DateTime.t(), BossRespawn.deadlines()}
+  defp pop_deadline(boss_deadlines, mob_id) do
+    case Map.get(boss_deadlines, mob_id) do
+      [deadline | rest] -> {deadline, Map.put(boss_deadlines, mob_id, rest)}
+      _empty_or_absent -> :none
+    end
   end
 
   # Clearing the durable deadline lives here rather than in the `:respawn_mob`
