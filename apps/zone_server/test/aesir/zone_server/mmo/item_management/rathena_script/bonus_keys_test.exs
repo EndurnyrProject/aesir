@@ -58,7 +58,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :heal_power,
     :crit_atk_rate,
     :short_atk_rate,
-    :perfect_hit
+    :perfect_hit,
+    :splash_range,
+    :hp_drain_rate,
+    :hp_drain_percent
   ]
 
   describe "destination/1" do
@@ -109,7 +112,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     end
 
     test "returns :error for an out-of-vocabulary key" do
-      assert BonusKeys.destination("bSplashRange") == :error
+      assert BonusKeys.destination("bNoRegen") == :error
+    end
+
+    test "resolves the splash range key case-insensitively" do
+      assert BonusKeys.destination("bSplashRange") == {:ok, :splash_range}
+      assert BonusKeys.destination("bsplashrange") == {:ok, :splash_range}
     end
 
     test "resolves the regen and sp-economy keys case-insensitively" do
@@ -181,12 +189,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
       assert BonusKeys.max_destination?(:movement_speed)
     end
 
+    test "splash range does not stack" do
+      assert BonusKeys.max_destination?(:splash_range)
+    end
+
     test "ordinary destinations stack" do
       refute BonusKeys.max_destination?(:atk)
       refute BonusKeys.max_destination?(:perfect_dodge)
       refute BonusKeys.max_destination?(:perfect_hit)
       refute BonusKeys.max_destination?(:crit_atk_rate)
       refute BonusKeys.max_destination?(:short_atk_rate)
+      refute BonusKeys.max_destination?(:hp_drain_rate)
+      refute BonusKeys.max_destination?(:hp_drain_percent)
       refute BonusKeys.max_destination?({:skill_use_sp_rate, 28})
     end
   end
@@ -202,6 +216,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
       assert BonusKeys.destination_scale(:perfect_hit) == 1
       assert BonusKeys.destination_scale(:crit_atk_rate) == 1
       assert BonusKeys.destination_scale(:short_atk_rate) == 1
+      assert BonusKeys.destination_scale(:splash_range) == 1
+      assert BonusKeys.destination_scale(:hp_drain_rate) == 1
+      assert BonusKeys.destination_scale(:hp_drain_percent) == 1
     end
   end
 
@@ -272,6 +289,28 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
 
     test "returns :error for flat keys" do
       assert BonusKeys.param_schema("bstr") == :error
+    end
+  end
+
+  describe "pair_schema/1" do
+    test "resolves the HP drain key case-insensitively" do
+      expected = {:ok, %{first: :hp_drain_rate, second: :hp_drain_percent}}
+
+      assert BonusKeys.pair_schema("bHPDrainRate") == expected
+      assert BonusKeys.pair_schema("bhpdrainrate") == expected
+      assert BonusKeys.pair_schema("BHPDRAINRATE") == expected
+    end
+
+    test "returns :error for parameterized and flat keys" do
+      assert BonusKeys.pair_schema("bAddRace") == :error
+      assert BonusKeys.pair_schema("bStr") == :error
+    end
+
+    test "both pair halves are ordinary summing destinations" do
+      assert :hp_drain_rate in BonusKeys.destinations()
+      assert :hp_drain_percent in BonusKeys.destinations()
+      assert BonusKeys.param_schema("bHPDrainRate") == :error
+      assert BonusKeys.destination("bHPDrainRate") == :error
     end
   end
 

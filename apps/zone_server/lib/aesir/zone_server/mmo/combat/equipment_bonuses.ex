@@ -130,6 +130,34 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   end
 
   @doc """
+  Per-mille chance the attacker's equipment grants to drain HP from the damage
+  a normal attack deals (`bonus2 bHPDrainRate,rate,per` first argument).
+  """
+  @spec hp_drain_rate(Combatant.t()) :: rate()
+  def hp_drain_rate(%Combatant{} = attacker) do
+    Map.get(attacker.equip_modifiers, :hp_drain_rate, 0)
+  end
+
+  @doc """
+  Percent of the damage dealt the attacker recovers as HP when a drain roll
+  succeeds (`bonus2 bHPDrainRate,rate,per` second argument).
+  """
+  @spec hp_drain_percent(Combatant.t()) :: rate()
+  def hp_drain_percent(%Combatant{} = attacker) do
+    Map.get(attacker.equip_modifiers, :hp_drain_percent, 0)
+  end
+
+  @doc """
+  Radius in cells of the area-of-effect the attacker's equipment adds around the
+  primary target of a normal attack (`bSplashRange`). Zero means the attack hits
+  only its target.
+  """
+  @spec splash_range(Combatant.t()) :: non_neg_integer()
+  def splash_range(%Combatant{} = attacker) do
+    max(Map.get(attacker.equip_modifiers, :splash_range, 0), 0)
+  end
+
+  @doc """
   Percent of the defender's hard DEF ignored by the attacker's equipment,
   capped at 100.
   """

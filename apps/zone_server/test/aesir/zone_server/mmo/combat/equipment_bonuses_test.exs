@@ -317,6 +317,52 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
     end
   end
 
+  describe "hp_drain_rate/1 and hp_drain_percent/1" do
+    test "read both halves of the drain pair independently" do
+      attacker =
+        CombatTestHelper.create_player_combatant()
+        |> with_equip_modifiers(%{hp_drain_rate: 50, hp_drain_percent: 5})
+
+      assert EquipmentBonuses.hp_drain_rate(attacker) == 50
+      assert EquipmentBonuses.hp_drain_percent(attacker) == 5
+    end
+
+    test "return 0 without the bonus and for mobs" do
+      player = CombatTestHelper.create_player_combatant()
+      mob = CombatTestHelper.create_mob_combatant()
+
+      assert EquipmentBonuses.hp_drain_rate(player) == 0
+      assert EquipmentBonuses.hp_drain_percent(player) == 0
+      assert EquipmentBonuses.hp_drain_rate(mob) == 0
+      assert EquipmentBonuses.hp_drain_percent(mob) == 0
+    end
+  end
+
+  describe "splash_range/1" do
+    test "reads :splash_range regardless of weapon range" do
+      for weapon_type <- [:sword, :bow] do
+        attacker =
+          CombatTestHelper.create_player_combatant(weapon_type: weapon_type)
+          |> with_equip_modifiers(%{splash_range: 1})
+
+        assert EquipmentBonuses.splash_range(attacker) == 1
+      end
+    end
+
+    test "returns 0 without the bonus and for mobs" do
+      assert EquipmentBonuses.splash_range(CombatTestHelper.create_player_combatant()) == 0
+      assert EquipmentBonuses.splash_range(CombatTestHelper.create_mob_combatant()) == 0
+    end
+
+    test "clamps a negative radius to 0" do
+      attacker =
+        CombatTestHelper.create_player_combatant()
+        |> with_equip_modifiers(%{splash_range: -2})
+
+      assert EquipmentBonuses.splash_range(attacker) == 0
+    end
+  end
+
   defp with_equip_modifiers(combatant, modifiers) do
     %{combatant | equip_modifiers: modifiers}
   end

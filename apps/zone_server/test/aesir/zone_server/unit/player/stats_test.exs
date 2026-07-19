@@ -1511,6 +1511,42 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert result.combat_stats.perfect_dodge == 30
     end
 
+    test "bSplashRange does not stack across items — the widest one wins" do
+      weapon = scripted_item(90_222, on_equip: [{:bonus, :splash_range, 1}])
+      shield = scripted_item(90_223, on_equip: [{:bonus, :splash_range, 1}])
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_222 -> {:ok, weapon}
+        90_223 -> {:ok, shield}
+      end)
+
+      both = with_equipped_items([equipped(90_222, @right_hand), equipped(90_223, @left_hand)])
+
+      assert both.modifiers.equipment.splash_range == 1
+    end
+
+    test "both bHPDrainRate halves sum across items" do
+      weapon =
+        scripted_item(90_224,
+          on_equip: [{:bonus, :hp_drain_rate, 50}, {:bonus, :hp_drain_percent, 5}]
+        )
+
+      shield =
+        scripted_item(90_225,
+          on_equip: [{:bonus, :hp_drain_rate, 30}, {:bonus, :hp_drain_percent, 1}]
+        )
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_224 -> {:ok, weapon}
+        90_225 -> {:ok, shield}
+      end)
+
+      both = with_equipped_items([equipped(90_224, @right_hand), equipped(90_225, @left_hand)])
+
+      assert both.modifiers.equipment.hp_drain_rate == 80
+      assert both.modifiers.equipment.hp_drain_percent == 6
+    end
+
     test "bHealPower lands on its own equipment key, separate from hplus" do
       item = scripted_item(90_221, on_equip: [{:bonus, :heal_power, 15}])
       stub(ItemManagement, :get_item_by_id, fn 90_221 -> {:ok, item} end)

@@ -3,9 +3,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   Basic (auto) attack execution for players and mobs.
 
   Runs the full swing: hit/miss/perfect-dodge roll, damage calculation,
-  multi-hit passives, equipment-break rolls, and attacker-side
-  `on_dealt_damage` status procs. `execute_attack/3` runs inside the attacker's
-  `PlayerSession`, so self-directed effects (breaks, auto-casts) are casts to
+  multi-hit passives, equipment-break rolls, attacker-side `on_dealt_damage`
+  status procs, HP drain, and the equipment-granted splash around the target.
+  `execute_attack/3` runs inside the attacker's `PlayerSession`, so
+  self-directed effects (breaks, auto-casts, drain heals) are messages to
   `self()`.
   """
 
@@ -17,8 +18,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
+  alias Aesir.ZoneServer.Mmo.Combat.HpDrain
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
+  alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Passives
@@ -194,6 +197,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          target_type,
          target_id
        ) do
+    hits = attack_hits(player_state)
+
     with :ok <-
            handle_player_attack_hit(
              damage_result,
@@ -202,13 +207,78 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
              target_pid,
              target_type,
              target_id,
-             attack_hits(player_state)
+             hits
            ) do
       roll_equipment_breaks(player_state, target_state, target_type, target_pid)
       dispatch_dealt_damage(attacker, target_type, target_id, damage_result)
       OnHitEffects.after_hit(attacker, target, damage_result)
+      drain_hp(attacker, dealt_damage(damage_result.damage, target_type, hits))
+      splash_attack(attacker, target)
       :ok
     end
+  end
+
+  # Recovers HP from the damage a landed swing dealt, when the attacker's
+  # equipment carries the drain bonus. Rolled once per swing over the swing's
+  # total damage (multi-hit included), never per delivered hit, so a multi-hit
+  # proc does not multiply the number of rolls.
+  #
+  # The heal is a broadcast to the attacker's own session rather than a direct
+  # state write: `execute_attack/3` runs inside that session, so it lands as an
+  # ordinary message the single writer applies after the current one.
+  # Only the mob path delivers the multi-hit; a skill unit takes a single hit
+  # whatever the proc rolled, so the drain always reads the damage that actually
+  # landed.
+  defp dealt_damage(damage, :mob, hits), do: damage * hits
+  defp dealt_damage(damage, _target_type, _hits), do: damage
+
+  defp drain_hp(attacker, damage) do
+    case HpDrain.roll(attacker, damage) do
+      0 -> :ok
+      heal -> DamageApplication.apply_heal(attacker.unit_id, heal, attacker.unit_id)
+    end
+  end
+
+  # Extends a landed normal attack to every other valid enemy within the
+  # attacker's equipment-granted splash radius, centered on the primary target's
+  # cell. Target selection is the same primitive the splash skills use, so the
+  # hostility, targetability and dead-unit rules stay in one place.
+  #
+  # Each splashed target rolls its own hit/miss and damage — it is a separate
+  # swing landing on a different defender — and receives exactly one hit: the
+  # multi-hit proc, the break roll and the attacker's on-dealt-damage procs all
+  # belong to the primary swing and are not repeated here. The primary target is
+  # excluded, so it keeps taking exactly the hit already dealt above.
+  defp splash_attack(attacker, target) do
+    case EquipmentBonuses.splash_range(attacker) do
+      0 ->
+        :ok
+
+      radius ->
+        attacker.map_name
+        |> SplashTargets.select(target.position, radius, attacker)
+        |> Enum.reject(&(&1 == {target.unit_type, target.unit_id}))
+        |> Enum.each(&splash_hit(attacker, &1))
+    end
+  end
+
+  defp splash_hit(attacker, {_unit_type, target_id}) do
+    with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
+         splash_target <- target_state.__struct__.to_combatant(target_state),
+         {:ok, {:hit, damage_result}} <-
+           check_hit_and_calculate_damage(attacker, splash_target) do
+      handle_player_attack_hit(
+        damage_result,
+        attacker,
+        splash_target,
+        target_pid,
+        target_type,
+        target_id,
+        1
+      )
+    end
+
+    :ok
   end
 
   # Rolls equipment breaks once per confirmed weapon hit (never once per

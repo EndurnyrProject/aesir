@@ -86,6 +86,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       tuple_add_eff_dest: [{:bonus, {:add_eff, :sc_stun}, 500}],
       tuple_add_eff_when_hit_dest: [{:bonus, {:add_eff_when_hit, :sc_poison}, 300}],
       tuple_res_eff_dest: [{:bonus, {:res_eff, :sc_freeze}, 1000}],
+      pair_dest: [{:bonus, :hp_drain_rate, 50}, {:bonus, :hp_drain_percent, 5}],
+      splash_dest: [{:bonus, :splash_range, 1}],
       set_dest: [{:set, :atk_ele, :fire}],
       set_mixed_with_bonus: [{:bonus, :atk, 10}, {:set, :atk_ele, :wind}],
       set_inside_if: [
@@ -338,6 +340,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
 
       assert EquipScript.eval(program, 0) == %{movement_speed: 25}
       assert EquipScript.eval(Enum.reverse(program), 0) == %{movement_speed: 25}
+    end
+
+    test "splash range keeps the largest contribution instead of summing" do
+      program = [{:bonus, :splash_range, 1}, {:bonus, :splash_range, 1}]
+
+      assert EquipScript.eval(program, 0) == %{splash_range: 1}
+    end
+
+    test "both HP drain halves sum independently" do
+      program = [
+        {:bonus, :hp_drain_rate, 50},
+        {:bonus, :hp_drain_percent, 5},
+        {:bonus, :hp_drain_rate, 30},
+        {:bonus, :hp_drain_percent, 1}
+      ]
+
+      assert EquipScript.eval(program, 0) == %{hp_drain_rate: 80, hp_drain_percent: 6}
     end
 
     test "sums repeated tuple destinations into one key" do

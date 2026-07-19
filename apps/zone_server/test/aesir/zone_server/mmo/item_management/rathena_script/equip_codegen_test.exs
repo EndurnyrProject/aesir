@@ -39,6 +39,44 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
       assert {:ok, [{:bonus, :all_stats, 2}]} = compile("bonus bAllStats,2;")
     end
 
+    test "bSplashRange compiles to the max-merged splash destination" do
+      assert {:ok, [{:bonus, :splash_range, 1}]} = compile("bonus bSplashRange,1;")
+    end
+
+    test "bHPDrainRate emits one summing instruction per argument" do
+      assert {:ok, [{:bonus, :hp_drain_rate, 50}, {:bonus, :hp_drain_percent, 5}]} =
+               compile("bonus2 bHPDrainRate,50,5;")
+    end
+
+    test "bHPDrainRate keeps its emission order among neighbouring bonuses" do
+      assert {:ok,
+              [
+                {:bonus, :str, 1},
+                {:bonus, :hp_drain_rate, 1000},
+                {:bonus, :hp_drain_percent, 1},
+                {:bonus, :agi, 2}
+              ]} =
+               compile("bonus bStr,1; bonus2 bHPDrainRate,1000,1; bonus bAgi,2;")
+    end
+
+    test "bHPDrainRate inside a branch expands to both instructions" do
+      assert {:ok,
+              [
+                {:if, {:>, :refine, 7},
+                 [{:bonus, :hp_drain_rate, 30}, {:bonus, :hp_drain_percent, 5}], []}
+              ]} = compile("if (getrefine()>7) { bonus2 bHPDrainRate,30,5; }")
+    end
+
+    test "bHPDrainRate accepts refine-dependent amounts on both halves" do
+      assert {:ok, [{:bonus, :hp_drain_rate, {:*, :refine, 10}}, {:bonus, :hp_drain_percent, 5}]} =
+               compile("bonus2 bHPDrainRate,getrefine()*10,5;")
+    end
+
+    test "bHPDrainRate rejects a non-numeric first argument" do
+      assert {:error, {:unsupported, {:expression, _}}} =
+               compile("bonus2 bHPDrainRate,RC_Brute,5;")
+    end
+
     test "bAtkEle compiles to a :set instruction carrying the element" do
       assert {:ok, [{:set, :atk_ele, :fire}]} = compile("bonus bAtkEle,Ele_Fire;")
     end
@@ -317,8 +355,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     end
 
     test "unknown bonus key" do
-      assert {:error, {:unsupported, {:unknown_bonus_key, "bSplashRange"}}} =
-               compile("bonus bSplashRange,2;")
+      assert {:error, {:unsupported, {:unknown_bonus_key, "bNoRegen"}}} =
+               compile("bonus bNoRegen,2;")
     end
 
     test "non-refine conditional read is rejected" do
@@ -341,8 +379,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     end
 
     test "the first violation aborts the whole item" do
-      assert {:error, {:unsupported, {:unknown_bonus_key, "bSplashRange"}}} =
-               compile("bonus bStr,5; bonus bSplashRange,2; bonus bAgi,3;")
+      assert {:error, {:unsupported, {:unknown_bonus_key, "bNoRegen"}}} =
+               compile("bonus bStr,5; bonus bNoRegen,2; bonus bAgi,3;")
     end
 
     test "bonus with a non-two-arg shape is rejected" do

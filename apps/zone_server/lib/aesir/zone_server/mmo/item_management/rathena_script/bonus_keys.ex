@@ -25,6 +25,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   These compile to an `EquipScript` `:set` instruction — last writer wins —
   instead of a summed `:bonus`.
 
+  A fourth table, `@pair_keys`, covers `bonus2` keys whose two arguments are
+  both **amounts** rather than a param plus an amount (`bonus2 bHPDrainRate,rate,per`).
+  Each argument owns its own summing destination, so the codegen emits two
+  ordinary `:bonus` instructions and no new IR shape is needed.
+
   Two per-destination rules also live here rather than in the evaluator, so the
   data table stays the single extension point:
 
@@ -43,6 +48,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   @type param :: :race | :element | :size | :class | :skill | :status
   @type param_schema :: %{family: atom(), param: param(), unit: :percent | :ms | :sp | :per10k}
   @type value_schema :: %{dest: destination(), param: param()}
+  @type pair_schema :: %{first: destination(), second: destination()}
 
   @keys %{
     "bstr" => :str,
@@ -99,10 +105,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bhealpower" => :heal_power,
     "bcritatkrate" => :crit_atk_rate,
     "bshortatkrate" => :short_atk_rate,
-    "bperfecthitaddrate" => :perfect_hit
+    "bperfecthitaddrate" => :perfect_hit,
+    "bsplashrange" => :splash_range
   }
 
-  @max_destinations MapSet.new([:movement_speed])
+  @max_destinations MapSet.new([:movement_speed, :splash_range])
 
   @destination_scales %{perfect_dodge: 10}
 
@@ -133,6 +140,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
 
   @value_keys %{
     "batkele" => %{dest: :atk_ele, param: :element}
+  }
+
+  @pair_keys %{
+    "bhpdrainrate" => %{first: :hp_drain_rate, second: :hp_drain_percent}
   }
 
   @race_domain [
@@ -173,10 +184,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   def destination(name) when is_binary(name), do: Map.fetch(@keys, String.downcase(name))
 
   @doc """
-  The deduplicated set of destination atoms every recognized key maps to.
+  The deduplicated set of destination atoms every recognized flat-amount key
+  maps to, including both halves of each `@pair_keys` entry — they are ordinary
+  summing destinations and must validate on the way back in.
   """
   @spec destinations() :: [destination()]
-  def destinations, do: @keys |> Map.values() |> Enum.uniq()
+  def destinations do
+    (Map.values(@keys) ++ Enum.flat_map(Map.values(@pair_keys), &[&1.first, &1.second]))
+    |> Enum.uniq()
+  end
 
   @doc """
   Whether a destination is non-stackable: the strongest single contribution
@@ -202,6 +218,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   """
   @spec param_schema(String.t()) :: {:ok, param_schema()} | :error
   def param_schema(name) when is_binary(name), do: Map.fetch(@param_keys, String.downcase(name))
+
+  @doc """
+  Resolves a rAthena `bonus2` key whose two arguments are both amounts (any
+  case) to the pair of destinations they sum into: `first` for the leading
+  argument, `second` for the trailing one. Returns `:error` for out-of-vocabulary
+  keys — including the parameterized `bonus2` keys, which `param_schema/1` owns.
+  """
+  @spec pair_schema(String.t()) :: {:ok, pair_schema()} | :error
+  def pair_schema(name) when is_binary(name), do: Map.fetch(@pair_keys, String.downcase(name))
 
   @doc """
   The deduplicated set of family atoms every recognized `bonus2` key maps to.

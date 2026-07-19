@@ -39,7 +39,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     resolves via `BonusKeys.param_schema/1` and `param` resolves through
     `Resolver` according to the schema's param kind (race/element/size/class/status
     via a `{:name, const}` constant, skill via a `{:name, const}` name or an
-    `{:int, id}` literal). `RC_Boss` is a sentinel: on an `:addrace`/`:subrace`
+    `{:int, id}` literal). A key in `BonusKeys.pair_schema/1` instead takes two
+    amounts and expands to TWO `{:bonus, dest, expr}` instructions, one per
+    destination, each summing independently. `RC_Boss` is a sentinel: on an `:addrace`/`:subrace`
     family it redirects to `:addclass`/`:subclass`; on any other family it is
     unsupported. A non-constant or unresolvable param is
     `{:unresolved_param, detail}`; any other shape is unsupported.
@@ -88,8 +90,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   end
 
   defp reduce_top([stmt | rest], env, acc) do
-    with {:ok, instr} <- compile_instr(stmt, env) do
-      reduce_top(rest, env, [instr | acc])
+    with {:ok, instrs} <- compile_instrs(stmt, env) do
+      reduce_top(rest, env, Enum.reverse(instrs) ++ acc)
     end
   end
 
@@ -100,7 +102,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     |> unblock_all()
     |> Enum.reduce_while({:ok, []}, fn stmt, {:ok, acc} ->
       case branch_instr(stmt, env) do
-        {:ok, instr} -> {:cont, {:ok, [instr | acc]}}
+        {:ok, instrs} -> {:cont, {:ok, Enum.reverse(instrs) ++ acc}}
         {:error, _} = error -> {:halt, error}
       end
     end)
@@ -111,14 +113,28 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   end
 
   @spec branch_instr(tuple(), %{String.t() => EquipScript.expr()}) ::
-          {:ok, EquipScript.instr()} | {:error, {:unsupported, detail()}}
+          {:ok, [EquipScript.instr()]} | {:error, {:unsupported, detail()}}
   defp branch_instr({:assign, {:var, :local, name, :int}, _ast}, _env),
     do: unsupported({:conditional_assignment, name})
 
-  defp branch_instr(stmt, env), do: compile_instr(stmt, env)
+  defp branch_instr(stmt, env), do: compile_instrs(stmt, env)
+
+  # A statement normally compiles to exactly one instruction; pair keys expand
+  # to two. Normalizing here keeps both fold points list-shaped without every
+  # `compile_instr/2` clause having to wrap itself.
+  @spec compile_instrs(tuple(), %{String.t() => EquipScript.expr()}) ::
+          {:ok, [EquipScript.instr()]} | {:error, {:unsupported, detail()}}
+  defp compile_instrs(stmt, env) do
+    case compile_instr(stmt, env) do
+      {:ok, instrs} when is_list(instrs) -> {:ok, instrs}
+      {:ok, instr} -> {:ok, [instr]}
+      {:error, _} = error -> error
+    end
+  end
 
   @spec compile_instr(tuple(), %{String.t() => EquipScript.expr()}) ::
-          {:ok, EquipScript.instr()} | {:error, {:unsupported, detail()}}
+          {:ok, EquipScript.instr() | [EquipScript.instr()]}
+          | {:error, {:unsupported, detail()}}
   defp compile_instr({:cmd, "bonus", [{:name, key}, arg]}, env) do
     case BonusKeys.value_schema(key) do
       {:ok, schema} -> compile_value_bonus(schema, arg)
@@ -128,11 +144,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   defp compile_instr({:cmd, "bonus", args}, _env), do: unsupported({:bonus_shape, args})
 
-  defp compile_instr({:cmd, "bonus2", [{:name, key}, param_ast, amount]}, env) do
-    with {:ok, schema} <- param_schema(key),
-         {:ok, dest} <- resolve_param(schema, param_ast),
-         {:ok, expr} <- compile_expr(amount, env) do
-      {:ok, {:bonus, dest, expr}}
+  defp compile_instr({:cmd, "bonus2", [{:name, key}, first_arg, second_arg]}, env) do
+    case BonusKeys.pair_schema(key) do
+      {:ok, schema} -> compile_pair_bonus(schema, first_arg, second_arg, env)
+      :error -> compile_param_bonus(key, first_arg, second_arg, env)
     end
   end
 
@@ -148,6 +163,36 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   defp compile_instr({:cmd, name, _args}, _env), do: unsupported({:unsupported_command, name})
   defp compile_instr(other, _env), do: unsupported({:statement, other})
+
+  @spec compile_param_bonus(String.t(), term(), term(), %{String.t() => EquipScript.expr()}) ::
+          {:ok, EquipScript.instr()} | {:error, {:unsupported, detail()}}
+  defp compile_param_bonus(key, param_ast, amount, env) do
+    with {:ok, schema} <- param_schema(key),
+         {:ok, dest} <- resolve_param(schema, param_ast),
+         {:ok, expr} <- compile_expr(amount, env) do
+      {:ok, {:bonus, dest, expr}}
+    end
+  end
+
+  # Both arguments of a pair key are amounts summing into a destination of their
+  # own, so the key expands to two independent `:bonus` instructions rather than
+  # an IR shape of its own.
+  @spec compile_pair_bonus(
+          BonusKeys.pair_schema(),
+          term(),
+          term(),
+          %{String.t() => EquipScript.expr()}
+        ) :: {:ok, [EquipScript.instr()]} | {:error, {:unsupported, detail()}}
+  defp compile_pair_bonus(%{first: first_dest, second: second_dest}, first_arg, second_arg, env) do
+    with {:ok, first_expr} <- compile_expr(first_arg, env),
+         {:ok, second_expr} <- compile_expr(second_arg, env) do
+      {:ok,
+       [
+         {:bonus, first_dest, scale(first_dest, first_expr)},
+         {:bonus, second_dest, scale(second_dest, second_expr)}
+       ]}
+    end
+  end
 
   @spec compile_amount_bonus(String.t(), term(), %{String.t() => EquipScript.expr()}) ::
           {:ok, EquipScript.instr()} | {:error, {:unsupported, detail()}}
