@@ -532,12 +532,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   # A contributing attacker's final damage-based EXP grant for a mob kill
-  # (`Unit.Mob.KillExp.distribute/5`, design "Damage-based EXP share"),
+  # (`Unit.Mob.KillExp.distribute/6`, design "Damage-based EXP share"),
   # already scaled by the damage/bonus/penalty (or party pool/bonus/penalty)
-  # math -- applied as-is.
+  # math. Only the killed mob's race is still ours to apply, through this
+  # session's own per-race equipment EXP bonus.
   @impl true
-  def handle_info({:mob_kill_exp, base, job}, state) do
-    ExperienceHandler.handle_gain_exp(base, job, state)
+  def handle_info({:mob_kill_exp, base, job, mob_race}, state) do
+    ExperienceHandler.handle_gain_exp(base, job, mob_race, state)
   end
 
   # A membership or option change on our own live party: relay the fresh

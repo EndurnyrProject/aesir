@@ -177,6 +177,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus2 bIgnoreMdefRaceRate,RC_Angel,50;")
     end
 
+    test "exp_add_race transpiles for a specific race and for the RC_All wildcard" do
+      assert {:ok, [{:bonus, {:exp_add_race, :all}, 10}]} =
+               compile("bonus2 bExpAddRace,RC_All,10;")
+
+      assert {:ok, [{:bonus, {:exp_add_race, :undead}, 5}]} =
+               compile("bonus2 bExpAddRace,RC_Undead,5;")
+
+      assert {:ok, [{:bonus, {:exp_add_race, :player_human}, 15}]} =
+               compile("bonus2 bExpAddRace,RC_Player_Human,15;")
+    end
+
     test "skill_atk by skill name resolves through the catalog to its integer id" do
       assert {:ok, %{id: firebolt_id}} = Catalog.by_name(:mg_firebolt)
 

@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
   @moduledoc """
   Verifies that a mob death broadcasts the drop-rolling `:mob_killed` payload
   (drop table, mob level, death position -- no EXP fields, since EXP now
-  flows through `Unit.Mob.KillExp.distribute/5` as `{:mob_kill_exp, ...}`) to
+  flows through `Unit.Mob.KillExp.distribute/6` as `{:mob_kill_exp, ...}`) to
   the killer, and that a death with no killer produces no broadcast at all.
   """
 

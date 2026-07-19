@@ -23,7 +23,7 @@ defmodule Aesir.ZoneServer.Integration.StatusPointsIntegrationTest do
 
       flush_packets()
       %{character_id: char_id, map_name: map_name} = get_player_state(player.pid)
-      KillExp.distribute(%{char_id => 1}, req, 0, 1, map_name)
+      KillExp.distribute(%{char_id => 1}, req, 0, 1, map_name, :formless)
 
       status_point_id = StatusParams.status_point()
       assert_receive {:packet_sent, %ParamChange{var_id: ^status_point_id, value: 3}, _}, 1_000

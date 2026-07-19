@@ -12,7 +12,7 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
   entry and DB rows; only the usual integration-test I/O (map cache, spatial
   index) goes through the real ETS-backed implementations `IntegrationCase`
   already wires up, mirroring `warp_test.exs`/`cart_integration_test.exs`.
-  `kill_mob/1` calls `KillExp.distribute/5` directly with the killer as the
+  `kill_mob/1` calls `KillExp.distribute/6` directly with the killer as the
   mob's sole (100%-damage) attacker -- the exact seam `MobSession` uses in
   production -- so the party pooling/eligibility logic under test is the real
   thing, not a hand-computed stand-in.
@@ -130,7 +130,7 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
       flush_packets()
 
       %{character_id: riser_char_id, map_name: riser_map} = get_player_state(riser.pid)
-      KillExp.distribute(%{riser_char_id => 1}, 1_000_000_000, 0, 1, riser_map)
+      KillExp.distribute(%{riser_char_id => 1}, 1_000_000_000, 0, 1, riser_map, :formless)
 
       leader_state = get_player_state(leader.pid)
       riser_state = get_player_state(riser.pid)
@@ -223,7 +223,7 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
 
   defp kill_mob(killer_pid) do
     %{character_id: char_id, map_name: map_name} = get_player_state(killer_pid)
-    KillExp.distribute(%{char_id => 1}, @base_exp, @job_exp, @mob_level, map_name)
+    KillExp.distribute(%{char_id => 1}, @base_exp, @job_exp, @mob_level, map_name, :formless)
   end
 
   defp enable_exp_share(leader_pid) do

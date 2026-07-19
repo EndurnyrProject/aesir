@@ -94,14 +94,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
 
   defp grant_exp({char_id, _name, base_level, _pid}, %MobDefinition{
          mvp_exp: mvp_exp,
-         level: level
+         level: level,
+         race: race
        }) do
     rate = LevelPenalty.mvp_exp(level, base_level)
 
     PubSub.broadcast(
       Aesir.PubSub,
       "player:#{char_id}",
-      {:mob_kill_exp, scale(mvp_exp, rate), 0}
+      {:mob_kill_exp, scale(mvp_exp, rate), 0, race}
     )
 
     :ok

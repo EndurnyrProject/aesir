@@ -136,7 +136,7 @@ defmodule Aesir.ZoneServer.SessionHelpers do
       skill_range: 10,
       chase_range: 12,
       element: {:neutral, 1},
-      race: :formless,
+      race: opts[:race] || :formless,
       size: :medium,
       walk_speed: 200,
       attack_delay: 1000,

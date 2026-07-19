@@ -24,7 +24,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.KillExp do
   design "EXP share") -- not just the ones who attacked; other attackers are
   granted their own damage-based share directly, after the renewal
   level-gap penalty (`LevelPenalty.exp/2`). Every final grant is delivered as
-  `{:mob_kill_exp, base, job}` to the recipient's own `player:<char_id>` topic.
+  `{:mob_kill_exp, base, job, mob_race}` to the recipient's own
+  `player:<char_id>` topic. The dead mob's race rides along so each recipient's
+  own session can apply its per-race equipment EXP bonus — the bonus is a
+  property of the receiving player's gear, not of the shared kill, so it cannot
+  be folded into the shares computed here.
   """
 
   alias Aesir.ZoneServer.Config
@@ -85,16 +89,19 @@ defmodule Aesir.ZoneServer.Unit.Mob.KillExp do
   broadcasts it. `aggro_list` is the mob's full cumulative per-attacker
   damage log; `base_exp`/`job_exp` are the mob's undivided reward; `mob_level`
   feeds the renewal level-gap penalty for non-pooled attackers; `mob_map` is
-  the mob's map, used to find each attacker's live party co-members.
+  the mob's map, used to find each attacker's live party co-members; `mob_race`
+  rides untouched into every grant, for the recipient's own per-race equipment
+  EXP bonus.
   """
   @spec distribute(
           %{non_neg_integer() => pos_integer()},
           non_neg_integer(),
           non_neg_integer(),
           non_neg_integer(),
-          String.t()
+          String.t(),
+          atom()
         ) :: :ok
-  def distribute(aggro_list, base_exp, job_exp, mob_level, mob_map) do
+  def distribute(aggro_list, base_exp, job_exp, mob_level, mob_map, mob_race) do
     total_damage = Enum.reduce(aggro_list, 0, fn {_char_id, dmg}, acc -> acc + dmg end)
 
     aggro_list
@@ -110,7 +117,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.KillExp do
       )
     )
     |> Enum.group_by(fn {char_id, _share} -> exp_share_party_id(char_id) end)
-    |> Enum.each(&distribute_group(&1, mob_level, mob_map))
+    |> Enum.each(&distribute_group(&1, mob_level, mob_map, mob_race))
 
     :ok
   end
@@ -148,13 +155,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.KillExp do
     end
   end
 
-  defp distribute_group({nil, shares}, mob_level, _mob_map) do
+  defp distribute_group({nil, shares}, mob_level, _mob_map, mob_race) do
     Enum.each(shares, fn {char_id, {base_share, job_share}} ->
-      grant_solo(char_id, base_share, job_share, mob_level)
+      grant_solo(char_id, base_share, job_share, mob_level, mob_race)
     end)
   end
 
-  defp distribute_group({party_id, shares}, mob_level, mob_map) do
+  defp distribute_group({party_id, shares}, mob_level, mob_map, mob_race) do
     case PartyManager.get(party_id) do
       {:ok, party_state} ->
         {pooled_base, pooled_job} = pool(shares)
@@ -165,12 +172,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.KillExp do
           &ExpShare.split(pooled_base, pooled_job, &1, Config.party_even_share_bonus(), mob_level)
         )
         |> Enum.each(fn {char_id, {base_slice, job_slice}} ->
-          broadcast_grant(char_id, base_slice, job_slice)
+          broadcast_grant(char_id, base_slice, job_slice, mob_race)
         end)
 
       {:error, _reason} ->
         Enum.each(shares, fn {char_id, {base_share, job_share}} ->
-          grant_solo(char_id, base_share, job_share, mob_level)
+          grant_solo(char_id, base_share, job_share, mob_level, mob_race)
         end)
     end
   end
@@ -181,7 +188,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.KillExp do
     end)
   end
 
-  defp grant_solo(char_id, base_share, job_share, mob_level) do
+  defp grant_solo(char_id, base_share, job_share, mob_level, mob_race) do
     case UnitRegistry.get_unit(:player, char_id) do
       {:ok, {_module, player_state, _pid}} ->
         rate = LevelPenalty.exp(mob_level, player_state.stats.progression.base_level)
@@ -189,7 +196,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.KillExp do
         broadcast_grant(
           char_id,
           apply_level_penalty(base_share, rate),
-          apply_level_penalty(job_share, rate)
+          apply_level_penalty(job_share, rate),
+          mob_race
         )
 
       {:error, :not_found} ->
@@ -204,7 +212,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.KillExp do
     end
   end
 
-  defp broadcast_grant(char_id, base, job) do
-    PubSub.broadcast(Aesir.PubSub, "player:#{char_id}", {:mob_kill_exp, base, job})
+  defp broadcast_grant(char_id, base, job, mob_race) do
+    PubSub.broadcast(Aesir.PubSub, "player:#{char_id}", {:mob_kill_exp, base, job, mob_race})
   end
 end

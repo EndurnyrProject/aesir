@@ -243,6 +243,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     "bmagicaddsize" => %{family: :magic_addsize, param: :size, unit: :percent},
     "bmagicatkele" => %{family: :magic_atk_ele, param: :element, unit: :percent},
     "bskillatk" => %{family: :skill_atk, param: :skill, unit: :percent},
+    "bexpaddrace" => %{family: :exp_add_race, param: :race, unit: :percent},
     "bignoredefracerate" => %{family: :ignore_def_race, param: :race, unit: :percent},
     "bignoremdefracerate" => %{family: :ignore_mdef_race, param: :race, unit: :percent},
     "bskillcooldown" => %{family: :skill_cooldown, param: :skill, unit: :ms},
@@ -262,6 +263,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     end
 
     test "resolves case-insensitively" do
+      assert BonusKeys.param_schema("bExpAddRace") == {:ok, @param_schemas["bexpaddrace"]}
       assert BonusKeys.param_schema("bAddRace") == {:ok, @param_schemas["baddrace"]}
       assert BonusKeys.param_schema("BADDRACE") == {:ok, @param_schemas["baddrace"]}
     end

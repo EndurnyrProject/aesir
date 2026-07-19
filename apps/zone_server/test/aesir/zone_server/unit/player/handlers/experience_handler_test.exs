@@ -102,6 +102,76 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandlerTest do
     end
   end
 
+  # Same capture as `capture_grant/1`, but through the kill-sourced arity that
+  # carries the dead mob's race, with `equipment` bonuses worn.
+  defp capture_race_grant(equipment, mob_race, modifiers \\ %{}) do
+    test_pid = self()
+
+    stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> modifiers end)
+
+    stub(Leveling, :apply_exp, fn progression, base, job ->
+      send(test_pid, {:granted, base, job})
+      {progression, 0, 0}
+    end)
+
+    ExperienceHandler.handle_gain_exp(100, 100, mob_race, state_wearing(equipment))
+
+    assert_received {:granted, base, job}
+    {base, job}
+  end
+
+  defp state_wearing(equipment) do
+    %{game_state: game_state} = state = state()
+    modifiers = %{game_state.stats.modifiers | equipment: equipment}
+    stats = %{game_state.stats | modifiers: modifiers}
+
+    %{state | game_state: %{game_state | stats: stats}}
+  end
+
+  describe "handle_gain_exp/4 per-race equipment EXP bonus" do
+    test "applies to base and job when the killed mob's race matches" do
+      assert {120, 120} == capture_race_grant(%{{:exp_add_race, :brute} => 20}, :brute)
+    end
+
+    test "does not apply when the killed mob is of another race" do
+      assert {100, 100} == capture_race_grant(%{{:exp_add_race, :brute} => 20}, :undead)
+    end
+
+    test "an :all bonus applies to every race" do
+      equipment = %{{:exp_add_race, :all} => 10}
+
+      for race <- [:formless, :undead, :brute, :plant, :insect, :demon, :angel, :dragon] do
+        assert {110, 110} == capture_race_grant(equipment, race)
+      end
+    end
+
+    test "a race-specific bonus sums with the :all bonus" do
+      equipment = %{{:exp_add_race, :brute} => 20, {:exp_add_race, :all} => 10}
+
+      assert {130, 130} == capture_race_grant(equipment, :brute)
+      assert {110, 110} == capture_race_grant(equipment, :fish)
+    end
+
+    test "a mob of the player race reads the :player_human bonus" do
+      assert {115, 115} == capture_race_grant(%{{:exp_add_race, :player_human} => 15}, :player)
+    end
+
+    test "no equipment leaves the grant untouched" do
+      assert {100, 100} == capture_race_grant(%{}, :brute)
+    end
+
+    test "stacks additively with the exp_rate status modifier, truncating once" do
+      equipment = %{{:exp_add_race, :brute} => 25}
+
+      assert {175, 195} ==
+               capture_race_grant(equipment, :brute, %{exp_rate: 50, job_exp_rate: 20})
+    end
+
+    test "a nil race grants no per-race bonus" do
+      assert {100, 100} == capture_race_grant(%{{:exp_add_race, :all} => 50}, nil)
+    end
+  end
+
   describe "handle_gain_exp/3 trait-point grant" do
     defp stub_level_up(from_level, to_level) do
       stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{} end)

@@ -2,10 +2,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionMobKillExpTest do
   @moduledoc """
   Exercises `PlayerSession`'s side of a mob kill now that damage-based EXP
   distribution lives in `Unit.Mob.KillExp` (design "Damage-based EXP share"):
-  `{:mob_kill_exp, base, job}` -- this session's own final share, already
-  computed and (for a party) pooled/split by `KillExp.distribute/5` -- is
-  applied as-is via `ExperienceHandler.handle_gain_exp/3`, with no further
-  math on this end.
+  `{:mob_kill_exp, base, job, race}` -- this session's own final share, already
+  computed and (for a party) pooled/split by `KillExp.distribute/6` -- is
+  handed to `ExperienceHandler.handle_gain_exp/4` untouched, along with the
+  dead mob's race, which only this session can turn into a per-race equipment
+  EXP bonus.
   """
 
   use ExUnit.Case, async: true
@@ -43,9 +44,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionMobKillExpTest do
     %{game_state: PlayerState.new(character()), connection_pid: self()}
   end
 
-  test "{:mob_kill_exp, base, job} delegates straight to ExperienceHandler.handle_gain_exp/3" do
-    expect(ExperienceHandler, :handle_gain_exp, fn 10, 5, state -> {:noreply, state} end)
+  test "{:mob_kill_exp, base, job, race} delegates to ExperienceHandler.handle_gain_exp/4" do
+    expect(ExperienceHandler, :handle_gain_exp, fn 10, 5, :brute, state -> {:noreply, state} end)
 
-    {:noreply, _state} = PlayerSession.handle_info({:mob_kill_exp, 10, 5}, state())
+    {:noreply, _state} = PlayerSession.handle_info({:mob_kill_exp, 10, 5, :brute}, state())
   end
 end

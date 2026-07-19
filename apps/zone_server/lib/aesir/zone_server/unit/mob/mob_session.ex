@@ -629,7 +629,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   # Distributes EXP to every attacker who damaged the mob, proportional to
-  # damage dealt (`KillExp.distribute/5`, design "Damage-based EXP share"),
+  # damage dealt (`KillExp.distribute/6`, design "Damage-based EXP share"),
   # grants the MVP reward for an MVP-tier boss (`MvpReward.grant/5`, a no-op
   # for every other mob), then publishes the drop-rolling payload to the
   # killing blow's own session
@@ -644,7 +644,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
       mob_data.base_exp,
       mob_data.job_exp,
       mob_data.level,
-      state.map_name
+      state.map_name,
+      mob_data.race
     )
 
     MvpReward.grant(aggro_list, mob_data, state.map_name, state.x, state.y)
