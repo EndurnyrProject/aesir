@@ -92,7 +92,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     skill_id = Keyword.fetch!(opts, :skill_id)
     skill_level = Keyword.fetch!(opts, :skill_level)
-    calc_opts = Keyword.take(opts, [:skill_ratio, :skip_crit])
+    calc_opts = Keyword.take(opts, [:skill_ratio, :skip_crit, :skill_id])
 
     attacker.map_name
     |> SplashTargets.select(center, radius, attacker)

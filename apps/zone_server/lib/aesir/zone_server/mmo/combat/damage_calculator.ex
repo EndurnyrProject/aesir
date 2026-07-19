@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
+  alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
 
@@ -217,20 +218,29 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   `opts` accepts `:element` to force the attack element for this call (see
   `calculate_damage/3`), taking priority over both the weapon element and any
-  `attack_element` status modifier.
+  `attack_element` status modifier. `:skill_id` scopes the `{:skill_atk, id}`
+  equipment family to the current skill.
+
+  After the size/race/element/status steps, the attacker's equipment damage
+  families (race+class, element, size, skill) each apply as their own
+  sequential multiplicative step, then the defender's equipment damage-taken
+  families (race+class, element, size) apply as reductions.
   """
   @spec apply_modifier_pipeline(integer(), combatant(), combatant(), keyword()) :: {:ok, number()}
   def apply_modifier_pipeline(base_damage, attacker, defender, opts \\ []) do
     {unit_type, unit_id} = get_unit_type_and_id(attacker)
     attacker_modifiers = ModifierCalculator.get_all_modifiers(unit_type, unit_id)
     forced_element = Keyword.get(opts, :element)
+    skill_id = Keyword.get(opts, :skill_id)
+    attack_element = forced_element || resolve_attack_element(attacker, attacker_modifiers)
 
     total_atk =
       base_damage
       |> apply_size_modifier(attacker, defender)
-      |> apply_race_modifier(attacker, defender)
-      |> apply_element_modifier(attacker, defender, attacker_modifiers, forced_element)
+      |> apply_element_modifier(attack_element, defender, attacker_modifiers)
       |> apply_status_effect_damage_modifiers(attacker_modifiers)
+      |> apply_equipment_attack_families(attacker, defender, skill_id, attack_element)
+      |> apply_equipment_taken_families(attacker, defender, attack_element)
 
     {:ok, total_atk}
   end
@@ -246,7 +256,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   """
   @spec apply_defense_formula(number(), combatant(), combatant() | nil) :: {:ok, integer()}
   def apply_defense_formula(total_atk, defender, attacker \\ nil) do
-    hard_def = defender.combat_stats.def
+    hard_def = ignore_hard_def(defender.combat_stats.def, attacker, defender)
     soft_def = calculate_soft_defense(defender) + divine_protection_bonus(attacker, defender)
 
     {unit_type, unit_id} = get_unit_type_and_id(defender)
@@ -338,6 +348,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     defender.combat_stats.soft_def
   end
 
+  # Reduces the defender's hard DEF by the attacker's equipment ignore-def-by-race
+  # percent before the renewal formula. A nil attacker (legacy 2-arity call) or a
+  # 0 rate leaves hard DEF bit-identical.
+  defp ignore_hard_def(hard_def, nil, _defender), do: hard_def
+
+  defp ignore_hard_def(hard_def, attacker, defender) do
+    rate = EquipmentBonuses.ignore_def_rate(attacker, defender.race)
+    div(hard_def * (100 - rate), 100)
+  end
+
   # Divine Protection (AL_DP): flat soft-DEF added to the defender when the
   # attacker is undead/demon. nil attacker (e.g. the legacy 2-arity call) means
   # no attacker context, so no Divine Protection is applied.
@@ -349,10 +369,51 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   # Modifier application functions (unified from original Combat module)
 
-  defp apply_element_modifier(damage, attacker, defender, attacker_modifiers, forced_element) do
-    attack_element = forced_element || resolve_attack_element(attacker, attacker_modifiers)
+  defp apply_element_modifier(damage, attack_element, defender, attacker_modifiers) do
     DamageShared.apply_element(damage, attack_element, defender, attacker_modifiers)
   end
+
+  # Attacker percent damage families. Each family (race+class, element, size,
+  # skill) is one sequential multiplicative step; every contributor to a family
+  # sums into a single accumulator before the multiply, so passives (Dragonology)
+  # and equipment never compound against each other — mirroring the magic
+  # pipeline's cardfix model. A family summing to 0 is identity, preserving the
+  # float damage untouched.
+  defp apply_equipment_attack_families(damage, attacker, defender, skill_id, attack_element) do
+    %{race_class: race_class, element: element, size: size, skill: skill} =
+      EquipmentBonuses.attack_rates(attacker, defender, skill_id, attack_element)
+
+    race_class = race_class + RaceModifiers.dragonology_atk_rate(attacker, defender.race)
+
+    damage
+    |> apply_family_step(race_class)
+    |> apply_family_step(element)
+    |> apply_family_step(size)
+    |> apply_family_step(skill)
+  end
+
+  # Defender percent damage-taken families, read off the defender's own
+  # equipment and keyed on the attacker's traits / the effective attack element.
+  # Dragonology's resist rate sums into the race+class family like any other
+  # contributor. Each family applies as a percent reduction, floored at the
+  # min-1 damage convention.
+  defp apply_equipment_taken_families(damage, attacker, defender, attack_element) do
+    %{race_class: race_class, element: element, size: size} =
+      EquipmentBonuses.damage_taken_rates(defender, attacker, attack_element)
+
+    race_class = race_class + RaceModifiers.dragonology_resist_rate(defender, attacker.race)
+
+    damage
+    |> apply_taken_step(race_class)
+    |> apply_taken_step(element)
+    |> apply_taken_step(size)
+  end
+
+  defp apply_family_step(damage, 0), do: damage
+  defp apply_family_step(damage, sum), do: div(trunc(damage) * (100 + sum), 100)
+
+  defp apply_taken_step(damage, 0), do: damage
+  defp apply_taken_step(damage, sum), do: max(1, div(trunc(damage) * (100 - sum), 100))
 
   defp resolve_attack_element(attacker, attacker_modifiers) do
     Map.get_lazy(attacker_modifiers, :attack_element, fn ->
@@ -366,15 +427,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
     modifier = SizeModifiers.get_modifier(attacker_size, defender_size)
     damage * modifier
-  end
-
-  # Dragonology (SA_DRAGONOLOGY): the attacker's percentage ATK bonus vs the
-  # defender's race, and the defender's percentage damage-taken reduction vs
-  # the attacker's race (both `status.cpp:4682-4700`, Dragon race today).
-  defp apply_race_modifier(damage, attacker, defender) do
-    atk_rate = RaceModifiers.dragonology_atk_rate(attacker, defender.race)
-    resist_rate = RaceModifiers.dragonology_resist_rate(defender, attacker.race)
-    damage * (100 + atk_rate) / 100 * (100 - resist_rate) / 100
   end
 
   defp apply_status_effect_damage_modifiers(damage, modifiers) do

@@ -117,7 +117,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
       :mob, 2002 -> {:ok, {149, 150, @map_name}}
     end)
 
-    stub(DamageCalculator, :calculate_damage, fn _attacker, _target, _opts ->
+    stub(DamageCalculator, :calculate_damage, fn _attacker, _target, opts ->
+      assert opts[:skill_id] == 7
       {:ok, %{damage: 50, is_critical: false}}
     end)
 

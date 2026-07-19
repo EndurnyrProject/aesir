@@ -1109,4 +1109,239 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert fully_reduced.damage == 1
     end
   end
+
+  describe "equipment damage families (physical)" do
+    setup do
+      # Neutralize the size/element resistance steps so each test isolates the
+      # equipment family under test. RaceModifiers is left un-stubbed so the
+      # Dragonology passive still runs (0 at level 0).
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
+      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
+      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+      :ok
+    end
+
+    test "a +20% vs-brute weapon multiplies damage by exactly 1.2, inert vs a non-brute" do
+      attacker = %{
+        CombatTestHelper.create_player_combatant()
+        | equip_modifiers: %{{:addrace, :brute} => 20}
+      }
+
+      plain = CombatTestHelper.create_player_combatant()
+      brute = CombatTestHelper.create_mob_combatant(race: :brute)
+      fish = CombatTestHelper.create_mob_combatant(race: :fish)
+
+      {:ok, base_vs_brute} = DamageCalculator.apply_modifier_pipeline(1000, plain, brute)
+      {:ok, boosted_vs_brute} = DamageCalculator.apply_modifier_pipeline(1000, attacker, brute)
+
+      {:ok, base_vs_fish} = DamageCalculator.apply_modifier_pipeline(1000, plain, fish)
+      {:ok, boosted_vs_fish} = DamageCalculator.apply_modifier_pipeline(1000, attacker, fish)
+
+      assert boosted_vs_brute == base_vs_brute * 1.2
+      assert boosted_vs_fish == base_vs_fish
+    end
+
+    test "a +20% race family and a +20% size family stack multiplicatively to exactly 1.44" do
+      attacker = %{
+        CombatTestHelper.create_player_combatant()
+        | equip_modifiers: %{{:addrace, :brute} => 20, {:addsize, :medium} => 20}
+      }
+
+      target = CombatTestHelper.create_mob_combatant(race: :brute, size: :medium)
+
+      {:ok, base} =
+        DamageCalculator.apply_modifier_pipeline(
+          1000,
+          CombatTestHelper.create_player_combatant(),
+          target
+        )
+
+      {:ok, stacked} = DamageCalculator.apply_modifier_pipeline(1000, attacker, target)
+
+      assert stacked == base * 1.44
+    end
+
+    test "a defender {:subrace, attacker-race} card reduces incoming damage by the percent" do
+      attacker = CombatTestHelper.create_player_combatant(race: :player_human)
+
+      defender = %{
+        CombatTestHelper.create_mob_combatant()
+        | equip_modifiers: %{{:subrace, :player_human} => 20}
+      }
+
+      plain_defender = CombatTestHelper.create_mob_combatant()
+
+      {:ok, base} = DamageCalculator.apply_modifier_pipeline(1000, attacker, plain_defender)
+      {:ok, reduced} = DamageCalculator.apply_modifier_pipeline(1000, attacker, defender)
+
+      assert reduced == base * 0.8
+    end
+
+    test "{:skill_atk, id} applies only when the :skill_id opt matches" do
+      skill_id = 1234
+
+      attacker = %{
+        CombatTestHelper.create_player_combatant()
+        | equip_modifiers: %{{:skill_atk, skill_id} => 50}
+      }
+
+      defender = CombatTestHelper.create_mob_combatant()
+
+      {:ok, without_skill} = DamageCalculator.apply_modifier_pipeline(1000, attacker, defender)
+
+      {:ok, matched} =
+        DamageCalculator.apply_modifier_pipeline(1000, attacker, defender, skill_id: skill_id)
+
+      {:ok, mismatched} =
+        DamageCalculator.apply_modifier_pipeline(1000, attacker, defender, skill_id: 9999)
+
+      assert without_skill == 1000.0
+      assert matched == 1500
+      assert mismatched == without_skill
+    end
+
+    test "{:skill_atk, id} reaches the full calculate_damage path through the :skill_id opt" do
+      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
+        %{damage: damage, is_critical: false}
+      end)
+
+      skill_id = 1234
+
+      attacker = %{
+        CombatTestHelper.create_player_combatant()
+        | equip_modifiers: %{{:skill_atk, skill_id} => 100}
+      }
+
+      defender = CombatTestHelper.create_mob_combatant(def: 0)
+
+      :rand.seed(:exsss, {1, 2, 3})
+
+      {:ok, %{damage: without_skill}} =
+        DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
+
+      :rand.seed(:exsss, {1, 2, 3})
+
+      {:ok, %{damage: with_skill}} =
+        DamageCalculator.calculate_damage(attacker, defender, skip_crit: true, skill_id: skill_id)
+
+      assert with_skill == without_skill * 2
+    end
+
+    test "{:addele, e} keys on the defender's own defense element" do
+      attacker = %{
+        CombatTestHelper.create_player_combatant()
+        | equip_modifiers: %{{:addele, :earth} => 20}
+      }
+
+      earth_mob = CombatTestHelper.create_mob_combatant(element: {:earth, 1})
+      fire_mob = CombatTestHelper.create_mob_combatant(element: {:fire, 1})
+
+      {:ok, vs_earth} = DamageCalculator.apply_modifier_pipeline(1000, attacker, earth_mob)
+      {:ok, vs_fire} = DamageCalculator.apply_modifier_pipeline(1000, attacker, fire_mob)
+
+      assert vs_earth == 1200
+      assert vs_fire == 1000.0
+    end
+
+    test "{:subele, e} keys on the post-endow effective attack element, not the raw weapon" do
+      # The attacker wields a neutral weapon but an :attack_element status endows
+      # fire; the defender's {:subele, :fire} card must bite off the endowed
+      # element, proving the effective attack element threads to the reduction.
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :player, 1001 -> %{attack_element: :fire}
+        _, _ -> %{}
+      end)
+
+      attacker = CombatTestHelper.create_player_combatant(weapon_element: :neutral)
+
+      fire_resist = %{
+        CombatTestHelper.create_mob_combatant()
+        | equip_modifiers: %{{:subele, :fire} => 20}
+      }
+
+      neutral_resist = %{
+        CombatTestHelper.create_mob_combatant()
+        | equip_modifiers: %{{:subele, :neutral} => 20}
+      }
+
+      {:ok, reduced} = DamageCalculator.apply_modifier_pipeline(1000, attacker, fire_resist)
+      {:ok, inert} = DamageCalculator.apply_modifier_pipeline(1000, attacker, neutral_resist)
+
+      assert reduced == 800
+      assert inert == 1000.0
+    end
+
+    test "a boss-class defender picks up the {:addclass, :boss} family" do
+      attacker = %{
+        CombatTestHelper.create_player_combatant()
+        | equip_modifiers: %{{:addclass, :boss} => 30}
+      }
+
+      boss = CombatTestHelper.create_boss_mob()
+      normal = CombatTestHelper.create_mob_combatant()
+
+      {:ok, vs_boss} = DamageCalculator.apply_modifier_pipeline(1000, attacker, boss)
+      {:ok, vs_normal} = DamageCalculator.apply_modifier_pipeline(1000, attacker, normal)
+
+      assert vs_boss == 1300
+      assert vs_normal == 1000.0
+    end
+
+    test "Dragonology passive and {:addrace, :dragon} equipment sum into one race step" do
+      attacker = %{
+        CombatTestHelper.create_player_combatant()
+        | dragonology_level: 5,
+          equip_modifiers: %{{:addrace, :dragon} => 20}
+      }
+
+      dragon = CombatTestHelper.create_mob_combatant(race: :dragon)
+
+      {:ok, total} = DamageCalculator.apply_modifier_pipeline(1000, attacker, dragon)
+
+      # One race+class accumulator: Dragonology 4*5 + equipment 20 = 40,
+      # div(1000 * 140, 100) = 1400 — summed, never compounded.
+      assert total == 1400
+    end
+  end
+
+  describe "ignore-def equipment family (physical defense formula)" do
+    setup do
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+      :ok
+    end
+
+    test "100% ignore-def drops the defender's hard DEF contribution to nothing" do
+      brute_defender = CombatTestHelper.create_mob_combatant(race: :brute, def: 100)
+      no_def_defender = CombatTestHelper.create_mob_combatant(race: :brute, def: 0)
+
+      attacker = %{
+        CombatTestHelper.create_player_combatant()
+        | equip_modifiers: %{{:ignore_def_race, :brute} => 100}
+      }
+
+      {:ok, fully_ignored} =
+        DamageCalculator.apply_defense_formula(200, brute_defender, attacker)
+
+      {:ok, no_def_baseline} = DamageCalculator.apply_defense_formula(200, no_def_defender)
+
+      assert fully_ignored == no_def_baseline
+    end
+
+    test "0% ignore-def is bit-identical to the no-equipment baseline" do
+      brute_defender = CombatTestHelper.create_mob_combatant(race: :brute, def: 100)
+
+      zero_attacker = %{
+        CombatTestHelper.create_player_combatant()
+        | equip_modifiers: %{{:ignore_def_race, :brute} => 0}
+      }
+
+      {:ok, baseline} = DamageCalculator.apply_defense_formula(200, brute_defender)
+
+      {:ok, with_zero_ignore} =
+        DamageCalculator.apply_defense_formula(200, brute_defender, zero_attacker)
+
+      assert with_zero_ignore == baseline
+    end
+  end
 end
