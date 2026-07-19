@@ -15,7 +15,7 @@ defmodule Aesir.ZoneServer.Map.BossRespawnDelayTest do
   roughly a third of runs.
   """
 
-  use ExUnit.Case, async: false
+  use Aesir.DataCase, async: false
 
   import Aesir.TestEtsSetup
 

@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   alias Aesir.Net.SnapshotEntity
   alias Aesir.ZoneServer.Announcement
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Map.BossRespawn
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
@@ -280,7 +281,13 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
         # Schedule respawn with spawn config
         spawn_config = mob.spawn_ref
-        delay = respawn_delay(spawn_config, module.is_boss?(mob))
+        boss? = module.is_boss?(mob)
+        delay = respawn_delay(spawn_config, boss?)
+
+        if boss? do
+          respawn_at = DateTime.add(DateTime.utc_now(), delay, :millisecond)
+          BossRespawn.write(state.map_name, spawn_config.mob, respawn_at)
+        end
 
         timer_ref = Process.send_after(self(), {:respawn_mob, spawn_config}, delay)
 
@@ -599,9 +606,22 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     end)
   end
 
+  # Clearing the durable deadline lives here rather than in the `:respawn_mob`
+  # handler because this is the one path every spawn funnels through, and
+  # `mob_data` is already loaded. The delete is gated on boss mode so ordinary
+  # mob respawns issue no query.
+  #
+  # CONTRACT for boot reconciliation: a boss whose deadline is still in the
+  # future must be skipped *before* reaching this function, so its row survives
+  # to be re-armed. Placing a boss here always means "it is spawning now", which
+  # is precisely when its pending deadline should be consumed.
   defp spawn_single_mob(spawn_config, state) do
     case MobManagement.get_mob_by_id(spawn_config.mob) do
       {:ok, mob_data} ->
+        if :boss in (mob_data.modes || []) do
+          BossRespawn.delete(state.map_name, spawn_config.mob)
+        end
+
         do_spawn_single_mob(spawn_config, mob_data, state)
 
       {:error, :mob_not_found} ->
