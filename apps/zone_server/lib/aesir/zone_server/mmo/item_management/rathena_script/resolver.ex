@@ -3,9 +3,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   Maps rAthena script symbols to Aesir runtime values for the item-script
   transpiler.
 
-  Statuses, elements and classes are resolved through hand-curated maps (the
-  rAthena constant names do not line up with Aesir's internal atoms); skills and
-  items delegate to the live `Skill.Catalog` / `ItemManagement.Items` registries.
+  Statuses, elements, classes, races, sizes, mob classes and on-hit effects are
+  resolved through hand-curated maps (the rAthena constant names do not line up
+  with Aesir's internal atoms); skills and items delegate to the live
+  `Skill.Catalog` / `ItemManagement.Items` registries.
 
   Every resolver returns `{:ok, value}` or `{:error, {:unknown_symbol, symbol}}`;
   the error feeds the transpiler's all-or-nothing rule (an item with any
@@ -186,6 +187,48 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "Job_Soul_Linker" => :soul_linker
   }
 
+  @races %{
+    "RC_Formless" => :formless,
+    "RC_Undead" => :undead,
+    "RC_Brute" => :brute,
+    "RC_Plant" => :plant,
+    "RC_Insect" => :insect,
+    "RC_Fish" => :fish,
+    "RC_Demon" => :demon,
+    "RC_DemiHuman" => :demi_human,
+    "RC_Angel" => :angel,
+    "RC_Dragon" => :dragon,
+    "RC_Player_Human" => :player_human,
+    "RC_All" => :all,
+    "RC_Boss" => {:class, :boss}
+  }
+
+  @sizes %{
+    "Size_Small" => :small,
+    "Size_Medium" => :medium,
+    "Size_Large" => :large,
+    "Size_All" => :all
+  }
+
+  @mob_classes %{
+    "Class_Normal" => :normal,
+    "Class_Boss" => :boss,
+    "Class_All" => :all
+  }
+
+  @effs %{
+    "Eff_Stun" => :sc_stun,
+    "Eff_Poison" => :sc_poison,
+    "Eff_Freeze" => :sc_freeze,
+    "Eff_Curse" => :sc_curse,
+    "Eff_Silence" => :sc_silence,
+    "Eff_Blind" => :sc_blind,
+    "Eff_Sleep" => :sc_sleep,
+    "Eff_Bleeding" => :sc_bleeding,
+    "Eff_Confusion" => :sc_confusion,
+    "Eff_Stone" => :sc_stone
+  }
+
   @spec resolve_status(String.t()) :: {:ok, atom()} | error()
   def resolve_status(symbol) when is_binary(symbol), do: lookup(@statuses, symbol)
 
@@ -202,6 +245,48 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
 
   @spec resolve_class(String.t()) :: {:ok, atom()} | error()
   def resolve_class(symbol) when is_binary(symbol), do: lookup(@classes, symbol)
+
+  @doc """
+  Resolves an rAthena `RC_*` race constant to its combat race atom
+  (`Combat.RaceModifiers`'s type). `RC_Boss` is a sentinel: it does not name a
+  race, it redirects race-family bonuses (`bAddRace`/`bSubRace`) to the class
+  family, so it resolves to `{:class, :boss}` rather than a race atom.
+  """
+  @spec resolve_race(String.t()) :: {:ok, atom() | {:class, :boss}} | error()
+  def resolve_race(symbol) when is_binary(symbol), do: lookup(@races, symbol)
+
+  @doc """
+  Resolves an rAthena `Size_*` constant to its combat size atom
+  (`Combat.SizeModifiers`'s type).
+  """
+  @spec resolve_size(String.t()) :: {:ok, atom()} | error()
+  def resolve_size(symbol) when is_binary(symbol), do: lookup(@sizes, symbol)
+
+  @doc """
+  Resolves an rAthena mob-class `Class_*` constant (`bAddClass`/`bSubClass`'s
+  param) to `:normal | :boss | :all`. `Class_Guardian` is deliberately absent
+  - Aesir has no guardian mob class - so it resolves `:error`.
+  """
+  @spec resolve_mob_class(String.t()) :: {:ok, atom()} | error()
+  def resolve_mob_class(symbol) when is_binary(symbol), do: lookup(@mob_classes, symbol)
+
+  @doc """
+  Resolves an rAthena `Eff_*` status-infliction constant (`bAddEff` /
+  `bAddEffWhenHit` / `bResEff`'s param) to the `:sc_*` atom of an
+  implemented, registered status. `Eff_*` names with no registered status
+  effect module are deliberately absent and resolve `:error`.
+  """
+  @spec resolve_eff(String.t()) :: {:ok, atom()} | error()
+  def resolve_eff(symbol) when is_binary(symbol), do: lookup(@effs, symbol)
+
+  @doc """
+  Returns the full rAthena-symbol-to-status-atom map for `Eff_*` constants.
+  Used by the resolver-completeness test to assert every resolved `Eff_*`
+  entry has a registered `StatusEffect.Registry` definition (the same-commit
+  rule guard).
+  """
+  @spec effs() :: %{String.t() => atom()}
+  def effs, do: @effs
 
   @doc """
   Resolves an rAthena `EF_*` special-effect constant to its readable `:ef_*`
@@ -283,7 +368,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     ArgumentError -> :error
   end
 
-  @spec lookup(map(), String.t()) :: {:ok, atom()} | error()
+  @spec lookup(map(), String.t()) :: {:ok, term()} | error()
   defp lookup(table, symbol) do
     case Map.fetch(table, symbol) do
       {:ok, value} -> {:ok, value}

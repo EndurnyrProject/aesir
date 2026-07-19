@@ -21,4 +21,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverCompleteness
     assert missing == [],
            "resolver symbols with no registered effect module: #{inspect(missing)}"
   end
+
+  test "every resolved Eff_ symbol has a registered Registry definition" do
+    missing =
+      for {symbol, status_id} <- Resolver.effs(),
+          is_nil(Registry.get_definition(status_id)),
+          do: {symbol, status_id}
+
+    assert missing == [],
+           "resolver Eff_ symbols with no registered effect module: #{inspect(missing)}"
+  end
 end

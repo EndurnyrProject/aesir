@@ -90,6 +90,59 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
     end
   end
 
+  describe "resolve_race/1" do
+    test "maps RC_Brute to :brute" do
+      assert {:ok, :brute} = Resolver.resolve_race("RC_Brute")
+    end
+
+    test "maps RC_All to :all" do
+      assert {:ok, :all} = Resolver.resolve_race("RC_All")
+    end
+
+    test "maps RC_Boss to the class-axis sentinel" do
+      assert {:ok, {:class, :boss}} = Resolver.resolve_race("RC_Boss")
+    end
+
+    test "unknown race is an unknown_symbol error" do
+      assert {:error, {:unknown_symbol, "RC_Nope"}} = Resolver.resolve_race("RC_Nope")
+    end
+  end
+
+  describe "resolve_size/1" do
+    test "maps Size_Large to :large" do
+      assert {:ok, :large} = Resolver.resolve_size("Size_Large")
+    end
+
+    test "unknown size is an unknown_symbol error" do
+      assert {:error, {:unknown_symbol, "Size_Nope"}} = Resolver.resolve_size("Size_Nope")
+    end
+  end
+
+  describe "resolve_mob_class/1" do
+    test "maps Class_Boss to :boss" do
+      assert {:ok, :boss} = Resolver.resolve_mob_class("Class_Boss")
+    end
+
+    test "maps Class_All to :all" do
+      assert {:ok, :all} = Resolver.resolve_mob_class("Class_All")
+    end
+
+    test "Class_Guardian is deliberately unresolved" do
+      assert {:error, {:unknown_symbol, "Class_Guardian"}} =
+               Resolver.resolve_mob_class("Class_Guardian")
+    end
+  end
+
+  describe "resolve_eff/1" do
+    test "maps Eff_Stun to :sc_stun" do
+      assert {:ok, :sc_stun} = Resolver.resolve_eff("Eff_Stun")
+    end
+
+    test "unknown eff is an unknown_symbol error" do
+      assert {:error, {:unknown_symbol, "Eff_Nope"}} = Resolver.resolve_eff("Eff_Nope")
+    end
+  end
+
   describe "resolve_effect/1" do
     test "maps an EF_ constant to its effect atom" do
       assert {:ok, :heal2} = Resolver.resolve_effect("EF_HEAL2")
