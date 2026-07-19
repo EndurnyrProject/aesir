@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.LineOfSight
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
+  alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
@@ -22,14 +23,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
-  alias Aesir.ZoneServer.Unit.Mob.MobSession
-  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
-  alias Phoenix.PubSub
 
   @doc """
   Executes an attack from player to target.
@@ -340,13 +337,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     end
   end
 
-  defp apply_skill_unit_target_damage(manager_pid, target_id, damage, source) do
-    case SkillUnitManager.damage_targetable_cell(manager_pid, target_id, damage, source) do
-      {:ok, _cell} -> :ok
-      {:destroyed, _cell} -> :ok
-      {:error, reason} -> {:error, reason}
-    end
-  end
+  defp apply_skill_unit_target_damage(manager_pid, target_id, damage, source),
+    do: DamageApplication.damage_skill_unit(manager_pid, target_id, damage, source)
 
   defp broadcast_skill_unit_attack(attacker, target, damage_result) do
     packet = PacketFactory.build_attack_packet(attacker, target, damage_result)
@@ -383,10 +375,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   An offline player (no subscriber) is a silent no-op. Mobs are never healed;
   for undead/demon targets use the damage path instead.
   """
-  @spec apply_heal(integer(), non_neg_integer(), integer() | nil) :: :ok
-  def apply_heal(target_id, amount, source_id \\ nil) do
-    PubSub.broadcast(Aesir.PubSub, "player:#{target_id}", {:apply_heal, amount, source_id})
-  end
+  defdelegate apply_heal(target_id, amount, source_id \\ nil), to: DamageApplication
 
   @doc """
   Applies an explicit damage amount as a single magic hit of the given element,
@@ -1205,24 +1194,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     end
   end
 
-  # Routes damage to the owning session by unit type, keeping the damage paths
-  # free of concrete session-module knowledge. Targets with positive damage
-  # first run the hit through the pre-damage status absorption hook (Kyrie, Safety
-  # Wall, Energy Coat) so statuses can reduce or block it before HP is reduced,
-  # regardless of whether the defender is a player or a mob.
-  defp apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, attacker_id) do
-    final_damage = absorb_unit_damage(target_type, target_id, damage, hit_info)
-    unit_session(target_type).apply_damage(target_pid, final_damage, attacker_id)
-  end
+  # Transitional wrappers over DamageApplication; removed as the attack paths
+  # move into their own modules.
+  defp apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, attacker_id),
+    do:
+      DamageApplication.apply_unit_damage(
+        target_type,
+        target_pid,
+        target_id,
+        damage,
+        hit_info,
+        attacker_id
+      )
 
-  defp absorb_unit_damage(target_type, target_id, damage, hit_info) when damage > 0 do
-    StatusInterpreter.absorb_damage(target_type, target_id, damage, hit_info)
-  end
-
-  defp absorb_unit_damage(_target_type, _target_id, damage, _hit_info), do: damage
-
-  defp unit_session(:mob), do: MobSession
-  defp unit_session(:player), do: PlayerSession
+  defp unit_session(unit_type), do: DamageApplication.unit_session(unit_type)
 
   @doc """
   Knocks a unit back away from `{from_x, from_y}`, collision-aware.
@@ -1384,10 +1369,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     end
   end
 
-  # Broadcasts a combat packet to players near the target. Works for both
-  # combatant structs and map-based target stats (both carry position/map_name).
-  defp broadcast_to_nearby_players(target, packet) do
-    {x, y} = target.position
-    Broadcast.to_in_range(target.map_name, x, y, Config.view_range(), packet)
-  end
+  defp broadcast_to_nearby_players(target, packet),
+    do: DamageApplication.broadcast_nearby(target, packet)
 end
