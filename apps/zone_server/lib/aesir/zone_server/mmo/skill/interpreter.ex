@@ -71,7 +71,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   Variable-cast reduction sums the caster's status-sourced `:cast_time_reduction`
   values (Suffragium, Bragi) and passes the total into `CastTime` as a plain
-  integer, keeping `CastTime` pure.
+  integer, keeping `CastTime` pure. The additive `varcast_rate` channel folds the
+  caster's status `:varcast_rate` with the per-skill equipment
+  `{:skill_varcast_rate, id}` bonus (items carry negatives) at this single call
+  site, so `CastTime` never reads state.
 
   NOTE: cast-time reduction uses base DEX/INT only; effective/buffed DEX/INT is a
   documented later refinement.
@@ -91,7 +94,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           dex: base_stats.dex,
           int: base_stats.int,
           varcast_reductions: status_reductions(game_state.character_id, :cast_time_reduction),
-          varcast_rate: merged_modifier(game_state.character_id, :varcast_rate)
+          varcast_rate:
+            merged_modifier(game_state.character_id, :varcast_rate) +
+              equip_modifier(game_state, {:skill_varcast_rate, skill_id})
         })
 
       schedule(timing, game_state, skill_id, level, target, definition)
@@ -429,14 +434,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   end
 
   # SP cost after the caster's summed `sp_cost_rate` delta (rAthena `dsprate`,
-  # negative = cheaper). The rate floors the multiplier at 0 so a stacked
-  # over-100% reduction cannot invert the cost. Computed once per cast site so
-  # check_sp/deduct_sp both see the same reduced value (single application).
+  # negative = cheaper) and the caster's per-skill equipment `{:skill_use_sp, id}`
+  # flat reduction. The rate floors the multiplier at 0 so a stacked over-100%
+  # reduction cannot invert the cost; the flat reduction is subtracted after the
+  # percent step and the final cost is floored at 0. Computed once per cast site
+  # so check_sp/deduct_sp both see the same reduced value (single application).
   @spec skill_sp_cost(PlayerState.t(), Definition.t(), pos_integer()) :: non_neg_integer()
   defp skill_sp_cost(game_state, definition, level) do
     cost = Enum.at(definition.sp_cost, level - 1)
     rate = merged_modifier(game_state.character_id, :sp_cost_rate)
-    div(cost * max(0, 100 + rate), 100)
+    reduced = div(cost * max(0, 100 + rate), 100)
+    flat = equip_modifier(game_state, {:skill_use_sp, definition.id})
+    max(0, reduced - flat)
   end
 
   # Reads a single summed key from the caster's merged status modifiers,
@@ -445,6 +454,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp merged_modifier(character_id, key) do
     :player
     |> ModifierCalculator.get_all_modifiers(character_id)
+    |> Map.get(key, 0)
+  end
+
+  # Reads a folded per-skill equipment modifier off the caster's
+  # `stats.modifiers.equipment` map, defaulting to 0 when the key is absent or the
+  # caster carries no equipment slice (unequipped players, bare-map test
+  # fixtures). The map keys are `{family, skill_id}` tuples produced by the
+  # equip-script eval fold.
+  @spec equip_modifier(PlayerState.t(), {atom(), integer()}) :: integer()
+  defp equip_modifier(game_state, key) do
+    game_state.stats
+    |> Map.get(:modifiers, %{})
+    |> Map.get(:equipment, %{})
     |> Map.get(key, 0)
   end
 
@@ -556,8 +578,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp deduct_zeny(game_state, 0), do: game_state
   defp deduct_zeny(game_state, cost), do: %{game_state | zeny: game_state.zeny - cost}
 
+  # Cooldown is the definition's per-level duration plus the caster's per-skill
+  # equipment `{:skill_cooldown, id}` delta (rAthena bSkillCooldown, ms, negative
+  # shortens). The final duration is floored at 0; a duration that collapses to 0
+  # writes no entry, matching a zero-cooldown skill.
   defp put_cooldown(game_state, skill_id, definition, level, now) do
-    case Cooldown.duration(definition, level) do
+    base = Cooldown.duration(definition, level)
+    delta = equip_modifier(game_state, {:skill_cooldown, skill_id})
+
+    case max(0, base + delta) do
       0 ->
         game_state
 

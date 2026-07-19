@@ -42,6 +42,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     }
   end
 
+  defp game_state(sp, learned, equipment) do
+    gs = game_state(sp, learned)
+    %{gs | stats: Map.put(gs.stats, :modifiers, %{equipment: equipment})}
+  end
+
   defp enemy_definition(range) do
     %Definition{
       id: 6,
@@ -572,6 +577,168 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert reduced.fixed == baseline.fixed
       assert reduced.total - reduced.fixed == round((baseline.total - baseline.fixed) * 0.5)
       assert reduced.total < baseline.total
+    end
+  end
+
+  describe "equipment {:skill_cooldown, id}" do
+    setup do
+      stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _params -> :ok end)
+
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition_with_cooldown([10_000])} end)
+      :ok
+    end
+
+    test "a negative equipment cooldown delta shortens only the named skill" do
+      gs = game_state(100, %{29 => 1}, %{{:skill_cooldown, 29} => -3_000})
+
+      before = System.monotonic_time(:millisecond)
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 29, 1, :self)
+      after_t = System.monotonic_time(:millisecond)
+
+      expires = updated.skill_cooldowns[29]
+      assert expires >= before + 7_000
+      assert expires <= after_t + 7_000
+    end
+
+    test "a cooldown delta keyed on another skill leaves this skill's cooldown untouched" do
+      gs = game_state(100, %{29 => 1}, %{{:skill_cooldown, 999} => -9_000})
+
+      before = System.monotonic_time(:millisecond)
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 29, 1, :self)
+      after_t = System.monotonic_time(:millisecond)
+
+      expires = updated.skill_cooldowns[29]
+      assert expires >= before + 10_000
+      assert expires <= after_t + 10_000
+    end
+
+    test "an over-large negative delta floors the cooldown at 0 and writes no entry" do
+      gs = game_state(100, %{29 => 1}, %{{:skill_cooldown, 29} => -20_000})
+
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 29, 1, :self)
+      assert updated.skill_cooldowns == %{}
+    end
+
+    test "an empty equipment map leaves the base cooldown unchanged" do
+      gs = game_state(100, %{29 => 1}, %{})
+
+      before = System.monotonic_time(:millisecond)
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 29, 1, :self)
+      after_t = System.monotonic_time(:millisecond)
+
+      expires = updated.skill_cooldowns[29]
+      assert expires >= before + 10_000
+      assert expires <= after_t + 10_000
+    end
+  end
+
+  describe "equipment {:skill_use_sp, id}" do
+    setup do
+      stub(Catalog, :by_id, fn 6 -> {:ok, instant_definition()} end)
+      stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+      :ok
+    end
+
+    test "a flat SP reduction lowers only the named skill's cost" do
+      gs = game_state(100, %{6 => 1}, %{{:skill_use_sp, 6} => 3})
+
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+      assert updated.stats.current_state.sp == 100 - (9 - 3)
+    end
+
+    test "an SP reduction keyed on another skill leaves this skill's cost untouched" do
+      gs = game_state(100, %{6 => 1}, %{{:skill_use_sp, 999} => 5})
+
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+      assert updated.stats.current_state.sp == 100 - 9
+    end
+
+    test "the flat reduction composes after the :sp_cost_rate percent step" do
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{sp_cost_rate: -50} end)
+      gs = game_state(100, %{6 => 1}, %{{:skill_use_sp, 6} => 3})
+
+      # base 9, -50% -> div(9 * 50, 100) = 4; then flat -3 -> 1
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+      assert updated.stats.current_state.sp == 100 - 1
+    end
+
+    test "an over-large flat reduction floors the SP cost at 0" do
+      gs = game_state(100, %{6 => 1}, %{{:skill_use_sp, 6} => 20})
+
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+      assert updated.stats.current_state.sp == 100
+    end
+
+    test "an empty equipment map leaves the base SP cost unchanged" do
+      gs = game_state(100, %{6 => 1}, %{})
+
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+      assert updated.stats.current_state.sp == 100 - 9
+    end
+  end
+
+  describe "equipment {:skill_varcast_rate, id}" do
+    test "composes additively with the status varcast_rate: negative speeds the cast" do
+      reject(&StatusInterpreter.apply_status/4)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{} end)
+
+      assert {:casting, _gs, baseline} =
+               Interpreter.begin_cast(game_state(100, %{29 => 1}), 29, 1, :self)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{varcast_rate: -25} end)
+      gs = game_state(100, %{29 => 1}, %{{:skill_varcast_rate, 29} => -25})
+
+      assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
+
+      assert reduced.fixed == baseline.fixed
+      # status -25 + equipment -25 = -50 -> variable * 0.5
+      assert reduced.total - reduced.fixed == round((baseline.total - baseline.fixed) * 0.5)
+    end
+
+    test "a positive equipment rate offsets a negative status rate additively" do
+      reject(&StatusInterpreter.apply_status/4)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{} end)
+
+      assert {:casting, _gs, baseline} =
+               Interpreter.begin_cast(game_state(100, %{29 => 1}), 29, 1, :self)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{varcast_rate: -50} end)
+      gs = game_state(100, %{29 => 1}, %{{:skill_varcast_rate, 29} => 30})
+
+      assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
+
+      # status -50 + equipment +30 = -20 -> variable * 0.8
+      assert reduced.total - reduced.fixed == round((baseline.total - baseline.fixed) * 0.8)
+    end
+
+    test "a varcast rate keyed on another skill leaves this skill's cast untouched" do
+      reject(&StatusInterpreter.apply_status/4)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{} end)
+
+      assert {:casting, _gs, baseline} =
+               Interpreter.begin_cast(game_state(100, %{29 => 1}), 29, 1, :self)
+
+      gs = game_state(100, %{29 => 1}, %{{:skill_varcast_rate, 999} => -50})
+      assert {:casting, _gs, unaffected} = Interpreter.begin_cast(gs, 29, 1, :self)
+
+      assert unaffected.total == baseline.total
+    end
+
+    test "an empty equipment map leaves the cast time unchanged" do
+      reject(&StatusInterpreter.apply_status/4)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{} end)
+
+      assert {:casting, _gs, baseline} =
+               Interpreter.begin_cast(game_state(100, %{29 => 1}), 29, 1, :self)
+
+      assert {:casting, _gs, empty} =
+               Interpreter.begin_cast(game_state(100, %{29 => 1}, %{}), 29, 1, :self)
+
+      assert empty.total == baseline.total
     end
   end
 
