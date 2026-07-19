@@ -96,6 +96,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           varcast_reductions: status_reductions(game_state.character_id, :cast_time_reduction),
           varcast_rate:
             merged_modifier(game_state.character_id, :varcast_rate) +
+              equip_modifier(game_state, :varcast_rate) +
               equip_modifier(game_state, {:skill_varcast_rate, skill_id})
         })
 
@@ -457,12 +458,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     |> Map.get(key, 0)
   end
 
-  # Reads a folded per-skill equipment modifier off the caster's
-  # `stats.modifiers.equipment` map, defaulting to 0 when the key is absent or the
-  # caster carries no equipment slice (unequipped players, bare-map test
-  # fixtures). The map keys are `{family, skill_id}` tuples produced by the
-  # equip-script eval fold.
-  @spec equip_modifier(PlayerState.t(), {atom(), integer()}) :: integer()
+  # Reads a folded equipment modifier off the caster's `stats.modifiers.equipment`
+  # map, defaulting to 0 when the key is absent or the caster carries no equipment
+  # slice (unequipped players, bare-map test fixtures). Keys are either a bare
+  # destination atom (global `bonus` keys) or a `{family, skill_id}` tuple
+  # (per-skill `bonus2` keys), both produced by the equip-script eval fold.
+  @spec equip_modifier(PlayerState.t(), atom() | {atom(), integer()}) :: integer()
   defp equip_modifier(game_state, key) do
     game_state.stats
     |> Map.get(:modifiers, %{})
@@ -596,8 +597,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  # After-cast act delay (rAthena AfterCastActDelay) reduced by delay-rate sources
-  # (Bragi `:delay_reduction`), not ASPD. Reduction floors the delay at 0.
+  # After-cast act delay (AfterCastActDelay) reduced by delay-rate sources
+  # (Bragi `:delay_reduction`), not ASPD, then scaled by the caster's equipment
+  # `:delay_rate` (`bDelayrate`, a signed percent delta where negative is less
+  # delay). Equipment applies as its own multiplicative step so it never
+  # compounds additively with the status reductions. Floors the delay at 0.
   defp put_act_delay(game_state, definition, level, now) do
     case Enum.at(definition.after_cast_delay, level - 1) do
       nil ->
@@ -608,7 +612,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
       base ->
         reduction = sum_status_reduction(game_state.character_id, :delay_reduction)
-        delay = max(0, round(base * (100 - reduction) / 100))
+        delay_rate = equip_modifier(game_state, :delay_rate)
+
+        reduced = base * (100 - reduction) / 100
+        delay = max(0, round(reduced * max(0, 100 + delay_rate) / 100))
+
         %{game_state | act_delay_until: now + delay}
     end
   end

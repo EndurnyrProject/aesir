@@ -677,6 +677,56 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     end
   end
 
+  describe "equipment :varcast_rate" do
+    test "a negative global rate speeds every skill's cast" do
+      reject(&StatusInterpreter.apply_status/4)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{} end)
+
+      assert {:casting, _gs, baseline} =
+               Interpreter.begin_cast(game_state(100, %{29 => 1}), 29, 1, :self)
+
+      gs = game_state(100, %{29 => 1}, %{varcast_rate: -40})
+
+      assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
+
+      assert reduced.fixed == baseline.fixed
+      assert reduced.total - reduced.fixed == round((baseline.total - baseline.fixed) * 0.6)
+    end
+
+    test "composes additively with the per-skill rate" do
+      reject(&StatusInterpreter.apply_status/4)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{} end)
+
+      assert {:casting, _gs, baseline} =
+               Interpreter.begin_cast(game_state(100, %{29 => 1}), 29, 1, :self)
+
+      gs =
+        game_state(100, %{29 => 1}, %{{:skill_varcast_rate, 29} => -30, varcast_rate: -20})
+
+      assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
+
+      # global -20 + per-skill -30 = -50 -> variable * 0.5
+      assert reduced.total - reduced.fixed == round((baseline.total - baseline.fixed) * 0.5)
+    end
+
+    test "applies to a skill the per-skill rate does not name" do
+      reject(&StatusInterpreter.apply_status/4)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{} end)
+
+      assert {:casting, _gs, baseline} =
+               Interpreter.begin_cast(game_state(100, %{29 => 1}), 29, 1, :self)
+
+      gs = game_state(100, %{29 => 1}, %{{:skill_varcast_rate, 999} => -50, varcast_rate: -50})
+
+      assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
+
+      assert reduced.total - reduced.fixed == round((baseline.total - baseline.fixed) * 0.5)
+    end
+  end
+
   describe "equipment {:skill_varcast_rate, id}" do
     test "composes additively with the status varcast_rate: negative speeds the cast" do
       reject(&StatusInterpreter.apply_status/4)
@@ -841,6 +891,50 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       # 50% of 500ms = 250ms; reduced delay sits below the flat 500ms value
       assert updated.act_delay_until >= before + 250
       assert updated.act_delay_until < before + 500
+    end
+
+    test "a negative equipment :delay_rate shortens the act delay" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, definition_with_act_delay([500])} end)
+      stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+
+      gs = game_state(100, %{6 => 1}, %{delay_rate: -20})
+      before = System.monotonic_time(:millisecond)
+
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+
+      # 500ms * 0.8 = 400ms
+      assert updated.act_delay_until >= before + 400
+      assert updated.act_delay_until < before + 500
+    end
+
+    test "a positive equipment :delay_rate lengthens the act delay" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, definition_with_act_delay([500])} end)
+      stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+
+      gs = game_state(100, %{6 => 1}, %{delay_rate: 50})
+      before = System.monotonic_time(:millisecond)
+
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+
+      assert updated.act_delay_until >= before + 750
+    end
+
+    test "equipment :delay_rate scales the status-reduced delay rather than summing into it" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, definition_with_act_delay([500])} end)
+      stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+
+      stub(StatusStorage, :get_unit_statuses, fn :player, 1000 ->
+        [%StatusEntry{state: %{delay_reduction: 50}}]
+      end)
+
+      gs = game_state(100, %{6 => 1}, %{delay_rate: -50})
+      before = System.monotonic_time(:millisecond)
+
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+
+      # 500 * 0.5 * 0.5 = 125ms, not the 0ms an additive -100% would give
+      assert updated.act_delay_until >= before + 125
+      assert updated.act_delay_until < before + 250
     end
 
     test "sums :delay_reduction across multiple statuses" do

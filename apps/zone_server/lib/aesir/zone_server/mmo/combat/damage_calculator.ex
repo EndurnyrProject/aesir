@@ -374,7 +374,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   end
 
   # Attacker percent damage families. Each family (race+class, element, size,
-  # skill) is one sequential multiplicative step; every contributor to a family
+  # skill, long-attack) is one sequential multiplicative step; every contributor to a family
   # sums into a single accumulator before the multiply, so passives (Dragonology)
   # and equipment never compound against each other — mirroring the magic
   # pipeline's cardfix model. A family summing to 0 is identity, preserving the
@@ -390,6 +390,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     |> apply_family_step(element)
     |> apply_family_step(size)
     |> apply_family_step(skill)
+    |> apply_family_step(EquipmentBonuses.long_atk_rate(attacker))
   end
 
   # Defender percent damage-taken families, read off the defender's own

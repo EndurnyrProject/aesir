@@ -228,6 +228,34 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
     end
   end
 
+  describe "long_atk_rate/1" do
+    test "reads :long_atk_rate when the attacker wields a ranged weapon" do
+      attacker =
+        CombatTestHelper.create_player_combatant(weapon_type: :bow)
+        |> with_equip_modifiers(%{long_atk_rate: 15})
+
+      assert EquipmentBonuses.long_atk_rate(attacker) == 15
+    end
+
+    test "returns 0 for a melee attacker carrying the same bonus" do
+      attacker =
+        CombatTestHelper.create_player_combatant(weapon_type: :sword)
+        |> with_equip_modifiers(%{long_atk_rate: 15})
+
+      assert EquipmentBonuses.long_atk_rate(attacker) == 0
+    end
+
+    test "returns 0 for a ranged attacker without the bonus" do
+      attacker = CombatTestHelper.create_player_combatant(weapon_type: :bow)
+
+      assert EquipmentBonuses.long_atk_rate(attacker) == 0
+    end
+
+    test "returns 0 for mobs, which carry no equipment" do
+      assert EquipmentBonuses.long_atk_rate(CombatTestHelper.create_mob_combatant()) == 0
+    end
+  end
+
   defp with_equip_modifiers(combatant, modifiers) do
     %{combatant | equip_modifiers: modifiers}
   end

@@ -1142,6 +1142,33 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert boosted_vs_fish == base_vs_fish
     end
 
+    test "bLongAtkRate boosts a bow attacker and is inert on the same sword attacker" do
+      target = CombatTestHelper.create_mob_combatant()
+
+      bow = CombatTestHelper.create_player_combatant(weapon_type: :bow)
+      sword = CombatTestHelper.create_player_combatant(weapon_type: :sword)
+
+      {:ok, base_bow} = DamageCalculator.apply_modifier_pipeline(1000, bow, target)
+      {:ok, base_sword} = DamageCalculator.apply_modifier_pipeline(1000, sword, target)
+
+      {:ok, boosted_bow} =
+        DamageCalculator.apply_modifier_pipeline(
+          1000,
+          %{bow | equip_modifiers: %{long_atk_rate: 20}},
+          target
+        )
+
+      {:ok, boosted_sword} =
+        DamageCalculator.apply_modifier_pipeline(
+          1000,
+          %{sword | equip_modifiers: %{long_atk_rate: 20}},
+          target
+        )
+
+      assert boosted_bow == base_bow * 1.2
+      assert boosted_sword == base_sword
+    end
+
     test "a +20% race family and a +20% size family stack multiplicatively to exactly 1.44" do
       attacker = %{
         CombatTestHelper.create_player_combatant()

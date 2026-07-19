@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   """
 
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.WeaponTypes
 
   @typedoc "A percent (or per-mille, depending on family) sum read from equip_modifiers."
   @type rate :: integer()
@@ -79,6 +80,23 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
       atk_ele: read(attacker, :magic_atk_ele, spell_element),
       skill: skill_rate(attacker, :skill_atk, skill_id)
     }
+  end
+
+  @doc """
+  Percent damage bonus the attacker's equipment grants to long-range physical
+  attacks (`bLongAtkRate`).
+
+  The bonus belongs to the long-attack damage class, so it is read only when the
+  attacker swings a ranged weapon; melee attackers — and every mob, which
+  carries no equipment — read zero.
+  """
+  @spec long_atk_rate(Combatant.t()) :: rate()
+  def long_atk_rate(%Combatant{} = attacker) do
+    if attacker.weapon |> Map.get(:type) |> WeaponTypes.is_ranged?() do
+      Map.get(attacker.equip_modifiers, :long_atk_rate, 0)
+    else
+      0
+    end
   end
 
   @doc """

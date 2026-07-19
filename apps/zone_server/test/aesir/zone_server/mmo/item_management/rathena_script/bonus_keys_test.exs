@@ -33,6 +33,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :all_stats,
     :atk_rate,
     :matk_rate,
+    :varcast_rate,
+    :delay_rate,
+    :long_atk_rate,
     :patk,
     :smatk,
     :res,
@@ -123,8 +126,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
       assert BonusKeys.value_param(:str) == :error
     end
 
-    test "returns :error for bVariableCastrate, the flat form is out of scope" do
-      assert BonusKeys.destination("bVariableCastrate") == :error
+    test "resolves the cast, delay and long-attack rate keys" do
+      assert BonusKeys.destination("bVariableCastrate") == {:ok, :varcast_rate}
+      assert BonusKeys.destination("bDelayrate") == {:ok, :delay_rate}
+      assert BonusKeys.destination("bLongAtkRate") == {:ok, :long_atk_rate}
+    end
+
+    test "bVariableCastrate resolves independently in the flat and bonus2 tables" do
+      assert BonusKeys.destination("bVariableCastrate") == {:ok, :varcast_rate}
+
+      assert BonusKeys.param_schema("bVariableCastrate") ==
+               {:ok, %{family: :skill_varcast_rate, param: :skill, unit: :percent}}
     end
   end
 

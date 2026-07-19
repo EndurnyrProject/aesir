@@ -10,6 +10,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   and the single extension point for the vocabulary: adding a supported key is
   a data edit here, not a change to `EquipCodegen`.
 
+  A key may appear in more than one table: `bVariableCastrate` is a global
+  cast-rate delta as `bonus` and a per-skill one as `bonus2`. The tables are
+  never consulted together — `EquipCodegen` picks one by the command's arity —
+  so the two spellings resolve independently.
+
   Parameterized `bonus2` keys live in `@param_keys`, mapping each key to a
   `t:param_schema/0` (`family` + `param` kind + `unit`); `param_schema/1`,
   `families/0`, and `param_domain/1` expose them to the codegen and to
@@ -58,6 +63,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "ballstats" => :all_stats,
     "batkrate" => :atk_rate,
     "bmatkrate" => :matk_rate,
+    "bvariablecastrate" => :varcast_rate,
+    "bdelayrate" => :delay_rate,
+    "blongatkrate" => :long_atk_rate,
     "bpatk" => :patk,
     "bsmatk" => :smatk,
     "bres" => :res,
