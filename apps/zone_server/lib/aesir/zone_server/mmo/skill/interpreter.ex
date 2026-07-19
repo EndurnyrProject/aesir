@@ -16,6 +16,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   `cast/4` is the synchronous wrapper preserving the legacy single-call
   semantics: instant casts execute immediately and timed casts run their
   behavior inline through `complete_cast/4`.
+
+  `auto_cast/4` and `item_cast/4` are narrow entry points for casts the player
+  did not initiate (a status proc, an item's script); each documents exactly
+  which requirements it bypasses.
   """
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Cell
@@ -198,7 +202,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          {:ok, resolved} <- resolve_auto_cast_target(definition, target),
          cost = auto_cast_sp_cost(definition, level),
          :ok <- check_sp(game_state, cost),
-         {:ok, game_state} <- run_auto_cast(module, game_state, resolved, level, definition) do
+         {:ok, game_state} <- run_unconditional(module, game_state, resolved, level, definition) do
       {:ok,
        game_state
        |> deduct_sp(cost)
@@ -207,6 +211,43 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   end
 
   def auto_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
+
+  @doc """
+  Runs an item-triggered cast: the restricted entry `itemskill` uses.
+
+  Deliberately not `complete_cast/4`. A skill cast by consuming an item is by
+  construction not one the player learned, and the item itself is the cost: the
+  cast is flagged so both the cast-begin and cast-end condition checks return
+  early, bypassing every requirement - learned level, SP, HP, zeny, catalysts,
+  ammo, weight and the act-delay gate - and charging none of them.
+
+  What it keeps is what makes the cast well-formed rather than affordable: the
+  skill must exist, be castable at that level, have a behavior module, and the
+  target must be valid and in range; the behavior's own `validate/4` still runs.
+  The skill's cooldown and aftercast delay are armed on success, so an item cast
+  cannot be spammed past the skill's own pacing.
+  """
+  @spec item_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
+          {:ok, PlayerState.t()} | {:error, atom()}
+  def item_cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
+    now = System.monotonic_time(:millisecond)
+
+    with {:ok, definition} <- fetch_definition(skill_id),
+         :ok <- check_max_level(definition, level),
+         :ok <- check_castable(definition),
+         {:ok, module} <- fetch_active_module(definition),
+         :ok <- check_target(game_state, target, definition),
+         :ok <- check_range(game_state, target, definition),
+         :ok <- module.validate(game_state, target, level, definition),
+         {:ok, game_state} <- run_unconditional(module, game_state, target, level, definition) do
+      {:ok,
+       game_state
+       |> put_cooldown(skill_id, definition, level, now)
+       |> put_act_delay(definition, level, now)}
+    end
+  end
+
+  def item_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
 
   # rAthena: `skill_get_sp(skill_id, skill_lv) * 2 / 3`, C integer division.
   @spec auto_cast_sp_cost(Definition.t(), pos_integer()) :: non_neg_integer()
@@ -223,10 +264,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   defp resolve_auto_cast_target(_definition, target), do: {:ok, target}
 
-  # Runs the bolt without `run_cast/5`'s catalyst consumption: the auto-cast is
-  # free of the skill's declared requirements by construction, not by the bolts
-  # happening to declare none today.
-  defp run_auto_cast(module, game_state, target, level, definition) do
+  # Runs a behavior without `run_cast/5`'s catalyst consumption, shared by the
+  # auto-cast and item-cast entry points: both are free of the skill's declared
+  # requirements by construction, not by their skills happening to declare none
+  # today.
+  defp run_unconditional(module, game_state, target, level, definition) do
     case module.cast(game_state, target, level, definition) do
       {:ok, game_state} -> {:ok, game_state}
       {:ok, game_state, :no_consume} -> {:ok, game_state}
@@ -583,8 +625,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # equipment `{:skill_cooldown, id}` delta (rAthena bSkillCooldown, ms, negative
   # shortens). The final duration is floored at 0; a duration that collapses to 0
   # writes no entry, matching a zero-cooldown skill.
+  #
+  # A skill with no cooldown short-circuits before any equipment is read: there
+  # is nothing to modify, and the common path must not require a `:stats` key
+  # (bare-map game_state fixtures in the test suite would otherwise raise, same
+  # as `check_zeny/2`).
   defp put_cooldown(game_state, skill_id, definition, level, now) do
-    base = Cooldown.duration(definition, level)
+    case Cooldown.duration(definition, level) do
+      0 -> game_state
+      base -> apply_cooldown(game_state, skill_id, base, now)
+    end
+  end
+
+  defp apply_cooldown(game_state, skill_id, base, now) do
     delta = equip_modifier(game_state, {:skill_cooldown, skill_id})
 
     case max(0, base + delta) do

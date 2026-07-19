@@ -500,7 +500,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     test "casts a skill by id and folds the returned game_state" do
       cast_state = %{build_game_state() | action_state: :casting}
 
-      expect(SkillInterpreter, :cast, fn _gs, 14, 5, :self -> {:ok, cast_state} end)
+      expect(SkillInterpreter, :item_cast, fn _gs, 14, 5, :self -> {:ok, cast_state} end)
 
       ctx = Dsl.itemskill(build_ctx(), 14, level: 5)
 
@@ -509,11 +509,22 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
 
     test "halts on a cast error" do
-      stub(SkillInterpreter, :cast, fn _gs, _id, _lvl, _target -> {:error, :not_enough_sp} end)
+      stub(SkillInterpreter, :item_cast, fn _gs, _id, _lvl, _target ->
+        {:error, :not_enough_sp}
+      end)
 
       ctx = Dsl.itemskill(build_ctx(), 14, [])
 
       assert ctx.status == {:error, :not_enough_sp}
+    end
+
+    # The item is the cost: an item-cast never goes through the requirement
+    # chain a player cast pays, so a skill the player never learned still runs.
+    test "routes through item_cast/4 and never through the player-cast entry" do
+      reject(&SkillInterpreter.cast/4)
+      stub(SkillInterpreter, :item_cast, fn gs, _id, _lvl, _target -> {:ok, gs} end)
+
+      assert %{status: :ok} = Dsl.itemskill(build_ctx(), 14, [])
     end
   end
 

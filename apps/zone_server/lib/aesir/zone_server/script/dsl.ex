@@ -697,6 +697,10 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   `skill_id_or_name` is a skill id or its catalog name atom. `opts` accepts
   `:level` (default 1) and `:target` (default `:self`). Halts on a cast error or
   an unknown skill name. Halts `:no_player` on a detached ctx.
+
+  The item is the cost, so this runs through `SkillInterpreter.item_cast/4`: the
+  player need not have learned the skill and no SP, zeny, catalyst or ammo is
+  required or charged.
   """
   @spec itemskill(Ctx.t(), integer() | atom(), keyword()) :: Ctx.t()
   def itemskill(%Ctx{status: {:error, _}} = ctx, _skill, _opts), do: ctx
@@ -707,7 +711,8 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     target = Keyword.get(opts, :target, :self)
 
     with {:ok, skill_id} <- resolve_skill_id(skill_id_or_name),
-         {:ok, new_game_state} <- SkillInterpreter.cast(ctx.game_state, skill_id, level, target) do
+         {:ok, new_game_state} <-
+           SkillInterpreter.item_cast(ctx.game_state, skill_id, level, target) do
       %{ctx | game_state: new_game_state}
     else
       {:error, reason} -> Ctx.halt(ctx, reason)

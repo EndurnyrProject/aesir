@@ -1155,4 +1155,143 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
                Interpreter.auto_cast(game_state(100, %{}), 91, 1, {:unit, 2001})
     end
   end
+
+  # An item-triggered cast pays with the item: it bypasses every requirement a
+  # player cast earns (learned level, SP, zeny, catalysts, ammo, act delay) and
+  # charges none of them, while still arming the skill's own pacing.
+  describe "item_cast/4" do
+    @gem_id 716
+
+    defp item_definition(overrides \\ %{}) do
+      Map.merge(
+        %Definition{
+          id: 6,
+          name: :sm_provoke,
+          display_name: "Item Cast Test",
+          max_level: 10,
+          target_type: :self,
+          damage_type: :no_damage,
+          sp_cost: List.duplicate(9, 10),
+          zeny_cost: List.duplicate(100, 10),
+          item_cost: [%{id: @gem_id, amount: 1}],
+          requires_ammo: true,
+          after_cast_delay: List.duplicate(700, 10),
+          cooldown: List.duplicate(3000, 10)
+        },
+        overrides
+      )
+    end
+
+    defp item_game_state do
+      Map.merge(game_state(100, %{}), %{
+        zeny: 0,
+        inventory: %{0 => %InventoryItem{nameid: @gem_id, amount: 3, equip: 0}},
+        pending_inventory_persist: []
+      })
+    end
+
+    setup do
+      stub(Catalog, :by_id, fn
+        6 -> {:ok, item_definition()}
+        other -> call_original(Catalog, :by_id, [other])
+      end)
+
+      stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+      :ok
+    end
+
+    test "casts a skill the player never learned" do
+      assert {:ok, _updated} = Interpreter.item_cast(item_game_state(), 6, 1, :self)
+    end
+
+    test "charges no SP" do
+      assert {:ok, updated} = Interpreter.item_cast(item_game_state(), 6, 1, :self)
+      assert updated.stats.current_state.sp == 100
+    end
+
+    test "charges no zeny even with none to spend" do
+      assert {:ok, updated} = Interpreter.item_cast(item_game_state(), 6, 1, :self)
+      assert updated.zeny == 0
+    end
+
+    test "consumes no catalyst and stages no inventory delta" do
+      assert {:ok, updated} = Interpreter.item_cast(item_game_state(), 6, 1, :self)
+      assert %{0 => %InventoryItem{amount: 3}} = updated.inventory
+      assert updated.pending_inventory_persist == []
+    end
+
+    test "casts without the catalyst in the inventory at all" do
+      gs = %{item_game_state() | inventory: %{}}
+
+      assert {:ok, _updated} = Interpreter.item_cast(gs, 6, 1, :self)
+    end
+
+    test "casts with no arrow equipped despite requires_ammo, and consumes none" do
+      gs = %{item_game_state() | inventory: %{}}
+
+      assert {:ok, updated} = Interpreter.item_cast(gs, 6, 1, :self)
+      assert updated.pending_inventory_persist == []
+    end
+
+    test "casts while the player is act-delayed" do
+      gs = %{item_game_state() | act_delay_until: System.monotonic_time(:millisecond) + 10_000}
+
+      assert {:ok, _updated} = Interpreter.item_cast(gs, 6, 1, :self)
+    end
+
+    test "casts while the skill is on cooldown" do
+      gs = %{
+        item_game_state()
+        | skill_cooldowns: %{6 => System.monotonic_time(:millisecond) + 5000}
+      }
+
+      assert {:ok, _updated} = Interpreter.item_cast(gs, 6, 1, :self)
+    end
+
+    test "arms the skill's cooldown and aftercast delay" do
+      before = System.monotonic_time(:millisecond)
+
+      assert {:ok, updated} = Interpreter.item_cast(item_game_state(), 6, 1, :self)
+      assert updated.skill_cooldowns[6] >= before + 3000
+      assert updated.act_delay_until >= before + 700
+    end
+
+    test "a cooldown-free skill writes no cooldown and reads no equipment" do
+      stub(Catalog, :by_id, fn 6 ->
+        {:ok, item_definition(%{cooldown: [], after_cast_delay: []})}
+      end)
+
+      gs = %{item_game_state() | stats: Map.delete(item_game_state().stats, :modifiers)}
+
+      assert {:ok, updated} = Interpreter.item_cast(gs, 6, 1, :self)
+      assert updated.skill_cooldowns == %{}
+    end
+
+    test "still refuses an unknown skill" do
+      assert {:error, :unknown_skill} =
+               Interpreter.item_cast(item_game_state(), 999_999, 1, :self)
+    end
+
+    test "still refuses a level above the skill's max" do
+      assert {:error, :invalid_level} = Interpreter.item_cast(item_game_state(), 6, 11, :self)
+    end
+
+    test "still refuses a level of zero" do
+      assert {:error, :invalid_level} = Interpreter.item_cast(item_game_state(), 6, 0, :self)
+    end
+
+    test "still refuses a passive skill" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, item_definition(%{target_type: :passive})} end)
+
+      assert {:error, :passive_skill} = Interpreter.item_cast(item_game_state(), 6, 1, :self)
+    end
+
+    test "still honours the behavior module's own validate/4" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, item_definition()} end)
+      stub(SmProvoke, :validate, fn _gs, _target, _level, _definition -> {:error, :nope} end)
+      reject(&SmProvoke.cast/4)
+
+      assert {:error, :nope} = Interpreter.item_cast(item_game_state(), 6, 1, :self)
+    end
+  end
 end
