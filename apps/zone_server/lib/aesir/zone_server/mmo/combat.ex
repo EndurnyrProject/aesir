@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
+  alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
@@ -83,30 +84,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
 
   Player IDs take precedence over mob IDs when they collide.
   """
-  @spec resolve_target_position(integer()) ::
-          {:ok, :player | :mob | :skill_unit, {integer(), integer(), String.t()}}
-          | {:error, :target_not_found}
-  def resolve_target_position(target_id) do
-    if CombatTarget.target?(target_id) do
-      CombatTarget.resolve_position(target_id)
-    else
-      resolve_standard_target_position(target_id)
-    end
-  end
-
-  defp resolve_standard_target_position(target_id) do
-    case SpatialIndex.get_unit_position(:player, target_id) do
-      {:ok, position} -> {:ok, :player, position}
-      {:error, :not_found} -> resolve_mob_target_position(target_id)
-    end
-  end
-
-  defp resolve_mob_target_position(target_id) do
-    case SpatialIndex.get_unit_position(:mob, target_id) do
-      {:ok, position} -> {:ok, :mob, position}
-      {:error, :not_found} -> {:error, :target_not_found}
-    end
-  end
+  defdelegate resolve_target_position(target_id), to: TargetResolver
 
   defp resolve_player_attack(
          {:miss},
@@ -480,17 +458,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   @doc """
   Resolves a unit id to its combatant struct.
 
-  Wraps the internal unit-state lookup so callers outside this module (e.g. ground
+  Wraps the unit-state lookup so callers outside this module (e.g. ground
   skill-units resolving their caster once per tick) can build a `Combatant` without
   knowing how players and mobs are stored. Returns `{:error, reason}` when the unit
   is gone (logged out, despawned), so the caller can skip cleanly.
   """
-  @spec resolve_combatant(integer()) :: {:ok, struct()} | {:error, atom()}
-  def resolve_combatant(unit_id) do
-    with {:ok, _pid, state, _type} <- get_target_unit_state(unit_id) do
-      {:ok, state.__struct__.to_combatant(state)}
-    end
-  end
+  defdelegate resolve_combatant(unit_id), to: TargetResolver
 
   @doc """
   Computes and applies a single magic skill-unit hit, broadcasting its visual.
@@ -1363,84 +1336,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     )
   end
 
-  # New function that returns actual unit states instead of maps
-  defp get_target_unit_state(:mob, target_id), do: get_mob_unit_state(target_id)
-  defp get_target_unit_state(:player, target_id), do: get_player_unit_state(target_id)
-  defp get_target_unit_state(:skill_unit, target_id), do: CombatTarget.resolve(target_id)
+  # Transitional wrappers over TargetResolver; removed as the attack paths move
+  # into their own modules.
+  defp get_target_unit_state(unit_type, target_id),
+    do: TargetResolver.resolve(unit_type, target_id)
 
-  defp get_target_unit_state(target_id) do
-    if CombatTarget.target?(target_id) do
-      CombatTarget.resolve(target_id)
-    else
-      case get_player_unit_state(target_id) do
-        {:ok, pid, player_state, :player} ->
-          {:ok, pid, player_state, :player}
+  defp get_target_unit_state(target_id), do: TargetResolver.resolve(target_id)
 
-        {:error, :target_not_found} ->
-          get_standard_mob_unit_state(target_id)
-      end
-    end
-  end
-
-  defp get_standard_mob_unit_state(target_id) do
-    case get_mob_unit_state(target_id) do
-      {:error, :not_found} -> {:error, :target_not_found}
-      result -> result
-    end
-  end
-
-  defp get_mob_unit_state(target_id) do
-    case UnitRegistry.get_unit(:mob, target_id) do
-      {:ok, {_module, mob_state, pid}} when is_pid(pid) ->
-        # Get the current position from SpatialIndex for consistency
-        updated_mob_state =
-          case SpatialIndex.get_unit_position(:mob, target_id) do
-            {:ok, {x, y, _map}} ->
-              %{mob_state | x: x, y: y}
-
-            _ ->
-              mob_state
-          end
-
-        {:ok, pid, updated_mob_state, :mob}
-
-      {:error, :not_found} ->
-        Logger.warning("Mob #{target_id} not found in registry")
-        {:error, :not_found}
-
-      {:ok, {_module, _state, nil}} ->
-        Logger.warning("Mob #{target_id} found but has no pid")
-        {:error, :target_no_pid}
-    end
-  end
-
-  defp get_player_unit_state(target_id) do
-    case UnitRegistry.get_player_pid(target_id) do
-      {:ok, pid} ->
-        stats = PlayerSession.get_current_stats(pid)
-        session_state = PlayerSession.get_state(pid)
-        # Extract the game_state which is the actual PlayerState
-        player_state = session_state.game_state
-        # Update player state with current stats for combat
-        player_state = %{player_state | stats: stats}
-        {:ok, pid, player_state, :player}
-
-      {:error, :not_found} ->
-        Logger.warning("Target #{target_id} not found in registry")
-        {:error, :target_not_found}
-    end
-  end
-
-  # A target that has died (or, for players, transitioned to :dead) is not a
-  # valid target. The melee path resolves the full unit state, so this is the
-  # authoritative gate; `MobSession` independently drops damage to dead mobs.
-  defp ensure_targetable(%{is_dead: true}, :mob), do: {:error, :target_dead}
-  defp ensure_targetable(%{hp: hp}, :mob) when hp <= 0, do: {:error, :target_dead}
-  defp ensure_targetable(_target_state, :mob), do: :ok
-  defp ensure_targetable(%{action_state: :dead}, :player), do: {:error, :target_dead}
-  defp ensure_targetable(_target_state, :player), do: :ok
-  defp ensure_targetable(%{hp: hp}, :skill_unit) when hp > 0, do: :ok
-  defp ensure_targetable(_target_state, :skill_unit), do: {:error, :target_dead}
+  defp ensure_targetable(target_state, target_type),
+    do: TargetResolver.ensure_targetable(target_state, target_type)
 
   # New combatant-based functions
   defp validate_attack_with_combatants(attacker_combatant, target_combatant, opts) do
