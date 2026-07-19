@@ -139,6 +139,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus2 bVariableCastrate,#{firebolt_id},-10;")
     end
 
+    test "status infliction/resist keys" do
+      assert {:ok, [{:bonus, {:add_eff, :sc_stun}, 500}]} =
+               compile("bonus2 bAddEff,Eff_Stun,500;")
+
+      assert {:ok, [{:bonus, {:add_eff_when_hit, :sc_poison}, 300}]} =
+               compile("bonus2 bAddEffWhenHit,Eff_Poison,300;")
+
+      assert {:ok, [{:bonus, {:res_eff, :sc_freeze}, 1000}]} =
+               compile("bonus2 bResEff,Eff_Freeze,1000;")
+    end
+
     test "refine-expression amount" do
       assert {:ok, [{:bonus, {:addrace, :brute}, {:*, :refine, 2}}]} =
                compile("bonus2 bAddRace,RC_Brute,getrefine()*2;")
@@ -192,6 +203,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
 
     test "bonus2 with a wrong-arity shape is rejected" do
       assert {:error, {:unsupported, {:bonus_shape, _}}} = compile("bonus2 bAddRace,RC_Brute;")
+    end
+
+    test "bonus3/4 bAddEff forms with atf flag/duration are rejected" do
+      assert {:error, {:unsupported, {:unsupported_command, "bonus3"}}} =
+               compile("bonus3 bAddEff,Eff_Stun,500,ATF_TARGET;")
+
+      assert {:error, {:unsupported, {:unsupported_command, "bonus4"}}} =
+               compile("bonus4 bAddEff,Eff_Stun,500,ATF_TARGET,5000;")
+    end
+
+    test "unknown Eff_ status param is rejected" do
+      assert {:error, {:unsupported, {:unresolved_param, "Eff_NotAStatus"}}} =
+               compile("bonus2 bAddEff,Eff_NotAStatus,500;")
     end
 
     test "mixed supported and unsupported bonus2 rejects the whole item" do

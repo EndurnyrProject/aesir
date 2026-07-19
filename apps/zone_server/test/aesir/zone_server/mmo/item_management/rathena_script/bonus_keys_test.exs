@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
   use ExUnit.Case, async: true
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
 
   @documented_destinations [
     :str,
@@ -119,7 +120,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     "bignoremdefracerate" => %{family: :ignore_mdef_race, param: :race, unit: :percent},
     "bskillcooldown" => %{family: :skill_cooldown, param: :skill, unit: :ms},
     "bskillusesp" => %{family: :skill_use_sp, param: :skill, unit: :sp},
-    "bvariablecastrate" => %{family: :skill_varcast_rate, param: :skill, unit: :percent}
+    "bvariablecastrate" => %{family: :skill_varcast_rate, param: :skill, unit: :percent},
+    "baddeff" => %{family: :add_eff, param: :status, unit: :per10k},
+    "baddeffwhenhit" => %{family: :add_eff_when_hit, param: :status, unit: :per10k},
+    "breseff" => %{family: :res_eff, param: :status, unit: :per10k}
   }
 
   describe "param_schema/1" do
@@ -143,7 +147,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     end
 
     test "returns :error for not-yet-supported bonus2 keys" do
-      assert BonusKeys.param_schema("baddeff") == :error
+      assert BonusKeys.param_schema("bautospell") == :error
+    end
+
+    test "resolves the status infliction/resist keys case-insensitively" do
+      assert BonusKeys.param_schema("bAddEff") == {:ok, @param_schemas["baddeff"]}
+      assert BonusKeys.param_schema("bAddEffWhenHit") == {:ok, @param_schemas["baddeffwhenhit"]}
+      assert BonusKeys.param_schema("bResEff") == {:ok, @param_schemas["breseff"]}
     end
 
     test "returns :error for flat keys" do
@@ -211,6 +221,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
 
     test "class domain" do
       assert BonusKeys.param_domain(:class) == [:normal, :boss, :all]
+    end
+
+    test "status domain equals the Resolver effs value set" do
+      expected = Resolver.effs() |> Map.values() |> Enum.uniq()
+
+      assert Enum.sort(BonusKeys.param_domain(:status)) == Enum.sort(expected)
     end
   end
 end

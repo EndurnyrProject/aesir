@@ -82,7 +82,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       tuple_dest_inside_if: [
         {:if, {:>=, :refine, 7}, [{:bonus, {:addrace, :brute}, 20}],
          [{:bonus, {:addrace, :all}, 5}]}
-      ]
+      ],
+      tuple_add_eff_dest: [{:bonus, {:add_eff, :sc_stun}, 500}],
+      tuple_add_eff_when_hit_dest: [{:bonus, {:add_eff_when_hit, :sc_poison}, 300}],
+      tuple_res_eff_dest: [{:bonus, {:res_eff, :sc_freeze}, 1000}]
     ]
 
     for {name, program} <- programs do
@@ -188,6 +191,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
     test "raises on a tuple dest with an out-of-domain atom param" do
       assert_raise ArgumentError, fn ->
         EquipScript.parse!("bonus(ctx, {:addrace, :bogus}, 20)")
+      end
+    end
+
+    test "raises on a status tuple dest with an out-of-domain atom param" do
+      assert_raise ArgumentError, fn ->
+        EquipScript.parse!("bonus(ctx, {:add_eff, :sc_bogus}, 500)")
       end
     end
 

@@ -31,8 +31,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     any other `bonus` shape is unsupported.
   - `bonus2 bKey,param,amount` — `{:bonus, {family, param}, expr}` when `bKey`
     resolves via `BonusKeys.param_schema/1` and `param` resolves through
-    `Resolver` according to the schema's param kind (race/element/size/class via
-    a `{:name, const}` constant, skill via a `{:name, const}` name or an
+    `Resolver` according to the schema's param kind (race/element/size/class/status
+    via a `{:name, const}` constant, skill via a `{:name, const}` name or an
     `{:int, id}` literal). `RC_Boss` is a sentinel: on an `:addrace`/`:subrace`
     family it redirects to `:addclass`/`:subclass`; on any other family it is
     unsupported. A non-constant or unresolvable param is
@@ -185,6 +185,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   defp resolve_param(%{family: family, param: :skill}, {:int, id}) do
     with {:ok, id} <- resolve(&Resolver.resolve_skill/1, id), do: {:ok, {family, id}}
+  end
+
+  defp resolve_param(%{family: family, param: :status}, {:name, const}) do
+    with {:ok, status} <- resolve(&Resolver.resolve_eff/1, const), do: {:ok, {family, status}}
   end
 
   defp resolve_param(_schema, param_ast), do: unsupported({:unresolved_param, param_ast})

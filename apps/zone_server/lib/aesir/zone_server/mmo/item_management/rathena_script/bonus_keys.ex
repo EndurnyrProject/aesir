@@ -16,9 +16,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   `EquipScript.parse!/1` destination validation.
   """
 
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
+
   @type destination :: atom()
-  @type param :: :race | :element | :size | :class | :skill
-  @type param_schema :: %{family: atom(), param: param(), unit: :percent | :ms | :sp}
+  @type param :: :race | :element | :size | :class | :skill | :status
+  @type param_schema :: %{family: atom(), param: param(), unit: :percent | :ms | :sp | :per10k}
 
   @keys %{
     "bstr" => :str,
@@ -74,7 +76,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bignoremdefracerate" => %{family: :ignore_mdef_race, param: :race, unit: :percent},
     "bskillcooldown" => %{family: :skill_cooldown, param: :skill, unit: :ms},
     "bskillusesp" => %{family: :skill_use_sp, param: :skill, unit: :sp},
-    "bvariablecastrate" => %{family: :skill_varcast_rate, param: :skill, unit: :percent}
+    "bvariablecastrate" => %{family: :skill_varcast_rate, param: :skill, unit: :percent},
+    "baddeff" => %{family: :add_eff, param: :status, unit: :per10k},
+    "baddeffwhenhit" => %{family: :add_eff_when_hit, param: :status, unit: :per10k},
+    "breseff" => %{family: :res_eff, param: :status, unit: :per10k}
   }
 
   @race_domain [
@@ -136,13 +141,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
 
   @doc """
   The valid atom values for a `bonus2` param domain, used to validate `bonus2`
-  arguments at `EquipScript.parse!` time.
+  arguments at `EquipScript.parse!` time. The `:status` domain is derived from
+  `Resolver.effs/0` rather than hardcoded, so it can never drift out of lockstep
+  with the resolvable `Eff_*` vocabulary.
   """
-  @spec param_domain(:race | :element | :size | :class) :: [atom()]
+  @spec param_domain(:race | :element | :size | :class | :status) :: [atom()]
   def param_domain(:race), do: @race_domain
   def param_domain(:element), do: @element_domain
   def param_domain(:size), do: @size_domain
   def param_domain(:class), do: @class_domain
+  def param_domain(:status), do: Resolver.effs() |> Map.values() |> Enum.uniq()
 
   @doc """
   Resolves a `bonus2` family atom back to its param kind, derived from the
