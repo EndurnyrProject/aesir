@@ -17,6 +17,41 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus bSMatk,3; bonus bSpl,2; bonus bCrt,2;")
     end
 
+    test "hp/sp capacity keys compile to their flat and rate destinations" do
+      assert {:ok,
+              [
+                {:bonus, :max_hp, 800},
+                {:bonus, :max_hp_rate, 5},
+                {:bonus, :max_sp, 50},
+                {:bonus, :max_sp_rate, 3}
+              ]} =
+               compile(
+                 "bonus bMaxHP,800; bonus bMaxHPrate,5; bonus bMaxSP,50; bonus bMaxSPrate,3;"
+               )
+    end
+
+    test "rate keys compile to their percentage destinations" do
+      assert {:ok, [{:bonus, :aspd_rate, 10}, {:bonus, :atk_rate, 5}, {:bonus, :matk_rate, 7}]} =
+               compile("bonus bAspdRate,10; bonus bAtkRate,5; bonus bMatkRate,7;")
+    end
+
+    test "bAllStats compiles to the fan-out destination" do
+      assert {:ok, [{:bonus, :all_stats, 2}]} = compile("bonus bAllStats,2;")
+    end
+
+    test "bAtkEle compiles to a :set instruction carrying the element" do
+      assert {:ok, [{:set, :atk_ele, :fire}]} = compile("bonus bAtkEle,Ele_Fire;")
+    end
+
+    test "bAtkEle with an unresolvable constant is unresolved_param" do
+      assert {:error, {:unsupported, {:unresolved_param, _}}} =
+               compile("bonus bAtkEle,Ele_Bogus;")
+    end
+
+    test "bAtkEle with a numeric argument is unresolved_param, not a summed bonus" do
+      assert {:error, {:unsupported, {:unresolved_param, _}}} = compile("bonus bAtkEle,3;")
+    end
+
     test "refine-scaled amount (id1298 Shiver_Katar)" do
       assert {:ok, [{:bonus, :critical, :refine}]} = compile("bonus bCritical,getrefine();")
     end
@@ -224,8 +259,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     end
 
     test "unknown bonus key" do
-      assert {:error, {:unsupported, {:unknown_bonus_key, "bMaxHP"}}} =
-               compile("bonus bMaxHP,100;")
+      assert {:error, {:unsupported, {:unknown_bonus_key, "bHealPower"}}} =
+               compile("bonus bHealPower,10;")
     end
 
     test "non-refine conditional read is rejected" do
@@ -248,8 +283,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     end
 
     test "the first violation aborts the whole item" do
-      assert {:error, {:unsupported, {:unknown_bonus_key, "bMaxHP"}}} =
-               compile("bonus bStr,5; bonus bMaxHP,100; bonus bAgi,3;")
+      assert {:error, {:unsupported, {:unknown_bonus_key, "bHealPower"}}} =
+               compile("bonus bStr,5; bonus bHealPower,10; bonus bAgi,3;")
     end
 
     test "bonus with a non-two-arg shape is rejected" do

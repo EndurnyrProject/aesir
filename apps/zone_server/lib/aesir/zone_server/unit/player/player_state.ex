@@ -856,7 +856,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       size: :medium,
       weapon: %{
         type: weapon_type,
-        element: weapon_element(state.stats.equipment),
+        element: weapon_element(state.stats),
         size: SizeModifiers.weapon_size(weapon_type)
       },
       attack_range: WeaponTypes.get_attack_range(weapon_type) + passive_range,
@@ -883,16 +883,32 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
   defp defense_element(_stats), do: {:neutral, 1}
 
-  defp weapon_element(%PlayerStats.Equipment{ammo: nil}), do: :neutral
+  # Ammo element wins, then the equipped weapon's own `attack_element`, then the
+  # equipment-script `:atk_ele` (`bonus bAtkEle`), then the neutral default. The
+  # weapon and script sources both derive from the item's `bonus bAtkEle` — the
+  # former survives an item whose script failed to transpile as a whole — so they
+  # never disagree. A status endow outranks all of them, applied by the damage
+  # calculators through the `:attack_element` modifier.
+  defp weapon_element(%PlayerStats{} = stats) do
+    item_element(stats.equipment.ammo) || item_element(stats.equipment.right_hand) ||
+      equip_atk_element(stats) || :neutral
+  end
 
-  defp weapon_element(%PlayerStats.Equipment{ammo: nameid}) do
+  defp item_element(nil), do: nil
+
+  defp item_element(nameid) do
     case ItemManagement.get_item_by_id(nameid) do
-      {:ok, %ItemDefinition{attack_element: element}}
-      when is_atom(element) and not is_nil(element) ->
-        element
-
-      _ ->
-        :neutral
+      {:ok, %ItemDefinition{attack_element: element}} when is_atom(element) -> element
+      _ -> nil
     end
   end
+
+  defp equip_atk_element(%PlayerStats{modifiers: %{equipment: equipment}}) do
+    case Map.get(equipment, :atk_ele) do
+      element when is_atom(element) -> element
+      _ -> nil
+    end
+  end
+
+  defp equip_atk_element(%PlayerStats{}), do: nil
 end

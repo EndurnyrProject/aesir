@@ -1397,6 +1397,140 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       unequipped = with_equipped_items([])
       refute Map.has_key?(unequipped.modifiers.equipment, {:addrace, :brute})
     end
+
+    test "bAllStats raises every primary stat but leaves the trait stats alone" do
+      item = scripted_item(90_210, on_equip: [{:bonus, :all_stats, 3}])
+      stub(ItemManagement, :get_item_by_id, fn 90_210 -> {:ok, item} end)
+
+      result = with_equipped(equipped(90_210, @armor_pos))
+
+      for stat <- [:str, :agi, :vit, :int, :dex, :luk] do
+        assert Stats.get_effective_stat(result, stat) == 3
+      end
+
+      for trait <- [:pow, :sta, :wis, :spl, :con, :crt] do
+        assert Stats.get_effective_stat(result, trait) == 0
+      end
+
+      # STR 3 flows into base ATK = trunc(STR + level/4) = 3; POW stays 0 so patk is 0.
+      assert result.combat_stats.atk == 3
+      assert result.combat_stats.patk == 0
+    end
+
+    test "bAtkRate scales base ATK only, after the STR derivation" do
+      item = scripted_item(90_211, on_equip: [{:bonus, :str, 4}, {:bonus, :atk_rate, 50}])
+      stub(ItemManagement, :get_item_by_id, fn 90_211 -> {:ok, item} end)
+
+      result = with_equipped(equipped(90_211, @armor_pos))
+
+      # base ATK = trunc(4 + 1/4) = 4, then +50% -> div(4 * 150, 100) = 6
+      assert result.combat_stats.atk == 6
+    end
+
+    test "bMatkRate scales the whole MATK band but not the heal band" do
+      item = scripted_item(90_212, on_equip: [{:bonus, :int, 10}, {:bonus, :matk_rate, 50}])
+      stub(ItemManagement, :get_item_by_id, fn 90_212 -> {:ok, item} end)
+
+      result = with_equipped(equipped(90_212, @armor_pos))
+
+      # base MATK = INT + INT/2 = 15, then +50% -> div(15 * 150, 100) = 22
+      assert result.combat_stats.matk_max == 22
+      assert result.combat_stats.matk_min == 22
+      # the renewal heal band excludes the item rate
+      assert result.combat_stats.heal_matk_max == 15
+    end
+
+    test "bAspdRate accumulates as a delta off the neutral 100 rate" do
+      item = scripted_item(90_213, on_equip: [{:bonus, :aspd_rate, 10}])
+      stub(ItemManagement, :get_item_by_id, fn 90_213 -> {:ok, item} end)
+
+      result = with_equipped(equipped(90_213, @armor_pos))
+
+      assert result.modifiers.equipment.aspd_rate == 110
+    end
+
+    test "two items each granting bAspdRate stack off the same neutral base" do
+      first = scripted_item(90_214, on_equip: [{:bonus, :aspd_rate, 10}])
+      second = scripted_item(90_215, on_equip: [{:bonus, :aspd_rate, 5}])
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_214 -> {:ok, first}
+        90_215 -> {:ok, second}
+      end)
+
+      result =
+        with_equipped_items([equipped(90_214, @right_hand), equipped(90_215, @left_hand)])
+
+      assert result.modifiers.equipment.aspd_rate == 115
+    end
+
+    test "a :set instruction stores the constant and the last equipped item wins" do
+      fire = scripted_item(90_216, on_equip: [{:set, :atk_ele, :fire}])
+      wind = scripted_item(90_217, on_equip: [{:set, :atk_ele, :wind}])
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_216 -> {:ok, fire}
+        90_217 -> {:ok, wind}
+      end)
+
+      one = with_equipped_items([equipped(90_216, @right_hand)])
+      assert one.modifiers.equipment.atk_ele == :fire
+
+      # Constants overwrite rather than sum, so the last item folded in wins. The
+      # fold order is the equipped-item order, which is only meaningful for a list
+      # — the session passes a map, so with two elemental sources the winner is
+      # arbitrary. rAthena is equally order-dependent here.
+      both = with_equipped_items([equipped(90_216, @right_hand), equipped(90_217, @left_hand)])
+      assert both.modifiers.equipment.atk_ele == :wind
+    end
+  end
+
+  describe "hp/sp capacity equipment bonuses" do
+    defp level_75_stats(equipment_modifiers) do
+      %Stats{
+        base_stats: %{vit: 50, str: 1, agi: 1, int: 1, dex: 1, luk: 1},
+        progression: %{
+          base_level: 75,
+          job_level: 1,
+          base_exp: 0,
+          job_exp: 0,
+          job_id: 0,
+          learned_skills: %{}
+        },
+        equipment: %Equipment{},
+        modifiers: %{
+          equipment: equipment_modifiers,
+          status_effects: %{},
+          job_bonuses: %{}
+        }
+      }
+      |> Stats.calculate_stats()
+    end
+
+    test "the level-75 baseline is unchanged with no capacity bonuses" do
+      assert level_75_stats(%{}).derived_stats.max_hp == 615
+    end
+
+    test "bMaxHP adds flat HP on top of the VIT-scaled base" do
+      assert level_75_stats(%{max_hp: 1000}).derived_stats.max_hp == 1615
+    end
+
+    test "bMaxHPrate scales the post-flat total" do
+      # 615 * 1.10 = 676.5 -> 676
+      assert level_75_stats(%{max_hp_rate: 10}).derived_stats.max_hp == 676
+    end
+
+    test "bMaxHP applies before bMaxHPrate, matching the renewal order" do
+      # (615 + 1000) * 1.10 = 1776.5 -> 1776
+      assert level_75_stats(%{max_hp: 1000, max_hp_rate: 10}).derived_stats.max_hp == 1776
+    end
+
+    test "bMaxSP adds flat SP and bMaxSPrate scales the total" do
+      baseline = level_75_stats(%{}).derived_stats.max_sp
+
+      assert level_75_stats(%{max_sp: 200}).derived_stats.max_sp == baseline + 200
+      assert level_75_stats(%{max_sp_rate: 10}).derived_stats.max_sp == trunc(baseline * 1.10)
+    end
   end
 
   describe "view extractors" do

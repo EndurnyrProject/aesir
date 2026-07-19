@@ -24,6 +24,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :hit,
     :flee,
     :critical,
+    :max_hp,
+    :max_sp,
+    :max_hp_rate,
+    :max_sp_rate,
+    :aspd,
+    :aspd_rate,
+    :all_stats,
+    :atk_rate,
+    :matk_rate,
     :patk,
     :smatk,
     :res,
@@ -87,7 +96,31 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     end
 
     test "returns :error for an out-of-vocabulary key" do
-      assert BonusKeys.destination("bMaxHP") == :error
+      assert BonusKeys.destination("bHealPower") == :error
+    end
+
+    test "resolves the capacity, rate and all-stats keys" do
+      assert BonusKeys.destination("bMaxHP") == {:ok, :max_hp}
+      assert BonusKeys.destination("bMaxSP") == {:ok, :max_sp}
+      assert BonusKeys.destination("bMaxHPrate") == {:ok, :max_hp_rate}
+      assert BonusKeys.destination("bMaxSPrate") == {:ok, :max_sp_rate}
+      assert BonusKeys.destination("bAspd") == {:ok, :aspd}
+      assert BonusKeys.destination("bAspdRate") == {:ok, :aspd_rate}
+      assert BonusKeys.destination("bAllStats") == {:ok, :all_stats}
+      assert BonusKeys.destination("bAtkRate") == {:ok, :atk_rate}
+      assert BonusKeys.destination("bMatkRate") == {:ok, :matk_rate}
+    end
+
+    test "bAtkEle is a value key, not a numeric destination" do
+      assert BonusKeys.destination("bAtkEle") == :error
+      assert BonusKeys.value_schema("bAtkEle") == {:ok, %{dest: :atk_ele, param: :element}}
+      assert BonusKeys.value_param(:atk_ele) == {:ok, :element}
+      assert BonusKeys.value_destinations() == [:atk_ele]
+    end
+
+    test "value_schema/1 returns :error for the numeric keys" do
+      assert BonusKeys.value_schema("bStr") == :error
+      assert BonusKeys.value_param(:str) == :error
     end
 
     test "returns :error for bVariableCastrate, the flat form is out of scope" do

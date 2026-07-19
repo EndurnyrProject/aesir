@@ -47,8 +47,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   """
   @type dest :: atom() | {atom(), atom() | pos_integer()}
 
+  @typedoc """
+  A constant-valued destination assignment, for the `bonus` keys whose argument
+  is a constant rather than an amount (`bonus bAtkEle,Ele_Fire;`). Unlike
+  `:bonus` these do not sum — the last one evaluated wins.
+  """
+  @type value :: atom()
+
   @typedoc "A single bonus program statement."
-  @type instr :: {:bonus, dest(), expr()} | {:if, condition(), [instr()], [instr()]}
+  @type instr ::
+          {:bonus, dest(), expr()}
+          | {:set, dest(), value()}
+          | {:if, condition(), [instr()], [instr()]}
 
   @typedoc "A bonus program: an ordered list of instructions."
   @type program :: [instr()]
@@ -83,10 +93,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   @doc """
   Evaluates a program against a refine level, folding every `:bonus` into a
-  `%{destination => integer}` accumulator. Pure and deterministic in
+  `%{destination => integer}` accumulator. `:set` instructions store their
+  constant instead, overwriting rather than summing. Pure and deterministic in
   `(program, refine)`.
   """
-  @spec eval(program(), integer()) :: %{dest() => integer()}
+  @spec eval(program(), integer()) :: %{dest() => integer() | value()}
   def eval(program, refine) when is_list(program) and is_integer(refine) do
     eval_instrs(program, refine, %{})
   end
@@ -103,6 +114,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp render_instr({:bonus, dest, expr}) do
     "bonus(ctx, #{inspect(dest)}, #{render_expr(expr)})"
+  end
+
+  defp render_instr({:set, dest, value}) do
+    "set(ctx, #{inspect(dest)}, #{inspect(value)})"
   end
 
   defp render_instr({:if, condition, then_branch, else_branch}) do
@@ -140,6 +155,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp parse_instr!({:bonus, _, [{:ctx, _, c}, dest, expr]}) when is_atom(c) do
     {:bonus, validate_destination!(dest), parse_expr!(expr)}
+  end
+
+  defp parse_instr!({:set, _, [{:ctx, _, c}, dest, value]}) when is_atom(c) do
+    validate_value!(dest, value)
   end
 
   defp parse_instr!({:if, _, [condition, [do: then_q, else: else_q]]}) do
@@ -190,6 +209,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp validate_destination!(dest), do: malformed!("bonus destination", dest)
 
+  defp validate_value!(dest, value) when is_atom(dest) and is_atom(value) do
+    with {:ok, domain} <- BonusKeys.value_param(dest),
+         true <- value in BonusKeys.param_domain(domain) do
+      {:set, dest, value}
+    else
+      _ -> malformed!("set value", {dest, value})
+    end
+  end
+
+  defp validate_value!(dest, value), do: malformed!("set value", {dest, value})
+
   defp validate_skill_param!(dest, param) do
     if is_integer(param) and param > 0, do: dest, else: malformed!("bonus destination", dest)
   end
@@ -208,6 +238,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     value = eval_expr(expr, refine)
     Map.update(acc, key, value, &(&1 + value))
   end
+
+  defp eval_instr({:set, key, value}, _refine, acc), do: Map.put(acc, key, value)
 
   defp eval_instr({:if, condition, then_branch, else_branch}, refine, acc) do
     branch = if eval_cond(condition, refine), do: then_branch, else: else_branch

@@ -29,6 +29,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   - `bonus bKey,amount` — `{:bonus, destination, expr}` when `bKey` resolves via
     `BonusKeys` (miss -> `{:unknown_bonus_key, key}`); any other command name and
     any other `bonus` shape is unsupported.
+  - `bonus bKey,CONST` — `{:set, destination, const}` for the constant-valued
+    keys in `BonusKeys.value_schema/1` (`bAtkEle`), whose argument is an element
+    constant rather than an amount. An unresolvable constant is
+    `{:unresolved_param, detail}`.
   - `bonus2 bKey,param,amount` — `{:bonus, {family, param}, expr}` when `bKey`
     resolves via `BonusKeys.param_schema/1` and `param` resolves through
     `Resolver` according to the schema's param kind (race/element/size/class/status
@@ -113,10 +117,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   @spec compile_instr(tuple(), %{String.t() => EquipScript.expr()}) ::
           {:ok, EquipScript.instr()} | {:error, {:unsupported, detail()}}
-  defp compile_instr({:cmd, "bonus", [{:name, key}, amount]}, env) do
-    with {:ok, dest} <- destination(key),
-         {:ok, expr} <- compile_expr(amount, env) do
-      {:ok, {:bonus, dest, expr}}
+  defp compile_instr({:cmd, "bonus", [{:name, key}, arg]}, env) do
+    case BonusKeys.value_schema(key) do
+      {:ok, schema} -> compile_value_bonus(schema, arg)
+      :error -> compile_amount_bonus(key, arg, env)
     end
   end
 
@@ -142,6 +146,24 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   defp compile_instr({:cmd, name, _args}, _env), do: unsupported({:unsupported_command, name})
   defp compile_instr(other, _env), do: unsupported({:statement, other})
+
+  @spec compile_amount_bonus(String.t(), term(), %{String.t() => EquipScript.expr()}) ::
+          {:ok, EquipScript.instr()} | {:error, {:unsupported, detail()}}
+  defp compile_amount_bonus(key, amount, env) do
+    with {:ok, dest} <- destination(key),
+         {:ok, expr} <- compile_expr(amount, env) do
+      {:ok, {:bonus, dest, expr}}
+    end
+  end
+
+  @spec compile_value_bonus(BonusKeys.value_schema(), term()) ::
+          {:ok, EquipScript.instr()} | {:error, {:unsupported, detail()}}
+  defp compile_value_bonus(%{dest: dest, param: :element}, {:name, const}) do
+    with {:ok, element} <- resolve(&Resolver.resolve_element/1, const),
+         do: {:ok, {:set, dest, element}}
+  end
+
+  defp compile_value_bonus(_schema, arg), do: unsupported({:unresolved_param, arg})
 
   @spec destination(String.t()) :: {:ok, atom()} | {:error, {:unsupported, detail()}}
   defp destination(key) do

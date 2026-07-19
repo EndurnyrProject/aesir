@@ -52,7 +52,7 @@ defmodule Mix.Tasks.Aesir.Import.ItemsTest do
 
     test "records an :on_equip failure for an out-of-vocabulary equip script" do
       assert {%ItemDefinition{on_equip: nil}, {:on_equip, 501, "Red Potion", {:unsupported, _}}} =
-               Items.apply_transpile(definition(%{type: :weapon}), "bonus bMaxHP,100;")
+               Items.apply_transpile(definition(%{type: :weapon}), "bonus bHealPower,10;")
     end
 
     test "skips equip items without a script" do
@@ -69,10 +69,8 @@ defmodule Mix.Tasks.Aesir.Import.ItemsTest do
   end
 
   describe "bAtkEle carve-out" do
-    test "a Fireblend-style item keeps attack_element while its on_equip is rejected" do
-      script = "bonus bAtkEle,Ele_Fire;"
-
-      entry = %{
+    defp fireblend(script) do
+      %{
         "Id" => 1140,
         "AegisName" => "Fireblend",
         "Name" => "Fireblend",
@@ -80,11 +78,26 @@ defmodule Mix.Tasks.Aesir.Import.ItemsTest do
         "SubType" => "1hSword",
         "Script" => script
       }
+    end
 
-      assert {:ok, %ItemDefinition{attack_element: :fire} = def} = Importer.to_definition(entry)
+    test "keeps attack_element even when the script is rejected as a whole" do
+      script = "bonus bAtkEle,Ele_Fire; bonus bHealPower,10;"
+
+      assert {:ok, %ItemDefinition{attack_element: :fire} = def} =
+               Importer.to_definition(fireblend(script))
 
       assert {%ItemDefinition{attack_element: :fire, on_equip: nil},
-              {:on_equip, 1140, "Fireblend", {:unsupported, {:unknown_bonus_key, "bAtkEle"}}}} =
+              {:on_equip, 1140, "Fireblend", {:unsupported, {:unknown_bonus_key, "bHealPower"}}}} =
+               Items.apply_transpile(def, script)
+    end
+
+    test "a transpilable script sets both attack_element and the :set instruction" do
+      script = "bonus bAtkEle,Ele_Fire;"
+
+      assert {:ok, %ItemDefinition{attack_element: :fire} = def} =
+               Importer.to_definition(fireblend(script))
+
+      assert {%ItemDefinition{attack_element: :fire, on_equip: [{:set, :atk_ele, :fire}]}, nil} =
                Items.apply_transpile(def, script)
     end
   end

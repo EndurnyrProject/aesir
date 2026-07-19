@@ -85,7 +85,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       ],
       tuple_add_eff_dest: [{:bonus, {:add_eff, :sc_stun}, 500}],
       tuple_add_eff_when_hit_dest: [{:bonus, {:add_eff_when_hit, :sc_poison}, 300}],
-      tuple_res_eff_dest: [{:bonus, {:res_eff, :sc_freeze}, 1000}]
+      tuple_res_eff_dest: [{:bonus, {:res_eff, :sc_freeze}, 1000}],
+      set_dest: [{:set, :atk_ele, :fire}],
+      set_mixed_with_bonus: [{:bonus, :atk, 10}, {:set, :atk_ele, :wind}],
+      set_inside_if: [
+        {:if, {:>=, :refine, 7}, [{:set, :atk_ele, :holy}], [{:set, :atk_ele, :neutral}]}
+      ]
     ]
 
     for {name, program} <- programs do
@@ -142,6 +147,95 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
 
       assert program == [{:bonus, :unbreakable_weapon, 1}]
       assert EquipScript.eval(program, 0) == %{unbreakable_weapon: 1}
+    end
+  end
+
+  describe "capacity and rate bonus keys" do
+    test "evaluates the hp/sp capacity keys" do
+      program =
+        EquipScript.parse!("""
+        ctx = bonus(ctx, :max_hp, 800)
+        ctx = bonus(ctx, :max_hp_rate, 5)
+        ctx = bonus(ctx, :max_sp, 50)
+        ctx = bonus(ctx, :max_sp_rate, 3)
+        ctx
+        """)
+
+      assert EquipScript.eval(program, 0) == %{
+               max_hp: 800,
+               max_hp_rate: 5,
+               max_sp: 50,
+               max_sp_rate: 3
+             }
+    end
+
+    test "evaluates the rate and all-stats keys" do
+      program =
+        EquipScript.parse!("""
+        ctx = bonus(ctx, :aspd_rate, 10)
+        ctx = bonus(ctx, :atk_rate, 5)
+        ctx = bonus(ctx, :matk_rate, 7)
+        ctx = bonus(ctx, :all_stats, 2)
+        ctx
+        """)
+
+      assert EquipScript.eval(program, 0) == %{
+               aspd_rate: 10,
+               atk_rate: 5,
+               matk_rate: 7,
+               all_stats: 2
+             }
+    end
+
+    test "repeated capacity bonuses sum within one program" do
+      program =
+        EquipScript.parse!("ctx = bonus(ctx, :max_hp, 300)\nctx = bonus(ctx, :max_hp, 200)\nctx")
+
+      assert EquipScript.eval(program, 0) == %{max_hp: 500}
+    end
+  end
+
+  describe ":set instructions" do
+    test "stores the constant rather than summing it" do
+      program = EquipScript.parse!("set(ctx, :atk_ele, :fire)")
+
+      assert program == [{:set, :atk_ele, :fire}]
+      assert EquipScript.eval(program, 0) == %{atk_ele: :fire}
+    end
+
+    test "the last set wins within one program" do
+      program =
+        EquipScript.parse!(
+          "ctx = set(ctx, :atk_ele, :fire)\nctx = set(ctx, :atk_ele, :wind)\nctx"
+        )
+
+      assert EquipScript.eval(program, 0) == %{atk_ele: :wind}
+    end
+
+    test "a refine-gated set resolves to the taken branch" do
+      program =
+        EquipScript.parse!("""
+        if (refine(ctx) >= 7) do
+          set(ctx, :atk_ele, :holy)
+        else
+          set(ctx, :atk_ele, :neutral)
+        end
+        """)
+
+      assert EquipScript.eval(program, 9) == %{atk_ele: :holy}
+      assert EquipScript.eval(program, 0) == %{atk_ele: :neutral}
+    end
+
+    test "raises on a set destination outside the value vocabulary" do
+      assert_raise ArgumentError, fn -> EquipScript.parse!("set(ctx, :atk, :fire)") end
+    end
+
+    test "raises on a set value outside the destination's domain" do
+      assert_raise ArgumentError, fn -> EquipScript.parse!("set(ctx, :atk_ele, :brute)") end
+    end
+
+    test "raises on a non-atom set value" do
+      assert_raise ArgumentError, fn -> EquipScript.parse!("set(ctx, :atk_ele, 3)") end
     end
   end
 

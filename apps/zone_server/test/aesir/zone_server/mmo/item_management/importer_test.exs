@@ -170,8 +170,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
     test "renders a per-hook summary table with derived unsupported counts" do
       failures = [
         {:on_use, 501, "Red Potion", {:unsupported, "produce"}},
-        {:on_equip, 1140, "Fireblend", {:unsupported, {:unknown_bonus_key, "bAtkEle"}}},
-        {:on_equip, 2000, "X", {:unsupported, {:unknown_bonus_key, "bMaxHP"}}}
+        {:on_equip, 1140, "Fireblend", {:unsupported, {:unknown_bonus_key, "bHealPower"}}},
+        {:on_equip, 2000, "X", {:unsupported, {:unknown_bonus_key, "bHealPower"}}}
       ]
 
       out = Importer.build_report(report(failures))
@@ -184,9 +184,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
     test "renders the on_equip rejection-reason histogram sorted descending" do
       failures =
         [
-          {:on_equip, 1, "a", {:unsupported, {:unknown_bonus_key, "bMaxHP"}}},
-          {:on_equip, 2, "b", {:unsupported, {:unknown_bonus_key, "bMaxHP"}}},
-          {:on_equip, 3, "c", {:unsupported, {:unknown_bonus_key, "bMaxHP"}}},
+          {:on_equip, 1, "a", {:unsupported, {:unknown_bonus_key, "bHealPower"}}},
+          {:on_equip, 2, "b", {:unsupported, {:unknown_bonus_key, "bHealPower"}}},
+          {:on_equip, 3, "c", {:unsupported, {:unknown_bonus_key, "bHealPower"}}},
           {:on_equip, 4, "d", {:unsupported, {:unsupported_command, "bonus2"}}},
           {:on_equip, 5, "e", {:unsupported, {:conditional_assignment, "x"}}}
         ]
@@ -194,11 +194,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       out = Importer.build_report(report(failures))
 
       assert out =~ "## on_equip rejection reasons"
-      assert out =~ "| unknown_bonus_key bMaxHP | 3 |"
+      assert out =~ "| unknown_bonus_key bHealPower | 3 |"
       assert out =~ "| unsupported_command bonus2 | 1 |"
       assert out =~ "| conditional_assignment | 1 |"
 
-      max_pos = position(out, "unknown_bonus_key bMaxHP")
+      max_pos = position(out, "unknown_bonus_key bHealPower")
       bonus2_pos = position(out, "unsupported_command bonus2")
       assert max_pos < bonus2_pos
     end
@@ -206,7 +206,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
     test "renders both hooks' full failure tables" do
       failures = [
         {:on_use, 501, "Red Potion", {:unsupported, "produce"}},
-        {:on_equip, 2198, "Lapine Shield", {:unsupported, {:unknown_bonus_key, "bMaxHP"}}}
+        {:on_equip, 2198, "Lapine Shield", {:unsupported, {:unknown_bonus_key, "bHealPower"}}}
       ]
 
       out = Importer.build_report(report(failures))
@@ -214,7 +214,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       assert out =~ "## on_use failures"
       assert out =~ "| 501 | Red Potion | {:unsupported, \"produce\"} |"
       assert out =~ "## on_equip failures"
-      assert out =~ "| 2198 | Lapine Shield | {:unsupported, {:unknown_bonus_key, \"bMaxHP\"}} |"
+
+      assert out =~
+               "| 2198 | Lapine Shield | {:unsupported, {:unknown_bonus_key, \"bHealPower\"}} |"
     end
 
     test "renders placeholders when a hook has no failures" do

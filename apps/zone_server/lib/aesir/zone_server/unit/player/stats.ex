@@ -570,7 +570,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     alias Aesir.ZoneServer.Unit.Player.CombatCalculations, as: PlayerCombatCalc
 
     base_critical = calculate_base_critical(stats)
-    base_atk = calculate_base_atk(stats)
+    base_atk = apply_rate(calculate_base_atk(stats), get_equipment_modifier(stats, :atk_rate))
     base_matk = calculate_base_matk(stats)
     base_def = calculate_base_def(stats)
     passive_atk = Passives.atk_bonus(stats)
@@ -586,8 +586,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     flat_matk = get_status_modifier(stats, :matk) + get_equipment_modifier(stats, :matk)
     wmatk_min = Map.get(stats.modifiers.equipment, :wmatk_min, 0)
     wmatk_max = Map.get(stats.modifiers.equipment, :wmatk_max, 0)
-    matk_min = base_matk + wmatk_min + flat_matk
-    matk_max = base_matk + wmatk_max + flat_matk
+    matk_rate = get_equipment_modifier(stats, :matk_rate)
+    matk_min = apply_rate(base_matk + wmatk_min + flat_matk, matk_rate)
+    matk_max = apply_rate(base_matk + wmatk_max + flat_matk, matk_rate)
 
     # Heal MATK band excludes flat item/status MATK: rAthena's RE heal
     # (skill.cpp:705-729) uses status_base_matk + weapon variance ONLY.
@@ -701,8 +702,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     status_bonus = Map.get(stats.modifiers.status_effects, stat_name, 0)
     passive_bonus = stats.modifiers |> Map.get(:passive, %{}) |> Map.get(stat_name, 0)
 
-    base_value + job_bonus + equipment_bonus + status_bonus + passive_bonus
+    base_value + job_bonus + equipment_bonus + status_bonus + passive_bonus +
+      all_stats_bonus(stats, stat_name)
   end
+
+  # `bonus bAllStats,n` grants n to each of the six primary stats only; the
+  # trait stats (POW/STA/WIS/SPL/CON/CRT) have their own `bAllTraitStats`.
+  @primary_stats [:str, :agi, :vit, :int, :dex, :luk]
+
+  defp all_stats_bonus(%__MODULE__{} = stats, stat_name) when stat_name in @primary_stats do
+    get_equipment_modifier(stats, :all_stats)
+  end
+
+  defp all_stats_bonus(%__MODULE__{}, _stat_name), do: 0
 
   @doc """
   Gets all status effect modifiers for a specific stat or property.
@@ -797,7 +809,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
         base_aspd = :math.sqrt(stat_term) * 0.25 + 196
 
-        flat_bonus = get_status_modifier(stats, :aspd) + Passives.aspd_bonus(stats)
+        flat_bonus =
+          get_status_modifier(stats, :aspd) + get_equipment_modifier(stats, :aspd) +
+            Passives.aspd_bonus(stats)
 
         final_aspd =
           trunc(base_aspd + flat_bonus * effective_agi / 200) - min(weapon_delay, 200)
@@ -844,7 +858,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     total_hp = hp_with_factor + hp_increase + get_hp_bonus_flat(stats)
 
     total_hp
-    |> apply_max_rate(get_status_modifier(stats, :max_hp_rate))
+    |> apply_max_rate(
+      get_status_modifier(stats, :max_hp_rate) + get_equipment_modifier(stats, :max_hp_rate)
+    )
     |> max(1)
   end
 
@@ -856,12 +872,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     total_sp = sp_with_int + sp_increase + get_sp_bonus_flat(stats)
 
     total_sp
-    |> apply_max_rate(get_status_modifier(stats, :max_sp_rate))
+    |> apply_max_rate(
+      get_status_modifier(stats, :max_sp_rate) + get_equipment_modifier(stats, :max_sp_rate)
+    )
     |> max(1)
   end
 
   @spec apply_max_rate(integer(), number()) :: integer()
   defp apply_max_rate(value, rate), do: trunc(value * (100 + rate) / 100)
+
+  # Percentage bonuses that accumulate as a delta off 100 (`bAtkRate`,
+  # `bMatkRate`). Zero is the common case and must be exact, not a float round-trip.
+  @spec apply_rate(integer(), number()) :: integer()
+  defp apply_rate(value, 0), do: value
+  defp apply_rate(value, rate), do: div(value * (100 + rate), 100)
 
   defp get_weapon_aspd(job_name, weapon_atom) do
     case JobManagement.get_base_aspd(job_name, weapon_atom) do
@@ -889,15 +913,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     equipment_percent + status_percent
   end
 
-  defp get_hp_bonus_flat(%__MODULE__{}) do
-    # NOTE: Implement equipment and status effect HP bonuses
-    0
-  end
+  defp get_hp_bonus_flat(%__MODULE__{} = stats), do: get_equipment_modifier(stats, :max_hp)
 
-  defp get_sp_bonus_flat(%__MODULE__{}) do
-    # NOTE: Implement equipment and status effect SP bonuses
-    0
-  end
+  defp get_sp_bonus_flat(%__MODULE__{} = stats), do: get_equipment_modifier(stats, :max_sp)
 
   # Sums the flat item_db bonuses (attack -> atk, defense -> def) across the
   # equipped items. Weapon MATK (a magic weapon's `magic_attack`) becomes a
@@ -953,15 +971,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   # `:critical`, ...) are not pre-seeded in the accumulator, so each bonus is
   # merged with `Map.update/4` rather than a struct-style update; downstream
   # readers all use `Map.get(..., 0)`.
+  #
+  # Numeric bonuses sum. Constant-valued ones (`:atk_ele` from `bonus bAtkEle`)
+  # are not summable, so the last equipped item to set one wins.
   defp apply_equip_script(acc, nil, _refine), do: acc
 
   defp apply_equip_script(acc, program, refine) do
     program
     |> EquipScript.eval(refine)
-    |> Enum.reduce(acc, fn {key, amount}, acc ->
-      Map.update(acc, key, amount, &(&1 + amount))
-    end)
+    |> Enum.reduce(acc, fn {key, value}, acc -> merge_equip_bonus(acc, key, value) end)
   end
+
+  defp merge_equip_bonus(acc, key, value) when is_number(value) do
+    Map.update(acc, key, value, &(&1 + value))
+  end
+
+  defp merge_equip_bonus(acc, key, value), do: Map.put(acc, key, value)
 
   # Weapon MATK variance, verified vs rAthena status.cpp:6306-6316:
   # `variance = weapon.matk * weapon.wlv / 10` (integer div), then

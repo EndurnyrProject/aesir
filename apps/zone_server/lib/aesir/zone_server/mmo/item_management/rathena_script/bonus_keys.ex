@@ -14,6 +14,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   `t:param_schema/0` (`family` + `param` kind + `unit`); `param_schema/1`,
   `families/0`, and `param_domain/1` expose them to the codegen and to
   `EquipScript.parse!/1` destination validation.
+
+  A third table, `@value_keys`, covers single-argument `bonus` keys whose
+  argument is a **constant** rather than an amount (`bonus bAtkEle,Ele_Fire;`).
+  These compile to an `EquipScript` `:set` instruction — last writer wins —
+  instead of a summed `:bonus`.
   """
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
@@ -21,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   @type destination :: atom()
   @type param :: :race | :element | :size | :class | :skill | :status
   @type param_schema :: %{family: atom(), param: param(), unit: :percent | :ms | :sp | :per10k}
+  @type value_schema :: %{dest: destination(), param: param()}
 
   @keys %{
     "bstr" => :str,
@@ -43,6 +49,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bhit" => :hit,
     "bflee" => :flee,
     "bcritical" => :critical,
+    "bmaxhp" => :max_hp,
+    "bmaxsp" => :max_sp,
+    "bmaxhprate" => :max_hp_rate,
+    "bmaxsprate" => :max_sp_rate,
+    "baspd" => :aspd,
+    "baspdrate" => :aspd_rate,
+    "ballstats" => :all_stats,
+    "batkrate" => :atk_rate,
+    "bmatkrate" => :matk_rate,
     "bpatk" => :patk,
     "bsmatk" => :smatk,
     "bres" => :res,
@@ -80,6 +95,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "baddeff" => %{family: :add_eff, param: :status, unit: :per10k},
     "baddeffwhenhit" => %{family: :add_eff_when_hit, param: :status, unit: :per10k},
     "breseff" => %{family: :res_eff, param: :status, unit: :per10k}
+  }
+
+  @value_keys %{
+    "batkele" => %{dest: :atk_ele, param: :element}
   }
 
   @race_domain [
@@ -151,6 +170,37 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   def param_domain(:size), do: @size_domain
   def param_domain(:class), do: @class_domain
   def param_domain(:status), do: Resolver.effs() |> Map.values() |> Enum.uniq()
+
+  @doc """
+  Resolves a single-argument `bonus` key whose argument is a **constant** rather
+  than an amount (`bonus bAtkEle,Ele_Fire;`) to its `value_schema/0`. Returns
+  `:error` for keys outside that vocabulary — including the ordinary numeric
+  keys, which `destination/1` owns.
+  """
+  @spec value_schema(String.t()) :: {:ok, value_schema()} | :error
+  def value_schema(name) when is_binary(name), do: Map.fetch(@value_keys, String.downcase(name))
+
+  @doc """
+  The deduplicated set of destination atoms every recognized value key maps to.
+  """
+  @spec value_destinations() :: [destination()]
+  def value_destinations, do: @value_keys |> Map.values() |> Enum.map(& &1.dest) |> Enum.uniq()
+
+  @doc """
+  Resolves a value-key destination atom back to its param kind, derived from the
+  same `@value_keys` table backing `value_schema/1`. Used by `EquipScript.parse!`
+  to validate `:set` instruction values. Returns `:error` outside the vocabulary.
+  """
+  @spec value_param(destination()) :: {:ok, param()} | :error
+  def value_param(dest) when is_atom(dest) do
+    @value_keys
+    |> Map.values()
+    |> Enum.find(&(&1.dest == dest))
+    |> case do
+      %{param: param} -> {:ok, param}
+      nil -> :error
+    end
+  end
 
   @doc """
   Resolves a `bonus2` family atom back to its param kind, derived from the

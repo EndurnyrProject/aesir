@@ -7,11 +7,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
   ## `bAtkEle` carve-out
 
   `parse_attack_element/1` sniffs `bonus bAtkEle,Ele_*` straight out of the raw
-  script and sets `attack_element`, independent of the `on_equip` transpile. An
-  item like Fireblend therefore keeps its `attack_element` while its script is
-  rejected for `on_equip` (the `bAtkEle` key is deliberately out of the bonus
-  vocabulary). That is by design - the element sniff is preserved - and is not
-  partial bonus application: the transpile is still all-or-nothing.
+  script and sets `attack_element`, independent of the `on_equip` transpile.
+  `bAtkEle` is *also* in the bonus vocabulary, compiling to an `EquipScript`
+  `:set` — the two are not redundant, because the transpile is all-or-nothing:
+  an item like Fireblend, whose script is rejected over some unrelated
+  construct, still keeps its `attack_element` from the sniff. The sniff is the
+  fallback; the `:set` is what a fully-transpiled script contributes.
+
+  Both feed the same runtime answer through
+  `Aesir.ZoneServer.Unit.Player.PlayerState`, which prefers the ammo's
+  `attack_element`, then the equipment `:atk_ele` modifier, then neutral. They
+  derive from the same rAthena field, so they never disagree.
   """
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
