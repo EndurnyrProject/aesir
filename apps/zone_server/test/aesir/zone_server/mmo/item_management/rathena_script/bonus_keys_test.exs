@@ -145,6 +145,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     end
   end
 
+  describe "family_param/1" do
+    test "resolves every documented param-key family to its param kind" do
+      for schema <- Map.values(@param_schemas) do
+        assert BonusKeys.family_param(schema.family) == {:ok, schema.param}
+      end
+    end
+
+    test "returns :error for a family outside the vocabulary" do
+      assert BonusKeys.family_param(:bogus_family) == :error
+    end
+  end
+
   describe "param_domain/1" do
     test "race domain" do
       assert BonusKeys.param_domain(:race) == [

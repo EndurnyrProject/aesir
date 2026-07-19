@@ -39,8 +39,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   @type condition ::
           {compare_op(), expr(), expr()} | {logic_op(), condition(), condition()}
 
+  @typedoc """
+  A bonus destination: a flat atom for section-3 keys, or a `{family, param}`
+  tuple for parameterized `bonus2` keys — `param` is an atom drawn from the
+  family's `BonusKeys` domain (race/element/size/class) or a positive integer
+  skill id.
+  """
+  @type dest :: atom() | {atom(), atom() | pos_integer()}
+
   @typedoc "A single bonus program statement."
-  @type instr :: {:bonus, atom(), expr()} | {:if, condition(), [instr()], [instr()]}
+  @type instr :: {:bonus, dest(), expr()} | {:if, condition(), [instr()], [instr()]}
 
   @typedoc "A bonus program: an ordered list of instructions."
   @type program :: [instr()]
@@ -61,9 +69,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   Strictly parses a DSL source string back to the tuple program form.
 
   The source is read with `Code.string_to_quoted!/1` and walked against a
-  closed vocabulary; bonus destinations are validated through
-  `BonusKeys.destinations/0`. Any unknown call, operator, destination, or
-  malformed shape raises `ArgumentError` — corrupt data must not load silently.
+  closed vocabulary; flat bonus destinations are validated through
+  `BonusKeys.destinations/0`, and `{family, param}` tuple destinations through
+  `BonusKeys.families/0` and `BonusKeys.family_param/1` (atom params against
+  the family's domain, skill params as positive integers). Any unknown call,
+  operator, destination, or malformed shape raises `ArgumentError` — corrupt
+  data must not load silently.
   """
   @spec parse!(String.t()) :: program()
   def parse!(source) when is_binary(source) do
@@ -75,7 +86,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   `%{destination => integer}` accumulator. Pure and deterministic in
   `(program, refine)`.
   """
-  @spec eval(program(), integer()) :: %{atom() => integer()}
+  @spec eval(program(), integer()) :: %{dest() => integer()}
   def eval(program, refine) when is_list(program) and is_integer(refine) do
     eval_instrs(program, refine, %{})
   end
@@ -90,7 +101,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     |> Enum.join("\n")
   end
 
-  defp render_instr({:bonus, dest, expr}) when is_atom(dest) do
+  defp render_instr({:bonus, dest, expr}) do
     "bonus(ctx, #{inspect(dest)}, #{render_expr(expr)})"
   end
 
@@ -127,8 +138,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp parse_stmt({:ctx, _, c}) when is_atom(c), do: []
   defp parse_stmt(quoted), do: [parse_instr!(quoted)]
 
-  defp parse_instr!({:bonus, _, [{:ctx, _, c}, dest, expr]})
-       when is_atom(c) and is_atom(dest) do
+  defp parse_instr!({:bonus, _, [{:ctx, _, c}, dest, expr]}) when is_atom(c) do
     {:bonus, validate_destination!(dest), parse_expr!(expr)}
   end
 
@@ -166,8 +176,28 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp parse_cond!(other), do: malformed!("condition", other)
 
-  defp validate_destination!(dest) do
+  defp validate_destination!(dest) when is_atom(dest) do
     if dest in BonusKeys.destinations(), do: dest, else: malformed!("bonus destination", dest)
+  end
+
+  defp validate_destination!({family, param} = dest) when is_atom(family) do
+    case BonusKeys.family_param(family) do
+      {:ok, :skill} -> validate_skill_param!(dest, param)
+      {:ok, domain} -> validate_domain_param!(dest, domain, param)
+      :error -> malformed!("bonus destination", dest)
+    end
+  end
+
+  defp validate_destination!(dest), do: malformed!("bonus destination", dest)
+
+  defp validate_skill_param!(dest, param) do
+    if is_integer(param) and param > 0, do: dest, else: malformed!("bonus destination", dest)
+  end
+
+  defp validate_domain_param!(dest, domain, param) do
+    if param in BonusKeys.param_domain(domain),
+      do: dest,
+      else: malformed!("bonus destination", dest)
   end
 
   defp eval_instrs(instrs, refine, acc) do

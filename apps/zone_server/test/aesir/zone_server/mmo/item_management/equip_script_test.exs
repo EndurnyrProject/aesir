@@ -67,6 +67,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       ],
       logical: [
         {:if, {:or, {:>=, :refine, 9}, {:==, :refine, 0}}, [{:bonus, :res, 15}], []}
+      ],
+      tuple_dest: [{:bonus, {:addrace, :brute}, 20}],
+      tuple_skill_dest: [{:bonus, {:skill_atk, 152}, 30}],
+      mixed_flat_and_tuple: [
+        {:bonus, :vit, 5},
+        {:bonus, {:subele, :fire}, 10},
+        {:bonus, :def, 3}
+      ],
+      tuple_dest_inside_if: [
+        {:if, {:>=, :refine, 7}, [{:bonus, {:addrace, :brute}, 20}],
+         [{:bonus, {:addrace, :all}, 5}]}
       ]
     ]
 
@@ -144,6 +155,30 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
         EquipScript.parse!("bonus(ctx, :smatk,")
       end
     end
+
+    test "raises on a tuple dest with an unknown family" do
+      assert_raise ArgumentError, fn ->
+        EquipScript.parse!("bonus(ctx, {:bogus_family, :brute}, 20)")
+      end
+    end
+
+    test "raises on a tuple dest with an out-of-domain atom param" do
+      assert_raise ArgumentError, fn ->
+        EquipScript.parse!("bonus(ctx, {:addrace, :bogus}, 20)")
+      end
+    end
+
+    test "raises on a tuple dest with a non-positive skill id" do
+      assert_raise ArgumentError, fn ->
+        EquipScript.parse!("bonus(ctx, {:skill_atk, 0}, 20)")
+      end
+    end
+
+    test "raises on a 3-element tuple dest" do
+      assert_raise ArgumentError, fn ->
+        EquipScript.parse!("bonus(ctx, {:addrace, :brute, :extra}, 20)")
+      end
+    end
   end
 
   describe "eval/2" do
@@ -170,6 +205,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       program = [{:bonus, :str, 2}, {:bonus, :str, {:div, :refine, 2}}]
 
       assert EquipScript.eval(program, 6) == %{str: 5}
+    end
+
+    test "sums repeated tuple destinations into one key" do
+      program = [
+        {:bonus, {:addrace, :brute}, 20},
+        {:bonus, {:addrace, :brute}, 5},
+        {:bonus, {:addrace, :undead}, 15}
+      ]
+
+      assert EquipScript.eval(program, 0) == %{
+               {:addrace, :brute} => 25,
+               {:addrace, :undead} => 15
+             }
     end
 
     test "refine 0 yields zeros and gates stay closed" do

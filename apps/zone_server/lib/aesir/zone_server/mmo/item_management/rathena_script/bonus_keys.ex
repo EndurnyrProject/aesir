@@ -140,4 +140,22 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   def param_domain(:element), do: @element_domain
   def param_domain(:size), do: @size_domain
   def param_domain(:class), do: @class_domain
+
+  @doc """
+  Resolves a `bonus2` family atom back to its param kind, derived from the
+  same `@param_keys` schema table backing `param_schema/1` so the mapping can
+  never drift out of sync with it. Used by `EquipScript.parse!` to validate
+  tuple bonus destinations. Returns `:error` for a family outside the
+  vocabulary.
+  """
+  @spec family_param(atom()) :: {:ok, param()} | :error
+  def family_param(family) when is_atom(family) do
+    @param_keys
+    |> Map.values()
+    |> Enum.find(&(&1.family == family))
+    |> case do
+      %{param: param} -> {:ok, param}
+      nil -> :error
+    end
+  end
 end
