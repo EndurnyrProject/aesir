@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   @moduledoc """
-  Final stage of the equip-script transpiler: NPC-transpiler AST -> refine-pure
+  Final stage of the equip-script transpiler: NPC-transpiler AST -> input-pure
   `EquipScript.program()` term.
 
   Walks the statement list produced by `Aesir.ZoneServer.Npc.Transpiler.Parser`
@@ -13,10 +13,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   ## Refine-variable inlining
 
   The `.@r = getrefine();` idiom is handled at transpile time. A top-level
-  assignment to a `.@`-scoped variable binds its name to a compiled, refine-pure
+  assignment to a `.@`-scoped variable binds its name to a compiled, input-pure
   expression in a transpile-time environment; every later `.@r` use is
-  substituted, so the emitted program is pure in a single input (refine) and the
-  evaluator needs no variable environment. Later assignments shadow earlier ones.
+  substituted, so the emitted program is pure in the `EquipScript.inputs()`
+  (refine, base level, job level) and the evaluator needs no variable
+  environment. Later assignments shadow earlier ones.
 
   Assignments inside an `if` branch are rejected (`{:conditional_assignment, name}`):
   the value would depend on the branch taken, making inlining unsound. Branches are
@@ -31,6 +32,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     any other `bonus` shape is unsupported. Destinations carrying a
     `BonusKeys.destination_scale/1` factor emit the amount **expression**
     multiplied by it, so a refine-dependent amount converts units too.
+  - `bonus bKey` (no argument) — rAthena's boolean-flag idiom
+    (`bonus bUnbreakableWeapon;`): compiles exactly like `bonus bKey,1`.
   - `bonus bKey,CONST` — `{:set, destination, const}` for the constant-valued
     keys in `BonusKeys.value_schema/1` (`bAtkEle`), whose argument is an element
     constant rather than an amount. An unresolvable constant is
@@ -47,13 +50,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     unsupported. A non-constant or unresolvable param is
     `{:unresolved_param, detail}`; any other shape is unsupported.
     `bonus3`..`bonus5` parse as ordinary commands and stay unsupported.
-  - `if (cond) then [else]` — `{:if, cond, then, else}` when `cond` is a
-    refine-pure boolean over comparisons / `&&` / `||`; a non-refine read such as
-    `BaseLevel` is unsupported.
-  - Expressions are refine-pure only: integer literals (including negated),
-    `getrefine()` -> `:refine`, inlined `.@var`, and `+ - * /` arithmetic
-    (`/` -> `:div`, matching C/Elixir truncating integer division). `rand(...)`
-    and every other call are unsupported.
+  - `if (cond) then [else]` — `{:if, cond, then, else}` when `cond` is an
+    input-pure boolean over comparisons / `&&` / `||`; a read outside the
+    inputs, such as `BaseClass` or `eaclass()`, is unsupported.
+  - Expressions are input-pure only: integer literals (including negated),
+    `getrefine()` -> `:refine`, `BaseLevel` -> `:base_level`, `JobLevel` ->
+    `:job_level`, inlined `.@var`, `+ - * /` arithmetic (`/` -> `:div`, matching
+    C/Elixir truncating integer division), and the `cond ? a : b` ternary ->
+    `{:ternary, cond, a, b}`. `rand(...)` and every other call are unsupported.
 
   A program that compiles to zero instructions (script was only assignments) yields
   `{:ok, []}`, which the importer stores as no `on_equip`.
@@ -142,6 +146,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
       :error -> compile_amount_bonus(key, arg, env)
     end
   end
+
+  # The argument-less form is rAthena's boolean-flag idiom
+  # (`bonus bUnbreakableWeapon;`) - the value is implicitly 1.
+  defp compile_instr({:cmd, "bonus", [{:name, key}]}, env),
+    do: compile_amount_bonus(key, {:int, 1}, env)
 
   defp compile_instr({:cmd, "bonus", args}, _env), do: unsupported({:bonus_shape, args})
 
@@ -317,6 +326,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   end
 
   defp compile_expr({:call, "getrefine", []}, _env), do: {:ok, :refine}
+  defp compile_expr({:name, "BaseLevel"}, _env), do: {:ok, :base_level}
+  defp compile_expr({:name, "JobLevel"}, _env), do: {:ok, :job_level}
+
+  defp compile_expr({:ternary, cond_ast, then_ast, else_ast}, env) do
+    with {:ok, condition} <- compile_cond(cond_ast, env),
+         {:ok, then_expr} <- compile_expr(then_ast, env),
+         {:ok, else_expr} <- compile_expr(else_ast, env) do
+      {:ok, {:ternary, condition, then_expr, else_expr}}
+    end
+  end
 
   defp compile_expr({:var, :local, name, :int}, env) do
     case Map.fetch(env, name) do

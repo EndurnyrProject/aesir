@@ -99,6 +99,46 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
       assert {:ok, [{:bonus, :critical, :refine}]} = compile("bonus bCritical,getrefine();")
     end
 
+    test "argument-less bonus is the boolean-flag idiom, amount 1" do
+      assert {:ok, [{:bonus, :unbreakable_weapon, 1}]} = compile("bonus bUnbreakableWeapon;")
+      assert {:ok, [{:bonus, :unbreakable_helm, 1}]} = compile("bonus bUnbreakableHelm;")
+    end
+
+    test "argument-less bonus with an unknown key stays unknown_bonus_key" do
+      assert {:error, {:unsupported, {:unknown_bonus_key, "bNoKnockback"}}} =
+               compile("bonus bNoKnockback;")
+    end
+
+    test "BaseLevel and JobLevel compile to their level inputs" do
+      assert {:ok, [{:bonus, :atk, {:div, :base_level, 10}}]} =
+               compile("bonus bBaseAtk,BaseLevel/10;")
+
+      assert {:ok, [{:bonus, :matk, :job_level}]} = compile("bonus bMatk,JobLevel;")
+    end
+
+    test "BaseLevel works as an if gate" do
+      assert {:ok, [{:if, {:>, :base_level, 99}, [{:bonus, :max_hp, 500}], []}]} =
+               compile("if (BaseLevel>99) bonus bMaxHP,500;")
+    end
+
+    test "a ternary amount compiles to the :ternary expression" do
+      assert {:ok, [{:bonus, :str, {:ternary, {:>=, :refine, 7}, 3, 1}}]} =
+               compile("bonus bStr,getrefine()>=7?3:1;")
+    end
+
+    test "a nested ternary over an inlined refine var compiles" do
+      assert {:ok,
+              [
+                {:bonus, :hit,
+                 {:ternary, {:<, :refine, 7}, 1, {:ternary, {:<, :refine, 9}, 2, 3}}}
+              ]} = compile(".@r = getrefine(); bonus bHit,.@r<7?1:(.@r<9?2:3);")
+    end
+
+    test "BaseClass stays unsupported" do
+      assert {:error, {:unsupported, {:expression, {:name, "BaseClass"}}}} =
+               compile("if (BaseClass==Job_Mage) bonus bMatk,10;")
+    end
+
     test "assignment-inline idiom compiles the substituted expression" do
       assert {:ok, [{:bonus, :smatk, {:+, 1, {:div, :refine, 2}}}]} =
                compile(".@r = getrefine(); bonus bSMatk,1+(.@r/2);")
@@ -400,9 +440,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus bNoRegen,2;")
     end
 
-    test "non-refine conditional read is rejected" do
-      assert {:error, {:unsupported, {:expression, {:name, "BaseLevel"}}}} =
-               compile("if (BaseLevel>90) bonus bStr,10;")
+    test "a conditional read outside the inputs is rejected" do
+      assert {:error, {:unsupported, {:expression, {:name, "BaseJob"}}}} =
+               compile("if (BaseJob==Job_Mage) bonus bStr,10;")
     end
 
     test "conditional assignment is rejected" do
@@ -424,8 +464,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus bStr,5; bonus bNoRegen,2; bonus bAgi,3;")
     end
 
-    test "bonus with a non-two-arg shape is rejected" do
-      assert {:error, {:unsupported, {:bonus_shape, _}}} = compile("bonus bStr;")
+    test "bonus with more than two args is rejected" do
+      assert {:error, {:unsupported, {:bonus_shape, _}}} = compile("bonus bStr,1,2;")
     end
   end
 end

@@ -1054,6 +1054,33 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert result.modifiers.equipment == %{atk: 99}
     end
 
+    test "a level-up recompute refolds level-gated on_equip programs from the worn cache" do
+      gated = %ItemDefinition{
+        id: 90_120,
+        aegis_name: "test_level_gated",
+        name: "Level Gated",
+        on_equip: [
+          {:bonus, :atk, {:div, :base_level, 10}},
+          {:if, {:>, :base_level, 99}, [{:bonus, :atk_rate, 10}], []}
+        ]
+      }
+
+      stub(ItemManagement, :get_item_by_id, fn 90_120 -> {:ok, gated} end)
+
+      worn =
+        Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, [equipped(90_120, @armor_pos)])
+
+      assert worn.modifiers.equipment.atk == 0
+      refute Map.has_key?(worn.modifiers.equipment, :atk_rate)
+
+      leveled =
+        %{worn | progression: %{worn.progression | base_level: 100}}
+        |> Stats.calculate_stats()
+
+      assert leveled.modifiers.equipment.atk == 10
+      assert leveled.modifiers.equipment.atk_rate == 10
+    end
+
     test "equipping Soul Staff (magic_attack 200, weapon_level 3) opens a +-15% MATK band" do
       staff = equipped(@soul_staff, @both_hand)
 

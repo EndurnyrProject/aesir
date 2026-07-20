@@ -1,7 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   @moduledoc """
   Owner of the `on_equip` bonus-program format: the single place where the
-  refine-pure program produced by `EquipCodegen` is defined, serialized,
+  input-pure program produced by `EquipCodegen` is defined, serialized,
   deserialized, and evaluated.
 
   A program is plain data (a list of tuples). It is stored in `equip.yml` as an
@@ -13,13 +13,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
       ctx
 
   and parsed back to the tuple form at load time through a closed vocabulary
-  (`parse!/1`): `bonus/3`, `refine/1`, `+ - *` and `div/2`, comparisons,
-  `&&`/`||`, and `if/else`. Unlike `on_use` the source is never compiled to
-  code — the equip corpus (~13k items) is far past the BEAM clause-count
-  ceiling — so `eval/2` interprets the tuple program against an item's refine
-  level during the stats recompute. The evaluator is pure and deterministic in
-  `(program, refine)` — the vocabulary admits no session reads and no
-  randomness.
+  (`parse!/1`): `bonus/3`, `refine/1`, `base_level/1`, `job_level/1`,
+  `+ - *` and `div/2`, comparisons, `&&`/`||`, `if/else` statements, and the
+  inline `if(cond, do: a, else: b)` ternary expression. Unlike `on_use` the
+  source is never compiled to code — the equip corpus (~13k items) is far past
+  the BEAM clause-count ceiling — so `eval/2` interprets the tuple program
+  against the `t:inputs/0` map during the stats recompute. The evaluator is
+  pure and deterministic in `(program, inputs)` — the three inputs (the item's
+  refine, the wearer's base and job level) are the only reads the vocabulary
+  admits, and there is no randomness. Level inputs change on level-up, which is
+  why the stats recompute re-evaluates programs (`Stats.apply_equipment_modifiers`
+  caches `worn_items` for exactly that refold).
 
   Corrupt stored data must fail loudly rather than silently degrade: `parse!/1`
   raises on any construct outside the vocabulary, any unknown bonus
@@ -32,10 +36,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   @type compare_op :: :> | :< | :>= | :<= | :== | :!=
   @type logic_op :: :and | :or
 
-  @typedoc "A refine-pure arithmetic expression evaluating to an integer."
-  @type expr :: integer() | :refine | {arith_op(), expr(), expr()}
+  @typedoc "The evaluation inputs: the item's refine and the wearer's levels."
+  @type inputs :: %{refine: integer(), base_level: integer(), job_level: integer()}
 
-  @typedoc "A refine-pure boolean condition gating an `:if` instruction."
+  @typedoc """
+  An input-pure arithmetic expression evaluating to an integer. `{:ternary, c, a, b}`
+  is the rAthena `c ? a : b` conditional expression: `a` when the condition
+  holds, `b` otherwise.
+  """
+  @type expr ::
+          integer()
+          | :refine
+          | :base_level
+          | :job_level
+          | {arith_op(), expr(), expr()}
+          | {:ternary, condition(), expr(), expr()}
+
+  @typedoc "An input-pure boolean condition gating an `:if` instruction or a ternary."
   @type condition ::
           {compare_op(), expr(), expr()} | {logic_op(), condition(), condition()}
 
@@ -92,15 +109,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   end
 
   @doc """
-  Evaluates a program against a refine level, folding every `:bonus` into a
+  Evaluates a program against its `t:inputs/0`, folding every `:bonus` into a
   `%{destination => integer}` accumulator. `:set` instructions store their
   constant instead, overwriting rather than summing, and the non-stackable
   destinations (`BonusKeys.max_destination?/1`) keep the largest contribution
-  instead of summing. Pure and deterministic in `(program, refine)`.
+  instead of summing. Pure and deterministic in `(program, inputs)`; an input
+  the program reads but the map lacks raises.
   """
-  @spec eval(program(), integer()) :: %{dest() => integer() | value()}
-  def eval(program, refine) when is_list(program) and is_integer(refine) do
-    eval_instrs(program, refine, %{})
+  @spec eval(program(), inputs()) :: %{dest() => integer() | value()}
+  def eval(program, inputs) when is_list(program) and is_map(inputs) do
+    eval_instrs(program, inputs, %{})
   end
 
   defp render_stmts([]), do: "ctx"
@@ -128,7 +146,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp render_expr(int) when is_integer(int), do: Integer.to_string(int)
   defp render_expr(:refine), do: "refine(ctx)"
+  defp render_expr(:base_level), do: "base_level(ctx)"
+  defp render_expr(:job_level), do: "job_level(ctx)"
   defp render_expr({:div, l, r}), do: "div(#{render_expr(l)}, #{render_expr(r)})"
+
+  defp render_expr({:ternary, condition, then_expr, else_expr}) do
+    "if(#{render_cond(condition)}, do: #{render_expr(then_expr)}, else: #{render_expr(else_expr)})"
+  end
 
   defp render_expr({op, l, r}) when op in @plain_arith_ops do
     "(#{render_expr(l)} #{op} #{render_expr(r)})"
@@ -175,9 +199,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp parse_expr!(int) when is_integer(int), do: int
   defp parse_expr!({:-, _, [int]}) when is_integer(int), do: -int
   defp parse_expr!({:refine, _, [{:ctx, _, c}]}) when is_atom(c), do: :refine
+  defp parse_expr!({:base_level, _, [{:ctx, _, c}]}) when is_atom(c), do: :base_level
+  defp parse_expr!({:job_level, _, [{:ctx, _, c}]}) when is_atom(c), do: :job_level
 
   defp parse_expr!({op, _, [l, r]}) when op in [:+, :-, :*, :div] do
     {op, parse_expr!(l), parse_expr!(r)}
+  end
+
+  defp parse_expr!({:if, _, [condition, [do: then_q, else: else_q]]}) do
+    {:ternary, parse_cond!(condition), parse_expr!(then_q), parse_expr!(else_q)}
   end
 
   defp parse_expr!(other), do: malformed!("expression", other)
@@ -231,12 +261,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
       else: malformed!("bonus destination", dest)
   end
 
-  defp eval_instrs(instrs, refine, acc) do
-    Enum.reduce(instrs, acc, &eval_instr(&1, refine, &2))
+  defp eval_instrs(instrs, inputs, acc) do
+    Enum.reduce(instrs, acc, &eval_instr(&1, inputs, &2))
   end
 
-  defp eval_instr({:bonus, key, expr}, refine, acc) do
-    value = eval_expr(expr, refine)
+  defp eval_instr({:bonus, key, expr}, inputs, acc) do
+    value = eval_expr(expr, inputs)
 
     if BonusKeys.max_destination?(key) do
       Map.update(acc, key, value, &max(&1, value))
@@ -245,32 +275,42 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     end
   end
 
-  defp eval_instr({:set, key, value}, _refine, acc), do: Map.put(acc, key, value)
+  defp eval_instr({:set, key, value}, _inputs, acc), do: Map.put(acc, key, value)
 
-  defp eval_instr({:if, condition, then_branch, else_branch}, refine, acc) do
-    branch = if eval_cond(condition, refine), do: then_branch, else: else_branch
-    eval_instrs(branch, refine, acc)
+  defp eval_instr({:if, condition, then_branch, else_branch}, inputs, acc) do
+    branch = if eval_cond(condition, inputs), do: then_branch, else: else_branch
+    eval_instrs(branch, inputs, acc)
   end
 
-  defp eval_instr(other, _refine, _acc), do: malformed!("instruction", other)
+  defp eval_instr(other, _inputs, _acc), do: malformed!("instruction", other)
 
-  defp eval_expr(int, _refine) when is_integer(int), do: int
-  defp eval_expr(:refine, refine), do: refine
-  defp eval_expr({:+, a, b}, refine), do: eval_expr(a, refine) + eval_expr(b, refine)
-  defp eval_expr({:-, a, b}, refine), do: eval_expr(a, refine) - eval_expr(b, refine)
-  defp eval_expr({:*, a, b}, refine), do: eval_expr(a, refine) * eval_expr(b, refine)
-  defp eval_expr({:div, a, b}, refine), do: div(eval_expr(a, refine), eval_expr(b, refine))
-  defp eval_expr(other, _refine), do: malformed!("expression", other)
+  defp eval_expr(int, _inputs) when is_integer(int), do: int
 
-  defp eval_cond({:>, a, b}, refine), do: eval_expr(a, refine) > eval_expr(b, refine)
-  defp eval_cond({:<, a, b}, refine), do: eval_expr(a, refine) < eval_expr(b, refine)
-  defp eval_cond({:>=, a, b}, refine), do: eval_expr(a, refine) >= eval_expr(b, refine)
-  defp eval_cond({:<=, a, b}, refine), do: eval_expr(a, refine) <= eval_expr(b, refine)
-  defp eval_cond({:==, a, b}, refine), do: eval_expr(a, refine) == eval_expr(b, refine)
-  defp eval_cond({:!=, a, b}, refine), do: eval_expr(a, refine) != eval_expr(b, refine)
-  defp eval_cond({:and, a, b}, refine), do: eval_cond(a, refine) and eval_cond(b, refine)
-  defp eval_cond({:or, a, b}, refine), do: eval_cond(a, refine) or eval_cond(b, refine)
-  defp eval_cond(other, _refine), do: malformed!("condition", other)
+  defp eval_expr(input, inputs) when input in [:refine, :base_level, :job_level],
+    do: Map.fetch!(inputs, input)
+
+  defp eval_expr({:+, a, b}, inputs), do: eval_expr(a, inputs) + eval_expr(b, inputs)
+  defp eval_expr({:-, a, b}, inputs), do: eval_expr(a, inputs) - eval_expr(b, inputs)
+  defp eval_expr({:*, a, b}, inputs), do: eval_expr(a, inputs) * eval_expr(b, inputs)
+  defp eval_expr({:div, a, b}, inputs), do: div(eval_expr(a, inputs), eval_expr(b, inputs))
+
+  defp eval_expr({:ternary, condition, then_expr, else_expr}, inputs) do
+    if eval_cond(condition, inputs),
+      do: eval_expr(then_expr, inputs),
+      else: eval_expr(else_expr, inputs)
+  end
+
+  defp eval_expr(other, _inputs), do: malformed!("expression", other)
+
+  defp eval_cond({:>, a, b}, inputs), do: eval_expr(a, inputs) > eval_expr(b, inputs)
+  defp eval_cond({:<, a, b}, inputs), do: eval_expr(a, inputs) < eval_expr(b, inputs)
+  defp eval_cond({:>=, a, b}, inputs), do: eval_expr(a, inputs) >= eval_expr(b, inputs)
+  defp eval_cond({:<=, a, b}, inputs), do: eval_expr(a, inputs) <= eval_expr(b, inputs)
+  defp eval_cond({:==, a, b}, inputs), do: eval_expr(a, inputs) == eval_expr(b, inputs)
+  defp eval_cond({:!=, a, b}, inputs), do: eval_expr(a, inputs) != eval_expr(b, inputs)
+  defp eval_cond({:and, a, b}, inputs), do: eval_cond(a, inputs) and eval_cond(b, inputs)
+  defp eval_cond({:or, a, b}, inputs), do: eval_cond(a, inputs) or eval_cond(b, inputs)
+  defp eval_cond(other, _inputs), do: malformed!("condition", other)
 
   @spec malformed!(String.t(), term()) :: no_return()
   defp malformed!(kind, term) do

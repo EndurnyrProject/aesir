@@ -103,6 +103,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     field :progression, PlayerProgression.t()
     field :equipment, Equipment.t()
     field :modifiers, Modifiers.t(), default: %Modifiers{}
+
+    # Minimal identity of the worn items ({nameid, refine} pairs), cached by
+    # `apply_equipment_modifiers/2` so a recompute without an equipped-items
+    # list can still re-evaluate the on_equip programs - their level inputs
+    # (BaseLevel/JobLevel) change without any equipment change.
+    field :worn_items, [%{nameid: integer(), refine: integer()}], default: []
   end
 
   @doc """
@@ -288,24 +294,40 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   @doc """
   Applies equipment modifiers to stats from the equipped inventory items.
 
-  When `equipped_items` is a list of `InventoryItem`s, this both rebuilds the
-  worn `Equipment` struct (so weapon-type/shield-dependent calculations such as
-  ASPD see the correct gear) and sums the flat `item_db` bonuses into
-  `modifiers.equipment`. When `nil`, the stats are returned unchanged so call
-  sites that do not yet thread the inventory keep their previous behaviour.
+  When `equipped_items` is a list of `InventoryItem`s, this rebuilds the worn
+  `Equipment` struct (so weapon-type/shield-dependent calculations such as
+  ASPD see the correct gear), caches the `{nameid, refine}` pairs in
+  `worn_items`, and folds the flat `item_db` bonuses plus each item's
+  `on_equip` program into `modifiers.equipment`. When `nil`, the fold reruns
+  from the cached `worn_items` instead - equipment cannot have changed, but the
+  program level inputs (`BaseLevel`/`JobLevel`) follow the current progression,
+  so a level-up recompute refreshes level-gated bonuses without threading the
+  inventory through every call site. An empty cache has nothing to refold, so
+  that case keeps the stats untouched.
   """
   @spec apply_equipment_modifiers(t(), [InventoryItem.t()] | nil) :: t()
   def apply_equipment_modifiers(stats, equipped_items \\ nil)
 
-  def apply_equipment_modifiers(%__MODULE__{} = stats, nil), do: stats
+  def apply_equipment_modifiers(%__MODULE__{worn_items: []} = stats, nil), do: stats
+
+  def apply_equipment_modifiers(%__MODULE__{} = stats, nil) do
+    equipment_bonuses = calculate_equipment_bonuses(stats.worn_items, stats.progression)
+    %{stats | modifiers: %{stats.modifiers | equipment: equipment_bonuses}}
+  end
 
   def apply_equipment_modifiers(%__MODULE__{} = stats, equipped_items)
       when is_list(equipped_items) do
-    equipment_bonuses = calculate_equipment_bonuses(equipped_items)
+    worn_items =
+      equipped_items
+      |> normalize_items()
+      |> Enum.map(&%{nameid: &1.nameid, refine: &1.refine})
+
+    equipment_bonuses = calculate_equipment_bonuses(worn_items, stats.progression)
 
     %{
       stats
       | equipment: equipment_from_inventory(equipped_items),
+        worn_items: worn_items,
         modifiers: %{stats.modifiers | equipment: equipment_bonuses}
     }
   end
@@ -931,10 +953,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   # the wlv5/armor-lv2 trait riders accumulate alongside the flat bonuses.
   # Armor refine DEF is summed raw into `refine_def` and folded into `def`
   # once, after the reduce, per the rAthena `(refinedef+50)/100` rounding.
-  defp calculate_equipment_bonuses(equipped_items) do
+  defp calculate_equipment_bonuses(worn_items, progression) do
     bonuses =
-      equipped_items
-      |> normalize_items()
+      worn_items
       |> Enum.reduce(
         %{
           atk: 0,
@@ -955,7 +976,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
             {:ok, %ItemDefinition{} = item_def} ->
               acc
               |> accumulate_item_bonus(item_def, item.refine)
-              |> apply_equip_script(item_def.on_equip, item.refine)
+              |> apply_equip_script(item_def.on_equip, item.refine, progression)
 
             _ ->
               acc
@@ -969,20 +990,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   end
 
   # Folds an item's `on_equip` bonus program (evaluated against the item's
-  # refine) into the equipment accumulator. Script keys (`:str`, `:hit`,
-  # `:critical`, ...) are not pre-seeded in the accumulator, so each bonus is
-  # merged with `Map.update/4` rather than a struct-style update; downstream
-  # readers all use `Map.get(..., 0)`.
+  # refine and the wearer's levels) into the equipment accumulator. Script keys
+  # (`:str`, `:hit`, `:critical`, ...) are not pre-seeded in the accumulator,
+  # so each bonus is merged with `Map.update/4` rather than a struct-style
+  # update; downstream readers all use `Map.get(..., 0)`.
   #
   # Numeric bonuses sum, except for the non-stackable destinations
   # (`BonusKeys.max_destination?/1`), where the strongest single item wins.
   # Constant-valued ones (`:atk_ele` from `bonus bAtkEle`) are not summable, so
   # the last equipped item to set one wins.
-  defp apply_equip_script(acc, nil, _refine), do: acc
+  defp apply_equip_script(acc, nil, _refine, _progression), do: acc
 
-  defp apply_equip_script(acc, program, refine) do
+  defp apply_equip_script(acc, program, refine, progression) do
+    inputs = %{
+      refine: refine,
+      base_level: progression.base_level,
+      job_level: progression.job_level
+    }
+
     program
-    |> EquipScript.eval(refine)
+    |> EquipScript.eval(inputs)
     |> Enum.reduce(acc, fn {key, value}, acc -> merge_equip_bonus(acc, key, value) end)
   end
 

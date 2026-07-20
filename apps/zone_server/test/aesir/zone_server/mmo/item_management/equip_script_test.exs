@@ -4,6 +4,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
 
+  defp on(refine, levels \\ []),
+    do: Map.merge(%{refine: refine, base_level: 1, job_level: 1}, Map.new(levels))
+
   describe "to_source/1" do
     test "renders a single bonus instruction as a bare DSL call" do
       assert EquipScript.to_source([{:bonus, :smatk, 3}]) == "bonus(ctx, :smatk, 3)"
@@ -40,6 +43,25 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
                end
                """
                |> String.trim_trailing()
+    end
+
+    test "renders the level inputs as base_level(ctx)/job_level(ctx)" do
+      program = [{:bonus, :atk, {:div, :base_level, 10}}, {:bonus, :matk, :job_level}]
+
+      assert EquipScript.to_source(program) ==
+               """
+               ctx = bonus(ctx, :atk, div(base_level(ctx), 10))
+               ctx = bonus(ctx, :matk, job_level(ctx))
+               ctx
+               """
+               |> String.trim_trailing()
+    end
+
+    test "renders a ternary as an inline if expression" do
+      program = [{:bonus, :str, {:ternary, {:>=, :refine, 7}, 3, 1}}]
+
+      assert EquipScript.to_source(program) ==
+               "bonus(ctx, :str, if((refine(ctx) >= 7), do: 3, else: 1))"
     end
 
     test "renders logical conditions with && and ||" do
@@ -92,6 +114,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       set_mixed_with_bonus: [{:bonus, :atk, 10}, {:set, :atk_ele, :wind}],
       set_inside_if: [
         {:if, {:>=, :refine, 7}, [{:set, :atk_ele, :holy}], [{:set, :atk_ele, :neutral}]}
+      ],
+      base_level_expr: [{:bonus, :atk, {:div, :base_level, 10}}],
+      job_level_expr: [{:bonus, :matk, :job_level}],
+      base_level_gate: [{:if, {:>, :base_level, 99}, [{:bonus, :max_hp, 500}], []}],
+      ternary_expr: [{:bonus, :str, {:ternary, {:>=, :refine, 7}, 3, 1}}],
+      nested_ternary: [
+        {:bonus, :hit, {:ternary, {:<, :refine, 7}, 1, {:ternary, {:<, :refine, 9}, 2, 3}}}
+      ],
+      ternary_on_levels: [
+        {:bonus, :critical, {:ternary, {:>, :base_level, 99}, :refine, {:div, :refine, 2}}}
       ]
     ]
 
@@ -129,8 +161,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       for program <- programs do
         assert program |> EquipScript.to_source() |> EquipScript.parse!() == program
 
-        for refine <- 0..20 do
-          assert is_map(EquipScript.eval(program, refine))
+        for refine <- 0..20, levels <- [[], [base_level: 200, job_level: 70]] do
+          assert is_map(EquipScript.eval(program, on(refine, levels)))
         end
       end
     end
@@ -141,14 +173,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       program = EquipScript.parse!("bonus(ctx, :break_weapon_rate, 50)")
 
       assert program == [{:bonus, :break_weapon_rate, 50}]
-      assert EquipScript.eval(program, 0) == %{break_weapon_rate: 50}
+      assert EquipScript.eval(program, on(0)) == %{break_weapon_rate: 50}
     end
 
     test "parses and evaluates an unbreakable bonus" do
       program = EquipScript.parse!("bonus(ctx, :unbreakable_weapon, 1)")
 
       assert program == [{:bonus, :unbreakable_weapon, 1}]
-      assert EquipScript.eval(program, 0) == %{unbreakable_weapon: 1}
+      assert EquipScript.eval(program, on(0)) == %{unbreakable_weapon: 1}
     end
   end
 
@@ -163,7 +195,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
         ctx
         """)
 
-      assert EquipScript.eval(program, 0) == %{
+      assert EquipScript.eval(program, on(0)) == %{
                max_hp: 800,
                max_hp_rate: 5,
                max_sp: 50,
@@ -181,7 +213,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
         ctx
         """)
 
-      assert EquipScript.eval(program, 0) == %{
+      assert EquipScript.eval(program, on(0)) == %{
                aspd_rate: 10,
                atk_rate: 5,
                matk_rate: 7,
@@ -193,7 +225,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       program =
         EquipScript.parse!("ctx = bonus(ctx, :max_hp, 300)\nctx = bonus(ctx, :max_hp, 200)\nctx")
 
-      assert EquipScript.eval(program, 0) == %{max_hp: 500}
+      assert EquipScript.eval(program, on(0)) == %{max_hp: 500}
     end
   end
 
@@ -202,7 +234,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       program = EquipScript.parse!("set(ctx, :atk_ele, :fire)")
 
       assert program == [{:set, :atk_ele, :fire}]
-      assert EquipScript.eval(program, 0) == %{atk_ele: :fire}
+      assert EquipScript.eval(program, on(0)) == %{atk_ele: :fire}
     end
 
     test "the last set wins within one program" do
@@ -211,7 +243,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
           "ctx = set(ctx, :atk_ele, :fire)\nctx = set(ctx, :atk_ele, :wind)\nctx"
         )
 
-      assert EquipScript.eval(program, 0) == %{atk_ele: :wind}
+      assert EquipScript.eval(program, on(0)) == %{atk_ele: :wind}
     end
 
     test "a refine-gated set resolves to the taken branch" do
@@ -224,8 +256,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
         end
         """)
 
-      assert EquipScript.eval(program, 9) == %{atk_ele: :holy}
-      assert EquipScript.eval(program, 0) == %{atk_ele: :neutral}
+      assert EquipScript.eval(program, on(9)) == %{atk_ele: :holy}
+      assert EquipScript.eval(program, on(0)) == %{atk_ele: :neutral}
     end
 
     test "raises on a set destination outside the value vocabulary" do
@@ -313,39 +345,39 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
     test "evaluates integer-truncating arithmetic against refine" do
       program = [{:bonus, :smatk, {:+, 1, {:div, :refine, 2}}}]
 
-      assert EquipScript.eval(program, 5) == %{smatk: 3}
+      assert EquipScript.eval(program, on(5)) == %{smatk: 3}
     end
 
     test "an if gate is off below the threshold and on at or above it" do
       program = [{:if, {:>=, :refine, 9}, [{:bonus, :matk, 20}], []}]
 
-      assert EquipScript.eval(program, 8) == %{}
-      assert EquipScript.eval(program, 9) == %{matk: 20}
+      assert EquipScript.eval(program, on(8)) == %{}
+      assert EquipScript.eval(program, on(9)) == %{matk: 20}
     end
 
     test "evaluates the else branch when the gate is false" do
       program = [{:if, {:>=, :refine, 9}, [{:bonus, :matk, 20}], [{:bonus, :matk, 5}]}]
 
-      assert EquipScript.eval(program, 3) == %{matk: 5}
+      assert EquipScript.eval(program, on(3)) == %{matk: 5}
     end
 
     test "accumulates repeated bonus instructions into one key" do
       program = [{:bonus, :str, 2}, {:bonus, :str, {:div, :refine, 2}}]
 
-      assert EquipScript.eval(program, 6) == %{str: 5}
+      assert EquipScript.eval(program, on(6)) == %{str: 5}
     end
 
     test "a non-stackable destination keeps the largest contribution" do
       program = [{:bonus, :movement_speed, 25}, {:bonus, :movement_speed, 10}]
 
-      assert EquipScript.eval(program, 0) == %{movement_speed: 25}
-      assert EquipScript.eval(Enum.reverse(program), 0) == %{movement_speed: 25}
+      assert EquipScript.eval(program, on(0)) == %{movement_speed: 25}
+      assert EquipScript.eval(Enum.reverse(program), on(0)) == %{movement_speed: 25}
     end
 
     test "splash range keeps the largest contribution instead of summing" do
       program = [{:bonus, :splash_range, 1}, {:bonus, :splash_range, 1}]
 
-      assert EquipScript.eval(program, 0) == %{splash_range: 1}
+      assert EquipScript.eval(program, on(0)) == %{splash_range: 1}
     end
 
     test "both HP drain halves sum independently" do
@@ -356,7 +388,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
         {:bonus, :hp_drain_percent, 1}
       ]
 
-      assert EquipScript.eval(program, 0) == %{hp_drain_rate: 80, hp_drain_percent: 6}
+      assert EquipScript.eval(program, on(0)) == %{hp_drain_rate: 80, hp_drain_percent: 6}
     end
 
     test "sums repeated tuple destinations into one key" do
@@ -366,7 +398,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
         {:bonus, {:addrace, :undead}, 15}
       ]
 
-      assert EquipScript.eval(program, 0) == %{
+      assert EquipScript.eval(program, on(0)) == %{
                {:addrace, :brute} => 25,
                {:addrace, :undead} => 15
              }
@@ -378,19 +410,54 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
         {:if, {:>, :refine, 0}, [{:bonus, :matk, 10}], []}
       ]
 
-      assert EquipScript.eval(program, 0) == %{critical: 0}
+      assert EquipScript.eval(program, on(0)) == %{critical: 0}
     end
 
     test "evaluates logical conditions" do
       program = [{:if, {:and, {:>, :refine, 3}, {:<, :refine, 9}}, [{:bonus, :str, 1}], []}]
 
-      assert EquipScript.eval(program, 5) == %{str: 1}
-      assert EquipScript.eval(program, 10) == %{}
+      assert EquipScript.eval(program, on(5)) == %{str: 1}
+      assert EquipScript.eval(program, on(10)) == %{}
     end
 
     test "raises on an unrecognized expression node" do
       assert_raise ArgumentError, fn ->
-        EquipScript.eval([{:bonus, :str, {:mod, :refine, 2}}], 5)
+        EquipScript.eval([{:bonus, :str, {:mod, :refine, 2}}], on(5))
+      end
+    end
+
+    test "level inputs feed expressions and gates" do
+      program = [
+        {:bonus, :atk, {:div, :base_level, 10}},
+        {:if, {:>, :job_level, 50}, [{:bonus, :matk, 15}], []}
+      ]
+
+      assert EquipScript.eval(program, on(0, base_level: 175, job_level: 60)) ==
+               %{atk: 17, matk: 15}
+
+      assert EquipScript.eval(program, on(0, base_level: 40, job_level: 10)) == %{atk: 4}
+    end
+
+    test "a ternary picks its branch from the condition" do
+      program = [{:bonus, :str, {:ternary, {:>=, :refine, 7}, 3, 1}}]
+
+      assert EquipScript.eval(program, on(7)) == %{str: 3}
+      assert EquipScript.eval(program, on(6)) == %{str: 1}
+    end
+
+    test "nested ternaries resolve innermost-first" do
+      program = [
+        {:bonus, :hit, {:ternary, {:<, :refine, 7}, 1, {:ternary, {:<, :refine, 9}, 2, 3}}}
+      ]
+
+      assert EquipScript.eval(program, on(0)) == %{hit: 1}
+      assert EquipScript.eval(program, on(8)) == %{hit: 2}
+      assert EquipScript.eval(program, on(12)) == %{hit: 3}
+    end
+
+    test "raises when a program reads an input the map lacks" do
+      assert_raise KeyError, fn ->
+        EquipScript.eval([{:bonus, :atk, :base_level}], %{refine: 0})
       end
     end
   end
