@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
@@ -38,10 +39,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
 
   defp offensive_target_in_square?(caster, {unit_type, target_id}, cx, cy, radius) do
     case TargetResolver.resolve(unit_type, target_id) do
-      {:ok, _pid, target_state, target_type} ->
+      {:ok, _pid, target_state, _target_type} ->
         target = target_state.__struct__.to_combatant(target_state)
 
-        TargetResolver.ensure_targetable(target_state, target_type) == :ok and
+        TargetState.living?(target_state) and
           splash_enemy?(caster, target) and splash_hit?(target_state, cx, cy, radius)
 
       _ ->
@@ -62,9 +63,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
   # fallback: mobs remain targetable, but players are not.
   defp splash_enemy?(%{relation_unavailable: true}, %{unit_type: :player}), do: false
   defp splash_enemy?(caster, target), do: Targeting.validate_enemy(caster, target) == :ok
-
-  # Keeps the square (Chebyshev) AoE shape and drops dead mobs awaiting despawn.
-  defp splash_hit?(%{hp: hp}, _x, _y, _radius) when hp <= 0, do: false
 
   defp splash_hit?(%{x: tx, y: ty}, x, y, radius),
     do: Geometry.chebyshev_distance(x, y, tx, ty) <= radius

@@ -23,7 +23,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundFieldTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables
   setup :set_mimic_private
@@ -98,6 +100,20 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundFieldTest do
   defp params,
     do: %{skill_id: @lp_skill_id, skill: "SA_LANDPROTECTOR", skill_name: :sa_landprotector}
 
+  defp index_player(id, action_state \\ :idle, hp \\ 100) do
+    UnitRegistry.register_unit(
+      :player,
+      id,
+      PlayerState,
+      %PlayerState{
+        character_id: id,
+        action_state: action_state,
+        stats: %{current_state: %{hp: hp}}
+      },
+      self()
+    )
+  end
+
   describe "apply/4" do
     test "a mob cast at a ground cell places the real Land Protector field" do
       assert :ok = GroundField.apply(build_caster(), {:ground, 102, 102, :around}, params(), 1)
@@ -121,11 +137,24 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundFieldTest do
     end
 
     test "a unit-target row places the field on the target's cell" do
+      :ok = index_player(@target_id)
+
       stub(SpatialIndex, :get_unit_position, fn :player, @target_id -> {:ok, {104, 101, @map}} end)
 
       assert :ok = GroundField.apply(build_caster(), {:unit, :player, @target_id}, params(), 1)
 
       assert [%Group{center: {104, 101}, caster_type: :mob}] = Storage.all()
+    end
+
+    test "a unit-target row rejects an indexed corpse" do
+      :ok = index_player(@target_id, :dead, 0)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, @target_id -> {:ok, {104, 101, @map}} end)
+
+      assert {:error, :no_target} =
+               GroundField.apply(build_caster(), {:unit, :player, @target_id}, params(), 1)
+
+      assert [] == Storage.all()
     end
 
     test "a self-target row places the field on the caster's own cell" do

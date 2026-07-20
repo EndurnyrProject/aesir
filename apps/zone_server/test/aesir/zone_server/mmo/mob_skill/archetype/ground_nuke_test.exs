@@ -29,7 +29,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables
   setup :verify_on_exit!
@@ -117,6 +119,20 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
   defp allow_tick_mocks(manager) do
     allow(Combat, self(), manager)
     allow(SpatialIndex, self(), manager)
+  end
+
+  defp index_player(id, action_state \\ :idle, hp \\ 100) do
+    UnitRegistry.register_unit(
+      :player,
+      id,
+      PlayerState,
+      %PlayerState{
+        character_id: id,
+        action_state: action_state,
+        stats: %{current_state: %{hp: hp}}
+      },
+      self()
+    )
   end
 
   describe "apply/4" do
@@ -215,6 +231,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
       manager: manager
     } do
       test_pid = self()
+      :ok = index_player(@target_id)
 
       stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
 
@@ -246,6 +263,26 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNukeTest do
 
       rearmed = Storage.get(group.group_id)
       assert rearmed.next_tick_at == group.next_tick_at + group.interval
+    end
+
+    test "an indexed corpse standing on the footprint is not hit", %{
+      group: group,
+      manager: manager
+    } do
+      :ok = index_player(@target_id, :dead, 0)
+      stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
+
+      stub(SpatialIndex, :get_units_in_range, fn :player, @map, 120, 120, _range ->
+        [@target_id]
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, @target_id ->
+        {:ok, {121, 119, @map}}
+      end)
+
+      reject(&Combat.apply_skill_unit_damage/7)
+      allow_tick_mocks(manager)
+      Manager.tick(manager, group.next_tick_at)
     end
 
     test "a player outside the footprint is not hit", %{group: group, manager: manager} do

@@ -15,10 +15,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.SaVolcanoTest do
   alias Aesir.ZoneServer.Mmo.Skills.SaVolcano
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables
   setup :verify_on_exit!
+
+  setup do
+    player = %PlayerState{action_state: :idle, stats: %{current_state: %{hp: 100}}}
+    mob = struct(MobState, %{hp: 100, is_dead: false})
+
+    :ok = UnitRegistry.register_unit(:player, 100, __MODULE__, %{player | character_id: 100})
+    :ok = UnitRegistry.register_unit(:player, 101, __MODULE__, %{player | character_id: 101})
+    :ok = UnitRegistry.register_unit(:mob, 200, __MODULE__, %{mob | instance_id: 200})
+    :ok
+  end
 
   # rAthena db/re/skill_db.yml:5768-5817.
   describe "definition/0" do

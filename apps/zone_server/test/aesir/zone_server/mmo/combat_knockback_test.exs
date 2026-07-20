@@ -99,8 +99,51 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
 
     stub(Cell, :traversable?, fn @map_name, _x, _y -> false end)
 
+    stub(UnitRegistry, :get_unit, fn :mob, @mob_id ->
+      {:ok, {MobState, mob_state(151, 150), self()}}
+    end)
+
     {from_x, from_y} = @from
     assert {:ok, {151, 150}} = Combat.knockback(:mob, @mob_id, from_x, from_y, 5)
+  end
+
+  test "knockback rejects a corpse before traversing a movable path" do
+    corpse = %{mob_state(151, 150) | hp: 0, is_dead: true}
+
+    stub(SpatialIndex, :get_unit_position, fn :mob, @mob_id ->
+      {:ok, {151, 150, @map_name}}
+    end)
+
+    stub(MapCache, :get, fn @map_name -> {:ok, :map} end)
+
+    expect(UnitRegistry, :get_unit, fn :mob, @mob_id ->
+      {:ok, {MobState, corpse, self()}}
+    end)
+
+    reject(&Cell.traversable?/3)
+    reject(&Broadcast.to_in_range/5)
+
+    {from_x, from_y} = @from
+    assert {:error, :target_dead} = Combat.knockback(:mob, @mob_id, from_x, from_y, 5)
+  end
+
+  test "knockback rejects a corpse when source and target share a cell" do
+    corpse = %{mob_state(151, 150) | hp: 0, is_dead: true}
+
+    stub(SpatialIndex, :get_unit_position, fn :mob, @mob_id ->
+      {:ok, {151, 150, @map_name}}
+    end)
+
+    stub(MapCache, :get, fn @map_name -> {:ok, :map} end)
+
+    expect(UnitRegistry, :get_unit, fn :mob, @mob_id ->
+      {:ok, {MobState, corpse, self()}}
+    end)
+
+    reject(&Cell.traversable?/3)
+    reject(&Broadcast.to_in_range/5)
+
+    assert {:error, :target_dead} = Combat.knockback(:mob, @mob_id, 151, 150, 5)
   end
 
   test "knockback ignores skill-unit cells without casting to their manager" do
@@ -130,6 +173,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     end)
 
     stub(MapCache, :get, fn "missing" -> {:error, :not_found} end)
+
+    stub(UnitRegistry, :get_unit, fn :mob, @mob_id ->
+      {:ok, {MobState, mob_state(151, 150), self()}}
+    end)
 
     {from_x, from_y} = @from
     assert {:error, :not_found} = Combat.knockback(:mob, @mob_id, from_x, from_y, 5)

@@ -125,6 +125,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
 
     test "a cast_time == 0 row executes immediately and sets the cooldown" do
       stub(MobSkillDb, :rows_for, fn 1001 -> [row(%{cast_time: 0})] end)
+
+      stub(UnitRegistry, :get_unit, fn :player, @target_id ->
+        {:ok, {nil, living_player_state(), nil}}
+      end)
+
       reject(&Combat.execute_mob_attack/2)
 
       expect(Combat, :execute_magic_damage, fn _caster, @target_id, 180, opts ->
@@ -184,6 +189,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
     test "executes the skill, writes the cooldown, clears casting and reschedules" do
       row = row()
       state = build_mob_state() |> MobState.set_casting(%{row: row, complete_at: 0})
+
+      stub(UnitRegistry, :get_unit, fn :player, @target_id ->
+        {:ok, {nil, living_player_state(), nil}}
+      end)
 
       expect(Combat, :execute_magic_damage, fn _caster, @target_id, 180, opts ->
         assert opts[:skill_id] == 186

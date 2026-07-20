@@ -11,7 +11,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   defmodule StationaryField do
     def field_support(_group),
@@ -31,6 +33,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportTest do
 
   setup :setup_ets_tables
   setup :verify_on_exit!
+
+  setup do
+    player = %PlayerState{action_state: :idle, stats: %{current_state: %{hp: 100}}}
+    :ok = UnitRegistry.register_unit(:player, 11, __MODULE__, player)
+    :ok
+  end
 
   setup do
     Mimic.copy(Interpreter)

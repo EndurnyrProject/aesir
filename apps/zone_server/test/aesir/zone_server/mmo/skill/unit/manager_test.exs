@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -1131,6 +1132,45 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     assert MapSet.new() == Manager.sync_view(manager, 99, [999], [])
   end
 
+  test "keeps a registered corpse as an observer while excluding it from field support" do
+    test_pid = self()
+
+    stub(Broadcast, :to_player, fn observer_id, packet ->
+      send(test_pid, {observer_id, packet})
+    end)
+
+    reject(&Interpreter.apply_status/4)
+
+    :ok = SpatialIndex.add_unit(:player, 43, 100, 100, "prontera")
+
+    :ok =
+      UnitRegistry.register_unit(
+        :player,
+        43,
+        PlayerState,
+        %PlayerState{character_id: 43, action_state: :dead, stats: %{current_state: %{hp: 0}}},
+        self()
+      )
+
+    manager = start_manager(10_000)
+    allow(Interpreter, self(), manager)
+
+    assert :ok =
+             Manager.register(
+               manager,
+               group(1,
+                 skill_name: :field_unit,
+                 visible?: true,
+                 cells: [{100, 100}],
+                 created_at: 10_000
+               )
+             )
+
+    assert [] == FieldSupport.sources_for_group(1)
+    assert MapSet.new([1]) == Manager.snapshot_for(manager, 43, "prontera", 100, 100, 0)
+    assert_receive {43, %Aesir.Net.SkillUnitSnapshot{groups: [%{group_id: 1}]}}
+  end
+
   test "syncs multiple visibility transitions once, in order, and idempotently" do
     test_pid = self()
 
@@ -1502,13 +1542,34 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       :ok = SpatialIndex.add_unit(:player, 43, 101, 100, "prontera")
 
       :ok =
+        UnitRegistry.register_unit(
+          :player,
+          42,
+          PlayerState,
+          %PlayerState{
+            character_id: 42,
+            action_state: :idle,
+            stats: %{current_state: %{hp: 100}}
+          },
+          self()
+        )
+
+      :ok =
+        UnitRegistry.register_unit(
+          :player,
+          43,
+          PlayerState,
+          %PlayerState{character_id: 43, action_state: :dead, stats: %{current_state: %{hp: 0}}},
+          self()
+        )
+
+      :ok =
         Manager.register(
           manager,
           group(1, skill_name: :field_unit, cells: [{100, 100}, {101, 100}])
         )
 
-      assert [{:player, 42, :sc_quagmire, []}, {:player, 43, :sc_quagmire, []}] =
-               Enum.sort(FieldSupport.sources_for_group(1))
+      assert [{:player, 42, :sc_quagmire, []}] = FieldSupport.sources_for_group(1)
 
       assert :ok = Manager.remove_cells(manager, 1, [{101, 100}])
 

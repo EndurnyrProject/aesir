@@ -33,6 +33,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.TargetState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   # NOTE: one generic timing/ratio for every mob ground nuke (Storm Gust's
   # 450ms/4500ms unit and its renewal ratio 70 + 50 * level); per-skill tuning
@@ -143,7 +145,14 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke do
   defp occupants(%Group{center: {cx, cy}, state: %{radius: radius}} = group) do
     :player
     |> SpatialIndex.get_units_in_range(group.map_name, cx, cy, radius * 2)
-    |> Enum.filter(&on_footprint?(group, &1))
+    |> Enum.filter(&(living_player?(&1) and on_footprint?(group, &1)))
+  end
+
+  defp living_player?(player_id) do
+    case UnitRegistry.get_unit(:player, player_id) do
+      {:ok, {_module, state, _pid}} -> TargetState.living?(state)
+      _ -> false
+    end
   end
 
   defp on_footprint?(%Group{cells: cells}, player_id) do

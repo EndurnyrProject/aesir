@@ -27,6 +27,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundField do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.TargetState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @impl true
   @spec apply(MobState.t(), Executor.target(), map(), pos_integer()) :: :ok | {:error, term()}
@@ -46,13 +48,24 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundField do
     do: {:ok, origin(caster)}
 
   defp center(%MobState{}, {:unit, unit_type, unit_id}) do
-    case SpatialIndex.get_unit_position(unit_type, unit_id) do
-      {:ok, {x, y, _map}} -> {:ok, {x, y}}
-      {:error, :not_found} -> {:error, :no_target}
+    if living_unit?(unit_type, unit_id) do
+      case SpatialIndex.get_unit_position(unit_type, unit_id) do
+        {:ok, {x, y, _map}} -> {:ok, {x, y}}
+        {:error, :not_found} -> {:error, :no_target}
+      end
+    else
+      {:error, :no_target}
     end
   end
 
   defp center(%MobState{}, _target), do: {:error, :invalid_target}
+
+  defp living_unit?(unit_type, unit_id) do
+    case UnitRegistry.get_unit(unit_type, unit_id) do
+      {:ok, {_module, state, _pid}} -> TargetState.living?(state)
+      _ -> false
+    end
+  end
 
   @spec build_group(MobState.t(), map(), pos_integer(), Group.cell()) :: Group.t()
   defp build_group(%MobState{} = caster, params, level, center) do

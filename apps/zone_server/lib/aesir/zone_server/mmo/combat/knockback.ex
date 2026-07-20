@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
@@ -38,6 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
 
   def knockback(unit_type, unit_id, from_x, from_y, distance) do
     with {:ok, {x, y, map_name}} <- SpatialIndex.get_unit_position(unit_type, unit_id),
+         :ok <- ensure_living_unit(unit_type, unit_id),
          {:ok, _map} <- MapCache.get(map_name) do
       if boss?(unit_type, unit_id) do
         {:ok, {x, y}}
@@ -54,9 +56,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
     if {dst_x, dst_y} != {x, y} do
       move_unit(unit_type, unit_id, dst_x, dst_y, map_name)
       broadcast_blownback(unit_id, dst_x, dst_y, map_name)
+      {:ok, {dst_x, dst_y}}
+    else
+      {:ok, {dst_x, dst_y}}
     end
+  end
 
-    {:ok, {dst_x, dst_y}}
+  defp ensure_living_unit(unit_type, unit_id) do
+    if living_unit?(unit_type, unit_id), do: :ok, else: {:error, :target_dead}
+  end
+
+  defp living_unit?(unit_type, unit_id) do
+    case UnitRegistry.get_unit(unit_type, unit_id) do
+      {:ok, {_module, state, _pid}} -> TargetState.living?(state)
+      _ -> false
+    end
   end
 
   defp boss?(unit_type, unit_id) do

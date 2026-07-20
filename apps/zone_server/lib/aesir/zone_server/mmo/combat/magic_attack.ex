@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.TargetState
 
   @doc """
   Deals damage to a target entity (used by status effects).
@@ -31,7 +32,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   """
   @spec deal_damage(integer(), integer(), atom(), atom()) :: :ok | {:error, atom()}
   def deal_damage(target_id, damage, element \\ :neutral, source_type \\ :status_effect) do
-    with {:ok, target_pid, _target_state, target_type} <- TargetResolver.resolve(target_id) do
+    with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
+         :ok <- ensure_living_target(target_state, target_type) do
       Logger.debug(
         "Combat: Dealing #{damage} #{element} damage to #{target_type} #{target_id} from #{source_type}"
       )
@@ -231,13 +233,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     dst_delay = Keyword.get(opts, :dst_delay, 0)
     divide_hits? = unit_type == :player and Keyword.get(opts, :divide_hits_for_player?, false)
 
-    with {:ok, target} <- TargetResolver.resolve_combatant(target_id),
+    with {:ok, target_pid, target_state, target_type} <-
+           resolve_skill_unit_target(unit_type, target_id),
+         :ok <- TargetResolver.ensure_targetable(target_state, target_type),
+         :ok <- ensure_living_target(target_state, target_type),
+         target <- target_state.__struct__.to_combatant(target_state),
          {:ok, {tx, ty, map_name}} <- SpatialIndex.get_unit_position(unit_type, target_id),
          damage <-
            sum_magic_hits(caster, target, element, skill_ratio, hit_count, bonus_matk, skill_id),
-         damage <- if(divide_hits?, do: div(damage, hit_count), else: damage),
-         {:ok, target_pid, _target_state, _target_type} <-
-           TargetResolver.resolve(unit_type, target_id) do
+         damage <- if(divide_hits?, do: div(damage, hit_count), else: damage) do
       {damage, packet_divisions} =
         case Keyword.fetch(opts, :hit_divisions) do
           {:ok, hit_divisions} -> normalize_hit_divisions(damage, hit_divisions)
@@ -421,6 +425,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     )
 
     :ok
+  end
+
+  defp ensure_living_target(_target_state, :skill_unit), do: :ok
+
+  defp ensure_living_target(target_state, _target_type) do
+    if TargetState.living?(target_state), do: :ok, else: {:error, :target_dead}
+  end
+
+  defp resolve_skill_unit_target(unit_type, target_id) do
+    case TargetResolver.resolve(unit_type, target_id) do
+      {:error, :not_found} -> {:error, :target_not_found}
+      result -> result
+    end
   end
 
   # The `hit_info` a defending status' `absorb_damage/4` hook receives. `skill_id`

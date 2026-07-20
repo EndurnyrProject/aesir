@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   alias Aesir.ZoneServer.Unit.Emote
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @archetype_namespace Aesir.ZoneServer.Mmo.MobSkill.Archetype
@@ -48,15 +49,21 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   @spec resolve_target(MobState.t(), map()) :: {:ok, target()} | {:error, atom()}
   def resolve_target(%MobState{target_id: nil}, %{target: :target}), do: {:error, :no_target}
 
-  def resolve_target(%MobState{target_id: target_id}, %{target: :target}),
-    do: {:ok, {:unit, :player, target_id}}
+  def resolve_target(%MobState{target_id: target_id}, %{target: :target}) do
+    if living_unit?(:player, target_id),
+      do: {:ok, {:unit, :player, target_id}},
+      else: {:error, :no_target}
+  end
 
   def resolve_target(%MobState{instance_id: id}, %{target: :self}), do: {:ok, {:unit, :mob, id}}
 
   def resolve_target(%MobState{master_id: nil}, %{target: :master}), do: {:error, :no_master}
 
-  def resolve_target(%MobState{master_id: master_id}, %{target: :master}),
-    do: {:ok, {:unit, :mob, master_id}}
+  def resolve_target(%MobState{master_id: master_id}, %{target: :master}) do
+    if living_unit?(:mob, master_id),
+      do: {:ok, {:unit, :mob, master_id}},
+      else: {:error, :no_master}
+  end
 
   def resolve_target(%MobState{} = state, %{target: :friend}) do
     case lowest_hp_friend(state) do
@@ -80,9 +87,13 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
 
   def resolve_target(%MobState{target_id: target_id}, %{target: area})
       when area in @around_target do
-    case SpatialIndex.get_unit_position(:player, target_id) do
-      {:ok, {x, y, _map}} -> {:ok, {:ground, x, y, area}}
-      {:error, :not_found} -> {:error, :no_target}
+    if living_unit?(:player, target_id) do
+      case SpatialIndex.get_unit_position(:player, target_id) do
+        {:ok, {x, y, _map}} -> {:ok, {:ground, x, y, area}}
+        {:error, :not_found} -> {:error, :no_target}
+      end
+    else
+      {:error, :no_target}
     end
   end
 
@@ -187,9 +198,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
     |> Enum.reject(&(&1 == state.instance_id))
     |> Enum.flat_map(fn id ->
       case UnitRegistry.get_unit(:mob, id) do
-        {:ok, {_module, %MobState{mob_id: mob_id, is_dead: false} = friend, _pid}}
+        {:ok, {_module, %MobState{mob_id: mob_id} = friend, _pid}}
         when mob_id == state.mob_id ->
-          [friend]
+          living_friend(friend)
 
         _other ->
           []
@@ -202,8 +213,21 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
     end)
   end
 
+  defp living_friend(friend) do
+    if TargetState.living?(friend), do: [friend], else: []
+  end
+
   defp players_in_skill_range(%MobState{} = state) do
-    SpatialIndex.get_units_in_range(:player, state.map_name, state.x, state.y, skill_range(state))
+    :player
+    |> SpatialIndex.get_units_in_range(state.map_name, state.x, state.y, skill_range(state))
+    |> Enum.filter(&living_unit?(:player, &1))
+  end
+
+  defp living_unit?(unit_type, unit_id) do
+    case UnitRegistry.get_unit(unit_type, unit_id) do
+      {:ok, {_module, state, _pid}} -> TargetState.living?(state)
+      _ -> false
+    end
   end
 
   defp skill_range(%MobState{mob_data: mob_data}), do: mob_data.skill_range

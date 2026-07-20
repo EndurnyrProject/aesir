@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @tick_interval 100
@@ -532,7 +533,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp apply_field_support_action(%Group{} = group, {unit_type, unit_id}, :on_touch) do
     with {:ok, spec} <- field_support_spec(group) do
-      if supports_target?(spec, {unit_type, unit_id}) do
+      if living_combat_unit?({unit_type, unit_id}) and
+           supports_target?(spec, {unit_type, unit_id}) do
         FieldSupport.acquire(
           unit_type,
           unit_id,
@@ -1324,11 +1326,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     |> Enum.flat_map(fn {x, y} ->
       SpatialIndex.get_all_units_in_range(group.map_name, x, y, 0)
     end)
-    |> Enum.filter(&(combat_unit?(&1) and supports_target?(spec, &1)))
+    |> Enum.filter(&(living_combat_unit?(&1) and supports_target?(spec, &1)))
     |> MapSet.new()
   end
 
-  defp combat_unit?({unit_type, _unit_id}), do: unit_type in [:player, :mob]
+  defp living_combat_unit?({unit_type, unit_id}) when unit_type in [:player, :mob] do
+    case UnitRegistry.get_unit(unit_type, unit_id) do
+      {:ok, {_module, state, _pid}} -> TargetState.living?(state)
+      _ -> false
+    end
+  end
+
+  defp living_combat_unit?(_unit), do: false
 
   defp field_support_current?(group, spec, occupants) do
     expected = MapSet.new(occupants, &{elem(&1, 0), elem(&1, 1), spec.status_type})
@@ -1381,8 +1390,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       current_groups
       |> Enum.filter(fn group ->
         case field_support_spec(group) do
-          {:ok, spec} -> supports_target?(spec, {unit_type, unit_id})
-          :error -> false
+          {:ok, spec} ->
+            living_combat_unit?({unit_type, unit_id}) and
+              supports_target?(spec, {unit_type, unit_id})
+
+          :error ->
+            false
         end
       end)
       |> MapSet.new(& &1.group_id)

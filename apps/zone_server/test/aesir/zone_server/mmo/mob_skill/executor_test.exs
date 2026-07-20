@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Emote
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -68,8 +69,24 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
     )
   end
 
+  defp player_state(id, action_state \\ :idle, hp \\ 100) do
+    %PlayerState{
+      character_id: id,
+      action_state: action_state,
+      stats: %{current_state: %{hp: hp}}
+    }
+  end
+
+  defp stub_living_player_target(id \\ 42) do
+    stub(UnitRegistry, :get_unit, fn :player, ^id ->
+      {:ok, {PlayerState, player_state(id), self()}}
+    end)
+  end
+
   describe "resolve_target/2" do
     test ":target resolves to the current target player" do
+      stub_living_player_target()
+
       assert Executor.resolve_target(mob(), row(%{target: :target})) ==
                {:ok, {:unit, :player, 42}}
     end
@@ -79,11 +96,21 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
                {:error, :no_target}
     end
 
+    test ":target rejects a stale current target" do
+      stub(UnitRegistry, :get_unit, fn :player, 42 -> {:error, :not_found} end)
+
+      assert Executor.resolve_target(mob(), row(%{target: :target})) == {:error, :no_target}
+    end
+
     test ":self resolves to the caster" do
       assert Executor.resolve_target(mob(), row(%{target: :self})) == {:ok, {:unit, :mob, 5001}}
     end
 
     test ":master resolves to the master mob" do
+      stub(UnitRegistry, :get_unit, fn :mob, 7_001 ->
+        {:ok, {MobState, friend_state(7_001, 1002, 100), self()}}
+      end)
+
       assert Executor.resolve_target(mob(%{master_id: 7001}), row(%{target: :master})) ==
                {:ok, {:unit, :mob, 7001}}
     end
@@ -92,9 +119,18 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
       assert Executor.resolve_target(mob(), row(%{target: :master})) == {:error, :no_master}
     end
 
+    test ":master rejects a dead master mob" do
+      stub(UnitRegistry, :get_unit, fn :mob, 7_001 ->
+        {:ok, {MobState, friend_state(7_001, 1002, 0, true), self()}}
+      end)
+
+      assert Executor.resolve_target(mob(%{master_id: 7_001}), row(%{target: :master})) ==
+               {:error, :no_master}
+    end
+
     test ":friend resolves to the lowest-HP living mob of the same class in skill range" do
       stub(SpatialIndex, :get_units_in_range, fn :mob, @map, 100, 100, 10 ->
-        [5001, 6001, 6002, 6003, 6004]
+        [5001, 6001, 6002, 6003, 6004, 6005]
       end)
 
       stub(UnitRegistry, :get_unit, fn
@@ -102,6 +138,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
         :mob, 6002 -> {:ok, {MobState, friend_state(6002, 1002, 100), self()}}
         :mob, 6003 -> {:ok, {MobState, friend_state(6003, 9999, 10), self()}}
         :mob, 6004 -> {:ok, {MobState, friend_state(6004, 1002, 5, true), self()}}
+        :mob, 6005 -> {:ok, {MobState, friend_state(6005, 1002, 0), self()}}
       end)
 
       assert Executor.resolve_target(mob(), row(%{target: :friend})) ==
@@ -117,8 +154,22 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
     test ":randomtarget resolves to a player in skill range" do
       stub(SpatialIndex, :get_units_in_range, fn :player, @map, 100, 100, 10 -> [7] end)
 
+      stub(UnitRegistry, :get_unit, fn :player, 7 ->
+        {:ok, {PlayerState, player_state(7), self()}}
+      end)
+
       assert Executor.resolve_target(mob(), row(%{target: :randomtarget})) ==
                {:ok, {:unit, :player, 7}}
+    end
+
+    test ":randomtarget excludes an indexed corpse in skill range" do
+      stub(SpatialIndex, :get_units_in_range, fn :player, @map, 100, 100, 10 -> [7] end)
+
+      stub(UnitRegistry, :get_unit, fn :player, 7 ->
+        {:ok, {PlayerState, player_state(7, :dead, 0), self()}}
+      end)
+
+      assert Executor.resolve_target(mob(), row(%{target: :randomtarget})) == {:error, :no_target}
     end
 
     test ":randomtarget errors when no player is in range" do
@@ -141,6 +192,10 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
     test ":around5 resolves to a ground cell at the target" do
       stub(SpatialIndex, :get_unit_position, fn :player, 42 -> {:ok, {110, 111, @map}} end)
 
+      stub(UnitRegistry, :get_unit, fn :player, 42 ->
+        {:ok, {PlayerState, player_state(42), self()}}
+      end)
+
       assert Executor.resolve_target(mob(), row(%{target: :around5})) ==
                {:ok, {:ground, 110, 111, :around5}}
     end
@@ -160,6 +215,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
   describe "execute/2" do
     test "dispatches an elemental nuke to Combat.execute_magic_damage with element and skill id" do
       caster = mob()
+      stub_living_player_target()
 
       expect(Combat, :execute_magic_damage, fn passed_caster, 42, amount, opts ->
         assert passed_caster.instance_id == caster.instance_id
@@ -203,6 +259,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
 
     test "fires the mob emote on a successfully-resolved cast when the row has one" do
       caster = mob()
+      stub_living_player_target()
 
       stub(Combat, :execute_magic_damage, fn _caster, _target, _amount, _opts -> :ok end)
 
@@ -215,6 +272,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
     end
 
     test "does not fire an emote when the row has none" do
+      stub_living_player_target()
       reject(&Emote.show/2)
 
       stub(Combat, :execute_magic_damage, fn _caster, _target, _amount, _opts -> :ok end)

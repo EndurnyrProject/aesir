@@ -13,6 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzQuagmireTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Lifecycle
+  alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -311,8 +313,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzQuagmireTest do
     end)
   end
 
-  defp player(id, attrs \\ []),
-    do: Map.merge(%{character_id: id, party_id: 0, guild_id: 0}, Map.new(attrs))
+  defp player(id, attrs \\ []) do
+    struct(
+      PlayerState,
+      Map.merge(
+        %{
+          character_id: id,
+          party_id: 0,
+          guild_id: 0,
+          action_state: :idle,
+          stats: %{current_state: %{hp: 100}}
+        },
+        Map.new(attrs)
+      )
+    )
+  end
 
-  defp mob(id, attrs \\ []), do: Map.merge(%{instance_id: id, is_dead: false}, Map.new(attrs))
+  defp mob(id, attrs \\ []) do
+    struct(MobState, Map.merge(%{instance_id: id, hp: 100, is_dead: false}, Map.new(attrs)))
+  end
 end
