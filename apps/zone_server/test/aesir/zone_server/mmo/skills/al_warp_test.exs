@@ -44,7 +44,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlWarpTest do
     test_pid = self()
 
     stub(UnitRegistry, :get_unit, fn :player, ^player_id ->
-      {:ok, {PlayerState, %PlayerState{character_id: player_id}, test_pid}}
+      state = %PlayerState{
+        character_id: player_id,
+        action_state: :idle,
+        stats: %{current_state: %{hp: 1}}
+      }
+
+      {:ok, {PlayerState, state, test_pid}}
     end)
   end
 
@@ -125,6 +131,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlWarpTest do
 
       assert {:ok, %Group{state: %{uses: 8}}} =
                AlWarp.on_touch(group(open_state()), {:player, 3000})
+    end
+
+    test "does not warp a corpse or spend a use" do
+      corpse = %PlayerState{
+        character_id: 3000,
+        action_state: :dead,
+        stats: %{current_state: %{hp: 0}}
+      }
+
+      stub(UnitRegistry, :get_unit, fn :player, 3000 -> {:ok, {PlayerState, corpse, self()}} end)
+
+      assert {:ok, %Group{state: %{uses: 8}}} =
+               AlWarp.on_touch(group(open_state()), {:player, 3000})
+
+      refute_received {:"$gen_cast", _}
     end
   end
 

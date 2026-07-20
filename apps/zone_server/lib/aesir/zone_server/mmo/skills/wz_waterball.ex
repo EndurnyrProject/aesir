@@ -25,6 +25,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzWaterball do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.TargetState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
   @behaviour Ground
@@ -72,6 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzWaterball do
   @impl Ground
   def on_interval(%Group{map_name: map_name} = group, _now) do
     with {:ok, caster} <- Combat.resolve_combatant(group.caster_id),
+         :ok <- living_target(group.target_type, group.target_id),
          {:ok, {target_x, target_y, ^map_name}} <-
            SpatialIndex.get_unit_position(group.target_type, group.target_id),
          true <- LineOfSight.clear?(map_name, group.center, {target_x, target_y}) do
@@ -90,11 +93,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzWaterball do
       false -> {:ok, mark_shot(group, false)}
       {:error, _reason} -> {:expire, group}
       {:ok, {_x, _y, _other_map}} -> {:expire, group}
+      _ -> {:expire, group}
     end
   end
 
   defp mark_shot(%Group{state: state} = group, fired?),
     do: %{group | state: Map.put(state, :water_ball_fired, fired?)}
+
+  defp living_target(unit_type, unit_id) do
+    with {:ok, {_module, state, _pid}} <- UnitRegistry.get_unit(unit_type, unit_id),
+         true <- TargetState.living?(state) do
+      :ok
+    else
+      _ -> {:error, :target_dead}
+    end
+  end
 
   defp require_water(map_name, x, y) do
     case MapCell.water_source(map_name, x, y) do

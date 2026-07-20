@@ -30,6 +30,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlCrucis do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.TargetState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
 
@@ -55,20 +57,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlCrucis do
   end
 
   defp try_apply_to_target({unit_type, target_id}, level, caster_id, caster_base_level) do
-    case Combat.resolve_combatant(target_id) do
-      {:ok, combatant} ->
-        rate = 25 + 4 * level + (caster_base_level - combatant.progression.base_level)
+    with {:ok, {_module, target_state, _pid}} <- UnitRegistry.get_unit(unit_type, target_id),
+         true <- TargetState.living?(target_state),
+         {:ok, combatant} <- Combat.resolve_combatant(target_id) do
+      rate = 25 + 4 * level + (caster_base_level - combatant.progression.base_level)
 
-        if :rand.uniform(100) <= rate do
-          StatusInterpreter.apply_status(unit_type, target_id, :sc_signumcrucis,
-            val1: level,
-            val2: 10 + 4 * level,
-            caster_id: caster_id
-          )
-        end
-
-      {:error, _} ->
-        :ok
+      if :rand.uniform(100) <= rate do
+        StatusInterpreter.apply_status(unit_type, target_id, :sc_signumcrucis,
+          val1: level,
+          val2: 10 + 4 * level,
+          caster_id: caster_id
+        )
+      end
+    else
+      _ -> :ok
     end
   end
 end

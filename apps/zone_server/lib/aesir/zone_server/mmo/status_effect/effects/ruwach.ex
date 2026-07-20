@@ -27,6 +27,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Ruwach do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.TargetState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @skill_id 24
   @skill_level 1
@@ -62,7 +64,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Ruwach do
   defp reveal_concealed(map_name, x, y, caster) do
     map_name
     |> SpatialIndex.get_all_units_in_range(x, y, @radius)
-    |> Enum.filter(&CombatTarget.combat_unit?/1)
+    |> Enum.filter(fn target -> CombatTarget.combat_unit?(target) and living?(target) end)
     |> Enum.reject(&(&1 == caster))
     |> Enum.each(&Helpers.remove_statuses(&1, @hidden_statuses))
   end
@@ -87,6 +89,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Ruwach do
 
       {:error, _reason} ->
         :ok
+    end
+  end
+
+  defp living?({unit_type, unit_id}) do
+    case UnitRegistry.get_unit(unit_type, unit_id) do
+      {:ok, {_module, state, _pid}} -> TargetState.living?(state)
+      {:error, :not_found} -> false
     end
   end
 end

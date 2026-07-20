@@ -7,9 +7,25 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.RuwachTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Ruwach
   alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
   alias Aesir.ZoneServer.Mmo.StatusEntry
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
+
+  setup do
+    stub(UnitRegistry, :get_unit, fn :player, player_id ->
+      state = %PlayerState{
+        character_id: player_id,
+        action_state: :idle,
+        stats: %{current_state: %{hp: 1}}
+      }
+
+      {:ok, {PlayerState, state, self()}}
+    end)
+
+    :ok
+  end
 
   @caster {:player, 1000}
   @caster_pos {:ok, {150, 150, "prontera"}}
@@ -106,5 +122,25 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.RuwachTest do
 
       assert {:ok, %StatusEntry{}} = Ruwach.on_apply(@caster, entry(), %{target_id: 1000})
     end
+  end
+
+  test "does not reveal a corpse" do
+    corpse = %PlayerState{
+      character_id: 2000,
+      action_state: :dead,
+      stats: %{current_state: %{hp: 0}}
+    }
+
+    stub(SpatialIndex, :get_unit_position, fn :player, 1000 -> @caster_pos end)
+
+    stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 150, 150, 2 ->
+      [{:player, 2000}]
+    end)
+
+    stub(UnitRegistry, :get_unit, fn :player, 2000 -> {:ok, {PlayerState, corpse, self()}} end)
+    reject(&Helpers.remove_statuses/2)
+    stub(Combat, :resolve_combatant, fn 1000 -> {:error, :not_found} end)
+
+    assert {:ok, %StatusEntry{}} = Ruwach.on_apply(@caster, entry(), %{target_id: 1000})
   end
 end

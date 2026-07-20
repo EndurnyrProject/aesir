@@ -50,6 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlWarp do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Ground
@@ -120,15 +121,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlWarp do
   # Delivers the warp through the player's session (the single writer for
   # player state) and spends one use; a vanished session spends nothing.
   @spec consume_warp(Group.t(), integer()) :: Group.t()
-  defp consume_warp(%Group{state: %{uses: uses, dest: {map, x, y}} = state} = group, player_id)
+  defp consume_warp(
+         %Group{state: %{uses: uses, dest: {map, x, y}} = group_state} = group,
+         player_id
+       )
        when uses > 0 do
-    case UnitRegistry.get_unit(:player, player_id) do
-      {:ok, {_module, _state, pid}} ->
-        GenServer.cast(pid, {:warp, map, x, y})
-        %{group | state: %{state | uses: uses - 1}}
-
-      _ ->
-        group
+    with {:ok, {_module, target_state, pid}} <- UnitRegistry.get_unit(:player, player_id),
+         true <- TargetState.living?(target_state) do
+      GenServer.cast(pid, {:warp, map, x, y})
+      %{group | state: %{group_state | uses: uses - 1}}
+    else
+      _ -> group
     end
   end
 

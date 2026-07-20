@@ -10,7 +10,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlPneumaTest do
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
 
@@ -33,6 +35,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlPneumaTest do
       interval: 1_000,
       state: %{}
     }
+  end
+
+  defp stub_living_units do
+    stub(UnitRegistry, :get_unit, fn :player, player_id ->
+      state = %PlayerState{
+        character_id: player_id,
+        action_state: :idle,
+        stats: %{current_state: %{hp: 1}}
+      }
+
+      {:ok, {PlayerState, state, self()}}
+    end)
   end
 
   describe "skill data" do
@@ -78,6 +92,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlPneumaTest do
   describe "on_interval/2" do
     test "grants sc_pneuma (with the field duration) to every occupant who does not already have it" do
       test_pid = self()
+      stub_living_units()
 
       stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 1 ->
         [{:player, @caster_id}, {:player, 2001}]
@@ -102,6 +117,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlPneumaTest do
 
     test "ignores targetable skill-unit cells sharing the footprint" do
       test_pid = self()
+      stub_living_units()
 
       stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 1 ->
         [{:skill_unit, 777}, {:player, 2001}]
@@ -121,12 +137,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlPneumaTest do
     end
 
     test "does not re-grant to an occupant who already carries the buff" do
+      stub_living_units()
+
       stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 1 ->
         [{:player, @caster_id}]
       end)
 
       stub(StatusStorage, :has_status?, fn :player, @caster_id, :sc_pneuma -> true end)
 
+      reject(&StatusInterpreter.apply_status/4)
+
+      assert {:ok, %Group{}} = AlPneuma.on_interval(group(1, 9), 0)
+    end
+
+    test "does not grant the field status to a corpse" do
+      corpse = %PlayerState{action_state: :dead, stats: %{current_state: %{hp: 0}}}
+
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 1 ->
+        [{:player, 2001}]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn :player, 2001 ->
+        {:ok, {PlayerState, corpse, self()}}
+      end)
+
+      reject(&StatusStorage.has_status?/3)
       reject(&StatusInterpreter.apply_status/4)
 
       assert {:ok, %Group{}} = AlPneuma.on_interval(group(1, 9), 0)

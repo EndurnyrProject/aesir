@@ -17,6 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sight do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.TargetState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @reveal_radius 3
   @hidden_statuses [:sc_hiding, :sc_cloaking]
@@ -27,7 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sight do
       {:ok, {x, y, map_name}} ->
         map_name
         |> SpatialIndex.get_all_units_in_range(x, y, @reveal_radius)
-        |> Enum.filter(&CombatTarget.combat_unit?/1)
+        |> Enum.filter(fn target -> CombatTarget.combat_unit?(target) and living?(target) end)
         |> Enum.each(&reveal/1)
 
       {:error, :not_found} ->
@@ -38,4 +40,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sight do
   end
 
   defp reveal(target), do: Helpers.remove_statuses(target, @hidden_statuses)
+
+  defp living?({unit_type, unit_id}) do
+    case UnitRegistry.get_unit(unit_type, unit_id) do
+      {:ok, {_module, state, _pid}} -> TargetState.living?(state)
+      {:error, :not_found} -> false
+    end
+  end
 end

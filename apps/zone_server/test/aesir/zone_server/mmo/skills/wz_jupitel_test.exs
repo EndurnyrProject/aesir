@@ -53,7 +53,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzJupitelTest do
 
   defp caster(opts \\ []) do
     stats = %Stats{
-      current_state: %{hp: 100},
       base_stats: %BaseStats{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
       combat_stats: %{
         atk: 1,
@@ -68,6 +67,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzJupitelTest do
         soft_mdef: 1
       },
       derived_stats: %{max_hp: 100, max_sp: 50, aspd: 150},
+      current_state: %Aesir.ZoneServer.Unit.Stats.CurrentState{hp: 100, sp: 50},
       progression: %PlayerProgression{base_level: 1, job_level: 1, learned_skills: %{}},
       equipment: %Equipment{}
     }
@@ -223,7 +223,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzJupitelTest do
     impact = %{target: {:mob, @target_id}, skill_level: 1}
 
     true = put_test_map()
-    :ok = SpatialIndex.add_unit(:mob, @target_id, 55, 60, "prontera")
+    {_mob, _pid} = register_mob(x: 55, y: 60)
 
     expect(Combat, :execute_magic_attack, fn ^caster, @target_id, opts ->
       assert opts[:skill_id] == 84
@@ -269,6 +269,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzJupitelTest do
 
     refute_receive {:session_cast, {:apply_damage, _damage, _attacker_id}}, 20
     refute_receive {:session_cast, {:knocked_back, _x, _y}}, 20
+  end
+
+  test "a target that dies after scheduling receives no delayed damage or knockback" do
+    true = put_test_map()
+    {mob, _pid} = register_mob()
+
+    expect(Combat, :resolve_combatant, fn @target_id -> {:ok, %{unit_type: :mob}} end)
+    reject(&Combat.execute_magic_attack/3)
+    reject(&Combat.knockback/5)
+
+    assert {:ok, _caster} =
+             WzJupitel.cast(caster(), {:unit, @target_id}, 1, WzJupitel.definition())
+
+    :ok = UnitRegistry.update_unit_state(:mob, @target_id, %{mob | hp: 0, is_dead: true})
+
+    assert_receive {:jupitel_impact, impact}, 200
+    assert {:error, :target_dead} = WzJupitel.impact(caster(), impact)
   end
 
   test "impact rechecks line of sight and stops at an intervening wall" do

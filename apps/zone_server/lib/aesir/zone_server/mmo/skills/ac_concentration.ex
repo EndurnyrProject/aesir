@@ -36,6 +36,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AcConcentration do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.TargetState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
 
@@ -64,11 +66,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AcConcentration do
       {:ok, {x, y, map_name}} ->
         map_name
         |> SpatialIndex.get_all_units_in_range(x, y, @reveal_radius)
-        |> Enum.filter(&CombatTarget.combat_unit?/1)
+        |> Enum.filter(fn target -> CombatTarget.combat_unit?(target) and living?(target) end)
         |> Enum.each(&Helpers.remove_statuses(&1, @hidden_statuses))
 
       {:error, :not_found} ->
         :ok
+    end
+  end
+
+  defp living?({unit_type, unit_id}) do
+    case UnitRegistry.get_unit(unit_type, unit_id) do
+      {:ok, {_module, state, _pid}} -> TargetState.living?(state)
+      {:error, :not_found} -> false
     end
   end
 end

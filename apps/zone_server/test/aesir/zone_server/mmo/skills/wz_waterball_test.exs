@@ -19,7 +19,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzWaterballTest do
   alias Aesir.ZoneServer.Mmo.Skills.SaLandprotector
   alias Aesir.ZoneServer.Mmo.Skills.WzWaterball
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables
 
@@ -61,6 +63,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzWaterballTest do
     }
   end
 
+  defp stub_living_target do
+    stub(UnitRegistry, :get_unit, fn :mob, 200 ->
+      {:ok, {MobState, struct(MobState, %{hp: 1, is_dead: false}), self()}}
+    end)
+  end
+
   test "is registered as an active ground skill" do
     assert {:ok, definition} = Catalog.by_name(:wz_waterball)
     assert definition.id == 86
@@ -70,6 +78,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzWaterballTest do
   end
 
   test "applies one water magic hit for a manager-claimed source cell" do
+    stub_living_target()
     stub(Combat, :resolve_combatant, fn 100 -> {:ok, %{unit_id: 100}} end)
     stub(SpatialIndex, :get_unit_position, fn :mob, 200 -> {:ok, {101, 100, "prontera"}} end)
     stub(LineOfSight, :clear?, fn "prontera", {100, 100}, {101, 100} -> true end)
@@ -200,6 +209,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzWaterballTest do
   end
 
   test "signals a skipped shot without dealing damage when line of sight is blocked" do
+    stub_living_target()
     stub(Combat, :resolve_combatant, fn 100 -> {:ok, %{unit_id: 100}} end)
     stub(SpatialIndex, :get_unit_position, fn :mob, 200 -> {:ok, {101, 100, "prontera"}} end)
     stub(LineOfSight, :clear?, fn "prontera", {100, 100}, {101, 100} -> false end)
@@ -209,12 +219,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzWaterballTest do
   end
 
   test "marks a fired shot so the manager consumes exactly one charge" do
+    stub_living_target()
     stub(Combat, :resolve_combatant, fn 100 -> {:ok, %{unit_id: 100}} end)
     stub(SpatialIndex, :get_unit_position, fn :mob, 200 -> {:ok, {101, 100, "prontera"}} end)
     stub(LineOfSight, :clear?, fn "prontera", {100, 100}, {101, 100} -> true end)
     stub(Combat, :apply_skill_unit_damage, fn _, _, _, _, _, _, _ -> :ok end)
 
     assert {:ok, %Group{state: %{water_ball_fired: true}}} = WzWaterball.on_interval(group(), 0)
+  end
+
+  test "expires without damaging a corpse target" do
+    corpse = struct(MobState, %{hp: 0, is_dead: true})
+    stub(Combat, :resolve_combatant, fn 100 -> {:ok, %{unit_id: 100}} end)
+    stub(UnitRegistry, :get_unit, fn :mob, 200 -> {:ok, {MobState, corpse, self()}} end)
+    reject(&SpatialIndex.get_unit_position/2)
+    reject(&Combat.apply_skill_unit_damage/7)
+
+    assert {:expire, %Group{}} = WzWaterball.on_interval(group(), 0)
   end
 
   describe "deluge fields as water sources" do

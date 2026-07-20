@@ -6,8 +6,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlCrucisTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.AlCrucis
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
 
@@ -27,6 +29,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlCrucisTest do
     %{progression: %{base_level: base_level}}
   end
 
+  defp stub_living_targets do
+    stub(UnitRegistry, :get_unit, fn :mob, target_id ->
+      state = struct(MobState, %{instance_id: target_id, hp: 1, is_dead: false})
+      {:ok, {MobState, state, self()}}
+    end)
+  end
+
   describe "catalog registration" do
     test "by_id(32) resolves al_crucis" do
       assert {:ok, %{name: :al_crucis}} = Catalog.by_id(32)
@@ -39,6 +48,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlCrucisTest do
 
   describe "cast/4 — no targets" do
     setup do
+      stub_living_targets()
       stub(PlayerState, :get_stats, fn _ -> %{base_level: @caster_base_level} end)
       stub(SpatialIndex, :get_unit_position, fn :player, 1000 -> @caster_pos end)
       stub(Combat, :splash_targets, fn @map, @center, @radius, 1000 -> [] end)
@@ -63,6 +73,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlCrucisTest do
     # 27 <= 85 → hit.
     setup do
       :rand.seed(:exsss, {1, 2, 3})
+      stub_living_targets()
       stub(PlayerState, :get_stats, fn _ -> %{base_level: @caster_base_level} end)
       stub(SpatialIndex, :get_unit_position, fn :player, 1000 -> @caster_pos end)
       stub(Combat, :resolve_combatant, fn _id -> {:ok, make_combatant(10)} end)
@@ -121,6 +132,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlCrucisTest do
     # caster_base_level=50, target_base_level=10, level=5 → rate = 85; 87 > 85 → miss.
     setup do
       :rand.seed(:exsss, {6, 7, 8})
+      stub_living_targets()
       stub(PlayerState, :get_stats, fn _ -> %{base_level: @caster_base_level} end)
       stub(SpatialIndex, :get_unit_position, fn :player, 1000 -> @caster_pos end)
       stub(Combat, :splash_targets, fn @map, @center, @radius, 1000 -> [{:mob, 2001}] end)
@@ -140,6 +152,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlCrucisTest do
     # Target 2002, base_level=200: rate = 25 + 20 + (50-200) = -105 → always miss.
     setup do
       :rand.seed(:exsss, {1, 2, 3})
+      stub_living_targets()
       stub(PlayerState, :get_stats, fn _ -> %{base_level: @caster_base_level} end)
       stub(SpatialIndex, :get_unit_position, fn :player, 1000 -> @caster_pos end)
 
@@ -173,6 +186,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlCrucisTest do
     # This shows a lower-level target is easier to land on.
     test "lower target base_level raises the rate enough to turn a miss into a hit" do
       :rand.seed(:exsss, {6, 7, 8})
+      stub_living_targets()
       stub(PlayerState, :get_stats, fn _ -> %{base_level: @caster_base_level} end)
       stub(SpatialIndex, :get_unit_position, fn :player, 1000 -> @caster_pos end)
       stub(Combat, :splash_targets, fn @map, @center, @radius, 1000 -> [{:mob, 2001}] end)
@@ -187,6 +201,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlCrucisTest do
 
     test "higher target base_level lowers the rate and causes a miss" do
       :rand.seed(:exsss, {6, 7, 8})
+      stub_living_targets()
       stub(PlayerState, :get_stats, fn _ -> %{base_level: @caster_base_level} end)
       stub(SpatialIndex, :get_unit_position, fn :player, 1000 -> @caster_pos end)
       stub(Combat, :splash_targets, fn @map, @center, @radius, 1000 -> [{:mob, 2001}] end)
@@ -195,5 +210,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlCrucisTest do
       reject(&StatusInterpreter.apply_status/4)
       assert {:ok, @caster} = AlCrucis.cast(@caster, :self, 5, definition())
     end
+  end
+
+  test "does not apply Signum Crucis to a corpse" do
+    corpse = struct(MobState, %{instance_id: 2001, hp: 0, is_dead: true})
+    stub(PlayerState, :get_stats, fn _ -> %{base_level: @caster_base_level} end)
+    stub(SpatialIndex, :get_unit_position, fn :player, 1000 -> @caster_pos end)
+    stub(Combat, :splash_targets, fn @map, @center, @radius, 1000 -> [{:mob, 2001}] end)
+    stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {MobState, corpse, self()}} end)
+    reject(&Combat.resolve_combatant/1)
+    reject(&StatusInterpreter.apply_status/4)
+
+    assert {:ok, @caster} = AlCrucis.cast(@caster, :self, 5, definition())
   end
 end

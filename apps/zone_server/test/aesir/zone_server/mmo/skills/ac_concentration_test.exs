@@ -7,10 +7,32 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AcConcentrationTest do
   alias Aesir.ZoneServer.Mmo.Skills.AcConcentration
   alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
+
+  setup do
+    stub(UnitRegistry, :get_unit, fn
+      :player, player_id ->
+        state = %PlayerState{
+          character_id: player_id,
+          action_state: :idle,
+          stats: %{current_state: %{hp: 1}}
+        }
+
+        {:ok, {PlayerState, state, self()}}
+
+      :mob, mob_id ->
+        state = struct(MobState, %{instance_id: mob_id, hp: 1, is_dead: false})
+        {:ok, {MobState, state, self()}}
+    end)
+
+    :ok
+  end
 
   @caster %{
     character_id: 1000,
@@ -108,6 +130,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AcConcentrationTest do
       stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_concentrate, _ -> :ok end)
       stub(SpatialIndex, :get_unit_position, fn :player, 1000 -> {:error, :not_found} end)
       reject(&SpatialIndex.get_all_units_in_range/4)
+      reject(&Helpers.remove_statuses/2)
+
+      assert {:ok, _} = AcConcentration.cast(@caster, :self, 1, AcConcentration.definition())
+    end
+
+    test "does not reveal a corpse" do
+      corpse = %PlayerState{
+        character_id: 2000,
+        action_state: :dead,
+        stats: %{current_state: %{hp: 0}}
+      }
+
+      stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_concentrate, _ -> :ok end)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, 1000 -> {:ok, {150, 150, "prontera"}} end)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 150, 150, 3 ->
+        [{:player, 2000}]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn :player, 2000 -> {:ok, {PlayerState, corpse, self()}} end)
       reject(&Helpers.remove_statuses/2)
 
       assert {:ok, _} = AcConcentration.cast(@caster, :self, 1, AcConcentration.definition())

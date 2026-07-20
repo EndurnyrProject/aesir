@@ -28,6 +28,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzJupitel do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.TargetState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @impact_delay_ms 150
 
@@ -64,6 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzJupitel do
 
     with {:ok, {target_x, target_y, ^map_name}} <-
            SpatialIndex.get_unit_position(unit_type, target_id),
+         :ok <- living_target(unit_type, target_id),
          {:ok, _map_data} <- MapCache.get(map_name),
          true <- LineOfSight.clear?(map_name, {x, y}, {target_x, target_y}),
          :ok <- Combat.execute_magic_attack(caster, target_id, opts) do
@@ -73,6 +76,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzJupitel do
       false -> {:error, :blocked_line_of_sight}
       {:ok, {_target_x, _target_y, _other_map}} -> {:error, :different_map}
       {:error, _reason} = error -> error
+    end
+  end
+
+  defp living_target(unit_type, target_id) do
+    with {:ok, {_module, state, _pid}} <- UnitRegistry.get_unit(unit_type, target_id),
+         true <- TargetState.living?(state) do
+      :ok
+    else
+      _ -> {:error, :target_dead}
     end
   end
 end

@@ -44,6 +44,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlPneuma do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.TargetState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Ground
 
@@ -69,7 +71,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlPneuma do
 
     map_name
     |> SpatialIndex.get_all_units_in_range(cx, cy, definition.splash_radius)
-    |> Enum.filter(&CombatTarget.combat_unit?/1)
+    |> Enum.filter(fn target -> CombatTarget.combat_unit?(target) and living?(target) end)
     |> Enum.reject(fn {unit_type, unit_id} ->
       StatusStorage.has_status?(unit_type, unit_id, :sc_pneuma)
     end)
@@ -83,6 +85,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlPneuma do
     end)
 
     {:ok, group}
+  end
+
+  defp living?({unit_type, unit_id}) do
+    case UnitRegistry.get_unit(unit_type, unit_id) do
+      {:ok, {_module, state, _pid}} -> TargetState.living?(state)
+      {:error, :not_found} -> false
+    end
   end
 
   @impl Ground
