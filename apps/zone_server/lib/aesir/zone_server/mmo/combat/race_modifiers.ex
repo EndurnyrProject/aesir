@@ -19,6 +19,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   - :demon - Demonic monsters
   - :demi_human - Human-like monsters
   - :player_human - Player combatants (renewal `RC_Player_Human`)
+  - :player_doram - Doram player combatants (renewal `RC_Player_Doram`); no
+    Aesir unit carries this race yet, so bonuses keyed to it are inert
   - :angel - Holy/angelic monsters
   - :dragon - Dragon-type monsters
   - :boss - Special boss monsters (receives different modifiers)
@@ -34,6 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
           | :demon
           | :demi_human
           | :player_human
+          | :player_doram
           | :angel
           | :dragon
           | :boss

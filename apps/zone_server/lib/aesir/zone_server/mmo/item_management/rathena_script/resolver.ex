@@ -155,7 +155,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "Ele_Ghost" => :ghost,
     "Ele_Poison" => :poison,
     "Ele_Undead" => :undead,
-    "Ele_Neutral" => :neutral
+    "Ele_Neutral" => :neutral,
+    "Ele_All" => :all
   }
 
   @classes %{
@@ -199,6 +200,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "RC_Angel" => :angel,
     "RC_Dragon" => :dragon,
     "RC_Player_Human" => :player_human,
+    "RC_Player_Doram" => :player_doram,
     "RC_All" => :all,
     "RC_Boss" => {:class, :boss}
   }
@@ -251,6 +253,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   (`Combat.RaceModifiers`'s type). `RC_Boss` is a sentinel: it does not name a
   race, it redirects race-family bonuses (`bAddRace`/`bSubRace`) to the class
   family, so it resolves to `{:class, :boss}` rather than a race atom.
+  `RC_Player_Doram` resolves to `:player_doram` even though no Aesir unit
+  carries that race yet: the bonus is inert at runtime (no combatant ever
+  matches it) but the rest of the item's script still transpiles.
   """
   @spec resolve_race(String.t()) :: {:ok, atom() | {:class, :boss}} | error()
   def resolve_race(symbol) when is_binary(symbol), do: lookup(@races, symbol)

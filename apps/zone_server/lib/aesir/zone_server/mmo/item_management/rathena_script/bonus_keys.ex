@@ -159,6 +159,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     :angel,
     :dragon,
     :player_human,
+    :player_doram,
     :all
   ]
   @element_domain [

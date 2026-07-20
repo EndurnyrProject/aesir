@@ -90,6 +90,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
       assert {:error, {:unsupported, {:unresolved_param, _}}} = compile("bonus bAtkEle,3;")
     end
 
+    test "bAtkEle rejects Ele_All - :all names no single element to :set" do
+      assert {:error, {:unsupported, {:unresolved_param, "Ele_All"}}} =
+               compile("bonus bAtkEle,Ele_All;")
+    end
+
     test "refine-scaled amount (id1298 Shiver_Katar)" do
       assert {:ok, [{:bonus, :critical, :refine}]} = compile("bonus bCritical,getrefine();")
     end
@@ -193,6 +198,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
 
       assert {:ok, [{:bonus, {:skill_atk, ^firebolt_id}, 15}]} =
                compile("bonus2 bSkillAtk,MG_FIREBOLT,15;")
+    end
+
+    test "skill_atk by quoted skill name resolves like the bare-name form" do
+      assert {:ok, %{id: firebolt_id}} = Catalog.by_name(:mg_firebolt)
+
+      assert {:ok, [{:bonus, {:skill_atk, ^firebolt_id}, 15}]} =
+               compile(~s(bonus2 bSkillAtk,"MG_FIREBOLT",15;))
+    end
+
+    test "quoted skill name outside the catalog is unresolved_param" do
+      assert {:error, {:unsupported, {:unresolved_param, "XX_NOTASKILL"}}} =
+               compile(~s(bonus2 bSkillAtk,"XX_NOTASKILL",15;))
     end
 
     test "skill_atk by raw skill id" do
@@ -300,6 +317,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     test "inside an if branch" do
       assert {:ok, [{:if, {:>, :refine, 7}, [{:bonus, {:addrace, :brute}, 20}], []}]} =
                compile("if (getrefine()>7) bonus2 bAddRace,RC_Brute,20;")
+    end
+
+    test "Ele_All transpiles to the :all wildcard the runtime read folds in" do
+      assert {:ok, [{:bonus, {:subele, :all}, 20}]} = compile("bonus2 bSubEle,Ele_All,20;")
+      assert {:ok, [{:bonus, {:addele, :all}, 10}]} = compile("bonus2 bAddEle,Ele_All,10;")
+    end
+
+    test "RC_Player_Doram transpiles to its (currently inert) race atom" do
+      assert {:ok, [{:bonus, {:addrace, :player_doram}, 10}]} =
+               compile("bonus2 bAddRace,RC_Player_Doram,10;")
+
+      assert {:ok, [{:bonus, {:subrace, :player_doram}, 15}]} =
+               compile("bonus2 bSubRace,RC_Player_Doram,15;")
     end
 
     test "RC_Boss redirects addrace/subrace to the class family" do

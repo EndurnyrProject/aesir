@@ -38,8 +38,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   - `bonus2 bKey,param,amount` — `{:bonus, {family, param}, expr}` when `bKey`
     resolves via `BonusKeys.param_schema/1` and `param` resolves through
     `Resolver` according to the schema's param kind (race/element/size/class/status
-    via a `{:name, const}` constant, skill via a `{:name, const}` name or an
-    `{:int, id}` literal). A key in `BonusKeys.pair_schema/1` instead takes two
+    via a `{:name, const}` constant, skill via a `{:name, const}` bare name, a
+    `{:str, name}` quoted name — the corpus idiom `bonus2 bSkillAtk,"SM_BASH",n`
+    — or an `{:int, id}` literal). A key in `BonusKeys.pair_schema/1` instead takes two
     amounts and expands to TWO `{:bonus, dest, expr}` instructions, one per
     destination, each summing independently. `RC_Boss` is a sentinel: on an `:addrace`/`:subrace`
     family it redirects to `:addclass`/`:subclass`; on any other family it is
@@ -217,9 +218,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   @spec compile_value_bonus(BonusKeys.value_schema(), term()) ::
           {:ok, EquipScript.instr()} | {:error, {:unsupported, detail()}}
+  # `:all` is a summing-family param (`bSubEle,Ele_All`); as a value it names
+  # no single element, so it cannot be `:set`.
   defp compile_value_bonus(%{dest: dest, param: :element}, {:name, const}) do
-    with {:ok, element} <- resolve(&Resolver.resolve_element/1, const),
-         do: {:ok, {:set, dest, element}}
+    case resolve(&Resolver.resolve_element/1, const) do
+      {:ok, :all} -> unsupported({:unresolved_param, const})
+      {:ok, element} -> {:ok, {:set, dest, element}}
+      {:error, _} = error -> error
+    end
   end
 
   defp compile_value_bonus(_schema, arg), do: unsupported({:unresolved_param, arg})
@@ -262,6 +268,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   defp resolve_param(%{family: family, param: :skill}, {:name, const}) do
     with {:ok, id} <- resolve(&Resolver.resolve_skill/1, const), do: {:ok, {family, id}}
+  end
+
+  defp resolve_param(%{family: family, param: :skill}, {:str, name}) do
+    with {:ok, id} <- resolve(&Resolver.resolve_skill/1, name), do: {:ok, {family, id}}
   end
 
   defp resolve_param(%{family: family, param: :skill}, {:int, id}) do

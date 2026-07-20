@@ -350,6 +350,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
                :angel,
                :dragon,
                :player_human,
+               :player_doram,
                :all
              ]
     end
