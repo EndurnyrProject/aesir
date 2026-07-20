@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Integration.PriestResurrectionTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.AllResurrection
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.TargetState
 
   test "a retained corpse is revived in place for itself and nearby observers without reindexing" do
     test_pid = self()
@@ -49,11 +50,19 @@ defmodule Aesir.ZoneServer.Integration.PriestResurrectionTest do
     PlayerSession.apply_damage(target.pid, 1_000_000, caster.character.id)
 
     assert_eventually(fn -> get_player_state(target.pid).action_state == :dead end)
+    corpse = get_player_state(target.pid)
+    assert TargetState.corpse?(corpse)
+    refute TargetState.living?(corpse)
     assert {:ok, {151, 150, "prontera"}} = SpatialIndex.get_unit_position(:player, 18_003)
 
     assert Enum.count(
              SpatialIndex.get_players_in_range("prontera", 151, 150, 0),
              &(&1 == 18_003)
+           ) == 1
+
+    assert Enum.count(
+             SpatialIndex.get_visible_players(observer.character.id),
+             &(&1 == target.character.id)
            ) == 1
 
     flush_tagged_packets()
@@ -76,9 +85,18 @@ defmodule Aesir.ZoneServer.Integration.PriestResurrectionTest do
 
     assert {:ok, {151, 150, "prontera"}} = SpatialIndex.get_unit_position(:player, 18_003)
 
+    revived = get_player_state(target.pid)
+    refute TargetState.corpse?(revived)
+    assert TargetState.living?(revived)
+
     assert Enum.count(
              SpatialIndex.get_players_in_range("prontera", 151, 150, 0),
              &(&1 == 18_003)
+           ) == 1
+
+    assert Enum.count(
+             SpatialIndex.get_visible_players(observer.character.id),
+             &(&1 == target.character.id)
            ) == 1
   end
 
