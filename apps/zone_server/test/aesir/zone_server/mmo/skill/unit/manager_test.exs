@@ -155,6 +155,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       :other_exclusive_unit -> {:ok, FakeUnit}
       :barrier_unit -> {:ok, FakeUnit}
       :mg_safetywall -> {:ok, FakeUnit}
+      :pr_magnus -> {:ok, FakeUnit}
     end)
 
     :ok
@@ -407,6 +408,42 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
       assert Enum.frequencies(results) == %{:ok => 1, {:error, :safetywall_overlap} => 1}
       assert [%Group{skill_id: 12}] = Storage.all()
+    end
+
+    test "rejects an overlapping Magnus Exorcismus field" do
+      manager = start_manager(10_000)
+
+      assert :ok = Manager.register(manager, group(1, skill_id: 79, skill_name: :pr_magnus))
+
+      assert {:error, :skill_unit_overlap} =
+               Manager.register(manager, group(2, skill_id: 79, skill_name: :pr_magnus))
+    end
+
+    test "keeps Magnus visibility and expiry authoritative in the unit manager" do
+      test_pid = self()
+
+      stub(Broadcast, :to_player, fn observer_id, packet ->
+        send(test_pid, {observer_id, packet})
+      end)
+
+      manager = start_manager(10_000)
+
+      magnus =
+        group(1,
+          skill_id: 79,
+          skill_name: :pr_magnus,
+          visible?: true,
+          created_at: 10_000,
+          next_tick_at: 20_000,
+          expires_at: 10_001
+        )
+
+      assert :ok = Manager.register(manager, magnus)
+      assert MapSet.new([1]) == Manager.snapshot_for(manager, 99, "prontera", 100, 100, 0)
+      assert_receive {99, %Aesir.Net.SkillUnitSnapshot{groups: [%{group_id: 1}]}}
+
+      assert :ok = Manager.tick(manager, 10_001)
+      assert nil == Storage.get(1)
     end
 
     test "preserves ordinary same-cell group stacking" do

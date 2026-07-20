@@ -164,6 +164,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   """
   defdelegate resolve_combatant(unit_id), to: TargetResolver
 
+  @doc "Resolves a known unit type and id to its live combatant."
+  defdelegate resolve_combatant(unit_type, unit_id), to: TargetResolver
+
   @doc """
   Selects the valid offensive targets for a center+radius splash/footprint.
 
