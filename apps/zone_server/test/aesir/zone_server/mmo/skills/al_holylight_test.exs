@@ -5,7 +5,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHolylightTest do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.AlHolylight
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
 
@@ -46,6 +48,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHolylightTest do
     test "issues a single holy magic hit at 125% MATK" do
       caster = caster()
 
+      stub(UnitRegistry, :unit_exists?, fn
+        :mob, @target_id -> false
+        :player, @target_id -> true
+      end)
+
       expect(Combat, :execute_magic_attack, fn ^caster, @target_id, opts ->
         assert opts[:skill_id] == 156
         assert opts[:skill_level] == 1
@@ -54,6 +61,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHolylightTest do
         assert opts[:element] == :holy
         :ok
       end)
+
+      assert {:ok, ^caster} = AlHolylight.cast(caster, {:unit, @target_id}, 1, definition())
+    end
+
+    test "ends P. Alter and Kyrie on a player target after the holy hit connects" do
+      caster = caster()
+
+      stub(UnitRegistry, :unit_exists?, fn
+        :mob, @target_id -> false
+        :player, @target_id -> true
+      end)
+
+      expect(Combat, :execute_magic_attack, fn ^caster, @target_id, _opts -> :ok end)
+      expect(StatusInterpreter, :remove_status, fn :player, @target_id, :sc_p_alter -> :ok end)
+      expect(StatusInterpreter, :remove_status, fn :player, @target_id, :sc_kyrie -> :ok end)
 
       assert {:ok, ^caster} = AlHolylight.cast(caster, {:unit, @target_id}, 1, definition())
     end

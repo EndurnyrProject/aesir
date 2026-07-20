@@ -49,6 +49,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TargetResolver do
   end
 
   @doc """
+  Resolves a known unit type and id to its combatant struct.
+  """
+  @spec resolve_combatant(:player | :mob | :skill_unit, integer()) ::
+          {:ok, struct()} | {:error, atom()}
+  def resolve_combatant(unit_type, unit_id) do
+    with {:ok, _pid, state, ^unit_type} <- resolve(unit_type, unit_id) do
+      {:ok, state.__struct__.to_combatant(state)}
+    end
+  end
+
+  @doc """
   Resolves a bare target id to its live unit state.
 
   Targetable skill units are recognized by their id range; otherwise players

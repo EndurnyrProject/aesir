@@ -21,7 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlCureTest do
     assert {:ok, %{id: 35}} = Catalog.by_name(:al_cure)
   end
 
-  test "cast/4 removes sc_silence, sc_blind, sc_confusion from a targeted ally" do
+  test "cast/4 removes rAthena's four curable statuses from a targeted ally" do
     {:ok, definition} = Catalog.by_id(35)
     caster = %{character_id: 1000}
     target_id = 2000
@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlCureTest do
     expect(StatusInterpreter, :remove_status, fn :player, ^target_id, :sc_silence -> :ok end)
     expect(StatusInterpreter, :remove_status, fn :player, ^target_id, :sc_blind -> :ok end)
     expect(StatusInterpreter, :remove_status, fn :player, ^target_id, :sc_confusion -> :ok end)
+    expect(StatusInterpreter, :remove_status, fn :player, ^target_id, :sc_bitescar -> :ok end)
 
     assert {:ok, ^caster} = AlCure.cast(caster, {:unit, target_id}, 1, definition)
   end
@@ -40,6 +41,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlCureTest do
     expect(StatusInterpreter, :remove_status, fn :player, 1000, :sc_silence -> :ok end)
     expect(StatusInterpreter, :remove_status, fn :player, 1000, :sc_blind -> :ok end)
     expect(StatusInterpreter, :remove_status, fn :player, 1000, :sc_confusion -> :ok end)
+    expect(StatusInterpreter, :remove_status, fn :player, 1000, :sc_bitescar -> :ok end)
 
     assert {:ok, ^caster} = AlCure.cast(caster, :self, 1, definition)
   end

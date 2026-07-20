@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlAngelus do
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
@@ -80,7 +81,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlAngelus do
     case UnitRegistry.get_unit(:player, char_id) do
       {:ok, {_module, player_state, _pid}} ->
         player_state.map_name == caster.map_name and
-          player_state.stats.current_state.hp > 0 and
+          TargetState.living?(player_state) and
           Geometry.in_tile_range?(
             caster.x,
             caster.y,

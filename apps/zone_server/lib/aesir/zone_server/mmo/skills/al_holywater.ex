@@ -15,7 +15,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHolywater do
     sp_cost: [10],
     cast_time: [800],
     fixed_cast_time: [200],
-    after_cast_delay: [500]
+    after_cast_delay: [500],
+    item_cost: [%{id: 713, amount: 1}]
 
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
@@ -53,6 +54,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHolywater do
         |> Map.put(:inventory, persisted)
         |> Map.update!(:pending_inventory_notify, &(&1 ++ [change]))
 
+      # NOTE: Aesir has no NJ_SUITON cell state. When NJ_SUITON cells exist, destroy the
+      # matching cell after a successful craft and remove this note.
       {:ok, updated}
     end
   end

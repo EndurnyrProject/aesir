@@ -2,11 +2,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlBlessingTest do
   use ExUnit.Case, async: true
   import Mimic
 
+  alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.AlBlessing
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
+
+  setup do
+    Mimic.copy(TargetResolver)
+  end
 
   test "Catalog.by_id/1 resolves al_blessing" do
     assert {:ok, definition} = Catalog.by_id(34)
@@ -64,5 +70,67 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlBlessingTest do
     end)
 
     assert {:error, :already_applied} = AlBlessing.cast(caster, :self, 5, definition)
+  end
+
+  test "cast/4 halves an undead mob's STR, INT, DEX, and HIT through val2 zero" do
+    {:ok, definition} = Catalog.by_id(34)
+    caster = %{character_id: 4000}
+    target_id = 5000
+
+    stub(UnitRegistry, :unit_exists?, fn :mob, ^target_id -> true end)
+
+    stub(TargetResolver, :resolve_combatant, fn :mob, ^target_id ->
+      {:ok, %{race: :undead}}
+    end)
+
+    expect(StatusInterpreter, :apply_status, fn :mob, ^target_id, :sc_blessing, params ->
+      assert params[:val1] == 10
+      assert params[:val2] == 0
+      assert params[:caster_id] == 4000
+      :ok
+    end)
+
+    assert {:ok, ^caster} = AlBlessing.cast(caster, {:unit, target_id}, 10, definition)
+  end
+
+  test "cast/4 halves a mob with undead defense element through val2 zero" do
+    {:ok, definition} = Catalog.by_id(34)
+    caster = %{character_id: 4000}
+    target_id = 5000
+
+    stub(UnitRegistry, :unit_exists?, fn :mob, ^target_id -> true end)
+
+    stub(TargetResolver, :resolve_combatant, fn :mob, ^target_id ->
+      {:ok, %{race: :formless, element: {:undead, 1}}}
+    end)
+
+    expect(StatusInterpreter, :apply_status, fn :mob, ^target_id, :sc_blessing, params ->
+      assert params[:val1] == 10
+      assert params[:val2] == 0
+      assert params[:caster_id] == 4000
+      :ok
+    end)
+
+    assert {:ok, ^caster} = AlBlessing.cast(caster, {:unit, target_id}, 10, definition)
+  end
+
+  test "cast/4 resolves a colliding target id as the selected mob" do
+    {:ok, definition} = Catalog.by_id(34)
+    caster = %{character_id: 4_000}
+    target_id = 5_000
+
+    stub(UnitRegistry, :unit_exists?, fn :mob, ^target_id -> true end)
+    reject(&TargetResolver.resolve_combatant/1)
+
+    expect(TargetResolver, :resolve_combatant, fn :mob, ^target_id ->
+      {:ok, %{race: :undead}}
+    end)
+
+    expect(StatusInterpreter, :apply_status, fn :mob, ^target_id, :sc_blessing, params ->
+      assert params[:val2] == 0
+      :ok
+    end)
+
+    assert {:ok, ^caster} = AlBlessing.cast(caster, {:unit, target_id}, 10, definition)
   end
 end

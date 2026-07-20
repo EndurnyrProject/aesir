@@ -8,10 +8,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHolylight do
   `base_skillratio += 25` in `skills/acolyte/holylight.cpp`
   (`calculateSkillRatio`), i.e. 125% MATK.
 
-  TODO: Not mirrored (out of scope until their systems exist): ending `SC_P_ALTER`
-  on the target, breaking Kyrie Eleison (SC_KYRIE check), and the
-  Soul Linker `SL_PRIEST` 5x multiplier.
+  A connected hit ends `SC_P_ALTER` and `SC_KYRIE`, matching
+  `skills/acolyte/holylight.cpp` and `battle.cpp:1291-1302`.
   """
+  # NOTE: Aesir has no SC_SPIRIT/SL_PRIEST. When it exists, make the linked-caster
+  # Holy Light SP cost five times normal and remove this note.
   use Aesir.ZoneServer.Mmo.Skill,
     id: 156,
     name: :al_holylight,
@@ -28,11 +29,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHolylight do
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
 
   @impl Active
   def cast(caster, {:unit, target_id}, level, definition) do
+    # NOTE: Aesir has no SC_SPIRIT/SL_PRIEST. When it exists, apply its fivefold
+    # Holy Light damage ratio for linked casters and remove this note.
     opts = [
       skill_id: definition.id,
       skill_level: level,
@@ -43,8 +48,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHolylight do
     ]
 
     case Combat.execute_magic_attack(caster, target_id, opts) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
+      :ok ->
+        unit_type = target_unit_type(target_id)
+        StatusInterpreter.remove_status(unit_type, target_id, :sc_p_alter)
+        StatusInterpreter.remove_status(unit_type, target_id, :sc_kyrie)
+        {:ok, caster}
+
+      {:error, _reason} = error ->
+        error
     end
+  end
+
+  defp target_unit_type(target_id) do
+    if UnitRegistry.unit_exists?(:mob, target_id), do: :mob, else: :player
   end
 end

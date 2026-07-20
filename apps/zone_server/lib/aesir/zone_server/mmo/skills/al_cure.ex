@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.AlCure do
   @moduledoc """
-  Cure (AL_CURE). Removes Silence, Blind, and Confusion from an ally.
+  Cure (AL_CURE). Removes Silence, Blind, Confusion, and Bite Scar from an ally.
 
   rAthena: id 35, max level 1, SP 15, AfterCastActDelay 1000ms.
   """
@@ -21,7 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlCure do
 
   @behaviour Active
 
-  @statuses_to_remove [:sc_silence, :sc_blind, :sc_confusion]
+  @statuses_to_remove [:sc_silence, :sc_blind, :sc_confusion, :sc_bitescar]
 
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::

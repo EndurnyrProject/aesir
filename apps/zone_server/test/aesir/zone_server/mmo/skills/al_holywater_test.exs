@@ -36,6 +36,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlHolywaterTest do
       assert defn.after_cast_delay == [500]
     end
 
+    test "requires one Empty Bottle (item 713)" do
+      assert {:ok, %{item_cost: [%{id: 713, amount: 1}]}} = Catalog.by_id(31)
+    end
+
     test "by_name/1 resolves :al_holywater" do
       assert {:ok, %{id: 31}} = Catalog.by_name(:al_holywater)
     end

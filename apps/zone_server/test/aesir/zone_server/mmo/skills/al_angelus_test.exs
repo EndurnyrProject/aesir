@@ -214,6 +214,38 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AlAngelusTest do
     assert {:ok, ^caster} = AlAngelus.cast(caster, :self, 1, definition)
   end
 
+  test "cast/4 does not splash an inconsistent dead party snapshot" do
+    {:ok, definition} = Catalog.by_id(33)
+    caster = caster_state(1, party_id: 10, map: "prontera", x: 150, y: 150)
+
+    dead_member =
+      2
+      |> caster_state(map: "prontera", x: 155, y: 150)
+      |> Map.put(:action_state, :dead)
+
+    UnitRegistry.register_unit(:player, 2, PlayerState, dead_member, self())
+
+    party_state = %PartyState{
+      party_id: 10,
+      name: "Party",
+      leader_char_id: 1,
+      exp_share: false,
+      members: %{1 => party_member(1, "prontera"), 2 => party_member(2, "prontera")}
+    }
+
+    expect(PartyManager, :get, fn 10 -> {:ok, party_state} end)
+    test_pid = self()
+
+    stub(StatusInterpreter, :apply_status, fn :player, target_id, :sc_angelus, _params ->
+      send(test_pid, {:angelus, target_id})
+      :ok
+    end)
+
+    assert {:ok, ^caster} = AlAngelus.cast(caster, :self, 1, definition)
+    assert_received {:angelus, 1}
+    refute_received {:angelus, 2}
+  end
+
   test "cast/4 does not consult Party.Manager when the caster has no party" do
     {:ok, definition} = Catalog.by_id(33)
     caster = caster_state(1, party_id: 0, map: "prontera", x: 150, y: 150)
