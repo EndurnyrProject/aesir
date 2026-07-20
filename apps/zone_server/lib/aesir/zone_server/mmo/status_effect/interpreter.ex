@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder
   alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.LexAeterna
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
@@ -567,7 +568,34 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     end
   end
 
+  defp dispatch_absorb(
+         unit_type,
+         unit_id,
+         %{type: :sc_aeterna} = instance,
+         damage,
+         hit_info
+       )
+       when damage > 0 do
+    hit = Map.put(hit_info, :damage, damage)
+
+    if LexAeterna.qualifying_hit?(hit) do
+      case StatusStorage.take_status(unit_type, unit_id, :sc_aeterna) do
+        nil ->
+          damage
+
+        claimed_instance ->
+          dispatch_claimed_lex_aeterna(unit_type, unit_id, claimed_instance, hit)
+      end
+    else
+      dispatch_absorb_ordinary(unit_type, unit_id, instance, damage, hit_info)
+    end
+  end
+
   defp dispatch_absorb(unit_type, unit_id, instance, damage, hit_info) do
+    dispatch_absorb_ordinary(unit_type, unit_id, instance, damage, hit_info)
+  end
+
+  defp dispatch_absorb_ordinary(unit_type, unit_id, instance, damage, hit_info) do
     case Registry.get_definition(instance.type) do
       nil ->
         damage
@@ -590,6 +618,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
             new_damage
         end
     end
+  end
+
+  defp dispatch_claimed_lex_aeterna(unit_type, unit_id, instance, hit) do
+    definition = Registry.get_definition(:sc_aeterna)
+    context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
+
+    {:remove, damage} =
+      definition.module.absorb_damage({unit_type, unit_id}, instance, hit, context)
+
+    definition.module.on_expire({unit_type, unit_id}, instance, context)
+    StatusDisplay.on_removed(unit_type, unit_id, :sc_aeterna, instance)
+    damage
   end
 
   defp store_instance_changes(unit_type, unit_id, status_id, new_instance) do

@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   alias Aesir.ZoneServer.Mmo.Skills.MgFirebolt
   alias Aesir.ZoneServer.Mmo.Skills.WzEarthspike
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -393,6 +394,77 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
       assert_received {:packet, %SkillDamage{damage: 90, div: 3}}
       assert_received {:damage, 90}
+    end
+
+    test "a pre-delivery modifier is reflected in both direct magic packet and HP loss" do
+      caster = build_caster()
+      test_pid = self()
+      stub_single_target_mob()
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _a, _t, _opts ->
+        {:ok, %{damage: 30, is_critical: false}}
+      end)
+
+      expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 30, hit_info ->
+        assert hit_info.dmg_type == :magic
+        60
+      end)
+
+      stub(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, %SkillDamage{} = packet ->
+        send(test_pid, {:packet, packet})
+        :ok
+      end)
+
+      stub(MobSession, :apply_damage, fn _pid, damage, @caster_id ->
+        send(test_pid, {:damage, damage})
+        :ok
+      end)
+
+      assert :ok =
+               Combat.execute_magic_attack(caster, @target_id,
+                 skill_id: 19,
+                 skill_level: 1,
+                 skill_ratio: 100,
+                 element: :fire
+               )
+
+      assert_received {:packet, %SkillDamage{damage: 60, div: 1}}
+      assert_received {:damage, 60}
+    end
+
+    test "equal modified magic multi-hits retain their combined packet" do
+      caster = build_caster()
+      test_pid = self()
+      stub_single_target_mob()
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _a, _t, _opts ->
+        {:ok, %{damage: 30, is_critical: false}}
+      end)
+
+      expect(StatusInterpreter, :absorb_damage, 2, fn :mob, @target_id, 30, _hit_info -> 60 end)
+
+      stub(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, %SkillDamage{} = packet ->
+        send(test_pid, {:packet, packet})
+        :ok
+      end)
+
+      stub(MobSession, :apply_damage, fn _pid, damage, @caster_id ->
+        send(test_pid, {:damage, damage})
+        :ok
+      end)
+
+      assert :ok =
+               Combat.execute_magic_attack(caster, @target_id,
+                 skill_id: 19,
+                 skill_level: 2,
+                 skill_ratio: 100,
+                 element: :fire,
+                 hit_count: 2
+               )
+
+      assert_received {:packet, %SkillDamage{damage: 120, div: 2}}
+      assert_received {:damage, 120}
+      refute_received {:packet, %SkillDamage{div: 1}}
     end
 
     test "rejects direct magic damage against another player until PvP exists" do

@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage, as: SkillUnitStorage
+  alias Aesir.ZoneServer.Mmo.Skills.PrLexdivina
   alias Aesir.ZoneServer.Mmo.Skills.PrStrecovery
   alias Aesir.ZoneServer.Mmo.Skills.WzJupitel
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
@@ -538,6 +539,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_info({:status_recovery_undead, unit_type, target_id, caster_id}, state) do
     _ = PrStrecovery.apply_undead_effect(unit_type, target_id, caster_id)
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:lex_divina, unit_type, target_id, caster_id, duration}, state) do
+    _ = PrLexdivina.apply_silence(unit_type, target_id, caster_id, duration)
     {:noreply, state}
   end
 

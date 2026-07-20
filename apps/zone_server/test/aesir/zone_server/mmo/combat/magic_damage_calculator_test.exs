@@ -224,6 +224,42 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
                MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(-100, 0))
     end
 
+    test "ignore_mdef bypasses hard and soft MDEF but preserves MRes" do
+      target = defender(500, 50, {:neutral, 1}, %{mres: 400})
+
+      # MRes first reduces 100 to 60. IgnoreDefense then bypasses both MDEF
+      # components, leaving that supported pre-defense reduction intact.
+      assert {:ok, %{damage: 60, is_critical: false}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker(100), target,
+                 ignore_mdef: true
+               )
+    end
+
+    test "ignore_mdef keeps element and attacker cardfix stages" do
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :player, 1001 -> %{{:magic_addsize, :large} => 20}
+        _, _ -> %{}
+      end)
+
+      target =
+        defender(500, 100, {:earth, 1})
+        |> Map.put(:size, :large)
+
+      # Size cardfix raises 100 to 120, then fire vs earth doubles it to 240.
+      assert {:ok, %{damage: 240, is_critical: false}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker(100), target,
+                 element: :fire,
+                 ignore_mdef: true
+               )
+    end
+
+    test "ignore_mdef false preserves the existing MDEF pipeline" do
+      assert {:ok, %{damage: 86, is_critical: false}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5),
+                 ignore_mdef: false
+               )
+    end
+
     test "damage is floored at 1 when reduction would go to zero or below" do
       # matk 1, hard 0, soft 100: 1 * 1000/1000 - 100 = -99 -> clamp 1
       assert {:ok, %{damage: 1, is_critical: false}} =

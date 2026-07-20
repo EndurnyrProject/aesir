@@ -91,6 +91,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         |> DamageShared.apply_element(element, target)
         |> DamageShared.clamp_min_one()
 
+      hit_info =
+        magic_hit_info(element,
+          skill_id: skill_id,
+          skill_level: skill_level,
+          from_caster?: true
+        )
+
+      {damage, hit_info} = prepare_magic_hit(target_type, target_id, damage, hit_info)
+
       packet =
         PacketFactory.build_splash_damage_packet(
           attacker.unit_id,
@@ -105,11 +114,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         target_pid,
         target_id,
         damage,
-        magic_hit_info(element,
-          skill_id: skill_id,
-          skill_level: skill_level,
-          from_caster?: true
-        ),
+        hit_info,
         attacker,
         target,
         packet
@@ -248,6 +253,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           :error -> {damage, if(divide_hits?, do: -hit_count, else: hit_count)}
         end
 
+      hit_info =
+        magic_hit_info(element,
+          skill_id: skill_id,
+          skill_level: skill_level,
+          from_caster?: false
+        )
+
+      {damage, hit_info} = prepare_magic_hit(target_type, target_id, damage, hit_info)
+
       packet =
         PacketFactory.build_splash_damage_packet(
           caster.unit_id,
@@ -260,7 +274,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         )
 
       Broadcast.to_in_range(map_name, tx, ty, Config.view_range(), packet)
-      deal_damage(target_id, damage, element, :skill_unit)
+      apply_magic_damage(target_type, target_pid, target_id, damage, hit_info, nil)
 
       if dst_delay > 0 do
         DamageApplication.unit_session(unit_type).apply_walk_delay(target_pid, dst_delay)
@@ -309,23 +323,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- AttackValidator.validate(attacker, target, opts),
          :ok <- Targeting.validate_enemy(attacker, target) do
-      total = sum_magic_hits(attacker, target, element, skill_ratio, hits, 0, skill_id)
+      damages = magic_hit_damages(attacker, target, element, skill_ratio, hits, 0, skill_id, opts)
 
-      packet =
-        PacketFactory.build_splash_damage_packet(
-          attacker.unit_id,
-          target_id,
-          skill_id,
-          skill_level,
-          total,
-          div: hits
-        )
-
-      apply_and_broadcast_magic_damage(
+      deliver_magic_hits(
         target_type,
         target_pid,
         target_id,
-        total,
+        damages,
         magic_hit_info(element,
           skill_id: skill_id,
           skill_level: skill_level,
@@ -333,7 +337,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         ),
         attacker,
         target,
-        packet
+        {skill_id, skill_level}
       )
     end
   end
@@ -394,16 +398,23 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   defp normalize_hit_divisions(damage, hit_divisions), do: {damage, hit_divisions}
 
   defp sum_magic_hits(attacker, target, element, skill_ratio, hits, bonus_matk, skill_id) do
-    Enum.reduce(1..hits//1, 0, fn _hit, acc ->
+    attacker
+    |> magic_hit_damages(target, element, skill_ratio, hits, bonus_matk, skill_id, [])
+    |> Enum.sum()
+  end
+
+  defp magic_hit_damages(attacker, target, element, skill_ratio, hits, bonus_matk, skill_id, opts) do
+    Enum.map(1..hits//1, fn _hit ->
       {:ok, %{damage: damage}} =
         MagicDamageCalculator.calculate_magic_damage(attacker, target,
           element: element,
           skill_ratio: skill_ratio,
           bonus_matk: bonus_matk,
-          skill_id: skill_id
+          skill_id: skill_id,
+          ignore_mdef: Keyword.get(opts, :ignore_mdef, false)
         )
 
-      acc + damage
+      damage
     end)
   end
 
@@ -529,6 +540,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       damage = div(damage, divisor)
       {tx, ty} = target.position
 
+      hit_info =
+        magic_hit_info(element,
+          skill_id: skill_id,
+          skill_level: skill_level,
+          from_caster?: true
+        )
+
+      {damage, hit_info} = prepare_magic_hit(target_type, target_id, damage, hit_info)
+
       packet =
         PacketFactory.build_splash_damage_packet(
           attacker.unit_id,
@@ -539,13 +559,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         )
 
       Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
-
-      hit_info =
-        magic_hit_info(element,
-          skill_id: skill_id,
-          skill_level: skill_level,
-          from_caster?: true
-        )
 
       DamageApplication.apply_unit_damage(
         target_type,
@@ -560,5 +573,76 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     else
       _ -> []
     end
+  end
+
+  defp deliver_magic_hits(
+         target_type,
+         target_pid,
+         target_id,
+         damages,
+         hit_info,
+         attacker,
+         target,
+         {skill_id, skill_level}
+       ) do
+    prepared_hits =
+      Enum.map(damages, fn damage ->
+        prepare_magic_hit(target_type, target_id, damage, hit_info)
+      end)
+
+    if length(prepared_hits) > 1 and
+         prepared_hits |> Enum.map(&elem(&1, 0)) |> Enum.uniq() |> length() > 1 do
+      Enum.each(prepared_hits, fn {damage, prepared_hit_info} ->
+        packet =
+          PacketFactory.build_splash_damage_packet(
+            attacker.unit_id,
+            target_id,
+            skill_id,
+            skill_level,
+            damage
+          )
+
+        apply_and_broadcast_magic_damage(
+          target_type,
+          target_pid,
+          target_id,
+          damage,
+          prepared_hit_info,
+          attacker,
+          target,
+          packet
+        )
+      end)
+    else
+      {_, prepared_hit_info} = List.first(prepared_hits)
+      total = Enum.sum(Enum.map(prepared_hits, &elem(&1, 0)))
+
+      packet =
+        PacketFactory.build_splash_damage_packet(
+          attacker.unit_id,
+          target_id,
+          skill_id,
+          skill_level,
+          total,
+          div: length(prepared_hits)
+        )
+
+      apply_and_broadcast_magic_damage(
+        target_type,
+        target_pid,
+        target_id,
+        total,
+        prepared_hit_info,
+        attacker,
+        target,
+        packet
+      )
+    end
+  end
+
+  defp prepare_magic_hit(:skill_unit, _target_id, damage, hit_info), do: {damage, hit_info}
+
+  defp prepare_magic_hit(target_type, target_id, damage, hit_info) do
+    DamageApplication.prepare_unit_damage(target_type, target_id, damage, hit_info)
   end
 end

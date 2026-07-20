@@ -17,17 +17,36 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   alias Phoenix.PubSub
 
   @doc """
+  Resolves pre-delivery status damage modifiers for one hit.
+
+  Attack paths that render damage must call this before constructing their
+  packet, then pass the returned hit information to `apply_unit_damage/6`.
+  This keeps the visible number and HP loss identical while ensuring a
+  consumable modifier such as Lex Aeterna runs exactly once.
+  """
+  @spec prepare_unit_damage(:player | :mob, integer(), integer(), map()) :: {integer(), map()}
+  def prepare_unit_damage(target_type, target_id, damage, hit_info) do
+    {absorb_unit_damage(target_type, target_id, damage, hit_info),
+     Map.put(hit_info, :pre_delivery_prepared?, true)}
+  end
+
+  @doc """
   Applies damage to a living unit's session.
 
-  Targets with positive damage first run the hit through the pre-damage status
-  absorption hook (Kyrie, Safety Wall, Energy Coat) so statuses can reduce or
-  block it before HP is reduced, regardless of whether the defender is a player
-  or a mob.
+  Callers without a packet may pass an ordinary hit and the modifier hook runs
+  here. Packet-producing paths pass hit information returned by
+  `prepare_unit_damage/4`, which prevents applying the same modifier twice.
   """
   @spec apply_unit_damage(:player | :mob, pid(), integer(), integer(), map(), integer() | nil) ::
           :ok
   def apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, attacker_id) do
-    final_damage = absorb_unit_damage(target_type, target_id, damage, hit_info)
+    final_damage =
+      if Map.get(hit_info, :pre_delivery_prepared?, false) do
+        damage
+      else
+        absorb_unit_damage(target_type, target_id, damage, hit_info)
+      end
+
     unit_session(target_type).apply_damage(target_pid, final_damage, attacker_id)
   end
 

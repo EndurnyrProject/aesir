@@ -139,6 +139,64 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       assert packet.type == 4
     end
 
+    test "a consuming pre-delivery modifier doubles only the first multi-hit packet and HP loss",
+         %{player_state: player_state, stats: stats} do
+      test_pid = self()
+
+      stub(Passives, :attack_procs, fn _player -> %{multi_hit: 2} end)
+
+      expect(StatusInterpreter, :absorb_damage, 2, fn :mob, 2001, 50, _hit_info ->
+        case Process.get(:lex_aeterna_hit, 0) do
+          0 ->
+            Process.put(:lex_aeterna_hit, 1)
+            100
+
+          1 ->
+            50
+        end
+      end)
+
+      stub(MobSession, :apply_damage, fn _pid, damage, _attacker_id ->
+        send(test_pid, {:damage_applied, damage})
+        :ok
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+        send(test_pid, {:packet, packet})
+        :ok
+      end)
+
+      capture_log(fn ->
+        assert Combat.execute_attack(stats, player_state, 2001) == :ok
+      end)
+
+      assert_received {:damage_applied, 100}
+      assert_received {:damage_applied, 50}
+      assert_received {:packet, %DamageDealt{damage: 100, div: 1}}
+      assert_received {:packet, %DamageDealt{damage: 50, div: 1}}
+    end
+
+    test "equal modified multi-hits retain their combined packet",
+         %{player_state: player_state, stats: stats} do
+      test_pid = self()
+
+      stub(Passives, :attack_procs, fn _player -> %{multi_hit: 2} end)
+      expect(StatusInterpreter, :absorb_damage, 2, fn :mob, 2001, 50, _hit_info -> 100 end)
+      stub(MobSession, :apply_damage, fn _pid, _damage, _attacker_id -> :ok end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+        send(test_pid, {:packet, packet})
+        :ok
+      end)
+
+      capture_log(fn ->
+        assert Combat.execute_attack(stats, player_state, 2001) == :ok
+      end)
+
+      assert_received {:packet, %DamageDealt{damage: 200, div: 2, type: 4}}
+      refute_received {:packet, %DamageDealt{div: 1}}
+    end
+
     test "applies damage once and packet reflects a single hit when no proc",
          %{player_state: player_state, stats: stats} do
       test_pid = self()

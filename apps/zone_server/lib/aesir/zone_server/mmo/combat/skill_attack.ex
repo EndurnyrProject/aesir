@@ -185,6 +185,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
              base_damage: base_damage,
              element: element
            ) do
+      hit_info = %{
+        dmg_type: :misc,
+        is_short: false,
+        element: element,
+        skill_id: skill_id,
+        skill_level: skill_level
+      }
+
+      {damage, hit_info} =
+        DamageApplication.prepare_unit_damage(target_type, target_id, damage, hit_info)
+
       packet =
         PacketFactory.build_splash_damage_packet(
           attacker.unit_id,
@@ -195,14 +206,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         )
 
       DamageApplication.broadcast_nearby(target, packet)
-
-      hit_info = %{
-        dmg_type: :misc,
-        is_short: false,
-        element: element,
-        skill_id: skill_id,
-        skill_level: skill_level
-      }
 
       DamageApplication.apply_unit_damage(
         target_type,
@@ -227,17 +230,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          calc_opts
        ) do
     with {:ok, damage_result} <- DamageCalculator.calculate_damage(attacker, target, calc_opts) do
-      packet =
-        PacketFactory.build_skill_damage_packet(
-          attacker,
-          target,
-          skill_id,
-          skill_level,
-          damage_result
-        )
-
-      DamageApplication.broadcast_nearby(target, packet)
-
       hit_info = %{
         dmg_type: :physical,
         is_short: attacker.attack_range <= 3,
@@ -246,11 +238,30 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         skill_level: skill_level
       }
 
+      {damage, hit_info} =
+        DamageApplication.prepare_unit_damage(
+          target_type,
+          target.unit_id,
+          damage_result.damage,
+          hit_info
+        )
+
+      packet =
+        PacketFactory.build_skill_damage_packet(
+          attacker,
+          target,
+          skill_id,
+          skill_level,
+          %{damage_result | damage: damage}
+        )
+
+      DamageApplication.broadcast_nearby(target, packet)
+
       DamageApplication.apply_unit_damage(
         target_type,
         target_pid,
         target.unit_id,
-        damage_result.damage,
+        damage,
         hit_info,
         attacker.unit_id
       )

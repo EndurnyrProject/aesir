@@ -403,18 +403,23 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
           from_caster?: true
         }
 
-        Enum.each(1..hits//1, fn _ ->
+        prepared_hits =
+          Enum.map(1..hits//1, fn _ ->
+            DamageApplication.prepare_unit_damage(:mob, target_id, damage, hit_info)
+          end)
+
+        Enum.each(prepared_hits, fn {final_damage, prepared_hit_info} ->
           DamageApplication.apply_unit_damage(
             :mob,
             target_pid,
             target_id,
-            damage,
-            hit_info,
+            final_damage,
+            prepared_hit_info,
             attacker_combatant.unit_id
           )
         end)
 
-        broadcast_basic_attack(attacker_combatant, target_combatant, damage_result, hits)
+        broadcast_basic_attack(attacker_combatant, target_combatant, damage_result, prepared_hits)
 
       :player ->
         Logger.warning("PvP combat not yet implemented")
@@ -433,11 +438,27 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     end
   end
 
-  defp broadcast_basic_attack(attacker, target, damage_result, hits) do
-    DamageApplication.broadcast_nearby(
-      target,
-      PacketFactory.build_attack_packet(attacker, target, damage_result, hits)
-    )
+  defp broadcast_basic_attack(attacker, target, damage_result, prepared_hits) do
+    damages = Enum.map(prepared_hits, &elem(&1, 0))
+
+    if length(damages) > 1 and length(Enum.uniq(damages)) > 1 do
+      Enum.each(damages, fn damage ->
+        DamageApplication.broadcast_nearby(
+          target,
+          PacketFactory.build_attack_packet(attacker, target, %{damage_result | damage: damage})
+        )
+      end)
+    else
+      DamageApplication.broadcast_nearby(
+        target,
+        PacketFactory.build_attack_packet(
+          attacker,
+          target,
+          %{damage_result | damage: hd(damages)},
+          length(damages)
+        )
+      )
+    end
 
     :ok
   end
@@ -483,11 +504,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
     # Show the hit animation/damage number first, then apply HP loss so the
     # SP_HP update (and any death) follows the visible strike.
-    attack_packet =
-      PacketFactory.build_attack_packet(attacker_combatant, target_combatant, damage_result)
-
-    DamageApplication.broadcast_nearby(target_combatant, attack_packet)
-
     # NOTE: no equipment-break roll on the mob path — mob attackers carry no break
     # bonuses and natural break is player-only; this is the future hook for
     # mob-skill-driven breaks (rAthena `skill_break_equip`) once those exist.
@@ -499,6 +515,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       skill_level: nil,
       from_caster?: true
     }
+
+    {damage, hit_info} =
+      DamageApplication.prepare_unit_damage(:player, target_id, damage, hit_info)
+
+    attack_packet =
+      PacketFactory.build_attack_packet(
+        attacker_combatant,
+        target_combatant,
+        %{damage_result | damage: damage}
+      )
+
+    DamageApplication.broadcast_nearby(target_combatant, attack_packet)
 
     DamageApplication.apply_unit_damage(
       :player,

@@ -89,6 +89,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   end
 
   @doc """
+  Atomically removes and returns a status entry.
+
+  Consumers of single-use statuses use this to claim the entry before applying
+  their effect, so concurrent combat paths cannot consume it twice.
+  """
+  @spec take_status(unit_type(), integer(), atom()) :: StatusEntry.t() | nil
+  def take_status(unit_type, unit_id, status_type) do
+    case :ets.take(table_for(:player_statuses), {unit_type, unit_id, status_type}) do
+      [{{^unit_type, ^unit_id, ^status_type}, entry}] -> entry
+      [] -> nil
+    end
+  end
+
+  @doc """
   Gets a specific status for a unit.
 
   ## Parameters

@@ -34,6 +34,56 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
   setup :verify_on_exit!
   setup :setup_ets_tables
 
+  test "Lex Aeterna atomically grants its double to one of two concurrent hits" do
+    target_id = 9_001
+    hit = %{dmg_type: :physical, is_short: true, element: :neutral, skill_id: 28}
+
+    stub(UnitRegistry, :get_unit_info, fn :mob, ^target_id -> {:ok, %{stats: %{}}} end)
+    :ok = StatusStorage.apply_status(:mob, target_id, :sc_aeterna)
+
+    parent = self()
+
+    tasks =
+      for _ <- 1..2 do
+        Task.async(fn ->
+          send(parent, {:lex_attacker_ready, self()})
+
+          receive do
+            :deliver_hit -> Interpreter.absorb_damage(:mob, target_id, 50, hit)
+          end
+        end)
+      end
+
+    Enum.each(tasks, &Mimic.allow(UnitRegistry, self(), &1.pid))
+
+    attacker_pids =
+      for _ <- 1..2 do
+        assert_receive {:lex_attacker_ready, attacker_pid}
+        attacker_pid
+      end
+
+    Enum.each(attacker_pids, &send(&1, :deliver_hit))
+
+    assert Enum.sort(Enum.map(tasks, &Task.await(&1))) == [50, 100]
+    refute StatusStorage.has_status?(:mob, target_id, :sc_aeterna)
+  end
+
+  test "Lex Aeterna keeps its mark for real excluded skill IDs" do
+    target_id = 9_002
+
+    stub(UnitRegistry, :get_unit_info, fn :mob, ^target_id -> {:ok, %{stats: %{}}} end)
+
+    for hit <- [
+          %{dmg_type: :physical, is_short: true, element: :neutral, skill_id: 379},
+          %{dmg_type: :magic, is_short: false, element: :neutral, skill_id: 375}
+        ] do
+      :ok = StatusStorage.apply_status(:mob, target_id, :sc_aeterna)
+      assert Interpreter.absorb_damage(:mob, target_id, 50, hit) == 50
+      assert StatusStorage.has_status?(:mob, target_id, :sc_aeterna)
+      :ok = StatusStorage.remove_status(:mob, target_id, :sc_aeterna)
+    end
+  end
+
   describe "apply_status/9" do
     test "applies a status to a target" do
       target_id = 1

@@ -83,6 +83,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
       resistance step (default `:neutral`).
     - `:fixed_damage` - when set, short-circuits the entire pipeline and returns
       that flat value (default `nil`).
+    - `:ignore_mdef` - bypasses the defender's hard and soft MDEF while
+      preserving the normal element, status, cardfix, MRes, and damage-taken
+      stages (default `false`).
 
   ## Returns
 
@@ -134,13 +137,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
     defender_modifiers = combatant_modifiers(defender)
     mres = Map.get(defender.combat_stats, :mres, 0)
 
+    ignore_mdef? = Keyword.get(opts, :ignore_mdef, false)
+
     damage =
       skilled
       |> DamageShared.apply_element(element, defender, modifiers)
       |> DamageShared.apply_damage_multiplier(modifiers)
       |> DamageShared.res_reduction(mres)
       |> apply_damage_taken_reductions(equip.taken)
-      |> apply_mdef_formula(defender, defender_modifiers, equip.ignore_mdef)
+      |> apply_mdef_formula(
+        defender,
+        defender_modifiers,
+        if(ignore_mdef?, do: 100, else: equip.ignore_mdef),
+        ignore_mdef?
+      )
       |> apply_magic_damage_reduction(defender_modifiers)
       |> DamageShared.clamp_min_one()
 
@@ -217,15 +227,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
   defp reduce_by(damage, 0), do: damage
   defp reduce_by(damage, rate), do: damage * (100 - rate) / 100
 
-  @spec apply_mdef_formula(number(), map(), map(), non_neg_integer()) :: number()
-  defp apply_mdef_formula(damage, defender, modifiers, ignore_mdef_rate) do
+  @spec apply_mdef_formula(number(), map(), map(), non_neg_integer(), boolean()) :: number()
+  defp apply_mdef_formula(damage, defender, modifiers, ignore_mdef_rate, ignore_soft_mdef?) do
     # :mdef_rate is an additive percent delta on hard MDEF (Freeze's +25); the
     # skill-status family scales the defender's eMDEF. The attacker's equipment
     # ignore-mdef then bypasses a percent of the resulting hard MDEF.
     mdef_rate = Map.get(modifiers, :mdef_rate, 0)
     hard = trunc(defender.combat_stats.mdef * (100 + mdef_rate) / 100)
     hard = trunc(hard * (100 - ignore_mdef_rate) / 100)
-    soft = defender.combat_stats.soft_mdef
+    soft = if(ignore_soft_mdef?, do: 0, else: defender.combat_stats.soft_mdef)
     effective_hard = if hard == -100, do: -99, else: hard
 
     damage * (1000 + effective_hard) / (1000 + 10 * effective_hard) - soft
