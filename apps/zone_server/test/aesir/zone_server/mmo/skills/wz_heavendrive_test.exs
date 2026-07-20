@@ -374,5 +374,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzHeavendriveTest do
       assert {:error, :invalid_target} =
                Interpreter.cast(interpreter_state(), 91, 1, {:ground, 12, 10})
     end
+
+    test "broadcasts the ground execution point once on a successful cast" do
+      map = MapData.new("prontera", 20, 20)
+
+      stub(Catalog, :by_id, fn 91 -> {:ok, WzHeavendrive.definition()} end)
+      stub(MapCache, :get, fn "prontera" -> {:ok, map} end)
+      stub(Combat, :execute_magic_splash, fn _, {12, 10}, 2, _opts -> [] end)
+
+      expect(Broadcast, :to_in_range, fn "prontera", 12, 10, _range, packet ->
+        assert %Aesir.Net.GroundSkill{skill_id: 91, src_id: 1_000, level: 1, x: 12, y: 10} =
+                 packet
+
+        :ok
+      end)
+
+      assert {:ok, _state} = Interpreter.cast(interpreter_state(), 91, 1, {:ground, 12, 10})
+    end
   end
 end

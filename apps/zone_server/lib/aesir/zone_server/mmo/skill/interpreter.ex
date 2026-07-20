@@ -21,6 +21,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   did not initiate (a status proc, an item's script); each documents exactly
   which requirements it bypasses.
   """
+  alias Aesir.Commons.Utils.ServerTick
+  alias Aesir.Net.GroundSkill
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Combat
@@ -33,6 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.WeaponTypes
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Ammo
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -272,9 +276,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # today.
   defp run_unconditional(module, game_state, target, level, definition) do
     case module.cast(game_state, target, level, definition) do
-      {:ok, game_state} -> {:ok, game_state}
-      {:ok, game_state, :no_consume} -> {:ok, game_state}
-      {:error, _reason} = error -> error
+      {:ok, game_state} ->
+        announce_ground_cast(module, game_state, target, level, definition)
+        {:ok, game_state}
+
+      {:ok, game_state, :no_consume} ->
+        announce_ground_cast(module, game_state, target, level, definition)
+        {:ok, game_state}
+
+      {:error, _reason} = error ->
+        error
     end
   end
 
@@ -588,11 +599,42 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # `{:ok, state, :no_consume}` completes the cast but spares them.
   defp run_cast(module, game_state, target, level, definition) do
     case module.cast(game_state, target, level, definition) do
-      {:ok, game_state} -> {:ok, consume_catalysts(game_state, definition)}
-      {:ok, game_state, :no_consume} -> {:ok, game_state}
-      {:error, _reason} = error -> error
+      {:ok, game_state} ->
+        announce_ground_cast(module, game_state, target, level, definition)
+        {:ok, consume_catalysts(game_state, definition)}
+
+      {:ok, game_state, :no_consume} ->
+        announce_ground_cast(module, game_state, target, level, definition)
+        {:ok, game_state}
+
+      {:error, _reason} = error ->
+        error
     end
   end
+
+  # A ground-targeted skill without the `Skill.Ground` capability (e.g.
+  # Heaven's Drive) creates no unit group, so `Unit.place/4` never broadcasts
+  # its cast animation; announce the execution point here, mirroring rAthena's
+  # `clif_skill_poseffect`. Unit-placing skills skip this - their single
+  # `GroundSkill` comes from the group placement.
+  defp announce_ground_cast(module, game_state, {:ground, x, y}, level, definition) do
+    if :ground not in module.__skill_capabilities__() do
+      packet = %GroundSkill{
+        skill_id: definition.id,
+        src_id: game_state.character_id,
+        level: level,
+        x: x,
+        y: y,
+        server_tick: ServerTick.now()
+      }
+
+      Broadcast.to_in_range(game_state.map_name, x, y, Config.view_range(), packet)
+    end
+
+    :ok
+  end
+
+  defp announce_ground_cast(_module, _game_state, _target, _level, _definition), do: :ok
 
   # Purely removes each catalyst from `game_state.inventory`, accumulating the
   # per-step change descriptors onto `:pending_inventory_persist` for the
