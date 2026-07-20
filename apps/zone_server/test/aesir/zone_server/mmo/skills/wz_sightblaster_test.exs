@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzSightblasterTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Movement
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -49,7 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzSightblasterTest do
   end
 
   test "cast applies the self status" do
-    caster = %{character_id: 1001, x: 50, y: 50, map_name: "prontera"}
+    caster = living_player(1001, 50, 50)
     register(:player, 1001, caster)
 
     assert {:ok, ^caster} = WzSightblaster.cast(caster, :self, 1, WzSightblaster.definition())
@@ -57,7 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzSightblasterTest do
   end
 
   test "cast immediately triggers an already-adjacent stationary target" do
-    caster = %{character_id: 1001, x: 50, y: 50, map_name: "prontera"}
+    caster = living_player(1001, 50, 50)
     target = %{instance_id: 2001, x: 51, y: 50, map_name: "prontera"}
     register(:player, 1001, caster)
     register(:mob, 2001, target)
@@ -69,8 +70,42 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzSightblasterTest do
     refute StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
   end
 
+  test "cast ignores an adjacent corpse" do
+    caster = living_player(1001, 50, 50)
+
+    corpse = %PlayerState{
+      character_id: 2001,
+      x: 51,
+      y: 50,
+      map_name: "prontera",
+      action_state: :dead,
+      stats: %{current_state: %{hp: 0}}
+    }
+
+    register(:player, 1001, caster)
+    register(:player, 2001, corpse)
+
+    reject(&Combat.execute_magic_attack/3)
+    reject(&Combat.knockback/5)
+
+    assert {:ok, ^caster} = WzSightblaster.cast(caster, :self, 1, WzSightblaster.definition())
+    assert StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
+  end
+
+  test "cast ignores an adjacent player without an authoritative snapshot" do
+    caster = living_player(1001, 50, 50)
+    register(:player, 1001, caster)
+    SpatialIndex.add_unit(:player, 2001, 51, 50, "prontera")
+
+    reject(&Combat.execute_magic_attack/3)
+    reject(&Combat.knockback/5)
+
+    assert {:ok, ^caster} = WzSightblaster.cast(caster, :self, 1, WzSightblaster.definition())
+    assert StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
+  end
+
   test "status tick triggers a stationary target that enters range without movement dispatch" do
-    caster = %{character_id: 1001, x: 50, y: 50, map_name: "prontera"}
+    caster = living_player(1001, 50, 50)
     target = %{instance_id: 2001, x: 55, y: 50, map_name: "prontera"}
     register(:player, 1001, caster)
     register(:mob, 2001, target)
@@ -91,7 +126,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzSightblasterTest do
   end
 
   test "movement contact damages, knocks back, and consumes the status" do
-    caster = %{character_id: 1001, x: 50, y: 50, map_name: "prontera", movement_state: :standing}
+    caster = living_player(1001, 50, 50)
     target = %{instance_id: 2001, x: 55, y: 50, map_name: "prontera", movement_state: :moving}
     register(:player, 1001, caster)
     register(:mob, 2001, target)
@@ -116,7 +151,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzSightblasterTest do
   end
 
   test "non-damaging contact keeps the status armed" do
-    caster = %{character_id: 1001, x: 50, y: 50, map_name: "prontera", movement_state: :standing}
+    caster = living_player(1001, 50, 50)
     target = %{instance_id: 2001, x: 55, y: 50, map_name: "prontera", movement_state: :moving}
     register(:player, 1001, caster)
     register(:mob, 2001, target)
@@ -138,5 +173,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzSightblasterTest do
   defp register(unit_type, unit_id, state) do
     :ok = UnitRegistry.register_unit(unit_type, unit_id, FixtureUnit, state, nil)
     :ok = SpatialIndex.add_unit(unit_type, unit_id, state.x, state.y, state.map_name)
+  end
+
+  defp living_player(character_id, x, y) do
+    %PlayerState{
+      character_id: character_id,
+      x: x,
+      y: y,
+      map_name: "prontera",
+      action_state: :idle,
+      movement_state: :standing,
+      stats: %{current_state: %{hp: 100}}
+    }
   end
 end

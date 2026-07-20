@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @skill_id 1006
@@ -37,7 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
 
   @impl true
   def on_contact({:player, caster_id}, instance, {target_type, target_id} = contact, _context) do
-    if hostile_contact?(caster_id, contact) do
+    if living_contact?(contact) and hostile_contact?(caster_id, contact) do
       with {:ok, {_module, caster, _pid}} <- UnitRegistry.get_unit(:player, caster_id),
            {:ok, {x, y, _map_name}} <- SpatialIndex.get_unit_position(:player, caster_id),
            :ok <-
@@ -105,4 +106,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
       {:ok, next_instance} -> {:cont, {:ok, next_instance}}
     end
   end
+
+  defp living_contact?({:player, player_id}) do
+    case UnitRegistry.get_unit(:player, player_id) do
+      {:ok, {_module, player, _pid}} -> TargetState.living?(player)
+      {:error, :not_found} -> false
+    end
+  end
+
+  defp living_contact?(_contact), do: true
 end

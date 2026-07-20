@@ -29,6 +29,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.TargetState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
   Handles an attack request, initiating move-to-range if necessary.
@@ -613,7 +615,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
       map_name
       |> SpatialIndex.get_all_units_in_range(target_x, target_y, range * 2)
       |> Enum.reject(fn {type, id} ->
-        id == target_id or (type == :player and id == self_char_id)
+        id == target_id or (type == :player and id == self_char_id) or
+          inactive_player?({type, id})
       end)
       |> Enum.reduce(MapSet.new(), fn {type, id}, acc ->
         case SpatialIndex.get_unit_position(type, id) do
@@ -624,6 +627,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
 
     fn x, y -> MapSet.member?(cells, {x, y}) end
   end
+
+  defp inactive_player?({:player, player_id}) do
+    case UnitRegistry.get_unit(:player, player_id) do
+      {:ok, {_module, player, _pid}} -> not TargetState.living?(player)
+      {:error, :not_found} -> true
+    end
+  end
+
+  defp inactive_player?(_unit), do: false
 
   defp handle_pathfinding_to_target(state, target_id, action_type, context, map_data) do
     case Pathfinding.find_path(map_data, context.current_pos, context.optimal_pos) do

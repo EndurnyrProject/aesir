@@ -25,7 +25,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
 
@@ -140,6 +142,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
 
     test "a nil selection falls through to the normal melee AI" do
       stub(MobSkillDb, :rows_for, fn 1001 -> [] end)
+
+      stub(UnitRegistry, :get_unit, fn :player, @target_id ->
+        {:ok, {nil, living_player_state(), nil}}
+      end)
 
       stub(SpatialIndex, :get_unit_position, fn :player, @target_id ->
         {:ok, {100, 100, "prontera"}}
@@ -479,6 +485,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
     test "a silenced mob does not begin a new cast on its ai tick" do
       stub(MobSkillDb, :rows_for, fn 1001 -> [row()] end)
 
+      stub(UnitRegistry, :get_unit, fn :player, @target_id ->
+        {:ok, {nil, living_player_state(), nil}}
+      end)
+
       stub(StatusStorage, :has_status?, fn
         :mob, 1, :sc_silence -> true
         :mob, _id, _status -> false
@@ -503,5 +513,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       assert updated.casting == nil
       assert_received :melee
     end
+  end
+
+  defp living_player_state do
+    %PlayerState{action_state: :idle, stats: %{current_state: %{hp: 100}}}
   end
 end

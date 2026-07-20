@@ -883,6 +883,51 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       assert max(abs(dest_x - 14), abs(dest_y - 14)) == 1
     end
 
+    test "approach treats a corpse cell as unoccupied" do
+      stub(Stats, :weapon_type, fn _equipment -> :dagger end)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:error, :not_found}
+        :mob, 2000 -> {:ok, {14, 14, "prontera"}}
+        :player, 5000 -> {:ok, {13, 13, "prontera"}}
+      end)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _r -> [{:player, 5000}] end)
+
+      stub(UnitRegistry, :get_unit, fn :player, 5000 ->
+        {:ok,
+         {PlayerState, %PlayerState{action_state: :dead, stats: %{current_state: %{hp: 0}}}, nil}}
+      end)
+
+      stub_open_terrain()
+      capture_moves(:approach)
+
+      {:noreply, returned} = CombatActionHandler.handle_attack_request(approach_state(), 2000, 7)
+
+      assert returned.game_state.action_state == :combat_moving
+      assert_received {:approach, {13, 13}}
+    end
+
+    test "approach treats an unresolved player cell as unoccupied" do
+      stub(Stats, :weapon_type, fn _equipment -> :dagger end)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:error, :not_found}
+        :mob, 2000 -> {:ok, {14, 14, "prontera"}}
+        :player, 5000 -> {:ok, {13, 13, "prontera"}}
+      end)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _r -> [{:player, 5000}] end)
+      stub(UnitRegistry, :get_unit, fn :player, 5000 -> {:error, :not_found} end)
+      stub_open_terrain()
+      capture_moves(:approach)
+
+      {:noreply, returned} = CombatActionHandler.handle_attack_request(approach_state(), 2000, 7)
+
+      assert returned.game_state.action_state == :combat_moving
+      assert_received {:approach, {13, 13}}
+    end
+
     test "re-picks and steps again when the arrival cell is occupied by another unit" do
       stub(Stats, :weapon_type, fn _equipment -> :dagger end)
 

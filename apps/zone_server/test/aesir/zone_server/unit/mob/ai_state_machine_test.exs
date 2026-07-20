@@ -18,7 +18,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :set_mimic_from_context
   setup :verify_on_exit!
@@ -30,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     Mimic.copy(SpatialIndex)
     Mimic.copy(MapCache)
     Mimic.copy(Cell)
+    Mimic.copy(UnitRegistry)
 
     stub(Interpreter, :can_move?, fn _type, _id -> true end)
     stub(Interpreter, :can_attack?, fn _type, _id -> true end)
@@ -38,6 +41,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     stub(MapCache, :get, fn _map -> {:ok, :map_data} end)
     stub(Cell, :traversable?, fn "prontera", _x, _y -> true end)
     stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _range -> [] end)
+
+    stub(UnitRegistry, :get_unit, fn :player, _id ->
+      {:ok, {PlayerState, living_player_state(), nil}}
+    end)
+
     :ok
   end
 
@@ -118,6 +126,34 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       state = aggressive_idle_mob_state()
 
       result = AIStateMachine.process_ai(state)
+
+      assert result.target_id == nil
+      assert result.ai_state == :idle
+    end
+
+    test "a corpse is not acquired by an idle aggressive mob" do
+      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
+        [2]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn :player, 2 ->
+        {:ok, {PlayerState, corpse_player_state(), nil}}
+      end)
+
+      result = AIStateMachine.process_ai(aggressive_idle_mob_state())
+
+      assert result.target_id == nil
+      assert result.ai_state == :idle
+    end
+
+    test "a player missing its authoritative snapshot is not acquired" do
+      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
+        [2]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn :player, 2 -> {:error, :not_found} end)
+
+      result = AIStateMachine.process_ai(aggressive_idle_mob_state())
 
       assert result.target_id == nil
       assert result.ai_state == :idle
@@ -279,6 +315,36 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     end
   end
 
+  describe "target lifecycle while already selected" do
+    test "an alert mob drops a target that died after acquisition" do
+      stub(UnitRegistry, :get_unit, fn :player, 2 ->
+        {:ok, {PlayerState, corpse_player_state(), nil}}
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
+        {:ok, {101, 101, "prontera"}}
+      end)
+
+      state = %MobState{base_mob_state() | ai_state: :alert, target_id: 2}
+
+      result = AIStateMachine.process_ai(state)
+
+      assert result.target_id == nil
+      assert result.ai_state == :idle
+    end
+
+    test "a chasing mob drops a target that died after acquisition" do
+      stub(UnitRegistry, :get_unit, fn :player, 2 ->
+        {:ok, {PlayerState, corpse_player_state(), nil}}
+      end)
+
+      result = AIStateMachine.process_ai(chase_mob_state())
+
+      assert result.target_id == nil
+      assert result.ai_state == :return
+    end
+  end
+
   describe "handle_damage_reaction/2 initiator tagging" do
     test "an idle mob attacked by a specific entity retaliates (not self-initiated)" do
       state = %MobState{base_mob_state() | ai_state: :idle, initiated_by_self?: true}
@@ -420,6 +486,59 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       assert Geometry.chebyshev_distance(dest_x, dest_y, 105, 105) <= 2
     end
 
+    test "uses a corpse cell as an available chase destination" do
+      test_pid = self()
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2 -> {:ok, {105, 105, "prontera"}}
+        :player, 5000 -> {:ok, {103, 103, "prontera"}}
+      end)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _range ->
+        [{:player, 5000}]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :player, 2 -> {:ok, {PlayerState, living_player_state(), nil}}
+        :player, 5000 -> {:ok, {PlayerState, corpse_player_state(), nil}}
+      end)
+
+      stub(MobSession, :move_to, fn _pid, x, y -> send(test_pid, {:moved, x, y}) end)
+
+      AIStateMachine.process_ai(chase_mob_state())
+
+      assert_received {:moved, 103, 103}
+    end
+
+    test "uses an inconsistent player cell as an available chase destination" do
+      test_pid = self()
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2 -> {:ok, {105, 105, "prontera"}}
+        :player, 5000 -> {:ok, {103, 103, "prontera"}}
+      end)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _range ->
+        [{:player, 5000}]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :player, 2 ->
+          {:ok, {PlayerState, living_player_state(), nil}}
+
+        :player, 5000 ->
+          {:ok,
+           {PlayerState, %PlayerState{action_state: :idle, stats: %{current_state: %{hp: 0}}},
+            nil}}
+      end)
+
+      stub(MobSession, :move_to, fn _pid, x, y -> send(test_pid, {:moved, x, y}) end)
+
+      AIStateMachine.process_ai(chase_mob_state())
+
+      assert_received {:moved, 103, 103}
+    end
+
     test "re-picks another adjacent cell when dynamic terrain blocks the nearest cell" do
       test_pid = self()
 
@@ -504,6 +623,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
         target_id: 2,
         last_attack_time: nil
     }
+  end
+
+  defp corpse_player_state do
+    %PlayerState{action_state: :dead, stats: %{current_state: %{hp: 0}}}
+  end
+
+  defp living_player_state do
+    %PlayerState{action_state: :idle, stats: %{current_state: %{hp: 100}}}
   end
 
   defp base_mob_state(opts \\ []) do

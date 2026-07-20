@@ -110,7 +110,7 @@ defmodule Aesir.ZoneServer.Unit.MovementInterruptsTest do
       collector = start_move_collector()
       target_id = 5001
 
-      SpatialIndex.add_unit(:player, target_id, 101, 100, @map_name)
+      register_living_target(target_id, 101, 100)
 
       mob_state = %{
         chasing_mob_state(collector)
@@ -143,7 +143,7 @@ defmodule Aesir.ZoneServer.Unit.MovementInterruptsTest do
       }
 
       # Target starts adjacent (in attack range): the mob stops and engages.
-      SpatialIndex.add_unit(:player, target_id, 101, 100, @map_name)
+      register_living_target(target_id, 101, 100)
       in_range = AIStateMachine.process_ai(mob_state)
 
       assert in_range.ai_state == :combat
@@ -178,6 +178,20 @@ defmodule Aesir.ZoneServer.Unit.MovementInterruptsTest do
 
   defp collected_moves do
     collect_moves([])
+  end
+
+  defp register_living_target(target_id, x, y) do
+    target = %PlayerState{
+      character_id: target_id,
+      x: x,
+      y: y,
+      map_name: @map_name,
+      action_state: :idle,
+      stats: %{current_state: %{hp: 100}}
+    }
+
+    :ok = UnitRegistry.register_unit(:player, target_id, MovementHandler, target, nil)
+    :ok = SpatialIndex.add_unit(:player, target_id, x, y, @map_name)
   end
 
   defp collect_moves(acc) do

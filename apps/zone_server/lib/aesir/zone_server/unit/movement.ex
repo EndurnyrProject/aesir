@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Movement do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @type unit_type :: Unit.unit_type()
@@ -79,16 +80,29 @@ defmodule Aesir.ZoneServer.Unit.Movement do
          y
        )
        when old_map != map_name or old_x != x or old_y != y do
-    map_name
-    |> SpatialIndex.get_all_units_in_range(x, y, 1)
-    |> Enum.reject(&(&1 == mover))
-    |> Enum.each(fn contact = {contact_type, contact_id} ->
-      StatusInterpreter.on_movement_contact(unit_type, unit_id, contact)
-      StatusInterpreter.on_movement_contact(contact_type, contact_id, mover)
-    end)
+    unless inactive_player?(mover) do
+      map_name
+      |> SpatialIndex.get_all_units_in_range(x, y, 1)
+      |> Enum.reject(&(&1 == mover or inactive_player?(&1)))
+      |> Enum.each(fn contact = {contact_type, contact_id} ->
+        StatusInterpreter.on_movement_contact(unit_type, unit_id, contact)
+        StatusInterpreter.on_movement_contact(contact_type, contact_id, mover)
+      end)
+    end
+
+    :ok
   end
 
   defp fire_movement_contact(_mover, _previous, _map_name, _x, _y), do: :ok
+
+  defp inactive_player?({:player, player_id}) do
+    case UnitRegistry.get_unit(:player, player_id) do
+      {:ok, {_module, player, _pid}} -> not TargetState.living?(player)
+      {:error, :not_found} -> true
+    end
+  end
+
+  defp inactive_player?(_unit), do: false
 
   @doc """
   Records a unit in its map's dirty set with the given `move_state`.

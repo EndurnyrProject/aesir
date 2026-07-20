@@ -24,6 +24,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.TargetState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
   Processes AI logic based on current state.
@@ -170,7 +172,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
       |> SpatialIndex.get_all_units_in_range(target_x, target_y, range * 2)
       |> Enum.reject(fn {type, id} ->
         (type == :mob and id == state.instance_id) or
-          (type == :player and id == state.target_id)
+          (type == :player and id == state.target_id) or inactive_player?({type, id})
       end)
       |> Enum.reduce(MapSet.new(), fn {type, id}, acc ->
         case SpatialIndex.get_unit_position(type, id) do
@@ -231,6 +233,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
       target_id ->
         cond do
+          not can_target?(state, target_id) ->
+            state
+            |> MobState.set_target(nil)
+            |> MobState.set_ai_state(:idle)
+
           target_in_attack_range?(state, target_id) ->
             # Target in attack range, switch to combat
             MobState.set_ai_state(state, :combat)
@@ -356,9 +363,21 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   # checks. Concealment (Hiding, Cloaking) hides a player from every mob except
   # bosses, which act as detectors.
   defp can_target?(%MobState{} = state, target_id) do
-    Interpreter.targetable?(:player, target_id) and
+    living_player?(target_id) and
+      Interpreter.targetable?(:player, target_id) and
       (MobState.is_boss?(state) or not Interpreter.concealed?(:player, target_id))
   end
+
+  defp living_player?(target_id) do
+    case UnitRegistry.get_unit(:player, target_id) do
+      {:ok, {_module, player, _pid}} -> TargetState.living?(player)
+      {:error, :not_found} -> false
+    end
+  end
+
+  defp inactive_player?({:player, player_id}), do: not living_player?(player_id)
+
+  defp inactive_player?(_unit), do: false
 
   defp select_closest_target(state, targets) when is_list(targets) do
     targets

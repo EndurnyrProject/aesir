@@ -23,7 +23,9 @@ defmodule Aesir.ZoneServer.Unit.MovementTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Movement
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -33,6 +35,8 @@ defmodule Aesir.ZoneServer.Unit.MovementTest do
   setup :verify_on_exit!
 
   setup do
+    Mimic.copy(StatusInterpreter)
+
     manager =
       start_supervised!({Manager, name: nil, schedule_tick: fn _pid, _interval -> :ok end})
 
@@ -128,6 +132,64 @@ defmodule Aesir.ZoneServer.Unit.MovementTest do
 
       refute_received {:touched, _, _}
       assert %Group{group_id: 1} = Storage.get(1)
+    end
+
+    test "does not notify a corpse when a living mover enters contact range" do
+      map_name = "prontera"
+      corpse = %PlayerState{action_state: :dead, stats: %{current_state: %{hp: 0}}}
+
+      UnitRegistry.register_unit(:player, 1001, __MODULE__, corpse, nil)
+      SpatialIndex.add_unit(:player, 1001, 51, 50, map_name)
+      UnitRegistry.register_unit(:mob, 2001, __MODULE__, %{movement_state: :standing}, nil)
+      SpatialIndex.add_unit(:mob, 2001, 55, 50, map_name)
+
+      reject(&StatusInterpreter.on_movement_contact/3)
+
+      assert :ok =
+               Movement.set_position(
+                 :mob,
+                 2001,
+                 %{movement_state: :moving, x: 50, y: 50},
+                 map_name
+               )
+    end
+
+    test "does not notify an unresolved player contact" do
+      map_name = "prontera"
+
+      SpatialIndex.add_unit(:player, 1001, 51, 50, map_name)
+      UnitRegistry.register_unit(:mob, 2001, __MODULE__, %{movement_state: :standing}, nil)
+      SpatialIndex.add_unit(:mob, 2001, 55, 50, map_name)
+
+      reject(&StatusInterpreter.on_movement_contact/3)
+
+      assert :ok =
+               Movement.set_position(
+                 :mob,
+                 2001,
+                 %{movement_state: :moving, x: 50, y: 50},
+                 map_name
+               )
+    end
+
+    test "does not notify contacts when a corpse moves" do
+      map_name = "prontera"
+      corpse = %PlayerState{action_state: :dead, stats: %{current_state: %{hp: 0}}}
+
+      UnitRegistry.register_unit(:player, 1001, __MODULE__, corpse, nil)
+      SpatialIndex.add_unit(:player, 1001, 55, 50, map_name)
+      UnitRegistry.register_unit(:mob, 2001, __MODULE__, %{movement_state: :standing}, nil)
+      SpatialIndex.add_unit(:mob, 2001, 51, 50, map_name)
+
+      reject(&StatusInterpreter.on_movement_contact/3)
+
+      assert :ok =
+               Movement.set_position(
+                 :player,
+                 1001,
+                 %{corpse | x: 50, y: 50, movement_state: :moving},
+                 map_name
+               )
     end
   end
 
