@@ -1,0 +1,42 @@
+defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexaeterna do
+  @moduledoc """
+  Lex Aeterna (PR_LEXAETERNA). Marks an enemy so its next qualifying hit deals
+  double damage.
+
+  rAthena renewal: `db/re/skill_db.yml:2716-2730`.
+  """
+  use Aesir.ZoneServer.Mmo.Skill,
+    id: 78,
+    name: :pr_lexaeterna,
+    status: :sc_aeterna,
+    display_name: "Lex Aeterna",
+    max_level: 1,
+    target_type: :target_enemy,
+    damage_type: :no_damage,
+    range: 9,
+    after_cast_delay: [3_000],
+    sp_cost: [10],
+    duration: [600_000]
+
+  alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+
+  @behaviour Active
+
+  @impl Active
+  @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, PlayerState.t()} | {:error, atom()}
+  def cast(%{character_id: caster_id} = caster, {:unit, target_id}, level, definition) do
+    with {:ok, %{unit_type: unit_type}} <- Combat.resolve_combatant(target_id),
+         :ok <-
+           StatusInterpreter.apply_status(unit_type, target_id, :sc_aeterna,
+             caster_id: caster_id,
+             duration: Enum.at(definition.duration, level - 1)
+           ) do
+      {:ok, caster}
+    end
+  end
+end

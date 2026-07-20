@@ -10,7 +10,7 @@ defmodule Aesir.ZoneServer.Integration.PriestResurrectionTest do
   alias Aesir.Net.ParamChange
   alias Aesir.Net.Resurrect
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skills.AllResurrection
+  alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.TargetState
 

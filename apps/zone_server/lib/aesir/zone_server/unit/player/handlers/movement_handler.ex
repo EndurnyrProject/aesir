@@ -23,7 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport, as: SkillUnitFieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage, as: SkillUnitStorage
-  alias Aesir.ZoneServer.Mmo.Skills.SaFreecast
+  alias Aesir.ZoneServer.Mmo.Skills.Sage.SaFreecast
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -369,7 +369,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
   # Moving mid-cast. Free Cast turns the cast into an overlay: transition to
   # `:moving` keeping the `casting` descriptor, so the timer keeps running and the
-  # skill fires mid-walk (`Mmo.Skills.SaFreecast`). Without it, moving is still a
+  # skill fires mid-walk (`Mmo.Skills.Sage.SaFreecast`). Without it, moving is still a
   # hard cancel. An invalid transition can only mean the state machine and this
   # clause have drifted apart, so fall back to the cancel rather than walking with
   # a cast nothing will ever resolve.

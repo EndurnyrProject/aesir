@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ClientItemType
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Learned
-  alias Aesir.ZoneServer.Mmo.Skills.McVending
+  alias Aesir.ZoneServer.Mmo.Skills.Merchant.McVending
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast

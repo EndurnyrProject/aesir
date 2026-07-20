@@ -60,7 +60,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.VendingListRequest
   alias Aesir.Net.VendingOpenRequest
   alias Aesir.Net.VendingPurchaseRequest
-  alias Aesir.ZoneServer.Mmo.Skills.NvBasic
+  alias Aesir.ZoneServer.Mmo.Skills.Novice.NvBasic
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ChatHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler

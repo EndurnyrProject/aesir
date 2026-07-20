@@ -150,10 +150,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
     @skills_dir Path.expand("../../../../../lib/aesir/zone_server/mmo/skills", __DIR__)
 
     @non_skill_modules [
-      Aesir.ZoneServer.Mmo.Skills.ElementChange,
-      Aesir.ZoneServer.Mmo.Skills.ElementField,
-      Aesir.ZoneServer.Mmo.Skills.EstimationView,
-      Aesir.ZoneServer.Mmo.Skills.Trap
+      Aesir.ZoneServer.Mmo.Skills.Sage.ElementChange,
+      Aesir.ZoneServer.Mmo.Skills.Sage.ElementField,
+      Aesir.ZoneServer.Mmo.Skills.Wizard.EstimationView,
+      Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
     ]
 
     test "every module under mmo/skills/ is either discovered or a declared helper" do

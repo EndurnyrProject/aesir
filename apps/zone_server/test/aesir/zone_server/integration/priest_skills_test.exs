@@ -24,15 +24,15 @@ defmodule Aesir.ZoneServer.Integration.PriestSkillsTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage, as: SkillUnitStorage
-  alias Aesir.ZoneServer.Mmo.Skills.AlHolylight
-  alias Aesir.ZoneServer.Mmo.Skills.MgSafetywall
-  alias Aesir.ZoneServer.Mmo.Skills.PrBenedictio
-  alias Aesir.ZoneServer.Mmo.Skills.PrImpositio
-  alias Aesir.ZoneServer.Mmo.Skills.PrKyrie
-  alias Aesir.ZoneServer.Mmo.Skills.PrMacemastery
-  alias Aesir.ZoneServer.Mmo.Skills.PrMagnus
-  alias Aesir.ZoneServer.Mmo.Skills.PrSanctuary
-  alias Aesir.ZoneServer.Mmo.Skills.PrStrecovery
+  alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolylight
+  alias Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywall
+  alias Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio
+  alias Aesir.ZoneServer.Mmo.Skills.Priest.PrImpositio
+  alias Aesir.ZoneServer.Mmo.Skills.Priest.PrKyrie
+  alias Aesir.ZoneServer.Mmo.Skills.Priest.PrMacemastery
+  alias Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnus
+  alias Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary
+  alias Aesir.ZoneServer.Mmo.Skills.Priest.PrStrecovery
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager

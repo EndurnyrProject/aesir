@@ -3,19 +3,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
-  alias Aesir.ZoneServer.Mmo.Skills.SmBash
-  alias Aesir.ZoneServer.Mmo.Skills.SmFatalblow
-  alias Aesir.ZoneServer.Mmo.Skills.SmSword
-  alias Aesir.ZoneServer.Mmo.Skills.WzEarthspike
-  alias Aesir.ZoneServer.Mmo.Skills.WzFirepillar
-  alias Aesir.ZoneServer.Mmo.Skills.WzFrostnova
-  alias Aesir.ZoneServer.Mmo.Skills.WzHeavendrive
-  alias Aesir.ZoneServer.Mmo.Skills.WzJupitel
-  alias Aesir.ZoneServer.Mmo.Skills.WzMeteor
-  alias Aesir.ZoneServer.Mmo.Skills.WzQuagmire
-  alias Aesir.ZoneServer.Mmo.Skills.WzSightrasher
-  alias Aesir.ZoneServer.Mmo.Skills.WzStormgust
-  alias Aesir.ZoneServer.Mmo.Skills.WzVermilion
+  alias Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBash
+  alias Aesir.ZoneServer.Mmo.Skills.Swordsman.SmFatalblow
+  alias Aesir.ZoneServer.Mmo.Skills.Swordsman.SmSword
+  alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspike
+  alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillar
+  alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnova
+  alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendrive
+  alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitel
+  alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteor
+  alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmire
+  alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightrasher
+  alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust
+  alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilion
 
   test "by_id/1 loads AL_INCAGI with correct structure" do
     assert {:ok, %Definition{} = def} = Catalog.by_id(29)

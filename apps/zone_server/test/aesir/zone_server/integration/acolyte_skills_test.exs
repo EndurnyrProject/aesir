@@ -26,8 +26,8 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
   alias Aesir.Net.SkillList
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skills.AlHeal
-  alias Aesir.ZoneServer.Mmo.Skills.AlRuwach
+  alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal
+  alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlRuwach
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerSession

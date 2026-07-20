@@ -49,8 +49,8 @@ defmodule Aesir.ZoneServer.Integration.CartIntegrationTest do
   alias Aesir.Repo
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skills.McCartrevolution
-  alias Aesir.ZoneServer.Mmo.Skills.McChangecart
+  alias Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolution
+  alias Aesir.ZoneServer.Mmo.Skills.Merchant.McChangecart
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage

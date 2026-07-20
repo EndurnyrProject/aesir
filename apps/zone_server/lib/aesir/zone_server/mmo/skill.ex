@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill do
 
   ## Example - a ground skill (active cast auto-derived)
 
-      defmodule Aesir.ZoneServer.Mmo.Skills.WzStormgust do
+      defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
         use Aesir.ZoneServer.Mmo.Skill,
           id: 89,
           name: :wz_stormgust,

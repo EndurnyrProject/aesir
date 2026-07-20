@@ -21,7 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
-  alias Aesir.ZoneServer.Mmo.Skills.SaCastcancel
+  alias Aesir.ZoneServer.Mmo.Skills.Sage.SaCastcancel
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Party.Manager
   alias Aesir.ZoneServer.Party.Member

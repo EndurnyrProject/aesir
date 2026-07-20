@@ -5,9 +5,9 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeMerchantTest do
 
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skills.McCartrevolution
-  alias Aesir.ZoneServer.Mmo.Skills.McChangecart
-  alias Aesir.ZoneServer.Mmo.Skills.McPushcart
+  alias Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolution
+  alias Aesir.ZoneServer.Mmo.Skills.Merchant.McChangecart
+  alias Aesir.ZoneServer.Mmo.Skills.Merchant.McPushcart
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
 

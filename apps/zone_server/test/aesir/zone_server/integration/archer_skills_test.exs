@@ -31,9 +31,9 @@ defmodule Aesir.ZoneServer.Integration.ArcherSkillsTest do
   alias Aesir.Net.SkillDamage
   alias Aesir.Net.SkillList
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skills.AcConcentration
-  alias Aesir.ZoneServer.Mmo.Skills.AcDouble
-  alias Aesir.ZoneServer.Mmo.Skills.AcShower
+  alias Aesir.ZoneServer.Mmo.Skills.Archer.AcConcentration
+  alias Aesir.ZoneServer.Mmo.Skills.Archer.AcDouble
+  alias Aesir.ZoneServer.Mmo.Skills.Archer.AcShower
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Stats
 

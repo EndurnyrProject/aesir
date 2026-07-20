@@ -31,7 +31,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   alias Aesir.Net.CartMountResult
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.Skill.Learned
-  alias Aesir.ZoneServer.Mmo.Skills.McPushcart
+  alias Aesir.ZoneServer.Mmo.Skills.Merchant.McPushcart
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Network.MessageRouter

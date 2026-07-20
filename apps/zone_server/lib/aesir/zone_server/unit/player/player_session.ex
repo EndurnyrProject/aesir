@@ -34,9 +34,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage, as: SkillUnitStorage
-  alias Aesir.ZoneServer.Mmo.Skills.PrLexdivina
-  alias Aesir.ZoneServer.Mmo.Skills.PrStrecovery
-  alias Aesir.ZoneServer.Mmo.Skills.WzJupitel
+  alias Aesir.ZoneServer.Mmo.Skills.Priest.PrLexdivina
+  alias Aesir.ZoneServer.Mmo.Skills.Priest.PrStrecovery
+  alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitel
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage

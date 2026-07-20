@@ -14,7 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Id, as: SkillUnitId
-  alias Aesir.ZoneServer.Mmo.Skills.SmProvoke
+  alias Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvoke
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Suffragium
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator

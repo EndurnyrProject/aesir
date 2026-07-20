@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Learned
-  alias Aesir.ZoneServer.Mmo.Skills.McPushcart
+  alias Aesir.ZoneServer.Mmo.Skills.Merchant.McPushcart
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Mmo.StatPoint
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter

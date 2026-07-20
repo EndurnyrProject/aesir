@@ -60,8 +60,8 @@ defmodule Aesir.ZoneServer.Integration.AcolyteStage2Test do
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit, as: SkillUnit
-  alias Aesir.ZoneServer.Mmo.Skills.AlHolywater
-  alias Aesir.ZoneServer.Mmo.Skills.AlPneuma
+  alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolywater
+  alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneuma
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState

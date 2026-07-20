@@ -6,7 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalystTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
-  alias Aesir.ZoneServer.Mmo.Skills.SmProvoke
+  alias Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvoke
 
   setup :verify_on_exit!
 

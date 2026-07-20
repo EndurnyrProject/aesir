@@ -14,8 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
-  alias Aesir.ZoneServer.Mmo.Skills.MgFirebolt
-  alias Aesir.ZoneServer.Mmo.Skills.WzEarthspike
+  alias Aesir.ZoneServer.Mmo.Skills.Mage.MgFirebolt
+  alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspike
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
