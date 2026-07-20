@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
   # Real equip.yml ids.
   @sword 1101
+  @mace 1340
   @bow 1701
   @guard 2101
   @cotton_shirt 2301
@@ -707,6 +708,20 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       assert result.combat_stats.passive_atk == 0
       assert result.combat_stats.atk == 0
+    end
+
+    test "converts Mace Mastery's internal critical tenths at the display boundary" do
+      stats = %Stats{
+        base_stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
+        progression: %{base_level: 0, job_level: 0, learned_skills: %{65 => 5}},
+        derived_stats: %{max_hp: 1, max_sp: 1},
+        equipment: Stats.equipment_from_inventory([equipped(@mace, @right_hand)]),
+        modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
+      }
+
+      result = Stats.calculate_combat_stats(stats)
+
+      assert result.combat_stats.critical == 5
     end
   end
 

@@ -469,6 +469,42 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert result.damage == 100
       assert result.is_critical == false
     end
+
+    test "converts the display-scale combat critical rate to tenths once" do
+      attacker = CombatTestHelper.create_player_combatant(luk: 0)
+      attacker = %{attacker | combat_stats: Map.put(attacker.combat_stats, :critical, 5)}
+
+      expect(CriticalHits, :calculate_critical_hit, fn %{critical: 50}, 100 ->
+        %{damage: 100, is_critical: false, critical_rate: 50}
+      end)
+
+      assert {:ok, %{critical_rate: 50}} = DamageCalculator.apply_critical_hit(100, attacker)
+    end
+
+    test "preserves LUK's tenths remainder when Mace Mastery changes displayed critical" do
+      attacker = CombatTestHelper.create_player_combatant(luk: 5)
+      attacker = %{attacker | combat_stats: Map.put(attacker.combat_stats, :critical, 6)}
+
+      expect(CriticalHits, :calculate_critical_hit, fn %{critical: 66}, 100 ->
+        %{damage: 100, is_critical: false, critical_rate: 66}
+      end)
+
+      assert {:ok, %{critical_rate: 66}} = DamageCalculator.apply_critical_hit(100, attacker)
+    end
+
+    test "adds display-scale status and equipment critical without losing LUK precision" do
+      attacker = CombatTestHelper.create_player_combatant(luk: 5)
+
+      # LUK 5 contributes 16 tenths; the display value 20 represents its base
+      # 1 plus Mace Mastery 5, status 10, and equipment 4.
+      attacker = %{attacker | combat_stats: Map.put(attacker.combat_stats, :critical, 20)}
+
+      expect(CriticalHits, :calculate_critical_hit, fn %{critical: 206}, 100 ->
+        %{damage: 100, is_critical: false, critical_rate: 206}
+      end)
+
+      assert {:ok, %{critical_rate: 206}} = DamageCalculator.apply_critical_hit(100, attacker)
+    end
   end
 
   describe "integration scenarios" do

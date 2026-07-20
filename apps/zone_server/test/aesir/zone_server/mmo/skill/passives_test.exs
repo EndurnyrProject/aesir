@@ -12,7 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
   alias Aesir.ZoneServer.Unit.Stats.DerivedStats
 
   # Real equip.yml ids whose subtype matches the weapon atoms under test.
-  @weapon_ids %{one_handed_sword: 1101, bow: 1701}
+  @weapon_ids %{one_handed_sword: 1101, mace: 1340, bow: 1701}
   @both_hand 34
   @right_hand 2
 
@@ -129,6 +129,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
     test "SM_SWORD level 5 with a bow grants 0 ATK" do
       player = build_player(%{2 => 5}, :bow)
       assert Passives.atk_bonus(player) == 0
+    end
+
+    test "PR_MACEMASTERY level 5 with a mace grants 15 ATK" do
+      player = build_player(%{65 => 5}, :mace)
+      assert Passives.atk_bonus(player) == 15
+    end
+  end
+
+  describe "critical_bonus/1" do
+    test "PR_MACEMASTERY level 5 with a mace grants 50 critical" do
+      player = build_player(%{65 => 5}, :mace)
+      assert Passives.critical_bonus(player) == 50
+    end
+
+    test "PR_MACEMASTERY grants no critical with another weapon" do
+      player = build_player(%{65 => 5}, :bow)
+      assert Passives.critical_bonus(player) == 0
+    end
+
+    test "existing passives contribute zero to the optional critical channel" do
+      player = build_player(%{2 => 5}, :one_handed_sword)
+      assert Passives.critical_bonus(player) == 0
     end
   end
 

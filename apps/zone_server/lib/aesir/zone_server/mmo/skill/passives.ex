@@ -44,6 +44,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   end
 
   @doc """
+  Sums the rAthena-tenths critical bonus contributed by every learned passive for
+  the player.
+  """
+  @spec critical_bonus(PlayerState.t() | PlayerStats.t()) :: integer()
+  def critical_bonus(%PlayerState{stats: stats}), do: critical_bonus(stats)
+
+  def critical_bonus(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
+    |> learned_passives()
+    |> Enum.reduce(0, fn {module, level}, acc ->
+      acc + module.critical_bonus(level, ctx)
+    end)
+  end
+
+  @doc """
   Sums the FLEE bonus contributed by every learned passive for the player.
   """
   @spec flee_bonus(PlayerState.t() | PlayerStats.t()) :: integer()

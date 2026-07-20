@@ -8,7 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill do
   their callbacks:
 
     * `Skill.Active` - the skill is actively cast (`cast/4`, optional `validate/4`)
-    * `Skill.Passive` - the skill contributes passive effects (`atk_bonus/2`,
+    * `Skill.Passive` - the skill contributes passive effects (`atk_bonus/2`, `critical_bonus/2`,
       `regen_contribution/2`, `skill_rider/4`)
     * `Skill.Ground` - the skill places a persistent ground unit (`on_place/1`,
       `on_interval/2`, optional `on_expire/1`)
@@ -136,6 +136,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill do
 
   @passive_channel_defaults [
     {:atk_bonus, 2, quote(do: def(atk_bonus(_level, _ctx), do: 0))},
+    {:critical_bonus, 2, quote(do: def(critical_bonus(_level, _ctx), do: 0))},
     {:flee_bonus, 2, quote(do: def(flee_bonus(_level, _ctx), do: 0))},
     {:dex_bonus, 2, quote(do: def(dex_bonus(_level, _ctx), do: 0))},
     {:hit_bonus, 2, quote(do: def(hit_bonus(_level, _ctx), do: 0))},

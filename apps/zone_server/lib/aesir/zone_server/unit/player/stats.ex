@@ -598,6 +598,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     base_matk = calculate_base_matk(stats)
     base_def = calculate_base_def(stats)
     passive_atk = Passives.atk_bonus(stats)
+    passive_critical = Passives.critical_bonus(stats)
+    passive_critical_display = div(passive_critical, 10)
 
     # Effective trait stats feed the six SP-A combat slots (rows 5-10).
     pow_eff = get_effective_stat(stats, :pow)
@@ -624,7 +626,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       flee: PlayerCombatCalc.calculate_flee(stats),
       critical:
         trunc(
-          (base_critical + get_status_modifier(stats, :critical) +
+          (base_critical + passive_critical_display + get_status_modifier(stats, :critical) +
              get_equipment_modifier(stats, :critical)) *
             (100 + get_status_modifier(stats, :critical_rate)) / 100
         ),

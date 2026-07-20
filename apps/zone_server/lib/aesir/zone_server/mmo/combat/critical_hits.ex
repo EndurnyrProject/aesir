@@ -58,11 +58,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHits do
   @doc """
   Calculates the critical rate.
 
-  Formula: critical_rate = LUK * 10/3
+  Uses a supplied computed critical rate when available; otherwise:
+  critical_rate = LUK * 10/3
   The result is in tenths of percent (0-1000 scale where 1000 = 100%)
 
   ## Parameters
-  - attacker_stats: Stats map or PlayerStats struct containing LUK value
+  - attacker_stats: Stats map or PlayerStats struct containing a computed
+    `:critical` rate or a LUK value
 
   ## Returns
   Critical rate as integer (0-1000)
@@ -77,6 +79,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHits do
   def calculate_critical_rate(%PlayerStats{} = player_stats) do
     luk = PlayerStats.get_effective_stat(player_stats, :luk)
     calculate_critical_rate_from_luk(luk)
+  end
+
+  def calculate_critical_rate(%{critical: critical}) when is_integer(critical) do
+    critical |> max(0) |> min(1000)
   end
 
   def calculate_critical_rate(%{luk: luk}) when is_integer(luk) do

@@ -50,6 +50,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHitsTest do
       assert CriticalHits.calculate_critical_rate(%{str: 50}) == 3
       assert CriticalHits.calculate_critical_rate(%{}) == 3
     end
+
+    test "uses a computed critical rate when one is supplied" do
+      assert CriticalHits.calculate_critical_rate(%{critical: 600, luk: 30}) == 600
+    end
   end
 
   describe "calculate_critical_rate_from_luk/1" do

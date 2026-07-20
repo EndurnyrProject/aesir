@@ -297,6 +297,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     # defaults both to 0, landing on the x1.4 non-player branch.
     attacker_for_crit = %{
       luk: attacker.base_stats.luk,
+      critical: computed_critical_rate(attacker),
       combat_stats: attacker.combat_stats,
       equip_modifiers: attacker.equip_modifiers
     }
@@ -309,6 +310,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
     {:ok, critical_result}
   end
+
+  defp computed_critical_rate(%{base_stats: %{luk: luk}, combat_stats: %{critical: critical}})
+       when is_integer(luk) and is_integer(critical) do
+    base_critical = div(luk, 3)
+
+    CriticalHits.calculate_critical_rate_from_luk(luk) + (critical - base_critical) * 10
+  end
+
+  defp computed_critical_rate(_attacker), do: nil
 
   # Private helper functions
 
