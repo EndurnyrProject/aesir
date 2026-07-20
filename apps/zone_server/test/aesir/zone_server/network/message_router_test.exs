@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Network.MessageRouterTest do
     {%Aesir.Net.SkillDamage{}, {:gameplay, :skill_damage}},
     {%Aesir.Net.CastCancel{}, {:gameplay, :cast_cancel}},
     {%Aesir.Net.SkillCooldown{}, {:gameplay, :skill_cooldown}},
+    {%Aesir.Net.SkillCastFailed{}, {:gameplay, :skill_cast_failed}},
     {%Aesir.Net.EquipResult{}, {:gameplay, :equip_result}},
     {%Aesir.Net.UnequipResult{}, {:gameplay, :unequip_result}},
     {%Aesir.Net.ItemAdded{}, {:gameplay, :item_added}},

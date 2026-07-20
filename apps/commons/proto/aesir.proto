@@ -185,6 +185,8 @@ message Envelope {
     // 160-161: generic skill menu (server->client offer + client selection)
     SkillMenu skill_menu = 160;
     SkillMenuReply skill_menu_reply = 161;
+    // 162: caster-only reason for a rejected skill cast
+    SkillCastFailed skill_cast_failed = 162;
   }
 }
 
@@ -1684,4 +1686,23 @@ message SkillMenu {
 message SkillMenuReply {
   uint32 src_skill_id = 1;
   uint32 selected_id = 2;
+}
+
+enum SkillCastFailureReason {
+  SKILL_CAST_FAILURE_REASON_UNSPECIFIED = 0;
+  SKILL_CAST_FAILURE_REASON_MISSING_CATALYST = 1;
+  SKILL_CAST_FAILURE_REASON_INSUFFICIENT_SP = 2;
+  SKILL_CAST_FAILURE_REASON_INSUFFICIENT_ZENY = 3;
+  SKILL_CAST_FAILURE_REASON_NO_AMMO = 4;
+  SKILL_CAST_FAILURE_REASON_ON_COOLDOWN = 5;
+  SKILL_CAST_FAILURE_REASON_INVALID_TARGET = 6;
+  SKILL_CAST_FAILURE_REASON_NOT_LEARNED = 7;
+  SKILL_CAST_FAILURE_REASON_OUT_OF_RANGE = 8;
+  SKILL_CAST_FAILURE_REASON_BUSY = 9;
+}
+
+// Server -> client, caster-only feedback when an attempted skill cast is rejected.
+message SkillCastFailed {
+  uint32 skill_id = 1;
+  SkillCastFailureReason reason = 2;
 }

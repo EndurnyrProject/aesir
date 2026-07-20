@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.CastCancel
+  alias Aesir.Net.SkillCastFailed
   alias Aesir.Net.SkillCasting
   alias Aesir.Net.SkillCooldown
   alias Aesir.Net.SkillEffect
@@ -85,7 +86,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         {:noreply, new_state}
 
       {:error, reason} ->
-        log_cast_failure(@cast_cancel_id, game_state.character_id, reason)
+        report_cast_failure(@cast_cancel_id, game_state.character_id, reason)
         {:noreply, state}
     end
   end
@@ -150,7 +151,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         {:noreply, maybe_resume_lock(resolved_state, Map.get(ctx, :combat_target_id))}
 
       {:error, reason} ->
-        log_cast_failure(ctx.skill_id, game_state.character_id, reason)
+        report_cast_failure(ctx.skill_id, game_state.character_id, reason)
         {:noreply, %{state | game_state: end_cast(game_state)}}
     end
   end
@@ -235,10 +236,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         dispatch_cast(ready_state, skill_id, level, target, locked)
 
       :busy ->
-        Logger.debug(
-          "Skill #{skill_id} cast skipped for #{game_state.character_id}: busy in #{game_state.action_state}"
-        )
-
+        report_cast_failure(skill_id, game_state.character_id, :busy)
         {:noreply, state}
     end
   end
@@ -261,7 +259,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         initiate_skill_movement(state, skill_id, level, target, locked)
 
       {:error, reason} ->
-        log_cast_failure(skill_id, game_state.character_id, reason)
+        report_cast_failure(skill_id, game_state.character_id, reason)
         {:noreply, state}
     end
   end
@@ -306,7 +304,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       move_toward_skill_target(state, skill_id, level, target, current, optimal, map_data, locked)
     else
       _ ->
-        log_cast_failure(skill_id, game_state.character_id, :out_of_range)
+        report_cast_failure(skill_id, game_state.character_id, :out_of_range)
         {:noreply, state}
     end
   end
@@ -323,7 +321,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
          _map_data,
          _locked
        ) do
-    log_cast_failure(skill_id, state.game_state.character_id, :out_of_range)
+    report_cast_failure(skill_id, state.game_state.character_id, :out_of_range)
     {:noreply, state}
   end
 
@@ -342,7 +340,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         start_skill_approach(state, skill_id, level, target, optimal, locked)
 
       _ ->
-        log_cast_failure(skill_id, state.game_state.character_id, :no_path)
+        report_cast_failure(skill_id, state.game_state.character_id, :no_path)
         {:noreply, state}
     end
   end
@@ -448,7 +446,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
       {:error, reason} ->
         Process.cancel_timer(timer_ref)
-        log_cast_failure(info.skill_id, game_state.character_id, reason)
+        report_cast_failure(info.skill_id, game_state.character_id, reason)
         {:noreply, state}
     end
   end
@@ -666,9 +664,31 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
-  defp log_cast_failure(skill_id, character_id, reason) do
+  defp report_cast_failure(skill_id, character_id, reason) do
     Logger.debug("Skill #{skill_id} cast failed for #{character_id}: #{inspect(reason)}")
+
+    Broadcast.to_player(character_id, %SkillCastFailed{
+      skill_id: skill_id,
+      reason: failure_reason(reason)
+    })
   end
+
+  defp failure_reason(:missing_catalyst), do: :SKILL_CAST_FAILURE_REASON_MISSING_CATALYST
+  defp failure_reason(:insufficient_sp), do: :SKILL_CAST_FAILURE_REASON_INSUFFICIENT_SP
+  defp failure_reason(:insufficient_zeny), do: :SKILL_CAST_FAILURE_REASON_INSUFFICIENT_ZENY
+  defp failure_reason(:no_ammo), do: :SKILL_CAST_FAILURE_REASON_NO_AMMO
+  defp failure_reason(:on_cooldown), do: :SKILL_CAST_FAILURE_REASON_ON_COOLDOWN
+
+  defp failure_reason(reason) when reason in [:invalid_target, :different_map, :target_not_found],
+    do: :SKILL_CAST_FAILURE_REASON_INVALID_TARGET
+
+  defp failure_reason(:skill_not_learned), do: :SKILL_CAST_FAILURE_REASON_NOT_LEARNED
+
+  defp failure_reason(reason) when reason in [:out_of_range, :no_path],
+    do: :SKILL_CAST_FAILURE_REASON_OUT_OF_RANGE
+
+  defp failure_reason(:busy), do: :SKILL_CAST_FAILURE_REASON_BUSY
+  defp failure_reason(_reason), do: :SKILL_CAST_FAILURE_REASON_UNSPECIFIED
 
   defp resolve_target(%{character_id: caster_id}, target_id) when target_id == caster_id,
     do: :self

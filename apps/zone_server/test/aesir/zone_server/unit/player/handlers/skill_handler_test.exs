@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.Net.ItemAdded
   alias Aesir.Net.MapLoaded
   alias Aesir.Net.SkillCast
+  alias Aesir.Net.SkillCastFailed
   alias Aesir.Net.SkillCasting
   alias Aesir.Net.SkillCooldown
   alias Aesir.Net.SkillEffect
@@ -738,7 +739,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     end
 
     test "cancelling with no cast in flight fails through the normal path, charging nothing" do
-      reject(&Broadcast.to_player/2)
+      test_pid = self()
+      stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:to_player, packet}) end)
       reject(&CharacterPersistence.update_character/3)
 
       state = cast_cancel_state(45)
@@ -748,6 +750,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       assert unchanged == idle
       assert unchanged.game_state.stats.current_state.sp == 45
+
+      assert_received {:to_player,
+                       %SkillCastFailed{
+                         skill_id: 275,
+                         reason: :SKILL_CAST_FAILURE_REASON_UNSPECIFIED
+                       }}
     end
 
     test "SaCastcancel.validate/4 rejects :not_casting when no cast is in flight" do
@@ -780,6 +788,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   end
 
   describe "skill action-gating" do
+    test "a rejected cast sends its failure reason to the caster" do
+      stub(Interpreter, :begin_cast, fn _game_state, 12, 1, {:ground, 12, 12} ->
+        {:error, :missing_catalyst}
+      end)
+
+      test_pid = self()
+      stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:to_player, packet}) end)
+
+      s = casting_state(45)
+      assert {:noreply, ^s} = SkillHandler.handle_use_skill_ground(s, 12, 1, 12, 12)
+
+      assert_received {:to_player,
+                       %SkillCastFailed{
+                         skill_id: 12,
+                         reason: :SKILL_CAST_FAILURE_REASON_MISSING_CATALYST
+                       }}
+    end
+
     test "a no_skill player calling handle_use_skill gets a CastCancel and no cast is driven" do
       stub(StatusInterpreter, :can_use_skill?, fn :player, 1000, _skill -> false end)
       reject(&Interpreter.begin_cast/4)

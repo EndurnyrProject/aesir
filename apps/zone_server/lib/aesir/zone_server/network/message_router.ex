@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def route(%Aesir.Net.SkillDamage{}), do: {:gameplay, :skill_damage}
   def route(%Aesir.Net.CastCancel{}), do: {:gameplay, :cast_cancel}
   def route(%Aesir.Net.SkillCooldown{}), do: {:gameplay, :skill_cooldown}
+  def route(%Aesir.Net.SkillCastFailed{}), do: {:gameplay, :skill_cast_failed}
   def route(%Aesir.Net.EquipResult{}), do: {:gameplay, :equip_result}
   def route(%Aesir.Net.UnequipResult{}), do: {:gameplay, :unequip_result}
   def route(%Aesir.Net.ItemAdded{}), do: {:gameplay, :item_added}
