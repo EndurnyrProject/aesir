@@ -11,6 +11,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.DefinitionTest do
   ]
 
   describe "target_type" do
+    test "accepts :target_corpse" do
+      defn = Definition.build!(@required_opts ++ [target_type: :target_corpse], __MODULE__)
+      assert defn.target_type == :target_corpse
+    end
+
     test "accepts :target_any" do
       defn = Definition.build!(@required_opts ++ [target_type: :target_any], __MODULE__)
       assert defn.target_type == :target_any

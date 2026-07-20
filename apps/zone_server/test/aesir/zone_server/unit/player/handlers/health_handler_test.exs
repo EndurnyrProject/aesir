@@ -376,6 +376,68 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     end
   end
 
+  describe "try_consume_sp/2" do
+    test "deducts SP when the full amount is available" do
+      assert {:reply, :ok, %{game_state: game_state}} =
+               HealthHandler.try_consume_sp(6, build_state(100, :idle))
+
+      assert game_state.stats.current_state.sp == 4
+    end
+
+    test "leaves SP unchanged when the full amount is unavailable" do
+      state = build_state(100, :idle)
+      reject(&CharacterPersistence.update_stats/3)
+
+      assert {:reply, {:error, :insufficient_sp}, ^state} =
+               HealthHandler.try_consume_sp(11, state)
+
+      refute_received {:send, _, _}
+    end
+  end
+
+  describe "resurrect/3" do
+    test "revives a corpse at 10 percent HP" do
+      assert {:reply, :ok, %{game_state: game_state}} =
+               HealthHandler.resurrect(2_001, 10, build_state(0, :dead))
+
+      assert game_state.action_state == :idle
+      assert game_state.stats.current_state.hp == 10
+    end
+
+    test "restores each rAthena Resurrection percentage" do
+      for {percent, hp} <- [{10, 10}, {30, 30}, {50, 50}, {80, 80}] do
+        assert {:reply, :ok, %{game_state: game_state}} =
+                 HealthHandler.resurrect(2_001, percent, build_state(0, :dead))
+
+        assert game_state.stats.current_state.hp == hp
+      end
+    end
+
+    test "synchronizes, persists, and broadcasts the existing Resurrect packet" do
+      expect(CharacterPersistence, :update_stats, fn 1, %{hp: 80}, [async: true] ->
+        {:ok, %Character{}}
+      end)
+
+      expect(Broadcast, :to_visible_players, fn game_state, %Resurrect{gid: 1, type: 0} ->
+        assert game_state.action_state == :idle
+        :ok
+      end)
+
+      assert {:reply, :ok, _state} = HealthHandler.resurrect(2_001, 80, build_state(0, :dead))
+      assert_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_hp, value: 80}}}
+      assert_received {:send, _channel, {_tag, %Resurrect{gid: 1, type: 0}}}
+    end
+
+    test "rejects a target that is no longer a corpse" do
+      state = build_state(100, :idle)
+      reject(&CharacterPersistence.update_stats/3)
+      reject(&Broadcast.to_visible_players/2)
+
+      assert {:reply, {:error, :stale_target}, ^state} = HealthHandler.resurrect(2_001, 30, state)
+      refute_received {:send, _, _}
+    end
+  end
+
   describe "death EXP penalty" do
     test "subtracts the computed base/job loss, pushes the exp params and persists" do
       stub(Leveling, :death_penalty, fn _prog, 1, 1 -> {10, 5} end)

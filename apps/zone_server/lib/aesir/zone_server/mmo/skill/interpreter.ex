@@ -42,6 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Unit.Inventory.Ammo
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
+  alias Aesir.ZoneServer.Unit.TargetState
 
   @typedoc """
   Scheduling info for a timed cast, returned by `begin_cast/4` when the skill
@@ -392,6 +393,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
        when target_type in [:target_ally, :target_any],
        do: ensure_living_target(target_id)
 
+  defp check_target(_game_state, {:unit, target_id}, %{target_type: :target_corpse}),
+    do: ensure_corpse_target(target_id)
+
   defp check_target(_game_state, {:ground, _x, _y}, %{target_type: :ground}), do: :ok
 
   defp check_target(_game_state, :self, _definition), do: :ok
@@ -484,6 +488,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       {:error, _reason} ->
         :ok
     end
+  end
+
+  defp ensure_corpse_target(unit_id) do
+    result =
+      case TargetResolver.resolve(unit_id) do
+        {:ok, _pid, target_state, :player} ->
+          if TargetState.corpse?(target_state),
+            do: :ok,
+            else: {:error, :invalid_target}
+
+        {:ok, _pid, _target_state, _unit_type} ->
+          {:error, :invalid_target}
+
+        {:error, _reason} ->
+          {:error, :target_not_found}
+      end
+
+    result
+  catch
+    :exit, _reason -> {:error, :target_not_found}
   end
 
   defp check_cooldown(game_state, skill_id, now) do

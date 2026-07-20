@@ -128,6 +128,50 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     end
   end
 
+  test "a corpse-target skill accepts a nearby corpse" do
+    corpse = %PlayerState{action_state: :dead, stats: %{current_state: %{hp: 0}}}
+
+    Mimic.copy(TargetResolver)
+    stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), corpse, :player} end)
+    stub(Combat, :resolve_target_position, fn 2_000 -> {:ok, :player, {14, 10, "prontera"}} end)
+    stub(Catalog, :by_id, fn 6 -> {:ok, unit_definition(:target_corpse, 5)} end)
+    stub(SmProvoke, :cast, fn caster, {:unit, 2_000}, 1, _definition -> {:ok, caster} end)
+
+    assert {:ok, _} = Interpreter.cast(game_state(100, %{6 => 1}), 6, 1, {:unit, 2_000})
+  end
+
+  test "a corpse-target skill rejects a living target" do
+    living = %PlayerState{action_state: :idle, stats: %{current_state: %{hp: 100}}}
+
+    Mimic.copy(TargetResolver)
+    stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), living, :player} end)
+    stub(Catalog, :by_id, fn 6 -> {:ok, unit_definition(:target_corpse, 5)} end)
+
+    assert {:error, :invalid_target} =
+             Interpreter.cast(game_state(100, %{6 => 1}), 6, 1, {:unit, 2_000})
+  end
+
+  test "a corpse-target skill returns a typed error when the target session exits during resolution" do
+    Mimic.copy(TargetResolver)
+    stub(TargetResolver, :resolve, fn 2_000 -> exit(:shutdown) end)
+    stub(Catalog, :by_id, fn 6 -> {:ok, unit_definition(:target_corpse, 5)} end)
+
+    assert {:error, :target_not_found} =
+             Interpreter.cast(game_state(100, %{6 => 1}), 6, 1, {:unit, 2_000})
+  end
+
+  test "a corpse-target skill rejects an out-of-range corpse" do
+    corpse = %PlayerState{action_state: :dead, stats: %{current_state: %{hp: 0}}}
+
+    Mimic.copy(TargetResolver)
+    stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), corpse, :player} end)
+    stub(Combat, :resolve_target_position, fn 2_000 -> {:ok, :player, {20, 10, "prontera"}} end)
+    stub(Catalog, :by_id, fn 6 -> {:ok, unit_definition(:target_corpse, 5)} end)
+
+    assert {:error, :out_of_range} =
+             Interpreter.cast(game_state(100, %{6 => 1}), 6, 1, {:unit, 2_000})
+  end
+
   test "happy path applies the effect and deducts SP" do
     stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _params -> :ok end)
 

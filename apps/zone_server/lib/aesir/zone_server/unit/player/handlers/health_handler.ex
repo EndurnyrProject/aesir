@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.TargetState
 
   @doc """
   Computes the HP after taking `damage`, clamped at 0.
@@ -149,6 +150,73 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   end
 
   def consume_sp(_amount, state), do: {:noreply, state}
+
+  @doc """
+  Attempts to deduct SP without allowing the value to underflow.
+
+  Unlike `consume_sp/2`, this synchronous operation leaves state unchanged when
+  the player cannot pay the entire amount.
+  """
+  @spec try_consume_sp(non_neg_integer(), map()) ::
+          {:reply, :ok | {:error, :insufficient_sp}, map()}
+  def try_consume_sp(amount, state) when is_integer(amount) and amount > 0 do
+    stats = state.game_state.stats
+
+    if stats.current_state.sp >= amount do
+      new_sp = stats.current_state.sp - amount
+      char_id = state.game_state.character_id
+      updated_stats = %{stats | current_state: %{stats.current_state | sp: new_sp}}
+      game_state = %{state.game_state | stats: updated_stats}
+      state = StatsManager.update_game_state(state, game_state)
+
+      StatusSync.send_param(state.connection_pid, StatusParams.sp(), new_sp)
+      CharacterPersistence.update_stats(char_id, %{sp: new_sp}, async: true)
+
+      {:reply, :ok, state}
+    else
+      {:reply, {:error, :insufficient_sp}, state}
+    end
+  end
+
+  def try_consume_sp(_amount, state), do: {:reply, {:error, :insufficient_sp}, state}
+
+  @doc """
+  Revives a corpse in place at `hp_percent` of maximum HP.
+
+  The session revalidates the corpse immediately before committing the state
+  transition so a cast that completed after another resurrection cannot mutate
+  a living target.
+  """
+  @spec resurrect(integer(), pos_integer(), map()) ::
+          {:reply, :ok | {:error, :stale_target | :invalid_hp_percent}, map()}
+  def resurrect(_source_id, hp_percent, state)
+      when is_integer(hp_percent) and hp_percent > 0 and hp_percent <= 100 do
+    if TargetState.corpse?(state.game_state) do
+      stats = state.game_state.stats
+      hp = max(1, div(stats.derived_stats.max_hp * hp_percent, 100))
+      updated_stats = %{stats | current_state: %{stats.current_state | hp: hp}}
+
+      {:ok, game_state} =
+        state.game_state
+        |> Map.put(:stats, updated_stats)
+        |> PlayerState.transition_to(:idle)
+
+      state = StatsManager.update_game_state(state, game_state)
+      StatusSync.send_param(state.connection_pid, StatusParams.hp(), hp)
+      CharacterPersistence.update_stats(game_state.character_id, %{hp: hp}, async: true)
+
+      resurrection = %Resurrect{gid: game_state.character_id, type: 0}
+      MessageRouter.send_to(state.connection_pid, resurrection)
+      Broadcast.to_visible_players(game_state, resurrection)
+
+      {:reply, :ok, state}
+    else
+      {:reply, {:error, :stale_target}, state}
+    end
+  end
+
+  def resurrect(_source_id, _hp_percent, state),
+    do: {:reply, {:error, :invalid_hp_percent}, state}
 
   @doc """
   Restores SP to the player, clamped at `max_sp`.

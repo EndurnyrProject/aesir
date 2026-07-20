@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Lifecycle.Event
+  alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
@@ -35,6 +36,96 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     def handle_cast({:send_packet, packet}, test_pid) do
       send(test_pid, {:vanish_packet, packet})
       {:noreply, test_pid}
+    end
+  end
+
+  defmodule ResurrectionSource do
+    use GenServer
+
+    alias Aesir.ZoneServer.Unit.Player.PlayerState
+    alias Aesir.ZoneServer.Unit.SpatialIndex
+    alias Aesir.ZoneServer.Unit.UnitRegistry
+
+    def start_link(%PlayerState{} = game_state), do: GenServer.start_link(__MODULE__, game_state)
+
+    def get_state(pid), do: GenServer.call(pid, :get_state)
+    def warp(pid, map_name), do: GenServer.cast(pid, {:warp, map_name})
+
+    @impl true
+    def init(%PlayerState{} = game_state) do
+      :ok = UnitRegistry.register_player(game_state, self())
+
+      :ok =
+        SpatialIndex.add_player(
+          game_state.character_id,
+          game_state.x,
+          game_state.y,
+          game_state.map_name
+        )
+
+      {:ok, game_state}
+    end
+
+    @impl true
+    def handle_call(:get_state, _from, game_state),
+      do: {:reply, %{game_state: game_state}, game_state}
+
+    @impl true
+    def handle_cast({:warp, map_name}, game_state) do
+      :ok = SpatialIndex.remove_player(game_state.character_id)
+
+      game_state = PlayerState.relocate(game_state, map_name, game_state.x, game_state.y)
+      :ok = UnitRegistry.update_unit_state(:player, game_state.character_id, game_state)
+
+      {:noreply, game_state}
+    end
+
+    def handle_cast(_message, game_state), do: {:noreply, game_state}
+  end
+
+  defmodule ExitingSession do
+    use GenServer
+
+    def start, do: GenServer.start(__MODULE__, :ok)
+
+    @impl true
+    def init(:ok), do: {:ok, :ok}
+
+    @impl true
+    def handle_call(_message, _from, state), do: {:stop, :shutdown, state}
+  end
+
+  defmodule ResurrectionCaller do
+    use GenServer
+
+    alias Aesir.ZoneServer.Unit.Player.PlayerSession
+    alias Aesir.ZoneServer.Unit.Player.PlayerState
+    alias Aesir.ZoneServer.Unit.SpatialIndex
+    alias Aesir.ZoneServer.Unit.UnitRegistry
+
+    def start_link(%PlayerState{} = game_state, target_pid),
+      do: GenServer.start_link(__MODULE__, {game_state, target_pid})
+
+    def resurrect(pid), do: GenServer.call(pid, :resurrect, 500)
+
+    @impl true
+    def init({%PlayerState{} = game_state, target_pid}) do
+      :ok = UnitRegistry.register_player(game_state, self())
+
+      :ok =
+        SpatialIndex.add_player(
+          game_state.character_id,
+          game_state.x,
+          game_state.y,
+          game_state.map_name
+        )
+
+      {:ok, %{game_state: game_state, target_pid: target_pid}}
+    end
+
+    @impl true
+    def handle_call(:resurrect, _from, %{game_state: game_state, target_pid: target_pid} = state) do
+      {:reply, PlayerSession.resurrect(target_pid, game_state.character_id, 30), state}
     end
   end
 
@@ -1142,6 +1233,133 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       {:noreply, new_state} = PlayerSession.handle_info({:apply_heal, 10, nil}, state)
 
       assert new_state.game_state.stats.current_state.hp == 11
+    end
+  end
+
+  describe "cross-session health commands" do
+    test "resurrect revalidates and commits through the target session", %{character: character} do
+      Mimic.copy(CharacterPersistence)
+      stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
+      stub(CharacterPersistence, :update_position, fn _, _, _, _ -> {:ok, %Character{}} end)
+
+      {:ok, pid} = PlayerSession.start_link(%{character: character, connection_pid: self()})
+      source_character = %{character | id: 2, account_id: 200, name: "ResurrectionSource"}
+      {:ok, _source_pid} = ResurrectionSource.start_link(PlayerState.new(source_character))
+
+      PlayerSession.apply_damage(pid, 1_000)
+      assert %{game_state: %{action_state: :dead}} = PlayerSession.get_state(pid)
+
+      assert :ok = PlayerSession.resurrect(pid, 2, 30)
+
+      assert %{game_state: game_state} = PlayerSession.get_state(pid)
+      assert game_state.action_state == :idle
+
+      assert game_state.stats.current_state.hp ==
+               div(game_state.stats.derived_stats.max_hp * 30, 100)
+    end
+
+    test "returns a typed source error when a source warp is queued before resurrection", %{
+      character: character
+    } do
+      Mimic.copy(CharacterPersistence)
+      stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
+      stub(CharacterPersistence, :update_position, fn _, _, _, _ -> {:ok, %Character{}} end)
+
+      {:ok, target_pid} =
+        PlayerSession.start_link(%{character: character, connection_pid: self()})
+
+      source_character = %{character | id: 2, account_id: 200, name: "ResurrectionSource"}
+      {:ok, source_pid} = ResurrectionSource.start_link(PlayerState.new(source_character))
+
+      PlayerSession.apply_damage(target_pid, 1_000)
+      assert %{game_state: %{action_state: :dead}} = PlayerSession.get_state(target_pid)
+
+      ResurrectionSource.warp(source_pid, "geffen")
+      assert %{game_state: %{map_name: "geffen"}} = ResurrectionSource.get_state(source_pid)
+
+      assert {:error, :source_unavailable} = PlayerSession.resurrect(target_pid, 2, 30)
+      assert %{game_state: %{action_state: :dead}} = PlayerSession.get_state(target_pid)
+    end
+
+    test "resurrection from a live source session does not create a cyclic call", %{
+      character: character
+    } do
+      Mimic.copy(CharacterPersistence)
+      stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
+      stub(CharacterPersistence, :update_position, fn _, _, _, _ -> {:ok, %Character{}} end)
+
+      {:ok, target_pid} =
+        PlayerSession.start_link(%{character: character, connection_pid: self()})
+
+      source_character = %{character | id: 2, account_id: 200, name: "ResurrectionSource"}
+
+      {:ok, source_pid} =
+        ResurrectionCaller.start_link(PlayerState.new(source_character), target_pid)
+
+      PlayerSession.apply_damage(target_pid, 1_000)
+      assert %{game_state: %{action_state: :dead}} = PlayerSession.get_state(target_pid)
+
+      assert :ok = ResurrectionCaller.resurrect(source_pid)
+    end
+
+    test "returns a typed stale error when a target warp is queued before resurrection", %{
+      character: character
+    } do
+      Mimic.copy(CharacterPersistence)
+      Mimic.copy(WarpHandler)
+      stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
+      stub(CharacterPersistence, :update_position, fn _, _, _, _ -> {:ok, %Character{}} end)
+
+      stub(WarpHandler, :warp, fn state, "geffen", 1, 1 ->
+        :ok = SpatialIndex.remove_player(state.game_state.character_id)
+
+        game_state = PlayerState.relocate(state.game_state, "geffen", 1, 1)
+        {:ok, %{state | game_state: game_state}}
+      end)
+
+      {:ok, target_pid} =
+        PlayerSession.start_link(%{character: character, connection_pid: self()})
+
+      source_character = %{character | id: 2, account_id: 200, name: "ResurrectionSource"}
+      {:ok, _source_pid} = ResurrectionSource.start_link(PlayerState.new(source_character))
+
+      PlayerSession.apply_damage(target_pid, 1_000)
+      assert %{game_state: %{action_state: :dead}} = PlayerSession.get_state(target_pid)
+
+      GenServer.cast(target_pid, {:warp, "geffen", 1, 1})
+      assert %{game_state: %{map_name: "geffen"}} = PlayerSession.get_state(target_pid)
+
+      assert {:error, :stale_target} = PlayerSession.resurrect(target_pid, 2, 30)
+    end
+
+    test "try_consume_sp charges synchronously without underflow", %{character: character} do
+      Mimic.copy(CharacterPersistence)
+      stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
+
+      {:ok, pid} = PlayerSession.start_link(%{character: character, connection_pid: self()})
+      %{game_state: initial_state} = PlayerSession.get_state(pid)
+      initial_sp = initial_state.stats.current_state.sp
+
+      assert :ok = PlayerSession.try_consume_sp(pid, 1)
+      assert %{game_state: %{stats: %{current_state: %{sp: sp}}}} = PlayerSession.get_state(pid)
+      assert sp == initial_sp - 1
+
+      assert {:error, :insufficient_sp} = PlayerSession.try_consume_sp(pid, initial_sp)
+      assert %{game_state: %{stats: %{current_state: %{sp: ^sp}}}} = PlayerSession.get_state(pid)
+    end
+
+    test "resurrect returns a typed error when the target session is unavailable" do
+      pid = spawn(fn -> :ok end)
+      ref = Process.monitor(pid)
+      assert_receive {:DOWN, ^ref, :process, ^pid, :normal}
+
+      assert {:error, :target_unavailable} = PlayerSession.resurrect(pid, 2_001, 30)
+    end
+
+    test "resurrect returns a typed error when the target exits during the call" do
+      {:ok, pid} = ExitingSession.start()
+
+      assert {:error, :target_unavailable} = PlayerSession.resurrect(pid, 2_001, 30)
     end
   end
 
