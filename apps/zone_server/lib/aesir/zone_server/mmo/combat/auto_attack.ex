@@ -294,6 +294,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     |> maybe_roll(player_state, target_pid)
   end
 
+  # The `:player` clauses below are intentionally unreachable until PvP lands
+  # (see the NOTE), so their dead-clause warnings are suppressed.
+  @dialyzer {:no_match, break_target: 2, maybe_roll: 3}
+
   defp break_target(:player, target_state), do: {:player, target_state.stats}
   defp break_target(target_type, target_state), do: {target_type, target_state}
 

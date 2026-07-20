@@ -280,8 +280,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     end
   end
 
-  @spec resolve_param(BonusKeys.param_schema(), term()) ::
-          {:ok, dest()} | {:error, {:unsupported, detail()}}
+  @spec resolve_param(
+          %{:family => atom(), :param => BonusKeys.param(), optional(atom()) => term()},
+          term()
+        ) :: {:ok, dest()} | {:error, {:unsupported, detail()}}
   defp resolve_param(%{family: family, param: :race}, {:name, const}) do
     with {:ok, race} <- resolve(&Resolver.resolve_race/1, const), do: race_dest(family, race)
   end

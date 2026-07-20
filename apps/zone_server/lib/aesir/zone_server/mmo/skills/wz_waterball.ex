@@ -93,7 +93,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzWaterball do
       false -> {:ok, mark_shot(group, false)}
       {:error, _reason} -> {:expire, group}
       {:ok, {_x, _y, _other_map}} -> {:expire, group}
-      _ -> {:expire, group}
     end
   end
 

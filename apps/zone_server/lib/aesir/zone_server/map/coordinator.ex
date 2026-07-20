@@ -679,7 +679,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   defp spawn_single_mob(spawn_config, state) do
     case MobManagement.get_mob_by_id(spawn_config.mob) do
       {:ok, mob_data} ->
-        if :boss in (mob_data.modes || []) do
+        if :boss in mob_data.modes do
           BossRespawn.delete(state.map_name, spawn_config.mob)
         end
 
