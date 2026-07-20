@@ -457,10 +457,12 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       Mimic.copy(PlayerState)
       stub(PlayerState, :to_combatant, fn ^target_state -> target end)
 
-      stub(UnitRegistry, :get_unit, fn :mob, 3001 -> {:error, :not_found} end)
+      stub(UnitRegistry, :get_unit, fn
+        :mob, 3001 -> {:error, :not_found}
+        :player, 3001 -> {:ok, {PlayerState, target_state, test_pid}}
+      end)
+
       stub(UnitRegistry, :get_player_pid, fn 3001 -> {:ok, self()} end)
-      stub(PlayerSession, :get_current_stats, fn _pid -> target_state.stats end)
-      stub(PlayerSession, :get_state, fn _pid -> %{game_state: target_state} end)
 
       stub(EquipBreak, :resolve, fn _attacker, resolved_target ->
         send(test_pid, {:resolve_called, resolved_target})
@@ -634,8 +636,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       target_state = %FakeUnit{combatant: target, stats: target, x: 150, y: 153}
 
       stub(UnitRegistry, :get_player_pid, fn 2001 -> {:ok, self()} end)
-      stub(PlayerSession, :get_current_stats, fn _pid -> target end)
-      stub(PlayerSession, :get_state, fn _pid -> %{game_state: target_state} end)
+
+      stub(UnitRegistry, :get_unit, fn :player, 2001 ->
+        {:ok, {FakeUnit, target_state, self()}}
+      end)
+
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
       :ok
     end
@@ -658,8 +663,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
       adjacent = combatant(2001, :player, position: {151, 150})
       adjacent_state = %FakeUnit{combatant: adjacent, stats: adjacent, x: 151, y: 150}
-      stub(PlayerSession, :get_state, fn _pid -> %{game_state: adjacent_state} end)
-      stub(PlayerSession, :get_current_stats, fn _pid -> adjacent end)
+
+      stub(UnitRegistry, :get_unit, fn :player, 2001 ->
+        {:ok, {FakeUnit, adjacent_state, self()}}
+      end)
 
       stub(DamageCalculator, :calculate_damage, fn _a, _d ->
         {:ok, %{damage: 10, is_critical: false}}
@@ -680,8 +687,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       target_state = %FakeUnit{combatant: target, stats: target, x: 151, y: 150}
 
       stub(UnitRegistry, :get_player_pid, fn 2001 -> {:ok, self()} end)
-      stub(PlayerSession, :get_current_stats, fn _pid -> target end)
-      stub(PlayerSession, :get_state, fn _pid -> %{game_state: target_state} end)
+
+      stub(UnitRegistry, :get_unit, fn :player, 2001 ->
+        {:ok, {FakeUnit, target_state, self()}}
+      end)
+
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
 
       stub(DamageCalculator, :calculate_damage, fn _a, _d ->
@@ -788,8 +798,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       target_state = %FakeUnit{combatant: target, stats: target, x: 151, y: 150}
 
       stub(UnitRegistry, :get_player_pid, fn 2001 -> {:ok, self()} end)
-      stub(PlayerSession, :get_current_stats, fn _pid -> target end)
-      stub(PlayerSession, :get_state, fn _pid -> %{game_state: target_state} end)
+
+      stub(UnitRegistry, :get_unit, fn :player, 2001 ->
+        {:ok, {FakeUnit, target_state, self()}}
+      end)
+
       stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, _p -> :ok end)
       stub(StatusInterpreter, :absorb_damage, fn :player, 2001, dmg, _hit_info -> dmg end)
       stub(PlayerSession, :apply_damage, fn _pid, _d, _a -> :ok end)

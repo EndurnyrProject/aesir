@@ -501,14 +501,14 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
     test "rejects direct magic damage against another player until PvP exists" do
       caster = build_caster()
       target_player = self()
+      target = %{build_caster() | character_id: @target_id, x: 150, y: 150}
 
-      stub(UnitRegistry, :get_unit, fn :mob, @target_id -> {:error, :not_found} end)
-      stub(UnitRegistry, :get_player_pid, fn @target_id -> {:ok, target_player} end)
-      stub(PlayerSession, :get_current_stats, fn ^target_player -> build_caster().stats end)
-
-      stub(PlayerSession, :get_state, fn ^target_player ->
-        %{game_state: %{build_caster() | character_id: @target_id, x: 150, y: 150}}
+      stub(UnitRegistry, :get_unit, fn
+        :mob, @target_id -> {:error, :not_found}
+        :player, @target_id -> {:ok, {PlayerState, target, target_player}}
       end)
+
+      stub(UnitRegistry, :get_player_pid, fn @target_id -> {:ok, target_player} end)
 
       reject(&MagicDamageCalculator.calculate_magic_damage/3)
       reject(&Broadcast.to_in_range/5)
@@ -523,10 +523,12 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       target_player = self()
       target = %{build_caster() | character_id: @target_id, party_id: 10}
 
-      stub(UnitRegistry, :get_unit, fn :mob, @target_id -> {:error, :not_found} end)
+      stub(UnitRegistry, :get_unit, fn
+        :mob, @target_id -> {:error, :not_found}
+        :player, @target_id -> {:ok, {PlayerState, target, target_player}}
+      end)
+
       stub(UnitRegistry, :get_player_pid, fn @target_id -> {:ok, target_player} end)
-      stub(PlayerSession, :get_current_stats, fn ^target_player -> target.stats end)
-      stub(PlayerSession, :get_state, fn ^target_player -> %{game_state: target} end)
 
       reject(&MagicDamageCalculator.calculate_magic_damage/3)
       reject(&Broadcast.to_in_range/5)
@@ -684,11 +686,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
       stub(UnitRegistry, :get_unit, fn
         :mob, @target_id -> {:error, :not_found}
+        :player, @target_id -> {:ok, {PlayerState, target, target_pid}}
       end)
 
       stub(UnitRegistry, :get_player_pid, fn @target_id -> {:ok, target_pid} end)
-      stub(PlayerSession, :get_current_stats, fn ^target_pid -> target.stats end)
-      stub(PlayerSession, :get_state, fn ^target_pid -> %{game_state: target} end)
 
       reject(&MagicDamageCalculator.calculate_magic_damage/3)
       reject(&PlayerSession.apply_damage/3)

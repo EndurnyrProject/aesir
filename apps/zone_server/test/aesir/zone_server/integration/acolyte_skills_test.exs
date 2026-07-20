@@ -7,9 +7,11 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
        Heal -> Inc AGI -> Dec AGI and Heal -> Cure chains succeed in order).
     2. A real `AlHeal.cast/4` against an ally session restores that ally's HP over
        the PubSub heal path, bounded by max HP.
-    3. A real `AlRuwach.cast/4` applies `:sc_ruwach` to the caster in ETS-backed
-       `StatusStorage`, and its first pulse reveals a concealed unit and emits a
-       holy splash at a nearby mob.
+    3. A Ruwach cast driven through the caster's own live session applies
+       `:sc_ruwach` in ETS-backed `StatusStorage`, and its first pulse reveals a
+       concealed unit and emits a holy splash at a nearby mob. Casting from
+       inside the session is load-bearing: the first pulse resolves the caster's
+       own combatant, which must not call back into the session it runs in.
 
   Drives the real subsystems (skill learning, skill modules, Combat, status
   interpreter/storage, player/mob sessions). Only the network transport is faked
@@ -22,12 +24,12 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
 
   alias Aesir.Net.LearnSkill
   alias Aesir.Net.LearnSkillResult
+  alias Aesir.Net.SkillCast
   alias Aesir.Net.SkillDamage
   alias Aesir.Net.SkillList
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal
-  alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlRuwach
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -158,7 +160,7 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
   end
 
   describe "Ruwach aura" do
-    test "applies sc_ruwach, reveals a concealed unit, and emits a holy splash" do
+    test "a session-driven cast applies sc_ruwach, reveals a concealed unit, and splashes" do
       caster =
         start_player_session(
           id: 9301,
@@ -166,7 +168,8 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
           class: @acolyte_class,
           base_level: 50,
           int: 40,
-          position: {150, 150}
+          position: {150, 150},
+          skill_point: 1
         )
 
       hidden =
@@ -191,21 +194,27 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
       mob =
         start_mob_session(unit_id: 93_050, map_name: "prontera", position: {150, 151}, hp: 100)
 
+      ruwach = catalog_id(:al_ruwach)
+      learn(caster.pid, ruwach)
       flush_packets()
 
-      caster_state = get_player_state(caster.pid)
-      {:ok, ruwach_def} = Catalog.by_id(catalog_id(:al_ruwach))
-      assert {:ok, ^caster_state} = AlRuwach.cast(caster_state, :self, 1, ruwach_def)
+      # Cast through the live session: the first pulse runs inside the caster's
+      # own PlayerSession, where resolving the caster combatant must not call
+      # back into that session.
+      simulate_incoming_message(caster.pid, %SkillCast{
+        skill_id: ruwach,
+        level: 1,
+        target_id: caster.character.id
+      })
+
+      # The pulse splashes the in-range mob with a holy AL_RUWACH hit.
+      mob_id = mob.unit_id
+      assert_receive {:packet_sent, %SkillDamage{skill_id: 24, target_id: ^mob_id}, _}, 1_000
 
       assert StatusStorage.has_status?(:player, caster.character.id, :sc_ruwach)
 
-      # The first pulse fires on apply: the concealed ally is revealed in radius 2.
+      # The first pulse fired on apply: the concealed ally is revealed in radius 2.
       refute StatusStorage.has_status?(:player, hidden.character.id, :sc_hiding)
-
-      # ...and the pulse splashes the in-range mob with a holy AL_RUWACH hit.
-      mob_id = mob.unit_id
-
-      assert_receive {:packet_sent, %SkillDamage{skill_id: 24, target_id: ^mob_id}, _}, 1_000
     end
   end
 
