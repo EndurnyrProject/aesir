@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage, as: SkillUnitStorage
+  alias Aesir.ZoneServer.Mmo.Skills.PrStrecovery
   alias Aesir.ZoneServer.Mmo.Skills.WzJupitel
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
@@ -531,6 +532,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_info({:jupitel_impact, impact}, %{game_state: game_state} = state) do
     _ = WzJupitel.impact(game_state, impact)
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:status_recovery_undead, unit_type, target_id, caster_id}, state) do
+    _ = PrStrecovery.apply_undead_effect(unit_type, target_id, caster_id)
     {:noreply, state}
   end
 

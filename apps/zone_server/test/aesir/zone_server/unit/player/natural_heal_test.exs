@@ -90,6 +90,27 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHealTest do
       assert hp > 0
     end
 
+    test "normal regen resumes when Slow Poison removes Poison's -100 penalties" do
+      s = stats(vit: 50, int: 50, max_hp: 4_000, max_sp: 500, hp: 100, sp: 1)
+
+      {blocked_hp, blocked_sp, _acc} =
+        NaturalHeal.compute(
+          s,
+          :idle,
+          :standing,
+          %{hp_regen: -100, sp_regen: -100},
+          @no_passive,
+          acc(60_000)
+        )
+
+      {slow_poison_hp, slow_poison_sp, _acc} =
+        NaturalHeal.compute(s, :idle, :standing, %{}, @no_passive, acc(60_000))
+
+      assert {blocked_hp, blocked_sp} == {0, 0}
+      assert slow_poison_hp > 0
+      assert slow_poison_sp > 0
+    end
+
     test "positive sp_regen modifier increases the SP delta" do
       s = stats(vit: 50, int: 50, max_hp: 4000, max_sp: 500, hp: 100, sp: 1)
 

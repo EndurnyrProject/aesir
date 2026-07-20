@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SlowPoison do
   @moduledoc """
   Slow Poison (SC_SLOWPOISON).
 
-  Suppresses poison damage and improves HP regeneration while active.
+  Suppresses Poison and Deadly Poison damage ticks while active.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_slowpoison,
@@ -11,7 +11,4 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SlowPoison do
     calc_flags: [:regen],
     prevented_by: [:sc_refresh, :sc_inspiration],
     icon: :slowpoison
-
-  @impl true
-  def modifiers(_instance, _context), do: %{hp_regen: 100}
 end

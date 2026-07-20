@@ -20,9 +20,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DeadlyPoison do
 
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
 
+  alias Aesir.ZoneServer.Mmo.StatusStorage
+
   @impl true
-  def modifiers(_instance, _context) do
-    %{hp_regen: -100, sp_regen: -100, def_rate: -25}
+  def modifiers(_instance, %{unit_type: unit_type, target_id: target_id}) do
+    if slow_poison?(unit_type, target_id) do
+      %{def_rate: -25}
+    else
+      %{hp_regen: -100, sp_regen: -100, def_rate: -25}
+    end
   end
 
   @impl true
@@ -36,10 +42,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DeadlyPoison do
         2 + div(stats.max_hp, 100)
       end
 
-    if stats.hp > max(div(stats.max_hp, 4), damage) do
+    if not slow_poison?(target) and stats.hp > max(div(stats.max_hp, 4), damage) do
       deal_damage(target, max(damage, 1))
     end
 
     {:ok, instance}
   end
+
+  defp slow_poison?({unit_type, target_id}), do: slow_poison?(unit_type, target_id)
+
+  defp slow_poison?(unit_type, target_id),
+    do: StatusStorage.has_status?(unit_type, target_id, :sc_slowpoison)
 end
