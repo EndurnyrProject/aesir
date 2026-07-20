@@ -245,8 +245,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp dispatch_cast(%{game_state: game_state} = state, skill_id, level, target, locked) do
     case Interpreter.begin_cast(game_state, skill_id, level, target) do
       {:instant, new_game_state} ->
+        # Broadcast against new_game_state, not the post-commit state: commit_cast
+        # drains any pending_warp, which moves map_name/x/y to the arrival
+        # position. Reading it after commit would broadcast the visual at the
+        # destination instead of the departure cell viewers actually stood on.
+        broadcast_skill_use(new_game_state, skill_id, level, target)
         new_state = commit_cast(state, new_game_state, skill_id, level)
-        broadcast_skill_use(new_state.game_state, skill_id, level, target)
         {:noreply, maybe_resume_lock(new_state, locked)}
 
       {:casting, new_game_state, info} ->

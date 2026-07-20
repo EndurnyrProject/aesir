@@ -1162,6 +1162,86 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       assert {:noreply, _} = SkillHandler.handle_use_skill(instant_state(30), 29, 1, 1000)
     end
+
+    test "AL_TELEPORT broadcasts a SkillEffect at the pre-warp position before the warp lands" do
+      base = instant_state(30)
+
+      staged = %{base.game_state | pending_warp: {"morocc", 155, 95}}
+
+      expect(Interpreter, :begin_cast, fn _gs, 26, 1, :self -> {:instant, staged} end)
+      stub(Catalog, :by_id, fn 26 -> {:ok, definition(id: 26, cooldown: [])} end)
+      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+
+      # Simulates the real WarpHandler: it mutates map/x/y on the returned
+      # session, so a broadcast reading the post-commit state would read the
+      # arrival position instead of the departure one.
+      stub(WarpHandler, :warp, fn session_state, "morocc", 155, 95 ->
+        {:ok,
+         %{
+           session_state
+           | game_state: %{session_state.game_state | map_name: "morocc", x: 155, y: 95}
+         }}
+      end)
+
+      test_pid = self()
+
+      stub(Broadcast, :to_in_range, fn map_name, x, y, _range, packet ->
+        send(test_pid, {:broadcast, map_name, x, y, packet})
+        :ok
+      end)
+
+      assert {:noreply, _new_state} = SkillHandler.handle_use_skill(base, 26, 1, 1000)
+
+      assert_received {:broadcast, "prontera", 150, 150,
+                       %SkillEffect{skill_id: 26, level: 1, src_id: 1000, target_id: 1000}}
+    end
+  end
+
+  describe "no-damage support skills reach clients as SkillEffect" do
+    test "AL_CURE broadcasts a SkillEffect on cast" do
+      stub(Catalog, :by_id, fn 35 -> {:ok, definition(id: 35, cooldown: [])} end)
+      stub(Interpreter, :begin_cast, fn gs, 35, 1, {:unit, 2000} -> {:instant, gs} end)
+      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+
+      test_pid = self()
+
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, packet ->
+        send(test_pid, {:broadcast, packet})
+        :ok
+      end)
+
+      assert {:noreply, _} = SkillHandler.handle_use_skill(instant_state(30), 35, 1, 2000)
+
+      assert_received {:broadcast,
+                       %SkillEffect{skill_id: 35, level: 1, src_id: 1000, target_id: 2000}}
+    end
+
+    test "PR_STRECOVERY broadcasts a SkillEffect on cast" do
+      stub(Catalog, :by_id, fn 72 -> {:ok, definition(id: 72, cooldown: [])} end)
+      stub(Interpreter, :begin_cast, fn gs, 72, 1, {:unit, 2000} -> {:instant, gs} end)
+      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+
+      test_pid = self()
+
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, packet ->
+        send(test_pid, {:broadcast, packet})
+        :ok
+      end)
+
+      assert {:noreply, _} = SkillHandler.handle_use_skill(instant_state(30), 72, 1, 2000)
+
+      assert_received {:broadcast,
+                       %SkillEffect{skill_id: 72, level: 1, src_id: 1000, target_id: 2000}}
+    end
   end
 
   defp definition(fields) do
