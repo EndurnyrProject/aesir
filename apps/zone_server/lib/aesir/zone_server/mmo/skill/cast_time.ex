@@ -31,6 +31,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTime do
   skill's own fixed cast is resolved and floored at 0; the variable portion is
   derived from the unmodified fixed cast, so shortening the fixed portion never
   silently lengthens the variable one.
+
+  Skills with rAthena's `CastTimeFlags.IgnoreDex` set `ignore_dex` on their
+  definition. Their variable portion skips the DEX/INT stat factor while still
+  honoring status and equipment cast-time modifiers.
   """
 
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -84,7 +88,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTime do
     fct_base = fixed_cast(definition, level, base)
     fct = max(0, fct_base + Map.get(stats, :fixed_cast, 0))
     vct_base = max(0, base - fct_base)
-    reduction = max(0.0, 1 - :math.sqrt((2 * dex + int) / @vcast_stat_scale))
+    reduction = stat_reduction(definition, dex, int)
     vct_after_stat = round(vct_base * reduction)
 
     factor =
@@ -96,6 +100,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTime do
     vct = round(vct_reduced * max(0, 100 + varcast_rate) / 100)
 
     %{fixed: fct, variable: vct, total: fct + vct}
+  end
+
+  @spec stat_reduction(Definition.t(), non_neg_integer(), non_neg_integer()) :: float()
+  defp stat_reduction(%{ignore_dex: true}, _dex, _int), do: 1.0
+
+  defp stat_reduction(_definition, dex, int) do
+    max(0.0, 1 - :math.sqrt((2 * dex + int) / @vcast_stat_scale))
   end
 
   @spec fixed_cast(Definition.t(), pos_integer(), non_neg_integer()) :: non_neg_integer()

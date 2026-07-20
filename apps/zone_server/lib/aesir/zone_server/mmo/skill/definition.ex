@@ -61,6 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     field :duration, [non_neg_integer()], default: []
     field :cast_time, [non_neg_integer()], default: []
     field :fixed_cast_time, [non_neg_integer()], default: []
+    field :ignore_dex, boolean(), default: false
     field :after_cast_delay, [non_neg_integer()], default: []
     field :cooldown, [non_neg_integer()], default: []
     field :damage_kind, damage_kind(), default: :weapon
@@ -100,6 +101,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     duration: {:list, :integer},
     cast_time: {:list, :integer},
     fixed_cast_time: {:list, :integer},
+    ignore_dex: :boolean,
     after_cast_delay: {:list, :integer},
     cooldown: {:list, :integer},
     damage_kind: {:enum, [:weapon, :magic, :misc]},
@@ -123,6 +125,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     duration: [],
     cast_time: [],
     fixed_cast_time: [],
+    ignore_dex: false,
     after_cast_delay: [],
     cooldown: [],
     damage_kind: :weapon,
