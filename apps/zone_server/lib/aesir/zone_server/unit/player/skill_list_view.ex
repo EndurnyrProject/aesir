@@ -77,4 +77,5 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListView do
   defp inf_for(:self), do: 4
   defp inf_for(:target_ally), do: 16
   defp inf_for(:target_any), do: 16
+  defp inf_for(:target_resurrection), do: 16
 end

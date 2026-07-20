@@ -1,0 +1,97 @@
+---
+- job: priest
+  inherit:
+    - novice
+    - acolyte
+  tree:
+    - name: MG_SRECOVERY
+      max_level: 10
+    - name: MG_SAFETYWALL
+      max_level: 10
+      requires:
+        - name: PR_ASPERSIO
+          level: 4
+        - name: PR_SANCTUARY
+          level: 3
+    - name: ALL_RESURRECTION
+      max_level: 4
+      requires:
+        - name: PR_STRECOVERY
+          level: 1
+        - name: MG_SRECOVERY
+          level: 4
+    - name: PR_MACEMASTERY
+      max_level: 10
+    - name: PR_IMPOSITIO
+      max_level: 5
+    - name: PR_SUFFRAGIUM
+      max_level: 3
+      requires:
+        - name: PR_IMPOSITIO
+          level: 2
+    - name: PR_ASPERSIO
+      max_level: 5
+      requires:
+        - name: AL_HOLYWATER
+          level: 1
+        - name: PR_IMPOSITIO
+          level: 3
+    - name: PR_BENEDICTIO
+      max_level: 5
+      requires:
+        - name: PR_GLORIA
+          level: 3
+        - name: PR_ASPERSIO
+          level: 5
+    - name: PR_SANCTUARY
+      max_level: 10
+      requires:
+        - name: AL_HEAL
+          level: 1
+    - name: PR_SLOWPOISON
+      max_level: 4
+    - name: PR_STRECOVERY
+      max_level: 1
+    - name: PR_KYRIE
+      max_level: 10
+      requires:
+        - name: AL_ANGELUS
+          level: 2
+    - name: PR_MAGNIFICAT
+      max_level: 5
+    - name: PR_GLORIA
+      max_level: 5
+      requires:
+        - name: PR_KYRIE
+          level: 4
+        - name: PR_MAGNIFICAT
+          level: 3
+    - name: PR_LEXDIVINA
+      max_level: 10
+      requires:
+        - name: AL_RUWACH
+          level: 1
+    - name: PR_TURNUNDEAD
+      max_level: 10
+      requires:
+        - name: ALL_RESURRECTION
+          level: 1
+        - name: PR_LEXDIVINA
+          level: 3
+    - name: PR_LEXAETERNA
+      max_level: 1
+      requires:
+        - name: PR_LEXDIVINA
+          level: 5
+    - name: PR_MAGNUS
+      max_level: 10
+      requires:
+        - name: MG_SAFETYWALL
+          level: 1
+        - name: PR_LEXAETERNA
+          level: 1
+        - name: PR_TURNUNDEAD
+          level: 3
+
+  # NOTE: PR_REDEMPTIO is intentionally absent; remove this catalog-only boundary
+  # when Priest quest/grant acquisition support exists.
