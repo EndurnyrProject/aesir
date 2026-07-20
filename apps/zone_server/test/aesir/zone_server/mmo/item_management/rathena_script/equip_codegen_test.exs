@@ -105,8 +105,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     end
 
     test "argument-less bonus with an unknown key stays unknown_bonus_key" do
-      assert {:error, {:unsupported, {:unknown_bonus_key, "bNoKnockback"}}} =
-               compile("bonus bNoKnockback;")
+      assert {:error, {:unsupported, {:unknown_bonus_key, "bNoWalkDelay"}}} =
+               compile("bonus bNoWalkDelay;")
     end
 
     test "BaseLevel and JobLevel compile to their level inputs" do
@@ -383,6 +383,94 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
 
       assert {:error, {:unsupported, {:unresolved_param, {:class, :boss}}}} =
                compile("bonus2 bIgnoreDefRaceRate,RC_Boss,20;")
+    end
+  end
+
+  describe "generate/1 defender, drain and flag keys" do
+    test "flat defender and utility keys compile to their destinations" do
+      assert {:ok, [{:bonus, :long_atk_def, 10}]} = compile("bonus bLongAtkDef,10;")
+      assert {:ok, [{:bonus, :hp_gain_value, 50}]} = compile("bonus bHPGainValue,50;")
+
+      assert {:ok, [{:bonus, :short_weapon_damage_return, 5}]} =
+               compile("bonus bShortWeaponDamageReturn,5;")
+
+      assert {:ok, [{:bonus, :item_heal_rate, 20}]} = compile("bonus bAddItemHealRate,20;")
+    end
+
+    test "bFixedCastrate is global as bonus and per-skill as bonus2" do
+      assert {:ok, [{:bonus, :fixcast_rate, -10}]} = compile("bonus bFixedCastrate,-10;")
+
+      assert {:ok, [{:bonus, {:skill_fixcast_rate, id}, -50}]} =
+               compile(~s(bonus2 bFixedCastrate,"SM_BASH",-50;))
+
+      assert is_integer(id)
+    end
+
+    test "bNoKnockback and bNoCastCancel are argument-less flags, amount 1" do
+      assert {:ok, [{:bonus, :no_knockback, 1}]} = compile("bonus bNoKnockback;")
+      assert {:ok, [{:bonus, :no_cast_cancel, 1}]} = compile("bonus bNoCastCancel;")
+    end
+
+    test "bDefEle compiles to a :set instruction carrying the element" do
+      assert {:ok, [{:set, :def_ele, :holy}]} = compile("bonus bDefEle,Ele_Holy;")
+    end
+
+    test "bSPDrainRate emits one summing instruction per argument" do
+      assert {:ok, [{:bonus, :sp_drain_rate, 30}, {:bonus, :sp_drain_percent, 2}]} =
+               compile("bonus2 bSPDrainRate,30,2;")
+    end
+
+    test "bMagicAddClass and bDropAddRace transpile to their families" do
+      assert {:ok, [{:bonus, {:magic_addclass, :boss}, 30}]} =
+               compile("bonus2 bMagicAddClass,Class_Boss,30;")
+
+      assert {:ok, [{:bonus, {:drop_add_race, :all}, 100}]} =
+               compile("bonus2 bDropAddRace,RC_All,100;")
+    end
+
+    test "bAddEff2 transpiles to the self-infliction family" do
+      assert {:ok, [{:bonus, {:add_eff2, :sc_curse}, 500}]} =
+               compile("bonus2 bAddEff2,Eff_Curse,500;")
+    end
+
+    test "bAddItemHealRate keeps the item id verbatim as its param" do
+      assert {:ok, [{:bonus, {:add_item_heal, 501}, 10}]} =
+               compile("bonus2 bAddItemHealRate,501,10;")
+    end
+
+    test "bAddRace2 resolves RC2 groups case-insensitively" do
+      assert {:ok, [{:bonus, {:addrace2, :biolab}, 20}]} =
+               compile("bonus2 bAddRace2,RC2_BioLab,20;")
+
+      assert {:ok, [{:bonus, {:addrace2, :biolab}, 20}]} =
+               compile("bonus2 bAddRace2,RC2_BIOLAB,20;")
+
+      assert {:ok, [{:bonus, {:addrace2, :edda_arunafeltz}, 5}]} =
+               compile("bonus2 bAddRace2,RC2_Edda_Arunafeltz,5;")
+    end
+
+    test "single-argument ignore-def flags carry an implicit 100 into the rate family" do
+      assert {:ok, [{:bonus, {:ignore_def_race, :brute}, 100}]} =
+               compile("bonus bIgnoreDefRace,RC_Brute;")
+
+      assert {:ok, [{:bonus, {:ignore_def_race, :all}, 100}]} =
+               compile("bonus bIgnoreDefRace,RC_All;")
+
+      assert {:ok, [{:bonus, {:ignore_mdef_race, :all}, 100}]} =
+               compile("bonus bIgnoreMDefRace,RC_All;")
+
+      assert {:ok, [{:bonus, {:ignore_def_class, :normal}, 100}]} =
+               compile("bonus bIgnoreDefClass,Class_Normal;")
+    end
+
+    test "an unresolvable flag param is rejected" do
+      assert {:error, {:unsupported, {:unresolved_param, "RC_NotARace"}}} =
+               compile("bonus bIgnoreDefRace,RC_NotARace;")
+    end
+
+    test "bAddRace2 with an unknown group is unresolved_param" do
+      assert {:error, {:unsupported, {:unresolved_param, "RC2_NotAGroup"}}} =
+               compile("bonus2 bAddRace2,RC2_NotAGroup,20;")
     end
   end
 

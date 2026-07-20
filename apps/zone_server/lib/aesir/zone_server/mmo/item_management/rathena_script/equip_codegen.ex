@@ -35,15 +35,21 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   - `bonus bKey` (no argument) — rAthena's boolean-flag idiom
     (`bonus bUnbreakableWeapon;`): compiles exactly like `bonus bKey,1`.
   - `bonus bKey,CONST` — `{:set, destination, const}` for the constant-valued
-    keys in `BonusKeys.value_schema/1` (`bAtkEle`), whose argument is an element
-    constant rather than an amount. An unresolvable constant is
+    keys in `BonusKeys.value_schema/1` (`bAtkEle`, `bDefEle`), whose argument is
+    an element constant rather than an amount. An unresolvable constant is
     `{:unresolved_param, detail}`.
+  - `bonus bKey,PARAM` — `{:bonus, {family, param}, amount}` for the
+    single-argument param-constant keys in `BonusKeys.flag_param_schema/1`
+    (`bIgnoreDefRace,RC_Brute`), whose lone argument is a race/class constant and
+    whose amount is the schema's fixed value (rAthena's full-effect 100). The
+    param resolves exactly like a `bonus2` key.
   - `bonus2 bKey,param,amount` — `{:bonus, {family, param}, expr}` when `bKey`
     resolves via `BonusKeys.param_schema/1` and `param` resolves through
-    `Resolver` according to the schema's param kind (race/element/size/class/status
+    `Resolver` according to the schema's param kind (race/element/size/class/status/race2
     via a `{:name, const}` constant, skill via a `{:name, const}` bare name, a
     `{:str, name}` quoted name — the corpus idiom `bonus2 bSkillAtk,"SM_BASH",n`
-    — or an `{:int, id}` literal). A key in `BonusKeys.pair_schema/1` instead takes two
+    — or an `{:int, id}` literal, and item via a bare `{:int, id}` kept verbatim).
+    A key in `BonusKeys.pair_schema/1` instead takes two
     amounts and expands to TWO `{:bonus, dest, expr}` instructions, one per
     destination, each summing independently. `RC_Boss` is a sentinel: on an `:addrace`/`:subrace`
     family it redirects to `:addclass`/`:subclass`; on any other family it is
@@ -142,8 +148,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
           | {:error, {:unsupported, detail()}}
   defp compile_instr({:cmd, "bonus", [{:name, key}, arg]}, env) do
     case BonusKeys.value_schema(key) do
-      {:ok, schema} -> compile_value_bonus(schema, arg)
-      :error -> compile_amount_bonus(key, arg, env)
+      {:ok, schema} ->
+        compile_value_bonus(schema, arg)
+
+      :error ->
+        case BonusKeys.flag_param_schema(key) do
+          {:ok, schema} -> compile_flag_param_bonus(schema, arg)
+          :error -> compile_amount_bonus(key, arg, env)
+        end
     end
   end
 
@@ -181,6 +193,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
          {:ok, dest} <- resolve_param(schema, param_ast),
          {:ok, expr} <- compile_expr(amount, env) do
       {:ok, {:bonus, dest, expr}}
+    end
+  end
+
+  # A flag-param key carries its param in the lone `bonus` argument and a fixed
+  # amount in its schema, so it resolves the param exactly like a `bonus2` key
+  # and emits a single summing `:bonus` into the shared `{family, param}`
+  # destination.
+  @spec compile_flag_param_bonus(BonusKeys.flag_schema(), term()) ::
+          {:ok, EquipScript.instr()} | {:error, {:unsupported, detail()}}
+  defp compile_flag_param_bonus(%{family: family, param: param, amount: amount}, param_ast) do
+    with {:ok, dest} <- resolve_param(%{family: family, param: param}, param_ast) do
+      {:ok, {:bonus, dest, amount}}
     end
   end
 
@@ -290,6 +314,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   defp resolve_param(%{family: family, param: :status}, {:name, const}) do
     with {:ok, status} <- resolve(&Resolver.resolve_eff/1, const), do: {:ok, {family, status}}
   end
+
+  defp resolve_param(%{family: family, param: :race2}, {:name, const}) do
+    with {:ok, race2} <- resolve(&Resolver.resolve_race2/1, const), do: {:ok, {family, race2}}
+  end
+
+  # The `bAddItemHealRate` param is a bare item id kept verbatim - it is not
+  # validated against the item catalog, which is not loaded during the import
+  # mix task and which the runtime never needs to consult for this destination.
+  defp resolve_param(%{family: family, param: :item}, {:int, id}) when id > 0,
+    do: {:ok, {family, id}}
 
   defp resolve_param(_schema, param_ast), do: unsupported({:unresolved_param, param_ast})
 

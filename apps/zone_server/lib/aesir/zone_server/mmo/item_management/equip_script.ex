@@ -59,8 +59,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   @typedoc """
   A bonus destination: a flat atom for section-3 keys, or a `{family, param}`
   tuple for parameterized `bonus2` keys — `param` is an atom drawn from the
-  family's `BonusKeys` domain (race/element/size/class) or a positive integer
-  skill id.
+  family's `BonusKeys` domain (race/element/size/class/race2) or a positive
+  integer skill or item id.
   """
   @type dest :: atom() | {atom(), atom() | pos_integer()}
 
@@ -232,7 +232,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp validate_destination!({family, param} = dest) when is_atom(family) do
     case BonusKeys.family_param(family) do
-      {:ok, :skill} -> validate_skill_param!(dest, param)
+      {:ok, kind} when kind in [:skill, :item] -> validate_skill_param!(dest, param)
       {:ok, domain} -> validate_domain_param!(dest, domain, param)
       :error -> malformed!("bonus destination", dest)
     end

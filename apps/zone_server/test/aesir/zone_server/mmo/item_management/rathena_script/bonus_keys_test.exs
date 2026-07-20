@@ -61,7 +61,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :perfect_hit,
     :splash_range,
     :hp_drain_rate,
-    :hp_drain_percent
+    :hp_drain_percent,
+    :long_atk_def,
+    :hp_gain_value,
+    :short_weapon_damage_return,
+    :fixcast_rate,
+    :item_heal_rate,
+    :no_knockback,
+    :no_cast_cancel,
+    :sp_drain_rate,
+    :sp_drain_percent
   ]
 
   describe "destination/1" do
@@ -150,7 +159,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
       assert BonusKeys.destination("bAtkEle") == :error
       assert BonusKeys.value_schema("bAtkEle") == {:ok, %{dest: :atk_ele, param: :element}}
       assert BonusKeys.value_param(:atk_ele) == {:ok, :element}
-      assert BonusKeys.value_destinations() == [:atk_ele]
+      assert Enum.sort(BonusKeys.value_destinations()) == [:atk_ele, :def_ele]
     end
 
     test "value_schema/1 returns :error for the numeric keys" do
@@ -251,9 +260,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     "bvariablecastrate" => %{family: :skill_varcast_rate, param: :skill, unit: :percent},
     "bskillusesprate" => %{family: :skill_use_sp_rate, param: :skill, unit: :percent},
     "baddeff" => %{family: :add_eff, param: :status, unit: :per10k},
+    "baddeff2" => %{family: :add_eff2, param: :status, unit: :per10k},
     "baddeffwhenhit" => %{family: :add_eff_when_hit, param: :status, unit: :per10k},
-    "breseff" => %{family: :res_eff, param: :status, unit: :per10k}
+    "breseff" => %{family: :res_eff, param: :status, unit: :per10k},
+    "bmagicaddclass" => %{family: :magic_addclass, param: :class, unit: :percent},
+    "bdropaddrace" => %{family: :drop_add_race, param: :race, unit: :percent},
+    "bfixedcastrate" => %{family: :skill_fixcast_rate, param: :skill, unit: :percent},
+    "badditemhealrate" => %{family: :add_item_heal, param: :item, unit: :percent},
+    "baddrace2" => %{family: :addrace2, param: :race2, unit: :percent}
   }
+
+  # Families reachable only through the single-argument flag-param keys
+  # (`bonus bIgnoreDefClass,Class_Boss;`), which `families/0`/`family_param/1`
+  # also expose but which carry no `bonus2` schema of their own.
+  @flag_only_families [:ignore_def_class]
 
   describe "param_schema/1" do
     test "resolves every documented bonus2 parameterized key" do
@@ -318,9 +338,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
 
   describe "families/0" do
     test "returns exactly the documented param-key families" do
-      expected = @param_schemas |> Map.values() |> Enum.map(& &1.family) |> Enum.uniq()
+      expected =
+        (@param_schemas |> Map.values() |> Enum.map(& &1.family)) ++ @flag_only_families
 
-      assert Enum.sort(BonusKeys.families()) == Enum.sort(expected)
+      assert Enum.sort(BonusKeys.families()) == Enum.sort(Enum.uniq(expected))
     end
   end
 
@@ -333,6 +354,28 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
 
     test "returns :error for a family outside the vocabulary" do
       assert BonusKeys.family_param(:bogus_family) == :error
+    end
+
+    test "resolves flag-only families reachable through the single-argument keys" do
+      assert BonusKeys.family_param(:ignore_def_class) == {:ok, :class}
+    end
+  end
+
+  describe "flag_param_schema/1" do
+    test "resolves the single-argument param-constant keys, any case" do
+      assert BonusKeys.flag_param_schema("bIgnoreDefRace") ==
+               {:ok, %{family: :ignore_def_race, param: :race, amount: 100}}
+
+      assert BonusKeys.flag_param_schema("bignoremdefrace") ==
+               {:ok, %{family: :ignore_mdef_race, param: :race, amount: 100}}
+
+      assert BonusKeys.flag_param_schema("bIgnoreDefClass") ==
+               {:ok, %{family: :ignore_def_class, param: :class, amount: 100}}
+    end
+
+    test "returns :error for numeric and parameterized keys" do
+      assert BonusKeys.flag_param_schema("bStr") == :error
+      assert BonusKeys.flag_param_schema("bAddRace") == :error
     end
   end
 

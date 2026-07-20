@@ -45,10 +45,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
 
   @type destination :: atom()
-  @type param :: :race | :element | :size | :class | :skill | :status
+  @type param :: :race | :element | :size | :class | :skill | :status | :item | :race2
   @type param_schema :: %{family: atom(), param: param(), unit: :percent | :ms | :sp | :per10k}
   @type value_schema :: %{dest: destination(), param: param()}
   @type pair_schema :: %{first: destination(), second: destination()}
+  @type flag_schema :: %{family: atom(), param: param(), amount: integer()}
 
   @keys %{
     "bstr" => :str,
@@ -106,7 +107,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bcritatkrate" => :crit_atk_rate,
     "bshortatkrate" => :short_atk_rate,
     "bperfecthitaddrate" => :perfect_hit,
-    "bsplashrange" => :splash_range
+    "bsplashrange" => :splash_range,
+    "blongatkdef" => :long_atk_def,
+    "bhpgainvalue" => :hp_gain_value,
+    "bshortweapondamagereturn" => :short_weapon_damage_return,
+    "bfixedcastrate" => :fixcast_rate,
+    "badditemhealrate" => :item_heal_rate,
+    "bnoknockback" => :no_knockback,
+    "bnocastcancel" => :no_cast_cancel
   }
 
   @max_destinations MapSet.new([:movement_speed, :splash_range])
@@ -135,16 +143,35 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bvariablecastrate" => %{family: :skill_varcast_rate, param: :skill, unit: :percent},
     "bskillusesprate" => %{family: :skill_use_sp_rate, param: :skill, unit: :percent},
     "baddeff" => %{family: :add_eff, param: :status, unit: :per10k},
+    "baddeff2" => %{family: :add_eff2, param: :status, unit: :per10k},
     "baddeffwhenhit" => %{family: :add_eff_when_hit, param: :status, unit: :per10k},
-    "breseff" => %{family: :res_eff, param: :status, unit: :per10k}
+    "breseff" => %{family: :res_eff, param: :status, unit: :per10k},
+    "bmagicaddclass" => %{family: :magic_addclass, param: :class, unit: :percent},
+    "bdropaddrace" => %{family: :drop_add_race, param: :race, unit: :percent},
+    "bfixedcastrate" => %{family: :skill_fixcast_rate, param: :skill, unit: :percent},
+    "badditemhealrate" => %{family: :add_item_heal, param: :item, unit: :percent},
+    "baddrace2" => %{family: :addrace2, param: :race2, unit: :percent}
   }
 
   @value_keys %{
-    "batkele" => %{dest: :atk_ele, param: :element}
+    "batkele" => %{dest: :atk_ele, param: :element},
+    "bdefele" => %{dest: :def_ele, param: :element}
   }
 
   @pair_keys %{
-    "bhpdrainrate" => %{first: :hp_drain_rate, second: :hp_drain_percent}
+    "bhpdrainrate" => %{first: :hp_drain_rate, second: :hp_drain_percent},
+    "bspdrainrate" => %{first: :sp_drain_rate, second: :sp_drain_percent}
+  }
+
+  # Single-argument `bonus` keys whose lone argument is a param constant
+  # (`bonus bIgnoreDefRace,RC_Brute;`) rather than an amount. rAthena treats
+  # these as full (100%) effects for the named param, so they compile to a
+  # `{:bonus, {family, param}, amount}` with the amount baked in — the same
+  # `{family, param}` destinations their `*Rate` `bonus2` siblings sum into.
+  @flag_param_keys %{
+    "bignoredefrace" => %{family: :ignore_def_race, param: :race, amount: 100},
+    "bignoremdefrace" => %{family: :ignore_mdef_race, param: :race, amount: 100},
+    "bignoredefclass" => %{family: :ignore_def_class, param: :class, amount: 100}
   }
 
   @race_domain [
@@ -231,10 +258,25 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   def pair_schema(name) when is_binary(name), do: Map.fetch(@pair_keys, String.downcase(name))
 
   @doc """
-  The deduplicated set of family atoms every recognized `bonus2` key maps to.
+  Resolves a single-argument `bonus` key whose lone argument is a param constant
+  (`bonus bIgnoreDefRace,RC_Brute;`) to its `t:flag_schema/0`: the family it
+  stores into, the param kind that argument comes from, and the fixed amount.
+  Returns `:error` for keys outside that vocabulary.
+  """
+  @spec flag_param_schema(String.t()) :: {:ok, flag_schema()} | :error
+  def flag_param_schema(name) when is_binary(name),
+    do: Map.fetch(@flag_param_keys, String.downcase(name))
+
+  @doc """
+  The deduplicated set of family atoms every recognized `bonus2` and
+  flag-param key maps to.
   """
   @spec families() :: [atom()]
-  def families, do: @param_keys |> Map.values() |> Enum.map(& &1.family) |> Enum.uniq()
+  def families do
+    (Map.values(@param_keys) ++ Map.values(@flag_param_keys))
+    |> Enum.map(& &1.family)
+    |> Enum.uniq()
+  end
 
   @doc """
   The valid atom values for a `bonus2` param domain, used to validate `bonus2`
@@ -242,12 +284,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   `Resolver.effs/0` rather than hardcoded, so it can never drift out of lockstep
   with the resolvable `Eff_*` vocabulary.
   """
-  @spec param_domain(:race | :element | :size | :class | :status) :: [atom()]
+  @spec param_domain(:race | :element | :size | :class | :status | :race2) :: [atom()]
   def param_domain(:race), do: @race_domain
   def param_domain(:element), do: @element_domain
   def param_domain(:size), do: @size_domain
   def param_domain(:class), do: @class_domain
   def param_domain(:status), do: Resolver.effs() |> Map.values() |> Enum.uniq()
+  def param_domain(:race2), do: Resolver.race2s() |> Map.values() |> Enum.uniq()
 
   @doc """
   Resolves a single-argument `bonus` key whose argument is a **constant** rather
@@ -289,8 +332,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   """
   @spec family_param(atom()) :: {:ok, param()} | :error
   def family_param(family) when is_atom(family) do
-    @param_keys
-    |> Map.values()
+    (Map.values(@param_keys) ++ Map.values(@flag_param_keys))
     |> Enum.find(&(&1.family == family))
     |> case do
       %{param: param} -> {:ok, param}

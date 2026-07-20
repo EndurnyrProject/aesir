@@ -218,6 +218,57 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "Class_All" => :all
   }
 
+  # rAthena's `e_race2` monster-group enum (`bAddRace2`'s param). Keyed on the
+  # downcased constant name because the corpus spells the same group both ways
+  # (`RC2_BioLab` and `RC2_BIOLAB`, `RC2_Illusion_Vampire` and
+  # `RC2_ILLUSION_VAMPIRE`); `resolve_race2/1` downcases before lookup. Groups
+  # are opaque param atoms (no combatant carries a race2 yet), so the atom is
+  # just the name minus its `rc2_` prefix.
+  @race2 %{
+    "rc2_goblin" => :goblin,
+    "rc2_kobold" => :kobold,
+    "rc2_orc" => :orc,
+    "rc2_golem" => :golem,
+    "rc2_guardian" => :guardian,
+    "rc2_ninja" => :ninja,
+    "rc2_gvg" => :gvg,
+    "rc2_battlefield" => :battlefield,
+    "rc2_treasure" => :treasure,
+    "rc2_biolab" => :biolab,
+    "rc2_manuk" => :manuk,
+    "rc2_splendide" => :splendide,
+    "rc2_scaraba" => :scaraba,
+    "rc2_ogh_atk_def" => :ogh_atk_def,
+    "rc2_ogh_hidden" => :ogh_hidden,
+    "rc2_bio5_swordman_thief" => :bio5_swordman_thief,
+    "rc2_bio5_acolyte_merchant" => :bio5_acolyte_merchant,
+    "rc2_bio5_mage_archer" => :bio5_mage_archer,
+    "rc2_bio5_mvp" => :bio5_mvp,
+    "rc2_clocktower" => :clocktower,
+    "rc2_thanatos" => :thanatos,
+    "rc2_faceworm" => :faceworm,
+    "rc2_hearthunter" => :hearthunter,
+    "rc2_rockridge" => :rockridge,
+    "rc2_werner_lab" => :werner_lab,
+    "rc2_temple_demon" => :temple_demon,
+    "rc2_illusion_vampire" => :illusion_vampire,
+    "rc2_malangdo" => :malangdo,
+    "rc2_ep172alpha" => :ep172alpha,
+    "rc2_ep172beta" => :ep172beta,
+    "rc2_ep172bath" => :ep172bath,
+    "rc2_illusion_turtle" => :illusion_turtle,
+    "rc2_rachel_sanctuary" => :rachel_sanctuary,
+    "rc2_illusion_luanda" => :illusion_luanda,
+    "rc2_illusion_frozen" => :illusion_frozen,
+    "rc2_illusion_moonlight" => :illusion_moonlight,
+    "rc2_ep16_def" => :ep16_def,
+    "rc2_edda_arunafeltz" => :edda_arunafeltz,
+    "rc2_lasagna" => :lasagna,
+    "rc2_glast_heim_abyss" => :glast_heim_abyss,
+    "rc2_destroyed_valkyrie_realm" => :destroyed_valkyrie_realm,
+    "rc2_encroached_gephenia" => :encroached_gephenia
+  }
+
   @effs %{
     "Eff_Stun" => :sc_stun,
     "Eff_Poison" => :sc_poison,
@@ -274,6 +325,26 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   """
   @spec resolve_mob_class(String.t()) :: {:ok, atom()} | error()
   def resolve_mob_class(symbol) when is_binary(symbol), do: lookup(@mob_classes, symbol)
+
+  @doc """
+  Resolves an rAthena `RC2_*` monster-group constant (`bAddRace2`'s param) to
+  its group atom. Lookup is case-insensitive: the corpus spells the same group
+  in several casings, so the symbol is downcased before lookup.
+  """
+  @spec resolve_race2(String.t()) :: {:ok, atom()} | error()
+  def resolve_race2(symbol) when is_binary(symbol) do
+    case Map.fetch(@race2, String.downcase(symbol)) do
+      {:ok, value} -> {:ok, value}
+      :error -> unknown(symbol)
+    end
+  end
+
+  @doc """
+  Returns the full rAthena-symbol-to-group-atom map for `RC2_*` constants,
+  backing `BonusKeys.param_domain(:race2)`.
+  """
+  @spec race2s() :: %{String.t() => atom()}
+  def race2s, do: @race2
 
   @doc """
   Resolves an rAthena `Eff_*` status-infliction constant (`bAddEff` /
