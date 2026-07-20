@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Aspersio do
     no_dispel: false,
     properties: [:buff],
     calc_flags: [:atk_ele],
+    flags: [:remove_on_unequip_weapon],
     end_on_start: [
       :sc_encpoison,
       :sc_fireweapon,

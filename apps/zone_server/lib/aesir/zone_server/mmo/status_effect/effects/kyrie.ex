@@ -22,12 +22,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Kyrie do
   end
 
   @impl true
-  def absorb_damage(_target, instance, %{damage: damage, dmg_type: :physical}, _context) do
+  def absorb_damage(_target, instance, %{damage: damage, dmg_type: :physical}, _context)
+      when damage > 0 do
     shield_hp = instance.state.shield_hp - damage
     hits = instance.state.hits_remaining - 1
 
     if hits <= 0 or shield_hp <= 0 do
-      :remove
+      {:remove, max(-shield_hp, 0)}
     else
       {:ok, 0, put_state(instance, shield_hp: shield_hp, hits_remaining: hits)}
     end

@@ -106,7 +106,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
       assert 0 = Interpreter.absorb_damage(:player, target_id, 100, %{dmg_type: :physical})
       assert StatusStorage.has_status?(:player, target_id, :sc_kyrie)
 
-      assert 100 = Interpreter.absorb_damage(:player, target_id, 100, %{dmg_type: :physical})
+      assert 0 = Interpreter.absorb_damage(:player, target_id, 100, %{dmg_type: :physical})
       refute StatusStorage.has_status?(:player, target_id, :sc_kyrie)
     end
 
@@ -116,7 +116,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
 
       :ok = Interpreter.apply_status(:player, target_id, :sc_kyrie, val2: 50, val3: 10)
 
-      assert 100 = Interpreter.absorb_damage(:player, target_id, 100, %{dmg_type: :physical})
+      assert 50 = Interpreter.absorb_damage(:player, target_id, 100, %{dmg_type: :physical})
       refute StatusStorage.has_status?(:player, target_id, :sc_kyrie)
     end
 

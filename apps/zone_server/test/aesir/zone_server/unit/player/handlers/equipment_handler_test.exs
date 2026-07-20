@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.StatusParams
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
@@ -16,6 +17,60 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
 
   setup :verify_on_exit!
   setup :set_mimic_from_context
+
+  setup do
+    Aesir.TestEtsSetup.setup_ets_tables(%{})
+    :ok
+  end
+
+  test "removes weapon-unequip statuses only after a successful weapon unequip" do
+    game_state = PlayerState.new(character())
+    weapon = %InventoryItem{nameid: 501, amount: 1, equip: 2}
+    game_state = %{game_state | inventory: %{0 => weapon}}
+
+    :ok = StatusStorage.apply_status(:player, 1000, :sc_aspersio, duration: 30_000)
+
+    stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+    stub(UnitRegistry, :get_unit_info, fn :player, 1000 -> {:ok, %{stats: game_state.stats}} end)
+    stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
+    stub(StatusSync, :send_params, fn _connection, _params -> :ok end)
+
+    expect(InventoryOps, :apply_change, fn 1000, _old, _new, {:unequipped, 0} ->
+      {:ok, %{}}
+    end)
+
+    expect(Stats, :calculate_stats, fn stats, 1000, [] -> stats end)
+
+    state = %{connection_pid: self(), game_state: game_state}
+    assert {:noreply, _state} = EquipmentHandler.handle_unequip(0, state)
+    refute StatusStorage.has_status?(:player, 1000, :sc_aspersio)
+  end
+
+  test "keeps weapon-unequip statuses after failures and non-weapon changes" do
+    game_state = PlayerState.new(character())
+    armor = %InventoryItem{nameid: 501, amount: 1, equip: 16}
+    game_state = %{game_state | inventory: %{0 => armor}}
+
+    :ok = StatusStorage.apply_status(:player, 1000, :sc_aspersio, duration: 30_000)
+
+    state = %{connection_pid: self(), game_state: game_state}
+    assert {:noreply, ^state} = EquipmentHandler.handle_unequip(99, state)
+    assert {:noreply, ^state} = EquipmentHandler.handle_equip(99, 2, state)
+    assert StatusStorage.has_status?(:player, 1000, :sc_aspersio)
+
+    stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+    stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
+    stub(StatusSync, :send_params, fn _connection, _params -> :ok end)
+
+    expect(InventoryOps, :apply_change, fn 1000, _old, _new, {:unequipped, 0} ->
+      {:ok, %{}}
+    end)
+
+    expect(Stats, :calculate_stats, fn stats, 1000, [] -> stats end)
+
+    assert {:noreply, _state} = EquipmentHandler.handle_unequip(0, state)
+    assert StatusStorage.has_status?(:player, 1000, :sc_aspersio)
+  end
 
   test "publishes recalculated maxima and clamped resources after equipment changes" do
     game_state = PlayerState.new(character())

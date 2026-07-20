@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Impositio do
     no_dispel: false,
     properties: [:buff],
     calc_flags: [:watk, :matk],
+    end_on_start: [:sc_impositio],
     prevented_by: [:sc_refresh, :sc_inspiration],
     icon: :impositio
 

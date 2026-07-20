@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Magnificat do
     no_dispel: false,
     properties: [:buff],
     calc_flags: [:regen],
+    end_on_start: [:sc_offertorium],
     prevented_by: [:sc_refresh, :sc_inspiration],
     no_save: true,
     icon: :magnificat

@@ -17,6 +17,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.EquipResult
   alias Aesir.Net.UnequipResult
+  alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry, as: StatusRegistry
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory
@@ -87,6 +91,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
            change
          ) do
       {:ok, persisted} ->
+        if weapon_unequipped?(game_state.inventory, unequipped) do
+          remove_weapon_unequip_statuses(game_state.character_id)
+        end
+
         updated_game_state = advance(game_state, persisted)
 
         send_packet(state, equip_success_result(server_index, mask))
@@ -116,6 +124,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
            change
          ) do
       {:ok, persisted} ->
+        if right_hand?(mask) do
+          remove_weapon_unequip_statuses(game_state.character_id)
+        end
+
         updated_game_state = advance(game_state, persisted)
 
         send_packet(state, unequip_success_result(server_index, mask))
@@ -178,6 +190,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
       nil -> 0
       item -> item.equip
     end
+  end
+
+  defp weapon_unequipped?(inventory, unequipped_indices) do
+    Enum.any?(unequipped_indices, fn index ->
+      inventory
+      |> unequipped_mask(index)
+      |> right_hand?()
+    end)
+  end
+
+  defp right_hand?(mask) do
+    :right_hand in EquipLocation.bitmask_to_location_atoms(mask)
+  end
+
+  defp remove_weapon_unequip_statuses(character_id) do
+    :player
+    |> StatusStorage.get_unit_statuses(character_id)
+    |> Enum.each(fn status ->
+      definition = StatusRegistry.get_definition(status.type)
+
+      if definition && :remove_on_unequip_weapon in definition.flags do
+        StatusInterpreter.remove_status(:player, character_id, status.type)
+      end
+    end)
   end
 
   defp equip_failure(:requirement_unmet), do: :level

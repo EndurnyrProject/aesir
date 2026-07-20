@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Id, as: SkillUnitId
   alias Aesir.ZoneServer.Mmo.Skills.SmProvoke
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Suffragium
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEntry
@@ -22,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables
   setup :verify_on_exit!
@@ -558,6 +560,37 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert reduced.fixed == unreduced.fixed
       assert reduced.total - reduced.fixed == round((unreduced.total - unreduced.fixed) * 0.55)
       assert reduced.total < unreduced.total
+    end
+
+    test "Suffragium reduces variable cast time and persists through the Renewal cast lifecycle" do
+      gs = game_state(100, %{29 => 1})
+
+      stub(UnitRegistry, :get_unit_info, fn :player, 1000 -> {:ok, %{stats: gs.stats}} end)
+
+      assert {:casting, _gs, unreduced} = Interpreter.begin_cast(gs, 29, 1, :self)
+
+      assert {:ok, suffragium} =
+               Suffragium.on_apply(
+                 {:player, 1000},
+                 %StatusEntry{type: :sc_suffragium, val1: 3, state: %{}},
+                 %{}
+               )
+
+      :ok =
+        StatusStorage.apply_status(:player, 1000, :sc_suffragium,
+          duration: 30_000,
+          val1: 3,
+          state: suffragium.state
+        )
+
+      assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
+      assert reduced.fixed == unreduced.fixed
+      assert reduced.total - reduced.fixed == round((unreduced.total - unreduced.fixed) * 0.8)
+
+      stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _params -> :ok end)
+
+      assert {:ok, _updated} = Interpreter.complete_cast(gs, 29, 1, :self)
+      assert StatusStorage.has_status?(:player, 1000, :sc_suffragium)
     end
 
     test "composes multiple status cast reductions multiplicatively, not additively" do
