@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SnapshotBuilder
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
 
@@ -46,8 +47,9 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   # Cadence of the ground-item expiry sweep.
   @ground_item_sweep_ms 10_000
 
-  # Tick cadence while the map has no players: just often enough to notice a
-  # player arriving, instead of burning the 10 Hz snapshot loop on empty maps.
+  # Tick cadence while the map has no connected observers: just often enough
+  # to notice one arriving, instead of burning the 10 Hz snapshot loop on an
+  # unobserved map. Connected corpses remain observers and keep the fast cadence.
   @idle_broadcast_interval 1000
   # How long a map must stay empty before its mobs are put to sleep, so players
   # hopping between adjacent maps don't churn sleep/wake sweeps.
@@ -413,11 +415,13 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
   @impl true
   def handle_info(:broadcast_tick, state) do
-    has_players = SpatialIndex.count_players_on_map(state.map_name) > 0
-    state = manage_mob_activity(has_players, state)
+    observers = SpatialIndex.get_players_on_map(state.map_name)
+    has_observers = observers != []
+    has_living_players = Enum.any?(observers, &living_player?/1)
+    state = manage_mob_activity(has_living_players, state)
 
     state =
-      if has_players do
+      if has_observers do
         {deliveries, recently_stopped} =
           flush_snapshots(state.map_name, state.recently_stopped, ServerTick.now())
 
@@ -433,7 +437,9 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
         %{state | recently_stopped: %{}}
       end
 
-    schedule_broadcast(if has_players, do: broadcast_interval(), else: idle_broadcast_interval())
+    schedule_broadcast(
+      if has_observers, do: broadcast_interval(), else: idle_broadcast_interval()
+    )
 
     {:noreply, state}
   end
@@ -562,9 +568,9 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
   # Mob Spawning Functions
 
-  # Drives the mob population from player presence: the first player to reach
-  # the map triggers its initial spawn, a repopulated map wakes its dormant
-  # mobs, and a map that stays empty past the grace period puts them to sleep.
+  # Drives the mob population from living-player presence: the first living
+  # player to reach the map triggers its initial spawn, a repopulated map wakes
+  # its dormant mobs, and a map without living players sleeps them after grace.
   defp manage_mob_activity(true, state) do
     cond do
       not state.mobs_spawned ->
@@ -600,6 +606,13 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   end
 
   defp manage_mob_activity(false, state), do: state
+
+  defp living_player?(character_id) do
+    case UnitRegistry.get_unit(:player, character_id) do
+      {:ok, {_module, player_state, _pid}} -> TargetState.living?(player_state)
+      {:error, :not_found} -> false
+    end
+  end
 
   defp spawn_all_mobs(state) do
     Enum.reduce(state.spawn_data, state, fn spawn_config, acc_state ->

@@ -19,7 +19,9 @@ defmodule Aesir.ZoneServer.Map.CoordinatorActivityTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @map_name "coordinator_activity_test_map"
   @poring_id 1002
@@ -78,9 +80,23 @@ defmodule Aesir.ZoneServer.Map.CoordinatorActivityTest do
 
   defp tick(state), do: Coordinator.handle_info(:broadcast_tick, state)
 
+  defp register_player(action_state, hp) do
+    player = %PlayerState{
+      character_id: 1001,
+      map_name: @map_name,
+      x: 100,
+      y: 100,
+      action_state: action_state,
+      stats: %{current_state: %{hp: hp}}
+    }
+
+    SpatialIndex.add_player(player.character_id, player.x, player.y, player.map_name)
+    UnitRegistry.register_unit(:player, player.character_id, PlayerState, player, self())
+  end
+
   describe "lazy initial spawn" do
     test "the first tick with a player on the map spawns all mobs awake" do
-      SpatialIndex.add_player(1001, 100, 100, @map_name)
+      register_player(:idle, 100)
 
       {:noreply, new_state} = tick(base_state([]))
 
@@ -91,6 +107,16 @@ defmodule Aesir.ZoneServer.Map.CoordinatorActivityTest do
     end
 
     test "ticks on a never-visited empty map spawn nothing" do
+      {:noreply, new_state} = tick(base_state([]))
+
+      refute new_state.mobs_spawned
+      refute new_state.mobs_awake
+      refute_received {:spawned, _, _}
+    end
+
+    test "a connected corpse does not activate an unvisited map" do
+      register_player(:dead, 0)
+
       {:noreply, new_state} = tick(base_state([]))
 
       refute new_state.mobs_spawned
@@ -119,7 +145,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorActivityTest do
     end
 
     test "a player returning to a dormant map wakes its mobs" do
-      SpatialIndex.add_player(1001, 100, 100, @map_name)
+      register_player(:idle, 100)
 
       {:noreply, new_state} =
         tick(base_state(mobs_spawned: true, mobs_awake: false, empty_since: 0))
@@ -127,6 +153,16 @@ defmodule Aesir.ZoneServer.Map.CoordinatorActivityTest do
       assert new_state.mobs_awake
       assert new_state.empty_since == nil
       assert_received :woke_all
+    end
+
+    test "a connected corpse does not wake a dormant map" do
+      register_player(:dead, 0)
+
+      {:noreply, new_state} =
+        tick(base_state(mobs_spawned: true, mobs_awake: false, empty_since: 0))
+
+      refute new_state.mobs_awake
+      refute_received :woke_all
     end
 
     test "a respawn on a dormant map starts the mob asleep" do
@@ -167,7 +203,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorActivityTest do
 
     test "an area spawn stays within its bounds" do
       state = base_state(map_data: MapData.new(@map_name, 200, 200))
-      SpatialIndex.add_player(1001, 100, 100, @map_name)
+      register_player(:idle, 100)
 
       {:noreply, _new_state} = tick(state)
 

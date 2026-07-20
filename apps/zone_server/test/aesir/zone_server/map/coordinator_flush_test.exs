@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorFlushTest do
       x: 50,
       y: 50,
       dir: 3,
+      action_state: :idle,
       movement_state: :standing,
       view_range: 14,
       stats: %{
@@ -197,6 +198,23 @@ defmodule Aesir.ZoneServer.Map.CoordinatorFlushTest do
       }
 
       assert {:noreply, %Coordinator{recently_stopped: %{}}} =
+               Coordinator.handle_info(:broadcast_tick, state)
+
+      assert_receive {:"$gen_cast", {:send_packet, %NetSnapshot{entities: [%{id: 5001}]}}}
+    end
+
+    test "a connected corpse still receives nearby dirty snapshots without activating mobs" do
+      register_player(action_state: :dead, stats: %{current_state: %{hp: 0}})
+      register_mob(instance_id: 5001, x: 52, y: 50, movement_state: :moving)
+      Movement.mark_dirty(@map_name, :mob, 5001, 1)
+
+      state = %Coordinator{
+        map_name: @map_name,
+        spawn_data: [],
+        recently_stopped: %{}
+      }
+
+      assert {:noreply, %Coordinator{mobs_spawned: false, mobs_awake: false}} =
                Coordinator.handle_info(:broadcast_tick, state)
 
       assert_receive {:"$gen_cast", {:send_packet, %NetSnapshot{entities: [%{id: 5001}]}}}

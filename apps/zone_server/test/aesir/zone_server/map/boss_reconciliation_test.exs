@@ -24,7 +24,9 @@ defmodule Aesir.ZoneServer.Map.BossReconciliationTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.Spawns
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   # Osiris and Poring: real entries in the imported mob catalog, so the boss
   # lookups run against real mob data instead of a stub.
@@ -231,7 +233,17 @@ defmodule Aesir.ZoneServer.Map.BossReconciliationTest do
   end
 
   defp tick_with_player(state) do
-    SpatialIndex.add_player(2001, 100, 100, state.map_name)
+    player = %PlayerState{
+      character_id: 2001,
+      map_name: state.map_name,
+      x: 100,
+      y: 100,
+      action_state: :idle,
+      stats: %{current_state: %{hp: 100}}
+    }
+
+    SpatialIndex.add_player(player.character_id, player.x, player.y, player.map_name)
+    UnitRegistry.register_unit(:player, player.character_id, PlayerState, player, self())
     Coordinator.handle_info(:broadcast_tick, state)
   end
 

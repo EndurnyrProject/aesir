@@ -274,6 +274,55 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
     end
   end
 
+  describe "handle_visibility_update/1 observer lifecycle" do
+    test "a connected corpse keeps player and skill-unit observer visibility" do
+      test_pid = self()
+
+      corpse = %{
+        idle_state().game_state
+        | action_state: :dead,
+          stats: %{current_state: %{hp: 0}},
+          visible_players: MapSet.new(),
+          visible_skill_units: MapSet.new()
+      }
+
+      group = %Group{
+        group_id: 77,
+        skill_id: 12,
+        skill_name: :wz_icewall,
+        level: 1,
+        caster_id: 2,
+        caster_type: :player,
+        map_name: "prontera",
+        center: {50, 50},
+        cells: [{50, 50}]
+      }
+
+      stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [2] end)
+      stub(SpatialIndex, :get_units_in_range, fn :mob, _, _, _, _ -> [] end)
+      stub(SpatialIndex, :update_visibility, fn _, _, _ -> :ok end)
+
+      stub(UnitRegistry, :get_player_pid, fn player_id when player_id in [1, 2] ->
+        {:ok, self()}
+      end)
+
+      stub(SkillUnit, :in_range, fn _, _, _, _ -> [group] end)
+
+      stub(SkillUnitManager, :sync_view, fn observer_id, enter_ids, leave_ids ->
+        send(test_pid, {:sync_view, observer_id, enter_ids, leave_ids})
+        MapSet.new(enter_ids -- leave_ids)
+      end)
+
+      updated = MovementHandler.handle_visibility_update(corpse)
+
+      assert_receive {:"$gen_cast", {:player_entered_view, 2}}
+      assert_receive {:"$gen_cast", {:player_entered_view, 1}}
+      assert_received {:sync_view, 1, [77], []}
+      assert updated.visible_players == MapSet.new([2])
+      assert updated.visible_skill_units == MapSet.new([77])
+    end
+  end
+
   describe "handle_visibility_update/1 mob lifecycle" do
     test "a newly-visible mob yields a UnitSpawn; a now-hidden mob yields a UnitDespawn" do
       test_pid = self()

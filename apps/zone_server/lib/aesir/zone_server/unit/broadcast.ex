@@ -4,6 +4,10 @@ defmodule Aesir.ZoneServer.Unit.Broadcast do
 
   Centralizes the "resolve player session and push a packet" pattern that was
   previously duplicated across combat, mob and movement code.
+
+  Spatial membership defines observer eligibility here. Connected corpses
+  remain observers; callers that require living participants must classify
+  authoritative unit state before invoking a broadcast.
   """
   require Logger
 

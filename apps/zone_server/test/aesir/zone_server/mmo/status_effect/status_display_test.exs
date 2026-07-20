@@ -61,6 +61,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplayTest do
   end
 
   describe "on_applied/4 icon broadcast" do
+    test "delegates recipient selection to spatial broadcast without a lifecycle lookup" do
+      test_pid = self()
+      stub_position()
+
+      instance = timed_instance(:sc_provoke)
+      stub(Registry, :get_definition, fn :sc_provoke -> definition(icon: :provoke) end)
+
+      stub(Broadcast, :to_in_range, fn map, x, y, _range, packet, _opts ->
+        send(test_pid, {:broadcast, map, x, y, packet})
+        :ok
+      end)
+
+      StatusDisplay.on_applied(:player, 2_000, :sc_provoke, instance)
+
+      assert_received {:broadcast, "prontera", 100, 100, %StatusChange{unit_id: 2_000, on: true}}
+    end
+
     test "broadcasts StatusChange{on: true} with non-zero timers and vals for an icon status" do
       test_pid = self()
       stub_position()
