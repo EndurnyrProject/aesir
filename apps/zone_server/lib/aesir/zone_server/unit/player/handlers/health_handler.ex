@@ -6,11 +6,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   (SP_HP), matching rAthena's `clif_updatestatus(sd, SP_HP)`. `UnitHp` is
   reserved for monster HP bars and is not used here.
 
-  On death the player is marked `:dead`, vanishes for nearby players
-  (`UnitDespawn` with the died reason) and is pulled out of the spatial index
-  so mobs drop aggro. Respawn revives the player and warps them to their save
-  point; if that warp fails (e.g. the save map is unknown) it falls back to
-  resurrecting in place and standing the sprite back up via a `Resurrect`.
+  On death the player is marked `:dead` and nearby players receive a
+  `UnitDespawn` with the died reason, while the corpse remains spatially present
+  for observer delivery and corpse-targeted skills. Respawn revives the player
+  and warps them to their save point; if that warp fails (e.g. the save map is
+  unknown) it falls back to resurrecting in place and standing the sprite back
+  up via a `Resurrect`.
   """
 
   require Logger
@@ -190,18 +191,31 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   defp handle_death(attacker_id, %{game_state: game_state} = state) do
     Logger.info("Player #{game_state.character_id} died (killed by #{inspect(attacker_id)})")
 
-    {:ok, dead_state} = PlayerState.transition_to(game_state, :dead)
+    inactive_state =
+      game_state
+      |> cancel_cast_timer()
+      |> PlayerState.stop_walking()
+      |> PlayerState.clear_combat_intent()
+      |> PlayerState.clear_skill_intent()
+      |> PlayerState.clear_pickup_intent()
+
+    {:ok, dead_state} = PlayerState.transition_to(inactive_state, :dead)
     state = StatsManager.update_game_state(state, dead_state)
 
     vanish = %UnitDespawn{gid: game_state.character_id, reason: DespawnReason.died()}
     Broadcast.to_visible_players(dead_state, vanish)
     Lifecycle.publish_death(:player, game_state.character_id, game_state.map_name)
 
-    SpatialIndex.remove_player(game_state.character_id)
-    SpatialIndex.clear_visibility(game_state.character_id)
-
     {:noreply, state |> SkillMenuHandler.clear() |> apply_death_penalty()}
   end
+
+  defp cancel_cast_timer(%PlayerState{casting: %{timer_ref: timer_ref}} = game_state)
+       when is_reference(timer_ref) do
+    Process.cancel_timer(timer_ref)
+    game_state
+  end
+
+  defp cancel_cast_timer(game_state), do: game_state
 
   # Renewal death EXP penalty (rAthena exp.conf death_penalty_base/job). Skipped
   # when both config rates are 0 or the dying player carries `no_death_penalty`

@@ -8,8 +8,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   alias Aesir.Net.CastCancel
   alias Aesir.Net.ParamChange
   alias Aesir.Net.Resurrect
+  alias Aesir.Net.UnitDespawn
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
@@ -137,6 +139,82 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
                       } = event}
 
       refute_receive {:unit_lifecycle, ^event}
+    end
+
+    test "retains the corpse position and visibility relationship after broadcasting death" do
+      visible_players = MapSet.new([2])
+      state = build_state(100, :idle)
+      state = put_in(state.game_state.visible_players, visible_players)
+
+      reject(&SpatialIndex.remove_player/1)
+      reject(&SpatialIndex.clear_visibility/1)
+
+      expect(Broadcast, :to_visible_players, fn dead_state,
+                                                %UnitDespawn{
+                                                  gid: 1,
+                                                  reason: reason
+                                                } ->
+        assert dead_state.action_state == :dead
+        assert dead_state.visible_players == visible_players
+        assert reason == DespawnReason.died()
+        :ok
+      end)
+
+      assert {:noreply, %{game_state: game_state}} =
+               HealthHandler.apply_damage(150, 2_001, state)
+
+      assert {game_state.x, game_state.y, game_state.map_name} == {50, 50, "prontera"}
+      assert game_state.visible_players == visible_players
+    end
+
+    test "lethal damage cancels the active cast and action without moving the player" do
+      state = casting_state(60_000)
+      timer_ref = state.game_state.casting.timer_ref
+
+      assert is_integer(Process.read_timer(timer_ref))
+
+      assert {:noreply, %{game_state: game_state}} =
+               HealthHandler.apply_damage(150, 2_001, state)
+
+      assert game_state.stats.current_state.hp == 0
+      assert game_state.action_state == :dead
+      assert game_state.casting == nil
+      assert game_state.state_context == %{}
+      assert {game_state.x, game_state.y, game_state.map_name} == {50, 50, "prontera"}
+      assert Process.read_timer(timer_ref) == false
+    end
+
+    test "lethal damage stops an active walk at the death coordinate" do
+      state = build_state(100, :idle)
+      {:ok, moving} = PlayerState.transition_to(state.game_state, :moving)
+      moving = PlayerState.set_path(moving, [{51, 50}, {52, 50}])
+
+      assert {:noreply, %{game_state: game_state}} =
+               HealthHandler.apply_damage(150, 2_001, %{state | game_state: moving})
+
+      assert game_state.action_state == :dead
+      assert game_state.movement_state == :standing
+      assert game_state.walk_path == []
+      assert {game_state.x, game_state.y} == {50, 50}
+    end
+
+    test "lethal damage cancels the active combat action and timer" do
+      state = build_state(100, :idle)
+      {:ok, attacking} = PlayerState.transition_to(state.game_state, :attacking)
+      timer_ref = Process.send_after(self(), :attack_tick, 60_000)
+
+      attacking =
+        attacking
+        |> PlayerState.set_combat_intent(2_001, 0)
+        |> PlayerState.set_continuous_timer(timer_ref)
+
+      assert {:noreply, %{game_state: game_state}} =
+               HealthHandler.apply_damage(150, 2_001, %{state | game_state: attacking})
+
+      assert game_state.action_state == :dead
+      assert game_state.combat_target_id == nil
+      assert game_state.continuous_attack_timer == nil
+      assert Process.read_timer(timer_ref) == false
     end
 
     test "clears a pending skill menu on death" do

@@ -858,13 +858,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       refute_receive {:unit_lifecycle, ^event}
     end
 
-    test "death followed by a normal stop publishes only the death event", %{
+    test "disconnect removes a retained corpse and publishes only the death event", %{
       character: character
     } do
       :ok = Lifecycle.subscribe()
-      expect(SpatialIndex, :get_visible_players, fn 1 -> [] end)
-      expect(SpatialIndex, :remove_player, fn 1 -> :ok end)
-      expect(SpatialIndex, :clear_visibility, fn 1 -> :ok end)
+
+      SpatialIndex.add_player(1, 50, 50, "prontera")
+      SpatialIndex.add_player(2, 55, 50, "prontera")
+      SpatialIndex.update_visibility(1, 2, true)
 
       game_state = %{PlayerState.new(character) | action_state: :dead}
 
@@ -888,6 +889,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
       assert :ok = PlayerSession.terminate(:normal, state)
 
+      assert {:error, :not_found} = SpatialIndex.get_position(1)
+      refute 1 in SpatialIndex.get_players_on_map("prontera")
+      refute SpatialIndex.can_see?(1, 2)
       refute_receive {:unit_lifecycle, %Event{}}
     end
 

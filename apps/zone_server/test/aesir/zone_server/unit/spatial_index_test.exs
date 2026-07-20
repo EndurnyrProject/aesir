@@ -143,6 +143,26 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndexTest do
       end
     end
 
+    test "a retained corpse stays visible until explicit map departure removes it" do
+      corpse_id = 1001
+      observer_id = 1002
+
+      SpatialIndex.add_player(corpse_id, 50, 50, "prontera")
+      SpatialIndex.add_player(observer_id, 55, 50, "prontera")
+      SpatialIndex.update_visibility(corpse_id, observer_id, true)
+
+      assert {:ok, {50, 50, "prontera"}} = SpatialIndex.get_position(corpse_id)
+      assert corpse_id in SpatialIndex.get_players_on_map("prontera")
+      assert SpatialIndex.can_see?(corpse_id, observer_id)
+
+      SpatialIndex.remove_player(corpse_id)
+      SpatialIndex.clear_visibility(corpse_id)
+
+      assert {:error, :not_found} = SpatialIndex.get_position(corpse_id)
+      refute corpse_id in SpatialIndex.get_players_on_map("prontera")
+      refute SpatialIndex.can_see?(corpse_id, observer_id)
+    end
+
     test "players on different maps cannot see each other" do
       # Add players on different maps
       player1_id = 1001
