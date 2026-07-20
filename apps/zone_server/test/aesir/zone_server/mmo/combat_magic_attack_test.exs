@@ -580,6 +580,29 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
     end
   end
 
+  describe "apply_skill_unit_damage/8" do
+    test "applies explicit fixed elemental damage without invoking the MATK calculator" do
+      caster = PlayerState.to_combatant(build_caster())
+      stub_single_target_mob()
+
+      reject(&MagicDamageCalculator.calculate_magic_damage/3)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      expect(MobSession, :apply_damage, fn _pid, 777, nil -> :ok end)
+
+      assert :ok =
+               Combat.apply_skill_unit_damage(
+                 caster,
+                 :mob,
+                 @target_id,
+                 70,
+                 7,
+                 :holy,
+                 0,
+                 fixed_damage: 777
+               )
+    end
+  end
+
   describe "execute_magic_splash/4" do
     test "line-of-sight splash uses rAthena's diagonal integer traversal" do
       caster = build_caster()

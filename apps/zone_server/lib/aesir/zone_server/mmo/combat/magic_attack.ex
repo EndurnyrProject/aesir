@@ -205,8 +205,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   end
 
   @doc """
-  Applies a magic ground-unit hit with optional multi-hit, flat-MATK, and target
-  walk-delay traits.
+  Applies a magic ground-unit hit with optional multi-hit, flat-MATK, fixed
+  damage, and target walk-delay traits.
 
   `:divide_hits_for_player?` mirrors Renewal Fire Pillar's negative `div`
   behavior for player targets: its total damage is divided by the hit count while
@@ -235,6 +235,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       when is_list(opts) do
     hit_count = Keyword.get(opts, :hit_count, 1)
     bonus_matk = Keyword.get(opts, :bonus_matk, 0)
+    fixed_damage = Keyword.get(opts, :fixed_damage)
     dst_delay = Keyword.get(opts, :dst_delay, 0)
     divide_hits? = unit_type == :player and Keyword.get(opts, :divide_hits_for_player?, false)
 
@@ -245,7 +246,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          target <- target_state.__struct__.to_combatant(target_state),
          {:ok, {tx, ty, map_name}} <- SpatialIndex.get_unit_position(unit_type, target_id),
          damage <-
-           sum_magic_hits(caster, target, element, skill_ratio, hit_count, bonus_matk, skill_id),
+           skill_unit_damage(
+             caster,
+             target,
+             element,
+             skill_ratio,
+             hit_count,
+             bonus_matk,
+             skill_id,
+             fixed_damage
+           ),
          damage <- if(divide_hits?, do: div(damage, hit_count), else: damage) do
       {damage, packet_divisions} =
         case Keyword.fetch(opts, :hit_divisions) do
@@ -396,6 +406,35 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   end
 
   defp normalize_hit_divisions(damage, hit_divisions), do: {damage, hit_divisions}
+
+  defp skill_unit_damage(
+         attacker,
+         target,
+         element,
+         skill_ratio,
+         hits,
+         bonus_matk,
+         skill_id,
+         nil
+       ) do
+    sum_magic_hits(attacker, target, element, skill_ratio, hits, bonus_matk, skill_id)
+  end
+
+  defp skill_unit_damage(
+         _attacker,
+         target,
+         element,
+         _skill_ratio,
+         _hits,
+         _bonus_matk,
+         _skill_id,
+         fixed_damage
+       )
+       when is_integer(fixed_damage) and fixed_damage >= 0 do
+    fixed_damage
+    |> DamageShared.apply_element(element, target)
+    |> DamageShared.clamp_min_one()
+  end
 
   defp sum_magic_hits(attacker, target, element, skill_ratio, hits, bonus_matk, skill_id) do
     attacker

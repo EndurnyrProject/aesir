@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   @tick_interval 100
   @safetywall_skill_id 12
+  @no_overlap_skill_ids [@safetywall_skill_id, 70, 79]
 
   @type server :: GenServer.server()
   @type mover :: {atom(), integer()}
@@ -210,7 +211,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   @impl true
   def handle_call({:register, group}, _from, state) do
     with {:ok, group} <- apply_exclusive_family(group, state.clock.()),
-         :ok <- ensure_safetywall_admission(group),
+         :ok <- ensure_no_overlap_admission(group),
          {:ok, group} <- apply_land_protector(group),
          {:ok, group} <- schedule_group(group, state.rng),
          {:ok, group} <- register_group(group) do
@@ -657,20 +658,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
   end
 
-  defp ensure_safetywall_admission(%Group{skill_id: @safetywall_skill_id} = group) do
+  defp ensure_no_overlap_admission(%Group{skill_id: skill_id} = group)
+       when skill_id in @no_overlap_skill_ids do
     overlap? =
       Enum.any?(group.cells, fn {x, y} ->
         group.map_name
         |> Storage.get_groups_at_cell(x, y)
         |> Enum.any?(fn existing ->
-          existing.skill_id == @safetywall_skill_id and existing.group_id != group.group_id
+          existing.skill_id == skill_id and existing.group_id != group.group_id
         end)
       end)
 
-    if overlap?, do: {:error, :safetywall_overlap}, else: :ok
+    if overlap?, do: {:error, overlap_error(skill_id)}, else: :ok
   end
 
-  defp ensure_safetywall_admission(%Group{}), do: :ok
+  defp ensure_no_overlap_admission(%Group{}), do: :ok
+
+  defp overlap_error(@safetywall_skill_id), do: :safetywall_overlap
+  defp overlap_error(_skill_id), do: :skill_unit_overlap
 
   defp absorb_safetywall_hit_now(group_id, damage) do
     case Storage.get(group_id) do
