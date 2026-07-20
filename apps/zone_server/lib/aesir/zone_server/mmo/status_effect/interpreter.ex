@@ -190,8 +190,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   Folds the target's active statuses over an incoming hit before HP is reduced.
 
   Each status' `absorb_damage` callback sees the running `damage` (already reduced
-  by statuses folded before it) inside `hit_info` and may lower it or, by returning
-  `:remove`, pass the hit through and expire itself. Updated state is persisted and
+  by statuses folded before it) inside `hit_info` and may lower it. Returning
+  `:remove` passes the hit through and expires the status; `{:remove, damage}`
+  expires it after setting the running damage. Updated state is persisted and
   removals run the expire path. Returns the final integer damage.
   """
   @spec absorb_damage(unit_type(), integer(), integer(), map()) :: integer()
@@ -583,6 +584,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
           :remove ->
             remove_status(unit_type, unit_id, instance.type)
             damage
+
+          {:remove, new_damage} ->
+            remove_status(unit_type, unit_id, instance.type)
+            new_damage
         end
     end
   end

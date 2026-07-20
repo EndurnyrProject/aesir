@@ -34,9 +34,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @tick_interval 100
+  @safetywall_skill_id 12
 
   @type server :: GenServer.server()
   @type mover :: {atom(), integer()}
+  @type safetywall_absorb_result :: :pass | {:block, :keep | :remove}
 
   @doc "Starts the supervised skill-unit manager."
   @spec start_link(keyword()) :: GenServer.on_start()
@@ -65,6 +67,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   @spec update_state(server(), non_neg_integer(), map()) :: :ok
   def update_state(server, group_id, state) do
     GenServer.call(server, {:update_state, group_id, state})
+  end
+
+  @doc "Atomically spends one Safety Wall hit and its shared HP budget."
+  @spec absorb_safetywall_hit(non_neg_integer(), pos_integer()) :: safetywall_absorb_result()
+  def absorb_safetywall_hit(group_id, damage) do
+    absorb_safetywall_hit(default_server(), group_id, damage)
+  end
+
+  @doc false
+  @spec absorb_safetywall_hit(server(), non_neg_integer(), pos_integer()) ::
+          safetywall_absorb_result()
+  def absorb_safetywall_hit(server, group_id, damage)
+      when is_integer(damage) and damage > 0 do
+    GenServer.call(server, {:absorb_safetywall_hit, group_id, damage})
   end
 
   @doc """
@@ -194,6 +210,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   @impl true
   def handle_call({:register, group}, _from, state) do
     with {:ok, group} <- apply_exclusive_family(group, state.clock.()),
+         :ok <- ensure_safetywall_admission(group),
          {:ok, group} <- apply_land_protector(group),
          {:ok, group} <- schedule_group(group, state.rng),
          {:ok, group} <- register_group(group) do
@@ -222,6 +239,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
 
     {:reply, :ok, state}
+  end
+
+  def handle_call({:absorb_safetywall_hit, group_id, damage}, _from, state) do
+    result = absorb_safetywall_hit_now(group_id, damage)
+    {:reply, result, state}
   end
 
   def handle_call({:remove_cells, group_id, cells}, _from, state) do
@@ -632,6 +654,44 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       [replaced | _] = groups ->
         Enum.each(groups, &cleanup_with_reason(&1, :SKILL_UNIT_DESPAWN_REASON_CANCELED))
         {:ok, inherit_family_duration(group, replaced, now)}
+    end
+  end
+
+  defp ensure_safetywall_admission(%Group{skill_id: @safetywall_skill_id} = group) do
+    overlap? =
+      Enum.any?(group.cells, fn {x, y} ->
+        group.map_name
+        |> Storage.get_groups_at_cell(x, y)
+        |> Enum.any?(fn existing ->
+          existing.skill_id == @safetywall_skill_id and existing.group_id != group.group_id
+        end)
+      end)
+
+    if overlap?, do: {:error, :safetywall_overlap}, else: :ok
+  end
+
+  defp ensure_safetywall_admission(%Group{}), do: :ok
+
+  defp absorb_safetywall_hit_now(group_id, damage) do
+    case Storage.get(group_id) do
+      nil ->
+        :pass
+
+      %Group{skill_id: skill_id} when skill_id != @safetywall_skill_id ->
+        :pass
+
+      %Group{state: %{hits_remaining: hits, shield_hp: shield_hp}} = group ->
+        hits_remaining = hits - 1
+        remaining_hp = shield_hp - damage
+
+        if hits_remaining <= 0 or remaining_hp <= 0 do
+          cleanup(group, nil, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
+          {:block, :remove}
+        else
+          state = %{group.state | hits_remaining: hits_remaining, shield_hp: remaining_hp}
+          :ok = Storage.update(%{group | state: state})
+          {:block, :keep}
+        end
     end
   end
 

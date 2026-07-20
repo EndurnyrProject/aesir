@@ -2,12 +2,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.MgSafetywall do
   @moduledoc """
   Safety Wall (MG_SAFETYWALL). Ground-targeted, no-damage defensive skill-unit.
 
-  As a `target_type: :ground` skill, `use Skill` auto-derives the `cast/4` that
-  places this single-cell unit at the target cell, consuming a Blue Gemstone. The
-  hit/shield budget is shared by the wall and computed once at placement from the
-  caster's stats (rAthena `group->val2`/`val3`): `hits_remaining = level + 1` and
-  `shield_hp = 300*level + 65*(INT + baseLv) + maxSP`. Each tick the unit grants
-  the `sc_safetywall` marker to every unit standing on its cell - allies and the
+  A cast rejects a cell already occupied by Safety Wall before it can consume a
+  Blue Gemstone. The hit/shield budget is shared by the wall and computed once at
+  placement from the caster's stats (rAthena `group->val2`/`val3`):
+  `hits_remaining = level + 1` and `shield_hp = 300*level + 65*(INT + baseLv) +
+  maxSP`. Each tick the unit grants the `sc_safetywall` marker to every unit
+  standing on its cell - allies and the
   caster included, since it is defensive - that does not already carry it. The
   status blocks short-range physical hits and spends the wall's shared budget; once
   exhausted it tears this unit down (rAthena `skill_delunitgroup`).
@@ -32,8 +32,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.MgSafetywall do
     item_cost: [%{id: 717, amount: 1}]
 
   alias Aesir.ZoneServer.Mmo.Skill.Ground
+  alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -41,6 +43,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.MgSafetywall do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Ground
+
+  def validate(%{map_name: map_name}, {:ground, x, y}, _level, _definition) do
+    if safetywall_at?(map_name, x, y), do: {:error, :safetywall_overlap}, else: :ok
+  end
+
+  def cast(caster, {:ground, x, y}, level, _definition) do
+    if safetywall_at?(caster.map_name, x, y) do
+      {:error, :safetywall_overlap}
+    else
+      case Unit.place(caster, :mg_safetywall, level, {x, y}) do
+        {:ok, _group} -> {:ok, caster}
+        {:error, _reason} = error -> error
+      end
+    end
+  end
 
   @impl Ground
   def on_place(%Group{
@@ -88,6 +105,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.MgSafetywall do
       {:ok, {_module, state, _pid}} -> TargetState.living?(state)
       {:error, :not_found} -> false
     end
+  end
+
+  defp safetywall_at?(map_name, x, y) do
+    Enum.any?(Storage.get_groups_at_cell(map_name, x, y), &(&1.skill_id == 12))
   end
 
   @spec shield_hp(non_neg_integer(), map()) :: non_neg_integer()

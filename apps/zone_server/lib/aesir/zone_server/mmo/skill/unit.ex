@@ -86,6 +86,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
   @spec update_state(non_neg_integer(), map()) :: :ok
   def update_state(group_id, state), do: Manager.update_state(group_id, state)
 
+  @doc "Atomically spends one qualifying hit from a Safety Wall's shared budget."
+  @spec absorb_safetywall_hit(non_neg_integer(), pos_integer()) ::
+          Manager.safetywall_absorb_result()
+  def absorb_safetywall_hit(group_id, damage),
+    do: Manager.absorb_safetywall_hit(group_id, damage)
+
   @doc """
   Destroys a ground skill-unit group by `group_id` (rAthena `skill_delunitgroup`).
 

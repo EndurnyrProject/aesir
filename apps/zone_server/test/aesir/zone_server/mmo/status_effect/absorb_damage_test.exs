@@ -45,7 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
     @impl true
     def absorb_damage(_target, instance, _hit_info, _context) do
       case instance.state.hits_remaining - 1 do
-        n when n <= 0 -> :remove
+        n when n <= 0 -> {:remove, 0}
         n -> {:ok, 0, put_state(instance, :hits_remaining, n)}
       end
     end
@@ -83,7 +83,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
       assert 0 = Interpreter.absorb_damage(:player, target_id, 100, %{dmg_type: :physical})
       assert StatusStorage.has_status?(:player, target_id, :sc_test_block_once)
 
-      assert 100 = Interpreter.absorb_damage(:player, target_id, 100, %{dmg_type: :physical})
+      assert 0 = Interpreter.absorb_damage(:player, target_id, 100, %{dmg_type: :physical})
       refute StatusStorage.has_status?(:player, target_id, :sc_test_block_once)
     end
 

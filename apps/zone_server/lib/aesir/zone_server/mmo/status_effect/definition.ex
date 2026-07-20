@@ -164,7 +164,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   everything else fall through a catch-all clause.
   """
   @callback absorb_damage(target(), StatusEntry.t(), map(), context()) ::
-              {:ok, integer(), StatusEntry.t()} | :remove
+              {:ok, integer(), StatusEntry.t()} | {:remove, integer()} | :remove
 
   @doc """
   Derives an `Option` sprite bit from this status' live instance.

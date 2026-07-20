@@ -154,6 +154,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       :blocked_water_ball -> {:ok, BlockedWaterBallUnit}
       :other_exclusive_unit -> {:ok, FakeUnit}
       :barrier_unit -> {:ok, FakeUnit}
+      :mg_safetywall -> {:ok, FakeUnit}
     end)
 
     :ok
@@ -387,6 +388,88 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       assert :ok = Manager.register(manager, nonexclusive)
       assert MapCell.dynamically_blocked?("prontera", 100, 100)
       assert MapCell.blocks_projectiles?("prontera", 100, 100)
+    end
+  end
+
+  describe "Safety Wall serialization" do
+    test "admits only one of two concurrent same-cell casts from different casters" do
+      manager = start_manager(10_000)
+
+      walls = [
+        group(1, skill_id: 12, skill_name: :mg_safetywall, caster_id: 100),
+        group(2, skill_id: 12, skill_name: :mg_safetywall, caster_id: 200)
+      ]
+
+      results =
+        walls
+        |> Enum.map(&Task.async(fn -> Manager.register(manager, &1) end))
+        |> Task.await_many()
+
+      assert Enum.frequencies(results) == %{:ok => 1, {:error, :safetywall_overlap} => 1}
+      assert [%Group{skill_id: 12}] = Storage.all()
+    end
+
+    test "preserves ordinary same-cell group stacking" do
+      manager = start_manager(10_000)
+
+      assert :ok = Manager.register(manager, group(1, caster_id: 100))
+      assert :ok = Manager.register(manager, group(2, caster_id: 200))
+      assert length(Storage.all()) == 2
+    end
+
+    test "serializes two occupant hits against the latest shared wall budget" do
+      manager = start_manager(10_000)
+
+      wall =
+        group(1,
+          skill_id: 12,
+          skill_name: :mg_safetywall,
+          state: %{hits_remaining: 2, shield_hp: 1_000}
+        )
+
+      assert :ok = Manager.register(manager, wall)
+
+      results =
+        [100, 200]
+        |> Enum.map(fn _occupant ->
+          Task.async(fn -> Manager.absorb_safetywall_hit(manager, wall.group_id, 100) end)
+        end)
+        |> Task.await_many()
+
+      assert Enum.frequencies(results) == %{
+               {:block, :keep} => 1,
+               {:block, :remove} => 1
+             }
+
+      assert nil == Storage.get(wall.group_id)
+      assert :pass = Manager.absorb_safetywall_hit(manager, wall.group_id, 100)
+    end
+
+    test "serializes concurrent hits against the latest shared HP pool" do
+      manager = start_manager(10_000)
+
+      wall =
+        group(1,
+          skill_id: 12,
+          skill_name: :mg_safetywall,
+          state: %{hits_remaining: 6, shield_hp: 150}
+        )
+
+      assert :ok = Manager.register(manager, wall)
+
+      results =
+        [100, 200]
+        |> Enum.map(fn _occupant ->
+          Task.async(fn -> Manager.absorb_safetywall_hit(manager, wall.group_id, 100) end)
+        end)
+        |> Task.await_many()
+
+      assert Enum.frequencies(results) == %{
+               {:block, :keep} => 1,
+               {:block, :remove} => 1
+             }
+
+      assert nil == Storage.get(wall.group_id)
     end
   end
 

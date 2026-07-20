@@ -9,10 +9,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Safetywall do
   The hit/shield budget is **shared by the wall**, not the defender: it lives on
   the owning ground unit's `state` (`hits_remaining = level + 1`,
   `shield_hp = 300*level + 65*(INT + baseLv) + maxSP` from the caster's stats) and
-  is set when the wall is placed (see `MgSafetywall`). Each blocked hit decrements
-  that shared budget through `Skill.Unit.update_state/2`. When it runs out the wall
-  is torn down via `Skill.Unit.destroy/1` (rAthena `skill_delunitgroup`) and the
-  status ends; a hit landing after the wall is already gone simply ends the status.
+  is set when the wall is placed (see `MgSafetywall`). The skill-unit manager
+  atomically reads and spends both budgets for each blocked hit. When either runs
+  out, the final hit stays blocked while the wall and marker are removed; a hit
+  landing after the wall is already gone passes through and ends the stale marker.
 
   The status only keeps the wall's `group_id` in its own state, for the
   unit<->status linkage.
@@ -26,7 +26,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Safetywall do
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
 
   alias Aesir.ZoneServer.Mmo.Skill.Unit
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
 
   @impl true
   def on_apply(_target, %{val2: group_id} = instance, _context) do
@@ -39,20 +38,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Safetywall do
         instance,
         %{damage: damage, is_short: true, dmg_type: :physical},
         _context
-      ) do
+      )
+      when damage > 0 do
     group_id = instance.state.group_id
 
-    case Unit.fetch(group_id) do
-      {:ok, %Group{state: %{hits_remaining: hits, shield_hp: shield_hp}}}
-      when hits - 1 <= 0 or shield_hp - damage <= 0 ->
-        Unit.destroy(group_id)
-        :remove
+    case Unit.absorb_safetywall_hit(group_id, damage) do
+      {:block, :remove} ->
+        {:remove, 0}
 
-      {:ok, %Group{state: %{hits_remaining: hits, shield_hp: shield_hp}}} ->
-        Unit.update_state(group_id, %{hits_remaining: hits - 1, shield_hp: shield_hp - damage})
+      {:block, :keep} ->
         {:ok, 0, instance}
 
-      :error ->
+      :pass ->
         :remove
     end
   end

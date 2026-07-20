@@ -74,7 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SafetywallTest do
       entry = instance(42)
       hit = %{damage: 100, is_short: true, dmg_type: :physical, element: :neutral}
 
-      assert :remove = Safetywall.absorb_damage(@target, entry, hit, %{})
+      assert {:remove, 0} = Safetywall.absorb_damage(@target, entry, hit, %{})
       assert nil == Storage.get(42)
     end
 
@@ -83,7 +83,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SafetywallTest do
       entry = instance(42)
       hit = %{damage: 100, is_short: true, dmg_type: :physical, element: :neutral}
 
-      assert :remove = Safetywall.absorb_damage(@target, entry, hit, %{})
+      assert {:remove, 0} = Safetywall.absorb_damage(@target, entry, hit, %{})
       assert nil == Storage.get(42)
     end
 
@@ -92,6 +92,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SafetywallTest do
       hit = %{damage: 100, is_short: true, dmg_type: :physical, element: :neutral}
 
       assert :remove = Safetywall.absorb_damage(@target, entry, hit, %{})
+    end
+
+    test "does not spend the wall budget on a zero-damage physical hit" do
+      place_wall(42, %{hits_remaining: 6, shield_hp: 9_500})
+      entry = instance(42)
+      hit = %{damage: 0, is_short: true, dmg_type: :physical, element: :neutral}
+
+      assert {:ok, 0, ^entry} = Safetywall.absorb_damage(@target, entry, hit, %{})
+      assert %Group{state: %{hits_remaining: 6, shield_hp: 9_500}} = Storage.get(42)
     end
   end
 
