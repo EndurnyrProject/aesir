@@ -21,7 +21,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
 
   @typedoc "How a skill is targeted (rAthena `inf`)."
   @type target_type ::
-          :self | :target_enemy | :target_ally | :target_any | :target_corpse | :ground | :passive
+          :self
+          | :target_enemy
+          | :target_ally
+          | :target_any
+          | :target_corpse
+          | :target_resurrection
+          | :ground
+          | :passive
 
   @typedoc "Whether casting deals damage (rAthena `DamageFlags.NoDamage`)."
   @type damage_type :: :damage | :no_damage
@@ -69,7 +76,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     max_level: {:required, {:integer, {:gt, 0}}},
     target_type: {
       :enum,
-      [:self, :target_enemy, :target_ally, :target_any, :target_corpse, :ground, :passive]
+      [
+        :self,
+        :target_enemy,
+        :target_ally,
+        :target_any,
+        :target_corpse,
+        :target_resurrection,
+        :ground,
+        :passive
+      ]
     },
     damage_type: {:enum, [:damage, :no_damage]},
     range: :integer,

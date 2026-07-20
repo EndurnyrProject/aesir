@@ -396,6 +396,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp check_target(_game_state, {:unit, target_id}, %{target_type: :target_corpse}),
     do: ensure_corpse_target(target_id)
 
+  defp check_target(_game_state, {:unit, target_id}, %{target_type: :target_resurrection}),
+    do: ensure_resurrection_target(target_id)
+
   defp check_target(_game_state, {:ground, _x, _y}, %{target_type: :ground}), do: :ok
 
   defp check_target(_game_state, :self, _definition), do: :ok
@@ -506,6 +509,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       end
 
     result
+  catch
+    :exit, _reason -> {:error, :target_not_found}
+  end
+
+  defp ensure_resurrection_target(unit_id) do
+    case TargetResolver.resolve(unit_id) do
+      {:ok, _pid, target_state, :player} ->
+        if TargetState.corpse?(target_state),
+          do: :ok,
+          else: TargetResolver.ensure_targetable(target_state, :player)
+
+      {:ok, _pid, target_state, unit_type} ->
+        TargetResolver.ensure_targetable(target_state, unit_type)
+
+      {:error, _reason} ->
+        {:error, :target_not_found}
+    end
   catch
     :exit, _reason -> {:error, :target_not_found}
   end

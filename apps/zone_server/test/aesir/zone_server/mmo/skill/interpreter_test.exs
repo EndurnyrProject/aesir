@@ -20,6 +20,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -49,6 +51,30 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   defp game_state(sp, learned, equipment) do
     gs = game_state(sp, learned)
     %{gs | stats: Map.put(gs.stats, :modifiers, %{equipment: equipment})}
+  end
+
+  defp resurrection_game_state do
+    Map.merge(game_state(100, %{54 => 1}), %{
+      inventory: %{0 => %InventoryItem{nameid: 717, amount: 1, equip: 0}},
+      pending_inventory_persist: []
+    })
+  end
+
+  defp resurrection_mob do
+    %MobState{
+      instance_id: 2_000,
+      mob_id: 1,
+      mob_data: nil,
+      spawn_ref: nil,
+      x: 14,
+      y: 10,
+      map_name: "prontera",
+      hp: 100,
+      max_hp: 100,
+      sp: 0,
+      max_sp: 0,
+      spawned_at: 0
+    }
   end
 
   defp enemy_definition(range) do
@@ -137,6 +163,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), corpse, :player} end)
     stub(Combat, :resolve_target_position, fn 2_000 -> {:ok, :player, {14, 10, "prontera"}} end)
     stub(Catalog, :by_id, fn 6 -> {:ok, unit_definition(:target_corpse, 5)} end)
+    stub(SmProvoke, :cast, fn caster, {:unit, 2_000}, 1, _definition -> {:ok, caster} end)
+
+    assert {:ok, _} = Interpreter.cast(game_state(100, %{6 => 1}), 6, 1, {:unit, 2_000})
+  end
+
+  test "a resurrection-target skill accepts a nearby player corpse" do
+    corpse = %PlayerState{action_state: :dead, stats: %{current_state: %{hp: 0}}}
+
+    Mimic.copy(TargetResolver)
+    stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), corpse, :player} end)
+    stub(Combat, :resolve_target_position, fn 2_000 -> {:ok, :player, {14, 10, "prontera"}} end)
+    stub(Catalog, :by_id, fn 6 -> {:ok, unit_definition(:target_resurrection, 5)} end)
     stub(SmProvoke, :cast, fn caster, {:unit, 2_000}, 1, _definition -> {:ok, caster} end)
 
     assert {:ok, _} = Interpreter.cast(game_state(100, %{6 => 1}), 6, 1, {:unit, 2_000})
@@ -981,6 +1019,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   end
 
   describe "complete_cast/4" do
+    setup do
+      Mimic.copy(TargetResolver)
+      Mimic.copy(MobState)
+      :ok
+    end
+
     test "deducts SP, runs the behavior, and sets the cooldown" do
       stub(Catalog, :by_id, fn 6 -> {:ok, instant_definition()} end)
       stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
@@ -1013,6 +1057,76 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
       assert {:error, :target_not_found} = Interpreter.complete_cast(gs, 6, 1, {:unit, 9999})
     end
+
+    test "a stale Resurrection corpse session retains SP and its Blue Gemstone" do
+      corpse = %PlayerState{action_state: :dead, stats: %{current_state: %{hp: 0}}}
+      gs = resurrection_game_state()
+
+      stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), corpse, :player} end)
+      stub(Combat, :resolve_target_position, fn 2_000 -> {:ok, :player, {14, 10, "prontera"}} end)
+      stub(PlayerSession, :resurrect, fn _pid, 1_000, 10 -> {:error, :target_not_found} end)
+
+      assert {:error, :target_not_found} =
+               Interpreter.complete_cast(gs, 54, 1, {:unit, 2_000})
+
+      assert gs.stats.current_state.sp == 100
+      assert %{0 => %InventoryItem{nameid: 717, amount: 1}} = gs.inventory
+      assert gs.pending_inventory_persist == []
+    end
+
+    test "a successful corpse Resurrection charges SP and its Blue Gemstone" do
+      corpse = %PlayerState{action_state: :dead, stats: %{current_state: %{hp: 0}}}
+
+      stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), corpse, :player} end)
+      stub(Combat, :resolve_target_position, fn 2_000 -> {:ok, :player, {14, 10, "prontera"}} end)
+      stub(PlayerSession, :resurrect, fn _pid, 1_000, 10 -> :ok end)
+
+      assert {:ok, updated} =
+               Interpreter.complete_cast(resurrection_game_state(), 54, 1, {:unit, 2_000})
+
+      assert updated.stats.current_state.sp == 40
+      assert updated.inventory == %{}
+      assert length(updated.pending_inventory_persist) == 1
+    end
+
+    test "a successful offensive Resurrection charges SP and its Blue Gemstone" do
+      stub_offensive_resurrection(:ok)
+
+      assert {:ok, updated} =
+               Interpreter.complete_cast(resurrection_game_state(), 54, 1, {:unit, 2_000})
+
+      assert updated.stats.current_state.sp == 40
+      assert updated.inventory == %{}
+      assert length(updated.pending_inventory_persist) == 1
+    end
+
+    test "a failed offensive Resurrection delivery retains SP and its Blue Gemstone" do
+      gs = resurrection_game_state()
+      stub_offensive_resurrection({:error, :target_not_found})
+
+      assert {:error, :target_not_found} =
+               Interpreter.complete_cast(gs, 54, 1, {:unit, 2_000})
+
+      assert gs.stats.current_state.sp == 100
+      assert %{0 => %InventoryItem{nameid: 717, amount: 1}} = gs.inventory
+      assert gs.pending_inventory_persist == []
+    end
+  end
+
+  defp stub_offensive_resurrection(delivery_result) do
+    undead = resurrection_mob()
+
+    stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), undead, :mob} end)
+    stub(Combat, :resolve_target_position, fn 2_000 -> {:ok, :mob, {14, 10, "prontera"}} end)
+
+    stub(MobState, :to_combatant, fn ^undead ->
+      %{race: :undead, element: {:undead, 1}, class: :normal}
+    end)
+
+    stub(MobState, :get_stats, fn ^undead -> %{hp: 100, max_hp: 100} end)
+    stub(PlayerState, :get_stats, fn _caster -> %{luk: 0, int: 0, base_level: 0} end)
+    stub(Combat, :execute_magic_attack, fn _caster, 2_000, _opts -> delivery_result end)
+    :rand.seed(:exsss, {100, 200, 300})
   end
 
   defp definition_with_act_delay(act_delay) do

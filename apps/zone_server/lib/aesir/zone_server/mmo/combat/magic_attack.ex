@@ -307,6 +307,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   ## Options
     - `:skill_id` / `:skill_level` - identify the skill for the damage packet
     - `:skill_ratio` - percent of base MATK each hit deals (default `100`)
+    - `:bonus_matk` - flat MATK added after the skill-ratio step (default `0`)
     - `:element` - the skill's magic element (default `:neutral`)
     - `:hit_count` - number of magic hits to deliver (default `1`)
     - `:skip_range` - skip only the distance check, which gates on the caster's
@@ -325,6 +326,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     skill_id = Keyword.fetch!(opts, :skill_id)
     skill_level = Keyword.fetch!(opts, :skill_level)
     skill_ratio = Keyword.get(opts, :skill_ratio, 100)
+    bonus_matk = Keyword.get(opts, :bonus_matk, 0)
     element = Keyword.get(opts, :element, :neutral)
     hits = Keyword.get(opts, :hit_count, 1)
 
@@ -333,7 +335,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- AttackValidator.validate(attacker, target, opts),
          :ok <- Targeting.validate_enemy(attacker, target) do
-      damages = magic_hit_damages(attacker, target, element, skill_ratio, hits, 0, skill_id, opts)
+      damages =
+        magic_hit_damages(
+          attacker,
+          target,
+          element,
+          skill_ratio,
+          hits,
+          bonus_matk,
+          skill_id,
+          opts
+        )
 
       deliver_magic_hits(
         target_type,

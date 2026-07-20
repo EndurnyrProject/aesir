@@ -396,6 +396,37 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       assert_received {:damage, 90}
     end
 
+    test "passes flat bonus MATK into the magic damage pipeline" do
+      caster = build_caster()
+      test_pid = self()
+      stub_single_target_mob()
+
+      expect(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, opts ->
+        assert opts[:skill_ratio] == 0
+        assert opts[:bonus_matk] == 100
+        assert opts[:ignore_mdef] == false
+        {:ok, %{damage: 30, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, %SkillDamage{} -> :ok end)
+
+      stub(MobSession, :apply_damage, fn _pid, damage, @caster_id ->
+        send(test_pid, {:damage, damage})
+        :ok
+      end)
+
+      assert :ok =
+               Combat.execute_magic_attack(caster, @target_id,
+                 skill_id: 54,
+                 skill_level: 1,
+                 skill_ratio: 0,
+                 bonus_matk: 100,
+                 element: :holy
+               )
+
+      assert_received {:damage, 30}
+    end
+
     test "a pre-delivery modifier is reflected in both direct magic packet and HP loss" do
       caster = build_caster()
       test_pid = self()
