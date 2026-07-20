@@ -22,6 +22,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatDealtDamageTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
+  alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -122,9 +124,33 @@ defmodule Aesir.ZoneServer.Mmo.CombatDealtDamageTest do
 
   setup do
     attacker = combatant(@attacker_id, :player)
-    target_state = %FakeUnit{combatant: combatant(@mob_id, :mob), x: 150, y: 150}
+    target = combatant(@mob_id, :mob)
 
-    stub(UnitRegistry, :get_unit, fn :mob, @mob_id -> {:ok, {FakeUnit, target_state, self()}} end)
+    target_state =
+      struct(MobState, %{
+        instance_id: @mob_id,
+        hp: 100,
+        max_hp: 100,
+        is_dead: false,
+        x: 150,
+        y: 150,
+        map_name: @map_name
+      })
+
+    player_state = %PlayerState{
+      character_id: @attacker_id,
+      action_state: :idle,
+      stats: %{current_state: %{hp: 100}}
+    }
+
+    Mimic.copy(MobState)
+    stub(MobState, :to_combatant, fn ^target_state -> target end)
+
+    stub(UnitRegistry, :get_unit, fn
+      :mob, @mob_id -> {:ok, {MobState, target_state, self()}}
+      :player, @attacker_id -> {:ok, {PlayerState, player_state, self()}}
+    end)
+
     stub(SpatialIndex, :get_unit_position, fn :mob, @mob_id -> {:ok, {150, 150, @map_name}} end)
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     stub(Passives, :attack_procs, fn _player -> %{} end)

@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
+  alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
@@ -294,7 +295,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # (leaving the player idle) when the target is gone, no closer cell exists, or
   # no path reaches it — never loops.
   defp initiate_skill_movement(%{game_state: game_state} = state, skill_id, level, target, locked) do
-    with {:ok, target_pos} <- skill_target_position(target),
+    with :ok <- ensure_living_target(target),
+         {:ok, target_pos} <- skill_target_position(target),
          {:ok, definition} <- Catalog.by_id(skill_id),
          {:ok, map_data} <- MapCache.get(game_state.map_name) do
       range = Interpreter.effective_range(definition, game_state)
@@ -386,6 +388,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       {:error, :not_found} -> SpatialIndex.get_unit_position(:mob, unit_id)
     end
   end
+
+  defp ensure_living_target({:unit, unit_id}) do
+    case TargetResolver.resolve(unit_id) do
+      {:ok, _pid, target_state, unit_type} ->
+        TargetResolver.ensure_targetable(target_state, unit_type)
+
+      {:error, _reason} ->
+        :ok
+    end
+  end
+
+  defp ensure_living_target(_target), do: :ok
 
   # A cast may only begin from idle. A moving player is stopped first (using a
   # skill ends movement); any other busy state (casting, attacking, sitting,

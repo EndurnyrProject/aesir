@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Map.GatType
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
@@ -18,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
@@ -98,6 +100,32 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
     assert {:error, :invalid_target} =
              Interpreter.cast(game_state(100, %{29 => 1}), 29, 1, {:unit, 2000})
+  end
+
+  test "ordinary enemy skills reject corpse targets before charging SP" do
+    corpse = %PlayerState{action_state: :dead, stats: %{current_state: %{hp: 0}}}
+
+    Mimic.copy(TargetResolver)
+    stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), corpse, :player} end)
+
+    assert {:error, :target_dead} =
+             Interpreter.cast(game_state(100, %{6 => 1}), 6, 1, {:unit, 2_000})
+  end
+
+  test "ordinary ally and target-any skills reject corpse targets" do
+    corpse = %PlayerState{action_state: :dead, stats: %{current_state: %{hp: 0}}}
+
+    Mimic.copy(TargetResolver)
+    stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), corpse, :player} end)
+
+    for target_type <- [:target_ally, :target_any] do
+      stub(Catalog, :by_id, fn 29 ->
+        {:ok, %{definition_with_cooldown([]) | target_type: target_type}}
+      end)
+
+      assert {:error, :target_dead} =
+               Interpreter.cast(game_state(100, %{29 => 1}), 29, 1, {:unit, 2_000})
+    end
   end
 
   test "happy path applies the effect and deducts SP" do

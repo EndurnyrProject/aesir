@@ -326,6 +326,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportRealInterpreterTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -335,8 +336,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportRealInterpreterTest do
 
   setup :setup_ets_tables
 
+  defp living_player do
+    %PlayerState{action_state: :idle, stats: %{current_state: %{hp: 100}}}
+  end
+
   test "real status materialization stays alive through overlap and removes after the last source" do
-    :ok = UnitRegistry.register_unit(:player, 77, Entity, %{})
+    :ok = UnitRegistry.register_unit(:player, 77, Entity, living_player())
 
     first = [level: 1, val1: 1, val2: 5]
     second = [level: 5, val1: 5, val2: 25]
@@ -361,7 +366,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportRealInterpreterTest do
   end
 
   test "manager reconciliation releases Quagmire support after leaving for an empty cell" do
-    :ok = UnitRegistry.register_unit(:player, 77, Entity, %{})
+    :ok = UnitRegistry.register_unit(:player, 77, Entity, living_player())
     :ok = SpatialIndex.add_unit(:player, 77, 20, 20, "prontera")
     assert :ok = FieldSupport.acquire(:player, 77, :sc_quagmire, 70, level: 1, val2: 5)
     assert StatusStorage.has_status?(:player, 77, :sc_quagmire)

@@ -13,7 +13,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -58,13 +60,31 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
     })
   end
 
+  defp living_mob_state(combatant, x, y) do
+    Mimic.copy(MobState)
+
+    state =
+      struct(MobState, %{
+        instance_id: combatant.unit_id,
+        hp: 100,
+        max_hp: 100,
+        is_dead: false,
+        x: x,
+        y: y,
+        map_name: combatant.map_name
+      })
+
+    stub(MobState, :to_combatant, fn ^state -> combatant end)
+    state
+  end
+
   describe "execute_attack/3 multi-hit procs" do
     setup do
       attacker = combatant(1001, :player)
       target = combatant(2001, :mob)
 
       player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
-      target_state = %FakeUnit{combatant: target, x: 150, y: 150}
+      target_state = living_mob_state(target, 150, 150)
 
       stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
       stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
@@ -200,7 +220,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       target = combatant(2001, :mob)
 
       player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
-      target_state = %FakeUnit{combatant: target, x: 150, y: 150}
+      target_state = living_mob_state(target, 150, 150)
 
       stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
       stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
@@ -258,7 +278,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
     test "rejects an attack on a target on a different map without applying damage",
          %{player_state: player_state, stats: stats} do
       target = combatant(2001, :mob, map_name: "geffen")
-      target_state = %FakeUnit{combatant: target, x: 150, y: 150}
+      target_state = living_mob_state(target, 150, 150)
       stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
       stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "geffen"}} end)
       reject(&MobSession.apply_damage/3)
@@ -273,7 +293,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       target = combatant(2001, :mob)
 
       player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
-      target_state = %FakeUnit{combatant: target, x: 150, y: 150}
+      target_state = living_mob_state(target, 150, 150)
 
       stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
       stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
@@ -366,11 +386,22 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
          %{player_state: player_state, stats: stats} do
       test_pid = self()
       target = combatant(3001, :player)
-      target_state = %FakeUnit{combatant: target, x: 150, y: 150}
+
+      target_state = %PlayerState{
+        character_id: 3001,
+        action_state: :idle,
+        x: 150,
+        y: 150,
+        map_name: "prontera",
+        stats: %{current_state: %{hp: 100}}
+      }
+
+      Mimic.copy(PlayerState)
+      stub(PlayerState, :to_combatant, fn ^target_state -> target end)
 
       stub(UnitRegistry, :get_unit, fn :mob, 3001 -> {:error, :not_found} end)
       stub(UnitRegistry, :get_player_pid, fn 3001 -> {:ok, self()} end)
-      stub(PlayerSession, :get_current_stats, fn _pid -> stats end)
+      stub(PlayerSession, :get_current_stats, fn _pid -> target_state.stats end)
       stub(PlayerSession, :get_state, fn _pid -> %{game_state: target_state} end)
 
       stub(EquipBreak, :resolve, fn _attacker, resolved_target ->
@@ -438,7 +469,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       attacker = combatant(1001, :player)
       target = combatant(2001, :mob)
       player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
-      target_state = %FakeUnit{combatant: target, x: 150, y: 150}
+      target_state = living_mob_state(target, 150, 150)
 
       stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
       stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
@@ -497,7 +528,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       attacker = combatant(1001, :player, attack_range: 5, position: {150, 150})
       target = combatant(2001, :mob, position: {150, 153})
       player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
-      target_state = %FakeUnit{combatant: target, x: 150, y: 153}
+      target_state = living_mob_state(target, 150, 153)
 
       stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
       stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 153, "prontera"}} end)
@@ -518,7 +549,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       attacker = combatant(1001, :player, attack_range: 1, position: {150, 150})
       target = combatant(2001, :mob, position: {151, 150})
       player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
-      target_state = %FakeUnit{combatant: target, x: 151, y: 150}
+      target_state = living_mob_state(target, 151, 150)
 
       stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
       stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {151, 150, "prontera"}} end)
@@ -661,7 +692,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
       target = combatant(2001, :mob)
       player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
-      target_state = %FakeUnit{combatant: target, x: 150, y: 150}
+      target_state = living_mob_state(target, 150, 150)
 
       stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
       stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)

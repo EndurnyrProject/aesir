@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.Net.SkillList
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -445,6 +446,31 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
                target: {:unit, 2000},
                combat_target_id: nil
              }
+    end
+
+    test "an out-of-range skill does not approach a corpse" do
+      state = casting_state(45)
+      corpse = %PlayerState{action_state: :dead, stats: %{current_state: %{hp: 0}}}
+
+      Mimic.copy(TargetResolver)
+      stub(Interpreter, :begin_cast, fn _gs, 29, 1, {:unit, 2_000} -> {:error, :out_of_range} end)
+      stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), corpse, :player} end)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2_000 -> {:error, :not_found}
+        :mob, 2_000 -> {:ok, {160, 150, "prontera"}}
+      end)
+
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(range: 9)} end)
+      stub(MapCache, :get, fn "prontera" -> {:ok, :map_data} end)
+
+      stub(Pathfinding, :find_path, fn :map_data, {150, 150}, {151, 150} ->
+        {:ok, [{151, 150}]}
+      end)
+
+      reject(&MovementHandler.handle_request_move/4)
+
+      assert {:noreply, ^state} = SkillHandler.handle_use_skill(state, 29, 1, 2_000)
     end
 
     test "reaching casting range re-dispatches the pending skill from context" do

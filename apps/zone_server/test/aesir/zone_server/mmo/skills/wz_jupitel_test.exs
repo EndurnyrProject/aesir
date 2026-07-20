@@ -53,6 +53,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzJupitelTest do
 
   defp caster(opts \\ []) do
     stats = %Stats{
+      current_state: %{hp: 100},
       base_stats: %BaseStats{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
       combat_stats: %{
         atk: 1,
@@ -80,6 +81,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzJupitelTest do
           x: 50,
           y: 60,
           map_name: "prontera",
+          action_state: :idle,
           stats: stats
         ],
         opts

@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzHeavendriveTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -249,14 +250,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzHeavendriveTest do
       caster = fake_unit(1_000, :player, 150, 150, party_id: 7, guild_id: 9)
 
       units = %{
-        2_001 => fake_unit(2_001, :mob, 150, 150),
-        2_002 => fake_unit(2_002, :mob, 152, 152),
-        2_003 => fake_unit(2_003, :mob, 153, 150),
+        2_001 => struct(MobState, %{instance_id: 2_001, hp: 100, is_dead: false, x: 150, y: 150}),
+        2_002 => struct(MobState, %{instance_id: 2_002, hp: 100, is_dead: false, x: 152, y: 152}),
+        2_003 => struct(MobState, %{instance_id: 2_003, hp: 100, is_dead: false, x: 153, y: 150}),
         3_001 => fake_unit(3_001, :player, 149, 149),
         3_002 => fake_unit(3_002, :player, 151, 150, party_id: 7),
         3_003 => fake_unit(3_003, :player, 150, 151, guild_id: 9),
         1_000 => caster
       }
+
+      Mimic.copy(MobState)
+
+      stub(MobState, :to_combatant, fn state ->
+        combatant(state.instance_id, :mob, state.x, state.y)
+      end)
 
       stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 150, 150, 4 ->
         [
@@ -272,8 +279,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzHeavendriveTest do
 
       stub(UnitRegistry, :get_unit, fn :mob, unit_id ->
         case Map.fetch(units, unit_id) do
-          {:ok, %FakeUnit{combatant: %{unit_type: :mob}} = unit} ->
-            {:ok, {FakeUnit, unit, self()}}
+          {:ok, %MobState{} = unit} ->
+            {:ok, {MobState, unit, self()}}
 
           _ ->
             {:error, :not_found}
@@ -282,6 +289,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.WzHeavendriveTest do
 
       stub(SpatialIndex, :get_unit_position, fn unit_type, unit_id ->
         case Map.fetch(units, unit_id) do
+          {:ok, %MobState{x: x, y: y}} when unit_type == :mob ->
+            {:ok, {x, y, "prontera"}}
+
           {:ok, %FakeUnit{combatant: %{unit_type: ^unit_type}, x: x, y: y}} ->
             {:ok, {x, y, "prontera"}}
 

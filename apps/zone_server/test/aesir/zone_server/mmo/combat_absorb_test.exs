@@ -10,7 +10,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatAbsorbTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -52,10 +54,24 @@ defmodule Aesir.ZoneServer.Mmo.CombatAbsorbTest do
   end
 
   defp stub_mob_target(target_id) do
-    target_state = %FakeUnit{combatant: combatant(target_id, :mob), x: 150, y: 150}
+    target = combatant(target_id, :mob)
 
-    stub(UnitRegistry, :get_unit, fn :mob, ^target_id ->
-      {:ok, {FakeUnit, target_state, self()}}
+    target_state =
+      struct(MobState, %{
+        instance_id: target_id,
+        hp: 100,
+        max_hp: 100,
+        is_dead: false,
+        x: 150,
+        y: 150,
+        map_name: @map_name
+      })
+
+    Mimic.copy(MobState)
+    stub(MobState, :to_combatant, fn ^target_state -> target end)
+
+    stub(UnitRegistry, :get_unit, fn
+      :mob, ^target_id -> {:ok, {MobState, target_state, self()}}
     end)
 
     stub(SpatialIndex, :get_unit_position, fn :mob, ^target_id -> {:ok, {150, 150, @map_name}} end)
@@ -63,11 +79,27 @@ defmodule Aesir.ZoneServer.Mmo.CombatAbsorbTest do
 
   defp stub_player_target(target_id) do
     target_pid = spawn(fn -> Process.sleep(:infinity) end)
-    target_state = %FakeUnit{combatant: combatant(target_id, :player), stats: nil, x: 150, y: 150}
+    target = combatant(target_id, :player)
 
-    stub(UnitRegistry, :get_unit, fn :mob, ^target_id -> {:error, :not_found} end)
+    target_state = %PlayerState{
+      character_id: target_id,
+      action_state: :idle,
+      x: 150,
+      y: 150,
+      map_name: @map_name,
+      stats: %{current_state: %{hp: 100}}
+    }
+
+    Mimic.copy(PlayerState)
+    stub(PlayerState, :to_combatant, fn %PlayerState{} -> target end)
+
+    stub(UnitRegistry, :get_unit, fn
+      :mob, ^target_id -> {:error, :not_found}
+      :player, ^target_id -> {:ok, {PlayerState, target_state, target_pid}}
+    end)
+
     stub(UnitRegistry, :get_player_pid, fn ^target_id -> {:ok, target_pid} end)
-    stub(PlayerSession, :get_current_stats, fn ^target_pid -> nil end)
+    stub(PlayerSession, :get_current_stats, fn ^target_pid -> target_state.stats end)
     stub(PlayerSession, :get_state, fn ^target_pid -> %{game_state: target_state} end)
 
     target_pid

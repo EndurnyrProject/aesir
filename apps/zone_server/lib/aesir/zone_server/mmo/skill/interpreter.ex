@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.CastTime
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -377,17 +378,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # `:skill_unit` for a cell the registry already confirmed is targetable, so
   # it is a valid enemy target by construction.
   defp check_target(_game_state, {:unit, target_id}, %{target_type: :target_enemy}) do
-    case unit_type_of(target_id) do
-      :mob -> :ok
-      :skill_unit -> :ok
-      :player -> {:error, :invalid_target}
-      :not_found -> :ok
+    with :ok <- ensure_living_target(target_id) do
+      case unit_type_of(target_id) do
+        :mob -> :ok
+        :skill_unit -> :ok
+        :player -> {:error, :invalid_target}
+        :not_found -> :ok
+      end
     end
   end
 
-  defp check_target(_game_state, {:unit, _id}, %{target_type: target_type})
+  defp check_target(_game_state, {:unit, target_id}, %{target_type: target_type})
        when target_type in [:target_ally, :target_any],
-       do: :ok
+       do: ensure_living_target(target_id)
 
   defp check_target(_game_state, {:ground, _x, _y}, %{target_type: :ground}), do: :ok
 
@@ -470,6 +473,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     case Combat.resolve_target_position(unit_id) do
       {:ok, type, _position} -> type
       {:error, :target_not_found} -> :not_found
+    end
+  end
+
+  defp ensure_living_target(unit_id) do
+    case TargetResolver.resolve(unit_id) do
+      {:ok, _pid, target_state, unit_type} ->
+        TargetResolver.ensure_targetable(target_state, unit_type)
+
+      {:error, _reason} ->
+        :ok
     end
   end
 

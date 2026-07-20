@@ -39,6 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
   defp build_caster do
     stats = %Stats{
+      current_state: %{hp: 100},
       base_stats: %BaseStats{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
       combat_stats: %{atk: 1, def: 1, hit: 1, flee: 1, perfect_dodge: 1, matk: 100},
       derived_stats: %{max_hp: 100, max_sp: 50, aspd: 150},
@@ -52,6 +53,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       x: 150,
       y: 150,
       map_name: @map_name,
+      action_state: :idle,
       stats: stats
     }
   end

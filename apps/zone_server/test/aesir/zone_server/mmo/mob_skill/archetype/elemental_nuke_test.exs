@@ -75,6 +75,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.ElementalNukeTest do
 
   defp build_target_state(x, y) do
     stats = %Stats{
+      current_state: %{hp: 100},
       base_stats: %BaseStats{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
       combat_stats: %{atk: 1, def: 1, hit: 1, flee: 1, perfect_dodge: 1, matk: 100},
       derived_stats: %{max_hp: 100, max_sp: 50, aspd: 150},
@@ -88,6 +89,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.ElementalNukeTest do
       x: x,
       y: y,
       map_name: @map,
+      action_state: :idle,
       stats: stats
     }
   end

@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   defmodule PermanentStatus do
@@ -44,6 +45,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
 
       assert :ok = Interpreter.apply_status(:player, target_id, status_id, val1: val1, val2: val2)
       assert StatusStorage.has_status?(:player, target_id, status_id)
+    end
+
+    test "rejects ordinary status application to a corpse" do
+      target_id = 99
+      corpse = %PlayerState{action_state: :dead, stats: %{current_state: %{hp: 0}}}
+
+      stub(UnitRegistry, :get_unit, fn :player, ^target_id ->
+        {:ok, {PlayerState, corpse, self()}}
+      end)
+
+      assert {:error, :target_dead} = Interpreter.apply_status(:player, target_id, :sc_provoke)
+      refute StatusStorage.has_status?(:player, target_id, :sc_provoke)
     end
 
     test "permanent status is stored with nil expires_at" do
