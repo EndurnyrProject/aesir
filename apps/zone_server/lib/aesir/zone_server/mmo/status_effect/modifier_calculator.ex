@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator do
   def get_all_modifiers(unit_type, unit_id) do
     unit_type
     |> StatusStorage.get_unit_statuses(unit_id)
+    |> Enum.sort_by(&{&1.started_at, &1.type})
     |> Enum.reduce(%{}, fn instance, acc ->
       case Registry.get_definition(instance.type) do
         nil ->
@@ -35,11 +36,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator do
   @doc """
   Merges two modifier maps, summing numeric values present in both.
 
+  `:walk_speed_override` is an exact final value, so the most recently
+  applied status wins. Status instances are sorted by application time before
+  they reach this function, with the status type as a stable tie-breaker.
+
   When either colliding value is non-numeric the value from `new` wins.
   """
   @spec merge_modifiers(map(), map()) :: map()
   def merge_modifiers(base, new) do
     Map.merge(base, new, fn
+      :walk_speed_override, _v1, v2 -> v2
       _key, v1, v2 when is_number(v1) and is_number(v2) -> v1 + v2
       _key, _v1, v2 -> v2
     end)

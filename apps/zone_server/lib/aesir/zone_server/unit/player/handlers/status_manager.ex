@@ -130,10 +130,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
 
     speed_rate = max(100 + speed_delta, @min_speed_rate)
 
-    @base_walk_speed
-    |> Kernel.*(speed_rate)
-    |> div(100)
-    |> max(@min_walk_speed)
-    |> min(@max_walk_speed)
+    calculated_walk_speed =
+      @base_walk_speed
+      |> Kernel.*(speed_rate)
+      |> div(100)
+      |> max(@min_walk_speed)
+      |> min(@max_walk_speed)
+
+    Map.get(stats.modifiers.status_effects, :walk_speed_override, calculated_walk_speed)
   end
 end

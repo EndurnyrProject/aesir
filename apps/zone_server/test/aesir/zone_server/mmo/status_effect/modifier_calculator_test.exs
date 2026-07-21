@@ -28,5 +28,19 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculatorTest do
       assert ModifierCalculator.merge_modifiers(%{attack_element: 2}, %{attack_element: :fire}) ==
                %{attack_element: :fire}
     end
+
+    test "keeps the latest fixed walk speed override instead of summing it" do
+      assert ModifierCalculator.merge_modifiers(
+               %{walk_speed_override: 200},
+               %{walk_speed_override: 300}
+             ) == %{walk_speed_override: 300}
+    end
+
+    test "sums ASPD penalties separately from positive ASPD rates" do
+      assert ModifierCalculator.merge_modifiers(
+               %{aspd_rate: 10, aspd_penalty_rate: 250},
+               %{aspd_rate: 5, aspd_penalty_rate: 50}
+             ) == %{aspd_rate: 15, aspd_penalty_rate: 300}
+    end
   end
 end

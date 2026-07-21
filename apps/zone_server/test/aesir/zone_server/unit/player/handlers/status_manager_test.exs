@@ -129,6 +129,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManagerTest do
       assert StatusManager.walk_speed_for(stats) == 150
     end
 
+    test "a walk speed override wins after percentage movement modifiers", %{state: state} do
+      stats =
+        put_in(state.game_state.stats, [Access.key!(:modifiers), Access.key!(:status_effects)], %{
+          movement_speed: 100,
+          walk_speed_override: 200
+        })
+
+      assert StatusManager.walk_speed_for(stats) == 200
+    end
+
     defp with_equipment_speed(stats, bonus) do
       put_in(stats, [Access.key!(:modifiers), Access.key!(:equipment)], %{movement_speed: bonus})
     end

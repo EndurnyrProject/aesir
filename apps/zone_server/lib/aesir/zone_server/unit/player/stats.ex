@@ -845,11 +845,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
         final_aspd =
           final_aspd + div(max(195 - final_aspd, 2) * aspd_percent_bonus(stats), 100)
 
-        min(max(final_aspd, 0), 193)
+        final_aspd
+        |> apply_aspd_penalty(get_status_modifier(stats, :aspd_penalty_rate))
+        |> min(193)
+        |> max(0)
 
       err ->
         raise "Failed to get job name for ASPD calculation: #{inspect(err)}"
     end
+  end
+
+  defp apply_aspd_penalty(aspd, penalty_rate) do
+    200 - div((200 - aspd) * (1_000 + penalty_rate), 1_000)
   end
 
   defp get_job_stats_for_level(job_name, base_level) do

@@ -44,6 +44,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
                :critical_rate,
                :perfect_dodge,
                :movement_speed,
+               :walk_speed_override,
+               :aspd_penalty_rate,
                :max_hp_rate,
                :max_sp_rate,
                # DamageCalculator / MagicDamageCalculator / DamageShared

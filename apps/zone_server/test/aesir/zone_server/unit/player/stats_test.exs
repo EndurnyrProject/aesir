@@ -1747,6 +1747,19 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert status_stats(%{aspd_rate: 0}).derived_stats.aspd ==
                status_stats(%{}).derived_stats.aspd
     end
+
+    test "aspd_penalty_rate increases attack delay after positive ASPD modifiers" do
+      unpenalized = status_stats(%{aspd_rate: 5}).derived_stats.aspd
+      penalized = status_stats(%{aspd_rate: 5, aspd_penalty_rate: 250}).derived_stats.aspd
+
+      assert penalized == 200 - div((200 - unpenalized) * 1_250, 1_000)
+      assert penalized < unpenalized
+    end
+
+    test "no ASPD penalty preserves the calculated ASPD" do
+      assert status_stats(%{aspd_rate: 5, aspd_penalty_rate: 0}).derived_stats.aspd ==
+               status_stats(%{aspd_rate: 5}).derived_stats.aspd
+    end
   end
 
   describe "passive aspd_bonus and int_bonus" do
