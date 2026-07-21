@@ -12,7 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
   alias Aesir.ZoneServer.Unit.Stats.DerivedStats
 
   # Real equip.yml ids whose subtype matches the weapon atoms under test.
-  @weapon_ids %{one_handed_sword: 1101, mace: 1340, bow: 1701}
+  @weapon_ids %{one_handed_sword: 1101, mace: 1340, bow: 1701, knuckle: 1801}
   @both_hand 34
   @right_hand 2
 
@@ -135,6 +135,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
       player = build_player(%{65 => 5}, :mace)
       assert Passives.atk_bonus(player) == 15
     end
+
+    test "MO_IRONHAND level 5 with a knuckle grants 15 ATK" do
+      player = build_player(%{259 => 5}, :knuckle)
+      assert Passives.atk_bonus(player) == 15
+    end
   end
 
   describe "critical_bonus/1" do
@@ -167,6 +172,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
       player = build_player(%{9_900_001 => 5}, :one_handed_sword)
 
       assert Passives.flee_bonus(player) == 20
+    end
+
+    test "MO_DODGE level 3 grants 4 FLEE" do
+      player = build_player(%{265 => 3}, :one_handed_sword)
+      assert Passives.flee_bonus(player) == 4
     end
   end
 
@@ -280,6 +290,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
 
     test "returns all keys defaulted when no regen passives are learned" do
       player = build_player(%{2 => 5}, :one_handed_sword)
+
+      assert Passives.regen(player) ==
+               %{skill_hp_regen: 0, skill_sp_regen: 0, allow_while_moving: false}
+    end
+  end
+
+  describe "sitting_regen/1" do
+    test "collects Spiritual Cadence separately from ordinary passive regeneration" do
+      player = build_player(%{260 => 5}, :one_handed_sword)
+
+      assert Passives.sitting_regen(player) == %{sitting_hp_regen: 30, sitting_sp_regen: 11}
 
       assert Passives.regen(player) ==
                %{skill_hp_regen: 0, skill_sp_regen: 0, allow_while_moving: false}

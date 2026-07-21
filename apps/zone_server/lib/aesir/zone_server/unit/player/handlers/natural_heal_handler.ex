@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
     else
       regen_modifiers = regen_modifiers(game_state)
       passive_regen = Passives.regen(game_state)
+      sitting_regen = Passives.sitting_regen(game_state)
 
       accumulators = Map.put(game_state.regen_accumulators, :elapsed_ms, elapsed_ms)
 
@@ -50,6 +51,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
           game_state.movement_state,
           regen_modifiers,
           passive_regen,
+          sitting_regen,
           accumulators
         )
 

@@ -181,6 +181,138 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHealTest do
     end
   end
 
+  describe "compute/7 sitting Spiritual Cadence regeneration" do
+    @cadence %{sitting_hp_regen: 120, sitting_sp_regen: 110}
+
+    test "adds its HP and SP contributions after one sitting skill interval" do
+      s = stats(vit: 1, int: 1, max_hp: 10_000, max_sp: 10_000, hp: 100, sp: 100)
+
+      {base_hp, base_sp, _acc} =
+        NaturalHeal.compute(s, :sitting, :standing, %{}, @no_passive, acc(10_000))
+
+      {cadence_hp, cadence_sp, _acc} =
+        NaturalHeal.compute(s, :sitting, :standing, %{}, @no_passive, @cadence, acc(10_000))
+
+      assert {cadence_hp - base_hp, cadence_sp - base_sp} == {120, 110}
+    end
+
+    test "pauses accumulated progress while standing or moving" do
+      s = stats(vit: 1, int: 1, max_hp: 10_000, max_sp: 10_000, hp: 100, sp: 100)
+
+      {_hp, _sp, sitting_acc} =
+        NaturalHeal.compute(s, :sitting, :standing, %{}, @no_passive, @cadence, acc(9_000))
+
+      assert sitting_acc.sitting_hp_acc == 9_000
+      assert sitting_acc.sitting_sp_acc == 9_000
+
+      paused_acc =
+        Enum.reduce([{:idle, :standing}, {:sitting, :moving}], sitting_acc, fn
+          {action_state, movement_state}, accumulators ->
+            {_hp, _sp, next_accumulators} =
+              NaturalHeal.compute(
+                s,
+                action_state,
+                movement_state,
+                %{},
+                @no_passive,
+                @cadence,
+                Map.put(accumulators, :elapsed_ms, 500)
+              )
+
+            assert next_accumulators.sitting_hp_acc == 9_000
+            assert next_accumulators.sitting_sp_acc == 9_000
+            next_accumulators
+        end)
+
+      full = stats(vit: 1, int: 1, max_hp: 10_000, max_sp: 10_000, hp: 10_000, sp: 10_000)
+
+      {0, 0, ineligible_acc} =
+        NaturalHeal.compute(
+          full,
+          :sitting,
+          :standing,
+          %{},
+          @no_passive,
+          @cadence,
+          Map.put(paused_acc, :elapsed_ms, 500)
+        )
+
+      assert ineligible_acc.sitting_hp_acc == 9_000
+      assert ineligible_acc.sitting_sp_acc == 9_000
+
+      final_acc = Map.put(ineligible_acc, :elapsed_ms, 1_000)
+
+      {base_hp, base_sp, _acc} =
+        NaturalHeal.compute(
+          s,
+          :sitting,
+          :standing,
+          %{},
+          @no_passive,
+          %{sitting_hp_regen: 0, sitting_sp_regen: 0},
+          final_acc
+        )
+
+      {cadence_hp, cadence_sp, _acc} =
+        NaturalHeal.compute(
+          s,
+          :sitting,
+          :standing,
+          %{},
+          @no_passive,
+          @cadence,
+          final_acc
+        )
+
+      assert {cadence_hp - base_hp, cadence_sp - base_sp} == {120, 110}
+    end
+
+    test "does not change standing, moving, or status-modified natural regeneration" do
+      s = stats(vit: 50, int: 50, max_hp: 4_000, max_sp: 500, hp: 100, sp: 1)
+
+      for {action_state, movement_state} <- [idle: :standing, sitting: :moving] do
+        {base_hp, base_sp, _acc} =
+          NaturalHeal.compute(
+            s,
+            action_state,
+            movement_state,
+            %{hp_regen: -100, sp_regen: -100},
+            @no_passive,
+            acc(10_000)
+          )
+
+        {cadence_hp, cadence_sp, _acc} =
+          NaturalHeal.compute(
+            s,
+            action_state,
+            movement_state,
+            %{hp_regen: -100, sp_regen: -100},
+            @no_passive,
+            @cadence,
+            acc(10_000)
+          )
+
+        assert {cadence_hp, cadence_sp} == {base_hp, base_sp}
+      end
+    end
+
+    test "keeps the existing compute/6 status-modified result byte-for-byte" do
+      s = stats(vit: 50, int: 50, max_hp: 4_000, max_sp: 500, hp: 100, sp: 1)
+      modifiers = %{hp_regen: -100, sp_regen: 100}
+
+      assert NaturalHeal.compute(s, :idle, :standing, modifiers, @no_passive, acc(10_000)) ==
+               NaturalHeal.compute(
+                 s,
+                 :idle,
+                 :standing,
+                 modifiers,
+                 @no_passive,
+                 %{sitting_hp_regen: 0, sitting_sp_regen: 0},
+                 acc(10_000)
+               )
+    end
+  end
+
   describe "compute/6 sub-interval accumulation" do
     test "sub-interval regen accumulates across successive calls rather than being lost" do
       s = stats(vit: 50, max_hp: 4000, hp: 100)

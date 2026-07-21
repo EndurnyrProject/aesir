@@ -67,6 +67,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
               %{
                 optional(:skill_hp_regen) => integer(),
                 optional(:skill_sp_regen) => integer(),
+                optional(:sitting_hp_regen) => integer(),
+                optional(:sitting_sp_regen) => integer(),
                 optional(:allow_while_moving) => boolean()
               }
 

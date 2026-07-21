@@ -24,6 +24,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
           allow_while_moving: boolean()
         }
 
+  @typedoc "Aggregated regeneration that only applies while sitting."
+  @type sitting_regen :: %{sitting_hp_regen: integer(), sitting_sp_regen: integer()}
+
   @typedoc "A skill rider produced by a passive."
   @type rider :: {:apply_status, atom(), keyword()}
 
@@ -219,6 +222,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
         skill_sp_regen: acc.skill_sp_regen + Map.get(contribution, :skill_sp_regen, 0),
         allow_while_moving:
           acc.allow_while_moving or Map.get(contribution, :allow_while_moving, false)
+      }
+    end)
+  end
+
+  @doc """
+  Merges the sitting-only regeneration contributions of learned passives.
+  """
+  @spec sitting_regen(PlayerState.t() | PlayerStats.t()) :: sitting_regen()
+  def sitting_regen(%PlayerState{stats: stats}), do: sitting_regen(stats)
+
+  def sitting_regen(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
+    |> learned_passives()
+    |> Enum.reduce(%{sitting_hp_regen: 0, sitting_sp_regen: 0}, fn {module, level}, acc ->
+      contribution = module.regen_contribution(level, ctx)
+
+      %{
+        sitting_hp_regen: acc.sitting_hp_regen + Map.get(contribution, :sitting_hp_regen, 0),
+        sitting_sp_regen: acc.sitting_sp_regen + Map.get(contribution, :sitting_sp_regen, 0)
       }
     end)
   end

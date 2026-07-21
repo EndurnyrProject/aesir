@@ -38,6 +38,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
       %{skill_hp_regen: 0, skill_sp_regen: 0, allow_while_moving: false}
     end)
 
+    stub(Passives, :sitting_regen, fn _ ->
+      %{sitting_hp_regen: 0, sitting_sp_regen: 0}
+    end)
+
     :ok
   end
 
@@ -179,6 +183,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
         end)
 
       assert final.game_state.stats.current_state.hp > 100
+    end
+
+    test "adds Spiritual Cadence only while sitting" do
+      baseline = build_state(hp: 100, sp: 50, action: :sitting, movement: :standing)
+
+      {:noreply, without_cadence} = NaturalHealHandler.handle_tick(baseline, 10_000)
+
+      stub(Passives, :sitting_regen, fn _ ->
+        %{sitting_hp_regen: 120, sitting_sp_regen: 110}
+      end)
+
+      cadence = build_state(hp: 100, sp: 50, action: :sitting, movement: :standing)
+      {:noreply, with_cadence} = NaturalHealHandler.handle_tick(cadence, 10_000)
+
+      assert with_cadence.game_state.stats.current_state.hp -
+               without_cadence.game_state.stats.current_state.hp == 120
+
+      assert with_cadence.game_state.stats.current_state.sp -
+               without_cadence.game_state.stats.current_state.sp == 110
     end
 
     test "bleeding (hp_regen: -100) zeroes HP regen but SP still regens" do

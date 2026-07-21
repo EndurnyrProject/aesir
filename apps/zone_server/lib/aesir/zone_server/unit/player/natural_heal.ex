@@ -16,7 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
   ## Channels (rAthena renewal, `status.cpp` `status_calc_regen` /
   `status_natural_heal`)
 
-  Three independent interval+amount channels, each with its own accumulator so
+  Four independent interval+amount channels, each with its own accumulator so
   sub-interval progress is never lost:
 
   1. **Base HP** — amount `vit / 5 + max(1, max_hp / 200)`, base interval 6000ms;
@@ -31,9 +31,12 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
      `passive_regen.skill_hp_regen` (SM_RECOVERY), interval 10000ms
      (`natural_heal_skill_interval`). Gated like base HP: fires while **not moving**
      (standing-idle *or* sitting), disabled while moving unless
-     `allow_while_moving`. Sitting does **not** speed it up (the sit ≈2× bonus is
-     the separate `ssregen` channel for MO_SPIRITSRECOVERY/TK, out of scope).
+     `allow_while_moving`. Sitting does **not** speed it up; the separate
+     `ssregen` channel handles MO_SPIRITSRECOVERY/TK recovery below.
      `skill_sp_regen` (MG_SRECOVERY) feeds the analogous skill SP channel.
+  4. **Sitting skill HP/SP regen** — flat amounts from Spiritual Cadence,
+     interval 10000ms. This separate channel advances only while sitting and
+     preserves paused progress otherwise; it does not use status recovery modifiers.
 
   (all integer division). The skill HP regen folds into `hp_delta`; the combined
   HP delta is clamped so HP never exceeds `max_hp`.
@@ -45,7 +48,9 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
 
       %{elapsed_ms: non_neg_integer(),
         hp_acc: non_neg_integer(), sp_acc: non_neg_integer(),
-        skill_hp_acc: non_neg_integer(), skill_sp_acc: non_neg_integer()}
+        skill_hp_acc: non_neg_integer(), skill_sp_acc: non_neg_integer(),
+        optional(:sitting_hp_acc) => non_neg_integer(),
+        optional(:sitting_sp_acc) => non_neg_integer()}
 
   The caller sets `:elapsed_ms` (time since the previous tick); the function folds
   it into each channel's accumulator, emits one amount per whole interval crossed,
@@ -77,6 +82,9 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
           allow_while_moving: boolean()
         }
 
+  @typedoc "Sitting-only passive recovery amounts."
+  @type sitting_regen :: %{sitting_hp_regen: integer(), sitting_sp_regen: integer()}
+
   @doc """
   Computes the HP/SP to restore this tick and the updated accumulators.
 
@@ -97,6 +105,38 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
         movement_state,
         regen_modifiers,
         passive_regen,
+        accumulators
+      ),
+      do:
+        compute(
+          stats,
+          action_state,
+          movement_state,
+          regen_modifiers,
+          passive_regen,
+          %{sitting_hp_regen: 0, sitting_sp_regen: 0},
+          accumulators
+        )
+
+  @doc """
+  Computes natural healing with a separate sitting-only passive contribution.
+  """
+  @spec compute(
+          PlayerStats.t(),
+          atom(),
+          atom(),
+          regen_modifiers(),
+          passive_regen(),
+          sitting_regen(),
+          accumulators()
+        ) :: {non_neg_integer(), non_neg_integer(), accumulators()}
+  def compute(
+        %PlayerStats{} = stats,
+        action_state,
+        movement_state,
+        regen_modifiers,
+        passive_regen,
+        sitting_regen,
         accumulators
       ) do
     elapsed = Map.get(accumulators, :elapsed_ms, 0)
@@ -155,17 +195,76 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
         elapsed
       )
 
-    hp_delta = min(base_hp_raw + skill_hp_raw, hp_room)
-    sp_delta = min(base_sp_raw + skill_sp_raw, sp_room)
+    {sitting_hp_raw, sitting_sp_raw, sitting_accumulators} =
+      sitting_regen(
+        sitting? and not moving?,
+        hp_room,
+        sp_room,
+        sitting_regen,
+        accumulators,
+        elapsed
+      )
 
-    {hp_delta, sp_delta,
-     %{
-       elapsed_ms: 0,
-       hp_acc: hp_acc,
-       sp_acc: sp_acc,
-       skill_hp_acc: skill_hp_acc,
-       skill_sp_acc: skill_sp_acc
-     }}
+    hp_delta = min(base_hp_raw + skill_hp_raw + sitting_hp_raw, hp_room)
+    sp_delta = min(base_sp_raw + skill_sp_raw + sitting_sp_raw, sp_room)
+
+    updated_accumulators =
+      %{
+        elapsed_ms: 0,
+        hp_acc: hp_acc,
+        sp_acc: sp_acc,
+        skill_hp_acc: skill_hp_acc,
+        skill_sp_acc: skill_sp_acc
+      }
+      |> Map.merge(sitting_accumulators)
+
+    {hp_delta, sp_delta, updated_accumulators}
+  end
+
+  @spec sitting_regen(
+          boolean(),
+          integer(),
+          integer(),
+          sitting_regen(),
+          accumulators(),
+          non_neg_integer()
+        ) :: {non_neg_integer(), non_neg_integer(), map()}
+  defp sitting_regen(false, _hp_room, _sp_room, _sitting_regen, accumulators, _elapsed) do
+    {0, 0, Map.take(accumulators, [:sitting_hp_acc, :sitting_sp_acc])}
+  end
+
+  defp sitting_regen(true, hp_room, sp_room, sitting_regen, accumulators, elapsed) do
+    hp_amount = sitting_regen.sitting_hp_regen
+    sp_amount = sitting_regen.sitting_sp_regen
+
+    if hp_amount > 0 or sp_amount > 0 or Map.has_key?(accumulators, :sitting_hp_acc) or
+         Map.has_key?(accumulators, :sitting_sp_acc) do
+      {hp_raw, hp_acc} =
+        channel(
+          hp_room > 0,
+          hp_amount,
+          100,
+          @skill_interval,
+          false,
+          Map.get(accumulators, :sitting_hp_acc, 0),
+          elapsed
+        )
+
+      {sp_raw, sp_acc} =
+        channel(
+          sp_room > 0,
+          sp_amount,
+          100,
+          @skill_interval,
+          false,
+          Map.get(accumulators, :sitting_sp_acc, 0),
+          elapsed
+        )
+
+      {hp_raw, sp_raw, %{sitting_hp_acc: hp_acc, sitting_sp_acc: sp_acc}}
+    else
+      {0, 0, %{}}
+    end
   end
 
   @spec channel(
