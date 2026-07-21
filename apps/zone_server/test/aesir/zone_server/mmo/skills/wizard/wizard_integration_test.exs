@@ -114,7 +114,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
         :mob,
         @target_id,
         FieldEntity,
-        %{instance_id: @target_id},
+        estimation_target(),
         self()
       )
 
@@ -321,12 +321,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
   end
 
   test "Sight Blaster arms, hits on contact, and consumes its status" do
-    caster = %{
+    # `ensure_living_target` (and `on_contact`, which re-fetches the caster
+    # from the registry) need a real living `PlayerState`, not a bare map.
+    caster = %PlayerState{
       character_id: @caster_id,
       x: 120,
       y: 120,
       map_name: @map,
-      movement_state: :standing
+      movement_state: :standing,
+      action_state: :idle,
+      stats: %{current_state: %{hp: 100}}
     }
 
     target = %{instance_id: @target_id, x: 123, y: 120, map_name: @map, movement_state: :moving}
