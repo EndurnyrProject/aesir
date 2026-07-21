@@ -37,13 +37,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCallspirits do
     expires_at = System.monotonic_time(:millisecond) + Formulas.spirit_sphere_duration()
 
     with {:ok, cap} <- validated_cap(caster, requested_level, definition) do
-      case SpiritSpheres.summon(spheres, expires_at, cap) do
-        {%SpiritSpheres{} = updated_spheres, %SpiritSpheres.Entry{}} ->
-          {:ok, Map.put(caster, :spirit_spheres, updated_spheres)}
+      {%SpiritSpheres{} = updated_spheres, %SpiritSpheres.Entry{}} =
+        SpiritSpheres.summon(spheres, expires_at, cap)
 
-        {:error, :all_reserved} ->
-          {:error, :all_reserved}
-      end
+      {:ok, Map.put(caster, :spirit_spheres, updated_spheres)}
     end
   end
 

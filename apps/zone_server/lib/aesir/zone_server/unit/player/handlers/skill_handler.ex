@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryStaging
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -155,7 +156,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         {:noreply, maybe_resume_lock(resolved_state, Map.get(ctx, :combat_target_id))}
 
       {:deferred, new_game_state, descriptor} ->
-        {:noreply, defer_cast(state, end_cast(new_game_state), descriptor)}
+        {:noreply,
+         resolve_deferred(
+           state,
+           end_cast(new_game_state),
+           descriptor,
+           Map.get(ctx, :combat_target_id)
+         )}
 
       {:error, reason} ->
         report_cast_failure(ctx.skill_id, game_state.character_id, reason)
@@ -267,7 +274,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         {:noreply, maybe_resume_lock(new_state, locked)}
 
       {:deferred, new_game_state, descriptor} ->
-        {:noreply, defer_cast(state, new_game_state, descriptor)}
+        {:noreply, resolve_deferred(state, new_game_state, descriptor, locked)}
 
       {:casting, new_game_state, info} ->
         schedule_cast(%{state | game_state: new_game_state}, info, locked)
@@ -285,20 +292,131 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
-  @doc """
-  Returns and clears an unsettled deferred skill result.
-
-  Task 8 owns deciding how to persist, dispatch, settle, or abort this result.
-  """
+  @doc "Returns and clears an unsettled deferred skill result."
   @spec take_deferred_skill_result(map()) :: {map() | nil, map()}
   def take_deferred_skill_result(state) do
-    {Map.get(state, :deferred_skill_result), Map.delete(state, :deferred_skill_result)}
+    pending = Map.get(state, :deferred_skill_result)
+    cancel_deferred_timer(pending)
+    {pending, Map.delete(state, :deferred_skill_result)}
   end
 
-  defp defer_cast(state, game_state, descriptor) do
+  @doc "Settles a matching Absorb Spirit Sphere reply against current caster state."
+  @spec handle_spirit_absorb_result(map(), reference(), non_neg_integer(), non_neg_integer()) ::
+          {:noreply, map()}
+  def handle_spirit_absorb_result(
+        %{deferred_skill_result: %{token: token, target_id: target_id} = pending} = state,
+        token,
+        target_id,
+        count
+      ) do
+    cancel_deferred_timer(pending)
+    state = Map.delete(state, :deferred_skill_result)
+
+    case Interpreter.settle_deferred(state.game_state, pending.descriptor) do
+      {:ok, charged} ->
+        rewarded = restore_sp(charged, count * 7)
+
+        new_state =
+          commit_cast(
+            state,
+            rewarded,
+            pending.descriptor.skill_id,
+            pending.descriptor.level
+          )
+
+        broadcast_skill_use(
+          new_state.game_state,
+          pending.descriptor.skill_id,
+          pending.descriptor.level,
+          pending.descriptor.target
+        )
+
+        {:noreply, maybe_resume_lock(new_state, pending.combat_target_id)}
+
+      {:error, _reason} ->
+        {:noreply, maybe_resume_lock(state, pending.combat_target_id)}
+    end
+  end
+
+  def handle_spirit_absorb_result(state, _token, _target_id, _count), do: {:noreply, state}
+
+  @doc "Drops a matching deferred skill after its one-second reply window."
+  @spec handle_deferred_timeout(map(), reference()) :: {:noreply, map()}
+  def handle_deferred_timeout(
+        %{deferred_skill_result: %{token: token} = pending} = state,
+        token
+      ) do
+    state = Map.delete(state, :deferred_skill_result)
+    {:noreply, maybe_resume_lock(state, pending.combat_target_id)}
+  end
+
+  def handle_deferred_timeout(state, _token), do: {:noreply, state}
+
+  @doc "Cancels a pending deferred skill without charging or resuming combat."
+  @spec cancel_deferred(map()) :: map()
+  def cancel_deferred(state) do
+    {_pending, state} = take_deferred_skill_result(state)
     state
-    |> Map.put(:game_state, game_state)
-    |> Map.put(:deferred_skill_result, %{game_state: game_state, descriptor: descriptor})
+  end
+
+  defp resolve_deferred(
+         state,
+         game_state,
+         %Interpreter.Deferred{effect: {:transfer_sphere, target_id}} = descriptor,
+         locked
+       ) do
+    case Interpreter.settle_deferred(game_state, descriptor) do
+      {:ok, charged} ->
+        new_state = commit_cast(state, charged, descriptor.skill_id, descriptor.level)
+        broadcast_skill_use(charged, descriptor.skill_id, descriptor.level, descriptor.target)
+        SpiritExchangeHandler.transfer(new_state, target_id)
+        maybe_resume_lock(new_state, locked)
+
+      {:error, _reason} ->
+        maybe_resume_lock(%{state | game_state: game_state}, locked)
+    end
+  end
+
+  defp resolve_deferred(
+         state,
+         game_state,
+         %Interpreter.Deferred{effect: {:absorb_player, target_id}} = descriptor,
+         locked
+       ) do
+    token = make_ref()
+    timer_ref = Process.send_after(self(), {:deferred_skill_timeout, token}, 1_000)
+
+    state =
+      state
+      |> Map.put(:game_state, game_state)
+      |> Map.put(:deferred_skill_result, %{
+        descriptor: descriptor,
+        target_id: target_id,
+        token: token,
+        timer_ref: timer_ref,
+        combat_target_id: locked
+      })
+
+    SpiritExchangeHandler.request_absorb(state, target_id, token)
+    state
+  end
+
+  defp resolve_deferred(state, game_state, _descriptor, locked) do
+    maybe_resume_lock(%{state | game_state: game_state}, locked)
+  end
+
+  defp cancel_deferred_timer(%{timer_ref: timer_ref}) when is_reference(timer_ref) do
+    Process.cancel_timer(timer_ref)
+    :ok
+  end
+
+  defp cancel_deferred_timer(_pending), do: :ok
+
+  defp restore_sp(game_state, amount) do
+    stats = game_state.stats
+    max_sp = stats.derived_stats.max_sp
+    current = %{stats.current_state | sp: min(stats.current_state.sp + amount, max_sp)}
+    %{game_state | stats: %{stats | current_state: current}}
   end
 
   @doc """

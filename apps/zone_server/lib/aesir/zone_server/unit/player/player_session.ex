@@ -42,6 +42,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
@@ -669,6 +670,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     SpiritSphereHandler.expire(state, generation)
   end
 
+  @impl true
+  def handle_info({:deferred_skill_timeout, token}, state) do
+    SkillHandler.handle_deferred_timeout(state, token)
+  end
+
   # The active NPC interaction ended (close / idle-timeout / crash). Clearing the
   # lock frees the player to talk to NPCs again; the session always survives
   # (this monitor never propagates the interaction's exit). Matched ahead of the
@@ -808,6 +814,23 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       {:ok, state} -> {:noreply, state}
       {:error, :insufficient} -> {:noreply, state}
     end
+  end
+
+  # Skill: the spirit-exchange write path (Monk). Receive/absorb spirit spheres
+  # and the deferred absorb result route to their handlers.
+  @impl true
+  def handle_cast({:receive_spirit_sphere, request}, state) do
+    SpiritExchangeHandler.receive_sphere(state, request)
+  end
+
+  @impl true
+  def handle_cast({:absorb_spirit_spheres, request}, state) do
+    SpiritExchangeHandler.absorb_spheres(state, request)
+  end
+
+  @impl true
+  def handle_cast({:spirit_absorb_result, token, target_id, count}, state) do
+    SkillHandler.handle_spirit_absorb_result(state, token, target_id, count)
   end
 
   # NPC: the owner-event dispatch half of the two-message `:npc` domain (the
@@ -1003,6 +1026,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         reason,
         %{game_state: _game_state, connection_monitor_ref: connection_monitor_ref} = state
       ) do
+    state = SkillHandler.cancel_deferred(state)
     state = SpiritSphereHandler.discard(state)
     game_state = state.game_state
     Process.demonitor(connection_monitor_ref, [:flush])

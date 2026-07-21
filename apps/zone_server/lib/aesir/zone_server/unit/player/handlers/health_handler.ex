@@ -295,6 +295,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   defp handle_death(attacker_id, %{game_state: game_state} = state) do
     Logger.info("Player #{game_state.character_id} died (killed by #{inspect(attacker_id)})")
 
+    state = SkillHandler.cancel_deferred(state)
     state = SpiritSphereHandler.clear(state)
     state = apply_death_penalty(state)
     had_statuses? = StatusStorage.get_unit_statuses(:player, game_state.character_id) != []

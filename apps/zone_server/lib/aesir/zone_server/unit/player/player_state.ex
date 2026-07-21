@@ -90,8 +90,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           spirit_sphere_timer_plan: %{generation: non_neg_integer(), expires_at: integer()} | nil,
           spirit_sphere_timer_generation: non_neg_integer(),
           spirit_sphere_revision: non_neg_integer(),
-          pending_spirit_sphere_action:
-            %{required(:operation_id) => term(), required(:entry_ids) => [pos_integer()]} | nil,
           skill_cooldowns: %{integer() => integer()},
           regen_accumulators: %{atom() => non_neg_integer()},
           stats: PlayerStats.t(),
@@ -213,7 +211,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     spirit_sphere_timer_plan: nil,
     spirit_sphere_timer_generation: 0,
     spirit_sphere_revision: 0,
-    pending_spirit_sphere_action: nil,
     vars: %{},
     temp_vars: %{},
     # Quest log keyed by quest id, restored from character_quests on spawn
@@ -381,8 +378,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   """
   @spec relocate(t(), String.t(), non_neg_integer(), non_neg_integer()) :: t()
   def relocate(%__MODULE__{} = state, map_name, x, y) do
-    {spirit_spheres, _released} = SpiritSpheres.release_all(state.spirit_spheres)
-
     %{
       state
       | map_name: map_name,
@@ -398,9 +393,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
         visible_items: MapSet.new(),
         visible_skill_units: MapSet.new(),
         last_visibility_cell: nil,
-        inside_npc_areas: MapSet.new(),
-        spirit_spheres: spirit_spheres,
-        pending_spirit_sphere_action: nil
+        inside_npc_areas: MapSet.new()
     }
     |> stop_walking()
     |> clear_combat_intent()

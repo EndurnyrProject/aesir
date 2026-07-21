@@ -463,8 +463,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
     game_state = game_state(50, %{29 => 1})
 
-    assert {:deferred, ^game_state, :spirit_action} =
-             Interpreter.cast(game_state, 29, 1, :self)
+    assert {:deferred, ^game_state,
+            %Interpreter.Deferred{
+              effect: :spirit_action,
+              cost: %Cost{hp: 10, sp: 20},
+              skill_id: 29,
+              level: 1,
+              target: :self
+            } = deferred} = Interpreter.cast(game_state, 29, 1, :self)
+
+    assert {:error, :insufficient_sp} =
+             Interpreter.settle_deferred(
+               put_in(game_state.stats.current_state.sp, 10),
+               deferred
+             )
+
+    assert {:ok, settled} = Interpreter.settle_deferred(game_state, deferred)
+    assert settled.stats.current_state.hp == 90
+    assert settled.stats.current_state.sp == 30
+    assert settled.skill_cooldowns[29] > System.monotonic_time(:millisecond)
+    assert settled.act_delay_until > System.monotonic_time(:millisecond)
   end
 
   defp definition_with_cooldown(cooldown) do

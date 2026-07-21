@@ -49,18 +49,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CostTest do
     end
   end
 
-  test "empty and all-reserved sphere costs resolve safely" do
+  test "empty sphere costs resolve safely" do
     empty = game_state(50, 40, 0)
     assert %Cost{spheres: 0} = Cost.from_definition(empty, definition(sphere_cost: [:all]), 1)
-
-    reserved = game_state(50, 40, 1)
-    {:ok, spheres, _entries} = SpiritSpheres.reserve(reserved.spirit_spheres, :operation, 1)
-    reserved = %{reserved | spirit_spheres: spheres}
-
-    assert %Cost{spheres: 0} = Cost.from_definition(reserved, definition(sphere_cost: [:all]), 1)
-
-    assert {:error, :insufficient_spirit_spheres} =
-             Cost.prepare(reserved, %Cost{spheres: 1})
   end
 
   defp definition(overrides) do

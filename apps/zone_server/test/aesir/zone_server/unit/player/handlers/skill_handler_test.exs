@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skills.Sage.SaCastcancel
@@ -279,9 +280,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     test "instant deferred results retain the outcome without committing resources or timers" do
       state = casting_state(45)
       game_state = state.game_state
+      descriptor = deferred_descriptor()
 
       expect(Interpreter, :begin_cast, fn ^game_state, 29, 1, :self ->
-        {:deferred, game_state, :spirit_action}
+        {:deferred, game_state, descriptor}
       end)
 
       reject(&CharacterPersistence.update_character/3)
@@ -290,8 +292,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert {:noreply, deferred} = SkillHandler.handle_use_skill(state, 29, 1, 1000)
       assert deferred.game_state == game_state
 
-      assert %{game_state: ^game_state, descriptor: :spirit_action} =
-               deferred.deferred_skill_result
+      assert %{
+               descriptor: ^descriptor,
+               target_id: 2000,
+               token: token,
+               timer_ref: timer_ref
+             } = deferred.deferred_skill_result
+
+      assert is_reference(token)
+      assert is_reference(timer_ref)
 
       assert {deferred_result, retained} = SkillHandler.take_deferred_skill_result(deferred)
       assert deferred_result == deferred.deferred_skill_result
@@ -302,9 +311,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       state = interrupting_state(45, fixed_offset: 1_000)
       game_state = state.game_state
       token = game_state.casting.token
+      descriptor = deferred_descriptor()
 
       expect(Interpreter, :complete_cast, fn ^game_state, 29, 1, :self ->
-        {:deferred, game_state, :spirit_action}
+        {:deferred, game_state, descriptor}
       end)
 
       reject(&CharacterPersistence.update_character/3)
@@ -316,13 +326,113 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert deferred.game_state.act_delay_until == 0
       assert deferred.game_state.action_state == :idle
       assert deferred.game_state.casting == nil
-      assert %{descriptor: :spirit_action} = deferred.deferred_skill_result
+      assert %{descriptor: ^descriptor, target_id: 2000} = deferred.deferred_skill_result
 
       assert {deferred_result, retained} = SkillHandler.take_deferred_skill_result(deferred)
-      assert deferred_result.game_state.action_state == :idle
-      assert deferred_result.game_state.casting == nil
+      refute Map.has_key?(deferred_result, :game_state)
       assert retained.game_state.action_state == :idle
       assert retained.game_state.casting == nil
+    end
+
+    test "a matching absorb reply settles current SP before adding the reward" do
+      state = instant_state(45)
+      game_state = state.game_state
+      descriptor = deferred_descriptor()
+
+      expect(Interpreter, :begin_cast, fn ^game_state, 29, 1, :self ->
+        {:deferred, game_state, descriptor}
+      end)
+
+      assert {:noreply, pending} = SkillHandler.handle_use_skill(state, 29, 1, 1000)
+      %{token: token} = pending.deferred_skill_result
+      stats = pending.game_state.stats
+      current_stats = put_in(stats.current_state.sp, 30)
+      current = %{pending.game_state | stats: current_stats}
+      pending = %{pending | game_state: current}
+      charged_stats = put_in(current_stats.current_state.sp, 25)
+      charged = %{current | stats: charged_stats}
+
+      expect(Interpreter, :settle_deferred, fn ^current, ^descriptor -> {:ok, charged} end)
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [], cooldown: [])} end)
+      stub_commit()
+
+      assert {:noreply, settled} =
+               SkillHandler.handle_spirit_absorb_result(pending, token, 2000, 2)
+
+      assert settled.game_state.stats.current_state.sp == 39
+      refute Map.has_key?(settled, :deferred_skill_result)
+    end
+
+    test "timeout clears a deferred absorb and a late result is ignored" do
+      state = instant_state(45)
+      game_state = state.game_state
+      descriptor = deferred_descriptor()
+
+      expect(Interpreter, :begin_cast, fn ^game_state, 29, 1, :self ->
+        {:deferred, game_state, descriptor}
+      end)
+
+      assert {:noreply, pending} = SkillHandler.handle_use_skill(state, 29, 1, 1000)
+      %{token: token} = pending.deferred_skill_result
+
+      assert {:noreply, timed_out} = SkillHandler.handle_deferred_timeout(pending, token)
+      refute Map.has_key?(timed_out, :deferred_skill_result)
+      assert timed_out.game_state.stats.current_state.sp == 45
+
+      assert {:noreply, ^timed_out} =
+               SkillHandler.handle_spirit_absorb_result(timed_out, token, 2000, 2)
+    end
+
+    test "a transfer descriptor commits source costs before its single delivery" do
+      state = instant_state(45)
+      {spheres, _entry} = SpiritSpheres.summon(state.game_state.spirit_spheres, 60_000, 5)
+      game_state = %{state.game_state | spirit_spheres: spheres}
+
+      descriptor = %Interpreter.Deferred{
+        effect: {:transfer_sphere, 2000},
+        cost: %Cost{sp: 40, spheres: 1},
+        zeny: 0,
+        skill_id: 29,
+        level: 1,
+        target: {:unit, 2000}
+      }
+
+      {:ok, consumed, _entry} = SpiritSpheres.consume(spheres, 1)
+      stats = game_state.stats
+      charged_stats = put_in(stats.current_state.sp, 5)
+      charged = %{game_state | stats: charged_stats, spirit_spheres: consumed}
+
+      expect(Interpreter, :begin_cast, fn ^game_state, 29, 1, {:unit, 2000} ->
+        {:deferred, game_state, descriptor}
+      end)
+
+      expect(Interpreter, :settle_deferred, fn ^game_state, ^descriptor -> {:ok, charged} end)
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [], cooldown: [])} end)
+      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
+      stub(Broadcast, :to_visible_players, fn _state, _update, exclude_id: 1000 -> :ok end)
+
+      expect(UnitRegistry, :update_unit_state, fn :player, 1000, committed ->
+        assert committed.stats.current_state.sp == 5
+        assert SpiritSpheres.count(committed.spirit_spheres) == 0
+        Process.put(:source_committed, true)
+        :ok
+      end)
+
+      expect(UnitRegistry, :get_unit, fn :player, 2000 ->
+        assert Process.get(:source_committed)
+        {:ok, {PlayerState, casting_state(10).game_state, self()}}
+      end)
+
+      assert {:noreply, committed} =
+               SkillHandler.handle_use_skill(%{state | game_state: game_state}, 29, 1, 2000)
+
+      assert committed.game_state.stats.current_state.sp == 5
+      assert SpiritSpheres.count(committed.game_state.spirit_spheres) == 0
+
+      assert_receive {:"$gen_cast", {:receive_spirit_sphere, %{source_id: 1000, target_id: 2000}}}
     end
 
     test "a staged pending_interaction starts a dialog and takes the lock" do
@@ -1370,6 +1480,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert_received {:broadcast,
                        %SkillEffect{skill_id: 72, level: 1, src_id: 1000, target_id: 2000}}
     end
+  end
+
+  defp deferred_descriptor do
+    %Interpreter.Deferred{
+      effect: {:absorb_player, 2000},
+      cost: %Cost{sp: 5},
+      zeny: 0,
+      skill_id: 29,
+      level: 1,
+      target: :self
+    }
   end
 
   defp definition(fields) do

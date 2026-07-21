@@ -26,7 +26,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   alias Aesir.ZoneServer.Unit.Lifecycle.Event
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
-  alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -180,8 +179,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
 
     test "death clears spirit spheres and cancels their expiry timer" do
       now = System.monotonic_time(:millisecond)
-      {spheres, sphere} = SpiritSpheres.new() |> SpiritSpheres.summon(now + 60_000, 5)
-      assert {:ok, spheres, [_]} = SpiritSpheres.reserve(spheres, :death, 1)
+      {spheres, _sphere} = SpiritSpheres.new() |> SpiritSpheres.summon(now + 60_000, 5)
       timer_ref = Process.send_after(self(), :spirit_sphere_timer, 60_000)
 
       state = build_state(100, :idle)
@@ -193,21 +191,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
             | spirit_spheres: spheres,
               spirit_sphere_timer: timer_ref,
               spirit_sphere_timer_generation: 4,
-              spirit_sphere_revision: 3,
-              pending_spirit_sphere_action: %{operation_id: :death, entry_ids: [sphere.id]}
+              spirit_sphere_revision: 3
           }
       }
 
-      assert {:noreply, %{game_state: game_state} = dead_session} =
+      assert {:noreply, %{game_state: game_state}} =
                HealthHandler.apply_damage(100, 2001, state)
 
       assert SpiritSpheres.count(game_state.spirit_spheres) == 0
       assert game_state.spirit_sphere_timer == nil
       assert game_state.spirit_sphere_timer_generation == 5
       assert game_state.spirit_sphere_revision == 4
-      assert game_state.pending_spirit_sphere_action == nil
       assert Process.cancel_timer(timer_ref) == false
-      assert SpiritSphereHandler.release(dead_session, :death) == dead_session
 
       assert_receive {:send, :world,
                       {:spirit_sphere_update, %{count: 0, revision: 4, unit_id: 1}}}

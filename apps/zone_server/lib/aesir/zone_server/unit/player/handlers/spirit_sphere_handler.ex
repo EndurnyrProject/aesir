@@ -41,9 +41,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler do
   def summon(%{game_state: game_state} = state, duration, cap) when duration > 0 and cap > 0 do
     now = System.monotonic_time(:millisecond)
 
-    case SpiritSpheres.summon(game_state.spirit_spheres, now + duration, cap) do
-      {spheres, %SpiritSpheres.Entry{}} -> {:noreply, commit(state, spheres, now, true)}
-      {:error, :all_reserved} -> {:noreply, state}
+    {spheres, %SpiritSpheres.Entry{}} =
+      SpiritSpheres.summon(game_state.spirit_spheres, now + duration, cap)
+
+    {:noreply, commit(state, spheres, now, true)}
+  end
+
+  @spec receive_sphere(session_state(), pos_integer(), pos_integer()) ::
+          {:ok, session_state()} | {:error, :full}
+  def receive_sphere(%{game_state: game_state} = state, duration, cap)
+      when duration > 0 and cap > 0 do
+    now = System.monotonic_time(:millisecond)
+
+    case SpiritSpheres.add_if_below_cap(game_state.spirit_spheres, now + duration, cap) do
+      {:ok, spheres, _entry} -> {:ok, commit(state, spheres, now, true)}
+      {:error, :full} = error -> error
     end
   end
 
@@ -99,116 +111,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler do
     state
   end
 
-  @spec reserve(session_state(), term(), pos_integer()) ::
-          {:ok, session_state(), [SpiritSpheres.Entry.t()]}
-          | {:error, :insufficient | :operation_mismatch | :pending_operation}
-  def reserve(
-        %{game_state: %{pending_spirit_sphere_action: nil} = game_state} = state,
-        operation_id,
-        count
-      )
-      when count > 0 do
-    case SpiritSpheres.reserve(game_state.spirit_spheres, operation_id, count) do
-      {:ok, spheres, entries} ->
-        game_state = %{
-          game_state
-          | spirit_spheres: spheres,
-            pending_spirit_sphere_action: %{
-              operation_id: operation_id,
-              entry_ids: Enum.map(entries, & &1.id)
-            }
-        }
-
-        {:ok, StateCommit.commit(state, game_state), entries}
-
-      {:error, :insufficient} = error ->
-        error
-    end
-  end
-
-  def reserve(
-        %{
-          game_state:
-            %{
-              pending_spirit_sphere_action: %{
-                operation_id: operation_id,
-                entry_ids: expected_entry_ids
-              }
-            } = game_state
-        } = state,
-        operation_id,
-        count
-      )
-      when count > 0 do
-    entries = SpiritSpheres.reserved(game_state.spirit_spheres, operation_id)
-    entry_ids = Enum.map(entries, & &1.id)
-
-    if entry_ids == expected_entry_ids and length(expected_entry_ids) == count do
-      {:ok, state, entries}
-    else
-      {:error, :operation_mismatch}
-    end
-  end
-
-  def reserve(_state, _operation_id, _count), do: {:error, :pending_operation}
-
-  @spec release(session_state(), term()) :: session_state()
-  def release(
-        %{
-          game_state:
-            %{
-              pending_spirit_sphere_action: %{operation_id: operation_id}
-            } = game_state
-        } = state,
-        operation_id
-      ) do
-    {spheres, _entries} = SpiritSpheres.release(game_state.spirit_spheres, operation_id)
-
-    game_state =
-      %{game_state | spirit_spheres: spheres, pending_spirit_sphere_action: nil}
-
-    StateCommit.commit(state, game_state)
-  end
-
-  def release(state, _stale_operation_id), do: state
-
-  @spec consume_reserved(session_state(), term()) ::
-          {:ok, session_state()}
-          | {:error, :stale_operation}
-          | {:error, :reservation_changed, session_state()}
-  def consume_reserved(
-        %{
-          game_state:
-            %{
-              pending_spirit_sphere_action: %{
-                operation_id: operation_id,
-                entry_ids: expected_entry_ids
-              }
-            } = game_state
-        } = state,
-        operation_id
-      ) do
-    case SpiritSpheres.consume_reserved(
-           game_state.spirit_spheres,
-           operation_id,
-           expected_entry_ids
-         ) do
-      {:ok, spheres, _entries} ->
-        state = put_in(state.game_state.pending_spirit_sphere_action, nil)
-        {:ok, commit(state, spheres, System.monotonic_time(:millisecond), true)}
-
-      {:error, reason} when reason in [:not_reserved, :reservation_changed] ->
-        {:error, :reservation_changed, release(state, operation_id)}
-    end
-  end
-
-  def consume_reserved(_state, _stale_operation_id), do: {:error, :stale_operation}
-
   @spec expire(session_state(), non_neg_integer()) :: {:noreply, session_state()}
   def expire(%{game_state: %{spirit_sphere_timer_generation: generation}} = state, generation) do
     now = System.monotonic_time(:millisecond)
     {spheres, expired} = SpiritSpheres.expire_due(state.game_state.spirit_spheres, now)
-    {state, spheres} = invalidate_expired_reservation(state, spheres, expired)
     {:noreply, commit(state, spheres, now, expired != [])}
   end
 
@@ -217,7 +123,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler do
   @spec clear(session_state()) :: session_state()
   def clear(%{game_state: game_state} = state) do
     {spheres, cleared} = SpiritSpheres.clear(game_state.spirit_spheres)
-    state = put_in(state.game_state.pending_spirit_sphere_action, nil)
     commit(state, spheres, System.monotonic_time(:millisecond), cleared != [])
   end
 
@@ -231,8 +136,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler do
         | spirit_spheres: SpiritSpheres.new(),
           spirit_sphere_timer: nil,
           spirit_sphere_timer_plan: nil,
-          spirit_sphere_timer_generation: game_state.spirit_sphere_timer_generation + 1,
-          pending_spirit_sphere_action: nil
+          spirit_sphere_timer_generation: game_state.spirit_sphere_timer_generation + 1
       }
 
     %{state | game_state: game_state}
@@ -274,28 +178,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler do
   defp arm_timer(%TimerPlan{generation: generation, expires_at: expires_at}, now) do
     Process.send_after(self(), {:spirit_sphere_expire, generation}, max(expires_at - now, 0))
   end
-
-  defp invalidate_expired_reservation(
-         %{
-           game_state: %{
-             pending_spirit_sphere_action: %{
-               operation_id: operation_id,
-               entry_ids: expected_entry_ids
-             }
-           }
-         } = state,
-         spheres,
-         expired
-       ) do
-    if Enum.any?(expired, &(&1.id in expected_entry_ids)) do
-      {spheres, _released} = SpiritSpheres.release(spheres, operation_id)
-      {put_in(state.game_state.pending_spirit_sphere_action, nil), spheres}
-    else
-      {state, spheres}
-    end
-  end
-
-  defp invalidate_expired_reservation(state, spheres, _expired), do: {state, spheres}
 
   defp cancel_timer(nil), do: :ok
 

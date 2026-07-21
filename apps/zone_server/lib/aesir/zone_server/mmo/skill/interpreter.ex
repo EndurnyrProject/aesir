@@ -45,6 +45,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
+  defmodule Deferred do
+    @moduledoc "Deferred effect plus the owner-local resources settled on reply."
+
+    use TypedStruct
+
+    alias Aesir.ZoneServer.Mmo.Skill.Active
+    alias Aesir.ZoneServer.Mmo.Skill.Cost
+
+    typedstruct do
+      field :effect, term(), enforce: true
+      field :cost, Cost.t(), enforce: true
+      field :zeny, non_neg_integer(), enforce: true
+      field :skill_id, integer(), enforce: true
+      field :level, pos_integer(), enforce: true
+      field :target, Active.target(), enforce: true
+    end
+  end
+
   @typedoc """
   Scheduling info for a timed cast, returned by `begin_cast/4` when the skill
   has a non-zero cast time. `fixed` is the uninterruptible leading window and
@@ -161,7 +179,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   to the behavior. On success, the already-validated HP and SP costs are then
   deducted from the behavior's returned state; a behavior's own HP/SP changes
   are therefore retained. Sphere consumption is prepared from the original
-  collection, because its entries carry timer and reservation identity.
+  collection.
   """
   @spec complete_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
           {:ok, PlayerState.t()} | {:deferred, PlayerState.t(), term()} | {:error, atom()}
@@ -185,12 +203,41 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         target,
         level,
         definition,
-        %{commitment: commitment, zeny: zeny, skill_id: skill_id, now: now}
+        %{
+          commitment: commitment,
+          cost: cost,
+          zeny: zeny,
+          skill_id: skill_id,
+          level: level,
+          now: now
+        }
       )
     end
   end
 
   def complete_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
+
+  @doc "Settles a deferred cast against the caster's current resources."
+  @spec settle_deferred(PlayerState.t(), Deferred.t()) ::
+          {:ok, PlayerState.t()} | {:error, atom()}
+  def settle_deferred(game_state, %Deferred{} = deferred) do
+    now = System.monotonic_time(:millisecond)
+
+    with {:ok, definition} <- fetch_definition(deferred.skill_id),
+         {:ok, commitment} <- Cost.prepare(game_state, deferred.cost),
+         :ok <- check_zeny(game_state, deferred.zeny),
+         :ok <- check_catalysts(game_state, definition),
+         :ok <- check_ammo(game_state, definition) do
+      {:ok,
+       game_state
+       |> Cost.apply_commitment(commitment)
+       |> deduct_zeny(deferred.zeny)
+       |> consume_catalysts(definition)
+       |> consume_ammo(definition)
+       |> put_cooldown(deferred.skill_id, definition, deferred.level, now)
+       |> put_act_delay(definition, deferred.level, now)}
+    end
+  end
 
   @doc """
   Runs a status-driven auto-cast: the restricted entry SA_AUTOSPELL's proc uses.
@@ -311,11 +358,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          target,
          level,
          definition,
-         %{commitment: commitment, zeny: zeny, skill_id: skill_id, now: now}
+         %{
+           commitment: commitment,
+           cost: cost,
+           zeny: zeny,
+           skill_id: skill_id,
+           level: level,
+           now: now
+         }
        ) do
     case run_cast(module, game_state, target, level, definition) do
       {:deferred, game_state, descriptor} ->
-        {:deferred, game_state, descriptor}
+        {:deferred, game_state,
+         %Deferred{
+           effect: descriptor,
+           cost: cost,
+           zeny: zeny,
+           skill_id: skill_id,
+           level: level,
+           target: target
+         }}
 
       {:ok, game_state} ->
         {:ok,

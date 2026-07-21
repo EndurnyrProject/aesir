@@ -113,8 +113,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Cost do
   defp available_spheres(game_state) do
     game_state
     |> spheres()
-    |> SpiritSpheres.entries()
-    |> Enum.count(&is_nil(&1.reserved_by))
+    |> SpiritSpheres.count()
   end
 
   defp spheres(game_state), do: Map.get(game_state, :spirit_spheres, SpiritSpheres.new())
