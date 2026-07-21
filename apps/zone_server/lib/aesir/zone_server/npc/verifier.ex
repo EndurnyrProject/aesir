@@ -56,7 +56,7 @@ defmodule Aesir.ZoneServer.Npc.Verifier do
   @spec warn_collisions([entry()]) :: :ok
   defp warn_collisions(entries) do
     for {:cell_collision, {map, x, y}, modules} <- collision_errors(entries) do
-      Logger.warning(
+      Logger.debug(
         "NPC cell collision at #{inspect({map, x, y})}: #{inspect(modules)} share one cell; " <>
           "only one will be reachable, the rest are shadowed."
       )

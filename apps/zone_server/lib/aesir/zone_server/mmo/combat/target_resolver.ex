@@ -141,11 +141,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TargetResolver do
         {:ok, pid, updated_mob_state, :mob}
 
       {:error, :not_found} ->
-        Logger.warning("Mob #{target_id} not found in registry")
+        Logger.debug("Mob #{target_id} not found in registry")
         {:error, :not_found}
 
       {:ok, {_module, _state, nil}} ->
-        Logger.warning("Mob #{target_id} found but has no pid")
+        Logger.debug("Mob #{target_id} found but has no pid")
         {:error, :target_no_pid}
     end
   end
@@ -162,7 +162,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TargetResolver do
         get_own_player_state(target_id, pid)
 
       {:error, :not_found} ->
-        Logger.warning("Target #{target_id} not found in registry")
+        Logger.debug("Target #{target_id} not found in registry")
         {:error, :target_not_found}
     end
   end

@@ -701,7 +701,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
         new_state
 
       {:error, :no_walkable_cell} ->
-        Logger.warning(
+        Logger.debug(
           "No walkable cell for mob #{inspect(spawn_config.mob)} spawn on #{state.map_name}; " <>
             "retrying in #{spawn_retry_delay()}ms"
         )

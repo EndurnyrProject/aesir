@@ -140,7 +140,7 @@ defmodule Aesir.ZoneServer.Npc.Warps do
   @spec warn_blocked_destination(Warp.t(), MapData.t()) :: :ok
   defp warn_blocked_destination(%Warp{} = warp, to_map_data) do
     unless MapData.walkable?(to_map_data, warp.to_x, warp.to_y) do
-      Logger.warning(
+      Logger.debug(
         "warp #{inspect(warp.id)} destination cell (#{warp.to_x}, #{warp.to_y}) on " <>
           "#{inspect(warp.to_map)} is not walkable"
       )

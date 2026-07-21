@@ -73,6 +73,7 @@ defmodule Aesir.Commons.Cluster.Entry do
 
     case Horde.Registry.register(Cluster.registry(), key, value) do
       {:ok, _pid} ->
+        await_locally_visible(key)
         :net_kernel.monitor_nodes(true, node_type: :visible)
         anchor_ref = if is_pid(anchor), do: Process.monitor(anchor), else: nil
 
@@ -81,6 +82,27 @@ defmodule Aesir.Commons.Cluster.Entry do
 
       {:error, {:already_registered, _pid}} ->
         :ignore
+    end
+  end
+
+  # Horde.Registry.register/3 replies once the CRDT accepts the put, but the
+  # local read-path ETS table is only populated afterwards, asynchronously,
+  # when the registry process handles the resulting `:crdt_update` diff. A
+  # lookup right after register can still return `[]`. Block here until this
+  # entry's own key is locally visible, so callers (e.g. Manager.create/2)
+  # never race their own registration.
+  defp await_locally_visible(key, attempts \\ 100)
+
+  defp await_locally_visible(_key, 0), do: :ok
+
+  defp await_locally_visible(key, attempts) do
+    case Horde.Registry.lookup(Cluster.registry(), key) do
+      [] ->
+        Process.sleep(1)
+        await_locally_visible(key, attempts - 1)
+
+      _ ->
+        :ok
     end
   end
 
