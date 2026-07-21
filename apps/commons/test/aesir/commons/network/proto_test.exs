@@ -117,6 +117,7 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.Snapshot
   alias Aesir.Net.SnapshotEntity
   alias Aesir.Net.SpecialEffect
+  alias Aesir.Net.SpiritSphereUpdate
   alias Aesir.Net.SpriteChange
   alias Aesir.Net.StatUp
   alias Aesir.Net.StatUpResult
@@ -509,7 +510,7 @@ defmodule Aesir.Commons.Network.ProtoTest do
              Envelope.decode(IO.iodata_to_binary(iodata))
   end
 
-  test "unit_spawn with moving fields round-trips through envelope oneof" do
+  test "unit_spawn with moving and spirit-sphere fields round-trips through envelope oneof" do
     env = %Envelope{
       body:
         {:unit_spawn,
@@ -531,7 +532,9 @@ defmodule Aesir.Commons.Network.ProtoTest do
            moving: true,
            dst_x: 160,
            dst_y: 110,
-           move_start_time: 1_750_000_000
+           move_start_time: 1_750_000_000,
+           spirit_sphere_count: 4_294_967_295,
+           spirit_sphere_revision: 4_294_967_296
          }}
     }
 
@@ -551,9 +554,26 @@ defmodule Aesir.Commons.Network.ProtoTest do
                    moving: true,
                    dst_x: 160,
                    dst_y: 110,
-                   move_start_time: 1_750_000_000
+                   move_start_time: 1_750_000_000,
+                   spirit_sphere_count: 4_294_967_295,
+                   spirit_sphere_revision: 4_294_967_296
                  }}
             }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "spirit sphere protocol fields use the assigned schema tags" do
+    assert UnitSpawn.schema().fields.spirit_sphere_count.tag == 36
+    assert UnitSpawn.schema().fields.spirit_sphere_revision.tag == 37
+    assert Envelope.schema().fields.spirit_sphere_update.tag == 163
+
+    assert Map.keys(SnapshotEntity.schema().fields) == [:id, :x, :y, :dir, :move_state, :hp_pct]
+  end
+
+  test "spirit_sphere_update round-trips absolute state through envelope oneof" do
+    assert_round_trip(
+      :spirit_sphere_update,
+      %SpiritSphereUpdate{unit_id: 1, count: 2, revision: 3}
+    )
   end
 
   test "unit_despawn round-trips through envelope oneof" do

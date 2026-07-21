@@ -187,6 +187,8 @@ message Envelope {
     SkillMenuReply skill_menu_reply = 161;
     // 162: caster-only reason for a rejected skill cast
     SkillCastFailed skill_cast_failed = 162;
+    // 163: authoritative absolute spirit-sphere state
+    SpiritSphereUpdate spirit_sphere_update = 163;
   }
 }
 
@@ -461,6 +463,15 @@ message UnitSpawn {
   uint32 virtue = 33;
   string guild_name = 34;
   uint32 emblem_id = 35;
+  uint32 spirit_sphere_count = 36;
+  uint64 spirit_sphere_revision = 37;
+}
+
+// Server -> client, authoritative absolute spirit-sphere state for a unit.
+message SpiritSphereUpdate {
+  uint32 unit_id = 1;
+  uint32 count = 2;
+  uint64 revision = 3;
 }
 
 // Server -> client, an entity left view (replaces RO ZC_NOTIFY_VANISH 0x0080).
