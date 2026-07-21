@@ -66,7 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTime do
   Computes the `%{fixed, variable, total}` cast time in ms for a skill level.
 
   Returns an instant cast (`%{fixed: 0, variable: 0, total: 0}`) when the
-  definition has no base cast time for the level (empty list) or the base is `0`.
+  definition has neither a base nor an explicit fixed cast time for the level.
   """
   @spec compute(Definition.t(), pos_integer(), stats()) :: result()
   def compute(%Definition{} = definition, level, %{dex: _dex, int: _int} = stats) do
@@ -76,8 +76,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTime do
 
   @spec compute_for_base(nil | non_neg_integer(), Definition.t(), pos_integer(), stats()) ::
           result()
-  defp compute_for_base(base, _definition, _level, _stats) when base in [nil, 0] do
-    %{fixed: 0, variable: 0, total: 0}
+  defp compute_for_base(base, definition, level, stats) when base in [nil, 0] do
+    case Enum.at(definition.fixed_cast_time, level - 1) do
+      fixed when is_integer(fixed) and fixed > 0 ->
+        fixed = max(0, fixed + Map.get(stats, :fixed_cast, 0))
+        %{fixed: fixed, variable: 0, total: fixed}
+
+      _other ->
+        %{fixed: 0, variable: 0, total: 0}
+    end
   end
 
   defp compute_for_base(base, definition, level, stats) do

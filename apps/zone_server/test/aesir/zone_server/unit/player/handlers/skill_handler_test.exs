@@ -435,6 +435,37 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert_receive {:"$gen_cast", {:receive_spirit_sphere, %{source_id: 1000, target_id: 2000}}}
     end
 
+    test "a local absorb settles its cost before applying the capped reward" do
+      state = instant_state(100)
+      stats = state.game_state.stats
+      stats = put_in(stats.derived_stats.max_sp, 100)
+      state = %{state | game_state: %{state.game_state | stats: stats}}
+      game_state = state.game_state
+
+      descriptor = %Interpreter.Deferred{
+        effect: {:absorb_local, 14},
+        cost: %Cost{sp: 5},
+        zeny: 0,
+        skill_id: 262,
+        level: 1,
+        target: :self
+      }
+
+      charged_stats = put_in(stats.current_state.sp, 95)
+      charged = %{game_state | stats: charged_stats}
+
+      expect(Interpreter, :begin_cast, fn ^game_state, 262, 1, :self ->
+        {:deferred, game_state, descriptor}
+      end)
+
+      expect(Interpreter, :settle_deferred, fn ^game_state, ^descriptor -> {:ok, charged} end)
+      stub(Catalog, :by_id, fn 262 -> {:ok, definition(id: 262, cast_time: [], cooldown: [])} end)
+      stub_commit()
+
+      assert {:noreply, settled} = SkillHandler.handle_use_skill(state, 262, 1, 1000)
+      assert settled.game_state.stats.current_state.sp == 100
+    end
+
     test "a staged pending_interaction starts a dialog and takes the lock" do
       stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)

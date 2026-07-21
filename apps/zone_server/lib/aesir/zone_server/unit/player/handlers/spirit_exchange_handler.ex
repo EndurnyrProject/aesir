@@ -72,6 +72,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandler do
     with {:ok, source} <- current_source(request),
          true <- request.target_id == target.character_id,
          true <- source.map_name == target.map_name,
+         false <- coin_job?(target),
          :ok <- Targeting.validate_enemy(source, target) do
       count = SpiritSpheres.count(target.spirit_spheres)
       state = SpiritSphereHandler.clear(state)

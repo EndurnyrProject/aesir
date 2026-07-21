@@ -65,6 +65,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandlerTest do
     end
   end
 
+  test "a receiver rejects a dead target" do
+    source = player_state(1, party_id: 10)
+    target = player_state(2, party_id: 10)
+    target = put_in(target.stats.current_state.hp, 0)
+    :ok = UnitRegistry.register_player(source, self())
+
+    request = %{source_id: 1, source_pid: self(), target_id: 2}
+    state = %{connection_pid: self(), game_state: target}
+
+    assert {:noreply, ^state} = SpiritExchangeHandler.receive_sphere(state, request)
+  end
+
   test "an accepted absorb request clears the target and replies once with the count" do
     Mimic.copy(Broadcast)
     Mimic.copy(Targeting)
@@ -90,6 +102,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandlerTest do
   test "player absorb is rejected when the current targeting policy disallows PvP" do
     source = player_state(1)
     target = player_state(2) |> with_spheres(1)
+    :ok = UnitRegistry.register_player(source, self())
+    token = make_ref()
+    request = %{source_id: 1, source_pid: self(), target_id: 2, token: token}
+    state = %{connection_pid: self(), game_state: target}
+
+    assert {:noreply, ^state} = SpiritExchangeHandler.absorb_spheres(state, request)
+    refute_receive {:"$gen_cast", {:spirit_absorb_result, ^token, 2, _count}}
+  end
+
+  test "player absorb rejects a current coin-user target before the PvP check" do
+    Mimic.copy(Targeting)
+    reject(&Targeting.validate_enemy/2)
+
+    source = player_state(1)
+    target = player_state(2, job_id: 24) |> with_spheres(1)
     :ok = UnitRegistry.register_player(source, self())
     token = make_ref()
     request = %{source_id: 1, source_pid: self(), target_id: 2, token: token}

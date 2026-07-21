@@ -362,6 +362,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp resolve_deferred(
          state,
          game_state,
+         %Interpreter.Deferred{effect: {:absorb_local, reward}} = descriptor,
+         locked
+       ) do
+    case Interpreter.settle_deferred(game_state, descriptor) do
+      {:ok, charged} ->
+        rewarded = restore_sp(charged, reward)
+        new_state = commit_cast(state, rewarded, descriptor.skill_id, descriptor.level)
+        broadcast_skill_use(rewarded, descriptor.skill_id, descriptor.level, descriptor.target)
+        maybe_resume_lock(new_state, locked)
+
+      {:error, _reason} ->
+        maybe_resume_lock(%{state | game_state: game_state}, locked)
+    end
+  end
+
+  defp resolve_deferred(
+         state,
+         game_state,
          %Interpreter.Deferred{effect: {:transfer_sphere, target_id}} = descriptor,
          locked
        ) do

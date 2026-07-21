@@ -26,6 +26,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTimeTest do
                %{fixed: 0, variable: 0, total: 0}
     end
 
+    test "uses an explicit fixed cast when the variable cast list is empty" do
+      assert CastTime.compute(definition([], [500]), 1, %{dex: 50, int: 50}) ==
+               %{fixed: 500, variable: 0, total: 500}
+    end
+
     test "fixed cast defaults to 20% of base when no fixed_cast_time is set" do
       assert %{fixed: 200} = CastTime.compute(definition([1_000]), 1, %{dex: 0, int: 0})
     end
