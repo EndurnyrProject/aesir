@@ -51,6 +51,32 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
       now < combo.deadline
   end
 
+  @doc "Validates a stage and target id, returning the retained typed target."
+  @spec validate(t(), stage(), non_neg_integer() | target(), integer()) ::
+          {:ok, target()} | {:error, :invalid_combo}
+  def validate(%__MODULE__{} = combo, stage, {target_type, target_id}, now)
+      when stage != :idle and target_type in [:player, :mob, :skill_unit] and
+             is_integer(target_id) and is_integer(now) do
+    if combo.deadline != 0 and current?(combo, stage, {target_type, target_id}, now),
+      do: {:ok, {target_type, target_id}},
+      else: {:error, :invalid_combo}
+  end
+
+  def validate(%__MODULE__{} = combo, stage, target_id, now)
+      when stage != :idle and is_integer(target_id) and is_integer(now) do
+    case combo.target do
+      {_, ^target_id} = target ->
+        if combo.deadline != 0 and current?(combo, stage, target, now),
+          do: {:ok, target},
+          else: {:error, :invalid_combo}
+
+      _ ->
+        {:error, :invalid_combo}
+    end
+  end
+
+  def validate(_combo, _stage, _target_id, _now), do: {:error, :invalid_combo}
+
   @doc "Expires a matching generation once its deadline has elapsed."
   @spec expire(t(), non_neg_integer(), integer()) :: t()
   def expire(%__MODULE__{} = combo, generation, now) do

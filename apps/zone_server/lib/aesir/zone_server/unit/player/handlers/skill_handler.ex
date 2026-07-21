@@ -49,12 +49,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # `drive_cast/4` (and therefore ahead of `ensure_idle_for_cast/1`, which would
   # reject it) and never takes the ordinary cast path.
   @cast_cancel_id 275
-  @combo_followup_ids [272]
+  @combo_followup_ids [272, 273]
 
   @spec handle_use_skill(SessionState.t(), integer(), pos_integer(), integer()) ::
           {:noreply, SessionState.t()}
   def handle_use_skill(state, skill_id, level, target_id) do
-    state = maybe_cancel_combo(state, skill_id)
+    state = maybe_cancel_combo(state, skill_id, target_id)
     game_state = state.game_state
 
     if StatusInterpreter.can_use_skill?(:player, game_state.character_id, skill_id) do
@@ -898,9 +898,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   defp resolve_target(_game_state, target_id), do: {:unit, target_id}
 
-  defp maybe_cancel_combo(state, skill_id) when skill_id in @combo_followup_ids, do: state
+  defp maybe_cancel_combo(
+         %{game_state: %{combo: %{target: {_type, retained_target_id}}}} = state,
+         skill_id,
+         target_id
+       )
+       when skill_id in @combo_followup_ids and retained_target_id == target_id,
+       do: state
 
-  defp maybe_cancel_combo(%{game_state: game_state} = state, _skill_id) do
+  defp maybe_cancel_combo(%{game_state: game_state} = state, skill_id, _target_id)
+       when skill_id in @combo_followup_ids do
+    %{state | game_state: PlayerState.cancel_combo(game_state)}
+  end
+
+  defp maybe_cancel_combo(%{game_state: game_state} = state, _skill_id, _target_id) do
     %{state | game_state: PlayerState.cancel_combo(game_state)}
   end
 

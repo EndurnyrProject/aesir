@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.CastTime
@@ -197,6 +198,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_zeny(game_state, zeny),
          :ok <- check_catalysts(game_state, definition),
          :ok <- check_ammo(game_state, definition) do
+      apply_act_delay = Enum.at(definition.after_cast_delay, level - 1) not in [nil, 0]
+      after_cast_delay = resolved_after_cast_delay(game_state, definition, level)
+      definition = put_resolved_combo_delay(definition, level, after_cast_delay)
+
       complete_resolved_cast(
         game_state,
         module,
@@ -209,6 +214,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           zeny: zeny,
           skill_id: skill_id,
           level: level,
+          apply_act_delay: apply_act_delay,
+          after_cast_delay: after_cast_delay,
           now: now
         }
       )
@@ -315,6 +322,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   def item_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
 
+  @doc "Resolves the committed after-cast duration, including Monk combo flooring."
+  @spec resolved_after_cast_delay(PlayerState.t() | map(), Definition.t(), pos_integer()) ::
+          non_neg_integer()
+  def resolved_after_cast_delay(game_state, definition, level) do
+    case Enum.at(definition.after_cast_delay, level - 1) do
+      nil -> 0
+      0 -> 0
+      base -> resolve_delay(game_state, definition.id, base)
+    end
+  end
+
   # rAthena: `skill_get_sp(skill_id, skill_lv) * 2 / 3`, C integer division.
   @spec auto_cast_sp_cost(Definition.t(), pos_integer()) :: non_neg_integer()
   defp auto_cast_sp_cost(definition, level) do
@@ -364,6 +382,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
            zeny: zeny,
            skill_id: skill_id,
            level: level,
+           apply_act_delay: apply_act_delay,
+           after_cast_delay: after_cast_delay,
            now: now
          }
        ) do
@@ -386,12 +406,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          |> deduct_zeny(zeny)
          |> consume_ammo(definition)
          |> put_cooldown(skill_id, definition, level, now)
-         |> put_act_delay(definition, level, now)}
+         |> put_resolved_act_delay(apply_act_delay, after_cast_delay, now)}
 
       {:error, _reason} = error ->
         error
     end
   end
+
+  defp put_resolved_combo_delay(%{id: skill_id} = definition, level, delay)
+       when skill_id in [272, 273] do
+    %{
+      definition
+      | after_cast_delay: List.replace_at(definition.after_cast_delay, level - 1, delay)
+    }
+  end
+
+  defp put_resolved_combo_delay(definition, _level, _delay), do: definition
 
   @spec validate_cast(PlayerState.t(), integer(), pos_integer(), Active.target(), integer()) ::
           {:ok, Definition.t(), module()} | {:error, atom()}
@@ -883,6 +913,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # `:delay_rate` (`bDelayrate`, a signed percent delta where negative is less
   # delay). Equipment applies as its own multiplicative step so it never
   # compounds additively with the status reductions. Floors the delay at 0.
+  defp put_resolved_act_delay(game_state, false, _delay, _now), do: game_state
+
+  defp put_resolved_act_delay(game_state, true, delay, now),
+    do: %{game_state | act_delay_until: now + delay}
+
   defp put_act_delay(game_state, definition, level, now) do
     case Enum.at(definition.after_cast_delay, level - 1) do
       nil ->
@@ -891,14 +926,32 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       0 ->
         game_state
 
-      base ->
-        reduction = sum_status_reduction(game_state.character_id, :delay_reduction)
-        delay_rate = equip_modifier(game_state, :delay_rate)
-
-        reduced = base * (100 - reduction) / 100
-        delay = max(0, round(reduced * max(0, 100 + delay_rate) / 100))
-
-        %{game_state | act_delay_until: now + delay}
+      _base ->
+        %{
+          game_state
+          | act_delay_until: now + resolved_after_cast_delay(game_state, definition, level)
+        }
     end
+  end
+
+  defp resolve_delay(game_state, skill_id, base) do
+    base = combo_base_delay(game_state, skill_id, base)
+    reduction = sum_status_reduction(game_state.character_id, :delay_reduction)
+    delay_rate = equip_modifier(game_state, :delay_rate)
+    reduced = round(base * (100 - reduction) / 100 * max(0, 100 + delay_rate) / 100)
+
+    if skill_id in [272, 273], do: combo_delay_floor(game_state, reduced), else: max(0, reduced)
+  end
+
+  defp combo_base_delay(game_state, skill_id, base) when skill_id in [272, 273] do
+    stats = game_state.stats.base_stats
+    max(0, base - 4 * stats.agi - 2 * stats.dex)
+  end
+
+  defp combo_base_delay(_game_state, _skill_id, base), do: base
+
+  defp combo_delay_floor(game_state, reduced) do
+    attack_motion = AttackSpeed.calculate_delay_from_stats(game_state.stats) |> div(2)
+    max(attack_motion, max(0, reduced))
   end
 end

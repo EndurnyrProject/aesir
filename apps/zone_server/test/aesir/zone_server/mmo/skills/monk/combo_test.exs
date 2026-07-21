@@ -53,4 +53,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.ComboTest do
     assert cancelled.generation == reopened.generation + 1
     assert Combo.cancel(cancelled) == cancelled
   end
+
+  test "validate returns the retained typed target only for the current stage and id" do
+    now = 1_000
+    combo = Combo.open(Combo.new(), :quadruple, {:mob, 42}, now + 500)
+
+    assert {:ok, {:mob, 42}} = Combo.validate(combo, :quadruple, 42, now)
+    assert {:error, :invalid_combo} = Combo.validate(combo, :thrust, 42, now)
+    assert {:error, :invalid_combo} = Combo.validate(combo, :quadruple, 43, now)
+    assert {:error, :invalid_combo} = Combo.validate(combo, :quadruple, 42, now + 500)
+  end
+
+  test "typed validation rejects a reused id owned by another unit type" do
+    now = 1_000
+    combo = Combo.open(Combo.new(), :quadruple, {:mob, 42}, now + 500)
+
+    assert {:ok, {:mob, 42}} = Combo.validate(combo, :quadruple, {:mob, 42}, now)
+    assert {:error, :invalid_combo} = Combo.validate(combo, :quadruple, {:player, 42}, now)
+  end
 end

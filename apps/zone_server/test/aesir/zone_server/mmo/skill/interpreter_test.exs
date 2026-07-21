@@ -1422,6 +1422,37 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert updated.act_delay_until >= now + 500
     end
 
+    test "Monk combo effect and commitment share one modifier-resolved duration" do
+      gs = game_state(100, %{272 => 1}, %{delay_rate: -50})
+      stats = gs.stats
+      stats = %{stats | base_stats: stats.base_stats |> Map.put(:agi, 1) |> Map.put(:dex, 1)}
+      stats = %{stats | derived_stats: Map.put(stats.derived_stats, :aspd, 150)}
+      gs = %{gs | stats: stats}
+
+      definition = %Definition{
+        id: 272,
+        name: :sm_provoke,
+        display_name: "Raging Quadruple Blow",
+        max_level: 5,
+        target_type: :self,
+        sp_cost: [0],
+        after_cast_delay: [1_000]
+      }
+
+      stub(Catalog, :by_id, fn 272 -> {:ok, definition} end)
+
+      stub(SmProvoke, :cast, fn caster, :self, 1, resolved_definition ->
+        assert resolved_definition.after_cast_delay == [500]
+
+        {:ok, put_in(caster, [:stats, :modifiers, :equipment, :delay_rate], 0)}
+      end)
+
+      before = System.monotonic_time(:millisecond)
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 272, 1, :self)
+      assert updated.act_delay_until >= before + 500
+      assert updated.act_delay_until < before + 600
+    end
+
     test "complete_cast of a skill with no after_cast_delay leaves act_delay_until at 0" do
       stub(Catalog, :by_id, fn 6 -> {:ok, definition_with_act_delay([])} end)
       stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
