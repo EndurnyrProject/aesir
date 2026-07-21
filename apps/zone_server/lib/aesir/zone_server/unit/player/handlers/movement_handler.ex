@@ -561,6 +561,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   def handle_knocked_back(state, x, y) do
     game_state =
       state.game_state
+      |> PlayerState.cancel_pending_weapon_hit()
       |> PlayerState.stop_walking()
       |> PlayerState.update_position(x, y)
 

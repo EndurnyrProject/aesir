@@ -229,13 +229,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendriveTest do
         [{:player, target_id}]
       end)
 
-      stub(UnitRegistry, :get_unit, fn :mob, ^target_id ->
-        {:ok, {FakeUnit, registered_mob, mob_pid}}
+      stub(UnitRegistry, :get_unit, fn
+        :mob, ^target_id -> {:ok, {FakeUnit, registered_mob, mob_pid}}
+        :player, ^target_id -> {:ok, {FakeUnit, target, player_pid}}
       end)
 
       stub(UnitRegistry, :get_player_pid, fn ^target_id -> {:ok, player_pid} end)
-      stub(PlayerSession, :get_current_stats, fn ^player_pid -> target.stats end)
-      stub(PlayerSession, :get_state, fn ^player_pid -> %{game_state: target} end)
 
       reject(&MagicDamageCalculator.calculate_magic_damage/3)
       reject(&PlayerSession.apply_damage/3)
@@ -283,14 +282,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendriveTest do
         ]
       end)
 
-      stub(UnitRegistry, :get_unit, fn :mob, unit_id ->
-        case Map.fetch(units, unit_id) do
-          {:ok, %MobState{} = unit} ->
-            {:ok, {MobState, unit, self()}}
+      player_pids =
+        Map.new([1_000, 3_001, 3_002, 3_003], &{&1, spawn(fn -> Process.sleep(:infinity) end)})
 
-          _ ->
-            {:error, :not_found}
-        end
+      stub(UnitRegistry, :get_unit, fn
+        :player, unit_id ->
+          case {Map.fetch(units, unit_id), Map.fetch(player_pids, unit_id)} do
+            {{:ok, %FakeUnit{} = unit}, {:ok, pid}} -> {:ok, {FakeUnit, unit, pid}}
+            _ -> {:error, :not_found}
+          end
+
+        :mob, unit_id ->
+          case Map.fetch(units, unit_id) do
+            {:ok, %MobState{} = unit} ->
+              {:ok, {MobState, unit, self()}}
+
+            _ ->
+              {:error, :not_found}
+          end
       end)
 
       stub(SpatialIndex, :get_unit_position, fn unit_type, unit_id ->
@@ -306,28 +315,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendriveTest do
         end
       end)
 
-      player_pids =
-        Map.new([1_000, 3_001, 3_002, 3_003], &{&1, spawn(fn -> Process.sleep(:infinity) end)})
-
       stub(UnitRegistry, :get_player_pid, fn unit_id ->
         case Map.fetch(player_pids, unit_id) do
           {:ok, pid} -> {:ok, pid}
           :error -> {:error, :not_found}
         end
-      end)
-
-      stub(PlayerSession, :get_current_stats, fn pid ->
-        {unit_id, ^pid} =
-          Enum.find(player_pids, fn {_unit_id, player_pid} -> player_pid == pid end)
-
-        units[unit_id].stats
-      end)
-
-      stub(PlayerSession, :get_state, fn pid ->
-        {unit_id, ^pid} =
-          Enum.find(player_pids, fn {_unit_id, player_pid} -> player_pid == pid end)
-
-        %{game_state: units[unit_id]}
       end)
 
       stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, opts ->

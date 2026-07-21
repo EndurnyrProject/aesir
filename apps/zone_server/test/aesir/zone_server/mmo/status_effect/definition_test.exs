@@ -40,6 +40,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
     def on_damage(_target, instance, _damage_info, _context), do: {:ok, instance}
   end
 
+  defmodule RootOfferStatus do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_root_offer,
+      no_dispel: false
+
+    @impl true
+    def before_weapon_hit(_target, _instance, _attack_info, _context),
+      do: {:request_root_offer, %{unit: {:player, 99}, pid: self()}}
+  end
+
   describe "use macro" do
     test "generates id/0 from metadata" do
       assert MinimalStatus.id() == :sc_test_minimal
@@ -115,6 +125,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
       damage_info = %{damage: 100, element: :neutral}
       assert {:ok, ^instance} = MinimalStatus.on_damage(target, instance, damage_info, %{})
     end
+
+    test "before_weapon_hit/4 continues by default", %{instance: instance, target: target} do
+      assert :continue = MinimalStatus.before_weapon_hit(target, instance, %{}, %{})
+    end
   end
 
   describe "overridden callbacks" do
@@ -138,6 +152,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
     test "on_damage/4 pattern matches on damage info", %{instance: instance, target: target} do
       assert :remove = FullStatus.on_damage(target, instance, %{element: :earth}, %{})
       assert {:ok, ^instance} = FullStatus.on_damage(target, instance, %{element: :fire}, %{})
+    end
+
+    test "before_weapon_hit/4 publishes the Root offer capability" do
+      assert RootOfferStatus.__status_capabilities__() == [:before_weapon_hit]
+
+      assert {:request_root_offer, %{unit: {:player, 99}, pid: _pid}} =
+               RootOfferStatus.before_weapon_hit(
+                 {:player, 1},
+                 %StatusEntry{type: :sc_test_root_offer},
+                 %{},
+                 %{}
+               )
     end
   end
 

@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackPositioning
+  alias Aesir.ZoneServer.Mmo.Combat.PendingWeaponHit
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Mob.MobSession
@@ -456,7 +457,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
     attack_delay = MobState.get_attack_delay(state)
 
     can_attack =
-      Interpreter.can_attack?(:mob, state.instance_id) and
+      state.pending_weapon_hit == nil and
+        Interpreter.can_attack?(:mob, state.instance_id) and
         (state.last_attack_time == nil or
            current_time - state.last_attack_time >= attack_delay)
 
@@ -466,6 +468,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
         :ok ->
           # Update last attack time
           %{state | last_attack_time: current_time}
+
+        {:pending, pending} ->
+          :ok = PendingWeaponHit.dispatch_offer(pending)
+          %{state | pending_weapon_hit: pending}
 
         {:error, reason} ->
           # Attack failed, don't update attack time

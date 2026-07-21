@@ -140,6 +140,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   @callback on_dealt_damage(target(), StatusEntry.t(), map(), context()) :: hook_result()
 
   @doc """
+  Reads a target status before a weapon swing selects Trifecta or resolves damage.
+
+  The hook must not mutate the status instance or target state. A Root-capable
+  status may request an asynchronous claim through its opaque Monk reference.
+  """
+  @callback before_weapon_hit(target(), StatusEntry.t(), map(), context()) ::
+              :continue | {:request_root_offer, %{unit: {:player, non_neg_integer()}, pid: pid()}}
+
+  @doc """
   Pre-damage hook that may reduce or block an incoming hit before HP is applied.
 
   Receives the running `damage` (already reduced by statuses folded before it) in
@@ -252,7 +261,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   registry to index. Only hooks whose dispatch is on a hot path are tracked;
   the rest are called unconditionally through their no-op defaults.
   """
-  @type capability :: :on_dealt_damage
+  @type capability :: :before_weapon_hit | :on_dealt_damage
 
   defmacro __using__(opts) do
     quote bind_quoted: [opts: opts] do
@@ -308,25 +317,41 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
 
   @doc false
   defmacro __before_compile__(env) do
-    implements? = Module.defines?(env.module, {:on_dealt_damage, 4})
+    dealt_damage? = Module.defines?(env.module, {:on_dealt_damage, 4})
+    before_weapon_hit? = Module.defines?(env.module, {:before_weapon_hit, 4})
 
-    default =
-      unless implements? do
+    dealt_damage_default =
+      unless dealt_damage? do
         quote do
           @impl true
           def on_dealt_damage(_target, instance, _hit_info, _context), do: {:ok, instance}
         end
       end
 
-    capabilities = if implements?, do: [:on_dealt_damage], else: []
+    before_weapon_hit_default =
+      unless before_weapon_hit? do
+        quote do
+          @impl true
+          def before_weapon_hit(_target, _instance, _attack_info, _context), do: :continue
+        end
+      end
+
+    capabilities =
+      []
+      |> maybe_add_capability(before_weapon_hit?, :before_weapon_hit)
+      |> maybe_add_capability(dealt_damage?, :on_dealt_damage)
 
     quote do
-      unquote(default)
+      unquote(dealt_damage_default)
+      unquote(before_weapon_hit_default)
 
       @doc false
       def __status_capabilities__, do: unquote(capabilities)
     end
   end
+
+  defp maybe_add_capability(capabilities, true, capability), do: [capability | capabilities]
+  defp maybe_add_capability(capabilities, false, _capability), do: capabilities
 
   @doc """
   Validates `use` options against the metadata schema and fills in defaults.

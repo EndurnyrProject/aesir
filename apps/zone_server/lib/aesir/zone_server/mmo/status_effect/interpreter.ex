@@ -151,6 +151,24 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   @doc """
+  Reads active target statuses before a weapon hit selects a replacement or damage.
+
+  The callback path is intentionally read-only: it never stores an instance,
+  removes a status, or applies a follow-up. The first Root offer wins.
+  """
+  @spec before_weapon_hit(unit_type(), integer(), map()) ::
+          :continue | {:request_root_offer, %{unit: {:player, non_neg_integer()}, pid: pid()}}
+  def before_weapon_hit(unit_type, unit_id, attack_info) do
+    implementing = Registry.statuses_implementing(:before_weapon_hit)
+
+    if MapSet.size(implementing) == 0 do
+      :continue
+    else
+      find_weapon_hit_offer(unit_type, unit_id, implementing, attack_info)
+    end
+  end
+
+  @doc """
   Notifies the attacker's implementing statuses that one of its weapon hits landed.
 
   Only statuses implementing `c:Definition.on_dealt_damage/4` are dispatched -
@@ -582,6 +600,44 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   defp dispatch_damage(unit_type, unit_id, instance, damage_info),
     do: dispatch_hook(:on_damage, unit_type, unit_id, instance, damage_info)
+
+  defp find_weapon_hit_offer(unit_type, unit_id, implementing, attack_info) do
+    unit_type
+    |> StatusStorage.get_unit_statuses(unit_id)
+    |> Enum.filter(&MapSet.member?(implementing, &1.type))
+    |> Enum.find_value(:continue, fn instance ->
+      case dispatch_before_weapon_hit(unit_type, unit_id, instance, attack_info) do
+        :continue -> nil
+        {:request_root_offer, _monk_ref} = offer -> offer
+      end
+    end)
+  end
+
+  defp dispatch_before_weapon_hit(unit_type, unit_id, instance, attack_info) do
+    case Registry.get_definition(instance.type) do
+      nil ->
+        :continue
+
+      definition ->
+        context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
+
+        case definition.module.before_weapon_hit(
+               {unit_type, unit_id},
+               instance,
+               attack_info,
+               context
+             ) do
+          :continue ->
+            :continue
+
+          {:request_root_offer, _monk_ref} = offer ->
+            offer
+
+          result ->
+            raise "invalid before_weapon_hit result for #{instance.type}: #{inspect(result)}"
+        end
+    end
+  end
 
   defp dispatch_dealt_damage(unit_type, unit_id, instance, hit_info),
     do: dispatch_hook(:on_dealt_damage, unit_type, unit_id, instance, hit_info)

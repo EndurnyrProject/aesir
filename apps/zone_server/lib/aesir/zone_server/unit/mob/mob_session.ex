@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   require Logger
 
+  alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.PendingWeaponHit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler
@@ -82,6 +84,25 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   def get_state(pid) do
     GenServer.call(pid, :get_state)
   end
+
+  @doc "Delivers an asynchronous resolution for this mob's pending weapon hit."
+  @spec resolve_pending_weapon_hit(pid(), reference(), :resume | {:suppress, reference()}) :: :ok
+  def resolve_pending_weapon_hit(pid, id, resolution) do
+    send(pid, {:pending_weapon_hit_result, id, resolution})
+    :ok
+  end
+
+  @doc "Attaches the Root-owned link to this mob's pending weapon hit."
+  @spec claim_pending_weapon_hit(pid(), reference(), term(), term()) ::
+          :ok | {:error, :invalid_claim}
+  def claim_pending_weapon_hit(pid, id, link_id, coordinator_pid)
+      when is_reference(link_id) and is_pid(coordinator_pid) do
+    send(pid, {:pending_weapon_hit_claimed, id, link_id, coordinator_pid})
+    :ok
+  end
+
+  def claim_pending_weapon_hit(_pid, _id, _link_id, _coordinator_pid),
+    do: {:error, :invalid_claim}
 
   @doc """
   Forces the mob to move to a target position.
@@ -356,6 +377,58 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     {:noreply, state}
   end
 
+  # Combat: the Root-owned pending weapon hit - async resolution, the deadline
+  # timeout, and the Coordinator claim.
+  @impl GenServer
+  def handle_info({:pending_weapon_hit_result, id, resolution}, state)
+      when resolution == :resume or (is_tuple(resolution) and tuple_size(resolution) == 2) do
+    case state.pending_weapon_hit do
+      %PendingWeaponHit{id: ^id} = pending ->
+        case PendingWeaponHit.resolve(pending, resolution) do
+          {:ok, %{phase: :resumed}} -> {:noreply, resume_pending_weapon_hit(state, pending)}
+          {:ok, %{phase: :suppressed}} -> {:noreply, clear_pending_weapon_hit(state, pending)}
+          :already_resolved -> {:noreply, state}
+        end
+
+      _ ->
+        {:noreply, state}
+    end
+  end
+
+  @impl GenServer
+  def handle_info({:pending_weapon_hit_claimed, id, link_id, coordinator_pid}, state)
+      when is_reference(link_id) and is_pid(coordinator_pid) do
+    case state.pending_weapon_hit do
+      %PendingWeaponHit{id: ^id} = pending ->
+        case PendingWeaponHit.claim(pending, link_id) do
+          {:ok, claimed} ->
+            send(coordinator_pid, PendingWeaponHit.claim_submission_message(claimed))
+            {:noreply, %{state | pending_weapon_hit: claimed}}
+
+          :already_resolved ->
+            {:noreply, state}
+        end
+
+      _ ->
+        {:noreply, state}
+    end
+  end
+
+  @impl GenServer
+  def handle_info({:pending_weapon_hit_timeout, id}, state) do
+    case state.pending_weapon_hit do
+      %PendingWeaponHit{id: ^id, deadline_at: deadline_at} = pending ->
+        if deadline_at <= System.monotonic_time(:millisecond) do
+          {:noreply, resume_pending_weapon_hit(state, pending)}
+        else
+          {:noreply, state}
+        end
+
+      _ ->
+        {:noreply, state}
+    end
+  end
+
   # :terminate stays bare: a singleton lifecycle atom (post-death cleanup timer).
   @impl GenServer
   def handle_info(:terminate, state) do
@@ -370,6 +443,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   @impl GenServer
   def terminate(_reason, state) do
+    state = MobState.cancel_pending_weapon_hit(state)
+
     unless state.is_dead do
       Lifecycle.publish_departure(:mob, state.instance_id, state.map_name, :termination)
     end
@@ -377,5 +452,34 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     SpatialIndex.remove_unit(:mob, state.instance_id)
     Broadcast.publish_mob_despawn(state.map_name, state.instance_id)
     :ok
+  end
+
+  # Runs the deferred weapon swing once its Root resolution resumes it, then
+  # re-arms the ordinary attack cadence. A resumed swing must settle inline and
+  # never spawn a fresh pending hit.
+  defp resume_pending_weapon_hit(state, pending) do
+    state = %{state | pending_weapon_hit: nil}
+
+    case Combat.resume_mob_attack(state, pending) do
+      :ok ->
+        clear_pending_weapon_hit(state, pending)
+
+      {:pending, _next_pending} ->
+        raise "resuming a pending weapon hit must not create another pending hit"
+
+      {:error, _reason} ->
+        state
+    end
+  end
+
+  # Drops the pending hit, restores the melee cadence bookkeeping, and reschedules
+  # the AI tick at the swing's own next-attack delay.
+  defp clear_pending_weapon_hit(state, pending) do
+    if state.ai_timer_ref, do: Process.cancel_timer(state.ai_timer_ref)
+
+    delay = max(pending.next_attack_at - System.monotonic_time(:millisecond), 0)
+
+    %{state | pending_weapon_hit: nil, last_attack_time: pending.swing_at}
+    |> AiHandler.schedule_ai_tick(delay)
   end
 end

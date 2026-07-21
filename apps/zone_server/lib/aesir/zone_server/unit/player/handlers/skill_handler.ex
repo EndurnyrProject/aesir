@@ -54,6 +54,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   @spec handle_use_skill(SessionState.t(), integer(), pos_integer(), integer()) ::
           {:noreply, SessionState.t()}
   def handle_use_skill(state, skill_id, level, target_id) do
+    state = %{state | game_state: PlayerState.cancel_pending_weapon_hit(state.game_state)}
     state = maybe_cancel_combo(state, skill_id, target_id)
     game_state = state.game_state
 
@@ -122,7 +123,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   @spec handle_use_skill_ground(SessionState.t(), integer(), pos_integer(), integer(), integer()) ::
           {:noreply, SessionState.t()}
   def handle_use_skill_ground(%{game_state: game_state} = state, skill_id, level, x, y) do
-    state = %{state | game_state: PlayerState.cancel_combo(game_state)}
+    game_state =
+      game_state |> PlayerState.cancel_pending_weapon_hit() |> PlayerState.cancel_combo()
+
+    state = %{state | game_state: game_state}
     game_state = state.game_state
 
     if StatusInterpreter.can_use_skill?(:player, game_state.character_id, skill_id) do

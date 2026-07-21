@@ -35,12 +35,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   """
   defdelegate execute_attack(stats, player_state, target_id), to: AutoAttack
 
+  @doc "Resumes an already-authorized player weapon swing without a second Root probe."
+  defdelegate resume_attack(stats, player_state, pending), to: AutoAttack
+
   @doc """
   Executes a basic attack from mob to player.
 
   See `Aesir.ZoneServer.Mmo.Combat.AutoAttack.execute_mob_attack/2`.
   """
   defdelegate execute_mob_attack(mob_state, target_id), to: AutoAttack
+
+  @doc "Resumes an already-authorized mob weapon swing without a second Root probe."
+  defdelegate resume_mob_attack(mob_state, pending), to: AutoAttack
 
   @doc """
   Executes a single-target offensive skill from a caster against a target.

@@ -206,14 +206,14 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
 
       on_exit(fn -> Process.exit(target_player, :kill) end)
 
-      stub(UnitRegistry, :get_unit, fn :mob, @target_id -> {:error, :not_found} end)
-      stub(UnitRegistry, :get_player_pid, fn @target_id -> {:ok, target_player} end)
+      target_state = %{build_caster() | character_id: @target_id, x: 150, y: 150}
 
-      stub(PlayerSession, :get_current_stats, fn ^target_player -> build_caster().stats end)
-
-      stub(PlayerSession, :get_state, fn ^target_player ->
-        %{game_state: %{build_caster() | character_id: @target_id, x: 150, y: 150}}
+      stub(UnitRegistry, :get_unit, fn
+        :mob, @target_id -> {:error, :not_found}
+        :player, @target_id -> {:ok, {PlayerState, target_state, target_player}}
       end)
+
+      stub(UnitRegistry, :get_player_pid, fn @target_id -> {:ok, target_player} end)
 
       reject(&Broadcast.to_in_range/5)
       reject(&PlayerSession.apply_damage/3)
@@ -231,14 +231,14 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
       target_player = spawn(fn -> Process.sleep(:infinity) end)
       test_pid = self()
 
-      stub(UnitRegistry, :get_unit, fn :mob, @target_id -> {:error, :not_found} end)
-      stub(UnitRegistry, :get_player_pid, fn @target_id -> {:ok, target_player} end)
+      target_state = %{build_caster() | character_id: @target_id, x: 150, y: 150}
 
-      stub(PlayerSession, :get_current_stats, fn ^target_player -> build_caster().stats end)
-
-      stub(PlayerSession, :get_state, fn ^target_player ->
-        %{game_state: %{build_caster() | character_id: @target_id, x: 150, y: 150}}
+      stub(UnitRegistry, :get_unit, fn
+        :mob, @target_id -> {:error, :not_found}
+        :player, @target_id -> {:ok, {PlayerState, target_state, target_player}}
       end)
+
+      stub(UnitRegistry, :get_player_pid, fn @target_id -> {:ok, target_player} end)
 
       stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, _p -> :ok end)
 
@@ -268,13 +268,14 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
   # catching a direct cast's splash. Asserted at the boundary rather than trusted.
   describe "absorb_damage hit_info contract" do
     defp stub_player_target(target_player, test_pid) do
-      stub(UnitRegistry, :get_unit, fn :mob, @target_id -> {:error, :not_found} end)
-      stub(UnitRegistry, :get_player_pid, fn @target_id -> {:ok, target_player} end)
-      stub(PlayerSession, :get_current_stats, fn ^target_player -> build_caster().stats end)
+      target_state = %{build_caster() | character_id: @target_id, x: 150, y: 150}
 
-      stub(PlayerSession, :get_state, fn ^target_player ->
-        %{game_state: %{build_caster() | character_id: @target_id, x: 150, y: 150}}
+      stub(UnitRegistry, :get_unit, fn
+        :mob, @target_id -> {:error, :not_found}
+        :player, @target_id -> {:ok, {PlayerState, target_state, target_player}}
       end)
+
+      stub(UnitRegistry, :get_player_pid, fn @target_id -> {:ok, target_player} end)
 
       stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, _p -> :ok end)
       stub(PlayerSession, :apply_damage, fn ^target_player, _damage, _attacker -> :ok end)

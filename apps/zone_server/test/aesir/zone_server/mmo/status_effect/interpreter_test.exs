@@ -30,9 +30,40 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     end
   end
 
+  defmodule RootOfferStatus do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_root_offer,
+      no_dispel: false,
+      properties: [:buff]
+
+    @impl true
+    def before_weapon_hit(_target, instance, attack_info, _context) do
+      send(self(), {:root_offer_probe, instance, attack_info})
+      {:request_root_offer, %{unit: {:player, 77}, pid: self()}}
+    end
+  end
+
   setup :set_mimic_from_context
   setup :verify_on_exit!
   setup :setup_ets_tables
+
+  describe "before_weapon_hit/3" do
+    test "returns a Root offer without changing the target status" do
+      target_id = 7_701
+      setup_player_mock(target_id)
+      Registry.register_module(RootOfferStatus)
+      :ok = StatusStorage.apply_status(:player, target_id, :sc_test_root_offer)
+
+      before = StatusStorage.get_status(:player, target_id, :sc_test_root_offer)
+      attack_info = %{attacker: {:mob, 44}, target: {:player, target_id}}
+
+      assert {:request_root_offer, %{unit: {:player, 77}, pid: _pid}} =
+               Interpreter.before_weapon_hit(:player, target_id, attack_info)
+
+      assert_received {:root_offer_probe, ^before, ^attack_info}
+      assert StatusStorage.get_status(:player, target_id, :sc_test_root_offer) == before
+    end
+  end
 
   test "Lex Aeterna atomically grants its double to one of two concurrent hits" do
     target_id = 9_001

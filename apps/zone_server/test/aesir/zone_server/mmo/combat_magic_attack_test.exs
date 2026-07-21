@@ -758,8 +758,18 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
         [{:player, @caster_id}, {:player, ally_id}, {:player, enemy_id}]
       end)
 
-      stub(UnitRegistry, :get_unit, fn :mob, id when id in [@caster_id, ally_id, enemy_id] ->
-        {:error, :not_found}
+      stub(UnitRegistry, :get_unit, fn
+        :mob, id when id in [@caster_id, ally_id, enemy_id] ->
+          {:error, :not_found}
+
+        :player, @caster_id ->
+          {:ok, {PlayerState, states[self_pid], self_pid}}
+
+        :player, ^ally_id ->
+          {:ok, {PlayerState, states[ally_pid], ally_pid}}
+
+        :player, ^enemy_id ->
+          {:ok, {PlayerState, states[enemy_pid], enemy_pid}}
       end)
 
       stub(UnitRegistry, :get_player_pid, fn
@@ -767,9 +777,6 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
         ^ally_id -> {:ok, ally_pid}
         ^enemy_id -> {:ok, enemy_pid}
       end)
-
-      stub(PlayerSession, :get_current_stats, fn pid -> states[pid].stats end)
-      stub(PlayerSession, :get_state, fn pid -> %{game_state: states[pid]} end)
 
       reject(&MagicDamageCalculator.calculate_magic_damage/3)
       reject(&PlayerSession.apply_damage/3)

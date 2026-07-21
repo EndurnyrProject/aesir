@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackPositioning
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
+  alias Aesir.ZoneServer.Mmo.Combat.PendingWeaponHit
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.WeaponTypes
@@ -46,7 +47,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   """
   @spec handle_attack_request(map(), integer(), integer()) :: {:noreply, map()}
   def handle_attack_request(state, target_id, action_type) do
-    state = cancel_combo_for_target_change(state, target_id)
+    state =
+      state
+      |> cancel_combo_for_target_change(target_id)
+      |> cancel_pending_for_target_change(target_id)
+
+    game_state = state.game_state
+
+    if game_state.pending_weapon_hit do
+      {:noreply, state}
+    else
+      handle_attack_request_when_unblocked(state, target_id, action_type)
+    end
+  end
+
+  defp handle_attack_request_when_unblocked(state, target_id, action_type) do
     game_state = state.game_state
 
     if Interpreter.can_attack?(:player, game_state.character_id) do
@@ -230,6 +245,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   @spec handle_auto_attack(map(), integer()) :: {:noreply, map()}
   def handle_auto_attack(%{game_state: game_state} = state, target_id) do
     cond do
+      game_state.pending_weapon_hit != nil ->
+        {:noreply, state}
+
       game_state.combat_target_id != target_id ->
         {:noreply, state}
 
@@ -447,11 +465,113 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
           {stage, target, duration}
         )
 
+      {:pending, %PendingWeaponHit{} = pending} ->
+        hold_pending_weapon_hit(state, transitioned_state, pending)
+
       {:error, :target_out_of_range} ->
         handle_target_out_of_range(state, target_id, transitioned_state)
 
       {:error, reason} ->
         handle_attack_failure(state, transitioned_state, reason)
+    end
+  end
+
+  @doc "Resolves a pending weapon hit once after an asynchronous Root outcome."
+  @spec handle_pending_weapon_hit_result(map(), reference(), :resume | {:suppress, reference()}) ::
+          {:noreply, map()}
+  def handle_pending_weapon_hit_result(%{game_state: game_state} = state, id, resolution) do
+    with %PendingWeaponHit{id: ^id} = pending <- game_state.pending_weapon_hit,
+         {:ok, resolved} <- PendingWeaponHit.resolve(pending, resolution) do
+      state = %{state | game_state: %{game_state | pending_weapon_hit: nil}}
+
+      case resolved.phase do
+        :resumed -> resume_pending_weapon_hit(state, resolved)
+        :suppressed -> schedule_suppressed_weapon_hit(state, resolved)
+      end
+    else
+      _ -> {:noreply, state}
+    end
+  end
+
+  @doc "Resumes an expired pending weapon hit once; early or stale timers are ignored."
+  @spec handle_pending_weapon_hit_timeout(map(), reference()) :: {:noreply, map()}
+  def handle_pending_weapon_hit_timeout(%{game_state: game_state} = state, id) do
+    case game_state.pending_weapon_hit do
+      %PendingWeaponHit{id: ^id, deadline_at: deadline_at} ->
+        if System.monotonic_time(:millisecond) >= deadline_at do
+          handle_pending_weapon_hit_result(state, id, :resume)
+        else
+          {:noreply, state}
+        end
+
+      _ ->
+        {:noreply, state}
+    end
+  end
+
+  @doc "Cancels the pending weapon hit without resolving it."
+  @spec cancel_pending_weapon_hit(map()) :: map()
+  def cancel_pending_weapon_hit(%{game_state: game_state} = state) do
+    %{state | game_state: PlayerState.cancel_pending_weapon_hit(game_state)}
+  end
+
+  defp hold_pending_weapon_hit(state, transitioned_state, pending) do
+    delay = max(pending.deadline_at - System.monotonic_time(:millisecond), 0)
+    Process.send_after(self(), {:pending_weapon_hit_timeout, pending.id}, delay)
+
+    game_state =
+      transitioned_state
+      |> PlayerState.put_pending_weapon_hit(pending)
+      |> Map.put(:continuous_attack_timer, nil)
+
+    {:noreply, %{state | game_state: game_state}}
+  end
+
+  defp resume_pending_weapon_hit(%{game_state: game_state} = state, pending) do
+    weapon_type = Stats.weapon_type(game_state.stats.equipment)
+
+    case Combat.resume_attack(game_state.stats, game_state, pending) do
+      :ok ->
+        handle_resumed_weapon_hit(state, pending, game_state, weapon_type, nil)
+
+      {:ok, {:combo, stage, target, duration}} ->
+        handle_resumed_weapon_hit(
+          state,
+          pending,
+          game_state,
+          weapon_type,
+          {stage, target, duration}
+        )
+
+      {:pending, %PendingWeaponHit{}} ->
+        raise "resuming a pending weapon hit must not create another pending hit"
+
+      {:error, reason} ->
+        handle_attack_failure(state, game_state, reason)
+    end
+  end
+
+  defp handle_resumed_weapon_hit(state, pending, game_state, weapon_type, combo_window) do
+    game_state = maybe_consume_ammo(state, game_state, weapon_type)
+    game_state = maybe_open_combo(game_state, combo_window, AttackSpeed.current_timestamp())
+
+    {:noreply, %{state | game_state: determine_post_pending_attack(state, pending, game_state)}}
+  end
+
+  defp schedule_suppressed_weapon_hit(%{game_state: game_state} = state, pending) do
+    {:noreply, %{state | game_state: determine_post_pending_attack(state, pending, game_state)}}
+  end
+
+  defp determine_post_pending_attack(state, pending, game_state) do
+    if state.game_state.combat_action_type == 7 do
+      delay = max(pending.next_attack_at - AttackSpeed.current_timestamp(), 0)
+      timer_ref = Process.send_after(self(), {:auto_attack, elem(pending.target, 1)}, delay)
+
+      %{game_state | last_attack_timestamp: pending.swing_at}
+      |> PlayerState.set_continuous_timer(timer_ref)
+    else
+      {:ok, idle_state} = PlayerState.transition_to(game_state, :idle)
+      %{idle_state | last_attack_timestamp: pending.swing_at}
     end
   end
 
@@ -822,4 +942,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   end
 
   defp cancel_combo_for_target_change(state, _target_id), do: state
+
+  defp cancel_pending_for_target_change(
+         %{game_state: %{pending_weapon_hit: %PendingWeaponHit{target: {_type, id}}} = game_state} =
+           state,
+         target_id
+       )
+       when id != target_id do
+    %{state | game_state: PlayerState.cancel_pending_weapon_hit(game_state)}
+  end
+
+  defp cancel_pending_for_target_change(state, _target_id), do: state
 end

@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Combat.HpDrain
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
+  alias Aesir.ZoneServer.Mmo.Combat.PendingWeaponHit
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
@@ -28,6 +29,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+
+  @pending_weapon_hit_timeout_ms 5_000
 
   @doc """
   Executes an attack from player to target.
@@ -52,7 +55,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   @type combo_result ::
           {:ok, {:combo, atom(), {atom(), non_neg_integer()}, non_neg_integer()}}
 
-  @spec execute_attack(map(), map(), integer()) :: :ok | combo_result() | {:error, atom()}
+  @type pending_result :: {:pending, PendingWeaponHit.t()}
+
+  @spec execute_attack(map(), map(), integer()) ::
+          :ok | combo_result() | pending_result() | {:error, atom()}
   def execute_attack(stats, player_state, target_id) do
     # Create player combatant - player_state already implements to_combatant
     # But we need to update the stats first
@@ -60,6 +66,35 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     attacker_combatant = player_state.__struct__.to_combatant(player_state)
 
     with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
+         :ok <- TargetResolver.ensure_targetable(target_state, target_type),
+         target_combatant <- target_state.__struct__.to_combatant(target_state),
+         :ok <-
+           AttackValidator.validate(attacker_combatant, target_combatant, projectile?: true) do
+      resolve_player_attack_or_pending(
+        player_state,
+        target_state,
+        attacker_combatant,
+        target_combatant,
+        target_pid,
+        target_type,
+        target_id
+      )
+    end
+  end
+
+  @doc "Resumes a Root-gated player swing without probing `before_weapon_hit` again."
+  @spec resume_attack(map(), map(), PendingWeaponHit.t()) ::
+          :ok | combo_result() | {:error, atom()}
+  def resume_attack(
+        stats,
+        player_state,
+        %PendingWeaponHit{target: {target_type, target_id}, continuation: :pre_trifecta}
+      ) do
+    player_state = %{player_state | stats: stats}
+    attacker_combatant = player_state.__struct__.to_combatant(player_state)
+
+    with {:ok, target_pid, target_state, ^target_type} <-
+           TargetResolver.resolve(target_type, target_id),
          :ok <- TargetResolver.ensure_targetable(target_state, target_type),
          target_combatant <- target_state.__struct__.to_combatant(target_state),
          :ok <-
@@ -73,6 +108,32 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         target_type,
         target_id
       )
+    end
+  end
+
+  defp resolve_player_attack_or_pending(
+         player_state,
+         target_state,
+         attacker,
+         target,
+         target_pid,
+         target_type,
+         target_id
+       ) do
+    case before_weapon_hit(:player, attacker, target, target_type, target_id) do
+      :continue ->
+        resolve_player_attack_or_replacement(
+          player_state,
+          target_state,
+          attacker,
+          target,
+          target_pid,
+          target_type,
+          target_id
+        )
+
+      {:request_root_offer, monk_ref} ->
+        {:pending, pending_weapon_hit(:player, attacker, target_type, target_id, monk_ref)}
     end
   end
 
@@ -175,46 +236,118 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     - :ok if attack was successful
     - {:error, reason} if attack failed
   """
-  @spec execute_mob_attack(map(), integer()) :: :ok | {:error, atom()}
+  @spec execute_mob_attack(map(), integer()) :: :ok | pending_result() | {:error, atom()}
   def execute_mob_attack(mob_state, target_id) do
     attacker_combatant = mob_state.__struct__.to_combatant(mob_state)
 
     with {:ok, target_pid, target_state, :player} <- TargetResolver.resolve(target_id),
          target_combatant <- target_state.__struct__.to_combatant(target_state),
+         :ok <- AttackValidator.validate_mob_attack(attacker_combatant, target_combatant) do
+      resolve_mob_attack_or_pending(
+        attacker_combatant,
+        target_combatant,
+        target_pid,
+        target_id
+      )
+    end
+  end
+
+  @doc "Resumes a Root-gated mob swing without probing `before_weapon_hit` again."
+  @spec resume_mob_attack(map(), PendingWeaponHit.t()) :: :ok | {:error, atom()}
+  def resume_mob_attack(
+        mob_state,
+        %PendingWeaponHit{target: {:player, target_id}, continuation: :pre_trifecta}
+      ) do
+    attacker_combatant = mob_state.__struct__.to_combatant(mob_state)
+
+    with {:ok, target_pid, target_state, :player} <- TargetResolver.resolve(:player, target_id),
+         target_combatant <- target_state.__struct__.to_combatant(target_state),
          :ok <- AttackValidator.validate_mob_attack(attacker_combatant, target_combatant),
          {:ok, combat_result} <-
            check_hit_and_calculate_damage(attacker_combatant, target_combatant) do
-      case combat_result do
-        {:miss} ->
-          Logger.debug(
-            "Combat: Mob #{attacker_combatant.unit_id} attack missed player #{target_id}"
-          )
-
-          miss_packet = PacketFactory.build_miss_packet(attacker_combatant, target_combatant)
-          DamageApplication.broadcast_nearby(target_combatant, miss_packet)
-
-        {:perfect_dodge} ->
-          Logger.debug(
-            "Combat: Mob #{attacker_combatant.unit_id} attack perfect dodged by player #{target_id}"
-          )
-
-          dodge_packet =
-            PacketFactory.build_perfect_dodge_packet(attacker_combatant, target_combatant)
-
-          DamageApplication.broadcast_nearby(target_combatant, dodge_packet)
-
-        {:hit, damage_result} ->
-          handle_mob_attack_hit(
-            damage_result,
-            attacker_combatant,
-            target_combatant,
-            target_pid,
-            target_id
-          )
-      end
-
-      :ok
+      resolve_mob_attack(
+        combat_result,
+        attacker_combatant,
+        target_combatant,
+        target_pid,
+        target_id
+      )
     end
+  end
+
+  defp resolve_mob_attack_or_pending(attacker, target, target_pid, target_id) do
+    case before_weapon_hit(:mob, attacker, target, :player, target_id) do
+      {:request_root_offer, monk_ref} ->
+        {:pending, pending_weapon_hit(:mob, attacker, :player, target_id, monk_ref)}
+
+      :continue ->
+        with {:ok, combat_result} <- check_hit_and_calculate_damage(attacker, target) do
+          resolve_mob_attack(combat_result, attacker, target, target_pid, target_id)
+        end
+    end
+  end
+
+  defp resolve_mob_attack(
+         combat_result,
+         attacker_combatant,
+         target_combatant,
+         target_pid,
+         target_id
+       ) do
+    case combat_result do
+      {:miss} ->
+        Logger.debug(
+          "Combat: Mob #{attacker_combatant.unit_id} attack missed player #{target_id}"
+        )
+
+        miss_packet = PacketFactory.build_miss_packet(attacker_combatant, target_combatant)
+        DamageApplication.broadcast_nearby(target_combatant, miss_packet)
+
+      {:perfect_dodge} ->
+        Logger.debug(
+          "Combat: Mob #{attacker_combatant.unit_id} attack perfect dodged by player #{target_id}"
+        )
+
+        dodge_packet =
+          PacketFactory.build_perfect_dodge_packet(attacker_combatant, target_combatant)
+
+        DamageApplication.broadcast_nearby(target_combatant, dodge_packet)
+
+      {:hit, damage_result} ->
+        handle_mob_attack_hit(
+          damage_result,
+          attacker_combatant,
+          target_combatant,
+          target_pid,
+          target_id
+        )
+    end
+
+    :ok
+  end
+
+  defp before_weapon_hit(_attacker_type, _attacker, _target, :skill_unit, _target_id),
+    do: :continue
+
+  defp before_weapon_hit(attacker_type, attacker, target, target_type, target_id) do
+    StatusInterpreter.before_weapon_hit(target_type, target_id, %{
+      attacker: {attacker_type, attacker.unit_id},
+      target: {target_type, target.unit_id}
+    })
+  end
+
+  defp pending_weapon_hit(attacker_type, attacker, target_type, target_id, monk_ref) do
+    swing_at = System.monotonic_time(:millisecond)
+
+    PendingWeaponHit.new(
+      make_ref(),
+      {attacker_type, attacker.unit_id},
+      {target_type, target_id},
+      monk_ref,
+      swing_at + @pending_weapon_hit_timeout_ms,
+      swing_at,
+      swing_at + max(attacker.attack_delay_ms, 1)
+    )
   end
 
   defp resolve_player_attack(

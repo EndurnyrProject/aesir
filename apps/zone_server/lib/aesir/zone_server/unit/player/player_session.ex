@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.Net.SkillUnitDespawn
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Constants.DespawnReason
+  alias Aesir.ZoneServer.Mmo.Combat.PendingWeaponHit
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage, as: SkillUnitStorage
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -77,6 +78,25 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   def send_packet(pid, packet) do
     GenServer.cast(pid, {:send_packet, packet})
   end
+
+  @doc "Delivers an asynchronous resolution for this player's pending weapon hit."
+  @spec resolve_pending_weapon_hit(pid(), reference(), :resume | {:suppress, reference()}) :: :ok
+  def resolve_pending_weapon_hit(pid, id, resolution) do
+    send(pid, {:pending_weapon_hit_result, id, resolution})
+    :ok
+  end
+
+  @doc "Attaches the Root-owned link to this player's pending weapon hit."
+  @spec claim_pending_weapon_hit(pid(), reference(), term(), term()) ::
+          :ok | {:error, :invalid_claim}
+  def claim_pending_weapon_hit(pid, id, link_id, coordinator_pid)
+      when is_reference(link_id) and is_pid(coordinator_pid) do
+    send(pid, {:pending_weapon_hit_claimed, id, link_id, coordinator_pid})
+    :ok
+  end
+
+  def claim_pending_weapon_hit(_pid, _id, _link_id, _coordinator_pid),
+    do: {:error, :invalid_claim}
 
   @doc """
   Applies combat damage to this player, updating HP and handling death.
@@ -588,6 +608,42 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     CombatActionHandler.handle_combo_timeout(state, generation)
   end
 
+  # Combat: the Root-owned pending weapon hit - async resolution, the deadline
+  # timeout, and the Coordinator claim (bare-tag messages posted by the public
+  # API sends).
+  @impl true
+  def handle_info({:pending_weapon_hit_result, id, resolution}, state)
+      when resolution == :resume or (is_tuple(resolution) and tuple_size(resolution) == 2) do
+    CombatActionHandler.handle_pending_weapon_hit_result(state, id, resolution)
+  end
+
+  @impl true
+  def handle_info({:pending_weapon_hit_timeout, id}, state) do
+    CombatActionHandler.handle_pending_weapon_hit_timeout(state, id)
+  end
+
+  @impl true
+  def handle_info(
+        {:pending_weapon_hit_claimed, id, link_id, coordinator_pid},
+        %{game_state: game_state} = state
+      )
+      when is_reference(link_id) and is_pid(coordinator_pid) do
+    case game_state.pending_weapon_hit do
+      %{id: ^id} = pending ->
+        case PendingWeaponHit.claim(pending, link_id) do
+          {:ok, claimed} ->
+            send(coordinator_pid, PendingWeaponHit.claim_submission_message(claimed))
+            {:noreply, %{state | game_state: %{game_state | pending_weapon_hit: claimed}}}
+
+          :already_resolved ->
+            {:noreply, state}
+        end
+
+      _ ->
+        {:noreply, state}
+    end
+  end
+
   # Skill: the cast-timer resolution, and the generic deferred-effect seam
   # (`Skill.defer/3`) that runs `module.deferred/2` on the caster's own state.
   @impl true
@@ -1032,6 +1088,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         reason,
         %{game_state: _game_state, connection_monitor_ref: connection_monitor_ref} = state
       ) do
+    state = CombatActionHandler.cancel_pending_weapon_hit(state)
     state = SkillHandler.cancel_deferred(state)
     state = SpiritSphereHandler.discard(state)
     game_state = state.game_state

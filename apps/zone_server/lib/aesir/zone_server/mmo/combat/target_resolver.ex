@@ -12,7 +12,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TargetResolver do
 
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Unit
-  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -152,14 +151,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TargetResolver do
 
   defp get_player_unit_state(target_id) do
     case UnitRegistry.get_player_pid(target_id) do
-      {:ok, pid} when pid != self() ->
-        stats = PlayerSession.get_current_stats(pid)
-        session_state = PlayerSession.get_state(pid)
-        player_state = %{session_state.game_state | stats: stats}
-        {:ok, pid, player_state, :player}
-
       {:ok, pid} ->
-        get_own_player_state(target_id, pid)
+        get_player_snapshot(target_id, pid)
 
       {:error, :not_found} ->
         Logger.debug("Target #{target_id} not found in registry")
@@ -167,11 +160,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TargetResolver do
     end
   end
 
-  # A hook can resolve its own player while running inside that player's
-  # session (e.g. a status pulse fired by on_apply during a cast); calling the
-  # session from its own handler would deadlock, so the registry snapshot --
-  # recommitted by StateCommit on every game-state change -- is used instead.
-  defp get_own_player_state(target_id, pid) do
+  defp get_player_snapshot(target_id, pid) do
     case UnitRegistry.get_unit(:player, target_id) do
       {:ok, {_module, player_state, _pid}} ->
         {:ok, pid, player_state, :player}

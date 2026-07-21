@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Unit.KnockbackCancelWalkTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.ZoneServer.Mmo.Combat.PendingWeaponHit
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Movement
@@ -34,6 +35,21 @@ defmodule Aesir.ZoneServer.Unit.KnockbackCancelWalkTest do
         visible_mobs: MapSet.new()
       }
 
+      pending =
+        PendingWeaponHit.new(
+          make_ref(),
+          {:player, char_id},
+          {:mob, 9001},
+          %{unit: {:player, 303}, pid: self()},
+          5_000,
+          3_000,
+          4_200
+        )
+
+      game_state = PlayerState.put_pending_weapon_hit(game_state, pending)
+      pending_id = pending.id
+      assert_received {:pending_weapon_hit_offer, ^pending_id, _, _, _, _}
+
       UnitRegistry.register_unit(:player, char_id, PlayerState, game_state, self())
       SpatialIndex.add_player(char_id, 50, 50, @map_name)
 
@@ -46,6 +62,8 @@ defmodule Aesir.ZoneServer.Unit.KnockbackCancelWalkTest do
       assert knocked_state.game_state.y == 50
       assert knocked_state.game_state.movement_state == :standing
       assert knocked_state.game_state.walk_path == []
+      assert knocked_state.game_state.pending_weapon_hit == nil
+      assert_received {:pending_weapon_hit_cancelled, ^pending_id, {:offer, {:player, ^char_id}}}
 
       assert {:player, ^char_id, _move_state} =
                Enum.find(Movement.drain_dirty(@map_name), fn {_t, id, _ms} -> id == char_id end)

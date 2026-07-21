@@ -211,8 +211,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnovaTest do
         ]
       end)
 
-      stub(UnitRegistry, :get_unit, fn :mob, id ->
-        {:ok, {MobState, Map.fetch!(mobs, id), Map.fetch!(pids, id)}}
+      stub(UnitRegistry, :get_unit, fn
+        :mob, id -> {:ok, {MobState, Map.fetch!(mobs, id), Map.fetch!(pids, id)}}
+        :player, id -> {:ok, {PlayerState, Map.fetch!(players, id), Map.fetch!(pids, id)}}
       end)
 
       stub(SpatialIndex, :get_unit_position, fn :mob, id ->
@@ -221,11 +222,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnovaTest do
       end)
 
       stub(UnitRegistry, :get_player_pid, fn id -> {:ok, Map.fetch!(pids, id)} end)
-      stub(PlayerSession, :get_current_stats, fn pid -> players[ids_by_pid[pid]].stats end)
-
-      stub(PlayerSession, :get_state, fn pid ->
-        %{game_state: Map.fetch!(players, ids_by_pid[pid])}
-      end)
 
       stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, defender, opts ->
         assert defender.unit_id in [inner_id, boundary_id]
