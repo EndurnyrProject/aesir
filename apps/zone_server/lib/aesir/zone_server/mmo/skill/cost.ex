@@ -81,7 +81,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Cost do
          hp: cost.hp,
          sp: cost.sp,
          spheres: spheres,
-         write_spheres?: cost.spheres > 0 or Map.has_key?(game_state, :spirit_spheres)
+         write_spheres?: cost.spheres > 0
        }}
     end
   end
