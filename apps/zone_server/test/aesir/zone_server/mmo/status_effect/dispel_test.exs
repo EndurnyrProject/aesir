@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DispelTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.UnitRegistry
+  alias Phoenix.PubSub
 
   defmodule ExpireReportingStatus do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
@@ -66,6 +67,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DispelTest do
     # entries - there is no buff/debuff distinction. Do not "fix" this test to
     # spare debuffs. See src/map/skills/mage/dispell.cpp:46-71.
     test "removes debuffs too", %{unit_id: unit_id} do
+      :ok = PubSub.subscribe(Aesir.PubSub, "player:#{unit_id}")
       StatusStorage.apply_status(:player, unit_id, :sc_poison, val1: 1, duration: 60_000)
       StatusStorage.apply_status(:player, unit_id, :sc_blind, val1: 1, duration: 60_000)
 
@@ -73,6 +75,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DispelTest do
 
       refute StatusStorage.has_status?(:player, unit_id, :sc_poison)
       refute StatusStorage.has_status?(:player, unit_id, :sc_blind)
+      assert_receive :recalculate_stats
+      refute_receive :recalculate_stats
     end
 
     test "leaves no_dispel statuses alone", %{unit_id: unit_id} do

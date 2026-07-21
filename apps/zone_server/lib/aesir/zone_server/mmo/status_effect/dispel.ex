@@ -9,7 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Dispel do
   disposition therefore reads the `no_dispel` metadata key (audited against
   rAthena's `NoDispell` entries), never `PropertyChecker.buff?/1`.
 
-  Removal is delegated per status to `Interpreter.remove_status/3` so that
+  Removal is delegated as one batch to `Interpreter.remove_statuses/4` so that
   `on_expire`, icon deltas and calc-flag recomputation fire exactly as they do
   on natural expiry. `StatusStorage.clear_status_types/3` is deliberately not
   used: it deletes ETS rows behind the interpreter's back and classifies by
@@ -48,14 +48,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Dispel do
   Removes every status on the target whose definition lacks `no_dispel`.
 
   A dispelled mob also drops its aggro target. Casts are untouched: rAthena's
-  Dispell does not interrupt a cast in progress.
+  Dispell does not interrupt a cast in progress. Player owners receive exactly
+  one asynchronous refresh after the whole removal batch.
   """
   @spec dispel(Definition.target()) :: :ok
   def dispel({unit_type, unit_id} = target) do
-    unit_type
-    |> StatusStorage.get_unit_statuses(unit_id)
-    |> Enum.reject(&no_dispel?/1)
-    |> Enum.each(&Interpreter.remove_status(unit_type, unit_id, &1.type))
+    status_ids =
+      unit_type
+      |> StatusStorage.get_unit_statuses(unit_id)
+      |> Enum.reject(&no_dispel?/1)
+      |> Enum.map(& &1.type)
+
+    Interpreter.remove_statuses(unit_type, unit_id, status_ids, owner_refresh: :notify)
 
     unlock_target(target)
   end

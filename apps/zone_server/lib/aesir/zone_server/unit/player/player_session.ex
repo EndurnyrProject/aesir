@@ -616,10 +616,18 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     ProgressionHandler.info(msg, state)
   end
 
-  # Stats: recompute cached stats after a status change (StatusTickManager).
+  # Stats: recompute cached stats after a status change. `{:stats, :recalculate}`
+  # comes from StatusTickManager; the bare `:recalculate_stats` comes from the
+  # status-effect interpreter and runs the richer reconciliation that settles
+  # status-driven side effects (Fury / Mental Strength and friends).
   @impl true
   def handle_info({:stats, :recalculate}, state) do
     StatsManager.handle_recalculate_stats(state)
+  end
+
+  @impl true
+  def handle_info(:recalculate_stats, state) do
+    {:noreply, StatusManager.recalculate_after_status_change(state)}
   end
 
   # Loot: drop rolling and hunting-quest kill credit.

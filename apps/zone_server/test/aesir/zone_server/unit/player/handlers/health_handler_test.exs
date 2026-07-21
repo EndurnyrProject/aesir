@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   use ExUnit.Case, async: false
   use Mimic
 
+  import Aesir.TestEtsSetup
+
   @moduletag :capture_log
 
   alias Aesir.Commons.Models.Character
@@ -16,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -24,6 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
@@ -31,9 +35,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.Stats.BaseStats
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
   alias Aesir.ZoneServer.Unit.Stats.CurrentState
   alias Aesir.ZoneServer.Unit.Stats.DerivedStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
+  alias Phoenix.PubSub
 
   # SP_HP param id / SP_BASE_EXP / SP_JOB_EXP
   @sp_hp 5
@@ -41,17 +48,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   @sp_job_exp 2
 
   setup :set_mimic_from_context
+  setup :setup_ets_tables
 
   setup do
     Mimic.copy(CharacterPersistence)
     Mimic.copy(MovementHandler)
     Mimic.copy(StatusInterpreter)
     Mimic.copy(ModifierCalculator)
+    Mimic.copy(StatusManager)
     Mimic.copy(Config)
     Mimic.copy(Leveling)
 
     stub(StatusInterpreter, :on_damage, fn _, _, _ -> :ok end)
     stub(UnitRegistry, :update_unit_state, fn _, _, _ -> :ok end)
+
+    stub(UnitRegistry, :get_unit_info, fn :player, 1 ->
+      {:ok, %{stats: %{max_hp: 100, max_sp: 50, current_hp: 0, current_sp: 10}}}
+    end)
+
     stub(ModifierCalculator, :get_all_modifiers, fn :player, _ -> %{} end)
     stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
     stub(CharacterPersistence, :update_character, fn _, _, _ -> {:ok, %Character{}} end)
@@ -143,6 +157,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
                       } = event}
 
       refute_receive {:unit_lifecycle, ^event}
+    end
+
+    test "death clears active statuses and their action restrictions" do
+      test_pid = self()
+      :ok = PubSub.subscribe(Aesir.PubSub, "player:1")
+      :ok = StatusStorage.apply_status(:player, 1, :sc_steelbody)
+      assert StatusStorage.has_status?(:player, 1, :sc_steelbody)
+
+      expect(StatusManager, :recalculate_after_status_change, fn state ->
+        send(test_pid, :synchronous_status_refresh)
+        call_original(StatusManager, :recalculate_after_status_change, [state])
+      end)
+
+      assert {:noreply, _} =
+               HealthHandler.apply_damage(100, 2001, build_recalculable_state(100, :idle))
+
+      refute StatusStorage.has_status?(:player, 1, :sc_steelbody)
+      assert_received :synchronous_status_refresh
+      refute_received :recalculate_stats
     end
 
     test "death clears spirit spheres and cancels their expiry timer" do
@@ -580,7 +613,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     end
 
     test "skips when the dying player carries no_death_penalty" do
-      stub(ModifierCalculator, :get_all_modifiers, fn :player, _ -> %{no_death_penalty: 1} end)
+      :ok = StatusStorage.apply_status(:player, 1, :sc_lifeinsurance)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 ->
+        if StatusStorage.has_status?(:player, 1, :sc_lifeinsurance) do
+          %{no_death_penalty: 1}
+        else
+          %{}
+        end
+      end)
+
       reject(&Leveling.death_penalty/3)
       reject(&CharacterPersistence.update_character/3)
 
@@ -588,11 +630,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
         HealthHandler.apply_damage(
           150,
           2001,
-          build_state(100, :idle, %{base_exp: 100, job_exp: 40})
+          build_recalculable_state(100, :idle, %{base_exp: 100, job_exp: 40})
         )
 
       assert game_state.stats.progression.base_exp == 100
       assert game_state.stats.progression.job_exp == 40
+      refute StatusStorage.has_status?(:player, 1, :sc_lifeinsurance)
     end
 
     test "does not persist when the computed loss is zero" do
@@ -738,5 +781,31 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       game_state: game_state,
       connection_pid: self()
     }
+  end
+
+  defp build_recalculable_state(hp, action_state, progression_attrs \\ %{}) do
+    state = build_state(hp, action_state, progression_attrs)
+
+    stats = %{
+      state.game_state.stats
+      | base_stats: %BaseStats{
+          str: 1,
+          agi: 1,
+          vit: 1,
+          int: 1,
+          dex: 1,
+          luk: 1,
+          pow: 0,
+          sta: 0,
+          wis: 0,
+          spl: 0,
+          con: 0,
+          crt: 0
+        },
+        combat_stats: %CombatStats{},
+        equipment: %Stats.Equipment{}
+    }
+
+    put_in(state.game_state.stats, stats)
   end
 end

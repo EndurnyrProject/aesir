@@ -160,16 +160,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   end
 
   defp process_unit_expirations(unit_type, unit_id, statuses) do
-    Enum.each(statuses, fn {{^unit_type, ^unit_id, status_type}, %StatusEntry{} = _entry} ->
-      Interpreter.remove_status(unit_type, unit_id, status_type)
+    status_types =
+      Enum.map(statuses, fn {{^unit_type, ^unit_id, status_type}, %StatusEntry{} = _entry} ->
+        status_type
+      end)
+
+    Interpreter.remove_statuses(unit_type, unit_id, status_types, owner_refresh: :notify)
+
+    Enum.each(status_types, fn status_type ->
       notify_mob_session(unit_type, unit_id, status_type, :expired)
     end)
-
-    # Notify the unit to recalculate stats after all expirations are processed
-    # For now, only notify player sessions
-    if unit_type == :player do
-      notify_player_session(unit_id)
-    end
   end
 
   defp process_tick_effects(now_ms) do

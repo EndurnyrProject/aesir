@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -34,6 +35,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
+  alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
@@ -294,6 +296,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     Logger.info("Player #{game_state.character_id} died (killed by #{inspect(attacker_id)})")
 
     state = SpiritSphereHandler.clear(state)
+    state = apply_death_penalty(state)
+    had_statuses? = StatusStorage.get_unit_statuses(:player, game_state.character_id) != []
 
     inactive_state =
       state.game_state
@@ -306,11 +310,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     {:ok, dead_state} = PlayerState.transition_to(inactive_state, :dead)
     state = StatsManager.update_game_state(state, dead_state)
 
+    :ok =
+      StatusInterpreter.remove_all_statuses(:player, game_state.character_id,
+        owner_refresh: :defer
+      )
+
+    state =
+      if had_statuses?, do: StatusManager.recalculate_after_status_change(state), else: state
+
     vanish = %UnitDespawn{gid: game_state.character_id, reason: DespawnReason.died()}
     Broadcast.to_visible_players(dead_state, vanish)
     Lifecycle.publish_death(:player, game_state.character_id, game_state.map_name)
 
-    {:noreply, state |> SkillMenuHandler.clear() |> apply_death_penalty()}
+    {:noreply, SkillMenuHandler.clear(state)}
   end
 
   defp cancel_cast_timer(%PlayerState{casting: %{timer_ref: timer_ref}} = game_state)

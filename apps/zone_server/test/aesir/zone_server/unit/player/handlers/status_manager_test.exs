@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManagerTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.UnitRegistry
+  alias Phoenix.PubSub
 
   setup :verify_on_exit!
   setup :set_mimic_from_context
@@ -79,10 +80,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManagerTest do
       {:reply, :ok, applied} =
         StatusManager.handle_apply_status(:sc_decreaseagi, [val1: 1], state)
 
+      assert_receive {:send, :gameplay, {:param_change, %ParamChange{var_id: 0, value: 187}}}
+      :ok = PubSub.subscribe(Aesir.PubSub, "player:#{state.game_state.character_id}")
+
+      expect(UnitRegistry, :update_unit_state, fn :player, id, _game_state
+                                                  when id == state.game_state.character_id ->
+        :ok
+      end)
+
       {:reply, :ok, removed} = StatusManager.handle_remove_status(:sc_decreaseagi, applied)
 
       assert removed.game_state.walk_speed == 150
       assert_receive {:send, :gameplay, {:param_change, %ParamChange{var_id: 0, value: 150}}}
+      refute_receive {:send, :gameplay, {:param_change, %ParamChange{var_id: 0}}}
+      refute_receive :recalculate_stats
     end
 
     test "applying Increase AGI speeds the player up", %{state: state} do

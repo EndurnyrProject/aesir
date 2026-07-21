@@ -122,6 +122,26 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHealTest do
 
       assert boosted_sp > base_sp
     end
+
+    test "Fury's interval multiplier slows natural healing without changing its amount" do
+      s = stats(vit: 50, int: 50, max_hp: 4_000, max_sp: 500, hp: 100, sp: 1)
+
+      {normal_hp, _normal_sp, _normal_acc} =
+        NaturalHeal.compute(s, :idle, :standing, %{}, @no_passive, acc(6_000))
+
+      {fury_hp, _fury_sp, _fury_acc} =
+        NaturalHeal.compute(
+          s,
+          :idle,
+          :standing,
+          %{regen_interval_multiplier: 2},
+          @no_passive,
+          acc(6_000)
+        )
+
+      assert normal_hp > 0
+      assert fury_hp == 0
+    end
   end
 
   describe "compute/6 skill HP regen (SM_RECOVERY)" do

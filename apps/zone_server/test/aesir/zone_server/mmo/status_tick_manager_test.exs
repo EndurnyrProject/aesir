@@ -29,7 +29,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
 
   setup do
     stub(Interpreter, :process_tick, fn _type, _id, _status -> :ok end)
-    stub(Interpreter, :remove_status, fn _type, _id, _status -> :ok end)
+
+    stub(Interpreter, :remove_statuses, fn unit_type,
+                                           unit_id,
+                                           status_ids,
+                                           [owner_refresh: :notify] ->
+      Enum.each(status_ids, &StatusStorage.remove_status(unit_type, unit_id, &1))
+
+      if unit_type == :player do
+        PubSub.broadcast(Aesir.PubSub, "player:#{unit_id}", :recalculate_stats)
+      end
+
+      :ok
+    end)
+
     stub(UnitRegistry, :unit_exists?, fn _type, _id -> true end)
     :ok
   end
@@ -91,7 +104,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
 
     test "an expired status of a unit missing from the registry is cleared, not processed" do
       stub(UnitRegistry, :unit_exists?, fn :player, @player_id -> false end)
-      reject(&Interpreter.remove_status/3)
+      reject(&Interpreter.remove_statuses/4)
 
       :ok = StatusStorage.apply_status(:player, @player_id, @status)
       :ok = StatusStorage.update_status(:player, @player_id, @status, &%{&1 | expires_at: past()})
@@ -127,7 +140,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
 
       tick()
 
-      assert_receive {:stats, :recalculate}
+      assert_receive :recalculate_stats
+      refute_receive :recalculate_stats
       refute_received {:"$gen_cast", {:casting, {:status_changed, _, _}}}
     end
 

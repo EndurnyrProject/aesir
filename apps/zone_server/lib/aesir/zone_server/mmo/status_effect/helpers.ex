@@ -27,8 +27,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Helpers do
   Removes several status effects from the target.
   """
   @spec remove_statuses(Definition.target(), [atom()]) :: :ok
-  def remove_statuses(target, status_ids) do
-    Enum.each(status_ids, &remove_status(target, &1))
+  def remove_statuses({unit_type, unit_id}, status_ids) do
+    Interpreter.remove_statuses(unit_type, unit_id, status_ids)
   end
 
   @doc """

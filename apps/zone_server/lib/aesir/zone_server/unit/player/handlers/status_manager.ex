@@ -52,7 +52,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
   """
   @spec handle_remove_status(atom(), map()) :: {:reply, :ok, map()}
   def handle_remove_status(status_id, %{game_state: game_state} = state) do
-    Interpreter.remove_status(:player, game_state.character_id, status_id)
+    Interpreter.remove_status(:player, game_state.character_id, status_id, owner_refresh: :defer)
     {:reply, :ok, recalculate_after_status_change(state)}
   end
 

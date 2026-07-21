@@ -28,8 +28,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.UnitRegistry
+  alias Phoenix.PubSub
 
   @type unit_type :: Unit.unit_type()
+  @type owner_refresh :: :auto | :notify | :defer
+  @type remove_option :: {:owner_refresh, owner_refresh()}
 
   @doc """
   Initializes the status effect system by loading all definitions.
@@ -206,15 +209,82 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   @doc """
   Removes a status effect, running its on_expire callback first.
+
+  `owner_refresh: :notify` publishes the player's asynchronous refresh after a
+  real removal. `owner_refresh: :defer` is for an owning session that will
+  synchronously recalculate and commit the state in the same handler. The
+  default `:auto` defers when the caller is the owning player process and
+  notifies otherwise.
   """
-  @spec remove_status(unit_type(), integer(), atom()) :: :ok
-  def remove_status(unit_type, unit_id, status_id) do
+  @spec remove_status(unit_type(), integer(), atom(), [remove_option()]) :: :ok
+  def remove_status(unit_type, unit_id, status_id, opts \\ []) do
+    removed? = remove_status_without_refresh(unit_type, unit_id, status_id)
+    maybe_refresh_owner(unit_type, unit_id, removed?, opts)
+  end
+
+  @doc """
+  Removes the supplied statuses through the normal expiration lifecycle and
+  applies the selected owner-refresh policy once after the batch.
+  """
+  @spec remove_statuses(unit_type(), integer(), [atom()], [remove_option()]) :: :ok
+  def remove_statuses(unit_type, unit_id, status_ids, opts \\ []) do
+    removed? =
+      Enum.reduce(status_ids, false, fn status_id, removed? ->
+        remove_status_without_refresh(unit_type, unit_id, status_id) or removed?
+      end)
+
+    maybe_refresh_owner(unit_type, unit_id, removed?, opts)
+  end
+
+  defp remove_status_without_refresh(unit_type, unit_id, status_id) do
+    active? =
+      not is_nil(Registry.get_definition(status_id)) and
+        not is_nil(StatusStorage.get_status(unit_type, unit_id, status_id))
+
     with_active_status(unit_type, unit_id, status_id, fn module, instance, context ->
       module.on_expire({unit_type, unit_id}, instance, context)
       StatusStorage.remove_status(unit_type, unit_id, status_id)
       StatusDisplay.on_removed(unit_type, unit_id, status_id, instance)
       :ok
     end)
+
+    active?
+  end
+
+  @doc """
+  Removes every active status through the normal expiration lifecycle.
+
+  Each status receives `on_expire` and display cleanup before the selected
+  owner-refresh policy is applied once for the batch.
+  """
+  @spec remove_all_statuses(unit_type(), integer(), [remove_option()]) :: :ok
+  def remove_all_statuses(unit_type, unit_id, opts \\ []) do
+    unit_type
+    |> StatusStorage.get_unit_statuses(unit_id)
+    |> Enum.map(& &1.type)
+    |> then(&remove_statuses(unit_type, unit_id, &1, opts))
+  end
+
+  defp maybe_refresh_owner(:player, unit_id, true, opts) do
+    case Keyword.get(opts, :owner_refresh, :auto) do
+      :notify -> PubSub.broadcast(Aesir.PubSub, "player:#{unit_id}", :recalculate_stats)
+      :defer -> :ok
+      :auto -> if owner_process?(unit_id), do: :ok, else: notify_player_owner(unit_id)
+      policy -> raise ArgumentError, "invalid owner refresh policy: #{inspect(policy)}"
+    end
+  end
+
+  defp maybe_refresh_owner(_unit_type, _unit_id, _removed?, _opts), do: :ok
+
+  defp owner_process?(unit_id) do
+    case UnitRegistry.get_unit(:player, unit_id) do
+      {:ok, {_module, _state, pid}} when is_pid(pid) -> pid == self()
+      _ -> false
+    end
+  end
+
+  defp notify_player_owner(unit_id) do
+    PubSub.broadcast(Aesir.PubSub, "player:#{unit_id}", :recalculate_stats)
   end
 
   @doc """

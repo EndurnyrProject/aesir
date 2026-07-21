@@ -73,7 +73,11 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
         }
 
   @typedoc "Aggregated status regen modifiers (percent units, e.g. -100)."
-  @type regen_modifiers :: %{optional(:hp_regen) => integer(), optional(:sp_regen) => integer()}
+  @type regen_modifiers :: %{
+          optional(:hp_regen) => integer(),
+          optional(:sp_regen) => integer(),
+          optional(:regen_interval_multiplier) => pos_integer()
+        }
 
   @typedoc "Passive regen contribution (flat skill-regen amounts + moving flag)."
   @type passive_regen :: %{
@@ -142,6 +146,7 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
     elapsed = Map.get(accumulators, :elapsed_ms, 0)
     sitting? = action_state == :sitting
     moving? = movement_state == :moving
+    interval_multiplier = interval_multiplier(regen_modifiers)
 
     hp_room = stats.derived_stats.max_hp - stats.current_state.hp
     sp_room = stats.derived_stats.max_sp - stats.current_state.sp
@@ -159,7 +164,8 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
         @hp_interval,
         sitting?,
         Map.get(accumulators, :hp_acc, 0),
-        elapsed
+        elapsed,
+        interval_multiplier
       )
 
     {skill_hp_raw, skill_hp_acc} =
@@ -170,7 +176,8 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
         @skill_interval,
         false,
         Map.get(accumulators, :skill_hp_acc, 0),
-        elapsed
+        elapsed,
+        interval_multiplier
       )
 
     {base_sp_raw, sp_acc} =
@@ -181,7 +188,8 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
         @sp_interval,
         sitting?,
         Map.get(accumulators, :sp_acc, 0),
-        elapsed
+        elapsed,
+        interval_multiplier
       )
 
     {skill_sp_raw, skill_sp_acc} =
@@ -192,7 +200,8 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
         @skill_interval,
         false,
         Map.get(accumulators, :skill_sp_acc, 0),
-        elapsed
+        elapsed,
+        interval_multiplier
       )
 
     {sitting_hp_raw, sitting_sp_raw, sitting_accumulators} =
@@ -202,7 +211,8 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
         sp_room,
         sitting_regen,
         accumulators,
-        elapsed
+        elapsed,
+        interval_multiplier
       )
 
     hp_delta = min(base_hp_raw + skill_hp_raw + sitting_hp_raw, hp_room)
@@ -227,13 +237,22 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
           integer(),
           sitting_regen(),
           accumulators(),
-          non_neg_integer()
+          non_neg_integer(),
+          pos_integer()
         ) :: {non_neg_integer(), non_neg_integer(), map()}
-  defp sitting_regen(false, _hp_room, _sp_room, _sitting_regen, accumulators, _elapsed) do
+  defp sitting_regen(
+         false,
+         _hp_room,
+         _sp_room,
+         _sitting_regen,
+         accumulators,
+         _elapsed,
+         _multiplier
+       ) do
     {0, 0, Map.take(accumulators, [:sitting_hp_acc, :sitting_sp_acc])}
   end
 
-  defp sitting_regen(true, hp_room, sp_room, sitting_regen, accumulators, elapsed) do
+  defp sitting_regen(true, hp_room, sp_room, sitting_regen, accumulators, elapsed, multiplier) do
     hp_amount = sitting_regen.sitting_hp_regen
     sp_amount = sitting_regen.sitting_sp_regen
 
@@ -247,7 +266,8 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
           @skill_interval,
           false,
           Map.get(accumulators, :sitting_hp_acc, 0),
-          elapsed
+          elapsed,
+          multiplier
         )
 
       {sp_raw, sp_acc} =
@@ -258,7 +278,8 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
           @skill_interval,
           false,
           Map.get(accumulators, :sitting_sp_acc, 0),
-          elapsed
+          elapsed,
+          multiplier
         )
 
       {hp_raw, sp_raw, %{sitting_hp_acc: hp_acc, sitting_sp_acc: sp_acc}}
@@ -274,18 +295,19 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
           pos_integer(),
           boolean(),
           non_neg_integer(),
-          non_neg_integer()
+          non_neg_integer(),
+          pos_integer()
         ) :: {non_neg_integer(), non_neg_integer()}
-  defp channel(false, _amount, _rate, _base_interval, _sitting?, acc, _elapsed),
+  defp channel(false, _amount, _rate, _base_interval, _sitting?, acc, _elapsed, _multiplier),
     do: {0, acc}
 
-  defp channel(true, amount, rate, _base_interval, _sitting?, acc, _elapsed)
+  defp channel(true, amount, rate, _base_interval, _sitting?, acc, _elapsed, _multiplier)
        when rate <= 0 or amount <= 0,
        do: {0, acc}
 
-  defp channel(true, amount, rate, base_interval, sitting?, acc, elapsed) do
+  defp channel(true, amount, rate, base_interval, sitting?, acc, elapsed, multiplier) do
     multi = if sitting?, do: 2, else: 1
-    interval = max(div(base_interval * 100, rate * multi), 1)
+    interval = max(div(base_interval * multiplier * 100, rate * multi), 1)
 
     progress = acc + elapsed
     intervals = div(progress, interval)
@@ -296,6 +318,10 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
 
   @spec rate(regen_modifiers(), atom()) :: integer()
   defp rate(regen_modifiers, key), do: 100 + Map.get(regen_modifiers, key, 0)
+
+  @spec interval_multiplier(regen_modifiers()) :: pos_integer()
+  defp interval_multiplier(regen_modifiers),
+    do: max(Map.get(regen_modifiers, :regen_interval_multiplier, 1), 1)
 
   @spec regen_hp(PlayerStats.t()) :: pos_integer()
   defp regen_hp(%PlayerStats{} = stats) do
