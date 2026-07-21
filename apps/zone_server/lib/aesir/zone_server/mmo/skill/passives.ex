@@ -31,6 +31,38 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   @type rider :: {:apply_status, atom(), keyword()}
 
   @doc """
+  Selects the first learned passive that replaces a normal attack.
+
+  Learned skills are checked by skill id so selection stays deterministic.
+  Players without such a passive return `:normal` without affecting combat.
+  """
+  @spec attack_replacement(PlayerState.t()) :: Passive.attack_replacement()
+  def attack_replacement(%PlayerState{stats: %PlayerStats{} = stats}) do
+    ctx = build_ctx(stats)
+
+    stats.progression.learned_skills
+    |> Enum.sort_by(&elem(&1, 0))
+    |> Enum.reduce_while(:normal, fn {skill_id, level}, :normal ->
+      case replacement_for(skill_id, level, ctx) do
+        :normal -> {:cont, :normal}
+        replacement -> {:halt, replacement}
+      end
+    end)
+  end
+
+  def attack_replacement(_player_state), do: :normal
+
+  defp replacement_for(skill_id, level, ctx) do
+    with {:ok, definition} <- Catalog.by_id(skill_id),
+         {:ok, module} <- Catalog.passive_module_for(definition.name),
+         true <- function_exported?(module, :attack_replacement, 2) do
+      module.attack_replacement(level, ctx)
+    else
+      _other -> :normal
+    end
+  end
+
+  @doc """
   Sums the ATK bonus contributed by every learned passive for the player.
   """
   @spec atk_bonus(PlayerState.t() | PlayerStats.t()) :: integer()

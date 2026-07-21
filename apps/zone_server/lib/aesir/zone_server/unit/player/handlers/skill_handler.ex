@@ -49,10 +49,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # `drive_cast/4` (and therefore ahead of `ensure_idle_for_cast/1`, which would
   # reject it) and never takes the ordinary cast path.
   @cast_cancel_id 275
+  @combo_followup_ids [272]
 
   @spec handle_use_skill(SessionState.t(), integer(), pos_integer(), integer()) ::
           {:noreply, SessionState.t()}
-  def handle_use_skill(%{game_state: game_state} = state, skill_id, level, target_id) do
+  def handle_use_skill(state, skill_id, level, target_id) do
+    state = maybe_cancel_combo(state, skill_id)
+    game_state = state.game_state
+
     if StatusInterpreter.can_use_skill?(:player, game_state.character_id, skill_id) do
       dispatch_use_skill(state, skill_id, level, target_id)
     else
@@ -118,6 +122,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   @spec handle_use_skill_ground(SessionState.t(), integer(), pos_integer(), integer(), integer()) ::
           {:noreply, SessionState.t()}
   def handle_use_skill_ground(%{game_state: game_state} = state, skill_id, level, x, y) do
+    state = %{state | game_state: PlayerState.cancel_combo(game_state)}
+    game_state = state.game_state
+
     if StatusInterpreter.can_use_skill?(:player, game_state.character_id, skill_id) do
       drive_cast(state, skill_id, level, {:ground, x, y})
     else
@@ -890,6 +897,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     do: :self
 
   defp resolve_target(_game_state, target_id), do: {:unit, target_id}
+
+  defp maybe_cancel_combo(state, skill_id) when skill_id in @combo_followup_ids, do: state
+
+  defp maybe_cancel_combo(%{game_state: game_state} = state, _skill_id) do
+    %{state | game_state: PlayerState.cancel_combo(game_state)}
+  end
 
   # Self-only cooldown feedback: the client shows the cooldown sweep on the
   # skill icon. No packet when the skill has no cooldown for this level.

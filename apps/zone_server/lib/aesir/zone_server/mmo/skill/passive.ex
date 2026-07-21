@@ -62,6 +62,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
               optional(:chance) => 1..100
             }
 
+  @typedoc "A complete normal-attack replacement selected before hit calculation."
+  @type attack_replacement :: :normal | {:skill_attack, keyword(), atom()}
+
+  @doc "Returns a replacement for the pending normal attack, or `:normal`."
+  @callback attack_replacement(level :: pos_integer(), ctx()) :: attack_replacement()
+
   @doc "Returns a map of regen contributions from this passive at the given level."
   @callback regen_contribution(level :: pos_integer(), ctx()) ::
               %{
@@ -93,6 +99,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
                       aspd_bonus: 2,
                       int_bonus: 2,
                       attack_proc: 2,
+                      attack_replacement: 2,
                       regen_contribution: 2,
                       skill_rider: 4
 end

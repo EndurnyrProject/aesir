@@ -130,7 +130,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
           integer(),
           damage_result()
         ) :: SkillDamage.t()
-  def build_skill_damage_packet(attacker, defender, skill_id, skill_level, damage_result) do
+  @spec build_skill_damage_packet(
+          Combatant.t(),
+          Combatant.t(),
+          integer(),
+          integer(),
+          damage_result(),
+          keyword()
+        ) :: SkillDamage.t()
+  def build_skill_damage_packet(
+        attacker,
+        defender,
+        skill_id,
+        skill_level,
+        damage_result,
+        opts \\ []
+      ) do
     %SkillDamage{
       skill_id: skill_id,
       level: skill_level,
@@ -140,7 +155,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
       src_delay: attacker.attack_delay_ms,
       dst_delay: 500,
       damage: damage_result.damage,
-      div: 1,
+      div: Keyword.get(opts, :div, 1),
       type: @dmg_single
     }
   end

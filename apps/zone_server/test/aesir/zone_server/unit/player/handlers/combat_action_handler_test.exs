@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Id, as: SkillUnitId
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
+  alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Unit.Inventory.Ammo
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
@@ -704,6 +705,61 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       assert_received :attacked
       assert is_reference(s2.game_state.continuous_attack_timer)
       assert_receive {:combat, {:auto_attack, 2000}}, 500
+    end
+
+    test "a Trifecta replacement opens and expires its retained-target window" do
+      stub(Stats, :weapon_type, fn _equipment -> :dagger end)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:error, :not_found}
+        :mob, 2000 -> {:ok, {10, 11, "prontera"}}
+      end)
+
+      stub(Combat, :execute_attack, fn _stats, _gs, 2000 ->
+        {:ok, {:combo, :quadruple, {:mob, 2000}, 20}}
+      end)
+
+      {:noreply, opened} = CombatActionHandler.handle_attack_request(loop_state(), 2000, 7)
+
+      assert %Combo{stage: :quadruple, target: {:mob, 2000}} = opened.game_state.combo
+      generation = opened.game_state.combo.generation
+
+      assert_receive {:combo_timeout, ^generation}, 100
+      assert {:noreply, expired} = CombatActionHandler.handle_combo_timeout(opened, generation)
+      assert expired.game_state.combo.stage == :idle
+    end
+
+    test "movement, another attack, death, and warp cancel an open combo window" do
+      combo = Combo.open(Combo.new(), :quadruple, {:mob, 2000}, 9_999_999_999)
+      state = loop_state()
+      game_state = %{state.game_state | combo: combo}
+
+      assert {:ok, moving} = PlayerState.transition_to(game_state, :moving)
+      assert moving.combo.stage == :idle
+
+      assert {:ok, attacking} =
+               PlayerState.transition_to(%{game_state | action_state: :idle}, :attacking)
+
+      assert attacking.combo.stage == :idle
+
+      assert {:ok, dead} =
+               PlayerState.transition_to(%{game_state | action_state: :idle}, :dead)
+
+      assert dead.combo.stage == :idle
+
+      warped = PlayerState.relocate(game_state, "morocc", 10, 10)
+      assert warped.combo.stage == :idle
+    end
+
+    test "changing targets cancels the retained combo even when the new attack is blocked" do
+      stub(Interpreter, :can_attack?, fn :player, 1000 -> false end)
+
+      combo = Combo.open(Combo.new(), :quadruple, {:mob, 2000}, 9_999_999_999)
+      state = loop_state()
+      state = %{state | game_state: %{state.game_state | combo: combo}}
+
+      assert {:noreply, returned} = CombatActionHandler.handle_attack_request(state, 3000, 0)
+      assert returned.game_state.combo.stage == :idle
     end
 
     test "a dead or missing target stops the loop and clears combat intent" do

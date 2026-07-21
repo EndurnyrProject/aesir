@@ -582,6 +582,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     CombatActionHandler.handle_auto_attack(state, target_id)
   end
 
+  # Combat: the combo-window timeout that expires an unconsumed Monk combo.
+  @impl true
+  def handle_info({:combo_timeout, generation}, state) do
+    CombatActionHandler.handle_combo_timeout(state, generation)
+  end
+
   # Skill: the cast-timer resolution, and the generic deferred-effect seam
   # (`Skill.defer/3`) that runs `module.deferred/2` on the caster's own state.
   @impl true

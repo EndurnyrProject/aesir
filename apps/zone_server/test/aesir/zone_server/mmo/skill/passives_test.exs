@@ -277,6 +277,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
     end
   end
 
+  describe "attack_replacement/1" do
+    test "returns normal for a player without a replacement passive" do
+      player = build_player(%{2 => 5}, :one_handed_sword)
+      assert Passives.attack_replacement(player) == :normal
+    end
+
+    test "selects a learned Trifecta replacement" do
+      :rand.seed(:exsss, {1, 2, 3})
+      player = build_player(%{263 => 5}, :knuckle)
+
+      assert {:skill_attack, opts, :quadruple} = Passives.attack_replacement(player)
+      assert opts[:skill_id] == 263
+      assert opts[:skill_level] == 5
+    end
+  end
+
   describe "regen/1" do
     test "merges flat skill HP regen and the moving flag" do
       player = build_player(%{4 => 5, 144 => 1}, :one_handed_sword)

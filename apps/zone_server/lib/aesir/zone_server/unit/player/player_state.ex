@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Learned
+  alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.ItemContainer
@@ -78,6 +79,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           target_id: integer() | nil,
           combat_target_id: integer() | nil,
           combat_action_type: integer() | nil,
+          combo: Combo.t(),
           last_target_position: {integer(), integer()} | nil,
           pickup_target_id: integer() | nil,
           last_attack_timestamp: integer(),
@@ -206,6 +208,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # Persistent char variables (jsonb-backed, sourced from Character.vars)
     # and session-life-only temp char vars (never persisted).
     :zeny,
+    # Session-owned ordinary Monk combo window.
+    combo: Combo.new(),
     spirit_spheres: SpiritSpheres.new(),
     spirit_sphere_timer: nil,
     spirit_sphere_timer_plan: nil,
@@ -398,6 +402,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     |> stop_walking()
     |> clear_combat_intent()
     |> clear_pickup_intent()
+    |> cancel_combo()
   end
 
   @doc """
@@ -558,6 +563,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
       # Handle state-specific setup
       updated_state = handle_state_entry(updated_state, new_state)
+      updated_state = cancel_combo_on_entry(updated_state, new_state)
       {:ok, updated_state}
     else
       {:error, :invalid_transition}
@@ -585,6 +591,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   """
   @spec clear_casting(t()) :: t()
   def clear_casting(%__MODULE__{} = state), do: %{state | casting: nil}
+
+  @doc "Cancels the current Monk combo window."
+  @spec cancel_combo(t()) :: t()
+  def cancel_combo(%__MODULE__{combo: %Combo{} = combo} = state) do
+    %{state | combo: Combo.cancel(combo)}
+  end
+
+  def cancel_combo(%__MODULE__{} = state), do: %{state | combo: Combo.new()}
 
   @doc """
   Sets combat intent for move-to-attack behavior.
@@ -814,6 +828,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   end
 
   defp handle_state_entry(state, _new_state), do: state
+
+  defp cancel_combo_on_entry(state, :idle), do: state
+  defp cancel_combo_on_entry(state, _new_state), do: cancel_combo(state)
 
   @impl Aesir.ZoneServer.Unit
   def get_unit_id(%__MODULE__{character_id: character_id}), do: character_id

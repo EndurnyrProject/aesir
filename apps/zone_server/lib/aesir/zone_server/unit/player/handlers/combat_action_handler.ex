@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackPositioning
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
+  alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -44,7 +45,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
     - {:noreply, updated_state} with appropriate action state set
   """
   @spec handle_attack_request(map(), integer(), integer()) :: {:noreply, map()}
-  def handle_attack_request(%{game_state: game_state} = state, target_id, action_type) do
+  def handle_attack_request(state, target_id, action_type) do
+    state = cancel_combo_for_target_change(state, target_id)
+    game_state = state.game_state
+
     if Interpreter.can_attack?(:player, game_state.character_id) do
       do_handle_attack_request(state, target_id, action_type)
     else
@@ -432,7 +436,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   defp do_execute_attack(state, target_id, transitioned_state, weapon_type) do
     case Combat.execute_attack(transitioned_state.stats, transitioned_state, target_id) do
       :ok ->
-        handle_successful_attack(state, target_id, transitioned_state, weapon_type)
+        handle_successful_attack(state, target_id, transitioned_state, weapon_type, nil)
+
+      {:ok, {:combo, stage, target, duration}} ->
+        handle_successful_attack(
+          state,
+          target_id,
+          transitioned_state,
+          weapon_type,
+          {stage, target, duration}
+        )
 
       {:error, :target_out_of_range} ->
         handle_target_out_of_range(state, target_id, transitioned_state)
@@ -442,14 +455,36 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
     end
   end
 
-  defp handle_successful_attack(state, target_id, transitioned_state, weapon_type) do
+  defp handle_successful_attack(
+         state,
+         target_id,
+         transitioned_state,
+         weapon_type,
+         combo_window
+       ) do
     current_timestamp = AttackSpeed.current_timestamp()
     transitioned_state = maybe_consume_ammo(state, transitioned_state, weapon_type)
+    transitioned_state = maybe_open_combo(transitioned_state, combo_window, current_timestamp)
 
     game_state =
       determine_post_attack_state(state, target_id, transitioned_state, current_timestamp)
 
     {:noreply, %{state | game_state: game_state}}
+  end
+
+  defp maybe_open_combo(game_state, nil, _now), do: game_state
+
+  defp maybe_open_combo(game_state, {stage, target, duration}, now) do
+    combo = Combo.open(game_state.combo, stage, target, now + duration)
+    Process.send_after(self(), {:combo_timeout, combo.generation}, duration)
+    %{game_state | combo: combo}
+  end
+
+  @doc "Expires a matching Monk combo window; stale generations are ignored."
+  @spec handle_combo_timeout(map(), non_neg_integer()) :: {:noreply, map()}
+  def handle_combo_timeout(%{game_state: game_state} = state, generation) do
+    combo = Combo.expire(game_state.combo, generation, AttackSpeed.current_timestamp())
+    {:noreply, %{state | game_state: %{game_state | combo: combo}}}
   end
 
   defp maybe_consume_ammo(state, game_state, weapon_type) do
@@ -777,4 +812,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   end
 
   defp get_weapon_type(%{equipment: equipment}), do: Stats.weapon_type(equipment)
+
+  defp cancel_combo_for_target_change(
+         %{game_state: %{combo: %Combo{target: {_type, id}}}} = state,
+         target_id
+       )
+       when id != target_id do
+    %{state | game_state: PlayerState.cancel_combo(state.game_state)}
+  end
+
+  defp cancel_combo_for_target_change(state, _target_id), do: state
 end

@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Combat.HpDrain
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
+  alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -48,7 +49,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     - :ok if attack was successful
     - {:error, reason} if attack failed
   """
-  @spec execute_attack(map(), map(), integer()) :: :ok | {:error, atom()}
+  @type combo_result ::
+          {:ok, {:combo, atom(), {atom(), non_neg_integer()}, non_neg_integer()}}
+
+  @spec execute_attack(map(), map(), integer()) :: :ok | combo_result() | {:error, atom()}
   def execute_attack(stats, player_state, target_id) do
     # Create player combatant - player_state already implements to_combatant
     # But we need to update the stats first
@@ -59,11 +63,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          :ok <- TargetResolver.ensure_targetable(target_state, target_type),
          target_combatant <- target_state.__struct__.to_combatant(target_state),
          :ok <-
-           AttackValidator.validate(attacker_combatant, target_combatant, projectile?: true),
-         {:ok, combat_result} <-
-           check_hit_and_calculate_damage(attacker_combatant, target_combatant) do
-      resolve_player_attack(
-        combat_result,
+           AttackValidator.validate(attacker_combatant, target_combatant, projectile?: true) do
+      resolve_player_attack_or_replacement(
         player_state,
         target_state,
         attacker_combatant,
@@ -72,6 +73,87 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         target_type,
         target_id
       )
+    end
+  end
+
+  defp resolve_player_attack_or_replacement(
+         player_state,
+         target_state,
+         attacker,
+         target,
+         target_pid,
+         target_type,
+         target_id
+       ) do
+    case Passives.attack_replacement(player_state) do
+      :normal ->
+        with {:ok, combat_result} <- check_hit_and_calculate_damage(attacker, target) do
+          resolve_player_attack(
+            combat_result,
+            player_state,
+            target_state,
+            attacker,
+            target,
+            target_pid,
+            target_type,
+            target_id
+          )
+        end
+
+      {:skill_attack, opts, next_stage} ->
+        with :ok <-
+               resolve_attack_replacement(
+                 player_state,
+                 attacker,
+                 target,
+                 target_id,
+                 opts
+               ) do
+          {:ok, {:combo, next_stage, {target_type, target_id}, max(attacker.attack_delay_ms, 1)}}
+        end
+    end
+  end
+
+  defp resolve_attack_replacement(player_state, attacker, target, target_id, opts) do
+    case weapon_skill_hit_result(attacker, target) do
+      :hit ->
+        SkillAttack.execute_skill_attack(player_state, target_id, opts)
+
+      :miss ->
+        damage_result = %{damage: 0, is_critical: false}
+
+        packet =
+          PacketFactory.build_skill_damage_packet(
+            attacker,
+            target,
+            Keyword.fetch!(opts, :skill_id),
+            Keyword.fetch!(opts, :skill_level),
+            damage_result,
+            div: Keyword.get(opts, :display_hit_count, 1)
+          )
+
+        DamageApplication.broadcast_nearby(target, packet)
+    end
+
+    :ok
+  end
+
+  defp weapon_skill_hit_result(attacker, target) do
+    attacker_stats = %{
+      hit: attacker.combat_stats.hit,
+      char_id: attacker.unit_id,
+      perfect_hit: EquipmentBonuses.perfect_hit_rate(attacker)
+    }
+
+    target_stats = %{
+      flee: target.combat_stats.flee,
+      perfect_dodge: 0,
+      unit_id: target.unit_id
+    }
+
+    case HitCalculations.calculate_hit_result(attacker_stats, target_stats) do
+      :hit -> :hit
+      _ -> :miss
     end
   end
 

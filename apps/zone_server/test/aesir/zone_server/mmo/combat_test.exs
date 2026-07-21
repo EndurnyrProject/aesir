@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
   import ExUnit.CaptureLog
 
   alias Aesir.Net.DamageDealt
+  alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
@@ -95,7 +96,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
 
-      %{player_state: player_state, stats: attacker}
+      %{player_state: player_state, stats: attacker, target: target, target_state: target_state}
     end
 
     test "applies damage twice and the broadcast packet reflects 2 hits when multi_hit: 2",
@@ -265,6 +266,85 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
       assert_received {:damage_applied, 50}
       refute_received {:damage_applied, _}
+    end
+
+    test "a replacement emits only the skill hit and returns its combo window",
+         %{player_state: player_state, stats: stats} do
+      test_pid = self()
+
+      stub(Passives, :attack_replacement, fn _player ->
+        {:skill_attack,
+         [
+           skill_id: 263,
+           skill_level: 5,
+           skill_ratio: 200,
+           display_hit_count: 3,
+           skip_crit: true
+         ], :quadruple}
+      end)
+
+      reject(&DamageCalculator.calculate_damage/2)
+
+      expect(DamageCalculator, :calculate_damage, fn _attacker, _target, opts ->
+        assert opts[:skill_ratio] == 200
+        {:ok, %{damage: 75, is_critical: false}}
+      end)
+
+      expect(MobSession, :apply_damage, fn _pid, 75, _attacker_id -> :ok end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+        send(test_pid, {:packet, packet})
+        :ok
+      end)
+
+      assert {:ok, {:combo, :quadruple, {:mob, 2001}, 500}} =
+               Combat.execute_attack(stats, player_state, 2001)
+
+      assert_received {:packet, %SkillDamage{skill_id: 263, div: 3, damage: 75}}
+      refute_received {:packet, %DamageDealt{}}
+    end
+
+    test "a replacement can miss flee without falling back to normal damage",
+         %{
+           player_state: player_state,
+           stats: stats,
+           target: target,
+           target_state: target_state
+         } do
+      high_flee_target = %{
+        target
+        | combat_stats: %{target.combat_stats | flee: 10_000}
+      }
+
+      stub(MobState, :to_combatant, fn ^target_state -> high_flee_target end)
+
+      stub(Passives, :attack_replacement, fn _player ->
+        {:skill_attack,
+         [
+           skill_id: 263,
+           skill_level: 5,
+           skill_ratio: 200,
+           display_hit_count: 3,
+           skip_crit: true
+         ], :quadruple}
+      end)
+
+      reject(&DamageCalculator.calculate_damage/2)
+      reject(&DamageCalculator.calculate_damage/3)
+      reject(&MobSession.apply_damage/3)
+
+      test_pid = self()
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+        send(test_pid, {:packet, packet})
+        :ok
+      end)
+
+      assert {:ok, {:combo, :quadruple, {:mob, 2001}, 500}} =
+               Combat.execute_attack(stats, player_state, 2001)
+
+      assert_received {:packet, %SkillDamage{skill_id: 263, div: 3, damage: 0}}
+      refute_received {:packet, %DamageDealt{}}
     end
   end
 

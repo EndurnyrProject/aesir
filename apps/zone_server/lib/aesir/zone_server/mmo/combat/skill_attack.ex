@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:fixed_damage` - deal exactly this value, bypassing weapon/defense/flee
     - `:hit_count` - number of hits to deliver, each rolling its own hit/flee
       check and its own damage (default `1`)
+    - `:display_hit_count` - packet-only divisions for one total-damage hit
     - `:element` - forces the attack element for this hit, overriding the
       weapon element (e.g. Envenom's poison, Sand Attack's earth)
     - `:report_hit` - when `true`, returns `{:ok, %{hit?: boolean}}` instead of
@@ -53,6 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     skill_level = Keyword.fetch!(opts, :skill_level)
     hits = Keyword.get(opts, :hit_count, 1)
     report_hit? = Keyword.get(opts, :report_hit, false)
+    display_hits = Keyword.get(opts, :display_hit_count, 1)
 
     calc_opts =
       Keyword.take(opts, [
@@ -79,7 +81,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
             target,
             skill_id,
             skill_level,
-            calc_opts
+            calc_opts,
+            display_hits
           )
         end)
         |> Enum.any?()
@@ -257,6 +260,28 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          skill_id,
          skill_level,
          calc_opts
+       ),
+       do:
+         apply_skill_damage(
+           attacker,
+           target_type,
+           target_pid,
+           target,
+           skill_id,
+           skill_level,
+           calc_opts,
+           nil
+         )
+
+  defp apply_skill_damage(
+         attacker,
+         target_type,
+         target_pid,
+         target,
+         skill_id,
+         skill_level,
+         calc_opts,
+         display_hits
        ) do
     case HitCalculations.calculate_hit_result(hit_stats(attacker), flee_stats(target)) do
       :miss ->
@@ -283,7 +308,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           target,
           skill_id,
           skill_level,
-          calc_opts
+          calc_opts,
+          display_hits
         )
     end
   end
@@ -295,7 +321,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          target,
          skill_id,
          skill_level,
-         calc_opts
+         calc_opts,
+         display_hits
        ) do
     case DamageCalculator.calculate_damage(attacker, target, calc_opts) do
       {:ok, damage_result} ->
@@ -316,12 +343,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           )
 
         packet =
-          PacketFactory.build_skill_damage_packet(
+          skill_damage_packet(
             attacker,
             target,
             skill_id,
             skill_level,
-            %{damage_result | damage: damage}
+            damage_result,
+            damage,
+            display_hits
           )
 
         DamageApplication.broadcast_nearby(target, packet)
@@ -358,5 +387,34 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       perfect_dodge: target.combat_stats.perfect_dodge,
       unit_id: target.unit_id
     }
+  end
+
+  defp skill_damage_packet(attacker, target, skill_id, skill_level, damage_result, damage, nil) do
+    PacketFactory.build_skill_damage_packet(
+      attacker,
+      target,
+      skill_id,
+      skill_level,
+      %{damage_result | damage: damage}
+    )
+  end
+
+  defp skill_damage_packet(
+         attacker,
+         target,
+         skill_id,
+         skill_level,
+         damage_result,
+         damage,
+         display_hits
+       ) do
+    PacketFactory.build_skill_damage_packet(
+      attacker,
+      target,
+      skill_id,
+      skill_level,
+      %{damage_result | damage: damage},
+      div: display_hits
+    )
   end
 end

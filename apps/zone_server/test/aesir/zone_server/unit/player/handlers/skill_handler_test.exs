@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
+  alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
   alias Aesir.ZoneServer.Mmo.Skills.Sage.SaCastcancel
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Party.Manager
@@ -164,6 +165,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   end
 
   describe "instant cast" do
+    test "an incompatible skill request cancels an open Monk combo" do
+      state = instant_state(100)
+      combo = Combo.open(Combo.new(), :quadruple, {:mob, 2000}, 9_999_999_999)
+      state = %{state | game_state: %{state.game_state | combo: combo}}
+
+      expect(Interpreter, :begin_cast, fn game_state, 29, 1, :self ->
+        assert game_state.combo.stage == :idle
+        {:error, :invalid_target}
+      end)
+
+      assert {:noreply, returned} = SkillHandler.handle_use_skill(state, 29, 1, 1000)
+      assert returned.game_state.combo.stage == :idle
+    end
+
     test "publishes the final resource projection after consuming SP" do
       stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
       stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)
@@ -412,7 +427,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
       stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
       stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
-      stub(Broadcast, :to_visible_players, fn _state, _update, exclude_id: 1000 -> :ok end)
+      stub(Broadcast, :to_visible_players, fn _state, _update, [exclude_id: 1000] -> :ok end)
 
       expect(UnitRegistry, :update_unit_state, fn :player, 1000, committed ->
         assert committed.stats.current_state.sp == 5
