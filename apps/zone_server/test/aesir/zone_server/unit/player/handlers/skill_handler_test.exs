@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.Skill.ForcedMovement
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
   alias Aesir.ZoneServer.Mmo.Skills.Sage.SaCastcancel
@@ -107,6 +108,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     |> Map.put(:game_state, %{state.game_state | stats: stats})
   end
 
+  defp snap_state do
+    base = PlayerState.new(character())
+
+    stats =
+      base.stats
+      |> put_in([Access.key!(:current_state), Access.key!(:sp)], 30)
+      |> put_in([Access.key!(:progression), Access.key!(:learned_skills)], %{264 => 1})
+
+    %{connection_pid: self(), game_state: %{base | stats: stats}}
+  end
+
   # Real PlayerState used for the timed-cast path, where transition_to needs a
   # genuine struct. AL_INCAGI (id 29) is a real 800ms cast self-cast on the ally.
   defp casting_state(sp, action_state \\ :idle) do
@@ -165,6 +177,48 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   end
 
   describe "instant cast" do
+    test "a committed Snap moves through Movement and blocks Asura for two seconds" do
+      directive = %ForcedMovement{map_name: "prontera", x: 152, y: 150}
+      state = snap_state()
+
+      stub(Interpreter, :begin_cast, fn game_state, 264, 1, {:ground, 152, 150} ->
+        {:instant, PlayerState.put_pending_forced_movement(game_state, directive)}
+      end)
+
+      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+      stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
+      stub(StatusSync, :send_param, fn _connection, _param, _value -> :ok end)
+      stub(Broadcast, :to_player, fn 1000, _packet -> :ok end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet, _opts -> :ok end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _state -> :ok end)
+
+      stub(Aesir.ZoneServer.Unit.Movement, :set_position, fn :player, 1000, _state, "prontera" ->
+        :ok
+      end)
+
+      assert {:noreply, %{game_state: moved}} =
+               SkillHandler.handle_use_skill_ground(state, 264, 1, 152, 150)
+
+      assert {moved.x, moved.y} == {152, 150}
+      assert moved.pending_forced_movement == nil
+      assert moved.skill_cooldowns[271] > System.monotonic_time(:millisecond)
+    end
+
+    test "a failed Snap leaves position and Asura cooldown unchanged" do
+      state = snap_state()
+
+      stub(Interpreter, :begin_cast, fn _game_state, 264, 1, {:ground, 152, 150} ->
+        {:error, :invalid_target}
+      end)
+
+      assert {:noreply, %{game_state: unchanged}} =
+               SkillHandler.handle_use_skill_ground(state, 264, 1, 152, 150)
+
+      assert {unchanged.x, unchanged.y} == {150, 150}
+      assert unchanged.skill_cooldowns == %{}
+    end
+
     test "an incompatible skill request cancels an open Monk combo" do
       state = instant_state(100)
       combo = Combo.open(Combo.new(), :quadruple, {:mob, 2000}, 9_999_999_999)

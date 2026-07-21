@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.MovementTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.ForcedMovement
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
@@ -64,6 +65,20 @@ defmodule Aesir.ZoneServer.Unit.MovementTest do
   end
 
   describe "set_position/4" do
+    test "commits a prevalidated forced-movement destination through the choke point" do
+      char_id = 1003
+      map_name = "prontera"
+      directive = %ForcedMovement{map_name: map_name, x: 55, y: 60}
+      UnitRegistry.register_unit(:player, char_id, __MODULE__, %{movement_state: :standing}, nil)
+      SpatialIndex.add_unit(:player, char_id, 50, 50, map_name)
+
+      updated_state = Map.merge(%{movement_state: :standing}, Map.from_struct(directive))
+      assert :ok = Movement.set_position(:player, char_id, updated_state, directive.map_name)
+
+      assert {:ok, {55, 60, ^map_name}} = SpatialIndex.get_unit_position(:player, char_id)
+      assert [{:player, ^char_id, 0}] = Movement.drain_dirty(map_name)
+    end
+
     test "updates the spatial index and registry and marks the unit dirty" do
       char_id = 1001
       map_name = "prontera"

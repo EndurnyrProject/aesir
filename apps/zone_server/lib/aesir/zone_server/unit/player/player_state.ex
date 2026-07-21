@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.Skill.ForcedMovement
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
   alias Aesir.ZoneServer.Mmo.WeaponTypes
@@ -89,6 +90,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           last_emote_at: integer() | nil,
           continuous_attack_timer: reference() | nil,
           pending_weapon_hit: PendingWeaponHit.t() | nil,
+          pending_forced_movement: ForcedMovement.t() | nil,
           spirit_spheres: SpiritSpheres.t(),
           spirit_sphere_timer: reference() | nil,
           spirit_sphere_timer_plan: %{generation: non_neg_integer(), expires_at: integer()} | nil,
@@ -201,6 +203,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     :last_target_position,
     :continuous_attack_timer,
     :pending_weapon_hit,
+    :pending_forced_movement,
 
     # Move-to-pickup state — the ground item we are walking toward to pick up.
     :pickup_target_id,
@@ -394,6 +397,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
         y: y,
         action_state: :idle,
         casting: nil,
+        pending_forced_movement: nil,
         visible_players: MapSet.new(),
         visible_mobs: MapSet.new(),
         visible_warps: MapSet.new(),
@@ -599,9 +603,32 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
               :casting,
               :dead
             ],
-       do: cancel_pending_weapon_hit(state)
+       do:
+         state
+         |> cancel_pending_weapon_hit()
+         |> Map.put(:pending_forced_movement, nil)
+
+  defp cancel_pending_for_transition(state, :idle),
+    do: Map.put(state, :pending_forced_movement, nil)
 
   defp cancel_pending_for_transition(state, _new_state), do: state
+
+  @doc "Stages a validated forced-movement directive for post-commit application."
+  @spec put_pending_forced_movement(t(), ForcedMovement.t()) :: t()
+  def put_pending_forced_movement(%__MODULE__{} = state, %ForcedMovement{} = directive) do
+    %{state | pending_forced_movement: directive}
+  end
+
+  @doc "Takes and clears the staged forced-movement directive."
+  @spec take_pending_forced_movement(t()) :: {ForcedMovement.t() | nil, t()}
+  def take_pending_forced_movement(%__MODULE__{} = state) do
+    {state.pending_forced_movement, %{state | pending_forced_movement: nil}}
+  end
+
+  @doc "Cancels a staged forced-movement directive."
+  @spec clear_pending_forced_movement(t()) :: t()
+  def clear_pending_forced_movement(%__MODULE__{} = state),
+    do: %{state | pending_forced_movement: nil}
 
   @doc """
   Ends the in-flight cast (mirrors `MobState.clear_casting/1`).
@@ -842,10 +869,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   defp valid_from_vending?(to), do: to == :idle
 
   # Private helper to handle state entry logic
-  defp handle_state_entry(state, :idle) do
-    # Clear combat intent when becoming idle
-    clear_combat_intent(state)
-  end
+  defp handle_state_entry(state, :idle), do: clear_combat_intent_for_transition(state)
 
   defp handle_state_entry(state, :moving) do
     # Set movement intent to normal if not combat
@@ -872,6 +896,19 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   end
 
   defp handle_state_entry(state, _new_state), do: state
+
+  defp clear_combat_intent_for_transition(%__MODULE__{} = state) do
+    cancel_continuous_timer(state.continuous_attack_timer)
+
+    %{
+      state
+      | combat_target_id: nil,
+        combat_action_type: nil,
+        last_target_position: nil,
+        continuous_attack_timer: nil,
+        movement_intent: if(state.movement_state == :moving, do: :normal, else: :none)
+    }
+  end
 
   defp cancel_combo_on_entry(state, :idle), do: state
   defp cancel_combo_on_entry(state, _new_state), do: cancel_combo(state)

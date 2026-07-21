@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
+  alias Aesir.ZoneServer.Mmo.Skill.ForcedMovement
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -30,6 +31,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Script.Interaction
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryStaging
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
@@ -776,9 +778,48 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
     state
     |> SpiritSphereHandler.apply_skill_cost_effects(sphere_cost_plan)
+    |> drain_forced_movement(skill_id)
     |> drain_warp()
     |> drain_interaction()
     |> drain_menu_offer()
+  end
+
+  @doc false
+  @spec drain_forced_movement(map(), integer()) :: map()
+  defp drain_forced_movement(%{game_state: game_state} = state, skill_id) do
+    {directive, clean_game_state} = PlayerState.take_pending_forced_movement(game_state)
+
+    case directive do
+      nil ->
+        %{state | game_state: clean_game_state}
+
+      %ForcedMovement{map_name: map_name, x: x, y: y} ->
+        moved_state =
+          clean_game_state
+          |> PlayerState.update_position(x, y)
+          |> PlayerState.stop_walking()
+
+        :ok = Movement.set_position(:player, moved_state.character_id, moved_state, map_name)
+
+        blocked_cooldowns =
+          if skill_id == 264 do
+            blocked_until =
+              max(
+                Map.get(moved_state.skill_cooldowns, 271, 0),
+                System.monotonic_time(:millisecond) + 2_000
+              )
+
+            Cooldown.put(
+              moved_state.skill_cooldowns,
+              271,
+              blocked_until
+            )
+          else
+            moved_state.skill_cooldowns
+          end
+
+        %{state | game_state: %{moved_state | skill_cooldowns: blocked_cooldowns}}
+    end
   end
 
   # Sends the SkillMenu a cast staged on pending_menu_offer (SA_AUTOSPELL's bolt

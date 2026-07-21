@@ -1091,7 +1091,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     state = CombatActionHandler.cancel_pending_weapon_hit(state)
     state = SkillHandler.cancel_deferred(state)
     state = SpiritSphereHandler.discard(state)
-    game_state = state.game_state
+    game_state = PlayerState.clear_pending_forced_movement(state.game_state)
+    state = %{state | game_state: game_state}
     Process.demonitor(connection_monitor_ref, [:flush])
 
     # Tear down an open vending shop so the registry entry + board don't leak;
