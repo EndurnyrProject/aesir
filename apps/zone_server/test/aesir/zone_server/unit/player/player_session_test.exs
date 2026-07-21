@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
+  alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusPersistence
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -189,6 +190,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       assert state.game_state.movement_state == :standing
       assert state.game_state.walk_speed == 150
       assert state.game_state.view_range == 20
+      assert SpiritSpheres.count(state.game_state.spirit_spheres) == 0
+      assert state.game_state.spirit_sphere_revision == 0
 
       # Verify player is registered in UnitRegistry
       assert {:ok, {_module, %{account_id: 100}, _pid}} = UnitRegistry.get_unit(:player, 1)
@@ -232,6 +235,53 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         })
 
       assert_receive :spawn_player, 100
+    end
+
+    test "routes a matching sphere expiry through the player-session writer", %{
+      character: character
+    } do
+      {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
+      now = System.monotonic_time(:millisecond)
+      {spheres, _} = SpiritSpheres.new() |> SpiritSpheres.summon(now - 1, 5)
+
+      state = %{
+        state
+        | game_state: %{
+            state.game_state
+            | spirit_spheres: spheres,
+              spirit_sphere_timer_generation: 4,
+              spirit_sphere_revision: 2
+          }
+      }
+
+      assert {:noreply, %{game_state: game_state}} =
+               PlayerSession.handle_info({:spirit_sphere_expire, 4}, state)
+
+      assert SpiritSpheres.count(game_state.spirit_spheres) == 0
+      assert game_state.spirit_sphere_revision == 3
+
+      assert_receive {:send, :world,
+                      {:spirit_sphere_update, %{count: 0, revision: 3, unit_id: 1}}}
+    end
+
+    test "disconnect cancels the owned sphere timer", %{character: character} do
+      Mimic.copy(CharacterPersistence)
+      stub(CharacterPersistence, :update_position, fn _, _, _, _ -> {:ok, %Character{}} end)
+
+      {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
+      timer_ref = Process.send_after(self(), :spirit_sphere_timer, 60_000)
+
+      state = %{
+        state
+        | game_state: %{
+            state.game_state
+            | spirit_sphere_timer: timer_ref,
+              spirit_sphere_timer_generation: 4
+          }
+      }
+
+      assert :ok = PlayerSession.terminate(:normal, state)
+      assert Process.cancel_timer(timer_ref) == false
     end
   end
 
@@ -408,6 +458,39 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
                          guild_name: "",
                          emblem_id: 0,
                          moving: false
+                       }}}
+
+      Process.exit(other_pid, :kill)
+    end
+
+    test "player_entered_view includes the current spirit-sphere state", %{character: character} do
+      other_character = %{character | id: 2, account_id: 200, name: "OtherPlayer"}
+      {spheres, _} = SpiritSpheres.new() |> SpiritSpheres.summon(100, 5)
+      {spheres, _} = SpiritSpheres.summon(spheres, 200, 5)
+
+      other_game_state = %{
+        PlayerState.new(other_character)
+        | spirit_spheres: spheres,
+          spirit_sphere_revision: 7
+      }
+
+      other_pid = spawn(fn -> Process.sleep(1000) end)
+      UnitRegistry.register_player(other_game_state, other_pid)
+
+      state = %{
+        character: character,
+        game_state: PlayerState.new(character),
+        connection_pid: self()
+      }
+
+      assert {:noreply, _} = PlayerSession.handle_cast({:player_entered_view, 2}, state)
+
+      assert_receive {:send, :world,
+                      {:unit_spawn,
+                       %Aesir.Net.UnitSpawn{
+                         gid: 2,
+                         spirit_sphere_count: 2,
+                         spirit_sphere_revision: 7
                        }}}
 
       Process.exit(other_pid, :kill)

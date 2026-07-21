@@ -75,6 +75,7 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def route(%Aesir.Net.QuestHuntProgress{}), do: {:gameplay, :quest_hunt_progress}
 
   def route(%Aesir.Net.UnitSpawn{}), do: {:world, :unit_spawn}
+  def route(%Aesir.Net.SpiritSphereUpdate{}), do: {:world, :spirit_sphere_update}
   def route(%Aesir.Net.UnitDespawn{}), do: {:world, :unit_despawn}
   def route(%Aesir.Net.GroundSkill{}), do: {:world, :ground_skill}
   def route(%Aesir.Net.SpriteChange{}), do: {:world, :sprite_change}

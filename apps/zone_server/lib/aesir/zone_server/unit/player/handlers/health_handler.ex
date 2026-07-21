@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -292,8 +293,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   defp handle_death(attacker_id, %{game_state: game_state} = state) do
     Logger.info("Player #{game_state.character_id} died (killed by #{inspect(attacker_id)})")
 
+    state = SpiritSphereHandler.clear(state)
+
     inactive_state =
-      game_state
+      state.game_state
       |> cancel_cast_timer()
       |> PlayerState.stop_walking()
       |> PlayerState.clear_combat_intent()

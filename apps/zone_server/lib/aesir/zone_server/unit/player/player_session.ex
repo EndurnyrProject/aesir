@@ -42,6 +42,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
@@ -96,6 +97,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @spec consume_sp(pid(), non_neg_integer()) :: :ok
   def consume_sp(pid, amount) do
     GenServer.cast(pid, {:unit, {:drain_sp, amount}})
+  end
+
+  @spec summon_spirit_sphere(pid(), pos_integer(), pos_integer()) :: :ok
+  def summon_spirit_sphere(pid, duration, cap \\ 5) do
+    GenServer.cast(pid, {:summon_spirit_sphere, duration, cap})
+  end
+
+  @spec consume_spirit_spheres(pid(), pos_integer()) :: :ok
+  def consume_spirit_spheres(pid, count) do
+    GenServer.cast(pid, {:consume_spirit_spheres, count})
   end
 
   @doc """
@@ -645,6 +656,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     {:stop, :normal, state}
   end
 
+  @impl true
+  def handle_info({:spirit_sphere_expire, generation}, state) do
+    SpiritSphereHandler.expire(state, generation)
+  end
+
   # The active NPC interaction ended (close / idle-timeout / crash). Clearing the
   # lock frees the player to talk to NPCs again; the session always survives
   # (this monitor never propagates the interaction's exit). Matched ahead of the
@@ -769,6 +785,21 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:progression, {:add_job_level, amount}}, state) do
     ProgressionHandler.handle_add_job_level(amount, state)
+  end
+
+  # Skill: the spirit-sphere write path (Monk). Summon/consume timed spheres
+  # route to SpiritSphereHandler, the single-writer handler for that state.
+  @impl true
+  def handle_cast({:summon_spirit_sphere, duration, cap}, state) do
+    SpiritSphereHandler.summon(state, duration, cap)
+  end
+
+  @impl true
+  def handle_cast({:consume_spirit_spheres, count}, state) do
+    case SpiritSphereHandler.consume(state, count) do
+      {:ok, state} -> {:noreply, state}
+      {:error, :insufficient} -> {:noreply, state}
+    end
   end
 
   # NPC: the owner-event dispatch half of the two-message `:npc` domain (the
@@ -962,8 +993,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def terminate(
         reason,
-        %{game_state: game_state, connection_monitor_ref: connection_monitor_ref} = state
+        %{game_state: _game_state, connection_monitor_ref: connection_monitor_ref} = state
       ) do
+    state = SpiritSphereHandler.discard(state)
+    game_state = state.game_state
     Process.demonitor(connection_monitor_ref, [:flush])
 
     # Tear down an open vending shop so the registry entry + board don't leak;

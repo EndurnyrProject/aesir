@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SpawnView do
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Unit.Player.Appearance
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
 
   @doc """
   Builds the `UnitSpawn` describing `game_state`'s player for a nearby observer.
@@ -55,6 +56,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SpawnView do
       guild_id: guild_id,
       guild_name: guild_name,
       emblem_id: emblem_id,
+      spirit_sphere_count: SpiritSpheres.count(game_state.spirit_spheres),
+      spirit_sphere_revision: game_state.spirit_sphere_revision,
       sex: sex_to_int(game_state.sex),
       x: game_state.x,
       y: game_state.y,

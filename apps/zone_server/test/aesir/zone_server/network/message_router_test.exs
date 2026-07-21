@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Network.MessageRouterTest do
     {%Aesir.Net.QuestStateChanged{}, {:gameplay, :quest_state_changed}},
     {%Aesir.Net.QuestHuntProgress{}, {:gameplay, :quest_hunt_progress}},
     {%Aesir.Net.UnitSpawn{}, {:world, :unit_spawn}},
+    {%Aesir.Net.SpiritSphereUpdate{}, {:world, :spirit_sphere_update}},
     {%Aesir.Net.UnitDespawn{}, {:world, :unit_despawn}},
     {%Aesir.Net.GroundSkill{}, {:world, :ground_skill}},
     {%Aesir.Net.SpriteChange{}, {:world, :sprite_change}},
