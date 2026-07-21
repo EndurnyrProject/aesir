@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Id, as: SkillUnitId
@@ -23,12 +24,101 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables
   setup :verify_on_exit!
+
+  defmodule StaticCostSkill do
+    @behaviour Aesir.ZoneServer.Mmo.Skill.Active
+
+    @impl true
+    def cast(game_state, _target, _level, _definition) do
+      send(self(), {:cost_skill_sp, game_state.stats.current_state.sp})
+      {:ok, game_state}
+    end
+
+    @impl true
+    def validate(_game_state, _target, _level, _definition), do: :ok
+  end
+
+  defmodule DynamicCostSkill do
+    @behaviour Aesir.ZoneServer.Mmo.Skill.Active
+
+    alias Aesir.ZoneServer.Mmo.Skill.Cost
+
+    @impl true
+    def cast(game_state, _target, _level, _definition) do
+      send(self(), {:cost_skill_sp, game_state.stats.current_state.sp})
+      {:ok, game_state}
+    end
+
+    @impl true
+    def validate(_game_state, _target, _level, _definition), do: :ok
+
+    @impl true
+    def dynamic_cost(%{dynamic_sp: sp}, _target, _level, _definition), do: %Cost{sp: sp}
+  end
+
+  defmodule DeferredCostSkill do
+    @behaviour Aesir.ZoneServer.Mmo.Skill.Active
+
+    @impl true
+    def cast(game_state, _target, _level, _definition),
+      do: {:deferred, game_state, :spirit_action}
+
+    @impl true
+    def validate(_game_state, _target, _level, _definition), do: :ok
+  end
+
+  defmodule MalformedCostSkill do
+    @behaviour Aesir.ZoneServer.Mmo.Skill.Active
+
+    @impl true
+    def cast(game_state, _target, _level, _definition) do
+      send(self(), :malformed_cost_effect)
+      {:ok, game_state}
+    end
+
+    @impl true
+    def validate(_game_state, _target, _level, _definition), do: :ok
+
+    @impl true
+    def dynamic_cost(game_state, _target, _level, _definition), do: game_state.dynamic_cost
+  end
+
+  defmodule ResourceChangingCostSkill do
+    @behaviour Aesir.ZoneServer.Mmo.Skill.Active
+
+    alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
+
+    @impl true
+    def cast(game_state, _target, _level, _definition) do
+      send(self(), :resource_changing_effect)
+      {:ok, Map.put(game_state, :spirit_spheres, SpiritSpheres.new())}
+    end
+
+    @impl true
+    def validate(_game_state, _target, _level, _definition), do: :ok
+  end
+
+  defmodule CompletionValidationSkill do
+    @behaviour Aesir.ZoneServer.Mmo.Skill.Active
+
+    @impl true
+    def cast(game_state, _target, _level, _definition) do
+      send(self(), :completion_validation_effect)
+      {:ok, game_state}
+    end
+
+    @impl true
+    def validate(%{allow_cast?: true}, _target, _level, _definition), do: :ok
+
+    def validate(_game_state, _target, _level, _definition), do: {:error, :requirements_changed}
+  end
 
   defp game_state(sp, learned) do
     %{
@@ -218,6 +308,163 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     gs = game_state(100, %{29 => 1})
     assert {:ok, updated} = Interpreter.cast(gs, 29, 1, :self)
     assert updated.stats.current_state.sp == 100 - 18
+  end
+
+  test "all-SP costs leave pre-drain SP available to the effect" do
+    definition = %Definition{
+      id: 29,
+      name: :cost_skill,
+      display_name: "Cost Skill",
+      max_level: 1,
+      target_type: :self,
+      sp_cost: [:all]
+    }
+
+    stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
+    stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, StaticCostSkill} end)
+
+    assert {:ok, updated} = Interpreter.cast(game_state(50, %{29 => 1}), 29, 1, :self)
+    assert_received {:cost_skill_sp, 50}
+    assert updated.stats.current_state.sp == 0
+  end
+
+  test "re-runs a dynamic cost at completion before applying its effect" do
+    definition = %Definition{
+      id: 29,
+      name: :cost_skill,
+      display_name: "Cost Skill",
+      max_level: 1,
+      target_type: :self,
+      cast_time: [1_000]
+    }
+
+    stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
+    stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, DynamicCostSkill} end)
+
+    started = Map.put(game_state(50, %{29 => 1}), :dynamic_sp, 10)
+    assert {:casting, ^started, _info} = Interpreter.begin_cast(started, 29, 1, :self)
+
+    assert {:error, :insufficient_sp} =
+             Interpreter.complete_cast(%{started | dynamic_sp: 60}, 29, 1, :self)
+
+    refute_received {:cost_skill_sp, _}
+  end
+
+  test "rejects invalid dynamic costs before the effect runs" do
+    definition = %Definition{
+      id: 29,
+      name: :cost_skill,
+      display_name: "Cost Skill",
+      max_level: 1,
+      target_type: :self
+    }
+
+    stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
+    stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, MalformedCostSkill} end)
+
+    for dynamic_cost <- [nil, %{}, %Cost{hp: -1}, %Cost{sp: :all}, %Cost{spheres: -1}] do
+      game_state = Map.put(game_state(50, %{29 => 1}), :dynamic_cost, dynamic_cost)
+
+      assert {:error, :invalid_cost} = Interpreter.cast(game_state, 29, 1, :self)
+      refute_received :malformed_cost_effect
+    end
+  end
+
+  test "applies a prepared sphere cost after an effect changes the returned state" do
+    definition = %Definition{
+      id: 29,
+      name: :cost_skill,
+      display_name: "Cost Skill",
+      max_level: 1,
+      target_type: :self,
+      sp_cost: [0],
+      sphere_cost: [1]
+    }
+
+    stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
+    stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, ResourceChangingCostSkill} end)
+
+    {spheres, _entry} = SpiritSpheres.summon(SpiritSpheres.new(), 60_000, 5)
+    game_state = Map.put(game_state(50, %{29 => 1}), :spirit_spheres, spheres)
+
+    assert {:ok, updated} = Interpreter.cast(game_state, 29, 1, :self)
+    assert_received :resource_changing_effect
+    assert SpiritSpheres.count(updated.spirit_spheres) == 0
+  end
+
+  test "re-validates active requirements at completion before the effect runs" do
+    definition = %Definition{
+      id: 29,
+      name: :cost_skill,
+      display_name: "Cost Skill",
+      max_level: 1,
+      target_type: :self,
+      sp_cost: [0],
+      cast_time: [1_000]
+    }
+
+    stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
+    stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, CompletionValidationSkill} end)
+
+    starting = Map.put(game_state(50, %{29 => 1}), :allow_cast?, true)
+    assert {:casting, ^starting, _info} = Interpreter.begin_cast(starting, 29, 1, :self)
+
+    assert {:error, :requirements_changed} =
+             Interpreter.complete_cast(%{starting | allow_cast?: false}, 29, 1, :self)
+
+    refute_received :completion_validation_effect
+  end
+
+  test "commits fixed HP, SP, and sphere costs only after the effect" do
+    definition = %Definition{
+      id: 29,
+      name: :cost_skill,
+      display_name: "Cost Skill",
+      max_level: 1,
+      target_type: :self,
+      hp_cost: [10],
+      sp_cost: [20],
+      sphere_cost: [2]
+    }
+
+    stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
+    stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, StaticCostSkill} end)
+
+    spheres =
+      Enum.reduce(1..2, SpiritSpheres.new(), fn _, acc ->
+        {next, _entry} = SpiritSpheres.summon(acc, 60_000, 5)
+        next
+      end)
+
+    game_state = Map.put(game_state(50, %{29 => 1}), :spirit_spheres, spheres)
+
+    assert {:ok, updated} = Interpreter.cast(game_state, 29, 1, :self)
+    assert_received {:cost_skill_sp, 50}
+    assert updated.stats.current_state.hp == 90
+    assert updated.stats.current_state.sp == 30
+    assert SpiritSpheres.count(updated.spirit_spheres) == 0
+  end
+
+  test "preserves a deferred descriptor without committing costs or delay" do
+    definition = %Definition{
+      id: 29,
+      name: :cost_skill,
+      display_name: "Cost Skill",
+      max_level: 1,
+      target_type: :self,
+      hp_cost: [10],
+      sp_cost: [20],
+      after_cast_delay: [1_000],
+      cooldown: [1_000]
+    }
+
+    stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
+    stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, DeferredCostSkill} end)
+
+    game_state = game_state(50, %{29 => 1})
+
+    assert {:deferred, ^game_state, :spirit_action} =
+             Interpreter.cast(game_state, 29, 1, :self)
   end
 
   defp definition_with_cooldown(cooldown) do

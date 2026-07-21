@@ -56,7 +56,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     field :splash_radius, non_neg_integer(), default: 0
     field :hit_interval, non_neg_integer(), default: 0
     field :unit_duration, [non_neg_integer()], default: []
-    field :sp_cost, [non_neg_integer()], default: []
+    field :hp_cost, [non_neg_integer()], default: []
+    field :sp_cost, [non_neg_integer() | :all], default: []
+    field :sphere_cost, [non_neg_integer() | :all], default: []
     field :zeny_cost, [non_neg_integer()], default: []
     field :duration, [non_neg_integer()], default: []
     field :cast_time, [non_neg_integer()], default: []
@@ -96,7 +98,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     splash_radius: :integer,
     hit_interval: :integer,
     unit_duration: {:list, :integer},
-    sp_cost: {:list, :integer},
+    hp_cost: {:list, {:integer, {:gte, 0}}},
+    sp_cost: {:list, {:oneof, [{:integer, {:gte, 0}}, {:literal, :all}]}},
+    sphere_cost: {:list, {:oneof, [{:integer, {:gte, 0}}, {:literal, :all}]}},
     zeny_cost: {:list, :integer},
     duration: {:list, :integer},
     cast_time: {:list, :integer},
@@ -120,7 +124,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     splash_radius: 0,
     hit_interval: 0,
     unit_duration: [],
+    hp_cost: [],
     sp_cost: [],
+    sphere_cost: [],
     zeny_cost: [],
     duration: [],
     cast_time: [],

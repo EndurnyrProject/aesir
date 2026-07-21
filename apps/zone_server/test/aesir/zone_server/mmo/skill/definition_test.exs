@@ -67,4 +67,31 @@ defmodule Aesir.ZoneServer.Mmo.Skill.DefinitionTest do
       assert defn.fixed_cast_time == [200, 200]
     end
   end
+
+  describe "resource costs" do
+    test "defaults HP and sphere costs to empty lists" do
+      defn = Definition.build!(@required_opts, __MODULE__)
+
+      assert defn.hp_cost == []
+      assert defn.sphere_cost == []
+    end
+
+    test "accepts fixed and all resource costs" do
+      defn =
+        Definition.build!(
+          @required_opts ++ [hp_cost: [10], sp_cost: [:all], sphere_cost: [1, :all]],
+          __MODULE__
+        )
+
+      assert defn.hp_cost == [10]
+      assert defn.sp_cost == [:all]
+      assert defn.sphere_cost == [1, :all]
+    end
+
+    test "rejects all HP costs" do
+      assert_raise ArgumentError, ~r/DefinitionTest/, fn ->
+        Definition.build!(@required_opts ++ [hp_cost: [:all]], __MODULE__)
+      end
+    end
+  end
 end

@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.Skill.CastTime
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
+  alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
@@ -59,10 +60,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         }
 
   @spec cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
-          {:ok, PlayerState.t()} | {:error, atom()}
+          {:ok, PlayerState.t()} | {:deferred, PlayerState.t(), term()} | {:error, atom()}
   def cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
     case begin_cast(game_state, skill_id, level, target) do
       {:instant, game_state} -> {:ok, game_state}
+      {:deferred, game_state, descriptor} -> {:deferred, game_state, descriptor}
       {:casting, game_state, _info} -> complete_cast(game_state, skill_id, level, target)
       {:error, _reason} = error -> error
     end
@@ -92,6 +94,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   """
   @spec begin_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
           {:instant, PlayerState.t()}
+          | {:deferred, PlayerState.t(), term()}
           | {:casting, PlayerState.t(), cast_info()}
           | {:error, atom()}
   def begin_cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
@@ -149,12 +152,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   Runs a previously-validated cast to completion.
 
   Re-validates the target (it may have moved, died, or logged out during the
-  cast) and re-checks SP, then runs the behavior, deducts SP, sets the
-  cooldown, and arms the after-cast act delay. A target that is gone or out of
-  range fizzles with `{:error, _}` and no SP is spent.
+  cast) and re-checks every resolved resource cost, then runs the behavior,
+  applies the prepared cost, sets the cooldown, and arms the after-cast act
+  delay. A target that is gone or out of range fizzles with `{:error, _}` and
+  no resources are spent.
+
+  The resources are validated from the pre-effect state, so `:all` SP is visible
+  to the behavior. On success, the already-validated HP and SP costs are then
+  deducted from the behavior's returned state; a behavior's own HP/SP changes
+  are therefore retained. Sphere consumption is prepared from the original
+  collection, because its entries carry timer and reservation identity.
   """
   @spec complete_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
-          {:ok, PlayerState.t()} | {:error, atom()}
+          {:ok, PlayerState.t()} | {:deferred, PlayerState.t(), term()} | {:error, atom()}
   def complete_cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
     now = System.monotonic_time(:millisecond)
 
@@ -162,20 +172,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          {:ok, module} <- fetch_active_module(definition),
          :ok <- check_target(game_state, target, definition),
          :ok <- check_range(game_state, target, definition),
-         cost = skill_sp_cost(game_state, definition, level),
-         :ok <- check_sp(game_state, cost),
+         :ok <- module.validate(game_state, target, level, definition),
+         {:ok, cost} <- resolve_cost(game_state, module, target, level, definition),
+         {:ok, commitment} <- Cost.prepare(game_state, cost),
          zeny = Enum.at(definition.zeny_cost, level - 1, 0),
          :ok <- check_zeny(game_state, zeny),
          :ok <- check_catalysts(game_state, definition),
-         :ok <- check_ammo(game_state, definition),
-         {:ok, game_state} <- run_cast(module, game_state, target, level, definition) do
-      {:ok,
-       game_state
-       |> deduct_sp(cost)
-       |> deduct_zeny(zeny)
-       |> consume_ammo(definition)
-       |> put_cooldown(skill_id, definition, level, now)
-       |> put_act_delay(definition, level, now)}
+         :ok <- check_ammo(game_state, definition) do
+      complete_resolved_cast(
+        game_state,
+        module,
+        target,
+        level,
+        definition,
+        %{commitment: commitment, zeny: zeny, skill_id: skill_id, now: now}
+      )
     end
   end
 
@@ -286,6 +297,35 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         announce_ground_cast(module, game_state, target, level, definition)
         {:ok, game_state}
 
+      {:deferred, game_state, descriptor} ->
+        {:deferred, game_state, descriptor}
+
+      {:error, _reason} = error ->
+        error
+    end
+  end
+
+  defp complete_resolved_cast(
+         game_state,
+         module,
+         target,
+         level,
+         definition,
+         %{commitment: commitment, zeny: zeny, skill_id: skill_id, now: now}
+       ) do
+    case run_cast(module, game_state, target, level, definition) do
+      {:deferred, game_state, descriptor} ->
+        {:deferred, game_state, descriptor}
+
+      {:ok, game_state} ->
+        {:ok,
+         game_state
+         |> Cost.apply_commitment(commitment)
+         |> deduct_zeny(zeny)
+         |> consume_ammo(definition)
+         |> put_cooldown(skill_id, definition, level, now)
+         |> put_act_delay(definition, level, now)}
+
       {:error, _reason} = error ->
         error
     end
@@ -304,8 +344,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_cooldown(game_state, skill_id, now),
          :ok <- check_act_delay(game_state, now),
          :ok <- module.validate(game_state, target, level, definition),
-         cost = skill_sp_cost(game_state, definition, level),
-         :ok <- check_sp(game_state, cost),
+         {:ok, cost} <- resolve_cost(game_state, module, target, level, definition),
+         {:ok, _commitment} <- Cost.prepare(game_state, cost),
          zeny = Enum.at(definition.zeny_cost, level - 1, 0),
          :ok <- check_zeny(game_state, zeny) do
       {:ok, definition, module}
@@ -321,11 +361,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           Definition.t()
         ) ::
           {:instant, PlayerState.t()}
+          | {:deferred, PlayerState.t(), term()}
           | {:casting, PlayerState.t(), cast_info()}
           | {:error, atom()}
   defp schedule(%{total: 0}, game_state, skill_id, level, target, _definition) do
     case complete_cast(game_state, skill_id, level, target) do
       {:ok, game_state} -> {:instant, game_state}
+      {:deferred, game_state, descriptor} -> {:deferred, game_state, descriptor}
       {:error, _reason} = error -> error
     end
   end
@@ -546,6 +588,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     if game_state.stats.current_state.sp >= cost, do: :ok, else: {:error, :insufficient_sp}
   end
 
+  defp resolve_cost(game_state, module, target, level, definition) do
+    cost =
+      if function_exported?(module, :dynamic_cost, 4) do
+        module.dynamic_cost(game_state, target, level, definition)
+      else
+        Cost.from_definition(game_state, definition, level,
+          sp: skill_sp_cost(game_state, definition, level)
+        )
+      end
+
+    Cost.validate_resolved(cost)
+  end
+
   # SP cost after the caster's summed `sp_cost_rate` delta (negative = cheaper,
   # summing the status sources with the global and per-skill equipment rates)
   # and the caster's per-skill equipment `{:skill_use_sp, id}`
@@ -555,6 +610,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # so check_sp/deduct_sp both see the same reduced value (single application).
   @spec skill_sp_cost(PlayerState.t(), Definition.t(), pos_integer()) :: non_neg_integer()
   defp skill_sp_cost(game_state, definition, level) do
+    case Enum.at(definition.sp_cost, level - 1, 0) do
+      :all -> game_state.stats.current_state.sp
+      _cost -> reduced_skill_sp_cost(game_state, definition, level)
+    end
+  end
+
+  defp reduced_skill_sp_cost(game_state, definition, level) do
     cost = Enum.at(definition.sp_cost, level - 1)
 
     rate =
@@ -664,6 +726,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         announce_ground_cast(module, game_state, target, level, definition)
         {:ok, game_state}
 
+      {:deferred, game_state, descriptor} ->
+        {:deferred, game_state, descriptor}
+
       {:error, _reason} = error ->
         error
     end
@@ -723,8 +788,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  # Player SP lives in the nested current_state; mutate it inline (same pattern
-  # as HealthHandler), since consume_sp is defined on Unit.Stats, not Player.Stats.
   defp deduct_sp(game_state, cost) do
     stats = game_state.stats
     current = %{stats.current_state | sp: stats.current_state.sp - cost}

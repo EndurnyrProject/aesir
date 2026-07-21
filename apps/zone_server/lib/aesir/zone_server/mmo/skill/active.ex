@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   `mob_cast/5` is optional and preferred by the mob executor when a skill exports
   it; see its callback doc for the raw-target and row contract.
   """
+  alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -31,10 +32,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   A bare `{:ok, state}` consumes the skill's declared catalysts; `{:ok, state,
   :no_consume}` completes the cast (SP, cooldown, act delay) but spares the
   catalysts (rAthena `SKILL_NOCONSUME_REQ`, e.g. Stone Curse lv 6-10 on a failed
-  petrify).
+  petrify). `{:deferred, state, descriptor}` leaves all commitments to the
+  caller that settles the descriptor.
   """
   @callback cast(caster(), target(), pos_integer(), Definition.t()) ::
-              {:ok, caster()} | {:ok, caster(), :no_consume} | {:error, atom()}
+              {:ok, caster()}
+              | {:ok, caster(), :no_consume}
+              | {:deferred, caster(), term()}
+              | {:error, atom()}
 
   @doc "Optional pre-cast validation, run before SP is charged. Defaults to `:ok` when absent."
   @callback validate(caster(), target(), pos_integer(), Definition.t()) ::
@@ -69,7 +74,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
               row :: map()
             ) :: :ok | {:error, term()}
 
-  @optional_callbacks validate: 4, deferred: 2, mob_cast: 5
+  @doc "Optionally resolves a dynamic cost from the caster's current state."
+  @callback dynamic_cost(PlayerState.t(), target(), pos_integer(), Definition.t()) :: Cost.t()
+
+  @optional_callbacks validate: 4, deferred: 2, mob_cast: 5, dynamic_cost: 4
 
   @doc """
   Resolves a cast target to a unit id.

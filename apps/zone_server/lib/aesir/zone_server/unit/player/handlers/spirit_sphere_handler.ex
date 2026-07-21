@@ -15,6 +15,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler do
           required(:connection_pid) => pid()
         }
 
+  defmodule TimerPlan do
+    @moduledoc false
+
+    use TypedStruct
+
+    typedstruct do
+      field :generation, non_neg_integer(), enforce: true
+      field :expires_at, integer(), enforce: true
+    end
+  end
+
+  defmodule SkillCostPlan do
+    @moduledoc false
+
+    use TypedStruct
+
+    typedstruct do
+      field :previous_timer, reference() | nil, enforce: true
+      field :timer_plan, TimerPlan.t() | nil, enforce: true
+    end
+  end
+
   @spec summon(session_state(), pos_integer(), pos_integer()) :: {:noreply, session_state()}
   def summon(%{game_state: game_state} = state, duration, cap) when duration > 0 and cap > 0 do
     now = System.monotonic_time(:millisecond)
@@ -35,6 +57,46 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler do
       {:error, :insufficient} = error ->
         error
     end
+  end
+
+  @doc false
+  @spec prepare_skill_cost(PlayerState.t(), SpiritSpheres.t()) ::
+          {PlayerState.t(), SkillCostPlan.t() | nil}
+  def prepare_skill_cost(game_state, previous_spheres) do
+    if previous_spheres == game_state.spirit_spheres do
+      {game_state, nil}
+    else
+      generation = game_state.spirit_sphere_timer_generation + 1
+      previous_timer = game_state.spirit_sphere_timer
+      timer_plan = timer_plan(game_state.spirit_spheres, generation)
+
+      game_state = %{
+        game_state
+        | spirit_sphere_timer: nil,
+          spirit_sphere_timer_plan: timer_plan,
+          spirit_sphere_timer_generation: generation,
+          spirit_sphere_revision: game_state.spirit_sphere_revision + 1
+      }
+
+      {game_state, %SkillCostPlan{previous_timer: previous_timer, timer_plan: timer_plan}}
+    end
+  end
+
+  @doc false
+  @spec apply_skill_cost_effects(session_state(), SkillCostPlan.t() | nil) :: session_state()
+  def apply_skill_cost_effects(state, nil), do: state
+
+  def apply_skill_cost_effects(%{game_state: game_state} = state, %SkillCostPlan{} = plan) do
+    cancel_timer(plan.previous_timer)
+
+    game_state = %{
+      game_state
+      | spirit_sphere_timer: arm_timer(plan.timer_plan, System.monotonic_time(:millisecond))
+    }
+
+    state = %{state | game_state: game_state}
+    broadcast(state)
+    state
   end
 
   @spec reserve(session_state(), term(), pos_integer()) ::
@@ -168,6 +230,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler do
         game_state
         | spirit_spheres: SpiritSpheres.new(),
           spirit_sphere_timer: nil,
+          spirit_sphere_timer_plan: nil,
           spirit_sphere_timer_generation: game_state.spirit_sphere_timer_generation + 1,
           pending_spirit_sphere_action: nil
       }
@@ -178,12 +241,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler do
   defp commit(%{game_state: game_state} = state, spheres, now, notify?) do
     generation = game_state.spirit_sphere_timer_generation + 1
     cancel_timer(game_state.spirit_sphere_timer)
-    timer_ref = schedule_next(spheres, generation, now)
+    timer_plan = timer_plan(spheres, generation)
+    timer_ref = arm_timer(timer_plan, now)
 
     game_state = %{
       game_state
       | spirit_spheres: spheres,
         spirit_sphere_timer: timer_ref,
+        spirit_sphere_timer_plan: timer_plan,
         spirit_sphere_timer_generation: generation,
         spirit_sphere_revision:
           if(notify?,
@@ -197,14 +262,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler do
     state
   end
 
-  defp schedule_next(spheres, generation, now) do
+  defp timer_plan(spheres, generation) do
     case SpiritSpheres.next_expiry(spheres) do
-      nil ->
-        nil
-
-      expires_at ->
-        Process.send_after(self(), {:spirit_sphere_expire, generation}, max(expires_at - now, 0))
+      nil -> nil
+      expires_at -> %TimerPlan{generation: generation, expires_at: expires_at}
     end
+  end
+
+  defp arm_timer(nil, _now), do: nil
+
+  defp arm_timer(%TimerPlan{generation: generation, expires_at: expires_at}, now) do
+    Process.send_after(self(), {:spirit_sphere_expire, generation}, max(expires_at - now, 0))
   end
 
   defp invalidate_expired_reservation(

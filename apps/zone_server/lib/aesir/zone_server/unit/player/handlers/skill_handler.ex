@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryStaging
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
@@ -153,6 +154,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         resolved_state = %{new_state | game_state: end_cast(new_state.game_state)}
         {:noreply, maybe_resume_lock(resolved_state, Map.get(ctx, :combat_target_id))}
 
+      {:deferred, new_game_state, descriptor} ->
+        {:noreply, defer_cast(state, end_cast(new_game_state), descriptor)}
+
       {:error, reason} ->
         report_cast_failure(ctx.skill_id, game_state.character_id, reason)
         {:noreply, %{state | game_state: end_cast(game_state)}}
@@ -245,15 +249,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   defp dispatch_cast(%{game_state: game_state} = state, skill_id, level, target, locked) do
+    if Map.has_key?(state, :deferred_skill_result) do
+      report_cast_failure(skill_id, game_state.character_id, :busy)
+      {:noreply, state}
+    else
+      dispatch_resolved_cast(state, skill_id, level, target, locked)
+    end
+  end
+
+  defp dispatch_resolved_cast(%{game_state: game_state} = state, skill_id, level, target, locked) do
     case Interpreter.begin_cast(game_state, skill_id, level, target) do
       {:instant, new_game_state} ->
-        # Broadcast against new_game_state, not the post-commit state: commit_cast
-        # drains any pending_warp, which moves map_name/x/y to the arrival
-        # position. Reading it after commit would broadcast the visual at the
-        # destination instead of the departure cell viewers actually stood on.
-        broadcast_skill_use(new_game_state, skill_id, level, target)
         new_state = commit_cast(state, new_game_state, skill_id, level)
+        # Keep the departure snapshot for this visual: commit_cast/5 may drain a
+        # staged warp and move the player before the committed state returns.
+        broadcast_skill_use(new_game_state, skill_id, level, target)
         {:noreply, maybe_resume_lock(new_state, locked)}
+
+      {:deferred, new_game_state, descriptor} ->
+        {:noreply, defer_cast(state, new_game_state, descriptor)}
 
       {:casting, new_game_state, info} ->
         schedule_cast(%{state | game_state: new_game_state}, info, locked)
@@ -269,6 +283,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         report_cast_failure(skill_id, game_state.character_id, reason)
         {:noreply, state}
     end
+  end
+
+  @doc """
+  Returns and clears an unsettled deferred skill result.
+
+  Task 8 owns deciding how to persist, dispatch, settle, or abort this result.
+  """
+  @spec take_deferred_skill_result(map()) :: {map() | nil, map()}
+  def take_deferred_skill_result(state) do
+    {Map.get(state, :deferred_skill_result), Map.delete(state, :deferred_skill_result)}
+  end
+
+  defp defer_cast(state, game_state, descriptor) do
+    state
+    |> Map.put(:game_state, game_state)
+    |> Map.put(:deferred_skill_result, %{game_state: game_state, descriptor: descriptor})
   end
 
   @doc """
@@ -549,11 +579,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   defp target_alive?(target_id), do: match?({:ok, _}, resolve_unit_position(target_id))
 
-  # Shared success path: persist catalyst consumption, recalc stats, update
-  # registry, persist HP/SP, sync to client, emit the cooldown sweep, and drain
-  # any pending warp directive staged by the skill's cast/4. Returns the full
-  # session state so that a warp (which mutates session-level fields) is
-  # threaded back to the caller cleanly.
+  # Shared success path: calculate the final player state, commit it to the
+  # registry, then perform every outward effect. The committed state is the gate
+  # for persistence, packets, timer work, and staged follow-up actions.
   # `postdelay?` is false for the auto-cast path only: the SkillCooldown packet
   # announces the cooldown the interpreter just wrote, and `auto_cast/4` writes
   # none, so sending it would grey out a bolt the server still considers ready.
@@ -564,8 +592,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
          level,
          postdelay? \\ true
        ) do
-    new_game_state = InventoryStaging.drain(connection_pid, new_game_state)
-
+    previous_spheres = state.game_state.spirit_spheres
     equipped = Map.values(Inventory.equipped_items(new_game_state.inventory))
 
     updated_stats =
@@ -573,22 +600,35 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
     new_game_state = %{new_game_state | stats: updated_stats}
 
+    {new_game_state, sphere_cost_plan} =
+      SpiritSphereHandler.prepare_skill_cost(new_game_state, previous_spheres)
+
+    state = StateCommit.commit(state, new_game_state)
+
+    state =
+      update_in(state.game_state, fn game_state ->
+        InventoryStaging.drain(connection_pid, game_state)
+      end)
+
+    game_state = state.game_state
+
     CharacterPersistence.update_character(
-      new_game_state.character_id,
+      game_state.character_id,
       %{
-        hp: updated_stats.current_state.hp,
-        sp: updated_stats.current_state.sp,
-        zeny: new_game_state.zeny
+        hp: game_state.stats.current_state.hp,
+        sp: game_state.stats.current_state.sp,
+        zeny: game_state.zeny
       },
       async: true
     )
 
-    StatusSync.send_stat_updates(connection_pid, updated_stats)
-    StatusSync.send_param(connection_pid, StatusParams.zeny(), new_game_state.zeny)
+    StatusSync.send_stat_updates(connection_pid, game_state.stats)
+    StatusSync.send_param(connection_pid, StatusParams.zeny(), game_state.zeny)
 
     if postdelay?, do: maybe_send_postdelay(connection_pid, skill_id, level)
 
-    StateCommit.commit(state, new_game_state)
+    state
+    |> SpiritSphereHandler.apply_skill_cost_effects(sphere_cost_plan)
     |> drain_warp()
     |> drain_interaction()
     |> drain_menu_offer()

@@ -87,6 +87,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           continuous_attack_timer: reference() | nil,
           spirit_spheres: SpiritSpheres.t(),
           spirit_sphere_timer: reference() | nil,
+          spirit_sphere_timer_plan: %{generation: non_neg_integer(), expires_at: integer()} | nil,
           spirit_sphere_timer_generation: non_neg_integer(),
           spirit_sphere_revision: non_neg_integer(),
           pending_spirit_sphere_action:
@@ -209,6 +210,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     :zeny,
     spirit_spheres: SpiritSpheres.new(),
     spirit_sphere_timer: nil,
+    spirit_sphere_timer_plan: nil,
     spirit_sphere_timer_generation: 0,
     spirit_sphere_revision: 0,
     pending_spirit_sphere_action: nil,

@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -195,6 +196,133 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       assert {:noreply, %{game_state: %{stats: %{current_state: %{sp: 27}}}}} =
                SkillHandler.handle_use_skill(%{state | game_state: game_state}, 29, 1, 1000)
+    end
+
+    test "committing a sphere cost advances its authoritative revision" do
+      state = casting_state(45)
+
+      spheres =
+        Enum.reduce(1..2, SpiritSpheres.new(), fn _, acc ->
+          {next, _entry} = SpiritSpheres.summon(acc, 60_000, 5)
+          next
+        end)
+
+      {:ok, consumed, _entries} = SpiritSpheres.consume(spheres, 2)
+      state = put_in(state.game_state.spirit_spheres, spheres)
+      game_state = state.game_state
+      committed_game_state = %{game_state | spirit_spheres: consumed}
+
+      expect(Interpreter, :begin_cast, fn ^game_state, 29, 1, :self ->
+        {:instant, committed_game_state}
+      end)
+
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
+      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
+      stub(Broadcast, :to_visible_players, fn _state, _packet, _opts -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+
+      assert {:noreply, committed} = SkillHandler.handle_use_skill(state, 29, 1, 1000)
+      assert SpiritSpheres.count(committed.game_state.spirit_spheres) == 0
+      assert committed.game_state.spirit_sphere_revision == 1
+      assert committed.game_state.spirit_sphere_timer == nil
+    end
+
+    test "a failed state commit performs no outward cast effects" do
+      state = casting_state(45)
+
+      spheres =
+        Enum.reduce(1..2, SpiritSpheres.new(), fn _, acc ->
+          {next, _entry} = SpiritSpheres.summon(acc, 60_000, 5)
+          next
+        end)
+
+      {:ok, consumed, _entries} = SpiritSpheres.consume(spheres, 1)
+      timer_ref = Process.send_after(self(), :existing_sphere_timer, 60_000)
+      state = put_in(state.game_state.spirit_spheres, spheres)
+      state = put_in(state.game_state.spirit_sphere_timer, timer_ref)
+      game_state = state.game_state
+      committed_game_state = %{game_state | spirit_spheres: consumed}
+
+      expect(Interpreter, :begin_cast, fn ^game_state, 29, 1, :self ->
+        {:instant, committed_game_state}
+      end)
+
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
+      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+
+      expect(UnitRegistry, :update_unit_state, fn :player, 1000, committed ->
+        assert SpiritSpheres.count(committed.spirit_spheres) == 1
+        assert committed.spirit_sphere_revision == 1
+        assert committed.spirit_sphere_timer_generation == 1
+        assert committed.spirit_sphere_timer == nil
+        assert %{generation: 1, expires_at: _expires_at} = committed.spirit_sphere_timer_plan
+        raise "commit failed"
+      end)
+
+      reject(&CharacterPersistence.update_character/3)
+      reject(&StatusSync.send_stat_updates/2)
+      reject(&StatusSync.send_param/3)
+      reject(&Broadcast.to_in_range/5)
+      reject(&Broadcast.to_visible_players/3)
+
+      assert_raise RuntimeError, "commit failed", fn ->
+        SkillHandler.handle_use_skill(state, 29, 1, 1000)
+      end
+
+      assert is_integer(Process.read_timer(timer_ref))
+      assert Process.cancel_timer(timer_ref)
+    end
+
+    test "instant deferred results retain the outcome without committing resources or timers" do
+      state = casting_state(45)
+      game_state = state.game_state
+
+      expect(Interpreter, :begin_cast, fn ^game_state, 29, 1, :self ->
+        {:deferred, game_state, :spirit_action}
+      end)
+
+      reject(&CharacterPersistence.update_character/3)
+      reject(&StatusSync.send_stat_updates/2)
+
+      assert {:noreply, deferred} = SkillHandler.handle_use_skill(state, 29, 1, 1000)
+      assert deferred.game_state == game_state
+
+      assert %{game_state: ^game_state, descriptor: :spirit_action} =
+               deferred.deferred_skill_result
+
+      assert {deferred_result, retained} = SkillHandler.take_deferred_skill_result(deferred)
+      assert deferred_result == deferred.deferred_skill_result
+      refute Map.has_key?(retained, :deferred_skill_result)
+    end
+
+    test "timed deferred results retain the completion outcome without commitment" do
+      state = interrupting_state(45, fixed_offset: 1_000)
+      game_state = state.game_state
+      token = game_state.casting.token
+
+      expect(Interpreter, :complete_cast, fn ^game_state, 29, 1, :self ->
+        {:deferred, game_state, :spirit_action}
+      end)
+
+      reject(&CharacterPersistence.update_character/3)
+      reject(&StatusSync.send_stat_updates/2)
+
+      assert {:noreply, deferred} = SkillHandler.handle_cast_complete(state, token)
+      assert deferred.game_state.stats.current_state.sp == 45
+      assert deferred.game_state.skill_cooldowns == %{}
+      assert deferred.game_state.act_delay_until == 0
+      assert deferred.game_state.action_state == :idle
+      assert deferred.game_state.casting == nil
+      assert %{descriptor: :spirit_action} = deferred.deferred_skill_result
+
+      assert {deferred_result, retained} = SkillHandler.take_deferred_skill_result(deferred)
+      assert deferred_result.game_state.action_state == :idle
+      assert deferred_result.game_state.casting == nil
+      assert retained.game_state.action_state == :idle
+      assert retained.game_state.casting == nil
     end
 
     test "a staged pending_interaction starts a dialog and takes the lock" do
