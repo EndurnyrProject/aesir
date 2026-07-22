@@ -1,8 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
   @moduledoc """
   Verifies the tick manager's post-processing notifications: a mob whose status
-  ticks or expires gets a `{:status_changed, status_id, event}` cast on its
-  MobSession, while the player path keeps its `:recalculate_stats` PubSub
+  ticks or expires gets a `{:casting, {:status_changed, status_id, event}}` cast
+  on its MobSession, while the player path keeps its `:recalculate_stats` PubSub
   broadcast untouched.
   """
 
@@ -42,7 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
   end
 
   describe "mob notifications" do
-    test "an expired mob status casts {:status_changed, status_id, :expired} to its session" do
+    test "an expired mob status casts {:casting, {:status_changed, status_id, :expired}} to its session" do
       test_pid = self()
       stub(UnitRegistry, :get_unit, fn :mob, @mob_id -> {:ok, {MobState, %{}, test_pid}} end)
 
@@ -51,10 +51,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
 
       tick()
 
-      assert_receive {:"$gen_cast", {:status_changed, @status, :expired}}
+      assert_receive {:"$gen_cast", {:casting, {:status_changed, @status, :expired}}}
     end
 
-    test "a due mob status casts {:status_changed, status_id, :tick} to its session" do
+    test "a due mob status casts {:casting, {:status_changed, status_id, :tick}} to its session" do
       test_pid = self()
       stub(UnitRegistry, :get_unit, fn :mob, @mob_id -> {:ok, {MobState, %{}, test_pid}} end)
 
@@ -63,7 +63,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
 
       tick()
 
-      assert_receive {:"$gen_cast", {:status_changed, @status, :tick}}
+      assert_receive {:"$gen_cast", {:casting, {:status_changed, @status, :tick}}}
     end
 
     test "an unregistered mob session is a silent no-op" do
@@ -114,7 +114,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
       tick()
 
       assert StatusStorage.get_unit_statuses(:player, @player_id) == []
-      assert_receive {:"$gen_cast", {:status_changed, @status, :tick}}
+      assert_receive {:"$gen_cast", {:casting, {:status_changed, @status, :tick}}}
     end
   end
 
@@ -128,7 +128,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
       tick()
 
       assert_receive {:stats, :recalculate}
-      refute_received {:"$gen_cast", {:status_changed, _, _}}
+      refute_received {:"$gen_cast", {:casting, {:status_changed, _, _}}}
     end
 
     test "a due player status still broadcasts :recalculate_stats" do

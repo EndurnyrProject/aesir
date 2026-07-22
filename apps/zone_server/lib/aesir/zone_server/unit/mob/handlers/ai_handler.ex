@@ -1,8 +1,8 @@
 defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
   @moduledoc """
-  Handles a mob's AI loop: the periodic `:ai_tick`, sleep/wake suspension of
-  the loop while its map has no players, and AI target assignment. Extracted
-  from MobSession to improve modularity and maintainability.
+  Handles a mob's AI loop: the periodic `{:ai, :tick}`, sleep/wake suspension
+  of the loop while its map has no players, and AI target assignment.
+  Extracted from MobSession to improve modularity and maintainability.
 
   Cross-references `Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler` to gate
   and abort a locked AI tick and to start a cast picked by skill selection;
@@ -20,9 +20,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
   @ai_tick_interval 1000
 
   @doc """
-  Processes a periodic `:ai_tick`: dead and dormant mobs drop it, a casting
-  mob stays locked (aborting first if a silence/stun landed mid-cast), and
-  otherwise runs skill selection/AI and reschedules the next tick.
+  Processes a periodic `{:ai, :tick}`: dead and dormant mobs drop it, a
+  casting mob stays locked (aborting first if a silence/stun landed
+  mid-cast), and otherwise runs skill selection/AI and reschedules the next
+  tick.
   """
   @spec handle_ai_tick(MobState.t()) :: {:noreply, MobState.t()}
   def handle_ai_tick(state) do
@@ -32,13 +33,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
         {:noreply, state}
 
       not state.ai_awake ->
-        # A tick that raced a :sleep; drop it without rescheduling
+        # A tick that raced a {:ai, :sleep}; drop it without rescheduling
         {:noreply, state}
 
       state.casting != nil ->
         # A casting mob is locked: no movement, no melee, no re-selection.
-        # Completion is driven by the separate :cast_complete timer, unless a
-        # silence/stun landed mid-cast, in which case the cast is aborted here.
+        # Completion is driven by the separate {:casting, :complete} timer,
+        # unless a silence/stun landed mid-cast, in which case the cast is
+        # aborted here.
         if CastingHandler.cast_interrupted?(state) do
           {:noreply, schedule_ai_tick(CastingHandler.abort_cast(state))}
         else
@@ -52,9 +54,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
   end
 
   @doc """
-  Suspends the AI loop for a `:sleep` cast: sheds in-flight movement/combat
-  intent and hibernates so a dormant map costs no CPU. A no-op if already
-  asleep.
+  Suspends the AI loop for an `{:ai, :sleep}` cast: sheds in-flight
+  movement/combat intent and hibernates so a dormant map costs no CPU. A
+  no-op if already asleep.
   """
   @spec handle_sleep(MobState.t()) ::
           {:noreply, MobState.t()} | {:noreply, MobState.t(), :hibernate}
@@ -67,7 +69,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
     # dormant; aggro toward players who left the map must not survive the nap.
     # Hibernating compacts the heap, so a dormant map costs no CPU and little
     # memory until a player shows up again.
-    # ponytail: a cast in flight is not cancelled here; its :cast_complete
+    # ponytail: a cast in flight is not cancelled here; its {:casting, :complete}
     # self-heals via the target-invalidation abort. Proper cast interruption
     # lands with Phase 2b (mob-side statuses).
     updated_state =
@@ -81,7 +83,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
   end
 
   @doc """
-  Resumes the AI loop for a `:wake` cast. A no-op if already awake.
+  Resumes the AI loop for an `{:ai, :wake}` cast. A no-op if already awake.
   """
   @spec handle_wake(MobState.t()) :: {:noreply, MobState.t()}
   def handle_wake(%{ai_awake: true} = state), do: {:noreply, state}
@@ -91,8 +93,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
   end
 
   @doc """
-  Sets the mob's AI target for a `{:set_target, target_id}` cast, entering
-  combat if a target is given or returning to idle if cleared.
+  Sets the mob's AI target for an `{:ai, {:set_target, target_id}}` cast,
+  entering combat if a target is given or returning to idle if cleared.
   """
   @spec handle_set_target(MobState.t(), integer() | nil) :: {:noreply, MobState.t()}
   def handle_set_target(state, target_id) do
@@ -105,12 +107,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
   end
 
   @doc """
-  Schedules the next `:ai_tick` after `interval` milliseconds (defaults to the
-  tick interval), stamping the new timer ref on the state.
+  Schedules the next `{:ai, :tick}` after `interval` milliseconds (defaults to
+  the tick interval), stamping the new timer ref on the state.
   """
   @spec schedule_ai_tick(MobState.t(), non_neg_integer()) :: MobState.t()
   def schedule_ai_tick(state, interval \\ @ai_tick_interval) do
-    %{state | ai_timer_ref: Process.send_after(self(), :ai_tick, interval)}
+    %{state | ai_timer_ref: Process.send_after(self(), {:ai, :tick}, interval)}
   end
 
   @doc """
@@ -127,8 +129,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
   end
 
   # Skill selection runs before the melee/movement state machine: a tick that
-  # picks a row either starts a cast (locking the mob until :cast_complete) or
-  # fires it instantly; only a nil selection falls through to the normal AI.
+  # picks a row either starts a cast (locking the mob until {:casting, :complete})
+  # or fires it instantly; only a nil selection falls through to the normal AI.
   # The very first tick after spawn selects with the :spawn event so `onspawn`
   # rows can fire. `now` is System.system_time(:millisecond), the same clock
   # the melee path uses for last_attack_time, so cooldown expiry lines up.

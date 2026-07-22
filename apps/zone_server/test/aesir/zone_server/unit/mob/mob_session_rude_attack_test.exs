@@ -28,7 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionRudeAttackTest do
 
     state = build_mob_state()
 
-    {:noreply, updated} = MobSession.handle_cast({:apply_damage, 100, 42}, state)
+    {:noreply, updated} = MobSession.handle_cast({:combat, {:apply_damage, 100, 42}}, state)
 
     assert updated.rude_attack_count == 0
     assert updated.rude_attacked? == false
@@ -39,7 +39,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionRudeAttackTest do
 
     state = build_mob_state()
 
-    {:noreply, updated} = MobSession.handle_cast({:apply_damage, 100, 42}, state)
+    {:noreply, updated} = MobSession.handle_cast({:combat, {:apply_damage, 100, 42}}, state)
 
     assert updated.rude_attack_count == 1
     assert updated.rude_attacked? == true
@@ -53,7 +53,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionRudeAttackTest do
 
     state = build_mob_state()
 
-    {:noreply, updated} = MobSession.handle_cast({:apply_damage, 100, 42}, state)
+    {:noreply, updated} = MobSession.handle_cast({:combat, {:apply_damage, 100, 42}}, state)
 
     assert updated.rude_attack_count == 0
     assert updated.rude_attacked? == false

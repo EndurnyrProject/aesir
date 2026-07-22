@@ -1,7 +1,7 @@
 defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSleepTest do
   @moduledoc """
   Verifies the dormant-mob lifecycle: spawning asleep on an empty map, the
-  :sleep/:wake casts, and that a sleeping mob neither processes nor reschedules
+  {:ai, :sleep}/{:ai, :wake} casts, and that a sleeping mob neither processes nor reschedules
   AI ticks.
   """
 
@@ -53,7 +53,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSleepTest do
   end
 
   describe "sleep/wake casts" do
-    test ":sleep cancels the AI timer and sheds movement and target" do
+    test "{:ai, :sleep} cancels the AI timer and sheds movement and target" do
       {:ok, state} = MobSession.init(%{state: build_mob_state(4), awake: true})
 
       state = %{
@@ -64,7 +64,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSleepTest do
           ai_state: :chase
       }
 
-      assert {:noreply, slept, :hibernate} = MobSession.handle_cast(:sleep, state)
+      assert {:noreply, slept, :hibernate} = MobSession.handle_cast({:ai, :sleep}, state)
 
       refute slept.ai_awake
       assert slept.ai_timer_ref == nil
@@ -74,33 +74,33 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSleepTest do
       assert slept.ai_state == :idle
     end
 
-    test ":sleep on an already-sleeping mob is a no-op" do
+    test "{:ai, :sleep} on an already-sleeping mob is a no-op" do
       {:ok, state, :hibernate} = MobSession.init(%{state: build_mob_state(5), awake: false})
 
-      assert {:noreply, ^state} = MobSession.handle_cast(:sleep, state)
+      assert {:noreply, ^state} = MobSession.handle_cast({:ai, :sleep}, state)
     end
 
-    test ":wake reschedules the AI tick" do
+    test "{:ai, :wake} reschedules the AI tick" do
       {:ok, state, :hibernate} = MobSession.init(%{state: build_mob_state(6), awake: false})
 
-      assert {:noreply, woke} = MobSession.handle_cast(:wake, state)
+      assert {:noreply, woke} = MobSession.handle_cast({:ai, :wake}, state)
 
       assert woke.ai_awake
       assert is_reference(woke.ai_timer_ref)
     end
 
-    test ":wake on an already-awake mob does not stack a second timer" do
+    test "{:ai, :wake} on an already-awake mob does not stack a second timer" do
       {:ok, state} = MobSession.init(%{state: build_mob_state(7), awake: true})
 
-      assert {:noreply, ^state} = MobSession.handle_cast(:wake, state)
+      assert {:noreply, ^state} = MobSession.handle_cast({:ai, :wake}, state)
     end
   end
 
-  describe "ai_tick while asleep" do
-    test "a tick that raced a :sleep is dropped without rescheduling" do
+  describe "{:ai, :tick} while asleep" do
+    test "a tick that raced a {:ai, :sleep} is dropped without rescheduling" do
       {:ok, state, :hibernate} = MobSession.init(%{state: build_mob_state(8), awake: false})
 
-      assert {:noreply, ^state} = MobSession.handle_info(:ai_tick, state)
+      assert {:noreply, ^state} = MobSession.handle_info({:ai, :tick}, state)
       assert state.ai_timer_ref == nil
     end
   end

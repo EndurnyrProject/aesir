@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionHpTest do
 
     state = build_mob_state(hp: 500, max_hp: 1000)
 
-    {:noreply, _state} = MobSession.handle_cast({:heal, 200}, state)
+    {:noreply, _state} = MobSession.handle_cast({:unit, {:heal, 200}}, state)
 
     assert_received {:hp_broadcast, %UnitHp{id: 1, hp: 700, max_hp: 1000}}
   end
@@ -37,7 +37,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionHpTest do
 
     state = %{build_mob_state(hp: 0, max_hp: 1000) | is_dead: true}
 
-    assert {:noreply, ^state} = MobSession.handle_cast({:apply_damage, 100, 42}, state)
+    assert {:noreply, ^state} = MobSession.handle_cast({:combat, {:apply_damage, 100, 42}}, state)
   end
 
   defp build_mob_state(opts) do

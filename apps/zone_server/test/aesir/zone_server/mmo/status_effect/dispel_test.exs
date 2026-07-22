@@ -120,7 +120,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DispelTest do
 
       Dispel.dispel({:mob, unit_id})
 
-      assert_received {:"$gen_cast", {:set_target, nil}}
+      assert_received {:"$gen_cast", {:ai, {:set_target, nil}}}
       refute StatusStorage.has_status?(:mob, unit_id, :sc_blessing)
     end
 

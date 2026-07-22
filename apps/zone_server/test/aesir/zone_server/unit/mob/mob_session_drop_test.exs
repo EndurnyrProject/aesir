@@ -35,7 +35,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
     drops = [%MobDrop{item: "Red_Potion", rate: 10_000}]
     state = build_mob_state(hp: 1, max_hp: 1000, drops: drops)
 
-    {:noreply, dead_state} = MobSession.handle_cast({:apply_damage, 100, 42}, state)
+    {:noreply, dead_state} = MobSession.handle_cast({:combat, {:apply_damage, 100, 42}}, state)
 
     assert_receive {:loot, {:mob_killed, payload}}
     assert payload.drops == drops
@@ -69,7 +69,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
     state =
       build_mob_state(hp: 1, max_hp: 1000, drops: [%MobDrop{item: "Red_Potion", rate: 10_000}])
 
-    {:noreply, _state} = MobSession.handle_cast({:apply_damage, 100, nil}, state)
+    {:noreply, _state} = MobSession.handle_cast({:combat, {:apply_damage, 100, nil}}, state)
 
     refute_receive {:loot, {:mob_killed, _payload}}
   end

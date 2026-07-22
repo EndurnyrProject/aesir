@@ -16,8 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.Dispel do
   exempts this cast from the PvP gate.
 
   `apply/4` runs inside the caster's `MobSession` process (from
-  `:cast_complete`); the removal is a cross-process-safe interpreter operation
-  on the target.
+  `{:casting, :complete}`); the removal is a cross-process-safe interpreter
+  operation on the target.
   """
 
   @behaviour Aesir.ZoneServer.Mmo.MobSkill.Archetype

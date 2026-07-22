@@ -1,7 +1,7 @@
 defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
   @moduledoc """
   Verifies the mob cast phase: skill selection runs before melee on the AI
-  tick, a cast_time > 0 row locks the mob in `casting` until `:cast_complete`,
+  tick, a cast_time > 0 row locks the mob in `casting` until `{:casting, :complete}`,
   a cast_time == 0 row executes instantly, and the per-skill delay is written
   to `skill_cooldowns` whether or not the effect landed.
 
@@ -99,7 +99,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
     struct(state, Map.new(overrides))
   end
 
-  describe ":ai_tick skill selection" do
+  describe "{:ai, :tick} skill selection" do
     test "a selectable cast_time > 0 row starts a cast instead of melee" do
       row = row()
       stub(MobSkillDb, :rows_for, fn 1001 -> [row] end)
@@ -112,7 +112,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
         :ok
       end)
 
-      {:noreply, updated} = MobSession.handle_info(:ai_tick, build_mob_state())
+      {:noreply, updated} = MobSession.handle_info({:ai, :tick}, build_mob_state())
 
       assert %{row: ^row, complete_at: complete_at} = updated.casting
       assert is_integer(complete_at)
@@ -120,7 +120,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       assert updated.ai_timer_ref
 
       assert_received {:packet, %SkillCasting{src_id: 1, skill_id: 186, cast_time: 50}}
-      assert_receive :cast_complete, 500
+      assert_receive {:casting, :complete}, 500
     end
 
     test "a cast_time == 0 row executes immediately and sets the cooldown" do
@@ -138,11 +138,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       end)
 
       before = System.system_time(:millisecond)
-      {:noreply, updated} = MobSession.handle_info(:ai_tick, build_mob_state())
+      {:noreply, updated} = MobSession.handle_info({:ai, :tick}, build_mob_state())
 
       assert updated.casting == nil
       assert updated.skill_cooldowns["NPC_FIREATTACK"] >= before + 5_000
-      refute_received :cast_complete
+      refute_received {:casting, :complete}
     end
 
     test "a nil selection falls through to the normal melee AI" do
@@ -165,7 +165,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
         :ok
       end)
 
-      {:noreply, updated} = MobSession.handle_info(:ai_tick, build_mob_state())
+      {:noreply, updated} = MobSession.handle_info({:ai, :tick}, build_mob_state())
 
       assert updated.casting == nil
       assert_received :melee
@@ -177,7 +177,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       reject(&Combat.execute_mob_attack/2)
       reject(&Combat.execute_magic_damage/4)
 
-      {:noreply, updated} = MobSession.handle_info(:ai_tick, state)
+      {:noreply, updated} = MobSession.handle_info({:ai, :tick}, state)
 
       assert updated.casting == state.casting
       assert updated.ai_state == state.ai_state
@@ -185,7 +185,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
     end
   end
 
-  describe ":cast_complete" do
+  describe "{:casting, :complete}" do
     test "executes the skill, writes the cooldown, clears casting and reschedules" do
       row = row()
       state = build_mob_state() |> MobState.set_casting(%{row: row, complete_at: 0})
@@ -201,7 +201,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       end)
 
       before = System.system_time(:millisecond)
-      {:noreply, updated} = MobSession.handle_info(:cast_complete, state)
+      {:noreply, updated} = MobSession.handle_info({:casting, :complete}, state)
 
       assert updated.casting == nil
       assert updated.skill_cooldowns["NPC_FIREATTACK"] >= before + 5_000
@@ -217,7 +217,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       reject(&Combat.execute_magic_damage/4)
 
       before = System.system_time(:millisecond)
-      {:noreply, updated} = MobSession.handle_info(:cast_complete, state)
+      {:noreply, updated} = MobSession.handle_info({:casting, :complete}, state)
 
       assert updated.casting == nil
       assert updated.skill_cooldowns["NPC_FIREATTACK"] >= before + 5_000
@@ -230,13 +230,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
 
       reject(&Combat.execute_magic_damage/4)
 
-      {:noreply, updated} = MobSession.handle_info(:cast_complete, state)
+      {:noreply, updated} = MobSession.handle_info({:casting, :complete}, state)
 
       assert updated.skill_cooldowns == %{}
     end
 
-    test "a silenced mob aborts at cast_complete without executing but still sets the delay" do
-      ref = Process.send_after(self(), :cast_complete, 10_000)
+    test "a silenced mob aborts at {:casting, :complete} without executing but still sets the delay" do
+      ref = Process.send_after(self(), {:casting, :complete}, 10_000)
 
       state =
         build_mob_state()
@@ -250,7 +250,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       reject(&Combat.execute_magic_damage/4)
 
       before = System.system_time(:millisecond)
-      {:noreply, updated} = MobSession.handle_info(:cast_complete, state)
+      {:noreply, updated} = MobSession.handle_info({:casting, :complete}, state)
 
       assert updated.casting == nil
       assert updated.skill_cooldowns["NPC_FIREATTACK"] >= before + 5_000
@@ -266,14 +266,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
         build_mob_state()
         |> MobState.set_casting(%{row: row(), complete_at: 0})
 
-      {:reply, reply, updated} = MobSession.handle_call(:interrupt_cast, self(), state)
+      {:reply, reply, updated} = MobSession.handle_call({:casting, :interrupt}, self(), state)
 
       assert reply == {:ok, %{skill: "NPC_FIREATTACK", skill_id: 186, level: 3}}
       assert updated.casting == nil
     end
 
     test "broadcasts a cast cancel, cancels the timer and still writes the delay cooldown" do
-      ref = Process.send_after(self(), :cast_complete, 10_000)
+      ref = Process.send_after(self(), {:casting, :complete}, 10_000)
 
       state =
         build_mob_state()
@@ -287,7 +287,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       end)
 
       before = System.system_time(:millisecond)
-      {:reply, {:ok, _}, updated} = MobSession.handle_call(:interrupt_cast, self(), state)
+      {:reply, {:ok, _}, updated} = MobSession.handle_call({:casting, :interrupt}, self(), state)
 
       assert updated.casting == nil
       assert updated.skill_cooldowns["NPC_FIREATTACK"] >= before + 5_000
@@ -298,7 +298,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
     test "an idle mob reports :not_casting" do
       state = build_mob_state()
 
-      {:reply, reply, updated} = MobSession.handle_call(:interrupt_cast, self(), state)
+      {:reply, reply, updated} = MobSession.handle_call({:casting, :interrupt}, self(), state)
 
       assert reply == {:error, :not_casting}
       assert updated == state
@@ -311,7 +311,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
         build_mob_state(%{is_dead: true})
         |> MobState.set_casting(%{row: row(), complete_at: 0})
 
-      {:reply, reply, updated} = MobSession.handle_call(:interrupt_cast, self(), state)
+      {:reply, reply, updated} = MobSession.handle_call({:casting, :interrupt}, self(), state)
 
       assert reply == {:error, :not_casting}
       assert updated.skill_cooldowns == %{}
@@ -322,7 +322,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
     test "drains the requested SP" do
       state = build_mob_state(%{sp: 50, max_sp: 100})
 
-      {:noreply, updated} = MobSession.handle_cast({:zap_sp, 20}, state)
+      {:noreply, updated} = MobSession.handle_cast({:unit, {:zap_sp, 20}}, state)
 
       assert updated.sp == 30
     end
@@ -330,7 +330,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
     test "clamps the drain at 0 rather than going negative" do
       state = build_mob_state(%{sp: 5, max_sp: 100})
 
-      {:noreply, updated} = MobSession.handle_cast({:zap_sp, 20}, state)
+      {:noreply, updated} = MobSession.handle_cast({:unit, {:zap_sp, 20}}, state)
 
       assert updated.sp == 0
     end
@@ -340,7 +340,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       # in between; a corpse must not be billed.
       state = build_mob_state(%{sp: 50, max_sp: 100, is_dead: true})
 
-      {:noreply, updated} = MobSession.handle_cast({:zap_sp, 20}, state)
+      {:noreply, updated} = MobSession.handle_cast({:unit, {:zap_sp, 20}}, state)
 
       assert updated.sp == 50
     end
@@ -348,7 +348,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
     test "a zero drain is a no-op" do
       state = build_mob_state(%{sp: 50, max_sp: 100})
 
-      {:noreply, updated} = MobSession.handle_cast({:zap_sp, 0}, state)
+      {:noreply, updated} = MobSession.handle_cast({:unit, {:zap_sp, 0}}, state)
 
       assert updated.sp == 50
     end
@@ -373,15 +373,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       arm_cast(pid, %{row: row(), complete_at: 0, timer_ref: nil})
 
       # Enqueued ahead of the call, exactly as the fired timer would be: the mob
-      # drains :cast_complete first, so the call must find no cast rather than
+      # drains {:casting, :complete} first, so the call must find no cast rather than
       # bill one that already went off.
-      send(pid, :cast_complete)
+      send(pid, {:casting, :complete})
 
       assert MobSession.interrupt_cast(pid) == {:error, :not_casting}
     end
 
     test "an interrupt that lands first wins and the completion never fires", %{pid: pid} do
-      timer_ref = Process.send_after(pid, :cast_complete, 30_000)
+      timer_ref = Process.send_after(pid, {:casting, :complete}, 30_000)
       arm_cast(pid, %{row: row(), complete_at: 0, timer_ref: timer_ref})
 
       assert {:ok, %{skill: "NPC_FIREATTACK", skill_id: 186, level: 3}} =
@@ -404,7 +404,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
         :ok
       end)
 
-      {:noreply, updated} = MobSession.handle_cast({:status_changed, :sc_silence, :apply}, state)
+      {:noreply, updated} =
+        MobSession.handle_cast({:casting, {:status_changed, :sc_silence, :apply}}, state)
 
       assert updated.casting == nil
       assert_received {:packet, %CastCancel{gid: 1}}
@@ -419,7 +420,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
         :ok
       end)
 
-      {:noreply, updated} = MobSession.handle_cast({:status_changed, :sc_stun, :apply}, state)
+      {:noreply, updated} =
+        MobSession.handle_cast({:casting, {:status_changed, :sc_stun, :apply}}, state)
 
       assert updated.casting == nil
       assert_received {:packet, %CastCancel{gid: 1}}
@@ -429,30 +431,30 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       row = row(%{cast_time: 100})
       stub(MobSkillDb, :rows_for, fn 1001 -> [row] end)
 
-      {:noreply, casting_state} = MobSession.handle_info(:ai_tick, build_mob_state())
+      {:noreply, casting_state} = MobSession.handle_info({:ai, :tick}, build_mob_state())
       assert %{row: ^row, timer_ref: ref} = casting_state.casting
       assert is_reference(ref)
 
       before = System.system_time(:millisecond)
 
       {:noreply, updated} =
-        MobSession.handle_cast({:status_changed, :sc_silence, :apply}, casting_state)
+        MobSession.handle_cast({:casting, {:status_changed, :sc_silence, :apply}}, casting_state)
 
       assert updated.casting == nil
       assert updated.skill_cooldowns["NPC_FIREATTACK"] >= before + 5_000
-      # The cancelled timer must never deliver :cast_complete (window > cast_time).
-      refute_receive :cast_complete, 200
+      # The cancelled timer must never deliver {:casting, :complete} (window > cast_time).
+      refute_receive {:casting, :complete}, 200
     end
 
     test "a status_changed for an unrelated status leaves the cast running" do
-      ref = Process.send_after(self(), :cast_complete, 10_000)
+      ref = Process.send_after(self(), {:casting, :complete}, 10_000)
 
       state =
         build_mob_state()
         |> MobState.set_casting(%{row: row(), complete_at: 0, timer_ref: ref})
 
       {:noreply, updated} =
-        MobSession.handle_cast({:status_changed, :sc_poison, :tick}, state)
+        MobSession.handle_cast({:casting, {:status_changed, :sc_poison, :tick}}, state)
 
       assert updated.casting == state.casting
       Process.cancel_timer(ref)
@@ -462,14 +464,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       state = build_mob_state()
 
       {:noreply, updated} =
-        MobSession.handle_cast({:status_changed, :sc_stun, :apply}, state)
+        MobSession.handle_cast({:casting, {:status_changed, :sc_stun, :apply}}, state)
 
       assert updated.casting == nil
     end
 
     @tag :skip
-    test "an ai_tick on a stunned mid-cast mob aborts the cast and cancels the timer" do
-      ref = Process.send_after(self(), :cast_complete, 100)
+    test "an {:ai, :tick} on a stunned mid-cast mob aborts the cast and cancels the timer" do
+      ref = Process.send_after(self(), {:casting, :complete}, 100)
 
       state =
         build_mob_state()
@@ -483,12 +485,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       reject(&Combat.execute_magic_damage/4)
 
       before = System.system_time(:millisecond)
-      {:noreply, updated} = MobSession.handle_info(:ai_tick, state)
+      {:noreply, updated} = MobSession.handle_info({:ai, :tick}, state)
 
       assert updated.casting == nil
       assert updated.skill_cooldowns["NPC_FIREATTACK"] >= before + 5_000
       assert updated.ai_timer_ref
-      refute_receive :cast_complete, 200
+      refute_receive {:casting, :complete}, 200
     end
 
     test "a silenced mob does not begin a new cast on its ai tick" do
@@ -517,7 +519,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
         :ok
       end)
 
-      {:noreply, updated} = MobSession.handle_info(:ai_tick, build_mob_state())
+      {:noreply, updated} = MobSession.handle_info({:ai, :tick}, build_mob_state())
 
       assert updated.casting == nil
       assert_received :melee

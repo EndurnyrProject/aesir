@@ -37,18 +37,19 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   """
   @spec apply_damage(pid(), integer(), integer() | nil) :: :ok
   def apply_damage(pid, damage, attacker_id \\ nil) do
-    GenServer.cast(pid, {:apply_damage, damage, attacker_id})
+    GenServer.cast(pid, {:combat, {:apply_damage, damage, attacker_id}})
   end
 
   @spec apply_walk_delay(pid(), non_neg_integer()) :: :ok
-  def apply_walk_delay(pid, duration), do: GenServer.cast(pid, {:apply_walk_delay, duration})
+  def apply_walk_delay(pid, duration),
+    do: GenServer.cast(pid, {:movement, {:apply_walk_delay, duration}})
 
   @doc """
   Heals the mob.
   """
   @spec heal(pid(), integer()) :: :ok
   def heal(pid, amount) do
-    GenServer.cast(pid, {:heal, amount})
+    GenServer.cast(pid, {:unit, {:heal, amount}})
   end
 
   @doc """
@@ -60,7 +61,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   """
   @spec zap_sp(pid(), non_neg_integer()) :: :ok
   def zap_sp(pid, amount) do
-    GenServer.cast(pid, {:zap_sp, amount})
+    GenServer.cast(pid, {:unit, {:zap_sp, amount}})
   end
 
   @doc """
@@ -71,7 +72,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   """
   @spec notify_status_changed(pid(), atom(), atom()) :: :ok
   def notify_status_changed(pid, status_id, event) do
-    GenServer.cast(pid, {:status_changed, status_id, event})
+    GenServer.cast(pid, {:casting, {:status_changed, status_id, event}})
   end
 
   @doc """
@@ -87,7 +88,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   """
   @spec move_to(pid(), integer(), integer()) :: :ok
   def move_to(pid, x, y) do
-    GenServer.cast(pid, {:move_to, x, y})
+    GenServer.cast(pid, {:movement, {:move_to, x, y}})
   end
 
   @doc """
@@ -95,7 +96,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   """
   @spec set_target(pid(), integer() | nil) :: :ok
   def set_target(pid, target_id) do
-    GenServer.cast(pid, {:set_target, target_id})
+    GenServer.cast(pid, {:ai, {:set_target, target_id}})
   end
 
   @doc """
@@ -103,7 +104,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   """
   @spec mark_stolen(pid()) :: :ok
   def mark_stolen(pid) do
-    GenServer.cast(pid, {:mark_stolen})
+    GenServer.cast(pid, {:steal, :mark})
   end
 
   @doc """
@@ -119,7 +120,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   @spec attempt_steal(pid(), non_neg_integer(), pos_integer()) ::
           {:ok, non_neg_integer()} | {:error, atom()}
   def attempt_steal(pid, caster_dex, skill_level) do
-    GenServer.call(pid, {:attempt_steal, caster_dex, skill_level})
+    GenServer.call(pid, {:steal, {:attempt, caster_dex, skill_level}})
   end
 
   @doc """
@@ -131,17 +132,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   the caller can bill the cast synchronously (SA_SPELLBREAKER's SP math).
 
   Running in the mob's own process serializes it against that mob's pending
-  `:cast_complete`: a cast that completed first has already cleared `casting`,
-  so this reports `{:error, :not_casting}` rather than billing a cast that
-  already fired. A dead mob is likewise never casting as far as callers are
-  concerned (its process outlives death briefly, and `handle_death/2` leaves the
-  descriptor intact).
+  `{:casting, :complete}`: a cast that completed first has already cleared
+  `casting`, so this reports `{:error, :not_casting}` rather than billing a
+  cast that already fired. A dead mob is likewise never casting as far as
+  callers are concerned (its process outlives death briefly, and
+  `handle_death/2` leaves the descriptor intact).
   """
   @spec interrupt_cast(pid()) ::
           {:ok, %{skill: String.t(), skill_id: integer(), level: pos_integer()}}
           | {:error, :not_casting}
   def interrupt_cast(pid) do
-    GenServer.call(pid, :interrupt_cast)
+    GenServer.call(pid, {:casting, :interrupt})
   end
 
   @doc """
@@ -152,7 +153,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   """
   @spec sleep(pid()) :: :ok
   def sleep(pid) do
-    GenServer.cast(pid, :sleep)
+    GenServer.cast(pid, {:ai, :sleep})
   end
 
   @doc """
@@ -160,17 +161,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   """
   @spec wake(pid()) :: :ok
   def wake(pid) do
-    GenServer.cast(pid, :wake)
+    GenServer.cast(pid, {:ai, :wake})
   end
 
   @doc """
   Instantly relocates the mob to a random walkable cell on its map and drops
-  its current target (`AL_TELEPORT` flee). Reuses the `:knocked_back` instant
-  position-set path; a no-op if no walkable cell is found.
+  its current target (`AL_TELEPORT` flee). Reuses the `{:movement,
+  {:knocked_back, x, y}}` instant position-set path; a no-op if no walkable
+  cell is found.
   """
   @spec teleport(pid()) :: :ok
   def teleport(pid) do
-    GenServer.cast(pid, {:mob_teleport})
+    GenServer.cast(pid, {:movement, :teleport})
   end
 
   @doc """
@@ -215,85 +217,65 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     end
   end
 
+  # get_state stays bare: a ubiquitous utility call, not a domain message.
   @impl GenServer
   def handle_call(:get_state, _from, state) do
     {:reply, state, state}
   end
 
+  # Casting: the forced-interrupt call (SA_SPELLBREAKER).
   @impl GenServer
-  def handle_call(:interrupt_cast, _from, state) do
+  def handle_call({:casting, :interrupt}, _from, state) do
     CastingHandler.handle_interrupt_cast(state)
   end
 
+  # Steal: the TF_STEAL roll, serialized inside this mob's own process.
   @impl GenServer
-  def handle_call({:attempt_steal, caster_dex, skill_level}, _from, state) do
+  def handle_call({:steal, {:attempt, caster_dex, skill_level}}, _from, state) do
     case StealOps.attempt_steal(state, caster_dex, skill_level) do
       {:ok, item_id, new_state} -> {:reply, {:ok, item_id}, new_state}
       {:error, reason} -> {:reply, {:error, reason}, state}
     end
   end
 
+  # AI: sleep/wake suspension of the AI loop and target (re)assignment.
   @impl GenServer
-  def handle_cast({:apply_damage, damage, attacker_id}, state) do
-    CombatHandler.handle_apply_damage(damage, attacker_id, state)
+  def handle_cast({:ai, :sleep}, state) do
+    AiHandler.handle_sleep(state)
   end
 
-  def handle_cast({:apply_walk_delay, duration}, state) do
+  def handle_cast({:ai, :wake}, state) do
+    AiHandler.handle_wake(state)
+  end
+
+  def handle_cast({:ai, {:set_target, target_id}}, state) do
+    AiHandler.handle_set_target(state, target_id)
+  end
+
+  # Casting: a status tick/expiry that may interrupt an in-flight cast.
+  @impl GenServer
+  def handle_cast({:casting, {:status_changed, status_id, event}}, state) do
+    CastingHandler.handle_status_changed(status_id, event, state)
+  end
+
+  # Movement: pathing kickoff, the instant teleport reposition, the walk-delay
+  # slow, and the knockback landing - the latter three update movement state
+  # directly rather than routing through MovementHandler's request/tick path.
+  @impl GenServer
+  def handle_cast({:movement, {:move_to, x, y}}, state) do
+    MovementHandler.handle_move_to(state, x, y)
+  end
+
+  def handle_cast({:movement, :teleport}, state) do
+    MovementHandler.handle_teleport(state)
+  end
+
+  def handle_cast({:movement, {:apply_walk_delay, duration}}, state) do
     now = System.monotonic_time(:millisecond)
     {:noreply, state |> MobState.apply_walk_delay(duration, now) |> MobState.stop_movement()}
   end
 
-  def handle_cast({:zap_sp, _amount}, %{is_dead: true} = state), do: {:noreply, state}
-
-  def handle_cast({:zap_sp, amount}, state) when amount > 0 do
-    {:noreply, %{state | sp: max(0, state.sp - amount)}}
-  end
-
-  def handle_cast({:zap_sp, _amount}, state), do: {:noreply, state}
-
-  @impl GenServer
-  def handle_cast({:heal, amount}, state) do
-    updated_state = MobState.heal(state, amount)
-
-    # Send HP update packet to nearby players
-    SpawnView.notify_hp_update(updated_state)
-
-    {:noreply, updated_state}
-  end
-
-  @impl GenServer
-  def handle_cast({:move_to, x, y}, state) do
-    MovementHandler.handle_move_to(state, x, y)
-  end
-
-  @impl GenServer
-  def handle_cast({:set_target, target_id}, state) do
-    AiHandler.handle_set_target(state, target_id)
-  end
-
-  @impl GenServer
-  def handle_cast({:mark_stolen}, state) do
-    updated_state = MobState.mark_stolen(state)
-    {:noreply, updated_state}
-  end
-
-  @impl GenServer
-  def handle_cast({:status_changed, status_id, event}, state) do
-    CastingHandler.handle_status_changed(status_id, event, state)
-  end
-
-  @impl GenServer
-  def handle_cast(:sleep, state) do
-    AiHandler.handle_sleep(state)
-  end
-
-  @impl GenServer
-  def handle_cast(:wake, state) do
-    AiHandler.handle_wake(state)
-  end
-
-  @impl GenServer
-  def handle_cast({:knocked_back, x, y}, state) do
+  def handle_cast({:movement, {:knocked_back, x, y}}, state) do
     updated_state =
       state
       |> MobState.update_position(x, y)
@@ -304,9 +286,36 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     {:noreply, updated_state}
   end
 
+  # Combat: damage application (death handling lives in CombatHandler).
   @impl GenServer
-  def handle_cast({:mob_teleport}, state) do
-    MovementHandler.handle_teleport(state)
+  def handle_cast({:combat, {:apply_damage, damage, attacker_id}}, state) do
+    CombatHandler.handle_apply_damage(damage, attacker_id, state)
+  end
+
+  # Unit: heal and SP drain.
+  @impl GenServer
+  def handle_cast({:unit, {:heal, amount}}, state) do
+    updated_state = MobState.heal(state, amount)
+
+    # Send HP update packet to nearby players
+    SpawnView.notify_hp_update(updated_state)
+
+    {:noreply, updated_state}
+  end
+
+  def handle_cast({:unit, {:zap_sp, _amount}}, %{is_dead: true} = state), do: {:noreply, state}
+
+  def handle_cast({:unit, {:zap_sp, amount}}, state) when amount > 0 do
+    {:noreply, %{state | sp: max(0, state.sp - amount)}}
+  end
+
+  def handle_cast({:unit, {:zap_sp, _amount}}, state), do: {:noreply, state}
+
+  # Steal: mark this mob as already stolen from (TF_STEAL success path).
+  @impl GenServer
+  def handle_cast({:steal, :mark}, state) do
+    updated_state = MobState.mark_stolen(state)
+    {:noreply, updated_state}
   end
 
   # Unknown casts must not crash a live mob session.
@@ -315,21 +324,25 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     {:noreply, state}
   end
 
+  # AI: the self-armed periodic tick.
   @impl GenServer
-  def handle_info(:ai_tick, state) do
+  def handle_info({:ai, :tick}, state) do
     AiHandler.handle_ai_tick(state)
   end
 
+  # Casting: the self-armed cast-timer resolution.
   @impl GenServer
-  def handle_info(:cast_complete, state) do
+  def handle_info({:casting, :complete}, state) do
     CastingHandler.handle_cast_complete(state)
   end
 
+  # Movement: the self-armed per-step walk tick.
   @impl GenServer
-  def handle_info(:movement_tick, state) do
+  def handle_info({:movement, :tick}, state) do
     MovementHandler.handle_movement_tick(state)
   end
 
+  # :terminate stays bare: a singleton lifecycle atom (post-death cleanup timer).
   @impl GenServer
   def handle_info(:terminate, state) do
     {:stop, :normal, state}

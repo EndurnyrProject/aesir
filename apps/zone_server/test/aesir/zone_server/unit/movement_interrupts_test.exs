@@ -167,7 +167,7 @@ defmodule Aesir.ZoneServer.Unit.MovementInterruptsTest do
 
   defp move_collector_loop(test_pid) do
     receive do
-      {:"$gen_cast", {:move_to, x, y}} ->
+      {:"$gen_cast", {:movement, {:move_to, x, y}}} ->
         send(test_pid, {:move_to, x, y})
         move_collector_loop(test_pid)
 

@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Unit.Mob.MobSessionStatusTest do
   @moduledoc """
-  Covers the `{:status_changed, status_id, event}` session hook fired by the
+  Covers the `{:casting, {:status_changed, status_id, event}}` session hook fired by the
   StatusTickManager. Today combat stats are live-folded on read and the display
   delta is broadcast by the interpreter, so the handler is a no-op that keeps
   the mob's state intact; it is the extension point Task 5 (cast interruption)
@@ -51,19 +51,25 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionStatusTest do
     MobState.new(1, mob_data, spawn_ref, "prontera", 100, 100)
   end
 
-  describe "{:status_changed, status_id, event}" do
+  describe "{:casting, {:status_changed, status_id, event}}" do
     test "a status tick leaves the mob state unchanged" do
       state = build_mob_state()
 
       assert {:noreply, ^state} =
-               MobSession.handle_cast({:status_changed, :sc_increase_agi, :tick}, state)
+               MobSession.handle_cast(
+                 {:casting, {:status_changed, :sc_increase_agi, :tick}},
+                 state
+               )
     end
 
     test "a status expiry leaves the mob state unchanged" do
       state = build_mob_state()
 
       assert {:noreply, ^state} =
-               MobSession.handle_cast({:status_changed, :sc_increase_agi, :expired}, state)
+               MobSession.handle_cast(
+                 {:casting, {:status_changed, :sc_increase_agi, :expired}},
+                 state
+               )
     end
   end
 end

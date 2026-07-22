@@ -6,10 +6,11 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.Teleport do
   rAthena's teleport is flee behavior: the caster vanishes and reappears
   elsewhere on the same map, dropping its current target. The archetype is a
   thin shim — `apply/4` runs synchronously inside the caster's `MobSession`
-  process (from `:cast_complete`), so it self-casts `{:mob_teleport}` and lets
-  the session perform the reposition after the current cast returns. The session
-  reuses the `:knocked_back` instant position-set path (spatial-index update +
-  delta-snapshot broadcast), not the walking `move_to`.
+  process (from `{:casting, :complete}`), so it self-casts `{:movement,
+  :teleport}` and lets the session perform the reposition after the current
+  cast returns. The session reuses the `{:movement, {:knocked_back, x, y}}`
+  instant position-set path (spatial-index update + delta-snapshot
+  broadcast), not the walking `move_to`.
   """
 
   @behaviour Aesir.ZoneServer.Mmo.MobSkill.Archetype

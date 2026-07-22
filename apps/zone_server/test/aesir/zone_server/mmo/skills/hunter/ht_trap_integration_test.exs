@@ -21,7 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest.FakeMob do
   end
 
   @impl true
-  def handle_cast({:apply_damage, damage, attacker_id}, %{test_pid: test_pid} = state) do
+  def handle_cast({:combat, {:apply_damage, damage, attacker_id}}, %{test_pid: test_pid} = state) do
     send(test_pid, {:applied, damage, attacker_id})
     {:noreply, state}
   end

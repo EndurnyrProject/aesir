@@ -35,7 +35,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
         # cell when the step completes, keeping the server position in
         # lockstep with the clients' interpolation instead of one cell ahead.
         first_delay = MovementEngine.step_delay(state.walk_speed, {state.x, state.y}, hd(path))
-        Process.send_after(self(), :movement_tick, first_delay)
+        Process.send_after(self(), {:movement, :tick}, first_delay)
 
         {:noreply, updated_state}
       else
@@ -51,7 +51,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   end
 
   @doc """
-  Processes a `:movement_tick` for a live mob: steps it along its path,
+  Processes a `{:movement, :tick}` for a live mob: steps it along its path,
   repaths around a newly blocked cell, or drops the tick if the mob is dead.
   """
   @spec handle_movement_tick(MobState.t()) :: {:noreply, MobState.t()}
@@ -68,14 +68,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
 
   @doc """
   Instantly relocates the mob to a random walkable cell on its map and drops
-  its current target (`AL_TELEPORT` flee). Reuses the `:knocked_back` instant
-  position-set path; a no-op if no walkable cell is found.
+  its current target (`AL_TELEPORT` flee). Reuses the `{:movement,
+  {:knocked_back, x, y}}` instant position-set path; a no-op if no walkable
+  cell is found.
   """
   @spec handle_teleport(MobState.t()) :: {:noreply, MobState.t()}
   def handle_teleport(state) do
-    # Instant flee reposition (AL_TELEPORT): reuse the :knocked_back position-set
-    # path (spatial-index update + delta-snapshot broadcast), not the walking
-    # move_to. A missing cache entry or a fully-blocked map is a benign no-op.
+    # Instant flee reposition (AL_TELEPORT): reuse the {:movement,
+    # {:knocked_back, x, y}} position-set path (spatial-index update +
+    # delta-snapshot broadcast), not the walking move_to. A missing cache
+    # entry or a fully-blocked map is a benign no-op.
     case Cell.random_traversable(state.map_name) do
       {:ok, {x, y}} ->
         updated_state =
@@ -152,7 +154,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
       interval =
         MovementEngine.step_delay(state.walk_speed, {next_x, next_y}, hd(remaining_path))
 
-      Process.send_after(self(), :movement_tick, interval)
+      Process.send_after(self(), {:movement, :tick}, interval)
       updated_state
     else
       # Path completed: stop and broadcast the standing transition so the
@@ -177,7 +179,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
       updated_state = MobState.set_path(state, path)
 
       first_delay = MovementEngine.step_delay(state.walk_speed, {state.x, state.y}, hd(path))
-      Process.send_after(self(), :movement_tick, first_delay)
+      Process.send_after(self(), {:movement, :tick}, first_delay)
       updated_state
     else
       _ ->

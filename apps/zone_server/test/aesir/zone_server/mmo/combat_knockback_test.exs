@@ -54,7 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     stub(Cell, :traversable?, fn @map_name, x, _y -> x < 154 end)
 
     # The owning session is the single writer: knockback routes the landing cell
-    # to it via a {:knocked_back, x, y} cast (received by this test process).
+    # to it via a {:movement, {:knocked_back, x, y}} cast (received by this test process).
     stub(UnitRegistry, :get_unit, fn :mob, @mob_id ->
       {:ok, {MobState, mob_state(151, 150), test_pid}}
     end)
@@ -67,7 +67,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     {from_x, from_y} = @from
     assert {:ok, {153, 150}} = Combat.knockback(:mob, @mob_id, from_x, from_y, 5)
 
-    assert_received {:"$gen_cast", {:knocked_back, 153, 150}}
+    assert_received {:"$gen_cast", {:movement, {:knocked_back, 153, 150}}}
     assert_received {:broadcast, %Knockback{unit_id: @mob_id, dst_x: 153, dst_y: 150}}
   end
 
@@ -87,7 +87,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
 
     {from_x, from_y} = @from
     assert {:ok, {151, 150}} = Combat.knockback(:mob, @mob_id, from_x, from_y, 5)
-    refute_received {:"$gen_cast", {:knocked_back, _, _}}
+    refute_received {:"$gen_cast", {:movement, {:knocked_back, _, _}}}
   end
 
   test "knockback with no walkable cell leaves the unit in place" do
@@ -164,7 +164,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
 
     {from_x, from_y} = @from
     assert :ok = Combat.knockback(:skill_unit, @mob_id, from_x, from_y, 5)
-    refute_received {:"$gen_cast", {:knocked_back, _, _}}
+    refute_received {:"$gen_cast", {:movement, {:knocked_back, _, _}}}
   end
 
   test "knockback returns an error when the unit map is unavailable" do

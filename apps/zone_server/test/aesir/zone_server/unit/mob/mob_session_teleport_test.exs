@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
   @moduledoc """
-  Verifies the mob teleport reposition (`AL_TELEPORT`): the `{:mob_teleport}`
+  Verifies the mob teleport reposition (`AL_TELEPORT`): the `{:movement, :teleport}`
   cast instantly relocates the mob to a random walkable cell, drops its target
   and returns it to `:idle`, routing the move through the same `Movement`
   choke point the knockback path uses. A map with no walkable cell is a clean
@@ -78,7 +78,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
       :ok
     end)
 
-    {:noreply, updated} = MobSession.handle_cast({:mob_teleport}, build_mob_state())
+    {:noreply, updated} = MobSession.handle_cast({:movement, :teleport}, build_mob_state())
 
     assert updated.x == 150
     assert updated.y == 160
@@ -95,7 +95,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
 
     state = build_mob_state()
 
-    assert {:noreply, ^state} = MobSession.handle_cast({:mob_teleport}, state)
+    assert {:noreply, ^state} = MobSession.handle_cast({:movement, :teleport}, state)
   end
 
   test "is a clean no-op when the map is not cached" do
@@ -104,6 +104,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
 
     state = build_mob_state()
 
-    assert {:noreply, ^state} = MobSession.handle_cast({:mob_teleport}, state)
+    assert {:noreply, ^state} = MobSession.handle_cast({:movement, :teleport}, state)
   end
 end

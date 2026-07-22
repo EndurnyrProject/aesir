@@ -12,6 +12,6 @@ defmodule Aesir.ZoneServer.Unit.SessionTest do
   test "knock_back/4 casts the landing cell to the given pid for a mob" do
     assert :ok = Session.knock_back(:mob, self(), 42, 7)
 
-    assert_received {:"$gen_cast", {:knocked_back, 42, 7}}
+    assert_received {:"$gen_cast", {:movement, {:knocked_back, 42, 7}}}
   end
 end

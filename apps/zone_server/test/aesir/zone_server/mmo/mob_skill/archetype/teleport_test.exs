@@ -1,7 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.TeleportTest do
   @moduledoc """
-  The teleport archetype is a thin shim: it self-casts `{:mob_teleport}` to the
-  caster's own `MobSession` (the reposition itself is covered end-to-end by
+  The teleport archetype is a thin shim: it self-casts `{:movement, :teleport}`
+  to the caster's own `MobSession` (the reposition itself is covered end-to-end by
   `MobSessionTeleportTest`) and returns `:ok`. A caster with no live process is
   a clean `{:error, :no_process}`.
   """
@@ -58,7 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.TeleportTest do
 
     assert :ok = Teleport.apply(caster, {:unit, :mob, @caster_id}, %{}, 1)
 
-    assert_received {:"$gen_cast", {:mob_teleport}}
+    assert_received {:"$gen_cast", {:movement, :teleport}}
   end
 
   test "returns an error when the caster has no live process" do

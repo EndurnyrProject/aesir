@@ -141,7 +141,7 @@ defmodule Aesir.ZoneServer.Unit.MovementStepperTest do
 
       SpatialIndex.add_unit(:mob, instance_id, 100, 100, @map_name)
 
-      {:noreply, _state} = MobSession.handle_info(:movement_tick, mob_state)
+      {:noreply, _state} = MobSession.handle_info({:movement, :tick}, mob_state)
 
       assert {:mob, ^instance_id, _move_state} =
                @map_name |> Movement.drain_dirty() |> find_unit(:mob, instance_id)
@@ -155,7 +155,7 @@ defmodule Aesir.ZoneServer.Unit.MovementStepperTest do
 
       SpatialIndex.add_unit(:mob, instance_id, 100, 100, @map_name)
 
-      {:noreply, new_state} = MobSession.handle_info(:movement_tick, mob_state)
+      {:noreply, new_state} = MobSession.handle_info({:movement, :tick}, mob_state)
 
       assert {new_state.x, new_state.y} == {100, 100}
       assert new_state.movement_state == :moving
@@ -171,7 +171,7 @@ defmodule Aesir.ZoneServer.Unit.MovementStepperTest do
 
       SpatialIndex.add_unit(:mob, instance_id, 100, 100, @map_name)
 
-      {:noreply, new_state} = MobSession.handle_info(:movement_tick, mob_state)
+      {:noreply, new_state} = MobSession.handle_info({:movement, :tick}, mob_state)
 
       assert {new_state.x, new_state.y} == {100, 100}
       assert new_state.movement_state == :standing
@@ -189,7 +189,7 @@ defmodule Aesir.ZoneServer.Unit.MovementStepperTest do
       instance_id = mob_state.instance_id
       SpatialIndex.add_unit(:mob, instance_id, 100, 100, @map_name)
 
-      {:noreply, new_state} = MobSession.handle_info(:movement_tick, mob_state)
+      {:noreply, new_state} = MobSession.handle_info({:movement, :tick}, mob_state)
 
       assert {new_state.x, new_state.y} == {101, 100}
     end

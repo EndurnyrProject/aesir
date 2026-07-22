@@ -84,7 +84,8 @@ defmodule Aesir.ZoneServer.Unit.KnockbackCancelWalkTest do
       UnitRegistry.register_unit(:mob, instance_id, MobState, mob_state, self())
       SpatialIndex.add_unit(:mob, instance_id, 50, 50, @map_name)
 
-      {:noreply, knocked_state} = MobSession.handle_cast({:knocked_back, 60, 50}, mob_state)
+      {:noreply, knocked_state} =
+        MobSession.handle_cast({:movement, {:knocked_back, 60, 50}}, mob_state)
 
       assert knocked_state.x == 60
       assert knocked_state.y == 50
@@ -96,7 +97,7 @@ defmodule Aesir.ZoneServer.Unit.KnockbackCancelWalkTest do
                  id == instance_id
                end)
 
-      {:noreply, after_tick} = MobSession.handle_info(:movement_tick, knocked_state)
+      {:noreply, after_tick} = MobSession.handle_info({:movement, :tick}, knocked_state)
 
       assert after_tick.x == 60
       assert after_tick.y == 50
