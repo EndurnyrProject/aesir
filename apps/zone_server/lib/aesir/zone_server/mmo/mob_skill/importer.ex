@@ -26,7 +26,15 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Importer do
   status-abnormality **name** (`hiding`, `anybad`) for the `mystatuson` /
   `friendstatuson` family - kept as an atom rather than an integer. Empty
   condition values default to `0`.
+
+  `classify/1` backs the `mix aesir.import.mob_skills` coverage manifest: it
+  mirrors `MobSkill.Selector`'s castable gate (`Skill.Catalog.by_id/1` +
+  `MobSkill.Denylist`) so the manifest reports the same live truth the AI
+  actually casts against, rather than the legacy archetype catalog.
   """
+
+  alias Aesir.ZoneServer.Mmo.MobSkill.Denylist
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
 
   @typedoc "A parsed skill row."
   @type row :: %{
@@ -50,6 +58,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Importer do
           },
           emotion: integer() | nil
         }
+
+  @typedoc "Coverage classification for a skill id against the live skill catalog."
+  @type classification :: :castable | {:denylisted, String.t()} | :unresolved
 
   @states ~w(any idle walk dead loot attack angry chase follow anytarget)
 
@@ -79,6 +90,25 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Importer do
     |> Enum.map(&String.trim/1)
     |> Enum.reject(&(&1 == "" or String.starts_with?(&1, "//")))
     |> parse_lines()
+  end
+
+  @doc """
+  Classifies `skill_id` against the live skill catalog + denylist: `:castable`
+  (resolves, has an active module, not denylisted), `{:denylisted, reason}`
+  (resolves but is denied), or `:unresolved` (no catalog entry / no active
+  module).
+  """
+  @spec classify(integer()) :: classification()
+  def classify(skill_id) do
+    with {:ok, definition} <- SkillCatalog.by_id(skill_id),
+         {:ok, _module} <- SkillCatalog.active_module_for(definition.name) do
+      case Denylist.reason_for(skill_id) do
+        nil -> :castable
+        reason -> {:denylisted, reason}
+      end
+    else
+      :error -> :unresolved
+    end
   end
 
   @spec parse_lines([String.t()]) :: {:ok, %{String.t() => [row()]}} | {:error, term()}

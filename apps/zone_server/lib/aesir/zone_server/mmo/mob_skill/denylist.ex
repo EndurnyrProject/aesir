@@ -14,5 +14,13 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Denylist do
 
   @doc "Whether `skill_id` is denylisted for mob casting."
   @spec denied?(integer()) :: boolean()
-  def denied?(skill_id), do: Map.has_key?(@denied, skill_id)
+  def denied?(skill_id), do: reason_for(skill_id) != nil
+
+  @doc "The one-line reason `skill_id` is denylisted, or `nil` if it is not."
+  @spec reason_for(integer()) :: String.t() | nil
+  # Enum.find_value instead of Map.get: the seeded-empty @denied map makes
+  # Map.get a type-checker "always nil" warning until the sweep populates it.
+  def reason_for(skill_id) do
+    Enum.find_value(@denied, fn {id, reason} -> if id == skill_id, do: reason end)
+  end
 end

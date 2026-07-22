@@ -1,7 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.MobSkill.ImporterTest do
   use ExUnit.Case, async: true
+  import Mimic
 
+  alias Aesir.ZoneServer.Mmo.MobSkill.Denylist
   alias Aesir.ZoneServer.Mmo.MobSkill.Importer
+
+  setup :verify_on_exit!
 
   @fixture """
   // Mob Skill Database fixture
@@ -107,6 +111,26 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ImporterTest do
     test "fails on an unknown condition token" do
       line = "1001,Scorpion@NPC_POISON,attack,176,3,500,800,5000,no,target,wiggle,0,,,,,,,"
       assert {:error, {:unknown_condition, "wiggle"}} = Importer.to_rows(line)
+    end
+  end
+
+  describe "classify/1" do
+    # MG_FIREBOLT: a real player skill (id 19), resolvable in Skill.Catalog with
+    # an active module, so it classifies as :castable by default.
+    test "a skill id that resolves with an active module and is not denylisted is :castable" do
+      stub(Denylist, :reason_for, fn 19 -> nil end)
+
+      assert Importer.classify(19) == :castable
+    end
+
+    test "a skill id that resolves but is denylisted reports the reason" do
+      stub(Denylist, :reason_for, fn 19 -> "no proto message" end)
+
+      assert Importer.classify(19) == {:denylisted, "no proto message"}
+    end
+
+    test "a skill id with no catalog entry is :unresolved" do
+      assert Importer.classify(999_999) == :unresolved
     end
   end
 end

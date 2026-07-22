@@ -13,17 +13,18 @@ defmodule Mix.Tasks.Aesir.Import.MobSkills do
   syncing rAthena.
 
   After writing, it prints a coverage manifest: total rows, distinct skills, and
-  which skills map to a real archetype (`MobSkill.Catalog`) vs `:stub`, with the
-  row-coverage %, per-archetype skill counts, and the top stubbed skills by row
-  count.
+  which skills are `:castable` (resolve in the live skill catalog with an active
+  module and are not denylisted), `:denylisted` (resolve but are denied, with the
+  reason), or `:unresolved` (no catalog entry / no active module) - see
+  `MobSkill.Importer.classify/1` - with the row-coverage %, the denylisted skills
+  and their reasons, and the top unresolved skills by row count.
   """
   use Mix.Task
 
-  alias Aesir.ZoneServer.Mmo.MobSkill.Catalog
   alias Aesir.ZoneServer.Mmo.MobSkill.Importer
 
   @out_dir Path.join(~w(apps zone_server priv db mob_skills))
-  @top_stubs 20
+  @top_unresolved 20
 
   @impl Mix.Task
   def run(args) do
@@ -48,60 +49,56 @@ defmodule Mix.Tasks.Aesir.Import.MobSkills do
   defp report(grouped) do
     rows = grouped |> Map.values() |> List.flatten()
     total = length(rows)
-    skill_counts = Enum.frequencies_by(rows, & &1.skill)
-    classified = Enum.map(skill_counts, fn {skill, count} -> {skill, count, archetype(skill)} end)
+    skill_rows = Enum.group_by(rows, & &1.skill)
 
-    {mapped, stubbed} = Enum.split_with(classified, fn {_s, _c, arch} -> arch != :stub end)
-    mapped_rows = sum_rows(mapped)
+    classified =
+      Enum.map(skill_rows, fn {skill, rows_for_skill} ->
+        {skill, length(rows_for_skill), Importer.classify(hd(rows_for_skill).skill_id)}
+      end)
 
-    Mix.shell().info("  rows: #{total}   distinct skills: #{map_size(skill_counts)}")
+    castable = Enum.filter(classified, fn {_s, _c, class} -> class == :castable end)
+
+    denylisted =
+      Enum.filter(classified, fn {_s, _c, class} -> match?({:denylisted, _}, class) end)
+
+    unresolved = Enum.filter(classified, fn {_s, _c, class} -> class == :unresolved end)
+    castable_rows = sum_rows(castable)
+
+    Mix.shell().info("  rows: #{total}   distinct skills: #{map_size(skill_rows)}")
 
     Mix.shell().info(
-      "  mapped skills: #{length(mapped)}   stub skills: #{length(stubbed)}   " <>
-        "row coverage: #{percent(mapped_rows, total)}% (#{mapped_rows}/#{total})"
+      "  castable skills: #{length(castable)}   denylisted skills: #{length(denylisted)}   " <>
+        "unresolved skills: #{length(unresolved)}   " <>
+        "row coverage: #{percent(castable_rows, total)}% (#{castable_rows}/#{total})"
     )
 
-    Mix.shell().info("  per-archetype (distinct skills / rows):")
+    Mix.shell().info("  denylisted skills (rows, reason):")
 
-    Enum.each(per_archetype(mapped), fn {arch, skills, arch_rows} ->
-      Mix.shell().info("    #{arch}: #{skills} / #{arch_rows}")
+    Enum.each(denylisted, fn {skill, count, {:denylisted, reason}} ->
+      Mix.shell().info("    #{skill}: #{count} (#{reason})")
     end)
 
-    Mix.shell().info("  top stubbed skills by row count:")
+    Mix.shell().info("  top unresolved skills by row count:")
 
-    Enum.each(top_stubs(stubbed), fn {skill, count} ->
+    Enum.each(top_unresolved(unresolved), fn {skill, count} ->
       Mix.shell().info("    #{skill}: #{count}")
     end)
 
     :ok
   end
 
-  @spec archetype(String.t()) :: atom()
-  defp archetype(skill) do
-    case Catalog.archetype_for(skill) do
-      {arch, _params} -> arch
-      :stub -> :stub
-    end
-  end
+  @spec sum_rows([{String.t(), non_neg_integer(), Importer.classification()}]) ::
+          non_neg_integer()
+  defp sum_rows(classified),
+    do: Enum.reduce(classified, 0, fn {_s, c, _class}, acc -> acc + c end)
 
-  @spec sum_rows([{String.t(), non_neg_integer(), atom()}]) :: non_neg_integer()
-  defp sum_rows(classified), do: Enum.reduce(classified, 0, fn {_s, c, _a}, acc -> acc + c end)
-
-  @spec per_archetype([{String.t(), non_neg_integer(), atom()}]) ::
-          [{atom(), non_neg_integer(), non_neg_integer()}]
-  defp per_archetype(mapped) do
-    mapped
-    |> Enum.group_by(fn {_s, _c, arch} -> arch end)
-    |> Enum.map(fn {arch, entries} -> {arch, length(entries), sum_rows(entries)} end)
-    |> Enum.sort_by(fn {_arch, _skills, arch_rows} -> -arch_rows end)
-  end
-
-  @spec top_stubs([{String.t(), non_neg_integer(), atom()}]) :: [{String.t(), non_neg_integer()}]
-  defp top_stubs(stubbed) do
-    stubbed
-    |> Enum.map(fn {skill, count, _arch} -> {skill, count} end)
+  @spec top_unresolved([{String.t(), non_neg_integer(), Importer.classification()}]) ::
+          [{String.t(), non_neg_integer()}]
+  defp top_unresolved(unresolved) do
+    unresolved
+    |> Enum.map(fn {skill, count, _class} -> {skill, count} end)
     |> Enum.sort_by(fn {_skill, count} -> -count end)
-    |> Enum.take(@top_stubs)
+    |> Enum.take(@top_unresolved)
   end
 
   @spec percent(non_neg_integer(), non_neg_integer()) :: float()
