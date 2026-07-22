@@ -338,7 +338,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       {:ok, item_def} = ItemManagement.get_item_by_id(501)
 
       {:noreply, new_state} =
-        PlayerSession.handle_cast({:give_item, item_def, 5}, state)
+        PlayerSession.handle_cast({:inventory, {:give_item, item_def, 5}}, state)
 
       items = PlayerState.to_list(new_state.game_state.inventory)
       assert [%{nameid: 501, amount: 5}] = items
@@ -355,7 +355,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       {:ok, item_def} = ItemManagement.get_item_by_id(501)
 
       {:noreply, new_state} =
-        PlayerSession.handle_cast({:give_item, item_def, 2}, state)
+        PlayerSession.handle_cast({:inventory, {:give_item, item_def, 2}}, state)
 
       assert [%{nameid: 501, amount: 5}] = PlayerState.to_list(new_state.game_state.inventory)
 
@@ -372,7 +372,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       huge = div(Weight.max_weight(state.game_state.stats), item_def.weight) + 100
 
       {:noreply, new_state} =
-        PlayerSession.handle_cast({:give_item, item_def, huge}, state)
+        PlayerSession.handle_cast({:inventory, {:give_item, item_def, huge}}, state)
 
       assert new_state.game_state.inventory == state.game_state.inventory
       assert PlayerState.to_list(reload(character.id)) == []

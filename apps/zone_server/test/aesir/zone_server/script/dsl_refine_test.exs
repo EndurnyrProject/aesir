@@ -34,7 +34,7 @@ defmodule Aesir.ZoneServer.Script.DslRefineTest do
     def init(reply_fun), do: {:ok, reply_fun}
 
     @impl true
-    def handle_call({:script_apply, op}, {from_pid, _tag}, reply_fun) do
+    def handle_call({:npc, {:script_apply, op}}, {from_pid, _tag}, reply_fun) do
       send(:dsl_refine_probe, {:script_apply, op})
       {:reply, reply_fun.(op, from_pid), reply_fun}
     end

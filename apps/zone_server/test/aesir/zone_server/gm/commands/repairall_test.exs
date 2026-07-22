@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Gm.Commands.RepairAllTest do
   test "no args casts to self and reports the self name" do
     assert {:ok, msg} = RepairAll.execute([], ctx())
     assert msg == "Repaired all broken items for GmChar"
-    assert_receive {:"$gen_cast", :repair_all}
+    assert_receive {:"$gen_cast", {:inventory, :repair_all}}
   end
 
   test "integer arg resolves the target via the registry" do
@@ -39,7 +39,8 @@ defmodule Aesir.ZoneServer.Gm.Commands.RepairAllTest do
     assert {:ok, msg} = RepairAll.execute(["2000"], ctx())
     assert msg == "Repaired all broken items for TargetChar"
 
-    assert {:messages, [{:"$gen_cast", :repair_all}]} = Process.info(target, :messages)
+    assert {:messages, [{:"$gen_cast", {:inventory, :repair_all}}]} =
+             Process.info(target, :messages)
   end
 
   test "name arg resolves the target by case-insensitive name" do
@@ -48,16 +49,17 @@ defmodule Aesir.ZoneServer.Gm.Commands.RepairAllTest do
     assert {:ok, msg} = RepairAll.execute(["targetchar"], ctx())
     assert msg == "Repaired all broken items for TargetChar"
 
-    assert {:messages, [{:"$gen_cast", :repair_all}]} = Process.info(target, :messages)
+    assert {:messages, [{:"$gen_cast", {:inventory, :repair_all}}]} =
+             Process.info(target, :messages)
   end
 
   test "offline integer target returns an error and casts nothing" do
     assert {:error, "Player not online"} = RepairAll.execute(["4000"], ctx())
-    refute_received {:"$gen_cast", :repair_all}
+    refute_received {:"$gen_cast", {:inventory, :repair_all}}
   end
 
   test "unknown name target returns an error and casts nothing" do
     assert {:error, "Player not online"} = RepairAll.execute(["Nobody"], ctx())
-    refute_received {:"$gen_cast", :repair_all}
+    refute_received {:"$gen_cast", {:inventory, :repair_all}}
   end
 end

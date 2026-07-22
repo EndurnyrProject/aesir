@@ -92,7 +92,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
   end
 
   # A stand-in for a `PlayerSession`: answers the single-writer
-  # `{:script_apply, op}` call with `reply` and mirrors the op to the test.
+  # `{:npc, {:script_apply, op}}` call with `reply` and mirrors the op to the test.
   defp fake_session(reply) do
     test = self()
 
@@ -162,7 +162,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
         10
       )
 
-      assert_receive {:session_call, {:script_apply, {:give_item, 1001, 1}}}
+      assert_receive {:session_call, {:npc, {:script_apply, {:give_item, 1001, 1}}}}
       refute_receive {:session_call, _msg}
     end
 
@@ -180,7 +180,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
         end)
 
       assert :ok = Task.await(task, 1000)
-      assert_receive {:session_call, {:script_apply, {:give_item, 1001, 1}}}
+      assert_receive {:session_call, {:npc, {:script_apply, {:give_item, 1001, 1}}}}
     end
 
     test "scatters the item onto the death cell when the winner is overweight" do
@@ -260,7 +260,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
       )
 
       assert_receive {:progression, {:mob_kill_exp, 700, 0, _race}}
-      assert_receive {:session_call, {:script_apply, {:give_item, 1001, 1}}}
+      assert_receive {:session_call, {:npc, {:script_apply, {:give_item, 1001, 1}}}}
       assert_receive {:announced, %{text: "Runner has defeated Baphomet!"}}
     end
 

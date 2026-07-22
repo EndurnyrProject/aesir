@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerRefineTest do
   @moduledoc """
   The `{:refine, index, nameid, cost_type, use_blessing?}` op end to end: real
   DB, real `RefineOps`, no mocks — mirrors `RefineOpsTest`'s fixtures. Also
-  drives `PlayerSession.handle_call({:script_apply, op}, ...)` directly to
+  drives `PlayerSession.handle_call({:npc, {:script_apply, op}}, ...)` directly to
   prove the session's reply-shape handling accepts the tagged `RefineOps`
   outcome (not just `{:ok, %PlayerState{}}`).
   """
@@ -111,7 +111,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerRefineTest do
     end
   end
 
-  describe "PlayerSession.handle_call({:script_apply, {:refine, ...}}, ...)" do
+  describe "PlayerSession.handle_call({:npc, {:script_apply, {:refine, ...}}}, ...)" do
     test "replies with the tagged outcome and keeps it as the session's new state", %{
       character: char,
       stats: stats
@@ -125,7 +125,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerRefineTest do
 
       {:reply, reply, new_state} =
         PlayerSession.handle_call(
-          {:script_apply, {:refine, index, @sword, :normal, false}},
+          {:npc, {:script_apply, {:refine, index, @sword, :normal, false}}},
           self(),
           state
         )
@@ -152,7 +152,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerRefineTest do
 
       {:reply, {:ok, :success, 1}, _new_state} =
         PlayerSession.handle_call(
-          {:script_apply, {:refine, index, @sword, :normal, false}},
+          {:npc, {:script_apply, {:refine, index, @sword, :normal, false}}},
           self(),
           state
         )

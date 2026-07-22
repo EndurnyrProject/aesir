@@ -266,7 +266,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
 
   @doc """
   Runs on the invitee's session, invoked from `PlayerSession`'s
-  `handle_call({:deliver_guild_invite, invite}, _from, state)`: stores the
+  `handle_call({:social, {:deliver_guild_invite, invite}}, _from, state)`: stores the
   pending invite, sends the `GuildInviteNotify`, and arms the expiry timer.
   Rejects a second invite while one is already pending and unexpired.
   """

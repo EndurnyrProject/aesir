@@ -54,7 +54,7 @@ defmodule Aesir.ZoneServer.Integration.TraitStatsIntegrationTest do
       assert Repo.get(Character, char_id).trait_point == 7
 
       # 3. Level 200 -> 205 accrues the cumulative table delta (7 + 19 == 26).
-      GenServer.cast(pid, {:add_base_level, 5})
+      GenServer.cast(pid, {:progression, {:add_base_level, 5}})
       leveled = get_player_state(pid)
 
       assert leveled.stats.progression.base_level == 205

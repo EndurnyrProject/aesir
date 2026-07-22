@@ -1,10 +1,12 @@
 defmodule Aesir.ZoneServer.Gm.Commands.JobLevel do
   @moduledoc """
   `@joblevelup <amount>` - adds job levels to the calling GM, clamped to the job's
-  max job level. Delivery is the `{:add_job_level, amount}` cast on the caller's
+  max job level. Delivery is `PlayerSession.add_job_level/2` on the caller's
   own session.
   """
   @behaviour Aesir.ZoneServer.Gm.Command
+
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
 
   @usage "Usage: @joblevelup <amount>"
 
@@ -18,7 +20,7 @@ defmodule Aesir.ZoneServer.Gm.Commands.JobLevel do
   def execute([amount_str], _ctx) do
     case Integer.parse(amount_str) do
       {amount, ""} when amount > 0 ->
-        GenServer.cast(self(), {:add_job_level, amount})
+        PlayerSession.add_job_level(self(), amount)
         {:ok, "Gained #{amount} job level(s)"}
 
       _ ->

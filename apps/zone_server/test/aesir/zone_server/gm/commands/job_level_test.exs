@@ -25,8 +25,8 @@ defmodule Aesir.ZoneServer.Gm.Commands.JobLevelTest do
     end
   end
 
-  test "valid amount casts {:add_job_level, amount}" do
+  test "valid amount casts {:progression, {:add_job_level, amount}}" do
     assert {:ok, "Gained 3 job level(s)"} = JobLevel.execute(["3"], ctx())
-    assert_received {:"$gen_cast", {:add_job_level, 3}}
+    assert_received {:"$gen_cast", {:progression, {:add_job_level, 3}}}
   end
 end

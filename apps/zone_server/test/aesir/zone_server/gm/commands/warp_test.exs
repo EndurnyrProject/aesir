@@ -31,8 +31,8 @@ defmodule Aesir.ZoneServer.Gm.Commands.WarpTest do
     end
   end
 
-  test "valid args cast {:warp, map, x, y} to the caller's session and reply" do
+  test "valid args cast {:movement, {:warp, map, x, y}} to the caller's session and reply" do
     assert {:ok, "Warping to geffen (100, 120)"} = Warp.execute(["geffen", "100", "120"], ctx())
-    assert_received {:"$gen_cast", {:warp, "geffen", 100, 120}}
+    assert_received {:"$gen_cast", {:movement, {:warp, "geffen", 100, 120}}}
   end
 end

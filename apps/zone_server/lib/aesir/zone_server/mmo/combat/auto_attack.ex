@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
 
   @doc """
   Executes an attack from player to target.
@@ -316,10 +317,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   end
 
   defp dispatch_break({:self, slot}, _target_pid),
-    do: GenServer.cast(self(), {:break_equip, break_slot(slot)})
+    do: PlayerSession.break_equip(self(), break_slot(slot))
 
   defp dispatch_break({:target, slot}, target_pid),
-    do: GenServer.cast(target_pid, {:break_equip, break_slot(slot)})
+    do: PlayerSession.break_equip(target_pid, break_slot(slot))
 
   defp break_slot(:weapon), do: :right_hand
   defp break_slot(:armor), do: :armor

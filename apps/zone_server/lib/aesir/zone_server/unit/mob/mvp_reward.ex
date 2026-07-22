@@ -111,7 +111,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
 
   # Rolls the MVP drop table in order, stopping at the first success, and hands
   # the winning item to the MVP through the player session's single-writer
-  # `{:script_apply, op}` seam (which itself runs `InventoryOps.add/6`). A full
+  # `{:npc, {:script_apply, op}}` seam (which itself runs `InventoryOps.add/6`). A full
   # inventory -- or no MVP left to receive it -- scatters the item onto the
   # death cell instead.
   @spec grant_drop(winner() | nil, MobDefinition.t(), String.t(), integer(), integer()) :: :ok

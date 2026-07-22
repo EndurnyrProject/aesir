@@ -1,7 +1,7 @@
 defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionVendingTest do
   @moduledoc """
   Exercises the vending wiring on `PlayerSession` directly: the on-view-enter
-  shop board, the seller-authority `{:vending_purchase, ...}` call, and the
+  shop board, the seller-authority `{:vending, {:vending_purchase, ...}}` call, and the
   `terminate/2` shop teardown. The two-player end-to-end flow lives in the
   integration suite (Task 8).
   """
@@ -65,7 +65,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionVendingTest do
         connection_pid: self()
       }
 
-      {:noreply, _state} = PlayerSession.handle_cast({:player_entered_view, 2}, state)
+      {:noreply, _state} =
+        PlayerSession.handle_cast({:visibility, {:player_entered_view, 2}}, state)
 
       assert_received {:send, :world,
                        {:vending_board_shown, %VendingBoardShown{unit_id: 2, title: "Cheap Pots"}}}
@@ -84,7 +85,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionVendingTest do
         connection_pid: self()
       }
 
-      {:noreply, _state} = PlayerSession.handle_cast({:player_entered_view, 2}, state)
+      {:noreply, _state} =
+        PlayerSession.handle_cast({:visibility, {:player_entered_view, 2}}, state)
 
       refute_received {:send, :world, {:vending_board_shown, _}}
 

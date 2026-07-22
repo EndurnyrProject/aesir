@@ -375,8 +375,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         assert Combat.execute_attack(stats, player_state, 2001) == :ok
       end)
 
-      assert_received {:"$gen_cast", {:break_equip, :right_hand}}
-      refute_received {:"$gen_cast", {:break_equip, _}}
+      assert_received {:"$gen_cast", {:inventory, {:break_equip, :right_hand}}}
+      refute_received {:"$gen_cast", {:inventory, {:break_equip, _}}}
     end
 
     test "the break roll fires once per attack even on a multi-hit swing",
@@ -397,8 +397,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
       assert_received {:damage_applied, 50}
       assert_received {:damage_applied, 50}
-      assert_received {:"$gen_cast", {:break_equip, :right_hand}}
-      refute_received {:"$gen_cast", {:break_equip, _}}
+      assert_received {:"$gen_cast", {:inventory, {:break_equip, :right_hand}}}
+      refute_received {:"$gen_cast", {:inventory, {:break_equip, _}}}
     end
 
     test "resolve gets a {:mob, target_state} tuple and no decisions means no cast",
@@ -415,7 +415,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       end)
 
       assert_received {:resolve_target, {:mob, ^target_state}}
-      refute_received {:"$gen_cast", {:break_equip, _}}
+      refute_received {:"$gen_cast", {:inventory, {:break_equip, _}}}
     end
 
     test "a {:target, :armor} decision casts {:break_equip, :armor} to the target session, not self",
@@ -433,8 +433,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         assert Combat.execute_attack(stats, player_state, 2001) == :ok
       end)
 
-      assert_receive {:relayed, {:"$gen_cast", {:break_equip, :armor}}}
-      refute_received {:"$gen_cast", {:break_equip, _}}
+      assert_receive {:relayed, {:"$gen_cast", {:inventory, {:break_equip, :armor}}}}
+      refute_received {:"$gen_cast", {:inventory, {:break_equip, _}}}
     end
 
     # PvP damage is a no-op today (handle_player_attack_hit returns
@@ -474,7 +474,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       end)
 
       refute_received {:resolve_called, _}
-      refute_received {:"$gen_cast", {:break_equip, _}}
+      refute_received {:"$gen_cast", {:inventory, {:break_equip, _}}}
     end
   end
 

@@ -784,7 +784,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     with {:ok, to_pid} <- UnitRegistry.get_player_pid(to_char_id),
          {:ok, {_about_pid, about_account_id}} <-
            UnitRegistry.get_player_with_account(about_char_id) do
-      GenServer.cast(to_pid, {:player_left_view, about_char_id, about_account_id})
+      PlayerSession.notify_left_view(to_pid, about_char_id, about_account_id)
     else
       _ -> :ok
     end

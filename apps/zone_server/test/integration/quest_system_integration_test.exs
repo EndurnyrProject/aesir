@@ -7,7 +7,7 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
   The loop, all through production code paths:
 
   1. Accept the Verit hunting quest (`2289`) through the NPC dialog -- a real
-     `Script.Interaction` routing `{:script_apply, op}` to a real `PlayerSession`,
+     `Script.Interaction` routing `{:npc, {:script_apply, op}}` to a real `PlayerSession`,
      asserting the `QuestAdded` push.
   2. Hunt: `{:quest_kill, 2355}` ticks the session's `QuestLog`, pushing one
      `QuestHuntProgress` per moved objective and clamping at the target of 20.
@@ -154,7 +154,7 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
       member =
         start_player_session(character: member_char, position: {150, 150}, map_name: "prontera")
 
-      {:ok, _gs} = GenServer.call(member.pid, {:script_apply, {:setquest, @verit_hunt}})
+      {:ok, _gs} = PlayerSession.script_apply(member.pid, {:setquest, @verit_hunt})
 
       killer_id = 990_001
 

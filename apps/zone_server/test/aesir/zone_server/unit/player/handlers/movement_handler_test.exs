@@ -315,8 +315,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
 
       updated = MovementHandler.handle_visibility_update(corpse)
 
-      assert_receive {:"$gen_cast", {:player_entered_view, 2}}
-      assert_receive {:"$gen_cast", {:player_entered_view, 1}}
+      assert_receive {:"$gen_cast", {:visibility, {:player_entered_view, 2}}}
+      assert_receive {:"$gen_cast", {:visibility, {:player_entered_view, 1}}}
       assert_received {:sync_view, 1, [77], []}
       assert updated.visible_players == MapSet.new([2])
       assert updated.visible_skill_units == MapSet.new([77])

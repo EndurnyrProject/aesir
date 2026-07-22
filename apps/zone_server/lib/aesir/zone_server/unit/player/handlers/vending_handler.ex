@@ -41,7 +41,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.InventoryView
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -203,10 +205,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
     with :ok <- reject_self_purchase(vendor_unit_id, gs.character_id),
          {:ok, seller_pid} <- UnitRegistry.get_player_pid(vendor_unit_id),
          {:ok, buyer_delta} <-
-           GenServer.call(
+           PlayerSession.vending_purchase(
              seller_pid,
-             {:vending_purchase, gs.character_id, gs.inventory, gs.zeny, gs.stats,
-              gs.character_name, buy_lines}
+             gs.character_id,
+             gs.inventory,
+             gs.zeny,
+             gs.stats,
+             gs.character_name,
+             buy_lines
            ),
          {:ok, new_state} <- apply_purchase_as_buyer(buyer_state, buyer_delta) do
       {:noreply, sync_game_state(new_state)}
@@ -290,6 +296,49 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
       finalize(seller_state, shop, collapsed, plan, persisted_cart, persisted_inv, inv_changes,
         buyer_name: buyer_name
       )
+    end
+  end
+
+  @doc """
+  Session-facing wrapper for `purchase/7`: runs the sale, pushes the seller's
+  per-line `VendingSaleReport`s to its own client, commits the new seller
+  state (registry + party/guild views), and replies with the buyer's delta.
+  """
+  @spec handle_purchase(
+          state(),
+          integer(),
+          Inventory.t(),
+          non_neg_integer(),
+          Stats.t(),
+          String.t(),
+          [Vending.buy_line()]
+        ) :: {:reply, {:ok, buyer_delta()} | {:error, term()}, state()}
+  def handle_purchase(
+        seller_state,
+        buyer_char_id,
+        buyer_inventory,
+        buyer_zeny,
+        buyer_stats,
+        buyer_name,
+        buy_lines
+      ) do
+    case purchase(
+           seller_state,
+           buyer_char_id,
+           buyer_inventory,
+           buyer_zeny,
+           buyer_stats,
+           buyer_name,
+           buy_lines
+         ) do
+      {:ok, new_seller_state, buyer_delta, sale_reports} ->
+        Enum.each(sale_reports, &MessageRouter.send_to(new_seller_state.connection_pid, &1))
+
+        {:reply, {:ok, buyer_delta},
+         StateCommit.commit(new_seller_state, new_seller_state.game_state)}
+
+      {:error, reason} ->
+        {:reply, {:error, reason}, seller_state}
     end
   end
 

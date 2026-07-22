@@ -1,10 +1,12 @@
 defmodule Aesir.ZoneServer.Gm.Commands.BaseLevel do
   @moduledoc """
   `@baselevelup <amount>` - adds base levels to the calling GM, clamped to the
-  job's max base level. Delivery is the `{:add_base_level, amount}` cast on the
+  job's max base level. Delivery is `PlayerSession.add_base_level/2` on the
   caller's own session.
   """
   @behaviour Aesir.ZoneServer.Gm.Command
+
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
 
   @usage "Usage: @baselevelup <amount>"
 
@@ -18,7 +20,7 @@ defmodule Aesir.ZoneServer.Gm.Commands.BaseLevel do
   def execute([amount_str], _ctx) do
     case Integer.parse(amount_str) do
       {amount, ""} when amount > 0 ->
-        GenServer.cast(self(), {:add_base_level, amount})
+        PlayerSession.add_base_level(self(), amount)
         {:ok, "Gained #{amount} base level(s)"}
 
       _ ->

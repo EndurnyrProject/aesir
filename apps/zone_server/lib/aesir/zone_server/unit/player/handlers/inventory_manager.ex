@@ -78,7 +78,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
   end
 
   @doc """
-  GenServer-native entry point for the session's `{:give_item, ...}` cast.
+  GenServer-native entry point for the session's `{:inventory, {:give_item, ...}}` cast.
 
   Wraps `handle_give_item/3`, discarding the error reason on failure and
   returning the untouched state, so a lost add never crashes or stalls the

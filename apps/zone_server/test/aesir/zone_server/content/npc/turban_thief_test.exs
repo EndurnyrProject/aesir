@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Morocc.TurbanThiefTest do
   @moduledoc """
   End-to-end Sphinx Mask quest: drives the real `Turban Thief` through the real
   interaction runtime by sending the `NpcInteract` messages a client would, and
-  routes its `{:script_apply, op}` calls through a session that genuinely applies
+  routes its `{:npc, {:script_apply, op}}` calls through a session that genuinely applies
   them via the production `ScriptEffectHandler.apply_op/2`.
 
   The interaction process, dialog DSL, registry, verifier, and effect seam are
@@ -54,7 +54,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Morocc.TurbanThiefTest do
     def init(state), do: {:ok, state}
 
     @impl true
-    def handle_call({:script_apply, op}, _from, state) do
+    def handle_call({:npc, {:script_apply, op}}, _from, state) do
       {reply, new_state} = ScriptEffectHandler.apply_op(op, state)
       {:reply, reply, new_state}
     end

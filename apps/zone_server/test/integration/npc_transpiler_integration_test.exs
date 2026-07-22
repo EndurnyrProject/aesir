@@ -66,7 +66,7 @@ defmodule Aesir.ZoneServer.NpcTranspilerIntegrationTest do
     def init(state), do: {:ok, state}
 
     @impl true
-    def handle_call({:script_apply, op}, _from, state) do
+    def handle_call({:npc, {:script_apply, op}}, _from, state) do
       {reply, new_state} = ScriptEffectHandler.apply_op(op, state)
       {:reply, reply, new_state}
     end

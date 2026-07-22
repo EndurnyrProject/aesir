@@ -6,7 +6,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   the player's `PlayerState`. Every state mutation it needs (`pay_zeny`,
   `give_item`, `delitem`, `getexp`, `set_char_var`, `set_temp_var`, `jobchange`,
   `setquest`, `erasequest`, `completequest`, `changequest`) is routed here as a
-  `{:script_apply, op}` `GenServer.call` so the player session stays the sole
+  `{:npc, {:script_apply, op}}` `GenServer.call` so the player session stays the sole
   writer of its own state. This module applies the op to the authoritative
   state, persists the change, pushes the relevant proto to the client, and
   returns `{reply, new_state}` where `reply` is
@@ -70,7 +70,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
         }
 
   @doc """
-  GenServer-native entry point for the session's `{:script_apply, op}` call.
+  GenServer-native entry point for the session's `{:npc, {:script_apply, op}}` call.
 
   Wraps `apply_op/2` and, on success, commits the new state to the unit
   registry and party/guild views via `StateCommit.commit/2`; on

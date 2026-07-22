@@ -4,8 +4,8 @@ defmodule Aesir.ZoneServer.Npc.WarpIntegrationTest do
 
   Proves the full on-touch -> warp -> MapLoaded -> respawn cycle:
     1. A walking player steps into a warp's `xs/ys` trigger area -> the on-touch
-       hook casts `{:warp, to_map, to_x, to_y}` and cancels the walk.
-    2. `PlayerSession.handle_cast({:warp, …})` runs `WarpHandler.warp/4`, which
+       hook casts `{:movement, {:warp, to_map, to_x, to_y}}` and cancels the walk.
+    2. `PlayerSession.handle_cast({:movement, {:warp, …}})` runs `WarpHandler.warp/4`, which
        tears the player down on the old map (`leave_current_map` -> spatial
        index + visibility cleared) and sends `MapMove` to the connection.
     3. On the `MapLoaded` ack, the player re-enters the destination map
@@ -95,19 +95,19 @@ defmodule Aesir.ZoneServer.Npc.WarpIntegrationTest do
       {:noreply, ticked_state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
 
       # On-touch hook cast the warp to the session and cancelled the walk.
-      assert_received {:"$gen_cast", {:warp, "izlude", 150, 190}}
+      assert_received {:"$gen_cast", {:movement, {:warp, "izlude", 150, 190}}}
       assert ticked_state.game_state.movement_state == :standing
       assert ticked_state.game_state.walk_path == []
       assert ticked_state.game_state.last_warp_at != nil
 
-      # --- Stage 2: the {:warp, …} cast runs WarpHandler.warp/4. ----------
+      # --- Stage 2: the {:movement, {:warp, …}} cast runs WarpHandler.warp/4. ----
       # `leave_current_map` must run: the player is removed from the spatial
       # index and its visibility pairs cleared, before the MapLoaded ack.
       expect(SpatialIndex, :remove_player, fn @char_id -> :ok end)
       expect(SpatialIndex, :clear_visibility, fn @char_id -> :ok end)
 
       {:noreply, warped_state} =
-        PlayerSession.handle_cast({:warp, "izlude", 150, 190}, ticked_state)
+        PlayerSession.handle_cast({:movement, {:warp, "izlude", 150, 190}}, ticked_state)
 
       # MapMove carries the warp's destination coords.
       assert_received {:send, :control, {:map_move, %MapMove{map_name: "izlude", x: 150, y: 190}}}
@@ -124,7 +124,7 @@ defmodule Aesir.ZoneServer.Npc.WarpIntegrationTest do
       assert loaded_state.game_state.pending_map_load == nil
       assert loaded_state.game_state.last_warp_at == nil
       assert_received :respawn_after_warp
-      refute_received {:"$gen_cast", {:warp, _, _, _}}
+      refute_received {:"$gen_cast", {:movement, {:warp, _, _, _}}}
 
       # --- Stage 4: :respawn_after_warp re-enters the destination map. ----
       expect(SpatialIndex, :add_player, fn @char_id, 150, 190, "izlude" -> :ok end)
@@ -157,10 +157,10 @@ defmodule Aesir.ZoneServer.Npc.WarpIntegrationTest do
 
       state = %{game_state: game_state, connection_pid: self()}
 
-      # Stage 1: step into the warp -> cast {:warp, "prontera", 200, 200}.
+      # Stage 1: step into the warp -> cast {:movement, {:warp, "prontera", 200, 200}}.
       {:noreply, ticked_state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
 
-      assert_received {:"$gen_cast", {:warp, "prontera", 200, 200}}
+      assert_received {:"$gen_cast", {:movement, {:warp, "prontera", 200, 200}}}
 
       # Stage 2: the warp cast relocates within the same map. `leave_current_map`
       # still runs (the player vanishes from observers and re-enters at the new
@@ -169,7 +169,7 @@ defmodule Aesir.ZoneServer.Npc.WarpIntegrationTest do
       expect(SpatialIndex, :clear_visibility, fn @char_id -> :ok end)
 
       {:noreply, warped_state} =
-        PlayerSession.handle_cast({:warp, "prontera", 200, 200}, ticked_state)
+        PlayerSession.handle_cast({:movement, {:warp, "prontera", 200, 200}}, ticked_state)
 
       assert_received {:send, :control,
                        {:map_move, %MapMove{map_name: "prontera", x: 200, y: 200}}}
@@ -182,7 +182,7 @@ defmodule Aesir.ZoneServer.Npc.WarpIntegrationTest do
 
       assert loaded_state.game_state.last_warp_at == nil
       assert_received :respawn_after_warp
-      refute_received {:"$gen_cast", {:warp, _, _, _}}
+      refute_received {:"$gen_cast", {:movement, {:warp, _, _, _}}}
     end
   end
 

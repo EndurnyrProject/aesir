@@ -92,7 +92,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   end
 
   @doc """
-  GenServer-native entry point for the session's `{:warp, ...}` cast.
+  GenServer-native entry point for the session's `{:movement, {:warp, ...}}` cast.
 
   Wraps `warp/4`, returning `{:noreply, new_state}` on success. On
   `{:error, reason}` it logs the failure and returns `{:noreply, state}`

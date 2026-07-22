@@ -158,7 +158,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
 
   @doc """
   Runs on the invitee's session, invoked from `PlayerSession`'s
-  `handle_call({:deliver_party_invite, invite}, _from, state)`: stores the
+  `handle_call({:social, {:deliver_party_invite, invite}}, _from, state)`: stores the
   pending invite, sends the `PartyInviteNotify`, and arms the expiry timer.
   Rejects a second invite while one is already pending and unexpired.
   """

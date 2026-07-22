@@ -395,7 +395,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         connection_pid: self()
       }
 
-      {:noreply, _new_state} = PlayerSession.handle_cast({:player_entered_view, 2}, state)
+      {:noreply, _new_state} =
+        PlayerSession.handle_cast({:visibility, {:player_entered_view, 2}}, state)
 
       assert_receive {:send, :world,
                       {:unit_spawn,
@@ -434,7 +435,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         connection_pid: self()
       }
 
-      {:noreply, _new_state} = PlayerSession.handle_cast({:player_entered_view, 2}, state)
+      {:noreply, _new_state} =
+        PlayerSession.handle_cast({:visibility, {:player_entered_view, 2}}, state)
 
       assert_receive {:send, :world,
                       {:unit_spawn,
@@ -470,7 +472,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         connection_pid: self()
       }
 
-      {:noreply, _new_state} = PlayerSession.handle_cast({:player_entered_view, 2}, state)
+      {:noreply, _new_state} =
+        PlayerSession.handle_cast({:visibility, {:player_entered_view, 2}}, state)
 
       assert_receive {:send, :world,
                       {:unit_spawn,
@@ -509,7 +512,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         connection_pid: self()
       }
 
-      {:noreply, _new_state} = PlayerSession.handle_cast({:player_entered_view, 2}, state)
+      {:noreply, _new_state} =
+        PlayerSession.handle_cast({:visibility, {:player_entered_view, 2}}, state)
 
       assert_receive {:send, :world,
                       {:unit_spawn,
@@ -543,7 +547,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         connection_pid: self()
       }
 
-      {:noreply, _new_state} = PlayerSession.handle_cast({:player_entered_view, 2}, state)
+      {:noreply, _new_state} =
+        PlayerSession.handle_cast({:visibility, {:player_entered_view, 2}}, state)
 
       assert_receive {:send, :world,
                       {:unit_spawn,
@@ -587,7 +592,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         connection_pid: self()
       }
 
-      {:noreply, _new_state} = PlayerSession.handle_cast({:player_entered_view, 2}, state)
+      {:noreply, _new_state} =
+        PlayerSession.handle_cast({:visibility, {:player_entered_view, 2}}, state)
 
       assert_received {:icon_to, 1, ^icon}
 
@@ -622,7 +628,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         connection_pid: self()
       }
 
-      {:noreply, _new_state} = PlayerSession.handle_cast({:player_entered_view, 2}, state)
+      {:noreply, _new_state} =
+        PlayerSession.handle_cast({:visibility, {:player_entered_view, 2}}, state)
 
       refute_received {:icon_to, _observer, _packet}
 
@@ -636,7 +643,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         connection_pid: self()
       }
 
-      {:noreply, _new_state} = PlayerSession.handle_cast({:player_entered_view, 999}, state)
+      {:noreply, _new_state} =
+        PlayerSession.handle_cast({:visibility, {:player_entered_view, 999}}, state)
 
       refute_receive {:send, _channel, _msg}
     end
@@ -650,7 +658,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
       {:noreply, _new_state} =
         PlayerSession.handle_cast(
-          {:player_left_view, 2, 200},
+          {:visibility, {:player_left_view, 2, 200}},
           state
         )
 
@@ -680,7 +688,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
       {:reply, :ok, new_state} =
         PlayerSession.handle_call(
-          {:update_base_stat, :str, 20},
+          {:stats, {:update_base_stat, :str, 20}},
           {self(), make_ref()},
           state
         )
@@ -706,7 +714,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
       {:reply, stats, _new_state} =
         PlayerSession.handle_call(
-          :recalculate_stats,
+          {:stats, :recalculate},
           {self(), make_ref()},
           state
         )
@@ -735,7 +743,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
       {:noreply, new_state} =
         PlayerSession.handle_cast(
-          :recalculate_stats,
+          {:stats, :recalculate},
           state
         )
 
@@ -777,7 +785,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
       {:reply, stats, _new_state} =
         PlayerSession.handle_call(
-          :get_current_stats,
+          {:stats, :get_current_stats},
           {self(), make_ref()},
           state
         )
@@ -867,7 +875,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       {:noreply, _} =
         PlayerSession.handle_cast(
           # STR param
-          {:send_status_update, 13, 100},
+          {:stats, {:send_status_update, 13, 100}},
           state
         )
 
@@ -877,7 +885,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       # same ParamChange; uint64 carries the wide value without truncation.
       {:noreply, _} =
         PlayerSession.handle_cast(
-          {:send_status_update, 1, 999_999},
+          {:stats, {:send_status_update, 1, 999_999}},
           state
         )
 
@@ -902,7 +910,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
       {:noreply, _} =
         PlayerSession.handle_cast(
-          {:send_status_updates, status_map},
+          {:stats, {:send_status_updates, status_map}},
           state
         )
 
@@ -1327,7 +1335,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       PlayerSession.apply_damage(target_pid, 1_000)
       assert %{game_state: %{action_state: :dead}} = PlayerSession.get_state(target_pid)
 
-      GenServer.cast(target_pid, {:warp, "geffen", 1, 1})
+      GenServer.cast(target_pid, {:movement, {:warp, "geffen", 1, 1}})
       assert %{game_state: %{map_name: "geffen"}} = PlayerSession.get_state(target_pid)
 
       assert {:error, :stale_target} = PlayerSession.resurrect(target_pid, 2, 30)

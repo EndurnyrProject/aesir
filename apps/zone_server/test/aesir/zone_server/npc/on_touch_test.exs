@@ -274,7 +274,7 @@ defmodule Aesir.ZoneServer.Npc.OnTouchTest do
 
       {:noreply, ticked_state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
 
-      assert_received {:"$gen_cast", {:warp, "izlude", 150, 190}}
+      assert_received {:"$gen_cast", {:movement, {:warp, "izlude", 150, 190}}}
       refute_receive {:touched, TouchNpc}, 50
       refute_receive {:talked, TouchNpc}, 50
       refute MapSet.member?(ticked_state.game_state.inside_npc_areas, gid)

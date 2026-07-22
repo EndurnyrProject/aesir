@@ -390,7 +390,7 @@ defmodule Aesir.ZoneServer.Integration.GuildIntegrationTest do
 
       flush_packets()
 
-      GenServer.cast(observer_session.pid, {:player_entered_view, master_char_id})
+      GenServer.cast(observer_session.pid, {:visibility, {:player_entered_view, master_char_id}})
 
       assert_receive {:packet_sent,
                       %UnitSpawn{

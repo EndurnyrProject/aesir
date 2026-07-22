@@ -56,7 +56,7 @@ defmodule Aesir.ZoneServer.Gm.Commands.ItemTest do
 
     assert {:ok, msg} = Item.execute(["501", "5"], ctx())
     assert msg == "Gave 5x #{item_def.name} to GmChar"
-    assert_receive {:"$gen_cast", {:give_item, ^item_def, 5}}
+    assert_receive {:"$gen_cast", {:inventory, {:give_item, ^item_def, 5}}}
   end
 
   test "integer 3rd arg resolves the target via the registry" do
@@ -66,7 +66,7 @@ defmodule Aesir.ZoneServer.Gm.Commands.ItemTest do
     assert {:ok, msg} = Item.execute(["501", "3", "2000"], ctx())
     assert msg == "Gave 3x #{item_def.name} to TargetChar"
 
-    assert {:messages, [{:"$gen_cast", {:give_item, ^item_def, 3}}]} =
+    assert {:messages, [{:"$gen_cast", {:inventory, {:give_item, ^item_def, 3}}}]} =
              Process.info(target, :messages)
   end
 
@@ -77,17 +77,17 @@ defmodule Aesir.ZoneServer.Gm.Commands.ItemTest do
     assert {:ok, msg} = Item.execute(["501", "2", "targetchar"], ctx())
     assert msg == "Gave 2x #{item_def.name} to TargetChar"
 
-    assert {:messages, [{:"$gen_cast", {:give_item, ^item_def, 2}}]} =
+    assert {:messages, [{:"$gen_cast", {:inventory, {:give_item, ^item_def, 2}}}]} =
              Process.info(target, :messages)
   end
 
   test "offline integer target returns an error and casts nothing" do
     assert {:error, "Player not online"} = Item.execute(["501", "1", "4000"], ctx())
-    refute_received {:"$gen_cast", {:give_item, _, _}}
+    refute_received {:"$gen_cast", {:inventory, {:give_item, _, _}}}
   end
 
   test "unknown name target returns an error and casts nothing" do
     assert {:error, "Player not online"} = Item.execute(["501", "1", "Nobody"], ctx())
-    refute_received {:"$gen_cast", {:give_item, _, _}}
+    refute_received {:"$gen_cast", {:inventory, {:give_item, _, _}}}
   end
 end

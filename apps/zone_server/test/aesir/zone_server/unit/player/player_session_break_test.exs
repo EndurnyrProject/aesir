@@ -78,7 +78,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionBreakTest do
       end)
 
       {:noreply, new_state} =
-        PlayerSession.handle_cast({:break_equip, :right_hand}, state)
+        PlayerSession.handle_cast({:inventory, {:break_equip, :right_hand}}, state)
 
       broken = new_state.game_state.inventory[server_index]
       assert broken.attribute == 1
@@ -108,7 +108,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionBreakTest do
       reject(&Broadcast.to_player/2)
 
       {:noreply, new_state} =
-        PlayerSession.handle_cast({:break_equip, :right_hand}, state)
+        PlayerSession.handle_cast({:inventory, {:break_equip, :right_hand}}, state)
 
       assert new_state.game_state.inventory == state.game_state.inventory
       refute_received {:send, _channel, {:item_added, _}}
@@ -124,7 +124,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionBreakTest do
       server_index = index_of(state.game_state.inventory, 1101)
 
       {:noreply, new_state} =
-        PlayerSession.handle_cast(:repair_all, state)
+        PlayerSession.handle_cast({:inventory, :repair_all}, state)
 
       assert new_state.game_state.inventory[server_index].attribute == 0
       assert reload(character.id)[server_index].attribute == 0
@@ -139,7 +139,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionBreakTest do
       {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
 
       {:noreply, new_state} =
-        PlayerSession.handle_cast(:repair_all, state)
+        PlayerSession.handle_cast({:inventory, :repair_all}, state)
 
       assert new_state.game_state.inventory == state.game_state.inventory
       refute_received {:send, _channel, {:item_added, _}}

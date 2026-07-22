@@ -67,7 +67,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerWarpTest do
 
       assert {:noreply, new_state} = PacketHandler.handle_message(%MapLoaded{}, state)
 
-      assert_received {:"$gen_cast", {:warp, "izlude", 150, 190}}
+      assert_received {:"$gen_cast", {:movement, {:warp, "izlude", 150, 190}}}
       assert new_state.game_state.last_warp_at == nil
     end
 
@@ -85,7 +85,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerWarpTest do
 
       assert {:noreply, _new_state} = PacketHandler.handle_message(%MapLoaded{}, state)
 
-      refute_received {:"$gen_cast", {:warp, _, _, _}}
+      refute_received {:"$gen_cast", {:movement, {:warp, _, _, _}}}
     end
   end
 
@@ -99,7 +99,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerWarpTest do
 
       assert {:noreply, new_state} = PacketHandler.handle_message(%MapLoaded{}, state)
 
-      assert_received {:"$gen_cast", {:warp, "izlude", 150, 190}}
+      assert_received {:"$gen_cast", {:movement, {:warp, "izlude", 150, 190}}}
       assert_received :spawn_player
       assert new_state.game_state.last_warp_at == nil
     end
@@ -110,7 +110,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerWarpTest do
 
       assert {:noreply, _new_state} = PacketHandler.handle_message(%MapLoaded{}, state)
 
-      refute_received {:"$gen_cast", {:warp, _, _, _}}
+      refute_received {:"$gen_cast", {:movement, {:warp, _, _, _}}}
     end
 
     test "clears last_warp_at set by a prior warp before the on-spawn check" do
@@ -125,7 +125,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerWarpTest do
 
       assert {:noreply, new_state} = PacketHandler.handle_message(%MapLoaded{}, state)
 
-      assert_received {:"$gen_cast", {:warp, "izlude", 150, 190}}
+      assert_received {:"$gen_cast", {:movement, {:warp, "izlude", 150, 190}}}
       assert new_state.game_state.last_warp_at == nil
     end
   end

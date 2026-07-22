@@ -61,7 +61,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerGmTest do
     assert message == "Gave 1x #{item_def.name} to #{@char_name}"
 
     # The give-item delivery runs as a cast to the GM's own session (self()).
-    assert_receive {:"$gen_cast", {:give_item, ^item_def, 1}}
+    assert_receive {:"$gen_cast", {:inventory, {:give_item, ^item_def, 1}}}
 
     # The raw command is never broadcast.
     refute_received {:send, _channel,
@@ -76,6 +76,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerGmTest do
     assert %ChatMessage{gid: @char_id, message: "Insufficient permission"} =
              receive_chat_message()
 
-    refute_received {:"$gen_cast", {:give_item, _, _}}
+    refute_received {:"$gen_cast", {:inventory, {:give_item, _, _}}}
   end
 end

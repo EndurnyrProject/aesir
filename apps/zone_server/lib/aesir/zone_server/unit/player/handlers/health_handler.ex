@@ -184,7 +184,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   @doc """
   Validates the resurrection source, then revives the corpse on success.
 
-  The single entry point for a `{:resurrect, source_id, hp_percent}` call:
+  The single entry point for a `{:unit, {:resurrect, source_id, hp_percent}}` call:
   confirms the source is still alive and co-located with the target before
   delegating to `resurrect/3`, replying with the validation error and leaving
   `state` untouched when the source has moved on or gone away.

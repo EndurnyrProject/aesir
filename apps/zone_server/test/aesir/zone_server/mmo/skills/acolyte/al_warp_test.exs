@@ -101,14 +101,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarpTest do
       assert {:ok, %Group{state: %{uses: 7}}} =
                AlWarp.on_touch(group(open_state()), {:player, 3000})
 
-      assert_received {:"$gen_cast", {:warp, "prontera", 155, 180}}
+      assert_received {:"$gen_cast", {:movement, {:warp, "prontera", 155, 180}}}
     end
 
     test "expires when the last use is spent" do
       stub_target_session(3000)
 
       assert :expire = AlWarp.on_touch(group(open_state(%{uses: 1})), {:player, 3000})
-      assert_received {:"$gen_cast", {:warp, "prontera", 155, 180}}
+      assert_received {:"$gen_cast", {:movement, {:warp, "prontera", 155, 180}}}
     end
 
     test "ignores touches before the portal opens" do
@@ -160,7 +160,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarpTest do
       assert {:ok, %Group{state: %{uses: 7}}} =
                AlWarp.on_interval(group(open_state()), now_ms())
 
-      assert_received {:"$gen_cast", {:warp, "prontera", 155, 180}}
+      assert_received {:"$gen_cast", {:movement, {:warp, "prontera", 155, 180}}}
     end
 
     test "expires when standing occupants drain the last use" do

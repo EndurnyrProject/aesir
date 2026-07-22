@@ -25,8 +25,8 @@ defmodule Aesir.ZoneServer.Gm.Commands.BaseLevelTest do
     end
   end
 
-  test "valid amount casts {:add_base_level, amount}" do
+  test "valid amount casts {:progression, {:add_base_level, amount}}" do
     assert {:ok, "Gained 5 base level(s)"} = BaseLevel.execute(["5"], ctx())
-    assert_received {:"$gen_cast", {:add_base_level, 5}}
+    assert_received {:"$gen_cast", {:progression, {:add_base_level, 5}}}
   end
 end

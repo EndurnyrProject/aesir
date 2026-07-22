@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.GuildSync
@@ -51,9 +52,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
   alias Aesir.ZoneServer.Unit.Player.StateCommit
+  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusPersistence
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
+  alias Aesir.ZoneServer.Unit.Vending
   alias Phoenix.PubSub
 
   # rAthena NATURAL_HEAL_INTERVAL
@@ -77,7 +80,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   Applies combat damage to this player, updating HP and handling death.
   """
   def apply_damage(pid, damage, attacker_id \\ nil) do
-    GenServer.cast(pid, {:apply_damage, damage, attacker_id})
+    GenServer.cast(pid, {:unit, {:apply_damage, damage, attacker_id}})
   end
 
   @spec apply_walk_delay(pid(), non_neg_integer()) :: :ok
@@ -91,7 +94,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   """
   @spec consume_sp(pid(), non_neg_integer()) :: :ok
   def consume_sp(pid, amount) do
-    GenServer.cast(pid, {:consume_sp, amount})
+    GenServer.cast(pid, {:unit, {:consume_sp, amount}})
   end
 
   @doc """
@@ -100,7 +103,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   """
   @spec try_consume_sp(pid(), non_neg_integer()) ::
           :ok | {:error, :insufficient_sp | :target_unavailable}
-  def try_consume_sp(pid, amount), do: call_session(pid, {:try_consume_sp, amount})
+  def try_consume_sp(pid, amount), do: call_session(pid, {:unit, {:try_consume_sp, amount}})
 
   @doc """
   Revives this target session in place at a percentage of its maximum HP.
@@ -110,7 +113,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
           | {:error,
              :stale_target | :invalid_hp_percent | :source_unavailable | :target_unavailable}
   def resurrect(pid, source_id, hp_percent) do
-    call_session(pid, {:resurrect, source_id, hp_percent})
+    call_session(pid, {:unit, {:resurrect, source_id, hp_percent}})
   end
 
   defp call_session(pid, message) do
@@ -132,7 +135,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   """
   @spec restore_sp(pid(), non_neg_integer()) :: :ok
   def restore_sp(pid, amount) do
-    GenServer.cast(pid, {:restore_sp, amount})
+    GenServer.cast(pid, {:unit, {:restore_sp, amount}})
   end
 
   @doc """
@@ -142,7 +145,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   """
   @spec run_attached_event(pid(), module(), non_neg_integer(), String.t()) :: :ok
   def run_attached_event(pid, module, gid, label) do
-    GenServer.cast(pid, {:run_attached_event, module, gid, label})
+    GenServer.cast(pid, {:npc, {:run_attached_event, module, gid, label}})
   end
 
   @doc """
@@ -172,14 +175,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   Automatically chooses between ZC_PAR_CHANGE and ZC_LONGPAR_CHANGE based on value size.
   """
   def send_status_update(pid, param_id, value) do
-    GenServer.cast(pid, {:send_status_update, param_id, value})
+    GenServer.cast(pid, {:stats, {:send_status_update, param_id, value}})
   end
 
   @doc """
   Sends multiple status updates to this player efficiently.
   """
   def send_status_updates(pid, status_map) when is_map(status_map) do
-    GenServer.cast(pid, {:send_status_updates, status_map})
+    GenServer.cast(pid, {:stats, {:send_status_updates, status_map}})
   end
 
   @doc """
@@ -187,7 +190,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   """
   def update_base_stat(pid, stat_name, new_value)
       when stat_name in [:str, :agi, :vit, :int, :dex, :luk] do
-    GenServer.call(pid, {:update_base_stat, stat_name, new_value})
+    GenServer.call(pid, {:stats, {:update_base_stat, stat_name, new_value}})
   end
 
   @doc """
@@ -203,11 +206,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   def recalculate_stats(pid, sync \\ true)
 
   def recalculate_stats(pid, true) do
-    GenServer.call(pid, :recalculate_stats)
+    GenServer.call(pid, {:stats, :recalculate})
   end
 
   def recalculate_stats(pid, false) do
-    GenServer.cast(pid, :recalculate_stats)
+    GenServer.cast(pid, {:stats, :recalculate})
     :ok
   end
 
@@ -215,7 +218,25 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   Gets the current Stats struct.
   """
   def get_current_stats(pid) do
-    GenServer.call(pid, :get_current_stats)
+    GenServer.call(pid, {:stats, :get_current_stats})
+  end
+
+  @doc """
+  Adds base levels to this player (e.g. `@baselevelup`), clamped to the job's
+  max base level.
+  """
+  @spec add_base_level(pid(), pos_integer()) :: :ok
+  def add_base_level(pid, amount) do
+    GenServer.cast(pid, {:progression, {:add_base_level, amount}})
+  end
+
+  @doc """
+  Adds job levels to this player (e.g. `@joblevelup`), clamped to the job's
+  max job level.
+  """
+  @spec add_job_level(pid(), pos_integer()) :: :ok
+  def add_job_level(pid, amount) do
+    GenServer.cast(pid, {:progression, {:add_job_level, amount}})
   end
 
   @doc """
@@ -231,7 +252,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   :ok | {:error, atom()}
   """
   def apply_status(pid, status_id, status_params \\ []) do
-    GenServer.call(pid, {:apply_status, status_id, status_params})
+    GenServer.call(pid, {:status, {:apply_status, status_id, status_params}})
   end
 
   @doc """
@@ -239,21 +260,21 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   Delegates to the StatusEffect.Interpreter and triggers stats recalculation.
   """
   def remove_status(pid, status_id) do
-    GenServer.call(pid, {:remove_status, status_id})
+    GenServer.call(pid, {:status, {:remove_status, status_id}})
   end
 
   @doc """
   Gets all active status effects for the player.
   """
   def get_active_statuses(pid) do
-    GenServer.call(pid, :get_active_statuses)
+    GenServer.call(pid, {:status, :get_active_statuses})
   end
 
   @doc """
   Checks if a player has a specific status effect.
   """
   def has_status?(pid, status_id) do
-    GenServer.call(pid, {:has_status, status_id})
+    GenServer.call(pid, {:status, {:has_status, status_id}})
   end
 
   @doc """
@@ -263,7 +284,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   """
   @spec deliver_party_invite(pid(), map()) :: :ok | {:error, :invite_pending}
   def deliver_party_invite(pid, invite) do
-    GenServer.call(pid, {:deliver_party_invite, invite})
+    GenServer.call(pid, {:social, {:deliver_party_invite, invite}})
   end
 
   @doc """
@@ -273,37 +294,88 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   """
   @spec deliver_guild_invite(pid(), map()) :: :ok | {:error, :invite_pending}
   def deliver_guild_invite(pid, invite) do
-    GenServer.call(pid, {:deliver_guild_invite, invite})
+    GenServer.call(pid, {:social, {:deliver_guild_invite, invite}})
   end
 
   @doc "Notifies this player that `about_char_id` entered their view range."
   @spec notify_entered_view(pid(), non_neg_integer()) :: :ok
   def notify_entered_view(pid, about_char_id) do
-    GenServer.cast(pid, {:player_entered_view, about_char_id})
+    GenServer.cast(pid, {:visibility, {:player_entered_view, about_char_id}})
+  end
+
+  @doc """
+  Notifies this player that `about_char_id` (account `about_account_id`) left
+  their view range.
+  """
+  @spec notify_left_view(pid(), non_neg_integer(), non_neg_integer()) :: :ok
+  def notify_left_view(pid, about_char_id, about_account_id) do
+    GenServer.cast(pid, {:visibility, {:player_left_view, about_char_id, about_account_id}})
   end
 
   @doc "Warps this player to `{x, y}` on `map_name`."
   @spec warp(pid(), String.t(), integer(), integer()) :: :ok
   def warp(pid, map_name, x, y) do
-    GenServer.cast(pid, {:warp, map_name, x, y})
+    GenServer.cast(pid, {:movement, {:warp, map_name, x, y}})
   end
 
   @doc "Gives `amount` of `item_def` to this player's inventory."
   @spec give_item(pid(), ItemDefinition.t(), pos_integer()) :: :ok
   def give_item(pid, item_def, amount) do
-    GenServer.cast(pid, {:give_item, item_def, amount})
+    GenServer.cast(pid, {:inventory, {:give_item, item_def, amount}})
+  end
+
+  @doc """
+  Breaks the equipment worn in `slot` on this player: a natural break on the
+  attacker's own weapon, or (once PvP enables the enemy-break path) a landed
+  break roll on the target.
+  """
+  @spec break_equip(pid(), atom()) :: :ok
+  def break_equip(pid, slot) do
+    GenServer.cast(pid, {:inventory, {:break_equip, slot}})
   end
 
   @doc "Repairs every broken item in this player's inventory at no cost."
   @spec repair_all(pid()) :: :ok
   def repair_all(pid) do
-    GenServer.cast(pid, :repair_all)
+    GenServer.cast(pid, {:inventory, :repair_all})
   end
 
   @doc "Applies a script DSL state-mutating `op` through the single-writer session."
   @spec script_apply(pid(), ScriptEffectHandler.op()) :: ScriptEffectHandler.reply()
   def script_apply(pid, op) do
-    GenServer.call(pid, {:script_apply, op})
+    GenServer.call(pid, {:npc, {:script_apply, op}})
+  end
+
+  @doc """
+  Runs a vending purchase against this seller session: the transactional
+  authority for its own cart, zeny and shop. Called from the buyer's
+  `VendingHandler.handle_purchase_request/3` with the buyer's fresh snapshot,
+  parked as a `call` on the seller.
+  """
+  @spec vending_purchase(
+          pid(),
+          integer(),
+          Inventory.t(),
+          non_neg_integer(),
+          Stats.t(),
+          String.t(),
+          [Vending.buy_line()]
+        ) :: {:ok, VendingHandler.buyer_delta()} | {:error, term()}
+  def vending_purchase(
+        pid,
+        buyer_char_id,
+        buyer_inventory,
+        buyer_zeny,
+        buyer_stats,
+        buyer_name,
+        buy_lines
+      ) do
+    GenServer.call(
+      pid,
+      {:vending,
+       {:vending_purchase, buyer_char_id, buyer_inventory, buyer_zeny, buyer_stats, buyer_name,
+        buy_lines}}
+    )
   end
 
   @doc "Forwards a decoded client `message` to this player's session for routing."
@@ -615,19 +687,23 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     {:noreply, state}
   end
 
+  # Visibility: another player's session directly casting to this one as it
+  # enters or leaves view range (point-to-point, not PubSub - MovementHandler
+  # resolves the target session and casts to it directly).
   @impl true
-  def handle_cast({:player_entered_view, other_char_id}, state) do
+  def handle_cast({:visibility, {:player_entered_view, other_char_id}}, state) do
     VisibilityHandler.entered_view(other_char_id, state)
   end
 
   @impl true
-  def handle_cast({:player_left_view, other_char_id, _other_account_id}, state) do
+  def handle_cast({:visibility, {:player_left_view, other_char_id, _other_account_id}}, state) do
     VisibilityHandler.left_view(other_char_id, state)
   end
 
   # Movement: knockback landing, the forced-stop cast (skill/stun interrupts),
-  # and the walk-delay cast (post-hit slow) - all three update movement state
-  # directly rather than routing through MovementHandler's request/tick path.
+  # the walk-delay cast (post-hit slow) - all three update movement state
+  # directly rather than routing through MovementHandler's request/tick path -
+  # and the warp cast (on-touch warp NPCs, AL_WARP, GM @warp).
   @impl true
   def handle_cast({:movement, {:knocked_back, x, y}}, %{game_state: game_state} = state) do
     updated_game_state =
@@ -659,22 +735,24 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
-  def handle_cast({:warp, map_name, x, y}, state) do
+  def handle_cast({:movement, {:warp, map_name, x, y}}, state) do
     WarpHandler.handle_warp(map_name, x, y, state)
   end
 
+  # Inventory: item grants (GM @item, NPC/quest rewards), and the break/repair
+  # pair (natural weapon break on a swing, GM @repairall).
   @impl true
-  def handle_cast({:give_item, item_def, amount}, state) do
+  def handle_cast({:inventory, {:give_item, item_def, amount}}, state) do
     InventoryManager.handle_give_item_cast(item_def, amount, state)
   end
 
   @impl true
-  def handle_cast({:break_equip, slot}, state) do
+  def handle_cast({:inventory, {:break_equip, slot}}, state) do
     InventoryManager.handle_break_equip(slot, state)
   end
 
   @impl true
-  def handle_cast(:repair_all, state) do
+  def handle_cast({:inventory, :repair_all}, state) do
     InventoryManager.handle_repair_all(state)
   end
 
@@ -687,33 +765,39 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     SkillHandler.handle_auto_cast(state, skill_id, level, target)
   end
 
+  # Unit: vitals casts (damage, SP drain/restore). Heal stays under `:combat`
+  # (Task 13) rather than moving here - Task 21 converges every HP/SP tag
+  # (player and mob) under this domain via `Unit.Session.Vitals`.
   @impl true
-  def handle_cast({:apply_damage, damage, attacker_id}, state) do
+  def handle_cast({:unit, {:apply_damage, damage, attacker_id}}, state) do
     HealthHandler.apply_damage(damage, attacker_id, state)
   end
 
   @impl true
-  def handle_cast({:add_base_level, amount}, state) do
-    ProgressionHandler.handle_add_base_level(amount, state)
-  end
-
-  @impl true
-  def handle_cast({:add_job_level, amount}, state) do
-    ProgressionHandler.handle_add_job_level(amount, state)
-  end
-
-  @impl true
-  def handle_cast({:consume_sp, amount}, state) do
+  def handle_cast({:unit, {:consume_sp, amount}}, state) do
     HealthHandler.consume_sp(amount, state)
   end
 
   @impl true
-  def handle_cast({:restore_sp, amount}, state) do
+  def handle_cast({:unit, {:restore_sp, amount}}, state) do
     HealthHandler.restore_sp(amount, state)
   end
 
+  # Progression: GM base/job level grants (`@baselevelup`/`@joblevelup`).
   @impl true
-  def handle_cast({:run_attached_event, module, gid, label}, state) do
+  def handle_cast({:progression, {:add_base_level, amount}}, state) do
+    ProgressionHandler.handle_add_base_level(amount, state)
+  end
+
+  @impl true
+  def handle_cast({:progression, {:add_job_level, amount}}, state) do
+    ProgressionHandler.handle_add_job_level(amount, state)
+  end
+
+  # NPC: the owner-event dispatch half of the two-message `:npc` domain (the
+  # other, `{:script_apply, op}`, is a call - see the handle_call clauses).
+  @impl true
+  def handle_cast({:npc, {:run_attached_event, module, gid, label}}, state) do
     NpcOwnerEventHandler.run(module, gid, label, state)
     {:noreply, state}
   end
@@ -771,18 +855,20 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     {:noreply, state}
   end
 
+  # Stats: client status-sync casts and the async recalculate variant (the
+  # sync call variant lives in the handle_call block below).
   @impl true
-  def handle_cast({:send_status_update, param_id, value}, state) do
+  def handle_cast({:stats, {:send_status_update, param_id, value}}, state) do
     StatsManager.handle_send_status_update(param_id, value, state)
   end
 
   @impl true
-  def handle_cast({:send_status_updates, status_map}, state) do
+  def handle_cast({:stats, {:send_status_updates, status_map}}, state) do
     StatsManager.handle_send_status_updates(status_map, state)
   end
 
   @impl true
-  def handle_cast(:recalculate_stats, state) do
+  def handle_cast({:stats, :recalculate}, state) do
     StatsManager.handle_recalculate_stats(state)
   end
 
@@ -795,104 +881,104 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     {:noreply, state}
   end
 
+  # get_state stays bare: a ubiquitous utility call, not a domain message.
   @impl true
   def handle_call(:get_state, _from, state) do
     {:reply, state, state}
   end
 
+  # Unit: vitals calls (SP debit, resurrect).
   @impl true
-  def handle_call({:try_consume_sp, amount}, _from, state) do
+  def handle_call({:unit, {:try_consume_sp, amount}}, _from, state) do
     HealthHandler.try_consume_sp(amount, state)
   end
 
   @impl true
-  def handle_call({:resurrect, source_id, hp_percent}, _from, state) do
+  def handle_call({:unit, {:resurrect, source_id, hp_percent}}, _from, state) do
     HealthHandler.handle_resurrect(source_id, hp_percent, state)
   end
 
+  # Stats: the synchronous stat calls (the async cast variants live in the
+  # handle_cast block above).
   @impl true
-  def handle_call({:update_base_stat, stat_name, new_value}, _from, state) do
+  def handle_call({:stats, {:update_base_stat, stat_name, new_value}}, _from, state) do
     StatsManager.handle_update_base_stat(stat_name, new_value, state)
   end
 
   @impl true
-  def handle_call(:recalculate_stats, _from, state) do
+  def handle_call({:stats, :recalculate}, _from, state) do
     StatsManager.handle_sync_recalculate_stats(state)
   end
 
   @impl true
-  def handle_call(:get_current_stats, _from, state) do
+  def handle_call({:stats, :get_current_stats}, _from, state) do
     StatsManager.handle_get_current_stats(state)
   end
 
+  # Status: apply/remove/query status effects.
   @impl true
-  def handle_call({:apply_status, status_id, status_params}, _from, state) do
+  def handle_call({:status, {:apply_status, status_id, status_params}}, _from, state) do
     StatusManager.handle_apply_status(status_id, status_params, state)
   end
 
   @impl true
-  def handle_call({:remove_status, status_id}, _from, state) do
+  def handle_call({:status, {:remove_status, status_id}}, _from, state) do
     StatusManager.handle_remove_status(status_id, state)
   end
 
   @impl true
-  def handle_call(:get_active_statuses, _from, state) do
+  def handle_call({:status, :get_active_statuses}, _from, state) do
     StatusManager.handle_get_active_statuses(state)
   end
 
   @impl true
-  def handle_call({:has_status, status_id}, _from, state) do
+  def handle_call({:status, {:has_status, status_id}}, _from, state) do
     StatusManager.handle_has_status(status_id, state)
   end
 
-  # The single-writer effect seam: an NPC interaction process applies a state
-  # mutation (pay_zeny / give_item / delitem / set_char_var) against this
-  # authoritative session. Replies with the fresh game_state or an error; on
-  # success the new game_state is also published to the unit registry.
-  # The seller-authority buy seam: a buyer session (parked in its own cast)
-  # calls this on the seller session, which runs the whole atomic transaction
-  # and replies with the buyer's delta. `purchase/7` already pushed the seller's
-  # own cart/zeny packets; the per-line `VendingSaleReport`s are returned for us
-  # to deliver to the seller's client here.
+  # Vending: the seller-authority buy seam. A buyer session (parked in its own
+  # call, via `PlayerSession.vending_purchase/7`) calls this on the seller
+  # session, which runs the whole atomic transaction and replies with the
+  # buyer's delta. Kept as its own domain despite being a single message: it is
+  # the entire cross-session `VendingHandler` seam, not a session-local tag.
   @impl true
   def handle_call(
-        {:vending_purchase, buyer_char_id, buyer_inventory, buyer_zeny, buyer_stats, buyer_name,
-         buy_lines},
+        {:vending,
+         {:vending_purchase, buyer_char_id, buyer_inventory, buyer_zeny, buyer_stats, buyer_name,
+          buy_lines}},
         _from,
         seller_state
       ) do
-    case VendingHandler.purchase(
-           seller_state,
-           buyer_char_id,
-           buyer_inventory,
-           buyer_zeny,
-           buyer_stats,
-           buyer_name,
-           buy_lines
-         ) do
-      {:ok, new_seller_state, buyer_delta, sale_reports} ->
-        Enum.each(sale_reports, &MessageRouter.send_to(new_seller_state.connection_pid, &1))
-
-        {:reply, {:ok, buyer_delta},
-         update_game_state(new_seller_state, new_seller_state.game_state)}
-
-      {:error, reason} ->
-        {:reply, {:error, reason}, seller_state}
-    end
+    VendingHandler.handle_purchase(
+      seller_state,
+      buyer_char_id,
+      buyer_inventory,
+      buyer_zeny,
+      buyer_stats,
+      buyer_name,
+      buy_lines
+    )
   end
 
+  # Social: pending party/guild invite delivery.
   @impl true
-  def handle_call({:deliver_party_invite, invite}, _from, state) do
+  def handle_call({:social, {:deliver_party_invite, invite}}, _from, state) do
     PartyHandler.handle_invite_delivery(invite, state)
   end
 
   @impl true
-  def handle_call({:deliver_guild_invite, invite}, _from, state) do
+  def handle_call({:social, {:deliver_guild_invite, invite}}, _from, state) do
     GuildHandler.handle_invite_delivery(invite, state)
   end
 
+  # NPC: the single-writer script-effect seam. An NPC interaction process (or
+  # MvpReward) applies a state mutation (pay_zeny / give_item / delitem /
+  # set_char_var / ...) against this authoritative session. Replies with the
+  # fresh game_state or an error; on success the new game_state is also
+  # published to the unit registry. The other `:npc` message,
+  # `{:run_attached_event, ...}`, is a cast - see the handle_cast clauses.
   @impl true
-  def handle_call({:script_apply, op}, _from, state) do
+  def handle_call({:npc, {:script_apply, op}}, _from, state) do
     ScriptEffectHandler.handle_script_apply(op, state)
   end
 

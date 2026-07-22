@@ -38,7 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     def init({owner, unit_state}), do: {:ok, %{owner: owner, game_state: unit_state}}
 
     @impl GenServer
-    def handle_call(:get_current_stats, _from, state) do
+    def handle_call({:stats, :get_current_stats}, _from, state) do
       {:reply, state.game_state.stats, state}
     end
 

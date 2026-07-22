@@ -43,7 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightrasherTest do
     end
 
     @impl GenServer
-    def handle_call(:get_current_stats, _from, state) do
+    def handle_call({:stats, :get_current_stats}, _from, state) do
       {:reply, state.game_state.stats, state}
     end
 

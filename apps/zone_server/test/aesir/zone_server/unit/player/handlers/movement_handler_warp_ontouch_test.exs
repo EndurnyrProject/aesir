@@ -34,7 +34,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerWarpOntouchTest d
   end
 
   describe "on-touch warp trigger during step_player" do
-    test "stepping into a warp area casts {:warp, to_map, to_x, to_y} and cancels the walk" do
+    test "stepping into a warp area casts {:movement, {:warp, to_map, to_x, to_y}} and cancels the walk" do
       warp = warp_at(51, 50, xs: 1, ys: 1)
       stub(Warps, :for_map, fn "prontera" -> {:ok, [warp]} end)
 
@@ -48,7 +48,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerWarpOntouchTest d
 
       {:noreply, new_state} = MovementHandler.handle_movement_tick(%{game_state: game_state})
 
-      assert_received {:"$gen_cast", {:warp, "izlude", 150, 190}}
+      assert_received {:"$gen_cast", {:movement, {:warp, "izlude", 150, 190}}}
 
       assert new_state.game_state.movement_state == :standing
       assert new_state.game_state.walk_path == []
@@ -70,7 +70,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerWarpOntouchTest d
 
       {:noreply, new_state} = MovementHandler.handle_movement_tick(%{game_state: game_state})
 
-      refute_received {:"$gen_cast", {:warp, _, _, _}}
+      refute_received {:"$gen_cast", {:movement, {:warp, _, _, _}}}
 
       assert new_state.game_state.movement_state == :moving
       assert new_state.game_state.walk_path == [{52, 50}]
@@ -93,7 +93,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerWarpOntouchTest d
 
       {:noreply, new_state} = MovementHandler.handle_movement_tick(%{game_state: game_state})
 
-      refute_received {:"$gen_cast", {:warp, _, _, _}}
+      refute_received {:"$gen_cast", {:movement, {:warp, _, _, _}}}
 
       # Cooldown no-op: the walk continues as normal.
       assert new_state.game_state.movement_state == :moving

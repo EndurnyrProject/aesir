@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionScriptApplyTest do
   @moduledoc """
-  Exercises the production `{:script_apply, op}` `handle_call` clause on
+  Exercises the production `{:npc, {:script_apply, op}}` `handle_call` clause on
   `PlayerSession` directly: it must apply the op, publish the new state to the
   unit registry, and reply with `{:ok, game_state}` / `{:error, reason}` exactly
   as a routing NPC interaction expects.
@@ -38,7 +38,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionScriptApplyTest do
 
     {:reply, reply, new_state} =
       PlayerSession.handle_call(
-        {:script_apply, {:pay_zeny, 200}},
+        {:npc, {:script_apply, {:pay_zeny, 200}}},
         self(),
         base_state(zeny: 1_000)
       )
@@ -56,7 +56,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionScriptApplyTest do
     state = base_state(zeny: 50)
 
     {:reply, reply, new_state} =
-      PlayerSession.handle_call({:script_apply, {:pay_zeny, 200}}, self(), state)
+      PlayerSession.handle_call({:npc, {:script_apply, {:pay_zeny, 200}}}, self(), state)
 
     assert reply == {:error, :not_enough_zeny}
     assert new_state == state

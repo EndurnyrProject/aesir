@@ -34,7 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcMakingarrowTest do
     def init({game_state, test_pid}), do: {:ok, {game_state, test_pid}}
 
     @impl true
-    def handle_call({:script_apply, op}, _from, {game_state, test_pid} = state) do
+    def handle_call({:npc, {:script_apply, op}}, _from, {game_state, test_pid} = state) do
       send(test_pid, {:script_op, op})
       {:reply, {:ok, game_state}, state}
     end
