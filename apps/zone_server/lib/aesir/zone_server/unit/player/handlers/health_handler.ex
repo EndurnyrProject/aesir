@@ -34,10 +34,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.SessionAdapter
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StatusSync
-  alias Aesir.ZoneServer.Unit.Session.Vitals
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -135,26 +133,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   @doc """
   Drains SP from the player, clamping at zero, then syncs and persists it.
 
-  Routes through `Unit.Session.Vitals`, which owns the clamp and pushes only the
-  SP `ParamChange` + persists only `sp`. Used by SP-costing statuses.
+  Pushes only the SP `ParamChange` and persists only `sp`. Used by SP-costing
+  statuses; a non-positive amount is a no-op.
   """
   @spec consume_sp(non_neg_integer(), SessionState.t()) :: {:noreply, SessionState.t()}
-  def consume_sp(amount, state) do
-    {:noreply, Vitals.drain_sp(state, amount, SessionAdapter, commit: true)}
+  def consume_sp(amount, state) when is_integer(amount) and amount > 0 do
+    {:noreply, put_sp(state, max(0, current_sp(state) - amount))}
   end
+
+  def consume_sp(_amount, state), do: {:noreply, state}
 
   @doc """
   Attempts to deduct SP without allowing the value to underflow.
 
   Unlike `consume_sp/2`, this synchronous operation leaves state unchanged when
-  the player cannot pay the entire amount; on success it drains through the same
-  `Unit.Session.Vitals` path.
+  the player cannot pay the entire amount.
   """
   @spec try_consume_sp(non_neg_integer(), SessionState.t()) ::
           {:reply, :ok | {:error, :insufficient_sp}, SessionState.t()}
   def try_consume_sp(amount, state) when is_integer(amount) and amount > 0 do
-    if Vitals.can_pay_sp?(state, SessionAdapter, amount) do
-      {:reply, :ok, Vitals.drain_sp(state, amount, SessionAdapter, commit: true)}
+    sp = current_sp(state)
+
+    if sp >= amount do
+      {:reply, :ok, put_sp(state, sp - amount)}
     else
       {:reply, {:error, :insufficient_sp}, state}
     end
@@ -249,12 +250,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   @doc """
   Restores SP to the player, clamped at `max_sp`.
 
-  The mirror of `consume_sp/2` through `Unit.Session.Vitals`; no-op for a
-  non-positive amount.
+  The mirror of `consume_sp/2`; no-op for a non-positive amount.
   """
   @spec restore_sp(integer(), SessionState.t()) :: {:noreply, SessionState.t()}
-  def restore_sp(amount, state) do
-    {:noreply, Vitals.restore_sp(state, amount, SessionAdapter, commit: true)}
+  def restore_sp(amount, state) when is_integer(amount) and amount > 0 do
+    max_sp = state.game_state.stats.derived_stats.max_sp
+    {:noreply, put_sp(state, min(current_sp(state) + amount, max_sp))}
+  end
+
+  def restore_sp(_amount, state), do: {:noreply, state}
+
+  defp current_sp(state), do: state.game_state.stats.current_state.sp
+
+  defp put_sp(state, new_sp) do
+    stats = state.game_state.stats
+    updated_stats = %{stats | current_state: %{stats.current_state | sp: new_sp}}
+    game_state = %{state.game_state | stats: updated_stats}
+    state = StatsManager.update_game_state(state, game_state)
+
+    StatusSync.send_param(state.connection_pid, StatusParams.sp(), new_sp)
+    CharacterPersistence.update_stats(game_state.character_id, %{sp: new_sp}, async: true)
+    state
   end
 
   @doc """

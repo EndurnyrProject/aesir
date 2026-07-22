@@ -32,6 +32,47 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionHpTest do
     assert_received {:hp_broadcast, %UnitHp{id: 1, hp: 700, max_hp: 1000}}
   end
 
+  test "a heal is clamped at max_hp" do
+    test_pid = self()
+
+    expect(Broadcast, :to_in_range, fn _map, _x, _y, _range, %UnitHp{} = packet ->
+      send(test_pid, {:hp_broadcast, packet})
+      :ok
+    end)
+
+    state = build_mob_state(hp: 950, max_hp: 1000)
+
+    {:noreply, healed} = MobSession.handle_cast({:unit, {:heal, 200}}, state)
+
+    assert healed.hp == 1000
+    assert_received {:hp_broadcast, %UnitHp{hp: 1000, max_hp: 1000}}
+  end
+
+  test "a non-positive heal is a no-op with no broadcast" do
+    reject(&Broadcast.to_in_range/5)
+
+    state = build_mob_state(hp: 500, max_hp: 1000)
+
+    assert {:noreply, ^state} = MobSession.handle_cast({:unit, {:heal, 0}}, state)
+    assert {:noreply, ^state} = MobSession.handle_cast({:unit, {:heal, -5}}, state)
+  end
+
+  test "an SP drain floors at 0 and publishes nothing" do
+    reject(&Broadcast.to_in_range/5)
+
+    state = %{build_mob_state(hp: 500, max_hp: 1000) | sp: 5, max_sp: 90}
+
+    {:noreply, drained} = MobSession.handle_cast({:unit, {:drain_sp, 20}}, state)
+
+    assert drained.sp == 0
+  end
+
+  test "an SP drain on a dead mob is a no-op" do
+    state = %{build_mob_state(hp: 0, max_hp: 1000) | is_dead: true, sp: 50}
+
+    assert {:noreply, ^state} = MobSession.handle_cast({:unit, {:drain_sp, 10}}, state)
+  end
+
   test "a dead mob ignores further damage and does not re-run the death path" do
     reject(&Broadcast.to_in_range/5)
 

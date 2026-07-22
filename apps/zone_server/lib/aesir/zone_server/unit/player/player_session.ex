@@ -686,13 +686,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     VisibilityHandler.left_view(other_char_id, state)
   end
 
-  # Movement: the knockback landing delegates to MovementHandler, which routes
-  # through the shared Unit.Session.Motion (stop + position-set, identical to
-  # the mob path). The walk-delay cast (post-hit slow) applies its bookkeeping
-  # here then delegates its stop to the same force-stop path as the
-  # forced-stop cast (skill/stun interrupts) - deliberately not through
-  # Motion, since a player's stop is conditional and sends a client-visible
-  # packet (see Unit.Session.Motion's moduledoc). The warp cast (on-touch warp
+  # Movement: the knockback landing delegates to MovementHandler (stop +
+  # position-set, same shape as the mob path). The walk-delay cast (post-hit
+  # slow) applies its bookkeeping here then delegates its stop to the same
+  # force-stop path as the forced-stop cast (skill/stun interrupts) -
+  # deliberately not the knockback stop, since a player's stop is conditional
+  # and sends a client-visible MoveStop packet. The warp cast (on-touch warp
   # NPCs, AL_WARP, GM @warp) delegates too.
   @impl true
   def handle_cast({:movement, {:knocked_back, x, y}}, state) do
@@ -743,11 +742,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     SkillHandler.handle_auto_cast(state, skill_id, level, target)
   end
 
-  # Unit: vitals casts (damage, SP drain/restore). Damage keeps its per-type
-  # orchestration in HealthHandler; SP drain/restore converge on
-  # `Unit.Session.Vitals` (shared with the mob session) via HealthHandler. Heal
-  # stays under `:combat` - the player heal carries received-heal-rate scaling
-  # that is genuinely player-only, so it is not converged here.
+  # Unit: vitals casts (damage, SP drain/restore), all handled in
+  # HealthHandler. Heal stays under `:combat` - the player heal carries
+  # received-heal-rate scaling that is genuinely player-only.
   @impl true
   def handle_cast({:unit, {:apply_damage, damage, attacker_id}}, state) do
     HealthHandler.apply_damage(damage, attacker_id, state)

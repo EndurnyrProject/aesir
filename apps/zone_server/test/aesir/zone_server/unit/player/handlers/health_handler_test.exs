@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   @moduletag :capture_log
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.Commons.StatusParams
   alias Aesir.Net.CastCancel
   alias Aesir.Net.ParamChange
   alias Aesir.Net.Resurrect
@@ -376,6 +377,55 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
 
       assert {:noreply, %{game_state: %{stats: %{current_state: %{sp: 6}}}}} =
                HealthHandler.consume_sp(4, %{state | game_state: game_state})
+    end
+
+    test "floors the drain at 0 rather than going negative" do
+      assert {:noreply, %{game_state: game_state}} =
+               HealthHandler.consume_sp(20, build_state(100, :idle))
+
+      assert game_state.stats.current_state.sp == 0
+    end
+
+    test "sends only the SP ParamChange and persists only sp" do
+      test_pid = self()
+
+      expect(CharacterPersistence, :update_stats, fn 1, stats, opts ->
+        send(test_pid, {:persist, stats, opts})
+        {:ok, %Character{}}
+      end)
+
+      HealthHandler.consume_sp(4, build_state(100, :idle))
+
+      sp_id = StatusParams.sp()
+      assert_received {:send, _channel, {_tag, %ParamChange{var_id: ^sp_id, value: 6}}}
+      refute_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_hp}}}
+      assert_received {:persist, %{sp: 6}, [async: true]}
+    end
+
+    test "a non-positive drain is a no-op with no side effects" do
+      reject(&CharacterPersistence.update_stats/3)
+      state = build_state(100, :idle)
+
+      assert {:noreply, ^state} = HealthHandler.consume_sp(0, state)
+      assert {:noreply, ^state} = HealthHandler.consume_sp(-5, state)
+      refute_received {:send, _, _}
+    end
+  end
+
+  describe "restore_sp/2" do
+    test "ceils the restore at max_sp" do
+      assert {:noreply, %{game_state: game_state}} =
+               HealthHandler.restore_sp(100, build_state(100, :idle))
+
+      assert game_state.stats.current_state.sp == 50
+    end
+
+    test "a non-positive restore is a no-op with no side effects" do
+      reject(&CharacterPersistence.update_stats/3)
+      state = build_state(100, :idle)
+
+      assert {:noreply, ^state} = HealthHandler.restore_sp(0, state)
+      refute_received {:send, _, _}
     end
   end
 

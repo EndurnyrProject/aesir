@@ -17,10 +17,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler
   alias Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
-  alias Aesir.ZoneServer.Unit.Mob.SessionAdapter
   alias Aesir.ZoneServer.Unit.Mob.SpawnView
   alias Aesir.ZoneServer.Unit.Mob.StealOps
-  alias Aesir.ZoneServer.Unit.Session.Vitals
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
   # Public API
@@ -261,10 +259,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   # Movement: pathing kickoff, the instant teleport reposition, and the
-  # knockback landing all delegate to MovementHandler - the latter routes
-  # through the shared Unit.Session.Motion (stop + position-set, identical to
-  # the player path). The walk-delay slow stays inline: it is not the same
-  # operation as knockback (see Unit.Session.Motion's moduledoc for why).
+  # knockback landing (stop + position-set, same shape as the player path) all
+  # delegate to MovementHandler. The walk-delay slow stays inline: it is not
+  # the same operation as knockback - a mob unconditionally resets its movement
+  # state with no publish, while knockback publishes the landing cell.
   @impl GenServer
   def handle_cast({:movement, {:move_to, x, y}}, state) do
     MovementHandler.handle_move_to(state, x, y)
@@ -289,20 +287,28 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     CombatHandler.handle_apply_damage(damage, attacker_id, state)
   end
 
-  # Unit: heal and SP drain, converged on `Unit.Session.Vitals`. Heal keeps its
-  # HP broadcast and is ungated (a corpse still heals, as before); SP drain
-  # publishes nothing, commits nothing, and no-ops on a dead mob - the dead
-  # guard stays here since it differs by op and unit type.
+  # Unit: heal and SP drain. Heal broadcasts the new HP and is ungated (a
+  # corpse still heals, as before); SP drain publishes nothing (mobs have no
+  # client-visible SP) and no-ops on a dead mob. Neither touches the unit
+  # registry. Non-positive amounts are silent no-ops.
   @impl GenServer
-  def handle_cast({:unit, {:heal, amount}}, state) do
-    {:noreply, Vitals.heal(state, amount, SessionAdapter)}
+  def handle_cast({:unit, {:heal, amount}}, state)
+      when is_integer(amount) and amount > 0 do
+    state = %{state | hp: min(state.hp + amount, state.max_hp)}
+    SpawnView.notify_hp_update(state)
+    {:noreply, state}
   end
+
+  def handle_cast({:unit, {:heal, _amount}}, state), do: {:noreply, state}
 
   def handle_cast({:unit, {:drain_sp, _amount}}, %{is_dead: true} = state), do: {:noreply, state}
 
-  def handle_cast({:unit, {:drain_sp, amount}}, state) do
-    {:noreply, Vitals.drain_sp(state, amount, SessionAdapter)}
+  def handle_cast({:unit, {:drain_sp, amount}}, state)
+      when is_integer(amount) and amount > 0 do
+    {:noreply, %{state | sp: max(0, state.sp - amount)}}
   end
+
+  def handle_cast({:unit, {:drain_sp, _amount}}, state), do: {:noreply, state}
 
   # Steal: mark this mob as already stolen from (TF_STEAL success path).
   @impl GenServer

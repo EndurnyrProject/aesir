@@ -10,10 +10,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Mob.MobState
-  alias Aesir.ZoneServer.Unit.Mob.SessionAdapter
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.MovementEngine
-  alias Aesir.ZoneServer.Unit.Session.Motion
 
   @doc """
   Forces the mob to path toward `{x, y}`, or drops the request if the mob is
@@ -106,12 +104,19 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   @doc """
   Lands the mob at `{x, y}` after a knockback.
 
-  Routes through the shared `Unit.Session.Motion`: stops the in-flight walk,
-  then writes and publishes the new position via `Movement.set_position/4`.
+  Stops the in-flight walk first so the published snapshot never shows the mob
+  still mid-walk at the old cell, then writes and publishes the landing cell
+  via `Movement.set_position/4`.
   """
   @spec handle_knocked_back(MobState.t(), integer(), integer()) :: {:noreply, MobState.t()}
   def handle_knocked_back(state, x, y) do
-    {:noreply, Motion.knocked_back(state, x, y, SessionAdapter)}
+    state =
+      state
+      |> MobState.stop_movement()
+      |> MobState.update_position(x, y)
+
+    Movement.set_position(:mob, state.instance_id, state, state.map_name)
+    {:noreply, state}
   end
 
   defp process_movement_tick(%{} = state) do
