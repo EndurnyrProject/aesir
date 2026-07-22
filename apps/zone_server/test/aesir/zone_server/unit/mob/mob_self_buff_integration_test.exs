@@ -1,11 +1,11 @@
 defmodule Aesir.ZoneServer.Unit.Mob.MobSelfBuffIntegrationTest do
   @moduledoc """
   End-to-end lifecycle for a mob self-buff through the live MobSkill path:
-  `Executor.execute/2` resolves an `NPC_AGIUP` row's self target, dispatches to
-  the real `SelfBuff` archetype, which applies `:sc_increaseagi` to the mob via
-  the real status interpreter/storage. Proves Phase 2b Task 1 (status fold in
-  `to_combatant/1`) and Task 4 (SelfBuff archetype) compose: the buff lands, the
-  buffed AGI shows up in the combatant, and removing the status reverts it.
+  `Executor.execute/2` resolves an `NPC_AGIUP` row's self target, dispatches
+  through the skill catalog to `NpcAgiup`, which applies `:sc_increaseagi` to
+  the mob via the real status interpreter/storage. Proves the status fold in
+  `to_combatant/1` composes with the catalog-dispatched skill: the buff lands,
+  the buffed AGI shows up in the combatant, and removing the status reverts it.
   """
 
   use ExUnit.Case, async: true
@@ -67,7 +67,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSelfBuffIntegrationTest do
   defp self_buff_row do
     %{
       skill: "NPC_AGIUP",
-      skill_id: 391,
+      skill_id: 350,
       level: @level,
       target: :self,
       condition: %{type: :always}

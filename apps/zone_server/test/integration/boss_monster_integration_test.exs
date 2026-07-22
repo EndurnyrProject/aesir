@@ -422,7 +422,7 @@ defmodule Aesir.ZoneServer.Integration.BossMonsterIntegrationTest do
   end
 
   defp self_buff_row do
-    %{skill: "NPC_AGIUP", skill_id: 391, level: 3, target: :self, condition: %{type: :always}}
+    %{skill: "NPC_AGIUP", skill_id: 350, level: 3, target: :self, condition: %{type: :always}}
   end
 
   defp idle(mob) do
