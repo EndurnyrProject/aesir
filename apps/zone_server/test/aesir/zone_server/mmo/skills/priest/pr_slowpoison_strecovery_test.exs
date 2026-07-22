@@ -102,7 +102,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSlowpoisonStrecoveryTest do
     reject(&StatusInterpreter.remove_status/3)
 
     assert {:ok, ^caster} = PrStrecovery.cast(caster, {:unit, target_id}, 1, definition)
-    assert_receive {:status_recovery_undead, :mob, ^target_id, 1_000}, 1_100
+
+    assert_receive {:skill_deferred, PrStrecovery,
+                    %{unit_type: :mob, target_id: ^target_id, caster_id: 1_000}},
+                   1_100
   end
 
   test "Status Recovery delays Blind on an undead-element target" do
@@ -115,7 +118,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSlowpoisonStrecoveryTest do
     end)
 
     assert {:ok, ^caster} = PrStrecovery.cast(caster, {:unit, target_id}, 1, definition)
-    assert_receive {:status_recovery_undead, :mob, ^target_id, 1_000}, 1_100
+
+    assert_receive {:skill_deferred, PrStrecovery,
+                    %{unit_type: :mob, target_id: ^target_id, caster_id: 1_000}},
+                   1_100
   end
 
   test "Status Recovery cures a demon instead of treating it as undead" do

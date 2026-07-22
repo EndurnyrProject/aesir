@@ -63,6 +63,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill do
   @typedoc "A capability a skill module provides, derived from its declared behaviours."
   @type capability :: :active | :passive | :ground | :menu
 
+  @doc """
+  Schedules a deferred skill effect on the caller.
+
+  Sends `{:skill_deferred, module, payload}` to the calling process after
+  `delay_ms`, so the delayed effect runs later inside the caster's own session
+  process. It must be called from within that session (so `self()` is the
+  session pid); this keeps the timer's ordering and deadlock semantics
+  identical to an inline `Process.send_after/3`. The receiving session invokes
+  `module.deferred(payload, caster_state)`.
+  """
+  @spec defer(module(), term(), non_neg_integer()) :: reference()
+  def defer(module, payload, delay_ms) do
+    Process.send_after(self(), {:skill_deferred, module, payload}, delay_ms)
+  end
+
   defmacro __using__(opts) do
     quote bind_quoted: [opts: opts] do
       @before_compile Aesir.ZoneServer.Mmo.Skill

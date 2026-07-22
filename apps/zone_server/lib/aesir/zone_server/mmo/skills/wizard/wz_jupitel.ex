@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitel do
   alias Aesir.ZoneServer.Map.LineOfSight
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Skill
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -42,16 +43,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitel do
   def cast(caster, {:unit, target_id}, level, _definition) do
     with {:ok, %{unit_type: unit_type}} <- Combat.resolve_combatant(target_id) do
       impact = %{target: {unit_type, target_id}, skill_level: level}
-      Process.send_after(self(), {:jupitel_impact, impact}, @impact_delay_ms)
+      Skill.defer(__MODULE__, impact, @impact_delay_ms)
       {:ok, caster}
     end
   end
 
   @doc "Resolves one scheduled Jupitel Thunder impact from the caster's live session state."
-  @spec impact(PlayerState.t(), impact()) :: :ok | {:error, atom()}
-  def impact(
-        %{x: x, y: y, map_name: map_name} = caster,
-        %{target: {unit_type, target_id}, skill_level: level}
+  @impl Active
+  @spec deferred(impact(), PlayerState.t()) :: :ok | {:error, atom()}
+  def deferred(
+        %{target: {unit_type, target_id}, skill_level: level},
+        %{x: x, y: y, map_name: map_name} = caster
       ) do
     definition = definition()
 

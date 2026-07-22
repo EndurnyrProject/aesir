@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrStrecovery do
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
+  alias Aesir.ZoneServer.Mmo.Skill
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -45,17 +46,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrStrecovery do
   def cast(%{character_id: caster_id} = caster, {:unit, target_id}, _level, _definition) do
     with {:ok, %{unit_type: unit_type} = target} <- Combat.resolve_combatant(target_id) do
       if undead?(target) do
-        Process.send_after(
-          self(),
-          {:status_recovery_undead, unit_type, target_id, caster_id},
-          @undead_delay_ms
-        )
+        payload = %{unit_type: unit_type, target_id: target_id, caster_id: caster_id}
+        Skill.defer(__MODULE__, payload, @undead_delay_ms)
       else
         cure_body_statuses(unit_type, target_id)
       end
 
       {:ok, caster}
     end
+  end
+
+  @doc "Applies the scheduled undead Blind. Ignores the caster state - it acts on the target."
+  @impl Active
+  @spec deferred(map(), PlayerState.t()) :: :ok | {:error, atom()}
+  def deferred(%{unit_type: unit_type, target_id: target_id, caster_id: caster_id}, _caster) do
+    apply_undead_effect(unit_type, target_id, caster_id)
   end
 
   @doc false

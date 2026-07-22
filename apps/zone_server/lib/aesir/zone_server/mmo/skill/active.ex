@@ -33,7 +33,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   @callback validate(PlayerState.t(), target(), pos_integer(), Definition.t()) ::
               :ok | {:error, atom()}
 
-  @optional_callbacks validate: 4
+  @doc """
+  Optional deferred effect, run later inside the caster's session process.
+
+  A skill schedules it with `Skill.defer/3`, which posts the effect back to the
+  caster's session; the session then invokes this callback with the scheduled
+  `payload` and the caster's live `PlayerState`. Its return value is discarded
+  by the session (like today's fire-and-forget delayed impacts) - it exists for
+  the skill's own tests and for symmetry with `cast/4`.
+  """
+  @callback deferred(payload :: term(), caster :: PlayerState.t()) :: :ok | {:error, atom()}
+
+  @optional_callbacks validate: 4, deferred: 2
 
   @doc """
   Resolves a cast target to a unit id.

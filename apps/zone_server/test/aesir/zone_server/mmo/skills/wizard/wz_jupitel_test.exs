@@ -205,9 +205,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
 
     assert {:ok, ^caster} = WzJupitel.cast(caster, {:unit, @target_id}, 1, definition)
 
-    refute_receive {:jupitel_impact, _impact}, 140
+    refute_receive {:skill_deferred, WzJupitel, _impact}, 140
 
-    assert_receive {:jupitel_impact,
+    assert_receive {:skill_deferred, WzJupitel,
                     %{
                       target: {:mob, @target_id},
                       skill_level: 1
@@ -215,7 +215,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
                    100
 
     assert System.monotonic_time(:millisecond) - started_at >= 150
-    refute_receive {:jupitel_impact, _impact}, 50
+    refute_receive {:skill_deferred, WzJupitel, _impact}, 50
   end
 
   test "a clear delayed impact carries the level 1 magic and knockback parameters" do
@@ -239,7 +239,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
       {:ok, {57, 60}}
     end)
 
-    assert :ok = WzJupitel.impact(caster, impact)
+    assert :ok = WzJupitel.deferred(impact, caster)
   end
 
   test "the player session resolves an impact against a registered mob beyond attack range" do
@@ -251,7 +251,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     {_mob, _pid} = register_mob()
 
     assert {:noreply, %{game_state: ^caster}} =
-             PlayerSession.handle_info({:jupitel_impact, impact}, %{game_state: caster})
+             PlayerSession.handle_info({:skill_deferred, WzJupitel, impact}, %{game_state: caster})
 
     assert_receive {:session_cast, {:apply_damage, damage, 1000}}
     assert damage > 0
@@ -265,7 +265,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     {_mob, _pid} = register_mob(hp: 0, is_dead: true)
 
     assert {:error, :target_dead} =
-             WzJupitel.impact(caster(), %{target: {:mob, @target_id}, skill_level: 1})
+             WzJupitel.deferred(%{target: {:mob, @target_id}, skill_level: 1}, caster())
 
     refute_receive {:session_cast, {:apply_damage, _damage, _attacker_id}}, 20
     refute_receive {:session_cast, {:knocked_back, _x, _y}}, 20
@@ -284,8 +284,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
 
     :ok = UnitRegistry.update_unit_state(:mob, @target_id, %{mob | hp: 0, is_dead: true})
 
-    assert_receive {:jupitel_impact, impact}, 200
-    assert {:error, :target_dead} = WzJupitel.impact(caster(), impact)
+    assert_receive {:skill_deferred, WzJupitel, impact}, 200
+    assert {:error, :target_dead} = WzJupitel.deferred(impact, caster())
   end
 
   test "impact rechecks line of sight and stops at an intervening wall" do
@@ -294,7 +294,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     {_mob, _pid} = register_mob()
 
     assert {:error, :blocked_line_of_sight} =
-             WzJupitel.impact(caster(), %{target: {:mob, @target_id}, skill_level: 1})
+             WzJupitel.deferred(%{target: {:mob, @target_id}, skill_level: 1}, caster())
 
     refute_receive {:session_cast, {:apply_damage, _damage, _attacker_id}}, 20
     refute_receive {:session_cast, {:knocked_back, _x, _y}}, 20
@@ -306,7 +306,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     {_mob, _pid} = register_mob()
 
     assert {:error, :blocked_line_of_sight} =
-             WzJupitel.impact(caster(), %{target: {:mob, @target_id}, skill_level: 1})
+             WzJupitel.deferred(%{target: {:mob, @target_id}, skill_level: 1}, caster())
 
     refute_receive {:session_cast, {:apply_damage, _damage, _attacker_id}}, 20
     refute_receive {:session_cast, {:knocked_back, _x, _y}}, 20
@@ -318,7 +318,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     {_mob, _pid} = register_mob(x: 54, y: 62)
 
     assert {:error, :blocked_line_of_sight} =
-             WzJupitel.impact(caster(), %{target: {:mob, @target_id}, skill_level: 1})
+             WzJupitel.deferred(%{target: {:mob, @target_id}, skill_level: 1}, caster())
 
     refute_receive {:session_cast, {:apply_damage, _damage, _attacker_id}}, 20
     refute_receive {:session_cast, {:knocked_back, _x, _y}}, 20
@@ -330,7 +330,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     {_mob, _pid} = register_mob(x: 54, y: 62)
 
     assert :ok =
-             WzJupitel.impact(caster(), %{target: {:mob, @target_id}, skill_level: 1})
+             WzJupitel.deferred(%{target: {:mob, @target_id}, skill_level: 1}, caster())
 
     assert_receive {:session_cast, {:apply_damage, damage, 1000}}
     assert damage > 0
@@ -342,7 +342,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     {_player, _pid} = register_player()
 
     assert {:error, :invalid_target} =
-             WzJupitel.impact(caster(), %{target: {:player, @target_id}, skill_level: 1})
+             WzJupitel.deferred(%{target: {:player, @target_id}, skill_level: 1}, caster())
 
     refute_receive {:session_cast, {:apply_damage, _damage, _attacker_id}}, 20
     refute_receive {:session_cast, {:knocked_back, _x, _y}}, 20
@@ -353,10 +353,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     {_player, _pid} = register_player(party_id: 10)
 
     assert {:error, :invalid_target} =
-             WzJupitel.impact(caster(party_id: 10), %{
-               target: {:player, @target_id},
-               skill_level: 1
-             })
+             WzJupitel.deferred(
+               %{target: {:player, @target_id}, skill_level: 1},
+               caster(party_id: 10)
+             )
 
     refute_receive {:session_cast, {:apply_damage, _damage, _attacker_id}}, 20
     refute_receive {:session_cast, {:knocked_back, _x, _y}}, 20

@@ -6,10 +6,10 @@ defmodule Aesir.ZoneServer.Unit.SessionHygieneTest do
     * neither session GenServer may crash on an unrecognized cast/info - the
       permanent logging catch-alls at the bottom of each clause group must log
       and drop instead of raising a `FunctionClauseError`;
-    * the mob session source may not reference a concrete `Mmo.Skills.` module.
-      The player session still aliases `PrLexdivina`/`PrStrecovery`/`WzJupitel`
-      until the deferred-skill seam task converts them and deletes the
-      aliases/clauses; that task extends this guard to the player session.
+    * neither session source may reference a concrete `Mmo.Skills.` module - the
+      deferred-skill seam replaced the per-skill session clauses with one generic
+      `{:skill_deferred, module, payload}` dispatch, so no skill module is named
+      in either session.
   """
 
   use ExUnit.Case, async: false
@@ -32,12 +32,23 @@ defmodule Aesir.ZoneServer.Unit.SessionHygieneTest do
                         )
                       )
 
+  @player_session_source File.read!(
+                           Path.join(
+                             __DIR__,
+                             "../../../../lib/aesir/zone_server/unit/player/player_session.ex"
+                           )
+                         )
+
   setup :verify_on_exit!
   setup :set_mimic_from_context
 
   describe "skill-alias guard" do
     test "mob session references no Mmo.Skills. module" do
       refute @mob_session_source =~ "Mmo.Skills."
+    end
+
+    test "player session references no Mmo.Skills. module" do
+      refute @player_session_source =~ "Mmo.Skills."
     end
   end
 

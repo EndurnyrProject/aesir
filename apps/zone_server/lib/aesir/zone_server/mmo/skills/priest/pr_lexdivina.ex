@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexdivina do
     duration: [30_000, 35_000, 40_000, 45_000, 50_000, 60_000, 60_000, 60_000, 60_000, 60_000]
 
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Skill
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -39,15 +40,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexdivina do
       else
         duration = Enum.at(definition.duration, level - 1)
 
-        Process.send_after(
-          self(),
-          {:lex_divina, unit_type, target_id, caster_id, duration},
-          @delay_ms
-        )
+        payload = %{
+          unit_type: unit_type,
+          target_id: target_id,
+          caster_id: caster_id,
+          duration: duration
+        }
+
+        Skill.defer(__MODULE__, payload, @delay_ms)
       end
 
       {:ok, caster}
     end
+  end
+
+  @doc "Applies the scheduled Silence toggle. Ignores the caster state - it acts on the target."
+  @impl Active
+  @spec deferred(map(), PlayerState.t()) :: :ok | {:error, atom()}
+  def deferred(
+        %{unit_type: unit_type, target_id: target_id, caster_id: caster_id, duration: duration},
+        _caster
+      ) do
+    apply_silence(unit_type, target_id, caster_id, duration)
   end
 
   @doc false

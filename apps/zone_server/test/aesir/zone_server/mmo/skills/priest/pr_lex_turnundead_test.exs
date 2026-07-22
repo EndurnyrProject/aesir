@@ -19,7 +19,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexTurnundeadTest do
     Mimic.copy(Combat)
     Mimic.copy(TargetResolver)
     Mimic.copy(PlayerState)
-    Mimic.copy(PrLexdivina)
     Mimic.copy(StatusInterpreter)
     Mimic.copy(StatusStorage)
   end
@@ -73,7 +72,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexTurnundeadTest do
     stub(StatusStorage, :has_status?, fn :mob, ^target_id, :sc_silence -> false end)
 
     assert {:ok, ^caster} = PrLexdivina.cast(caster, {:unit, target_id}, 3, definition)
-    assert_receive {:lex_divina, :mob, ^target_id, 1_000, 40_000}, 1_100
+
+    assert_receive {:skill_deferred, PrLexdivina,
+                    %{unit_type: :mob, target_id: ^target_id, caster_id: 1_000, duration: 40_000}},
+                   1_100
   end
 
   test "the delayed Lex Divina application carries its certain chance and selected duration" do
@@ -88,12 +90,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexTurnundeadTest do
   end
 
   test "PlayerSession applies Lex Divina's delayed toggle through its message handler" do
-    expect(PrLexdivina, :apply_silence, fn :mob, 2_000, 1_000, 40_000 -> :ok end)
+    expect(StatusInterpreter, :apply_status, fn :mob, 2_000, :sc_silence, params ->
+      assert params[:caster_id] == 1_000
+      assert params[:duration] == 40_000
+      assert params[:success_rate] == 100
+      :ok
+    end)
+
+    payload = %{unit_type: :mob, target_id: 2_000, caster_id: 1_000, duration: 40_000}
 
     assert {:noreply, %{marker: :unchanged}} =
              PlayerSession.handle_info(
-               {:lex_divina, :mob, 2_000, 1_000, 40_000},
-               %{marker: :unchanged}
+               {:skill_deferred, PrLexdivina, payload},
+               %{marker: :unchanged, game_state: %{}}
              )
   end
 
