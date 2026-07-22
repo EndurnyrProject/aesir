@@ -603,6 +603,78 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
     end
   end
 
+  describe "execute_skill_attack/3 hit result" do
+    setup do
+      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      :ok
+    end
+
+    test "report_hit: true reports a connected hit and applies damage" do
+      attacker = combatant(1001, :player, hit: 200)
+      target = combatant(2001, :mob, flee: 0)
+      player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
+      target_state = living_mob_state(target, 150, 150)
+
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
+
+      stub(DamageCalculator, :calculate_damage, fn _a, _d, _opts ->
+        {:ok, %{damage: 50, is_critical: false}}
+      end)
+
+      expect(MobSession, :apply_damage, fn _pid, _damage, _attacker_id -> :ok end)
+
+      assert {:ok, %{hit?: true}} =
+               Combat.execute_skill_attack(player_state, 2001,
+                 skill_id: 7,
+                 skill_level: 1,
+                 skill_ratio: 100,
+                 report_hit: true
+               )
+    end
+
+    test "report_hit: true reports a dodged hit and applies no damage" do
+      attacker = combatant(1001, :player, hit: 0)
+      target = combatant(2001, :mob, flee: 300)
+      player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
+      target_state = living_mob_state(target, 150, 150)
+
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
+      reject(&DamageCalculator.calculate_damage/3)
+      reject(&MobSession.apply_damage/3)
+
+      assert {:ok, %{hit?: false}} =
+               Combat.execute_skill_attack(player_state, 2001,
+                 skill_id: 7,
+                 skill_level: 1,
+                 skill_ratio: 100,
+                 report_hit: true
+               )
+    end
+
+    test "without report_hit a connected hit still returns plain :ok" do
+      attacker = combatant(1001, :player, hit: 200)
+      target = combatant(2001, :mob, flee: 0)
+      player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
+      target_state = living_mob_state(target, 150, 150)
+
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
+
+      stub(DamageCalculator, :calculate_damage, fn _a, _d, _opts ->
+        {:ok, %{damage: 50, is_critical: false}}
+      end)
+
+      expect(MobSession, :apply_damage, fn _pid, _damage, _attacker_id -> :ok end)
+
+      assert :ok =
+               Combat.execute_skill_attack(player_state, 2001,
+                 skill_id: 7,
+                 skill_level: 1,
+                 skill_ratio: 100
+               )
+    end
+  end
+
   describe "execute_skill_attack/3 projectile line of sight" do
     test "a ranged physical skill blocked by a projectile-blocking cell fails" do
       Mimic.copy(Cell)

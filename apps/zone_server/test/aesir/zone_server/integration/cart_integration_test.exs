@@ -199,10 +199,22 @@ defmodule Aesir.ZoneServer.Integration.CartIntegrationTest do
       flush_packets()
 
       center =
-        start_mob_session(unit_id: 95_510, map_name: "prontera", position: {150, 151}, hp: 5000)
+        start_mob_session(
+          unit_id: 95_510,
+          map_name: "prontera",
+          position: {150, 151},
+          hp: 5000,
+          agi: 0
+        )
 
       edge =
-        start_mob_session(unit_id: 95_511, map_name: "prontera", position: {150, 152}, hp: 5000)
+        start_mob_session(
+          unit_id: 95_511,
+          map_name: "prontera",
+          position: {150, 152},
+          hp: 5000,
+          agi: 0
+        )
 
       center_id = center.unit_id
       edge_id = edge.unit_id

@@ -47,11 +47,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcChargearrowTest do
         assert opts[:skill_ratio] == 150
         assert opts[:hit_count] == 1
         assert opts[:skip_crit] == true
-        :ok
+        assert opts[:report_hit] == true
+        {:ok, %{hit?: true}}
       end)
 
       expect(Combat, :knockback, fn :mob, @target_id, 50, 60, 6 ->
         {:ok, {50, 66}}
+      end)
+
+      assert {:ok, ^caster} = AcChargearrow.cast(caster, {:unit, @target_id}, 1, definition())
+    end
+
+    test "does not knock back a dodged strike, but still returns {:ok, caster}" do
+      caster = caster()
+      reject(&Combat.knockback/5)
+
+      stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts ->
+        {:ok, %{hit?: false}}
       end)
 
       assert {:ok, ^caster} = AcChargearrow.cast(caster, {:unit, @target_id}, 1, definition())

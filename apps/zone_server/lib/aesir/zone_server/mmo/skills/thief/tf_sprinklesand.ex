@@ -32,12 +32,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSprinklesand do
       skill_level: level,
       skill_ratio: 130,
       element: :earth,
-      skip_crit: true
+      skip_crit: true,
+      report_hit: true
     ]
 
     case Combat.execute_skill_attack(caster, target_id, opts) do
-      :ok ->
+      {:ok, %{hit?: true}} ->
         maybe_blind(target_id)
+        {:ok, caster}
+
+      {:ok, %{hit?: false}} ->
         {:ok, caster}
 
       {:error, _reason} = error ->

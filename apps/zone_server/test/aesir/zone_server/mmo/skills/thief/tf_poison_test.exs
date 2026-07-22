@@ -38,7 +38,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPoisonTest do
       assert opts[:bonus_atk] == 15 * 6
       assert opts[:element] == :poison
       assert opts[:skip_crit] == true
-      :ok
+      assert opts[:report_hit] == true
+      {:ok, %{hit?: true}}
     end)
 
     stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
@@ -52,7 +53,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPoisonTest do
     :rand.seed(:exsss, {1, 2, 3})
     caster = caster()
 
-    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> :ok end)
+    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
     stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
 
     expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_poison, params ->
@@ -68,7 +69,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPoisonTest do
     :rand.seed(:exsss, {6, 7, 8})
     caster = caster()
 
-    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> :ok end)
+    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
     stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
     reject(&StatusInterpreter.apply_status/4)
 
@@ -80,12 +81,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPoisonTest do
     :rand.seed(:exsss, {1, 2, 3})
     caster = caster()
 
-    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> :ok end)
+    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
     stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> false end)
 
     expect(StatusInterpreter, :apply_status, fn :player, @target_id, :sc_poison, _params ->
       :ok
     end)
+
+    assert {:ok, ^caster} = TfPoison.cast(caster, {:unit, @target_id}, 10, definition())
+  end
+
+  test "does not apply sc_poison when the attack is dodged, but still returns {:ok, caster}" do
+    # Seed {1,2,3} yields :rand.uniform(100) == 27, which would pass the roll
+    # if it ran; the miss must skip the roll entirely.
+    :rand.seed(:exsss, {1, 2, 3})
+    caster = caster()
+
+    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: false}} end)
+
+    reject(&StatusInterpreter.apply_status/4)
 
     assert {:ok, ^caster} = TfPoison.cast(caster, {:unit, @target_id}, 10, definition())
   end

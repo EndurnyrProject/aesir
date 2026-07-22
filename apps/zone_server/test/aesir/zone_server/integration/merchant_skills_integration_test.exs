@@ -108,7 +108,8 @@ defmodule Aesir.ZoneServer.Integration.MerchantSkillsIntegrationTest do
           unit_id: 96_101,
           map_name: "prontera",
           position: {151, 150},
-          hp: 5_000
+          hp: 5_000,
+          agi: 0
         )
 
       mob_id = mob.unit_id

@@ -32,12 +32,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPoison do
       skill_ratio: 100,
       bonus_atk: 15 * level,
       element: :poison,
-      skip_crit: true
+      skip_crit: true,
+      report_hit: true
     ]
 
     case Combat.execute_skill_attack(caster, target_id, opts) do
-      :ok ->
+      {:ok, %{hit?: true}} ->
         maybe_poison(target_id, level)
+        {:ok, caster}
+
+      {:ok, %{hit?: false}} ->
         {:ok, caster}
 
       {:error, _reason} = error ->

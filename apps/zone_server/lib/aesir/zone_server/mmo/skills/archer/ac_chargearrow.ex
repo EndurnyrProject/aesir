@@ -10,7 +10,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcChargearrow do
   weapon's own range) so the Vulture's Eye bonus applies. The bow-equipped
   weapon requirement is not enforced (no weapon-state gate in the interpreter
   yet, matching AC_DOUBLE/AC_SHOWER). Knockback direction is away from the
-  caster, mob targets only (PvE simplification shared with Arrow Shower).
+  caster, mob targets only (PvE simplification shared with Arrow Shower). The
+  knockback only fires when the strike actually connects; a dodged or missed
+  hit leaves the target in place.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 148,
@@ -38,12 +40,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcChargearrow do
       skill_level: level,
       skill_ratio: 150,
       hit_count: 1,
-      skip_crit: true
+      skip_crit: true,
+      report_hit: true
     ]
 
     case Combat.execute_skill_attack(caster, target_id, opts) do
-      :ok ->
+      {:ok, %{hit?: true}} ->
         Combat.knockback(:mob, target_id, caster.x, caster.y, definition.knockback)
+        {:ok, caster}
+
+      {:ok, %{hit?: false}} ->
         {:ok, caster}
 
       {:error, _reason} = error ->

@@ -30,12 +30,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBash do
       skill_id: definition.id,
       skill_level: level,
       skill_ratio: 100 + 30 * level,
-      skip_crit: true
+      skip_crit: true,
+      report_hit: true
     ]
 
     case Combat.execute_skill_attack(caster, target_id, opts) do
-      :ok ->
+      {:ok, %{hit?: true}} ->
         apply_riders(caster, target_id, level)
+        {:ok, caster}
+
+      {:ok, %{hit?: false}} ->
         {:ok, caster}
 
       {:error, _reason} = error ->

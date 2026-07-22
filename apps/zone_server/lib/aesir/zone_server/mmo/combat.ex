@@ -45,6 +45,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   @doc """
   Executes a single-target offensive skill from a caster against a target.
 
+  Rolls a hit/flee check per hit; pass `report_hit: true` in `opts` to get
+  `{:ok, %{hit?: boolean}}` back instead of plain `:ok`, so a follow-up effect
+  (e.g. a status rider) can be gated on the attack actually connecting.
+
   See `Aesir.ZoneServer.Mmo.Combat.SkillAttack.execute_skill_attack/3`.
   """
   defdelegate execute_skill_attack(caster_state, target_id, opts), to: SkillAttack

@@ -38,7 +38,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSprinklesandTest do
       assert opts[:skill_ratio] == 130
       assert opts[:element] == :earth
       assert opts[:skip_crit] == true
-      :ok
+      assert opts[:report_hit] == true
+      {:ok, %{hit?: true}}
     end)
 
     stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
@@ -52,7 +53,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSprinklesandTest do
     :rand.seed(:exsss, {1, 1, 1})
     caster = caster()
 
-    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> :ok end)
+    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
     stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
 
     expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_blind, params ->
@@ -68,8 +69,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSprinklesandTest do
     :rand.seed(:exsss, {6, 7, 8})
     caster = caster()
 
-    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> :ok end)
+    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
     stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
+    reject(&StatusInterpreter.apply_status/4)
+
+    assert {:ok, ^caster} = TfSprinklesand.cast(caster, {:unit, @target_id}, 1, definition())
+  end
+
+  test "does not apply sc_blind when the attack is dodged, but still returns {:ok, caster}" do
+    # Seed {1,1,1} yields :rand.uniform(100) == 8, which would pass the 20%
+    # roll if it ran; the miss must skip the roll entirely.
+    :rand.seed(:exsss, {1, 1, 1})
+    caster = caster()
+
+    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: false}} end)
+
     reject(&StatusInterpreter.apply_status/4)
 
     assert {:ok, ^caster} = TfSprinklesand.cast(caster, {:unit, @target_id}, 1, definition())

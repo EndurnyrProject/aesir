@@ -7,6 +7,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
+  alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
+  alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
@@ -26,20 +28,31 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:skip_crit` - skip the critical roll (most skills don't crit)
     - `:bonus_atk` - flat ATK added after the skill ratio, before defense
     - `:fixed_damage` - deal exactly this value, bypassing weapon/defense/flee
-    - `:hit_count` - number of hits to deliver, each rolling its own damage (default `1`)
+    - `:hit_count` - number of hits to deliver, each rolling its own hit/flee
+      check and its own damage (default `1`)
     - `:element` - forces the attack element for this hit, overriding the
       weapon element (e.g. Envenom's poison, Sand Attack's earth)
+    - `:report_hit` - when `true`, returns `{:ok, %{hit?: boolean}}` instead of
+      plain `:ok`, so a caller can gate a follow-up effect (e.g. a status
+      rider) on whether the attack actually connected rather than being
+      dodged or missed. With `:hit_count` greater than `1`, `hit?` is `true`
+      if any of the hits connected. Default `false`, so existing callers see
+      no change. (default `false`)
 
   ## Returns
-    - :ok if the skill connected
+    - :ok if the skill was dispatched (regardless of whether any hit
+      connected), when `:report_hit` is not set
+    - {:ok, %{hit?: boolean}} when `:report_hit` is `true`
     - {:error, reason} if the target was invalid, friendly, dead, or out of range
   """
-  @spec execute_skill_attack(struct(), integer(), keyword()) :: :ok | {:error, atom()}
+  @spec execute_skill_attack(struct(), integer(), keyword()) ::
+          :ok | {:ok, %{hit?: boolean()}} | {:error, atom()}
   def execute_skill_attack(caster_state, target_id, opts) do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     skill_id = Keyword.fetch!(opts, :skill_id)
     skill_level = Keyword.fetch!(opts, :skill_level)
     hits = Keyword.get(opts, :hit_count, 1)
+    report_hit? = Keyword.get(opts, :report_hit, false)
 
     calc_opts =
       Keyword.take(opts, [
@@ -51,25 +64,27 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         :skill_id
       ])
 
-    # NOTE: skills always connect here; skill miss/flee isn't modeled yet.
     with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
          :ok <- TargetResolver.ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- AttackValidator.validate(attacker, target, projectile?: true),
          :ok <- Targeting.validate_enemy(attacker, target) do
-      Enum.each(1..hits//1, fn _ ->
-        apply_skill_damage(
-          attacker,
-          target_type,
-          target_pid,
-          target,
-          skill_id,
-          skill_level,
-          calc_opts
-        )
-      end)
+      connected? =
+        1..hits//1
+        |> Enum.map(fn _ ->
+          apply_skill_damage(
+            attacker,
+            target_type,
+            target_pid,
+            target,
+            skill_id,
+            skill_level,
+            calc_opts
+          )
+        end)
+        |> Enum.any?()
 
-      :ok
+      if report_hit?, do: {:ok, %{hit?: connected?}}, else: :ok
     end
   end
 
@@ -79,8 +94,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
   Selects targets via `SplashTargets.select/4`, then runs each through the
   shared single-target damage path **without** the per-target attack-range
-  gate — the radius already bounds the hit set. Returns the list of hit target
-  ids, consumed by knockback.
+  gate — the radius already bounds the hit set. Each target rolls its own
+  hit/flee check; a dodged or missed target is left out of the returned list.
+  Returns the list of connected target ids, consumed by knockback.
 
   ## Options
     - `:skill_id` / `:skill_level` - identify the skill for the damage packet
@@ -100,7 +116,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     |> Enum.flat_map(fn {_unit_type, target_id} ->
       with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
            target <- target_state.__struct__.to_combatant(target_state),
-           :ok <-
+           true <-
              apply_skill_damage(
                attacker,
                target_type,
@@ -220,6 +236,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     end
   end
 
+  # Rolls the weapon-class hit/flee check, then applies damage on a connect or
+  # broadcasts the miss/perfect-dodge packet otherwise. Returns whether the
+  # hit connected, so callers can gate follow-up effects (status riders) or
+  # exclude a dodged target from a splash's knockback list.
+  @spec apply_skill_damage(
+          struct(),
+          :player | :mob | :skill_unit,
+          pid(),
+          struct(),
+          integer(),
+          pos_integer(),
+          keyword()
+        ) :: boolean()
   defp apply_skill_damage(
          attacker,
          target_type,
@@ -229,46 +258,105 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          skill_level,
          calc_opts
        ) do
-    with {:ok, damage_result} <- DamageCalculator.calculate_damage(attacker, target, calc_opts) do
-      hit_info = %{
-        dmg_type: :physical,
-        is_short: attacker.attack_range <= 3,
-        element: :neutral,
-        skill_id: skill_id,
-        skill_level: skill_level
-      }
-
-      {damage, hit_info} =
-        DamageApplication.prepare_unit_damage(
-          target_type,
-          target.unit_id,
-          damage_result.damage,
-          hit_info
+    case HitCalculations.calculate_hit_result(hit_stats(attacker), flee_stats(target)) do
+      :miss ->
+        DamageApplication.broadcast_nearby(
+          target,
+          PacketFactory.build_miss_packet(attacker, target)
         )
 
-      packet =
-        PacketFactory.build_skill_damage_packet(
+        false
+
+      :perfect_dodge ->
+        DamageApplication.broadcast_nearby(
+          target,
+          PacketFactory.build_perfect_dodge_packet(attacker, target)
+        )
+
+        false
+
+      :hit ->
+        deliver_skill_hit(
           attacker,
+          target_type,
+          target_pid,
           target,
           skill_id,
           skill_level,
-          %{damage_result | damage: damage}
+          calc_opts
+        )
+    end
+  end
+
+  defp deliver_skill_hit(
+         attacker,
+         target_type,
+         target_pid,
+         target,
+         skill_id,
+         skill_level,
+         calc_opts
+       ) do
+    case DamageCalculator.calculate_damage(attacker, target, calc_opts) do
+      {:ok, damage_result} ->
+        hit_info = %{
+          dmg_type: :physical,
+          is_short: attacker.attack_range <= 3,
+          element: :neutral,
+          skill_id: skill_id,
+          skill_level: skill_level
+        }
+
+        {damage, hit_info} =
+          DamageApplication.prepare_unit_damage(
+            target_type,
+            target.unit_id,
+            damage_result.damage,
+            hit_info
+          )
+
+        packet =
+          PacketFactory.build_skill_damage_packet(
+            attacker,
+            target,
+            skill_id,
+            skill_level,
+            %{damage_result | damage: damage}
+          )
+
+        DamageApplication.broadcast_nearby(target, packet)
+
+        DamageApplication.apply_unit_damage(
+          target_type,
+          target_pid,
+          target.unit_id,
+          damage,
+          hit_info,
+          attacker.unit_id
         )
 
-      DamageApplication.broadcast_nearby(target, packet)
+        OnHitEffects.after_hit(attacker, target, damage_result)
 
-      DamageApplication.apply_unit_damage(
-        target_type,
-        target_pid,
-        target.unit_id,
-        damage,
-        hit_info,
-        attacker.unit_id
-      )
+        true
 
-      OnHitEffects.after_hit(attacker, target, damage_result)
-
-      :ok
+      {:error, _reason} ->
+        false
     end
+  end
+
+  defp hit_stats(attacker) do
+    %{
+      hit: attacker.combat_stats.hit,
+      char_id: attacker.unit_id,
+      perfect_hit: EquipmentBonuses.perfect_hit_rate(attacker)
+    }
+  end
+
+  defp flee_stats(target) do
+    %{
+      flee: target.combat_stats.flee,
+      perfect_dodge: target.combat_stats.perfect_dodge,
+      unit_id: target.unit_id
+    }
   end
 end

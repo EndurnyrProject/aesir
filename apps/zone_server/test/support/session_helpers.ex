@@ -92,6 +92,7 @@ defmodule Aesir.ZoneServer.SessionHelpers do
   - :max_hp - Maximum HP
   - :level - Mob level
   - :dex - Mob DEX stat (default 10)
+  - :agi - Mob AGI stat, feeds the mob's flee (default 10)
   - :modes - Mob mode list, e.g. `[:boss]` (default `[]`)
   - :drops - Mob drop table (default `[]`)
   - :mvp_exp - MVP experience (default `0`; a non-zero value makes the mob MVP-tier)
@@ -131,7 +132,14 @@ defmodule Aesir.ZoneServer.SessionHelpers do
       matk: 0,
       def: 5,
       mdef: 3,
-      stats: %{str: 10, agi: 10, vit: 10, int: 5, dex: opts[:dex] || 10, luk: 5},
+      stats: %{
+        str: 10,
+        agi: opts[:agi] || 10,
+        vit: 10,
+        int: 5,
+        dex: opts[:dex] || 10,
+        luk: 5
+      },
       attack_range: 1,
       skill_range: 10,
       chase_range: 12,

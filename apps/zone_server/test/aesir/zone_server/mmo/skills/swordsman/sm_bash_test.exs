@@ -58,7 +58,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBashTest do
       assert opts[:skill_level] == 7
       assert opts[:skill_ratio] == 100 + 30 * 7
       assert opts[:skip_crit] == true
-      :ok
+      assert opts[:report_hit] == true
+      {:ok, %{hit?: true}}
     end)
 
     assert {:ok, ^caster} = SmBash.cast(caster, {:unit, @target_id}, 7, definition())
@@ -67,7 +68,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBashTest do
   test "cast/4 returns {:ok, caster} and does not apply stun when SM_FATALBLOW is not learned" do
     caster = build_caster(%{})
 
-    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> :ok end)
+    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
     reject(&StatusInterpreter.apply_status/4)
 
     assert {:ok, ^caster} = SmBash.cast(caster, {:unit, @target_id}, 6, definition())
@@ -76,7 +77,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBashTest do
   test "cast/4 never applies stun at level 5 even with SM_FATALBLOW learned" do
     caster = build_caster(%{145 => 1})
 
-    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> :ok end)
+    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
     reject(&StatusInterpreter.apply_status/4)
 
     assert {:ok, ^caster} = SmBash.cast(caster, {:unit, @target_id}, 5, definition())
@@ -85,7 +86,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBashTest do
   test "cast/4 applies sc_stun to a mob target at level 6 with SM_FATALBLOW when the roll succeeds" do
     caster = build_caster(%{145 => 1})
 
-    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> :ok end)
+    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
     stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
 
     expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stun, params ->
@@ -99,7 +100,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBashTest do
   test "cast/4 applies stun to a player target when the mob lookup misses" do
     caster = build_caster(%{145 => 1})
 
-    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> :ok end)
+    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
     stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> false end)
 
     expect(StatusInterpreter, :apply_status, fn :player, @target_id, :sc_stun, _params ->
@@ -112,7 +113,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBashTest do
   test "cast/4 does not apply stun when the chance roll cannot succeed" do
     caster = build_caster(%{145 => 1}, 0)
 
-    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> :ok end)
+    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
+    reject(&StatusInterpreter.apply_status/4)
+
+    assert {:ok, ^caster} = SmBash.cast(caster, {:unit, @target_id}, 6, definition())
+  end
+
+  test "cast/4 does not apply stun when the attack is dodged, but still returns {:ok, caster}" do
+    # base_level 1000 at bash level 6 would make the stun roll guaranteed if it
+    # ran; the miss must skip the roll entirely.
+    caster = build_caster(%{145 => 1})
+
+    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: false}} end)
+
     reject(&StatusInterpreter.apply_status/4)
 
     assert {:ok, ^caster} = SmBash.cast(caster, {:unit, @target_id}, 6, definition())
