@@ -341,6 +341,21 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     MovementHandler.handle_movement_tick(state)
   end
 
+  # Skill: the generic deferred-effect seam (`Skill.defer/3`) that runs
+  # `module.deferred/2` on the mob's own state.
+  @impl GenServer
+  def handle_info({:skill, {:deferred, module, payload}}, state) do
+    if function_exported?(module, :deferred, 2) do
+      _ = module.deferred(payload, state)
+    else
+      Logger.error(
+        "MobSession dropped deferred skill effect: #{inspect(module)} does not implement deferred/2"
+      )
+    end
+
+    {:noreply, state}
+  end
+
   # :terminate stays bare: a singleton lifecycle atom (post-death cleanup timer).
   @impl GenServer
   def handle_info(:terminate, state) do
