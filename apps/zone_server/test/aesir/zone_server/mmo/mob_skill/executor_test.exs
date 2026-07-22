@@ -91,8 +91,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
 
   defp row(overrides \\ %{}) do
     base = %{
-      skill: "NPC_FIREATTACK",
-      skill_id: 186,
+      skill: "UNRESOLVED_TEST_SKILL",
+      skill_id: 999_999,
       state: :attack,
       level: 3,
       rate: 10_000,
