@@ -13,7 +13,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Movement
-  alias Aesir.ZoneServer.Unit.Session, as: UnitSession
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -105,10 +104,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
   # writer: the session updates its live `game_state` (position + stop walking)
   # and re-syncs the spatial index/registry/dirty set via `Movement.set_position`,
   # which prevents a knocked-back moving unit's own next tick from overwriting the
-  # blow. Falls back to a direct write when the owning process can't be resolved.
+  # blow. Both session types dispatch the same `{:movement, {:knocked_back, x, y}}`
+  # envelope. Falls back to a direct write when the owning process can't be resolved.
   defp move_unit(unit_type, unit_id, x, y, map_name) do
     case owning_pid(unit_type, unit_id) do
-      {:ok, pid} -> UnitSession.knock_back(unit_type, pid, x, y)
+      {:ok, pid} -> GenServer.cast(pid, {:movement, {:knocked_back, x, y}})
       :error -> move_unit_direct(unit_type, unit_id, x, y, map_name)
     end
   end
