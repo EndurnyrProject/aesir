@@ -318,11 +318,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
     end
   end
 
-  describe "zap_sp/2" do
+  describe "zap_sp/2 (converged {:unit, {:drain_sp, _}} tag)" do
     test "drains the requested SP" do
       state = build_mob_state(%{sp: 50, max_sp: 100})
 
-      {:noreply, updated} = MobSession.handle_cast({:unit, {:zap_sp, 20}}, state)
+      {:noreply, updated} = MobSession.handle_cast({:unit, {:drain_sp, 20}}, state)
 
       assert updated.sp == 30
     end
@@ -330,7 +330,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
     test "clamps the drain at 0 rather than going negative" do
       state = build_mob_state(%{sp: 5, max_sp: 100})
 
-      {:noreply, updated} = MobSession.handle_cast({:unit, {:zap_sp, 20}}, state)
+      {:noreply, updated} = MobSession.handle_cast({:unit, {:drain_sp, 20}}, state)
 
       assert updated.sp == 0
     end
@@ -340,7 +340,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       # in between; a corpse must not be billed.
       state = build_mob_state(%{sp: 50, max_sp: 100, is_dead: true})
 
-      {:noreply, updated} = MobSession.handle_cast({:unit, {:zap_sp, 20}}, state)
+      {:noreply, updated} = MobSession.handle_cast({:unit, {:drain_sp, 20}}, state)
 
       assert updated.sp == 50
     end
@@ -348,7 +348,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
     test "a zero drain is a no-op" do
       state = build_mob_state(%{sp: 50, max_sp: 100})
 
-      {:noreply, updated} = MobSession.handle_cast({:unit, {:zap_sp, 0}}, state)
+      {:noreply, updated} = MobSession.handle_cast({:unit, {:drain_sp, 0}}, state)
 
       assert updated.sp == 50
     end

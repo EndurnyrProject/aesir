@@ -76,11 +76,11 @@ defmodule Aesir.ZoneServer.Unit.Session.AdapterTest do
     end
   end
 
-  describe "notify_vitals/1" do
-    test "player pushes SP_HP and SP_SP ParamChanges to its own connection" do
+  describe "notify_vitals/2" do
+    test "player pushes a ParamChange per requested field to its own connection" do
       state = player_state(hp: 30, sp: 5, max_hp: 250, max_sp: 90)
 
-      assert :ok = PlayerAdapter.notify_vitals(state)
+      assert :ok = PlayerAdapter.notify_vitals(state, [:hp, :sp])
 
       hp_id = StatusParams.hp()
       sp_id = StatusParams.sp()
@@ -88,7 +88,18 @@ defmodule Aesir.ZoneServer.Unit.Session.AdapterTest do
       assert_received {:send, _channel, {_tag, %ParamChange{var_id: ^sp_id, value: 5}}}
     end
 
-    test "mob broadcasts a UnitHp to nearby players" do
+    test "player with an :sp-only notify sends only the SP ParamChange" do
+      state = player_state(hp: 30, sp: 5, max_hp: 250, max_sp: 90)
+
+      assert :ok = PlayerAdapter.notify_vitals(state, [:sp])
+
+      sp_id = StatusParams.sp()
+      hp_id = StatusParams.hp()
+      assert_received {:send, _channel, {_tag, %ParamChange{var_id: ^sp_id, value: 5}}}
+      refute_received {:send, _channel, {_tag, %ParamChange{var_id: ^hp_id}}}
+    end
+
+    test "mob broadcasts a UnitHp when :hp is requested" do
       state = mob_state(hp: 30, sp: 5, max_hp: 250, max_sp: 90)
       test_pid = self()
 
@@ -97,8 +108,15 @@ defmodule Aesir.ZoneServer.Unit.Session.AdapterTest do
         :ok
       end)
 
-      assert :ok = MobAdapter.notify_vitals(state)
+      assert :ok = MobAdapter.notify_vitals(state, [:hp])
       assert_received {:broadcast, %UnitHp{id: 9001, hp: 30, max_hp: 250}}
+    end
+
+    test "mob with an :sp-only notify sends nothing (mobs have no client SP)" do
+      reject(&Broadcast.to_in_range/5)
+      state = mob_state(hp: 30, sp: 5, max_hp: 250, max_sp: 90)
+
+      assert :ok = MobAdapter.notify_vitals(state, [:sp])
     end
   end
 
@@ -160,8 +178,8 @@ defmodule Aesir.ZoneServer.Unit.Session.AdapterTest do
     end
   end
 
-  describe "commit/2" do
-    test "player refreshes the registry snapshot and persists hp/sp" do
+  describe "commit/3" do
+    test "player refreshes the registry snapshot and persists the requested fields" do
       prev = player_state(hp: 100, sp: 50, max_hp: 250, max_sp: 90)
       updated = PlayerAdapter.put_vitals(prev, %{hp: 30, sp: 5})
       test_pid = self()
@@ -180,11 +198,29 @@ defmodule Aesir.ZoneServer.Unit.Session.AdapterTest do
         :ok
       end)
 
-      committed = PlayerAdapter.commit(prev, updated)
+      committed = PlayerAdapter.commit(prev, updated, [:hp, :sp])
 
       assert PlayerAdapter.get_vitals(committed) == %{hp: 30, sp: 5, max_hp: 250, max_sp: 90}
       assert_received {:registry, 30, 5}
       assert_received {:persist, %{hp: 30, sp: 5}, [async: true]}
+    end
+
+    test "player with an :sp-only commit persists only sp" do
+      prev = player_state(hp: 100, sp: 50, max_hp: 250, max_sp: 90)
+      updated = PlayerAdapter.put_vitals(prev, %{sp: 5})
+      test_pid = self()
+
+      stub(UnitRegistry, :update_unit_state, fn _, _, _ -> :ok end)
+
+      expect(CharacterPersistence, :update_stats, fn 1, stats, opts ->
+        send(test_pid, {:persist, stats, opts})
+        :ok
+      end)
+
+      PlayerAdapter.commit(prev, updated, [:sp])
+
+      assert_received {:persist, persisted, [async: true]}
+      assert persisted == %{sp: 5}
     end
 
     test "mob refreshes its registry snapshot and returns the updated state" do
@@ -197,7 +233,7 @@ defmodule Aesir.ZoneServer.Unit.Session.AdapterTest do
         :ok
       end)
 
-      assert MobAdapter.commit(prev, updated) == updated
+      assert MobAdapter.commit(prev, updated, [:hp]) == updated
       assert_received {:registry, 30}
     end
   end

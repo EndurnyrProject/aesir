@@ -549,15 +549,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   end
 
   @doc """
-  Heals the mob.
-  """
-  @spec heal(t(), integer()) :: t()
-  def heal(%__MODULE__{hp: current_hp, max_hp: max_hp} = mob, amount) do
-    new_hp = min(max_hp, current_hp + amount)
-    %{mob | hp: new_hp}
-  end
-
-  @doc """
   Checks if the mob should be aggressive towards players.
   """
   @spec aggressive?(t()) :: boolean()

@@ -16,10 +16,12 @@ defmodule Aesir.ZoneServer.Unit.Session.Adapter do
     reads/writes of the unit's own state shape. `get_vitals`/`put_vitals`
     round-trip; they never clamp (that is the caller's job) and never emit side
     effects.
-  - **Effect seams** (`notify_vitals/1`, `set_position/2`, `commit/2`): publish
+  - **Effect seams** (`notify_vitals/2`, `set_position/2`, `commit/3`): publish
     a change to shared runtime views or the client. For players these fan out
     through `StatusSync`/`StateCommit`; for mobs through the `UnitHp` broadcast
-    and the unit registry.
+    and the unit registry. Both are told which vitals fields actually changed so
+    a caller that only touched SP does not send an HP `ParamChange` or persist a
+    stale HP - matching each op's exact wire/DB footprint.
   """
 
   @typedoc """
@@ -48,6 +50,14 @@ defmodule Aesir.ZoneServer.Unit.Session.Adapter do
   @typedoc "A map cell, `{x, y}`."
   @type position :: {non_neg_integer(), non_neg_integer()}
 
+  @typedoc """
+  The vitals fields a single operation changed, in `[:hp | :sp]`.
+
+  Threaded into `notify_vitals/2` and `commit/3` so each op publishes and
+  persists exactly the fields it touched (SP drain sends/persists only SP).
+  """
+  @type fields :: [:hp | :sp]
+
   @doc """
   Reads the unit's current HP/SP and their maxima.
   """
@@ -62,13 +72,13 @@ defmodule Aesir.ZoneServer.Unit.Session.Adapter do
   @callback put_vitals(state(), vitals_update()) :: state()
 
   @doc """
-  Pushes the unit's current vitals to whoever watches them.
+  Pushes the given `fields` of the unit's current vitals to whoever watches them.
 
-  Players receive `SP_HP`/`SP_SP` `ParamChange`s on their own connection; mobs
-  broadcast a `UnitHp` to nearby players. Mobs have no client-visible SP, so
-  only HP crosses the wire for them.
+  Players receive a `SP_HP`/`SP_SP` `ParamChange` per requested field on their
+  own connection; mobs broadcast a `UnitHp` when `:hp` is requested. Mobs have
+  no client-visible SP, so a `:sp`-only notify is a no-op for them.
   """
-  @callback notify_vitals(state()) :: :ok
+  @callback notify_vitals(state(), fields()) :: :ok
 
   @doc """
   Moves the unit to `position` through the world's position choke point.
@@ -93,9 +103,11 @@ defmodule Aesir.ZoneServer.Unit.Session.Adapter do
   Commits a vitals change to the authoritative shared views.
 
   Takes the pre-change state and the post-change state (the shared handlers hold
-  both), so the player path can diff for party/guild projection. Players commit
-  through `StateCommit` (unit registry + party/guild sync) and persist HP/SP;
-  mobs update their unit-registry snapshot. Returns the committed state.
+  both), so the player path can diff for party/guild projection, plus the
+  `fields` that changed so only those are persisted. Players commit through
+  `StateCommit` (unit registry + party/guild sync) and persist just the given
+  fields; mobs refresh their unit-registry snapshot (`fields` unused, they hold
+  no durable row). Returns the committed state.
   """
-  @callback commit(previous :: state(), updated :: state()) :: state()
+  @callback commit(previous :: state(), updated :: state(), fields()) :: state()
 end

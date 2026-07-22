@@ -34,7 +34,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionAdapter
   alias Aesir.ZoneServer.Unit.Player.StatusSync
+  alias Aesir.ZoneServer.Unit.Session.Vitals
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -131,49 +133,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   @doc """
   Drains SP from the player, clamping at zero, then syncs and persists it.
 
-  Mirrors the natural-heal SP path: updates `current_state.sp`, pushes the new
-  value to the client, and persists asynchronously. Used by SP-costing statuses.
+  Routes through `Unit.Session.Vitals`, which owns the clamp and pushes only the
+  SP `ParamChange` + persists only `sp`. Used by SP-costing statuses.
   """
   @spec consume_sp(non_neg_integer(), map()) :: {:noreply, map()}
-  def consume_sp(amount, state) when is_integer(amount) and amount > 0 do
-    stats = state.game_state.stats
-    new_sp = max(0, stats.current_state.sp - amount)
-    char_id = state.game_state.character_id
-
-    updated_stats = %{stats | current_state: %{stats.current_state | sp: new_sp}}
-    game_state = %{state.game_state | stats: updated_stats}
-    state = StatsManager.update_game_state(state, game_state)
-
-    StatusSync.send_param(state.connection_pid, StatusParams.sp(), new_sp)
-    CharacterPersistence.update_stats(char_id, %{sp: new_sp}, async: true)
-
-    {:noreply, state}
+  def consume_sp(amount, state) do
+    {:noreply, Vitals.drain_sp(state, amount, SessionAdapter, commit: true)}
   end
-
-  def consume_sp(_amount, state), do: {:noreply, state}
 
   @doc """
   Attempts to deduct SP without allowing the value to underflow.
 
   Unlike `consume_sp/2`, this synchronous operation leaves state unchanged when
-  the player cannot pay the entire amount.
+  the player cannot pay the entire amount; on success it drains through the same
+  `Unit.Session.Vitals` path.
   """
   @spec try_consume_sp(non_neg_integer(), map()) ::
           {:reply, :ok | {:error, :insufficient_sp}, map()}
   def try_consume_sp(amount, state) when is_integer(amount) and amount > 0 do
-    stats = state.game_state.stats
-
-    if stats.current_state.sp >= amount do
-      new_sp = stats.current_state.sp - amount
-      char_id = state.game_state.character_id
-      updated_stats = %{stats | current_state: %{stats.current_state | sp: new_sp}}
-      game_state = %{state.game_state | stats: updated_stats}
-      state = StatsManager.update_game_state(state, game_state)
-
-      StatusSync.send_param(state.connection_pid, StatusParams.sp(), new_sp)
-      CharacterPersistence.update_stats(char_id, %{sp: new_sp}, async: true)
-
-      {:reply, :ok, state}
+    if Vitals.can_pay_sp?(state, SessionAdapter, amount) do
+      {:reply, :ok, Vitals.drain_sp(state, amount, SessionAdapter, commit: true)}
     else
       {:reply, {:error, :insufficient_sp}, state}
     end
@@ -268,25 +247,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   @doc """
   Restores SP to the player, clamped at `max_sp`.
 
-  The mirror of `consume_sp/2`; no-op for a non-positive amount.
+  The mirror of `consume_sp/2` through `Unit.Session.Vitals`; no-op for a
+  non-positive amount.
   """
   @spec restore_sp(integer(), map()) :: {:noreply, map()}
-  def restore_sp(amount, state) when is_integer(amount) and amount > 0 do
-    stats = state.game_state.stats
-    new_sp = min(stats.current_state.sp + amount, stats.derived_stats.max_sp)
-    char_id = state.game_state.character_id
-
-    updated_stats = %{stats | current_state: %{stats.current_state | sp: new_sp}}
-    game_state = %{state.game_state | stats: updated_stats}
-    state = StatsManager.update_game_state(state, game_state)
-
-    StatusSync.send_param(state.connection_pid, StatusParams.sp(), new_sp)
-    CharacterPersistence.update_stats(char_id, %{sp: new_sp}, async: true)
-
-    {:noreply, state}
+  def restore_sp(amount, state) do
+    {:noreply, Vitals.restore_sp(state, amount, SessionAdapter, commit: true)}
   end
-
-  def restore_sp(_amount, state), do: {:noreply, state}
 
   @doc """
   Handles a CZ_RESTART request.

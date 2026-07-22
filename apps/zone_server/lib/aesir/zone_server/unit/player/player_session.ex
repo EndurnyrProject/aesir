@@ -90,11 +90,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @doc """
   Drains SP from this player (fire-and-forget), clamping at zero.
 
-  Used by SP-costing status effects such as Energy Coat.
+  Used by SP-costing status effects such as Energy Coat. Shares the converged
+  `{:unit, {:drain_sp, _}}` tag with `MobSession.zap_sp/2`.
   """
   @spec consume_sp(pid(), non_neg_integer()) :: :ok
   def consume_sp(pid, amount) do
-    GenServer.cast(pid, {:unit, {:consume_sp, amount}})
+    GenServer.cast(pid, {:unit, {:drain_sp, amount}})
   end
 
   @doc """
@@ -765,16 +766,18 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     SkillHandler.handle_auto_cast(state, skill_id, level, target)
   end
 
-  # Unit: vitals casts (damage, SP drain/restore). Heal stays under `:combat`
-  # (Task 13) rather than moving here - Task 21 converges every HP/SP tag
-  # (player and mob) under this domain via `Unit.Session.Vitals`.
+  # Unit: vitals casts (damage, SP drain/restore). Damage keeps its per-type
+  # orchestration in HealthHandler; SP drain/restore converge on
+  # `Unit.Session.Vitals` (shared with the mob session) via HealthHandler. Heal
+  # stays under `:combat` - the player heal carries received-heal-rate scaling
+  # that is genuinely player-only, so it is not converged here.
   @impl true
   def handle_cast({:unit, {:apply_damage, damage, attacker_id}}, state) do
     HealthHandler.apply_damage(damage, attacker_id, state)
   end
 
   @impl true
-  def handle_cast({:unit, {:consume_sp, amount}}, state) do
+  def handle_cast({:unit, {:drain_sp, amount}}, state) do
     HealthHandler.consume_sp(amount, state)
   end
 

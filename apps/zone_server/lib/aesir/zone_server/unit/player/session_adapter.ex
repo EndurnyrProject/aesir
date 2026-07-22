@@ -2,8 +2,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionAdapter do
   @moduledoc """
   `Unit.Session.Adapter` for players.
 
-  Operates on the player **session map** (not the bare `PlayerState`): `commit/2`
-  needs the whole session to reach `StateCommit`, and `notify_vitals/1` needs the
+  Operates on the player **session map** (not the bare `PlayerState`): `commit/3`
+  needs the whole session to reach `StateCommit`, and `notify_vitals/2` needs the
   `:connection_pid`, so every callback takes and returns the session map with the
   `PlayerState` under `:game_state`.
 
@@ -47,10 +47,18 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionAdapter do
   end
 
   @impl Adapter
-  @spec notify_vitals(map()) :: :ok
-  def notify_vitals(%{game_state: %PlayerState{stats: stats}, connection_pid: connection_pid}) do
-    StatusSync.send_param(connection_pid, StatusParams.hp(), stats.current_state.hp)
-    StatusSync.send_param(connection_pid, StatusParams.sp(), stats.current_state.sp)
+  @spec notify_vitals(map(), Adapter.fields()) :: :ok
+  def notify_vitals(
+        %{game_state: %PlayerState{stats: stats}, connection_pid: connection_pid},
+        fields
+      ) do
+    current = stats.current_state
+
+    Enum.each(fields, fn
+      :hp -> StatusSync.send_param(connection_pid, StatusParams.hp(), current.hp)
+      :sp -> StatusSync.send_param(connection_pid, StatusParams.sp(), current.sp)
+    end)
+
     :ok
   end
 
@@ -69,16 +77,23 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionAdapter do
   end
 
   @impl Adapter
-  @spec commit(map(), map()) :: map()
-  def commit(previous, %{game_state: %PlayerState{} = game_state}) do
+  @spec commit(map(), map(), Adapter.fields()) :: map()
+  def commit(previous, %{game_state: %PlayerState{} = game_state}, fields) do
     committed = StateCommit.commit(previous, game_state)
 
     CharacterPersistence.update_stats(
       game_state.character_id,
-      %{hp: game_state.stats.current_state.hp, sp: game_state.stats.current_state.sp},
+      persist_map(game_state.stats.current_state, fields),
       async: true
     )
 
     committed
+  end
+
+  defp persist_map(current, fields) do
+    Map.new(fields, fn
+      :hp -> {:hp, current.hp}
+      :sp -> {:sp, current.sp}
+    end)
   end
 end

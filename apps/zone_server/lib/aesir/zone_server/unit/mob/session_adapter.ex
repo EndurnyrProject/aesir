@@ -7,9 +7,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.SessionAdapter do
   nearby clients as a `UnitHp` broadcast via `Mob.SpawnView`, and the registry
   snapshot is refreshed through `UnitRegistry.update_unit_state/3`.
 
-  Note: the current mob heal/SP-drain paths do not touch the unit registry, so
-  `commit/2` here is a capability the shared vitals handler may or may not invoke
-  for mobs — the routing task owns that policy, this adapter only exposes it.
+  Note: the current mob heal/SP-drain paths do not touch the unit registry, and
+  `Unit.Session.Vitals` never asks a mob to `commit/3` (it passes no commit
+  fields on the mob branch), preserving that. `commit/3` stays a real capability
+  the adapter exposes for a future caller, it is simply left uninvoked here.
   """
 
   @behaviour Aesir.ZoneServer.Unit.Session.Adapter
@@ -33,9 +34,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.SessionAdapter do
   end
 
   @impl Adapter
-  @spec notify_vitals(MobState.t()) :: :ok
-  def notify_vitals(%MobState{} = state) do
-    SpawnView.notify_hp_update(state)
+  @spec notify_vitals(MobState.t(), Adapter.fields()) :: :ok
+  def notify_vitals(%MobState{} = state, fields) do
+    if :hp in fields, do: SpawnView.notify_hp_update(state)
     :ok
   end
 
@@ -54,8 +55,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.SessionAdapter do
   end
 
   @impl Adapter
-  @spec commit(MobState.t(), MobState.t()) :: MobState.t()
-  def commit(%MobState{}, %MobState{} = updated) do
+  @spec commit(MobState.t(), MobState.t(), Adapter.fields()) :: MobState.t()
+  def commit(%MobState{}, %MobState{} = updated, _fields) do
     UnitRegistry.update_unit_state(:mob, updated.instance_id, updated)
     updated
   end

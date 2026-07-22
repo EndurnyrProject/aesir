@@ -17,9 +17,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler
   alias Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Mob.SessionAdapter
   alias Aesir.ZoneServer.Unit.Mob.SpawnView
   alias Aesir.ZoneServer.Unit.Mob.StealOps
   alias Aesir.ZoneServer.Unit.Movement
+  alias Aesir.ZoneServer.Unit.Session.Vitals
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
   # Public API
@@ -57,11 +59,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   Mobs spend no SP to cast; their SP pool exists only so drains
   (`SA_SPELLBREAKER`) have something real to take. A dead mob is skipped, like
-  `apply_damage/3`.
+  `apply_damage/3`. Shares the converged `{:unit, {:drain_sp, _}}` tag with
+  `PlayerSession.consume_sp/2`.
   """
   @spec zap_sp(pid(), non_neg_integer()) :: :ok
   def zap_sp(pid, amount) do
-    GenServer.cast(pid, {:unit, {:zap_sp, amount}})
+    GenServer.cast(pid, {:unit, {:drain_sp, amount}})
   end
 
   @doc """
@@ -292,24 +295,20 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     CombatHandler.handle_apply_damage(damage, attacker_id, state)
   end
 
-  # Unit: heal and SP drain.
+  # Unit: heal and SP drain, converged on `Unit.Session.Vitals`. Heal keeps its
+  # HP broadcast and is ungated (a corpse still heals, as before); SP drain
+  # publishes nothing, commits nothing, and no-ops on a dead mob - the dead
+  # guard stays here since it differs by op and unit type.
   @impl GenServer
   def handle_cast({:unit, {:heal, amount}}, state) do
-    updated_state = MobState.heal(state, amount)
-
-    # Send HP update packet to nearby players
-    SpawnView.notify_hp_update(updated_state)
-
-    {:noreply, updated_state}
+    {:noreply, Vitals.heal(state, amount, SessionAdapter)}
   end
 
-  def handle_cast({:unit, {:zap_sp, _amount}}, %{is_dead: true} = state), do: {:noreply, state}
+  def handle_cast({:unit, {:drain_sp, _amount}}, %{is_dead: true} = state), do: {:noreply, state}
 
-  def handle_cast({:unit, {:zap_sp, amount}}, state) when amount > 0 do
-    {:noreply, %{state | sp: max(0, state.sp - amount)}}
+  def handle_cast({:unit, {:drain_sp, amount}}, state) do
+    {:noreply, Vitals.drain_sp(state, amount, SessionAdapter)}
   end
-
-  def handle_cast({:unit, {:zap_sp, _amount}}, state), do: {:noreply, state}
 
   # Steal: mark this mob as already stolen from (TF_STEAL success path).
   @impl GenServer
