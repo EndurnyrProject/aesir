@@ -57,6 +57,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
   alias Aesir.ZoneServer.Unit.Player.Handlers.RefineOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.QuestLog
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.SpecialEffect
@@ -1084,9 +1085,9 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   def refine(%Ctx{game_state: gs, session_pid: session_pid}, index, cost_type, use_blessing?) do
     case Map.get(gs.inventory, index) do
       %InventoryItem{nameid: nameid} ->
-        GenServer.call(
+        PlayerSession.script_apply(
           session_pid,
-          {:script_apply, {:refine, index, nameid, cost_type, use_blessing?}}
+          {:refine, index, nameid, cost_type, use_blessing?}
         )
 
       nil ->
@@ -1740,7 +1741,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defp apply_op(%Ctx{session_pid: nil} = ctx, _op), do: Ctx.halt(ctx, :no_player)
 
   defp apply_op(%Ctx{session_pid: session_pid} = ctx, op) do
-    case GenServer.call(session_pid, {:script_apply, op}) do
+    case PlayerSession.script_apply(session_pid, op) do
       {:ok, game_state} -> %{ctx | game_state: game_state}
       {:error, reason} -> Ctx.halt(ctx, reason)
     end

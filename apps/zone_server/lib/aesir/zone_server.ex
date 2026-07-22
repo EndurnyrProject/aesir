@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer do
   alias Aesir.Net.TimeSync
   alias Aesir.Net.TimeSyncAck
   alias Aesir.ZoneServer.CharacterLoader
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerSupervisor
 
   @protocol_version 1
@@ -107,7 +108,7 @@ defmodule Aesir.ZoneServer do
   defp forward_to_player_session(message, session_data) do
     case get_player_session_pid(session_data) do
       {:ok, pid} ->
-        send(pid, {:message, message})
+        PlayerSession.deliver_message(pid, message)
         {:ok, session_data}
 
       :no_session ->

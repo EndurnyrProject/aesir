@@ -1,12 +1,13 @@
 defmodule Aesir.ZoneServer.Gm.Commands.Item do
   @moduledoc """
   `@item <item_id> <amount> [char_name | char_id]` - gives an item to an online
-  player (self by default). Delivery is the `{:give_item, item_def, amount}` cast
-  on the target's session.
+  player (self by default). Delivery is `PlayerSession.give_item/3` on the
+  target's session.
   """
   @behaviour Aesir.ZoneServer.Gm.Command
 
   alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @usage "Usage: @item <item_id> <amount> [target]"
@@ -22,7 +23,7 @@ defmodule Aesir.ZoneServer.Gm.Commands.Item do
     with {:ok, item_id, amount, target_arg} <- parse(args),
          {:ok, item_def} <- resolve_item(item_id),
          {:ok, pid, target_name} <- resolve_target(target_arg, ctx) do
-      GenServer.cast(pid, {:give_item, item_def, amount})
+      PlayerSession.give_item(pid, item_def, amount)
       {:ok, "Gave #{amount}x #{item_def.name} to #{target_name}"}
     end
   end

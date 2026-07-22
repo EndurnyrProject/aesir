@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
   alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.InventoryView
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.QuestView
   alias Aesir.ZoneServer.Unit.Player.SkillListView
@@ -114,7 +115,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
 
     case Warp.Registry.hit?(warps_for_map, game_state.x, game_state.y) do
       %Warp{} = warp ->
-        GenServer.cast(self(), {:warp, warp.to_map, warp.to_x, warp.to_y})
+        PlayerSession.warp(self(), warp.to_map, warp.to_x, warp.to_y)
 
       nil ->
         :ok

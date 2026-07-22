@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.Net.SkillUnitDespawn
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Constants.DespawnReason
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage, as: SkillUnitStorage
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -272,6 +273,43 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @spec deliver_guild_invite(pid(), map()) :: :ok | {:error, :invite_pending}
   def deliver_guild_invite(pid, invite) do
     GenServer.call(pid, {:deliver_guild_invite, invite})
+  end
+
+  @doc "Notifies this player that `about_char_id` entered their view range."
+  @spec notify_entered_view(pid(), non_neg_integer()) :: :ok
+  def notify_entered_view(pid, about_char_id) do
+    GenServer.cast(pid, {:player_entered_view, about_char_id})
+  end
+
+  @doc "Warps this player to `{x, y}` on `map_name`."
+  @spec warp(pid(), String.t(), integer(), integer()) :: :ok
+  def warp(pid, map_name, x, y) do
+    GenServer.cast(pid, {:warp, map_name, x, y})
+  end
+
+  @doc "Gives `amount` of `item_def` to this player's inventory."
+  @spec give_item(pid(), ItemDefinition.t(), pos_integer()) :: :ok
+  def give_item(pid, item_def, amount) do
+    GenServer.cast(pid, {:give_item, item_def, amount})
+  end
+
+  @doc "Repairs every broken item in this player's inventory at no cost."
+  @spec repair_all(pid()) :: :ok
+  def repair_all(pid) do
+    GenServer.cast(pid, :repair_all)
+  end
+
+  @doc "Applies a script DSL state-mutating `op` through the single-writer session."
+  @spec script_apply(pid(), ScriptEffectHandler.op()) :: ScriptEffectHandler.reply()
+  def script_apply(pid, op) do
+    GenServer.call(pid, {:script_apply, op})
+  end
+
+  @doc "Forwards a decoded client `message` to this player's session for routing."
+  @spec deliver_message(pid(), struct()) :: :ok
+  def deliver_message(pid, message) do
+    send(pid, {:message, message})
+    :ok
   end
 
   @impl true

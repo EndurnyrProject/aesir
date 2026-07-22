@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
   alias Aesir.ZoneServer.Unit.Mob.KillExp
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
 
@@ -160,7 +161,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
   # fallback, so the exit is caught and normalized into an error tuple.
   @spec give_item(pid(), non_neg_integer()) :: :ok | {:error, term()}
   defp give_item(pid, nameid) do
-    case GenServer.call(pid, {:script_apply, {:give_item, nameid, 1}}) do
+    case PlayerSession.script_apply(pid, {:give_item, nameid, 1}) do
       {:error, reason} -> {:error, reason}
       _delivered -> :ok
     end

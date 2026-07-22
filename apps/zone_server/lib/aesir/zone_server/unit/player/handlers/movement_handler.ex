@@ -44,6 +44,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.MovementEngine
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.StaticEntity
@@ -220,8 +221,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   # On-touch warp trigger hook (rAthena `OnTouch`, cell-enter).
   #
   # Fires after the player has stepped onto `(x, y)`: if that cell sits inside a
-  # warp's `xs/ys` area, cancel the remaining walk and cast `{:warp, …}` to the
-  # session — reusing the existing map-warp cast (zero new plumbing). The
+  # warp's `xs/ys` area, cancel the remaining walk and call `PlayerSession.warp/4`
+  # on the session — reusing the existing map-warp cast (zero new plumbing). The
   # per-player re-trigger cooldown guards the same-map-destination instant
   # re-fire loop; within the cooldown this is a no-op and the walk continues.
   @spec maybe_trigger_warp(PlayerState.t(), integer(), integer()) ::
@@ -245,7 +246,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
           Movement.set_position(:player, marked.character_id, marked, marked.map_name)
 
-          GenServer.cast(self(), {:warp, warp.to_map, warp.to_x, warp.to_y})
+          PlayerSession.warp(self(), warp.to_map, warp.to_x, warp.to_y)
 
           {:warp_fired, marked}
         end
@@ -771,7 +772,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     # Get the player session for the target
     case UnitRegistry.get_player_pid(to_char_id) do
       {:ok, pid} ->
-        GenServer.cast(pid, {:player_entered_view, about_char_id})
+        PlayerSession.notify_entered_view(pid, about_char_id)
 
       {:error, :not_found} ->
         :ok

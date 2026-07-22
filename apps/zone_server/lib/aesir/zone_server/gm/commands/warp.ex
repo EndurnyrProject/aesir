@@ -1,10 +1,12 @@
 defmodule Aesir.ZoneServer.Gm.Commands.Warp do
   @moduledoc """
   `@warp <map> <x> <y>` - warps the calling GM to the given cell on another map.
-  Delivery is the `{:warp, map, x, y}` cast on the caller's own session; the
+  Delivery is `PlayerSession.warp/4` on the caller's own session; the
   destination map/cell are validated in `WarpHandler`.
   """
   @behaviour Aesir.ZoneServer.Gm.Command
+
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
 
   @usage "Usage: @warp <map> <x> <y>"
 
@@ -17,7 +19,7 @@ defmodule Aesir.ZoneServer.Gm.Commands.Warp do
   @impl true
   def execute(args, _ctx) do
     with {:ok, map_name, x, y} <- parse(args) do
-      GenServer.cast(self(), {:warp, map_name, x, y})
+      PlayerSession.warp(self(), map_name, x, y)
       {:ok, "Warping to #{map_name} (#{x}, #{y})"}
     end
   end

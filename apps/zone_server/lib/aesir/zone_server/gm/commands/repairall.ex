@@ -1,11 +1,12 @@
 defmodule Aesir.ZoneServer.Gm.Commands.RepairAll do
   @moduledoc """
   `@repairall [char_name | char_id]` - repairs every broken item for an online
-  player (self by default) at no cost. Delivery is the `:repair_all` cast on
-  the target's session.
+  player (self by default) at no cost. Delivery is `PlayerSession.repair_all/1`
+  on the target's session.
   """
   @behaviour Aesir.ZoneServer.Gm.Command
 
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @impl true
@@ -17,7 +18,7 @@ defmodule Aesir.ZoneServer.Gm.Commands.RepairAll do
   @impl true
   def execute(args, ctx) do
     with {:ok, pid, target_name} <- resolve_target(List.first(args), ctx) do
-      GenServer.cast(pid, :repair_all)
+      PlayerSession.repair_all(pid)
       {:ok, "Repaired all broken items for #{target_name}"}
     end
   end
