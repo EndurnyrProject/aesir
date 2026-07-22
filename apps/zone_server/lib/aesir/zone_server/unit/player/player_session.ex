@@ -853,10 +853,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @impl true
   def handle_call({:resurrect, source_id, hp_percent}, _from, state) do
-    case validate_resurrection_source(source_id, state) do
-      :ok -> HealthHandler.resurrect(source_id, hp_percent, state)
-      {:error, _reason} = error -> {:reply, error, state}
-    end
+    HealthHandler.handle_resurrect(source_id, hp_percent, state)
   end
 
   @impl true
@@ -950,34 +947,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
       _ok_reply ->
         {:reply, reply, update_game_state(new_state, new_state.game_state)}
-    end
-  end
-
-  defp validate_resurrection_source(source_id, %{game_state: target_state}) do
-    with {:ok, source_map} <- source_map(source_id, target_state.character_id),
-         {:ok, target_map} <- target_map(target_state) do
-      if source_map == target_map, do: :ok, else: {:error, :stale_target}
-    end
-  end
-
-  defp source_map(source_id, target_id) when source_id == target_id,
-    do: {:error, :source_unavailable}
-
-  defp source_map(source_id, _target_id) do
-    with {:ok, {_module, source_state, source_pid}} <- UnitRegistry.get_unit(:player, source_id),
-         true <- is_pid(source_pid) and Process.alive?(source_pid),
-         {:ok, {_x, _y, source_map}} <- SpatialIndex.get_unit_position(:player, source_id),
-         true <- source_state.map_name == source_map do
-      {:ok, source_map}
-    else
-      _ -> {:error, :source_unavailable}
-    end
-  end
-
-  defp target_map(target_state) do
-    case SpatialIndex.get_unit_position(:player, target_state.character_id) do
-      {:ok, {_x, _y, map_name}} when map_name == target_state.map_name -> {:ok, map_name}
-      _ -> {:error, :stale_target}
     end
   end
 

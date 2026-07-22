@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.TargetState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
   Computes the HP after taking `damage`, clamped at 0.
@@ -181,6 +182,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   def try_consume_sp(_amount, state), do: {:reply, {:error, :insufficient_sp}, state}
 
   @doc """
+  Validates the resurrection source, then revives the corpse on success.
+
+  The single entry point for a `{:resurrect, source_id, hp_percent}` call:
+  confirms the source is still alive and co-located with the target before
+  delegating to `resurrect/3`, replying with the validation error and leaving
+  `state` untouched when the source has moved on or gone away.
+  """
+  @spec handle_resurrect(integer(), pos_integer(), map()) ::
+          {:reply, :ok | {:error, :stale_target | :invalid_hp_percent | :source_unavailable},
+           map()}
+  def handle_resurrect(source_id, hp_percent, state) do
+    case validate_resurrection_source(source_id, state) do
+      :ok -> resurrect(source_id, hp_percent, state)
+      {:error, _reason} = error -> {:reply, error, state}
+    end
+  end
+
+  @doc """
   Revives a corpse in place at `hp_percent` of maximum HP.
 
   The session revalidates the corpse immediately before committing the state
@@ -217,6 +236,34 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
   def resurrect(_source_id, _hp_percent, state),
     do: {:reply, {:error, :invalid_hp_percent}, state}
+
+  defp validate_resurrection_source(source_id, %{game_state: target_state}) do
+    with {:ok, source_map} <- source_map(source_id, target_state.character_id),
+         {:ok, target_map} <- target_map(target_state) do
+      if source_map == target_map, do: :ok, else: {:error, :stale_target}
+    end
+  end
+
+  defp source_map(source_id, target_id) when source_id == target_id,
+    do: {:error, :source_unavailable}
+
+  defp source_map(source_id, _target_id) do
+    with {:ok, {_module, source_state, source_pid}} <- UnitRegistry.get_unit(:player, source_id),
+         true <- is_pid(source_pid) and Process.alive?(source_pid),
+         {:ok, {_x, _y, source_map}} <- SpatialIndex.get_unit_position(:player, source_id),
+         true <- source_state.map_name == source_map do
+      {:ok, source_map}
+    else
+      _ -> {:error, :source_unavailable}
+    end
+  end
+
+  defp target_map(target_state) do
+    case SpatialIndex.get_unit_position(:player, target_state.character_id) do
+      {:ok, {_x, _y, map_name}} when map_name == target_state.map_name -> {:ok, map_name}
+      _ -> {:error, :stale_target}
+    end
+  end
 
   @doc """
   Restores SP to the player, clamped at `max_sp`.
