@@ -154,7 +154,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
       Aesir.ZoneServer.Mmo.Skills.Sage.ElementField,
       Aesir.ZoneServer.Mmo.Skills.Wizard.EstimationView,
       Aesir.ZoneServer.Mmo.Skills.Hunter.Trap,
-      Aesir.ZoneServer.Mmo.Skills.Npc.SlaveSummon
+      Aesir.ZoneServer.Mmo.Skills.Npc.SlaveSummon,
+      Aesir.ZoneServer.Mmo.Skills.Npc.StatusStrike
     ]
 
     test "every module under mmo/skills/ is either discovered or a declared helper" do
