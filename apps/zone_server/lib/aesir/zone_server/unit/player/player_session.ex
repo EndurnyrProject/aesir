@@ -664,19 +664,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     {:stop, :normal, state}
   end
 
-  @impl true
-  def handle_info(
-        {:player_spawned, _spawn_data},
-        %{connection_pid: _connection_pid} = state
-      ) do
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_info({:player_despawned, char_id}, state) do
-    VisibilityHandler.despawned(char_id, state)
-  end
-
   # Unknown messages must not crash a live player session.
   def handle_info(message, %{game_state: game_state} = state) do
     Logger.error(

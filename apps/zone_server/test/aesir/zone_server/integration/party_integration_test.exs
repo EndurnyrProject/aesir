@@ -19,7 +19,7 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
 
   `form_party/1` drives the real create/invite/accept protocol messages
   end to end, with no relog: `PartyHandler.handle_create_request/2` and the
-  invite-accept path call `PlayerSession.attach_to_party/2` inline, which
+  invite-accept path call `SocialHandler.attach_to_party/2` inline, which
   updates the requester's own live `game_state.party_id`, subscribes it to
   `"party:\#{party_id}"`, and sends the initial `PartyInfo` snapshot --
   exactly as a login would, but without needing one.

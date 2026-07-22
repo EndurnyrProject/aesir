@@ -12,8 +12,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.QuestHuntCredit do
   naturally included exactly once via the same range scan, never double-counted.
 
   This module never touches quest state itself: each recipient gets a
-  `{:quest_kill, mob_id}` message on its own `player:<char_id>` topic and its
-  `PlayerSession` decides whether any of its quests care.
+  `{:loot, {:quest_kill, mob_id}}` message on its own `player:<char_id>` topic
+  and its `PlayerSession` decides whether any of its quests care.
   """
 
   alias Aesir.ZoneServer.Geometry
@@ -25,8 +25,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.QuestHuntCredit do
   @area_size 14
 
   @doc """
-  Broadcasts `{:quest_kill, mob_id}` to every session eligible to credit the
-  kill of `mob_id` at `{mob_x, mob_y}` on `mob_map`.
+  Broadcasts `{:loot, {:quest_kill, mob_id}}` to every session eligible to
+  credit the kill of `mob_id` at `{mob_x, mob_y}` on `mob_map`.
 
   With no party (or a killer no longer in the registry) only the killer is
   credited; otherwise the killer's live party co-members in range on the map

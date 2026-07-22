@@ -3,10 +3,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ItemBoost do
   Item drop-rate boost (SC_ITEMBOOST, Bubble Gum).
 
   Adds `val1` percent to the killer's drop rate. Modelled as an additive
-  `drop_rate` percent delta fetched in `unit/player/player_session.ex`
-  `maybe_drop_items/2` and applied before the 90% cap in
-  `mmo/item_drop/drop_calculator.ex` (rAthena `mob.cpp:2837-2862`). val1-driven
-  (Bubble Gum passes 100).
+  `drop_rate` percent delta fetched in `LootHandler.maybe_drop_items/2` and
+  applied before the 90% cap in `mmo/item_drop/drop_calculator.ex`.
+  val1-driven (Bubble Gum passes 100).
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_itemboost,

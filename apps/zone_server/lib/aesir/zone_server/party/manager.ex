@@ -113,8 +113,9 @@ defmodule Aesir.ZoneServer.Party.Manager do
 
   @doc """
   Disbands a party: resets `party_id` to `0` for every member row and deletes
-  the `Party` row in one DB transaction, broadcasts `{:party_disbanded,
-  party_id, reason}` on `"party:\#{party_id}"`, and stops the entry.
+  the `Party` row in one DB transaction, broadcasts
+  `{:social, {:party_disbanded, party_id, reason}}` on `"party:\#{party_id}"`,
+  and stops the entry.
   """
   @spec disband(non_neg_integer(), String.t()) :: :ok | {:error, term()}
   def disband(party_id, reason) do
@@ -167,8 +168,8 @@ defmodule Aesir.ZoneServer.Party.Manager do
   Adds `character` to `party_id`, re-validating inside the entry that the
   party is not full (`Party.State.full?/1`) and that no existing member
   shares `character.account_id` (design "Same-account rule"). Persists
-  `characters.party_id` and broadcasts `{:party_updated, state}` on success;
-  leaves the state and the character's row untouched on failure.
+  `characters.party_id` and broadcasts `{:social, {:party_updated, state}}` on
+  success; leaves the state and the character's row untouched on failure.
   """
   @spec add_member(non_neg_integer(), Character.t()) ::
           {:ok, State.t()} | {:error, :party_full | :same_account | :not_found | term()}
@@ -228,7 +229,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
 
   @doc """
   Removes `char_id` from `party_id`, resets its `characters.party_id` to `0`,
-  persists, and broadcasts `{:party_updated, state}`. Removing the leader
+  persists, and broadcasts `{:social, {:party_updated, state}}`. Removing the leader
   disbands the party instead (design "Leader leaves"), delegating to
   `disband/2`. The leader check is made against live entry state, so it
   cannot be fooled by a stale read racing a concurrent leadership transfer.
@@ -433,10 +434,10 @@ defmodule Aesir.ZoneServer.Party.Manager do
   @doc """
   Replaces one member's complete runtime snapshot in the live party entry.
 
-  Changed snapshots emit `{:party_member_updated, party_id, member}`; identical
-  snapshots are a no-op. Only a base-level change that invalidates EXP sharing
-  writes party persistence, disabling the option and emitting the existing
-  `{:party_updated, state}` event as well.
+  Changed snapshots emit `{:social, {:party_member_updated, party_id, member}}`;
+  identical snapshots are a no-op. Only a base-level change that invalidates
+  EXP sharing writes party persistence, disabling the option and emitting the
+  existing `{:social, {:party_updated, state}}` event as well.
   """
   @spec sync_member(non_neg_integer(), non_neg_integer(), Member.t()) ::
           {:ok, State.t()} | {:error, :not_member | :not_found | term()}

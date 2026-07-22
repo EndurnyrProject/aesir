@@ -9,7 +9,7 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase2IntegrationTest do
        `ExperienceHandler`, measurably above an unbuffed control receiving the
        same grant.
     2. `SC_ITEMBOOST` (Bubble Gum) - the killer's merged `drop_rate` bonus is
-       read exactly as `PlayerSession.maybe_drop_items/2` reads it and threaded
+       read exactly as `LootHandler.maybe_drop_items/2` reads it and threaded
        into `DropCalculator.roll/8`; a seeded RNG makes a borderline roll drop
        under the boost while the same seed drops nothing unbuffed.
     3. `SC_LIFEINSURANCE` (`no_death_penalty`) - a lethal blow through
@@ -99,7 +99,7 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase2IntegrationTest do
           duration: 900_000
         )
 
-      # Read the bonus exactly as `PlayerSession.maybe_drop_items/2` does.
+      # Read the bonus exactly as `LootHandler.maybe_drop_items/2` does.
       drop_bonus =
         :player |> ModifierCalculator.get_all_modifiers(char_id) |> Map.get(:drop_rate, 0)
 

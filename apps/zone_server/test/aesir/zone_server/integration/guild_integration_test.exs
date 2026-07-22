@@ -15,7 +15,7 @@ defmodule Aesir.ZoneServer.Integration.GuildIntegrationTest do
   goes through the ETS-backed implementations `IntegrationCase` wires up,
   mirroring `party_integration_test.exs`. Every flow is driven through the real
   `Guild*Request` protocol messages fed to the owning session with no relog:
-  `GuildHandler` calls `PlayerSession.attach_to_guild/2` inline during dispatch,
+  `GuildHandler` calls `SocialHandler.attach_to_guild/2` inline during dispatch,
   which updates the requester's live `game_state.guild_id`, subscribes it to
   `"guild:\#{guild_id}"`, and pushes the initial snapshot -- exactly as a login
   would, but without needing one.
@@ -240,9 +240,9 @@ defmodule Aesir.ZoneServer.Integration.GuildIntegrationTest do
 
       assert_position_edit_ok()
 
-      # The edit broadcasts {:guild_updated} on "guild:{id}"; the officer, a
-      # subscribed bystander that did not initiate the edit, gets a fresh
-      # GuildInfo push -- exercising PlayerSession's guild pub/sub relay.
+      # The edit broadcasts {:social, {:guild_updated, _}} on "guild:{id}"; the
+      # officer, a subscribed bystander that did not initiate the edit, gets a
+      # fresh GuildInfo push -- exercising SocialHandler's guild pub/sub relay.
       assert_receive {:packet_sent, %GuildInfo{guild_id: ^guild_id}, _}, 1_000
 
       simulate_incoming_message(officer_session.pid, %GuildInviteRequest{
@@ -356,10 +356,11 @@ defmodule Aesir.ZoneServer.Integration.GuildIntegrationTest do
                       _},
                      1_000
 
-      # add_member broadcasts {:guild_updated} on "guild:{id}"; the master -- a
-      # bystander subscribed since creation -- relays a fresh GuildInfo listing
-      # the joiner, alongside the invitee's own attach snapshot, so two arrive.
-      # Only the master's requires a live guild pub/sub -> PlayerSession relay.
+      # add_member broadcasts {:social, {:guild_updated, _}} on "guild:{id}";
+      # the master -- a bystander subscribed since creation -- relays a fresh
+      # GuildInfo listing the joiner, alongside the invitee's own attach
+      # snapshot, so two arrive. Only the master's requires a live guild
+      # pub/sub -> SocialHandler relay.
       infos =
         GuildInfo
         |> collect_packets_of_type(500)

@@ -15,13 +15,11 @@ defmodule Aesir.ZoneServer.Unit.Session.VitalsTest do
   use ExUnit.Case, async: true
   use Mimic
 
-  alias Aesir.Commons.Models.Character
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.ParamChange
   alias Aesir.Net.UnitHp
   alias Aesir.ZoneServer.CharacterPersistence
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
+  alias Aesir.ZoneServer.SessionFixtures
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.SessionAdapter, as: MobAdapter
@@ -168,7 +166,7 @@ defmodule Aesir.ZoneServer.Unit.Session.VitalsTest do
   end
 
   defp player_state(overrides) do
-    game_state = PlayerState.new(character())
+    game_state = PlayerState.new(SessionFixtures.character(name: "Vitals"))
     stats = game_state.stats
 
     current_state = %{
@@ -191,32 +189,12 @@ defmodule Aesir.ZoneServer.Unit.Session.VitalsTest do
     %{game_state: game_state, connection_pid: self()}
   end
 
-  defp character do
-    %Character{
-      id: 1,
-      account_id: 100,
-      name: "Vitals",
-      last_map: "prontera",
-      last_x: 150,
-      last_y: 150,
-      class: 0,
-      base_level: 50,
-      job_level: 50,
-      str: 10,
-      agi: 10,
-      vit: 10,
-      int: 10,
-      dex: 10,
-      luk: 7
-    }
-  end
-
   defp mob_state(overrides) do
     %MobState{
       instance_id: 9001,
       mob_id: 1002,
-      mob_data: mob_definition(),
-      spawn_ref: mob_spawn(),
+      mob_data: SessionFixtures.mob_definition(),
+      spawn_ref: SessionFixtures.mob_spawn(),
       x: 150,
       y: 150,
       map_name: "prontera",
@@ -225,35 +203,6 @@ defmodule Aesir.ZoneServer.Unit.Session.VitalsTest do
       sp: Keyword.fetch!(overrides, :sp),
       max_sp: Keyword.fetch!(overrides, :max_sp),
       spawned_at: System.system_time(:second)
-    }
-  end
-
-  defp mob_definition do
-    %MobDefinition{
-      id: 1002,
-      aegis_name: "PORING",
-      name: "Poring",
-      level: 1,
-      hp: 100,
-      stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 6, luk: 5},
-      attack_range: 1,
-      size: :medium,
-      race: :plant,
-      element: {:water, 1},
-      walk_speed: 400,
-      attack_delay: 1000,
-      attack_motion: 500,
-      client_attack_motion: 500,
-      damage_motion: 400
-    }
-  end
-
-  defp mob_spawn do
-    %MobSpawn{
-      mob: 1002,
-      amount: 1,
-      respawn_time: 5_000,
-      spawn_area: %MobSpawn.SpawnArea{x: 150, y: 150, xs: 0, ys: 0}
     }
   end
 end

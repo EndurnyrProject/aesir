@@ -24,7 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.KillExp do
   design "EXP share") -- not just the ones who attacked; other attackers are
   granted their own damage-based share directly, after the renewal
   level-gap penalty (`LevelPenalty.exp/2`). Every final grant is delivered as
-  `{:mob_kill_exp, base, job, mob_race}` to the recipient's own
+  `{:progression, {:mob_kill_exp, base, job, mob_race}}` to the recipient's own
   `player:<char_id>` topic. The dead mob's race rides along so each recipient's
   own session can apply its per-race equipment EXP bonus — the bonus is a
   property of the receiving player's gear, not of the shared kill, so it cannot

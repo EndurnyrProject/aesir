@@ -1,8 +1,8 @@
 defmodule Aesir.ZoneServer.Gm.Commands.ResetSkill do
   @moduledoc """
   `@resetskill` - refunds the calling GM's learned skills into skill points
-  (rAthena `resetskill`). Delivery mirrors `@job`: a `{:reset_skills}` message is
-  broadcast on the caller's own `"player:<char_id>"` topic, which the already
+  (rAthena `resetskill`). Delivery mirrors `@job`: a `{:progression, {:reset_skills}}`
+  message is broadcast on the caller's own `"player:<char_id>"` topic, which the already
   subscribed `PlayerSession` picks up. Broadcasting (rather than calling the
   session directly) avoids a self-call deadlock, since the GM command runs inside
   the session process.

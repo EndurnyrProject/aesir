@@ -159,8 +159,8 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   Disbands a guild: resets `guild_id`/`guild_position` to `0` for every member
   row and deletes the guild's positions, expulsions and row in one DB
   transaction (explicit cascade, not a DB constraint), broadcasts
-  `{:guild_disbanded, guild_id, reason}` on `"guild:\#{guild_id}"`, and stops
-  the entry.
+  `{:social, {:guild_disbanded, guild_id, reason}}` on `"guild:\#{guild_id}"`,
+  and stops the entry.
   """
   @spec disband(non_neg_integer(), String.t()) :: :ok | {:error, term()}
   def disband(guild_id, reason) do
@@ -218,9 +218,9 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   @doc """
   Adds `character` to `guild_id`, re-validating inside the entry that the guild
   is not at the fixed cap of 16 (`State.full?/1`). Persists the member's
-  `guild_id` + `guild_position: 19` (Newbie), broadcasts `{:guild_updated,
-  state}` on success, and leaves the state and the character's row untouched on
-  failure.
+  `guild_id` + `guild_position: 19` (Newbie), broadcasts
+  `{:social, {:guild_updated, state}}` on success, and leaves the state and
+  the character's row untouched on failure.
   """
   @spec add_member(non_neg_integer(), Character.t()) ::
           {:ok, State.t()} | {:error, :guild_full | :not_found | term()}
@@ -256,7 +256,7 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   @doc """
   Voluntary leave of `char_id` from `guild_id`: resets its
   `guild_id`/`guild_position` to `0`, persists, and broadcasts
-  `{:guild_updated, state}`. The master leaving disbands the guild instead (no
+  `{:social, {:guild_updated, state}}`. The master leaving disbands the guild instead (no
   transfer this phase), delegating to `disband/2`. The master check runs
   against live entry state.
   """
@@ -308,7 +308,7 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   (`{:error, :no_permission}` otherwise) and refuses to target the master
   (`{:error, :cannot_target_master}`). On success it resets the target's row
   and writes exactly one `GuildExpulsion` row in one transaction, then
-  broadcasts `{:guild_updated, state}`.
+  broadcasts `{:social, {:guild_updated, state}}`.
   """
   @spec expel(non_neg_integer(), non_neg_integer(), non_neg_integer(), String.t()) ::
           {:ok, State.t()}
@@ -374,7 +374,8 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   Master-only emblem change: stores `data` as the guild's `emblem_data` and
   bumps `emblem_id` by one in Postgres, updates the entry's `emblem_id` version
   counter (the blob is not held in `State`), and broadcasts
-  `{:guild_emblem_changed, guild_id, emblem_id}`. Returns the new `emblem_id`.
+  `{:social, {:guild_emblem_changed, guild_id, emblem_id}}`. Returns the new
+  `emblem_id`.
   """
   @spec change_emblem(non_neg_integer(), non_neg_integer(), binary()) ::
           {:ok, non_neg_integer()} | {:error, :no_permission | :not_found | term()}
@@ -419,7 +420,7 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   @doc """
   Master-only (`:notice`) guild-notice update. Persists `notice_subject`/
   `notice_body`, updates the entry's `notice`, and broadcasts
-  `{:guild_updated, state}`.
+  `{:social, {:guild_updated, state}}`.
   """
   @spec set_notice(non_neg_integer(), non_neg_integer(), %{
           subject: String.t(),
@@ -449,7 +450,7 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   `can_invite` and `can_expel`. Index 0 (the master slot) is protected and
   returns `{:error, :no_permission}`; an index outside `0..19` returns
   `{:error, :invalid_position}`. The inert `can_storage`/`tax` fields are
-  preserved. Broadcasts `{:guild_updated, state}`.
+  preserved. Broadcasts `{:social, {:guild_updated, state}}`.
   """
   @spec edit_position(non_neg_integer(), non_neg_integer(), %{
           index: non_neg_integer(),
@@ -518,7 +519,8 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   Master-only (`:assign`) assignment of `target_char_id` to position `index`.
   Rejects an index outside `0..19` with `{:error, :invalid_position}` and a
   non-member target with `{:error, :not_member}`. Persists the target's
-  `guild_position`, updates the entry, and broadcasts `{:guild_updated, state}`.
+  `guild_position`, updates the entry, and broadcasts
+  `{:social, {:guild_updated, state}}`.
   """
   @spec assign_member_position(
           non_neg_integer(),
@@ -572,7 +574,7 @@ defmodule Aesir.ZoneServer.Guild.Manager do
 
   @doc """
   Pushes `char_id`'s new `base_level` into the entry, broadcasting
-  `{:guild_updated, state}`. `{:error, :not_member}` if `char_id` isn't a
+  `{:social, {:guild_updated, state}}`. `{:error, :not_member}` if `char_id` isn't a
   current member; `{:error, :not_found}` if the entry isn't running.
   """
   @spec push_base_level(non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
@@ -587,7 +589,7 @@ defmodule Aesir.ZoneServer.Guild.Manager do
 
   @doc """
   Pushes `char_id`'s new `map_name` into the entry, broadcasting
-  `{:guild_updated, state}`.
+  `{:social, {:guild_updated, state}}`.
   """
   @spec push_map_change(non_neg_integer(), non_neg_integer(), String.t()) ::
           {:ok, State.t()} | {:error, :not_member | :not_found | term()}
@@ -601,7 +603,7 @@ defmodule Aesir.ZoneServer.Guild.Manager do
 
   @doc """
   Pushes `char_id`'s `online` flag into the entry -- both login and logout
-  cross this path -- broadcasting `{:guild_updated, state}`.
+  cross this path -- broadcasting `{:social, {:guild_updated, state}}`.
   """
   @spec set_online(non_neg_integer(), non_neg_integer(), boolean()) ::
           {:ok, State.t()} | {:error, :not_member | :not_found | term()}
@@ -618,7 +620,8 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   `position_index` is always preserved (position is authoritative in the guild
   entry, never in the session presence projection), so only the presence fields
   from `member` are applied. Changed snapshots emit
-  `{:guild_member_updated, guild_id, member}`; identical snapshots are a no-op.
+  `{:social, {:guild_member_updated, guild_id, member}}`; identical snapshots
+  are a no-op.
   A snapshot whose `char_id` differs from the member key is rejected with
   `{:error, :not_member}`.
   """

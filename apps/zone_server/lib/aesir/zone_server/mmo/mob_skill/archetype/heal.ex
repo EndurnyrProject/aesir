@@ -4,8 +4,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.Heal do
   Executor already resolved (`AL_HEAL`, `NPC_ALLHEAL`).
 
   Healing routes through the mob's own HP path (`MobSession.heal/2` →
-  `MobState.heal/2` + HP-update broadcast), **not** `Combat.apply_heal/3`, which
-  is player-oriented; mobs are never healed through the player pipeline.
+  `Unit.Session.Vitals.heal/4` + HP-update broadcast via `Mob.SessionAdapter`),
+  **not** `Combat.apply_heal/3`, which is player-oriented; mobs are never
+  healed through the player pipeline.
 
   ## Heal amount (approximation)
 

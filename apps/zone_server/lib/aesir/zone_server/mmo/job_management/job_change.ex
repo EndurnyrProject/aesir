@@ -2,8 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobChange do
   @moduledoc """
   Decoupled, tell-don't-ask public entry point for changing a player's job.
 
-  Validates `job_id`, then broadcasts `{:change_job, job_id}` on the player's
-  `"player:<char_id>"` PubSub topic. The caller needs only the `char_id`, never
+  Validates `job_id`, then broadcasts `{:progression, {:change_job, job_id}}`
+  on the player's `"player:<char_id>"` PubSub topic. The caller needs only the
+  `char_id`, never
   the session pid; `PlayerSession` (already subscribed to that topic) picks up
   the message and delegates to `ProgressionHandler.apply_job_change/2`.
   """

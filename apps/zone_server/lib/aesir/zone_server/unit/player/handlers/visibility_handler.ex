@@ -1,12 +1,12 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler do
   @moduledoc """
   Player-facing visibility glue: another player entering or leaving this
-  session's view, and a player-despawn broadcast.
+  session's view.
 
   On entry the entering unit's `UnitSpawn` (built by `SpawnView`), its active
   status icons and, when it is running an open vending shop, its board are
-  pushed to this session's connection. On exit (or despawn) a `UnitDespawn`
-  vanish packet is sent.
+  pushed to this session's connection. On exit a `UnitDespawn` vanish packet
+  is sent.
   """
 
   alias Aesir.Net.UnitDespawn
@@ -51,24 +51,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler do
     }
 
     MessageRouter.send_to(state.connection_pid, packet)
-
-    {:noreply, state}
-  end
-
-  @doc """
-  Sends a vanish packet to this session for a despawned player (never for this
-  session's own character).
-  """
-  @spec despawned(non_neg_integer(), map()) :: {:noreply, map()}
-  def despawned(char_id, %{game_state: game_state, connection_pid: connection_pid} = state) do
-    if char_id != game_state.character_id do
-      packet = %UnitDespawn{
-        gid: char_id,
-        reason: DespawnReason.out_of_sight()
-      }
-
-      MessageRouter.send_to(connection_pid, packet)
-    end
 
     {:noreply, state}
   end
