@@ -1,42 +1,93 @@
 defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
   @moduledoc """
-  End-to-end coverage that the `SA_DISPELL` and `SA_LANDPROTECTOR` rows shipped
-  in `priv/db/mob_skills/mob_skills.yml` actually resolve into effects.
+  End-to-end coverage that mob-cast rows read from `MobSkill.Db` resolve into
+  real effects through the converged dispatch path: `MobSkill.Executor` ->
+  `Skill.Catalog` -> the same `Skill.Active` modules a player cast runs.
 
-  Both drive real rows read from `MobSkill.Db` through the real
-  `MobSkill.Executor` against a real, live `PlayerSession`: the data is the
-  fixture, so a catalog or archetype regression that silently degrades these
-  rows back to `:stub` fails here.
+  Every scenario drives a real row against a real `Executor.execute/2` call,
+  a real `PlayerSession`/`MobSession`, and asserts the observable outcome
+  (damage packets, HP, status storage, spatial position) rather than
+  stubbing the mechanic under test - a catalog or convergence regression that
+  silently degrades a row back to a stub, or reintroduces archetype-era
+  behavior, fails here.
   """
 
   use Aesir.ZoneServer.IntegrationCase
 
   @moduletag :capture_log
 
+  alias Aesir.Net.SkillDamage
+  alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.MobSkill.Db
+  alias Aesir.ZoneServer.Mmo.MobSkill.Denylist
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.Skills.Npc.NpcEarthquake
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+
+  @map "prontera"
 
   # Wounded Morocc: carries both a level 5 `SA_DISPELL` row and a level 5
-  # `SA_LANDPROTECTOR` row. Level 5 makes the archetype's `50 + 10*lv`% roll a
-  # certainty, so the assertions do not depend on randomness.
+  # `SA_LANDPROTECTOR` row, plus a level 10 `MG_FIREBOLT` row. Level 5 makes
+  # the skill's `50 + 10*lv`% roll a certainty, so the assertions do not
+  # depend on randomness.
   @mob_id 3235
-  @map "prontera"
+
+  # Tengu: carries `NPC_STUNATTACK` rows, weapon-class hit + status rider.
+  @stun_mob_id 1_405
+
+  # Corrupted Soul: carries `NPC_EARTHQUAKE` (self-targeted ground shockwave).
+  @earthquake_mob_id 2_475
+
+  # Evil Nymph: carries an `AL_HEAL` row targeting `friend`.
+  @heal_mob_id 1_416
+
+  # Nydhoggur Memory: carries an `NPC_SUMMONSLAVE` row summoning a single
+  # Scorpion (mob id 2143, `condition.val1`).
+  @summon_mob_id 2_142
+  @summon_slave_id 2_143
+
+  # Wind Ghost: carries `WZ_JUPITEL` rows. Not denylisted for mob casting.
+  @jupitel_mob_id 1_450
 
   setup :set_mimic_private
   setup :verify_on_exit!
 
-  defp row!(skill_name) do
-    row = Enum.find(Db.rows_for(@mob_id), &(&1.skill == skill_name and &1.level == 5))
+  defp row!(mob_id, skill_name, opts \\ []) do
+    level = Keyword.get(opts, :level)
+    target = Keyword.get(opts, :target)
+
+    row =
+      Enum.find(Db.rows_for(mob_id), fn row ->
+        row.skill == skill_name and
+          (is_nil(level) or row.level == level) and
+          (is_nil(target) or row.target == target)
+      end)
 
     assert row != nil,
-           "mob #{@mob_id} must still ship a level 5 #{skill_name} row (this test's fixture)"
+           "mob #{mob_id} must still ship a #{skill_name} row (this test's fixture)"
 
     row
+  end
+
+  defp await_map_coordinator(map_name, attempts \\ 40)
+
+  defp await_map_coordinator(_map_name, 0), do: {:error, :map_coordinator_not_ready}
+
+  defp await_map_coordinator(map_name, attempts) do
+    case Registry.lookup(Aesir.ZoneServer.MapRegistry, map_name) do
+      [_ | _] ->
+        :ok
+
+      [] ->
+        Process.sleep(25)
+        await_map_coordinator(map_name, attempts - 1)
+    end
   end
 
   defp caster_targeting(char_id) do
@@ -61,7 +112,8 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
       :ok = StatusInterpreter.apply_status(:player, char_id, :sc_bleeding, duration: 1_800_000)
       :ok = StatusInterpreter.apply_status(:player, char_id, :sc_hiding, duration: 1_800_000)
 
-      assert :ok = Executor.execute(caster_targeting(char_id), row!("SA_DISPELL"))
+      assert :ok =
+               Executor.execute(caster_targeting(char_id), row!(@mob_id, "SA_DISPELL", level: 5))
 
       refute StatusStorage.has_status?(:player, char_id, :sc_blessing)
 
@@ -94,7 +146,8 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
       # The gate exemption is structural - keep it that way.
       reject(&Targeting.validate_enemy/2)
 
-      assert :ok = Executor.execute(caster_targeting(char_id), row!("SA_DISPELL"))
+      assert :ok =
+               Executor.execute(caster_targeting(char_id), row!(@mob_id, "SA_DISPELL", level: 5))
 
       refute StatusStorage.has_status?(:player, char_id, :sc_blessing)
     end
@@ -105,7 +158,11 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
       player = start_player_session(id: 9_803, name: "Protected", base_level: 50)
       char_id = player.character.id
 
-      assert :ok = Executor.execute(caster_targeting(char_id), row!("SA_LANDPROTECTOR"))
+      assert :ok =
+               Executor.execute(
+                 caster_targeting(char_id),
+                 row!(@mob_id, "SA_LANDPROTECTOR", level: 5)
+               )
 
       assert %Group{} = group = Enum.find(Storage.all(), &(&1.skill_name == :sa_landprotector))
       assert group.caster_type == :mob
@@ -114,6 +171,205 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
       assert group.cells != []
 
       on_exit(fn -> Storage.delete(group.group_id) end)
+    end
+  end
+
+  describe "MG_FIREBOLT formula parity + MDEF" do
+    test "mob-cast magic damage matches the player formula and drops against higher MDEF" do
+      player =
+        start_player_session(
+          id: 9_810,
+          name: "Bolted",
+          base_level: 50,
+          hp: 20_000,
+          max_hp: 20_000
+        )
+
+      char_id = player.character.id
+
+      on_exit(fn -> StatusStorage.clear_unit_statuses(:player, char_id) end)
+
+      caster = caster_targeting(char_id)
+      caster = put_in(caster.mob_data.matk, 500)
+      row = row!(@mob_id, "MG_FIREBOLT", level: 10)
+
+      attacker = MobState.to_combatant(caster)
+      target = PlayerState.to_combatant(get_player_state(player.pid))
+
+      {:ok, %{damage: per_hit}} =
+        MagicDamageCalculator.calculate_magic_damage(attacker, target,
+          element: :fire,
+          skill_ratio: 100,
+          skill_id: row.skill_id
+        )
+
+      expected_damage = per_hit * row.level
+
+      flush_packets()
+      assert :ok = Executor.execute(caster, row)
+
+      assert_packet_sent_with(SkillDamage, fn packet ->
+        assert packet.skill_id == row.skill_id
+        assert packet.target_id == char_id
+        assert packet.damage == expected_damage
+      end)
+
+      assert :ok =
+               StatusInterpreter.apply_status(:player, char_id, :sc_endure,
+                 val1: 80,
+                 val4: 1,
+                 duration: 1_800_000
+               )
+
+      stats = PlayerSession.recalculate_stats(player.pid)
+      assert stats.combat_stats.mdef == 80
+
+      flush_packets()
+      assert :ok = Executor.execute(caster, row)
+
+      assert_packet_sent_with(SkillDamage, fn packet ->
+        assert packet.damage < expected_damage
+      end)
+    end
+  end
+
+  describe "NPC_STUNATTACK on-connect status" do
+    test "a forced-high flee target takes no damage and gets no sc_stun" do
+      player = start_player_session(id: 9_811, name: "Evasive", base_level: 1, agi: 500, luk: 0)
+      char_id = player.character.id
+
+      on_exit(fn -> StatusStorage.clear_unit_statuses(:player, char_id) end)
+
+      mob = spawn_test_mob(@map, {150, 150}, mob_id: @stun_mob_id)
+      caster = %{get_mob_state(mob.pid) | target_id: char_id}
+
+      flush_packets()
+      assert :ok = Executor.execute(caster, row!(@stun_mob_id, "NPC_STUNATTACK"))
+
+      refute_packet_sent(SkillDamage)
+      refute StatusStorage.has_status?(:player, char_id, :sc_stun)
+    end
+
+    test "a normal-flee target takes damage and sc_stun applies on connect" do
+      player =
+        start_player_session(id: 9_812, name: "Rooted", base_level: 1, agi: 1, luk: 0, vit: 0)
+
+      char_id = player.character.id
+
+      on_exit(fn -> StatusStorage.clear_unit_statuses(:player, char_id) end)
+
+      mob = spawn_test_mob(@map, {150, 150}, mob_id: @stun_mob_id, dex: 300)
+      caster = %{get_mob_state(mob.pid) | target_id: char_id}
+
+      flush_packets()
+      assert :ok = Executor.execute(caster, row!(@stun_mob_id, "NPC_STUNATTACK"))
+
+      assert_packet_sent(SkillDamage)
+      assert StatusStorage.has_status?(:player, char_id, :sc_stun)
+    end
+  end
+
+  describe "NPC_EARTHQUAKE ground cast" do
+    test "damages a player standing on the footprint but spares a mob on the same footprint" do
+      caster_mob = spawn_test_mob(@map, {160, 160}, mob_id: @earthquake_mob_id)
+      caster = get_mob_state(caster_mob.pid)
+
+      victim =
+        start_player_session(id: 9_813, name: "Shaken", position: {161, 160}, map_name: @map)
+
+      bystander_mob =
+        spawn_test_mob(@map, {160, 161}, mob_id: @earthquake_mob_id, hp: 500, max_hp: 500)
+
+      assert :ok = Executor.execute(caster, row!(@earthquake_mob_id, "NPC_EARTHQUAKE"))
+
+      assert %Group{} = group = Enum.find(Storage.all(), &(&1.skill_name == :npc_earthquake))
+      on_exit(fn -> Storage.delete(group.group_id) end)
+
+      assert {:ok, _group} = NpcEarthquake.on_interval(group, System.system_time(:millisecond))
+
+      assert get_player_state(victim.pid).stats.current_state.hp < 100
+      assert get_mob_state(bystander_mob.pid).hp == 500
+    end
+  end
+
+  describe "AL_HEAL friend row" do
+    test "heals a damaged friendly mob through the shared heal path" do
+      caster_mob = spawn_test_mob(@map, {180, 180}, mob_id: @heal_mob_id)
+      friend_mob = spawn_test_mob(@map, {181, 180}, mob_id: @heal_mob_id, hp: 50, max_hp: 200)
+
+      caster = get_mob_state(caster_mob.pid)
+      row = row!(@heal_mob_id, "AL_HEAL", target: :friend)
+
+      assert :ok = Executor.execute(caster, row)
+
+      assert get_mob_state(friend_mob.pid).hp > 50
+    end
+  end
+
+  describe "NPC_SUMMONSLAVE" do
+    test "a mob-cast summon row threads master_id to the spawned slave" do
+      # NPC_SUMMONSLAVE resolves through the real, permanently-running
+      # "prontera" Map.Coordinator (boot's MapManager starts it
+      # asynchronously), so a test running early relative to that boot must
+      # wait for its registration instead of racing it.
+      assert :ok = await_map_coordinator(@map)
+
+      mob = spawn_test_mob(@map, {190, 190}, mob_id: @summon_mob_id)
+      caster = get_mob_state(mob.pid)
+
+      assert :ok = Executor.execute(caster, row!(@summon_mob_id, "NPC_SUMMONSLAVE"))
+
+      slave =
+        :mob
+        |> UnitRegistry.list_units_by_type()
+        |> Enum.find_value(fn id ->
+          case UnitRegistry.get_unit(:mob, id) do
+            {:ok, {_module, %MobState{master_id: master_id} = state, _pid}}
+            when master_id == caster.instance_id ->
+              state
+
+            _ ->
+              nil
+          end
+        end)
+
+      assert %MobState{} = slave
+      assert slave.mob_id == @summon_slave_id
+    end
+  end
+
+  describe "WZ_JUPITEL deferred effect" do
+    test "a mob-cast row's deferred hit lands via MobSession's deferred handler" do
+      refute Denylist.denied?(84),
+             "WZ_JUPITEL (84) is denylisted for mob casting - this scenario needs the real path"
+
+      victim =
+        start_player_session(id: 9_814, name: "Struck", position: {153, 150}, map_name: @map)
+
+      char_id = victim.character.id
+
+      {:ok, orig_position} = SpatialIndex.get_unit_position(:player, char_id)
+
+      mob = spawn_test_mob(@map, {150, 150}, mob_id: @jupitel_mob_id)
+      row = row!(@jupitel_mob_id, "WZ_JUPITEL")
+
+      # Drives the row through the real cast/complete/defer cycle on the mob's
+      # own process so `Skill.defer/3`'s `Process.send_after(self(), ...)`
+      # arms on the mob's pid, exactly like production `{:ai, :tick}` casting -
+      # the same MobSession that later receives and dispatches the deferred
+      # `{:skill, {:deferred, WzJupitel, _}}` message.
+      :sys.replace_state(mob.pid, fn state ->
+        state
+        |> MobState.set_target(char_id)
+        |> MobState.set_casting(%{row: row, complete_at: 0, timer_ref: nil})
+      end)
+
+      send(mob.pid, {:casting, :complete})
+
+      Process.sleep(500)
+
+      {:ok, new_position} = SpatialIndex.get_unit_position(:player, char_id)
+      assert new_position != orig_position
     end
   end
 end
