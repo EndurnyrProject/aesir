@@ -2,11 +2,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   @moduledoc """
   Shared enemy-target relation for skills and combat.
 
-  A living mob is an enemy. A living player is an enemy of a mob. A player,
-  however, is never a valid target for another player until the server gains
-  PvP map modes: `pvp_enabled?/1` is the single seam that flips that policy.
-  Beyond PvP, players sharing the caster's nonzero party or guild are never
-  enemies.
+  A living mob is an enemy of a player, and vice versa, but a mob is never a
+  valid target for another mob (PvE has no friendly fire between mobs). A
+  player, however, is never a valid target for another player until the
+  server gains PvP map modes: `pvp_enabled?/1` is the single seam that flips
+  that policy. Beyond PvP, players sharing the caster's nonzero party or
+  guild are never enemies.
   """
 
   @doc """
@@ -18,9 +19,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
       not alive?(target) -> {:error, :target_dead}
       same_unit?(attacker, target) -> {:error, :invalid_target}
       pvp_blocked?(attacker, target) -> {:error, :invalid_target}
+      mob_vs_mob?(attacker, target) -> {:error, :invalid_target}
       allied_players?(attacker, target) -> {:error, :invalid_target}
       true -> :ok
     end
+  end
+
+  # Mobs never target other mobs; this is PvE-only friendly fire protection.
+  defp mob_vs_mob?(attacker, target) do
+    unit_type(attacker) == :mob and unit_type(target) == :mob
   end
 
   # A player attacking another player is rejected until PvP map modes exist.

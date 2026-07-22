@@ -52,6 +52,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
     assert :ok = Targeting.validate_enemy(mob(1000), player(2000))
   end
 
+  test "a mob is never a valid target for another mob" do
+    assert {:error, :invalid_target} = Targeting.validate_enemy(mob(1000), mob(2000))
+  end
+
   test "dead players and mobs are not enemies" do
     assert {:error, :target_dead} =
              Targeting.validate_enemy(player(1000), player(2000, %{action_state: :dead}))
