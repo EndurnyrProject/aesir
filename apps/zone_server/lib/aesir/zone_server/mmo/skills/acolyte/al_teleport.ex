@@ -11,6 +11,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlTeleport do
   The warp is staged on `pending_warp` in the returned `PlayerState`;
   `SkillHandler.commit_cast` drains it via `WarpHandler.warp/4` after
   committing SP and cooldowns.
+
+  A mob caster has no `pending_warp` staging step: it relocates immediately
+  via `MobSession.teleport/1`, a cast to the mob's own session pid, regardless
+  of level.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -24,13 +28,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlTeleport do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Mob.MobSession
+  alias Aesir.ZoneServer.Unit.Mob.MobState
 
   @behaviour Active
 
   @impl Active
-  @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          {:ok, PlayerState.t()} | {:error, atom()}
+  @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, Active.caster()} | {:error, atom()}
+  def cast(%MobState{process_pid: pid} = caster, :self, _level, _definition) do
+    MobSession.teleport(pid)
+    {:ok, caster}
+  end
+
   def cast(caster, :self, 1, _definition) do
     case Cell.random_traversable(caster.map_name) do
       {:ok, {x, y}} -> {:ok, %{caster | pending_warp: {caster.map_name, x, y}}}

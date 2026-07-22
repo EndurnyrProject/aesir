@@ -38,6 +38,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
   bonus (SC_INCHEALRATE) is applied downstream on the generic `HealthHandler.apply_heal`
   path that every `Combat.apply_heal` flows through. Still deferred here: Meditatio's
   caster-side heal-power bonus.
+
+  The caster's stats are read generically through `caster.__struct__.to_combatant/1`,
+  so a `%MobState{}` caster heals off its own INT/base level the same way a player
+  does; mobs simply have no equipment (`heal_power` reads as 0) and no HPlus trait.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 28,
@@ -54,7 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Skill.Active
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
 
@@ -69,11 +73,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
   - All others (including players and unresolvable targets) — HP is restored
     via `Combat.apply_heal/4`.
   """
-  @spec cast(struct(), :self | {:unit, integer()}, pos_integer(), struct()) ::
-          {:ok, struct()} | {:error, atom()}
-  def cast(%{character_id: caster_id} = caster, target, level, _definition) do
-    stats = PlayerState.get_stats(caster)
-    heal_value = compute_heal(stats, level)
+  @spec cast(Active.caster(), :self | {:unit, integer()}, pos_integer(), struct()) ::
+          {:ok, Active.caster()} | {:error, atom()}
+  def cast(caster, target, level, _definition) do
+    combatant = caster.__struct__.to_combatant(caster)
+    heal_value = compute_heal(combatant, level)
     target_id = Active.resolve_target_id(caster, target)
 
     case Combat.resolve_combatant(target_id) do
@@ -89,21 +93,30 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
         end
 
       _ ->
-        Combat.apply_heal(:player, target_id, heal_value, caster_id)
+        Combat.apply_heal(target_unit_type(target_id), target_id, heal_value, combatant.unit_id)
         {:ok, caster}
     end
   end
 
-  defp compute_heal(%{base_level: base_level, int: int_val} = stats, level) do
-    base = div(div(base_level + int_val, 5) * 30 * level, 10)
-    matk_min = Map.get(stats, :heal_matk_min, stats.matk)
-    matk_max = Map.get(stats, :heal_matk_max, stats.matk)
+  defp compute_heal(combatant, level) do
+    combat_stats = combatant.combat_stats
+
+    base =
+      div(div(combatant.progression.base_level + combatant.base_stats.int, 5) * 30 * level, 10)
+
+    matk_min = Map.get(combat_stats, :heal_matk_min, combat_stats.matk)
+    matk_max = Map.get(combat_stats, :heal_matk_max, combat_stats.matk)
     heal = base + DamageShared.roll(matk_min, matk_max)
-    hplus = Map.get(stats, :hplus, 0)
-    heal_power = Map.get(stats, :heal_power, 0)
+    hplus = Map.get(combat_stats, :hplus, 0)
+    heal_power = Map.get(combatant.equip_modifiers, :heal_power, 0)
 
     heal
     |> then(&(&1 + div(&1 * hplus, 100)))
     |> then(&(&1 + div(&1 * heal_power, 100)))
+  end
+
+  @spec target_unit_type(integer()) :: :mob | :player
+  defp target_unit_type(target_id) do
+    if UnitRegistry.unit_exists?(:mob, target_id), do: :mob, else: :player
   end
 end

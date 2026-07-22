@@ -7,6 +7,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlTeleportTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlTeleport
   alias Aesir.ZoneServer.Mmo.SkillTree
+  alias Aesir.ZoneServer.Unit.Mob.MobSession
+  alias Aesir.ZoneServer.Unit.Mob.MobState
 
   setup do
     Mimic.copy(Cell)
@@ -83,5 +85,50 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlTeleportTest do
       assert {:ok, updated} = AlTeleport.cast(@caster, :self, 2, definition)
       assert updated.pending_warp == {"prontera", 150, 190}
     end
+  end
+
+  describe "cast/4 (mob caster)" do
+    test "casts a self-teleport to the mob's own session pid" do
+      {:ok, definition} = Catalog.by_id(26)
+      mob = mob_caster()
+
+      expect(MobSession, :teleport, fn pid ->
+        assert pid == mob.process_pid
+        :ok
+      end)
+
+      assert {:ok, ^mob} = AlTeleport.cast(mob, :self, 1, definition)
+    end
+
+    test "lv2 also routes through the mob's session pid" do
+      {:ok, definition} = Catalog.by_id(26)
+      mob = mob_caster()
+
+      expect(MobSession, :teleport, fn pid ->
+        assert pid == mob.process_pid
+        :ok
+      end)
+
+      assert {:ok, ^mob} = AlTeleport.cast(mob, :self, 2, definition)
+    end
+  end
+
+  defp mob_caster do
+    %MobState{
+      instance_id: 5001,
+      mob_id: 1002,
+      mob_data: nil,
+      spawn_ref: nil,
+      x: 50,
+      y: 60,
+      map_name: "prontera",
+      hp: 100,
+      max_hp: 100,
+      sp: 0,
+      max_sp: 0,
+      spawned_at: 0,
+      is_dead: false,
+      process_pid: self()
+    }
   end
 end
