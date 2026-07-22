@@ -219,7 +219,7 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
       assert :ok = Manager.disband(created.party_id, "leader_left")
 
       party_id = created.party_id
-      assert_receive {:party_disbanded, ^party_id, "leader_left"}
+      assert_receive {:social, {:party_disbanded, ^party_id, "leader_left"}}
     end
 
     test "returns {:error, :not_found} when no entry is running" do
@@ -266,7 +266,7 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
       assert member.base_level == joiner.base_level
 
       assert Repo.get(Character, joiner.id).party_id == created.party_id
-      assert_receive {:party_updated, ^state}
+      assert_receive {:social, {:party_updated, ^state}}
     end
 
     test "rejects a same-account character without mutating state" do
@@ -341,7 +341,7 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
       assert {:ok, state} = Manager.remove_member(joined.party_id, joiner.id)
       refute Map.has_key?(state.members, joiner.id)
       assert Repo.get(Character, joiner.id).party_id == 0
-      assert_receive {:party_updated, ^state}
+      assert_receive {:social, {:party_updated, ^state}}
     end
 
     test "removing the leader disbands the party" do
@@ -384,7 +384,7 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
       assert {:ok, state} = Manager.kick(joined.party_id, leader.id, target.id)
       refute Map.has_key?(state.members, target.id)
       assert Repo.get(Character, target.id).party_id == 0
-      assert_receive {:party_updated, ^state}
+      assert_receive {:social, {:party_updated, ^state}}
     end
 
     test "rejects a non-leader requester" do
@@ -434,7 +434,7 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
       assert {:ok, state} = Manager.transfer_leader(joined.party_id, leader.id, target.id)
       assert state.leader_char_id == target.id
       assert Repo.get(Party, joined.party_id).leader_char_id == target.id
-      assert_receive {:party_updated, ^state}
+      assert_receive {:social, {:party_updated, ^state}}
     end
 
     test "rejects an offline target" do
@@ -488,7 +488,7 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
       assert {:ok, state} = Manager.set_options(joined.party_id, leader.id, true)
       assert state.exp_share == true
       assert Repo.get(Party, joined.party_id).exp_share == true
-      assert_receive {:party_updated, ^state}
+      assert_receive {:social, {:party_updated, ^state}}
     end
 
     test "rejects enabling exp_share when the online level spread exceeds party_share_level" do
@@ -529,7 +529,7 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
 
       assert {:ok, state} = Manager.push_base_level(joined.party_id, target.id, 42)
       assert Map.fetch!(state.members, target.id).base_level == 42
-      assert_receive {:party_updated, ^state}
+      assert_receive {:social, {:party_updated, ^state}}
     end
 
     test "auto-disables exp_share when the new spread exceeds party_share_level" do
@@ -579,7 +579,7 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
 
       assert {:ok, state} = Manager.push_map_change(joined.party_id, target.id, "geffen")
       assert Map.fetch!(state.members, target.id).map_name == "geffen"
-      assert_receive {:party_updated, ^state}
+      assert_receive {:social, {:party_updated, ^state}}
     end
 
     test "never touches exp_share even when the spread is already out of range" do
@@ -616,7 +616,7 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
 
       assert {:ok, state} = Manager.set_online(joined.party_id, target.id, false)
       assert Map.fetch!(state.members, target.id).online == false
-      assert_receive {:party_updated, ^state}
+      assert_receive {:social, {:party_updated, ^state}}
     end
 
     test "bringing a far-level member online auto-disables exp_share" do
@@ -697,8 +697,8 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
 
       assert {:error, :not_member} = Manager.sync_member(created.party_id, leader.id, member)
       assert {:ok, ^created} = Manager.get(created.party_id)
-      refute_receive {:party_member_updated, _party_id, _member}
-      refute_receive {:party_updated, _state}
+      refute_receive {:social, {:party_member_updated, _party_id, _member}}
+      refute_receive {:social, {:party_updated, _state}}
     end
 
     test "replaces the complete snapshot and broadcasts only the member event" do
@@ -721,10 +721,10 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
 
       assert {:ok, state} = Manager.sync_member(created.party_id, leader.id, member)
       assert Map.fetch!(state.members, leader.id) == member
-      assert_receive {:party_member_updated, party_id, ^member}
+      assert_receive {:social, {:party_member_updated, party_id, ^member}}
       assert party_id == created.party_id
-      refute_receive {:party_member_updated, _party_id, _member}
-      refute_receive {:party_updated, _state}
+      refute_receive {:social, {:party_member_updated, _party_id, _member}}
+      refute_receive {:social, {:party_updated, _state}}
     end
 
     test "identical snapshots are a no-op" do
@@ -734,8 +734,8 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
       Phoenix.PubSub.subscribe(Aesir.PubSub, "party:#{created.party_id}")
 
       assert {:ok, ^created} = Manager.sync_member(created.party_id, leader.id, member)
-      refute_receive {:party_member_updated, _party_id, _member}
-      refute_receive {:party_updated, _state}
+      refute_receive {:social, {:party_member_updated, _party_id, _member}}
+      refute_receive {:social, {:party_updated, _state}}
     end
 
     test "base-level changes disable invalid EXP share and emit both updates" do
@@ -755,9 +755,9 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
       assert {:ok, state} = Manager.sync_member(shared.party_id, target.id, member)
       assert state.exp_share == false
       assert Repo.get(Party, shared.party_id).exp_share == false
-      assert_receive {:party_member_updated, party_id, ^member}
+      assert_receive {:social, {:party_member_updated, party_id, ^member}}
       assert party_id == shared.party_id
-      assert_receive {:party_updated, ^state}
+      assert_receive {:social, {:party_updated, ^state}}
     end
 
     test "online-only changes stay runtime-only when EXP share is enabled" do
@@ -782,9 +782,9 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
 
       assert {:ok, state} = Manager.sync_member(shared.party_id, target.id, member)
       assert state.exp_share == true
-      assert_receive {:party_member_updated, party_id, ^member}
+      assert_receive {:social, {:party_member_updated, party_id, ^member}}
       assert party_id == shared.party_id
-      refute_receive {:party_updated, _state}
+      refute_receive {:social, {:party_updated, _state}}
     end
 
     test "valid-spread base-level changes stay runtime-only" do
@@ -807,9 +807,9 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
 
       assert {:ok, state} = Manager.sync_member(shared.party_id, target.id, member)
       assert state.exp_share == true
-      assert_receive {:party_member_updated, party_id, ^member}
+      assert_receive {:social, {:party_member_updated, party_id, ^member}}
       assert party_id == shared.party_id
-      refute_receive {:party_updated, _state}
+      refute_receive {:social, {:party_updated, _state}}
     end
 
     test "persistence failure rolls back the entry and emits no updates" do
@@ -832,8 +832,8 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
 
       assert {:error, :not_found} = Manager.sync_member(shared.party_id, target.id, member)
       assert {:ok, ^shared} = Manager.get(shared.party_id)
-      refute_receive {:party_member_updated, _party_id, _member}
-      refute_receive {:party_updated, _state}
+      refute_receive {:social, {:party_member_updated, _party_id, _member}}
+      refute_receive {:social, {:party_updated, _state}}
     end
 
     test "ordinary snapshot changes stay runtime-only" do

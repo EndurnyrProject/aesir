@@ -809,6 +809,6 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   end
 
   defp broadcast(guild_id, message) do
-    Phoenix.PubSub.broadcast(Aesir.PubSub, "guild:#{guild_id}", message)
+    Phoenix.PubSub.broadcast(Aesir.PubSub, "guild:#{guild_id}", {:social, message})
   end
 end

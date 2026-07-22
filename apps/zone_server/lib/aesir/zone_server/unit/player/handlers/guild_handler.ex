@@ -30,8 +30,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   requester's ack reflects whether the invite was accepted for delivery. Storing
   `%{guild_id, inviter_char_id, expires_at}`, sending the `GuildInviteNotify`,
   and arming the 30s expiry timer all happen inside `handle_invite_delivery/2`,
-  which runs on the invitee's session; the `:guild_invite_expired` clause that
-  clears it lives on `PlayerSession`.
+  which runs on the invitee's session; the enveloped
+  `{:social, :guild_invite_expired}` timer routes through `PlayerSession`'s
+  single `:social` clause into `SocialHandler.guild_invite_expired/1`, which
+  clears it.
   """
 
   require Logger
@@ -273,7 +275,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
     if pending_invite_active?(state) do
       {:reply, {:error, :invite_pending}, state}
     else
-      Process.send_after(self(), :guild_invite_expired, @invite_ttl_ms)
+      Process.send_after(self(), {:social, :guild_invite_expired}, @invite_ttl_ms)
 
       MessageRouter.send_to(state.connection_pid, %GuildInviteNotify{
         guild_id: invite.guild_id,

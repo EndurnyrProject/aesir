@@ -38,7 +38,7 @@ defmodule Aesir.ZoneServer.Unit.Player.GuildSyncBroadcastTest do
 
     assert %{game_state: ^current} = StateCommit.commit(session, current)
 
-    assert_receive {:guild_member_updated, guild_id, %Member{} = member}
+    assert_receive {:social, {:guild_member_updated, guild_id, %Member{} = member}}
     assert guild_id == guild.guild_id
     assert member.char_id == master.id
     assert member.hp == 420

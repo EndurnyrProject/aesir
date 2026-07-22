@@ -662,7 +662,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
                           error: :GUILD_ERR_NONE
                         }}}
 
-      assert_receive {:guild_emblem_changed, guild_id, 1}
+      assert_receive {:social, {:guild_emblem_changed, guild_id, 1}}
       assert guild_id == guild.guild_id
 
       persisted = Repo.get(GuildModel, guild.guild_id)

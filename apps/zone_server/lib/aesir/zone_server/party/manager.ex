@@ -648,6 +648,6 @@ defmodule Aesir.ZoneServer.Party.Manager do
   end
 
   defp broadcast(party_id, message) do
-    Phoenix.PubSub.broadcast(Aesir.PubSub, "party:#{party_id}", message)
+    Phoenix.PubSub.broadcast(Aesir.PubSub, "party:#{party_id}", {:social, message})
   end
 end

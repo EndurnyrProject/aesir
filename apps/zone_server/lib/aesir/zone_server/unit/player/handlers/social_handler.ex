@@ -5,8 +5,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   membership/option/notice/emblem changes to the client, and reconciling a
   character kicked/expelled or a party/guild disbanded while offline.
 
-  `PlayerSession` keeps thin delegating clauses whose bodies call the entry
-  points here; the info-backed entry points return the GenServer-native
+  `PlayerSession` routes its single `{:social, msg}` `handle_info` clause here
+  through `info/2`, which discriminates the enveloped message and calls the
+  matching entry point; those entry points return the GenServer-native
   `{:noreply, state}` tuple, while `attach_to_party/2`, `attach_to_guild/2`,
   `subscribe_party/1`, and `subscribe_guild/1` return the bare session map since
   they run mid-flow (from `PartyHandler`/`GuildHandler` dispatch or `init/1`),
@@ -32,6 +33,36 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   alias Aesir.ZoneServer.Unit.Player.PartySync
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Phoenix.PubSub
+
+  @doc """
+  Routes a `:social`-enveloped session message to its handler. `PlayerSession`'s
+  single `handle_info({:social, msg}, state)` clause delegates here; each head
+  discriminates the party/guild lifecycle message and the "our party/guild vs
+  stale broadcast" refinement happens in the entry points below.
+  """
+  @spec info(term(), map()) :: {:noreply, map()}
+  def info({:party_updated, party_state}, state), do: party_updated(party_state, state)
+
+  def info({:party_member_updated, party_id, member}, state),
+    do: party_member_updated(party_id, member, state)
+
+  def info({:party_disbanded, party_id, reason}, state),
+    do: party_disbanded(party_id, reason, state)
+
+  def info(:party_invite_expired, state), do: party_invite_expired(state)
+
+  def info({:guild_updated, guild_state}, state), do: guild_updated(guild_state, state)
+
+  def info({:guild_member_updated, guild_id, member}, state),
+    do: guild_member_updated(guild_id, member, state)
+
+  def info({:guild_disbanded, guild_id, reason}, state),
+    do: guild_disbanded(guild_id, reason, state)
+
+  def info({:guild_emblem_changed, guild_id, emblem_id}, state),
+    do: guild_emblem_changed(guild_id, emblem_id, state)
+
+  def info(:guild_invite_expired, state), do: guild_invite_expired(state)
 
   @doc """
   Subscribes the calling session to a party it just created or joined

@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionPartyTest do
   @moduledoc """
   Party presence/snapshot wiring in `PlayerSession`: topic subscription and the
   initial `PartyInfo` snapshot on login, kicked-while-offline reconciliation,
-  `{:party_updated, _}`/`{:party_disbanded, _, _}` relaying, presence pushes on
+  `{:social, {:party_updated, _}}`/`{:social, {:party_disbanded, _, _}}` relaying, presence pushes on
   disconnect, and the base-level push on level-up (Task 9).
 
   Most lifecycle callbacks are called directly in the test process (mirroring
@@ -176,7 +176,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionPartyTest do
       assert Map.fetch!(live.members, member.id).max_hp ==
                state.game_state.stats.derived_stats.max_hp
 
-      assert_receive {:party_member_updated, ^party_id, updated_member}
+      assert_receive {:social, {:party_member_updated, ^party_id, updated_member}}
       assert updated_member.char_id == member.id
 
       PubSub.broadcast(Aesir.PubSub, "party:#{party.party_id}", :probe)
@@ -258,7 +258,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionPartyTest do
     end
   end
 
-  describe "handle_info({:party_updated, _})" do
+  describe "handle_info({:social, {:party_updated, _}})" do
     test "relays a PartyInfo snapshot to the client when still a member" do
       {_leader, party} = party_fixture("Henry")
       member = character_fixture("Ivyx", %{})
@@ -269,7 +269,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionPartyTest do
         connection_pid: self()
       }
 
-      assert {:noreply, _new_state} = PlayerSession.handle_info({:party_updated, joined}, state)
+      assert {:noreply, _new_state} =
+               PlayerSession.handle_info({:social, {:party_updated, joined}}, state)
 
       assert_received {:send, :gameplay, {:party_info, %PartyInfo{party_id: party_id}}}
       assert party_id == party.party_id
@@ -289,7 +290,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionPartyTest do
       state = %{game_state: game_state, connection_pid: self()}
 
       assert {:noreply, new_state} =
-               PlayerSession.handle_info({:party_updated, after_kick}, state)
+               PlayerSession.handle_info({:social, {:party_updated, after_kick}}, state)
 
       assert new_state.game_state.party_id == 0
 
@@ -300,7 +301,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionPartyTest do
 
       assert {:noreply, ^new_state} =
                PlayerSession.handle_info(
-                 {:party_member_updated, party.party_id, stale_member},
+                 {:social, {:party_member_updated, party.party_id, stale_member}},
                  new_state
                )
 
@@ -308,7 +309,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionPartyTest do
     end
   end
 
-  describe "handle_info({:party_member_updated, _, _})" do
+  describe "handle_info({:social, {:party_member_updated, _, _}})" do
     test "relays a complete member update for the current party" do
       member = %Member{
         char_id: 42,
@@ -331,7 +332,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionPartyTest do
       }
 
       assert {:noreply, ^state} =
-               PlayerSession.handle_info({:party_member_updated, 77, member}, state)
+               PlayerSession.handle_info({:social, {:party_member_updated, 77, member}}, state)
 
       assert_received {:send, :gameplay,
                        {:party_member_update,
@@ -364,13 +365,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionPartyTest do
       }
 
       assert {:noreply, ^state} =
-               PlayerSession.handle_info({:party_member_updated, 88, member}, state)
+               PlayerSession.handle_info({:social, {:party_member_updated, 88, member}}, state)
 
       refute_received {:send, :gameplay, {:party_member_update, _}}
     end
   end
 
-  describe "handle_info({:party_disbanded, _, _})" do
+  describe "handle_info({:social, {:party_disbanded, _, _}})" do
     test "sends PartyDisbanded, unsubscribes, and clears party_id" do
       {leader, party} = party_fixture("Liam")
 
@@ -382,7 +383,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionPartyTest do
 
       assert {:noreply, new_state} =
                PlayerSession.handle_info(
-                 {:party_disbanded, party.party_id, "leader_left"},
+                 {:social, {:party_disbanded, party.party_id, "leader_left"}},
                  state
                )
 
@@ -399,11 +400,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionPartyTest do
     end
   end
 
-  describe "handle_info(:party_invite_expired)" do
+  describe "handle_info({:social, :party_invite_expired})" do
     test "clears the pending invite" do
       state = %{pending_party_invite: %{party_id: 1, inviter_char_id: 2, expires_at: 0}}
 
-      assert {:noreply, new_state} = PlayerSession.handle_info(:party_invite_expired, state)
+      assert {:noreply, new_state} =
+               PlayerSession.handle_info({:social, :party_invite_expired}, state)
 
       refute Map.has_key?(new_state, :pending_party_invite)
     end

@@ -23,11 +23,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
   mutates its `:pending_party_invite`). Storing
   `%{party_id, inviter_char_id, expires_at}`, sending the `PartyInviteNotify`,
   and arming the 30s expiry timer
-  (`Process.send_after(self(), :party_invite_expired, 30_000)`) all happen
-  inside `handle_invite_delivery/2`, which runs on the invitee's session
-  (`self()` there is the invitee's own pid) -- `PlayerSession`'s
-  `handle_info(:party_invite_expired, ...)` clause that actually clears it is
-  a later task's.
+  (`Process.send_after(self(), {:social, :party_invite_expired}, 30_000)`) all
+  happen inside `handle_invite_delivery/2`, which runs on the invitee's session
+  (`self()` there is the invitee's own pid) -- the enveloped timer routes
+  through `PlayerSession`'s single `:social` clause into
+  `SocialHandler.party_invite_expired/1`, which clears it.
   """
 
   require Logger
@@ -167,7 +167,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
     if pending_invite_active?(state) do
       {:reply, {:error, :invite_pending}, state}
     else
-      Process.send_after(self(), :party_invite_expired, @invite_ttl_ms)
+      Process.send_after(self(), {:social, :party_invite_expired}, @invite_ttl_ms)
 
       MessageRouter.send_to(state.connection_pid, %PartyInviteNotify{
         party_id: invite.party_id,

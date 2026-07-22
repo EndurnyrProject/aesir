@@ -176,7 +176,7 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
       assert reloaded.guild_id == created.guild_id
       assert reloaded.guild_position == @newbie_position
 
-      assert_receive {:guild_updated, ^state}
+      assert_receive {:social, {:guild_updated, ^state}}
     end
 
     test "rejects a full guild (cap 16) without mutating state" do
@@ -225,7 +225,7 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
       reloaded = Repo.get(Character, joiner.id)
       assert reloaded.guild_id == 0
       assert reloaded.guild_position == 0
-      assert_receive {:guild_updated, ^state}
+      assert_receive {:social, {:guild_updated, ^state}}
     end
 
     test "the master leaving disbands the guild" do
@@ -240,7 +240,7 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
       assert Repo.get(GuildModel, created.guild_id) == nil
       assert Repo.get(Character, master.id).guild_id == 0
       assert Repo.get(Character, joiner.id).guild_id == 0
-      assert_receive {:guild_disbanded, _id, "master_left"}
+      assert_receive {:social, {:guild_disbanded, _id, "master_left"}}
     end
 
     test "returns {:error, :not_found} when no entry is running" do
@@ -276,7 +276,7 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
 
       assert Repo.get(Character, master.id).guild_id == 0
       assert Repo.get(Character, joiner.id).guild_id == 0
-      assert_receive {:guild_disbanded, _id, "gm_action"}
+      assert_receive {:social, {:guild_disbanded, _id, "gm_action"}}
     end
 
     test "returns {:error, :not_found} when no entry is running" do
@@ -310,7 +310,7 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
       assert hd(rows).name == "Troublemaker"
       assert hd(rows).account_id == target.account_id
 
-      assert_receive {:guild_updated, ^state}
+      assert_receive {:social, {:guild_updated, ^state}}
     end
 
     test "denies a requester without the EXPEL permission" do
@@ -372,7 +372,7 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
       assert state.emblem_id == 1
 
       guild_id = created.guild_id
-      assert_receive {:guild_emblem_changed, ^guild_id, 1}
+      assert_receive {:social, {:guild_emblem_changed, ^guild_id, 1}}
     end
 
     test "denies a non-master" do
@@ -505,7 +505,7 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
 
       assert {:ok, state} = Manager.push_base_level(created.guild_id, master.id, 99)
       assert Map.fetch!(state.members, master.id).base_level == 99
-      assert_receive {:guild_updated, ^state}
+      assert_receive {:social, {:guild_updated, ^state}}
     end
 
     test "push_map_change updates the member map" do
@@ -538,7 +538,7 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
       assert Map.fetch!(state.members, master.id) == member
 
       guild_id = created.guild_id
-      assert_receive {:guild_member_updated, ^guild_id, ^member}
+      assert_receive {:social, {:guild_member_updated, ^guild_id, ^member}}
     end
 
     test "preserves the stored position_index against a presence projection" do
@@ -555,7 +555,7 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
       assert Map.fetch!(state.members, master.id).hp == 555
 
       guild_id = created.guild_id
-      assert_receive {:guild_member_updated, ^guild_id, broadcast_member}
+      assert_receive {:social, {:guild_member_updated, ^guild_id, broadcast_member}}
       assert broadcast_member.position_index == 0
     end
 
@@ -566,7 +566,7 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
       Phoenix.PubSub.subscribe(Aesir.PubSub, "guild:#{created.guild_id}")
 
       assert {:ok, ^created} = Manager.sync_member(created.guild_id, master.id, member)
-      refute_receive {:guild_member_updated, _id, _member}
+      refute_receive {:social, {:guild_member_updated, _id, _member}}
     end
 
     test "rejects a snapshot whose identity differs from the member key" do

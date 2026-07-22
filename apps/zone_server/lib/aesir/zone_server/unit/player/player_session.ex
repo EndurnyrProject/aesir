@@ -525,48 +525,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
-  def handle_info({:party_updated, party_state}, state) do
-    SocialHandler.party_updated(party_state, state)
-  end
-
-  @impl true
-  def handle_info({:party_member_updated, party_id, member}, state) do
-    SocialHandler.party_member_updated(party_id, member, state)
-  end
-
-  @impl true
-  def handle_info({:party_disbanded, party_id, reason}, state) do
-    SocialHandler.party_disbanded(party_id, reason, state)
-  end
-
-  @impl true
-  def handle_info(:party_invite_expired, state) do
-    SocialHandler.party_invite_expired(state)
-  end
-
-  @impl true
-  def handle_info({:guild_updated, guild_state}, state) do
-    SocialHandler.guild_updated(guild_state, state)
-  end
-
-  @impl true
-  def handle_info({:guild_member_updated, guild_id, member}, state) do
-    SocialHandler.guild_member_updated(guild_id, member, state)
-  end
-
-  @impl true
-  def handle_info({:guild_disbanded, guild_id, reason}, state) do
-    SocialHandler.guild_disbanded(guild_id, reason, state)
-  end
-
-  @impl true
-  def handle_info({:guild_emblem_changed, guild_id, emblem_id}, state) do
-    SocialHandler.guild_emblem_changed(guild_id, emblem_id, state)
-  end
-
-  @impl true
-  def handle_info(:guild_invite_expired, state) do
-    SocialHandler.guild_invite_expired(state)
+  def handle_info({:social, msg}, state) do
+    SocialHandler.info(msg, state)
   end
 
   @impl true
