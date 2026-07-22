@@ -109,8 +109,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
 
       # The first tick lands after the first step's cost (150ms at base speed),
       # never immediately: stepping at schedule time would lead the client.
-      refute_receive :movement_tick, 50
-      assert_receive :movement_tick, 300
+      refute_receive {:movement, :movement_tick}, 50
+      assert_receive {:movement, :movement_tick}, 300
     end
 
     test "does not broadcast a movement UnitSpawn to nearby players" do

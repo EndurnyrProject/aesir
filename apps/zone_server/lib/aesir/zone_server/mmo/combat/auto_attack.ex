@@ -350,14 +350,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   # auto-cast is a cast to `self()` (like a `:self` equipment break): it runs
   # after the current message finishes, on state the session has already
   # committed. `SC_AUTOSPELL` is the only producer today; the session's
-  # `{:auto_cast, ...}` handler routes it to the interpreter's restricted entry.
+  # `{:skill, {:auto_cast, ...}}` handler routes it to the interpreter's
+  # restricted entry.
   #
   # This is also why the proc cannot recurse: the bolt it casts is magic, and
   # only the weapon-attack path above ever reaches `dispatch_dealt_damage/4`.
   defp drain_auto_cast({:auto_cast, skill_name, level, target}) do
     case Catalog.by_name(skill_name) do
       {:ok, definition} ->
-        GenServer.cast(self(), {:auto_cast, definition.id, level, target})
+        GenServer.cast(self(), {:skill, {:auto_cast, definition.id, level, target}})
 
       :error ->
         raise "auto-cast of unknown skill #{inspect(skill_name)} at level #{level}: " <>

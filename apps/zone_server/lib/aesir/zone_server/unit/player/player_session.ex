@@ -81,7 +81,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @spec apply_walk_delay(pid(), non_neg_integer()) :: :ok
-  def apply_walk_delay(pid, duration), do: GenServer.cast(pid, {:apply_walk_delay, duration})
+  def apply_walk_delay(pid, duration),
+    do: GenServer.cast(pid, {:movement, {:apply_walk_delay, duration}})
 
   @doc """
   Drains SP from this player (fire-and-forget), clamping at zero.
@@ -163,7 +164,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   Sends ZC_NOTIFY_MOVE_STOP to fix client position.
   """
   def force_stop_movement(pid) do
-    GenServer.cast(pid, :force_stop_movement)
+    GenServer.cast(pid, {:movement, :force_stop_movement})
   end
 
   @doc """
@@ -426,17 +427,22 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
-  def handle_info(:movement_tick, state) do
-    MovementHandler.handle_movement_tick(state)
-  end
-
-  @impl true
   def handle_info(:natural_heal_tick, state) do
     Process.send_after(self(), :natural_heal_tick, @natural_heal_interval)
     NaturalHealHandler.handle_tick(state, @natural_heal_interval)
   end
 
-  def handle_info(:movement_completed, %{game_state: game_state} = state) do
+  # Movement: the self-armed walk tick, and the cross-domain movement_completed
+  # orchestrator that routes arrival to whichever domain the player's action
+  # state and movement intent say it serves (combat, skill, pickup, or a plain
+  # walk) - kept here rather than in a handler since the routing itself spans
+  # domains.
+  @impl true
+  def handle_info({:movement, :movement_tick}, state) do
+    MovementHandler.handle_movement_tick(state)
+  end
+
+  def handle_info({:movement, :movement_completed}, %{game_state: game_state} = state) do
     # Save position to database asynchronously
     CharacterPersistence.update_position(
       game_state.character_id,
@@ -481,18 +487,27 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     PacketHandler.handle_message(message, state)
   end
 
+  # Combat: cross-unit heal broadcast on this player's topic, and the
+  # self-armed auto-attack loop tick.
   @impl true
-  def handle_info({:auto_attack, target_id}, state) do
-    CombatActionHandler.handle_auto_attack(state, target_id)
+  def handle_info({:combat, {:apply_heal, amount, source_id}}, state) do
+    HealthHandler.apply_heal(amount, source_id, state)
   end
 
   @impl true
-  def handle_info({:cast_complete, token}, state) do
+  def handle_info({:combat, {:auto_attack, target_id}}, state) do
+    CombatActionHandler.handle_auto_attack(state, target_id)
+  end
+
+  # Skill: the cast-timer resolution, and the generic deferred-effect seam
+  # (`Skill.defer/3`) that runs `module.deferred/2` on the caster's own state.
+  @impl true
+  def handle_info({:skill, {:cast_complete, token}}, state) do
     SkillHandler.handle_cast_complete(state, token)
   end
 
   @impl true
-  def handle_info({:skill_deferred, module, payload}, %{game_state: game_state} = state) do
+  def handle_info({:skill, {:deferred, module, payload}}, %{game_state: game_state} = state) do
     if function_exported?(module, :deferred, 2) do
       _ = module.deferred(payload, game_state)
     else
@@ -517,12 +532,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_info({:progression, msg}, state) do
     ProgressionHandler.info(msg, state)
-  end
-
-  # Combat: cross-unit heal broadcast on this player's topic.
-  @impl true
-  def handle_info({:combat, {:apply_heal, amount, source_id}}, state) do
-    HealthHandler.apply_heal(amount, source_id, state)
   end
 
   # Stats: recompute cached stats after a status change (StatusTickManager).
@@ -616,8 +625,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     VisibilityHandler.left_view(other_char_id, state)
   end
 
+  # Movement: knockback landing, the forced-stop cast (skill/stun interrupts),
+  # and the walk-delay cast (post-hit slow) - all three update movement state
+  # directly rather than routing through MovementHandler's request/tick path.
   @impl true
-  def handle_cast({:knocked_back, x, y}, %{game_state: game_state} = state) do
+  def handle_cast({:movement, {:knocked_back, x, y}}, %{game_state: game_state} = state) do
     updated_game_state =
       game_state
       |> PlayerState.update_position(x, y)
@@ -631,6 +643,19 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     )
 
     {:noreply, %{state | game_state: updated_game_state}}
+  end
+
+  @impl true
+  def handle_cast({:movement, :force_stop_movement}, state) do
+    MovementHandler.handle_force_stop_movement(state)
+  end
+
+  @impl true
+  def handle_cast({:movement, {:apply_walk_delay, duration}}, %{game_state: game_state} = state) do
+    delayed =
+      PlayerState.apply_walk_delay(game_state, duration, System.monotonic_time(:millisecond))
+
+    MovementHandler.handle_force_stop_movement(%{state | game_state: delayed})
   end
 
   @impl true
@@ -653,24 +678,18 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     InventoryManager.handle_repair_all(state)
   end
 
-  # A bolt SA_AUTOSPELL armed, procced by one of this player's weapon hits. Cast
-  # to self() by the combat path from inside this very session, so it runs after
-  # the triggering hit has fully committed, on state this session already wrote.
+  # Skill: a bolt SA_AUTOSPELL armed, procced by one of this player's weapon
+  # hits. Cast to self() by the combat path from inside this very session, so
+  # it runs after the triggering hit has fully committed, on state this
+  # session already wrote.
   @impl true
-  def handle_cast({:auto_cast, skill_id, level, target}, state) do
+  def handle_cast({:skill, {:auto_cast, skill_id, level, target}}, state) do
     SkillHandler.handle_auto_cast(state, skill_id, level, target)
   end
 
   @impl true
   def handle_cast({:apply_damage, damage, attacker_id}, state) do
     HealthHandler.apply_damage(damage, attacker_id, state)
-  end
-
-  def handle_cast({:apply_walk_delay, duration}, %{game_state: game_state} = state) do
-    delayed =
-      PlayerState.apply_walk_delay(game_state, duration, System.monotonic_time(:millisecond))
-
-    MovementHandler.handle_force_stop_movement(%{state | game_state: delayed})
   end
 
   @impl true
@@ -697,11 +716,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   def handle_cast({:run_attached_event, module, gid, label}, state) do
     NpcOwnerEventHandler.run(module, gid, label, state)
     {:noreply, state}
-  end
-
-  @impl true
-  def handle_cast(:force_stop_movement, state) do
-    MovementHandler.handle_force_stop_movement(state)
   end
 
   # A Coordinator-broadcast ground-item vanish: forward it like any other packet

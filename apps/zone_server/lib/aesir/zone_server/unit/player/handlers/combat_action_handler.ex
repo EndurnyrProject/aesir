@@ -216,7 +216,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
 
   @doc """
   Drives one iteration of the server-authoritative continuous auto-attack loop,
-  fired by the `{:auto_attack, target_id}` timer.
+  fired by the `{:combat, {:auto_attack, target_id}}` timer.
 
   Only proceeds while the target is still the locked one and the player may
   attack (no stun/freeze status). In range it swings and re-arms the next
@@ -251,7 +251,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   end
 
   # Honour the ASPD gate on the loop the same way `acquire_and_attack/3` does: a
-  # duplicate or early `{:auto_attack}` tick must not swing before the cooldown
+  # duplicate or early auto-attack tick must not swing before the cooldown
   # elapses. When it is too soon, re-arm for the remaining delay instead.
   defp swing_or_wait(%{game_state: game_state} = state, target_id) do
     attack_delay = AttackSpeed.calculate_delay_from_stats(game_state.stats)
@@ -262,7 +262,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
       remaining =
         attack_delay - (AttackSpeed.current_timestamp() - game_state.last_attack_timestamp)
 
-      timer_ref = Process.send_after(self(), {:auto_attack, target_id}, max(remaining, 0))
+      timer_ref =
+        Process.send_after(self(), {:combat, {:auto_attack, target_id}}, max(remaining, 0))
+
       {:noreply, %{state | game_state: PlayerState.set_continuous_timer(game_state, timer_ref)}}
     end
   end
@@ -510,7 +512,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   # `handle_auto_attack/2` when the timer fires.
   defp schedule_next_auto_attack(game_state, target_id, current_timestamp) do
     attack_delay = AttackSpeed.calculate_delay_from_stats(game_state.stats)
-    timer_ref = Process.send_after(self(), {:auto_attack, target_id}, attack_delay)
+    timer_ref = Process.send_after(self(), {:combat, {:auto_attack, target_id}}, attack_delay)
 
     %{
       game_state

@@ -4,8 +4,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatDealtDamageTest do
 
   `Combat.execute_attack/3` runs inside the attacker's own `PlayerSession`, so
   these tests call it straight from the test process: the hook's `self()` and
-  the `{:auto_cast, ...}` cast target are then the test process itself, which is
-  what the ordering assertions read.
+  the `{:skill, {:auto_cast, ...}}` cast target are then the test process
+  itself, which is what the ordering assertions read.
   """
   use ExUnit.Case, async: true
   use Mimic
@@ -207,7 +207,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatDealtDamageTest do
       assert [
                {:damage_applied, 50},
                {:hook_ran, _pid, _target, _hit_info},
-               {:"$gen_cast", {:auto_cast, @bolt_id, 3, {:mob, @mob_id}}}
+               {:"$gen_cast", {:skill, {:auto_cast, @bolt_id, 3, {:mob, @mob_id}}}}
              ] = mailbox()
     end
 
@@ -222,7 +222,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatDealtDamageTest do
                {:damage_applied, 50},
                {:damage_applied, 50},
                {:hook_ran, _pid, _target, _hit_info},
-               {:"$gen_cast", {:auto_cast, @bolt_id, 3, {:mob, @mob_id}}}
+               {:"$gen_cast", {:skill, {:auto_cast, @bolt_id, 3, {:mob, @mob_id}}}}
              ] = mailbox()
     end
 
@@ -230,7 +230,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatDealtDamageTest do
       assert :ok = Combat.execute_attack(ctx.stats, ctx.player_state, @mob_id)
 
       assert_received {:damage_applied, 50}
-      refute_received {:"$gen_cast", {:auto_cast, _, _, _}}
+      refute_received {:"$gen_cast", {:skill, {:auto_cast, _, _, _}}}
     end
 
     test "an auto-cast naming an uncatalogued skill fails hard rather than skipping", ctx do
@@ -257,7 +257,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatDealtDamageTest do
 
       assert_received {:damage_applied, 50}
       refute_received {:hook_ran, _, _, _}
-      refute_received {:"$gen_cast", {:auto_cast, _, _, _}}
+      refute_received {:"$gen_cast", {:skill, {:auto_cast, _, _, _}}}
     end
 
     test "a physical skill attack never fires the hook", ctx do
@@ -272,7 +272,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatDealtDamageTest do
 
       assert_received {:damage_applied, 50}
       refute_received {:hook_ran, _, _, _}
-      refute_received {:"$gen_cast", {:auto_cast, _, _, _}}
+      refute_received {:"$gen_cast", {:skill, {:auto_cast, _, _, _}}}
     end
   end
 end

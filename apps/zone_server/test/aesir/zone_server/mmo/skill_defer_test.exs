@@ -29,8 +29,8 @@ defmodule Aesir.ZoneServer.Mmo.SkillDeferTest do
 
       Skill.defer(Deferrer, payload, 20)
 
-      refute_received {:skill_deferred, _module, _payload}
-      assert_receive {:skill_deferred, Deferrer, ^payload}, 200
+      refute_received {:skill, {:deferred, _module, _payload}}
+      assert_receive {:skill, {:deferred, Deferrer, ^payload}}, 200
     end
   end
 
@@ -40,7 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillDeferTest do
       state = %{game_state: :caster_game_state}
 
       assert {:noreply, ^state} =
-               PlayerSession.handle_info({:skill_deferred, Deferrer, payload}, state)
+               PlayerSession.handle_info({:skill, {:deferred, Deferrer, payload}}, state)
 
       assert_received {:deferred_called, ^payload, :caster_game_state}
     end
@@ -51,7 +51,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillDeferTest do
       log =
         capture_log(fn ->
           assert {:noreply, ^state} =
-                   PlayerSession.handle_info({:skill_deferred, Undeferrable, %{}}, state)
+                   PlayerSession.handle_info({:skill, {:deferred, Undeferrable, %{}}}, state)
         end)
 
       assert log =~ inspect(Undeferrable)

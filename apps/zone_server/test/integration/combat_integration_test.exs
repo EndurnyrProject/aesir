@@ -446,7 +446,7 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
       Process.sleep(50)
       flush_packets()
 
-      send(player.pid, :movement_completed)
+      send(player.pid, {:movement, :movement_completed})
 
       # Give it time to process
       Process.sleep(100)

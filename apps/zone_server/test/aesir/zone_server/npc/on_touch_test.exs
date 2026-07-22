@@ -6,7 +6,7 @@ defmodule Aesir.ZoneServer.Npc.OnTouchTest do
   falls back to `on_talk/1` when the module declares a trigger area but no
   `OnTouch` label (rAthena warper behavior).
 
-  Drives the real `PlayerSession.handle_info(:movement_tick, ...)` ->
+  Drives the real `PlayerSession.handle_info({:movement, :movement_tick}, ...)` ->
   `MovementHandler` path, mirroring `warp_integration_test.exs`'s
   movement-driven trigger pattern and `npc_visibility_test.exs`'s
   registry/flag fixture hygiene (the `:npc_session_flags` on_exit cleanup).
@@ -128,12 +128,12 @@ defmodule Aesir.ZoneServer.Npc.OnTouchTest do
       state = %{game_state: game_state, connection_pid: self(), interaction_lock: nil}
 
       # (58, 50): still outside the [59..61, 49..51] rect.
-      {:noreply, state} = PlayerSession.handle_info(:movement_tick, state)
+      {:noreply, state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
       refute_receive {:touched, TouchNpc}, 50
       refute MapSet.member?(state.game_state.inside_npc_areas, gid)
 
       # (59, 50): enters the rect -> fires.
-      {:noreply, state} = PlayerSession.handle_info(:movement_tick, state)
+      {:noreply, state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
       assert_receive {:touched, TouchNpc}
       assert MapSet.member?(state.game_state.inside_npc_areas, gid)
       assert {_pid, ref, ^gid} = state.interaction_lock
@@ -145,18 +145,18 @@ defmodule Aesir.ZoneServer.Npc.OnTouchTest do
       assert state.interaction_lock == nil
 
       # (60, 50) and (61, 50): still inside -> no re-fire.
-      {:noreply, state} = PlayerSession.handle_info(:movement_tick, state)
+      {:noreply, state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
       refute_receive {:touched, TouchNpc}, 50
 
-      {:noreply, state} = PlayerSession.handle_info(:movement_tick, state)
+      {:noreply, state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
       refute_receive {:touched, TouchNpc}, 50
 
       # (62, 50): leaves the rect -> cleared.
-      {:noreply, state} = PlayerSession.handle_info(:movement_tick, state)
+      {:noreply, state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
       refute MapSet.member?(state.game_state.inside_npc_areas, gid)
 
       # (61, 50): re-enters -> fires again.
-      {:noreply, state} = PlayerSession.handle_info(:movement_tick, state)
+      {:noreply, state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
       assert_receive {:touched, TouchNpc}
       assert MapSet.member?(state.game_state.inside_npc_areas, gid)
     end
@@ -176,7 +176,7 @@ defmodule Aesir.ZoneServer.Npc.OnTouchTest do
 
       state = %{game_state: game_state, connection_pid: self(), interaction_lock: nil}
 
-      {:noreply, ticked_state} = PlayerSession.handle_info(:movement_tick, state)
+      {:noreply, ticked_state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
 
       assert_receive {:talked, WarperNpc}
       gid = gid_for(WarperNpc)
@@ -201,8 +201,8 @@ defmodule Aesir.ZoneServer.Npc.OnTouchTest do
 
       state = %{game_state: game_state, connection_pid: self(), interaction_lock: fake_lock}
 
-      {:noreply, state} = PlayerSession.handle_info(:movement_tick, state)
-      {:noreply, state} = PlayerSession.handle_info(:movement_tick, state)
+      {:noreply, state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
+      {:noreply, state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
 
       refute_receive {:touched, TouchNpc}, 100
       assert MapSet.member?(state.game_state.inside_npc_areas, gid)
@@ -227,8 +227,8 @@ defmodule Aesir.ZoneServer.Npc.OnTouchTest do
 
       state = %{game_state: game_state, connection_pid: self(), interaction_lock: nil}
 
-      {:noreply, state} = PlayerSession.handle_info(:movement_tick, state)
-      {:noreply, state} = PlayerSession.handle_info(:movement_tick, state)
+      {:noreply, state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
+      {:noreply, state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
 
       refute_receive {:touched, TouchNpc}, 100
       refute MapSet.member?(state.game_state.inside_npc_areas, gid)
@@ -272,7 +272,7 @@ defmodule Aesir.ZoneServer.Npc.OnTouchTest do
 
       state = %{game_state: game_state, connection_pid: self(), interaction_lock: nil}
 
-      {:noreply, ticked_state} = PlayerSession.handle_info(:movement_tick, state)
+      {:noreply, ticked_state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
 
       assert_received {:"$gen_cast", {:warp, "izlude", 150, 190}}
       refute_receive {:touched, TouchNpc}, 50
@@ -299,7 +299,7 @@ defmodule Aesir.ZoneServer.Npc.OnTouchTest do
       state = %{game_state: game_state, connection_pid: self(), interaction_lock: nil}
 
       # (78, 50): enters A's rect [78..82] only -> fires A.
-      {:noreply, state} = PlayerSession.handle_info(:movement_tick, state)
+      {:noreply, state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
       assert_receive {:touched, OverlapNpcA}
       refute_receive {:touched, OverlapNpcB}, 50
       assert MapSet.member?(state.game_state.inside_npc_areas, gid_a)
@@ -317,23 +317,23 @@ defmodule Aesir.ZoneServer.Npc.OnTouchTest do
       assert state.interaction_lock == nil
 
       # (79, 50): still only inside A -> no new fire.
-      {:noreply, state} = PlayerSession.handle_info(:movement_tick, state)
+      {:noreply, state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
       refute_receive {:touched, OverlapNpcA}, 50
       refute_receive {:touched, OverlapNpcB}, 50
 
       # (80, 50): now also inside B's rect [80..84] -> fires B only.
-      {:noreply, state} = PlayerSession.handle_info(:movement_tick, state)
+      {:noreply, state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
       assert_receive {:touched, OverlapNpcB}
       refute_receive {:touched, OverlapNpcA}, 50
       assert MapSet.member?(state.game_state.inside_npc_areas, gid_a)
       assert MapSet.member?(state.game_state.inside_npc_areas, gid_b)
 
       # (81, 50) and (82, 50): still inside the overlap of both -> nothing new.
-      {:noreply, state} = PlayerSession.handle_info(:movement_tick, state)
+      {:noreply, state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
       refute_receive {:touched, OverlapNpcA}, 50
       refute_receive {:touched, OverlapNpcB}, 50
 
-      {:noreply, _state} = PlayerSession.handle_info(:movement_tick, state)
+      {:noreply, _state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
       refute_receive {:touched, OverlapNpcA}, 50
       refute_receive {:touched, OverlapNpcB}, 50
     end

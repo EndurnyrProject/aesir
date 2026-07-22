@@ -92,7 +92,7 @@ defmodule Aesir.ZoneServer.Npc.WarpIntegrationTest do
 
       state = %{game_state: game_state, connection_pid: self()}
 
-      {:noreply, ticked_state} = PlayerSession.handle_info(:movement_tick, state)
+      {:noreply, ticked_state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
 
       # On-touch hook cast the warp to the session and cancelled the walk.
       assert_received {:"$gen_cast", {:warp, "izlude", 150, 190}}
@@ -158,7 +158,7 @@ defmodule Aesir.ZoneServer.Npc.WarpIntegrationTest do
       state = %{game_state: game_state, connection_pid: self()}
 
       # Stage 1: step into the warp -> cast {:warp, "prontera", 200, 200}.
-      {:noreply, ticked_state} = PlayerSession.handle_info(:movement_tick, state)
+      {:noreply, ticked_state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
 
       assert_received {:"$gen_cast", {:warp, "prontera", 200, 200}}
 

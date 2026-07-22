@@ -697,13 +697,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       assert s1.game_state.combat_target_id == 2000
       assert is_reference(s1.game_state.continuous_attack_timer)
 
-      assert_receive {:auto_attack, 2000}, 500
+      assert_receive {:combat, {:auto_attack, 2000}}, 500
 
       {:noreply, s2} = CombatActionHandler.handle_auto_attack(s1, 2000)
 
       assert_received :attacked
       assert is_reference(s2.game_state.continuous_attack_timer)
-      assert_receive {:auto_attack, 2000}, 500
+      assert_receive {:combat, {:auto_attack, 2000}}, 500
     end
 
     test "a dead or missing target stops the loop and clears combat intent" do
@@ -719,7 +719,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       assert returned.game_state.combat_target_id == nil
       assert returned.game_state.continuous_attack_timer == nil
       assert Process.read_timer(ref) == false
-      refute_received {:auto_attack, _}
+      refute_received {:combat, {:auto_attack, _}}
     end
 
     test "a stunned player stops the loop instead of swinging through" do
@@ -733,7 +733,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
 
       assert returned.game_state.combat_target_id == nil
       assert Process.read_timer(ref) == false
-      refute_received {:auto_attack, _}
+      refute_received {:combat, {:auto_attack, _}}
     end
 
     test "an auto-attack for a target that is no longer locked is ignored" do
@@ -797,7 +797,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       assert is_reference(returned.game_state.continuous_attack_timer)
       assert returned.game_state.continuous_attack_timer != old_ref
       assert returned.game_state.action_state == :attacking
-      assert_receive {:auto_attack, 2000}, 500
+      assert_receive {:combat, {:auto_attack, 2000}}, 500
     end
   end
 

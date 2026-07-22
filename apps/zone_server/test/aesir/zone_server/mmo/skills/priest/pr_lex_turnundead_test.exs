@@ -73,8 +73,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexTurnundeadTest do
 
     assert {:ok, ^caster} = PrLexdivina.cast(caster, {:unit, target_id}, 3, definition)
 
-    assert_receive {:skill_deferred, PrLexdivina,
-                    %{unit_type: :mob, target_id: ^target_id, caster_id: 1_000, duration: 40_000}},
+    assert_receive {:skill,
+                    {:deferred, PrLexdivina,
+                     %{unit_type: :mob, target_id: ^target_id, caster_id: 1_000, duration: 40_000}}},
                    1_100
   end
 
@@ -101,7 +102,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexTurnundeadTest do
 
     assert {:noreply, %{marker: :unchanged}} =
              PlayerSession.handle_info(
-               {:skill_deferred, PrLexdivina, payload},
+               {:skill, {:deferred, PrLexdivina, payload}},
                %{marker: :unchanged, game_state: %{}}
              )
   end

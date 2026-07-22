@@ -71,7 +71,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
     # Send message to self for movement completion handling
     # This allows PlayerSession to orchestrate based on state
-    send(self(), :movement_completed)
+    send(self(), {:movement, :movement_completed})
 
     {:noreply, updated_state}
   end
@@ -197,7 +197,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
           interval =
             step_delay(touched_state.game_state, {next_x, next_y}, hd(remaining_path))
 
-          Process.send_after(self(), :movement_tick, interval)
+          Process.send_after(self(), {:movement, :movement_tick}, interval)
           {:noreply, touched_state}
         else
           # Path completed: stop and broadcast the standing transition so the
@@ -212,7 +212,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
           )
 
           # Send completion message for PlayerSession to handle
-          send(self(), :movement_completed)
+          send(self(), {:movement, :movement_completed})
           {:noreply, %{touched_state | game_state: game_state}}
         end
     end
@@ -323,7 +323,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       game_state = PlayerState.set_path(game_state, path)
 
       first_delay = step_delay(game_state, {game_state.x, game_state.y}, hd(path))
-      Process.send_after(self(), :movement_tick, first_delay)
+      Process.send_after(self(), {:movement, :movement_tick}, first_delay)
       {:noreply, %{state | game_state: game_state}}
     else
       _ ->
@@ -442,7 +442,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       # unit enters a cell when the step completes, keeping the server position
       # in lockstep with the client's interpolation instead of one cell ahead.
       first_delay = step_delay(game_state, {game_state.x, game_state.y}, hd(path))
-      Process.send_after(self(), :movement_tick, first_delay)
+      Process.send_after(self(), {:movement, :movement_tick}, first_delay)
 
       {:noreply, %{state | game_state: game_state}}
     else

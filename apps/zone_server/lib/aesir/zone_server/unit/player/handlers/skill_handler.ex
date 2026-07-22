@@ -2,9 +2,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   @moduledoc """
   Session-side handler for skill casts. Runs the interpreter's two-phase
   lifecycle: instant casts commit immediately, timed casts enter `:casting`,
-  show a cast bar, and resolve on a `{:cast_complete, token}` timer. On a
-  successful commit it updates the registry, persists HP/SP, syncs them to the
-  client, and broadcasts the skill-use visual to nearby players.
+  show a cast bar, and resolve on a `{:skill, {:cast_complete, token}}` timer.
+  On a successful commit it updates the registry, persists HP/SP, syncs them
+  to the client, and broadcasts the skill-use visual to nearby players.
   """
   require Logger
 
@@ -441,7 +441,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp schedule_cast(%{game_state: game_state} = state, info, locked) do
     now = System.monotonic_time(:millisecond)
     token = make_ref()
-    timer_ref = Process.send_after(self(), {:cast_complete, token}, info.total)
+    timer_ref = Process.send_after(self(), {:skill, {:cast_complete, token}}, info.total)
 
     context = %{
       skill_id: info.skill_id,
@@ -524,7 +524,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   # Skills count as engaging in combat: after a cast the player keeps attacking
   # the target that was locked when the cast began. Re-set combat intent and hand
-  # the target back to Task 4's `{:auto_attack}` loop. No lock (idle caster) or a
+  # the target back to the combat auto-attack loop. No lock (idle caster) or a
   # dead target means no resume, so a lone skill never starts a spurious loop. The
   # lock survives instant casts, timed casts, a walk-into-range (skill_moving), and
   # a damage interrupt.
@@ -532,7 +532,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   defp maybe_resume_lock(%{game_state: game_state} = state, target_id) do
     if target_alive?(target_id) do
-      timer_ref = Process.send_after(self(), {:auto_attack, target_id}, 0)
+      timer_ref = Process.send_after(self(), {:combat, {:auto_attack, target_id}}, 0)
 
       game_state =
         game_state

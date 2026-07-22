@@ -205,17 +205,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
 
     assert {:ok, ^caster} = WzJupitel.cast(caster, {:unit, @target_id}, 1, definition)
 
-    refute_receive {:skill_deferred, WzJupitel, _impact}, 140
+    refute_receive {:skill, {:deferred, WzJupitel, _impact}}, 140
 
-    assert_receive {:skill_deferred, WzJupitel,
-                    %{
-                      target: {:mob, @target_id},
-                      skill_level: 1
-                    }},
+    assert_receive {:skill,
+                    {:deferred, WzJupitel,
+                     %{
+                       target: {:mob, @target_id},
+                       skill_level: 1
+                     }}},
                    100
 
     assert System.monotonic_time(:millisecond) - started_at >= 150
-    refute_receive {:skill_deferred, WzJupitel, _impact}, 50
+    refute_receive {:skill, {:deferred, WzJupitel, _impact}}, 50
   end
 
   test "a clear delayed impact carries the level 1 magic and knockback parameters" do
@@ -251,7 +252,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     {_mob, _pid} = register_mob()
 
     assert {:noreply, %{game_state: ^caster}} =
-             PlayerSession.handle_info({:skill_deferred, WzJupitel, impact}, %{game_state: caster})
+             PlayerSession.handle_info(
+               {:skill, {:deferred, WzJupitel, impact}},
+               %{game_state: caster}
+             )
 
     assert_receive {:session_cast, {:apply_damage, damage, 1000}}
     assert damage > 0
@@ -284,7 +288,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
 
     :ok = UnitRegistry.update_unit_state(:mob, @target_id, %{mob | hp: 0, is_dead: true})
 
-    assert_receive {:skill_deferred, WzJupitel, impact}, 200
+    assert_receive {:skill, {:deferred, WzJupitel, impact}}, 200
     assert {:error, :target_dead} = WzJupitel.deferred(impact, caster())
   end
 

@@ -194,11 +194,11 @@ defmodule Aesir.ZoneServer.NpcEventsIntegrationTest do
 
       state = %{game_state: game_state, connection_pid: self(), interaction_lock: nil}
 
-      {:noreply, state} = PlayerSession.handle_info(:movement_tick, state)
+      {:noreply, state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
       refute_receive :warped, 50
       refute MapSet.member?(state.game_state.inside_npc_areas, gid)
 
-      {:noreply, state} = PlayerSession.handle_info(:movement_tick, state)
+      {:noreply, state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
       assert_receive :warped
       assert {_pid, ref, ^gid} = state.interaction_lock
 
@@ -220,10 +220,10 @@ defmodule Aesir.ZoneServer.NpcEventsIntegrationTest do
 
       state = %{state | game_state: return_gs}
 
-      {:noreply, state} = PlayerSession.handle_info(:movement_tick, state)
+      {:noreply, state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
       refute_receive :warped, 50
 
-      {:noreply, state} = PlayerSession.handle_info(:movement_tick, state)
+      {:noreply, state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
       assert_receive :warped
       assert MapSet.member?(state.game_state.inside_npc_areas, gid)
     end

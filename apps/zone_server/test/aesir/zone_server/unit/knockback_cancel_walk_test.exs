@@ -40,7 +40,7 @@ defmodule Aesir.ZoneServer.Unit.KnockbackCancelWalkTest do
       state = %{game_state: game_state, connection_pid: self()}
 
       {:noreply, knocked_state} =
-        PlayerSession.handle_cast({:knocked_back, 60, 50}, state)
+        PlayerSession.handle_cast({:movement, {:knocked_back, 60, 50}}, state)
 
       assert knocked_state.game_state.x == 60
       assert knocked_state.game_state.y == 50

@@ -194,7 +194,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
     caster = caster()
 
     assert {:ok, ^caster} = WzJupitel.cast(caster, {:unit, @target_id}, 3, WzJupitel.definition())
-    assert_receive {:skill_deferred, WzJupitel, %{target: {:mob, @target_id}, skill_level: 3}}
+    assert_receive {:skill, {:deferred, WzJupitel, %{target: {:mob, @target_id}, skill_level: 3}}}
   end
 
   test "Ice Wall creates targetable movement and projectile terrain, decays it, and restores the cell",

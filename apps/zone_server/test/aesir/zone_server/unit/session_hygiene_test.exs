@@ -8,8 +8,8 @@ defmodule Aesir.ZoneServer.Unit.SessionHygieneTest do
       and drop instead of raising a `FunctionClauseError`;
     * neither session source may reference a concrete `Mmo.Skills.` module - the
       deferred-skill seam replaced the per-skill session clauses with one generic
-      `{:skill_deferred, module, payload}` dispatch, so no skill module is named
-      in either session.
+      `{:skill, {:deferred, module, payload}}` dispatch, so no skill module is
+      named in either session.
   """
 
   use ExUnit.Case, async: false

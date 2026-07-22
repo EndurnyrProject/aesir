@@ -103,8 +103,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSlowpoisonStrecoveryTest do
 
     assert {:ok, ^caster} = PrStrecovery.cast(caster, {:unit, target_id}, 1, definition)
 
-    assert_receive {:skill_deferred, PrStrecovery,
-                    %{unit_type: :mob, target_id: ^target_id, caster_id: 1_000}},
+    assert_receive {:skill,
+                    {:deferred, PrStrecovery,
+                     %{unit_type: :mob, target_id: ^target_id, caster_id: 1_000}}},
                    1_100
   end
 
@@ -119,8 +120,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSlowpoisonStrecoveryTest do
 
     assert {:ok, ^caster} = PrStrecovery.cast(caster, {:unit, target_id}, 1, definition)
 
-    assert_receive {:skill_deferred, PrStrecovery,
-                    %{unit_type: :mob, target_id: ^target_id, caster_id: 1_000}},
+    assert_receive {:skill,
+                    {:deferred, PrStrecovery,
+                     %{unit_type: :mob, target_id: ^target_id, caster_id: 1_000}}},
                    1_100
   end
 

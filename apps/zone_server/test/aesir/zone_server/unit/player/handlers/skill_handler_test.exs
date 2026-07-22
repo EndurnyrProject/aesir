@@ -949,7 +949,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       assert new_state.game_state.combat_target_id == 2000
       assert is_reference(new_state.game_state.continuous_attack_timer)
-      assert_receive {:auto_attack, 2000}
+      assert_receive {:combat, {:auto_attack, 2000}}
     end
 
     test "a timed cast completing while locked re-sets the lock and reschedules auto-attack" do
@@ -967,7 +967,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert completed.game_state.action_state == :idle
       assert completed.game_state.combat_target_id == 2000
       assert is_reference(completed.game_state.continuous_attack_timer)
-      assert_receive {:auto_attack, 2000}
+      assert_receive {:combat, {:auto_attack, 2000}}
     end
 
     test "an instant cast with no lock does not start an auto-attack loop" do
@@ -978,7 +978,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert {:noreply, new_state} = SkillHandler.handle_use_skill(instant_state(30), 29, 1, 1000)
 
       assert new_state.game_state.combat_target_id == nil
-      refute_receive {:auto_attack, _}
+      refute_receive {:combat, {:auto_attack, _}}
     end
 
     test "a cast whose locked target has died does not resume" do
@@ -992,7 +992,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
                SkillHandler.handle_use_skill(locked_attacking_state(45), 29, 1, 2000)
 
       assert new_state.game_state.combat_target_id == nil
-      refute_receive {:auto_attack, _}
+      refute_receive {:combat, {:auto_attack, _}}
     end
 
     test "a locked skill that walked into range resumes auto-attack after casting" do
@@ -1014,7 +1014,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       assert new_state.game_state.combat_target_id == 2000
       assert is_reference(new_state.game_state.continuous_attack_timer)
-      assert_receive {:auto_attack, 2000}
+      assert_receive {:combat, {:auto_attack, 2000}}
     end
 
     test "a damage interrupt keeps the lock and resumes auto-attack" do
@@ -1028,7 +1028,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert result.game_state.action_state == :idle
       assert result.game_state.combat_target_id == 2000
       assert is_reference(result.game_state.continuous_attack_timer)
-      assert_receive {:auto_attack, 2000}
+      assert_receive {:combat, {:auto_attack, 2000}}
     end
 
     test "a manual-move cancel drops the lock and does not resume" do
@@ -1041,7 +1041,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       assert result.game_state.action_state == :idle
       assert result.game_state.combat_target_id == nil
-      refute_receive {:auto_attack, _}
+      refute_receive {:combat, {:auto_attack, _}}
     end
   end
 

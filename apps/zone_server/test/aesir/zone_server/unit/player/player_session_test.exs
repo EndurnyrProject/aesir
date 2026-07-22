@@ -349,7 +349,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         connection_pid: self()
       }
 
-      {:noreply, new_state} = PlayerSession.handle_info(:movement_tick, state)
+      {:noreply, new_state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
 
       assert new_state.game_state.x == 51
       assert new_state.game_state.y == 50
@@ -369,7 +369,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         connection_pid: self()
       }
 
-      {:noreply, new_state} = PlayerSession.handle_cast(:force_stop_movement, state)
+      {:noreply, new_state} = PlayerSession.handle_cast({:movement, :force_stop_movement}, state)
 
       assert new_state.game_state.movement_state == :standing
       assert new_state.game_state.walk_path == []
@@ -816,7 +816,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       token = make_ref()
       state = casting_state(character, token, sp: 40)
 
-      {:noreply, new_state} = PlayerSession.handle_info({:cast_complete, token}, state)
+      {:noreply, new_state} = PlayerSession.handle_info({:skill, {:cast_complete, token}}, state)
 
       assert new_state.game_state.action_state == :idle
       assert new_state.game_state.stats.current_state.sp == 40 - 18
@@ -828,7 +828,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       token = make_ref()
       state = casting_state(character, token, sp: 40)
 
-      {:noreply, new_state} = PlayerSession.handle_info({:cast_complete, make_ref()}, state)
+      {:noreply, new_state} =
+        PlayerSession.handle_info({:skill, {:cast_complete, make_ref()}}, state)
 
       assert new_state == state
       assert new_state.game_state.action_state == :casting
@@ -1170,7 +1171,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         connection_pid: self()
       }
 
-      {:noreply, new_state} = PlayerSession.handle_info(:movement_tick, state)
+      {:noreply, new_state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
 
       assert new_state.game_state.movement_state == :standing
       assert new_state.game_state.movement_state == :standing
