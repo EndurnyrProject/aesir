@@ -200,11 +200,11 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
       PlayerSession.apply_damage(ally.pid, start_hp - 1, nil)
       assert current_hp(ally.pid) == 1
 
-      :ok = Combat.apply_heal(ally.character.id, 5, nil)
+      :ok = Combat.apply_heal(:player, ally.character.id, 5, nil)
       assert current_hp(ally.pid) == 6
 
       # A heal larger than the remaining pool clamps at max HP.
-      :ok = Combat.apply_heal(ally.character.id, 1_000_000, nil)
+      :ok = Combat.apply_heal(:player, ally.character.id, 1_000_000, nil)
       assert current_hp(ally.pid) == ally_max
     end
   end

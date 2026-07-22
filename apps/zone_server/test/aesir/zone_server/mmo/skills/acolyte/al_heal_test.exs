@@ -41,14 +41,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
     test "healing self calls apply_heal on caster_id with the computed amount",
          %{definition: definition} do
       # div(div(50+50, 5) * 30 * 5, 10) + 50 = 300 + 50 = 350
-      expect(Combat, :apply_heal, fn 1000, 350, 1000 -> :ok end)
+      expect(Combat, :apply_heal, fn :player, 1000, 350, 1000 -> :ok end)
 
       assert {:ok, @caster} = AlHeal.cast(@caster, :self, 5, definition)
     end
 
     test "healing an ally calls apply_heal on target_id with source_id",
          %{definition: definition} do
-      expect(Combat, :apply_heal, fn @ally_id, 350, 1000 -> :ok end)
+      expect(Combat, :apply_heal, fn :player, @ally_id, 350, 1000 -> :ok end)
 
       assert {:ok, @caster} = AlHeal.cast(@caster, {:unit, @ally_id}, 5, definition)
     end
@@ -107,21 +107,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
     test "lv1 @ base_level=10, int=10, matk=0 → 12", %{definition: definition} do
       stub(PlayerState, :get_stats, fn _ -> %{base_level: 10, int: 10, matk: 0} end)
       # div(div(20,5)*30*1, 10) + 0 = div(4*30, 10) = 12
-      expect(Combat, :apply_heal, fn 1000, 12, 1000 -> :ok end)
+      expect(Combat, :apply_heal, fn :player, 1000, 12, 1000 -> :ok end)
       AlHeal.cast(@caster, :self, 1, definition)
     end
 
     test "lv10 @ base_level=99, int=50, matk=100 → 970", %{definition: definition} do
       stub(PlayerState, :get_stats, fn _ -> %{base_level: 99, int: 50, matk: 100} end)
       # div(div(149,5)*30*10, 10) + 100 = div(29*300, 10) + 100 = 870 + 100 = 970
-      expect(Combat, :apply_heal, fn 1000, 970, 1000 -> :ok end)
+      expect(Combat, :apply_heal, fn :player, 1000, 970, 1000 -> :ok end)
       AlHeal.cast(@caster, :self, 10, definition)
     end
 
     test "lv5 @ base_level=50, int=50, matk=50 → 350", %{definition: definition} do
       stub(PlayerState, :get_stats, fn _ -> %{base_level: 50, int: 50, matk: 50} end)
       # div(div(100,5)*30*5, 10) + 50 = div(20*150, 10) + 50 = 300 + 50 = 350
-      expect(Combat, :apply_heal, fn 1000, 350, 1000 -> :ok end)
+      expect(Combat, :apply_heal, fn :player, 1000, 350, 1000 -> :ok end)
       AlHeal.cast(@caster, :self, 5, definition)
     end
 
@@ -134,7 +134,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
       end)
 
       test_pid = self()
-      stub(Combat, :apply_heal, fn 1000, amount, 1000 -> send(test_pid, {:heal, amount}) end)
+
+      stub(Combat, :apply_heal, fn :player, 1000, amount, 1000 ->
+        send(test_pid, {:heal, amount})
+      end)
 
       for _ <- 1..200, do: AlHeal.cast(@caster, :self, 5, definition)
       amounts = for _ <- 1..200, do: receive(do: ({:heal, a} -> a))
@@ -150,7 +153,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
       end)
 
       # 300 + roll(50, 50) = 350; flat combat matk (999) is intentionally ignored
-      expect(Combat, :apply_heal, fn 1000, 350, 1000 -> :ok end)
+      expect(Combat, :apply_heal, fn :player, 1000, 350, 1000 -> :ok end)
       AlHeal.cast(@caster, :self, 5, definition)
     end
   end
@@ -169,7 +172,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
 
       # base heal is 350 (see the lv5 @ base_level=50 vector above);
       # 350 + div(350 * 10, 100) = 350 + 35 = 385
-      expect(Combat, :apply_heal, fn 1000, 385, 1000 -> :ok end)
+      expect(Combat, :apply_heal, fn :player, 1000, 385, 1000 -> :ok end)
       AlHeal.cast(@caster, :self, 5, definition)
     end
 
@@ -178,7 +181,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
         %{base_level: 50, int: 50, matk: 50, hplus: 0}
       end)
 
-      expect(Combat, :apply_heal, fn 1000, 350, 1000 -> :ok end)
+      expect(Combat, :apply_heal, fn :player, 1000, 350, 1000 -> :ok end)
       AlHeal.cast(@caster, :self, 5, definition)
     end
 
@@ -191,7 +194,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
       end)
 
       # div(div(100,5)*30*5, 10) + 150 = 300 + 150 = 450
-      expect(Combat, :apply_heal, fn 1000, 450, 1000 -> :ok end)
+      expect(Combat, :apply_heal, fn :player, 1000, 450, 1000 -> :ok end)
       AlHeal.cast(@caster, :self, 5, definition)
     end
   end
@@ -208,7 +211,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
         %{base_level: 50, int: 50, matk: 50, heal_power: 20}
       end)
 
-      expect(Combat, :apply_heal, fn 1000, 420, 1000 -> :ok end)
+      expect(Combat, :apply_heal, fn :player, 1000, 420, 1000 -> :ok end)
       AlHeal.cast(@caster, :self, 5, definition)
     end
 
@@ -219,7 +222,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
       end)
 
       # 350 -> hplus 10% -> 385 -> heal_power 20% -> 385 + 77 = 462
-      expect(Combat, :apply_heal, fn 1000, 462, 1000 -> :ok end)
+      expect(Combat, :apply_heal, fn :player, 1000, 462, 1000 -> :ok end)
       AlHeal.cast(@caster, :self, 5, definition)
     end
 
@@ -228,7 +231,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
         %{base_level: 50, int: 50, matk: 50}
       end)
 
-      expect(Combat, :apply_heal, fn 1000, 350, 1000 -> :ok end)
+      expect(Combat, :apply_heal, fn :player, 1000, 350, 1000 -> :ok end)
       AlHeal.cast(@caster, :self, 5, definition)
     end
   end

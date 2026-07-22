@@ -164,7 +164,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
   end
 
   defp heal_target(:player, unit_id, _pid, group) do
-    DamageApplication.apply_heal(unit_id, heal_amount(group.level), group.caster_id)
+    DamageApplication.apply_heal(:player, unit_id, heal_amount(group.level), group.caster_id)
     {:cont, group}
   end
 

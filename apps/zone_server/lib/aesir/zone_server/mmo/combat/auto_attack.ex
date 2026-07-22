@@ -236,7 +236,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   defp drain_hp(attacker, damage) do
     case HpDrain.roll(attacker, damage) do
       0 -> :ok
-      heal -> DamageApplication.apply_heal(attacker.unit_id, heal, attacker.unit_id)
+      heal -> DamageApplication.apply_heal(:player, attacker.unit_id, heal, attacker.unit_id)
     end
   end
 

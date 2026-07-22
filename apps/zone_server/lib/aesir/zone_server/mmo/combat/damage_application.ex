@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
 
   @doc """
@@ -66,18 +67,27 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   end
 
   @doc """
-  Broadcasts a heal to a player session via PubSub.
+  Heals a living unit.
 
-  An offline player (no subscriber) is a silent no-op. Mobs are never healed;
-  for undead/demon targets use the damage path instead.
+  For `:player` this broadcasts to the player's PubSub topic; an offline
+  player (no subscriber) is a silent no-op. For `:mob` this resolves the
+  target's session pid via `UnitRegistry` and calls `MobSession.heal/2`; a
+  target that no longer exists is a silent no-op.
   """
-  @spec apply_heal(integer(), non_neg_integer(), integer() | nil) :: :ok
-  def apply_heal(target_id, amount, source_id \\ nil) do
+  @spec apply_heal(:player | :mob, integer(), non_neg_integer(), integer() | nil) :: :ok
+  def apply_heal(:player, unit_id, amount, source_id) do
     PubSub.broadcast(
       Aesir.PubSub,
-      "player:#{target_id}",
+      "player:#{unit_id}",
       {:combat, {:apply_heal, amount, source_id}}
     )
+  end
+
+  def apply_heal(:mob, unit_id, amount, _source_id) do
+    case UnitRegistry.get_unit(:mob, unit_id) do
+      {:ok, {_module, _state, pid}} -> MobSession.heal(pid, amount)
+      {:error, :not_found} -> :ok
+    end
   end
 
   @doc """

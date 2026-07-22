@@ -488,21 +488,42 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
     end
   end
 
-  describe "apply_heal/3" do
+  describe "apply_heal/4" do
     test "broadcasts {:apply_heal, amount, source_id} on the player topic" do
       Phoenix.PubSub.subscribe(Aesir.PubSub, "player:42000")
 
-      Combat.apply_heal(42_000, 500, 1001)
+      Combat.apply_heal(:player, 42_000, 500, 1001)
 
       assert_receive {:combat, {:apply_heal, 500, 1001}}
     end
 
-    test "source_id defaults to nil" do
+    test "player heal with a nil source_id still broadcasts" do
       Phoenix.PubSub.subscribe(Aesir.PubSub, "player:42001")
 
-      Combat.apply_heal(42_001, 300)
+      Combat.apply_heal(:player, 42_001, 300, nil)
 
       assert_receive {:combat, {:apply_heal, 300, nil}}
+    end
+
+    test "resolves the target mob's pid via UnitRegistry and heals via MobSession.heal/2" do
+      test_pid = self()
+
+      stub(UnitRegistry, :get_unit, fn :mob, 2_001 -> {:ok, {MobState, %{}, test_pid}} end)
+
+      expect(MobSession, :heal, fn pid, amount ->
+        send(test_pid, {:healed, pid, amount})
+        :ok
+      end)
+
+      assert Combat.apply_heal(:mob, 2_001, 500, 1001) == :ok
+      assert_receive {:healed, ^test_pid, 500}
+    end
+
+    test "a mob that no longer exists is a silent no-op" do
+      stub(UnitRegistry, :get_unit, fn :mob, 2_002 -> {:error, :not_found} end)
+      reject(&MobSession.heal/2)
+
+      assert Combat.apply_heal(:mob, 2_002, 500, 1001) == :ok
     end
   end
 

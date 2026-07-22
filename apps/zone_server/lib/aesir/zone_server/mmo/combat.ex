@@ -137,11 +137,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
     to: MagicAttack
 
   @doc """
-  Broadcasts a heal to a player session via PubSub.
+  Heals a living unit.
 
-  See `Aesir.ZoneServer.Mmo.Combat.DamageApplication.apply_heal/3`.
+  See `Aesir.ZoneServer.Mmo.Combat.DamageApplication.apply_heal/4`.
   """
-  defdelegate apply_heal(target_id, amount, source_id \\ nil), to: DamageApplication
+  defdelegate apply_heal(unit_type, unit_id, amount, source_id), to: DamageApplication
 
   @doc """
   Knocks a unit back away from `{from_x, from_y}`, collision-aware.

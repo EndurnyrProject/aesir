@@ -67,7 +67,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
   - `:undead` or `:demon` — the heal value is dealt as a holy magic hit via
     `Combat.execute_magic_damage/4`.
   - All others (including players and unresolvable targets) — HP is restored
-    via `Combat.apply_heal/3`.
+    via `Combat.apply_heal/4`.
   """
   @spec cast(struct(), :self | {:unit, integer()}, pos_integer(), struct()) ::
           {:ok, struct()} | {:error, atom()}
@@ -89,7 +89,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
         end
 
       _ ->
-        Combat.apply_heal(target_id, heal_value, caster_id)
+        Combat.apply_heal(:player, target_id, heal_value, caster_id)
         {:ok, caster}
     end
   end

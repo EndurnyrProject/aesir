@@ -266,7 +266,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
       {:ok, {PlayerState, target, self()}}
     end)
 
-    expect(DamageApplication, :apply_heal, fn 2_001, 500, 1_000 -> :ok end)
+    expect(DamageApplication, :apply_heal, fn :player, 2_001, 500, 1_000 -> :ok end)
 
     assert {:ok, %Group{state: %{hits_remaining: 8}}} =
              PrSanctuary.on_interval(group(5, %{hits_remaining: 8}), 1_000)
