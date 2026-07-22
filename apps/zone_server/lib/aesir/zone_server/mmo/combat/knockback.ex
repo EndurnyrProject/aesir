@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Movement
+  alias Aesir.ZoneServer.Unit.Session, as: UnitSession
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -107,7 +108,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
   # blow. Falls back to a direct write when the owning process can't be resolved.
   defp move_unit(unit_type, unit_id, x, y, map_name) do
     case owning_pid(unit_type, unit_id) do
-      {:ok, pid} -> GenServer.cast(pid, {:knocked_back, x, y})
+      {:ok, pid} -> UnitSession.knock_back(unit_type, pid, x, y)
       :error -> move_unit_direct(unit_type, unit_id, x, y, map_name)
     end
   end
