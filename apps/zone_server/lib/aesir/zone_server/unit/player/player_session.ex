@@ -16,27 +16,19 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.ItemVanished
   alias Aesir.Net.SkillUnitDespawn
-  alias Aesir.Net.UnitDespawn
-  alias Aesir.Net.UnitSpawn
-  alias Aesir.Net.VendingBoardShown
   alias Aesir.ZoneServer.Announcement
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Constants.DespawnReason
-  alias Aesir.ZoneServer.Constants.ObjectType
-  alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
-  alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage, as: SkillUnitStorage
   alias Aesir.ZoneServer.Mmo.Skills.Priest.PrLexdivina
   alias Aesir.ZoneServer.Mmo.Skills.Priest.PrStrecovery
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitel
-  alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Movement
-  alias Aesir.ZoneServer.Unit.Player.Appearance
   alias Aesir.ZoneServer.Unit.Player.GuildSync
   alias Aesir.ZoneServer.Unit.Player.Handlers.BreakOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
@@ -59,6 +51,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PartySync
@@ -68,7 +61,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.StatusPersistence
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
-  alias Aesir.ZoneServer.Unit.Vending.Registry, as: VendingRegistry
   alias Phoenix.PubSub
 
   # rAthena NATURAL_HEAL_INTERVAL
@@ -631,20 +623,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
-  def handle_info(
-        {:player_despawned, char_id},
-        %{game_state: game_state, connection_pid: connection_pid} = state
-      ) do
-    if char_id != game_state.character_id do
-      packet = %UnitDespawn{
-        gid: char_id,
-        reason: DespawnReason.out_of_sight()
-      }
-
-      MessageRouter.send_to(connection_pid, packet)
-    end
-
-    {:noreply, state}
+  def handle_info({:player_despawned, char_id}, state) do
+    VisibilityHandler.despawned(char_id, state)
   end
 
   # Unknown messages must not crash a live player session.
@@ -658,31 +638,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @impl true
   def handle_cast({:player_entered_view, other_char_id}, state) do
-    # Read the other player's state straight from the registry instead of
-    # round-tripping through their process to fetch it.
-    case UnitRegistry.get_unit(:player, other_char_id) do
-      {:ok, {_module, %PlayerState{} = other_game_state, _pid}} ->
-        send_player_spawn_packet(state.connection_pid, other_game_state)
-        send_active_icons(:player, other_char_id, state.game_state.character_id)
-        maybe_send_vending_board(state.connection_pid, other_char_id)
-
-      _ ->
-        :ok
-    end
-
-    {:noreply, state}
+    VisibilityHandler.entered_view(other_char_id, state)
   end
 
   @impl true
   def handle_cast({:player_left_view, other_char_id, _other_account_id}, state) do
-    packet = %UnitDespawn{
-      gid: other_char_id,
-      reason: DespawnReason.out_of_sight()
-    }
-
-    MessageRouter.send_to(state.connection_pid, packet)
-
-    {:noreply, state}
+    VisibilityHandler.left_view(other_char_id, state)
   end
 
   @impl true
@@ -1102,92 +1063,4 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   defp register_player(%PlayerState{} = game_state),
     do: UnitRegistry.register_player(game_state, self())
-
-  defp sex_to_int("F"), do: 0
-  defp sex_to_int("M"), do: 1
-  defp sex_to_int(_), do: 1
-
-  defp send_player_spawn_packet(connection_pid, game_state) do
-    packet = build_unit_spawn(game_state)
-    MessageRouter.send_to(connection_pid, packet)
-  end
-
-  defp maybe_send_vending_board(connection_pid, char_id) do
-    case VendingRegistry.get(char_id) do
-      {:ok, %{title: title}} ->
-        MessageRouter.send_to(connection_pid, %VendingBoardShown{unit_id: char_id, title: title})
-
-      :error ->
-        :ok
-    end
-  end
-
-  defp send_active_icons(unit_type, subject_id, observer_id) do
-    unit_type
-    |> StatusDisplay.active_icons(subject_id)
-    |> Enum.each(&Broadcast.to_player(observer_id, &1))
-  end
-
-  defp build_unit_spawn(game_state) do
-    %{
-      body_state: body_state,
-      health_state: health_state,
-      effect_state: effect_state,
-      virtue: virtue
-    } =
-      StatusDisplay.spawn_state(:player, game_state.character_id)
-
-    appearance = Appearance.spawn_fields(game_state.stats.equipment)
-
-    {guild_id, guild_name, emblem_id} = guild_identity(game_state)
-
-    %UnitSpawn{
-      object_type: ObjectType.pc(),
-      aid: game_state.account_id,
-      gid: game_state.character_id,
-      speed: game_state.walk_speed,
-      body_state: body_state,
-      health_state: health_state,
-      effect_state: effect_state,
-      virtue: virtue,
-      job: game_state.stats.progression.job_id,
-      head: game_state.hair,
-      weapon: appearance.weapon,
-      shield: appearance.shield,
-      accessory: appearance.accessory,
-      accessory2: appearance.accessory2,
-      accessory3: appearance.accessory3,
-      head_palette: game_state.hair_color,
-      body_palette: game_state.clothes_color,
-      head_dir: 0,
-      robe: appearance.robe,
-      guild_id: guild_id,
-      guild_name: guild_name,
-      emblem_id: emblem_id,
-      sex: sex_to_int(game_state.sex),
-      x: game_state.x,
-      y: game_state.y,
-      dir: game_state.dir || 0,
-      clevel: game_state.stats.progression.base_level,
-      max_hp: game_state.stats.derived_stats.max_hp,
-      hp: game_state.stats.current_state.hp,
-      is_boss: false,
-      name: game_state.character_name,
-      moving: false
-    }
-  end
-
-  # Resolves a player's guild identity for a spawn packet as
-  # `{guild_id, guild_name, emblem_id}`. A guild-less player (guild_id 0) or a
-  # stale/non-live guild entry defaults to an empty name and emblem 0; the real
-  # guild_id is still carried for a member whose entry is not live.
-  @spec guild_identity(map()) :: {non_neg_integer(), String.t(), non_neg_integer()}
-  defp guild_identity(%{guild_id: 0}), do: {0, "", 0}
-
-  defp guild_identity(%{guild_id: guild_id}) do
-    case GuildManager.get(guild_id) do
-      {:ok, %GuildState{name: name, emblem_id: emblem_id}} -> {guild_id, name, emblem_id}
-      {:error, :not_found} -> {guild_id, "", 0}
-    end
-  end
 end
