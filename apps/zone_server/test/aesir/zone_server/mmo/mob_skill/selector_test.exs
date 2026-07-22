@@ -1,8 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
   use ExUnit.Case, async: true
+  import Mimic
 
+  alias Aesir.ZoneServer.Mmo.MobSkill.Denylist
   alias Aesir.ZoneServer.Mmo.MobSkill.Selector
   alias Aesir.ZoneServer.Unit.Mob.MobState
+
+  setup :verify_on_exit!
 
   # Forces every rate roll to succeed (1 <= rate for any rate >= 1).
   defp hit, do: fn _ -> 1 end
@@ -23,10 +27,12 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     struct(MobState, Map.merge(base, Map.new(overrides)))
   end
 
+  # MG_FIREBOLT: a real player skill (id 19), resolvable in Skill.Catalog with
+  # an active module, so it clears the castable gate by default.
   defp row(overrides \\ %{}) do
     base = %{
-      skill: "NPC_FIREATTACK",
-      skill_id: 1,
+      skill: "MG_FIREBOLT",
+      skill_id: 19,
       state: :attack,
       rate: 10_000,
       condition: %{type: :always}
@@ -82,11 +88,23 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     end
   end
 
-  describe "stub filter" do
-    test "a row whose skill maps to :stub is never selected" do
-      stub_row = row(%{skill: "NPC_EMOTION", state: :attack})
+  describe "castable filter" do
+    test "a row whose skill_id has no catalog entry is skipped" do
+      unresolvable = row(%{skill_id: 999_999})
 
-      assert Selector.select(mob(), [stub_row], opts()) == nil
+      assert Selector.select(mob(), [unresolvable], opts()) == nil
+    end
+
+    test "a row whose skill_id is denylisted is skipped" do
+      stub(Denylist, :denied?, fn 19 -> true end)
+
+      assert Selector.select(mob(), [row()], opts()) == nil
+    end
+
+    test "a row whose skill_id resolves and is not denylisted fires" do
+      stub(Denylist, :denied?, fn 19 -> false end)
+
+      assert Selector.select(mob(), [row()], opts()) == {:cast, row()}
     end
   end
 
@@ -147,13 +165,13 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
 
   describe "delay gate" do
     test "a row still on cooldown is excluded" do
-      mob = mob(%{skill_cooldowns: %{1 => 5000}})
+      mob = mob(%{skill_cooldowns: %{19 => 5000}})
 
       assert Selector.select(mob, [row()], now: 1000, rng: hit()) == nil
     end
 
     test "a row whose cooldown has elapsed is eligible" do
-      mob = mob(%{skill_cooldowns: %{1 => 5000}})
+      mob = mob(%{skill_cooldowns: %{19 => 5000}})
 
       assert Selector.select(mob, [row()], now: 5000, rng: hit()) == {:cast, row()}
     end

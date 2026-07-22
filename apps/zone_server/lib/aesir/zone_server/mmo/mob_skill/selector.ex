@@ -11,9 +11,11 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
 
     1. **State** - the row's `state` must be eligible for the mob's current
        `ai_state` (see `eligible_states/1`, an approximation of rAthena states).
-    2. **Stub** - rows whose skill has no archetype (`Catalog.archetype_for/1`
-       returns `:stub`) are dropped silently. Stub coverage is tracked once
-       globally by the importer's manifest; per-tick logging here would spam.
+    2. **Castable** - the row's skill must resolve in the real skill catalog
+       (`Skill.Catalog.by_id/1` with an active module) and must not be in
+       `MobSkill.Denylist`. Non-castable rows are dropped silently; coverage
+       is tracked once globally by the importer's manifest and the sweep
+       test, not per-tick here (that would spam).
     3. **Condition** - the row's `condition` predicate must hold.
     4. **Delay** - the row's skill must be off cooldown (`MobState.skill_ready?/3`).
     5. **Rate** - each surviving row rolls `rng.(10_000) <= row.rate` in order;
@@ -35,7 +37,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
   """
 
   alias Aesir.ZoneServer.Mmo.MobSkill.Archetype.SummonSlave
-  alias Aesir.ZoneServer.Mmo.MobSkill.Catalog
+  alias Aesir.ZoneServer.Mmo.MobSkill.Denylist
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
   alias Aesir.ZoneServer.Unit.Mob.MobState
 
   @typedoc "A mob skill row as produced by `MobSkill.Db`."
@@ -55,10 +58,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
     eligible = eligible_states(mob_state)
 
     rows
-    |> Enum.filter(&(&1.state in eligible))
-    |> Enum.reject(&stub?/1)
     |> Enum.filter(fn row ->
-      condition_holds?(row, mob_state, env) and
+      row.state in eligible and castable?(row) and
+        condition_holds?(row, mob_state, env) and
         MobState.skill_ready?(mob_state, row.skill_id, now)
     end)
     |> Enum.find_value(fn row -> if rng.(10_000) <= row.rate, do: {:cast, row} end)
@@ -86,8 +88,15 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
 
   defp eligible_states(%MobState{ai_state: :return}), do: [:any]
 
-  @spec stub?(row()) :: boolean()
-  defp stub?(%{skill: skill}), do: Catalog.archetype_for(skill) == :stub
+  @spec castable?(row()) :: boolean()
+  defp castable?(%{skill_id: skill_id}) do
+    with {:ok, definition} <- SkillCatalog.by_id(skill_id),
+         {:ok, _module} <- SkillCatalog.active_module_for(definition.name) do
+      not Denylist.denied?(skill_id)
+    else
+      :error -> false
+    end
+  end
 
   @spec condition_holds?(row(), MobState.t(), map()) :: boolean()
   defp condition_holds?(%{condition: condition}, mob_state, env) do
