@@ -4,14 +4,31 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
 
   `resolve_target/2` maps the row's rAthena `target` code onto a live target
   (`{:unit, type, id}` or `{:ground, x, y, area}`); `execute/2` then dispatches
-  to the archetype module the `Catalog` maps the skill to. Archetype modules are
-  resolved dynamically (`:elemental_nuke` -> `Archetype.ElementalNuke`) and an
-  archetype without a built module is skipped, keeping intermediate waves
-  shippable while the archetype set grows.
+  through the real skill catalog: `Skill.Catalog.by_id/1` resolves the row's
+  `skill_id` to its `Definition`, `Skill.Catalog.active_module_for/1` resolves
+  the definition's name to its `Skill.Active` module. A skill unresolvable at
+  either step is a no-op `:ok` — rare once the `Selector` gates on the same
+  lookup, but still reachable on a target-invalidation race.
 
-  Packet ownership: the combat primitives the archetypes call (e.g.
-  `Combat.execute_magic_damage/4`) broadcast their own `SkillDamage` packets, so
-  this module broadcasts only the mob cast bar — `SkillCasting` via
+  A resolved module runs its `validate/4` (auto-defaulted to `:ok` by `use
+  Skill` when the skill does not define one) against the row's adapted target,
+  then `mob_cast/5` when the module exports it, otherwise `cast/4`.
+  `validate/4` and `cast/4` always see the same *adapted* target; `mob_cast/5`
+  always sees the *raw*, unadapted one plus the full row — a skill exporting
+  both must not expect the two calls to agree on shape.
+
+  Adaptation depends on the resolved skill's `target_type`: a `:ground` skill
+  centers its cell on a unit-shaped raw target (`mob_skills.yml` routinely
+  gives ground skills a `target`/`self`/`friend`/`randomtarget` row - "center
+  the ground effect on my target" - e.g. `SA_LANDPROTECTOR`, `PR_SANCTUARY`,
+  `WZ_METEOR`) - the caster's own cell for a self-target, `SpatialIndex` for
+  anyone else, `{:error, :no_target}` if that unit's cell cannot be resolved.
+  Every other skill adapts uniformly: `{:unit, type, id}` -> `{:unit, id}`,
+  `{:ground, x, y, area}` -> `{:ground, x, y}`.
+
+  Packet ownership: the combat primitives a skill's `cast/4`/`mob_cast/5` calls
+  (e.g. `Combat.execute_magic_damage/4`) broadcast their own `SkillDamage`
+  packets, so this module broadcasts only the mob cast bar — `SkillCasting` via
   `broadcast_casting/2` and its `CastCancel` counterpart via
   `broadcast_cast_cancel/1`.
   """
@@ -22,15 +39,13 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   alias Aesir.Net.SkillCasting
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
-  alias Aesir.ZoneServer.Mmo.MobSkill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Emote
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
-
-  @archetype_namespace Aesir.ZoneServer.Mmo.MobSkill.Archetype
 
   @around_self [:around, :around1, :around2, :around3, :around4]
   @around_target [:around5, :around6, :around7, :around8]
@@ -100,11 +115,11 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   def resolve_target(%MobState{}, %{target: other}), do: {:error, {:unsupported_target, other}}
 
   @doc """
-  Resolves the row's target and dispatches to its archetype module.
+  Resolves the row's target and dispatches to its skill module.
 
-  Target invalidation and archetype failures surface as `{:error, reason}` — a
-  clean abort, never a crash. A `:stub` skill or an archetype whose module is
-  not built yet is a no-op `:ok`.
+  Target invalidation, a failed `validate/4`, and a `cast/4`/`mob_cast/5`
+  error surface as `{:error, reason}` — a clean abort, never a crash. A skill
+  unresolvable in the catalog is a no-op `:ok`.
   """
   @spec execute(MobState.t(), map()) :: :ok | {:error, term()}
   def execute(%MobState{} = state, row) do
@@ -129,7 +144,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
       x: 0,
       y: 0,
       skill_id: row.skill_id,
-      property: property(row.skill),
+      property: property(row.skill_id),
       cast_time: row.cast_time
     }
 
@@ -159,36 +174,57 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   end
 
   defp dispatch(state, target, row) do
-    case Catalog.archetype_for(row.skill) do
-      :stub ->
+    with {:ok, definition} <- SkillCatalog.by_id(row.skill_id),
+         {:ok, module} <- SkillCatalog.active_module_for(definition.name) do
+      run(module, state, target, row, definition)
+    else
+      :error ->
+        Logger.debug("MobSkill: #{row.skill} (#{row.skill_id}) has no active module, skipping")
         :ok
-
-      {archetype, params} ->
-        module = Module.concat(@archetype_namespace, Macro.camelize(Atom.to_string(archetype)))
-
-        if Code.ensure_loaded?(module) and function_exported?(module, :apply, 4) do
-          params =
-            Map.merge(params, %{
-              skill_id: row.skill_id,
-              skill: row.skill,
-              condition: row.condition
-            })
-
-          module.apply(state, target, params, row.level)
-        else
-          Logger.debug(
-            "MobSkill: archetype #{archetype} not implemented yet, skipping #{row.skill}"
-          )
-
-          :ok
-        end
     end
   end
 
-  defp property(skill_name) do
-    case Catalog.archetype_for(skill_name) do
-      {_archetype, %{element: element}} -> ElementModifiers.id(element)
-      _lookup -> 0
+  defp run(module, state, target, row, definition) do
+    with {:ok, adapted_target} <- adapt_target(target, definition, state),
+         :ok <- module.validate(state, adapted_target, row.level, definition) do
+      module
+      |> invoke(state, target, adapted_target, row, definition)
+      |> collapse()
+    end
+  end
+
+  defp invoke(module, state, raw_target, adapted_target, row, definition) do
+    if function_exported?(module, :mob_cast, 5) do
+      module.mob_cast(state, raw_target, row.level, definition, row)
+    else
+      module.cast(state, adapted_target, row.level, definition)
+    end
+  end
+
+  defp adapt_target({:unit, unit_type, id}, %{target_type: :ground}, state),
+    do: ground_center(unit_type, id, state)
+
+  defp adapt_target({:unit, _unit_type, id}, _definition, _state), do: {:ok, {:unit, id}}
+  defp adapt_target({:ground, x, y, _area}, _definition, _state), do: {:ok, {:ground, x, y}}
+
+  defp ground_center(:mob, id, %MobState{instance_id: id, x: x, y: y}), do: {:ok, {:ground, x, y}}
+
+  defp ground_center(unit_type, id, _state) do
+    case SpatialIndex.get_unit_position(unit_type, id) do
+      {:ok, {x, y, _map}} -> {:ok, {:ground, x, y}}
+      {:error, :not_found} -> {:error, :no_target}
+    end
+  end
+
+  defp collapse(:ok), do: :ok
+  defp collapse({:ok, _state}), do: :ok
+  defp collapse({:ok, _state, :no_consume}), do: :ok
+  defp collapse({:error, _reason} = error), do: error
+
+  defp property(skill_id) do
+    case SkillCatalog.by_id(skill_id) do
+      {:ok, definition} -> ElementModifiers.id(definition.element)
+      :error -> 0
     end
   end
 

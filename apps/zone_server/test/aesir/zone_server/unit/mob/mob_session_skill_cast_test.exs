@@ -42,8 +42,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
 
   defp row(overrides \\ %{}) do
     base = %{
-      skill: "NPC_FIREATTACK",
-      skill_id: 186,
+      skill: "MG_FIREBOLT",
+      skill_id: 19,
       state: :attack,
       level: 3,
       rate: 10_000,
@@ -104,7 +104,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       row = row()
       stub(MobSkillDb, :rows_for, fn 1001 -> [row] end)
       reject(&Combat.execute_mob_attack/2)
-      reject(&Combat.execute_magic_damage/4)
+      reject(&Combat.execute_magic_attack/3)
       test_pid = self()
 
       expect(Broadcast, :to_in_range, fn "prontera", 100, 100, _range, packet ->
@@ -119,7 +119,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       assert updated.skill_cooldowns == %{}
       assert updated.ai_timer_ref
 
-      assert_received {:packet, %SkillCasting{src_id: 1, skill_id: 186, cast_time: 50}}
+      assert_received {:packet, %SkillCasting{src_id: 1, skill_id: 19, cast_time: 50}}
       assert_receive {:casting, :complete}, 500
     end
 
@@ -132,7 +132,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
 
       reject(&Combat.execute_mob_attack/2)
 
-      expect(Combat, :execute_magic_damage, fn _caster, @target_id, 180, opts ->
+      expect(Combat, :execute_magic_attack, fn _caster, @target_id, opts ->
+        assert opts[:skill_id] == 19
         assert opts[:element] == :fire
         :ok
       end)
@@ -141,7 +142,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       {:noreply, updated} = MobSession.handle_info({:ai, :tick}, build_mob_state())
 
       assert updated.casting == nil
-      assert updated.skill_cooldowns[186] >= before + 5_000
+      assert updated.skill_cooldowns[19] >= before + 5_000
       refute_received {:casting, :complete}
     end
 
@@ -175,7 +176,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       state = build_mob_state() |> MobState.set_casting(%{row: row(), complete_at: 0})
       reject(&MobSkillDb.rows_for/1)
       reject(&Combat.execute_mob_attack/2)
-      reject(&Combat.execute_magic_damage/4)
+      reject(&Combat.execute_magic_attack/3)
 
       {:noreply, updated} = MobSession.handle_info({:ai, :tick}, state)
 
@@ -194,8 +195,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
         {:ok, {nil, living_player_state(), nil}}
       end)
 
-      expect(Combat, :execute_magic_damage, fn _caster, @target_id, 180, opts ->
-        assert opts[:skill_id] == 186
+      expect(Combat, :execute_magic_attack, fn _caster, @target_id, opts ->
+        assert opts[:skill_id] == 19
         assert opts[:element] == :fire
         :ok
       end)
@@ -204,7 +205,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       {:noreply, updated} = MobSession.handle_info({:casting, :complete}, state)
 
       assert updated.casting == nil
-      assert updated.skill_cooldowns[186] >= before + 5_000
+      assert updated.skill_cooldowns[19] >= before + 5_000
       assert updated.ai_timer_ref
     end
 
@@ -214,13 +215,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
         |> MobState.set_target(nil)
         |> MobState.set_casting(%{row: row(), complete_at: 0})
 
-      reject(&Combat.execute_magic_damage/4)
+      reject(&Combat.execute_magic_attack/3)
 
       before = System.system_time(:millisecond)
       {:noreply, updated} = MobSession.handle_info({:casting, :complete}, state)
 
       assert updated.casting == nil
-      assert updated.skill_cooldowns[186] >= before + 5_000
+      assert updated.skill_cooldowns[19] >= before + 5_000
     end
 
     test "a dead mob ignores cast completion" do
@@ -228,7 +229,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
         build_mob_state(%{is_dead: true})
         |> MobState.set_casting(%{row: row(), complete_at: 0})
 
-      reject(&Combat.execute_magic_damage/4)
+      reject(&Combat.execute_magic_attack/3)
 
       {:noreply, updated} = MobSession.handle_info({:casting, :complete}, state)
 
@@ -247,13 +248,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
         :mob, _id, _status -> false
       end)
 
-      reject(&Combat.execute_magic_damage/4)
+      reject(&Combat.execute_magic_attack/3)
 
       before = System.system_time(:millisecond)
       {:noreply, updated} = MobSession.handle_info({:casting, :complete}, state)
 
       assert updated.casting == nil
-      assert updated.skill_cooldowns[186] >= before + 5_000
+      assert updated.skill_cooldowns[19] >= before + 5_000
       assert updated.ai_timer_ref
     end
   end
@@ -268,7 +269,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
 
       {:reply, reply, updated} = MobSession.handle_call({:casting, :interrupt}, self(), state)
 
-      assert reply == {:ok, %{skill: "NPC_FIREATTACK", skill_id: 186, level: 3}}
+      assert reply == {:ok, %{skill: "MG_FIREBOLT", skill_id: 19, level: 3}}
       assert updated.casting == nil
     end
 
@@ -290,7 +291,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       {:reply, {:ok, _}, updated} = MobSession.handle_call({:casting, :interrupt}, self(), state)
 
       assert updated.casting == nil
-      assert updated.skill_cooldowns[186] >= before + 5_000
+      assert updated.skill_cooldowns[19] >= before + 5_000
       assert_received {:packet, %CastCancel{gid: 1}}
       assert Process.cancel_timer(ref) == false
     end
@@ -384,7 +385,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       timer_ref = Process.send_after(pid, {:casting, :complete}, 30_000)
       arm_cast(pid, %{row: row(), complete_at: 0, timer_ref: timer_ref})
 
-      assert {:ok, %{skill: "NPC_FIREATTACK", skill_id: 186, level: 3}} =
+      assert {:ok, %{skill: "MG_FIREBOLT", skill_id: 19, level: 3}} =
                MobSession.interrupt_cast(pid)
 
       assert MobSession.get_state(pid).casting == nil
@@ -441,7 +442,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
         MobSession.handle_cast({:casting, {:status_changed, :sc_silence, :apply}}, casting_state)
 
       assert updated.casting == nil
-      assert updated.skill_cooldowns[186] >= before + 5_000
+      assert updated.skill_cooldowns[19] >= before + 5_000
       # The cancelled timer must never deliver {:casting, :complete} (window > cast_time).
       refute_receive {:casting, :complete}, 200
     end
@@ -482,13 +483,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
         :mob, _id, _status -> false
       end)
 
-      reject(&Combat.execute_magic_damage/4)
+      reject(&Combat.execute_magic_attack/3)
 
       before = System.system_time(:millisecond)
       {:noreply, updated} = MobSession.handle_info({:ai, :tick}, state)
 
       assert updated.casting == nil
-      assert updated.skill_cooldowns[186] >= before + 5_000
+      assert updated.skill_cooldowns[19] >= before + 5_000
       assert updated.ai_timer_ref
       refute_receive {:casting, :complete}, 200
     end
@@ -511,7 +512,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
 
       stub(StatusInterpreter, :targetable?, fn :player, @target_id -> true end)
       stub(StatusInterpreter, :can_attack?, fn :mob, 1 -> true end)
-      reject(&Combat.execute_magic_damage/4)
+      reject(&Combat.execute_magic_attack/3)
       test_pid = self()
 
       expect(Combat, :execute_mob_attack, fn _state, @target_id ->

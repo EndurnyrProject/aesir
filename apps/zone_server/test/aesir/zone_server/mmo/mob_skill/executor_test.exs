@@ -7,8 +7,10 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
-  alias Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor
+  alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Emote
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -19,6 +21,52 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
   setup :verify_on_exit!
 
   @map "prontera"
+
+  defmodule CastOnly do
+    @moduledoc false
+    @behaviour Active
+
+    @impl Active
+    def validate(_caster, _target, _level, _definition), do: :ok
+
+    @impl Active
+    def cast(caster, target, level, definition) do
+      send(self(), {:cast, caster.instance_id, target, level, definition.id})
+      {:ok, caster}
+    end
+  end
+
+  defmodule MobCastPreferred do
+    @moduledoc false
+    @behaviour Active
+
+    @impl Active
+    def validate(_caster, _target, _level, _definition), do: :ok
+
+    @impl Active
+    def cast(_caster, _target, _level, _definition), do: {:error, :cast_should_not_run}
+
+    @impl Active
+    def mob_cast(caster, raw_target, level, definition, row) do
+      send(
+        self(),
+        {:mob_cast, caster.instance_id, raw_target, level, definition.id, row.skill_id}
+      )
+
+      :ok
+    end
+  end
+
+  defmodule ValidateAborts do
+    @moduledoc false
+    @behaviour Active
+
+    @impl Active
+    def validate(_caster, _target, _level, _definition), do: {:error, :not_allowed}
+
+    @impl Active
+    def cast(_caster, _target, _level, _definition), do: {:error, :cast_should_not_run}
+  end
 
   defp mob(overrides \\ %{}) do
     base = %{
@@ -59,6 +107,11 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
     Map.merge(base, Map.new(overrides))
   end
 
+  defp definition(overrides) do
+    base = %{id: 9001, name: :fake_skill, display_name: "Fake Skill", max_level: 5}
+    struct(Definition, Map.merge(base, Map.new(overrides)))
+  end
+
   defp friend_state(instance_id, mob_id, hp, dead? \\ false) do
     struct(MobState,
       instance_id: instance_id,
@@ -81,6 +134,12 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
     stub(UnitRegistry, :get_unit, fn :player, ^id ->
       {:ok, {PlayerState, player_state(id), self()}}
     end)
+  end
+
+  defp stub_skill(skill_id, name, module, definition_overrides \\ %{}) do
+    defn = definition(Map.merge(%{id: skill_id, name: name}, definition_overrides))
+    stub(SkillCatalog, :by_id, fn ^skill_id -> {:ok, defn} end)
+    stub(SkillCatalog, :active_module_for, fn ^name -> {:ok, module} end)
   end
 
   describe "resolve_target/2" do
@@ -212,56 +271,108 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
     end
   end
 
-  describe "execute/2" do
-    test "dispatches an elemental nuke to Combat.execute_magic_damage with element and skill id" do
+  describe "execute/2 dispatch" do
+    test "dispatches MG_FIREBOLT (a real skill) through the real skill module's cast" do
       caster = mob()
       stub_living_player_target()
 
-      expect(Combat, :execute_magic_damage, fn passed_caster, 42, amount, opts ->
+      expect(Combat, :execute_magic_attack, fn passed_caster, 42, opts ->
         assert passed_caster.instance_id == caster.instance_id
-        # The nuke reaches the mob's skill range, not its melee reach.
-        assert passed_caster.mob_data.attack_range == 10
-        assert amount == 60 * 3
-        assert opts[:skill_id] == 186
+        assert opts[:skill_id] == 19
         assert opts[:skill_level] == 3
+        assert opts[:hit_count] == 3
         assert opts[:element] == :fire
         :ok
       end)
 
-      assert Executor.execute(caster, row()) == :ok
+      assert Executor.execute(caster, row(%{skill_id: 19, target: :target})) == :ok
+    end
+
+    test "adapts a unit target from {:unit, type, id} to {:unit, id} for cast/4" do
+      stub_skill(9001, :fake_skill, CastOnly)
+      stub_living_player_target()
+
+      assert Executor.execute(mob(), row(%{skill_id: 9001, target: :target})) == :ok
+      assert_received {:cast, 5001, {:unit, 42}, 3, 9001}
+    end
+
+    test "adapts a ground target from {:ground, x, y, area} to {:ground, x, y} for cast/4" do
+      stub_skill(9002, :fake_skill, CastOnly)
+
+      assert Executor.execute(mob(), row(%{skill_id: 9002, target: :around})) == :ok
+      assert_received {:cast, 5001, {:ground, 100, 100}, 3, 9002}
+    end
+
+    test "adapts a self target from {:unit, :mob, id} to {:unit, id}, never a bare :self" do
+      stub_skill(9003, :fake_skill, CastOnly)
+
+      assert Executor.execute(mob(), row(%{skill_id: 9003, target: :self})) == :ok
+      assert_received {:cast, 5001, {:unit, 5001}, 3, 9003}
+    end
+
+    test "a ground-definition skill centers its cell on a unit-shaped target row" do
+      stub_skill(9007, :fake_skill, CastOnly, %{target_type: :ground})
+      stub_living_player_target()
+      stub(SpatialIndex, :get_unit_position, fn :player, 42 -> {:ok, {200, 201, @map}} end)
+
+      assert Executor.execute(mob(), row(%{skill_id: 9007, target: :target})) == :ok
+      assert_received {:cast, 5001, {:ground, 200, 201}, 3, 9007}
+    end
+
+    test "a ground-definition skill with a self-target row centers on the caster's own cell" do
+      stub_skill(9008, :fake_skill, CastOnly, %{target_type: :ground})
+      reject(&SpatialIndex.get_unit_position/2)
+
+      assert Executor.execute(mob(), row(%{skill_id: 9008, target: :self})) == :ok
+      assert_received {:cast, 5001, {:ground, 100, 100}, 3, 9008}
+    end
+
+    test "a ground-definition skill aborts with :no_target when the unit's cell cannot be resolved" do
+      stub_skill(9009, :fake_skill, CastOnly, %{target_type: :ground})
+      stub_living_player_target()
+      stub(SpatialIndex, :get_unit_position, fn :player, 42 -> {:error, :not_found} end)
+
+      assert Executor.execute(mob(), row(%{skill_id: 9009, target: :target})) ==
+               {:error, :no_target}
+
+      refute_received {:cast, _, _, _, _}
+    end
+
+    test "prefers mob_cast/5 over cast/4 when the module exports it, with the raw target and full row" do
+      stub_skill(9004, :fake_skill, MobCastPreferred)
+      stub_living_player_target()
+
+      assert Executor.execute(mob(), row(%{skill_id: 9004, target: :target})) == :ok
+      assert_received {:mob_cast, 5001, {:unit, :player, 42}, 3, 9004, 9004}
+    end
+
+    test "aborts cleanly on a failed validate/4, never running cast/4 or mob_cast/5" do
+      stub_skill(9005, :fake_skill, ValidateAborts)
+
+      assert Executor.execute(mob(), row(%{skill_id: 9005, target: :self})) ==
+               {:error, :not_allowed}
+    end
+
+    test "is a no-op when the skill id is not in the catalog" do
+      assert Executor.execute(mob(), row(%{skill_id: 999_999, target: :self})) == :ok
+    end
+
+    test "is a no-op when the skill has no active module" do
+      stub(SkillCatalog, :by_id, fn 9006 -> {:ok, definition(%{id: 9006, name: :no_active})} end)
+      stub(SkillCatalog, :active_module_for, fn :no_active -> :error end)
+
+      assert Executor.execute(mob(), row(%{skill_id: 9006, target: :self})) == :ok
     end
 
     test "propagates a target resolution error without dispatching" do
-      reject(&Combat.execute_magic_damage/4)
+      reject(&Combat.execute_magic_attack/3)
 
       assert Executor.execute(mob(%{target_id: nil}), row()) == {:error, :no_target}
-    end
-
-    test "dispatches a ground-target skill to its archetype module" do
-      caster = mob()
-      test_pid = self()
-      reject(&Combat.execute_magic_damage/4)
-
-      expect(GroundNuke, :apply, fn passed_caster, {:ground, 100, 100, :around}, params, 3 ->
-        assert passed_caster.instance_id == caster.instance_id
-        assert params.skill == "WZ_METEOR"
-        send(test_pid, :dispatched)
-        :ok
-      end)
-
-      assert Executor.execute(caster, row(%{skill: "WZ_METEOR", target: :around})) == :ok
-      assert_received :dispatched
-    end
-
-    test "skips a stub skill as a no-op" do
-      assert Executor.execute(mob(), row(%{skill: "NPC_EMOTION", target: :self})) == :ok
     end
 
     test "fires the mob emote on a successfully-resolved cast when the row has one" do
       caster = mob()
       stub_living_player_target()
-
-      stub(Combat, :execute_magic_damage, fn _caster, _target, _amount, _opts -> :ok end)
 
       expect(Emote, :show, fn {:mob, instance_id}, 3 ->
         assert instance_id == caster.instance_id
@@ -275,21 +386,19 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
       stub_living_player_target()
       reject(&Emote.show/2)
 
-      stub(Combat, :execute_magic_damage, fn _caster, _target, _amount, _opts -> :ok end)
-
       assert Executor.execute(mob(), row(%{emotion: nil})) == :ok
     end
 
     test "does not fire an emote when target resolution fails" do
       reject(&Emote.show/2)
-      reject(&Combat.execute_magic_damage/4)
+      reject(&Combat.execute_magic_attack/3)
 
       assert Executor.execute(mob(%{target_id: nil}), row(%{emotion: 3})) == {:error, :no_target}
     end
   end
 
   describe "broadcast_casting/2" do
-    test "broadcasts a SkillCasting packet from the caster cell" do
+    test "broadcasts a SkillCasting packet with property from the skill's element" do
       test_pid = self()
 
       expect(Broadcast, :to_in_range, fn @map, 100, 100, range, packet ->
@@ -298,7 +407,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
         :ok
       end)
 
-      assert Executor.broadcast_casting(mob(), row()) == :ok
+      assert Executor.broadcast_casting(mob(), row(%{skill_id: 19})) == :ok
 
       fire = ElementModifiers.id(:fire)
 
@@ -306,13 +415,13 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
                        %SkillCasting{
                          src_id: 5001,
                          target_id: 42,
-                         skill_id: 186,
+                         skill_id: 19,
                          property: ^fire,
                          cast_time: 800
                        }}
     end
 
-    test "uses property 0 and target 0 for a skill without an element and no target" do
+    test "uses property 0 and target 0 for a skill unresolvable in the skill catalog and no target" do
       test_pid = self()
 
       expect(Broadcast, :to_in_range, fn @map, 100, 100, _range, packet ->
@@ -322,8 +431,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
 
       caster = mob(%{target_id: nil})
 
-      assert Executor.broadcast_casting(caster, row(%{skill: "AL_TELEPORT", target: :self})) ==
-               :ok
+      assert Executor.broadcast_casting(caster, row()) == :ok
 
       assert_received {:packet, %SkillCasting{target_id: 0, property: 0}}
     end

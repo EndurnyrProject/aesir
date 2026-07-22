@@ -36,7 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlTeleport do
   @impl Active
   @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, Active.caster()} | {:error, atom()}
-  def cast(%MobState{process_pid: pid} = caster, :self, _level, _definition) do
+  def cast(%MobState{process_pid: pid} = caster, _target, _level, _definition) do
     MobSession.teleport(pid)
     {:ok, caster}
   end

@@ -111,6 +111,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlTeleportTest do
 
       assert {:ok, ^mob} = AlTeleport.cast(mob, :self, 2, definition)
     end
+
+    test "matches the executor's adapted unit-self target" do
+      {:ok, definition} = Catalog.by_id(26)
+      mob = mob_caster()
+
+      expect(MobSession, :teleport, fn pid ->
+        assert pid == mob.process_pid
+        :ok
+      end)
+
+      assert {:ok, ^mob} = AlTeleport.cast(mob, {:unit, mob.instance_id}, 1, definition)
+    end
   end
 
   defp mob_caster do
