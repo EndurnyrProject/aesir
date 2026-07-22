@@ -9,6 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit
@@ -18,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.View
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   setup :setup_ets_tables
@@ -122,6 +125,56 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
       map_name: "prontera",
       x: 50,
       y: 60
+    }
+  end
+
+  defp mob_caster do
+    %MobState{
+      instance_id: 3_000,
+      mob_id: 1002,
+      mob_data: %MobDefinition{
+        id: 1002,
+        aegis_name: "TEST_MOB",
+        name: "TestMob",
+        level: 1,
+        hp: 100,
+        sp: 50,
+        base_exp: 10,
+        job_exp: 5,
+        atk: 10,
+        matk: 0,
+        def: 5,
+        mdef: 0,
+        stats: %{str: 10, agi: 10, vit: 10, int: 0, dex: 10, luk: 5},
+        attack_range: 1,
+        skill_range: 10,
+        chase_range: 12,
+        element: {:water, 1},
+        race: :formless,
+        size: :medium,
+        walk_speed: 200,
+        attack_delay: 1000,
+        attack_motion: 500,
+        client_attack_motion: 500,
+        damage_motion: 400,
+        ai_type: 0,
+        modes: [],
+        drops: []
+      },
+      spawn_ref: %MobSpawn{
+        mob: 1002,
+        amount: 1,
+        respawn_time: 5_000,
+        spawn_area: %MobSpawn.SpawnArea{x: 50, y: 60, xs: 0, ys: 0}
+      },
+      x: 50,
+      y: 60,
+      map_name: "prontera",
+      hp: 100,
+      max_hp: 100,
+      sp: 50,
+      max_sp: 50,
+      spawned_at: System.monotonic_time(:millisecond)
     }
   end
 
@@ -271,6 +324,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
 
       assert_received {:broadcast, %GroundSkill{} = packet}
       assert packet.skill_id == definition.id
+    end
+
+    test "derives group identity fields from a mob caster" do
+      stub(Broadcast, :to_in_range, fn _, _, _, _, _ -> :ok end)
+
+      {:ok, %Group{} = group} = Unit.place(mob_caster(), @skill_name, 5, {100, 120})
+
+      assert group.caster_id == 3_000
+      assert group.caster_type == :mob
+      assert group.map_name == "prontera"
+      assert group.center == {100, 120}
     end
 
     test "returns an error for an unregistered skill" do

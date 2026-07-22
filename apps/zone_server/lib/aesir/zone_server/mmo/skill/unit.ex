@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.View
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @doc """
@@ -33,9 +34,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
   ground-unit behaviour, or `{:error, :unknown_skill}` when the skill name is not
   in the catalog.
   """
-  @spec place(PlayerState.t(), atom(), non_neg_integer(), {integer(), integer()}) ::
+  @spec place(PlayerState.t() | MobState.t(), atom(), non_neg_integer(), {integer(), integer()}) ::
           {:ok, Group.t()} | {:error, term()}
-  def place(%PlayerState{} = caster_state, skill_name, level, {x, y}) do
+  def place(caster_state, skill_name, level, {x, y}) do
     with {:ok, _module} <- module_for(skill_name),
          {:ok, definition} <- skill_definition(skill_name) do
       caster_state
@@ -132,18 +133,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
     end
   end
 
-  defp build_group(%PlayerState{} = caster_state, skill_id, skill_name, level, {x, y}) do
+  defp build_group(caster_state, skill_id, skill_name, level, {x, y}) do
+    {caster_id, caster_type} = caster_identity(caster_state)
+
     %Group{
       group_id: System.unique_integer([:monotonic, :positive]),
       skill_id: skill_id,
       skill_name: skill_name,
       level: level,
-      caster_id: caster_state.character_id,
-      caster_type: :player,
+      caster_id: caster_id,
+      caster_type: caster_type,
       map_name: caster_state.map_name,
       center: {x, y}
     }
   end
+
+  defp caster_identity(%PlayerState{character_id: character_id}), do: {character_id, :player}
+  defp caster_identity(%MobState{instance_id: instance_id}), do: {instance_id, :mob}
 
   defp accepted_cells(map_name, cells, origin, path_check?) do
     case MapCache.get(map_name) do
