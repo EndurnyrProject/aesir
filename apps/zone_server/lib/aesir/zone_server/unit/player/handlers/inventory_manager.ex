@@ -78,6 +78,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
   end
 
   @doc """
+  GenServer-native entry point for the session's `{:give_item, ...}` cast.
+
+  Wraps `handle_give_item/3`, discarding the error reason on failure and
+  returning the untouched state, so a lost add never crashes or stalls the
+  session. `PickupHandler` calls `handle_give_item/3` directly instead: it
+  needs the error reason to re-place a claimed ground item.
+  """
+  @spec handle_give_item_cast(ItemDefinition.t(), pos_integer(), map()) :: {:noreply, map()}
+  def handle_give_item_cast(item_def, amount, state) do
+    case handle_give_item(item_def, amount, state) do
+      {:ok, new_state} -> {:noreply, new_state}
+      {:error, _reason, unchanged_state} -> {:noreply, unchanged_state}
+    end
+  end
+
+  @doc """
   Breaks the item equipped in `slot` via the single-writer handler, then
   notifies the owner (red system message) and syncs the now broken/unequipped
   row to the client. A break of an empty/invalid slot leaves state untouched

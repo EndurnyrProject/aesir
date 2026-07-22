@@ -92,6 +92,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   end
 
   @doc """
+  GenServer-native entry point for the session's `{:warp, ...}` cast.
+
+  Wraps `warp/4`, returning `{:noreply, new_state}` on success. On
+  `{:error, reason}` it logs the failure and returns `{:noreply, state}`
+  unchanged, so a bad destination never crashes or stalls the session.
+  """
+  @spec handle_warp(String.t(), non_neg_integer(), non_neg_integer(), session_state()) ::
+          {:noreply, session_state()}
+  def handle_warp(dest_map, x, y, %{game_state: game_state} = state) do
+    case warp(state, dest_map, x, y) do
+      {:ok, new_state} ->
+        {:noreply, new_state}
+
+      {:error, reason} ->
+        Logger.warning(
+          "Warp failed for #{game_state.character_id} to #{dest_map} (#{x}, #{y}): #{inspect(reason)}"
+        )
+
+        {:noreply, state}
+    end
+  end
+
+  @doc """
   Drops the player from its current map: vanishes it for every observer with the
   given despawn `reason`, removes it from the spatial index and clears its
   visibility pairs. Shared by the warp and disconnect paths.

@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Unit.Player.QuestLog
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
   alias Aesir.ZoneServer.Unit.Player.QuestView
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.StatusSync
 
   @type op ::
@@ -67,6 +68,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           required(:game_state) => PlayerState.t(),
           optional(atom()) => term()
         }
+
+  @doc """
+  GenServer-native entry point for the session's `{:script_apply, op}` call.
+
+  Wraps `apply_op/2` and, on success, commits the new state to the unit
+  registry and party/guild views via `StateCommit.commit/2`; on
+  `{:error, reason}` the state is returned untouched.
+  """
+  @spec handle_script_apply(op(), state()) :: {:reply, reply(), state()}
+  def handle_script_apply(op, state) do
+    {reply, new_state} = apply_op(op, state)
+
+    case reply do
+      {:error, _reason} ->
+        {:reply, reply, new_state}
+
+      _ok_reply ->
+        {:reply, reply, StateCommit.commit(new_state, new_state.game_state)}
+    end
+  end
 
   @doc """
   Applies `op` to the session `state`, returning `{reply, new_state}`.

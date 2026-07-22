@@ -21,6 +21,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
 
   On spawn the sprite needs no explicit broadcast: it rides the spawn packet's
   `effect_state`, which `build_unit_spawn/1` folds from `StatusDisplay.spawn_state/2`.
+
+  `load_on_spawn/2` is an exception to the GenServer-native dispatch contract:
+  it runs inside `init/1`, before the GenServer loop starts, so it takes and
+  returns bare session `state` rather than a GenServer tuple — a lifecycle
+  helper, not a dispatch entry point.
   """
 
   require Logger

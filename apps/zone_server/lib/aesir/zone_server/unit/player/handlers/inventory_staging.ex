@@ -17,6 +17,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryStaging do
   commits a skill's work: `SkillHandler.commit_cast/5` for a cast, and
   `SkillMenuHandler` for a menu reply, which produces items without a cast to
   ride on.
+
+  `drain/2` is an exception to the GenServer-native dispatch contract: it takes
+  and returns bare `PlayerState`, not session state, as a helper called from
+  inside those handlers' dispatch bodies rather than a `handle_cast`/`handle_call`
+  clause itself.
   """
 
   require Logger

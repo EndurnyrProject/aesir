@@ -652,18 +652,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @impl true
   def handle_cast({:warp, map_name, x, y}, state) do
-    case WarpHandler.warp(state, map_name, x, y) do
-      {:ok, new_state} -> {:noreply, new_state}
-      {:error, _reason} -> {:noreply, state}
-    end
+    WarpHandler.handle_warp(map_name, x, y, state)
   end
 
   @impl true
   def handle_cast({:give_item, item_def, amount}, state) do
-    case InventoryManager.handle_give_item(item_def, amount, state) do
-      {:ok, new_state} -> {:noreply, new_state}
-      {:error, _reason, unchanged_state} -> {:noreply, unchanged_state}
-    end
+    InventoryManager.handle_give_item_cast(item_def, amount, state)
   end
 
   @impl true
@@ -902,15 +896,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @impl true
   def handle_call({:script_apply, op}, _from, state) do
-    {reply, new_state} = ScriptEffectHandler.apply_op(op, state)
-
-    case reply do
-      {:error, _reason} ->
-        {:reply, reply, new_state}
-
-      _ok_reply ->
-        {:reply, reply, update_game_state(new_state, new_state.game_state)}
-    end
+    ScriptEffectHandler.handle_script_apply(op, state)
   end
 
   @impl true
