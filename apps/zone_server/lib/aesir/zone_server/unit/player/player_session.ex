@@ -24,7 +24,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Lifecycle
-  alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.GuildSync
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
@@ -701,25 +700,17 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     VisibilityHandler.left_view(other_char_id, state)
   end
 
-  # Movement: knockback landing, the forced-stop cast (skill/stun interrupts),
-  # the walk-delay cast (post-hit slow) - all three update movement state
-  # directly rather than routing through MovementHandler's request/tick path -
-  # and the warp cast (on-touch warp NPCs, AL_WARP, GM @warp).
+  # Movement: the knockback landing delegates to MovementHandler, which routes
+  # through the shared Unit.Session.Motion (stop + position-set, identical to
+  # the mob path). The walk-delay cast (post-hit slow) applies its bookkeeping
+  # here then delegates its stop to the same force-stop path as the
+  # forced-stop cast (skill/stun interrupts) - deliberately not through
+  # Motion, since a player's stop is conditional and sends a client-visible
+  # packet (see Unit.Session.Motion's moduledoc). The warp cast (on-touch warp
+  # NPCs, AL_WARP, GM @warp) delegates too.
   @impl true
-  def handle_cast({:movement, {:knocked_back, x, y}}, %{game_state: game_state} = state) do
-    updated_game_state =
-      game_state
-      |> PlayerState.update_position(x, y)
-      |> PlayerState.stop_walking()
-
-    Movement.set_position(
-      :player,
-      updated_game_state.character_id,
-      updated_game_state,
-      updated_game_state.map_name
-    )
-
-    {:noreply, %{state | game_state: updated_game_state}}
+  def handle_cast({:movement, {:knocked_back, x, y}}, state) do
+    MovementHandler.handle_knocked_back(state, x, y)
   end
 
   @impl true

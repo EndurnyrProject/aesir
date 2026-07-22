@@ -20,7 +20,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.ZoneServer.Unit.Mob.SessionAdapter
   alias Aesir.ZoneServer.Unit.Mob.SpawnView
   alias Aesir.ZoneServer.Unit.Mob.StealOps
-  alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Session.Vitals
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
@@ -261,9 +260,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     CastingHandler.handle_status_changed(status_id, event, state)
   end
 
-  # Movement: pathing kickoff, the instant teleport reposition, the walk-delay
-  # slow, and the knockback landing - the latter three update movement state
-  # directly rather than routing through MovementHandler's request/tick path.
+  # Movement: pathing kickoff, the instant teleport reposition, and the
+  # knockback landing all delegate to MovementHandler - the latter routes
+  # through the shared Unit.Session.Motion (stop + position-set, identical to
+  # the player path). The walk-delay slow stays inline: it is not the same
+  # operation as knockback (see Unit.Session.Motion's moduledoc for why).
   @impl GenServer
   def handle_cast({:movement, {:move_to, x, y}}, state) do
     MovementHandler.handle_move_to(state, x, y)
@@ -279,14 +280,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   def handle_cast({:movement, {:knocked_back, x, y}}, state) do
-    updated_state =
-      state
-      |> MobState.update_position(x, y)
-      |> MobState.stop_movement()
-
-    Movement.set_position(:mob, updated_state.instance_id, updated_state, updated_state.map_name)
-
-    {:noreply, updated_state}
+    MovementHandler.handle_knocked_back(state, x, y)
   end
 
   # Combat: damage application (death handling lives in CombatHandler).

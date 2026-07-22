@@ -46,6 +46,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionAdapter
+  alias Aesir.ZoneServer.Unit.Session.Motion
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.StaticEntity
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -546,6 +548,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     else
       {:noreply, state}
     end
+  end
+
+  @doc """
+  Lands the player at `{x, y}` after a knockback.
+
+  Routes through the shared `Unit.Session.Motion`: stops the in-flight walk,
+  then writes and publishes the new position via `Unit.Movement.set_position/4`.
+  """
+  @spec handle_knocked_back(map(), integer(), integer()) :: {:noreply, map()}
+  def handle_knocked_back(state, x, y) do
+    {:noreply, Motion.knocked_back(state, x, y, SessionAdapter)}
   end
 
   defp broadcast_stop_to_nearby(game_state, packet) do
