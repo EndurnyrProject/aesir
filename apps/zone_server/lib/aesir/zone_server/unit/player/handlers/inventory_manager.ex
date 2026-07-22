@@ -5,12 +5,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
 
   require Logger
 
+  alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Announcement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.Player.Handlers.BreakOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
 
   @doc """
@@ -73,6 +78,44 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
   end
 
   @doc """
+  Breaks the item equipped in `slot` via the single-writer handler, then
+  notifies the owner (red system message) and syncs the now broken/unequipped
+  row to the client. A break of an empty/invalid slot leaves state untouched
+  and sends nothing.
+  """
+  @spec handle_break_equip(atom(), map()) :: {:noreply, map()}
+  def handle_break_equip(slot, %{game_state: game_state} = state) do
+    case BreakOps.break(game_state, slot) do
+      {:ok, new_game_state, broken_item} ->
+        announce_break(new_game_state.character_id, broken_item)
+        push_broken_item(state.connection_pid, new_game_state, broken_item)
+        {:noreply, StateCommit.commit(state, new_game_state)}
+
+      {:error, _reason} ->
+        {:noreply, state}
+    end
+  end
+
+  @doc """
+  Clears every broken item on this session and re-syncs the affected rows to
+  the client. The GM `@repairall` command casts this to the resolved target
+  session; the DSL `repairall` op reaches repair via the script-apply seam.
+  """
+  @spec handle_repair_all(map()) :: {:noreply, map()}
+  def handle_repair_all(%{game_state: game_state} = state) do
+    broken_indices = for {index, %InventoryItem{attribute: 1}} <- game_state.inventory, do: index
+
+    case BreakOps.repair_all(game_state) do
+      {:ok, new_game_state} ->
+        push_repaired_items(state.connection_pid, new_game_state, broken_indices)
+        {:noreply, StateCommit.commit(state, new_game_state)}
+
+      {:error, _reason} ->
+        {:noreply, state}
+    end
+  end
+
+  @doc """
   Emits an `ItemAdded` to `connection_pid` for every slot `change` touched,
   reading each affected item from `inventory`.
 
@@ -100,4 +143,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
 
   def affected_indices({:split, [{topped_index, _}, {new_index, _}]}),
     do: [topped_index, new_index]
+
+  defp announce_break(character_id, %InventoryItem{nameid: nameid}) do
+    {:ok, definition} = Items.by_id(nameid)
+
+    Announcement.to_self(character_id, %{
+      text: "Your #{definition.name} has broken!",
+      color: 0xFF0000,
+      style: :LOCAL,
+      source_name: ""
+    })
+  end
+
+  defp push_broken_item(connection_pid, game_state, %InventoryItem{id: id} = broken_item) do
+    index = Enum.find_value(game_state.inventory, fn {i, item} -> if item.id == id, do: i end)
+    MessageRouter.send_to(connection_pid, InventoryView.item_added(broken_item, index))
+  end
+
+  defp push_repaired_items(connection_pid, game_state, indices) do
+    Enum.each(indices, fn index ->
+      item = Map.get(game_state.inventory, index)
+      MessageRouter.send_to(connection_pid, InventoryView.item_added(item, index))
+    end)
+  end
 end
