@@ -46,6 +46,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.State, as: PartyState
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -274,7 +275,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
 
   defp ack_and_attach(state, action, {:ok, %PartyState{} = party_state} = result) do
     state
-    |> PlayerSession.attach_to_party(party_state)
+    |> SocialHandler.attach_to_party(party_state)
     |> ack_result(action, result)
   end
 

@@ -14,10 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   require Logger
 
   alias Aesir.Commons.Models.InventoryItem
-  alias Aesir.Net.GuildDisbanded
-  alias Aesir.Net.GuildEmblemChanged
   alias Aesir.Net.ItemVanished
-  alias Aesir.Net.PartyDisbanded
   alias Aesir.Net.SkillUnitDespawn
   alias Aesir.Net.UnitDespawn
   alias Aesir.Net.UnitSpawn
@@ -27,9 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Constants.ObjectType
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
-  alias Aesir.ZoneServer.Guild.Member, as: GuildMember
   alias Aesir.ZoneServer.Guild.State, as: GuildState
-  alias Aesir.ZoneServer.Guild.View, as: GuildView
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
@@ -41,10 +36,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Network.MessageRouter
-  alias Aesir.ZoneServer.Party.Manager, as: PartyManager
-  alias Aesir.ZoneServer.Party.Member, as: PartyMember
-  alias Aesir.ZoneServer.Party.State, as: PartyState
-  alias Aesir.ZoneServer.Party.View, as: PartyView
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Movement
@@ -66,6 +57,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
@@ -303,54 +295,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.call(pid, {:deliver_guild_invite, invite})
   end
 
-  @doc """
-  Subscribes the calling session to a party it just created or joined
-  mid-session, updates `game_state.party_id`, and sends the initial
-  `PartyInfo` snapshot. Must run inside the owning `PlayerSession` process
-  (e.g. from `PartyHandler`, which executes inline during packet dispatch).
-  Mirrors login attachment by subscribing before publishing the player's
-  complete online snapshot, so the full roster reaches the client before the
-  queued self-update is handled.
-  """
-  @spec attach_to_party(map(), PartyState.t()) :: map()
-  def attach_to_party(%{game_state: game_state} = state, %PartyState{} = party_state) do
-    PubSub.subscribe(Aesir.PubSub, "party:#{party_state.party_id}")
-
-    state = update_game_state(state, %{game_state | party_id: party_state.party_id})
-
-    case sync_and_send_party(state, party_state.party_id) do
-      {:ok, state} ->
-        state
-
-      {:error, _reason} ->
-        PubSub.unsubscribe(Aesir.PubSub, "party:#{party_state.party_id}")
-        reconcile_missing_party(state)
-    end
-  end
-
-  @doc """
-  Subscribes the calling session to a guild it just created or joined
-  mid-session, updates `game_state.guild_id`, pushes the live presence snapshot
-  into the (already-started) guild entry, and sends the resulting `GuildInfo`.
-  Must run inside the owning `PlayerSession` process (from `GuildHandler`, which
-  executes inline during packet dispatch). Mirrors `attach_to_party/2`.
-  """
-  @spec attach_to_guild(map(), GuildState.t()) :: map()
-  def attach_to_guild(%{game_state: game_state} = state, %GuildState{guild_id: guild_id}) do
-    PubSub.subscribe(Aesir.PubSub, "guild:#{guild_id}")
-
-    state = update_game_state(state, %{game_state | guild_id: guild_id})
-
-    case sync_and_send_guild(state, guild_id) do
-      {:ok, state} ->
-        state
-
-      {:error, _reason} ->
-        PubSub.unsubscribe(Aesir.PubSub, "guild:#{guild_id}")
-        reconcile_missing_guild(state)
-    end
-  end
-
   @impl true
   def init(args) do
     character = args[:character]
@@ -396,12 +340,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # character is party'd. A missing party row or a live party that no
     # longer lists this character (kicked while offline) silently resets
     # `party_id` back to 0 instead of subscribing (design "Login/logout").
-    state = subscribe_party(state)
+    state = SocialHandler.subscribe_party(state)
 
     # Subscribe to the guild topic and push an online presence snapshot for a
     # character already in a guild at login (mirrors `subscribe_party`); a no-op
     # when the player has no guild.
-    state = subscribe_guild(state)
+    state = SocialHandler.subscribe_guild(state)
 
     # Subscribe to mob despawns on this map so we can drop a combat target
     # when the mob we were attacking dies.
@@ -586,135 +530,49 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     ExperienceHandler.handle_gain_exp(base, job, mob_race, state)
   end
 
-  # A membership or option change on our own live party: relay the fresh
-  # `PartyInfo` snapshot. If we're no longer listed among the members (an
-  # ordinary kick/leave while online), unsubscribe and clear `party_id`
-  # instead so the topic subscription doesn't leak (design "Flows": Kick,
-  # Leave).
   @impl true
-  def handle_info(
-        {:party_updated, %PartyState{party_id: party_id} = party_state},
-        %{game_state: %{party_id: party_id, character_id: char_id} = game_state} = state
-      ) do
-    if Map.has_key?(party_state.members, char_id) do
-      MessageRouter.send_to(state.connection_pid, PartyView.party_info(party_state))
-      {:noreply, state}
-    else
-      PubSub.unsubscribe(Aesir.PubSub, "party:#{party_id}")
-      {:noreply, update_game_state(state, %{game_state | party_id: 0})}
-    end
-  end
-
-  # A stale broadcast for a party we've already left/switched away from.
-  @impl true
-  def handle_info({:party_updated, %PartyState{}}, state), do: {:noreply, state}
-
-  @impl true
-  def handle_info(
-        {:party_member_updated, party_id, %PartyMember{} = member},
-        %{game_state: %{party_id: party_id}} = state
-      ) do
-    MessageRouter.send_to(state.connection_pid, PartyView.member_update(party_id, member))
-    {:noreply, state}
+  def handle_info({:party_updated, party_state}, state) do
+    SocialHandler.party_updated(party_state, state)
   end
 
   @impl true
-  def handle_info({:party_member_updated, _party_id, %PartyMember{}}, state),
-    do: {:noreply, state}
-
-  @impl true
-  def handle_info(
-        {:party_disbanded, party_id, reason},
-        %{game_state: %{party_id: party_id} = game_state} = state
-      ) do
-    MessageRouter.send_to(state.connection_pid, %PartyDisbanded{
-      party_id: party_id,
-      reason: reason
-    })
-
-    PubSub.unsubscribe(Aesir.PubSub, "party:#{party_id}")
-    {:noreply, update_game_state(state, %{game_state | party_id: 0})}
+  def handle_info({:party_member_updated, party_id, member}, state) do
+    SocialHandler.party_member_updated(party_id, member, state)
   end
 
   @impl true
-  def handle_info({:party_disbanded, _party_id, _reason}, state), do: {:noreply, state}
+  def handle_info({:party_disbanded, party_id, reason}, state) do
+    SocialHandler.party_disbanded(party_id, reason, state)
+  end
 
   @impl true
   def handle_info(:party_invite_expired, state) do
-    {:noreply, Map.delete(state, :pending_party_invite)}
-  end
-
-  # A membership, position, or notice change on our own live guild: relay the
-  # fresh `GuildInfo` snapshot. If we're no longer listed among the members (an
-  # expel/leave while online), unsubscribe and clear `guild_id` so the topic
-  # subscription doesn't leak (design "Expel / leave / disband").
-  @impl true
-  def handle_info(
-        {:guild_updated, %GuildState{guild_id: guild_id} = guild_state},
-        %{game_state: %{guild_id: guild_id, character_id: char_id} = game_state} = state
-      ) do
-    if Map.has_key?(guild_state.members, char_id) do
-      MessageRouter.send_to(state.connection_pid, GuildView.guild_info(guild_state))
-      {:noreply, state}
-    else
-      PubSub.unsubscribe(Aesir.PubSub, "guild:#{guild_id}")
-      {:noreply, update_game_state(state, %{game_state | guild_id: 0})}
-    end
-  end
-
-  # A stale broadcast for a guild we've already left/switched away from.
-  @impl true
-  def handle_info({:guild_updated, %GuildState{}}, state), do: {:noreply, state}
-
-  @impl true
-  def handle_info(
-        {:guild_member_updated, guild_id, %GuildMember{} = member},
-        %{game_state: %{guild_id: guild_id}} = state
-      ) do
-    MessageRouter.send_to(state.connection_pid, GuildView.member_update(guild_id, member))
-    {:noreply, state}
+    SocialHandler.party_invite_expired(state)
   end
 
   @impl true
-  def handle_info({:guild_member_updated, _guild_id, %GuildMember{}}, state),
-    do: {:noreply, state}
-
-  @impl true
-  def handle_info(
-        {:guild_disbanded, guild_id, reason},
-        %{game_state: %{guild_id: guild_id} = game_state} = state
-      ) do
-    MessageRouter.send_to(state.connection_pid, %GuildDisbanded{
-      guild_id: guild_id,
-      reason: reason
-    })
-
-    PubSub.unsubscribe(Aesir.PubSub, "guild:#{guild_id}")
-    {:noreply, update_game_state(state, %{game_state | guild_id: 0})}
+  def handle_info({:guild_updated, guild_state}, state) do
+    SocialHandler.guild_updated(guild_state, state)
   end
 
   @impl true
-  def handle_info({:guild_disbanded, _guild_id, _reason}, state), do: {:noreply, state}
-
-  @impl true
-  def handle_info(
-        {:guild_emblem_changed, guild_id, emblem_id},
-        %{game_state: %{guild_id: guild_id}} = state
-      ) do
-    MessageRouter.send_to(state.connection_pid, %GuildEmblemChanged{
-      guild_id: guild_id,
-      emblem_id: emblem_id
-    })
-
-    {:noreply, state}
+  def handle_info({:guild_member_updated, guild_id, member}, state) do
+    SocialHandler.guild_member_updated(guild_id, member, state)
   end
 
   @impl true
-  def handle_info({:guild_emblem_changed, _guild_id, _emblem_id}, state), do: {:noreply, state}
+  def handle_info({:guild_disbanded, guild_id, reason}, state) do
+    SocialHandler.guild_disbanded(guild_id, reason, state)
+  end
+
+  @impl true
+  def handle_info({:guild_emblem_changed, guild_id, emblem_id}, state) do
+    SocialHandler.guild_emblem_changed(guild_id, emblem_id, state)
+  end
 
   @impl true
   def handle_info(:guild_invite_expired, state) do
-    {:noreply, Map.delete(state, :pending_guild_invite)}
+    SocialHandler.guild_invite_expired(state)
   end
 
   @impl true
@@ -1303,106 +1161,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   defp register_player(%PlayerState{} = game_state),
     do: UnitRegistry.register_player(game_state, self())
-
-  defp subscribe_party(%{game_state: %{party_id: 0}} = state), do: state
-
-  defp subscribe_party(%{game_state: %{party_id: party_id}} = state) do
-    with {:ok, _party_state} <- PartyManager.ensure_started(party_id),
-         :ok <- PubSub.subscribe(Aesir.PubSub, "party:#{party_id}"),
-         {:ok, state} <- sync_and_send_party(state, party_id) do
-      state
-    else
-      {:error, _reason} ->
-        PubSub.unsubscribe(Aesir.PubSub, "party:#{party_id}")
-        reconcile_missing_party(state)
-    end
-  end
-
-  defp sync_and_send_party(%{game_state: game_state} = state, party_id) do
-    case PartySync.sync(game_state, online: true) do
-      :ok ->
-        send_current_party(state, party_id)
-
-      {:error, reason} when reason in [:not_member, :not_found] ->
-        {:error, reason}
-
-      {:error, reason} ->
-        Logger.warning(
-          "Failed to synchronize party state for character #{game_state.character_id}: #{inspect(reason)}"
-        )
-
-        send_current_party(state, party_id)
-    end
-  end
-
-  defp send_current_party(state, party_id) do
-    case PartyManager.get(party_id) do
-      {:ok, party_state} ->
-        MessageRouter.send_to(state.connection_pid, PartyView.party_info(party_state))
-        {:ok, state}
-
-      {:error, _reason} = error ->
-        error
-    end
-  end
-
-  defp send_current_guild(state, guild_id) do
-    case GuildManager.get(guild_id) do
-      {:ok, guild_state} ->
-        MessageRouter.send_to(state.connection_pid, GuildView.guild_info(guild_state))
-        state
-
-      {:error, _reason} ->
-        state
-    end
-  end
-
-  defp subscribe_guild(%{game_state: %{guild_id: 0}} = state), do: state
-
-  defp subscribe_guild(%{game_state: %{guild_id: guild_id}} = state) do
-    with {:ok, _guild_state} <- GuildManager.ensure_started(guild_id),
-         :ok <- PubSub.subscribe(Aesir.PubSub, "guild:#{guild_id}"),
-         {:ok, state} <- sync_and_send_guild(state, guild_id) do
-      state
-    else
-      {:error, _reason} ->
-        PubSub.unsubscribe(Aesir.PubSub, "guild:#{guild_id}")
-        reconcile_missing_guild(state)
-    end
-  end
-
-  defp sync_and_send_guild(%{game_state: game_state} = state, guild_id) do
-    case GuildSync.sync(game_state, online: true) do
-      :ok ->
-        {:ok, send_current_guild(state, guild_id)}
-
-      {:error, reason} when reason in [:not_member, :not_found] ->
-        {:error, reason}
-
-      {:error, reason} ->
-        Logger.warning(
-          "Failed to synchronize guild state for character #{game_state.character_id}: #{inspect(reason)}"
-        )
-
-        {:ok, send_current_guild(state, guild_id)}
-    end
-  end
-
-  # Kicked-while-offline reconciliation: the party row is gone, or the
-  # character no longer appears in a still-live party's member list. Silent
-  # per design ("Login/logout") -- no ack, just a fire-and-forget persist.
-  defp reconcile_missing_party(%{game_state: game_state} = state) do
-    CharacterPersistence.update_character(game_state.character_id, %{party_id: 0}, async: true)
-    update_game_state(state, %{game_state | party_id: 0})
-  end
-
-  # Guild disbanded while the character was offline: the guild entry can no
-  # longer be rebuilt, so silently reset `guild_id` back to 0 (mirrors
-  # `reconcile_missing_party`).
-  defp reconcile_missing_guild(%{game_state: game_state} = state) do
-    CharacterPersistence.update_character(game_state.character_id, %{guild_id: 0}, async: true)
-    update_game_state(state, %{game_state | guild_id: 0})
-  end
 
   defp sex_to_int("F"), do: 0
   defp sex_to_int("M"), do: 1

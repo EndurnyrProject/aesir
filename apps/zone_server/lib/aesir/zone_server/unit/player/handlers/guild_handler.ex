@@ -59,6 +59,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -87,7 +88,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
       new_state =
         state
         |> consume_emperium()
-        |> PlayerSession.attach_to_guild(guild_state)
+        |> SocialHandler.attach_to_guild(guild_state)
 
       {:ok, new_state}
     end
@@ -412,7 +413,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
 
   defp ack_and_attach(state, action, {:ok, %GuildState{} = guild_state} = result) do
     state
-    |> PlayerSession.attach_to_guild(guild_state)
+    |> SocialHandler.attach_to_guild(guild_state)
     |> ack_result(action, result)
   end
 
