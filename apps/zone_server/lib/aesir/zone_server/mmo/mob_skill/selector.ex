@@ -59,7 +59,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
     |> Enum.reject(&stub?/1)
     |> Enum.filter(fn row ->
       condition_holds?(row, mob_state, env) and
-        MobState.skill_ready?(mob_state, row.skill, now)
+        MobState.skill_ready?(mob_state, row.skill_id, now)
     end)
     |> Enum.find_value(fn row -> if rng.(10_000) <= row.rate, do: {:cast, row} end)
   end

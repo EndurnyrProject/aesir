@@ -59,13 +59,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     # Phase 1 only records the signal (no teleport/flee).
     field :rude_attack_count, integer(), default: 0
     field :rude_attacked?, boolean(), default: false
-    # Per-skill cooldown gate: `skill_name => expires_at` in the same
+    # Per-skill cooldown gate: `skill_id => expires_at` in the same
     # millisecond timestamp domain as the melee `last_attack_time` delay. The
     # `casting` map (`%{row: row, complete_at: ms, timer_ref: ref}`) marks an
     # in-progress cast; `timer_ref` is the pending `{:casting, :complete}` timer
     # so an interruption can cancel it. `master_id` links a summoned slave back
     # to its summoner's instance id.
-    field :skill_cooldowns, %{optional(String.t()) => integer()}, default: %{}
+    field :skill_cooldowns, %{optional(integer()) => integer()}, default: %{}
     field :casting, map() | nil, default: nil
     field :master_id, integer() | nil, default: nil
     # True until the first AI tick after spawn has run skill selection; that
@@ -412,24 +412,24 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   end
 
   @doc """
-  Records the per-skill cooldown gate: stores `expires_at` for `skill_name`.
+  Records the per-skill cooldown gate: stores `expires_at` for `skill_id`.
   `expires_at` is a millisecond timestamp in the same domain the caller uses
   for `skill_ready?/3`, following `Aesir.ZoneServer.Mmo.Skill.Cooldown`'s
   clock-agnostic lazy-comparison model (no time is read here).
   """
-  @spec put_skill_cooldown(t(), String.t(), integer()) :: t()
-  def put_skill_cooldown(%__MODULE__{skill_cooldowns: cooldowns} = state, skill_name, expires_at) do
-    %{state | skill_cooldowns: Map.put(cooldowns, skill_name, expires_at)}
+  @spec put_skill_cooldown(t(), integer(), integer()) :: t()
+  def put_skill_cooldown(%__MODULE__{skill_cooldowns: cooldowns} = state, skill_id, expires_at) do
+    %{state | skill_cooldowns: Map.put(cooldowns, skill_id, expires_at)}
   end
 
   @doc """
-  Returns `true` when `skill_name` has no cooldown entry or `now` has reached
+  Returns `true` when `skill_id` has no cooldown entry or `now` has reached
   the recorded `expires_at`. `now` is a millisecond timestamp in the same
   domain as `put_skill_cooldown/3`.
   """
-  @spec skill_ready?(t(), String.t(), integer()) :: boolean()
-  def skill_ready?(%__MODULE__{skill_cooldowns: cooldowns}, skill_name, now) do
-    case Map.fetch(cooldowns, skill_name) do
+  @spec skill_ready?(t(), integer(), integer()) :: boolean()
+  def skill_ready?(%__MODULE__{skill_cooldowns: cooldowns}, skill_id, now) do
+    case Map.fetch(cooldowns, skill_id) do
       :error -> true
       {:ok, expires_at} -> now >= expires_at
     end

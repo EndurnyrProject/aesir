@@ -141,7 +141,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       {:noreply, updated} = MobSession.handle_info({:ai, :tick}, build_mob_state())
 
       assert updated.casting == nil
-      assert updated.skill_cooldowns["NPC_FIREATTACK"] >= before + 5_000
+      assert updated.skill_cooldowns[186] >= before + 5_000
       refute_received {:casting, :complete}
     end
 
@@ -204,7 +204,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       {:noreply, updated} = MobSession.handle_info({:casting, :complete}, state)
 
       assert updated.casting == nil
-      assert updated.skill_cooldowns["NPC_FIREATTACK"] >= before + 5_000
+      assert updated.skill_cooldowns[186] >= before + 5_000
       assert updated.ai_timer_ref
     end
 
@@ -220,7 +220,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       {:noreply, updated} = MobSession.handle_info({:casting, :complete}, state)
 
       assert updated.casting == nil
-      assert updated.skill_cooldowns["NPC_FIREATTACK"] >= before + 5_000
+      assert updated.skill_cooldowns[186] >= before + 5_000
     end
 
     test "a dead mob ignores cast completion" do
@@ -253,7 +253,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       {:noreply, updated} = MobSession.handle_info({:casting, :complete}, state)
 
       assert updated.casting == nil
-      assert updated.skill_cooldowns["NPC_FIREATTACK"] >= before + 5_000
+      assert updated.skill_cooldowns[186] >= before + 5_000
       assert updated.ai_timer_ref
     end
   end
@@ -290,7 +290,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       {:reply, {:ok, _}, updated} = MobSession.handle_call({:casting, :interrupt}, self(), state)
 
       assert updated.casting == nil
-      assert updated.skill_cooldowns["NPC_FIREATTACK"] >= before + 5_000
+      assert updated.skill_cooldowns[186] >= before + 5_000
       assert_received {:packet, %CastCancel{gid: 1}}
       assert Process.cancel_timer(ref) == false
     end
@@ -441,7 +441,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
         MobSession.handle_cast({:casting, {:status_changed, :sc_silence, :apply}}, casting_state)
 
       assert updated.casting == nil
-      assert updated.skill_cooldowns["NPC_FIREATTACK"] >= before + 5_000
+      assert updated.skill_cooldowns[186] >= before + 5_000
       # The cancelled timer must never deliver {:casting, :complete} (window > cast_time).
       refute_receive {:casting, :complete}, 200
     end
@@ -488,7 +488,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       {:noreply, updated} = MobSession.handle_info({:ai, :tick}, state)
 
       assert updated.casting == nil
-      assert updated.skill_cooldowns["NPC_FIREATTACK"] >= before + 5_000
+      assert updated.skill_cooldowns[186] >= before + 5_000
       assert updated.ai_timer_ref
       refute_receive {:casting, :complete}, 200
     end

@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
   defp row(overrides \\ %{}) do
     base = %{
       skill: "NPC_FIREATTACK",
+      skill_id: 1,
       state: :attack,
       rate: 10_000,
       condition: %{type: :always}
@@ -146,13 +147,13 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
 
   describe "delay gate" do
     test "a row still on cooldown is excluded" do
-      mob = mob(%{skill_cooldowns: %{"NPC_FIREATTACK" => 5000}})
+      mob = mob(%{skill_cooldowns: %{1 => 5000}})
 
       assert Selector.select(mob, [row()], now: 1000, rng: hit()) == nil
     end
 
     test "a row whose cooldown has elapsed is eligible" do
-      mob = mob(%{skill_cooldowns: %{"NPC_FIREATTACK" => 5000}})
+      mob = mob(%{skill_cooldowns: %{1 => 5000}})
 
       assert Selector.select(mob, [row()], now: 5000, rng: hit()) == {:cast, row()}
     end

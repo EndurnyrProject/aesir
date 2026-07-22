@@ -23,7 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
   def begin_cast(state, %{cast_time: 0} = row, now) do
     MobSkillExecutor.broadcast_casting(state, row)
     MobSkillExecutor.execute(state, row)
-    MobState.put_skill_cooldown(state, row.skill, now + row.delay)
+    MobState.put_skill_cooldown(state, row.skill_id, now + row.delay)
   end
 
   def begin_cast(state, row, now) do
@@ -64,7 +64,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
         now = System.system_time(:millisecond)
 
         state
-        |> MobState.put_skill_cooldown(row.skill, now + row.delay)
+        |> MobState.put_skill_cooldown(row.skill_id, now + row.delay)
         |> MobState.clear_casting()
       end
 
@@ -154,7 +154,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
     now = System.system_time(:millisecond)
 
     state
-    |> MobState.put_skill_cooldown(row.skill, now + row.delay)
+    |> MobState.put_skill_cooldown(row.skill_id, now + row.delay)
     |> MobState.clear_casting()
   end
 end

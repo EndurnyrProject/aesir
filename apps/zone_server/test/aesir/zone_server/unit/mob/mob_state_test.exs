@@ -154,18 +154,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     test "a skill with no cooldown entry is ready" do
       state = build_mob_state()
 
-      assert MobState.skill_ready?(state, "NPC_FIREATTACK", 0)
+      assert MobState.skill_ready?(state, 1, 0)
     end
 
     test "put_skill_cooldown/3 gates the skill until now reaches expires_at" do
       state =
         build_mob_state()
-        |> MobState.put_skill_cooldown("NPC_FIREATTACK", 5_000)
+        |> MobState.put_skill_cooldown(1, 5_000)
 
-      assert state.skill_cooldowns == %{"NPC_FIREATTACK" => 5_000}
-      refute MobState.skill_ready?(state, "NPC_FIREATTACK", 4_999)
-      assert MobState.skill_ready?(state, "NPC_FIREATTACK", 5_000)
-      assert MobState.skill_ready?(state, "NPC_FIREATTACK", 5_001)
+      assert state.skill_cooldowns == %{1 => 5_000}
+      refute MobState.skill_ready?(state, 1, 4_999)
+      assert MobState.skill_ready?(state, 1, 5_000)
+      assert MobState.skill_ready?(state, 1, 5_001)
     end
   end
 
