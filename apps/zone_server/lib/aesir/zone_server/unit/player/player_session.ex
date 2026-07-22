@@ -812,6 +812,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     {:noreply, state}
   end
 
+  # Unknown messages must not crash a live player session.
+  def handle_info(message, %{game_state: game_state} = state) do
+    Logger.error(
+      "PlayerSession #{game_state.character_id} received unknown info: #{inspect(message)}"
+    )
+
+    {:noreply, state}
+  end
+
   @impl true
   def handle_cast({:player_entered_view, other_char_id}, state) do
     # Read the other player's state straight from the registry instead of
@@ -1025,6 +1034,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast(:recalculate_stats, state) do
     StatsManager.handle_recalculate_stats(state)
+  end
+
+  # Unknown messages must not crash a live player session.
+  def handle_cast(message, %{game_state: game_state} = state) do
+    Logger.error(
+      "PlayerSession #{game_state.character_id} received unknown cast: #{inspect(message)}"
+    )
+
+    {:noreply, state}
   end
 
   @impl true

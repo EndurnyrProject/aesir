@@ -8,6 +8,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   use GenServer
 
+  require Logger
+
   alias Aesir.Net.UnitDespawn
   alias Aesir.Net.UnitHp
   alias Aesir.Net.UnitSpawn
@@ -456,6 +458,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     end
   end
 
+  # Unknown casts must not crash a live mob session.
+  def handle_cast(message, state) do
+    Logger.error("MobSession #{state.instance_id} received unknown cast: #{inspect(message)}")
+    {:noreply, state}
+  end
+
   @impl GenServer
   def handle_info(:ai_tick, state) do
     cond do
@@ -526,6 +534,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   @impl GenServer
   def handle_info(:terminate, state) do
     {:stop, :normal, state}
+  end
+
+  # Unknown messages must not crash a live mob session.
+  def handle_info(message, state) do
+    Logger.error("MobSession #{state.instance_id} received unknown info: #{inspect(message)}")
+    {:noreply, state}
   end
 
   @impl GenServer
