@@ -10,10 +10,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   require Logger
 
-  alias Aesir.ZoneServer.Geometry
-  alias Aesir.ZoneServer.Map.Coordinator
-  alias Aesir.ZoneServer.Mmo.ItemManagement
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
   alias Aesir.ZoneServer.Mmo.MobSkill.Db, as: MobSkillDb
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor, as: MobSkillExecutor
   alias Aesir.ZoneServer.Mmo.MobSkill.Selector, as: MobSkillSelector
@@ -21,15 +17,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
+  alias Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler
   alias Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler
-  alias Aesir.ZoneServer.Unit.Mob.KillExp
   alias Aesir.ZoneServer.Unit.Mob.MobState
-  alias Aesir.ZoneServer.Unit.Mob.MvpReward
-  alias Aesir.ZoneServer.Unit.Mob.QuestHuntCredit
   alias Aesir.ZoneServer.Unit.Mob.SpawnView
+  alias Aesir.ZoneServer.Unit.Mob.StealOps
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Phoenix.PubSub
 
   # AI tick interval in milliseconds
   @ai_tick_interval 1000
@@ -250,55 +244,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   @impl GenServer
-  def handle_call({:attempt_steal, caster_dex, skill_level}, _from, %{mob_data: mob_data} = state) do
-    cond do
-      :boss in (mob_data.modes || []) ->
-        {:reply, {:error, :boss}, state}
-
-      state.stolen_from ->
-        {:reply, {:error, :already_stolen}, state}
-
-      :rand.uniform(100) > steal_rate(caster_dex, mob_data.stats.dex, skill_level) ->
-        {:reply, {:error, :miss}, state}
-
-      true ->
-        case steal_drop(mob_data.drops) do
-          {:ok, item_id} -> {:reply, {:ok, item_id}, MobState.mark_stolen(state)}
-          :error -> {:reply, {:error, :no_drop}, state}
-        end
+  def handle_call({:attempt_steal, caster_dex, skill_level}, _from, state) do
+    case StealOps.attempt_steal(state, caster_dex, skill_level) do
+      {:ok, item_id, new_state} -> {:reply, {:ok, item_id}, new_state}
+      {:error, reason} -> {:reply, {:error, reason}, state}
     end
   end
 
   @impl GenServer
-  def handle_cast({:apply_damage, _damage, _attacker_id}, %{is_dead: true} = state) do
-    # A dead mob is no longer a valid target. Dropping the hit prevents re-running
-    # the death path (and re-awarding experience) during the ~1s window between
-    # death and process termination, while it is still in the registry/index.
-    {:noreply, state}
-  end
-
   def handle_cast({:apply_damage, damage, attacker_id}, state) do
-    {updated_mob, status} = MobState.apply_damage(state, damage)
-    current_time = System.system_time(:second)
-
-    # Update last damage time and add aggro if attacker provided
-    updated_mob =
-      updated_mob
-      |> Map.put(:last_damage_time, current_time)
-      |> maybe_add_aggro(attacker_id, damage)
-      |> AIStateMachine.handle_damage_reaction(attacker_id)
-      |> maybe_note_rude_attack(attacker_id)
-
-    # Send HP update packet to nearby players
-    SpawnView.notify_hp_update(updated_mob)
-
-    case status do
-      :alive ->
-        {:noreply, updated_mob}
-
-      :dead ->
-        handle_death(updated_mob, attacker_id)
-    end
+    CombatHandler.handle_apply_damage(damage, attacker_id, state)
   end
 
   def handle_cast({:apply_walk_delay, duration}, state) do
@@ -499,133 +454,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   # Private Functions
-
-  # rAthena pc_steal_item renewal rate formula, expressed as a percent out of 100.
-  @spec steal_rate(non_neg_integer(), non_neg_integer(), pos_integer()) :: integer()
-  defp steal_rate(caster_dex, mob_dex, skill_level) do
-    div(caster_dex - mob_dex, 2) + 6 * skill_level + 4
-  end
-
-  # Walks the drop table in order, skipping steal-protected entries, and rolls
-  # each remaining drop's own `rnd(10000) <= rate`. The first roll to succeed
-  # wins; an unresolvable item name is treated as a miss on that drop rather
-  # than aborting the whole steal.
-  @spec steal_drop([MobDrop.t()]) :: {:ok, non_neg_integer()} | :error
-  defp steal_drop([]), do: :error
-
-  defp steal_drop([%MobDrop{steal_protected: true} | rest]), do: steal_drop(rest)
-
-  defp steal_drop([%MobDrop{item: item, rate: rate} | rest]) do
-    if :rand.uniform(10_000) <= rate do
-      case ItemManagement.get_item_by_aegis(item) do
-        {:ok, %{id: item_id}} -> {:ok, item_id}
-        {:error, _reason} -> steal_drop(rest)
-      end
-    else
-      steal_drop(rest)
-    end
-  end
-
-  defp maybe_add_aggro(state, nil, _damage), do: state
-
-  defp maybe_add_aggro(state, attacker_id, damage) do
-    MobState.add_aggro(state, attacker_id, damage)
-  end
-
-  # Records a rude attack when the hit came from beyond the mob's chase range
-  # (an attacker it cannot path to). Phase 1 only counts the signal; Phase 2's
-  # `rudeattacked` condition consumes it. An attacker whose position can't be
-  # resolved is skipped silently.
-  defp maybe_note_rude_attack(state, attacker_id) when is_integer(attacker_id) do
-    case resolve_attacker_position(attacker_id) do
-      {:ok, {x, y}} ->
-        if Geometry.chebyshev_distance(x, y, state.x, state.y) >
-             MobState.get_chase_range(state) do
-          MobState.note_rude_attack(state)
-        else
-          state
-        end
-
-      :error ->
-        state
-    end
-  end
-
-  defp maybe_note_rude_attack(state, _attacker_id), do: state
-
-  # The attacker type isn't known here, so try :player then :mob (mirrors the
-  # combat action handler's target resolution).
-  defp resolve_attacker_position(attacker_id) do
-    case SpatialIndex.get_unit_position(:player, attacker_id) do
-      {:ok, {x, y, _map}} ->
-        {:ok, {x, y}}
-
-      {:error, :not_found} ->
-        case SpatialIndex.get_unit_position(:mob, attacker_id) do
-          {:ok, {x, y, _map}} -> {:ok, {x, y}}
-          {:error, :not_found} -> :error
-        end
-    end
-  end
-
-  defp handle_death(state, attacker_id) do
-    # Mark as dead
-    updated_state = MobState.set_dead(state)
-
-    # Notify nearby players of mob death
-    SpawnView.notify_despawn(updated_state)
-    Lifecycle.publish_death(:mob, state.instance_id, state.map_name)
-
-    announce_kill(state, attacker_id)
-
-    # Notify coordinator of death for respawn scheduling and OnMyMobDead dispatch
-    Coordinator.mob_died(state.map_name, state.instance_id, attacker_id)
-
-    # Schedule process termination after a brief delay to handle cleanup
-    Process.send_after(self(), :terminate, 1000)
-
-    {:noreply, updated_state}
-  end
-
-  # Distributes EXP to every attacker who damaged the mob, proportional to
-  # damage dealt (`KillExp.distribute/6`, design "Damage-based EXP share"),
-  # grants the MVP reward for an MVP-tier boss (`MvpReward.grant/5`, a no-op
-  # for every other mob), then publishes the drop-rolling payload to the
-  # killing blow's own session
-  # (the only place holding both the drop table and the killer's stats). The
-  # mob stays ignorant of who listens; an absent killer simply has no
-  # subscriber.
-  defp announce_kill(_state, nil), do: :ok
-
-  defp announce_kill(%MobState{mob_data: mob_data, aggro_list: aggro_list} = state, attacker_id) do
-    KillExp.distribute(
-      aggro_list,
-      mob_data.base_exp,
-      mob_data.job_exp,
-      mob_data.level,
-      state.map_name,
-      mob_data.race
-    )
-
-    MvpReward.grant(aggro_list, mob_data, state.map_name, state.x, state.y)
-
-    QuestHuntCredit.credit(attacker_id, mob_data.id, state.map_name, {state.x, state.y})
-
-    PubSub.broadcast(
-      Aesir.PubSub,
-      "player:#{attacker_id}",
-      {:loot,
-       {:mob_killed,
-        %{
-          mob_id: mob_data.id,
-          drops: mob_data.drops,
-          mob_level: mob_data.level,
-          map: state.map_name,
-          x: state.x,
-          y: state.y
-        }}}
-    )
-  end
 
   defp process_ai(state) do
     AIStateMachine.process_ai(state)
