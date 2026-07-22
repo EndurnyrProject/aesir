@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
 
@@ -248,7 +249,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   defp notify_mob_session(:mob, instance_id, status_id, event) do
     case UnitRegistry.get_unit(:mob, instance_id) do
       {:ok, {_module, _state, pid}} when is_pid(pid) ->
-        GenServer.cast(pid, {:status_changed, status_id, event})
+        MobSession.notify_status_changed(pid, status_id, event)
 
       _ ->
         :ok

@@ -84,6 +84,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   @doc """
+  Notifies the mob that one of its statuses ticked or expired.
+
+  Fired by `StatusTickManager` when a status hits its tick interval or
+  expiration; may abort an in-flight cast if the status is a silence or stun.
+  """
+  @spec notify_status_changed(pid(), atom(), atom()) :: :ok
+  def notify_status_changed(pid, status_id, event) do
+    GenServer.cast(pid, {:status_changed, status_id, event})
+  end
+
+  @doc """
   Gets the current mob state.
   """
   @spec get_state(pid()) :: MobState.t()
