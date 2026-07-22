@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Importer do
   `classify/1` backs the `mix aesir.import.mob_skills` coverage manifest: it
   mirrors `MobSkill.Selector`'s castable gate (`Skill.Catalog.by_id/1` +
   `MobSkill.Denylist`) so the manifest reports the same live truth the AI
-  actually casts against, rather than the legacy archetype catalog.
+  actually casts against.
   """
 
   alias Aesir.ZoneServer.Mmo.MobSkill.Denylist

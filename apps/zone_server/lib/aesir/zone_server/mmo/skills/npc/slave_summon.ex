@@ -47,8 +47,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.SlaveSummon do
     end
   end
 
+  @doc """
+  Counts the living slaves linked to `master_id`.
+
+  Living means still registered: the map coordinator unregisters a mob from
+  `UnitRegistry` when it dies, so registry membership is the liveness signal
+  (mob snapshots in the registry are not otherwise refreshed, but `master_id`
+  is immutable after spawn). Also backs the `Selector`'s `slavele` condition
+  gate.
+  """
   @spec count_living_slaves(integer()) :: non_neg_integer()
-  defp count_living_slaves(master_id) do
+  def count_living_slaves(master_id) do
     :mob
     |> UnitRegistry.list_units_by_type()
     |> Enum.count(fn id ->

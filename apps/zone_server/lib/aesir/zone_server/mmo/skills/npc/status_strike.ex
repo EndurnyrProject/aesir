@@ -11,9 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.StatusStrike do
   status entirely, and a `Combat` error propagates unchanged.
 
   A mob caster's effective range is widened to `max(attack_range,
-  skill_range)` before the attack, mirroring the elemental-nuke archetype's
-  range override: these skills are cast at the mob's configured skill range,
-  not its melee reach.
+  skill_range)` before the attack: these skills are cast at the mob's
+  configured skill range, not its melee reach.
   """
 
   alias Aesir.ZoneServer.Mmo.Combat

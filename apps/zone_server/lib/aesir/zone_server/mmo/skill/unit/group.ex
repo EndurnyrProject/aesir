@@ -11,8 +11,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
   `Skill.Unit.Storage` keeps its secondary keys synchronized.
 
   `handler` carries the group's tick/trigger module for casters that bypass
-  `Skill.Catalog` (e.g. mob archetypes). When `nil`, `Skill.Unit.Manager`
-  resolves the handler from `skill_name` via `Skill.Catalog.ground_module_for/1`.
+  `Skill.Catalog` (e.g. mob ground skills built without a catalog entry). When
+  `nil`, `Skill.Unit.Manager` resolves the handler from `skill_name` via
+  `Skill.Catalog.ground_module_for/1`.
   """
   use TypedStruct
 

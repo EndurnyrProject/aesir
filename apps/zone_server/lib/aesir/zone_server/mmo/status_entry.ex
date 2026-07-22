@@ -250,8 +250,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
   An explicit `:source_type` in the params always wins. Without one, a status
   whose caster is the target itself (or has no caster) shares the target's
   type; a cross-unit caster defaults to `:player`, since players are the only
-  casters that do not pass `:source_type` explicitly (the mob skill archetypes
-  do).
+  casters that do not pass `:source_type` explicitly (mob skills do).
   """
   @spec resolve_source_type(atom(), integer(), integer() | nil, status_params()) :: atom()
   def resolve_source_type(unit_type, unit_id, caster_id, status_params) do

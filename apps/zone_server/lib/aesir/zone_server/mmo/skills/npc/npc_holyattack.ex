@@ -6,8 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcHolyattack do
   rows select this from `chase`/`angry` state, while the target is still
   outside the mob's melee `attack_range` (only within `skill_range`), so a
   `%MobState{}` caster's effective attack range is widened to
-  `max(attack_range, skill_range)` for the call, mirroring the retired
-  `ElementalNuke` archetype.
+  `max(attack_range, skill_range)` for the call.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 189,

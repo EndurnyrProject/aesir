@@ -48,9 +48,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
   @doc """
   Runs a prepared group's `on_place/1` and registers the resulting placement.
 
-  The seam `place/4` shares with casters that have no `PlayerState` — the mob
-  ground-field archetype builds its own `Group` (`caster_type: :mob`) and gets
-  the identical footprint, path check, registration and cast broadcast.
+  The seam `place/4` shares with casters that have no `PlayerState` — ground
+  mob skills (e.g. `NpcGroundattack`, `NpcEarthquake`) build their own `Group`
+  (`caster_type: :mob`) and get the identical footprint, path check,
+  registration and cast broadcast.
   `origin` is the caster's cell: it is stamped onto the group before `on_place/1`
   runs (so directional skills read it without calling back into the caster's
   process) and drives the placement's optional path check.

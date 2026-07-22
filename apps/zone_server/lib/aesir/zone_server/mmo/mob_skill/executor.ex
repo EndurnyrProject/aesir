@@ -59,7 +59,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
 
   `around`/`around1..4` anchor the ground cell on the caster, `around5..8` on
   the current target's cell (rAthena semantics); the `area` atom is passed
-  through for the ground archetype to size the AoE.
+  through for the ground-target skill to size the AoE.
   """
   @spec resolve_target(MobState.t(), map()) :: {:ok, target()} | {:error, atom()}
   def resolve_target(%MobState{target_id: nil}, %{target: :target}), do: {:error, :no_target}

@@ -30,15 +30,15 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
     * `:event` - the AI event driving this selection (default `:tick`); set to
       `:spawn` on the spawn tick so `onspawn` rows can fire.
     * `:count_living_slaves` - a 1-arg fun `(master instance id -> count)` for
-      the `slavele` gate (default `SummonSlave.count_living_slaves/1`). Like
+      the `slavele` gate (default `SlaveSummon.count_living_slaves/1`). Like
       `:rng`, this is the escape hatch keeping the module testable: the default
       reads the unit registry (read-only, and only when a `slavele` row is
       actually evaluated), tests inject a pure fun.
   """
 
-  alias Aesir.ZoneServer.Mmo.MobSkill.Archetype.SummonSlave
   alias Aesir.ZoneServer.Mmo.MobSkill.Denylist
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
+  alias Aesir.ZoneServer.Mmo.Skills.Npc.SlaveSummon
   alias Aesir.ZoneServer.Unit.Mob.MobState
 
   @typedoc "A mob skill row as produced by `MobSkill.Db`."
@@ -52,7 +52,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
     env = %{
       event: Keyword.get(opts, :event, :tick),
       count_living_slaves:
-        Keyword.get(opts, :count_living_slaves, &SummonSlave.count_living_slaves/1)
+        Keyword.get(opts, :count_living_slaves, &SlaveSummon.count_living_slaves/1)
     }
 
     eligible = eligible_states(mob_state)
