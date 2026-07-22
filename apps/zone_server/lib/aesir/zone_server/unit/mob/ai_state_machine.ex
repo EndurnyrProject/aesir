@@ -21,10 +21,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackPositioning
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
@@ -370,7 +370,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
   defp living_player?(target_id) do
     case UnitRegistry.get_unit(:player, target_id) do
-      {:ok, {_module, player, _pid}} -> TargetState.living?(player)
+      {:ok, {_module, player, _pid}} -> Unit.living?(player)
       {:error, :not_found} -> false
     end
   end

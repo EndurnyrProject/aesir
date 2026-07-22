@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
@@ -28,7 +29,6 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SnapshotBuilder
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
 
@@ -609,7 +609,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
   defp living_player?(character_id) do
     case UnitRegistry.get_unit(:player, character_id) do
-      {:ok, {_module, player_state, _pid}} -> TargetState.living?(player_state)
+      {:ok, {_module, player_state, _pid}} -> Unit.living?(player_state)
       {:error, :not_found} -> false
     end
   end

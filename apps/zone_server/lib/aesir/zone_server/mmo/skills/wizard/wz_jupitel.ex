@@ -27,9 +27,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitel do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @impact_delay_ms 150
@@ -83,7 +83,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitel do
 
   defp living_target(unit_type, target_id) do
     with {:ok, {_module, state, _pid}} <- UnitRegistry.get_unit(unit_type, target_id),
-         true <- TargetState.living?(state) do
+         true <- Unit.living?(state) do
       :ok
     else
       _ -> {:error, :target_dead}

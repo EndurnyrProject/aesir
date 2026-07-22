@@ -27,9 +27,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptio do
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.State, as: PartyState
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
@@ -85,7 +85,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptio do
 
   defp nearby_corpse?(target_state, caster, splash_radius) do
     target_state.map_name == caster.map_name and
-      TargetState.corpse?(target_state) and
+      Unit.corpse?(target_state) and
       Geometry.in_tile_range?(
         caster.x,
         caster.y,

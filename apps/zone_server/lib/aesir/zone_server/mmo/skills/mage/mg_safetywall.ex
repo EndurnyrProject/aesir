@@ -39,7 +39,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywall do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Ground
@@ -102,7 +101,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywall do
 
   defp living?({unit_type, unit_id}) do
     case UnitRegistry.get_unit(unit_type, unit_id) do
-      {:ok, {_module, state, _pid}} -> TargetState.living?(state)
+      {:ok, {module, state, _pid}} -> module.living?(state)
       {:error, :not_found} -> false
     end
   end

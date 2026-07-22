@@ -325,7 +325,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
     test "rejects an attack on a dead mob without applying damage",
          %{player_state: player_state, stats: stats} do
-      dead_target = %{is_dead: true, hp: 0, x: 150, y: 150, map_name: "prontera"}
+      dead_target =
+        struct(MobState, %{is_dead: true, hp: 0, x: 150, y: 150, map_name: "prontera"})
+
       stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, dead_target, self()}} end)
       stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
       reject(&MobSession.apply_damage/3)

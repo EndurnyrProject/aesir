@@ -38,6 +38,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendriveTest do
     ]
 
     def to_combatant(%__MODULE__{combatant: combatant}), do: combatant
+
+    def living?(%__MODULE__{hp: hp, action_state: action_state}),
+      do: is_integer(hp) and hp > 0 and action_state != :dead
+
+    def corpse?(%__MODULE__{hp: hp, action_state: action_state}),
+      do: hp == 0 and action_state == :dead
   end
 
   defp combatant(unit_id, unit_type, x, y) do

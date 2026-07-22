@@ -30,10 +30,10 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   # NOTE: one generic timing/ratio for every mob ground nuke (Storm Gust's
@@ -150,7 +150,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundNuke do
 
   defp living_player?(player_id) do
     case UnitRegistry.get_unit(:player, player_id) do
-      {:ok, {_module, state, _pid}} -> TargetState.living?(state)
+      {:ok, {_module, state, _pid}} -> Unit.living?(state)
       _ -> false
     end
   end

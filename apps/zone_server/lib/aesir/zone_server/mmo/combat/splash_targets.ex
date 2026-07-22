@@ -11,8 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
@@ -42,7 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
       {:ok, _pid, target_state, _target_type} ->
         target = target_state.__struct__.to_combatant(target_state)
 
-        TargetState.living?(target_state) and
+        Unit.living?(target_state) and
           splash_enemy?(caster, target) and splash_hit?(target_state, cx, cy, radius)
 
       _ ->

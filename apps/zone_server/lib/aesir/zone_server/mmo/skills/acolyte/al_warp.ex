@@ -48,10 +48,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarp do
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Ground
@@ -128,7 +128,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarp do
        )
        when uses > 0 do
     with {:ok, {_module, target_state, pid}} <- UnitRegistry.get_unit(:player, player_id),
-         true <- TargetState.living?(target_state) do
+         true <- Unit.living?(target_state) do
       PlayerSession.warp(pid, map, x, y)
       %{group | state: %{group_state | uses: uses - 1}}
     else

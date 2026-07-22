@@ -37,12 +37,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.WeaponTypes
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Ammo
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
-  alias Aesir.ZoneServer.Unit.TargetState
 
   @typedoc """
   Scheduling info for a timed cast, returned by `begin_cast/4` when the skill
@@ -497,7 +497,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     result =
       case TargetResolver.resolve(unit_id) do
         {:ok, _pid, target_state, :player} ->
-          if TargetState.corpse?(target_state),
+          if Unit.corpse?(target_state),
             do: :ok,
             else: {:error, :invalid_target}
 
@@ -516,7 +516,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp ensure_resurrection_target(unit_id) do
     case TargetResolver.resolve(unit_id) do
       {:ok, _pid, target_state, :player} ->
-        if TargetState.corpse?(target_state),
+        if Unit.corpse?(target_state),
           do: :ok,
           else: TargetResolver.ensure_targetable(target_state, :player)
 

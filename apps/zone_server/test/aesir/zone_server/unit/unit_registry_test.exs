@@ -53,6 +53,12 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistryTest do
     def is_boss?(_state), do: false
 
     @impl true
+    def living?(state), do: state.hp > 0
+
+    @impl true
+    def corpse?(_state), do: false
+
+    @impl true
     def get_process_pid(_state), do: nil
 
     @impl true

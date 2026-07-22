@@ -27,7 +27,6 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundField do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @impl true
@@ -62,7 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Archetype.GroundField do
 
   defp living_unit?(unit_type, unit_id) do
     case UnitRegistry.get_unit(unit_type, unit_id) do
-      {:ok, {_module, state, _pid}} -> TargetState.living?(state)
+      {:ok, {module, state, _pid}} -> module.living?(state)
       _ -> false
     end
   end

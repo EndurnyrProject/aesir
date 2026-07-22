@@ -22,8 +22,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @skill_id 1006
@@ -109,7 +109,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
 
   defp living_contact?({:player, player_id}) do
     case UnitRegistry.get_unit(:player, player_id) do
-      {:ok, {_module, player, _pid}} -> TargetState.living?(player)
+      {:ok, {_module, player, _pid}} -> Unit.living?(player)
       {:error, :not_found} -> false
     end
   end

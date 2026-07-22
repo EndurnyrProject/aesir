@@ -65,6 +65,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Cell do
   @spec to_combatant(t()) :: map()
   def to_combatant(%__MODULE__{} = cell), do: CombatTarget.to_combatant(cell)
 
+  @doc """
+  Ground cells are never living participants nor corpse targets; they only
+  satisfy the `Unit.living?/1`/`Unit.corpse?/1` dispatch contract so generic
+  code that meets a cell snapshot fails closed instead of raising.
+  """
+  @spec living?(t()) :: false
+  def living?(%__MODULE__{}), do: false
+
+  @spec corpse?(t()) :: false
+  def corpse?(%__MODULE__{}), do: false
+
   defp normalize_flags(%{flags: flags} = attrs) when is_list(flags) do
     Map.put(
       attrs,

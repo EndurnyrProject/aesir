@@ -24,13 +24,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Id
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skill.Unit.View
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Lifecycle.Event
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @tick_interval 100
@@ -1397,7 +1397,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp living_combat_unit?({unit_type, unit_id}) when unit_type in [:player, :mob] do
     case UnitRegistry.get_unit(unit_type, unit_id) do
-      {:ok, {_module, state, _pid}} -> TargetState.living?(state)
+      {:ok, {_module, state, _pid}} -> Unit.living?(state)
       _ -> false
     end
   end

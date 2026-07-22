@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Pathfinding
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Ammo
@@ -29,7 +30,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
@@ -632,7 +632,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
 
   defp inactive_player?({:player, player_id}) do
     case UnitRegistry.get_unit(:player, player_id) do
-      {:ok, {_module, player, _pid}} -> not TargetState.living?(player)
+      {:ok, {_module, player, _pid}} -> not Unit.living?(player)
       {:error, :not_found} -> true
     end
   end

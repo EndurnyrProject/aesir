@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
@@ -37,7 +38,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
@@ -192,7 +192,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
           {:reply, :ok | {:error, :stale_target | :invalid_hp_percent}, SessionState.t()}
   def resurrect(_source_id, hp_percent, state)
       when is_integer(hp_percent) and hp_percent > 0 and hp_percent <= 100 do
-    if TargetState.corpse?(state.game_state) do
+    if Unit.corpse?(state.game_state) do
       stats = state.game_state.stats
       hp = max(1, div(stats.derived_stats.max_hp * hp_percent, 100))
       updated_stats = %{stats | current_state: %{stats.current_state | hp: hp}}

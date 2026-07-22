@@ -40,10 +40,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
@@ -99,7 +99,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
   end
 
   defp eligible_companion?(companion, companion_id, caster) do
-    TargetState.living?(companion) and
+    Unit.living?(companion) and
       acolyte?(companion.stats.progression.job_id) and
       StatusInterpreter.can_use_skill?(:player, companion_id) and
       side_cell?(caster, companion)
@@ -135,7 +135,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
     |> Enum.filter(&match?({:player, _id}, &1))
     |> Enum.each(fn {:player, target_id} ->
       with {:ok, {module, state, _pid}} <- UnitRegistry.get_unit(:player, target_id),
-           true <- TargetState.living?(state),
+           true <- Unit.living?(state),
            false <- undead_or_demon?(module, state) do
         StatusInterpreter.apply_status(:player, target_id, :sc_benedictio, params)
       else

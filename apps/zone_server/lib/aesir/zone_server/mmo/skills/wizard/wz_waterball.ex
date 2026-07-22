@@ -24,8 +24,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterball do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
@@ -101,7 +101,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterball do
 
   defp living_target(unit_type, unit_id) do
     with {:ok, {_module, state, _pid}} <- UnitRegistry.get_unit(unit_type, unit_id),
-         true <- TargetState.living?(state) do
+         true <- Unit.living?(state) do
       :ok
     else
       _ -> {:error, :target_dead}

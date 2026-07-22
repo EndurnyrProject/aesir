@@ -28,9 +28,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection do
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.TargetState
 
   @behaviour Active
 
@@ -42,8 +42,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection do
   def validate(_caster, {:unit, target_id}, _level, _definition) do
     with {:ok, _target_pid, target_state, unit_type} <- TargetResolver.resolve(target_id) do
       cond do
-        unit_type == :player and TargetState.corpse?(target_state) -> :ok
-        TargetState.living?(target_state) and undead?(target_state) -> :ok
+        unit_type == :player and Unit.corpse?(target_state) -> :ok
+        Unit.living?(target_state) and undead?(target_state) -> :ok
         true -> {:error, :invalid_target}
       end
     end
@@ -71,13 +71,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection do
   end
 
   defp target_kind(:player, target_state) do
-    if TargetState.corpse?(target_state), do: :corpse, else: living_undead_kind(target_state)
+    if Unit.corpse?(target_state), do: :corpse, else: living_undead_kind(target_state)
   end
 
   defp target_kind(_unit_type, target_state), do: living_undead_kind(target_state)
 
   defp living_undead_kind(target_state) do
-    if TargetState.living?(target_state) and undead?(target_state), do: :undead, else: :invalid
+    if Unit.living?(target_state) and undead?(target_state), do: :undead, else: :invalid
   end
 
   defp apply_resurrection(

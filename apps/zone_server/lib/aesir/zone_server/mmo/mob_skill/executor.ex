@@ -23,11 +23,11 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.MobSkill.Catalog
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Emote
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @archetype_namespace Aesir.ZoneServer.Mmo.MobSkill.Archetype
@@ -214,7 +214,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   end
 
   defp living_friend(friend) do
-    if TargetState.living?(friend), do: [friend], else: []
+    if Unit.living?(friend), do: [friend], else: []
   end
 
   defp players_in_skill_range(%MobState{} = state) do
@@ -225,7 +225,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
 
   defp living_unit?(unit_type, unit_id) do
     case UnitRegistry.get_unit(unit_type, unit_id) do
-      {:ok, {_module, state, _pid}} -> TargetState.living?(state)
+      {:ok, {_module, state, _pid}} -> Unit.living?(state)
       _ -> false
     end
   end

@@ -19,7 +19,6 @@ defmodule Aesir.ZoneServer.Unit.Movement do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @type unit_type :: Unit.unit_type()
@@ -97,7 +96,7 @@ defmodule Aesir.ZoneServer.Unit.Movement do
 
   defp inactive_player?({:player, player_id}) do
     case UnitRegistry.get_unit(:player, player_id) do
-      {:ok, {_module, player, _pid}} -> not TargetState.living?(player)
+      {:ok, {_module, player, _pid}} -> not Unit.living?(player)
       {:error, :not_found} -> true
     end
   end

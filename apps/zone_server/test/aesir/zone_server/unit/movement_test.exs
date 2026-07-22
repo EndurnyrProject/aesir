@@ -67,10 +67,18 @@ defmodule Aesir.ZoneServer.Unit.MovementTest do
     test "updates the spatial index and registry and marks the unit dirty" do
       char_id = 1001
       map_name = "prontera"
-      UnitRegistry.register_unit(:player, char_id, __MODULE__, %{movement_state: :standing}, nil)
+
+      UnitRegistry.register_unit(
+        :player,
+        char_id,
+        __MODULE__,
+        struct(PlayerState, %{movement_state: :standing}),
+        nil
+      )
+
       SpatialIndex.add_unit(:player, char_id, 50, 50, map_name)
 
-      updated_state = %{movement_state: :moving, x: 55, y: 60}
+      updated_state = struct(PlayerState, %{movement_state: :moving, x: 55, y: 60})
       assert :ok = Movement.set_position(:player, char_id, updated_state, map_name)
 
       assert {:ok, {55, 60, ^map_name}} = SpatialIndex.get_unit_position(:player, char_id)
@@ -81,7 +89,15 @@ defmodule Aesir.ZoneServer.Unit.MovementTest do
     test "fires ground-unit on_touch for a player mover via the single chokepoint" do
       map_name = "prontera"
       stub(Catalog, :ground_module_for, fn :test_trap -> {:ok, TouchSpy} end)
-      UnitRegistry.register_unit(:player, 1001, __MODULE__, %{movement_state: :standing}, nil)
+
+      UnitRegistry.register_unit(
+        :player,
+        1001,
+        __MODULE__,
+        struct(PlayerState, %{movement_state: :standing}),
+        nil
+      )
+
       SpatialIndex.add_unit(:player, 1001, 50, 50, map_name)
       :ok = Storage.insert(touch_group(1, map_name))
 
@@ -89,7 +105,7 @@ defmodule Aesir.ZoneServer.Unit.MovementTest do
                Movement.set_position(
                  :player,
                  1001,
-                 %{movement_state: :moving, x: 55, y: 60},
+                 struct(PlayerState, %{movement_state: :moving, x: 55, y: 60}),
                  map_name
                )
 
@@ -118,7 +134,15 @@ defmodule Aesir.ZoneServer.Unit.MovementTest do
 
     test "does not fire on_touch when the destination cell has no ground unit" do
       map_name = "prontera"
-      UnitRegistry.register_unit(:player, 1002, __MODULE__, %{movement_state: :standing}, nil)
+
+      UnitRegistry.register_unit(
+        :player,
+        1002,
+        __MODULE__,
+        struct(PlayerState, %{movement_state: :standing}),
+        nil
+      )
+
       SpatialIndex.add_unit(:player, 1002, 50, 50, map_name)
       :ok = Storage.insert(touch_group(1, map_name))
 
@@ -126,7 +150,7 @@ defmodule Aesir.ZoneServer.Unit.MovementTest do
                Movement.set_position(
                  :player,
                  1002,
-                 %{movement_state: :moving, x: 10, y: 10},
+                 struct(PlayerState, %{movement_state: :moving, x: 10, y: 10}),
                  map_name
                )
 

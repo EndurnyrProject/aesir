@@ -48,11 +48,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Ground
@@ -128,7 +128,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
 
   defp affect_target({unit_type, unit_id} = target, group, caster, enemies) do
     with {:ok, {module, state, pid}} <- UnitRegistry.get_unit(unit_type, unit_id),
-         true <- TargetState.living?(state) do
+         true <- Unit.living?(state) do
       affect_living_target(target, {module, state, pid}, group, caster, enemies)
     else
       _ -> {:cont, group}

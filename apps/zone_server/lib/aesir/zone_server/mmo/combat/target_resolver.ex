@@ -11,9 +11,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TargetResolver do
   require Logger
 
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @typedoc "A resolved live target: owning pid, unit state, and unit type."
@@ -98,7 +98,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TargetResolver do
   @spec ensure_targetable(struct() | map(), :player | :mob | :skill_unit) ::
           :ok | {:error, :target_dead}
   def ensure_targetable(target_state, unit_type) when unit_type in [:player, :mob] do
-    if TargetState.living?(target_state), do: :ok, else: {:error, :target_dead}
+    if Unit.living?(target_state), do: :ok, else: {:error, :target_dead}
   end
 
   def ensure_targetable(%{hp: hp}, :skill_unit) when hp > 0, do: :ok

@@ -20,9 +20,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.TargetState
 
   @doc """
   Deals damage to a target entity (used by status effects).
@@ -492,7 +492,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   defp ensure_living_target(_target_state, :skill_unit), do: :ok
 
   defp ensure_living_target(target_state, _target_type) do
-    if TargetState.living?(target_state), do: :ok, else: {:error, :target_dead}
+    if Unit.living?(target_state), do: :ok, else: {:error, :target_dead}
   end
 
   defp resolve_skill_unit_target(unit_type, target_id) do

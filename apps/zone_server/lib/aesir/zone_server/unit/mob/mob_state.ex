@@ -236,6 +236,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   end
 
   @impl Aesir.ZoneServer.Unit
+  def living?(%__MODULE__{is_dead: false, hp: hp}) when is_integer(hp) and hp > 0, do: true
+  def living?(%__MODULE__{}), do: false
+
+  @impl Aesir.ZoneServer.Unit
+  def corpse?(%__MODULE__{}), do: false
+
+  @impl Aesir.ZoneServer.Unit
   def to_combatant(%__MODULE__{} = mob_state) do
     mob_data = mob_state.mob_data
     mob_matk = MobCombatCalc.calculate_magic_attack(mob_data)

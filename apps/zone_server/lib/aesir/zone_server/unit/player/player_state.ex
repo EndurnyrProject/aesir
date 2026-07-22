@@ -837,6 +837,30 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     |> Map.put(:equip_modifiers, state.stats.modifiers.equipment)
   end
 
+  @living_actions [
+    :idle,
+    :moving,
+    :combat_moving,
+    :skill_moving,
+    :moving_to_item,
+    :attacking,
+    :casting,
+    :sitting,
+    :trading,
+    :vending
+  ]
+
+  @impl Aesir.ZoneServer.Unit
+  def living?(%__MODULE__{action_state: action_state, stats: %{current_state: %{hp: hp}}})
+      when action_state in @living_actions and is_integer(hp) and hp > 0,
+      do: true
+
+  def living?(%__MODULE__{}), do: false
+
+  @impl Aesir.ZoneServer.Unit
+  def corpse?(%__MODULE__{action_state: :dead, stats: %{current_state: %{hp: 0}}}), do: true
+  def corpse?(%__MODULE__{}), do: false
+
   @impl Aesir.ZoneServer.Unit
   def to_combatant(%__MODULE__{} = state) do
     weapon_type = PlayerStats.weapon_type(state.stats.equipment)

@@ -28,9 +28,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlCrucis do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
@@ -58,7 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlCrucis do
 
   defp try_apply_to_target({unit_type, target_id}, level, caster_id, caster_base_level) do
     with {:ok, {_module, target_state, _pid}} <- UnitRegistry.get_unit(unit_type, target_id),
-         true <- TargetState.living?(target_state),
+         true <- Unit.living?(target_state),
          {:ok, combatant} <- Combat.resolve_combatant(target_id) do
       rate = 25 + 4 * level + (caster_base_level - combatant.progression.base_level)
 

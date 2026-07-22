@@ -27,7 +27,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit
-  alias Aesir.ZoneServer.Unit.TargetState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @type unit_type :: Unit.unit_type()
@@ -665,7 +664,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   defp ensure_living_target(unit_type, unit_id) when unit_type in [:player, :mob] do
     case UnitRegistry.get_unit(unit_type, unit_id) do
       {:ok, {_module, target_state, _pid}} ->
-        if TargetState.living?(target_state), do: :ok, else: {:error, :target_dead}
+        if Unit.living?(target_state), do: :ok, else: {:error, :target_dead}
 
       {:error, :not_found} ->
         :ok

@@ -104,7 +104,34 @@ defmodule Aesir.ZoneServer.Unit do
   """
   @callback to_combatant(state :: any()) :: Aesir.ZoneServer.Mmo.Combat.Combatant.t()
 
+  @doc """
+  Returns whether this snapshot is a consistent living participant: a unit
+  that can be targeted, damaged, and act. Inconsistent snapshots (e.g. zero
+  HP in a live action state) fail closed.
+  """
+  @callback living?(state :: any()) :: boolean()
+
+  @doc """
+  Returns whether this snapshot is a corpse-targetable unit (dead and
+  resurrectable). Unit types without corpse targeting always return false.
+  """
+  @callback corpse?(state :: any()) :: boolean()
+
   @optional_callbacks [get_custom_immunities: 1, get_process_pid: 1, to_combatant: 1]
+
+  @doc """
+  Whether `snapshot` is a consistent living unit, dispatched to the
+  snapshot's own `living?/1` implementation.
+  """
+  @spec living?(struct()) :: boolean()
+  def living?(%module{} = snapshot), do: module.living?(snapshot)
+
+  @doc """
+  Whether `snapshot` is a corpse-targetable unit, dispatched to the
+  snapshot's own `corpse?/1` implementation.
+  """
+  @spec corpse?(struct()) :: boolean()
+  def corpse?(%module{} = snapshot), do: module.corpse?(snapshot)
 
   @doc """
   Helper function to build standard entity info map from an entity module.
