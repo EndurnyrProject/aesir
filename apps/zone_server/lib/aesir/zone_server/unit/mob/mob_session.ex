@@ -680,15 +680,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     PubSub.broadcast(
       Aesir.PubSub,
       "player:#{attacker_id}",
-      {:mob_killed,
-       %{
-         mob_id: mob_data.id,
-         drops: mob_data.drops,
-         mob_level: mob_data.level,
-         map: state.map_name,
-         x: state.x,
-         y: state.y
-       }}
+      {:loot,
+       {:mob_killed,
+        %{
+          mob_id: mob_data.id,
+          drops: mob_data.drops,
+          mob_level: mob_data.level,
+          map: state.map_name,
+          x: state.x,
+          y: state.y
+        }}}
     )
   end
 

@@ -165,7 +165,11 @@ defmodule Aesir.ZoneServer.Integration.ItemDropTest do
       y: Keyword.fetch!(opts, :y)
     }
 
-    PubSub.broadcast(Aesir.PubSub, "player:#{player.character.id}", {:mob_killed, payload})
+    PubSub.broadcast(
+      Aesir.PubSub,
+      "player:#{player.character.id}",
+      {:loot, {:mob_killed, payload}}
+    )
   end
 
   defp assert_item_on_ground(opts) do

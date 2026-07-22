@@ -135,7 +135,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.KillExpTest do
 
       KillExp.distribute(%{1 => 100}, 100, 50, 100, "prontera", :brute)
 
-      assert_receive {:mob_kill_exp, 100, 50, :brute}
+      assert_receive {:progression, {:mob_kill_exp, 100, 50, :brute}}
     end
 
     test "splits two non-party attackers proportional to damage, each with its own level penalty" do
@@ -149,8 +149,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.KillExpTest do
 
       KillExp.distribute(%{1 => 75, 2 => 25}, 100, 0, 100, "prontera", :brute)
 
-      assert_receive {:mob_kill_exp, 75, 0, :brute}
-      assert_receive {:mob_kill_exp, 12, 0, :brute}
+      assert_receive {:progression, {:mob_kill_exp, 75, 0, :brute}}
+      assert_receive {:progression, {:mob_kill_exp, 12, 0, :brute}}
     end
 
     test "an ineligible attacker's damage dilutes the pool but it receives nothing" do
@@ -162,8 +162,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.KillExpTest do
 
       KillExp.distribute(%{1 => 50, 2 => 50}, 100, 0, 100, "prontera", :brute)
 
-      assert_receive {:mob_kill_exp, 50, 0, :brute}
-      refute_receive {:mob_kill_exp, _base, _job, _race}, 50
+      assert_receive {:progression, {:mob_kill_exp, 50, 0, :brute}}
+      refute_receive {:progression, {:mob_kill_exp, _base, _job, _race}}, 50
     end
 
     test "pools contributing party members' shares and splits evenly across every eligible member" do
@@ -193,9 +193,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.KillExpTest do
       # Only 1 and 2 attacked; 3 never dealt damage.
       KillExp.distribute(%{1 => 60, 2 => 40}, 100, 50, 100, "prontera", :brute)
 
-      assert_receive {:mob_kill_exp, 33, 16, :brute}
-      assert_receive {:mob_kill_exp, 33, 16, :brute}
-      assert_receive {:mob_kill_exp, 33, 16, :brute}
+      assert_receive {:progression, {:mob_kill_exp, 33, 16, :brute}}
+      assert_receive {:progression, {:mob_kill_exp, 33, 16, :brute}}
+      assert_receive {:progression, {:mob_kill_exp, 33, 16, :brute}}
     end
 
     test "a party member with exp_share off falls through to a damage-based solo grant" do
@@ -216,7 +216,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.KillExpTest do
 
       KillExp.distribute(%{1 => 100}, 100, 50, 100, "prontera", :brute)
 
-      assert_receive {:mob_kill_exp, 100, 50, :brute}
+      assert_receive {:progression, {:mob_kill_exp, 100, 50, :brute}}
     end
 
     test "a party that disbands between grouping and pooling falls back to solo grants" do
@@ -238,7 +238,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.KillExpTest do
 
       KillExp.distribute(%{1 => 100}, 100, 50, 100, "prontera", :brute)
 
-      assert_receive {:mob_kill_exp, 100, 50, :brute}
+      assert_receive {:progression, {:mob_kill_exp, 100, 50, :brute}}
     end
   end
 end

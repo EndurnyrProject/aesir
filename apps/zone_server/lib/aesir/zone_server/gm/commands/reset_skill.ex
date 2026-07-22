@@ -25,7 +25,12 @@ defmodule Aesir.ZoneServer.Gm.Commands.ResetSkill do
     if ProgressionHandler.cart_blocks_reset?(ctx.game_state) do
       {:error, @cart_active}
     else
-      PubSub.broadcast(Aesir.PubSub, "player:#{ctx.game_state.character_id}", {:reset_skills})
+      PubSub.broadcast(
+        Aesir.PubSub,
+        "player:#{ctx.game_state.character_id}",
+        {:progression, {:reset_skills}}
+      )
+
       {:ok, "Skills reset"}
     end
   end

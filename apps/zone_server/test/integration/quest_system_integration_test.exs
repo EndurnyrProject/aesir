@@ -87,7 +87,8 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
 
       # 2. Hunt: exact-mob kill ticks push progress and clamp at the target.
       flush_packets()
-      Enum.each(1..(@target + 2), fn _ -> send(player.pid, {:quest_kill, @verit_mob}) end)
+
+      Enum.each(1..(@target + 2), fn _ -> send(player.pid, {:loot, {:quest_kill, @verit_mob}}) end)
 
       # get_state is a serialized GenServer.call, so it only returns once every
       # queued {:quest_kill} handle_info has run -- a barrier, no sleep needed.

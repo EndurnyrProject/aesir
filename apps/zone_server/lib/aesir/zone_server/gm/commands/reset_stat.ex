@@ -20,7 +20,12 @@ defmodule Aesir.ZoneServer.Gm.Commands.ResetStat do
 
   @impl true
   def execute(_args, ctx) do
-    PubSub.broadcast(Aesir.PubSub, "player:#{ctx.game_state.character_id}", {:reset_stats})
+    PubSub.broadcast(
+      Aesir.PubSub,
+      "player:#{ctx.game_state.character_id}",
+      {:progression, {:reset_stats}}
+    )
+
     {:ok, "Stats reset"}
   end
 end

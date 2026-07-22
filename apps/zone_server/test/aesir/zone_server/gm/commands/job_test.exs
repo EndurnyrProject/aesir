@@ -50,14 +50,14 @@ defmodule Aesir.ZoneServer.Gm.Commands.JobTest do
     PubSub.subscribe(Aesir.PubSub, "player:#{@char_id}")
 
     assert {:ok, "Changed job to knight (7)"} = Job.execute(["7"], ctx())
-    assert_receive {:change_job, 7}
+    assert_receive {:progression, {:change_job, 7}}
   end
 
   test "valid job name broadcasts {:change_job, id} on the caller's topic" do
     PubSub.subscribe(Aesir.PubSub, "player:#{@char_id}")
 
     assert {:ok, "Changed job to knight (7)"} = Job.execute(["Knight"], ctx())
-    assert_receive {:change_job, 7}
+    assert_receive {:progression, {:change_job, 7}}
   end
 
   test "is rejected with a message when a mounted cart would be dropped, broadcasting nothing" do
@@ -66,7 +66,7 @@ defmodule Aesir.ZoneServer.Gm.Commands.JobTest do
     assert {:error, "Remove your cart before changing job"} =
              Job.execute(["7"], ctx(cart_type: 1))
 
-    refute_receive {:change_job, 7}
+    refute_receive {:progression, {:change_job, 7}}
   end
 
   test "is rejected with a message when 4th-job requirements are not met, broadcasting nothing" do
@@ -77,7 +77,7 @@ defmodule Aesir.ZoneServer.Gm.Commands.JobTest do
     assert {:error, "You do not meet the requirements for that job"} =
              Job.execute([to_string(@dragon_knight_id)], ineligible)
 
-    refute_receive {:change_job, _}
+    refute_receive {:progression, {:change_job, _}}
   end
 
   test "allows an eligible 4th-job change, broadcasting {:change_job, id}" do
@@ -86,6 +86,6 @@ defmodule Aesir.ZoneServer.Gm.Commands.JobTest do
     eligible = ctx([], job_id: @rune_knight_id, base_level: 200, job_level: 70)
 
     assert {:ok, _} = Job.execute([to_string(@dragon_knight_id)], eligible)
-    assert_receive {:change_job, @dragon_knight_id}
+    assert_receive {:progression, {:change_job, @dragon_knight_id}}
   end
 end

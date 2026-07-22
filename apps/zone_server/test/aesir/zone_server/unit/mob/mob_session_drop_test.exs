@@ -37,7 +37,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
 
     {:noreply, dead_state} = MobSession.handle_cast({:apply_damage, 100, 42}, state)
 
-    assert_receive {:mob_killed, payload}
+    assert_receive {:loot, {:mob_killed, payload}}
     assert payload.drops == drops
     assert payload.mob_level == 25
     assert payload.map == "prontera"
@@ -71,7 +71,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
 
     {:noreply, _state} = MobSession.handle_cast({:apply_damage, 100, nil}, state)
 
-    refute_receive {:mob_killed, _payload}
+    refute_receive {:loot, {:mob_killed, _payload}}
   end
 
   test "non-death termination publishes exactly one normalized event" do

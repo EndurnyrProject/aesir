@@ -60,8 +60,8 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase2IntegrationTest do
       flush_packets()
 
       # Default test mob grants 10 base / 5 job.
-      send(buffed.pid, {:mob_kill_exp, 10, 5, :formless})
-      send(control.pid, {:mob_kill_exp, 10, 5, :formless})
+      send(buffed.pid, {:progression, {:mob_kill_exp, 10, 5, :formless}})
+      send(control.pid, {:progression, {:mob_kill_exp, 10, 5, :formless}})
 
       buffed_prog = get_player_state(buffed.pid).stats.progression
       control_prog = get_player_state(control.pid).stats.progression
@@ -164,7 +164,7 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase2IntegrationTest do
     grant_base = div(Leveling.next_base_exp(progression0), 2)
     grant_job = div(Leveling.next_job_exp(progression0), 2)
 
-    send(player.pid, {:mob_kill_exp, grant_base, grant_job, :formless})
+    send(player.pid, {:progression, {:mob_kill_exp, grant_base, grant_job, :formless}})
 
     progression = get_player_state(player.pid).stats.progression
     assert progression.base_exp == grant_base

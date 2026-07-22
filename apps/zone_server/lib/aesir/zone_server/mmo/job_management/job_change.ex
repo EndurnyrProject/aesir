@@ -20,7 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobChange do
   def request(char_id, job_id) do
     case AvailableJobs.job_id_to_name(job_id) do
       {:ok, _job_name} ->
-        PubSub.broadcast(Aesir.PubSub, "player:#{char_id}", {:change_job, job_id})
+        PubSub.broadcast(Aesir.PubSub, "player:#{char_id}", {:progression, {:change_job, job_id}})
 
       {:error, :unknown_job_id} ->
         {:error, :unknown_job}

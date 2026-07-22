@@ -65,7 +65,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionQuestKillTest do
 
     log = %{7393 => %Entry{state: :active, counts: [0], deadline: nil}}
 
-    {:noreply, new_state} = PlayerSession.handle_info({:quest_kill, 2314}, state(log))
+    {:noreply, new_state} = PlayerSession.handle_info({:loot, {:quest_kill, 2314}}, state(log))
 
     assert new_state.game_state.quest_log[7393].counts == [1]
 
@@ -79,7 +79,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionQuestKillTest do
 
     log = %{7393 => %Entry{state: :active, counts: [2], deadline: nil}}
 
-    {:noreply, new_state} = PlayerSession.handle_info({:quest_kill, 2314}, state(log))
+    {:noreply, new_state} = PlayerSession.handle_info({:loot, {:quest_kill, 2314}}, state(log))
 
     assert new_state.game_state.quest_log == log
     refute_receive {:send, :gameplay, {:quest_hunt_progress, _}}
@@ -90,7 +90,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionQuestKillTest do
 
     log = %{7393 => %Entry{state: :active, counts: [0], deadline: nil}}
 
-    {:noreply, new_state} = PlayerSession.handle_info({:quest_kill, 9999}, state(log))
+    {:noreply, new_state} = PlayerSession.handle_info({:loot, {:quest_kill, 9999}}, state(log))
 
     assert new_state.game_state.quest_log == log
     refute_receive {:send, :gameplay, {:quest_hunt_progress, _}}

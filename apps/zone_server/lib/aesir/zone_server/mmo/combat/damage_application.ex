@@ -73,7 +73,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   """
   @spec apply_heal(integer(), non_neg_integer(), integer() | nil) :: :ok
   def apply_heal(target_id, amount, source_id \\ nil) do
-    PubSub.broadcast(Aesir.PubSub, "player:#{target_id}", {:apply_heal, amount, source_id})
+    PubSub.broadcast(
+      Aesir.PubSub,
+      "player:#{target_id}",
+      {:combat, {:apply_heal, amount, source_id}}
+    )
   end
 
   @doc """

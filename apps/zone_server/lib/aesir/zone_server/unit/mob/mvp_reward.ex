@@ -103,7 +103,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
     PubSub.broadcast(
       Aesir.PubSub,
       "player:#{char_id}",
-      {:mob_kill_exp, scale(mvp_exp, rate), 0, race}
+      {:progression, {:mob_kill_exp, scale(mvp_exp, rate), 0, race}}
     )
 
     :ok

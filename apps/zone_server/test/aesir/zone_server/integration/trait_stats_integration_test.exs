@@ -80,7 +80,7 @@ defmodule Aesir.ZoneServer.Integration.TraitStatsIntegrationTest do
       assert persisted.trait_point == 20
 
       # 5. @resetstat restores the pool and zeroes the trait stats.
-      PubSub.broadcast(Aesir.PubSub, "player:#{char_id}", {:reset_stats})
+      PubSub.broadcast(Aesir.PubSub, "player:#{char_id}", {:progression, {:reset_stats}})
       reset = get_player_state(pid)
 
       assert reset.stats.base_stats.pow == 0

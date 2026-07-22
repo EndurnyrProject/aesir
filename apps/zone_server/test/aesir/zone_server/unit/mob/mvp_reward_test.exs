@@ -115,7 +115,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
 
       assert :ok = MvpReward.grant(%{1 => 500}, mob(), "gld_dun03", 10, 10)
 
-      refute_receive {:mob_kill_exp, _base, _job, _race}
+      refute_receive {:progression, {:mob_kill_exp, _base, _job, _race}}
     end
   end
 
@@ -132,8 +132,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
       assert :ok =
                MvpReward.grant(%{1 => 100, 2 => 900}, mob(mvp_exp: 1000), "gld_dun03", 10, 10)
 
-      assert_receive {:mob_kill_exp, 500, 0, _race}
-      refute_receive {:mob_kill_exp, _base, _job, _race}
+      assert_receive {:progression, {:mob_kill_exp, 500, 0, _race}}
+      refute_receive {:progression, {:mob_kill_exp, _base, _job, _race}}
       assert_receive {:announced, %{text: "Bruiser has defeated Baphomet!"}}
     end
 
@@ -144,7 +144,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
 
       MvpReward.grant(%{1 => 100}, mob(mvp_exp: 1000), "gld_dun03", 10, 10)
 
-      assert_receive {:mob_kill_exp, 500, 0, _race}
+      assert_receive {:progression, {:mob_kill_exp, 500, 0, _race}}
     end
   end
 
@@ -239,7 +239,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
       )
 
       refute_receive {:session_call, _msg}
-      assert_receive {:mob_kill_exp, 500, 0, _race}
+      assert_receive {:progression, {:mob_kill_exp, 500, 0, _race}}
       assert_receive {:announced, _opts}
     end
   end
@@ -259,7 +259,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
         10
       )
 
-      assert_receive {:mob_kill_exp, 700, 0, _race}
+      assert_receive {:progression, {:mob_kill_exp, 700, 0, _race}}
       assert_receive {:session_call, {:script_apply, {:give_item, 1001, 1}}}
       assert_receive {:announced, %{text: "Runner has defeated Baphomet!"}}
     end

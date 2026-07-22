@@ -103,6 +103,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   end
 
   @doc """
+  Routes a `:progression`-enveloped session message to its handler.
+  `PlayerSession`'s `handle_info({:progression, msg}, state)` clause delegates
+  here for job changes and stat/skill resets; each head returns the
+  GenServer-native `{:noreply, state}` tuple, unwrapping the `{:ok, _}` /
+  `{:error, _}` cores of `reset_skills/1` and `reset_stats/1`.
+  """
+  @spec info(term(), map()) :: {:noreply, map()}
+  def info({:change_job, job_id}, state), do: handle_change_job(job_id, state)
+
+  def info({:reset_skills}, state) do
+    case reset_skills(state) do
+      {:ok, new_state} -> {:noreply, new_state}
+      {:error, _reason} -> {:noreply, state}
+    end
+  end
+
+  def info({:reset_stats}, state) do
+    {:ok, new_state} = reset_stats(state)
+    {:noreply, new_state}
+  end
+
+  @doc """
   Changes the character's job to `job_id`, recomputes job-dependent stats,
   full-heals, and broadcasts the new class sprite to the player and nearby
   observers.

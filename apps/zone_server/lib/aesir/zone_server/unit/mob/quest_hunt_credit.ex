@@ -38,7 +38,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.QuestHuntCredit do
     attacker_id
     |> recipients(mob_map, {mob_x, mob_y})
     |> Enum.each(fn char_id ->
-      PubSub.broadcast(Aesir.PubSub, "player:#{char_id}", {:quest_kill, mob_id})
+      PubSub.broadcast(Aesir.PubSub, "player:#{char_id}", {:loot, {:quest_kill, mob_id}})
     end)
   end
 

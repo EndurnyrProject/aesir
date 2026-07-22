@@ -9,7 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobChangeTest do
     PubSub.subscribe(Aesir.PubSub, "player:#{char_id}")
 
     assert :ok = JobChange.request(char_id, 7)
-    assert_receive {:change_job, 7}
+    assert_receive {:progression, {:change_job, 7}}
   end
 
   test "unknown job id returns an error and broadcasts nothing" do
@@ -17,6 +17,6 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobChangeTest do
     PubSub.subscribe(Aesir.PubSub, "player:#{char_id}")
 
     assert {:error, :unknown_job} = JobChange.request(char_id, 99_999)
-    refute_receive {:change_job, _}
+    refute_receive {:progression, {:change_job, _}}
   end
 end

@@ -47,6 +47,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionMobKillExpTest do
   test "{:mob_kill_exp, base, job, race} delegates to ExperienceHandler.handle_gain_exp/4" do
     expect(ExperienceHandler, :handle_gain_exp, fn 10, 5, :brute, state -> {:noreply, state} end)
 
-    {:noreply, _state} = PlayerSession.handle_info({:mob_kill_exp, 10, 5, :brute}, state())
+    {:noreply, _state} =
+      PlayerSession.handle_info({:progression, {:mob_kill_exp, 10, 5, :brute}}, state())
   end
 end

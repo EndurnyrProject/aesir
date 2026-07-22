@@ -64,7 +64,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
     expect(DropCalculator, :roll, fn ^drops, 7, 50, 50, 0, "morocc", 200, 90 -> rolled end)
     expect(Coordinator, :drop_items, fn "morocc", ^rolled, 200, 90 -> :ok end)
 
-    {:noreply, _state} = PlayerSession.handle_info({:mob_killed, payload(drops)}, state())
+    {:noreply, _state} =
+      PlayerSession.handle_info({:loot, {:mob_killed, payload(drops)}}, state())
   end
 
   test "threads the killer's drop_rate bonus into the roll" do
@@ -74,7 +75,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
     expect(DropCalculator, :roll, fn ^drops, 7, 50, 50, 100, "morocc", 200, 90 -> [] end)
     reject(&Coordinator.drop_items/4)
 
-    {:noreply, _state} = PlayerSession.handle_info({:mob_killed, payload(drops)}, state())
+    {:noreply, _state} =
+      PlayerSession.handle_info({:loot, {:mob_killed, payload(drops)}}, state())
   end
 
   test "an empty roll does not call the coordinator" do
@@ -83,7 +85,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
     expect(DropCalculator, :roll, fn ^drops, 7, 50, 50, 0, "morocc", 200, 90 -> [] end)
     reject(&Coordinator.drop_items/4)
 
-    {:noreply, _state} = PlayerSession.handle_info({:mob_killed, payload(drops)}, state())
+    {:noreply, _state} =
+      PlayerSession.handle_info({:loot, {:mob_killed, payload(drops)}}, state())
   end
 
   test "a legacy payload without drops skips drop rolling" do
@@ -91,6 +94,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
     reject(&Coordinator.drop_items/4)
 
     {:noreply, _state} =
-      PlayerSession.handle_info({:mob_killed, %{mob_level: 50}}, state())
+      PlayerSession.handle_info({:loot, {:mob_killed, %{mob_level: 50}}}, state())
   end
 end

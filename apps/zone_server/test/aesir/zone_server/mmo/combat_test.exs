@@ -492,7 +492,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
       Combat.apply_heal(42_000, 500, 1001)
 
-      assert_receive {:apply_heal, 500, 1001}
+      assert_receive {:combat, {:apply_heal, 500, 1001}}
     end
 
     test "source_id defaults to nil" do
@@ -500,7 +500,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
       Combat.apply_heal(42_001, 300)
 
-      assert_receive {:apply_heal, 300, nil}
+      assert_receive {:combat, {:apply_heal, 300, nil}}
     end
   end
 

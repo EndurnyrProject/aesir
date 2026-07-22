@@ -16,6 +16,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   alias Aesir.ZoneServer.Unit.Player.Stats
 
   @doc """
+  Routes a `:loot`-enveloped session message to its handler. `PlayerSession`'s
+  single `handle_info({:loot, msg}, state)` clause delegates here; each head
+  returns the GenServer-native `{:noreply, state}` tuple.
+  """
+  @spec info(term(), map()) :: {:noreply, map()}
+  def info({:mob_killed, payload}, state), do: mob_killed(payload, state)
+  def info({:quest_kill, mob_id}, state), do: quest_kill(mob_id, state)
+
+  @doc """
   EXP for the kill is granted separately, per contributing attacker, via
   `{:mob_kill_exp, base, job}` (`Unit.Mob.KillExp.distribute/5`); this
   handler only rolls and places this session's own drops as the killing

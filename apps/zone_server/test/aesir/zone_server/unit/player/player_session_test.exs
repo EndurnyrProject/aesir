@@ -760,7 +760,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         connection_pid: self()
       }
 
-      {:noreply, new_state} = PlayerSession.handle_info(:recalculate_stats, state)
+      {:noreply, new_state} = PlayerSession.handle_info({:stats, :recalculate}, state)
 
       assert new_state.game_state.stats.base_stats.str == 25
       assert_receive {:send, _channel, {_tag, %Aesir.Net.ParamChange{}}}
@@ -1214,7 +1214,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     end
   end
 
-  describe "handle_info({:apply_heal, amount, source_id})" do
+  describe "handle_info({:combat, {:apply_heal, amount, source_id}})" do
     test "delegates to HealthHandler and raises HP", %{character: character} do
       stub(UnitRegistry, :update_unit_state, fn _, _, _ -> :ok end)
       stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
@@ -1230,7 +1230,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
       state = %{character: character, game_state: game_state, connection_pid: self()}
 
-      {:noreply, new_state} = PlayerSession.handle_info({:apply_heal, 10, nil}, state)
+      {:noreply, new_state} = PlayerSession.handle_info({:combat, {:apply_heal, 10, nil}}, state)
 
       assert new_state.game_state.stats.current_state.hp == 11
     end

@@ -21,13 +21,13 @@ defmodule Aesir.ZoneServer.Gm.Commands.ResetStatTest do
     PubSub.subscribe(Aesir.PubSub, "player:#{@char_id}")
 
     assert {:ok, "Stats reset"} = ResetStat.execute([], ctx())
-    assert_receive {:reset_stats}
+    assert_receive {:progression, {:reset_stats}}
   end
 
   test "ignores extra args" do
     PubSub.subscribe(Aesir.PubSub, "player:#{@char_id}")
 
     assert {:ok, "Stats reset"} = ResetStat.execute(["anything"], ctx())
-    assert_receive {:reset_stats}
+    assert_receive {:progression, {:reset_stats}}
   end
 end

@@ -127,7 +127,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
 
       tick()
 
-      assert_receive :recalculate_stats
+      assert_receive {:stats, :recalculate}
       refute_received {:"$gen_cast", {:status_changed, _, _}}
     end
 
@@ -139,7 +139,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
 
       tick()
 
-      assert_receive :recalculate_stats
+      assert_receive {:stats, :recalculate}
     end
   end
 end

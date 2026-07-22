@@ -61,7 +61,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.QuestHuntCreditTest do
 
       QuestHuntCredit.credit(1, @mob_id, @mob_map, @mob_cell)
 
-      assert_receive {:quest_kill, @mob_id}
+      assert_receive {:loot, {:quest_kill, @mob_id}}
     end
 
     test "takes the fast path without consulting the party for a party_id 0 killer" do
@@ -71,7 +71,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.QuestHuntCreditTest do
 
       QuestHuntCredit.credit(1, @mob_id, @mob_map, @mob_cell)
 
-      assert_receive {:quest_kill, @mob_id}
+      assert_receive {:loot, {:quest_kill, @mob_id}}
     end
 
     test "credits the killer alone when it is no longer in the registry" do
@@ -80,7 +80,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.QuestHuntCreditTest do
 
       QuestHuntCredit.credit(1, @mob_id, @mob_map, @mob_cell)
 
-      assert_receive {:quest_kill, @mob_id}
+      assert_receive {:loot, {:quest_kill, @mob_id}}
     end
 
     test "credits the killer and every party member in range, each exactly once" do
@@ -93,9 +93,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.QuestHuntCreditTest do
 
       QuestHuntCredit.credit(1, @mob_id, @mob_map, @mob_cell)
 
-      assert_receive {:quest_kill, @mob_id}
-      assert_receive {:quest_kill, @mob_id}
-      refute_receive {:quest_kill, _mob_id}
+      assert_receive {:loot, {:quest_kill, @mob_id}}
+      assert_receive {:loot, {:quest_kill, @mob_id}}
+      refute_receive {:loot, {:quest_kill, _mob_id}}
     end
 
     test "excludes an out-of-range party member" do
@@ -108,8 +108,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.QuestHuntCreditTest do
 
       QuestHuntCredit.credit(1, @mob_id, @mob_map, @mob_cell)
 
-      assert_receive {:quest_kill, @mob_id}
-      refute_receive {:quest_kill, _mob_id}
+      assert_receive {:loot, {:quest_kill, @mob_id}}
+      refute_receive {:loot, {:quest_kill, _mob_id}}
     end
 
     test "excludes an off-map party member" do
@@ -122,8 +122,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.QuestHuntCreditTest do
 
       QuestHuntCredit.credit(1, @mob_id, @mob_map, @mob_cell)
 
-      assert_receive {:quest_kill, @mob_id}
-      refute_receive {:quest_kill, _mob_id}
+      assert_receive {:loot, {:quest_kill, @mob_id}}
+      refute_receive {:loot, {:quest_kill, _mob_id}}
     end
 
     test "still credits a dead but in-range party member (no alive filter)" do
@@ -136,8 +136,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.QuestHuntCreditTest do
 
       QuestHuntCredit.credit(1, @mob_id, @mob_map, @mob_cell)
 
-      assert_receive {:quest_kill, @mob_id}
-      assert_receive {:quest_kill, @mob_id}
+      assert_receive {:loot, {:quest_kill, @mob_id}}
+      assert_receive {:loot, {:quest_kill, @mob_id}}
     end
   end
 end

@@ -21,14 +21,14 @@ defmodule Aesir.ZoneServer.Gm.Commands.ResetSkillTest do
     PubSub.subscribe(Aesir.PubSub, "player:#{@char_id}")
 
     assert {:ok, "Skills reset"} = ResetSkill.execute([], ctx())
-    assert_receive {:reset_skills}
+    assert_receive {:progression, {:reset_skills}}
   end
 
   test "ignores extra args" do
     PubSub.subscribe(Aesir.PubSub, "player:#{@char_id}")
 
     assert {:ok, "Skills reset"} = ResetSkill.execute(["anything"], ctx())
-    assert_receive {:reset_skills}
+    assert_receive {:progression, {:reset_skills}}
   end
 
   test "is rejected with a message while a cart is mounted, broadcasting nothing" do
@@ -37,6 +37,6 @@ defmodule Aesir.ZoneServer.Gm.Commands.ResetSkillTest do
     assert {:error, "Remove your cart before resetting skills"} =
              ResetSkill.execute([], ctx(cart_type: 1))
 
-    refute_receive {:reset_skills}
+    refute_receive {:progression, {:reset_skills}}
   end
 end

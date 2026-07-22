@@ -213,6 +213,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.KillExp do
   end
 
   defp broadcast_grant(char_id, base, job, mob_race) do
-    PubSub.broadcast(Aesir.PubSub, "player:#{char_id}", {:mob_kill_exp, base, job, mob_race})
+    PubSub.broadcast(
+      Aesir.PubSub,
+      "player:#{char_id}",
+      {:progression, {:mob_kill_exp, base, job, mob_race}}
+    )
   end
 end

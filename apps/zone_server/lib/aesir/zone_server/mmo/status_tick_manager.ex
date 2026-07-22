@@ -237,7 +237,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   # Broadcast on the player's topic so this manager stays decoupled from
   # player session pids; an offline player simply has no subscriber.
   defp notify_player_session(player_id) do
-    PubSub.broadcast(Aesir.PubSub, "player:#{player_id}", :recalculate_stats)
+    PubSub.broadcast(Aesir.PubSub, "player:#{player_id}", {:stats, :recalculate})
   end
 
   # Signals a mob's session that one of its statuses ticked or expired. Unlike

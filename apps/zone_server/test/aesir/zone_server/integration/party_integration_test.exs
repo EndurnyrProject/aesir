@@ -159,7 +159,7 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
       flush_packets()
       flush_observed_party_updates()
 
-      send(changer.pid, {:change_job, 4252})
+      send(changer.pid, {:progression, {:change_job, 4252}})
 
       changer_id = changer.character.id
 

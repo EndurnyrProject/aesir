@@ -504,58 +504,43 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     {:noreply, state}
   end
 
+  # Progression: job change and stat/skill resets (ProgressionHandler), plus
+  # each contributing attacker's final damage-based EXP grant for a mob kill
+  # (already scaled by the damage/bonus/penalty math; only the killed mob's
+  # race is still ours to apply, through this session's per-race equipment EXP
+  # bonus).
   @impl true
-  def handle_info({:mob_killed, payload}, state) do
-    LootHandler.mob_killed(payload, state)
-  end
-
-  @impl true
-  def handle_info({:quest_kill, mob_id}, state) do
-    LootHandler.quest_kill(mob_id, state)
-  end
-
-  # A contributing attacker's final damage-based EXP grant for a mob kill
-  # (`Unit.Mob.KillExp.distribute/6`, design "Damage-based EXP share"),
-  # already scaled by the damage/bonus/penalty (or party pool/bonus/penalty)
-  # math. Only the killed mob's race is still ours to apply, through this
-  # session's own per-race equipment EXP bonus.
-  @impl true
-  def handle_info({:mob_kill_exp, base, job, mob_race}, state) do
+  def handle_info({:progression, {:mob_kill_exp, base, job, mob_race}}, state) do
     ExperienceHandler.handle_gain_exp(base, job, mob_race, state)
   end
 
   @impl true
-  def handle_info({:social, msg}, state) do
-    SocialHandler.info(msg, state)
+  def handle_info({:progression, msg}, state) do
+    ProgressionHandler.info(msg, state)
   end
 
+  # Combat: cross-unit heal broadcast on this player's topic.
   @impl true
-  def handle_info(:recalculate_stats, state) do
-    StatsManager.handle_recalculate_stats(state)
-  end
-
-  @impl true
-  def handle_info({:apply_heal, amount, source_id}, state) do
+  def handle_info({:combat, {:apply_heal, amount, source_id}}, state) do
     HealthHandler.apply_heal(amount, source_id, state)
   end
 
+  # Stats: recompute cached stats after a status change (StatusTickManager).
   @impl true
-  def handle_info({:change_job, job_id}, state) do
-    ProgressionHandler.handle_change_job(job_id, state)
+  def handle_info({:stats, :recalculate}, state) do
+    StatsManager.handle_recalculate_stats(state)
   end
 
+  # Loot: drop rolling and hunting-quest kill credit.
   @impl true
-  def handle_info({:reset_skills}, state) do
-    case ProgressionHandler.reset_skills(state) do
-      {:ok, new_state} -> {:noreply, new_state}
-      {:error, _reason} -> {:noreply, state}
-    end
+  def handle_info({:loot, msg}, state) do
+    LootHandler.info(msg, state)
   end
 
+  # Social: party/guild presence lifecycle.
   @impl true
-  def handle_info({:reset_stats}, state) do
-    {:ok, new_state} = ProgressionHandler.reset_stats(state)
-    {:noreply, new_state}
+  def handle_info({:social, msg}, state) do
+    SocialHandler.info(msg, state)
   end
 
   @impl true
