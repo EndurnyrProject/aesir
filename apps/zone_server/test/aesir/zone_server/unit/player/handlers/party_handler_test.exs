@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
 
@@ -71,10 +72,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandlerTest do
   end
 
   defp state_for(%Character{} = character) do
-    %{
+    %SessionState{
       connection_pid: self(),
-      game_state: PlayerState.new(character),
-      interaction_lock: nil
+      game_state: PlayerState.new(character)
     }
   end
 
@@ -347,7 +347,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandlerTest do
                  state
                )
 
-      refute Map.has_key?(new_state, :pending_party_invite)
+      assert new_state.pending_party_invite == nil
 
       assert_received {:send, :gameplay,
                        {:party_action_result,
@@ -461,7 +461,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandlerTest do
                  state
                )
 
-      refute Map.has_key?(new_state, :pending_party_invite)
+      assert new_state.pending_party_invite == nil
       assert Repo.get(Character, invitee.id).party_id == 0
 
       assert_received {:send, :gameplay,

@@ -48,12 +48,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @invite_ttl_ms 30_000
 
   @doc "Creates a party led by the requester (design \"Create\")."
-  @spec handle_create_request(PartyCreateRequest.t(), map()) :: {:noreply, map()}
+  @spec handle_create_request(PartyCreateRequest.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def handle_create_request(%PartyCreateRequest{name: name}, state) do
     result =
       with {:ok, requester} <- fetch_character(requester_char_id(state)),
@@ -69,7 +71,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
   eligibility in the requester's own session, then hands delivery off to the
   invitee's session (design "Invite").
   """
-  @spec handle_invite_request(PartyInviteRequest.t(), map()) :: {:noreply, map()}
+  @spec handle_invite_request(PartyInviteRequest.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def handle_invite_request(
         %PartyInviteRequest{target_char_id: target_char_id, target_name: target_name},
         state
@@ -96,7 +99,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
   same-account rule atomically (design "Invite/Accept"). Decline (and a
   missing/expired invite) just clears the pending invite, if any.
   """
-  @spec handle_invite_response(PartyInviteResponse.t(), map()) :: {:noreply, map()}
+  @spec handle_invite_response(PartyInviteResponse.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def handle_invite_response(%PartyInviteResponse{party_id: party_id, accept: accept}, state) do
     case take_pending_invite(state, party_id) do
       {:ok, invite, cleared_state} -> resolve_invite(accept, invite, cleared_state)
@@ -105,7 +109,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
   end
 
   @doc "Leader-only kick; works for an offline target (design \"Kick\")."
-  @spec handle_kick_request(PartyKickRequest.t(), map()) :: {:noreply, map()}
+  @spec handle_kick_request(PartyKickRequest.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def handle_kick_request(%PartyKickRequest{target_char_id: target_char_id}, state) do
     char_id = requester_char_id(state)
 
@@ -118,7 +123,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
   end
 
   @doc "Leader-only leadership transfer (design \"Leader transfer\")."
-  @spec handle_leader_request(PartyLeaderRequest.t(), map()) :: {:noreply, map()}
+  @spec handle_leader_request(PartyLeaderRequest.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def handle_leader_request(%PartyLeaderRequest{target_char_id: target_char_id}, state) do
     char_id = requester_char_id(state)
 
@@ -131,7 +137,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
   end
 
   @doc "Leader-only even-share toggle (design \"Options\")."
-  @spec handle_options_request(PartyOptionsRequest.t(), map()) :: {:noreply, map()}
+  @spec handle_options_request(PartyOptionsRequest.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def handle_options_request(%PartyOptionsRequest{exp_share: exp_share}, state) do
     char_id = requester_char_id(state)
 
@@ -144,7 +151,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
   end
 
   @doc "Leaves the current party; the leader leaving disbands it (design \"Leave\")."
-  @spec handle_leave_request(PartyLeaveRequest.t(), map()) :: {:noreply, map()}
+  @spec handle_leave_request(PartyLeaveRequest.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def handle_leave_request(%PartyLeaveRequest{}, state) do
     char_id = requester_char_id(state)
 
@@ -162,7 +170,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
   pending invite, sends the `PartyInviteNotify`, and arms the expiry timer.
   Rejects a second invite while one is already pending and unexpired.
   """
-  @spec handle_invite_delivery(map(), map()) :: {:reply, :ok | {:error, :invite_pending}, map()}
+  @spec handle_invite_delivery(map(), SessionState.t()) ::
+          {:reply, :ok | {:error, :invite_pending}, SessionState.t()}
   def handle_invite_delivery(invite, state) do
     if pending_invite_active?(state) do
       {:reply, {:error, :invite_pending}, state}
@@ -181,7 +190,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
         expires_at: System.monotonic_time(:millisecond) + @invite_ttl_ms
       }
 
-      {:reply, :ok, Map.put(state, :pending_party_invite, pending)}
+      {:reply, :ok, %{state | pending_party_invite: pending}}
     end
   end
 
@@ -247,7 +256,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
     if invite_expired?(invite) do
       :error
     else
-      {:ok, invite, Map.delete(state, :pending_party_invite)}
+      {:ok, invite, %{state | pending_party_invite: nil}}
     end
   end
 
@@ -257,6 +266,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
     System.monotonic_time(:millisecond) >= expires_at
   end
 
+  defp pending_invite_active?(%{pending_party_invite: nil}), do: false
   defp pending_invite_active?(%{pending_party_invite: invite}), do: not invite_expired?(invite)
   defp pending_invite_active?(_state), do: false
 

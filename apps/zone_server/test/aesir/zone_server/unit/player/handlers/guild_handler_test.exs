@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @emperium_id 714
@@ -88,10 +89,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
   defp state_for(%Character{} = character, overrides \\ %{}) do
     game_state = PlayerState.new(character)
 
-    %{
+    %SessionState{
       connection_pid: self(),
-      game_state: Map.merge(game_state, overrides),
-      interaction_lock: nil
+      game_state: Map.merge(game_state, overrides)
     }
   end
 
@@ -337,7 +337,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
                  state
                )
 
-      refute Map.has_key?(new_state, :pending_guild_invite)
+      assert new_state.pending_guild_invite == nil
       assert new_state.game_state.guild_id == guild.guild_id
 
       assert_received {:send, :gameplay,
@@ -377,7 +377,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
                  state
                )
 
-      refute Map.has_key?(new_state, :pending_guild_invite)
+      assert new_state.pending_guild_invite == nil
       assert Repo.get(Character, invitee.id).guild_id == 0
 
       assert_received {:send, :gameplay,

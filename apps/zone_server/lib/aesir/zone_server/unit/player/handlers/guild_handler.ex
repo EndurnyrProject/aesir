@@ -64,6 +64,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @invite_ttl_ms 30_000
@@ -74,7 +75,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   Requires `guild_id == 0` and an Emperium present; the item is consumed only
   after `Guild.Manager.create/2` succeeds (design "Create (with Emperium)").
   """
-  @spec handle_create_request(GuildCreateRequest.t(), map()) :: {:noreply, map()}
+  @spec handle_create_request(GuildCreateRequest.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def handle_create_request(%GuildCreateRequest{name: name}, state) do
     case create_guild(name, state) do
       {:ok, new_state} -> ack_result(new_state, "create", :ok)
@@ -101,7 +103,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   the target's eligibility in the requester's own session, then hands delivery
   off to the invitee's session (design "Invite").
   """
-  @spec handle_invite_request(GuildInviteRequest.t(), map()) :: {:noreply, map()}
+  @spec handle_invite_request(GuildInviteRequest.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def handle_invite_request(
         %GuildInviteRequest{target_char_id: target_char_id, target_name: target_name},
         state
@@ -129,7 +132,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   "Invite/Accept"). Decline (and a missing/expired invite) just clears the
   pending invite, if any.
   """
-  @spec handle_invite_response(GuildInviteResponse.t(), map()) :: {:noreply, map()}
+  @spec handle_invite_response(GuildInviteResponse.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def handle_invite_response(%GuildInviteResponse{guild_id: guild_id, accept: accept}, state) do
     case take_pending_invite(state, guild_id) do
       {:ok, _invite, cleared_state} -> resolve_invite(accept, guild_id, cleared_state)
@@ -138,7 +142,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   end
 
   @doc "Leaves the current guild; the master leaving disbands it (design \"Leave\")."
-  @spec handle_leave_request(GuildLeaveRequest.t(), map()) :: {:noreply, map()}
+  @spec handle_leave_request(GuildLeaveRequest.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def handle_leave_request(%GuildLeaveRequest{}, state) do
     char_id = requester_char_id(state)
 
@@ -151,7 +156,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   end
 
   @doc "EXPEL-gated removal of a member; the Manager refuses to target the master (design \"Expel\")."
-  @spec handle_expel_request(GuildExpelRequest.t(), map()) :: {:noreply, map()}
+  @spec handle_expel_request(GuildExpelRequest.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def handle_expel_request(
         %GuildExpelRequest{target_char_id: target_char_id, reason: reason},
         state
@@ -167,7 +173,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   end
 
   @doc "`:notice`-gated guild notice edit."
-  @spec handle_notice_edit_request(GuildNoticeEditRequest.t(), map()) :: {:noreply, map()}
+  @spec handle_notice_edit_request(GuildNoticeEditRequest.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def handle_notice_edit_request(%GuildNoticeEditRequest{subject: subject, body: body}, state) do
     char_id = requester_char_id(state)
 
@@ -180,7 +187,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   end
 
   @doc "`:positions`-gated edit of one non-zero position slot (index 0 protected)."
-  @spec handle_position_edit_request(GuildPositionEditRequest.t(), map()) :: {:noreply, map()}
+  @spec handle_position_edit_request(GuildPositionEditRequest.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def handle_position_edit_request(
         %GuildPositionEditRequest{
           index: index,
@@ -206,7 +214,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   end
 
   @doc "Master-only assignment of a member to a position slot."
-  @spec handle_member_position_request(GuildMemberPositionRequest.t(), map()) :: {:noreply, map()}
+  @spec handle_member_position_request(GuildMemberPositionRequest.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def handle_member_position_request(
         %GuildMemberPositionRequest{target_char_id: target_char_id, index: index},
         state
@@ -228,7 +237,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   broadcasts `GuildEmblemChanged`). Invalid emblem -> `:GUILD_ERR_INVALID_EMBLEM`;
   a non-master -> `:GUILD_ERR_NO_PERMISSION`; neither changes the stored data.
   """
-  @spec handle_emblem_upload_request(GuildEmblemUploadRequest.t(), map()) :: {:noreply, map()}
+  @spec handle_emblem_upload_request(GuildEmblemUploadRequest.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def handle_emblem_upload_request(%GuildEmblemUploadRequest{data: data}, state) do
     char_id = requester_char_id(state)
 
@@ -247,7 +257,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   with a `GuildEmblemData`. A missing guild or a guild without an emblem acks an
   error instead of crashing.
   """
-  @spec handle_emblem_request(GuildEmblemRequest.t(), map()) :: {:noreply, map()}
+  @spec handle_emblem_request(GuildEmblemRequest.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def handle_emblem_request(%GuildEmblemRequest{guild_id: guild_id}, state) do
     case Repo.get(GuildModel, guild_id) do
       %GuildModel{emblem_data: data, emblem_id: emblem_id} when is_binary(data) ->
@@ -270,7 +281,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   pending invite, sends the `GuildInviteNotify`, and arms the expiry timer.
   Rejects a second invite while one is already pending and unexpired.
   """
-  @spec handle_invite_delivery(map(), map()) :: {:reply, :ok | {:error, :invite_pending}, map()}
+  @spec handle_invite_delivery(map(), SessionState.t()) ::
+          {:reply, :ok | {:error, :invite_pending}, SessionState.t()}
   def handle_invite_delivery(invite, state) do
     if pending_invite_active?(state) do
       {:reply, {:error, :invite_pending}, state}
@@ -289,7 +301,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
         expires_at: System.monotonic_time(:millisecond) + @invite_ttl_ms
       }
 
-      {:reply, :ok, Map.put(state, :pending_guild_invite, pending)}
+      {:reply, :ok, %{state | pending_guild_invite: pending}}
     end
   end
 
@@ -387,7 +399,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
     if invite_expired?(invite) do
       :error
     else
-      {:ok, invite, Map.delete(state, :pending_guild_invite)}
+      {:ok, invite, %{state | pending_guild_invite: nil}}
     end
   end
 
@@ -397,6 +409,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
     System.monotonic_time(:millisecond) >= expires_at
   end
 
+  defp pending_invite_active?(%{pending_guild_invite: nil}), do: false
   defp pending_invite_active?(%{pending_guild_invite: invite}), do: not invite_expired?(invite)
   defp pending_invite_active?(_state), do: false
 

@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Interaction
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler
+  alias Aesir.ZoneServer.Unit.Player.SessionState
 
   @doc """
   Processes an NPC click (protobuf analogue of CZ_CONTACTNPC 0x0090).
@@ -28,7 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   Ignored while an interaction lock is held. A gid that resolves to neither a
   shop nor an NPC module is ignored.
   """
-  @spec handle_talk(integer(), map()) :: {:noreply, map()}
+  @spec handle_talk(integer(), SessionState.t()) :: {:noreply, SessionState.t()}
   def handle_talk(_gid, %{interaction_lock: lock} = state) when not is_nil(lock) do
     {:noreply, state}
   end
@@ -50,7 +51,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   same `on_talk/1` interaction the click path does, without duplicating this
   resolution/visibility/lock logic.
   """
-  @spec talk_to_npc(non_neg_integer(), map(), map()) :: {:noreply, map()}
+  @spec talk_to_npc(non_neg_integer(), map(), SessionState.t()) :: {:noreply, SessionState.t()}
   def talk_to_npc(gid, game_state, state) do
     with {:ok, {module, _placement}} <- NpcRegistry.module_for_unit(gid),
          true <- NpcSession.visible?(gid) do
@@ -75,7 +76,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   interaction process. Dropped when no dialog is active or the response
   carries a different npc_id than the active interaction.
   """
-  @spec handle_interact(NpcInteract.t(), map()) :: {:noreply, map()}
+  @spec handle_interact(NpcInteract.t(), SessionState.t()) :: {:noreply, SessionState.t()}
   def handle_interact(
         %NpcInteract{npc_id: gid} = msg,
         %{interaction_lock: {pid, _ref, gid}} = state

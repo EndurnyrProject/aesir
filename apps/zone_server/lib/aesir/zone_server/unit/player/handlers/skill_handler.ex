@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
@@ -47,7 +48,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # reject it) and never takes the ordinary cast path.
   @cast_cancel_id 275
 
-  @spec handle_use_skill(map(), integer(), pos_integer(), integer()) :: {:noreply, map()}
+  @spec handle_use_skill(SessionState.t(), integer(), pos_integer(), integer()) ::
+          {:noreply, SessionState.t()}
   def handle_use_skill(%{game_state: game_state} = state, skill_id, level, target_id) do
     if StatusInterpreter.can_use_skill?(:player, game_state.character_id, skill_id) do
       dispatch_use_skill(state, skill_id, level, target_id)
@@ -111,8 +113,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     %{game_state | stats: %{stats | current_state: current}}
   end
 
-  @spec handle_use_skill_ground(map(), integer(), pos_integer(), integer(), integer()) ::
-          {:noreply, map()}
+  @spec handle_use_skill_ground(SessionState.t(), integer(), pos_integer(), integer(), integer()) ::
+          {:noreply, SessionState.t()}
   def handle_use_skill_ground(%{game_state: game_state} = state, skill_id, level, x, y) do
     if StatusInterpreter.can_use_skill?(:player, game_state.character_id, skill_id) do
       drive_cast(state, skill_id, level, {:ground, x, y})
@@ -126,7 +128,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   Resolves a fired cast timer. Runs the behavior to completion only when the
   player is still casting under the same token; stale tokens are dropped.
   """
-  @spec handle_cast_complete(map(), reference()) :: {:noreply, map()}
+  @spec handle_cast_complete(SessionState.t(), reference()) :: {:noreply, SessionState.t()}
   def handle_cast_complete(
         %{game_state: %{casting: %{token: token} = ctx}} = state,
         token
@@ -162,7 +164,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   (`now < fixed_until`) and cancellable once it reaches the variable phase, as
   long as it is flagged interruptible. Anything else passes through unchanged.
   """
-  @spec interrupt_cast_on_damage(map()) :: map()
+  @spec interrupt_cast_on_damage(SessionState.t()) :: SessionState.t()
   def interrupt_cast_on_damage(
         %{game_state: %{casting: %{fixed_until: _, interruptible: _} = ctx}} = state
       ) do
@@ -185,7 +187,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   attacking Free Caster leaves that action running — only the cast is cancelled
   (see `end_cast/1`).
   """
-  @spec cancel_cast(map(), atom()) :: map()
+  @spec cancel_cast(SessionState.t(), atom()) :: SessionState.t()
   def cancel_cast(
         %{game_state: %{casting: %{timer_ref: _} = ctx} = game_state} = state,
         reason
@@ -277,7 +279,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   range it casts, if it drifted further it re-approaches, and if it vanished the
   cast quietly fails.
   """
-  @spec handle_reached_skill_position(map()) :: {:noreply, map()}
+  @spec handle_reached_skill_position(SessionState.t()) :: {:noreply, SessionState.t()}
   def handle_reached_skill_position(
         %{
           game_state:
@@ -616,8 +618,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   insufficient SP - leaves the session untouched and tells the player nothing,
   which is rAthena's behaviour.
   """
-  @spec handle_auto_cast(map(), integer(), pos_integer(), Active.target()) ::
-          {:noreply, map()}
+  @spec handle_auto_cast(SessionState.t(), integer(), pos_integer(), Active.target()) ::
+          {:noreply, SessionState.t()}
   def handle_auto_cast(%{game_state: game_state} = state, skill_id, level, target) do
     case Interpreter.auto_cast(game_state, skill_id, level, target) do
       {:ok, new_game_state} ->

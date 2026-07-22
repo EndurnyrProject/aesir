@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StateCommitTest do
 
   alias Aesir.ZoneServer.Party.Manager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
@@ -21,7 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StateCommitTest do
   test "publishes registry state before party sync and keeps it when party sync fails" do
     previous = player_state(40)
     current = player_state(35)
-    session = %{connection_pid: self(), game_state: previous}
+    session = %SessionState{connection_pid: self(), game_state: previous}
 
     :ok = UnitRegistry.register_unit(:player, 12, PlayerState, previous, self())
 

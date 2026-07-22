@@ -47,6 +47,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionAdapter
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Session.Motion
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.StaticEntity
@@ -310,7 +311,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     case NpcEvents.trigger_attached(gid, "OnTouch", base_ctx, self()) do
       {:ok, pid} ->
         ref = Process.monitor(pid)
-        Map.put(state, :interaction_lock, {pid, ref, gid})
+        %{state | interaction_lock: {pid, ref, gid}}
 
       {:error, :no_handler} ->
         {:noreply, new_state} = NpcInteractionHandler.talk_to_npc(gid, state.game_state, state)
@@ -556,7 +557,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   Routes through the shared `Unit.Session.Motion`: stops the in-flight walk,
   then writes and publishes the new position via `Unit.Movement.set_position/4`.
   """
-  @spec handle_knocked_back(map(), integer(), integer()) :: {:noreply, map()}
+  @spec handle_knocked_back(SessionState.t(), integer(), integer()) ::
+          {:noreply, SessionState.t()}
   def handle_knocked_back(state, x, y) do
     {:noreply, Motion.knocked_back(state, x, y, SessionAdapter)}
   end

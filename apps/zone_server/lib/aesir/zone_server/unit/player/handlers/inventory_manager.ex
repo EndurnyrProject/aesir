@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
 
@@ -53,8 +54,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
   state) on failure so callers can react to a lost add (e.g. re-place a claimed
   ground item).
   """
-  @spec handle_give_item(ItemDefinition.t(), pos_integer(), map()) ::
-          {:ok, map()} | {:error, term(), map()}
+  @spec handle_give_item(ItemDefinition.t(), pos_integer(), SessionState.t()) ::
+          {:ok, SessionState.t()} | {:error, term(), SessionState.t()}
   def handle_give_item(%ItemDefinition{} = item_def, amount, %{game_state: game_state} = state) do
     case InventoryOps.add(
            game_state.character_id,
@@ -85,7 +86,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
   session. `PickupHandler` calls `handle_give_item/3` directly instead: it
   needs the error reason to re-place a claimed ground item.
   """
-  @spec handle_give_item_cast(ItemDefinition.t(), pos_integer(), map()) :: {:noreply, map()}
+  @spec handle_give_item_cast(ItemDefinition.t(), pos_integer(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def handle_give_item_cast(item_def, amount, state) do
     case handle_give_item(item_def, amount, state) do
       {:ok, new_state} -> {:noreply, new_state}
@@ -99,7 +101,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
   row to the client. A break of an empty/invalid slot leaves state untouched
   and sends nothing.
   """
-  @spec handle_break_equip(atom(), map()) :: {:noreply, map()}
+  @spec handle_break_equip(atom(), SessionState.t()) :: {:noreply, SessionState.t()}
   def handle_break_equip(slot, %{game_state: game_state} = state) do
     case BreakOps.break(game_state, slot) do
       {:ok, new_game_state, broken_item} ->
@@ -117,7 +119,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
   the client. The GM `@repairall` command casts this to the resolved target
   session; the DSL `repairall` op reaches repair via the script-apply seam.
   """
-  @spec handle_repair_all(map()) :: {:noreply, map()}
+  @spec handle_repair_all(SessionState.t()) :: {:noreply, SessionState.t()}
   def handle_repair_all(%{game_state: game_state} = state) do
     broken_indices = for {index, %InventoryItem{attribute: 1}} <- game_state.inventory, do: index
 

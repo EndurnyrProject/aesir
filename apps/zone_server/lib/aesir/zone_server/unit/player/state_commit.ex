@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StateCommit do
   alias Aesir.ZoneServer.Unit.Player.GuildSync
   alias Aesir.ZoneServer.Unit.Player.PartySync
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
@@ -17,7 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StateCommit do
   Party and guild synchronization are best-effort and never roll back the
   authoritative session or registry state.
   """
-  @spec commit(map(), PlayerState.t()) :: map()
+  @spec commit(SessionState.t(), PlayerState.t()) :: SessionState.t()
   def commit(%{game_state: %PlayerState{} = previous} = session, %PlayerState{} = game_state) do
     UnitRegistry.update_unit_state(:player, game_state.character_id, game_state)
 

@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase2IntegrationTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
+  alias Aesir.ZoneServer.Unit.Player.SessionState
 
   setup :set_mimic_private
   setup :verify_on_exit!
@@ -177,7 +178,11 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase2IntegrationTest do
   end
 
   defp kill(player) do
-    state = %{game_state: get_player_state(player.pid), connection_pid: player.connection_pid}
+    state = %SessionState{
+      game_state: get_player_state(player.pid),
+      connection_pid: player.connection_pid
+    }
+
     {:noreply, dead} = HealthHandler.apply_damage(9_999, nil, state)
     dead.game_state
   end

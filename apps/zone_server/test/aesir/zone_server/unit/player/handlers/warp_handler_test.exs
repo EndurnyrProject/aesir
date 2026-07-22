@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
   alias Aesir.ZoneServer.Unit.Lifecycle.Event
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -58,16 +59,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
       last_visibility_cell: {18, 18}
     }
 
-    %{game_state: game_state, connection_pid: self()}
+    %SessionState{game_state: game_state, connection_pid: self()}
   end
 
   defp menu_state do
-    Map.put(state(), :pending_skill_menu, %{
-      skill_id: 380,
-      kind: :SKILLS,
-      entry_ids: [11],
-      level: 1
-    })
+    %{
+      state()
+      | pending_skill_menu: %{
+          skill_id: 380,
+          kind: :SKILLS,
+          entry_ids: [11],
+          level: 1
+        }
+    }
   end
 
   defp stub_teardown do

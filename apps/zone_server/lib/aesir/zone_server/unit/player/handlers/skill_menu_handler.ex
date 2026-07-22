@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryStaging
+  alias Aesir.ZoneServer.Unit.Player.SessionState
 
   @typedoc "The offer parked on the session while the client is deciding."
   @type pending :: %{
@@ -67,8 +68,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
   Drops the pending menu, if any. Called from the paths that invalidate an open
   menu: death and warp/map change.
   """
-  @spec clear(map()) :: map()
-  def clear(state), do: Map.put(state, :pending_skill_menu, nil)
+  @spec clear(SessionState.t()) :: SessionState.t()
+  def clear(state), do: %{state | pending_skill_menu: nil}
 
   @doc """
   Handles a client `SkillMenuReply` against the pending menu.

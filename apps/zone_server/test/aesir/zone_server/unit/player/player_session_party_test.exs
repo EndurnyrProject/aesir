@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionPartyTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
 
@@ -407,7 +408,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionPartyTest do
       assert {:noreply, new_state} =
                PlayerSession.handle_info({:social, :party_invite_expired}, state)
 
-      refute Map.has_key?(new_state, :pending_party_invite)
+      assert new_state.pending_party_invite == nil
     end
   end
 
@@ -451,7 +452,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionPartyTest do
           y: 50
       }
 
-      state = %{game_state: game_state, connection_pid: self()}
+      state = %SessionState{game_state: game_state, connection_pid: self()}
 
       assert {:ok, _new_state} = WarpHandler.warp(state, "geffen", 100, 120)
 

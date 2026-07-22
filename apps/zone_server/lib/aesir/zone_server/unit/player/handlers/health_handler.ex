@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionAdapter
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.Session.Vitals
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -54,7 +55,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   HP and triggers death handling when HP reaches 0. Damage on an already-dead
   player (or non-positive damage) is ignored.
   """
-  @spec apply_damage(integer(), integer() | nil, map()) :: {:noreply, map()}
+  @spec apply_damage(integer(), integer() | nil, SessionState.t()) :: {:noreply, SessionState.t()}
   def apply_damage(_damage, _attacker_id, %{game_state: %{action_state: :dead}} = state) do
     {:noreply, state}
   end
@@ -94,7 +95,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   Raises HP by `amount`, clamped at `max_hp`. No-op when the player is dead
   or `amount` is non-positive. Does not trigger death or cast-interrupt logic.
   """
-  @spec apply_heal(non_neg_integer(), integer() | nil, map()) :: {:noreply, map()}
+  @spec apply_heal(non_neg_integer(), integer() | nil, SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def apply_heal(_amount, _source_id, %{game_state: %{action_state: :dead}} = state) do
     {:noreply, state}
   end
@@ -136,7 +138,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   Routes through `Unit.Session.Vitals`, which owns the clamp and pushes only the
   SP `ParamChange` + persists only `sp`. Used by SP-costing statuses.
   """
-  @spec consume_sp(non_neg_integer(), map()) :: {:noreply, map()}
+  @spec consume_sp(non_neg_integer(), SessionState.t()) :: {:noreply, SessionState.t()}
   def consume_sp(amount, state) do
     {:noreply, Vitals.drain_sp(state, amount, SessionAdapter, commit: true)}
   end
@@ -148,8 +150,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   the player cannot pay the entire amount; on success it drains through the same
   `Unit.Session.Vitals` path.
   """
-  @spec try_consume_sp(non_neg_integer(), map()) ::
-          {:reply, :ok | {:error, :insufficient_sp}, map()}
+  @spec try_consume_sp(non_neg_integer(), SessionState.t()) ::
+          {:reply, :ok | {:error, :insufficient_sp}, SessionState.t()}
   def try_consume_sp(amount, state) when is_integer(amount) and amount > 0 do
     if Vitals.can_pay_sp?(state, SessionAdapter, amount) do
       {:reply, :ok, Vitals.drain_sp(state, amount, SessionAdapter, commit: true)}
@@ -168,9 +170,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   delegating to `resurrect/3`, replying with the validation error and leaving
   `state` untouched when the source has moved on or gone away.
   """
-  @spec handle_resurrect(integer(), pos_integer(), map()) ::
+  @spec handle_resurrect(integer(), pos_integer(), SessionState.t()) ::
           {:reply, :ok | {:error, :stale_target | :invalid_hp_percent | :source_unavailable},
-           map()}
+           SessionState.t()}
   def handle_resurrect(source_id, hp_percent, state) do
     case validate_resurrection_source(source_id, state) do
       :ok -> resurrect(source_id, hp_percent, state)
@@ -185,8 +187,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   transition so a cast that completed after another resurrection cannot mutate
   a living target.
   """
-  @spec resurrect(integer(), pos_integer(), map()) ::
-          {:reply, :ok | {:error, :stale_target | :invalid_hp_percent}, map()}
+  @spec resurrect(integer(), pos_integer(), SessionState.t()) ::
+          {:reply, :ok | {:error, :stale_target | :invalid_hp_percent}, SessionState.t()}
   def resurrect(_source_id, hp_percent, state)
       when is_integer(hp_percent) and hp_percent > 0 and hp_percent <= 100 do
     if TargetState.corpse?(state.game_state) do
@@ -250,7 +252,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   The mirror of `consume_sp/2` through `Unit.Session.Vitals`; no-op for a
   non-positive amount.
   """
-  @spec restore_sp(integer(), map()) :: {:noreply, map()}
+  @spec restore_sp(integer(), SessionState.t()) :: {:noreply, SessionState.t()}
   def restore_sp(amount, state) do
     {:noreply, Vitals.restore_sp(state, amount, SessionAdapter, commit: true)}
   end
@@ -261,7 +263,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   Type 0 respawns a dead player; type 1 (return to character select) disconnects
   the session.
   """
-  @spec handle_restart(non_neg_integer(), map()) :: {:noreply, map()} | {:stop, :normal, map()}
+  @spec handle_restart(non_neg_integer(), SessionState.t()) ::
+          {:noreply, SessionState.t()} | {:stop, :normal, SessionState.t()}
   def handle_restart(0, %{game_state: %{action_state: :dead}} = state), do: respawn(state)
   def handle_restart(0, state), do: {:noreply, state}
 

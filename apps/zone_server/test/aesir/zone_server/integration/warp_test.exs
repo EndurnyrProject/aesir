@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Integration.WarpTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -44,7 +45,7 @@ defmodule Aesir.ZoneServer.Integration.WarpTest do
       visible_mobs: MapSet.new()
     }
 
-    %{game_state: game_state, connection_pid: self()}
+    %SessionState{game_state: game_state, connection_pid: self()}
   end
 
   test "warp then MapLoaded relocates the player and respawns without a resync" do

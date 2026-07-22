@@ -50,6 +50,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.PartySync
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusPersistence
@@ -397,12 +398,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # Monitor the connection process to detect crashes
     connection_monitor_ref = Process.monitor(connection_pid)
 
-    state = %{
+    state = %SessionState{
       game_state: final_game_state,
       connection_pid: connection_pid,
-      connection_monitor_ref: connection_monitor_ref,
-      interaction_lock: nil,
-      pending_skill_menu: nil
+      connection_monitor_ref: connection_monitor_ref
     }
 
     register_player(final_game_state)

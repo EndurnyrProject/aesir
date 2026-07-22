@@ -39,6 +39,7 @@ defmodule Aesir.ZoneServer.Npc.WarpIntegrationTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -90,7 +91,7 @@ defmodule Aesir.ZoneServer.Npc.WarpIntegrationTest do
 
       register_player(game_state)
 
-      state = %{game_state: game_state, connection_pid: self()}
+      state = %SessionState{game_state: game_state, connection_pid: self()}
 
       {:noreply, ticked_state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
 
@@ -155,7 +156,7 @@ defmodule Aesir.ZoneServer.Npc.WarpIntegrationTest do
 
       register_player(game_state)
 
-      state = %{game_state: game_state, connection_pid: self()}
+      state = %SessionState{game_state: game_state, connection_pid: self()}
 
       # Stage 1: step into the warp -> cast {:movement, {:warp, "prontera", 200, 200}}.
       {:noreply, ticked_state} = PlayerSession.handle_info({:movement, :movement_tick}, state)

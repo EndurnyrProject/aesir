@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   alias Aesir.ZoneServer.Party.View, as: PartyView
   alias Aesir.ZoneServer.Unit.Player.GuildSync
   alias Aesir.ZoneServer.Unit.Player.PartySync
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Phoenix.PubSub
 
@@ -40,7 +41,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   discriminates the party/guild lifecycle message and the "our party/guild vs
   stale broadcast" refinement happens in the entry points below.
   """
-  @spec info(term(), map()) :: {:noreply, map()}
+  @spec info(term(), SessionState.t()) :: {:noreply, SessionState.t()}
   def info({:party_updated, party_state}, state), do: party_updated(party_state, state)
 
   def info({:party_member_updated, party_id, member}, state),
@@ -73,7 +74,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   complete online snapshot, so the full roster reaches the client before the
   queued self-update is handled.
   """
-  @spec attach_to_party(map(), PartyState.t()) :: map()
+  @spec attach_to_party(SessionState.t(), PartyState.t()) :: SessionState.t()
   def attach_to_party(%{game_state: game_state} = state, %PartyState{} = party_state) do
     PubSub.subscribe(Aesir.PubSub, "party:#{party_state.party_id}")
 
@@ -96,7 +97,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   Must run inside the owning `PlayerSession` process (from `GuildHandler`, which
   executes inline during packet dispatch). Mirrors `attach_to_party/2`.
   """
-  @spec attach_to_guild(map(), GuildState.t()) :: map()
+  @spec attach_to_guild(SessionState.t(), GuildState.t()) :: SessionState.t()
   def attach_to_guild(%{game_state: game_state} = state, %GuildState{guild_id: guild_id}) do
     PubSub.subscribe(Aesir.PubSub, "guild:#{guild_id}")
 
@@ -118,7 +119,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   longer lists this character (kicked while offline) silently resets
   `party_id` back to 0 instead of subscribing.
   """
-  @spec subscribe_party(map()) :: map()
+  @spec subscribe_party(SessionState.t()) :: SessionState.t()
   def subscribe_party(%{game_state: %{party_id: 0}} = state), do: state
 
   def subscribe_party(%{game_state: %{party_id: party_id}} = state) do
@@ -138,7 +139,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   character already in a guild at login (mirrors `subscribe_party/1`); a no-op
   when the player has no guild.
   """
-  @spec subscribe_guild(map()) :: map()
+  @spec subscribe_guild(SessionState.t()) :: SessionState.t()
   def subscribe_guild(%{game_state: %{guild_id: 0}} = state), do: state
 
   def subscribe_guild(%{game_state: %{guild_id: guild_id}} = state) do
@@ -160,7 +161,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   topic subscription doesn't leak. A stale broadcast for a party we've already
   left is a no-op.
   """
-  @spec party_updated(PartyState.t(), map()) :: {:noreply, map()}
+  @spec party_updated(PartyState.t(), SessionState.t()) :: {:noreply, SessionState.t()}
   def party_updated(
         %PartyState{party_id: party_id} = party_state,
         %{game_state: %{party_id: party_id, character_id: char_id} = game_state} = state
@@ -180,7 +181,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   Relays a single member's update for our current party; a stale update for
   another party is ignored.
   """
-  @spec party_member_updated(non_neg_integer(), PartyMember.t(), map()) :: {:noreply, map()}
+  @spec party_member_updated(non_neg_integer(), PartyMember.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def party_member_updated(
         party_id,
         %PartyMember{} = member,
@@ -196,7 +198,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   Notifies the client that our party disbanded, unsubscribes, and clears
   `party_id`; a stale disband for a party we've left is ignored.
   """
-  @spec party_disbanded(non_neg_integer(), String.t(), map()) :: {:noreply, map()}
+  @spec party_disbanded(non_neg_integer(), String.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def party_disbanded(party_id, reason, %{game_state: %{party_id: party_id} = game_state} = state) do
     MessageRouter.send_to(state.connection_pid, %PartyDisbanded{
       party_id: party_id,
@@ -210,9 +213,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   def party_disbanded(_party_id, _reason, state), do: {:noreply, state}
 
   @doc "Clears the pending party invite when its expiry timer fires."
-  @spec party_invite_expired(map()) :: {:noreply, map()}
+  @spec party_invite_expired(SessionState.t()) :: {:noreply, SessionState.t()}
   def party_invite_expired(state) do
-    {:noreply, Map.delete(state, :pending_party_invite)}
+    {:noreply, %{state | pending_party_invite: nil}}
   end
 
   @doc """
@@ -222,7 +225,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   subscription doesn't leak. A stale broadcast for a guild we've left is a
   no-op.
   """
-  @spec guild_updated(GuildState.t(), map()) :: {:noreply, map()}
+  @spec guild_updated(GuildState.t(), SessionState.t()) :: {:noreply, SessionState.t()}
   def guild_updated(
         %GuildState{guild_id: guild_id} = guild_state,
         %{game_state: %{guild_id: guild_id, character_id: char_id} = game_state} = state
@@ -242,7 +245,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   Relays a single member's update for our current guild; a stale update for
   another guild is ignored.
   """
-  @spec guild_member_updated(non_neg_integer(), GuildMember.t(), map()) :: {:noreply, map()}
+  @spec guild_member_updated(non_neg_integer(), GuildMember.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def guild_member_updated(
         guild_id,
         %GuildMember{} = member,
@@ -258,7 +262,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   Notifies the client that our guild disbanded, unsubscribes, and clears
   `guild_id`; a stale disband for a guild we've left is ignored.
   """
-  @spec guild_disbanded(non_neg_integer(), String.t(), map()) :: {:noreply, map()}
+  @spec guild_disbanded(non_neg_integer(), String.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def guild_disbanded(guild_id, reason, %{game_state: %{guild_id: guild_id} = game_state} = state) do
     MessageRouter.send_to(state.connection_pid, %GuildDisbanded{
       guild_id: guild_id,
@@ -275,7 +280,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   Relays a guild emblem change to our client; a stale change for a guild we've
   left is ignored.
   """
-  @spec guild_emblem_changed(non_neg_integer(), non_neg_integer(), map()) :: {:noreply, map()}
+  @spec guild_emblem_changed(non_neg_integer(), non_neg_integer(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def guild_emblem_changed(guild_id, emblem_id, %{game_state: %{guild_id: guild_id}} = state) do
     MessageRouter.send_to(state.connection_pid, %GuildEmblemChanged{
       guild_id: guild_id,
@@ -288,9 +294,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   def guild_emblem_changed(_guild_id, _emblem_id, state), do: {:noreply, state}
 
   @doc "Clears the pending guild invite when its expiry timer fires."
-  @spec guild_invite_expired(map()) :: {:noreply, map()}
+  @spec guild_invite_expired(SessionState.t()) :: {:noreply, SessionState.t()}
   def guild_invite_expired(state) do
-    {:noreply, Map.delete(state, :pending_guild_invite)}
+    {:noreply, %{state | pending_guild_invite: nil}}
   end
 
   defp sync_and_send_party(%{game_state: game_state} = state, party_id) do
