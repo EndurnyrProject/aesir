@@ -25,14 +25,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Constants.ObjectType
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.State, as: GuildState
-  alias Aesir.ZoneServer.Map.Coordinator
-  alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage, as: SkillUnitStorage
   alias Aesir.ZoneServer.Mmo.Skills.Priest.PrLexdivina
   alias Aesir.ZoneServer.Mmo.Skills.Priest.PrStrecovery
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitel
-  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -48,6 +45,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
+  alias Aesir.ZoneServer.Unit.Player.Handlers.LootHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcOwnerEventHandler
@@ -65,11 +63,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PartySync
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.QuestLog
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
-  alias Aesir.ZoneServer.Unit.Player.QuestView
   alias Aesir.ZoneServer.Unit.Player.StateCommit
-  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusPersistence
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -492,32 +487,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     {:noreply, state}
   end
 
-  # EXP for the kill is granted separately, per contributing attacker, via
-  # `{:mob_kill_exp, base, job}` (`Unit.Mob.KillExp.distribute/5`); this
-  # handler only rolls and places this session's own drops as the killing
-  # blow's attacker.
   @impl true
   def handle_info({:mob_killed, payload}, state) do
-    maybe_drop_items(payload, state)
-    {:noreply, state}
+    LootHandler.mob_killed(payload, state)
   end
 
-  # Credits a mob kill against this session's hunting quests
-  # (`Unit.Mob.QuestHuntCredit`): the pure `QuestLog.tick_kill/2` clamps the
-  # matching objectives, we write each moved quest through to
-  # `character_quests`, and push one `QuestHuntProgress` per moved objective.
-  # A kill matching no active quest leaves the log untouched and no-ops.
   @impl true
-  def handle_info({:quest_kill, mob_id}, %{game_state: game_state} = state) do
-    case QuestLog.tick_kill(game_state.quest_log, mob_id) do
-      {_quest_log, []} ->
-        {:noreply, state}
-
-      {quest_log, changes} ->
-        persist_quest_changes(game_state.character_id, quest_log, changes)
-        push_quest_progress(state.connection_pid, changes)
-        {:noreply, update_game_state(state, %{game_state | quest_log: quest_log})}
-    end
+  def handle_info({:quest_kill, mob_id}, state) do
+    LootHandler.quest_kill(mob_id, state)
   end
 
   # A contributing attacker's final damage-based EXP grant for a mob kill
@@ -1095,42 +1072,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   defp departure_reason(:normal), do: :disconnect
   defp departure_reason(_reason), do: :termination
-
-  # Rolls the slain mob's drop table from the killer's session (the only place
-  # holding both the table and the killer's stats) and places any results as
-  # ground items through the map coordinator. Legacy payloads without a drop
-  # table fall through to the no-op clause.
-  defp maybe_drop_items(%{drops: drops, mob_level: mob_level, map: map, x: x, y: y}, state) do
-    stats = state.game_state.stats
-    luk = Stats.get_effective_stat(stats, :luk)
-    base_level = stats.progression.base_level
-    char_id = state.game_state.character_id
-
-    drop_bonus =
-      :player |> ModifierCalculator.get_all_modifiers(char_id) |> Map.get(:drop_rate, 0)
-
-    case DropCalculator.roll(drops, luk, base_level, mob_level, drop_bonus, map, x, y) do
-      [] -> :ok
-      rolled -> Coordinator.drop_items(map, rolled, x, y)
-    end
-  end
-
-  defp maybe_drop_items(_payload, _state), do: :ok
-
-  defp persist_quest_changes(char_id, quest_log, changes) do
-    changes
-    |> Enum.map(& &1.quest_id)
-    |> Enum.uniq()
-    |> Enum.each(fn quest_id ->
-      QuestPersistence.upsert(char_id, {quest_id, Map.fetch!(quest_log, quest_id)})
-    end)
-  end
-
-  defp push_quest_progress(connection_pid, changes) do
-    Enum.each(changes, fn change ->
-      MessageRouter.send_to(connection_pid, QuestView.quest_hunt_progress(change))
-    end)
-  end
 
   defp announce_break(character_id, %InventoryItem{nameid: nameid}) do
     {:ok, definition} = Items.by_id(nameid)
