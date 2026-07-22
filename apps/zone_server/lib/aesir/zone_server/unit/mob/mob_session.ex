@@ -10,13 +10,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   require Logger
 
-  alias Aesir.ZoneServer.Mmo.MobSkill.Db, as: MobSkillDb
-  alias Aesir.ZoneServer.Mmo.MobSkill.Executor, as: MobSkillExecutor
-  alias Aesir.ZoneServer.Mmo.MobSkill.Selector, as: MobSkillSelector
-  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
-  alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
+  alias Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler
+  alias Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler
   alias Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -24,9 +21,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.ZoneServer.Unit.Mob.StealOps
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.SpatialIndex
-
-  # AI tick interval in milliseconds
-  @ai_tick_interval 1000
 
   # Public API
 
@@ -215,7 +209,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     # Schedule the first AI tick, or start dormant (and heap-compacted) when the
     # map has no players.
     if awake do
-      {:ok, schedule_jittered_ai_tick(updated_state)}
+      {:ok, AiHandler.schedule_jittered_ai_tick(updated_state)}
     else
       {:ok, updated_state, :hibernate}
     end
@@ -227,20 +221,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   @impl GenServer
-  def handle_call(:interrupt_cast, _from, %{is_dead: true} = state) do
-    # A dying mob keeps its cast descriptor (handle_death/2 does not clear it)
-    # and its process lingers until :terminate, so guard the same way
-    # :cast_complete does rather than let a corpse report a live cast.
-    {:reply, {:error, :not_casting}, state}
-  end
-
-  def handle_call(:interrupt_cast, _from, %{casting: nil} = state) do
-    {:reply, {:error, :not_casting}, state}
-  end
-
-  def handle_call(:interrupt_cast, _from, %{casting: %{row: row}} = state) do
-    identity = %{skill: row.skill, skill_id: row.skill_id, level: row.level}
-    {:reply, {:ok, identity}, abort_cast(state)}
+  def handle_call(:interrupt_cast, _from, state) do
+    CastingHandler.handle_interrupt_cast(state)
   end
 
   @impl GenServer
@@ -286,12 +268,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   @impl GenServer
   def handle_cast({:set_target, target_id}, state) do
-    updated_state =
-      state
-      |> MobState.set_target(target_id)
-      |> MobState.set_ai_state(if target_id, do: :combat, else: :idle)
-
-    {:noreply, updated_state}
+    AiHandler.handle_set_target(state, target_id)
   end
 
   @impl GenServer
@@ -301,51 +278,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   @impl GenServer
-  def handle_cast({:status_changed, status_id, _event}, %{casting: casting} = state)
-      when status_id in [:sc_silence, :sc_stun] and casting != nil do
-    # A silence/stun tick landing mid-cast aborts it promptly. The live
-    # :cast_complete poll is the authoritative guarantee (a status can be applied
-    # without ever emitting this hook); this only shortens the interruption
-    # latency when the hook does fire. A live :ai_tick timer keeps AI going.
-    {:noreply, abort_cast(state)}
-  end
-
-  def handle_cast({:status_changed, _status_id, _event}, state) do
-    # Fired by StatusTickManager when one of this mob's statuses ticks or expires.
-    # Combat stats are folded live on read (MobState.to_combatant/1) and the
-    # icon/opt display delta is already broadcast by the StatusEffect.Interpreter,
-    # so there is nothing to recompute here.
-    {:noreply, state}
+  def handle_cast({:status_changed, status_id, event}, state) do
+    CastingHandler.handle_status_changed(status_id, event, state)
   end
 
   @impl GenServer
-  def handle_cast(:sleep, %{ai_awake: false} = state), do: {:noreply, state}
-
   def handle_cast(:sleep, state) do
-    if state.ai_timer_ref, do: Process.cancel_timer(state.ai_timer_ref)
-
-    # Shed any in-flight movement and combat intent so the mob is inert while
-    # dormant; aggro toward players who left the map must not survive the nap.
-    # Hibernating compacts the heap, so a dormant map costs no CPU and little
-    # memory until a player shows up again.
-    # ponytail: a cast in flight is not cancelled here; its :cast_complete
-    # self-heals via the target-invalidation abort. Proper cast interruption
-    # lands with Phase 2b (mob-side statuses).
-    updated_state =
-      state
-      |> MobState.stop_movement()
-      |> MobState.set_target(nil)
-      |> MobState.set_ai_state(:idle)
-      |> Map.merge(%{ai_awake: false, ai_timer_ref: nil})
-
-    {:noreply, updated_state, :hibernate}
+    AiHandler.handle_sleep(state)
   end
 
   @impl GenServer
-  def handle_cast(:wake, %{ai_awake: true} = state), do: {:noreply, state}
-
   def handle_cast(:wake, state) do
-    {:noreply, schedule_jittered_ai_tick(%{state | ai_awake: true})}
+    AiHandler.handle_wake(state)
   end
 
   @impl GenServer
@@ -373,57 +317,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   @impl GenServer
   def handle_info(:ai_tick, state) do
-    cond do
-      state.is_dead ->
-        # Dead mobs don't process AI
-        {:noreply, state}
-
-      not state.ai_awake ->
-        # A tick that raced a :sleep; drop it without rescheduling
-        {:noreply, state}
-
-      state.casting != nil ->
-        # A casting mob is locked: no movement, no melee, no re-selection.
-        # Completion is driven by the separate :cast_complete timer, unless a
-        # silence/stun landed mid-cast, in which case the cast is aborted here.
-        if cast_interrupted?(state) do
-          {:noreply, schedule_ai_tick(abort_cast(state))}
-        else
-          {:noreply, schedule_ai_tick(state)}
-        end
-
-      true ->
-        updated_state = state |> run_skill_or_ai() |> schedule_ai_tick()
-        {:noreply, updated_state}
-    end
+    AiHandler.handle_ai_tick(state)
   end
 
   @impl GenServer
-  def handle_info(:cast_complete, %{is_dead: true} = state), do: {:noreply, state}
-
-  def handle_info(:cast_complete, %{casting: nil} = state), do: {:noreply, state}
-
-  def handle_info(:cast_complete, %{casting: %{row: row}} = state) do
-    # Authoritative silence/stun poll: a status may have landed via a plain apply
-    # (no :status_changed hook), so this is the one place that guarantees a
-    # silenced cast never fires. Target invalidation surfaces as {:error, _} from
-    # the Executor - also a clean abort with no packet. The cooldown is written
-    # in every case so an aborted cast cannot be instantly re-rolled every tick.
-    updated_state =
-      if cast_interrupted?(state) do
-        abort_cast(state)
-      else
-        MobSkillExecutor.execute(state, row)
-        now = System.system_time(:millisecond)
-
-        state
-        |> MobState.put_skill_cooldown(row.skill, now + row.delay)
-        |> MobState.clear_casting()
-      end
-
-    if updated_state.ai_timer_ref, do: Process.cancel_timer(updated_state.ai_timer_ref)
-
-    {:noreply, schedule_ai_tick(updated_state)}
+  def handle_info(:cast_complete, state) do
+    CastingHandler.handle_cast_complete(state)
   end
 
   @impl GenServer
@@ -451,94 +350,5 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     SpatialIndex.remove_unit(:mob, state.instance_id)
     Broadcast.publish_mob_despawn(state.map_name, state.instance_id)
     :ok
-  end
-
-  # Private Functions
-
-  defp process_ai(state) do
-    AIStateMachine.process_ai(state)
-  end
-
-  # Skill selection runs before the melee/movement state machine: a tick that
-  # picks a row either starts a cast (locking the mob until :cast_complete) or
-  # fires it instantly; only a nil selection falls through to the normal AI.
-  # The very first tick after spawn selects with the :spawn event so `onspawn`
-  # rows can fire. `now` is System.system_time(:millisecond), the same clock
-  # the melee path uses for last_attack_time, so cooldown expiry lines up.
-  defp run_skill_or_ai(state) do
-    if cast_interrupted?(state) do
-      # Silenced/stunned: skip skill selection entirely so no new cast begins.
-      # Melee/movement still runs through its own can_attack?/can_move? gates.
-      process_ai(%{state | spawn_tick_pending?: false})
-    else
-      now = System.system_time(:millisecond)
-      event = if state.spawn_tick_pending?, do: :spawn, else: :tick
-      state = %{state | spawn_tick_pending?: false}
-
-      case MobSkillSelector.select(state, MobSkillDb.rows_for(state.mob_id),
-             now: now,
-             event: event
-           ) do
-        {:cast, row} -> begin_cast(state, row, now)
-        nil -> process_ai(state)
-      end
-    end
-  end
-
-  defp begin_cast(state, %{cast_time: 0} = row, now) do
-    MobSkillExecutor.broadcast_casting(state, row)
-    MobSkillExecutor.execute(state, row)
-    MobState.put_skill_cooldown(state, row.skill, now + row.delay)
-  end
-
-  defp begin_cast(state, row, now) do
-    MobSkillExecutor.broadcast_casting(state, row)
-    timer_ref = Process.send_after(self(), :cast_complete, row.cast_time)
-
-    MobState.set_casting(state, %{
-      row: row,
-      complete_at: now + row.cast_time,
-      timer_ref: timer_ref
-    })
-  end
-
-  # A silence or stun on this mob interrupts skill casting (melee/movement are
-  # gated separately by the status interpreter).
-  defp cast_interrupted?(state) do
-    StatusStorage.has_status?(:mob, state.instance_id, :sc_silence) or
-      StatusStorage.has_status?(:mob, state.instance_id, :sc_stun)
-  end
-
-  # Aborts an in-flight cast cleanly: cancels the pending :cast_complete timer so
-  # a stale one cannot fire against a later cast, tears down the client's cast
-  # bar, writes the skill's delay cooldown (mirroring the target-invalidation
-  # abort so there is no instant re-roll), and clears the cast descriptor. No
-  # damage or effect fires. Every abort path (silence/stun and the forced
-  # interrupt_cast/1) funnels through here, so the CastCancel is unconditional.
-  defp abort_cast(%{casting: %{row: row} = casting} = state) do
-    case Map.get(casting, :timer_ref) do
-      nil -> :ok
-      ref -> Process.cancel_timer(ref)
-    end
-
-    MobSkillExecutor.broadcast_cast_cancel(state)
-
-    now = System.system_time(:millisecond)
-
-    state
-    |> MobState.put_skill_cooldown(row.skill, now + row.delay)
-    |> MobState.clear_casting()
-  end
-
-  # AI logic is now handled by AIStateMachine module
-
-  defp schedule_ai_tick(state, interval \\ @ai_tick_interval) do
-    %{state | ai_timer_ref: Process.send_after(self(), :ai_tick, interval)}
-  end
-
-  # First tick after spawn/wake lands at a random offset so a whole map waking
-  # at once doesn't tick every mob in the same millisecond thereafter.
-  defp schedule_jittered_ai_tick(state) do
-    schedule_ai_tick(state, :rand.uniform(@ai_tick_interval))
   end
 end
