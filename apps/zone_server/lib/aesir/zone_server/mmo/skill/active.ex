@@ -11,12 +11,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   charged. Ground skills (`target_type: :ground`) get a `cast/4` auto-derived by
   `use Skill` that places the skill-unit, so they implement `Skill.Ground`
   instead of writing this callback by hand.
+
+  `mob_cast/5` is optional and preferred by the mob executor when a skill exports
+  it; see its callback doc for the raw-target and row contract.
   """
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @typedoc "The resolved cast target handed to `cast/4`."
   @type target :: :self | {:unit, non_neg_integer()} | {:ground, integer(), integer()}
+
+  @typedoc "A caster state, either a player or a mob."
+  @type caster :: PlayerState.t() | MobState.t()
 
   @doc """
   Runs the skill's effect for a validated cast. Returns the updated caster state.
@@ -26,11 +33,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   catalysts (rAthena `SKILL_NOCONSUME_REQ`, e.g. Stone Curse lv 6-10 on a failed
   petrify).
   """
-  @callback cast(PlayerState.t(), target(), pos_integer(), Definition.t()) ::
-              {:ok, PlayerState.t()} | {:ok, PlayerState.t(), :no_consume} | {:error, atom()}
+  @callback cast(caster(), target(), pos_integer(), Definition.t()) ::
+              {:ok, caster()} | {:ok, caster(), :no_consume} | {:error, atom()}
 
   @doc "Optional pre-cast validation, run before SP is charged. Defaults to `:ok` when absent."
-  @callback validate(PlayerState.t(), target(), pos_integer(), Definition.t()) ::
+  @callback validate(caster(), target(), pos_integer(), Definition.t()) ::
               :ok | {:error, atom()}
 
   @doc """
@@ -38,13 +45,31 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
 
   A skill schedules it with `Skill.defer/3`, which posts the effect back to the
   caster's session; the session then invokes this callback with the scheduled
-  `payload` and the caster's live `PlayerState`. Its return value is discarded
-  by the session (like today's fire-and-forget delayed impacts) - it exists for
-  the skill's own tests and for symmetry with `cast/4`.
+  `payload` and the caster's live state. Its return value is discarded by the
+  session (like today's fire-and-forget delayed impacts) - it exists for the
+  skill's own tests and for symmetry with `cast/4`.
   """
-  @callback deferred(payload :: term(), caster :: PlayerState.t()) :: :ok | {:error, atom()}
+  @callback deferred(payload :: term(), caster :: caster()) :: :ok | {:error, atom()}
 
-  @optional_callbacks validate: 4, deferred: 2
+  @doc """
+  Optional mob-cast entry point, preferred by the mob executor over `cast/4`
+  when a skill exports it.
+
+  Receives the raw resolved target (unit-typed tuples like
+  `{:unit, :player, id}` / `{:ground, x, y, area}` with the `around*` area code
+  intact) instead of `cast/4`'s player-shaped adapted `target()`, plus the full
+  mob-skill `row`, whose `condition.val1..val5` carry per-row data such as
+  summon mob ids.
+  """
+  @callback mob_cast(
+              caster :: MobState.t(),
+              raw_target :: term(),
+              level :: pos_integer(),
+              definition :: Definition.t(),
+              row :: map()
+            ) :: :ok | {:error, term()}
+
+  @optional_callbacks validate: 4, deferred: 2, mob_cast: 5
 
   @doc """
   Resolves a cast target to a unit id.
