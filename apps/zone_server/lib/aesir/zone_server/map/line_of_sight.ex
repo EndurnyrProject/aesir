@@ -1,9 +1,11 @@
 defmodule Aesir.ZoneServer.Map.LineOfSight do
   @moduledoc """
-  Integer projectile traversal matching rAthena's `path_search_long`.
+  Integer straight-line traversal matching rAthena's `path_search_long`.
 
-  The source and destination cells are not obstruction-tested; only cells
-  traversed between them can block the line.
+  The source and destination cells are not obstruction-tested; only the cells
+  crossed between them can block the line. Each visited cell is checked against
+  the previous one, so a walkability predicate can enforce the no-corner-cut
+  rule on diagonal steps.
   """
 
   alias Aesir.ZoneServer.Map.Cell
@@ -11,12 +13,29 @@ defmodule Aesir.ZoneServer.Map.LineOfSight do
   @doc "Returns whether the rAthena projectile path between two cells is clear."
   @spec clear?(String.t(), {integer(), integer()}, {integer(), integer()}) :: boolean()
   def clear?(map_name, {from_x, from_y}, {to_x, to_y}) when is_binary(map_name) do
-    clear?(map_name, {from_x, from_y}, {to_x, to_y}, fn _map, x, y ->
+    walk?(map_name, {from_x, from_y}, {to_x, to_y}, fn _map, _prev, {x, y} ->
       not Cell.blocks_projectiles?(map_name, x, y)
     end)
   end
 
-  defp clear?(map_name, {from_x, from_y}, {to_x, to_y}, clear_cell?) do
+  @doc """
+  Returns whether a unit can walk the straight line between two cells.
+
+  Like `clear?/3`, the source and destination cells are not tested; only the
+  cells traversed between them can block the line. Each step is validated with
+  `Cell.step_traversable?/3`, so a diagonal step is rejected when it would cut
+  the corner between two blocked cells - the same rule pathfinding and unit
+  movement enforce. Used by charge-style movement that runs a unit across the
+  ground toward its target.
+  """
+  @spec walkable?(String.t(), {integer(), integer()}, {integer(), integer()}) :: boolean()
+  def walkable?(map_name, {from_x, from_y}, {to_x, to_y}) when is_binary(map_name) do
+    walk?(map_name, {from_x, from_y}, {to_x, to_y}, fn _map, prev, cell ->
+      Cell.step_traversable?(map_name, prev, cell)
+    end)
+  end
+
+  defp walk?(map_name, {from_x, from_y}, {to_x, to_y}, clear_step?) do
     {from_x, from_y, to_x, to_y, dx} =
       if to_x < from_x,
         do: {to_x, to_y, from_x, from_y, from_x - to_x},
@@ -25,18 +44,26 @@ defmodule Aesir.ZoneServer.Map.LineOfSight do
     dy = to_y - from_y
     weight = max(dx, abs(dy))
 
-    clear_step?(map_name, {from_x, from_y}, {to_x, to_y}, {dx, dy}, {0, 0}, weight, clear_cell?)
+    walk_step?(map_name, {from_x, from_y}, {to_x, to_y}, {dx, dy}, {0, 0}, weight, clear_step?)
   end
 
-  defp clear_step?(_map, destination, destination, _delta, _accumulated, _weight, _clear_cell?),
+  defp walk_step?(_map, destination, destination, _delta, _accumulated, _weight, _clear_step?),
     do: true
 
-  defp clear_step?(map, {x, y}, destination, {dx, dy} = delta, {wx, wy}, weight, clear_cell?) do
-    {x, wx} = advance_x(x, wx + dx, weight)
-    {y, wy} = advance_y(y, wy + dy, weight)
+  defp walk_step?(
+         map,
+         {x, y} = prev,
+         destination,
+         {dx, dy} = delta,
+         {wx, wy},
+         weight,
+         clear_step?
+       ) do
+    {nx, wx} = advance_x(x, wx + dx, weight)
+    {ny, wy} = advance_y(y, wy + dy, weight)
 
-    ({x, y} == destination or clear_cell?.(map, x, y)) and
-      clear_step?(map, {x, y}, destination, delta, {wx, wy}, weight, clear_cell?)
+    ({nx, ny} == destination or clear_step?.(map, prev, {nx, ny})) and
+      walk_step?(map, {nx, ny}, destination, delta, {wx, wy}, weight, clear_step?)
   end
 
   defp advance_x(x, wx, weight) when wx >= weight, do: {x + 1, wx - weight}

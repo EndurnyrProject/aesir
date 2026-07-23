@@ -39,4 +39,24 @@ defmodule Aesir.ZoneServer.Map.LineOfSightTest do
 
     assert LineOfSight.clear?("line_of_sight", {50, 60}, {54, 62})
   end
+
+  test "walkable? clears an open diagonal line" do
+    map = MapData.new("line_of_sight", 100, 100)
+    true = cache_map("line_of_sight", map)
+
+    assert LineOfSight.walkable?("line_of_sight", {50, 50}, {53, 53})
+  end
+
+  test "walkable? rejects a diagonal step that cuts the corner between blocked cells" do
+    map =
+      "line_of_sight"
+      |> MapData.new(100, 100)
+      |> MapData.set_cell(51, 50, GatType.wall())
+      |> MapData.set_cell(50, 51, GatType.wall())
+
+    true = cache_map("line_of_sight", map)
+
+    assert Cell.traversable?("line_of_sight", 51, 51)
+    refute LineOfSight.walkable?("line_of_sight", {50, 50}, {53, 53})
+  end
 end
