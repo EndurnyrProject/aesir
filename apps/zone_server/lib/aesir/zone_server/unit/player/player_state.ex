@@ -6,12 +6,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
   @behaviour Aesir.ZoneServer.Unit
 
+  import Bitwise
+
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill.ForcedMovement
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
@@ -21,6 +24,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   alias Aesir.ZoneServer.Unit.Player.QuestLog
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
+
+  @riding_option_bit Option.id(:riding)
 
   @type direction :: 0..7
   @type movement_state :: :standing | :moving
@@ -243,6 +248,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     pending_cart_notify: [],
     # In-memory copy of character.cart (0 = no cart, 1/2/3 = sprite tier)
     cart_type: 0,
+    # In-memory copy of character.option (e_option sprite-state bitmask). The
+    # single writer's authoritative value; persisted bits (e.g. :riding) are
+    # read-modify-written against it so unrelated bits are never clobbered.
+    option: 0,
     # Account storage keyed by stable session index, mirroring inventory/cart;
     # nil means the storage window is closed (nothing loaded for this session).
     storage: nil,
@@ -352,6 +361,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       vars: character.vars || %{},
       temp_vars: %{},
       zeny: character.zeny,
+
+      # e_option sprite-state bitmask (persisted; carries the riding bit)
+      option: character.option,
 
       # Inventory (will be loaded separately)
       inventory: %{},
@@ -965,9 +977,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       demon_bane_level: Learned.learned_level(learned, 23),
       dragonology_level: Learned.learned_level(learned, 284),
       class: :normal,
+      riding: riding?(state.option),
       equip_modifiers: state.stats.modifiers.equipment
     })
   end
+
+  defp riding?(option) when is_integer(option), do: (option &&& @riding_option_bit) != 0
+  defp riding?(_option), do: false
 
   defp passive_range(nil), do: 0
 

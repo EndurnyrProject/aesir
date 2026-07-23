@@ -50,6 +50,7 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def route(%Aesir.Net.Resurrect{}), do: {:gameplay, :resurrect}
   def route(%Aesir.Net.VendingSaleReport{}), do: {:gameplay, :vending_sale_report}
   def route(%Aesir.Net.CartMountResult{}), do: {:gameplay, :cart_mount_result}
+  def route(%Aesir.Net.MountResult{}), do: {:gameplay, :mount_result}
   def route(%Aesir.Net.VendingOpenResult{}), do: {:gameplay, :vending_open_result}
   def route(%Aesir.Net.NpcShopOpen{}), do: {:gameplay, :npc_shop_open}
   def route(%Aesir.Net.NpcBuyResult{}), do: {:gameplay, :npc_buy_result}

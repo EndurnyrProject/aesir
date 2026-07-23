@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
+  alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
 
@@ -562,6 +563,31 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       combatant = PlayerState.to_combatant(state)
 
       assert combatant.equip_modifiers == %{atk: 10, addrace_brute: 20}
+    end
+
+    test "an on-foot player's combatant is not riding", %{state: state} do
+      refute PlayerState.to_combatant(state).riding
+    end
+
+    test "the :riding option bit threads onto the combatant's riding flag", %{state: state} do
+      riding_bit = Aesir.ZoneServer.Mmo.Option.id(:riding)
+      combatant = PlayerState.to_combatant(%{state | option: riding_bit})
+
+      assert combatant.riding
+    end
+
+    test "a mounted spear hits a medium target at the large (100%) modifier", %{state: state} do
+      riding_bit = Aesir.ZoneServer.Mmo.Option.id(:riding)
+      # Javelin (id 1401), subtype one_handed_spear, worn on the right hand (bitmask 2).
+      mounted = PlayerState.to_combatant(%{with_weapon(state, 1401, 2) | option: riding_bit})
+      on_foot = PlayerState.to_combatant(with_weapon(state, 1401, 2))
+
+      assert mounted.weapon.type == :one_handed_spear
+      assert mounted.riding
+      refute on_foot.riding
+
+      assert SizeModifiers.get_modifier(mounted.weapon.type, :medium, mounted.riding) == 100
+      assert SizeModifiers.get_modifier(on_foot.weapon.type, :medium, on_foot.riding) == 75
     end
   end
 

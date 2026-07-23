@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.LootHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcOwnerEventHandler
@@ -423,6 +424,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # walk-speed penalty is recomputed. Runs after registration so the
     # status apply can resolve the unit's entity info.
     state = CartHandler.load_on_spawn(character, state)
+
+    # Restore a mounted Peco-Peco: re-apply SC_RIDING from the persisted
+    # option bit so the sprite and speed/ASPD modifiers come back on spawn.
+    state = MountHandler.load_on_spawn(character, state)
 
     # Restore the statuses persisted at logout (rAthena sc_data), consuming
     # the saved rows. Runs after registration for the same reason as the cart.

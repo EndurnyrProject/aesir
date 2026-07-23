@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.GuildPositionEditRequest
   alias Aesir.Net.LearnSkill
   alias Aesir.Net.MapLoaded
+  alias Aesir.Net.MountRequest
   alias Aesir.Net.MoveFromCartRequest
   alias Aesir.Net.MoveRequest
   alias Aesir.Net.MoveToCartRequest
@@ -70,6 +71,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NameHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler
@@ -185,6 +187,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
 
   def handle_message(%CartMountRequest{mount: false}, state) do
     CartHandler.unmount(state)
+  end
+
+  # MountRequest - Player mounts (true) or dismounts (false) the Peco-Peco.
+  def handle_message(%MountRequest{mount: true}, state) do
+    MountHandler.mount(state)
+  end
+
+  def handle_message(%MountRequest{mount: false}, state) do
+    MountHandler.dismount(state)
   end
 
   # MoveToCartRequest - Player moves an inventory item into the cart. `inventory_index`

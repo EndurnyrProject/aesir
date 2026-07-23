@@ -122,6 +122,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
     # are always :normal; mobs are :boss when tagged with the :boss mode.
     field :class, :normal | :boss, default: :normal
 
+    # Whether the attacker is mounted (Peco-Peco). Feeds the mounted-spear
+    # size-modifier override; always false for mobs.
+    field :riding, boolean(), default: false
+
     # Folded equipment bonus map (players: `stats.modifiers.equipment`;
     # mobs: empty, since mobs carry no equipment).
     field :equip_modifiers, map(), default: %{}
