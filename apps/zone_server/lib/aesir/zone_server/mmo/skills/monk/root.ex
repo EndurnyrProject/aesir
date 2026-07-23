@@ -46,6 +46,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Root do
   end
 
   @doc """
+  True when `unit` currently holds a `sc_bladestop` record, caught by any pair,
+  not only the caller's own link.
+
+  Renewal's Root damage bonus checks only the target's current status, so this
+  is the read the bonus condition uses; `follow_up_allowed?/4` is the separate,
+  link-aware read for combo-style target continuity.
+  """
+  @spec rooted?(Unit.unit_type(), integer()) :: boolean()
+  def rooted?(unit_type, unit_id) do
+    StatusStorage.has_status?(unit_type, unit_id, :sc_bladestop)
+  end
+
+  @doc """
   Validates a level-gated Root follow-up by the caller against `target`.
 
   True only when the caller holds a `sc_bladestop` whose peer is `target`, the
@@ -64,6 +77,30 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Root do
       root_level >= min_level
     else
       _ -> false
+    end
+  end
+
+  @doc """
+  Gates casting a Root-restricted skill by the caster's own record.
+
+  An unrooted caster is always `:ok` - these skills are ordinarily castable.
+  A rooted caster is hard-gated: `sc_bladestop`'s `allow_skills` only lets the
+  cast reach the skill module at all, but Renewal's own skill-use check then
+  requires the caster's *own* stored Root level to meet the skill's minimum, so
+  a rooted caster below that level is rejected outright rather than falling
+  back to an unrooted-style hit.
+  """
+  @spec check_cast(Unit.unit_type(), integer(), integer()) ::
+          :ok | {:error, :insufficient_root_level}
+  def check_cast(caster_type, caster_id, skill_id) do
+    min_level = Map.get(@min_root_level, skill_id, 0)
+
+    case StatusStorage.get_status(caster_type, caster_id, :sc_bladestop) do
+      %StatusEntry{state: %{root_level: root_level}} ->
+        if root_level >= min_level, do: :ok, else: {:error, :insufficient_root_level}
+
+      _ ->
+        :ok
     end
   end
 

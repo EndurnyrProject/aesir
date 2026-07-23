@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincombo do
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Formulas
+  alias Aesir.ZoneServer.Mmo.Skills.Monk.Root
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -51,7 +52,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincombo do
       skip_crit: true
     ]
 
-    with :ok <- validate(caster, {:unit, target_id}, level, definition),
+    with :ok <- Root.check_cast(:player, caster.character_id, definition.id),
+         :ok <- validate(caster, {:unit, target_id}, level, definition),
          {:ok, target} <- Combo.validate(caster.combo, :quadruple, target_id, now),
          {:ok, target_type, _position} <- Combat.resolve_target_position(target_id),
          {:ok, ^target} <- Combo.validate(caster.combo, :quadruple, {target_type, target_id}, now),

@@ -33,6 +33,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:display_hit_count` - packet-only divisions for one total-damage hit
     - `:element` - forces the attack element for this hit, overriding the
       weapon element (e.g. Envenom's poison, Sand Attack's earth)
+    - `:skip_range` - skip only the distance check (which gates on the caster's
+      *weapon* attack range) for a cast whose skill range the interpreter
+      already validated; map, life, and enemy-relation checks still run
+      (default `false`)
     - `:report_hit` - when `true`, returns `{:ok, %{hit?: boolean}}` instead of
       plain `:ok`, so a caller can gate a follow-up effect (e.g. a status
       rider) on whether the attack actually connected rather than being
@@ -66,10 +70,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         :skill_id
       ])
 
+    validator_opts = Keyword.take(opts, [:skip_range]) ++ [projectile?: true]
+
     with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
          :ok <- TargetResolver.ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
-         :ok <- AttackValidator.validate(attacker, target, projectile?: true),
+         :ok <- AttackValidator.validate(attacker, target, validator_opts),
          :ok <- Targeting.validate_enemy(attacker, target) do
       connected? =
         1..hits//1

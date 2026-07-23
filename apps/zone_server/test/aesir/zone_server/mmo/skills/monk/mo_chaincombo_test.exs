@@ -2,18 +2,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
   use ExUnit.Case, async: true
   import Mimic
 
+  import Aesir.TestEtsSetup
+
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
   alias Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincombo
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
   alias Aesir.ZoneServer.Unit.Player.Stats
 
   setup :verify_on_exit!
+  setup :setup_ets_tables
 
+  @caster_id 1_000
   @target_id 2_000
 
   test "definition preserves Renewal cost, range, and base delay" do
@@ -156,6 +161,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
              MoChaincombo.cast(empty, {:unit, @target_id}, 3, MoChaincombo.definition())
   end
 
+  test "a rooted caster below the Quadruple minimum is rejected with no attack or combo change" do
+    caster = caster(:quadruple, @target_id)
+    link_pair(@caster_id, {:mob, 3_000}, 3)
+
+    reject(&Combat.execute_skill_attack/3)
+
+    assert {:error, :insufficient_root_level} =
+             MoChaincombo.cast(caster, {:unit, @target_id}, 3, MoChaincombo.definition())
+
+    assert caster.combo.stage == :quadruple
+  end
+
+  test "a rooted caster at the Quadruple minimum still completes the chain" do
+    caster = caster(:quadruple, @target_id)
+    link_pair(@caster_id, {:mob, 3_000}, 4)
+    stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {10, 10, "prontera"}} end)
+    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> :ok end)
+
+    assert {:ok, %{combo: %{stage: :thrust}}} =
+             MoChaincombo.cast(caster, {:unit, @target_id}, 3, MoChaincombo.definition())
+  end
+
   test "a reused id with another unit type cannot complete the chain" do
     caster = caster(:quadruple, @target_id)
 
@@ -172,8 +199,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
   defp caster(stage, target_id, opts \\ []) do
     base =
       PlayerState.new(%Character{
-        id: 1_000,
-        account_id: 1_000,
+        id: @caster_id,
+        account_id: @caster_id,
         name: "Monk",
         last_map: "prontera",
         last_x: 50,
@@ -207,4 +234,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
   end
 
   defp future, do: System.monotonic_time(:millisecond) + 10_000
+
+  defp link_pair(monk_id, {caught_type, caught_id} = caught, monk_level) do
+    link_id = make_ref()
+
+    StatusStorage.apply_status(:player, monk_id, :sc_bladestop,
+      state: %{peer: caught, link_id: link_id, root_level: monk_level}
+    )
+
+    StatusStorage.apply_status(caught_type, caught_id, :sc_bladestop,
+      state: %{peer: {:player, monk_id}, link_id: link_id, root_level: 0}
+    )
+
+    link_id
+  end
 end
