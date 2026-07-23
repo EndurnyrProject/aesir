@@ -1332,6 +1332,18 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   def setcart(%Ctx{} = ctx, type), do: apply_op(ctx, {:setcart, type})
 
   @doc """
+  Mounts or dismounts the Peco-Peco through the session seam (rAthena
+  `setriding`). Mounting requires `KN_RIDING` learned; unlike `setcart/2`'s
+  silent failure, a rejected mount halts the script (mirrors `pay_zeny/2` on
+  insufficient zeny) since a script that keeps going assumes the mount
+  succeeded. Dismounting is always a no-op success, mounted or not. Halts
+  `:no_player` on a detached ctx.
+  """
+  @spec set_riding(Ctx.t(), boolean()) :: Ctx.t()
+  def set_riding(%Ctx{status: {:error, _}} = ctx, _riding?), do: ctx
+  def set_riding(%Ctx{} = ctx, riding?), do: apply_op(ctx, {:set_riding, riding?})
+
+  @doc """
   Whether the player has a cart mounted (rAthena `checkcart`): `1` when
   `cart_type` is set, else `0`. Pure read over the ctx snapshot.
   """

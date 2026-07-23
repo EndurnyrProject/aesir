@@ -885,6 +885,22 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
   end
 
+  # `setriding {<n>}`: the bare form mounts; an explicit arg mounts unless it
+  # evaluates to 0, which dismounts (rAthena's `setriding 0`).
+  defp emit_mapped(_name, %{shape: :riding, dsl: dsl}, [], _env),
+    do: {["ctx = #{dsl}(ctx, true)"], :cont}
+
+  defp emit_mapped(_name, %{shape: :riding, dsl: dsl}, [arg], env) do
+    {pre, [arg]} = hoist_all([arg], env)
+    {pre ++ ["ctx = #{dsl}(ctx, (#{render(arg, env)}) != 0)"], :cont}
+  end
+
+  defp emit_mapped(name, %{shape: :riding}, args, env) do
+    {pre, args} = hoist_all(args, env)
+    rendered = Enum.map_join(args, ", ", &render(&1, env))
+    {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
+  end
+
   # `monster "<map>",<x>,<y>,"<display name>",<mob>,<amount>{,"<event>"{,<size>{,<ai>}}}`
   # → summon_mob. The display name is cosmetic (the engine renders the db
   # name) and the size/ai tail has no DSL equivalent; both are dropped.

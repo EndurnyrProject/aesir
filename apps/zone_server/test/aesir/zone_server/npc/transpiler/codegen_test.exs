@@ -362,6 +362,21 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "todo(ctx"
   end
 
+  test "setriding maps to set_riding, folding a numeric arg into a mount/dismount bool" do
+    src =
+      gen!("""
+      setriding;
+      setriding 1;
+      setriding 0;
+      close;
+      """)
+
+    assert src =~ ~r/set_riding\((ctx, )?true\)/
+    assert src =~ ~r/set_riding\((ctx, )?1 != 0\)/
+    assert src =~ ~r/set_riding\((ctx, )?0 != 0\)/
+    refute src =~ "todo(ctx"
+  end
+
   test "getcharid and getskilllv map to reads, resolving the skill constant" do
     src =
       gen!("""

@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
+  alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.RefineOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler
@@ -52,6 +53,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:set_save_point, String.t(), non_neg_integer(), non_neg_integer()}
           | {:openstorage}
           | {:setcart, non_neg_integer()}
+          | {:set_riding, boolean()}
           | {:refine, non_neg_integer(), integer(), RefineDatabase.cost_type(), boolean()}
           | {:repair, non_neg_integer()}
           | {:repairall}
@@ -266,6 +268,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
       {:error, reason} ->
         {{:error, reason}, state}
     end
+  end
+
+  # Unlike `setcart`'s silent rejection, a script mount is expected to
+  # succeed: the KN_RIDING gate stays in MountHandler, and a rejected mount
+  # (not learned, dead) is surfaced as `{:error, :cannot_mount}` instead of
+  # continuing silently. `riding?/1` after the call is the only signal
+  # `mount/1` exposes beyond the client-facing `MountResult` push, and it
+  # also makes an already-mounted call a no-op success, matching `mount/1`'s
+  # own idempotence.
+  def apply_op({:set_riding, true}, state) do
+    {:noreply, new_state} = MountHandler.mount(state)
+
+    if MountHandler.riding?(new_state) do
+      {{:ok, new_state.game_state}, new_state}
+    else
+      {{:error, :cannot_mount}, state}
+    end
+  end
+
+  # Dismounting is always a no-op success (mounted or not), mirroring
+  # `MountHandler.dismount/1`'s own MOUNT_NOT_MOUNTED no-op semantics.
+  def apply_op({:set_riding, false}, state) do
+    {:noreply, new_state} = MountHandler.dismount(state)
+    {{:ok, new_state.game_state}, new_state}
   end
 
   def apply_op({:setquest, quest_id}, %{game_state: gs} = state) do

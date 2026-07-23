@@ -38,6 +38,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     (`setcart {<type>}`, `enablenpc {"name"}`): zero args → `name(ctx)` (the
     DSL default/self form), one arg → `name(ctx, arg)`; any longer form stays
     a stub.
+  - `%{shape: :riding, dsl: name}` — `setriding {<n>}` (rAthena mount/dismount):
+    zero args → `name(ctx, true)`; one arg → `name(ctx, <n> != 0)` (a literal
+    `0` dismounts, anything else mounts, matching rAthena); any longer form
+    stays a stub.
   - `%{shape: :monster}` — `monster "map",x,y,"name",id,amount{,"event"...}`
     → `summon_mob(ctx, mob_id: _, map: _, at: _, ...)`; the display name and
     the size/ai tail are dropped.
@@ -100,6 +104,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "areaannounce" => %{shape: :announce, dsl: "areaannounce", fixed: 7},
     "dispbottom" => %{shape: :announce, dsl: "dispbottom", fixed: 1},
     "setcart" => %{shape: :opt1, dsl: "setcart"},
+    "setriding" => %{shape: :riding, dsl: "set_riding"},
     "openstorage" => %{shape: :nullary, dsl: "openstorage"},
     "setquest" => %{dsl: "setquest", args: [:int]},
     "erasequest" => %{dsl: "erasequest", args: [:int]},

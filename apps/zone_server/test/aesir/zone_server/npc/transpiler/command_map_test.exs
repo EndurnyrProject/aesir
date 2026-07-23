@@ -127,6 +127,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     end
   end
 
+  test "setriding maps to the riding shape" do
+    assert {:ok, %{shape: :riding, dsl: "set_riding"}} = CommandMap.command("setriding")
+    assert CommandMap.supported?("setriding")
+    assert CommandMap.supported?("SetRiding")
+  end
+
   test "repair/repairall map to their DSL ops" do
     assert {:ok, %{dsl: "repair", args: [:int]}} = CommandMap.command("repair")
     assert {:ok, %{shape: :nullary, dsl: "repairall"}} = CommandMap.command("repairall")
