@@ -102,6 +102,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
 
         sync_after_change(updated_game_state, state)
         notify_appearance(state, old_equipment, updated_game_state)
+        enforce_weapon_requirements(updated_game_state)
 
         {:noreply, StateCommit.commit(state, updated_game_state)}
 
@@ -133,6 +134,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
         send_packet(state, unequip_success_result(server_index, mask))
         sync_after_change(updated_game_state, state)
         notify_appearance(state, old_equipment, updated_game_state)
+        enforce_weapon_requirements(updated_game_state)
 
         {:noreply, StateCommit.commit(state, updated_game_state)}
 
@@ -183,6 +185,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
       send_packet(state, change)
       Broadcast.to_visible_players(game_state, change, exclude_id: game_state.character_id)
     end)
+  end
+
+  # Ends any active status whose `require_weapon` list no longer includes the
+  # currently wielded weapon type, derived the same way `Stats` derives it.
+  defp enforce_weapon_requirements(game_state) do
+    weapon_type = Stats.weapon_type(game_state.stats.equipment)
+    StatusInterpreter.enforce_weapon_requirements(:player, game_state.character_id, weapon_type)
   end
 
   defp unequipped_mask(inventory, server_index) do

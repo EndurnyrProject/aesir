@@ -324,6 +324,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     %{closed_state | game_state: %{game_state | stats: stats}}
     |> cleanup_dropped_skills(dropped_ids)
     |> recheck_equipment(job_id)
+    |> enforce_weapon_requirements()
     |> finish_job_change(job_id, previous_game_state)
   end
 
@@ -405,6 +406,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     else
       _ -> state
     end
+  end
+
+  # Ends any active status whose `require_weapon` list no longer includes the
+  # currently wielded weapon type, derived the same way `Stats` derives it.
+  defp enforce_weapon_requirements(%{game_state: game_state} = state) do
+    weapon_type = Stats.weapon_type(game_state.stats.equipment)
+    StatusInterpreter.enforce_weapon_requirements(:player, game_state.character_id, weapon_type)
+    state
   end
 
   # Unconditionally recomputes stats against the final state (after cart,

@@ -57,6 +57,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       target even from an external caster; use it for a status a boss must be able
       to receive by design (e.g. Root locking a boss attacker), where the usual
       "boss rejects externally-sourced statuses" gate would otherwise block it
+    - `:require_weapon` - list of weapon type atoms (mirrors rAthena's
+      `SCF_REQUIREWEAPON`); when non-empty, the status ends the moment its
+      holder wields a weapon outside the list. Enforced by
+      `Interpreter.enforce_weapon_requirements/3`, called after equipment
+      changes and job changes; use it for a self-buff that only functions
+      with a specific weapon class (e.g. Two-Hand Quicken and a two-handed
+      sword)
     - `:no_dispel` - **required**; when true, the status survives Dispel (mirrors
       rAthena's `SCF_NODISPELL` status flag). There is no default: dispel
       disposition is a per-status gameplay decision that must be made
@@ -218,7 +225,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     end_on_start: [],
     allow_skills: [],
     immunity: [],
-    cleanse: []
+    cleanse: [],
+    require_weapon: []
   }
 
   @scalar_defaults %{
@@ -251,6 +259,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     allow_skills: {:list, :integer},
     immunity: {:list, :atom},
     cleanse: {:list, :atom},
+    require_weapon: {:list, :atom},
     resistance_type: {:enum, [:physical, :magical]},
     duration_adjustment: :integer,
     bypass_resistance: :boolean,

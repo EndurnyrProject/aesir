@@ -292,6 +292,30 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   @doc """
+  Ends every active status whose `require_weapon` list is non-empty and
+  excludes `weapon_type` (mirrors rAthena's `SCF_REQUIREWEAPON`).
+
+  Consumed by the equipment-change and job-change paths; a status opts in via
+  its definition's `:require_weapon` list, so callers stay ignorant of any
+  specific status.
+  """
+  @spec enforce_weapon_requirements(unit_type(), integer(), atom()) :: :ok
+  def enforce_weapon_requirements(unit_type, unit_id, weapon_type) do
+    unit_type
+    |> StatusStorage.get_unit_statuses(unit_id)
+    |> Enum.filter(&weapon_requirement_broken?(&1, weapon_type))
+    |> Enum.map(& &1.type)
+    |> then(&remove_statuses(unit_type, unit_id, &1, owner_refresh: :notify))
+  end
+
+  defp weapon_requirement_broken?(%StatusEntry{type: type}, weapon_type) do
+    case Registry.get_definition(type) do
+      %{require_weapon: [_ | _] = allowed} -> weapon_type not in allowed
+      _ -> false
+    end
+  end
+
+  @doc """
   Removes every active status through the normal expiration lifecycle.
 
   Each status receives `on_expire` and display cleanup before the selected
