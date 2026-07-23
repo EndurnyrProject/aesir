@@ -219,7 +219,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   `opts` accepts `:element` to force the attack element for this call (see
   `calculate_damage/3`), taking priority over both the weapon element and any
   `attack_element` status modifier. `:skill_id` scopes the `{:skill_atk, id}`
-  equipment family to the current skill.
+  equipment family to the current skill. `:riding?` (default `false`) feeds
+  the mounted-spear size-modifier override.
 
   After the size/race/element/status steps, the attacker's equipment damage
   families (race+class, element, size, skill) each apply as their own
@@ -232,11 +233,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     attacker_modifiers = ModifierCalculator.get_all_modifiers(unit_type, unit_id)
     forced_element = Keyword.get(opts, :element)
     skill_id = Keyword.get(opts, :skill_id)
+    riding? = Keyword.get(opts, :riding?, false)
     attack_element = forced_element || resolve_attack_element(attacker, attacker_modifiers)
 
     total_atk =
       base_damage
-      |> apply_size_modifier(attacker, defender)
+      |> apply_size_modifier(attacker, defender, riding?)
       |> apply_element_modifier(attack_element, defender, attacker_modifiers)
       |> apply_status_effect_damage_modifiers(attacker_modifiers)
       |> apply_equipment_attack_families(attacker, defender, skill_id, attack_element)
@@ -441,12 +443,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     end)
   end
 
-  defp apply_size_modifier(damage, attacker, defender) do
-    attacker_size = Map.get(attacker.weapon, :size, SizeModifiers.player_size())
-    defender_size = Map.get(defender, :size, SizeModifiers.player_size())
-
-    modifier = SizeModifiers.get_modifier(attacker_size, defender_size)
-    damage * modifier
+  defp apply_size_modifier(damage, attacker, defender, riding?) do
+    modifier = SizeModifiers.get_modifier(attacker.weapon.type, defender.size, riding?)
+    damage * modifier / 100
   end
 
   defp apply_status_effect_damage_modifiers(damage, modifiers) do

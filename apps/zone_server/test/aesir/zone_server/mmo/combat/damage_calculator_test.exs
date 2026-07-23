@@ -34,8 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   describe "calculate_damage/2" do
     test "calculates basic player vs mob damage" do
       stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
-      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
-      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
       stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
@@ -54,8 +53,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     test "calculates mob vs player damage" do
       stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
-      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
-      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
       stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
@@ -75,8 +73,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     test "handles critical hits" do
       stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
-      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
-      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
       stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
@@ -94,8 +91,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     test "CRate reaches the crit path: a player with crate>0 crits harder (real CriticalHits)" do
       stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
-      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
-      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
 
@@ -126,8 +122,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
         _, _, _, _ -> 1.0
       end)
 
-      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
-      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
       stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
@@ -153,8 +148,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     test "applies size modifiers" do
       stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
       # All size weapons vs Large
-      stub(SizeModifiers, :get_modifier, fn :all, :large -> 1.25 end)
-      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(SizeModifiers, :get_modifier, fn :fist, :large, false -> 125 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
       stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
@@ -187,8 +181,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
         1.0
       end)
 
-      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
-      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
       stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
@@ -295,8 +288,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
   describe "apply_modifier_pipeline/3" do
     test "applies all modifiers in sequence" do
-      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.1 end)
-      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 110 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
       stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.5 end)
 
@@ -316,8 +308,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "handles no modifiers gracefully" do
-      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
-      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
       stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
@@ -331,8 +322,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "adds flat weapon ATK (:watk) granted by statuses (SC_LOUD / Impositio)" do
-      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
-      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
       stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{watk: 30} end)
@@ -510,8 +500,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   describe "integration scenarios" do
     test "high level vs low level combat" do
       stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
-      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
-      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
       stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
@@ -530,8 +519,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     test "boss fight scenario" do
       stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
-      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
-      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
       stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
@@ -556,8 +544,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     test "ranged combat scenario" do
       stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
-      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
-      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
       stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
@@ -577,8 +564,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   describe "calculate_damage/3 with skill modifiers" do
     setup do
       stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
-      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
-      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
       :ok
@@ -662,8 +648,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   describe "mob status modifier lookup key" do
     setup do
       stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
-      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
-      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
       stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
@@ -697,8 +682,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   describe "Demon Bane additive ATK (vs undead/demon)" do
     setup do
       stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
-      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
-      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :player_human end)
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
       :ok
@@ -825,7 +809,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   describe "Dragonology physical race modifier (vs Dragon race)" do
     setup do
       stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
-      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
       :ok
     end
@@ -994,8 +978,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   describe "P.Atk / Res physical integration" do
     setup do
       stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
-      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
-      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
       :ok
@@ -1066,8 +1049,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   describe "status combat modifiers (atk_rate / def_rate / phys_damage_reduction)" do
     setup do
       stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
-      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
-      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
       :ok
     end
@@ -1153,8 +1135,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       # equipment family under test. RaceModifiers is left un-stubbed so the
       # Dragonology passive still runs (0 at level 0).
       stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
-      stub(SizeModifiers, :get_modifier, fn _, _ -> 1.0 end)
-      stub(SizeModifiers, :player_size, fn -> :medium end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
       :ok
     end

@@ -1,70 +1,69 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.SizeModifiers do
   @moduledoc """
-  Size-based damage modifier table based on rAthena implementation.
+  Renewal weapon-type vs target-size damage modifier table.
 
-  This module handles the damage modifications that occur when different
-  sized entities attack each other. In Ragnarok Online, weapon size
-  affects damage output.
-
-  Size types:
-  - :small - Small monsters and some weapons
-  - :medium - Human-sized entities and most weapons  
-  - :large - Large monsters and two-handed weapons
-
-  The modifier system reflects weapon effectiveness vs different sizes:
-  - Small weapons are most effective vs small targets
-  - Medium weapons are balanced across all sizes
-  - Large weapons are most effective vs large targets
+  Every weapon type has a fixed percent modifier against each of the three
+  target sizes (`:small`, `:medium`, `:large`); 100 is neutral. Spears
+  (`:one_handed_spear`, `:two_handed_spear`) get their `:medium` modifier
+  bumped to their `:large` modifier while the wielder is mounted, matching
+  rAthena's mounted-spear override. Unknown or missing weapon types fall back
+  to 100 (neutral) at every size.
   """
 
+  @type weapon_type :: atom()
   @type size :: :small | :medium | :large
 
-  @doc """
-  Gets the damage modifier for attacker size vs defender size.
+  @riding_spears [:one_handed_spear, :two_handed_spear]
 
-  ## Parameters
-    - attacker_size: Size of the attacking entity/weapon
-    - defender_size: Size of the defending target
+  @doc """
+  Gets the damage modifier percent for a weapon type vs a target size.
+
+  `riding?` (default `false`) applies the mounted-spear override: for
+  `:one_handed_spear`/`:two_handed_spear` against a `:medium` target, the
+  modifier becomes the spear's `:large` value instead of its `:medium` value.
 
   ## Returns
-    - Float representing the damage modifier
+    - Integer percent, 100 = neutral.
   """
-  @spec get_modifier(size(), size()) :: float()
-  def get_modifier(attacker_size, defender_size) do
-    size_modifier_table(attacker_size, defender_size)
+  @spec get_modifier(weapon_type(), size(), boolean()) :: integer()
+  def get_modifier(weapon_type, target_size, riding? \\ false)
+
+  def get_modifier(weapon_type, :medium, true) when weapon_type in @riding_spears do
+    weapon_type |> size_table() |> size_at(:large)
   end
 
-  @doc """
-  Gets the default size for players (medium).
-  """
-  @spec player_size() :: size()
-  def player_size, do: :medium
+  def get_modifier(weapon_type, target_size, _riding?) do
+    weapon_type |> size_table() |> size_at(target_size)
+  end
 
-  @doc """
-  Gets the weapon size based on weapon type.
-  For now, returns medium as default until weapon system is implemented.
-  """
-  @spec weapon_size(atom()) :: size()
-  def weapon_size(_weapon_type), do: :medium
+  # Size table: {small, medium, large} percent modifiers per weapon type.
+  defp size_table(:fist), do: {100, 100, 100}
+  defp size_table(:dagger), do: {100, 75, 50}
+  defp size_table(:one_handed_sword), do: {75, 100, 75}
+  defp size_table(:two_handed_sword), do: {75, 75, 100}
+  defp size_table(:one_handed_spear), do: {75, 75, 100}
+  defp size_table(:two_handed_spear), do: {75, 75, 100}
+  defp size_table(:one_handed_axe), do: {50, 75, 100}
+  defp size_table(:two_handed_axe), do: {50, 75, 100}
+  defp size_table(:mace), do: {75, 100, 100}
+  defp size_table(:two_handed_mace), do: {100, 100, 100}
+  defp size_table(:staff), do: {100, 100, 100}
+  defp size_table(:two_handed_staff), do: {100, 100, 100}
+  defp size_table(:bow), do: {100, 100, 75}
+  defp size_table(:musical), do: {75, 100, 75}
+  defp size_table(:whip), do: {75, 100, 75}
+  defp size_table(:book), do: {100, 100, 50}
+  defp size_table(:katar), do: {75, 100, 75}
+  defp size_table(:knuckle), do: {100, 100, 75}
+  defp size_table(:revolver), do: {100, 100, 100}
+  defp size_table(:rifle), do: {100, 100, 100}
+  defp size_table(:gatling), do: {100, 100, 100}
+  defp size_table(:shotgun), do: {100, 100, 100}
+  defp size_table(:grenade), do: {100, 100, 100}
+  defp size_table(:huuma), do: {100, 100, 100}
+  defp size_table(_unknown_weapon_type), do: {100, 100, 100}
 
-  # Size modifier table from rAthena
-  # Values represent damage multiplier when attacker_size attacks defender_size
-
-  # Small attacker (daggers, small weapons)
-  defp size_modifier_table(:small, :small), do: 1.0
-  defp size_modifier_table(:small, :medium), do: 0.75
-  defp size_modifier_table(:small, :large), do: 0.5
-
-  # Medium attacker (swords, most weapons, players)
-  defp size_modifier_table(:medium, :small), do: 1.25
-  defp size_modifier_table(:medium, :medium), do: 1.0
-  defp size_modifier_table(:medium, :large), do: 0.75
-
-  # Large attacker (two-handed weapons, large weapons)
-  defp size_modifier_table(:large, :small), do: 1.5
-  defp size_modifier_table(:large, :medium), do: 1.25
-  defp size_modifier_table(:large, :large), do: 1.0
-
-  # Default case for unknown sizes
-  defp size_modifier_table(_, _), do: 1.0
+  defp size_at({small, _medium, _large}, :small), do: small
+  defp size_at({_small, medium, _large}, :medium), do: medium
+  defp size_at({_small, _medium, large}, :large), do: large
 end

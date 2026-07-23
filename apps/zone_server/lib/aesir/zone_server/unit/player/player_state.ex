@@ -10,7 +10,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
-  alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Skill.ForcedMovement
@@ -956,7 +955,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       weapon: %{
         type: weapon_type,
         element: weapon_element(state.stats),
-        size: SizeModifiers.weapon_size(weapon_type)
+        size: :medium
       },
       attack_range: WeaponTypes.get_attack_range(weapon_type) + passive_range,
       attack_delay_ms: AttackSpeed.calculate_delay_from_stats(state.stats),
