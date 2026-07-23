@@ -10,7 +10,6 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
-  alias Aesir.ZoneServer.Mmo.Combat.PendingWeaponHit
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -100,45 +99,27 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       %{player_state: player_state, stats: attacker, target: target, target_state: target_state}
     end
 
-    test "returns a pending Root offer before Trifecta selection or damage", %{
-      player_state: player_state,
-      stats: stats
-    } do
+    test "an intercepting target status ends the swing with no damage before Trifecta" do
+      attacker = combatant(1001, :player, attack_range: 1)
+      player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
+
       stub(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, attack_info ->
-        send(self(), {:root_probe, attack_info})
-        {:request_root_offer, %{unit: {:player, 3001}, pid: self()}}
+        send(self(), {:intercept_probe, attack_info})
+        {:intercept, :caught}
       end)
 
       reject(&Passives.attack_replacement/1)
       reject(&DamageCalculator.calculate_damage/2)
 
-      assert {:pending, %PendingWeaponHit{} = pending} =
-               Combat.execute_attack(stats, player_state, 2001)
+      assert :intercepted = Combat.execute_attack(attacker, player_state, 2001)
 
-      assert pending.target == {:mob, 2001}
-      assert pending.continuation == :pre_trifecta
-      assert_received {:root_probe, %{attacker: {:player, 1001}, target: {:mob, 2001}}}
-    end
-
-    test "resumes a typed pending swing without another Root probe", %{
-      player_state: player_state,
-      stats: stats
-    } do
-      pending =
-        PendingWeaponHit.new(
-          make_ref(),
-          {:player, 1001},
-          {:mob, 2001},
-          %{unit: {:player, 3001}, pid: self()},
-          5_000,
-          3_000,
-          4_200
-        )
-
-      reject(&StatusInterpreter.before_weapon_hit/3)
-      stub(Passives, :attack_procs, fn _player_state -> %{} end)
-
-      assert :ok = Combat.resume_attack(stats, player_state, pending)
+      assert_received {:intercept_probe,
+                       %{
+                         attacker: {:player, 1001},
+                         target: {:mob, 2001},
+                         melee?: true,
+                         attacker_boss?: false
+                       }}
     end
 
     test "applies damage twice and the broadcast packet reflects 2 hits when multi_hit: 2",
@@ -963,6 +944,28 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       assert :ok = Combat.execute_mob_attack(mob_state, 2001)
 
       assert_received {:hit_info, %{is_short: false, dmg_type: :physical}}
+    end
+
+    test "an intercepting target status ends the mob swing before damage" do
+      stub(StatusInterpreter, :before_weapon_hit, fn :player, 2001, attack_info ->
+        send(self(), {:intercept_probe, attack_info})
+        {:intercept, :caught}
+      end)
+
+      reject(&PlayerSession.apply_damage/3)
+
+      mob = combatant(3001, :mob, attack_range: 1, position: {150, 150})
+      mob_state = %FakeUnit{combatant: mob, x: 150, y: 150}
+
+      assert :intercepted = Combat.execute_mob_attack(mob_state, 2001)
+
+      assert_received {:intercept_probe,
+                       %{
+                         attacker: {:mob, 3001},
+                         target: {:player, 2001},
+                         melee?: true,
+                         attacker_boss?: false
+                       }}
     end
   end
 

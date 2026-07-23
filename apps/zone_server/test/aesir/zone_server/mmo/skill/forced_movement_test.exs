@@ -4,7 +4,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.ForcedMovementTest do
   import Mimic
 
   alias Aesir.ZoneServer.Map.Cell
-  alias Aesir.ZoneServer.Mmo.Combat.PendingWeaponHit
   alias Aesir.ZoneServer.Mmo.Skill.ForcedMovement
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -48,26 +47,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.ForcedMovementTest do
     assert relocated.pending_forced_movement == nil
   end
 
-  test "idle clears forced movement without cancelling a pending Root offer" do
-    pending =
-      PendingWeaponHit.new(
-        make_ref(),
-        {:player, 101},
-        {:mob, 202},
-        %{unit: {:player, 303}, pid: self()},
-        5_000,
-        3_000,
-        4_200
-      )
-
+  test "idle clears a staged forced movement directive" do
     state = %PlayerState{
       action_state: :attacking,
-      pending_weapon_hit: pending,
       pending_forced_movement: %ForcedMovement{map_name: "prontera", x: 14, y: 17}
     }
 
     {:ok, idle} = PlayerState.transition_to(state, :idle, %{})
-    assert idle.pending_weapon_hit == pending
     assert idle.pending_forced_movement == nil
   end
 end

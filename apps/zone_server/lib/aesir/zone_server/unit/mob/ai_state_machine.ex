@@ -20,7 +20,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackPositioning
-  alias Aesir.ZoneServer.Mmo.Combat.PendingWeaponHit
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Mob.MobSession
@@ -457,21 +456,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
     attack_delay = MobState.get_attack_delay(state)
 
     can_attack =
-      state.pending_weapon_hit == nil and
-        Interpreter.can_attack?(:mob, state.instance_id) and
+      Interpreter.can_attack?(:mob, state.instance_id) and
         (state.last_attack_time == nil or
            current_time - state.last_attack_time >= attack_delay)
 
     if can_attack do
-      # Execute attack using the Combat system
+      # Execute attack using the Combat system. An intercepted swing (a target
+      # status caught it, dealing no damage) still advances the attack cadence.
       case Combat.execute_mob_attack(state, target_id) do
-        :ok ->
-          # Update last attack time
+        result when result in [:ok, :intercepted] ->
           %{state | last_attack_time: current_time}
-
-        {:pending, pending} ->
-          :ok = PendingWeaponHit.dispatch_offer(pending)
-          %{state | pending_weapon_hit: pending}
 
         {:error, reason} ->
           # Attack failed, don't update attack time

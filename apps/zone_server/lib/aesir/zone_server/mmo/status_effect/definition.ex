@@ -140,13 +140,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   @callback on_dealt_damage(target(), StatusEntry.t(), map(), context()) :: hook_result()
 
   @doc """
-  Reads a target status before a weapon swing selects Trifecta or resolves damage.
+  Intercepts a weapon swing before it selects Trifecta or resolves damage.
 
-  The hook must not mutate the status instance or target state. A Root-capable
-  status may request an asynchronous claim through its opaque Monk reference.
+  The hook may atomically consume a single-use entry of the target (the
+  `StatusStorage.take_status/3` claim pattern the Lex Aeterna hit path uses) and
+  return `{:intercept, result}` to end the swing without damage, or `:continue`
+  to leave the hit untouched. The first status returning an interception wins.
   """
   @callback before_weapon_hit(target(), StatusEntry.t(), map(), context()) ::
-              :continue | {:request_root_offer, %{unit: {:player, non_neg_integer()}, pid: pid()}}
+              :continue | {:intercept, term()}
 
   @doc """
   Pre-damage hook that may reduce or block an incoming hit before HP is applied.

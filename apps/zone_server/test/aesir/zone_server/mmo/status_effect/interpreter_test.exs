@@ -30,16 +30,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     end
   end
 
-  defmodule RootOfferStatus do
+  defmodule InterceptStatus do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
-      id: :sc_test_root_offer,
+      id: :sc_test_intercept,
       no_dispel: false,
       properties: [:buff]
 
+    alias Aesir.ZoneServer.Mmo.StatusStorage
+
     @impl true
-    def before_weapon_hit(_target, instance, attack_info, _context) do
-      send(self(), {:root_offer_probe, instance, attack_info})
-      {:request_root_offer, %{unit: {:player, 77}, pid: self()}}
+    def before_weapon_hit({unit_type, unit_id}, _instance, attack_info, _context) do
+      case StatusStorage.take_status(unit_type, unit_id, :sc_test_intercept) do
+        nil -> :continue
+        _claimed -> {:intercept, attack_info}
+      end
     end
   end
 
@@ -48,20 +52,39 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
   setup :setup_ets_tables
 
   describe "before_weapon_hit/3" do
-    test "returns a Root offer without changing the target status" do
+    test "intercepts a weapon hit and atomically consumes the single-use status" do
       target_id = 7_701
       setup_player_mock(target_id)
-      Registry.register_module(RootOfferStatus)
-      :ok = StatusStorage.apply_status(:player, target_id, :sc_test_root_offer)
+      Registry.register_module(InterceptStatus)
+      :ok = StatusStorage.apply_status(:player, target_id, :sc_test_intercept)
 
-      before = StatusStorage.get_status(:player, target_id, :sc_test_root_offer)
-      attack_info = %{attacker: {:mob, 44}, target: {:player, target_id}}
+      attack_info = %{attacker: {:mob, 44}, target: {:player, target_id}, melee?: true}
 
-      assert {:request_root_offer, %{unit: {:player, 77}, pid: _pid}} =
+      assert {:intercept, ^attack_info} =
                Interpreter.before_weapon_hit(:player, target_id, attack_info)
 
-      assert_received {:root_offer_probe, ^before, ^attack_info}
-      assert StatusStorage.get_status(:player, target_id, :sc_test_root_offer) == before
+      assert StatusStorage.get_status(:player, target_id, :sc_test_intercept) == nil
+    end
+
+    test "a second swing continues once the single-use status is consumed" do
+      target_id = 7_702
+      setup_player_mock(target_id)
+      Registry.register_module(InterceptStatus)
+      :ok = StatusStorage.apply_status(:player, target_id, :sc_test_intercept)
+
+      attack_info = %{attacker: {:mob, 44}, target: {:player, target_id}}
+
+      assert {:intercept, ^attack_info} =
+               Interpreter.before_weapon_hit(:player, target_id, attack_info)
+
+      assert :continue = Interpreter.before_weapon_hit(:player, target_id, attack_info)
+    end
+
+    test "continues in constant time when the target has no interception-capable status" do
+      target_id = 7_703
+      attack_info = %{attacker: {:mob, 44}, target: {:player, target_id}}
+
+      assert :continue = Interpreter.before_weapon_hit(:player, target_id, attack_info)
     end
   end
 

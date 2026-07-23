@@ -16,7 +16,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
   alias Aesir.Net.CastCancel
   alias Aesir.Net.SkillCasting
   alias Aesir.ZoneServer.Mmo.Combat
-  alias Aesir.ZoneServer.Mmo.Combat.PendingWeaponHit
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
@@ -101,60 +100,31 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
   end
 
   describe "{:ai, :tick} skill selection" do
-    test "a pending weapon hit gates melee and skill selection" do
-      pending =
-        PendingWeaponHit.new(
-          make_ref(),
-          {:mob, 1},
-          {:player, @target_id},
-          %{unit: {:player, @target_id}, pid: self()},
-          System.monotonic_time(:millisecond) + 5_000,
-          System.monotonic_time(:millisecond),
-          System.monotonic_time(:millisecond) + 1_000
-        )
+    test "an intercepted melee swing still advances the attack cadence" do
+      stub(MobSkillDb, :rows_for, fn 1001 -> [] end)
 
-      state = %{build_mob_state() | pending_weapon_hit: pending}
+      stub(UnitRegistry, :get_unit, fn :player, @target_id ->
+        {:ok, {nil, living_player_state(), nil}}
+      end)
 
-      reject(&MobSkillDb.rows_for/1)
-      reject(&Combat.execute_mob_attack/2)
+      stub(SpatialIndex, :get_unit_position, fn :player, @target_id ->
+        {:ok, {100, 100, "prontera"}}
+      end)
 
-      assert {:noreply, returned} = MobSession.handle_info({:ai, :tick}, state)
-      assert returned.pending_weapon_hit == pending
-      assert returned.ai_timer_ref
-    end
+      stub(StatusInterpreter, :targetable?, fn :player, @target_id -> true end)
+      stub(StatusInterpreter, :can_attack?, fn :mob, 1 -> true end)
+      test_pid = self()
 
-    test "a claimed pending hit submits the descriptor to the Root coordinator" do
-      pending =
-        PendingWeaponHit.new(
-          make_ref(),
-          {:mob, 1},
-          {:player, @target_id},
-          %{unit: {:player, @target_id}, pid: self()},
-          System.monotonic_time(:millisecond) + 5_000,
-          System.monotonic_time(:millisecond),
-          System.monotonic_time(:millisecond) + 1_000
-        )
+      expect(Combat, :execute_mob_attack, fn _state, @target_id ->
+        send(test_pid, :melee)
+        :intercepted
+      end)
 
-      link_id = make_ref()
-      pending_id = pending.id
-      state = %{build_mob_state() | pending_weapon_hit: pending}
+      {:noreply, updated} = MobSession.handle_info({:ai, :tick}, build_mob_state())
 
-      assert {:noreply, %{pending_weapon_hit: claimed}} =
-               MobSession.handle_info(
-                 {:pending_weapon_hit_claimed, pending_id, link_id, self()},
-                 state
-               )
-
-      assert claimed.phase == :claimed
-
-      assert_received {:pending_weapon_hit_pair_submission, ^link_id,
-                       %PendingWeaponHit{
-                         id: pending_id,
-                         attacker: {:mob, 1},
-                         target: {:player, @target_id}
-                       }}
-
-      assert pending_id == pending.id
+      assert_received :melee
+      assert updated.last_attack_time != nil
+      assert updated.ai_timer_ref
     end
 
     test "a selectable cast_time > 0 row starts a cast instead of melee" do

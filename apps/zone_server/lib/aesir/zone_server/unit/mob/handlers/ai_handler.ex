@@ -10,7 +10,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
   a cast resolves.
   """
 
-  alias Aesir.ZoneServer.Mmo.Combat.PendingWeaponHit
   alias Aesir.ZoneServer.Mmo.MobSkill.Db, as: MobSkillDb
   alias Aesir.ZoneServer.Mmo.MobSkill.Selector, as: MobSkillSelector
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
@@ -37,13 +36,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
         # A tick that raced a {:ai, :sleep}; drop it without rescheduling
         {:noreply, state}
 
-      state.pending_weapon_hit != nil ->
-        # A deferred weapon swing awaits its Root resolution: the mob acts on
-        # nothing (no melee, no skill re-selection) until the pending hit is
-        # resolved or its deadline times out. Keep ticking so the loop resumes
-        # once the pending hit clears.
-        {:noreply, schedule_ai_tick(state)}
-
       state.casting != nil ->
         # A casting mob is locked: no movement, no melee, no re-selection.
         # Completion is driven by the separate {:casting, :complete} timer,
@@ -56,24 +48,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
         end
 
       true ->
-        updated_state = run_skill_or_ai(state)
-        updated_state = schedule_pending_weapon_hit_timeout(state, updated_state)
-        {:noreply, schedule_ai_tick(updated_state)}
+        updated_state = state |> run_skill_or_ai() |> schedule_ai_tick()
+        {:noreply, updated_state}
     end
   end
-
-  # When this tick deferred a fresh weapon swing, arm the deadline timer so the
-  # pending hit resumes even if its Root resolution never arrives.
-  defp schedule_pending_weapon_hit_timeout(
-         %{pending_weapon_hit: nil},
-         %{pending_weapon_hit: %PendingWeaponHit{} = pending} = state
-       ) do
-    delay = max(pending.deadline_at - System.monotonic_time(:millisecond), 0)
-    Process.send_after(self(), {:pending_weapon_hit_timeout, pending.id}, delay)
-    state
-  end
-
-  defp schedule_pending_weapon_hit_timeout(_previous, state), do: state
 
   @doc """
   Suspends the AI loop for an `{:ai, :sleep}` cast: sheds in-flight

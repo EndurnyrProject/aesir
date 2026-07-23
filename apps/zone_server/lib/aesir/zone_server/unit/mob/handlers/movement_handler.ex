@@ -82,7 +82,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
       {:ok, {x, y}} ->
         updated_state =
           state
-          |> MobState.cancel_pending_weapon_hit()
           |> MobState.update_position(x, y)
           |> MobState.stop_movement()
           |> MobState.set_target(nil)
@@ -113,7 +112,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   def handle_knocked_back(state, x, y) do
     state =
       state
-      |> MobState.cancel_pending_weapon_hit()
       |> MobState.stop_movement()
       |> MobState.update_position(x, y)
 

@@ -8,7 +8,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   use TypedStruct
 
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
-  alias Aesir.ZoneServer.Mmo.Combat.PendingWeaponHit
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.ElementalChange
@@ -78,7 +77,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     field :last_movement_end_time, integer() | nil, default: nil
     field :last_idle_movement_time, integer() | nil, default: nil
     field :last_attack_time, integer() | nil, default: nil
-    field :pending_weapon_hit, PendingWeaponHit.t() | nil, default: nil
 
     # Combat state
     field :hp, integer(), enforce: true
@@ -327,8 +325,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   @spec set_path(t(), [{integer(), integer()}]) :: t()
   def set_path(%__MODULE__{} = state, path) when is_list(path) do
     if path != [] do
-      state = cancel_pending_weapon_hit(state)
-
       %{
         state
         | walk_path: path,
@@ -384,10 +380,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   Sets the combat target.
   """
   @spec set_target(t(), integer() | nil) :: t()
-  def set_target(%__MODULE__{target_id: target_id} = state, target_id), do: state
-
   def set_target(%__MODULE__{} = state, target_id) do
-    state = cancel_pending_weapon_hit(state)
     %{state | target_id: target_id}
   end
 
@@ -513,8 +506,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   """
   @spec set_dead(t()) :: t()
   def set_dead(%__MODULE__{} = state) do
-    state = cancel_pending_weapon_hit(state)
-
     %{
       state
       | is_dead: true,
@@ -525,21 +516,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
         movement_state: :standing,
         walk_path: []
     }
-  end
-
-  @doc "Cancels the unresolved weapon swing and notifies its Root offer owner once."
-  @spec cancel_pending_weapon_hit(t()) :: t()
-  def cancel_pending_weapon_hit(%__MODULE__{pending_weapon_hit: nil} = state), do: state
-
-  def cancel_pending_weapon_hit(%__MODULE__{pending_weapon_hit: pending} = state) do
-    case PendingWeaponHit.resolve(pending, :cancel) do
-      {:ok, cancelled} ->
-        send(cancelled.monk_ref.pid, PendingWeaponHit.cancellation_message(cancelled))
-        %{state | pending_weapon_hit: nil}
-
-      :already_resolved ->
-        %{state | pending_weapon_hit: nil}
-    end
   end
 
   @doc """

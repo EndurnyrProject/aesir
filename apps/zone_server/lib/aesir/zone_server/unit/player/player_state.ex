@@ -10,7 +10,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
-  alias Aesir.ZoneServer.Mmo.Combat.PendingWeaponHit
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
@@ -89,7 +88,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           last_warp_at: integer() | nil,
           last_emote_at: integer() | nil,
           continuous_attack_timer: reference() | nil,
-          pending_weapon_hit: PendingWeaponHit.t() | nil,
           pending_forced_movement: ForcedMovement.t() | nil,
           spirit_spheres: SpiritSpheres.t(),
           spirit_sphere_timer: reference() | nil,
@@ -202,7 +200,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     :combat_action_type,
     :last_target_position,
     :continuous_attack_timer,
-    :pending_weapon_hit,
     :pending_forced_movement,
 
     # Move-to-pickup state — the ground item we are walking toward to pick up.
@@ -388,8 +385,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   """
   @spec relocate(t(), String.t(), non_neg_integer(), non_neg_integer()) :: t()
   def relocate(%__MODULE__{} = state, map_name, x, y) do
-    state = cancel_pending_weapon_hit(state)
-
     %{
       state
       | map_name: map_name,
@@ -569,8 +564,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
         state
         | action_state: new_state,
           state_context: context,
-          casting: next_casting(state, current, new_state, context),
-          pending_weapon_hit: state.pending_weapon_hit
+          casting: next_casting(state, current, new_state, context)
       }
 
       # Handle state-specific setup
@@ -596,6 +590,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
   defp cancel_pending_for_transition(state, new_state)
        when new_state in [
+              :idle,
               :moving,
               :combat_moving,
               :skill_moving,
@@ -603,13 +598,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
               :casting,
               :dead
             ],
-       do:
-         state
-         |> cancel_pending_weapon_hit()
-         |> Map.put(:pending_forced_movement, nil)
-
-  defp cancel_pending_for_transition(state, :idle),
-    do: Map.put(state, :pending_forced_movement, nil)
+       do: Map.put(state, :pending_forced_movement, nil)
 
   defp cancel_pending_for_transition(state, _new_state), do: state
 
@@ -648,28 +637,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
   def cancel_combo(%__MODULE__{} = state), do: %{state | combo: Combo.new()}
 
-  @doc "Stores the one unresolved weapon swing owned by this player."
-  @spec put_pending_weapon_hit(t(), PendingWeaponHit.t()) :: t()
-  def put_pending_weapon_hit(%__MODULE__{} = state, %PendingWeaponHit{} = pending) do
-    :ok = PendingWeaponHit.dispatch_offer(pending)
-    %{state | pending_weapon_hit: pending}
-  end
-
-  @doc "Cancels the unresolved weapon swing and notifies its Root offer owner once."
-  @spec cancel_pending_weapon_hit(t()) :: t()
-  def cancel_pending_weapon_hit(%__MODULE__{pending_weapon_hit: nil} = state), do: state
-
-  def cancel_pending_weapon_hit(%__MODULE__{pending_weapon_hit: pending} = state) do
-    case PendingWeaponHit.resolve(pending, :cancel) do
-      {:ok, cancelled} ->
-        send(cancelled.monk_ref.pid, PendingWeaponHit.cancellation_message(cancelled))
-        %{state | pending_weapon_hit: nil}
-
-      :already_resolved ->
-        %{state | pending_weapon_hit: nil}
-    end
-  end
-
   @doc """
   Sets combat intent for move-to-attack behavior.
   """
@@ -701,7 +668,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   @spec clear_combat_intent(t()) :: t()
   def clear_combat_intent(%__MODULE__{} = state) do
     cancel_continuous_timer(state.continuous_attack_timer)
-    state = cancel_pending_weapon_hit(state)
 
     %{
       state

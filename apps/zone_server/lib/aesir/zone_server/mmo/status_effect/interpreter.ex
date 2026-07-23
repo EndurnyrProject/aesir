@@ -151,20 +151,21 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   @doc """
-  Reads active target statuses before a weapon hit selects a replacement or damage.
+  Dispatches the target's interception-capable statuses before a weapon hit
+  selects a replacement or resolves damage.
 
-  The callback path is intentionally read-only: it never stores an instance,
-  removes a status, or applies a follow-up. The first Root offer wins.
+  Each capable status may atomically consume a single-use entry of the target
+  and return `{:intercept, result}`; the first interception wins and ends the
+  swing. A target holding no such status stays on a constant-time no-op path.
   """
-  @spec before_weapon_hit(unit_type(), integer(), map()) ::
-          :continue | {:request_root_offer, %{unit: {:player, non_neg_integer()}, pid: pid()}}
+  @spec before_weapon_hit(unit_type(), integer(), map()) :: :continue | {:intercept, term()}
   def before_weapon_hit(unit_type, unit_id, attack_info) do
     implementing = Registry.statuses_implementing(:before_weapon_hit)
 
     if MapSet.size(implementing) == 0 do
       :continue
     else
-      find_weapon_hit_offer(unit_type, unit_id, implementing, attack_info)
+      find_weapon_hit_interception(unit_type, unit_id, implementing, attack_info)
     end
   end
 
@@ -601,14 +602,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   defp dispatch_damage(unit_type, unit_id, instance, damage_info),
     do: dispatch_hook(:on_damage, unit_type, unit_id, instance, damage_info)
 
-  defp find_weapon_hit_offer(unit_type, unit_id, implementing, attack_info) do
+  defp find_weapon_hit_interception(unit_type, unit_id, implementing, attack_info) do
     unit_type
     |> StatusStorage.get_unit_statuses(unit_id)
     |> Enum.filter(&MapSet.member?(implementing, &1.type))
     |> Enum.find_value(:continue, fn instance ->
       case dispatch_before_weapon_hit(unit_type, unit_id, instance, attack_info) do
         :continue -> nil
-        {:request_root_offer, _monk_ref} = offer -> offer
+        {:intercept, _result} = interception -> interception
       end
     end)
   end
@@ -630,8 +631,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
           :continue ->
             :continue
 
-          {:request_root_offer, _monk_ref} = offer ->
-            offer
+          {:intercept, _result} = interception ->
+            interception
 
           result ->
             raise "invalid before_weapon_hit result for #{instance.type}: #{inspect(result)}"

@@ -9,7 +9,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
   alias Aesir.Net.ItemRemoved
   alias Aesir.Net.MoveStop
   alias Aesir.ZoneServer.Mmo.Combat
-  alias Aesir.ZoneServer.Mmo.Combat.PendingWeaponHit
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Id, as: SkillUnitId
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
@@ -680,80 +679,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       %{game_state: game_state, connection_pid: self()}
     end
 
-    test "a pending swing gates repeated ticks and resumes once from its stored schedule" do
+    test "an intercepted swing deals no damage and continues the attack cadence" do
       stub(Stats, :weapon_type, fn _equipment -> :dagger end)
-      id = make_ref()
-      swing_at = System.monotonic_time(:millisecond)
 
-      pending =
-        PendingWeaponHit.new(
-          id,
-          {:player, 1000},
-          {:mob, 2000},
-          %{unit: {:player, 3000}, pid: self()},
-          swing_at + 5_000,
-          swing_at,
-          swing_at + 1_000
-        )
-
-      state = loop_state()
-
-      state = %{
-        state
-        | game_state:
-            state.game_state
-            |> Map.put(:action_state, :attacking)
-            |> PlayerState.put_pending_weapon_hit(pending)
-      }
-
-      stub(Combat, :resume_attack, fn _stats, _game_state, _pending ->
-        send(self(), :resumed)
-        :ok
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:error, :not_found}
+        :mob, 2000 -> {:ok, {10, 11, "prontera"}}
       end)
 
-      assert {:noreply, ^state} = CombatActionHandler.handle_auto_attack(state, 2000)
-      refute_received :resumed
+      stub(Combat, :execute_attack, fn _stats, _gs, 2000 ->
+        send(self(), :attacked)
+        :intercepted
+      end)
 
-      assert {:noreply, resumed} =
-               CombatActionHandler.handle_pending_weapon_hit_result(state, id, :resume)
+      {:noreply, s1} = CombatActionHandler.handle_attack_request(loop_state(), 2000, 7)
 
-      assert_received :resumed
-      assert resumed.game_state.pending_weapon_hit == nil
-      assert resumed.game_state.last_attack_timestamp == swing_at
-      assert is_reference(resumed.game_state.continuous_attack_timer)
-
-      assert {:noreply, ^resumed} =
-               CombatActionHandler.handle_pending_weapon_hit_result(resumed, id, :resume)
-
-      refute_received :resumed
-    end
-
-    test "cancelling a pending swing notifies its Root offer owner once" do
-      id = make_ref()
-
-      pending =
-        PendingWeaponHit.new(
-          id,
-          {:player, 1000},
-          {:mob, 2000},
-          %{unit: {:player, 3000}, pid: self()},
-          5_000,
-          3_000,
-          4_200
-        )
-
-      state = %{
-        loop_state()
-        | game_state: PlayerState.put_pending_weapon_hit(loop_state().game_state, pending)
-      }
-
-      cancelled = CombatActionHandler.cancel_pending_weapon_hit(state)
-
-      assert cancelled.game_state.pending_weapon_hit == nil
-      assert_received {:pending_weapon_hit_cancelled, ^id, {:offer, {:player, 1000}}}
-
-      _ = CombatActionHandler.cancel_pending_weapon_hit(cancelled)
-      refute_received {:pending_weapon_hit_cancelled, ^id, _}
+      assert_received :attacked
+      assert s1.game_state.combat_target_id == 2000
+      assert s1.game_state.combo.stage == :idle
+      assert is_reference(s1.game_state.continuous_attack_timer)
+      assert_receive {:combat, {:auto_attack, 2000}}, 500
     end
 
     test "a continuous attack swings, locks the target and reschedules on the tick" do

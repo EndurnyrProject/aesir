@@ -40,14 +40,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
     def on_damage(_target, instance, _damage_info, _context), do: {:ok, instance}
   end
 
-  defmodule RootOfferStatus do
+  defmodule InterceptStatus do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
-      id: :sc_test_root_offer,
+      id: :sc_test_intercept,
       no_dispel: false
 
     @impl true
     def before_weapon_hit(_target, _instance, _attack_info, _context),
-      do: {:request_root_offer, %{unit: {:player, 99}, pid: self()}}
+      do: {:intercept, :caught}
   end
 
   describe "use macro" do
@@ -154,13 +154,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
       assert {:ok, ^instance} = FullStatus.on_damage(target, instance, %{element: :fire}, %{})
     end
 
-    test "before_weapon_hit/4 publishes the Root offer capability" do
-      assert RootOfferStatus.__status_capabilities__() == [:before_weapon_hit]
+    test "before_weapon_hit/4 publishes the interception capability" do
+      assert InterceptStatus.__status_capabilities__() == [:before_weapon_hit]
 
-      assert {:request_root_offer, %{unit: {:player, 99}, pid: _pid}} =
-               RootOfferStatus.before_weapon_hit(
+      assert {:intercept, :caught} =
+               InterceptStatus.before_weapon_hit(
                  {:player, 1},
-                 %StatusEntry{type: :sc_test_root_offer},
+                 %StatusEntry{type: :sc_test_intercept},
                  %{},
                  %{}
                )
