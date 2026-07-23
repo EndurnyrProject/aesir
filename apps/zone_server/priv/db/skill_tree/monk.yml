@@ -1,0 +1,94 @@
+---
+- job: monk
+  inherit:
+    - novice
+    - acolyte
+  tree:
+    - name: MO_IRONHAND
+      max_level: 10
+      requires:
+        - name: AL_DEMONBANE
+          level: 10
+        - name: AL_DP
+          level: 10
+    - name: MO_SPIRITSRECOVERY
+      max_level: 5
+      requires:
+        - name: MO_BLADESTOP
+          level: 2
+    - name: MO_CALLSPIRITS
+      max_level: 5
+      requires:
+        - name: MO_IRONHAND
+          level: 2
+    - name: MO_ABSORBSPIRITS
+      max_level: 1
+      requires:
+        - name: MO_CALLSPIRITS
+          level: 5
+    - name: MO_TRIPLEATTACK
+      max_level: 10
+      requires:
+        - name: MO_DODGE
+          level: 5
+    - name: MO_BODYRELOCATION
+      max_level: 1
+      requires:
+        - name: MO_EXTREMITYFIST
+          level: 3
+        - name: MO_SPIRITSRECOVERY
+          level: 2
+        - name: MO_STEELBODY
+          level: 3
+    - name: MO_DODGE
+      max_level: 10
+      requires:
+        - name: MO_IRONHAND
+          level: 5
+        - name: MO_CALLSPIRITS
+          level: 5
+    - name: MO_INVESTIGATE
+      max_level: 5
+      requires:
+        - name: MO_CALLSPIRITS
+          level: 5
+    - name: MO_FINGEROFFENSIVE
+      max_level: 5
+      requires:
+        - name: MO_INVESTIGATE
+          level: 3
+    - name: MO_STEELBODY
+      max_level: 5
+      requires:
+        - name: MO_COMBOFINISH
+          level: 3
+    - name: MO_BLADESTOP
+      max_level: 5
+      requires:
+        - name: MO_DODGE
+          level: 5
+    - name: MO_EXPLOSIONSPIRITS
+      max_level: 5
+      requires:
+        - name: MO_ABSORBSPIRITS
+          level: 1
+    - name: MO_EXTREMITYFIST
+      max_level: 5
+      requires:
+        - name: MO_EXPLOSIONSPIRITS
+          level: 3
+        - name: MO_FINGEROFFENSIVE
+          level: 3
+    - name: MO_CHAINCOMBO
+      max_level: 5
+      requires:
+        - name: MO_TRIPLEATTACK
+          level: 5
+    - name: MO_COMBOFINISH
+      max_level: 5
+      requires:
+        - name: MO_CHAINCOMBO
+          level: 3
+
+  # NOTE: MO_KITRANSLATION and MO_BALKYOUNG are intentionally absent; both are
+  # quest skills, catalogued and directly castable but never ordinarily learned.
