@@ -189,6 +189,9 @@ message Envelope {
     SkillCastFailed skill_cast_failed = 162;
     // 163: authoritative absolute spirit-sphere state
     SpiritSphereUpdate spirit_sphere_update = 163;
+    // 164-165: peco mount (client intent + server->client outcome)
+    MountRequest mount_request = 164;
+    MountResult mount_result = 165;
   }
 }
 
@@ -852,6 +855,26 @@ enum CartMountResultCode {
 // Server -> client, outcome of a cart mount attempt.
 message CartMountResult {
   CartMountResultCode result = 1;
+}
+
+// Client -> server, mount (true) or unmount (false) a Peco. Gated on Ride learned.
+message MountRequest {
+  bool mount = 1;
+}
+
+// Outcome of a Peco mount attempt. Values are prefixed because proto3 enum
+// constants share the package namespace.
+enum MountResultCode {
+  MOUNT_OK = 0;
+  MOUNT_SKILL_NOT_LEARNED = 1;
+  MOUNT_ALREADY_MOUNTED = 2;
+  MOUNT_NOT_MOUNTED = 3;
+  MOUNT_DEAD = 4;
+}
+
+// Server -> client, outcome of a Peco mount attempt.
+message MountResult {
+  MountResultCode result = 1;
 }
 
 // Client -> server, move an inventory item into the cart.

@@ -60,6 +60,8 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.LoginRequest
   alias Aesir.Net.LoginResponse
   alias Aesir.Net.MapLoaded
+  alias Aesir.Net.MountRequest
+  alias Aesir.Net.MountResult
   alias Aesir.Net.MoveFromCartRequest
   alias Aesir.Net.MoveRequest
   alias Aesir.Net.MoveStop
@@ -2648,6 +2650,23 @@ defmodule Aesir.Commons.Network.ProtoTest do
   test "skill_menu_reply round-trips a selection and the cancel sentinel" do
     assert_round_trip(:skill_menu_reply, %SkillMenuReply{src_skill_id: 380, selected_id: 21})
     assert_round_trip(:skill_menu_reply, %SkillMenuReply{src_skill_id: 380, selected_id: 0})
+  end
+
+  test "mount_request round-trips through envelope oneof" do
+    assert_round_trip(:mount_request, %MountRequest{mount: true})
+    assert_round_trip(:mount_request, %MountRequest{mount: false})
+  end
+
+  test "mount_result round-trips every result code through envelope oneof" do
+    for result <- [
+          :MOUNT_OK,
+          :MOUNT_SKILL_NOT_LEARNED,
+          :MOUNT_ALREADY_MOUNTED,
+          :MOUNT_NOT_MOUNTED,
+          :MOUNT_DEAD
+        ] do
+      assert_round_trip(:mount_result, %MountResult{result: result})
+    end
   end
 
   defp assert_round_trip(tag, message) do
