@@ -28,6 +28,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:skill_id` / `:skill_level` - identify the skill for the damage packet
     - `:skill_ratio` - percent of base attack the skill deals
     - `:skip_crit` - skip the critical roll (most skills don't crit)
+    - `:force_crit` - guarantee a critical, applying the crit multiplier without
+      rolling (Auto Counter's counter strike); wins over `:skip_crit`
     - `:bonus_atk` - flat ATK added after the skill ratio, before defense
     - `:fixed_damage` - deal exactly this value, bypassing weapon/defense/flee
     - `:hit_count` - number of hits to deliver, each rolling its own hit/flee
@@ -71,6 +73,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       Keyword.take(opts, [
         :skill_ratio,
         :skip_crit,
+        :force_crit,
         :bonus_atk,
         :fixed_damage,
         :element,

@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Denylist do
     29 => "AL_INCAGI cast/4 pattern-matches %{character_id: _}, no mob-caster clause",
     30 => "AL_DECAGI cast/4 pattern-matches %{character_id: _}, no mob-caster clause",
     51 => "TF_HIDING cast/4 pattern-matches %{character_id: _}, no mob-caster clause",
+    61 => "KN_AUTOCOUNTER cast/4 pattern-matches %{character_id: _}, no mob-caster clause",
     72 => "PR_STRECOVERY cast/4 pattern-matches %{character_id: _}, no mob-caster clause",
     73 => "PR_KYRIE cast/4 pattern-matches %{character_id: _}, no mob-caster clause",
     76 => "PR_LEXDIVINA cast/4 pattern-matches %{character_id: _}, no mob-caster clause",

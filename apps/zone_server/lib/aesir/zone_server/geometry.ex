@@ -38,6 +38,20 @@ defmodule Aesir.ZoneServer.Geometry do
   end
 
   @doc """
+  Circular distance, in 45-degree dir-steps, between two 8-way directions.
+
+  Both directions use the 0-7 sprite-frame convention from
+  `calculate_direction/4`. The result is `0..4`: `0` when the two face the same
+  way, `4` when they are diametrically opposite. Wrapping across the 0/7 seam is
+  handled, so directions `0` and `7` differ by one step, not seven.
+  """
+  @spec direction_difference(0..7, 0..7) :: 0..4
+  def direction_difference(dir_a, dir_b) do
+    diff = abs(dir_a - dir_b)
+    min(diff, 8 - diff)
+  end
+
+  @doc """
   Calculates Manhattan distance between two points.
   Useful for grid-based movement.
   """

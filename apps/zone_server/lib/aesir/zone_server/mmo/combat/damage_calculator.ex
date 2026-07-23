@@ -119,7 +119,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   defp calculate_pipeline_damage(attacker, defender, opts) do
     skill_ratio = Keyword.get(opts, :skill_ratio, 100)
-    skip_crit = Keyword.get(opts, :skip_crit, false)
     bonus_atk = Keyword.get(opts, :bonus_atk, 0)
 
     with {:ok, base_atk} <- calculate_base_attack(attacker),
@@ -129,7 +128,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
          total_atk = modified_atk + demon_bane_bonus(attacker, defender),
          total_atk = apply_res_reduction(total_atk, defender),
          {:ok, final_damage} <- apply_defense_formula(total_atk, defender, attacker) do
-      finalize_damage(final_damage, attacker, skip_crit)
+      finalize_damage(final_damage, attacker, opts)
     end
   end
 
@@ -153,8 +152,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     RaceModifiers.demon_bane_atk(attacker, defender.race)
   end
 
-  defp finalize_damage(damage, _attacker, true), do: {:ok, %{damage: damage, is_critical: false}}
-  defp finalize_damage(damage, attacker, false), do: apply_critical_hit(damage, attacker)
+  # `:force_crit` guarantees the critical (Auto Counter's counter strike) and
+  # wins over `:skip_crit`; otherwise the roll is skipped or rolled per opts.
+  defp finalize_damage(damage, attacker, opts) do
+    cond do
+      Keyword.get(opts, :force_crit, false) -> apply_forced_critical_hit(damage, attacker)
+      Keyword.get(opts, :skip_crit, false) -> {:ok, %{damage: damage, is_critical: false}}
+      true -> apply_critical_hit(damage, attacker)
+    end
+  end
 
   @doc """
   Calculates base attack value based on unit type and stats.
@@ -310,6 +316,30 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     )
 
     {:ok, critical_result}
+  end
+
+  @doc """
+  Applies the Renewal critical multiplier unconditionally, flagging the hit as a
+  critical without rolling.
+
+  For effects that deal a guaranteed critical regardless of the attacker's crit
+  rate (Auto Counter's counter strike). Reuses `CriticalHits.apply_critical_damage/2`
+  so the CRate and equipment critical-damage channels stay identical to a rolled
+  critical.
+  """
+  @spec apply_forced_critical_hit(integer(), combatant()) :: {:ok, CriticalHits.critical_result()}
+  def apply_forced_critical_hit(base_damage, attacker) do
+    attacker_for_crit = %{
+      combat_stats: attacker.combat_stats,
+      equip_modifiers: attacker.equip_modifiers
+    }
+
+    {:ok,
+     %{
+       damage: CriticalHits.apply_critical_damage(base_damage, attacker_for_crit),
+       is_critical: true,
+       critical_rate: 1_000
+     }}
   end
 
   defp computed_critical_rate(%{base_stats: %{luk: luk}, combat_stats: %{critical: critical}})

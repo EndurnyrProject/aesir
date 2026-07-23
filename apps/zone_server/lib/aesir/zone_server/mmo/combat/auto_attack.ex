@@ -307,6 +307,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       target: {target_type, target.unit_id},
       attacker_boss?: attacker.class == :boss,
       attacker_root_level: attacker_root_level,
+      attacker_position: attacker.position,
+      attacker_short?: attacker.attack_range <= 3,
       distance: cell_distance(attacker, target)
     })
   end
