@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
+  alias Aesir.ZoneServer.Mmo.Skill.CastTime
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -118,6 +119,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     def validate(%{allow_cast?: true}, _target, _level, _definition), do: :ok
 
     def validate(_game_state, _target, _level, _definition), do: {:error, :requirements_changed}
+  end
+
+  defmodule DynamicCastTimeSkill do
+    @behaviour Aesir.ZoneServer.Mmo.Skill.Active
+
+    @impl true
+    def cast(game_state, _target, _level, _definition), do: {:ok, game_state}
+
+    @impl true
+    def validate(_game_state, _target, _level, _definition), do: :ok
+
+    @impl true
+    def dynamic_cast_time(%{instant_cast?: true}, _target, _level, _definition),
+      do: %{cast_time: 0, fixed_cast_time: 0}
+
+    def dynamic_cast_time(_game_state, _target, _level, definition) do
+      %{
+        cast_time: Enum.at(definition.cast_time, 0),
+        fixed_cast_time: Enum.at(definition.fixed_cast_time, 0)
+      }
+    end
   end
 
   defp game_state(sp, learned) do
@@ -805,6 +827,52 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       cast_time: [0],
       cooldown: [5_000]
     }
+  end
+
+  describe "dynamic cast-time seam" do
+    @timing_definition %Definition{
+      id: 29,
+      name: :cost_skill,
+      display_name: "Cost Skill",
+      max_level: 1,
+      target_type: :self,
+      sp_cost: [0],
+      cast_time: [1_000],
+      fixed_cast_time: [400]
+    }
+
+    test "an implementing skill can zero its cast time from context" do
+      stub(Catalog, :by_id, fn 29 -> {:ok, @timing_definition} end)
+      stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, DynamicCastTimeSkill} end)
+
+      instant = Map.put(game_state(50, %{29 => 1}), :instant_cast?, true)
+      assert {:instant, _gs} = Interpreter.begin_cast(instant, 29, 1, :self)
+
+      timed = Map.put(game_state(50, %{29 => 1}), :instant_cast?, false)
+      assert {:casting, _gs, info} = Interpreter.begin_cast(timed, 29, 1, :self)
+      assert info.fixed == 400
+      assert info.total > 400
+    end
+
+    test "a non-implementing skill keeps its declared cast time byte-identical" do
+      stub(Catalog, :by_id, fn 29 -> {:ok, @timing_definition} end)
+      stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, StaticCostSkill} end)
+
+      assert {:casting, _gs, info} =
+               Interpreter.begin_cast(game_state(50, %{29 => 1}), 29, 1, :self)
+
+      expected =
+        CastTime.compute(@timing_definition, 1, %{
+          dex: 1,
+          int: 1,
+          varcast_reductions: [],
+          varcast_rate: 0,
+          fixed_cast: 0
+        })
+
+      assert info.fixed == expected.fixed
+      assert info.total == expected.total
+    end
   end
 
   describe "begin_cast/4" do

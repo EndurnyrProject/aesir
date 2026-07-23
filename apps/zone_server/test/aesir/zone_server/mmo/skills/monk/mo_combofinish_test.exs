@@ -1,15 +1,20 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinishTest do
   use ExUnit.Case, async: true
+
   import Mimic
+  import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
   alias Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
 
   setup :verify_on_exit!
+  setup :setup_ets_tables
 
   @target_id 2_000
 
@@ -58,6 +63,70 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinishTest do
              MoCombofinish.cast(caster, {:unit, @target_id}, 3, MoCombofinish.definition())
 
     assert caster.combo.stage == :thrust
+  end
+
+  test "a Thrust that satisfies the Asura follow-up opens the extremity window" do
+    caster = asura_ready_caster()
+    old_generation = caster.combo.generation
+
+    stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {60, 50, "prontera"}} end)
+    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> :ok end)
+
+    assert {:ok, updated} =
+             MoCombofinish.cast(caster, {:unit, @target_id}, 3, MoCombofinish.definition())
+
+    assert updated.combo.stage == :extremity
+    assert updated.combo.target == {:mob, @target_id}
+    assert updated.combo.generation == old_generation + 1
+    assert updated.combo.deadline > System.monotonic_time(:millisecond)
+  end
+
+  test "a Thrust missing Fury closes the chain instead of opening the Asura window" do
+    caster = asura_ready_caster(fury?: false)
+
+    stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {60, 50, "prontera"}} end)
+    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> :ok end)
+
+    assert {:ok, updated} =
+             MoCombofinish.cast(caster, {:unit, @target_id}, 3, MoCombofinish.definition())
+
+    assert updated.combo.stage == :idle
+  end
+
+  test "a Thrust below the sphere threshold closes the chain" do
+    caster = asura_ready_caster(spheres: 3)
+
+    stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {60, 50, "prontera"}} end)
+    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> :ok end)
+
+    assert {:ok, updated} =
+             MoCombofinish.cast(caster, {:unit, @target_id}, 3, MoCombofinish.definition())
+
+    assert updated.combo.stage == :idle
+  end
+
+  defp asura_ready_caster(opts \\ []) do
+    base = caster(:thrust)
+
+    stats = %{
+      base.stats
+      | progression: %{base.stats.progression | learned_skills: %{273 => 5, 271 => 5}}
+    }
+
+    spheres =
+      Enum.reduce(1..Keyword.get(opts, :spheres, 5), base.spirit_spheres, fn _, acc ->
+        {updated, _entry} = SpiritSpheres.summon(acc, future(), 5)
+        updated
+      end)
+
+    if Keyword.get(opts, :fury?, true) do
+      :ok =
+        StatusStorage.apply_status(:player, base.character_id, :sc_explosionspirits,
+          duration: 180_000
+        )
+    end
+
+    %{base | stats: stats, spirit_spheres: spheres}
   end
 
   defp caster(stage) do

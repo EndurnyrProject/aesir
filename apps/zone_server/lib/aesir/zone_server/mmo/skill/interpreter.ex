@@ -119,20 +119,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   def begin_cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
     now = System.monotonic_time(:millisecond)
 
-    with {:ok, definition, _module} <- validate_cast(game_state, skill_id, level, target, now) do
+    with {:ok, definition, module} <- validate_cast(game_state, skill_id, level, target, now) do
       base_stats = game_state.stats.base_stats
 
       timing =
-        CastTime.compute(definition, level, %{
-          dex: base_stats.dex,
-          int: base_stats.int,
-          varcast_reductions: status_reductions(game_state.character_id, :cast_time_reduction),
-          varcast_rate:
-            merged_modifier(game_state.character_id, :varcast_rate) +
-              equip_modifier(game_state, :varcast_rate) +
-              equip_modifier(game_state, {:skill_varcast_rate, skill_id}),
-          fixed_cast: equip_modifier(game_state, :fixed_cast)
-        })
+        CastTime.compute(
+          cast_timing_definition(game_state, module, target, level, definition),
+          level,
+          %{
+            dex: base_stats.dex,
+            int: base_stats.int,
+            varcast_reductions: status_reductions(game_state.character_id, :cast_time_reduction),
+            varcast_rate:
+              merged_modifier(game_state.character_id, :varcast_rate) +
+                equip_modifier(game_state, :varcast_rate) +
+                equip_modifier(game_state, {:skill_varcast_rate, skill_id}),
+            fixed_cast: equip_modifier(game_state, :fixed_cast)
+          }
+        )
 
       schedule(timing, game_state, skill_id, level, target, definition)
     end
@@ -165,6 +169,31 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     |> Enum.reduce(0, fn entry, acc ->
       acc + Map.get(entry.state || %{}, state_key, 0)
     end)
+  end
+
+  # Lets a skill override its per-level cast-time table for this cast (Asura is
+  # instant as a combo follow-up). Skills without the callback take the
+  # definition unchanged, so their timing is byte-identical to the default path.
+  @spec cast_timing_definition(
+          PlayerState.t(),
+          module(),
+          Active.target(),
+          pos_integer(),
+          Definition.t()
+        ) :: Definition.t()
+  defp cast_timing_definition(game_state, module, target, level, definition) do
+    if function_exported?(module, :dynamic_cast_time, 4) do
+      %{cast_time: cast_time, fixed_cast_time: fixed_cast_time} =
+        module.dynamic_cast_time(game_state, target, level, definition)
+
+      %{
+        definition
+        | cast_time: List.replace_at(definition.cast_time, level - 1, cast_time),
+          fixed_cast_time: List.replace_at(definition.fixed_cast_time, level - 1, fixed_cast_time)
+      }
+    else
+      definition
+    end
   end
 
   @doc """

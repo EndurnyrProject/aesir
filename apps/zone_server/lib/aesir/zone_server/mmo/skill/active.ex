@@ -77,7 +77,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   @doc "Optionally resolves a dynamic cost from the caster's current state."
   @callback dynamic_cost(PlayerState.t(), target(), pos_integer(), Definition.t()) :: Cost.t()
 
-  @optional_callbacks validate: 4, deferred: 2, mob_cast: 5, dynamic_cost: 4
+  @doc """
+  Optionally resolves this cast's timing from the caster's current state,
+  overriding the definition's per-level table.
+
+  Returns the base and fixed cast times in milliseconds the interpreter should
+  use for this cast (e.g. `0`/`0` for an instant combo follow-up); the
+  interpreter substitutes them for the cast level before computing the renewal
+  cast time. A skill without it keeps its declared table verbatim, so every
+  non-implementing skill stays on the constant-time default path.
+  """
+  @callback dynamic_cast_time(PlayerState.t(), target(), pos_integer(), Definition.t()) ::
+              %{cast_time: non_neg_integer(), fixed_cast_time: non_neg_integer()}
+
+  @optional_callbacks validate: 4,
+                      deferred: 2,
+                      mob_cast: 5,
+                      dynamic_cost: 4,
+                      dynamic_cast_time: 4
 
   @doc """
   Resolves a cast target to a unit id.
