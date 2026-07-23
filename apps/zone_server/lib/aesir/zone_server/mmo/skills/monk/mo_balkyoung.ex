@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoung do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Formulas
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Mob.MobState
 
   @behaviour Active
 
@@ -62,15 +63,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoung do
     _ = Combat.knockback(unit_type, target_id, x, y, definition.knockback)
 
     if :rand.uniform(100) <= Formulas.ki_explosion_stun_rate() do
+      {caster_type, caster_id} = caster_identity(caster)
+
       StatusInterpreter.apply_status(
         unit_type,
         target_id,
         :sc_stun,
         duration: Formulas.ki_explosion_stun_duration(),
-        caster_id: caster.character_id
+        caster_id: caster_id,
+        source_type: caster_type
       )
     end
 
     :ok
   end
+
+  # Generic caster identity for the stun's source, so the splash rider works for
+  # a mob caster (Ki Explosion is an imported mob skill) as well as a player. A
+  # player caster resolves to `{:player, character_id}`, which is exactly the
+  # `caster_id` and default `source_type` the player path already produced.
+  defp caster_identity(%MobState{instance_id: id}), do: {:mob, id}
+  defp caster_identity(%{character_id: id}), do: {:player, id}
 end
