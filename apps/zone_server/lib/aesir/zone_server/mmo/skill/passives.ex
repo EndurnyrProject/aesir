@@ -328,7 +328,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
       max_hp: derived_stat(stats.derived_stats, :max_hp),
       max_sp: derived_stat(stats.derived_stats, :max_sp),
       vit: stats.base_stats.vit,
-      int: stats.base_stats.int
+      int: stats.base_stats.int,
+      riding: stats.riding
     }
   end
 

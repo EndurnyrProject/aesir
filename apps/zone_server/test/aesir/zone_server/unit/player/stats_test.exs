@@ -39,6 +39,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   # Real equip.yml ids.
   @sword 1101
   @mace 1340
+  @javelin 1401
+  @lance 1410
   @bow 1701
   @guard 2101
   @cotton_shirt 2301
@@ -249,6 +251,14 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       assert Stats.from_character(over_cap).current_state.ap == 200
       assert Stats.from_character(non_trait).current_state.ap == 0
+    end
+
+    test "denormalizes the option riding bit into stats.riding" do
+      mounted = %Character{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1, class: 0, option: 32}
+      grounded = %Character{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1, class: 0, option: 0}
+
+      assert Stats.from_character(mounted).riding == true
+      assert Stats.from_character(grounded).riding == false
     end
 
     test "initializes empty modifiers" do
@@ -722,6 +732,57 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       result = Stats.calculate_combat_stats(stats)
 
       assert result.combat_stats.critical == 5
+    end
+
+    test "Spear Mastery grants +4 per level on foot with a one-handed spear" do
+      stats = %Stats{
+        base_stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
+        progression: %{base_level: 0, job_level: 0, learned_skills: %{55 => 10}},
+        derived_stats: %{max_hp: 1, max_sp: 1},
+        equipment: Stats.equipment_from_inventory([equipped(@javelin, @right_hand)]),
+        modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}},
+        riding: false
+      }
+
+      result = Stats.calculate_combat_stats(stats)
+
+      assert result.combat_stats.passive_atk == 40
+      assert result.combat_stats.atk == 40
+    end
+
+    test "Spear Mastery grants +5 per level while riding, one-handed or two-handed spear" do
+      one_handed = %Stats{
+        base_stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
+        progression: %{base_level: 0, job_level: 0, learned_skills: %{55 => 10}},
+        derived_stats: %{max_hp: 1, max_sp: 1},
+        equipment: Stats.equipment_from_inventory([equipped(@javelin, @right_hand)]),
+        modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}},
+        riding: true
+      }
+
+      two_handed = %{
+        one_handed
+        | equipment: Stats.equipment_from_inventory([equipped(@lance, @both_hand)])
+      }
+
+      assert Stats.calculate_combat_stats(one_handed).combat_stats.atk == 50
+      assert Stats.calculate_combat_stats(two_handed).combat_stats.atk == 50
+    end
+
+    test "Spear Mastery grants no bonus with a non-spear weapon, mounted or not" do
+      stats = %Stats{
+        base_stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
+        progression: %{base_level: 0, job_level: 0, learned_skills: %{55 => 10}},
+        derived_stats: %{max_hp: 1, max_sp: 1},
+        equipment: Stats.equipment_from_inventory([equipped(@sword, @right_hand)]),
+        modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}},
+        riding: true
+      }
+
+      result = Stats.calculate_combat_stats(stats)
+
+      assert result.combat_stats.passive_atk == 0
+      assert result.combat_stats.atk == 0
     end
   end
 

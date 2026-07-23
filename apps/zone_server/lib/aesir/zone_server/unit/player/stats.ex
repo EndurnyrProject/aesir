@@ -34,6 +34,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   use TypedStruct
 
+  import Bitwise
+
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.ItemManagement
@@ -44,6 +46,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.JobManagement.TraitJobs
+  alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Passives
@@ -51,6 +54,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
   alias Aesir.ZoneServer.Unit.Stats
+
+  @riding_option_bit Option.id(:riding)
 
   typedstruct module: PlayerProgression do
     field :base_level, non_neg_integer()
@@ -109,6 +114,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     # list can still re-evaluate the on_equip programs - their level inputs
     # (BaseLevel/JobLevel) change without any equipment change.
     field :worn_items, [%{nameid: integer(), refine: integer()}], default: []
+
+    # Denormalized copy of the `:riding` bit of `PlayerState.option`, the
+    # single writer's authoritative in-memory value. `MountHandler` keeps this
+    # field in sync with the option bit before triggering the status-driven
+    # recalc that mount/dismount goes through, so `calculate_combat_stats/1`
+    # (which only ever sees a `Stats` struct, never `PlayerState`) can gate
+    # mounted passive bonuses (e.g. `KnSpearmastery`) without threading the
+    # option bit through every `calculate_stats/3` call site.
+    field :riding, boolean(), default: false
   end
 
   @doc """
@@ -159,11 +173,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
         status_effects: %{},
         job_bonuses: %{},
         passive: %{}
-      }
+      },
+      riding: riding?(character.option)
     }
 
     calculate_stats(stats)
   end
+
+  defp riding?(option) when is_integer(option), do: (option &&& @riding_option_bit) != 0
+  defp riding?(_option), do: false
 
   @doc """
   Converts player stats to formula map format for status effect calculations.

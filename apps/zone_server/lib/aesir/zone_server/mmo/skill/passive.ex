@@ -19,7 +19,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
           max_hp: pos_integer(),
           max_sp: pos_integer(),
           vit: non_neg_integer(),
-          int: non_neg_integer()
+          int: non_neg_integer(),
+          riding: boolean()
         }
 
   @doc "Returns a flat ATK bonus contributed by this passive at the given level."

@@ -139,8 +139,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandler do
   defp do_mount(%{game_state: game_state} = state) do
     char_id = game_state.character_id
     new_option = game_state.option ||| @riding_bit
+    mounting_state = put_stats_riding(state, true)
 
-    case StatusManager.handle_apply_status(@status_id, [val1: cavalier_level(game_state)], state) do
+    case StatusManager.handle_apply_status(
+           @status_id,
+           [val1: cavalier_level(game_state)],
+           mounting_state
+         ) do
       {:reply, :ok, applied} ->
         persist_option(char_id, new_option)
         committed = commit_option(applied, new_option)
@@ -149,7 +154,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandler do
 
       {:reply, {:error, reason}, unchanged} ->
         Logger.warning("Mount: SC_RIDING apply failed for #{char_id}: #{inspect(reason)}")
-        {:noreply, unchanged}
+        {:noreply, put_stats_riding(unchanged, false)}
     end
   end
 
@@ -157,12 +162,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandler do
   defp do_dismount(%{game_state: game_state} = state) do
     char_id = game_state.character_id
     new_option = game_state.option &&& bnot(@riding_bit)
+    dismounting_state = put_stats_riding(state, false)
 
-    {:reply, :ok, removed} = StatusManager.handle_remove_status(@status_id, state)
+    {:reply, :ok, removed} = StatusManager.handle_remove_status(@status_id, dismounting_state)
     persist_option(char_id, new_option)
     committed = commit_option(removed, new_option)
     MessageRouter.send_to(committed.connection_pid, %MountResult{result: :MOUNT_OK})
     {:noreply, committed}
+  end
+
+  # `stats.riding` is a denormalized copy of the `:riding` option bit, kept on
+  # `Stats` (not `PlayerState`) so `calculate_combat_stats/1` can gate mounted
+  # passive bonuses (e.g. `KnSpearmastery`) without ever seeing `PlayerState`.
+  # It must be set before the status apply/remove call below since that call
+  # is what triggers the stat recalculation - `commit_option/2` only flips the
+  # option bit itself, afterwards. `do_mount/1` reverts it back to `false` on
+  # the SC_RIDING apply failure branch, since that path never sets the option
+  # bit or applies the status - leaving it `true` would grant the mounted
+  # passive bonus to a player who never actually mounted.
+  @spec put_stats_riding(map(), boolean()) :: map()
+  defp put_stats_riding(%{game_state: game_state} = state, riding?) do
+    %{state | game_state: %{game_state | stats: %{game_state.stats | riding: riding?}}}
   end
 
   @spec apply_riding_status(map()) :: map()

@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandlerTest do
   import Bitwise
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.MountResult
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.Option
@@ -14,7 +15,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandlerTest do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -60,6 +63,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandlerTest do
 
   defp kn_cavaliermastery_id do
     {:ok, definition} = Catalog.by_name(:kn_cavaliermastery)
+    definition.id
+  end
+
+  defp kn_spearmastery_id do
+    {:ok, definition} = Catalog.by_name(:kn_spearmastery)
     definition.id
   end
 
@@ -160,6 +168,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandlerTest do
 
       assert_received {:send, :gameplay,
                        {:mount_result, %MountResult{result: :MOUNT_ALREADY_MOUNTED}}}
+    end
+
+    test "when SC_RIDING apply fails, stats.riding is reverted rather than left flipped" do
+      reject(&CharacterPersistence.update_character/3)
+
+      stub(StatusManager, :handle_apply_status, fn :sc_riding, _params, state ->
+        {:reply, {:error, :test_failure}, state}
+      end)
+
+      base = state(riding_level: 1, cavalier_level: @cavalier_level, option: 0)
+
+      assert {:noreply, result} = MountHandler.mount(base)
+
+      refute result.game_state.stats.riding
+      assert result.game_state.option == 0
+      refute MountHandler.riding?(result)
+      refute StatusStorage.has_status?(:player, @char_id, :sc_riding)
     end
   end
 
@@ -308,6 +333,59 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandlerTest do
 
       assert {:noreply, ^base} =
                PacketHandler.handle_message(%Aesir.Net.MountRequest{mount: false}, base)
+    end
+  end
+
+  describe "Spear Mastery interaction" do
+    # rAthena Renewal-shape javelin (1hSpear); its own base attack is stripped
+    # from `modifiers.equipment` by not going through `apply_equipment_modifiers`,
+    # so `combat_stats.passive_atk` reflects only KN_SPEARMASTERY's contribution.
+    # Knight (job id 7) - has a `one_handed_spear` entry in its base ASPD
+    # table, unlike novice, so mount/dismount's full recalc pipeline (which
+    # includes ASPD) doesn't blow up once the javelin is equipped.
+    defp spearman(opts) do
+      base = state(opts)
+      stats = base.game_state.stats
+
+      armed_stats = %{
+        stats
+        | equipment: Stats.equipment_from_inventory([%InventoryItem{nameid: 1401, equip: 2}]),
+          progression: %{
+            stats.progression
+            | job_id: 7,
+              learned_skills: Map.put(stats.progression.learned_skills, kn_spearmastery_id(), 10)
+          }
+      }
+
+      put_in(base.game_state.stats, Stats.calculate_stats(armed_stats, @char_id))
+    end
+
+    test "mounting raises the Spear Mastery ATK bonus from +40 to +50" do
+      stub(CharacterPersistence, :update_character, fn @char_id, %{option: _}, async: true ->
+        :ok
+      end)
+
+      base = spearman(riding_level: 1, cavalier_level: @cavalier_level, option: 0)
+      assert base.game_state.stats.combat_stats.passive_atk == 40
+
+      assert {:noreply, mounted} = MountHandler.mount(base)
+
+      assert mounted.game_state.stats.riding == true
+      assert mounted.game_state.stats.combat_stats.passive_atk == 50
+    end
+
+    test "dismounting drops the Spear Mastery ATK bonus back to +40" do
+      stub(CharacterPersistence, :update_character, fn @char_id, %{option: _}, async: true ->
+        :ok
+      end)
+
+      base = spearman(riding_level: 1, cavalier_level: @cavalier_level, option: @riding_bit)
+      assert base.game_state.stats.combat_stats.passive_atk == 50
+
+      assert {:noreply, dismounted} = MountHandler.dismount(base)
+
+      assert dismounted.game_state.stats.riding == false
+      assert dismounted.game_state.stats.combat_stats.passive_atk == 40
     end
   end
 end
