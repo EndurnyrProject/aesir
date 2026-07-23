@@ -63,4 +63,40 @@ defmodule Aesir.ZoneServer.Geometry do
   def in_tile_range?(x1, y1, x2, y2, range) do
     chebyshev_distance(x1, y1, x2, y2) <= range
   end
+
+  @doc """
+  Returns every grid cell on the straight line from `{x1, y1}` to `{x2, y2}`,
+  inclusive of both endpoints, ordered from start to end.
+
+  Uses Bresenham's line algorithm, so diagonal lines step one cell at a time
+  with no gaps. Useful for skills that pierce through every enemy standing
+  between the caster and a target cell.
+
+  This rasterization intentionally does not match `Map.LineOfSight`'s weighted
+  walk: on shallow slopes the two visit different cells. This one selects hit
+  targets; `LineOfSight` answers obstruction queries. Do not assume "on the
+  line" means the same set of cells in both.
+  """
+  @spec line_cells(integer(), integer(), integer(), integer()) :: [{integer(), integer()}]
+  def line_cells(x1, y1, x2, y2) do
+    dx = abs(x2 - x1)
+    dy = abs(y2 - y1)
+    sx = if x1 < x2, do: 1, else: -1
+    sy = if y1 < y2, do: 1, else: -1
+
+    line_cells({x1, y1}, {x2, y2}, {dx, dy}, {sx, sy}, dx - dy, [])
+  end
+
+  defp line_cells({x, y}, {x2, y2}, _delta, _step, _err, acc) when x == x2 and y == y2 do
+    Enum.reverse([{x, y} | acc])
+  end
+
+  defp line_cells({x, y}, {x2, y2}, {dx, dy} = delta, {sx, sy} = step, err, acc) do
+    acc = [{x, y} | acc]
+    e2 = 2 * err
+    {x, err} = if e2 > -dy, do: {x + sx, err - dy}, else: {x, err}
+    {y, err} = if e2 < dx, do: {y + sy, err + dx}, else: {y, err}
+
+    line_cells({x, y}, {x2, y2}, delta, step, err, acc)
+  end
 end

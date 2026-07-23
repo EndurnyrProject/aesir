@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   - `Combat.AttackValidator` - same-map, range, and projectile line-of-sight
     checks
   - `Combat.SplashTargets` - center+radius offensive target selection
+  - `Combat.LineTargets` - straight-line offensive target selection
   - `Combat.DamageApplication` - absorption hook, session routing, heals,
     combat broadcasts
   """
@@ -60,6 +61,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   See `Aesir.ZoneServer.Mmo.Combat.SkillAttack.execute_splash_attack/4`.
   """
   defdelegate execute_splash_attack(caster_state, center, radius, opts), to: SkillAttack
+
+  @doc """
+  Executes a line skill against the primary target plus every offensive
+  target standing on the straight line of cells between the caster and it.
+
+  See `Aesir.ZoneServer.Mmo.Combat.SkillAttack.execute_line_attack/3`.
+  """
+  defdelegate execute_line_attack(caster_state, target_id, opts), to: SkillAttack
 
   @doc """
   Executes a single-target BF_MISC skill (trap) from a caster against a target.

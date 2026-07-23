@@ -73,4 +73,45 @@ defmodule Aesir.ZoneServer.GeometryTest do
       assert Geometry.in_tile_range?(0, 0, 3, 3, 2) == false
     end
   end
+
+  describe "line_cells/4" do
+    test "walks a horizontal line inclusive of both endpoints" do
+      assert Geometry.line_cells(0, 0, 4, 0) == [{0, 0}, {1, 0}, {2, 0}, {3, 0}, {4, 0}]
+    end
+
+    test "walks a vertical line inclusive of both endpoints" do
+      assert Geometry.line_cells(0, 0, 0, 4) == [{0, 0}, {0, 1}, {0, 2}, {0, 3}, {0, 4}]
+    end
+
+    test "walks a diagonal line with no gaps" do
+      assert Geometry.line_cells(0, 0, 3, 3) == [{0, 0}, {1, 1}, {2, 2}, {3, 3}]
+    end
+
+    test "walks a diagonal line in the negative direction" do
+      assert Geometry.line_cells(3, 3, 0, 0) == [{3, 3}, {2, 2}, {1, 1}, {0, 0}]
+    end
+
+    test "pins the exact cell sequence for an in-spear-range shallow diagonal" do
+      assert Geometry.line_cells(0, 0, 2, 1) == [{0, 0}, {1, 0}, {2, 1}]
+      assert Geometry.line_cells(0, 0, 1, 2) == [{0, 0}, {0, 1}, {1, 2}]
+      assert Geometry.line_cells(2, 1, 0, 0) == [{2, 1}, {1, 1}, {0, 0}]
+    end
+
+    test "walks a shallow non-45-degree line with every step adjacent to the last" do
+      cells = Geometry.line_cells(0, 0, 4, 1)
+
+      assert List.first(cells) == {0, 0}
+      assert List.last(cells) == {4, 1}
+
+      cells
+      |> Enum.chunk_every(2, 1, :discard)
+      |> Enum.each(fn [{x1, y1}, {x2, y2}] ->
+        assert Geometry.chebyshev_distance(x1, y1, x2, y2) == 1
+      end)
+    end
+
+    test "a single-cell line returns just that cell" do
+      assert Geometry.line_cells(5, 5, 5, 5) == [{5, 5}]
+    end
+  end
 end

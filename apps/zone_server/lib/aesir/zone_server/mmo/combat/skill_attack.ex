@@ -1,7 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   @moduledoc """
   Physical (BF_WEAPON) and misc (BF_MISC) offensive skill paths: single-target
-  skill strikes, ground-centered physical splashes, and trap hits/splashes.
+  skill strikes, ground-centered physical splashes, line strikes, and trap
+  hits/splashes.
   """
 
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
@@ -9,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
+  alias Aesir.ZoneServer.Mmo.Combat.LineTargets
   alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
@@ -126,14 +128,58 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           [integer()]
   def execute_splash_attack(caster_state, center, radius, opts) do
     attacker = caster_state.__struct__.to_combatant(caster_state)
-    skill_id = Keyword.fetch!(opts, :skill_id)
-    skill_level = Keyword.fetch!(opts, :skill_level)
+    {skill_id, skill_level, calc_opts} = multi_target_opts(opts)
     hits = Keyword.get(opts, :hit_count, 1)
-    calc_opts = Keyword.take(opts, [:skill_ratio, :skip_crit, :skill_id])
 
     attacker.map_name
     |> SplashTargets.select(center, radius, attacker)
-    |> Enum.flat_map(fn {_unit_type, target_id} ->
+    |> hit_targets(attacker, skill_id, skill_level, calc_opts, hits)
+  end
+
+  @doc """
+  Executes a line skill against the primary target plus every offensive
+  target standing on the straight line of cells between the caster and it
+  (inclusive of the target's own cell).
+
+  Selects targets via `LineTargets.select/4`, then runs each through the
+  shared single-target damage path **without** the per-target attack-range
+  gate - the line already bounds the hit set. Each target rolls its own
+  hit/flee check independently; there is no knockback. Returns the list of
+  connected target ids.
+
+  ## Options
+    - `:skill_id` / `:skill_level` - identify the skill for the damage packet
+    - `:skill_ratio` - percent of base attack the skill deals
+    - `:skip_crit` - skip the critical roll
+  """
+  @spec execute_line_attack(struct(), integer(), keyword()) :: [integer()]
+  def execute_line_attack(caster_state, target_id, opts) do
+    attacker = caster_state.__struct__.to_combatant(caster_state)
+    {skill_id, skill_level, calc_opts} = multi_target_opts(opts)
+
+    case TargetResolver.resolve_target_position(target_id) do
+      {:ok, _target_type, {tx, ty, _map_name}} ->
+        {sx, sy} = attacker.position
+
+        attacker.map_name
+        |> LineTargets.select({sx, sy}, {tx, ty}, attacker)
+        |> hit_targets(attacker, skill_id, skill_level, calc_opts, 1)
+
+      {:error, _reason} ->
+        []
+    end
+  end
+
+  defp multi_target_opts(opts) do
+    skill_id = Keyword.fetch!(opts, :skill_id)
+    skill_level = Keyword.fetch!(opts, :skill_level)
+    calc_opts = Keyword.take(opts, [:skill_ratio, :skip_crit, :skill_id])
+
+    {skill_id, skill_level, calc_opts}
+  end
+
+  defp hit_targets(targets, attacker, skill_id, skill_level, calc_opts, hits) do
+    Enum.flat_map(targets, fn {_unit_type, target_id} ->
       apply_splash_hits(attacker, target_id, skill_id, skill_level, calc_opts, hits)
     end)
   end
