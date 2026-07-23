@@ -60,7 +60,10 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   - `:game_state` — a `PlayerState` carrying `character_id` and `account_id`
   - `:connection_pid` — the TCP connection process for this session
   """
-  @spec from_session(%{game_state: PlayerState.t(), connection_pid: pid()}, source()) :: t()
+  @spec from_session(
+          %{:game_state => PlayerState.t(), :connection_pid => pid(), optional(any()) => any()},
+          source()
+        ) :: t()
   def from_session(%{game_state: %PlayerState{} = ps, connection_pid: pid}, source) do
     %__MODULE__{
       char_id: ps.character_id,
