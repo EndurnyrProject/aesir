@@ -480,7 +480,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
          {:ok, target_pos} <- skill_target_position(target),
          {:ok, definition} <- Catalog.by_id(skill_id),
          {:ok, map_data} <- MapCache.get(game_state.map_name) do
-      range = Interpreter.effective_range(definition, game_state)
+      range = Interpreter.effective_range(definition, game_state, level)
       current = {game_state.x, game_state.y}
       optimal = CombatActionHandler.get_optimal_attack_position(current, target_pos, range)
 

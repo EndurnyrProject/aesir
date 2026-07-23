@@ -94,4 +94,59 @@ defmodule Aesir.ZoneServer.Mmo.Skill.DefinitionTest do
       end
     end
   end
+
+  describe "range" do
+    test "defaults to 0 when omitted" do
+      defn = Definition.build!(@required_opts, __MODULE__)
+      assert defn.range == 0
+    end
+
+    test "accepts a flat integer" do
+      defn = Definition.build!(@required_opts ++ [range: 9], __MODULE__)
+      assert defn.range == 9
+    end
+
+    test "accepts the -1 weapon-range sentinel" do
+      defn = Definition.build!(@required_opts ++ [range: -1], __MODULE__)
+      assert defn.range == -1
+    end
+
+    test "accepts a per-level list" do
+      defn = Definition.build!(@required_opts ++ [range: [3, 5, 7, 9, 11]], __MODULE__)
+      assert defn.range == [3, 5, 7, 9, 11]
+    end
+
+    test "rejects a non-integer, non-list value" do
+      assert_raise ArgumentError, ~r/DefinitionTest/, fn ->
+        Definition.build!(@required_opts ++ [range: "far"], __MODULE__)
+      end
+    end
+  end
+
+  describe "range_at_level/2" do
+    test "a flat range resolves the same regardless of level" do
+      defn = Definition.build!(@required_opts ++ [range: 9], __MODULE__)
+
+      assert Definition.range_at_level(defn, 1) == 9
+      assert Definition.range_at_level(defn, 5) == 9
+    end
+
+    test "a flat -1 sentinel resolves unchanged" do
+      defn = Definition.build!(@required_opts ++ [range: -1], __MODULE__)
+      assert Definition.range_at_level(defn, 3) == -1
+    end
+
+    test "a per-level list resolves the entry at level - 1" do
+      defn = Definition.build!(@required_opts ++ [range: [3, 5, 7, 9, 11]], __MODULE__)
+
+      assert Definition.range_at_level(defn, 1) == 3
+      assert Definition.range_at_level(defn, 3) == 7
+      assert Definition.range_at_level(defn, 5) == 11
+    end
+
+    test "a per-level list at level 0 previews the first level instead of wrapping" do
+      defn = Definition.build!(@required_opts ++ [range: [3, 5, 7, 9, 11]], __MODULE__)
+      assert Definition.range_at_level(defn, 0) == 3
+    end
+  end
 end

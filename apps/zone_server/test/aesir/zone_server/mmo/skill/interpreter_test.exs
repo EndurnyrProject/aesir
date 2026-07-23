@@ -609,6 +609,70 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     assert {:error, :out_of_range} = Interpreter.cast(gs, 6, 1, {:unit, 9999})
   end
 
+  test "a per-level range list resolves the range for the cast level, not the widest level" do
+    stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition([3, 5, 7, 9, 11])} end)
+
+    stub(SpatialIndex, :get_unit_position, fn
+      :player, 9999 -> {:error, :not_found}
+      :mob, 9999 -> {:ok, {17, 10, "prontera"}}
+    end)
+
+    stub(StatusInterpreter, :apply_status, fn _type, _id, _status, _params -> :ok end)
+
+    gs = game_state(100, %{6 => 3})
+    assert {:ok, _} = Interpreter.cast(gs, 6, 3, {:unit, 9999})
+  end
+
+  test "a per-level range list rejects a cast one cell beyond the cast level's range" do
+    stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition([3, 5, 7, 9, 11])} end)
+
+    stub(SpatialIndex, :get_unit_position, fn
+      :player, 9999 -> {:error, :not_found}
+      :mob, 9999 -> {:ok, {18, 10, "prontera"}}
+    end)
+
+    gs = game_state(100, %{6 => 3})
+    assert {:error, :out_of_range} = Interpreter.cast(gs, 6, 3, {:unit, 9999})
+  end
+
+  test "a per-level range list at a lower level does not fall back to the widest level's range" do
+    stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition([3, 5, 7, 9, 11])} end)
+
+    stub(SpatialIndex, :get_unit_position, fn
+      :player, 9999 -> {:error, :not_found}
+      :mob, 9999 -> {:ok, {14, 10, "prontera"}}
+    end)
+
+    gs = game_state(100, %{6 => 1})
+    assert {:error, :out_of_range} = Interpreter.cast(gs, 6, 1, {:unit, 9999})
+  end
+
+  describe "effective_range/3" do
+    test "resolves a flat range regardless of level" do
+      definition = enemy_definition(9)
+      gs = game_state(100, %{})
+
+      assert Interpreter.effective_range(definition, gs, 1) == 9
+      assert Interpreter.effective_range(definition, gs, 10) == 9
+    end
+
+    test "resolves a per-level list at the cast level" do
+      definition = enemy_definition([3, 5, 7, 9, 11])
+      gs = game_state(100, %{})
+
+      assert Interpreter.effective_range(definition, gs, 1) == 3
+      assert Interpreter.effective_range(definition, gs, 3) == 7
+      assert Interpreter.effective_range(definition, gs, 5) == 11
+    end
+
+    test "resolves a -1 sentinel to the caster's weapon range" do
+      definition = enemy_definition(-1)
+      gs = game_state(100, %{})
+
+      assert Interpreter.effective_range(definition, gs, 1) == 1
+    end
+  end
+
   test "an enemy skill targeting another player is rejected as :invalid_target" do
     stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(9)} end)
 

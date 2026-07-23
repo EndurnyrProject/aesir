@@ -786,6 +786,39 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
              }
     end
 
+    test "a per-level range list sizes the walk with the cast level's range, not the widest level's" do
+      stub(Interpreter, :begin_cast, fn _gs, 29, 1, {:unit, 2000} -> {:error, :out_of_range} end)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:error, :not_found}
+        :mob, 2000 -> {:ok, {160, 150, "prontera"}}
+      end)
+
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(range: [3, 5, 7, 9, 11])} end)
+      stub(MapCache, :get, fn "prontera" -> {:ok, :map_data} end)
+
+      # Level 1's range is 3, not the definition's widest (level 5) range of 11:
+      # sizing off 11 would read the target (10 cells away) as already in range
+      # and never call find_path at all.
+      expect(Pathfinding, :find_path, fn :map_data, {150, 150}, {157, 150} ->
+        {:ok, [{151, 150}]}
+      end)
+
+      test_pid = self()
+
+      stub(MovementHandler, :handle_request_move, fn state, x, y, opts ->
+        send(test_pid, {:move, state.game_state, x, y, opts})
+        {:noreply, state}
+      end)
+
+      assert {:noreply, _} = SkillHandler.handle_use_skill(casting_state(45), 29, 1, 2000)
+
+      # The approach targets the optimal cell itself (157,150, sized off the
+      # level's range of 3); find_path only gates reachability.
+      assert_received {:move, _moving_gs, 157, 150, opts}
+      assert Keyword.get(opts, :skill_initiated) == true
+    end
+
     test "an out-of-range skill does not approach a corpse" do
       state = casting_state(45)
       corpse = %PlayerState{action_state: :dead, stats: %{current_state: %{hp: 0}}}

@@ -47,7 +47,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListView do
       type: inf_for(definition.target_type),
       level: view_entry.level,
       sp: sp_for(definition.sp_cost, view_entry.level),
-      range: definition.range,
+      range: Definition.range_at_level(definition, view_entry.level),
       name: definition.name |> Atom.to_string() |> String.upcase(),
       upgradable: view_entry.upgradable,
       max_level: view_entry.max_level,

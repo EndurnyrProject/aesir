@@ -219,7 +219,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     with {:ok, definition} <- fetch_definition(skill_id),
          {:ok, module} <- fetch_active_module(definition),
          :ok <- check_target(game_state, target, definition),
-         :ok <- check_range(game_state, target, definition),
+         :ok <- check_range(game_state, target, definition, level),
          :ok <- module.validate(game_state, target, level, definition),
          {:ok, cost} <- resolve_cost(game_state, module, target, level, definition),
          {:ok, commitment} <- Cost.prepare(game_state, cost),
@@ -339,7 +339,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_castable(definition),
          {:ok, module} <- fetch_active_module(definition),
          :ok <- check_target(game_state, target, definition),
-         :ok <- check_range(game_state, target, definition),
+         :ok <- check_range(game_state, target, definition, level),
          :ok <- module.validate(game_state, target, level, definition),
          {:ok, game_state} <- run_unconditional(module, game_state, target, level, definition) do
       {:ok,
@@ -460,7 +460,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_castable(definition),
          :ok <- check_learned(game_state, skill_id, level),
          :ok <- check_target(game_state, target, definition),
-         :ok <- check_range(game_state, target, definition),
+         :ok <- check_range(game_state, target, definition, level),
          {:ok, module} <- fetch_active_module(definition),
          :ok <- check_cooldown(game_state, skill_id, now),
          :ok <- check_act_delay(game_state, now),
@@ -568,10 +568,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp check_target(%{character_id: caster_id}, {:unit, caster_id}, _definition), do: :ok
   defp check_target(_game_state, _target, _definition), do: {:error, :invalid_target}
 
-  defp check_range(_game_state, :self, _definition), do: :ok
+  defp check_range(_game_state, :self, _definition, _level), do: :ok
 
-  defp check_range(game_state, {:unit, target_id}, definition) do
-    range = effective_range(definition, game_state)
+  defp check_range(game_state, {:unit, target_id}, definition, level) do
+    range = effective_range(definition, game_state, level)
 
     case resolve_unit_position(target_id) do
       {:ok, {tx, ty, target_map}} ->
@@ -591,14 +591,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  defp check_range(game_state, {:ground, x, y}, definition) do
-    with :ok <- check_ground_range(game_state, x, y, definition) do
+  defp check_range(game_state, {:ground, x, y}, definition, level) do
+    with :ok <- check_ground_range(game_state, x, y, definition, level) do
       check_ground_walkable(game_state.map_name, x, y)
     end
   end
 
-  defp check_ground_range(game_state, x, y, definition) do
-    range = effective_range(definition, game_state)
+  defp check_ground_range(game_state, x, y, definition, level) do
+    range = effective_range(definition, game_state, level)
 
     if Geometry.chebyshev_distance(game_state.x, game_state.y, x, y) <= range,
       do: :ok,
@@ -606,16 +606,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   end
 
   @doc """
-  The cast-range of a skill for a given caster, in cells (Chebyshev).
+  The cast-range of a skill for a given caster and level, in cells (Chebyshev).
 
-  rAthena encodes melee skills as `range: -1` ("use the weapon's range"); that is
-  resolved to the caster's equipped-weapon attack range at cast time. Exposed so
-  the session handler can size the move-to-range approach for an out-of-range cast.
+  Resolves the definition's declared range at `level` first (`Definition.range_at_level/2`,
+  a no-op for a flat range). rAthena encodes melee skills as `range: -1` ("use the
+  weapon's range"); that is resolved to the caster's equipped-weapon attack range at
+  cast time. Exposed so the session handler can size the move-to-range approach for an
+  out-of-range cast.
   """
-  @spec effective_range(Definition.t(), PlayerState.t()) :: non_neg_integer()
-  def effective_range(%{range: range}, _game_state) when range >= 0, do: range
+  @spec effective_range(Definition.t(), PlayerState.t(), non_neg_integer()) :: non_neg_integer()
+  def effective_range(definition, game_state, level) do
+    case Definition.range_at_level(definition, level) do
+      range when range >= 0 -> range
+      _weapon_range_sentinel -> weapon_range(game_state)
+    end
+  end
 
-  def effective_range(_definition, %{stats: %{equipment: equipment}}) do
+  defp weapon_range(%{stats: %{equipment: equipment}}) do
     equipment
     |> PlayerStats.weapon_type()
     |> WeaponTypes.get_attack_range()

@@ -42,6 +42,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   @typedoc "A catalyst item consumed on cast (rAthena `RequiredItems`)."
   @type item_cost_entry :: %{id: integer(), amount: pos_integer()}
 
+  @typedoc """
+  A skill's cast range: a flat cell count, or a per-level list (index 0 is
+  level 1) for a skill whose reach grows with level. Read through
+  `range_at_level/2` rather than off the struct directly, so both shapes
+  resolve the same way.
+  """
+  @type range :: integer() | [integer()]
+
   typedstruct do
     field :id, integer(), enforce: true
     field :name, atom(), enforce: true
@@ -49,7 +57,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     field :max_level, pos_integer(), enforce: true
     field :target_type, target_type(), default: :self
     field :damage_type, damage_type(), default: :no_damage
-    field :range, integer(), default: 0
+    field :range, range(), default: 0
     field :element, element(), default: :neutral
     field :knockback, non_neg_integer(), default: 0
     field :hit_count, pos_integer(), default: 1
@@ -91,7 +99,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
       ]
     },
     damage_type: {:enum, [:damage, :no_damage]},
-    range: :integer,
+    range: {:oneof, [:integer, {:list, :integer}]},
     element: :atom,
     knockback: :integer,
     hit_count: {:integer, {:gt, 0}},
@@ -152,5 +160,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     @metadata_schema
     |> DefinitionValidation.validate!(opts, module, @defaults)
     |> then(&struct!(__MODULE__, &1))
+  end
+
+  @doc """
+  Resolves a skill's declared range to a plain cell count for `level`.
+
+  A flat `range` (the common case, including the `-1` "use the weapon's
+  range" sentinel) is returned unchanged regardless of level. A per-level
+  list is indexed at `level - 1`; an unlearned preview (`level` `0`) reads
+  the first level's entry rather than wrapping to the list's last element.
+  """
+  @spec range_at_level(t(), non_neg_integer()) :: integer()
+  def range_at_level(%__MODULE__{range: range}, _level) when is_integer(range), do: range
+
+  def range_at_level(%__MODULE__{range: range}, level) when is_list(range) do
+    Enum.at(range, max(level - 1, 0), List.last(range))
   end
 end
