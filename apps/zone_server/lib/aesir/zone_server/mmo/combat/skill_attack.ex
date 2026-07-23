@@ -51,6 +51,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       dodged or missed. With `:hit_count` greater than `1`, `hit?` is `true`
       if any of the hits connected. Default `false`, so existing callers see
       no change. (default `false`)
+    - `:ranged` - forces `is_short: false` in the delivered hit_info,
+      overriding the caster's melee attack-range classification, for a skill
+      whose reach is short but whose damage type is renewal's ranged physical
+      class (e.g. a thrown spear) (default `false`)
 
   ## Returns
     - :ok if the skill was dispatched (regardless of whether any hit
@@ -68,6 +72,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     report_hit? = Keyword.get(opts, :report_hit, false)
     display_hits = Keyword.get(opts, :display_hit_count, 1)
     hit_rate_bonus_pct = Keyword.get(opts, :hit_rate_bonus_pct, 0)
+    ranged? = Keyword.get(opts, :ranged, false)
 
     calc_opts =
       Keyword.take(opts, [
@@ -87,7 +92,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- AttackValidator.validate(attacker, target, validator_opts),
          :ok <- Targeting.validate_enemy(attacker, target) do
-      hit_opts = %{display_hits: display_hits, hit_rate_bonus_pct: hit_rate_bonus_pct}
+      hit_opts = %{
+        display_hits: display_hits,
+        hit_rate_bonus_pct: hit_rate_bonus_pct,
+        ranged: ranged?
+      }
 
       connected? =
         1..hits//1
@@ -126,6 +135,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:hit_count` - number of hits each connected target takes, each rolling
       its own hit/flee check and its own damage (default `1`); a target
       counts as hit if any of its hits connect
+    - `:ranged` - forces `is_short: false` in each connected target's hit_info
+      (default `false`, see `execute_skill_attack/3`)
   """
   @spec execute_splash_attack(struct(), {integer(), integer()}, non_neg_integer(), keyword()) ::
           [integer()]
@@ -133,10 +144,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     {skill_id, skill_level, calc_opts} = multi_target_opts(opts)
     hits = Keyword.get(opts, :hit_count, 1)
+    ranged? = Keyword.get(opts, :ranged, false)
 
     attacker.map_name
     |> SplashTargets.select(center, radius, attacker)
-    |> hit_targets(attacker, skill_id, skill_level, calc_opts, hits)
+    |> hit_targets(attacker, skill_id, skill_level, calc_opts, hits, ranged?)
   end
 
   @doc """
@@ -181,15 +193,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     {skill_id, skill_level, calc_opts}
   end
 
-  defp hit_targets(targets, attacker, skill_id, skill_level, calc_opts, hits) do
+  defp hit_targets(targets, attacker, skill_id, skill_level, calc_opts, hits, ranged? \\ false) do
     Enum.flat_map(targets, fn {_unit_type, target_id} ->
-      apply_splash_hits(attacker, target_id, skill_id, skill_level, calc_opts, hits)
+      apply_splash_hits(attacker, target_id, skill_id, skill_level, calc_opts, hits, ranged?)
     end)
   end
 
-  defp apply_splash_hits(attacker, target_id, skill_id, skill_level, calc_opts, hits) do
+  defp apply_splash_hits(attacker, target_id, skill_id, skill_level, calc_opts, hits, ranged?) do
     with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
          target <- target_state.__struct__.to_combatant(target_state) do
+      hit_opts = %{display_hits: nil, hit_rate_bonus_pct: 0, ranged: ranged?}
+
       connected? =
         1..hits//1
         |> Enum.map(fn _ ->
@@ -200,7 +214,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
             target,
             skill_id,
             skill_level,
-            calc_opts
+            calc_opts,
+            hit_opts
           )
         end)
         |> Enum.any?()
@@ -325,29 +340,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           struct(),
           integer(),
           pos_integer(),
-          keyword()
+          keyword(),
+          map()
         ) :: boolean()
-  defp apply_skill_damage(
-         attacker,
-         target_type,
-         target_pid,
-         target,
-         skill_id,
-         skill_level,
-         calc_opts
-       ),
-       do:
-         apply_skill_damage(
-           attacker,
-           target_type,
-           target_pid,
-           target,
-           skill_id,
-           skill_level,
-           calc_opts,
-           %{display_hits: nil, hit_rate_bonus_pct: 0}
-         )
-
   defp apply_skill_damage(
          attacker,
          target_type,
@@ -358,7 +353,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          calc_opts,
          hit_opts
        ) do
-    %{display_hits: display_hits, hit_rate_bonus_pct: hit_rate_bonus_pct} = hit_opts
+    %{hit_rate_bonus_pct: hit_rate_bonus_pct} = hit_opts
 
     case HitCalculations.calculate_hit_result(
            hit_stats(attacker, hit_rate_bonus_pct),
@@ -389,7 +384,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           skill_id,
           skill_level,
           calc_opts,
-          display_hits
+          hit_opts
         )
     end
   end
@@ -402,13 +397,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          skill_id,
          skill_level,
          calc_opts,
-         display_hits
+         hit_opts
        ) do
+    %{display_hits: display_hits, ranged: ranged?} = hit_opts
+
     case DamageCalculator.calculate_damage(attacker, target, calc_opts) do
       {:ok, damage_result} ->
         hit_info = %{
           dmg_type: :physical,
-          is_short: attacker.attack_range <= 3,
+          is_short: not ranged? and attacker.attack_range <= 3,
           element: :neutral,
           skill_id: skill_id,
           skill_level: skill_level

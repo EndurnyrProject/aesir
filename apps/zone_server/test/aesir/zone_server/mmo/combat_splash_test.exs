@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -236,5 +237,88 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
       )
 
     assert hits == []
+  end
+
+  test "execute_splash_attack defaults to melee is_short classification" do
+    caster = build_caster()
+    test_pid = self()
+
+    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+      [{:mob, 2001}]
+    end)
+
+    stub(UnitRegistry, :get_unit, fn
+      :mob, 2001 -> {:ok, {MobState, build_mob_state(2001, 151, 150), self()}}
+    end)
+
+    stub(SpatialIndex, :get_unit_position, fn
+      :mob, 2001 -> {:ok, {151, 150, @map_name}}
+    end)
+
+    stub(DamageCalculator, :calculate_damage, fn _a, _t, _o ->
+      {:ok, %{damage: 50, is_critical: false}}
+    end)
+
+    stub(PacketFactory, :build_skill_damage_packet, fn _a, _t, _id, _lvl, _res -> :packet end)
+    stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, :packet -> :ok end)
+    stub(MobSession, :apply_damage, fn _pid, _damage, @caster_id -> :ok end)
+
+    stub(StatusInterpreter, :absorb_damage, fn :mob, 2001, damage, hit_info ->
+      send(test_pid, {:hit_info, hit_info})
+      damage
+    end)
+
+    hits =
+      Combat.execute_splash_attack(caster, @center, 2,
+        skill_id: 7,
+        skill_level: 5,
+        skill_ratio: 200,
+        skip_crit: true
+      )
+
+    assert hits == [2001]
+    assert_received {:hit_info, %{is_short: true}}
+  end
+
+  test "execute_splash_attack with ranged: true forces is_short: false in hit_info" do
+    caster = build_caster()
+    test_pid = self()
+
+    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+      [{:mob, 2001}]
+    end)
+
+    stub(UnitRegistry, :get_unit, fn
+      :mob, 2001 -> {:ok, {MobState, build_mob_state(2001, 151, 150), self()}}
+    end)
+
+    stub(SpatialIndex, :get_unit_position, fn
+      :mob, 2001 -> {:ok, {151, 150, @map_name}}
+    end)
+
+    stub(DamageCalculator, :calculate_damage, fn _a, _t, _o ->
+      {:ok, %{damage: 50, is_critical: false}}
+    end)
+
+    stub(PacketFactory, :build_skill_damage_packet, fn _a, _t, _id, _lvl, _res -> :packet end)
+    stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, :packet -> :ok end)
+    stub(MobSession, :apply_damage, fn _pid, _damage, @caster_id -> :ok end)
+
+    stub(StatusInterpreter, :absorb_damage, fn :mob, 2001, damage, hit_info ->
+      send(test_pid, {:hit_info, hit_info})
+      damage
+    end)
+
+    hits =
+      Combat.execute_splash_attack(caster, @center, 2,
+        skill_id: 7,
+        skill_level: 5,
+        skill_ratio: 200,
+        skip_crit: true,
+        ranged: true
+      )
+
+    assert hits == [2001]
+    assert_received {:hit_info, %{is_short: false}}
   end
 end
