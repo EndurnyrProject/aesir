@@ -298,3 +298,12 @@ Always run the full test suite before considering a task done.
 6. **Documentation**: Document modules and functions; for protocol messages document field meaning.
 7. **Renewal Mechanics**: Ragnarok has pre-re and renewal mechanics; we target renewal.
 8. **Never assume a function signature or return value**: Always check the definition.
+9. **No distributed transactions between sessions**: Never build an offer/claim or two-phase-commit
+   style protocol across PlayerSession/MobSession processes to coordinate a cross-unit effect (the
+   Monk Root skill shipped one and it was deleted as unnecessary complexity). The single-writer rule
+   covers a session's own state, but `StatusStorage` is deliberately not single-writer: writing
+   another unit's status rows cross-process is the norm, and movement/attack gating is pull-based
+   (`can_move?`/`can_attack?` checked per action/tick), so no session needs to be notified
+   synchronously. When an effect must be granted exactly once, use a synchronous atomic claim on the
+   shared store (`StatusStorage.take_status/3`) inside the acting process, then write both sides'
+   records directly; let ticks and finite durations self-heal a dead peer.
