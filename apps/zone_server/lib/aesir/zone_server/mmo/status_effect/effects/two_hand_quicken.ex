@@ -10,7 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.TwoHandQuicken do
     no_dispel: false,
     properties: [:buff],
     calc_flags: [:aspd, :hit, :cri],
-    flags: [:require_weapon],
+    require_weapon: [:two_handed_sword],
     conflicts_with: [:sc_decreaseagi],
     prevented_by: [:sc_refresh, :sc_inspiration],
     icon: :twohandquicken,
