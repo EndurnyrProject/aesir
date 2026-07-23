@@ -269,6 +269,39 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandlerTest do
     end
   end
 
+  describe "force_dismount/1" do
+    test "while riding removes SC_RIDING, clears the bit, and persists without a client reply" do
+      test_pid = self()
+
+      stub(CharacterPersistence, :update_character, fn @char_id, %{option: option}, async: true ->
+        send(test_pid, {:persisted_option, option})
+        :ok
+      end)
+
+      base = state(riding_level: 1, cavalier_level: @cavalier_level, option: @falcon_bit)
+      {:noreply, mounted} = MountHandler.mount(base)
+      assert_received {:persisted_option, _}
+      assert_received {:send, :gameplay, {:mount_result, %MountResult{result: :MOUNT_OK}}}
+
+      dismounted = MountHandler.force_dismount(mounted)
+
+      refute MountHandler.riding?(dismounted)
+      assert dismounted.game_state.option == @falcon_bit
+      refute StatusStorage.has_status?(:player, @char_id, :sc_riding)
+      assert_received {:persisted_option, @falcon_bit}
+      refute_received {:send, :gameplay, {:mount_result, _}}
+    end
+
+    test "while not mounted is a no-op" do
+      reject(&CharacterPersistence.update_character/3)
+
+      base = state(riding_level: 1)
+
+      assert ^base = MountHandler.force_dismount(base)
+      refute_received {:send, :gameplay, {:mount_result, _}}
+    end
+  end
+
   describe "load_on_spawn/2" do
     test "re-applies SC_RIDING from the persisted riding bit without re-persisting" do
       reject(&CharacterPersistence.update_character/3)

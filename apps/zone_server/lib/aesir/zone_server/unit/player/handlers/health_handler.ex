@@ -313,7 +313,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
     :ok =
       StatusInterpreter.remove_all_statuses(:player, game_state.character_id,
-        owner_refresh: :defer
+        owner_refresh: :defer,
+        except_permanent: true
       )
 
     state =

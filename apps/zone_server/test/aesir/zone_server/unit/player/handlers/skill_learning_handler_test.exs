@@ -1,5 +1,5 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandlerTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   import Mimic
 
   alias Aesir.Commons.StatusParams
@@ -10,9 +10,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandlerTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
+  alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.SkillTree
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager
   alias Aesir.ZoneServer.Party.Member
+  alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -21,6 +25,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandlerTest do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
+
+  setup do
+    Mimic.copy(SkillTree)
+    StatusStorage.remove_status(:player, 1000, :sc_riding)
+    on_exit(fn -> StatusStorage.remove_status(:player, 1000, :sc_riding) end)
+    :ok
+  end
 
   {:ok, swordman_id} = AvailableJobs.job_name_to_id(:swordman)
   @swordman_id swordman_id
@@ -219,6 +230,80 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandlerTest do
                SkillLearningHandler.handle_learn_skill(sword_id, state)
 
       assert new_state.game_state.stats.combat_stats.atk > atk_before
+    end
+  end
+
+  describe "handle_learn_skill/2 riding ASPD recompute" do
+    setup do
+      stub(UnitRegistry, :get_unit_info, fn :player, 1000 ->
+        {:ok,
+         %{
+           unit_id: 1000,
+           unit_type: :player,
+           race: :human,
+           element: :neutral,
+           element_level: 1,
+           boss_flag: false,
+           size: :medium,
+           stats: %{level: 50, base_level: 50, str: 10, agi: 1, vit: 1, int: 1, dex: 1, luk: 1}
+         }}
+      end)
+
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(StatusSync, :send_params, fn _conn, _params -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+
+      :ok
+    end
+
+    test "learning KN_CAVALIERMASTERY while mounted shrinks the SC_RIDING ASPD penalty immediately" do
+      cavalier_id = catalog_id(:kn_cavaliermastery)
+      riding_bit = Option.id(:riding)
+
+      stub(SkillTree, :learn, fn progression, ^cavalier_id ->
+        learned = Map.put(progression.learned_skills, cavalier_id, 1)
+        {:ok, %{progression | learned_skills: learned, skill_point: progression.skill_point - 1}}
+      end)
+
+      :ok = StatusStorage.apply_status(:player, 1000, :sc_riding, val1: 0)
+
+      state = swordman_state(1, %{cavalier_id => 0})
+      state = put_in(state.game_state.option, riding_bit)
+
+      assert {:noreply, new_state} = SkillLearningHandler.handle_learn_skill(cavalier_id, state)
+
+      assert MountHandler.riding?(new_state)
+      assert StatusStorage.get_status(:player, 1000, :sc_riding).val1 == 1
+    end
+
+    test "learning an unrelated skill while mounted leaves SC_RIDING untouched" do
+      sword_id = catalog_id(:sm_sword)
+      riding_bit = Option.id(:riding)
+
+      :ok = StatusStorage.apply_status(:player, 1000, :sc_riding, val1: 5)
+
+      state = swordman_state(1, %{})
+      state = put_in(state.game_state.option, riding_bit)
+
+      assert {:noreply, _new_state} = SkillLearningHandler.handle_learn_skill(sword_id, state)
+
+      assert StatusStorage.get_status(:player, 1000, :sc_riding).val1 == 5
+    end
+
+    test "learning KN_CAVALIERMASTERY while not mounted does not apply SC_RIDING" do
+      cavalier_id = catalog_id(:kn_cavaliermastery)
+
+      stub(SkillTree, :learn, fn progression, ^cavalier_id ->
+        learned = Map.put(progression.learned_skills, cavalier_id, 1)
+        {:ok, %{progression | learned_skills: learned, skill_point: progression.skill_point - 1}}
+      end)
+
+      state = swordman_state(1, %{cavalier_id => 0})
+
+      assert {:noreply, new_state} = SkillLearningHandler.handle_learn_skill(cavalier_id, state)
+
+      refute MountHandler.riding?(new_state)
+      refute StatusStorage.has_status?(:player, 1000, :sc_riding)
     end
   end
 

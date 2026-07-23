@@ -11,7 +11,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   statuses tied to dropped skills) and updates the class sprite for the player and
   nearby observers. A change (or `reset_skills/1` refund) that would drop
   `MC_PUSHCART` while a cart is mounted is rejected with `{:error, :cart_active}`
-  before any mutation, so the player unloads and removes the cart first.
+  before any mutation, so the player unloads and removes the cart first. Unlike
+  the cart, a mounted Peco-Peco never blocks a change or reset that drops
+  `KN_RIDING`: `MountHandler.force_dismount/1` runs up front instead, before the
+  stats recompute, so the new job's derived stats never carry the riding ASPD
+  buyback.
   `reset_skills/1` implements the separate `resetskill` refund and `reset_stats/1`
   the separate `resetstate` stat reset.
   """
@@ -27,6 +31,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Learned
+  alias Aesir.ZoneServer.Mmo.Skills.Knight.KnRiding
   alias Aesir.ZoneServer.Mmo.Skills.Merchant.McPushcart
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Mmo.StatPoint
@@ -37,6 +42,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.LookType
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.SkillListView
   alias Aesir.ZoneServer.Unit.Player.StateCommit
@@ -45,6 +51,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   alias Aesir.ZoneServer.Unit.Stats, as: UnitStats
 
   @mc_pushcart_id McPushcart.definition().id
+  @kn_riding_id KnRiding.definition().id
 
   @doc """
   Adds `amount` base levels, clamped to the job's `max_base_level`. Grants the
@@ -188,7 +195,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   Refunds the player's learned skills into `skill_point` (rAthena `resetskill` /
   `@resetskill`).
 
-  Reduces `learned_skills` to the exempt set (`SkillTree.reset_skills/1`), ends
+  Reduces `learned_skills` to the exempt set (`SkillTree.reset_skills/1`),
+  force-dismounts a mounted Peco-Peco (`KN_RIDING` is never exempt), ends
   statuses granted by the refunded skills, recomputes stats so passive bonuses
   from refunded skills drop (a final recompute after all cleanup, since status
   removals bypass `game_state.stats`), refreshes the client's skill window and
@@ -264,11 +272,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     new_progression = SkillTree.reset_skills(progression)
     dropped_ids = Map.keys(progression.learned_skills) -- Map.keys(new_progression.learned_skills)
 
+    dismounted_state = dismount_if_losing_riding(state, dropped_ids)
+    game_state = dismounted_state.game_state
+
     stats =
       %{game_state.stats | progression: new_progression}
       |> Stats.calculate_stats(game_state.character_id)
 
-    %{state | game_state: %{game_state | stats: stats}}
+    %{dismounted_state | game_state: %{game_state | stats: stats}}
     |> cleanup_dropped_skills(dropped_ids)
     |> finish_reset_skills(previous_game_state)
   end
@@ -292,9 +303,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   end
 
   # rAthena `pc_jobchange` order: force-close vending, drop skills outside the new
-  # tree (no refund, unspent points kept), reset job level, recompute stats (so
-  # passives from dropped skills stop applying) BEFORE the cart/equipment/status
-  # cleanup, then notify and persist.
+  # tree (no refund, unspent points kept), force-dismount a Peco-Peco the new
+  # tree can no longer ride, reset job level, recompute stats (so passives from
+  # dropped skills, and the riding ASPD buyback, stop applying) BEFORE the
+  # cart/equipment/status cleanup, then notify and persist.
   defp change_to_job(job_id, state) do
     previous_game_state = state.game_state
     {:ok, closed_state} = VendingHandler.close_shop(state, :job_change)
@@ -303,6 +315,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
 
     {kept_skills, dropped_ids} = prune_skills(progression.learned_skills, job_id)
     old_job_id = progression.job_id
+
+    dismounted_state = dismount_if_losing_riding(closed_state, dropped_ids)
+    game_state = dismounted_state.game_state
 
     new_progression = %{
       progression
@@ -321,7 +336,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
         game_state.character_id
       )
 
-    %{closed_state | game_state: %{game_state | stats: stats}}
+    %{dismounted_state | game_state: %{game_state | stats: stats}}
     |> cleanup_dropped_skills(dropped_ids)
     |> recheck_equipment(job_id)
     |> enforce_weapon_requirements()
@@ -365,6 +380,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
       %{base_stats | pow: 0, sta: 0, wis: 0, spl: 0, con: 0, crt: 0}
     else
       base_stats
+    end
+  end
+
+  # Force-dismounts a mounted Peco-Peco when KN_RIDING is among the dropped
+  # skills, shared by job change (dropped via prune_skills/2 against the new
+  # job's tree) and skill reset (dropped via SkillTree.reset_skills/1's
+  # refund). Unlike the cart gate this never blocks the change/reset - it only
+  # runs the dismount side effect before the caller's stats recompute.
+  @spec dismount_if_losing_riding(map(), [non_neg_integer()]) :: map()
+  defp dismount_if_losing_riding(state, dropped_ids) do
+    if @kn_riding_id in dropped_ids and MountHandler.riding?(state) do
+      MountHandler.force_dismount(state)
+    else
+      state
     end
   end
 

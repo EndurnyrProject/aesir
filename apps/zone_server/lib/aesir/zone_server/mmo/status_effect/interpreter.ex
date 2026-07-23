@@ -320,13 +320,29 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   Each status receives `on_expire` and display cleanup before the selected
   owner-refresh policy is applied once for the batch.
+
+  Passing `except_permanent: true` skips any status whose definition sets
+  `permanent: true` (e.g. `SC_RIDING`, `SC_PUSHCART`): these aren't a timed
+  buff to expire, they mirror an out-of-band state (a mount/cart toggle, an
+  option bit) that a caller like death's cleanup must leave standing so it
+  keeps surviving through the respawn that follows.
   """
-  @spec remove_all_statuses(unit_type(), integer(), [remove_option()]) :: :ok
+  @spec remove_all_statuses(unit_type(), integer(), [
+          remove_option() | {:except_permanent, boolean()}
+        ]) ::
+          :ok
   def remove_all_statuses(unit_type, unit_id, opts \\ []) do
+    {except_permanent?, remove_opts} = Keyword.pop(opts, :except_permanent, false)
+
     unit_type
     |> StatusStorage.get_unit_statuses(unit_id)
+    |> Enum.reject(&(except_permanent? and permanent?(&1)))
     |> Enum.map(& &1.type)
-    |> then(&remove_statuses(unit_type, unit_id, &1, opts))
+    |> then(&remove_statuses(unit_type, unit_id, &1, remove_opts))
+  end
+
+  defp permanent?(%StatusEntry{type: type}) do
+    match?(%{permanent: true}, Registry.get_definition(type))
   end
 
   defp maybe_refresh_owner(:player, unit_id, true, opts) do

@@ -456,6 +456,38 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     end
   end
 
+  describe "remove_all_statuses/3" do
+    test "removes every active status by default, permanent included" do
+      target_id = 30
+
+      setup_player_mock(target_id)
+      Registry.register_module(PermanentStatus)
+
+      :ok = Interpreter.apply_status(:player, target_id, :sc_provoke, val1: 10)
+      :ok = Interpreter.apply_status(:player, target_id, :sc_test_permanent)
+
+      :ok = Interpreter.remove_all_statuses(:player, target_id)
+
+      refute StatusStorage.has_status?(:player, target_id, :sc_provoke)
+      refute StatusStorage.has_status?(:player, target_id, :sc_test_permanent)
+    end
+
+    test "except_permanent: true clears everything but permanent statuses" do
+      target_id = 31
+
+      setup_player_mock(target_id)
+      Registry.register_module(PermanentStatus)
+
+      :ok = Interpreter.apply_status(:player, target_id, :sc_provoke, val1: 10)
+      :ok = Interpreter.apply_status(:player, target_id, :sc_test_permanent)
+
+      :ok = Interpreter.remove_all_statuses(:player, target_id, except_permanent: true)
+
+      refute StatusStorage.has_status?(:player, target_id, :sc_provoke)
+      assert StatusStorage.has_status?(:player, target_id, :sc_test_permanent)
+    end
+  end
+
   describe "on_damage/2" do
     test "processes damage events for all statuses" do
       target_id = 1

@@ -1,5 +1,5 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   import Mimic
 
   alias Aesir.Commons.Models.InventoryItem
@@ -11,18 +11,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
+  alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Mmo.StatPoint
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
+
+  setup do
+    Mimic.copy(SkillTree)
+    StatusStorage.remove_status(:player, 1000, :sc_riding)
+    on_exit(fn -> StatusStorage.remove_status(:player, 1000, :sc_riding) end)
+    :ok
+  end
 
   {:ok, knight_id} = AvailableJobs.job_name_to_id(:knight)
   @knight_id knight_id
@@ -42,6 +53,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
 
   setup do
     stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+
+    stub(UnitRegistry, :get_unit_info, fn :player, 1000 ->
+      {:ok,
+       %{
+         unit_id: 1000,
+         unit_type: :player,
+         race: :human,
+         element: :neutral,
+         element_level: 1,
+         boss_flag: false,
+         size: :medium,
+         stats: %{level: 50, base_level: 50, str: 10, agi: 1, vit: 1, int: 1, dex: 1, luk: 1}
+       }}
+    end)
+
     stub(CharacterPersistence, :update_character, fn 1000, _attrs, async: true -> {:ok, %{}} end)
     stub(Broadcast, :to_player, fn _char_id, _packet -> :ok end)
     stub(Broadcast, :to_visible_players, fn _game_state, _packet, _opts -> :ok end)
@@ -382,6 +408,63 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
     end
   end
 
+  describe "apply_job_change/2 riding dismount" do
+    test "force-dismounts a mounted Peco-Peco when the new job's tree drops KN_RIDING" do
+      riding_bit = Option.id(:riding)
+      kn_riding = catalog_id(:kn_riding)
+      kn_cavalier = catalog_id(:kn_cavaliermastery)
+
+      :ok = StatusStorage.apply_status(:player, 1000, :sc_riding, val1: 3)
+
+      state =
+        state_with_gs(
+          [job_id: @swordman_id, learned_skills: %{kn_riding => 1, kn_cavalier => 3}],
+          option: riding_bit
+        )
+
+      assert {:ok, new_state} = ProgressionHandler.apply_job_change(@knight_id, state)
+
+      refute MountHandler.riding?(new_state)
+      assert new_state.game_state.option == 0
+      refute StatusStorage.has_status?(:player, 1000, :sc_riding)
+    end
+
+    test "keeps the mount when the new job's tree still grants KN_RIDING" do
+      riding_bit = Option.id(:riding)
+      kn_riding = catalog_id(:kn_riding)
+      kn_cavalier = catalog_id(:kn_cavaliermastery)
+
+      stub(SkillTree, :tree_for, fn
+        @knight_id -> %{kn_riding => %{}, kn_cavalier => %{}}
+        job_id -> call_original(SkillTree, :tree_for, [job_id])
+      end)
+
+      :ok = StatusStorage.apply_status(:player, 1000, :sc_riding, val1: 3)
+
+      state =
+        state_with_gs(
+          [job_id: @swordman_id, learned_skills: %{kn_riding => 1, kn_cavalier => 3}],
+          option: riding_bit
+        )
+
+      assert {:ok, new_state} = ProgressionHandler.apply_job_change(@knight_id, state)
+
+      assert MountHandler.riding?(new_state)
+      assert new_state.game_state.option == riding_bit
+      assert StatusStorage.has_status?(:player, 1000, :sc_riding)
+    end
+
+    test "is a no-op when the player is not mounted" do
+      kn_riding = catalog_id(:kn_riding)
+      state = state_with(job_id: @swordman_id, learned_skills: %{kn_riding => 1})
+
+      assert {:ok, new_state} = ProgressionHandler.apply_job_change(@knight_id, state)
+
+      refute MountHandler.riding?(new_state)
+      refute StatusStorage.has_status?(:player, 1000, :sc_riding)
+    end
+  end
+
   describe "reset_skills/1" do
     test "refunds learned levels into skill points and clears them" do
       sm_bash = catalog_id(:sm_bash)
@@ -449,6 +532,37 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
 
       assert {:error, :cart_active} = ProgressionHandler.reset_skills(state)
       refute_received {:send, :bulk, {:skill_list, _}}
+    end
+  end
+
+  describe "reset_skills/1 riding dismount" do
+    test "force-dismounts a mounted Peco-Peco (KN_RIDING is never exempt from the refund)" do
+      riding_bit = Option.id(:riding)
+      kn_riding = catalog_id(:kn_riding)
+
+      :ok = StatusStorage.apply_status(:player, 1000, :sc_riding, val1: 2)
+
+      state =
+        state_with_gs(
+          [job_id: @swordman_id, learned_skills: %{kn_riding => 1}],
+          option: riding_bit
+        )
+
+      assert {:ok, new_state} = ProgressionHandler.reset_skills(state)
+
+      refute MountHandler.riding?(new_state)
+      assert new_state.game_state.option == 0
+      refute StatusStorage.has_status?(:player, 1000, :sc_riding)
+    end
+
+    test "is a no-op when the player is not mounted" do
+      kn_riding = catalog_id(:kn_riding)
+      state = state_with(job_id: @swordman_id, learned_skills: %{kn_riding => 1})
+
+      assert {:ok, new_state} = ProgressionHandler.reset_skills(state)
+
+      refute MountHandler.riding?(new_state)
+      refute StatusStorage.has_status?(:player, 1000, :sc_riding)
     end
   end
 

@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Mmo.Leveling
+  alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -25,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Lifecycle.Event
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
@@ -175,6 +177,42 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       refute StatusStorage.has_status?(:player, 1, :sc_steelbody)
       assert_received :synchronous_status_refresh
       refute_received :recalculate_stats
+    end
+
+    test "death does not dismount: SC_RIDING and the option bit both survive status cleanup" do
+      on_exit(fn -> StatusStorage.remove_status(:player, 1, :sc_riding) end)
+
+      riding_bit = Option.id(:riding)
+      :ok = StatusStorage.apply_status(:player, 1, :sc_riding, val1: 3)
+      assert StatusStorage.has_status?(:player, 1, :sc_riding)
+
+      state = put_in(build_recalculable_state(100, :idle).game_state.option, riding_bit)
+
+      assert {:noreply, %{game_state: game_state} = new_state} =
+               HealthHandler.apply_damage(100, 2001, state)
+
+      assert game_state.action_state == :dead
+      assert game_state.option == riding_bit
+      assert MountHandler.riding?(new_state)
+      assert StatusStorage.has_status?(:player, 1, :sc_riding)
+      assert StatusStorage.get_status(:player, 1, :sc_riding).val1 == 3
+    end
+
+    test "death does not unload the cart: SC_PUSHCART survives status cleanup" do
+      on_exit(fn -> StatusStorage.remove_status(:player, 1, :sc_push_cart) end)
+
+      :ok = StatusStorage.apply_status(:player, 1, :sc_push_cart, val1: 5, val2: 1)
+      assert StatusStorage.has_status?(:player, 1, :sc_push_cart)
+
+      state = put_in(build_recalculable_state(100, :idle).game_state.cart_type, 1)
+
+      assert {:noreply, %{game_state: game_state}} =
+               HealthHandler.apply_damage(100, 2001, state)
+
+      assert game_state.action_state == :dead
+      assert game_state.cart_type == 1
+      assert StatusStorage.has_status?(:player, 1, :sc_push_cart)
+      assert StatusStorage.get_status(:player, 1, :sc_push_cart).val1 == 5
     end
 
     test "death clears spirit spheres and cancels their expiry timer" do

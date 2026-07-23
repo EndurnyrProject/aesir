@@ -22,7 +22,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandler do
 
   `load_on_spawn/2` is an exception to the GenServer-native dispatch contract:
   it runs inside `init/1`, before the GenServer loop starts, so it takes and
-  returns bare session `state` rather than a GenServer tuple.
+  returns bare session `state` rather than a GenServer tuple. `force_dismount/1`
+  is the same exception for the job-change/skill-reset lifecycle hooks in
+  `ProgressionHandler`: they call it as a plain state transform mid-pipe, with
+  no client-facing `MountResult`.
   """
 
   import Bitwise
@@ -129,6 +132,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandler do
   end
 
   @doc """
+  Dismounts as a lifecycle side effect (job change losing `KN_RIDING`, a skill
+  reset refunding it) rather than in response to a client mount toggle: same
+  `SC_RIDING` removal, option-bit clear, and persisted option as `dismount/1`,
+  but without the `MountResult` reply. A no-op returning `state` unchanged when
+  not mounted.
+  """
+  @spec force_dismount(map()) :: map()
+  def force_dismount(state) do
+    if riding?(state), do: dismount_core(state), else: state
+  end
+
+  @doc """
   Whether the player is currently mounted, read from the `:riding` bit of
   `game_state.option` (the single writer's authoritative in-memory copy).
   """
@@ -159,16 +174,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandler do
   end
 
   @spec do_dismount(map()) :: {:noreply, map()}
-  defp do_dismount(%{game_state: game_state} = state) do
+  defp do_dismount(state) do
+    committed = dismount_core(state)
+    MessageRouter.send_to(committed.connection_pid, %MountResult{result: :MOUNT_OK})
+    {:noreply, committed}
+  end
+
+  @spec dismount_core(map()) :: map()
+  defp dismount_core(%{game_state: game_state} = state) do
     char_id = game_state.character_id
     new_option = game_state.option &&& bnot(@riding_bit)
     dismounting_state = put_stats_riding(state, false)
 
     {:reply, :ok, removed} = StatusManager.handle_remove_status(@status_id, dismounting_state)
     persist_option(char_id, new_option)
-    committed = commit_option(removed, new_option)
-    MessageRouter.send_to(committed.connection_pid, %MountResult{result: :MOUNT_OK})
-    {:noreply, committed}
+    commit_option(removed, new_option)
   end
 
   # `stats.riding` is a denormalized copy of the `:riding` option bit, kept on
