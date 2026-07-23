@@ -163,6 +163,49 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandlerTest do
     end
   end
 
+  describe "force_mount/1" do
+    test "without KN_RIDING learned still applies SC_RIDING and persists the bit" do
+      expect(CharacterPersistence, :update_character, fn @char_id,
+                                                         %{option: option},
+                                                         async: true ->
+        assert option == (@falcon_bit ||| @riding_bit)
+        :ok
+      end)
+
+      base = state(riding_level: 0, cavalier_level: @cavalier_level, option: @falcon_bit)
+
+      assert {:noreply, new_state} = MountHandler.force_mount(base)
+
+      assert MountHandler.riding?(new_state)
+      assert new_state.game_state.option == (@falcon_bit ||| @riding_bit)
+      assert StatusStorage.has_status?(:player, @char_id, :sc_riding)
+
+      assert_received {:send, :gameplay, {:mount_result, %MountResult{result: :MOUNT_OK}}}
+    end
+
+    test "while dead is rejected as MOUNT_DEAD" do
+      reject(&CharacterPersistence.update_character/3)
+
+      base = state(riding_level: 0, action_state: :dead)
+
+      assert {:noreply, ^base} = MountHandler.force_mount(base)
+      refute StatusStorage.has_status?(:player, @char_id, :sc_riding)
+
+      assert_received {:send, :gameplay, {:mount_result, %MountResult{result: :MOUNT_DEAD}}}
+    end
+
+    test "while already mounted is rejected as MOUNT_ALREADY_MOUNTED" do
+      reject(&CharacterPersistence.update_character/3)
+
+      base = state(riding_level: 0, option: @riding_bit)
+
+      assert {:noreply, ^base} = MountHandler.force_mount(base)
+
+      assert_received {:send, :gameplay,
+                       {:mount_result, %MountResult{result: :MOUNT_ALREADY_MOUNTED}}}
+    end
+  end
+
   describe "dismount/1" do
     test "while riding removes SC_RIDING, clears the bit, and persists the recomputed option" do
       test_pid = self()

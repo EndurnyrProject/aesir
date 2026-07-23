@@ -19,7 +19,8 @@ defmodule Aesir.ZoneServer.Gm.Dispatcher do
     "resetskill" => Aesir.ZoneServer.Gm.Commands.ResetSkill,
     "resetstat" => Aesir.ZoneServer.Gm.Commands.ResetStat,
     "broadcast" => Aesir.ZoneServer.Gm.Commands.Broadcast,
-    "repairall" => Aesir.ZoneServer.Gm.Commands.RepairAll
+    "repairall" => Aesir.ZoneServer.Gm.Commands.RepairAll,
+    "mount" => Aesir.ZoneServer.Gm.Commands.Mount
   }
 
   @spec dispatch(String.t(), Aesir.ZoneServer.Gm.Command.ctx()) :: :ok

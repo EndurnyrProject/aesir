@@ -58,10 +58,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandler do
   """
   @spec mount(map()) :: {:noreply, map()}
   def mount(%{game_state: game_state} = state) do
-    cond do
-      not riding_learned?(game_state) ->
-        reject(state, :MOUNT_SKILL_NOT_LEARNED)
+    if riding_learned?(game_state) do
+      force_mount(state)
+    else
+      reject(state, :MOUNT_SKILL_NOT_LEARNED)
+    end
+  end
 
+  @doc """
+  Mounts the Peco-Peco without requiring `KN_RIDING` learned (the GM
+  `@mount` testing tool). The alive and not-already-mounted gates still
+  apply; on success it goes through the same `do_mount/1` state flip as
+  `mount/1`, so there is a single source of truth for the SC_RIDING/option
+  write.
+  """
+  @spec force_mount(map()) :: {:noreply, map()}
+  def force_mount(%{game_state: game_state} = state) do
+    cond do
       not PlayerState.living?(game_state) ->
         reject(state, :MOUNT_DEAD)
 

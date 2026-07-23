@@ -254,6 +254,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @doc """
+  Toggles this player's Peco-Peco mount for the GM `@mount` testing tool:
+  dismounts if mounted, otherwise force-mounts bypassing the `KN_RIDING`
+  learned gate (the alive/already-mounted gates still apply).
+  """
+  @spec gm_toggle_mount(pid()) :: :ok
+  def gm_toggle_mount(pid) do
+    GenServer.cast(pid, {:mount, :gm_toggle})
+  end
+
+  @doc """
   Applies a status effect to the player.
   Delegates to the StatusEffect.Interpreter and triggers stats recalculation.
 
@@ -810,6 +820,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:progression, {:add_job_level, amount}}, state) do
     ProgressionHandler.handle_add_job_level(amount, state)
+  end
+
+  # Mount: GM `@mount` toggle, bypassing the KN_RIDING learned gate.
+  @impl true
+  def handle_cast({:mount, :gm_toggle}, state) do
+    if MountHandler.riding?(state) do
+      MountHandler.dismount(state)
+    else
+      MountHandler.force_mount(state)
+    end
   end
 
   # Skill: the spirit-sphere write path (Monk). Summon/consume timed spheres
