@@ -118,6 +118,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:skill_id` / `:skill_level` - identify the skill for the damage packet
     - `:skill_ratio` - percent of base attack the skill deals
     - `:skip_crit` - skip the critical roll
+    - `:hit_count` - number of hits each connected target takes, each rolling
+      its own hit/flee check and its own damage (default `1`); a target
+      counts as hit if any of its hits connect
   """
   @spec execute_splash_attack(struct(), {integer(), integer()}, non_neg_integer(), keyword()) ::
           [integer()]
@@ -125,28 +128,38 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     skill_id = Keyword.fetch!(opts, :skill_id)
     skill_level = Keyword.fetch!(opts, :skill_level)
+    hits = Keyword.get(opts, :hit_count, 1)
     calc_opts = Keyword.take(opts, [:skill_ratio, :skip_crit, :skill_id])
 
     attacker.map_name
     |> SplashTargets.select(center, radius, attacker)
     |> Enum.flat_map(fn {_unit_type, target_id} ->
-      with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
-           target <- target_state.__struct__.to_combatant(target_state),
-           true <-
-             apply_skill_damage(
-               attacker,
-               target_type,
-               target_pid,
-               target,
-               skill_id,
-               skill_level,
-               calc_opts
-             ) do
-        [target_id]
-      else
-        _ -> []
-      end
+      apply_splash_hits(attacker, target_id, skill_id, skill_level, calc_opts, hits)
     end)
+  end
+
+  defp apply_splash_hits(attacker, target_id, skill_id, skill_level, calc_opts, hits) do
+    with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
+         target <- target_state.__struct__.to_combatant(target_state) do
+      connected? =
+        1..hits//1
+        |> Enum.map(fn _ ->
+          apply_skill_damage(
+            attacker,
+            target_type,
+            target_pid,
+            target,
+            skill_id,
+            skill_level,
+            calc_opts
+          )
+        end)
+        |> Enum.any?()
+
+      if connected?, do: [target_id], else: []
+    else
+      _ -> []
+    end
   end
 
   @doc """
