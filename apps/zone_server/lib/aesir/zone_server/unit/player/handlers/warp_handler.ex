@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
@@ -76,6 +77,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
       state = state |> StateCommit.commit(new_game_state) |> SkillMenuHandler.clear()
 
       unless same_map? do
+        StatusInterpreter.remove_on_map_change(:player, game_state.character_id)
+
         Lifecycle.publish_transition(
           :player,
           game_state.character_id,

@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -333,6 +334,51 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
       assert {:ok, _state} = WarpHandler.warp(state(), "prontera", 100, 120)
 
       refute_receive {:unit_lifecycle, %Event{}}
+    end
+  end
+
+  describe "warp/4 remove-on-map-change statuses" do
+    setup do
+      stub_teardown()
+      stub(Broadcast, :to_players, fn _visible, _packet, _opts -> :ok end)
+
+      stub(UnitRegistry, :get_unit_info, fn _type, id ->
+        {:ok, %{unit_id: id, race: :human, element: :neutral, boss_flag: false, stats: %{}}}
+      end)
+
+      :ok
+    end
+
+    defp arm_root_pair do
+      link_id = make_ref()
+
+      :ok =
+        StatusStorage.apply_status(:player, 1000, :sc_bladestop,
+          state: %{peer: {:mob, 9001}, link_id: link_id, root_level: 5}
+        )
+
+      :ok =
+        StatusStorage.apply_status(:mob, 9001, :sc_bladestop,
+          state: %{peer: {:player, 1000}, link_id: link_id, root_level: 5}
+        )
+    end
+
+    test "a cross-map warp unroots both sides of a Root pair" do
+      arm_root_pair()
+
+      assert {:ok, _} = WarpHandler.warp(state(), "geffen", 100, 120)
+
+      refute StatusStorage.has_status?(:player, 1000, :sc_bladestop)
+      refute StatusStorage.has_status?(:mob, 9001, :sc_bladestop)
+    end
+
+    test "a same-map warp leaves the Root pair intact" do
+      arm_root_pair()
+
+      assert {:ok, _} = WarpHandler.warp(state(), "prontera", 100, 120)
+
+      assert StatusStorage.has_status?(:player, 1000, :sc_bladestop)
+      assert StatusStorage.has_status?(:mob, 9001, :sc_bladestop)
     end
   end
 

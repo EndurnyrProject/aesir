@@ -152,6 +152,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
     @non_skill_modules [
       Aesir.ZoneServer.Mmo.Skills.Monk.Combo,
       Aesir.ZoneServer.Mmo.Skills.Monk.Formulas,
+      Aesir.ZoneServer.Mmo.Skills.Monk.Root,
       Aesir.ZoneServer.Mmo.Skills.Sage.ElementChange,
       Aesir.ZoneServer.Mmo.Skills.Sage.ElementField,
       Aesir.ZoneServer.Mmo.Skills.Wizard.EstimationView,

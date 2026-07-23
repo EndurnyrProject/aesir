@@ -117,8 +117,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
                        %{
                          attacker: {:player, 1001},
                          target: {:mob, 2001},
-                         melee?: true,
-                         attacker_boss?: false
+                         attacker_boss?: false,
+                         attacker_root_level: 0,
+                         distance: 0
                        }}
     end
 
@@ -963,8 +964,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
                        %{
                          attacker: {:mob, 3001},
                          target: {:player, 2001},
-                         melee?: true,
-                         attacker_boss?: false
+                         attacker_boss?: false,
+                         attacker_root_level: 5,
+                         distance: 1
                        }}
     end
   end

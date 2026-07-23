@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
   require Logger
 
+  alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
@@ -25,9 +26,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+
+  # Blade Stop (MO_BLADESTOP) skill id, read from a caught player attacker's
+  # learned skills so their own Root record carries their own level; a monster
+  # attacker hardcodes 5, matching the Renewal source.
+  @bladestop_skill_id 269
+  @mob_root_level 5
 
   @doc """
   Executes an attack from player to target.
@@ -86,7 +94,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          target_type,
          target_id
        ) do
-    case before_weapon_hit(:player, attacker, target, target_type, target_id) do
+    case before_weapon_hit(
+           :player,
+           attacker,
+           target,
+           target_type,
+           target_id,
+           attacker_root_level(player_state)
+         ) do
       :continue ->
         resolve_player_attack_or_replacement(
           player_state,
@@ -219,7 +234,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   end
 
   defp resolve_mob_attack_or_intercept(attacker, target, target_pid, target_id) do
-    case before_weapon_hit(:mob, attacker, target, :player, target_id) do
+    case before_weapon_hit(:mob, attacker, target, :player, target_id, @mob_root_level) do
       {:intercept, _result} ->
         :intercepted
 
@@ -269,17 +284,52 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     :ok
   end
 
-  defp before_weapon_hit(_attacker_type, _attacker, _target, :skill_unit, _target_id),
-    do: :continue
+  defp before_weapon_hit(
+         _attacker_type,
+         _attacker,
+         _target,
+         :skill_unit,
+         _target_id,
+         _root_level
+       ),
+       do: :continue
 
-  defp before_weapon_hit(attacker_type, attacker, target, target_type, target_id) do
+  defp before_weapon_hit(
+         attacker_type,
+         attacker,
+         target,
+         target_type,
+         target_id,
+         attacker_root_level
+       ) do
     StatusInterpreter.before_weapon_hit(target_type, target_id, %{
       attacker: {attacker_type, attacker.unit_id},
       target: {target_type, target.unit_id},
-      melee?: attacker.attack_range <= 3,
-      attacker_boss?: attacker.class == :boss
+      attacker_boss?: attacker.class == :boss,
+      attacker_root_level: attacker_root_level,
+      distance: cell_distance(attacker, target)
     })
   end
+
+  # A caught player attacker's own Blade Stop level (0 when unlearned) drives their
+  # Root record's follow-up gate, read from the real player progression's
+  # `learned_skills` map. The fallback fires only when the caster state carries no
+  # such map (a mob combatant reused as a caster, or a bare test fixture), never
+  # crashing the swing; a real player always hits the first clause.
+  defp attacker_root_level(%{stats: %{progression: %{learned_skills: learned}}})
+       when is_map(learned),
+       do: Learned.learned_level(learned, @bladestop_skill_id)
+
+  defp attacker_root_level(_state), do: 0
+
+  # Chebyshev cell distance between the two combatants, the Renewal metric Root
+  # uses to gate monster attackers. Positions ride both combatants on a real
+  # swing; the weapon-range proxy is only a fallback for a combatant built
+  # without a position.
+  defp cell_distance(%{position: {ax, ay}}, %{position: {tx, ty}}),
+    do: Geometry.chebyshev_distance(ax, ay, tx, ty)
+
+  defp cell_distance(attacker, _target), do: attacker.attack_range
 
   defp resolve_player_attack(
          {:miss},

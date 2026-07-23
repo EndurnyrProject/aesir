@@ -49,6 +49,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     - `:no_save` - when true, the status is not persisted across logout (mirrors
       rAthena's `NoSave` status flag); use it for session-bound statuses that are
       rebuilt from other state or tied to live world objects
+    - `:remove_on_map_change` - when true, a cross-map warp ends the status through
+      the ordinary removal path (mirrors rAthena's `SCF_REMOVEONCHGMAP`); use it for
+      statuses tied to a specific location or a live pairing that cannot survive the
+      player leaving the map
+    - `:bypass_boss_immunity` - when true, the status applies to a boss-flagged
+      target even from an external caster; use it for a status a boss must be able
+      to receive by design (e.g. Root locking a boss attacker), where the usual
+      "boss rejects externally-sourced statuses" gate would otherwise block it
     - `:no_dispel` - **required**; when true, the status survives Dispel (mirrors
       rAthena's `SCF_NODISPELL` status flag). There is no default: dispel
       disposition is a per-status gameplay decision that must be made
@@ -222,6 +230,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     duration: nil,
     permanent: false,
     no_save: false,
+    remove_on_map_change: false,
+    bypass_boss_immunity: false,
     icon: nil,
     opt1: nil,
     opt2: nil,
@@ -249,6 +259,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     duration: {:integer, {:gt, 0}},
     permanent: :boolean,
     no_save: :boolean,
+    remove_on_map_change: :boolean,
+    bypass_boss_immunity: :boolean,
     no_dispel: {:required, :boolean},
     icon: :atom,
     opt1: :atom,

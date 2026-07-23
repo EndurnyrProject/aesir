@@ -92,7 +92,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     duration_override = Keyword.get(status_params, :duration)
 
     with :ok <- check_immunity(entity_info, definition),
-         :ok <- check_boss_immunity(entity_info, unit_type, unit_id, status_params),
+         :ok <- check_boss_immunity(entity_info, unit_type, unit_id, status_params, definition),
          :ok <- check_prevented(unit_type, unit_id, definition),
          :ok <- check_conflicts(unit_type, unit_id, definition),
          {:ok, duration} <-
@@ -271,6 +271,27 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   @doc """
+  Removes the unit's statuses flagged `remove_on_map_change` through the normal
+  removal path (mirrors rAthena's `status_change_clear_onchangemap`).
+
+  Consumed by the cross-map warp path; a status opts in via its definition's
+  `:remove_on_map_change` flag, so the warp handler stays ignorant of any
+  specific status.
+  """
+  @spec remove_on_map_change(unit_type(), integer()) :: :ok
+  def remove_on_map_change(unit_type, unit_id) do
+    unit_type
+    |> StatusStorage.get_unit_statuses(unit_id)
+    |> Enum.filter(&remove_on_map_change?/1)
+    |> Enum.map(& &1.type)
+    |> then(&remove_statuses(unit_type, unit_id, &1, owner_refresh: :notify))
+  end
+
+  defp remove_on_map_change?(%StatusEntry{type: type}) do
+    match?(%{remove_on_map_change: true}, Registry.get_definition(type))
+  end
+
+  @doc """
   Removes every active status through the normal expiration lifecycle.
 
   Each status receives `on_expire` and display cleanup before the selected
@@ -446,7 +467,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     end
   end
 
-  defp check_boss_immunity(%{boss_flag: true}, unit_type, unit_id, status_params) do
+  defp check_boss_immunity(
+         %{boss_flag: true},
+         _unit_type,
+         _unit_id,
+         _status_params,
+         %{bypass_boss_immunity: true}
+       ),
+       do: :ok
+
+  defp check_boss_immunity(%{boss_flag: true}, unit_type, unit_id, status_params, _definition) do
     {_val1, _val2, _val3, _val4, _tick, _flag, caster_id, _duration, _state, _phase} =
       StatusEntry.extract_params(status_params)
 
@@ -459,7 +489,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     end
   end
 
-  defp check_boss_immunity(_entity_info, _unit_type, _unit_id, _status_params), do: :ok
+  defp check_boss_immunity(_entity_info, _unit_type, _unit_id, _status_params, _definition),
+    do: :ok
 
   defp check_prevented(unit_type, unit_id, definition) do
     if any_status_active?(unit_type, unit_id, definition.prevented_by) do
