@@ -1,0 +1,65 @@
+---
+- job: knight
+  inherit:
+    - swordman
+  tree:
+    - name: KN_SPEARMASTERY
+      max_level: 10
+    - name: KN_PIERCE
+      max_level: 10
+      requires:
+        - name: KN_SPEARMASTERY
+          level: 1
+    - name: KN_SPEARSTAB
+      max_level: 10
+      requires:
+        - name: KN_PIERCE
+          level: 5
+    - name: KN_SPEARBOOMERANG
+      max_level: 5
+      requires:
+        - name: KN_PIERCE
+          level: 3
+    - name: KN_RIDING
+      max_level: 1
+      requires:
+        - name: SM_ENDURE
+          level: 1
+    - name: KN_CAVALIERMASTERY
+      max_level: 5
+      requires:
+        - name: KN_RIDING
+          level: 1
+    - name: KN_BRANDISHSPEAR
+      max_level: 10
+      requires:
+        - name: KN_RIDING
+          level: 1
+        - name: KN_SPEARSTAB
+          level: 3
+    - name: KN_TWOHANDQUICKEN
+      max_level: 10
+      requires:
+        - name: SM_TWOHAND
+          level: 1
+    - name: KN_AUTOCOUNTER
+      max_level: 5
+      requires:
+        - name: SM_TWOHAND
+          level: 1
+    - name: KN_BOWLINGBASH
+      max_level: 10
+      requires:
+        - name: SM_BASH
+          level: 10
+        - name: SM_MAGNUM
+          level: 3
+        - name: SM_TWOHAND
+          level: 5
+        - name: KN_TWOHANDQUICKEN
+          level: 10
+        - name: KN_AUTOCOUNTER
+          level: 5
+
+  # NOTE: KN_CHARGEATK is intentionally absent; it is a quest skill, catalogued
+  # and directly castable but never ordinarily learned.

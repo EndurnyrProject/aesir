@@ -418,11 +418,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
 
       state =
         state_with_gs(
-          [job_id: @swordman_id, learned_skills: %{kn_riding => 1, kn_cavalier => 3}],
+          [job_id: @knight_id, learned_skills: %{kn_riding => 1, kn_cavalier => 3}],
           option: riding_bit
         )
 
-      assert {:ok, new_state} = ProgressionHandler.apply_job_change(@knight_id, state)
+      assert {:ok, new_state} = ProgressionHandler.apply_job_change(@merchant_id, state)
 
       refute MountHandler.riding?(new_state)
       assert new_state.game_state.option == 0
@@ -433,11 +433,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
       riding_bit = Option.id(:riding)
       kn_riding = catalog_id(:kn_riding)
       kn_cavalier = catalog_id(:kn_cavaliermastery)
-
-      stub(SkillTree, :tree_for, fn
-        @knight_id -> %{kn_riding => %{}, kn_cavalier => %{}}
-        job_id -> call_original(SkillTree, :tree_for, [job_id])
-      end)
 
       :ok = StatusStorage.apply_status(:player, 1000, :sc_riding, val1: 3)
 
