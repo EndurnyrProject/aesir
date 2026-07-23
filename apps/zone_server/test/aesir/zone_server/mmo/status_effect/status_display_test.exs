@@ -326,6 +326,21 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplayTest do
     end
   end
 
+  describe "spawn_state/2 static option" do
+    test "an active riding status ORs the :riding bit into effect_state" do
+      riding = timed_instance(:sc_riding, val1: 3)
+
+      stub(StatusStorage, :get_unit_statuses, fn :player, 3 -> [riding] end)
+
+      stub(Registry, :get_definition, fn
+        :sc_riding -> definition(module: Effects.Riding, option: :riding)
+      end)
+
+      assert %{effect_state: 32, body_state: 0, health_state: 0, virtue: 0} =
+               StatusDisplay.spawn_state(:player, 3)
+    end
+  end
+
   describe "active_icons/2" do
     test "returns one StatusChange{on: true} per active icon-bearing status" do
       provoke = timed_instance(:sc_provoke)
