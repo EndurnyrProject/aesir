@@ -483,7 +483,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         connection_pid: self()
       }
 
-      assert {:noreply, _} = PlayerSession.handle_cast({:player_entered_view, 2}, state)
+      assert {:noreply, _} =
+               PlayerSession.handle_cast({:visibility, {:player_entered_view, 2}}, state)
 
       assert_receive {:send, :world,
                       {:unit_spawn,

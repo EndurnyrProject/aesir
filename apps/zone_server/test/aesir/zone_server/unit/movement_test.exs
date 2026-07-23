@@ -69,10 +69,20 @@ defmodule Aesir.ZoneServer.Unit.MovementTest do
       char_id = 1003
       map_name = "prontera"
       directive = %ForcedMovement{map_name: map_name, x: 55, y: 60}
-      UnitRegistry.register_unit(:player, char_id, __MODULE__, %{movement_state: :standing}, nil)
+
+      UnitRegistry.register_unit(
+        :player,
+        char_id,
+        __MODULE__,
+        struct(PlayerState, %{movement_state: :standing}),
+        nil
+      )
+
       SpatialIndex.add_unit(:player, char_id, 50, 50, map_name)
 
-      updated_state = Map.merge(%{movement_state: :standing}, Map.from_struct(directive))
+      updated_state =
+        struct(PlayerState, Map.merge(%{movement_state: :standing}, Map.from_struct(directive)))
+
       assert :ok = Movement.set_position(:player, char_id, updated_state, directive.map_name)
 
       assert {:ok, {55, 60, ^map_name}} = SpatialIndex.get_unit_position(:player, char_id)
