@@ -779,6 +779,62 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
     end
   end
 
+  describe "execute_skill_attack/3 hit_rate_bonus_pct" do
+    setup do
+      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      :ok
+    end
+
+    test "a relative bonus cannot rescue a hit rate already clamped to 0" do
+      # hit 0, flee 1000 -> 80 + 0 - 1000 clamps to 0%; any relative percent
+      # bonus scales 0 by (100 + bonus) / 100, which is still 0.
+      attacker = combatant(1001, :player, hit: 0)
+      target = combatant(2001, :mob, flee: 1000)
+      player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
+      target_state = living_mob_state(target, 150, 150)
+
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
+      reject(&DamageCalculator.calculate_damage/3)
+      reject(&MobSession.apply_damage/3)
+
+      assert {:ok, %{hit?: false}} =
+               Combat.execute_skill_attack(player_state, 2001,
+                 skill_id: 7,
+                 skill_level: 1,
+                 skill_ratio: 100,
+                 hit_rate_bonus_pct: 2000,
+                 report_hit: true
+               )
+    end
+
+    test "a relative bonus scales a nonzero clamped hit rate up to a guaranteed hit" do
+      # hit 100, flee 160 -> 80 + 100 - 160 = 20% clamped; a +400% relative
+      # bonus scales it to 20 * (100 + 400) / 100 = 100%, a guaranteed hit.
+      attacker = combatant(1001, :player, hit: 100)
+      target = combatant(2001, :mob, flee: 160)
+      player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
+      target_state = living_mob_state(target, 150, 150)
+
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
+
+      stub(DamageCalculator, :calculate_damage, fn _a, _d, _opts ->
+        {:ok, %{damage: 50, is_critical: false}}
+      end)
+
+      expect(MobSession, :apply_damage, fn _pid, _damage, _attacker_id -> :ok end)
+
+      assert {:ok, %{hit?: true}} =
+               Combat.execute_skill_attack(player_state, 2001,
+                 skill_id: 7,
+                 skill_level: 1,
+                 skill_ratio: 100,
+                 hit_rate_bonus_pct: 400,
+                 report_hit: true
+               )
+    end
+  end
+
   describe "execute_skill_attack/3 projectile line of sight" do
     test "a ranged physical skill blocked by a projectile-blocking cell fails" do
       Mimic.copy(Cell)

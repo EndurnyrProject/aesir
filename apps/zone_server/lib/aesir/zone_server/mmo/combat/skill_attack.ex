@@ -31,6 +31,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:hit_count` - number of hits to deliver, each rolling its own hit/flee
       check and its own damage (default `1`)
     - `:display_hit_count` - packet-only divisions for one total-damage hit
+    - `:hit_rate_bonus_pct` - relative percent bonus applied to the
+      already-clamped hit rate for this attack's hit/flee roll only (e.g. a
+      skill's own `+5%` per level accuracy bonus), not a flat addition to the
+      `hit` stat (default `0`, see `HitCalculations.calculate_hit_rate/2`)
     - `:element` - forces the attack element for this hit, overriding the
       weapon element (e.g. Envenom's poison, Sand Attack's earth)
     - `:skip_range` - skip only the distance check (which gates on the caster's
@@ -59,6 +63,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     hits = Keyword.get(opts, :hit_count, 1)
     report_hit? = Keyword.get(opts, :report_hit, false)
     display_hits = Keyword.get(opts, :display_hit_count, 1)
+    hit_rate_bonus_pct = Keyword.get(opts, :hit_rate_bonus_pct, 0)
 
     calc_opts =
       Keyword.take(opts, [
@@ -77,6 +82,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- AttackValidator.validate(attacker, target, validator_opts),
          :ok <- Targeting.validate_enemy(attacker, target) do
+      hit_opts = %{display_hits: display_hits, hit_rate_bonus_pct: hit_rate_bonus_pct}
+
       connected? =
         1..hits//1
         |> Enum.map(fn _ ->
@@ -88,7 +95,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
             skill_id,
             skill_level,
             calc_opts,
-            display_hits
+            hit_opts
           )
         end)
         |> Enum.any?()
@@ -276,7 +283,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
            skill_id,
            skill_level,
            calc_opts,
-           nil
+           %{display_hits: nil, hit_rate_bonus_pct: 0}
          )
 
   defp apply_skill_damage(
@@ -287,9 +294,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          skill_id,
          skill_level,
          calc_opts,
-         display_hits
+         hit_opts
        ) do
-    case HitCalculations.calculate_hit_result(hit_stats(attacker), flee_stats(target)) do
+    %{display_hits: display_hits, hit_rate_bonus_pct: hit_rate_bonus_pct} = hit_opts
+
+    case HitCalculations.calculate_hit_result(
+           hit_stats(attacker, hit_rate_bonus_pct),
+           flee_stats(target)
+         ) do
       :miss ->
         DamageApplication.broadcast_nearby(
           target,
@@ -379,11 +391,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     end
   end
 
-  defp hit_stats(attacker) do
+  defp hit_stats(attacker, hit_rate_bonus_pct) do
     %{
       hit: attacker.combat_stats.hit,
       char_id: attacker.unit_id,
-      perfect_hit: EquipmentBonuses.perfect_hit_rate(attacker)
+      perfect_hit: EquipmentBonuses.perfect_hit_rate(attacker),
+      hit_rate_bonus_pct: hit_rate_bonus_pct
     }
   end
 

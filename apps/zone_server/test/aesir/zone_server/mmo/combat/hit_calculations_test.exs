@@ -147,6 +147,37 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculationsTest do
       assert HitCalculations.calculate_hit_rate(attacker, target) == 80
     end
 
+    test "hit_rate_bonus_pct is a relative bonus applied after the base clamp, not a flat hit addition" do
+      # 80 + 100 - 150 = 30, clamped to 30. A +50% relative bonus (Pierce at
+      # level 10) scales it to 30 * 150 / 100 = 45, not a flat 30 + 50 = 80.
+      attacker = %{hit: 100, hit_rate_bonus_pct: 50}
+      target = %{flee: 150}
+
+      assert HitCalculations.calculate_hit_rate(attacker, target) == 45
+    end
+
+    test "hit_rate_bonus_pct defaults to 0 (no change) when absent" do
+      attacker = %{hit: 90}
+      target = %{flee: 110}
+
+      assert HitCalculations.calculate_hit_rate(attacker, target) == 60
+    end
+
+    test "hit_rate_bonus_pct cannot rescue a rate already clamped to 0" do
+      attacker = %{hit: 0, hit_rate_bonus_pct: 2000}
+      target = %{flee: 1000}
+
+      assert HitCalculations.calculate_hit_rate(attacker, target) == 0
+    end
+
+    test "hit_rate_bonus_pct is clamped back to 100 when it overshoots" do
+      attacker = %{hit: 100, hit_rate_bonus_pct: 400}
+      target = %{flee: 160}
+
+      # 80 + 100 - 160 = 20, clamped 20. 20 * 500 / 100 = 100.
+      assert HitCalculations.calculate_hit_rate(attacker, target) == 100
+    end
+
     test "calculates various scenarios correctly" do
       test_cases = [
         # 80 + 90 - 110 = 60

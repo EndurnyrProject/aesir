@@ -8,7 +8,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
   - Base hit rate: 80 + attacker.hit - target.flee
   - Perfect dodge: rand(1000) < target.perfect_dodge
   - Perfect hit: rand(100) < attacker.perfect_hit, ignoring the target's flee
-  - Hit rate is clamped to 0-100% range
+  - Hit rate is clamped to 0-100% range, then an optional relative
+    `hit_rate_bonus_pct` scales that clamped rate (e.g. a skill's own
+    accuracy bonus), and the result is clamped again
   """
 
   @typedoc """
@@ -21,12 +23,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
 
   `perfect_hit` is the equipment-granted percent chance to bypass the accuracy
   roll; call sites that carry no equipment context may omit it and it reads
-  as 0.
+  as 0. `hit_rate_bonus_pct` is a relative percent bonus applied to the
+  already-clamped base hit rate (e.g. a skill granting `+X%` accuracy for its
+  own attack only); omitted call sites read as 0 (no change).
   """
   @type attacker_stats :: %{
           :hit => non_neg_integer(),
           :char_id => integer(),
-          optional(:perfect_hit) => non_neg_integer()
+          optional(:perfect_hit) => non_neg_integer(),
+          optional(:hit_rate_bonus_pct) => integer()
         }
 
   @typedoc """
@@ -87,10 +92,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
   ## Formula
   hit_rate = 80 + attacker.hit - target.flee
 
-  The result is clamped to 0-100% range to prevent impossible values.
+  The result is clamped to 0-100% range to prevent impossible values, then
+  scaled by the attacker's optional `hit_rate_bonus_pct` (a relative percent
+  bonus applied to that clamped rate, not to the raw `hit` stat — e.g. a
+  skill's own `+5%` per level accuracy bonus) and clamped again.
 
   ## Parameters
-    - attacker_stats: Map containing attacker's hit stat
+    - attacker_stats: Map containing attacker's hit stat and optional
+      hit_rate_bonus_pct
     - target_stats: Map containing target's flee stat
 
   ## Returns
@@ -106,14 +115,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
       iex> target = %{flee: 110}
       iex> Aesir.ZoneServer.Mmo.Combat.HitCalculations.calculate_hit_rate(attacker, target)
       60
+
+      iex> attacker = %{hit: 100, hit_rate_bonus_pct: 50}
+      iex> target = %{flee: 150}
+      iex> Aesir.ZoneServer.Mmo.Combat.HitCalculations.calculate_hit_rate(attacker, target)
+      45
   """
   @spec calculate_hit_rate(attacker_stats(), target_stats()) :: 0..100
   def calculate_hit_rate(attacker_stats, target_stats) do
     base_hit_rate = 80
     raw_hit_rate = base_hit_rate + attacker_stats.hit - target_stats.flee
+    clamped_hit_rate = max(0, min(100, raw_hit_rate))
 
-    # Clamp to valid percentage range
-    max(0, min(100, raw_hit_rate))
+    bonus_pct = Map.get(attacker_stats, :hit_rate_bonus_pct, 0)
+    scaled_hit_rate = div(clamped_hit_rate * (100 + bonus_pct), 100)
+
+    max(0, min(100, scaled_hit_rate))
   end
 
   @doc """
