@@ -56,6 +56,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
 
+  # CR_GRANDCROSS: routed through the magic path but scored by its own hybrid
+  # base-damage formula (see calculate_grand_cross_damage/2), not the standard
+  # MATK pipeline.
+  @grand_cross_skill_id 254
+
   # All-zero equipment rates used when a combatant is a bare test map rather than
   # a `%Combatant{}` (only real combatants carry a folded `equip_modifiers` map).
   @zero_equip_rates %{
@@ -95,10 +100,37 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
   @spec calculate_magic_damage(Combatant.t() | map(), Combatant.t() | map(), keyword()) ::
           {:ok, magic_damage_result()} | {:error, atom()}
   def calculate_magic_damage(attacker, defender, opts \\ []) do
-    case Keyword.get(opts, :fixed_damage) do
-      nil -> calculate_pipeline_damage(attacker, defender, opts)
-      fixed_damage -> {:ok, %{damage: fixed_damage, is_critical: false}}
+    cond do
+      Keyword.get(opts, :fixed_damage) != nil ->
+        {:ok, %{damage: Keyword.fetch!(opts, :fixed_damage), is_critical: false}}
+
+      Keyword.get(opts, :skill_id) == @grand_cross_skill_id ->
+        calculate_grand_cross_damage(attacker, defender, opts)
+
+      true ->
+        calculate_pipeline_damage(attacker, defender, opts)
     end
+  end
+
+  # Grand Cross (CR_GRANDCROSS) hybrid damage: the mean of the attacker's
+  # physical status ATK and a fresh MATK roll, scaled by the skill ratio, reduced
+  # by the sum of the defender's hard and soft MDEF, with the holy attribute fix
+  # applied twice against the defender's element (the skill's signature
+  # double-element step). Isolated here so the standard MATK pipeline stays
+  # untouched.
+  @spec calculate_grand_cross_damage(map(), map(), keyword()) :: {:ok, magic_damage_result()}
+  defp calculate_grand_cross_damage(attacker, defender, opts) do
+    skill_ratio = Keyword.get(opts, :skill_ratio, 100)
+    hybrid_base = div(attacker.combat_stats.atk + roll_matk(attacker.combat_stats), 2)
+    mdef = defender.combat_stats.mdef + defender.combat_stats.soft_mdef
+
+    damage =
+      (div(hybrid_base * skill_ratio, 100) - mdef)
+      |> DamageShared.apply_element(:holy, defender)
+      |> DamageShared.apply_element(:holy, defender)
+      |> DamageShared.clamp_min_one()
+
+    {:ok, %{damage: damage, is_critical: false}}
   end
 
   @doc """

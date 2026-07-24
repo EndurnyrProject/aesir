@@ -212,6 +212,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   `:divide_hits_for_player?` mirrors Renewal Fire Pillar's negative `div`
   behavior for player targets: its total damage is divided by the hit count while
   the client receives the multi-hit animation.
+
+  `:damage_scale` (default `1`) multiplies the final computed damage before it is
+  applied and re-clamps to a floor of 1 - the seam Grand Cross uses to halve the
+  self-damage its own footprint deals to its caster.
   """
   @spec apply_skill_unit_damage(
           struct(),
@@ -257,7 +261,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
              skill_id,
              fixed_damage
            ),
-         damage <- if(divide_hits?, do: div(damage, hit_count), else: damage) do
+         damage <- if(divide_hits?, do: div(damage, hit_count), else: damage),
+         damage <- scale_damage(damage, Keyword.get(opts, :damage_scale, 1)) do
       {damage, packet_divisions} =
         case Keyword.fetch(opts, :hit_divisions) do
           {:ok, hit_divisions} -> normalize_hit_divisions(damage, hit_divisions)
@@ -413,6 +418,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       )
     end)
   end
+
+  # Post-calculation damage scale for a skill-unit hit (Grand Cross halves its
+  # own caster's self-damage). A scale of 1 is the untouched default; any other
+  # factor multiplies the computed damage and re-clamps to a floor of 1.
+  defp scale_damage(damage, 1), do: damage
+  defp scale_damage(damage, scale), do: max(1, trunc(damage * scale))
 
   defp normalize_hit_divisions(damage, hit_divisions) when hit_divisions < 0 do
     divisions = abs(hit_divisions)
