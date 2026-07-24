@@ -17,12 +17,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.TwoHandQuickenTest do
   defp entry(val1, val2), do: %{val1: val1, val2: val2}
 
   describe "modifiers/2" do
-    test "lv1: crit +30, hit +2, aspd flat 7" do
-      assert %{aspd: 7, hit: 2, critical: 30} == TwoHandQuicken.modifiers(entry(1, 7), %{})
+    test "lv1: crit +3, hit +2, aspd flat 7" do
+      assert %{aspd: 7, hit: 2, critical: 3} == TwoHandQuicken.modifiers(entry(1, 7), %{})
     end
 
-    test "lv10: crit +120, hit +20, aspd flat 7" do
-      assert %{aspd: 7, hit: 20, critical: 120} == TwoHandQuicken.modifiers(entry(10, 7), %{})
+    test "lv10: crit +12, hit +20, aspd flat 7" do
+      assert %{aspd: 7, hit: 20, critical: 12} == TwoHandQuicken.modifiers(entry(10, 7), %{})
     end
   end
 
