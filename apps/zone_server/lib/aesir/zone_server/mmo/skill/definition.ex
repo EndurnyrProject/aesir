@@ -65,6 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     field :hit_interval, non_neg_integer(), default: 0
     field :unit_duration, [non_neg_integer()], default: []
     field :hp_cost, [non_neg_integer()], default: []
+    field :hp_cost_rate, [non_neg_integer()], default: []
     field :sp_cost, [non_neg_integer() | :all], default: []
     field :sphere_cost, [non_neg_integer() | :all], default: []
     field :zeny_cost, [non_neg_integer()], default: []
@@ -107,6 +108,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     hit_interval: :integer,
     unit_duration: {:list, :integer},
     hp_cost: {:list, {:integer, {:gte, 0}}},
+    hp_cost_rate: {:list, {:integer, {:gte, 0}}},
     sp_cost: {:list, {:oneof, [{:integer, {:gte, 0}}, {:literal, :all}]}},
     sphere_cost: {:list, {:oneof, [{:integer, {:gte, 0}}, {:literal, :all}]}},
     zeny_cost: {:list, :integer},
@@ -133,6 +135,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     hit_interval: 0,
     unit_duration: [],
     hp_cost: [],
+    hp_cost_rate: [],
     sp_cost: [],
     sphere_cost: [],
     zeny_cost: [],

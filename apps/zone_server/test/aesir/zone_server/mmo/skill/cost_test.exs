@@ -36,6 +36,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CostTest do
     assert {:error, :insufficient_hp} = Cost.validate(game_state(10, 40, 3), %Cost{hp: 10})
   end
 
+  test "resolves a percent-max-HP cost next to the flat HP cost" do
+    definition = definition(hp_cost: [5], hp_cost_rate: [20])
+    game_state = game_state(50, 40, 0, 100)
+
+    assert %Cost{hp: 25} = Cost.from_definition(game_state, definition, 1)
+  end
+
+  test "refuses a cast whose HP-rate cost would reduce HP to zero" do
+    definition = definition(hp_cost_rate: [20])
+    game_state = game_state(20, 40, 0, 100)
+    cost = Cost.from_definition(game_state, definition, 1)
+
+    assert {:error, :insufficient_hp} = Cost.validate(game_state, cost)
+  end
+
   test "accepts an all-zero cost" do
     game_state = game_state(10, 0, 0)
 
@@ -64,6 +79,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CostTest do
           display_name: "Test Skill",
           max_level: 1,
           hp_cost: [],
+          hp_cost_rate: [],
           sp_cost: [],
           sphere_cost: []
         },
@@ -72,7 +88,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CostTest do
     )
   end
 
-  defp game_state(hp, sp, spheres) do
+  defp game_state(hp, sp, spheres, max_hp \\ 0) do
     entries =
       Enum.reduce(List.duplicate(:sphere, spheres), SpiritSpheres.new(), fn _, acc ->
         {next, _entry} = SpiritSpheres.summon(acc, 60_000, 5)
@@ -80,7 +96,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CostTest do
       end)
 
     %{
-      stats: %{current_state: %{hp: hp, sp: sp}},
+      stats: %{current_state: %{hp: hp, sp: sp}, derived_stats: %{max_hp: max_hp}},
       spirit_spheres: entries
     }
   end

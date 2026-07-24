@@ -33,7 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Cost do
   @spec from_definition(map(), Definition.t(), pos_integer(), keyword()) :: t()
   def from_definition(game_state, definition, level, opts \\ []) do
     %__MODULE__{
-      hp: level_cost(definition.hp_cost, level, 0),
+      hp: level_cost(definition.hp_cost, level, 0) + hp_rate_cost(game_state, definition, level),
       sp:
         Keyword.get(
           opts,
@@ -100,6 +100,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Cost do
       Map.put(game_state, :spirit_spheres, commitment.spheres)
     else
       game_state
+    end
+  end
+
+  defp hp_rate_cost(game_state, definition, level) do
+    case Enum.at(definition.hp_cost_rate, level - 1, 0) do
+      0 -> 0
+      rate -> div(game_state.stats.derived_stats.max_hp * rate, 100)
     end
   end
 
