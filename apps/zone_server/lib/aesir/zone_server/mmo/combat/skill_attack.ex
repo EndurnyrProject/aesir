@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
@@ -372,6 +373,63 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           map()
         ) :: boolean()
   defp apply_skill_damage(
+         attacker,
+         target_type,
+         target_pid,
+         target,
+         skill_id,
+         skill_level,
+         calc_opts,
+         hit_opts
+       ) do
+    if weapon_hit_intercepted?(attacker, target_type, target) do
+      false
+    else
+      resolve_skill_hit(
+        attacker,
+        target_type,
+        target_pid,
+        target,
+        skill_id,
+        skill_level,
+        calc_opts,
+        hit_opts
+      )
+    end
+  end
+
+  # A weapon-class skill hit passes through the target's `before_weapon_hit`
+  # interception statuses (Guard) exactly as a basic attack does, but tagged
+  # `basic_attack?: false` so basic-attack-only stances (Auto Counter, Blade
+  # Stop) stay inert. An interception cancels this hit entirely: no hit roll, no
+  # damage, no packet - the intercepting status owns its own feedback effect.
+  # Magic and misc skills never call this path, so they can never be blocked.
+  @spec weapon_hit_intercepted?(struct(), :player | :mob | :skill_unit, struct()) :: boolean()
+  defp weapon_hit_intercepted?(attacker, target_type, target) do
+    attack_info = %{
+      attacker: {attacker.unit_type, attacker.unit_id},
+      target: {target_type, target.unit_id},
+      attacker_boss?: attacker.class == :boss,
+      attacker_root_level: 0,
+      attacker_position: attacker.position,
+      attacker_short?: attacker.attack_range <= 3,
+      distance: cell_distance(attacker, target),
+      basic_attack?: false
+    }
+
+    match?(
+      {:intercept, _result},
+      StatusInterpreter.before_weapon_hit(target_type, target.unit_id, attack_info)
+    )
+  end
+
+  @spec cell_distance(struct(), struct()) :: non_neg_integer()
+  defp cell_distance(%{position: {ax, ay}}, %{position: {tx, ty}}),
+    do: max(abs(ax - tx), abs(ay - ty))
+
+  defp cell_distance(_attacker, _target), do: 0
+
+  defp resolve_skill_hit(
          attacker,
          target_type,
          target_pid,

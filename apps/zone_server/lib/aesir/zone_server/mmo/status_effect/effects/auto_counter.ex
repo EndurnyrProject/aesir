@@ -65,7 +65,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AutoCounter do
     end
   end
 
-  defp melee_basic_attack?(%{attacker_short?: true}), do: true
+  defp melee_basic_attack?(%{attacker_short?: true} = attack_info),
+    do: Map.get(attack_info, :basic_attack?, true)
+
   defp melee_basic_attack?(_attack_info), do: false
 
   defp resolve_defender(unit_id) do

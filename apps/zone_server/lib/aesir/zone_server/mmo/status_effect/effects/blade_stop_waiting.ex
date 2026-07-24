@@ -51,14 +51,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BladeStopWaiting do
     end
   end
 
-  # A player attacker is always eligible; a monster attacker only within cell
-  # distance. Boss-ness does not gate eligibility - it only shortens the pair.
-  defp eligible?(%{attacker: {:player, _}}), do: true
+  # Only a basic weapon swing arms the catch; weapon skills tagged
+  # `basic_attack?: false` pass through. A player attacker is always eligible; a
+  # monster attacker only within cell distance. Boss-ness does not gate
+  # eligibility - it only shortens the pair.
+  defp eligible?(attack_info) do
+    Map.get(attack_info, :basic_attack?, true) and eligible_attacker?(attack_info)
+  end
 
-  defp eligible?(%{attacker: {:mob, _}, distance: distance}) when is_integer(distance),
+  defp eligible_attacker?(%{attacker: {:player, _}}), do: true
+
+  defp eligible_attacker?(%{attacker: {:mob, _}, distance: distance}) when is_integer(distance),
     do: distance <= @mob_catch_distance
 
-  defp eligible?(_attack_info), do: false
+  defp eligible_attacker?(_attack_info), do: false
 
   defp claim(unit_type, unit_id, attack_info) do
     case StatusStorage.take_status(unit_type, unit_id, :sc_bladestop_wait) do
