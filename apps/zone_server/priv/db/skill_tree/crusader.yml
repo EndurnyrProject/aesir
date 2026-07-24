@@ -1,0 +1,97 @@
+---
+- job: crusader
+  inherit:
+    - swordman
+  tree:
+    - name: KN_RIDING
+      max_level: 1
+      requires:
+        - name: SM_ENDURE
+          level: 1
+    - name: KN_CAVALIERMASTERY
+      max_level: 5
+      requires:
+        - name: KN_RIDING
+          level: 1
+    - name: KN_SPEARMASTERY
+      max_level: 10
+    - name: AL_CURE
+      max_level: 1
+      requires:
+        - name: CR_TRUST
+          level: 5
+    - name: AL_DP
+      max_level: 10
+      requires:
+        - name: AL_CURE
+          level: 1
+    - name: AL_DEMONBANE
+      max_level: 10
+      requires:
+        - name: AL_DP
+          level: 3
+    - name: AL_HEAL
+      max_level: 10
+      requires:
+        - name: AL_DEMONBANE
+          level: 5
+        - name: CR_TRUST
+          level: 10
+    - name: CR_TRUST
+      max_level: 10
+    - name: CR_AUTOGUARD
+      max_level: 10
+    - name: CR_SHIELDCHARGE
+      max_level: 5
+      requires:
+        - name: CR_AUTOGUARD
+          level: 5
+    - name: CR_SHIELDBOOMERANG
+      max_level: 5
+      requires:
+        - name: CR_SHIELDCHARGE
+          level: 3
+    - name: CR_REFLECTSHIELD
+      max_level: 10
+      requires:
+        - name: CR_SHIELDBOOMERANG
+          level: 3
+    - name: CR_HOLYCROSS
+      max_level: 10
+      requires:
+        - name: CR_TRUST
+          level: 7
+    - name: CR_GRANDCROSS
+      max_level: 10
+      requires:
+        - name: CR_HOLYCROSS
+          level: 6
+        - name: CR_TRUST
+          level: 10
+    - name: CR_DEVOTION
+      max_level: 5
+      requires:
+        - name: CR_REFLECTSHIELD
+          level: 5
+        - name: CR_GRANDCROSS
+          level: 4
+    - name: CR_PROVIDENCE
+      max_level: 5
+      requires:
+        - name: AL_DP
+          level: 5
+        - name: AL_HEAL
+          level: 5
+    - name: CR_DEFENDER
+      max_level: 5
+      requires:
+        - name: CR_SHIELDBOOMERANG
+          level: 1
+    - name: CR_SPEARQUICKEN
+      max_level: 10
+      requires:
+        - name: KN_SPEARMASTERY
+          level: 10
+
+  # NOTE: CR_SHRINK is intentionally absent; it is catalogued nowhere yet
+  # (no skill module) and is a quest/emergency skill, not ordinarily learned.
