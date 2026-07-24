@@ -1,0 +1,44 @@
+---
+- job: hunter
+  inherit:
+    - novice
+    - archer
+  tree:
+    - name: HT_LANDMINE
+      max_level: 5
+    - name: HT_BEASTBANE
+      max_level: 10
+    - name: HT_FALCON
+      max_level: 1
+      requires:
+        - name: HT_BEASTBANE
+          level: 1
+    - name: HT_BLITZBEAT
+      max_level: 5
+      requires:
+        - name: HT_FALCON
+          level: 1
+    - name: HT_STEELCROW
+      max_level: 10
+      requires:
+        - name: HT_BLITZBEAT
+          level: 5
+    - name: HT_DETECTING
+      max_level: 4
+      requires:
+        - name: AC_CONCENTRATION
+          level: 1
+        - name: HT_FALCON
+          level: 1
+    - name: HT_REMOVETRAP
+      max_level: 1
+      requires:
+        - name: HT_LANDMINE
+          level: 1
+    - name: HT_SPRINGTRAP
+      max_level: 5
+      requires:
+        - name: HT_REMOVETRAP
+          level: 1
+        - name: HT_FALCON
+          level: 1
