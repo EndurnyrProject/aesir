@@ -166,6 +166,24 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
               :continue | {:intercept, term()}
 
   @doc """
+  Post-damage hook fired on the victim after a delivered hit reduced its HP.
+
+  Runs inside the attacker's process, and only for short-range weapon damage:
+  ranged and magic hits, and hits already flagged `reflected`/`redirected`,
+  never reach it. Returning `{:reflect, amount}` sends `amount` damage back to
+  the attacker through the asynchronous damage path (flagged `reflected: true`,
+  so it can never re-trigger this hook); `:ok` does nothing. `hit_info` carries
+  the delivered `:damage`, plus the hit's `:dmg_type`, `:is_short` and
+  `:element`.
+
+  Statuses that do not implement it are excluded from dispatch entirely (the
+  registry indexes the implementers), so a hit on a victim holding none costs
+  one registry read.
+  """
+  @callback after_damage_taken(target(), StatusEntry.t(), map(), context()) ::
+              :ok | {:reflect, non_neg_integer()}
+
+  @doc """
   Pre-damage hook that may reduce or block an incoming hit before HP is applied.
 
   Receives the running `damage` (already reduced by statuses folded before it) in
@@ -284,7 +302,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   registry to index. Only hooks whose dispatch is on a hot path are tracked;
   the rest are called unconditionally through their no-op defaults.
   """
-  @type capability :: :before_weapon_hit | :on_dealt_damage
+  @type capability :: :before_weapon_hit | :on_dealt_damage | :after_damage_taken
 
   defmacro __using__(opts) do
     quote bind_quoted: [opts: opts] do
@@ -342,6 +360,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   defmacro __before_compile__(env) do
     dealt_damage? = Module.defines?(env.module, {:on_dealt_damage, 4})
     before_weapon_hit? = Module.defines?(env.module, {:before_weapon_hit, 4})
+    after_damage_taken? = Module.defines?(env.module, {:after_damage_taken, 4})
 
     dealt_damage_default =
       unless dealt_damage? do
@@ -359,14 +378,24 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
         end
       end
 
+    after_damage_taken_default =
+      unless after_damage_taken? do
+        quote do
+          @impl true
+          def after_damage_taken(_target, _instance, _hit_info, _context), do: :ok
+        end
+      end
+
     capabilities =
       []
       |> maybe_add_capability(before_weapon_hit?, :before_weapon_hit)
       |> maybe_add_capability(dealt_damage?, :on_dealt_damage)
+      |> maybe_add_capability(after_damage_taken?, :after_damage_taken)
 
     quote do
       unquote(dealt_damage_default)
       unquote(before_weapon_hit_default)
+      unquote(after_damage_taken_default)
 
       @doc false
       def __status_capabilities__, do: unquote(capabilities)

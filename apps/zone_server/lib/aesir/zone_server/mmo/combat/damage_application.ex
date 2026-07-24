@@ -4,11 +4,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
   The shared tail of every attack path: runs the hit through the pre-damage
   status absorption hook, routes the final damage to the target's session by
-  unit type, and broadcasts combat packets to nearby players. Keeps the attack
-  paths free of concrete session-module knowledge.
+  unit type, runs the victim's post-damage reflect hook, and broadcasts combat
+  packets to nearby players. Keeps the attack paths free of concrete
+  session-module knowledge.
   """
 
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -49,6 +51,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
       end
 
     unit_session(target_type).apply_damage(target_pid, final_damage, attacker_id)
+    reflect_unit_damage(target_type, target_id, final_damage, hit_info, attacker_id)
   end
 
   @doc """
@@ -112,4 +115,49 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   end
 
   defp absorb_unit_damage(_target_type, _target_id, damage, _hit_info), do: damage
+
+  # Runs the victim's post-damage statuses and sends any reflected damage back to
+  # the attacker. Fires only for short-range weapon damage that is neither a
+  # reflected nor a redirected packet, so reflection can never loop or re-trigger.
+  # The reflected packet goes through the async apply path (a session cast) - this
+  # runs inside the attacker's own process, so a synchronous self-application would
+  # deadlock.
+  defp reflect_unit_damage(target_type, target_id, damage, hit_info, attacker_id)
+       when damage > 0 and is_integer(attacker_id) do
+    if reflectable?(hit_info) do
+      target_type
+      |> StatusInterpreter.after_damage_taken(target_id, Map.put(hit_info, :damage, damage))
+      |> apply_reflected_damage(attacker_id)
+    else
+      :ok
+    end
+  end
+
+  defp reflect_unit_damage(_target_type, _target_id, _damage, _hit_info, _attacker_id), do: :ok
+
+  defp reflectable?(hit_info) do
+    Map.get(hit_info, :dmg_type) == :physical and
+      Map.get(hit_info, :is_short, false) == true and
+      not Map.get(hit_info, :reflected, false) and
+      not Map.get(hit_info, :redirected, false)
+  end
+
+  defp apply_reflected_damage(amount, attacker_id) when amount > 0 do
+    case TargetResolver.resolve(attacker_id) do
+      {:ok, attacker_pid, _state, attacker_type} ->
+        apply_unit_damage(
+          attacker_type,
+          attacker_pid,
+          attacker_id,
+          amount,
+          %{reflected: true},
+          nil
+        )
+
+      {:error, _reason} ->
+        :ok
+    end
+  end
+
+  defp apply_reflected_damage(_amount, _attacker_id), do: :ok
 end

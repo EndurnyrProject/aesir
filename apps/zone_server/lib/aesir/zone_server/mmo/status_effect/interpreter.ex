@@ -200,6 +200,31 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     end
   end
 
+  @doc """
+  Dispatches the victim's post-damage statuses after a delivered hit reduced HP.
+
+  Runs inside the attacker's process. Every status on the victim implementing
+  `c:Definition.after_damage_taken/4` sees the delivered `hit_info` (carrying the
+  final `:damage`) and may return `{:reflect, amount}`; the amounts are summed
+  into the total damage the caller sends back to the attacker. A victim holding
+  no implementing status stays on a constant-time registry-read no-op path.
+  """
+  @spec after_damage_taken(unit_type(), integer(), map()) :: non_neg_integer()
+  def after_damage_taken(unit_type, unit_id, hit_info) do
+    implementing = Registry.statuses_implementing(:after_damage_taken)
+
+    if MapSet.size(implementing) == 0 do
+      0
+    else
+      unit_type
+      |> StatusStorage.get_unit_statuses(unit_id)
+      |> Enum.filter(&MapSet.member?(implementing, &1.type))
+      |> Enum.reduce(0, fn instance, acc ->
+        acc + dispatch_after_damage_taken(unit_type, unit_id, instance, hit_info)
+      end)
+    end
+  end
+
   @doc "Notifies active statuses that their holder made movement contact with a unit."
   @spec on_movement_contact(unit_type(), integer(), {unit_type(), integer()}) :: :ok
   def on_movement_contact(unit_type, unit_id, contact) do
@@ -707,6 +732,35 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
           result ->
             raise "invalid before_weapon_hit result for #{instance.type}: #{inspect(result)}"
+        end
+    end
+  end
+
+  defp dispatch_after_damage_taken(unit_type, unit_id, instance, hit_info) do
+    case Registry.get_definition(instance.type) do
+      nil ->
+        0
+
+      definition ->
+        context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
+
+        case definition.module.after_damage_taken(
+               {unit_type, unit_id},
+               instance,
+               hit_info,
+               context
+             ) do
+          :ok ->
+            0
+
+          {:reflect, amount} when is_integer(amount) and amount > 0 ->
+            amount
+
+          {:reflect, _amount} ->
+            0
+
+          result ->
+            raise "invalid after_damage_taken result for #{instance.type}: #{inspect(result)}"
         end
     end
   end
