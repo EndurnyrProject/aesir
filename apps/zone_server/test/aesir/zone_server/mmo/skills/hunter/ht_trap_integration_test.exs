@@ -155,7 +155,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
       next_tick_at: System.monotonic_time(:millisecond) + 60_000,
       expires_at: System.monotonic_time(:millisecond) + 60_000,
       interval: 1_000,
-      state: %{base_damage: 250}
+      visible?: false,
+      state: %{base_damage: 250, armed: true, reclaimable: true, trap_item: 1065}
     }
   end
 
@@ -175,6 +176,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
     SpatialIndex.add_unit(:mob, @mob_id, sx, sy, @map)
 
     :ok = Storage.insert(landmine_group())
+
+    assert [%Group{group_id: 999, visible?: false}] = Storage.get_groups_at_cell(@map, 50, 50)
+    assert [] = Storage.get_cells_by_group(999)
+    assert %{groups: []} = Aesir.ZoneServer.Mmo.Skill.Unit.snapshot(@map)
 
     {tx, ty} = @trap
     walked = %{mob_state | x: tx, y: ty, movement_state: :moving}

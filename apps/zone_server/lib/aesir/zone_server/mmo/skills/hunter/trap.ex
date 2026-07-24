@@ -14,15 +14,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.Trap do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  # rAthena ITEMID_TRAP (Booby_Trap): the item returned when reclaiming one
+  # placed Hunter trap.
+  @trap_item_id 1065
+
   @doc """
   Builds the initial group state: the deterministic base damage stamped from the
   placer's stats at placement time (rAthena stamps trap damage at setup, so it
-  survives the placer's later stat changes / departure). The per-trigger ±
+  survives the placer's later stat changes / departure) plus the normalized
+  trap lifecycle metadata (`armed`/`reclaimable`/`trap_item`) consumed by
+  manager-level reveal, reclaim, and spring operations. The per-trigger ±
   variance is rolled at fire time via `roll_damage/1`.
   """
-  @spec place_state(non_neg_integer(), map()) :: %{base_damage: non_neg_integer()}
+  @spec place_state(non_neg_integer(), map()) :: %{
+          base_damage: non_neg_integer(),
+          armed: boolean(),
+          reclaimable: boolean(),
+          trap_item: pos_integer()
+        }
   def place_state(level, caster_stats) do
-    %{base_damage: base_damage(level, caster_stats)}
+    %{
+      base_damage: base_damage(level, caster_stats),
+      armed: true,
+      reclaimable: true,
+      trap_item: @trap_item_id
+    }
   end
 
   # rAthena renewal trap base, verified vs battle.cpp:6354-6360 (shared by

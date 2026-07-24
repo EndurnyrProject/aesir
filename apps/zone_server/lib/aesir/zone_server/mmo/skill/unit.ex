@@ -179,7 +179,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
           group
           | cells: cells,
             created_at: now,
-            visible?: true,
+            visible?: Map.get(placement, :visible?, true),
             state: state,
             interval: placement.interval,
             lifecycle_policy: Map.get(placement, :lifecycle_policy, group.lifecycle_policy),

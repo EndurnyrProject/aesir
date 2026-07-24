@@ -49,6 +49,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
     def on_expire(_group), do: :ok
   end
 
+  defmodule HiddenFakeUnit do
+    @behaviour Ground
+
+    alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+
+    @impl Ground
+    def on_place(%Group{center: {x, y}}) do
+      {:ok,
+       %{
+         cells: [{x, y}],
+         state: %{seeded: true},
+         interval: 450,
+         duration: 5_000,
+         visible?: false
+       }}
+    end
+
+    @impl Ground
+    def on_interval(group, _now), do: {:ok, group}
+  end
+
   defmodule ImmediateFakeUnit do
     @behaviour Ground
 
@@ -231,6 +252,37 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
                Unit.snapshot("prontera")
 
       assert snapshot_cell.cell_id == cell_id
+    end
+
+    test "a placement omitting visible? registers and publishes as visible" do
+      test_pid = self()
+      stub(Broadcast, :to_in_range, fn _, _, _, _, packet -> send(test_pid, packet) end)
+
+      {:ok, group} = Unit.place(caster(), @skill_name, 7, {100, 120})
+
+      assert group.visible?
+      assert %Group{visible?: true} = Storage.get(group.group_id)
+      assert_receive %Aesir.Net.SkillUnitSpawn{group: %{group_id: group_id}}
+      assert group_id == group.group_id
+    end
+
+    test "an explicitly hidden placement stays invisible, unmaterialized, and coordinate-indexed" do
+      stub(Catalog, :ground_module_for, fn @skill_name -> {:ok, HiddenFakeUnit} end)
+      test_pid = self()
+      stub(Broadcast, :to_in_range, fn _, _, _, _, packet -> send(test_pid, packet) end)
+
+      {:ok, group} = Unit.place(caster(), @skill_name, 7, {100, 120})
+
+      assert group.visible? == false
+      assert %Group{visible?: false} = Storage.get(group.group_id)
+      assert [] == Storage.get_cells_by_group(group.group_id)
+
+      assert [%Group{group_id: group_id}] = Storage.get_groups_at_cell("prontera", 100, 120)
+      assert group_id == group.group_id
+
+      assert %{groups: []} = Unit.snapshot("prontera")
+      assert_receive %GroundSkill{}
+      refute_received %Aesir.Net.SkillUnitSpawn{}
     end
 
     test "makes a ground field with an immediate first tick due on the next manager cadence" do

@@ -54,9 +54,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmineTest do
       assert {:ok, placement} = HtLandmine.on_place(group(%{}))
 
       assert placement.cells == [{50, 50}]
+      assert placement.visible? == false
       refute Map.has_key?(placement.state, :armed_at)
       # trunc(3 * 50 * (3.0 + 50/100) * (1.0 + 40/35)) = trunc(150 * 3.5 * 2.142857) = 1125
       assert placement.state.base_damage == 1125
+      assert placement.state.armed == true
+      assert placement.state.reclaimable == true
+      assert placement.state.trap_item == 1065
     end
   end
 
