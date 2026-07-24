@@ -1,5 +1,3 @@
-==> commons
-Compiling 1 file (.ex)
 defmodule Aesir.ZoneServer.CharacterLoaderTest do
   use Aesir.DataCase, async: true
 
