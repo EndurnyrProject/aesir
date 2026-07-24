@@ -152,6 +152,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       :field_unit -> {:ok, FieldUnit}
       :water_ball_sequence -> {:ok, WaterBallSequenceUnit}
       :blocked_water_ball -> {:ok, BlockedWaterBallUnit}
+      :ht_landmine -> {:ok, FakeUnit}
       :other_exclusive_unit -> {:ok, FakeUnit}
       :barrier_unit -> {:ok, FakeUnit}
       :mg_safetywall -> {:ok, FakeUnit}
@@ -199,6 +200,464 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     }
 
     struct(base, attrs)
+  end
+
+  defp trap_group(group_id, attrs \\ []) do
+    group(
+      group_id,
+      Keyword.merge(
+        [
+          skill_id: 116,
+          skill_name: :ht_landmine,
+          visible?: false,
+          state: %{base_damage: 100, armed: true, reclaimable: true, trap_item: 1065}
+        ],
+        attrs
+      )
+    )
+  end
+
+  describe "Hunter trap transitions" do
+    test "reveals a hidden supported trap and materializes it once" do
+      manager = start_manager(10_000)
+      assert :ok = Manager.register(manager, trap_group(1))
+      assert [] == Storage.get_cells_by_group(1)
+
+      assert {:ok, [1]} = Manager.reveal_traps(manager, "prontera", 100, 100, 0)
+      assert %Group{visible?: true} = Storage.get(1)
+      assert [%Cell{group_id: 1}] = Storage.get_cells_by_group(1)
+
+      assert {:ok, []} = Manager.reveal_traps(manager, "prontera", 100, 100, 0)
+      assert [_cell] = Storage.get_cells_by_group(1)
+    end
+
+    test "reveals only supported traps in a bounded area and publishes each group once" do
+      test_pid = self()
+
+      stub(Broadcast, :to_in_range, fn map_name, x, y, _range, packet ->
+        send(test_pid, {:published, map_name, x, y, packet})
+        :ok
+      end)
+
+      manager = start_manager(10_000)
+      assert :ok = Manager.register(manager, trap_group(2, cells: [{99, 100}, {100, 100}]))
+      assert :ok = Manager.register(manager, trap_group(1, cells: [{101, 101}]))
+      assert :ok = Manager.register(manager, trap_group(3, cells: [{102, 100}]))
+      assert :ok = Manager.register(manager, group(4, visible?: false, cells: [{100, 100}]))
+
+      assert {:ok, [1, 2]} = Manager.reveal_traps(manager, "prontera", 100, 100, 1)
+      assert %Group{visible?: false} = Storage.get(3)
+      assert %Group{visible?: false} = Storage.get(4)
+
+      assert_receive {:published, "prontera", 100, 100,
+                      %Aesir.Net.SkillUnitSpawn{group: %{group_id: 1}}}
+
+      assert_receive {:published, "prontera", 100, 100,
+                      %Aesir.Net.SkillUnitSpawn{group: %{group_id: 2}}}
+
+      refute_receive {:published, _, _, _, %Aesir.Net.SkillUnitSpawn{}}
+    end
+
+    test "includes revealed traps in observer snapshots and cleanup publication" do
+      test_pid = self()
+
+      stub(Broadcast, :to_in_range, fn _map_name, _x, _y, _range, packet ->
+        send(test_pid, {:range, packet})
+        :ok
+      end)
+
+      stub(Broadcast, :to_player, fn observer_id, packet ->
+        send(test_pid, {:observer, observer_id, packet})
+        :ok
+      end)
+
+      manager = start_manager(10_000)
+      assert :ok = Manager.register(manager, trap_group(1))
+
+      assert MapSet.new() == Manager.snapshot_for(manager, 99, "prontera", 100, 100, 0)
+      assert_receive {:observer, 99, %Aesir.Net.SkillUnitSnapshot{groups: []}}
+
+      assert {:ok, [1]} = Manager.reveal_traps(manager, "prontera", 100, 100, 0)
+      assert_receive {:range, %Aesir.Net.SkillUnitSpawn{group: %{group_id: 1}}}
+
+      assert MapSet.new([1]) == Manager.snapshot_for(manager, 99, "prontera", 100, 100, 0)
+
+      assert_receive {:observer, 99,
+                      %Aesir.Net.SkillUnitSnapshot{groups: [%{group_id: 1, cells: [_cell]}]}}
+
+      assert MapSet.new([1]) == Storage.get_observer_groups(99)
+
+      assert {:ok, %{group_id: 1}} =
+               Manager.reclaim_trap(manager, {:player, 1}, "prontera", 100, 100)
+
+      assert_receive {:observer, 99,
+                      %Aesir.Net.SkillUnitDespawn{
+                        group_id: 1,
+                        reason: :SKILL_UNIT_DESPAWN_REASON_CANCELED
+                      }}
+
+      assert MapSet.new() == Storage.get_observer_groups(99)
+    end
+
+    test "rolls a failed reveal materialization back to the untouched hidden group" do
+      manager = start_manager(10_000)
+
+      blocker =
+        group(9,
+          visible?: true,
+          state: %{
+            exclusive_terrain: true,
+            cell_attrs: %{
+              {100, 100} => %{flags: [:blocks_movement], state: %{exclusive_terrain: true}}
+            }
+          }
+        )
+
+      trap =
+        trap_group(1,
+          state: %{
+            base_damage: 100,
+            armed: true,
+            reclaimable: true,
+            trap_item: 1065,
+            exclusive_terrain: true
+          }
+        )
+
+      assert :ok = Manager.register(manager, blocker)
+      assert :ok = Manager.register(manager, trap)
+      stored = Storage.get(1)
+
+      assert {:error, :exclusive_terrain_overlap} =
+               Manager.reveal_traps(manager, "prontera", 100, 100, 0)
+
+      assert ^stored = Storage.get(1)
+      assert [] == Storage.get_cells_by_group(1)
+
+      assert [^stored, %Group{group_id: 9}] =
+               "prontera"
+               |> Storage.get_groups_at_cell(100, 100)
+               |> Enum.sort_by(& &1.group_id)
+    end
+
+    test "rolls back earlier groups when a later reveal in the same area cannot materialize" do
+      test_pid = self()
+
+      stub(Broadcast, :to_in_range, fn _map_name, _x, _y, _range, packet ->
+        send(test_pid, {:published, packet})
+        :ok
+      end)
+
+      manager = start_manager(10_000)
+
+      blocker =
+        group(9,
+          visible?: true,
+          cells: [{100, 100}],
+          state: %{
+            exclusive_terrain: true,
+            cell_attrs: %{
+              {100, 100} => %{flags: [:blocks_movement], state: %{exclusive_terrain: true}}
+            }
+          }
+        )
+
+      blocked =
+        trap_group(2,
+          cells: [{100, 100}],
+          state: %{
+            base_damage: 100,
+            armed: true,
+            reclaimable: true,
+            trap_item: 1065,
+            exclusive_terrain: true
+          }
+        )
+
+      assert :ok = Manager.register(manager, blocker)
+      assert_receive {:published, %Aesir.Net.SkillUnitSpawn{group: %{group_id: 9}}}
+      assert :ok = Manager.register(manager, trap_group(1, cells: [{99, 100}]))
+      assert :ok = Manager.register(manager, blocked)
+
+      assert {:error, :exclusive_terrain_overlap} =
+               Manager.reveal_traps(manager, "prontera", 100, 100, 1)
+
+      assert %Group{visible?: false} = Storage.get(1)
+      assert %Group{visible?: false} = Storage.get(2)
+      assert [] == Storage.get_cells_by_group(1)
+      assert [] == Storage.get_cells_by_group(2)
+      refute_receive {:published, %Aesir.Net.SkillUnitSpawn{}}
+    end
+
+    test "rejects an invalid trap state before revealing any group in the area" do
+      manager = start_manager(10_000)
+      assert :ok = Manager.register(manager, trap_group(1, cells: [{100, 100}]))
+
+      assert :ok =
+               Manager.register(
+                 manager,
+                 trap_group(2,
+                   cells: [{101, 100}],
+                   state: %{base_damage: 100, armed: true, reclaimable: false, trap_item: 1065}
+                 )
+               )
+
+      assert {:error, :invalid_trap_state} =
+               Manager.reveal_traps(manager, "prontera", 100, 100, 1)
+
+      assert %Group{visible?: false} = Storage.get(1)
+      assert %Group{visible?: false} = Storage.get(2)
+      assert [] == Storage.get_cells_by_group(1)
+      assert [] == Storage.get_cells_by_group(2)
+    end
+
+    test "reclaims the lowest-ID eligible owned trap and returns its item" do
+      manager = start_manager(10_000)
+      assert :ok = Manager.register(manager, trap_group(2))
+      assert :ok = Manager.register(manager, trap_group(1))
+
+      assert {:ok, %{group_id: 1, item_id: 1065}} =
+               Manager.reclaim_trap(manager, {:player, 1}, "prontera", 100, 100)
+
+      assert nil == Storage.get(1)
+      assert %Group{} = Storage.get(2)
+    end
+
+    test "serializes concurrent reclaim attempts so only one claims the trap" do
+      manager = start_manager(10_000)
+      assert :ok = Manager.register(manager, trap_group(1))
+
+      results =
+        1..2
+        |> Task.async_stream(
+          fn _ -> Manager.reclaim_trap(manager, {:player, 1}, "prontera", 100, 100) end,
+          ordered: false
+        )
+        |> Enum.map(fn {:ok, result} -> result end)
+
+      assert Enum.count(results, &match?({:ok, %{group_id: 1, item_id: 1065}}, &1)) == 1
+      assert Enum.count(results, &(&1 == {:error, :not_found})) == 1
+      assert nil == Storage.get(1)
+    end
+
+    test "rejects ineligible reclaim targets without mutating them" do
+      manager = start_manager(10_000)
+
+      assert :ok = Manager.register(manager, trap_group(1, caster_id: 2, cells: [{100, 100}]))
+
+      assert :ok =
+               Manager.register(
+                 manager,
+                 trap_group(2,
+                   cells: [{101, 100}],
+                   state: %{base_damage: 100, armed: false, reclaimable: false, trap_item: 1065}
+                 )
+               )
+
+      assert :ok =
+               Manager.register(
+                 manager,
+                 trap_group(3,
+                   cells: [{102, 100}],
+                   state: %{base_damage: 100, armed: true, reclaimable: false, trap_item: 1065}
+                 )
+               )
+
+      assert :ok = Manager.register(manager, group(4, visible?: false, cells: [{103, 100}]))
+      before = Map.new(1..4, &{&1, Storage.get(&1)})
+
+      assert {:error, :not_owner} =
+               Manager.reclaim_trap(manager, {:player, 1}, "prontera", 100, 100)
+
+      assert {:error, :already_spent} =
+               Manager.reclaim_trap(manager, {:player, 1}, "prontera", 101, 100)
+
+      assert {:error, :invalid_trap_state} =
+               Manager.reclaim_trap(manager, {:player, 1}, "prontera", 102, 100)
+
+      assert {:error, :unsupported_trap} =
+               Manager.reclaim_trap(manager, {:player, 1}, "prontera", 103, 100)
+
+      assert {:error, :not_found} =
+               Manager.reclaim_trap(manager, {:player, 1}, "geffen", 100, 100)
+
+      assert before == Map.new(1..4, &{&1, Storage.get(&1)})
+    end
+
+    test "springs the lowest-ID eligible trap when groups overlap" do
+      manager = start_manager(10_000)
+      assert :ok = Manager.register(manager, trap_group(2))
+      assert :ok = Manager.register(manager, trap_group(1))
+
+      assert {:ok, %{group_id: 1, expires_at: 11_500}} =
+               Manager.spring_trap(manager, "prontera", 100, 100)
+
+      assert %Group{state: %{armed: false, reclaimable: false}} = Storage.get(1)
+      assert %Group{state: %{armed: true, reclaimable: true}} = Storage.get(2)
+    end
+
+    test "springs a hidden armed trap into visible spent state with canonical expiry" do
+      test_pid = self()
+
+      stub(Broadcast, :to_in_range, fn _map_name, _x, _y, _range, packet ->
+        send(test_pid, {:published, packet})
+        :ok
+      end)
+
+      manager = start_manager(10_000)
+      assert :ok = Manager.register(manager, trap_group(1))
+
+      assert {:ok, %{group_id: 1, expires_at: 11_500}} =
+               Manager.spring_trap(manager, "prontera", 100, 100)
+
+      assert %Group{
+               visible?: true,
+               expires_at: 11_500,
+               state: %{armed: false, reclaimable: false}
+             } = Storage.get(1)
+
+      assert [%Cell{group_id: 1}] = Storage.get_cells_by_group(1)
+      assert_receive {:published, %Aesir.Net.SkillUnitSpawn{group: %{group_id: 1}}}
+      refute_receive {:published, %Aesir.Net.SkillUnitSpawn{}}
+
+      expiry_index = EtsTable.table_for(:skill_unit_expiry_index)
+      assert [] == :ets.lookup(expiry_index, {1_000_000, 1})
+      assert [{{11_500, 1}, true}] == :ets.lookup(expiry_index, {11_500, 1})
+    end
+
+    test "reaps a sprung trap only when its short expiry becomes due" do
+      manager = start_manager(10_000)
+      assert :ok = Manager.register(manager, trap_group(1))
+      assert {:ok, %{expires_at: 11_500}} = Manager.spring_trap(manager, "prontera", 100, 100)
+
+      assert :ok = Manager.tick(manager, 11_499)
+      assert %Group{} = Storage.get(1)
+
+      assert :ok = Manager.tick(manager, 11_500)
+      assert nil == Storage.get(1)
+    end
+
+    test "springs an already visible trap without replacing or duplicating its cells" do
+      manager = start_manager(10_000)
+      assert :ok = Manager.register(manager, trap_group(1, visible?: true))
+      [original_cell] = Storage.get_cells_by_group(1)
+
+      assert {:ok, %{group_id: 1, expires_at: 11_500}} =
+               Manager.spring_trap(manager, "prontera", 100, 100)
+
+      assert [^original_cell] = Storage.get_cells_by_group(1)
+      assert %Group{visible?: true, state: %{armed: false, reclaimable: false}} = Storage.get(1)
+    end
+
+    test "rolls a failed spring materialization back with its original state and timing index" do
+      manager = start_manager(10_000)
+
+      blocker =
+        group(9,
+          visible?: true,
+          state: %{
+            exclusive_terrain: true,
+            cell_attrs: %{
+              {100, 100} => %{flags: [:blocks_movement], state: %{exclusive_terrain: true}}
+            }
+          }
+        )
+
+      trap =
+        trap_group(1,
+          state: %{
+            base_damage: 100,
+            armed: true,
+            reclaimable: true,
+            trap_item: 1065,
+            exclusive_terrain: true
+          }
+        )
+
+      assert :ok = Manager.register(manager, blocker)
+      assert :ok = Manager.register(manager, trap)
+      stored = Storage.get(1)
+
+      assert {:error, :exclusive_terrain_overlap} =
+               Manager.spring_trap(manager, "prontera", 100, 100)
+
+      assert ^stored = Storage.get(1)
+      assert [] == Storage.get_cells_by_group(1)
+
+      expiry_index = EtsTable.table_for(:skill_unit_expiry_index)
+      assert [{{1_000_000, 1}, true}] == :ets.lookup(expiry_index, {1_000_000, 1})
+      assert [] == :ets.lookup(expiry_index, {11_500, 1})
+    end
+
+    test "serializes concurrent spring attempts so only one spends the trap" do
+      manager = start_manager(10_000)
+      assert :ok = Manager.register(manager, trap_group(1))
+
+      results =
+        1..2
+        |> Task.async_stream(
+          fn _ -> Manager.spring_trap(manager, "prontera", 100, 100) end,
+          ordered: false
+        )
+        |> Enum.map(fn {:ok, result} -> result end)
+
+      assert Enum.count(results, &match?({:ok, %{group_id: 1, expires_at: 11_500}}, &1)) == 1
+      assert Enum.count(results, &(&1 == {:error, :already_spent})) == 1
+
+      assert %Group{state: %{armed: false, reclaimable: false}} = Storage.get(1)
+      assert [_cell] = Storage.get_cells_by_group(1)
+    end
+
+    test "serializes reclaim against spring so the trap has only one winning transition" do
+      manager = start_manager(10_000)
+      assert :ok = Manager.register(manager, trap_group(1))
+
+      reclaim =
+        Task.async(fn ->
+          Manager.reclaim_trap(manager, {:player, 1}, "prontera", 100, 100)
+        end)
+
+      spring = Task.async(fn -> Manager.spring_trap(manager, "prontera", 100, 100) end)
+      results = [Task.await(reclaim), Task.await(spring)]
+
+      assert Enum.count(results, &match?({:ok, %{group_id: 1}}, &1)) == 1
+
+      assert Enum.any?(results, fn result ->
+               result in [{:error, :not_found}, {:error, :already_spent}]
+             end)
+    end
+
+    test "rejects ineligible spring targets without mutation" do
+      manager = start_manager(10_000)
+
+      assert :ok =
+               Manager.register(
+                 manager,
+                 trap_group(1,
+                   cells: [{100, 100}],
+                   state: %{base_damage: 100, armed: false, reclaimable: false, trap_item: 1065}
+                 )
+               )
+
+      assert :ok =
+               Manager.register(
+                 manager,
+                 trap_group(2,
+                   cells: [{101, 100}],
+                   state: %{base_damage: 100, armed: false, reclaimable: true, trap_item: 1065}
+                 )
+               )
+
+      assert :ok = Manager.register(manager, group(3, visible?: false, cells: [{102, 100}]))
+      before = Map.new(1..3, &{&1, Storage.get(&1)})
+
+      assert {:error, :already_spent} = Manager.spring_trap(manager, "prontera", 100, 100)
+      assert {:error, :invalid_trap_state} = Manager.spring_trap(manager, "prontera", 101, 100)
+      assert {:error, :unsupported_trap} = Manager.spring_trap(manager, "prontera", 102, 100)
+      assert {:error, :not_found} = Manager.spring_trap(manager, "geffen", 100, 100)
+
+      assert before == Map.new(1..3, &{&1, Storage.get(&1)})
+    end
   end
 
   describe "targetable cells" do

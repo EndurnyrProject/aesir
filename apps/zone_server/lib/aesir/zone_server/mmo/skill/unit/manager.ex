@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @tick_interval 100
+  @sprung_trap_lifetime 1_500
   @safetywall_skill_id 12
   @no_overlap_skill_ids [@safetywall_skill_id, 70, 79]
 
@@ -59,6 +60,49 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   @doc false
   @spec register(server(), Group.t()) :: :ok | {:error, term()}
   def register(server, %Group{} = group), do: GenServer.call(server, {:register, group})
+
+  @doc "Reveals hidden supported Hunter traps in an inclusive square area."
+  @spec reveal_traps(String.t(), integer(), integer(), non_neg_integer()) ::
+          {:ok, [non_neg_integer()]} | {:error, atom()}
+  def reveal_traps(map_name, x, y, range),
+    do: reveal_traps(default_server(), map_name, x, y, range)
+
+  @doc false
+  @spec reveal_traps(server(), String.t(), integer(), integer(), non_neg_integer()) ::
+          {:ok, [non_neg_integer()]} | {:error, atom()}
+  def reveal_traps(server, map_name, x, y, range)
+      when is_binary(map_name) and is_integer(x) and is_integer(y) and is_integer(range) and
+             range >= 0 do
+    GenServer.call(server, {:reveal_traps, map_name, x, y, range})
+  end
+
+  @doc "Atomically reclaims one eligible trap owned by `owner` at a map cell."
+  @spec reclaim_trap(mover(), String.t(), integer(), integer()) ::
+          {:ok, %{group_id: non_neg_integer(), item_id: pos_integer()}} | {:error, atom()}
+  def reclaim_trap(owner, map_name, x, y),
+    do: reclaim_trap(default_server(), owner, map_name, x, y)
+
+  @doc false
+  @spec reclaim_trap(server(), mover(), String.t(), integer(), integer()) ::
+          {:ok, %{group_id: non_neg_integer(), item_id: pos_integer()}} | {:error, atom()}
+  def reclaim_trap(server, {owner_type, owner_id} = owner, map_name, x, y)
+      when is_atom(owner_type) and is_integer(owner_id) and is_binary(map_name) and is_integer(x) and
+             is_integer(y) do
+    GenServer.call(server, {:reclaim_trap, owner, map_name, x, y})
+  end
+
+  @doc "Atomically springs one eligible armed trap at a map cell."
+  @spec spring_trap(String.t(), integer(), integer()) ::
+          {:ok, %{group_id: non_neg_integer(), expires_at: integer()}} | {:error, atom()}
+  def spring_trap(map_name, x, y), do: spring_trap(default_server(), map_name, x, y)
+
+  @doc false
+  @spec spring_trap(server(), String.t(), integer(), integer()) ::
+          {:ok, %{group_id: non_neg_integer(), expires_at: integer()}} | {:error, atom()}
+  def spring_trap(server, map_name, x, y)
+      when is_binary(map_name) and is_integer(x) and is_integer(y) do
+    GenServer.call(server, {:spring_trap, map_name, x, y})
+  end
 
   @doc "Merges skill-owned state into a live group without resurrecting a deleted one."
   @spec update_state(non_neg_integer(), map()) :: :ok
@@ -228,6 +272,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       {:error, _reason} = error ->
         {:reply, error, state}
     end
+  end
+
+  def handle_call({:reveal_traps, map_name, x, y, range}, _from, state) do
+    {:reply, reveal_traps_now(map_name, x, y, range), state}
+  end
+
+  def handle_call({:reclaim_trap, owner, map_name, x, y}, _from, state) do
+    {:reply, reclaim_trap_now(owner, map_name, x, y), state}
+  end
+
+  def handle_call({:spring_trap, map_name, x, y}, _from, state) do
+    {:reply, spring_trap_now(map_name, x, y, state.clock.()), state}
   end
 
   def handle_call({:update_state, group_id, new_state}, _from, state) do
@@ -1013,6 +1069,218 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp source_fields(nil), do: {:SKILL_UNIT_OWNER_TYPE_UNSPECIFIED, 0}
   defp update_reason(:damage), do: :SKILL_UNIT_UPDATE_REASON_DAMAGE
   defp update_reason(:decay), do: :SKILL_UNIT_UPDATE_REASON_DECAY
+
+  defp spring_trap_now(map_name, x, y, now) do
+    groups = map_name |> Storage.get_groups_at_cell(x, y) |> Enum.sort_by(& &1.group_id)
+
+    case select_trap(groups, &spring_eligibility/1) do
+      {:ok, %Group{} = group} ->
+        expires_at = now + @sprung_trap_lifetime
+
+        sprung = %{
+          group
+          | visible?: true,
+            expires_at: expires_at,
+            state: Map.merge(group.state, %{armed: false, reclaimable: false})
+        }
+
+        case persist_sprung_trap(group, sprung) do
+          :ok -> {:ok, %{group_id: group.group_id, expires_at: expires_at}}
+          {:error, _reason} = error -> error
+        end
+
+      {:error, _reason} = error ->
+        error
+    end
+  end
+
+  defp persist_sprung_trap(%Group{visible?: true} = original, %Group{} = sprung) do
+    case Storage.get_cells_by_group(original.group_id) do
+      [] -> {:error, :not_materialized}
+      [_cell | _cells] -> Storage.update(sprung)
+    end
+  end
+
+  defp persist_sprung_trap(%Group{visible?: false} = original, %Group{} = sprung) do
+    case Storage.get_cells_by_group(original.group_id) do
+      [] ->
+        :ok = Storage.update(sprung)
+
+        case materialize_visible_cells(sprung, []) do
+          {:ok, _cells} ->
+            sprung |> reconcile_group() |> publish_spawn()
+
+          {:error, _reason} = error ->
+            rollback_trap_materialization(original)
+            error
+        end
+
+      [_cell | _cells] ->
+        {:error, :already_materialized}
+    end
+  end
+
+  defp reclaim_trap_now(owner, map_name, x, y) do
+    groups = map_name |> Storage.get_groups_at_cell(x, y) |> Enum.sort_by(& &1.group_id)
+
+    case select_trap(groups, &reclaim_eligibility(&1, owner)) do
+      {:ok, %Group{state: %{trap_item: item_id}} = group} ->
+        cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
+        {:ok, %{group_id: group.group_id, item_id: item_id}}
+
+      {:error, _reason} = error ->
+        error
+    end
+  end
+
+  defp reveal_traps_now(map_name, x, y, range) do
+    with {:ok, groups} <- hidden_supported_traps(map_name, x, y, range) do
+      groups
+      |> Enum.reduce_while({:ok, []}, &reveal_trap_step/2)
+      |> case do
+        {:ok, transitions} -> {:ok, publish_revealed_traps(transitions)}
+        error -> error
+      end
+    end
+  end
+
+  defp publish_revealed_traps(transitions) do
+    transitions = Enum.reverse(transitions)
+    Enum.each(transitions, fn {_original, visible} -> publish_revealed_trap(visible) end)
+    Enum.map(transitions, fn {_original, visible} -> visible.group_id end)
+  end
+
+  defp reveal_trap_step(group, {:ok, transitions}) do
+    case reveal_trap(group) do
+      {:ok, visible} ->
+        {:cont, {:ok, [{group, visible} | transitions]}}
+
+      {:error, _reason} = error ->
+        rollback_revealed_traps(transitions)
+        {:halt, error}
+    end
+  end
+
+  defp rollback_revealed_traps(transitions) do
+    Enum.each(transitions, fn {original, _visible} ->
+      rollback_trap_materialization(original)
+    end)
+  end
+
+  defp hidden_supported_traps(map_name, x, y, range) do
+    map_name
+    |> groups_in_area(x, y, range)
+    |> Enum.reduce_while({:ok, []}, fn
+      %Group{visible?: true}, result ->
+        {:cont, result}
+
+      %Group{} = group, {:ok, groups} ->
+        case trap_state(group) do
+          {:ok, _state} -> {:cont, {:ok, [group | groups]}}
+          {:error, :unsupported_trap} -> {:cont, {:ok, groups}}
+          {:error, :invalid_trap_state} = error -> {:halt, error}
+        end
+    end)
+    |> case do
+      {:ok, groups} -> {:ok, Enum.reverse(groups)}
+      error -> error
+    end
+  end
+
+  defp groups_in_area(map_name, x, y, range) do
+    groups =
+      for cell_x <- (x - range)..(x + range),
+          cell_y <- (y - range)..(y + range),
+          group <- Storage.get_groups_at_cell(map_name, cell_x, cell_y),
+          uniq: true,
+          do: group
+
+    Enum.sort_by(groups, & &1.group_id)
+  end
+
+  defp reveal_trap(%Group{} = group) do
+    case Storage.get_cells_by_group(group.group_id) do
+      [] ->
+        visible = %{group | visible?: true}
+        :ok = Storage.update(visible)
+
+        case materialize_visible_cells(visible, []) do
+          {:ok, _cells} ->
+            {:ok, visible}
+
+          {:error, _reason} = error ->
+            rollback_trap_materialization(group)
+            error
+        end
+
+      [_cell | _cells] ->
+        {:error, :already_materialized}
+    end
+  end
+
+  defp publish_revealed_trap(%Group{} = group),
+    do: group |> reconcile_group() |> publish_spawn()
+
+  defp rollback_trap_materialization(%Group{} = original) do
+    original.group_id
+    |> Storage.get_cells_by_group()
+    |> Enum.each(&remove_cell/1)
+
+    Storage.update(original)
+  end
+
+  defp select_trap([], _eligibility), do: {:error, :not_found}
+
+  defp select_trap(groups, eligibility) do
+    results = Enum.map(groups, &{&1, eligibility.(&1)})
+
+    case Enum.find(results, fn {_group, result} -> result == :eligible end) do
+      {group, :eligible} ->
+        {:ok, group}
+
+      nil ->
+        {_group, {:error, reason}} =
+          Enum.find(results, fn {_group, result} -> result != {:error, :unsupported_trap} end) ||
+            hd(results)
+
+        {:error, reason}
+    end
+  end
+
+  defp spring_eligibility(%Group{} = group) do
+    case trap_state(group) do
+      {:ok, :armed} -> :eligible
+      {:ok, :spent} -> {:error, :already_spent}
+      {:error, _reason} = error -> error
+    end
+  end
+
+  defp reclaim_eligibility(%Group{} = group, owner) do
+    case trap_state(group) do
+      {:ok, :armed} when {group.caster_type, group.caster_id} == owner -> :eligible
+      {:ok, :armed} -> {:error, :not_owner}
+      {:ok, :spent} -> {:error, :already_spent}
+      {:error, _reason} = error -> error
+    end
+  end
+
+  defp trap_state(%Group{state: %{armed: armed, reclaimable: reclaimable, trap_item: trap_item}})
+       when is_boolean(armed) and is_boolean(reclaimable) and is_integer(trap_item) and
+              trap_item > 0 do
+    case {armed, reclaimable} do
+      {true, true} -> {:ok, :armed}
+      {false, false} -> {:ok, :spent}
+      _ -> {:error, :invalid_trap_state}
+    end
+  end
+
+  defp trap_state(%Group{state: state}) do
+    if Enum.any?([:armed, :reclaimable, :trap_item], &Map.has_key?(state, &1)) do
+      {:error, :invalid_trap_state}
+    else
+      {:error, :unsupported_trap}
+    end
+  end
 
   defp register_invisible_group(%Group{} = group) do
     :ok = remove_replaced_group(group.group_id)
