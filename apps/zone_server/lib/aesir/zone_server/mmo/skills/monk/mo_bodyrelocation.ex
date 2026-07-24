@@ -82,8 +82,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBodyrelocation do
   destination is a clean no-op.
   """
   @impl Active
-  @spec mob_cast(MobState.t(), tuple(), pos_integer(), Definition.t(), map()) ::
-          {:ok, MobState.t()}
+  @spec mob_cast(MobState.t(), tuple(), pos_integer(), Definition.t(), map()) :: :ok
   def mob_cast(%MobState{} = caster, {:unit, unit_type, target_id}, _level, _definition, _row) do
     with {:ok, {tx, ty, map_name}} <- SpatialIndex.get_unit_position(unit_type, target_id),
          true <- map_name == caster.map_name,
@@ -93,10 +92,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBodyrelocation do
       relocate(caster.instance_id, dest_x, dest_y)
     end
 
-    {:ok, caster}
+    :ok
   end
 
-  def mob_cast(%MobState{} = caster, _target, _level, _definition, _row), do: {:ok, caster}
+  def mob_cast(%MobState{}, _target, _level, _definition, _row), do: :ok
 
   # The walkable cell adjacent to the target nearest the caster.
   defp relocation_cell(%MobState{x: mx, y: my, map_name: map}, tx, ty) do

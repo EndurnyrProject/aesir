@@ -7,13 +7,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler do
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
   alias Aesir.ZoneServer.Unit.Player.StateCommit
 
-  @type session_state :: %{
-          required(:game_state) => PlayerState.t(),
-          required(:connection_pid) => pid()
-        }
+  @type session_state :: SessionState.t()
 
   defmodule TimerPlan do
     @moduledoc false

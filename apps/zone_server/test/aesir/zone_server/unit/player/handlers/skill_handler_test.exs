@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
@@ -116,7 +117,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       |> put_in([Access.key!(:current_state), Access.key!(:sp)], 30)
       |> put_in([Access.key!(:progression), Access.key!(:learned_skills)], %{264 => 1})
 
-    %{connection_pid: self(), game_state: %{base | stats: stats}}
+    %SessionState{connection_pid: self(), game_state: %{base | stats: stats}}
   end
 
   # Real PlayerState used for the timed-cast path, where transition_to needs a
@@ -133,7 +134,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
     game_state = %{base | action_state: action_state, stats: stats}
 
-    %{connection_pid: self(), game_state: game_state}
+    %SessionState{connection_pid: self(), game_state: game_state}
   end
 
   # Real Swordman PlayerState carrying one learned SM_SWORD level, used to drive
@@ -146,7 +147,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       |> put_in([Access.key!(:progression), Access.key!(:job_id)], 1)
       |> put_in([Access.key!(:progression), Access.key!(:learned_skills)], %{2 => 3})
 
-    %{connection_pid: self(), game_state: %{base | stats: stats}}
+    %SessionState{connection_pid: self(), game_state: %{base | stats: stats}}
   end
 
   defp character do
@@ -373,7 +374,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       assert {deferred_result, retained} = SkillHandler.take_deferred_skill_result(deferred)
       assert deferred_result == deferred.deferred_skill_result
-      refute Map.has_key?(retained, :deferred_skill_result)
+      assert retained.deferred_skill_result == nil
     end
 
     test "timed deferred results retain the completion outcome without commitment" do
@@ -429,7 +430,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
                SkillHandler.handle_spirit_absorb_result(pending, token, 2000, 2)
 
       assert settled.game_state.stats.current_state.sp == 39
-      refute Map.has_key?(settled, :deferred_skill_result)
+      assert settled.deferred_skill_result == nil
     end
 
     test "timeout clears a deferred absorb and a late result is ignored" do
@@ -445,7 +446,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       %{token: token} = pending.deferred_skill_result
 
       assert {:noreply, timed_out} = SkillHandler.handle_deferred_timeout(pending, token)
-      refute Map.has_key?(timed_out, :deferred_skill_result)
+      assert timed_out.deferred_skill_result == nil
       assert timed_out.game_state.stats.current_state.sp == 45
 
       assert {:noreply, ^timed_out} =
@@ -550,7 +551,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         casting_state(30)
         |> put_in(
           [
-            :game_state,
+            Access.key!(:game_state),
             Access.key!(:stats),
             Access.key!(:progression),
             Access.key!(:learned_skills)
@@ -593,7 +594,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         |> Map.put(:pending_skill_menu, nil)
         |> put_in(
           [
-            :game_state,
+            Access.key!(:game_state),
             Access.key!(:stats),
             Access.key!(:progression),
             Access.key!(:learned_skills)
@@ -859,7 +860,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
           %{skill_id: 29, skill_level: 1, target: {:unit, 2000}}
         )
 
-      state = %{connection_pid: self(), game_state: moving}
+      state = %SessionState{connection_pid: self(), game_state: moving}
 
       assert {:noreply, new_state} = SkillHandler.handle_reached_skill_position(state)
 
@@ -1379,7 +1380,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
           %{skill_id: 29, skill_level: 1, target: {:unit, 2000}, combat_target_id: 2000}
         )
 
-      state = %{connection_pid: self(), game_state: moving}
+      state = %SessionState{connection_pid: self(), game_state: moving}
 
       assert {:noreply, new_state} = SkillHandler.handle_reached_skill_position(state)
 

@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspiritsTest do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
@@ -62,7 +63,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspiritsTest do
     stub_commit()
 
     game_state = player_state(1, 100, %{262 => 1}) |> with_spheres(2)
-    state = %{connection_pid: self(), game_state: game_state}
+    state = %SessionState{connection_pid: self(), game_state: game_state}
 
     assert {:noreply, casting} = SkillHandler.handle_use_skill(state, 262, 1, 1)
     token = casting.game_state.casting.token

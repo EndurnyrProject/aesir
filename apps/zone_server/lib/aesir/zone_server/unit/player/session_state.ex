@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
     field :connection_monitor_ref, reference() | nil, default: nil
     field :interaction_lock, interaction_lock() | nil, default: nil
     field :pending_skill_menu, map() | nil, default: nil
+    field :deferred_skill_result, map() | nil, default: nil
     field :pending_party_invite, map() | nil, default: nil
     field :pending_guild_invite, map() | nil, default: nil
   end

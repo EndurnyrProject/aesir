@@ -265,7 +265,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   defp dispatch_cast(%{game_state: game_state} = state, skill_id, level, target, locked) do
-    if Map.has_key?(state, :deferred_skill_result) do
+    if state.deferred_skill_result do
       report_cast_failure(skill_id, game_state.character_id, :busy)
       {:noreply, state}
     else
@@ -302,16 +302,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   @doc "Returns and clears an unsettled deferred skill result."
-  @spec take_deferred_skill_result(map()) :: {map() | nil, map()}
+  @spec take_deferred_skill_result(SessionState.t()) :: {map() | nil, SessionState.t()}
   def take_deferred_skill_result(state) do
     pending = Map.get(state, :deferred_skill_result)
     cancel_deferred_timer(pending)
-    {pending, Map.delete(state, :deferred_skill_result)}
+    {pending, Map.replace(state, :deferred_skill_result, nil)}
   end
 
   @doc "Settles a matching Absorb Spirit Sphere reply against current caster state."
-  @spec handle_spirit_absorb_result(map(), reference(), non_neg_integer(), non_neg_integer()) ::
-          {:noreply, map()}
+  @spec handle_spirit_absorb_result(
+          SessionState.t(),
+          reference(),
+          non_neg_integer(),
+          non_neg_integer()
+        ) :: {:noreply, SessionState.t()}
   def handle_spirit_absorb_result(
         %{deferred_skill_result: %{token: token, target_id: target_id} = pending} = state,
         token,
@@ -319,7 +323,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         count
       ) do
     cancel_deferred_timer(pending)
-    state = Map.delete(state, :deferred_skill_result)
+    state = %{state | deferred_skill_result: nil}
 
     case Interpreter.settle_deferred(state.game_state, pending.descriptor) do
       {:ok, charged} ->
@@ -350,19 +354,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   def handle_spirit_absorb_result(state, _token, _target_id, _count), do: {:noreply, state}
 
   @doc "Drops a matching deferred skill after its one-second reply window."
-  @spec handle_deferred_timeout(map(), reference()) :: {:noreply, map()}
+  @spec handle_deferred_timeout(SessionState.t(), reference()) :: {:noreply, SessionState.t()}
   def handle_deferred_timeout(
         %{deferred_skill_result: %{token: token} = pending} = state,
         token
       ) do
-    state = Map.delete(state, :deferred_skill_result)
+    state = %{state | deferred_skill_result: nil}
     {:noreply, maybe_resume_lock(state, pending.combat_target_id)}
   end
 
   def handle_deferred_timeout(state, _token), do: {:noreply, state}
 
   @doc "Cancels a pending deferred skill without charging or resuming combat."
-  @spec cancel_deferred(map()) :: map()
+  @spec cancel_deferred(SessionState.t()) :: SessionState.t()
   def cancel_deferred(state) do
     {_pending, state} = take_deferred_skill_result(state)
     state
@@ -413,16 +417,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     token = make_ref()
     timer_ref = Process.send_after(self(), {:deferred_skill_timeout, token}, 1_000)
 
-    state =
+    state = %{
       state
-      |> Map.put(:game_state, game_state)
-      |> Map.put(:deferred_skill_result, %{
-        descriptor: descriptor,
-        target_id: target_id,
-        token: token,
-        timer_ref: timer_ref,
-        combat_target_id: locked
-      })
+      | game_state: game_state,
+        deferred_skill_result: %{
+          descriptor: descriptor,
+          target_id: target_id,
+          token: token,
+          timer_ref: timer_ref,
+          combat_target_id: locked
+        }
+    }
 
     SpiritExchangeHandler.request_absorb(state, target_id, token)
     state

@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerFreecastTest do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -202,7 +203,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerFreecastTest do
 
     game_state = %{moving | walk_path: [{51, 50}], movement_state: :moving}
 
-    %{game_state: game_state, connection_pid: self()}
+    %SessionState{game_state: game_state, connection_pid: self()}
   end
 
   defp character do

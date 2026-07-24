@@ -8,7 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
 
   use TypedStruct
 
-  @type stage :: :idle | :quadruple | :thrust
+  @type stage :: :idle | :quadruple | :thrust | :extremity
   @type target :: {:player | :mob | :skill_unit, non_neg_integer()}
 
   typedstruct do

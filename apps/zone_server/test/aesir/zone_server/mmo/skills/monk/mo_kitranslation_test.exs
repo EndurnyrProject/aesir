@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoKitranslationTest do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
@@ -70,7 +71,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoKitranslationTest do
     target = player_state(2, party_id: 10)
     :ok = UnitRegistry.register_player(target, self())
     :ok = SpatialIndex.add_unit(:player, 2, 50, 50, "prontera")
-    state = %{connection_pid: self(), game_state: source}
+    state = %SessionState{connection_pid: self(), game_state: source}
 
     assert {:noreply, casting} = SkillHandler.handle_use_skill(state, 1_015, 1, 2)
     token = casting.game_state.casting.token

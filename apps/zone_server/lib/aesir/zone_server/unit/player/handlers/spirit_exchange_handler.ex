@@ -11,7 +11,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -19,10 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandler do
   @sphere_cap 5
   @coin_jobs [:gunslinger, :rebellion, :baby_gunslinger, :baby_rebellion]
 
-  @type session_state :: %{
-          required(:game_state) => PlayerState.t(),
-          required(:connection_pid) => pid()
-        }
+  @type session_state :: SessionState.t()
 
   @type request :: %{
           required(:source_id) => non_neg_integer(),
@@ -31,7 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandler do
         }
 
   @doc "Sends one sphere-delivery request to the target's current session."
-  @spec transfer(%{required(:game_state) => PlayerState.t()}, non_neg_integer()) :: :ok
+  @spec transfer(session_state(), non_neg_integer()) :: :ok
   def transfer(%{game_state: source}, target_id) do
     dispatch(target_id, {:receive_spirit_sphere, request(source, target_id)})
   end
@@ -53,11 +50,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandler do
   end
 
   @doc "Sends one absorb request to the target's current session."
-  @spec request_absorb(
-          %{required(:game_state) => PlayerState.t()},
-          non_neg_integer(),
-          reference()
-        ) :: :ok
+  @spec request_absorb(session_state(), non_neg_integer(), reference()) :: :ok
   def request_absorb(%{game_state: source}, target_id, token) do
     dispatch(
       target_id,
