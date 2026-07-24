@@ -2,8 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Layout do
   @moduledoc """
   Pure helpers computing skill-unit footprint cell-sets from a center and shape.
 
-  Keeps footprint geometry in one place. Only the filled Chebyshev square is
-  needed now (Storm Gust's 5x5); line and single-cell shapes drop in here later.
+  Keeps footprint geometry in one place: the filled Chebyshev square (Storm
+  Gust's 5x5), the straight line (Fire Wall), and the plus/cross (Grand
+  Cross).
   """
 
   @typedoc "A single map cell."
@@ -31,5 +32,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Layout do
   @spec line(cell(), {integer(), integer()}, non_neg_integer()) :: [cell()]
   def line({cx, cy}, {ux, uy}, half) do
     for d <- -half..half, do: {cx + d * ux, cy + d * uy}
+  end
+
+  @doc """
+  Returns the plus/cross shape relative to the origin `{0, 0}`: the center
+  cell plus `arm_length` cells along each of the 4 cardinal directions
+  (Grand Cross's footprint, always self-centered on the caster).
+
+  `arm_length` 2 yields exactly 9 cells: the center and 2 cells in each of
+  north, south, east, and west. Callers translate the result onto the map by
+  adding the caster's cell to every returned offset.
+  """
+  @spec cross(non_neg_integer()) :: [cell()]
+  def cross(arm_length) do
+    arms =
+      for {ux, uy} <- [{1, 0}, {-1, 0}, {0, 1}, {0, -1}],
+          d <- 1..arm_length//1,
+          do: {d * ux, d * uy}
+
+    [{0, 0} | arms]
   end
 end

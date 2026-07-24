@@ -47,6 +47,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget do
   def combat_unit?({_unit_type, _unit_id}), do: true
 
   @doc """
+  True when `target_ref` should be excluded from an offensive selection
+  because it is the acting caster's own unit.
+
+  By default a caster never hits itself with its own ground unit or splash;
+  a skill that declares `hits_caster: true` (Grand Cross) is the one
+  exception -- the caster then stays eligible for its own unit's targets.
+  """
+  @spec own_caster?({atom(), integer()}, {atom(), integer()}, boolean()) :: boolean()
+  def own_caster?(_target_ref, _caster_ref, true), do: false
+  def own_caster?(target_ref, caster_ref, false), do: target_ref == caster_ref
+
+  @doc """
   Resolves a skill-unit `target_id` to its owning manager pid and live cell.
 
   Yields `{:ok, manager_pid, cell, :skill_unit}` (the combat target-state

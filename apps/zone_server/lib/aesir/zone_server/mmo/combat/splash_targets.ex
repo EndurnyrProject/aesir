@@ -22,33 +22,59 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
 
   The spatial index filters by Manhattan distance (a diamond); we query a Manhattan
   radius of `2 * radius` so the full Chebyshev square is covered, then post-filter.
+
+  `hits_caster` (default `false`) is the Grand Cross exception: when `true`
+  the caster is not excluded from its own selection on the caster-identity
+  check alone.
   """
-  @spec select(String.t(), {integer(), integer()}, non_neg_integer(), integer() | map()) ::
-          [{atom(), integer()}]
-  def select(map_name, {cx, cy}, radius, caster) do
+  @spec select(
+          String.t(),
+          {integer(), integer()},
+          non_neg_integer(),
+          integer() | map(),
+          boolean()
+        ) :: [{atom(), integer()}]
+  def select(map_name, {cx, cy}, radius, caster, hits_caster \\ false) do
     caster = resolve_splash_caster(caster)
+    caster_ref = {caster.unit_type, caster.unit_id}
 
     map_name
     |> SpatialIndex.get_all_units_in_range(cx, cy, radius * 2)
     |> Enum.filter(fn target_ref ->
       CombatTarget.combat_unit?(target_ref) and
-        target_ref != {caster.unit_type, caster.unit_id} and
-        offensive_target_in_square?(caster, target_ref, cx, cy, radius)
+        not CombatTarget.own_caster?(target_ref, caster_ref, hits_caster) and
+        offensive_target_in_square?(caster, target_ref, caster_ref, cx, cy, radius)
     end)
   end
 
-  defp offensive_target_in_square?(caster, {unit_type, target_id}, cx, cy, radius) do
+  defp offensive_target_in_square?(
+         caster,
+         {unit_type, target_id} = target_ref,
+         caster_ref,
+         cx,
+         cy,
+         radius
+       ) do
     case TargetResolver.resolve(unit_type, target_id) do
       {:ok, _pid, target_state, _target_type} ->
         target = target_state.__struct__.to_combatant(target_state)
 
         Unit.living?(target_state) and
-          splash_enemy?(caster, target) and splash_hit?(target_state, cx, cy, radius)
+          splash_hittable?(caster, target, target_ref, caster_ref) and
+          splash_hit?(target_state, cx, cy, radius)
 
       _ ->
         false
     end
   end
+
+  # Hits its own caster only reaches here when the skill allowed it (Grand
+  # Cross), past the identity exclusion above; the general enemy check would
+  # otherwise reject the caster as its own target.
+  defp splash_hittable?(_caster, _target, target_ref, target_ref), do: true
+
+  defp splash_hittable?(caster, target, _target_ref, _caster_ref),
+    do: splash_enemy?(caster, target)
 
   defp resolve_splash_caster(%{unit_type: _unit_type} = caster), do: caster
 

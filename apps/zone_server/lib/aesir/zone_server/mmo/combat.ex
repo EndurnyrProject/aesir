@@ -183,7 +183,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   @doc """
   Selects the valid offensive targets for a center+radius splash/footprint.
 
-  See `Aesir.ZoneServer.Mmo.Combat.SplashTargets.select/4`.
+  `hits_caster` (default `false`) lets a ground unit's caster be its own
+  target (Grand Cross); see `Aesir.ZoneServer.Mmo.Combat.SplashTargets.select/5`.
   """
-  defdelegate splash_targets(map_name, center, radius, caster), to: SplashTargets, as: :select
+  defdelegate splash_targets(map_name, center, radius, caster, hits_caster \\ false),
+    to: SplashTargets,
+    as: :select
 end

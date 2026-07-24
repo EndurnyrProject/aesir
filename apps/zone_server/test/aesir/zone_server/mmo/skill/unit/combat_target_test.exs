@@ -93,6 +93,30 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.CombatTargetTest do
     assert {:error, :not_found} = Combat.execute_attack(attacker, player, cell.cell_id)
   end
 
+  describe "own_caster?/3" do
+    test "excludes the caster's own ref by default" do
+      assert CombatTarget.own_caster?({:player, 1}, {:player, 1}, false)
+    end
+
+    test "does not exclude a different unit" do
+      refute CombatTarget.own_caster?({:mob, 2}, {:player, 1}, false)
+    end
+
+    test "never excludes when hits_caster is true, even for the caster's own ref" do
+      refute CombatTarget.own_caster?({:player, 1}, {:player, 1}, true)
+    end
+  end
+
+  describe "Group.hits_caster?/1" do
+    test "true when the group state declares hits_caster: true" do
+      assert group(state: %{hits_caster: true}) |> Group.hits_caster?()
+    end
+
+    test "false by default" do
+      refute group() |> Group.hits_caster?()
+    end
+  end
+
   defp group do
     %Group{
       group_id: 1,

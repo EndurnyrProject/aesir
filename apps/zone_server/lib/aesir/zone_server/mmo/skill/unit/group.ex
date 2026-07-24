@@ -61,4 +61,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
   @spec ignores_land_protector?(t()) :: boolean()
   def ignores_land_protector?(%__MODULE__{state: %{ignore_land_protector: true}}), do: true
   def ignores_land_protector?(%__MODULE__{}), do: false
+
+  @doc """
+  Whether this group's ground unit may damage its own caster (Grand Cross),
+  overriding the default targeting exclusion of the caster from its own unit.
+  """
+  @spec hits_caster?(t()) :: boolean()
+  def hits_caster?(%__MODULE__{state: %{hits_caster: true}}), do: true
+  def hits_caster?(%__MODULE__{}), do: false
 end

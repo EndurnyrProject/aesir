@@ -34,4 +34,33 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.LayoutTest do
       assert Layout.line({100, 100}, {0, 1}, 1) == [{100, 99}, {100, 100}, {100, 101}]
     end
   end
+
+  describe "cross/1" do
+    test "arm length 2 returns exactly 9 cells" do
+      cells = Layout.cross(2)
+
+      assert length(cells) == 9
+      assert Enum.uniq(cells) == cells
+    end
+
+    test "arm length 2 returns the center plus 2 cells per cardinal direction" do
+      expected = [
+        {0, 0},
+        {1, 0},
+        {2, 0},
+        {-1, 0},
+        {-2, 0},
+        {0, 1},
+        {0, 2},
+        {0, -1},
+        {0, -2}
+      ]
+
+      assert Enum.sort(Layout.cross(2)) == Enum.sort(expected)
+    end
+
+    test "arm length 0 returns only the center cell" do
+      assert Layout.cross(0) == [{0, 0}]
+    end
+  end
 end
