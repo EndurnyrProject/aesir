@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cost
+  alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross
@@ -54,7 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
     test "Catalog.by_id/1 resolves CR_GRANDCROSS" do
       assert definition().name == :cr_grandcross
       assert definition().max_level == 10
-      assert definition().target_type == :ground
+      assert definition().target_type == :self
       assert definition().damage_type == :damage
       assert definition().element == :holy
       assert definition().range == 9
@@ -64,8 +65,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
       assert definition().sp_cost == [37, 44, 51, 58, 65, 72, 79, 86, 93, 100]
     end
 
-    test "Catalog.ground_module_for/1 resolves cr_grandcross" do
+    test "Catalog active and ground modules resolve cr_grandcross" do
+      assert {:ok, CrGrandcross} = Catalog.active_module_for(:cr_grandcross)
       assert {:ok, CrGrandcross} = Catalog.ground_module_for(:cr_grandcross)
+    end
+
+    test "cast places the field at the caster cell" do
+      caster = %{x: 123, y: 456}
+
+      expect(Unit, :place, fn ^caster, :cr_grandcross, 3, {123, 456} ->
+        {:ok, :group}
+      end)
+
+      assert {:ok, ^caster} = CrGrandcross.cast(caster, :self, 3, definition())
     end
   end
 

@@ -42,13 +42,14 @@ defmodule Aesir.ZoneServer.Integration.CrusaderSkillsTest do
   alias Aesir.Commons.ClusterTestHelper
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
-  alias Aesir.Net.GroundSkillCast
+  alias Aesir.Net.GroundSkill
   alias Aesir.Net.SkillCast
   alias Aesir.Repo
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage, as: SkillUnitStorage
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguard
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefender
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshield
@@ -260,12 +261,28 @@ defmodule Aesir.ZoneServer.Integration.CrusaderSkillsTest do
       cost = div(max_hp * 20, 100)
       mob_hp = current_mob_hp(undead.pid)
 
-      simulate_incoming_message(crusader.pid, %GroundSkillCast{
+      flush_packets()
+
+      simulate_incoming_message(crusader.pid, %SkillCast{
         skill_id: @cr_grandcross,
         level: 10,
-        x: 150,
-        y: 150
+        target_id: crusader.character.id
       })
+
+      assert eventually(fn ->
+               match?(
+                 %{center: {150, 150}, origin: {150, 150}},
+                 Enum.find(SkillUnitStorage.all(), &(&1.skill_name == :cr_grandcross))
+               )
+             end)
+
+      assert_packet_sent_with(GroundSkill, fn packet ->
+        assert packet.skill_id == @cr_grandcross
+        assert packet.src_id == crusader.character.id
+        assert packet.level == 10
+        assert packet.x == 150
+        assert packet.y == 150
+      end)
 
       assert eventually(fn -> current_hp(crusader.pid) <= max_hp - cost end, 120)
 

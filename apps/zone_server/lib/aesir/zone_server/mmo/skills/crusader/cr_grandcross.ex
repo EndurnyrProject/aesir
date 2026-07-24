@@ -25,7 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
     name: :cr_grandcross,
     display_name: "Grand Cross",
     max_level: 10,
-    target_type: :ground,
+    target_type: :self,
     damage_type: :damage,
     damage_kind: :magic,
     element: :holy,
@@ -37,13 +37,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
     cast_time: List.duplicate(1_000, 10)
 
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Ground
+  alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
   alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
+  @behaviour Active
   @behaviour Ground
 
   @arm_length 2
@@ -51,6 +54,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
   @blind_races [:undead, :demon]
   @root_duration 950
   @self_damage_scale 0.5
+
+  @impl Active
+  def cast(%{instance_id: id} = caster, {:unit, id}, level, definition),
+    do: cast(caster, :self, level, definition)
+
+  def cast(caster, :self, level, _definition) do
+    case Unit.place(caster, :cr_grandcross, level, {caster.x, caster.y}) do
+      {:ok, _group} -> {:ok, caster}
+      {:error, _reason} = error -> error
+    end
+  end
 
   @impl Ground
   def on_place(%Group{caster_type: :player, caster_id: caster_id} = group) do
