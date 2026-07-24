@@ -35,7 +35,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Denylist do
     87 => "WZ_ICEWALL validate/4 pattern-matches %{character_id: _}, no mob-caster clause",
     88 => "WZ_FROSTNOVA cast/4 pattern-matches %{character_id: _}, no mob-caster clause",
     90 => "WZ_EARTHSPIKE skill_ratio/1 pattern-matches %{character_id: _}, no mob-caster clause",
-    150 => "TF_BACKSLIDING cast/4 pattern-matches %{character_id: _}, no mob-caster clause"
+    150 => "TF_BACKSLIDING cast/4 pattern-matches %{character_id: _}, no mob-caster clause",
+    255 => "CR_DEVOTION party/devotion semantics are player-only, no mob-caster clause"
   }
 
   @doc "Whether `skill_id` is denylisted for mob casting."

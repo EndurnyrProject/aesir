@@ -37,7 +37,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefender do
   @impl Active
   @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, Active.caster()} | {:error, atom()}
-  def cast(caster, :self, level, _definition) do
+  def cast(caster, :self, level, _definition), do: toggle(caster, level)
+  def cast(caster, {:unit, _id}, level, _definition), do: toggle(caster, level)
+
+  @spec toggle(Active.caster(), pos_integer()) :: {:ok, Active.caster()} | {:error, atom()}
+  defp toggle(caster, level) do
     unit_type = caster.__struct__.get_unit_type(caster)
     unit_id = caster.__struct__.get_unit_id(caster)
 
