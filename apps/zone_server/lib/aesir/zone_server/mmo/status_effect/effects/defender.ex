@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Defender do
     no_dispel: true,
     properties: [:buff],
     calc_flags: [:aspd],
+    icon: :defender,
     permanent: true,
     no_save: true
 

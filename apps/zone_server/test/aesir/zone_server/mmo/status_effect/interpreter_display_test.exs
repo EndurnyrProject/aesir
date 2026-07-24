@@ -4,6 +4,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterDisplayTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Net.StatusChange
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Defender
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
@@ -207,6 +209,37 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterDisplayTest do
   end
 
   describe "end-to-end through Broadcast (tick expiry)" do
+    test "Defender application and removal broadcast EFST 62 lifecycle" do
+      target_id = 1
+      test_pid = self()
+
+      setup_unit_mock(target_id)
+      Registry.register_module(Defender)
+
+      Mimic.copy(Aesir.ZoneServer.Unit.SpatialIndex)
+      Mimic.copy(Aesir.ZoneServer.Unit.Broadcast)
+
+      stub(Aesir.ZoneServer.Unit.SpatialIndex, :get_unit_position, fn _type, _id ->
+        {:ok, {100, 100, "prontera"}}
+      end)
+
+      stub(Aesir.ZoneServer.Unit.Broadcast, :to_in_range, fn _map,
+                                                             _x,
+                                                             _y,
+                                                             _range,
+                                                             packet,
+                                                             _opts ->
+        send(test_pid, {:broadcast, packet})
+        :ok
+      end)
+
+      :ok = Interpreter.apply_status(:player, target_id, :sc_defender, val1: 3)
+      assert_received {:broadcast, %StatusChange{unit_id: ^target_id, efst: 62, on: true}}
+
+      :ok = Interpreter.remove_status(:player, target_id, :sc_defender)
+      assert_received {:broadcast, %StatusChange{unit_id: ^target_id, efst: 62, on: false}}
+    end
+
     test "a tick-driven expiry broadcasts StatusChange{on: false}" do
       target_id = 1
       test_pid = self()
