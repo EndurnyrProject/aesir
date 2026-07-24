@@ -137,10 +137,10 @@ defmodule Aesir.Commons.Models.Character do
     field :head_mid, :integer, default: 0
     field :head_bottom, :integer, default: 0
     field :robe, :integer, default: 0
-    field :last_map, :string, default: "new_1-1.gat"
+    field :last_map, :string, default: "new_zone01"
     field :last_x, :integer, default: 53
     field :last_y, :integer, default: 111
-    field :save_map, :string, default: "new_1-1.gat"
+    field :save_map, :string, default: "new_zone01"
     field :save_x, :integer, default: 53
     field :save_y, :integer, default: 111
     field :partner_id, :integer, default: 0
@@ -290,10 +290,10 @@ defmodule Aesir.Commons.Models.Character do
       head_mid: 0,
       head_bottom: 0,
       robe: 0,
-      last_map: "new_1-1.gat",
+      last_map: "new_zone01",
       last_x: 53,
       last_y: 111,
-      save_map: "new_1-1.gat",
+      save_map: "new_zone01",
       save_x: 53,
       save_y: 111,
       option: 0,

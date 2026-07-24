@@ -1,6 +1,6 @@
 # Aesir - Ragnarok Online Server Emulator
 
-<br>`[![](https://dcbadge.limes.pink/api/server/https://discord.gg/xGq832HYey)](https://discord.gg/xGq832HYey)`
+[![](https://dcbadge.limes.pink/api/server/https://discord.gg/xGq832HYey)](https://discord.gg/xGq832HYey)
 
 Aesir is an Elixir-based implementation of a Ragnarok Online server.
 

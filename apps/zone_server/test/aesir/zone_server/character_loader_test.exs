@@ -1,3 +1,5 @@
+==> commons
+Compiling 1 file (.ex)
 defmodule Aesir.ZoneServer.CharacterLoaderTest do
   use Aesir.DataCase, async: true
 
@@ -92,7 +94,7 @@ defmodule Aesir.ZoneServer.CharacterLoaderTest do
           char_num: 1,
           name: "NoPosition",
           class: 0,
-          last_map: "new_1-1.gat",
+          last_map: "new_zone01",
           last_x: nil,
           last_y: nil
         })

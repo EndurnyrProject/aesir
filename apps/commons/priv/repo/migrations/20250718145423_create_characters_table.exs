@@ -41,10 +41,10 @@ defmodule Aesir.Repo.Migrations.CreateCharactersTable do
       add :head_mid, :integer, default: 0
       add :head_bottom, :integer, default: 0
       add :robe, :integer, default: 0
-      add :last_map, :string, default: "new_1-1"
+      add :last_map, :string, default: "new_zone01"
       add :last_x, :integer, default: 53
       add :last_y, :integer, default: 111
-      add :save_map, :string, default: "new_1-1"
+      add :save_map, :string, default: "new_zone01"
       add :save_x, :integer, default: 53
       add :save_y, :integer, default: 111
       add :partner_id, :integer, default: 0
@@ -65,7 +65,7 @@ defmodule Aesir.Repo.Migrations.CreateCharactersTable do
       add :last_login, :naive_datetime
       add :title_id, :integer, default: 0
       add :show_equip, :integer, default: 0
-      
+
       timestamps()
     end
 
