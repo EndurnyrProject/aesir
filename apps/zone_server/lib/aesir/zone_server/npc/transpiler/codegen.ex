@@ -1803,6 +1803,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   defp render({:call, name, args}, env) do
     case CommandMap.call_read(name) do
+      {:ok, %{shape: :nullary, dsl: dsl}} when args == [] ->
+        "#{dsl}(ctx)"
+
+      {:ok, %{shape: :nullary}} ->
+        flag(:todo_mod)
+        "Todo.call!(#{atom_lit(name)}, [#{Enum.map_join(args, ", ", &render(&1, env))}])"
+
       {:ok, %{shape: :quest_check, dsl: dsl}} ->
         quest_check_call(dsl, name, args, env)
 

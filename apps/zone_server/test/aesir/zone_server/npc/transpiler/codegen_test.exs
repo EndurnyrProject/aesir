@@ -362,6 +362,35 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "todo(ctx"
   end
 
+  test "setfalcon and checkfalcon map to attached-player DSL calls" do
+    src =
+      gen!("""
+      if (CheckFalcon()) setfalcon;
+      setfalcon -1;
+      setfalcon 0;
+      close;
+      """)
+
+    assert src =~ "if Rathena.truthy?(checkfalcon(ctx)) do"
+    assert src =~ ~r/setfalcon\((ctx, )?true\)/
+    assert src =~ ~r/setfalcon\((ctx, )?-1 != 0\)/
+    assert src =~ ~r/setfalcon\((ctx, )?0 != 0\)/
+    refute src =~ "todo(ctx"
+    refute src =~ "Todo.call!(:CheckFalcon"
+  end
+
+  test "Falcon buildins keep unsupported char-id forms as TODOs" do
+    src =
+      gen!("""
+      if (checkfalcon(100)) close;
+      setfalcon 1, 100;
+      close;
+      """)
+
+    assert src =~ ~S|Todo.call!(:checkfalcon, [100])|
+    assert src =~ ~S|todo(:setfalcon, [1, 100])|
+  end
+
   test "setriding maps to set_riding, folding a numeric arg into a mount/dismount bool" do
     src =
       gen!("""

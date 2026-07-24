@@ -57,6 +57,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
   functions; `@call_reads` maps call-style reads (`countitem(id)`) the same
   way, plus one dedicated shape:
 
+  - `%{shape: :nullary, dsl: name}` — a read with no supported arguments
+    (`checkfalcon()`); any argument stays a stub.
   - `%{shape: :quest_check, dsl: name}` — `checkquest(id)` /
     `checkquest(id, HUNTING)` (and `questprogress`, the same core aliased):
     the default args-truncation rule (above) would silently drop the
@@ -104,6 +106,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "areaannounce" => %{shape: :announce, dsl: "areaannounce", fixed: 7},
     "dispbottom" => %{shape: :announce, dsl: "dispbottom", fixed: 1},
     "setcart" => %{shape: :opt1, dsl: "setcart"},
+    "setfalcon" => %{shape: :riding, dsl: "setfalcon"},
     "setriding" => %{shape: :riding, dsl: "set_riding"},
     "openstorage" => %{shape: :nullary, dsl: "openstorage"},
     "setquest" => %{dsl: "setquest", args: [:int]},
@@ -155,6 +158,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "gettimetick" => %{dsl: "gettimetick", args: [:int]},
     "checkre" => %{dsl: "checkre", args: [:int]},
     "vip_status" => %{dsl: "vip_status", args: [:int]},
+    "checkfalcon" => %{shape: :nullary, dsl: "checkfalcon"},
     "checkcart" => %{dsl: "checkcart", args: []},
     "basicskillcheck" => %{dsl: "basicskillcheck", args: []},
     "getskilllv" => %{dsl: "getskilllv", args: [:skill]},

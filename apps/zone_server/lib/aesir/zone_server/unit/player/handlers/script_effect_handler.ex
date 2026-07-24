@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
@@ -54,6 +55,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:openstorage}
           | {:setcart, non_neg_integer()}
           | {:set_riding, boolean()}
+          | {:set_falcon, boolean()}
           | {:refine, non_neg_integer(), integer(), RefineDatabase.cost_type(), boolean()}
           | {:repair, non_neg_integer()}
           | {:repairall}
@@ -292,6 +294,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   def apply_op({:set_riding, false}, state) do
     {:noreply, new_state} = MountHandler.dismount(state)
     {{:ok, new_state.game_state}, new_state}
+  end
+
+  def apply_op({:set_falcon, enabled?}, state) do
+    case FalconHandler.set_falcon(state, enabled?) do
+      {:ok, new_state} -> {{:ok, new_state.game_state}, new_state}
+      {:error, reason} -> {{:error, reason}, state}
+    end
   end
 
   def apply_op({:setquest, quest_id}, %{game_state: gs} = state) do

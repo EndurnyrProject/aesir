@@ -14,6 +14,8 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     status.
   """
 
+  import Bitwise
+
   require Logger
 
   alias Aesir.Commons.Models.InventoryItem
@@ -37,6 +39,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.MobManagement
+  alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
@@ -1342,6 +1345,25 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   @spec set_riding(Ctx.t(), boolean()) :: Ctx.t()
   def set_riding(%Ctx{status: {:error, _}} = ctx, _riding?), do: ctx
   def set_riding(%Ctx{} = ctx, riding?), do: apply_op(ctx, {:set_riding, riding?})
+
+  @doc """
+  Equips or dismisses the Falcon through the session seam. A zero flag
+  dismisses; every non-zero integer equips, matching rAthena truthiness.
+  """
+  @spec setfalcon(Ctx.t(), integer()) :: Ctx.t()
+  def setfalcon(%Ctx{status: {:error, _}} = ctx, _flag), do: ctx
+  def setfalcon(%Ctx{} = ctx, flag), do: apply_op(ctx, {:set_falcon, flag != 0})
+
+  @doc """
+  Whether the attached player has a Falcon: `1` when the Falcon option bit is
+  set, otherwise `0`. Detached contexts report `0`.
+  """
+  @spec checkfalcon(Ctx.t()) :: 0 | 1
+  def checkfalcon(%Ctx{game_state: nil}), do: 0
+
+  def checkfalcon(%Ctx{game_state: gs}) do
+    if (gs.option &&& Option.id(:falcon)) != 0, do: 1, else: 0
+  end
 
   @doc """
   Whether the player has a cart mounted (rAthena `checkcart`): `1` when

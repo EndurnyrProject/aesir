@@ -127,6 +127,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     end
   end
 
+  test "Falcon buildins map as an effect and nullary call read" do
+    assert {:ok, %{shape: :riding, dsl: "setfalcon"}} = CommandMap.command("setfalcon")
+    assert {:ok, %{shape: :nullary, dsl: "checkfalcon"}} = CommandMap.call_read("checkfalcon")
+    assert CommandMap.supported?("setfalcon")
+    assert CommandMap.supported?("CheckFalcon")
+  end
+
   test "setriding maps to the riding shape" do
     assert {:ok, %{shape: :riding, dsl: "set_riding"}} = CommandMap.command("setriding")
     assert CommandMap.supported?("setriding")

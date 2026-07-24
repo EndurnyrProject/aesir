@@ -11,6 +11,9 @@ defmodule Aesir.ZoneServer.NpcTranspilerIntegrationTest do
   use ExUnit.Case, async: false
   use Mimic
 
+  import Aesir.TestEtsSetup
+  import Bitwise
+
   @moduletag :integration
 
   @moduletag :capture_log
@@ -22,17 +25,28 @@ defmodule Aesir.ZoneServer.NpcTranspilerIntegrationTest do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.Option
+  alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtFalcon
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Npc.Transpiler.Codegen
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Interaction
   alias Aesir.ZoneServer.Script.NotImplementedError
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @jellopy 909
   @char_id 9101
   @gid 0x5000_0099
+
+  @falcon_fixture """
+  if (checkfalcon() == 0) setfalcon 1;
+  end;
+  """
 
   @fixture """
   mes "[Test Vendor]";
@@ -89,15 +103,51 @@ defmodule Aesir.ZoneServer.NpcTranspilerIntegrationTest do
       })
 
     [{module, _}] = Code.compile_string(source)
-    %{npc_module: module}
+
+    {:ok, falcon_source} =
+      Codegen.generate(@falcon_fixture, %{
+        module: "Aesir.ZoneServer.NpcTranspilerIntegrationTest.TestFalcon",
+        kind: :script,
+        source: "falcon_fixture.txt:1",
+        spawns: [%{map: "prontera", x: 11, y: 11, dir: 0, sprite: 58, name: "Test Falcon"}],
+        functions: %{}
+      })
+
+    [{falcon_module, _}] = Code.compile_string(falcon_source)
+    %{npc_module: module, falcon_module: falcon_module}
   end
+
+  setup :setup_ets_tables
 
   setup do
     Mimic.copy(CharacterPersistence)
     Mimic.copy(InventoryOps)
     Mimic.copy(Items)
+    Mimic.copy(UnitRegistry)
+    Mimic.copy(SpatialIndex)
+    Mimic.copy(Broadcast)
 
     stub(CharacterPersistence, :update_character, fn _, _, _ -> {:ok, %Character{}} end)
+
+    stub(UnitRegistry, :get_unit_info, fn _unit_type, unit_id ->
+      {:ok,
+       %{
+         unit_id: unit_id,
+         unit_type: :player,
+         race: :human,
+         element: :neutral,
+         element_level: 1,
+         boss_flag: false,
+         size: :medium,
+         stats: %{level: 50, base_level: 50, str: 10, agi: 10, vit: 10, int: 10, dex: 10, luk: 10}
+       }}
+    end)
+
+    stub(UnitRegistry, :update_unit_state, fn :player, @char_id, _game_state -> :ok end)
+
+    stub(SpatialIndex, :get_unit_position, fn :player, @char_id -> {:ok, {10, 10, "prontera"}} end)
+
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet, _opts -> :ok end)
 
     stub(Items, :by_id, fn @jellopy ->
       {:ok, %ItemDefinition{id: @jellopy, aegis_name: "Jellopy", name: "Jellopy", weight: 10}}
@@ -167,6 +217,19 @@ defmodule Aesir.ZoneServer.NpcTranspilerIntegrationTest do
     assert GenServer.call(session, :game_state).zeny == 100
   end
 
+  test "attached Falcon script executes concrete checkfalcon and setfalcon calls", %{
+    falcon_module: module
+  } do
+    {session, pid} = talk(module, zeny: 0, learned_skills: %{HtFalcon.definition().id => 1})
+    ref = Process.monitor(pid)
+
+    assert_receive {:DOWN, ^ref, :process, ^pid, :normal}, 500
+
+    game_state = GenServer.call(session, :game_state)
+    assert (game_state.option &&& Option.id(:falcon)) != 0
+    assert StatusStorage.has_status?(:player, @char_id, :sc_falcon)
+  end
+
   defp talk(module, opts) do
     game_state = %PlayerState{
       character_id: @char_id,
@@ -175,7 +238,7 @@ defmodule Aesir.ZoneServer.NpcTranspilerIntegrationTest do
       vars: %{},
       temp_vars: %{},
       inventory: %{},
-      stats: stats()
+      stats: stats(Keyword.get(opts, :learned_skills, %{}))
     }
 
     {:ok, session} = Session.start_link(%{connection_pid: self(), game_state: game_state})
@@ -199,19 +262,35 @@ defmodule Aesir.ZoneServer.NpcTranspilerIntegrationTest do
   defp choose(pid, choice),
     do: send(pid, {:npc_interact, %NpcInteract{npc_id: @gid, response: {:choice, choice}}})
 
-  defp stats do
-    %Aesir.ZoneServer.Unit.Player.Stats{
-      current_state: %Aesir.ZoneServer.Unit.Stats.CurrentState{hp: 100, sp: 10},
-      derived_stats: %Aesir.ZoneServer.Unit.Stats.DerivedStats{
-        max_hp: 500,
-        max_sp: 200,
-        aspd: 150
-      },
-      progression: %Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression{
-        base_level: 50,
-        job_level: 10,
-        job_id: 0
-      }
+  defp stats(learned_skills) do
+    %Character{
+      id: @char_id,
+      str: 10,
+      agi: 10,
+      vit: 10,
+      int: 10,
+      dex: 10,
+      luk: 10,
+      pow: 0,
+      sta: 0,
+      wis: 0,
+      spl: 0,
+      con: 0,
+      crt: 0,
+      base_level: 50,
+      job_level: 10,
+      base_exp: 0,
+      job_exp: 0,
+      class: 0,
+      skill_point: 0,
+      status_point: 0,
+      trait_point: 0,
+      hp: 100,
+      sp: 10,
+      ap: 0,
+      option: 0,
+      learned_skills: learned_skills
     }
+    |> Aesir.ZoneServer.Unit.Player.Stats.from_character()
   end
 end
