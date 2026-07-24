@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshield do
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.StatusEffect.DevotionMirror
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -54,8 +55,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshield do
     unit_id = caster.__struct__.get_unit_id(caster)
 
     case StatusInterpreter.toggle_status(unit_type, unit_id, :sc_reflectshield, val1: level) do
-      {:ok, _} -> {:ok, caster}
-      {:error, _reason} = error -> error
+      {:ok, action} ->
+        DevotionMirror.fan_toggle(unit_type, unit_id, :sc_reflectshield, action, level)
+        {:ok, caster}
+
+      {:error, _reason} = error ->
+        error
     end
   end
 end

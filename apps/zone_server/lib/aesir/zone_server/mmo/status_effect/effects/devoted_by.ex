@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DevotedBy do
     properties: [:buff],
     tick_interval: 1_000
 
+  alias Aesir.ZoneServer.Mmo.StatusEffect.DevotionMirror
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -114,10 +115,19 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DevotedBy do
     )
   end
 
+  @doc "The ids of every party member the Crusader currently devotes."
+  @spec devotee_ids(non_neg_integer()) :: [non_neg_integer()]
+  def devotee_ids(crusader_id) do
+    case StatusStorage.get_status(:player, crusader_id, :sc_devoted_by) do
+      %StatusEntry{state: %{links: links}} -> Map.keys(links)
+      _ -> []
+    end
+  end
+
   @impl true
-  def on_expire(_target, %StatusEntry{state: %{links: links}}, _context) do
+  def on_expire({_type, crusader_id}, %StatusEntry{state: %{links: links}}, _context) do
     Enum.each(links, fn {devotee_id, %{link_id: link_id}} ->
-      close_devotee(devotee_id, link_id)
+      close_devotee(crusader_id, devotee_id, link_id)
     end)
 
     :ok
@@ -126,18 +136,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DevotedBy do
   def on_expire(_target, _instance, _context), do: :ok
 
   @impl true
-  def on_tick({_type, _crusader_id}, %StatusEntry{state: %{links: links}} = instance, _context) do
-    live_links =
-      links
-      |> Enum.filter(fn {devotee_id, %{link_id: link_id}} ->
+  def on_tick({_type, crusader_id}, %StatusEntry{state: %{links: links}} = instance, _context) do
+    {live, stale} =
+      Map.split_with(links, fn {devotee_id, %{link_id: link_id}} ->
         devotee_intact?(devotee_id, link_id)
       end)
-      |> Map.new()
 
-    if map_size(live_links) == 0 do
+    Enum.each(stale, fn {devotee_id, _link} ->
+      DevotionMirror.remove_from_devotee(crusader_id, devotee_id)
+    end)
+
+    if map_size(live) == 0 do
       :remove
     else
-      {:ok, %{instance | state: %{instance.state | links: live_links}}}
+      {:ok, %{instance | state: %{instance.state | links: live}}}
     end
   end
 
@@ -146,9 +158,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DevotedBy do
   # Ends one devotee's `sc_devotion` through the ordinary removal path, clearing
   # its back-reference first so its own `on_expire` sees no peer and the echo
   # into this (departing) entry terminates.
-  defp close_devotee(devotee_id, link_id) do
+  defp close_devotee(crusader_id, devotee_id, link_id) do
     case StatusStorage.get_status(:player, devotee_id, @devotion) do
       %StatusEntry{state: %{link_id: ^link_id}} ->
+        DevotionMirror.remove_from_devotee(crusader_id, devotee_id)
+
         StatusStorage.update_status(:player, devotee_id, @devotion, fn entry ->
           %{entry | state: Map.put(entry.state, :peer, nil)}
         end)

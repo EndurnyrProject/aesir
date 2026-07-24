@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion do
     icon: :devotion
 
   alias Aesir.ZoneServer.Geometry
+  alias Aesir.ZoneServer.Mmo.StatusEffect.DevotionMirror
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.DevotedBy
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEntry
@@ -91,6 +92,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion do
   # cleared by the Crusader-side cascade before it removed this record - makes
   # the detach a no-op, which is what terminates the removal echo.
   defp detach(devotee_id, %{peer: {:player, crusader_id}, link_id: link_id}) do
+    DevotionMirror.remove_from_devotee(crusader_id, devotee_id)
     DevotedBy.unlink(crusader_id, devotee_id, link_id)
   end
 

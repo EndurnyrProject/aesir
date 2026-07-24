@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotion do
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.StatusEffect.DevotionMirror
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.DevotedBy
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit
@@ -93,6 +94,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotion do
 
     with :ok <- StatusInterpreter.apply_status(:player, devotee_id, :sc_devotion, params),
          :ok <- DevotedBy.link(crusader_id, devotee_id, link_id) do
+      DevotionMirror.copy_to_devotee(crusader_id, devotee_id)
       {:ok, caster}
     end
   end
