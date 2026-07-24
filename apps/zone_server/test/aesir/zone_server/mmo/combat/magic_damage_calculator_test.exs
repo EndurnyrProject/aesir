@@ -521,6 +521,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
                MagicDamageCalculator.calculate_magic_damage(attacker, defender, element: :neutral)
     end
 
+    test "defender status subele_holy reduces magic damage like the equip family" do
+      attacker = c_attacker(100, %{}, unit_type: :mob, race: :formless)
+      defender = c_defender(0, 0, unit_type: :player)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :player, _ -> %{subele_holy: 25}
+        _, _ -> %{}
+      end)
+
+      # holy vs neutral = 1.0, then -25% damage taken: 100 * 0.75 = 75.
+      assert {:ok, %{damage: 75}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker, defender, element: :holy)
+
+      # a non-holy spell gets no reduction.
+      assert {:ok, %{damage: 100}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker, defender, element: :fire)
+    end
+
     test "defender subrace reduces magic damage keyed on the attacker race" do
       attacker = c_attacker(100, %{}, unit_type: :mob, race: :formless)
 

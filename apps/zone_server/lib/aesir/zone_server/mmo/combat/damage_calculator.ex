@@ -444,20 +444,28 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   end
 
   # Defender percent damage-taken families, read off the defender's own
-  # equipment and keyed on the attacker's traits / the effective attack element.
-  # Dragonology's resist rate sums into the race+class family like any other
-  # contributor. Each family applies as a percent reduction, floored at the
-  # min-1 damage convention.
+  # equipment and status effects, keyed on the attacker's traits / the effective
+  # attack element. Dragonology's resist rate sums into the race+class family like
+  # any other contributor; the defender's status resist keys (subele/subrace) sum
+  # into the element/race families through EquipmentBonuses. The ranged family is
+  # a taken-rate step gated on the attacker being ranged, mirroring the
+  # long/short attack-side split. Each reduction family is floored at the min-1
+  # damage convention.
   defp apply_equipment_taken_families(damage, attacker, defender, attack_element) do
+    {unit_type, unit_id} = get_unit_type_and_id(defender)
+    status_modifiers = ModifierCalculator.get_all_modifiers(unit_type, unit_id)
+
     %{race_class: race_class, element: element, size: size} =
-      EquipmentBonuses.damage_taken_rates(defender, attacker, attack_element)
+      EquipmentBonuses.damage_taken_rates(defender, attacker, attack_element, status_modifiers)
 
     race_class = race_class + RaceModifiers.dragonology_resist_rate(defender, attacker.race)
+    ranged = EquipmentBonuses.ranged_damage_taken_rate(attacker, defender, status_modifiers)
 
     damage
     |> apply_taken_step(race_class)
     |> apply_taken_step(element)
     |> apply_taken_step(size)
+    |> apply_taken_rate_step(ranged)
   end
 
   defp apply_family_step(damage, 0), do: damage
@@ -465,6 +473,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   defp apply_taken_step(damage, 0), do: damage
   defp apply_taken_step(damage, sum), do: max(1, div(trunc(damage) * (100 - sum), 100))
+
+  defp apply_taken_rate_step(damage, 0), do: damage
+  defp apply_taken_rate_step(damage, sum), do: max(1, div(trunc(damage) * (100 + sum), 100))
 
   defp resolve_attack_element(attacker, attacker_modifiers) do
     Map.get_lazy(attacker_modifiers, :attack_element, fn ->

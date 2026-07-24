@@ -1424,4 +1424,99 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert with_zero_ignore == baseline
     end
   end
+
+  describe "status combat-families bridge (damage-taken side)" do
+    setup do
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
+      stub(RaceModifiers, :player_race, fn -> :human end)
+
+      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
+        %{damage: damage, is_critical: false}
+      end)
+
+      :ok
+    end
+
+    defp damage_with_defender_modifiers(attacker, defender, modifiers) do
+      defender_id = defender.unit_id
+
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        _, ^defender_id -> modifiers
+        _, _ -> %{}
+      end)
+
+      :rand.seed(:exsss, {11, 22, 33})
+      {:ok, result} = DamageCalculator.calculate_damage(attacker, defender)
+      result.damage
+    end
+
+    test "ranged_damage_taken_rate: -20 reduces long-range weapon damage ~20%" do
+      attacker = CombatTestHelper.create_player_combatant(weapon_type: :bow)
+      defender = CombatTestHelper.create_mob_combatant(def: 0)
+
+      baseline = damage_with_defender_modifiers(attacker, defender, %{})
+
+      reduced =
+        damage_with_defender_modifiers(attacker, defender, %{ranged_damage_taken_rate: -20})
+
+      assert_in_delta reduced / baseline, 0.80, 0.02
+    end
+
+    test "ranged_damage_taken_rate leaves melee weapon damage untouched" do
+      attacker = CombatTestHelper.create_player_combatant(weapon_type: :sword)
+      defender = CombatTestHelper.create_mob_combatant(def: 0)
+
+      baseline = damage_with_defender_modifiers(attacker, defender, %{})
+
+      melee =
+        damage_with_defender_modifiers(attacker, defender, %{ranged_damage_taken_rate: -20})
+
+      assert melee == baseline
+    end
+
+    test "subele_holy: 25 reduces incoming holy damage ~25%" do
+      attacker = CombatTestHelper.create_player_combatant(weapon_element: :holy)
+      defender = CombatTestHelper.create_mob_combatant(def: 0)
+
+      baseline = damage_with_defender_modifiers(attacker, defender, %{})
+      reduced = damage_with_defender_modifiers(attacker, defender, %{subele_holy: 25})
+
+      assert_in_delta reduced / baseline, 0.75, 0.02
+    end
+
+    test "subele_holy is inert against a non-holy attack" do
+      attacker = CombatTestHelper.create_player_combatant(weapon_element: :fire)
+      defender = CombatTestHelper.create_mob_combatant(def: 0)
+
+      baseline = damage_with_defender_modifiers(attacker, defender, %{})
+      unaffected = damage_with_defender_modifiers(attacker, defender, %{subele_holy: 25})
+
+      assert unaffected == baseline
+    end
+
+    test "subrace_demon: 25 reduces damage from a demon-race attacker ~25%" do
+      attacker = CombatTestHelper.create_mob_combatant(race: :demon)
+      defender = CombatTestHelper.create_mob_combatant(unit_id: 3001, def: 0)
+
+      baseline = damage_with_defender_modifiers(attacker, defender, %{})
+      reduced = damage_with_defender_modifiers(attacker, defender, %{subrace_demon: 25})
+
+      assert_in_delta reduced / baseline, 0.75, 0.02
+    end
+
+    test "status and equipment resist for the same element family combine" do
+      attacker = CombatTestHelper.create_player_combatant(weapon_element: :holy)
+      clean = CombatTestHelper.create_mob_combatant(def: 0)
+      equipped = Map.put(clean, :equip_modifiers, %{{:subele, :holy} => 10})
+
+      baseline = damage_with_defender_modifiers(attacker, clean, %{})
+      equip_only = damage_with_defender_modifiers(attacker, equipped, %{})
+      combined = damage_with_defender_modifiers(attacker, equipped, %{subele_holy: 25})
+
+      assert_in_delta equip_only / baseline, 0.90, 0.02
+      assert_in_delta combined / baseline, 0.65, 0.02
+      assert combined < equip_only
+    end
+  end
 end

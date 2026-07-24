@@ -66,6 +66,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
                :phys_damage_reduction,
                :vit_bonus,
                :watk,
+               # EquipmentBonuses taken families (status → damage-taken/resist bridge)
+               :ranged_damage_taken_rate,
+               :subele_holy,
+               :subrace_demon,
                # NaturalHeal / handlers / Skill.Interpreter / Script.Dsl
                :hp_regen,
                :sp_regen,

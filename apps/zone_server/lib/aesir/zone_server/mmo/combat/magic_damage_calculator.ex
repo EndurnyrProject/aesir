@@ -247,7 +247,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
   defp equipment_rates(%Combatant{} = attacker, %Combatant{} = defender, skill_id, element) do
     %{
       attack: EquipmentBonuses.magic_attack_rates(attacker, defender, skill_id, element),
-      taken: EquipmentBonuses.damage_taken_rates(defender, attacker, element),
+      taken:
+        EquipmentBonuses.damage_taken_rates(
+          defender,
+          attacker,
+          element,
+          combatant_modifiers(defender)
+        ),
       ignore_mdef: EquipmentBonuses.ignore_mdef_rate(attacker, defender.race)
     }
   end

@@ -41,19 +41,52 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   @doc """
   Damage-taken-side rate sums keyed on the attacker's traits, read off the
   defender's own equipment.
+
+  `status_modifiers` is the defender's folded status-effect modifier map; its
+  element/race resist keys (`:subele_holy`, `:subrace_demon`) sum into the same
+  families equipment feeds, so a status resist and an equipment resist for the
+  same element/race stack. Mobs and callers without statuses pass `%{}` and read
+  equipment only.
   """
-  @spec damage_taken_rates(Combatant.t(), Combatant.t(), atom()) :: %{
+  @spec damage_taken_rates(Combatant.t(), Combatant.t(), atom(), map()) :: %{
           race_class: rate(),
           element: rate(),
           size: rate()
         }
-  def damage_taken_rates(%Combatant{} = defender, %Combatant{} = attacker, attack_element) do
+  def damage_taken_rates(
+        %Combatant{} = defender,
+        %Combatant{} = attacker,
+        attack_element,
+        status_modifiers \\ %{}
+      ) do
     %{
       race_class:
-        read(defender, :subrace, attacker.race) + read(defender, :subclass, attacker.class),
-      element: read(defender, :subele, attack_element),
+        read(defender, :subrace, attacker.race) + read(defender, :subclass, attacker.class) +
+          status_subrace(status_modifiers, attacker.race),
+      element:
+        read(defender, :subele, attack_element) +
+          status_subele(status_modifiers, attack_element),
       size: read(defender, :subsize, attacker.size)
     }
+  end
+
+  @doc """
+  Percent damage-taken rate the defender's equipment and statuses apply to
+  long-range physical attacks, the taken-side counterpart of `long_atk_rate/1`.
+
+  Read only when the *attacker* swings a ranged weapon; against a melee attacker
+  it is zero. The rate is additive on damage taken (`bLongAtkRate` convention),
+  so a negative value reduces incoming ranged damage. Equipment and status
+  values for the key sum.
+  """
+  @spec ranged_damage_taken_rate(Combatant.t(), Combatant.t(), map()) :: rate()
+  def ranged_damage_taken_rate(%Combatant{} = attacker, %Combatant{} = defender, status_modifiers) do
+    if attacker.weapon |> Map.get(:type) |> WeaponTypes.is_ranged?() do
+      Map.get(defender.equip_modifiers, :ranged_damage_taken_rate, 0) +
+        Map.get(status_modifiers, :ranged_damage_taken_rate, 0)
+    else
+      0
+    end
   end
 
   @doc """
@@ -180,6 +213,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
     Map.get(combatant.equip_modifiers, {family, param}, 0) +
       Map.get(combatant.equip_modifiers, {family, :all}, 0)
   end
+
+  @spec status_subele(map(), atom()) :: rate()
+  defp status_subele(status_modifiers, :holy), do: Map.get(status_modifiers, :subele_holy, 0)
+  defp status_subele(_status_modifiers, _element), do: 0
+
+  @spec status_subrace(map(), atom()) :: rate()
+  defp status_subrace(status_modifiers, :demon), do: Map.get(status_modifiers, :subrace_demon, 0)
+  defp status_subrace(_status_modifiers, _race), do: 0
 
   @spec skill_rate(Combatant.t(), atom(), pos_integer() | nil) :: rate()
   defp skill_rate(_combatant, _family, nil), do: 0

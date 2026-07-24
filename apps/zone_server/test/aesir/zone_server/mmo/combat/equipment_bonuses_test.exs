@@ -117,6 +117,55 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
                size: 0
              }
     end
+
+    test "sums status subele_holy/subrace_demon into equipment element/race families" do
+      defender =
+        CombatTestHelper.create_mob_combatant()
+        |> with_equip_modifiers(%{{:subele, :holy} => 10, {:subrace, :demon} => 4})
+
+      attacker = CombatTestHelper.create_player_combatant(race: :demon)
+      status = %{subele_holy: 25, subrace_demon: 6}
+
+      assert EquipmentBonuses.damage_taken_rates(defender, attacker, :holy, status) == %{
+               race_class: 4 + 6,
+               element: 10 + 25,
+               size: 0
+             }
+    end
+
+    test "status resist keys are inert against a non-matching element and race" do
+      defender = CombatTestHelper.create_mob_combatant()
+      attacker = CombatTestHelper.create_player_combatant(race: :human)
+      status = %{subele_holy: 25, subrace_demon: 6}
+
+      assert EquipmentBonuses.damage_taken_rates(defender, attacker, :fire, status) == %{
+               race_class: 0,
+               element: 0,
+               size: 0
+             }
+    end
+  end
+
+  describe "ranged_damage_taken_rate/3" do
+    test "sums defender equipment and status when the attacker is ranged" do
+      attacker = CombatTestHelper.create_player_combatant(weapon_type: :bow)
+
+      defender =
+        CombatTestHelper.create_mob_combatant()
+        |> with_equip_modifiers(%{ranged_damage_taken_rate: -5})
+
+      status = %{ranged_damage_taken_rate: -20}
+
+      assert EquipmentBonuses.ranged_damage_taken_rate(attacker, defender, status) == -25
+    end
+
+    test "returns 0 against a melee attacker even with the modifier present" do
+      attacker = CombatTestHelper.create_player_combatant(weapon_type: :sword)
+      defender = CombatTestHelper.create_mob_combatant()
+      status = %{ranged_damage_taken_rate: -20}
+
+      assert EquipmentBonuses.ranged_damage_taken_rate(attacker, defender, status) == 0
+    end
   end
 
   describe "magic_attack_rates/4" do
