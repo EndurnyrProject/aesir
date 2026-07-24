@@ -17,6 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @doc """
   Executes a single-target offensive skill from a caster against a target.
@@ -83,7 +85,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         :fixed_damage,
         :element,
         :skill_id
-      ])
+      ]) ++ shield_base_opts(caster_state, opts)
 
     validator_opts = Keyword.take(opts, [:skip_range]) ++ [projectile?: true]
 
@@ -184,6 +186,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         []
     end
   end
+
+  # Resolves the shield damage base for a `damage_base: :shield` skill: the worn
+  # shield contributes `4×refine + weight/10` on top of the caster's stat batk,
+  # replacing the weapon ATK. Player-only — a mob caster carries no shield and
+  # falls through to its plain weapon/batk base. A player with no shield equipped
+  # (guarded against by the skill's cast validation) likewise falls through.
+  defp shield_base_opts(%PlayerState{} = caster_state, opts) do
+    if Keyword.get(opts, :damage_base) == :shield do
+      inventory = Map.values(caster_state.inventory)
+
+      case PlayerStats.shield_stats(caster_state.stats.equipment, inventory) do
+        {weight, refine} -> [shield_base: 4 * refine + div(weight, 10)]
+        nil -> []
+      end
+    else
+      []
+    end
+  end
+
+  defp shield_base_opts(_caster_state, _opts), do: []
 
   defp multi_target_opts(opts) do
     skill_id = Keyword.fetch!(opts, :skill_id)

@@ -411,6 +411,50 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   end
 
   @doc """
+  Returns `:ok` when a shield is worn, `{:error, :requires_shield}` otherwise.
+
+  The shared cast gate for the shield-only skills. Player-only: a mob caster has
+  no equipment, so each shield skill skips this check on its mob validation path.
+  """
+  @spec validate_shield(Equipment.t()) :: :ok | {:error, :requires_shield}
+  def validate_shield(%Equipment{} = equipment) do
+    if shield?(equipment), do: :ok, else: {:error, :requires_shield}
+  end
+
+  @doc """
+  Returns `{weight, refine}` for the equipped left-hand shield, or `nil` when no
+  shield is worn.
+
+  `weight` is the shield's item-DB weight in raw units (ten times the in-game
+  weight); the shield damage base divides it by ten. `refine` is read from the
+  equipped inventory row, since refinement is per-instance and absent from the
+  item definition. `inventory` is any enumerable of `InventoryItem`s (e.g. the
+  player's inventory values).
+  """
+  @spec shield_stats(Equipment.t(), Enumerable.t()) ::
+          {non_neg_integer(), non_neg_integer()} | nil
+  def shield_stats(%Equipment{left_hand: nameid} = equipment, inventory) do
+    if shield?(equipment) do
+      {shield_weight(nameid), left_hand_refine(inventory)}
+    else
+      nil
+    end
+  end
+
+  defp shield_weight(nameid) do
+    case ItemManagement.get_item_by_id(nameid) do
+      {:ok, %ItemDefinition{weight: weight}} -> weight
+      _ -> 0
+    end
+  end
+
+  defp left_hand_refine(inventory) do
+    Enum.find_value(inventory, 0, fn %InventoryItem{equip: equip, refine: refine} ->
+      if :left_hand in EquipLocation.bitmask_to_location_atoms(equip), do: refine
+    end)
+  end
+
+  @doc """
   Returns the client view (sprite) id of the equipped weapon, or `0` when bare-handed.
   """
   @spec weapon_view(Equipment.t()) :: non_neg_integer()

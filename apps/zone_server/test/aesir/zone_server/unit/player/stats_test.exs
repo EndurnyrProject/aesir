@@ -1075,6 +1075,34 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     end
   end
 
+  describe "validate_shield/1 and shield_stats/2" do
+    test "validate_shield is :ok with a shield equipped" do
+      equipment = Stats.equipment_from_inventory([equipped(@guard, @left_hand)])
+      assert Stats.validate_shield(equipment) == :ok
+    end
+
+    test "validate_shield errors with no shield" do
+      assert Stats.validate_shield(%Equipment{}) == {:error, :requires_shield}
+    end
+
+    test "validate_shield errors when the left hand holds a two-handed weapon" do
+      equipment = Stats.equipment_from_inventory([equipped(@bow, @both_hand)])
+      assert Stats.validate_shield(equipment) == {:error, :requires_shield}
+    end
+
+    test "shield_stats returns the item-DB weight and the equipped row's refine" do
+      row = refined(@guard, @left_hand, 7)
+      equipment = Stats.equipment_from_inventory([row])
+
+      # Guard (id 2101) weighs 300 raw units in the item DB.
+      assert Stats.shield_stats(equipment, [row]) == {300, 7}
+    end
+
+    test "shield_stats is nil when no shield is worn" do
+      assert Stats.shield_stats(%Equipment{}, []) == nil
+    end
+  end
+
   describe "calculate_stats/3 with equipped items" do
     defp swordman(equipment_struct, modifier_equipment) do
       %Stats{

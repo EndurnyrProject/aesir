@@ -36,6 +36,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   @typedoc "Which damage calculator a skill dispatches to (rAthena skill type)."
   @type damage_kind :: :weapon | :magic | :misc
 
+  @typedoc """
+  Which value feeds the physical base-damage step: the equipped weapon
+  (`:weapon`, the default) or the equipped shield (`:shield`, base
+  `batk + 4×refine + shield_weight`). A shield-based skill cast by a mob, which
+  has no shield, falls back to the plain weapon/batk base.
+  """
+  @type damage_base :: :weapon | :shield
+
   @typedoc "Attack element atom (rAthena `Element`)."
   @type element :: atom()
 
@@ -76,6 +84,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     field :after_cast_delay, [non_neg_integer()], default: []
     field :cooldown, [non_neg_integer()], default: []
     field :damage_kind, damage_kind(), default: :weapon
+    field :damage_base, damage_base(), default: :weapon
     field :item_cost, [item_cost_entry()], default: []
     field :requires_ammo, boolean(), default: false
     field :status, atom() | nil, default: nil
@@ -119,6 +128,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     after_cast_delay: {:list, :integer},
     cooldown: {:list, :integer},
     damage_kind: {:enum, [:weapon, :magic, :misc]},
+    damage_base: {:enum, [:weapon, :shield]},
     item_cost: {:list, %{id: {:required, :integer}, amount: {:required, {:integer, {:gt, 0}}}}},
     requires_ammo: :boolean,
     status: :atom
@@ -146,6 +156,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     after_cast_delay: [],
     cooldown: [],
     damage_kind: :weapon,
+    damage_base: :weapon,
     item_cost: [],
     requires_ammo: false,
     status: nil

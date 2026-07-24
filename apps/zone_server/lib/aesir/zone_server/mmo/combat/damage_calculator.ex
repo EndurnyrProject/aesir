@@ -121,7 +121,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     skill_ratio = Keyword.get(opts, :skill_ratio, 100)
     bonus_atk = Keyword.get(opts, :bonus_atk, 0)
 
-    with {:ok, base_atk} <- calculate_base_attack(attacker),
+    with {:ok, base_atk} <- calculate_base_attack(attacker, opts),
          patk_atk = apply_patk_multiplier(base_atk, attacker),
          skilled_atk = div(patk_atk * skill_ratio, 100) + bonus_atk,
          {:ok, modified_atk} <- apply_modifier_pipeline(skilled_atk, attacker, defender, opts),
@@ -169,27 +169,30 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   while providing a unified interface.
   """
   @spec calculate_base_attack(combatant()) :: {:ok, integer()} | {:error, atom()}
-  def calculate_base_attack(%{unit_type: :player} = attacker) do
-    # Player base attack formula: (STR * 2) + (DEX / 5) + (LUK / 3) + base_level/4
-    stats = attacker.base_stats
-    progression = attacker.progression
+  def calculate_base_attack(attacker), do: calculate_base_attack(attacker, [])
 
-    base_atk =
-      stats.str * 2 +
-        div(stats.dex, 5) +
-        div(stats.luk, 3) +
-        div(progression.base_level, 4) +
-        5 * Map.get(stats, :pow, 0)
+  @doc """
+  Calculates base attack, honouring the `:shield_base` option.
 
-    weapon_atk = calculate_weapon_attack(attacker)
-    mastery_bonus = calculate_mastery_bonus(attacker)
+  When `:shield_base` is set on a player attacker, the equipped weapon's ATK
+  and mastery are replaced by the pre-computed shield contribution
+  (`4×refine + shield_weight`, resolved by the caller from the worn shield), so
+  the base becomes the stat-derived batk plus that contribution. Any other unit
+  type ignores the option and falls back to its plain base — mobs carry no
+  shield and use their weapon/batk roll.
+  """
+  @spec calculate_base_attack(combatant(), keyword()) :: {:ok, integer()} | {:error, atom()}
+  def calculate_base_attack(%{unit_type: :player} = attacker, opts) do
+    weapon_component =
+      case Keyword.get(opts, :shield_base) do
+        nil -> calculate_weapon_attack(attacker) + calculate_mastery_bonus(attacker)
+        shield_base -> shield_base
+      end
 
-    total_base_atk = base_atk + weapon_atk + mastery_bonus
-
-    {:ok, total_base_atk}
+    {:ok, player_status_atk(attacker) + weapon_component}
   end
 
-  def calculate_base_attack(%{unit_type: :mob} = attacker) do
+  def calculate_base_attack(%{unit_type: :mob} = attacker, _opts) do
     # Renewal mob melee (rAthena status_base_atk_min/max + battle_calc_base_damage):
     # the weapon hit rolls uniformly across the 80%-120% band of the mob's ATK,
     # then the mob's base ATK (STR + base level) is added flat.
@@ -209,8 +212,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     {:ok, weapon_atk + batk}
   end
 
-  def calculate_base_attack(_attacker) do
+  def calculate_base_attack(_attacker, _opts) do
     {:error, :unknown_unit_type}
+  end
+
+  # Player stat-derived base attack (rAthena status->batk): the weapon-independent
+  # portion the shield damage base builds on. (STR*2) + (DEX/5) + (LUK/3) +
+  # base_level/4 + 5*POW.
+  defp player_status_atk(%{base_stats: stats, progression: progression}) do
+    stats.str * 2 +
+      div(stats.dex, 5) +
+      div(stats.luk, 3) +
+      div(progression.base_level, 4) +
+      5 * Map.get(stats, :pow, 0)
   end
 
   @doc """

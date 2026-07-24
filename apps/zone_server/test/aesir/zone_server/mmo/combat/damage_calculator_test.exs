@@ -286,6 +286,27 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
   end
 
+  describe "calculate_base_attack/2 shield damage base" do
+    test "player shield base is stat batk + 4*refine + weight/10" do
+      # str 10, dex/luk/level 0 -> stat batk = 20; refine 5 and weight 300 ->
+      # 4*5 + div(300, 10) = 50; total 70. The equipped weapon ATK is replaced.
+      player =
+        CombatTestHelper.create_player_combatant(str: 10, dex: 0, luk: 0, base_level: 0)
+
+      shield_base = 4 * 5 + div(300, 10)
+
+      assert {:ok, 70} = DamageCalculator.calculate_base_attack(player, shield_base: shield_base)
+    end
+
+    test "mob ignores the shield base and uses its plain batk" do
+      # atk 0 collapses the variance band to 0, so base = str(10) + level(5) = 15,
+      # regardless of any shield_base passed through (mobs carry no shield).
+      mob = CombatTestHelper.create_mob_combatant(atk: 0, str: 10, base_level: 5)
+
+      assert {:ok, 15} = DamageCalculator.calculate_base_attack(mob, shield_base: 999)
+    end
+  end
+
   describe "apply_modifier_pipeline/3" do
     test "applies all modifiers in sequence" do
       stub(SizeModifiers, :get_modifier, fn _, _, _ -> 110 end)
