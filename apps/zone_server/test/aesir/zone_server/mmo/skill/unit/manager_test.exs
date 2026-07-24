@@ -464,7 +464,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                )
 
       assert :ok = Manager.register(manager, group(4, visible?: false, cells: [{103, 100}]))
-      before = Map.new(1..4, &{&1, Storage.get(&1)})
+
+      assert :ok =
+               Manager.register(
+                 manager,
+                 trap_group(5,
+                   cells: [{104, 100}],
+                   state: %{base_damage: 100, armed: true, reclaimable: true, trap_item: 1066}
+                 )
+               )
+
+      before = Map.new(1..5, &{&1, Storage.get(&1)})
 
       assert {:error, :not_owner} =
                Manager.reclaim_trap(manager, {:player, 1}, "prontera", 100, 100)
@@ -478,10 +488,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       assert {:error, :unsupported_trap} =
                Manager.reclaim_trap(manager, {:player, 1}, "prontera", 103, 100)
 
+      assert {:error, :unsupported_trap} =
+               Manager.reclaim_trap(manager, {:player, 1}, "prontera", 104, 100)
+
       assert {:error, :not_found} =
                Manager.reclaim_trap(manager, {:player, 1}, "geffen", 100, 100)
 
-      assert before == Map.new(1..4, &{&1, Storage.get(&1)})
+      assert before == Map.new(1..5, &{&1, Storage.get(&1)})
     end
 
     test "springs the lowest-ID eligible trap when groups overlap" do

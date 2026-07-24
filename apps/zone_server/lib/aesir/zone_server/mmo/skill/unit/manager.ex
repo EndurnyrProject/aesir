@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   @tick_interval 100
   @sprung_trap_lifetime 1_500
+  @trap_item_id 1065
   @safetywall_skill_id 12
   @no_overlap_skill_ids [@safetywall_skill_id, 70, 79]
 
@@ -1257,12 +1258,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp reclaim_eligibility(%Group{} = group, owner) do
     case trap_state(group) do
-      {:ok, :armed} when {group.caster_type, group.caster_id} == owner -> :eligible
-      {:ok, :armed} -> {:error, :not_owner}
+      {:ok, :armed} -> reclaim_armed_trap(group, owner)
       {:ok, :spent} -> {:error, :already_spent}
       {:error, _reason} = error -> error
     end
   end
+
+  defp reclaim_armed_trap(%Group{state: %{trap_item: @trap_item_id}} = group, owner) do
+    if {group.caster_type, group.caster_id} == owner,
+      do: :eligible,
+      else: {:error, :not_owner}
+  end
+
+  defp reclaim_armed_trap(_group, _owner), do: {:error, :unsupported_trap}
 
   defp trap_state(%Group{state: %{armed: armed, reclaimable: reclaimable, trap_item: trap_item}})
        when is_boolean(armed) and is_boolean(reclaimable) and is_integer(trap_item) and
