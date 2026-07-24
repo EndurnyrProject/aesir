@@ -55,12 +55,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     alias Aesir.ZoneServer.Mmo.Skill.Cost
 
     typedstruct do
-      field :effect, term(), enforce: true
-      field :cost, Cost.t(), enforce: true
-      field :zeny, non_neg_integer(), enforce: true
-      field :skill_id, integer(), enforce: true
-      field :level, pos_integer(), enforce: true
-      field :target, Active.target(), enforce: true
+      field(:effect, term(), enforce: true)
+      field(:cost, Cost.t(), enforce: true)
+      field(:zeny, non_neg_integer(), enforce: true)
+      field(:skill_id, integer(), enforce: true)
+      field(:level, pos_integer(), enforce: true)
+      field(:target, Active.target(), enforce: true)
     end
   end
 
@@ -616,9 +616,29 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   """
   @spec effective_range(Definition.t(), PlayerState.t(), non_neg_integer()) :: non_neg_integer()
   def effective_range(definition, game_state, level) do
+    base_range = base_range(definition, game_state, level)
+
+    case Catalog.active_module_for(definition.name) do
+      {:ok, module} -> skill_effective_range(module, game_state, level, definition, base_range)
+      :error -> base_range
+    end
+  end
+
+  defp base_range(definition, game_state, level) do
     case Definition.range_at_level(definition, level) do
       range when range >= 0 -> range
       _weapon_range_sentinel -> weapon_range(game_state)
+    end
+  end
+
+  defp skill_effective_range(module, game_state, level, definition, base_range) do
+    if function_exported?(module, :effective_range, 4) do
+      case module.effective_range(game_state, level, definition, base_range) do
+        range when is_integer(range) and range >= 0 -> range
+        invalid -> raise ArgumentError, "invalid effective skill range: #{inspect(invalid)}"
+      end
+    else
+      base_range
     end
   end
 

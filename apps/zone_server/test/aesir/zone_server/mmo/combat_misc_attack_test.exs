@@ -158,11 +158,15 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
         :mob, 2002 -> {:ok, {MobState, build_mob_state(2002, 151, 150), self()}}
       end)
 
-      stub(MiscDamageCalculator, :calculate_misc_damage, fn _a, _t, _opts ->
+      stub(MiscDamageCalculator, :calculate_misc_damage, fn _a, _t, opts ->
+        assert opts[:base_damage] == 200
         {:ok, %{damage: 40, is_critical: false}}
       end)
 
-      stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, _p -> :ok end)
+      stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, %SkillDamage{} = packet ->
+        send(test_pid, {:packet, packet})
+        :ok
+      end)
 
       stub(MobSession, :apply_damage, fn _pid, damage, @caster_id ->
         send(test_pid, {:damage, damage})
@@ -178,8 +182,109 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
         )
 
       assert Enum.sort(hits) == [2001, 2002]
+      assert_received {:packet, %SkillDamage{damage: 40, div: 1}}
+      assert_received {:packet, %SkillDamage{damage: 40, div: 1}}
       assert_received {:damage, 40}
       assert_received {:damage, 40}
+    end
+
+    test "display_hit_count changes only packet divisions" do
+      caster = build_caster()
+      test_pid = self()
+
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
+        [{:mob, 2001}, {:mob, 2002}]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :mob, 2001 -> {:ok, {MobState, build_mob_state(2001, 150, 150), self()}}
+        :mob, 2002 -> {:ok, {MobState, build_mob_state(2002, 151, 150), self()}}
+      end)
+
+      stub(MiscDamageCalculator, :calculate_misc_damage, fn _a, _t, opts ->
+        send(test_pid, {:calculated, opts})
+        {:ok, %{damage: 40, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, %SkillDamage{} = packet ->
+        send(test_pid, {:packet, packet})
+        :ok
+      end)
+
+      stub(MobSession, :apply_damage, fn _pid, damage, @caster_id ->
+        send(test_pid, {:damage, damage})
+        :ok
+      end)
+
+      hits =
+        Combat.execute_misc_splash(caster, @center, 1,
+          skill_id: 129,
+          skill_level: 5,
+          base_damage: 500,
+          element: :neutral,
+          display_hit_count: 5
+        )
+
+      assert Enum.sort(hits) == [2001, 2002]
+      assert_received {:calculated, [base_damage: 500, element: :neutral]}
+      assert_received {:calculated, [base_damage: 500, element: :neutral]}
+      assert_received {:packet, %SkillDamage{damage: 40, div: 5}}
+      assert_received {:packet, %SkillDamage{damage: 40, div: 5}}
+      assert_received {:damage, 40}
+      assert_received {:damage, 40}
+    end
+
+    test "rejects display hit counts that cannot be encoded as positive uint32 values" do
+      caster = build_caster()
+
+      for invalid <- [0, -1, 1.5, :many, 0x1_0000_0000] do
+        assert_raise ArgumentError, ~r/invalid display hit count/, fn ->
+          Combat.execute_misc_splash(caster, @center, 1,
+            skill_id: 129,
+            skill_level: 5,
+            base_damage: 500,
+            display_hit_count: invalid
+          )
+        end
+      end
+    end
+
+    test "revalidates selected recipients and skips one that died before delivery" do
+      caster = build_caster()
+      test_pid = self()
+      dead = %{build_mob_state(2001, 150, 150) | hp: 0, is_dead: true}
+      living = build_mob_state(2002, 151, 150)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
+        [{:mob, 2001}, {:mob, 2002}]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :mob, 2001 -> {:ok, {MobState, dead, self()}}
+        :mob, 2002 -> {:ok, {MobState, living, self()}}
+      end)
+
+      expect(MiscDamageCalculator, :calculate_misc_damage, fn _a, _t, _opts ->
+        {:ok, %{damage: 40, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, %SkillDamage{} = packet ->
+        send(test_pid, {:packet, packet})
+        :ok
+      end)
+
+      expect(MobSession, :apply_damage, fn _pid, 40, @caster_id -> :ok end)
+
+      assert [2002] =
+               Combat.execute_misc_splash(caster, @center, 1,
+                 skill_id: 129,
+                 skill_level: 5,
+                 base_damage: 500,
+                 display_hit_count: 5
+               )
+
+      assert_received {:packet, %SkillDamage{target_id: 2002, div: 5}}
+      refute_received {:packet, %SkillDamage{target_id: 2001}}
     end
   end
 end

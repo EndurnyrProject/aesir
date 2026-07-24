@@ -21,6 +21,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
+  @max_uint32 0xFFFF_FFFF
+
   @doc """
   Executes a single-target offensive skill from a caster against a target.
 
@@ -272,7 +274,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     base_damage = Keyword.fetch!(opts, :base_damage)
     element = Keyword.get(opts, :element, :neutral)
 
-    apply_misc_hit(attacker, target_id, skill_id, skill_level, element, base_damage)
+    apply_misc_hit(attacker, target_id, skill_id, skill_level, element, base_damage, 1)
   end
 
   @doc """
@@ -287,6 +289,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:skill_id` / `:skill_level` - identify the skill for the damage packet
     - `:base_damage` - the skill's per-level base damage (required)
     - `:element` - the skill's attack element (default `:neutral`)
+    - `:display_hit_count` - packet-only divisions for the total damage (default `1`)
   """
   @spec execute_misc_splash(struct(), {integer(), integer()}, non_neg_integer(), keyword()) ::
           [integer()]
@@ -296,18 +299,42 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     skill_level = Keyword.fetch!(opts, :skill_level)
     base_damage = Keyword.fetch!(opts, :base_damage)
     element = Keyword.get(opts, :element, :neutral)
+    display_hits = display_hit_count!(opts)
 
     targets = SplashTargets.select(attacker.map_name, center, radius, attacker)
 
     Enum.flat_map(targets, fn {_unit_type, target_id} ->
-      case apply_misc_hit(attacker, target_id, skill_id, skill_level, element, base_damage) do
+      case apply_misc_hit(
+             attacker,
+             target_id,
+             skill_id,
+             skill_level,
+             element,
+             base_damage,
+             display_hits
+           ) do
         :ok -> [target_id]
         _ -> []
       end
     end)
   end
 
-  defp apply_misc_hit(attacker, target_id, skill_id, skill_level, element, base_damage) do
+  defp display_hit_count!(opts) do
+    case Keyword.get(opts, :display_hit_count, 1) do
+      count when is_integer(count) and count > 0 and count <= @max_uint32 -> count
+      invalid -> raise ArgumentError, "invalid display hit count: #{inspect(invalid)}"
+    end
+  end
+
+  defp apply_misc_hit(
+         attacker,
+         target_id,
+         skill_id,
+         skill_level,
+         element,
+         base_damage,
+         display_hits
+       ) do
     with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
          :ok <- TargetResolver.ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
@@ -340,7 +367,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           target_id,
           skill_id,
           skill_level,
-          damage
+          damage,
+          div: display_hits
         )
 
       DamageApplication.broadcast_nearby(target, packet)

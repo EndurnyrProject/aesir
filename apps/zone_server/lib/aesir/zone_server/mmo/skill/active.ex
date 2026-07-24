@@ -77,6 +77,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   @doc "Optionally resolves a dynamic cost from the caster's current state."
   @callback dynamic_cost(PlayerState.t(), target(), pos_integer(), Definition.t()) :: Cost.t()
 
+  @doc "Optionally adjusts the definition's resolved base cast range for this caster."
+  @callback effective_range(
+              PlayerState.t(),
+              pos_integer(),
+              Definition.t(),
+              non_neg_integer()
+            ) :: non_neg_integer()
+
   @doc """
   Optionally resolves this cast's timing from the caster's current state,
   overriding the definition's per-level table.
@@ -94,6 +102,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
                       deferred: 2,
                       mob_cast: 5,
                       dynamic_cost: 4,
+                      effective_range: 4,
                       dynamic_cast_time: 4
 
   @doc """
