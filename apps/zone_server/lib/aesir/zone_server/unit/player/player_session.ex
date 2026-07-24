@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
@@ -438,6 +439,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # Restore a mounted Peco-Peco: re-apply SC_RIDING from the persisted
     # option bit so the sprite and speed/ASPD modifiers come back on spawn.
     state = MountHandler.load_on_spawn(character, state)
+
+    # Restore an equipped Falcon: re-apply SC_FALCON from the persisted option
+    # bit so the sprite folds into the spawn effect_state. A stale bit without
+    # Falconry Mastery is cleared and persisted instead of being mirrored.
+    state = FalconHandler.load_on_spawn(character, state)
 
     # Restore the statuses persisted at logout (rAthena sc_data), consuming
     # the saved rows. Runs after registration for the same reason as the cart.

@@ -72,7 +72,7 @@ defmodule Aesir.ZoneServer.Integration.RidingLifecycleTest do
 
   @status_id :sc_riding
   @riding_bit Option.id(:riding)
-  @falcon_bit Option.id(:falcon)
+  @unrelated_bit Option.id(:wedding)
   @base_walk_speed 150
 
   @jobchange_npc_pos {180, 180}
@@ -137,7 +137,7 @@ defmodule Aesir.ZoneServer.Integration.RidingLifecycleTest do
     test "MountRequest applies SC_RIDING, sets the option bit, speeds the player up, and persists the option (other bits kept)" do
       character =
         insert_knight(%{
-          option: @falcon_bit,
+          option: @unrelated_bit,
           learned_skills: riding_learned_skills()
         })
 
@@ -154,7 +154,7 @@ defmodule Aesir.ZoneServer.Integration.RidingLifecycleTest do
 
       assert riding?(mounted)
       assert band(mounted.option, @riding_bit) != 0
-      assert band(mounted.option, @falcon_bit) != 0
+      assert band(mounted.option, @unrelated_bit) != 0
       assert mounted.stats.riding == true
       assert mounted.walk_speed < @base_walk_speed
 
@@ -165,7 +165,7 @@ defmodule Aesir.ZoneServer.Integration.RidingLifecycleTest do
 
       assert band(StatusDisplay.spawn_state(:player, char_id).effect_state, @riding_bit) != 0
 
-      assert Repo.get(Character, char_id).option == (@falcon_bit ||| @riding_bit)
+      assert Repo.get(Character, char_id).option == (@unrelated_bit ||| @riding_bit)
     end
   end
 

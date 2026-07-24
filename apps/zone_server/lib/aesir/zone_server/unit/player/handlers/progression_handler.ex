@@ -15,7 +15,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   the cart, a mounted Peco-Peco never blocks a change or reset that drops
   `KN_RIDING`: `MountHandler.force_dismount/1` runs up front instead, before the
   stats recompute, so the new job's derived stats never carry the riding ASPD
-  buyback.
+  buyback. Dropping `HT_FALCON` is treated the same way: `FalconHandler.force_dismiss/1`
+  clears the durable option bit and its display mirror before the recompute.
   `reset_skills/1` implements the separate `resetskill` refund and `reset_stats/1`
   the separate `resetstate` stat reset.
   """
@@ -31,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Learned
+  alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtFalcon
   alias Aesir.ZoneServer.Mmo.Skills.Knight.KnRiding
   alias Aesir.ZoneServer.Mmo.Skills.Merchant.McPushcart
   alias Aesir.ZoneServer.Mmo.SkillTree
@@ -42,6 +44,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.LookType
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.SkillListView
@@ -52,6 +55,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
 
   @mc_pushcart_id McPushcart.definition().id
   @kn_riding_id KnRiding.definition().id
+  @ht_falcon_id HtFalcon.definition().id
 
   @doc """
   Adds `amount` base levels, clamped to the job's `max_base_level`. Grants the
@@ -273,13 +277,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     dropped_ids = Map.keys(progression.learned_skills) -- Map.keys(new_progression.learned_skills)
 
     dismounted_state = dismount_if_losing_riding(state, dropped_ids)
-    game_state = dismounted_state.game_state
+    dismissed_state = dismiss_falcon_if_losing_mastery(dismounted_state, dropped_ids)
+    game_state = dismissed_state.game_state
 
     stats =
       %{game_state.stats | progression: new_progression}
       |> Stats.calculate_stats(game_state.character_id)
 
-    %{dismounted_state | game_state: %{game_state | stats: stats}}
+    %{dismissed_state | game_state: %{game_state | stats: stats}}
     |> cleanup_dropped_skills(dropped_ids)
     |> finish_reset_skills(previous_game_state)
   end
@@ -317,7 +322,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     old_job_id = progression.job_id
 
     dismounted_state = dismount_if_losing_riding(closed_state, dropped_ids)
-    game_state = dismounted_state.game_state
+    dismissed_state = dismiss_falcon_if_losing_mastery(dismounted_state, dropped_ids)
+    game_state = dismissed_state.game_state
 
     new_progression = %{
       progression
@@ -336,7 +342,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
         game_state.character_id
       )
 
-    %{dismounted_state | game_state: %{game_state | stats: stats}}
+    %{dismissed_state | game_state: %{game_state | stats: stats}}
     |> cleanup_dropped_skills(dropped_ids)
     |> recheck_equipment(job_id)
     |> enforce_weapon_requirements()
@@ -392,6 +398,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   defp dismount_if_losing_riding(state, dropped_ids) do
     if @kn_riding_id in dropped_ids and MountHandler.riding?(state) do
       MountHandler.force_dismount(state)
+    else
+      state
+    end
+  end
+
+  # Falconry Mastery lost to a refund/job change force-dismisses the Falcon
+  # the same way; SC_FALCON grants no stats, so only the option bit and the
+  # display mirror move.
+  @spec dismiss_falcon_if_losing_mastery(map(), [non_neg_integer()]) :: map()
+  defp dismiss_falcon_if_losing_mastery(state, dropped_ids) do
+    if @ht_falcon_id in dropped_ids and FalconHandler.falcon?(state) do
+      FalconHandler.force_dismiss(state)
     else
       state
     end

@@ -1,5 +1,6 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   use ExUnit.Case, async: false
+  import Bitwise
   import Mimic
 
   alias Aesir.Commons.Models.InventoryItem
@@ -20,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -31,7 +33,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   setup do
     Mimic.copy(SkillTree)
     StatusStorage.remove_status(:player, 1000, :sc_riding)
-    on_exit(fn -> StatusStorage.remove_status(:player, 1000, :sc_riding) end)
+    StatusStorage.remove_status(:player, 1000, :sc_falcon)
+
+    on_exit(fn ->
+      StatusStorage.remove_status(:player, 1000, :sc_riding)
+      StatusStorage.remove_status(:player, 1000, :sc_falcon)
+    end)
+
     :ok
   end
 
@@ -558,6 +566,60 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
 
       refute MountHandler.riding?(new_state)
       refute StatusStorage.has_status?(:player, 1000, :sc_riding)
+    end
+  end
+
+  describe "reset_skills/1 falcon dismissal" do
+    test "force-dismisses the Falcon when the refund drops HT_FALCON" do
+      falcon_bit = Option.id(:falcon)
+      ht_falcon = catalog_id(:ht_falcon)
+
+      :ok = StatusStorage.apply_status(:player, 1000, :sc_falcon)
+
+      state =
+        state_with_gs(
+          [job_id: @swordman_id, learned_skills: %{ht_falcon => 1}],
+          option: falcon_bit
+        )
+
+      assert {:ok, new_state} = ProgressionHandler.reset_skills(state)
+
+      refute FalconHandler.falcon?(new_state)
+      assert new_state.game_state.option == 0
+      refute StatusStorage.has_status?(:player, 1000, :sc_falcon)
+    end
+
+    test "is a no-op when no Falcon is equipped" do
+      ht_falcon = catalog_id(:ht_falcon)
+      state = state_with(job_id: @swordman_id, learned_skills: %{ht_falcon => 1})
+
+      assert {:ok, new_state} = ProgressionHandler.reset_skills(state)
+
+      refute FalconHandler.falcon?(new_state)
+      assert new_state.game_state.option == 0
+      refute StatusStorage.has_status?(:player, 1000, :sc_falcon)
+    end
+  end
+
+  describe "apply_job_change/2 falcon dismissal" do
+    test "force-dismisses the Falcon when the new job's tree drops HT_FALCON" do
+      falcon_bit = Option.id(:falcon)
+      riding_bit = Option.id(:riding)
+      ht_falcon = catalog_id(:ht_falcon)
+
+      :ok = StatusStorage.apply_status(:player, 1000, :sc_falcon)
+
+      state =
+        state_with_gs(
+          [job_id: @swordman_id, learned_skills: %{ht_falcon => 1}],
+          option: riding_bit ||| falcon_bit
+        )
+
+      assert {:ok, new_state} = ProgressionHandler.apply_job_change(@merchant_id, state)
+
+      refute FalconHandler.falcon?(new_state)
+      assert new_state.game_state.option == riding_bit
+      refute StatusStorage.has_status?(:player, 1000, :sc_falcon)
     end
   end
 
