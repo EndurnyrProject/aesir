@@ -31,6 +31,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   @type rider :: {:apply_status, atom(), keyword()}
 
   @doc """
+  Invokes the `after_normal_hit` callback of every learned passive.
+
+  Called by the combat layer once a player's ordinary weapon hit is confirmed;
+  each learned passive receives the attacker state and the immutable hit
+  context. Player states without computed stats (or non-player callers) are
+  no-ops.
+  """
+  @spec after_normal_hit(PlayerState.t(), Passive.hit_context()) :: :ok
+  def after_normal_hit(%PlayerState{stats: %PlayerStats{} = stats} = player_state, hit) do
+    stats
+    |> learned_passives()
+    |> Enum.each(fn {module, _level} -> module.after_normal_hit(player_state, hit) end)
+  end
+
+  def after_normal_hit(_player_state, _hit), do: :ok
+
+  @doc """
   Selects the first learned passive that replaces a normal attack.
 
   Learned skills are checked by skill id so selection stays deterministic.

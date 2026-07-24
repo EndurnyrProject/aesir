@@ -101,6 +101,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
     def max_weight_bonus(level, _ctx), do: 2000 * level
   end
 
+  defmodule AfterNormalHitPassive do
+    @moduledoc false
+    use Aesir.ZoneServer.Mmo.Skill,
+      id: 9_900_006,
+      name: :test_after_normal_hit_passive,
+      display_name: "Test After Normal Hit Passive",
+      max_level: 10,
+      target_type: :passive
+
+    alias Aesir.ZoneServer.Mmo.Skill.Passive
+
+    @behaviour Passive
+
+    @impl Passive
+    def after_normal_hit(player_state, hit) do
+      send(Process.get(:after_normal_hit_probe), {:after_normal_hit, player_state, hit})
+      :ok
+    end
+  end
+
   defp build_player(learned_skills, weapon_atom) do
     equip = if weapon_atom == :bow, do: @both_hand, else: @right_hand
     nameid = Map.fetch!(@weapon_ids, weapon_atom)
@@ -334,6 +354,44 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
       player = build_player(%{145 => 1}, :one_handed_sword)
 
       assert Passives.rider_for(:sm_bash, 5, player) == []
+    end
+  end
+
+  describe "after_normal_hit/2" do
+    @hit %{target_type: :mob, target_id: 2001, position: {150, 150}}
+
+    test "invokes the callback of a learned passive with the player state and hit context" do
+      Process.put(:after_normal_hit_probe, self())
+
+      stub(Catalog, :by_id, fn 9_900_006 -> {:ok, AfterNormalHitPassive.definition()} end)
+
+      stub(Catalog, :passive_module_for, fn :test_after_normal_hit_passive ->
+        {:ok, AfterNormalHitPassive}
+      end)
+
+      player = build_player(%{9_900_006 => 5}, :one_handed_sword)
+
+      assert :ok = Passives.after_normal_hit(player, @hit)
+      assert_received {:after_normal_hit, ^player, @hit}
+    end
+
+    test "does not invoke the callback when the passive is not learned" do
+      Process.put(:after_normal_hit_probe, self())
+
+      player = build_player(%{2 => 5}, :one_handed_sword)
+
+      assert :ok = Passives.after_normal_hit(player, @hit)
+      refute_received {:after_normal_hit, _, _}
+    end
+
+    test "a learned passive without the callback implemented is a no-op" do
+      player = build_player(%{2 => 5}, :one_handed_sword)
+
+      assert :ok = Passives.after_normal_hit(player, @hit)
+    end
+
+    test "a player without computed stats is a no-op" do
+      assert :ok = Passives.after_normal_hit(%PlayerState{}, @hit)
     end
   end
 

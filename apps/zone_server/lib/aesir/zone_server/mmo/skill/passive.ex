@@ -8,6 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
   channels each one implements (the rest are treated as no-ops).
   """
 
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+
   @typedoc """
   Context passed to passive callbacks, describing the player's current state
   relevant for passive skill computations.
@@ -66,6 +68,30 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
               optional(:chance) => 1..100
             }
 
+  @typedoc """
+  Immutable description of a confirmed ordinary (non-skill) player weapon hit,
+  passed to `after_normal_hit` callbacks.
+
+  Carries the target identity and the target position captured before the hit
+  landed, so a target killed or despawned by the swing cannot erase them.
+  """
+  @type hit_context :: %{
+          target_type: :mob | :player,
+          target_id: pos_integer(),
+          position: {integer(), integer()}
+        }
+
+  @doc """
+  Runs after a player's confirmed ordinary weapon hit.
+
+  Called exactly once per successful primary basic-attack swing, after the hit
+  has landed. Never called for misses, perfect dodge, attack replacements,
+  skill attacks, skill-unit attacks, or secondary splash hits. The return
+  value is ignored; implementations act on their own (e.g. message-passing to
+  the owning sessions).
+  """
+  @callback after_normal_hit(player_state :: PlayerState.t(), hit :: hit_context()) :: :ok
+
   @typedoc "A complete normal-attack replacement selected before hit calculation."
   @type attack_replacement :: :normal | {:skill_attack, keyword(), atom()}
 
@@ -105,6 +131,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
                       max_hp_bonus: 2,
                       attack_proc: 2,
                       attack_replacement: 2,
+                      after_normal_hit: 2,
                       regen_contribution: 2,
                       skill_rider: 4
 end

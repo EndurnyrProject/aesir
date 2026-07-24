@@ -408,6 +408,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
              target_id,
              hits
            ) do
+      dispatch_normal_hit_passives(player_state, target_type, target_id, target)
       roll_equipment_breaks(player_state, target_state, target_type, target_pid)
       dispatch_dealt_damage(attacker, target_type, target_id, damage_result)
       OnHitEffects.after_hit(attacker, target, damage_result)
@@ -415,6 +416,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       splash_attack(attacker, target)
       :ok
     end
+  end
+
+  # The confirmed-ordinary-hit passive seam: fires exactly once per successful
+  # primary swing, right after the hit has landed. Skill-unit targets are
+  # excluded (not living targets a passive can act on); misses, perfect dodge,
+  # attack replacements and splash secondaries never reach this point. The
+  # target position is read from the pre-hit combatant snapshot, so a target
+  # killed or despawned by the swing cannot erase it.
+  defp dispatch_normal_hit_passives(_player_state, :skill_unit, _target_id, _target), do: :ok
+
+  defp dispatch_normal_hit_passives(player_state, target_type, target_id, target) do
+    Passives.after_normal_hit(player_state, %{
+      target_type: target_type,
+      target_id: target_id,
+      position: target.position
+    })
   end
 
   # Recovers HP from the damage a landed swing dealt, when the attacker's
