@@ -1484,6 +1484,35 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert_in_delta reduced / baseline, 0.80, 0.02
     end
 
+    test "the per-hit ranged opt triggers the reduction with a melee weapon equipped" do
+      attacker = CombatTestHelper.create_player_combatant(weapon_type: :sword)
+      defender = CombatTestHelper.create_mob_combatant(def: 0)
+
+      baseline = damage_with_defender_modifiers(attacker, defender, %{})
+
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        _, unit_id when unit_id == defender.unit_id -> %{ranged_damage_taken_rate: -20}
+        _, _ -> %{}
+      end)
+
+      :rand.seed(:exsss, {11, 22, 33})
+      {:ok, result} = DamageCalculator.calculate_damage(attacker, defender, ranged: true)
+
+      assert_in_delta result.damage / baseline, 0.80, 0.02
+    end
+
+    test "a long attack range attacker (ranged mob) triggers the reduction" do
+      attacker = %{CombatTestHelper.create_mob_combatant() | attack_range: 7}
+      defender = CombatTestHelper.create_player_combatant()
+
+      baseline = damage_with_defender_modifiers(attacker, defender, %{})
+
+      reduced =
+        damage_with_defender_modifiers(attacker, defender, %{ranged_damage_taken_rate: -20})
+
+      assert_in_delta reduced / baseline, 0.80, 0.02
+    end
+
     test "ranged_damage_taken_rate leaves melee weapon damage untouched" do
       attacker = CombatTestHelper.create_player_combatant(weapon_type: :sword)
       defender = CombatTestHelper.create_mob_combatant(def: 0)

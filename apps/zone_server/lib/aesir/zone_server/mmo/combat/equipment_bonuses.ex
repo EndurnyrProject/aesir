@@ -79,20 +79,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   Percent damage-taken rate the defender's equipment and statuses apply to
   long-range physical attacks, the taken-side counterpart of `long_atk_rate/1`.
 
-  Read only when the *attacker* swings a ranged weapon; against a melee attacker
-  it is zero. The rate is additive on damage taken (`bLongAtkRate` convention),
-  so a negative value reduces incoming ranged damage. Equipment and status
-  values for the key sum.
+  Read only when the hit itself is ranged (`ranged_hit?`), which the caller
+  derives from the per-hit ranged override, the attacker's weapon class, or the
+  attacker's attack range; against a melee hit it is zero. The rate is additive
+  on damage taken (`bLongAtkRate` convention), so a negative value reduces
+  incoming ranged damage. Equipment and status values for the key sum.
   """
-  @spec ranged_damage_taken_rate(Combatant.t(), Combatant.t(), map()) :: rate()
-  def ranged_damage_taken_rate(%Combatant{} = attacker, %Combatant{} = defender, status_modifiers) do
-    if attacker.weapon |> Map.get(:type) |> WeaponTypes.is_ranged?() do
-      Map.get(defender.equip_modifiers, :ranged_damage_taken_rate, 0) +
-        Map.get(status_modifiers, :ranged_damage_taken_rate, 0)
-    else
-      0
-    end
+  @spec ranged_damage_taken_rate(Combatant.t(), map(), boolean()) :: rate()
+  def ranged_damage_taken_rate(%Combatant{} = defender, status_modifiers, true) do
+    Map.get(defender.equip_modifiers, :ranged_damage_taken_rate, 0) +
+      Map.get(status_modifiers, :ranged_damage_taken_rate, 0)
   end
+
+  def ranged_damage_taken_rate(%Combatant{}, _status_modifiers, false), do: 0
 
   @doc """
   Magic attack-side rate sums keyed on the defender's traits and the spell's

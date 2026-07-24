@@ -147,24 +147,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
   end
 
   describe "ranged_damage_taken_rate/3" do
-    test "sums defender equipment and status when the attacker is ranged" do
-      attacker = CombatTestHelper.create_player_combatant(weapon_type: :bow)
-
+    test "sums defender equipment and status for a ranged hit" do
       defender =
         CombatTestHelper.create_mob_combatant()
         |> with_equip_modifiers(%{ranged_damage_taken_rate: -5})
 
       status = %{ranged_damage_taken_rate: -20}
 
-      assert EquipmentBonuses.ranged_damage_taken_rate(attacker, defender, status) == -25
+      assert EquipmentBonuses.ranged_damage_taken_rate(defender, status, true) == -25
     end
 
-    test "returns 0 against a melee attacker even with the modifier present" do
-      attacker = CombatTestHelper.create_player_combatant(weapon_type: :sword)
+    test "returns 0 for a melee hit even with the modifier present" do
       defender = CombatTestHelper.create_mob_combatant()
       status = %{ranged_damage_taken_rate: -20}
 
-      assert EquipmentBonuses.ranged_damage_taken_rate(attacker, defender, status) == 0
+      assert EquipmentBonuses.ranged_damage_taken_rate(defender, status, false) == 0
     end
   end
 

@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.WeaponTypes
 
   @typedoc """
   Result of damage calculation containing final damage and critical hit status.
@@ -261,7 +262,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       |> apply_element_modifier(attack_element, defender, attacker_modifiers)
       |> apply_status_effect_damage_modifiers(attacker_modifiers)
       |> apply_equipment_attack_families(attacker, defender, skill_id, attack_element)
-      |> apply_equipment_taken_families(attacker, defender, attack_element)
+      |> apply_equipment_taken_families(attacker, defender, attack_element, opts)
 
     {:ok, total_atk}
   end
@@ -462,10 +463,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   # attack element. Dragonology's resist rate sums into the race+class family like
   # any other contributor; the defender's status resist keys (subele/subrace) sum
   # into the element/race families through EquipmentBonuses. The ranged family is
-  # a taken-rate step gated on the attacker being ranged, mirroring the
-  # long/short attack-side split. Each reduction family is floored at the min-1
-  # damage convention.
-  defp apply_equipment_taken_families(damage, attacker, defender, attack_element) do
+  # a taken-rate step gated on the hit being ranged — the per-hit `:ranged` opt
+  # (thrown-weapon skills), a ranged weapon class, or a long attack range (ranged
+  # mobs) — matching the `is_short` determination used at hit delivery. Each
+  # reduction family is floored at the min-1 damage convention.
+  defp apply_equipment_taken_families(damage, attacker, defender, attack_element, opts) do
     {unit_type, unit_id} = get_unit_type_and_id(defender)
     status_modifiers = ModifierCalculator.get_all_modifiers(unit_type, unit_id)
 
@@ -473,13 +475,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       EquipmentBonuses.damage_taken_rates(defender, attacker, attack_element, status_modifiers)
 
     race_class = race_class + RaceModifiers.dragonology_resist_rate(defender, attacker.race)
-    ranged = EquipmentBonuses.ranged_damage_taken_rate(attacker, defender, status_modifiers)
+
+    ranged =
+      EquipmentBonuses.ranged_damage_taken_rate(
+        defender,
+        status_modifiers,
+        ranged_hit?(attacker, opts)
+      )
 
     damage
     |> apply_taken_step(race_class)
     |> apply_taken_step(element)
     |> apply_taken_step(size)
     |> apply_taken_rate_step(ranged)
+  end
+
+  defp ranged_hit?(attacker, opts) do
+    Keyword.get(opts, :ranged, false) or
+      attacker.weapon |> Map.get(:type) |> WeaponTypes.is_ranged?() or
+      Map.get(attacker, :attack_range, 1) > 3
   end
 
   defp apply_family_step(damage, 0), do: damage
