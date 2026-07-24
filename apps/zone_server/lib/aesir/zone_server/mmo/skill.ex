@@ -159,6 +159,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill do
     {:max_weight_bonus, 2, quote(do: def(max_weight_bonus(_level, _ctx), do: 0))},
     {:aspd_bonus, 2, quote(do: def(aspd_bonus(_level, _ctx), do: 0))},
     {:int_bonus, 2, quote(do: def(int_bonus(_level, _ctx), do: 0))},
+    {:max_hp_bonus, 2, quote(do: def(max_hp_bonus(_level, _ctx), do: 0))},
     {:attack_proc, 2, quote(do: def(attack_proc(_level, _ctx), do: %{}))},
     {:regen_contribution, 2, quote(do: def(regen_contribution(_level, _ctx), do: %{}))},
     {:skill_rider, 4,

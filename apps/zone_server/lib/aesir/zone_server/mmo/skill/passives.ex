@@ -208,6 +208,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   end
 
   @doc """
+  Sums the flat max-HP bonus contributed by every learned passive for the player.
+  """
+  @spec max_hp_bonus(PlayerState.t() | PlayerStats.t()) :: integer()
+  def max_hp_bonus(%PlayerState{stats: stats}), do: max_hp_bonus(stats)
+
+  def max_hp_bonus(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
+    |> learned_passives()
+    |> Enum.reduce(0, fn {module, level}, acc ->
+      acc + module.max_hp_bonus(level, ctx)
+    end)
+  end
+
+  @doc """
   Folds the on-normal-attack procs of every learned passive into one map.
 
   Keeps the proc with the highest `:multi_hit` (carrying its own `:chance`

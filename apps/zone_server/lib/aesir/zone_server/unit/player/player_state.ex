@@ -976,6 +976,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       divine_protection_level: Learned.learned_level(learned, 22),
       demon_bane_level: Learned.learned_level(learned, 23),
       dragonology_level: Learned.learned_level(learned, 284),
+      faith_level: Learned.learned_level(learned, 248),
       class: :normal,
       riding: riding?(state.option),
       equip_modifiers: state.stats.modifiers.equipment

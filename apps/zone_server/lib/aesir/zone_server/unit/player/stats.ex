@@ -1008,7 +1008,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     equipment_percent + status_percent
   end
 
-  defp get_hp_bonus_flat(%__MODULE__{} = stats), do: get_equipment_modifier(stats, :max_hp)
+  defp get_hp_bonus_flat(%__MODULE__{} = stats),
+    do: get_equipment_modifier(stats, :max_hp) + Passives.max_hp_bonus(stats)
 
   defp get_sp_bonus_flat(%__MODULE__{} = stats), do: get_equipment_modifier(stats, :max_sp)
 

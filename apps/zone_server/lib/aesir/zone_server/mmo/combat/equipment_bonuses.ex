@@ -45,8 +45,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   `status_modifiers` is the defender's folded status-effect modifier map; its
   element/race resist keys (`:subele_holy`, `:subrace_demon`) sum into the same
   families equipment feeds, so a status resist and an equipment resist for the
-  same element/race stack. Mobs and callers without statuses pass `%{}` and read
-  equipment only.
+  same element/race stack. Faith (`CR_TRUST`) feeds the element family the same
+  way, straight off the defender's precomputed `faith_level` rather than a
+  status modifier — the same precomputed-combatant-field approach as
+  Dragonology's `RaceModifiers.dragonology_resist_rate/2`, though Faith is read
+  here so both damage classes get it from one place. Mobs and callers without
+  statuses pass `%{}` and read equipment only.
   """
   @spec damage_taken_rates(Combatant.t(), Combatant.t(), atom(), map()) :: %{
           race_class: rate(),
@@ -65,7 +69,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
           status_subrace(status_modifiers, attacker.race),
       element:
         read(defender, :subele, attack_element) +
-          status_subele(status_modifiers, attack_element),
+          status_subele(status_modifiers, attack_element) +
+          faith_resist_rate(defender, attack_element),
       size: read(defender, :subsize, attacker.size)
     }
   end
@@ -217,6 +222,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   @spec status_subele(map(), atom()) :: rate()
   defp status_subele(status_modifiers, :holy), do: Map.get(status_modifiers, :subele_holy, 0)
   defp status_subele(_status_modifiers, _element), do: 0
+
+  # Faith (CR_TRUST) grants 5% holy resist per level, precomputed onto
+  # `Combatant.faith_level` at build time (0 for mobs).
+  @spec faith_resist_rate(Combatant.t(), atom()) :: rate()
+  defp faith_resist_rate(%Combatant{faith_level: level}, :holy) when level > 0, do: level * 5
+  defp faith_resist_rate(_defender, _attack_element), do: 0
 
   @spec status_subrace(map(), atom()) :: rate()
   defp status_subrace(status_modifiers, :demon), do: Map.get(status_modifiers, :subrace_demon, 0)
