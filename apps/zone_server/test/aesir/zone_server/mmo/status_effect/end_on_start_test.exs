@@ -33,7 +33,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.EndOnStartTest do
     :sc_onehand,
     :sc_offertorium,
     :sc_shadowweapon,
-    :sc_spearquicken,
     :sc_truesight,
     :sc_windwalk
   ]
