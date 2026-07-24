@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
+  alias Aesir.ZoneServer.Unit.SpecialEffect
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :set_mimic_from_context
@@ -220,6 +221,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
       victim = spawn_session(:victim)
       attacker = spawn_session(:attacker)
       arm_reflect(1)
+      expect(SpecialEffect, :play, fn {:player, @victim_id}, :reflectshield, :area -> :ok end)
       stub(TargetResolver, :resolve, fn @attacker_id -> {:ok, attacker, %{}, :player} end)
 
       DamageApplication.apply_unit_damage(
@@ -258,6 +260,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
       victim = spawn_session(:victim)
       attacker = spawn_session(:attacker)
       arm_reflect(5)
+      reject(&SpecialEffect.play/3)
       stub(TargetResolver, :resolve, fn @attacker_id -> {:ok, attacker, %{}, :player} end)
 
       DamageApplication.apply_unit_damage(
@@ -277,6 +280,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
       victim = spawn_session(:victim)
       attacker = spawn_session(:attacker)
       arm_reflect(5)
+      reject(&SpecialEffect.play/3)
       stub(TargetResolver, :resolve, fn @attacker_id -> {:ok, attacker, %{}, :player} end)
 
       DamageApplication.apply_unit_damage(
@@ -292,12 +296,48 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
       refute_receive {:attacker, _, _}
     end
 
+    test "zero damage plays no effect" do
+      victim = spawn_session(:victim)
+      arm_reflect(5)
+      reject(&SpecialEffect.play/3)
+
+      DamageApplication.apply_unit_damage(
+        :player,
+        victim,
+        @victim_id,
+        0,
+        melee_hit(),
+        @attacker_id
+      )
+
+      assert_receive {:victim, 0, @attacker_id}
+    end
+
+    test "a redirected hit plays no effect" do
+      victim = spawn_session(:victim)
+      arm_reflect(5)
+      reject(&SpecialEffect.play/3)
+
+      DamageApplication.apply_unit_damage(
+        :player,
+        victim,
+        @victim_id,
+        100,
+        Map.put(melee_hit(), :redirected, true),
+        @attacker_id
+      )
+
+      assert_receive {:victim, 100, @attacker_id}
+    end
+
     test "reflected damage is not itself reflected when both sides carry the status" do
       victim = spawn_session(:victim)
       attacker = spawn_session(:attacker)
       stub_unit_infos([{:player, @victim_id}, {:player, @attacker_id}])
       :ok = StatusInterpreter.apply_status(:player, @victim_id, :sc_reflectshield, val1: 5)
       :ok = StatusInterpreter.apply_status(:player, @attacker_id, :sc_reflectshield, val1: 5)
+
+      expect(SpecialEffect, :play, fn {:player, @victim_id}, :reflectshield, :area -> :ok end)
 
       stub(TargetResolver, :resolve, fn
         @attacker_id -> {:ok, attacker, %{}, :player}

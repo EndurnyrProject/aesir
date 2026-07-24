@@ -18,14 +18,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ReflectShield do
     icon: :reflectshield
 
   alias Aesir.ZoneServer.Mmo.StatusEntry
+  alias Aesir.ZoneServer.Unit.SpecialEffect
 
   @impl true
   @spec after_damage_taken({atom(), integer()}, StatusEntry.t(), map(), map()) ::
           :ok | {:reflect, non_neg_integer()}
-  def after_damage_taken(_target, %StatusEntry{val1: level}, %{damage: damage}, _context) do
+  def after_damage_taken(target, %StatusEntry{val1: level}, %{damage: damage}, _context) do
     amount = div(damage * (10 + 3 * level), 100)
 
     if amount > 0 do
+      SpecialEffect.play(target, :reflectshield, :area)
       {:reflect, amount}
     else
       :ok
