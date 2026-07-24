@@ -1,4 +1,4 @@
-defmodule Aesir.ZoneServer.Mmo.MobSkill.CrusaderMobCastTest do
+defmodule Aesir.ZoneServer.Integration.CrusaderMobCastTest do
   @moduledoc """
   Proves Crusader mob casting behaves correctly beyond the sweep's clean-result
   check:

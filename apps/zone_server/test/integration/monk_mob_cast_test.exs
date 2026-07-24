@@ -1,4 +1,4 @@
-defmodule Aesir.ZoneServer.Mmo.MobSkill.MonkMobCastTest do
+defmodule Aesir.ZoneServer.Integration.MonkMobCastTest do
   @moduledoc """
   Proves the two Monk skills whose player modules could not run for a mob caster
   now execute correctly through the mob-skill `Executor` against live sessions:

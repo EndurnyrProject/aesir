@@ -1,4 +1,4 @@
-defmodule Aesir.ZoneServer.Mmo.MobSkill.KnightMobCastTest do
+defmodule Aesir.ZoneServer.Integration.KnightMobCastTest do
   @moduledoc """
   Proves three Knight skills the sweep only checks for a clean, non-crashing
   result actually do the right thing for a mob caster:

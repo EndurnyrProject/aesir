@@ -49,6 +49,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
   use ExUnit.Case, async: false
 
   import Mimic
+  import ExUnit.CaptureLog
   import Aesir.TestEtsSetup
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -105,7 +106,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
       assert %{status_type: :sc_quagmire} = MalformedFieldSupport.field_support(group(1))
       :ok = Storage.insert(group(1))
 
-      assert catch_exit(Trigger.on_enter_cell(@mover, "prontera", 5, 5))
+      capture_log(fn ->
+        assert catch_exit(Trigger.on_enter_cell(@mover, "prontera", 5, 5))
+      end)
     end
 
     test "invokes on_touch for a covering group and persists {:ok, updated}" do

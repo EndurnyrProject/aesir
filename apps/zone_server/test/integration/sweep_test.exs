@@ -1,4 +1,4 @@
-defmodule Aesir.ZoneServer.Mmo.MobSkill.SweepTest do
+defmodule Aesir.ZoneServer.Integration.SweepTest do
   @moduledoc """
   Safety-gate sweep: every distinct (skill, skill id) pair shipped in
   `priv/db/mob_skills/mob_skills.yml` is exercised against a real, registered

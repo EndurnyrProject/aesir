@@ -1,4 +1,4 @@
-defmodule Aesir.ZoneServer.Mmo.Refine.RefineIntegrationTest do
+defmodule Aesir.ZoneServer.Integration.RefineIntegrationTest do
   @moduledoc """
   End-to-end coverage that the refine DSL surface is playable on the real
   stack, mirroring the storage/warp integration coverage. A throwaway NPC

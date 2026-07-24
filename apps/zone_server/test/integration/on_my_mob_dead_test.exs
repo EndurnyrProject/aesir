@@ -1,4 +1,4 @@
-defmodule Aesir.ZoneServer.Npc.OnMyMobDeadTest do
+defmodule Aesir.ZoneServer.Integration.OnMyMobDeadTest do
   @moduledoc """
   Covers Task 11: mob-spawning ops tagging a summoned mob with an `event:
   "Name::OnLabel"` owner event (rAthena OnMyMobDead), fired with the killer

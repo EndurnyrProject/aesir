@@ -1,4 +1,4 @@
-defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisorKillTest do
+defmodule Aesir.ZoneServer.Integration.MobSupervisorKillTest do
   @moduledoc """
   `MobSupervisor.kill_by_event/2` — the removal path behind the `killmonster`
   NPC buildin. Matching mobs are terminated and unregistered without firing

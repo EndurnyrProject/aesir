@@ -1,4 +1,4 @@
-defmodule Aesir.ZoneServer.Unit.Player.MonkSessionLifecycleTest do
+defmodule Aesir.ZoneServer.Integration.MonkSessionLifecycleTest do
   @moduledoc """
   Session-lifecycle cleanup for Monk-owned state: death, cross-map warp, and
   disconnect against a live `PlayerSession`.

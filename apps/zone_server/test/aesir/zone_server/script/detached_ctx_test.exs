@@ -12,7 +12,7 @@ defmodule Aesir.ZoneServer.Script.DetachedCtxTest do
   `summon_mob/2` and `summon_random_mob/2` are the exception: Task 11 makes
   them detached-capable off the calling NPC's own placement, so their
   detached-ctx coverage (including the still-halting unresolvable-gid case)
-  lives in `Aesir.ZoneServer.Npc.OnMyMobDeadTest` instead, alongside the rest
+  lives in `Aesir.ZoneServer.Integration.OnMyMobDeadTest` instead, alongside the rest
   of the OnMyMobDead owner-event feature.
   """
 

@@ -1,4 +1,4 @@
-defmodule Aesir.ZoneServer.Mmo.ItemBreakIntegrationTest do
+defmodule Aesir.ZoneServer.Integration.ItemBreakIntegrationTest do
   @moduledoc """
   End-to-end coverage of the item break/repair slice on the real stack,
   mirroring the refine integration coverage. It drives the natural weapon

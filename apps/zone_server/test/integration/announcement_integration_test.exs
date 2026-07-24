@@ -1,4 +1,4 @@
-defmodule Aesir.ZoneServer.AnnouncementIntegrationTest do
+defmodule Aesir.ZoneServer.Integration.AnnouncementIntegrationTest do
   @moduledoc """
   End-to-end broadcast delivery against the real subsystems (design "Testing"
   item 4, architecture section 8). Each scope drives the real

@@ -1,4 +1,4 @@
-defmodule Aesir.ZoneServer.Mmo.JobManagement.JobChangeIntegrationTest do
+defmodule Aesir.ZoneServer.Integration.JobChangeIntegrationTest do
   @moduledoc """
   End-to-end coverage that an NPC's `jobchange` DSL call flips a live player's
   job and refreshes the client's skill window, mirroring the merchant-skills
