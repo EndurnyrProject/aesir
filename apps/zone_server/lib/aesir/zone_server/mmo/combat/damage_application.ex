@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
@@ -26,11 +27,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   packet, then pass the returned hit information to `apply_unit_damage/6`.
   This keeps the visible number and HP loss identical while ensuring a
   consumable modifier such as Lex Aeterna runs exactly once.
+
+  Damage aimed at a player holding a valid Devotion link is rerouted to the
+  Crusader instead: the full computed damage is applied to the Crusader through
+  the async path flagged `redirected: true` (bypassing the Crusader's own
+  absorb/reductions/reflect), and this call returns `0` so the devotee takes and
+  displays nothing. A stale link (Crusader dead, cross-map, or out of range) is
+  torn down here and the hit lands on the devotee normally. Reflected packets
+  and self-damage (attacker equals target) are never rerouted.
   """
-  @spec prepare_unit_damage(:player | :mob, integer(), integer(), map()) :: {integer(), map()}
-  def prepare_unit_damage(target_type, target_id, damage, hit_info) do
-    {absorb_unit_damage(target_type, target_id, damage, hit_info),
-     Map.put(hit_info, :pre_delivery_prepared?, true)}
+  @spec prepare_unit_damage(:player | :mob, integer(), integer(), map(), integer() | nil) ::
+          {integer(), map()}
+  def prepare_unit_damage(target_type, target_id, damage, hit_info, attacker_id) do
+    case reroute_to_crusader(target_type, target_id, damage, hit_info, attacker_id) do
+      :rerouted ->
+        {0, Map.put(hit_info, :pre_delivery_prepared?, true)}
+
+      :not_rerouted ->
+        {absorb_unit_damage(target_type, target_id, damage, hit_info),
+         Map.put(hit_info, :pre_delivery_prepared?, true)}
+    end
   end
 
   @doc """
@@ -38,7 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
   Callers without a packet may pass an ordinary hit and the modifier hook runs
   here. Packet-producing paths pass hit information returned by
-  `prepare_unit_damage/4`, which prevents applying the same modifier twice.
+  `prepare_unit_damage/5`, which prevents applying the same modifier twice.
   """
   @spec apply_unit_damage(:player | :mob, pid(), integer(), integer(), map(), integer() | nil) ::
           :ok
@@ -108,6 +124,72 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   def broadcast_nearby(target, packet) do
     {x, y} = target.position
     Broadcast.to_in_range(target.map_name, x, y, Config.view_range(), packet)
+  end
+
+  # Redirects damage aimed at a devoted player to its Crusader. Runs entirely
+  # against StatusStorage and the spatial index (no session calls), so the
+  # decision is safe inside the attacker's own process. Only real, positive,
+  # non-reflected/non-redirected damage from a distinct attacker is eligible;
+  # self-damage (Grand Cross) carries `attacker_id == target_id` and is skipped.
+  defp reroute_to_crusader(:player, target_id, damage, hit_info, attacker_id)
+       when damage > 0 and is_integer(attacker_id) and attacker_id != target_id do
+    if reroutable?(hit_info) do
+      dispatch_reroute(target_id, damage, hit_info, attacker_id)
+    else
+      :not_rerouted
+    end
+  end
+
+  defp reroute_to_crusader(_target_type, _target_id, _damage, _hit_info, _attacker_id),
+    do: :not_rerouted
+
+  defp dispatch_reroute(target_id, damage, hit_info, attacker_id) do
+    case Devotion.redirect_target(target_id) do
+      {:ok, crusader_id} ->
+        redirect_damage(crusader_id, damage, hit_info, attacker_id)
+        :rerouted
+
+      :stale ->
+        Devotion.teardown(target_id)
+        :not_rerouted
+
+      :none ->
+        :not_rerouted
+    end
+  end
+
+  defp reroutable?(hit_info) do
+    not Map.get(hit_info, :reflected, false) and
+      not Map.get(hit_info, :redirected, false)
+  end
+
+  # Applies the full computed damage to the Crusader through the async apply
+  # path. `redirected: true` exempts it from the reflect hook and re-redirect;
+  # `pre_delivery_prepared?: true` skips the Crusader's own absorb. Its
+  # damage-taken reductions and before-hooks are never on this path to begin
+  # with. A Crusader that vanished between the pull-check and here is a rare
+  # race: the hit is dropped (the devotee already takes zero) and the tick
+  # self-heals the link.
+  defp redirect_damage(crusader_id, damage, hit_info, attacker_id) do
+    case TargetResolver.resolve(:player, crusader_id) do
+      {:ok, crusader_pid, _state, :player} ->
+        redirected_info =
+          hit_info
+          |> Map.put(:redirected, true)
+          |> Map.put(:pre_delivery_prepared?, true)
+
+        apply_unit_damage(
+          :player,
+          crusader_pid,
+          crusader_id,
+          damage,
+          redirected_info,
+          attacker_id
+        )
+
+      {:error, _reason} ->
+        :ok
+    end
   end
 
   defp absorb_unit_damage(target_type, target_id, damage, hit_info) when damage > 0 do

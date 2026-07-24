@@ -609,7 +609,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
         prepared_hits =
           Enum.map(1..hits//1, fn _ ->
-            DamageApplication.prepare_unit_damage(:mob, target_id, damage, hit_info)
+            DamageApplication.prepare_unit_damage(
+              :mob,
+              target_id,
+              damage,
+              hit_info,
+              attacker_combatant.unit_id
+            )
           end)
 
         Enum.each(prepared_hits, fn {final_damage, prepared_hit_info} ->
@@ -721,7 +727,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     }
 
     {damage, hit_info} =
-      DamageApplication.prepare_unit_damage(:player, target_id, damage, hit_info)
+      DamageApplication.prepare_unit_damage(
+        :player,
+        target_id,
+        damage,
+        hit_info,
+        attacker_combatant.unit_id
+      )
 
     attack_packet =
       PacketFactory.build_attack_packet(

@@ -34,11 +34,47 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion do
     tick_interval: 1_000,
     icon: :devotion
 
+  alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.DevotedBy
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  @doc """
+  Resolves a live redirect target for damage aimed at `devotee_id`.
+
+  Pull-checked against `StatusStorage` and the spatial index only - no session
+  calls - so the damage pipeline can decide in the attacker's own process:
+
+    * `{:ok, crusader_id}` when the devotee holds an `sc_devotion` whose Crusader
+      is alive, on the same map, and within the stored redirect range;
+    * `:stale` when a link exists but fails that pull-check (the caller should
+      tear both sides down and apply damage normally);
+    * `:none` when the devotee holds no devotion link.
+  """
+  @spec redirect_target(non_neg_integer()) :: {:ok, non_neg_integer()} | :stale | :none
+  def redirect_target(devotee_id) do
+    case StatusStorage.get_status(:player, devotee_id, :sc_devotion) do
+      %StatusEntry{state: %{peer: {:player, crusader_id}, range: range}} ->
+        if link_valid?(devotee_id, crusader_id, range), do: {:ok, crusader_id}, else: :stale
+
+      _ ->
+        :none
+    end
+  end
+
+  @doc """
+  Tears down both sides of `devotee_id`'s link through the normal removal
+  cascade: removing the devotee's `sc_devotion` runs `on_expire`, which detaches
+  the Crusader's `sc_devoted_by` entry for the same link.
+  """
+  @spec teardown(non_neg_integer()) :: :ok
+  def teardown(devotee_id) do
+    Interpreter.remove_status(:player, devotee_id, :sc_devotion)
+  end
 
   @impl true
   def on_expire({_type, devotee_id}, %StatusEntry{state: state}, _context) do
@@ -65,6 +101,22 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion do
   end
 
   defp peer_intact?(_devotee_id, _state), do: false
+
+  defp link_valid?(devotee_id, crusader_id, range) do
+    alive?(crusader_id) and within_range?(devotee_id, crusader_id, range)
+  end
+
+  # Same-map, within-range pull-check. The pinned map on the Crusader lookup
+  # makes a cross-map pairing fail the match, so a warped-away Crusader reads as
+  # out of range and the link is treated as stale.
+  defp within_range?(devotee_id, crusader_id, range) do
+    with {:ok, {dx, dy, map}} <- SpatialIndex.get_unit_position(:player, devotee_id),
+         {:ok, {cx, cy, ^map}} <- SpatialIndex.get_unit_position(:player, crusader_id) do
+      Geometry.chebyshev_distance(dx, dy, cx, cy) <= range
+    else
+      _ -> false
+    end
+  end
 
   defp provider_matches?(crusader_id, devotee_id, link_id) do
     match?(

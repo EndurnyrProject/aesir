@@ -325,7 +325,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       }
 
       {damage, hit_info} =
-        DamageApplication.prepare_unit_damage(target_type, target_id, damage, hit_info)
+        DamageApplication.prepare_unit_damage(
+          target_type,
+          target_id,
+          damage,
+          hit_info,
+          attacker.unit_id
+        )
 
       packet =
         PacketFactory.build_splash_damage_packet(
@@ -438,7 +444,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
             target_type,
             target.unit_id,
             damage_result.damage,
-            hit_info
+            hit_info,
+            attacker.unit_id
           )
 
         packet =

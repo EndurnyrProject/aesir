@@ -98,7 +98,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           from_caster?: true
         )
 
-      {damage, hit_info} = prepare_magic_hit(target_type, target_id, damage, hit_info)
+      {damage, hit_info} =
+        prepare_magic_hit(target_type, target_id, damage, hit_info, attacker.unit_id)
 
       packet =
         PacketFactory.build_splash_damage_packet(
@@ -270,7 +271,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           from_caster?: false
         )
 
-      {damage, hit_info} = prepare_magic_hit(target_type, target_id, damage, hit_info)
+      {damage, hit_info} =
+        prepare_magic_hit(target_type, target_id, damage, hit_info, caster.unit_id)
 
       packet =
         PacketFactory.build_splash_damage_packet(
@@ -598,7 +600,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           from_caster?: true
         )
 
-      {damage, hit_info} = prepare_magic_hit(target_type, target_id, damage, hit_info)
+      {damage, hit_info} =
+        prepare_magic_hit(target_type, target_id, damage, hit_info, attacker.unit_id)
 
       packet =
         PacketFactory.build_splash_damage_packet(
@@ -638,7 +641,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
        ) do
     prepared_hits =
       Enum.map(damages, fn damage ->
-        prepare_magic_hit(target_type, target_id, damage, hit_info)
+        prepare_magic_hit(target_type, target_id, damage, hit_info, attacker.unit_id)
       end)
 
     if length(prepared_hits) > 1 and
@@ -691,9 +694,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     end
   end
 
-  defp prepare_magic_hit(:skill_unit, _target_id, damage, hit_info), do: {damage, hit_info}
+  defp prepare_magic_hit(:skill_unit, _target_id, damage, hit_info, _attacker_id),
+    do: {damage, hit_info}
 
-  defp prepare_magic_hit(target_type, target_id, damage, hit_info) do
-    DamageApplication.prepare_unit_damage(target_type, target_id, damage, hit_info)
+  defp prepare_magic_hit(target_type, target_id, damage, hit_info, attacker_id) do
+    DamageApplication.prepare_unit_damage(target_type, target_id, damage, hit_info, attacker_id)
   end
 end
