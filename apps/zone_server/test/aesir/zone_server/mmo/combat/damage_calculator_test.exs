@@ -781,6 +781,81 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
   end
 
+  describe "Beast Bane additive ATK (vs Brute/Insect)" do
+    setup do
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
+      stub(RaceModifiers, :player_race, fn -> :player_human end)
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+      :ok
+    end
+
+    test "raises physical damage vs a Brute mob by exactly four ATK per level" do
+      attacker = %{CombatTestHelper.create_player_combatant() | beast_bane_level: 5}
+      brute_mob = CombatTestHelper.create_mob_combatant(race: :brute, def: 0)
+
+      :rand.seed(:exsss, {1, 2, 3})
+
+      {:ok, %{damage: with_bane}} =
+        DamageCalculator.calculate_damage(attacker, brute_mob, skip_crit: true)
+
+      :rand.seed(:exsss, {1, 2, 3})
+
+      {:ok, %{damage: without_bane}} =
+        DamageCalculator.calculate_damage(
+          %{attacker | beast_bane_level: 0},
+          brute_mob,
+          skip_crit: true
+        )
+
+      assert with_bane - without_bane == 20
+    end
+
+    test "raises physical damage vs an Insect mob by exactly four ATK per level" do
+      attacker = %{CombatTestHelper.create_player_combatant() | beast_bane_level: 3}
+      insect_mob = CombatTestHelper.create_mob_combatant(race: :insect, def: 0)
+
+      :rand.seed(:exsss, {1, 2, 3})
+
+      {:ok, %{damage: with_bane}} =
+        DamageCalculator.calculate_damage(attacker, insect_mob, skip_crit: true)
+
+      :rand.seed(:exsss, {1, 2, 3})
+
+      {:ok, %{damage: without_bane}} =
+        DamageCalculator.calculate_damage(
+          %{attacker | beast_bane_level: 0},
+          insect_mob,
+          skip_crit: true
+        )
+
+      assert with_bane - without_bane == 12
+    end
+
+    test "flows Beast Bane ATK through defense reduction" do
+      attacker = %{CombatTestHelper.create_player_combatant() | beast_bane_level: 5}
+      brute_mob = CombatTestHelper.create_mob_combatant(race: :brute, def: 60)
+
+      :rand.seed(:exsss, {1, 2, 3})
+
+      {:ok, %{damage: with_bane}} =
+        DamageCalculator.calculate_damage(attacker, brute_mob, skip_crit: true)
+
+      :rand.seed(:exsss, {1, 2, 3})
+
+      {:ok, %{damage: without_bane}} =
+        DamageCalculator.calculate_damage(
+          %{attacker | beast_bane_level: 0},
+          brute_mob,
+          skip_crit: true
+        )
+
+      delta = with_bane - without_bane
+      assert delta > 0
+      assert delta < 20
+    end
+  end
+
   describe "Divine Protection soft-DEF (vs undead/demon attacker)" do
     setup do
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
@@ -888,8 +963,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
   end
 
-  describe "Divine Protection / Demon Bane do not affect magic" do
-    test "magic damage is identical regardless of DP / Demon Bane levels" do
+  describe "Divine Protection, Demon Bane and Beast Bane do not affect magic" do
+    test "magic damage is identical regardless of passive physical damage levels" do
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
       stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
 
@@ -910,7 +985,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       {:ok, boosted} =
         MagicDamageCalculator.calculate_magic_damage(
-          Map.put(attacker, :demon_bane_level, 10),
+          attacker
+          |> Map.put(:demon_bane_level, 10)
+          |> Map.put(:beast_bane_level, 10),
           Map.put(defender, :divine_protection_level, 10)
         )
 

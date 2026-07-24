@@ -127,6 +127,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
          skilled_atk = div(patk_atk * skill_ratio, 100) + bonus_atk,
          {:ok, modified_atk} <- apply_modifier_pipeline(skilled_atk, attacker, defender, opts),
          total_atk = modified_atk + demon_bane_bonus(attacker, defender),
+         total_atk = total_atk + beast_bane_bonus(attacker, defender),
          total_atk = apply_res_reduction(total_atk, defender),
          {:ok, final_damage} <- apply_defense_formula(total_atk, defender, attacker) do
       finalize_damage(final_damage, attacker, opts)
@@ -151,6 +152,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   # defender is undead/demon. Additive, unlike the multiplicative race modifier.
   defp demon_bane_bonus(attacker, defender) do
     RaceModifiers.demon_bane_atk(attacker, defender.race)
+  end
+
+  defp beast_bane_bonus(attacker, defender) do
+    RaceModifiers.beast_bane_atk(attacker, defender.race)
   end
 
   # `:force_crit` guarantees the critical (Auto Counter's counter strike) and

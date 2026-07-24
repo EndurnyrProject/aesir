@@ -315,6 +315,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
       assert combatant.combat_stats.atk == 50
       assert combatant.combat_stats.def == 25
       assert combatant.base_stats.str == 40
+      assert combatant.beast_bane_level == 0
     end
   end
 

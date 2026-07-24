@@ -3,7 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   Race-based combat modifiers based on the rAthena implementation.
 
   Currently covers the racial skill bonuses that have a live source of truth:
-  Demon Bane (`demon_bane_atk/2`), Divine Protection
+  Demon Bane (`demon_bane_atk/2`), Beast Bane (`beast_bane_atk/2`), Divine Protection
   (`divine_protection_def/2`), and Dragonology (`dragonology_atk_rate/2`,
   `dragonology_matk_rate/2`, `dragonology_resist_rate/2`), plus the race
   taxonomy and predicates. Card / equipment race bonuses (`bonus2 bAddRace, ...`)
@@ -44,6 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   # Races against which Demon Bane / Divine Protection apply. Only mobs carry
   # these, so both bonuses are PvE-only in practice.
   @undead_demon [:undead, :demon]
+  @brute_insect [:brute, :insect]
 
   @doc """
   Demon Bane (AL_DEMONBANE) additive physical ATK bonus.
@@ -64,6 +65,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   end
 
   def demon_bane_atk(_attacker, _defender_race), do: 0
+
+  @doc """
+  Beast Bane (HT_BEASTBANE) additive physical ATK bonus.
+
+  Returns four ATK per learned level when the defender is Brute or Insect,
+  otherwise zero.
+  """
+  @spec beast_bane_atk(map(), race()) :: non_neg_integer()
+  def beast_bane_atk(%{beast_bane_level: level}, defender_race)
+      when level > 0 and defender_race in @brute_insect,
+      do: level * 4
+
+  def beast_bane_atk(_attacker, _defender_race), do: 0
 
   @doc """
   Divine Protection (AL_DP) additive soft-DEF (VIT-DEF) bonus.

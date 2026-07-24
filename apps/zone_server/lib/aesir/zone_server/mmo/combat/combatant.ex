@@ -116,6 +116,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
     # Passive skill levels precomputed at combatant-build time (0 for mobs).
     field :divine_protection_level, integer(), default: 0
     field :demon_bane_level, integer(), default: 0
+    field :beast_bane_level, integer(), default: 0
     field :dragonology_level, integer(), default: 0
     field :faith_level, integer(), default: 0
 

@@ -36,6 +36,37 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiersTest do
     end
   end
 
+  describe "beast_bane_atk/2" do
+    test "adds four ATK per level against Brute and Insect targets" do
+      attacker = %{beast_bane_level: 5}
+
+      assert RaceModifiers.beast_bane_atk(attacker, :brute) == 20
+      assert RaceModifiers.beast_bane_atk(attacker, :insect) == 20
+    end
+
+    test "is zero against every other supported race and when unlearned" do
+      attacker = %{beast_bane_level: 5}
+
+      for race <- [
+            :formless,
+            :undead,
+            :plant,
+            :fish,
+            :demon,
+            :demi_human,
+            :player_human,
+            :player_doram,
+            :angel,
+            :dragon,
+            :boss
+          ] do
+        assert RaceModifiers.beast_bane_atk(attacker, race) == 0
+      end
+
+      assert RaceModifiers.beast_bane_atk(%{beast_bane_level: 0}, :brute) == 0
+    end
+  end
+
   describe "divine_protection_def/2" do
     test "adds (base_level/25 + 3) * level + 0.5 soft-DEF vs undead and demon attackers" do
       defender = %{divine_protection_level: 5, progression: %{base_level: 50}}
