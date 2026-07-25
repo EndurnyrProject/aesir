@@ -62,7 +62,7 @@ defmodule Commons.MixProject do
       {:recode, "~> 0.8.0", only: [:dev], runtime: false},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
       {:tidewave, "~> 0.4", only: :dev},
-      {:typedstruct, github: "ygorcastor/typedstruct", branch: "main"}
+      {:typedstruct, "~> 0.5"}
     ]
   end
 
