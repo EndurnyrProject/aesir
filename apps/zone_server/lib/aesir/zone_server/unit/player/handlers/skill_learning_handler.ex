@@ -12,11 +12,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler do
   `KN_CAVALIERMASTERY` while mounted re-applies `SC_RIDING`
   (`MountHandler.recompute/1`) so the ASPD buyback updates immediately instead
   of waiting for a dismount/remount.
+
+  `grant_skill/3` is the separate NPC-script permanent-grant path (rAthena's
+  "platinum skill" style `skill <id>,<level>,SKILL_PERM`): it persists
+  `learned_skills` and refreshes the `SkillList` the same way, but never
+  spends or refunds a skill point and never recomputes derived stats.
   """
 
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.LearnSkillResult
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Mmo.Skill.Grant
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.Knight.KnCavaliermastery
   alias Aesir.ZoneServer.Mmo.SkillTree
@@ -66,6 +72,50 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler do
   @spec maybe_recompute_riding(map(), non_neg_integer()) :: map()
   defp maybe_recompute_riding(state, @kn_cavaliermastery_id), do: MountHandler.recompute(state)
   defp maybe_recompute_riding(state, _skill_id), do: state
+
+  @doc """
+  Grants `skill_id_or_name` permanently at `level` through the session
+  (rAthena's platinum-skill style `skill <id>,<level>,SKILL_PERM`).
+
+  Resolves and validates the grant through `Mmo.Skill.Grant`, keeping the
+  greater of the existing and requested learned level (idempotent - a repeat
+  or lower-level grant leaves the level unchanged), persists the updated
+  `learned_skills`, and pushes a refreshed `SkillList` to the client. Spends
+  and refunds no skill points, so no `ParamChange` is sent, and every other
+  learned skill is left untouched.
+
+  Returns `{:error, reason}` without mutating `state` when the skill is
+  unknown, `level` is out of range, or the definition lacks quest-grant
+  metadata (see `Mmo.Skill.Grant.reason/0`).
+  """
+  @spec grant_skill(integer() | atom(), pos_integer(), map()) ::
+          {:ok, map()} | {:error, Grant.reason()}
+  def grant_skill(skill_id_or_name, level, %{game_state: game_state} = state) do
+    progression = game_state.stats.progression
+
+    case Grant.grant(progression.learned_skills, skill_id_or_name, level) do
+      {:ok, learned_skills} ->
+        {:ok, commit_grant(learned_skills, state, game_state)}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp commit_grant(learned_skills, state, game_state) do
+    progression = %{game_state.stats.progression | learned_skills: learned_skills}
+    new_game_state = %{game_state | stats: %{game_state.stats | progression: progression}}
+
+    CharacterPersistence.update_character(
+      game_state.character_id,
+      %{learned_skills: Learned.dump(learned_skills)},
+      async: true
+    )
+
+    MessageRouter.send_to(state.connection_pid, SkillListView.build(progression))
+
+    %{state | game_state: new_game_state}
+  end
 
   defp reject(skill_id, reason, %{connection_pid: connection_pid} = state) do
     MessageRouter.send_to(connection_pid, %LearnSkillResult{

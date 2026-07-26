@@ -1308,6 +1308,26 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   def reset_skills(%Ctx{} = ctx), do: apply_op(ctx, {:reset_skills})
 
   @doc """
+  Grants a skill permanently through the session seam (rAthena `skill
+  <id>,<level>{,<flag>}` - the "platinum skill" style permanent grant outside
+  the normal skill tree). Aesir implements only the permanent-grant flag
+  (rAthena's `SKILL_PERM`); `flag` is accepted for source compatibility with
+  transpiled scripts but is otherwise unused. `skill` is a skill id or its
+  catalog name atom.
+
+  The session keeps `max(existing, requested)` as the learned level and never
+  spends or refunds a skill point, so a repeat or lower-level grant is a
+  no-op. Halts `:unknown_skill`, `:invalid_level`, or `:not_grantable` (a
+  definition without quest-grant metadata) without mutation; halts
+  `:no_player` on a detached ctx.
+  """
+  @spec skill(Ctx.t(), integer() | atom(), pos_integer(), integer()) :: Ctx.t()
+  def skill(%Ctx{status: {:error, _}} = ctx, _skill, _level, _flag), do: ctx
+
+  def skill(%Ctx{} = ctx, skill_id_or_name, level, _flag),
+    do: apply_op(ctx, {:grant_skill, skill_id_or_name, level})
+
+  @doc """
   Opens the account storage window through the session seam (rAthena
   `openstorage`). Never halts: a gate failure (missing `NV_BASIC`) is reported
   to the client as a `StorageResult`, not a script error.

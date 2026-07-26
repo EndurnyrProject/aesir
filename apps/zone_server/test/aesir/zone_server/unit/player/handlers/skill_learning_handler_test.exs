@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandlerTest do
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager
@@ -304,6 +305,109 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandlerTest do
 
       refute MountHandler.riding?(new_state)
       refute StatusStorage.has_status?(:player, 1000, :sc_riding)
+    end
+  end
+
+  defp quest_definition(overrides \\ []) do
+    struct!(
+      %Definition{
+        id: 9001,
+        name: :test_quest_skill,
+        display_name: "Test Quest Skill",
+        max_level: 5,
+        quest_skill: true,
+        quest_owner_job: :novice
+      },
+      overrides
+    )
+  end
+
+  defp stub_catalog_with_quest_definition do
+    stub(Catalog, :by_id, fn
+      9001 -> {:ok, quest_definition()}
+      _other -> :error
+    end)
+  end
+
+  describe "grant_skill/3" do
+    test "grants a new skill, persists, and refreshes the SkillList without spending a point" do
+      stub_catalog_with_quest_definition()
+      state = swordman_state(3, %{})
+      test_pid = self()
+
+      expect(CharacterPersistence, :update_character, fn 1000, attrs, async: true ->
+        send(test_pid, {:persisted, attrs})
+        {:ok, %{}}
+      end)
+
+      assert {:ok, new_state} = SkillLearningHandler.grant_skill(9001, 2, state)
+
+      progression = new_state.game_state.stats.progression
+      assert progression.learned_skills[9001] == 2
+      assert progression.skill_point == 3
+
+      assert_received {:persisted, attrs}
+      assert attrs == %{learned_skills: %{"9001" => 2}}
+
+      assert_received {:send, :bulk, {:skill_list, %SkillList{}}}
+      refute_received {:send, :gameplay, {:param_change, _}}
+    end
+
+    test "keeps the greater level on a repeated lower-level grant" do
+      stub_catalog_with_quest_definition()
+
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, async: true -> {:ok, %{}} end)
+
+      state = swordman_state(3, %{9001 => 5})
+
+      assert {:ok, new_state} = SkillLearningHandler.grant_skill(9001, 1, state)
+
+      progression = new_state.game_state.stats.progression
+      assert progression.learned_skills[9001] == 5
+      assert progression.skill_point == 3
+    end
+
+    test "preserves unrelated learned skills" do
+      stub_catalog_with_quest_definition()
+
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, async: true -> {:ok, %{}} end)
+
+      state = swordman_state(3, %{5 => 2})
+
+      assert {:ok, new_state} = SkillLearningHandler.grant_skill(9001, 1, state)
+
+      assert new_state.game_state.stats.progression.learned_skills == %{5 => 2, 9001 => 1}
+    end
+
+    test "returns an unknown_skill error and mutates nothing" do
+      stub(Catalog, :by_id, fn 9999 -> :error end)
+      reject(&CharacterPersistence.update_character/3)
+
+      state = swordman_state(3, %{})
+
+      assert SkillLearningHandler.grant_skill(9999, 1, state) == {:error, :unknown_skill}
+      refute_received {:send, :bulk, {:skill_list, _}}
+    end
+
+    test "returns an invalid_level error and mutates nothing" do
+      stub(Catalog, :by_id, fn 9001 -> {:ok, quest_definition()} end)
+      reject(&CharacterPersistence.update_character/3)
+
+      state = swordman_state(3, %{})
+
+      assert SkillLearningHandler.grant_skill(9001, 0, state) == {:error, :invalid_level}
+    end
+
+    test "returns a not_grantable error for a non-quest definition and mutates nothing" do
+      stub(Catalog, :by_id, fn 9001 ->
+        {:ok, quest_definition(quest_skill: false, quest_owner_job: nil)}
+      end)
+
+      reject(&CharacterPersistence.update_character/3)
+
+      state = swordman_state(3, %{})
+
+      assert SkillLearningHandler.grant_skill(9001, 1, state) == {:error, :not_grantable}
     end
   end
 

@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.RefineOps
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -51,6 +52,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:set_temp_var, atom(), term()}
           | {:change_job, non_neg_integer()}
           | {:reset_skills}
+          | {:grant_skill, integer() | atom(), pos_integer()}
           | {:set_save_point, String.t(), non_neg_integer(), non_neg_integer()}
           | {:openstorage}
           | {:setcart, non_neg_integer()}
@@ -192,6 +194,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
   def apply_op({:reset_skills}, state) do
     case ProgressionHandler.reset_skills(state) do
+      {:ok, new_state} -> {{:ok, new_state.game_state}, new_state}
+      {:error, reason} -> {{:error, reason}, state}
+    end
+  end
+
+  def apply_op({:grant_skill, skill_id_or_name, level}, state) do
+    case SkillLearningHandler.grant_skill(skill_id_or_name, level, state) do
       {:ok, new_state} -> {{:ok, new_state.game_state}, new_state}
       {:error, reason} -> {{:error, reason}, state}
     end

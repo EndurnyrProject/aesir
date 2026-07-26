@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.QuestLog.Entry
@@ -298,6 +299,33 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
       {reply, new_state} = ScriptEffectHandler.apply_op({:change_job, 99_999}, state)
 
       assert reply == {:error, :unknown_job}
+      assert new_state == state
+    end
+  end
+
+  describe "{:grant_skill, skill_id_or_name, level}" do
+    test "delegates to SkillLearningHandler.grant_skill/3 and returns its game_state" do
+      state = base_state()
+      granted_state = %{state | game_state: %{state.game_state | zeny: 1}}
+
+      expect(SkillLearningHandler, :grant_skill, fn 9001, 3, ^state -> {:ok, granted_state} end)
+
+      {reply, new_state} = ScriptEffectHandler.apply_op({:grant_skill, 9001, 3}, state)
+
+      assert reply == {:ok, granted_state.game_state}
+      assert new_state == granted_state
+    end
+
+    test "returns the handler's error unchanged and mutates nothing" do
+      state = base_state()
+
+      expect(SkillLearningHandler, :grant_skill, fn 9001, 1, ^state ->
+        {:error, :not_grantable}
+      end)
+
+      {reply, new_state} = ScriptEffectHandler.apply_op({:grant_skill, 9001, 1}, state)
+
+      assert reply == {:error, :not_grantable}
       assert new_state == state
     end
   end
