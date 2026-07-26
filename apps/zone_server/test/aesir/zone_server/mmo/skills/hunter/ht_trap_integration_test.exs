@@ -32,22 +32,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
 
   @moduletag :integration
 
-  import Aesir.TestEtsSetup
   import Mimic
 
+  alias Aesir.Net.Knockback
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
+  alias Aesir.ZoneServer.Mmo.MobSkill.Executor
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
+  alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtAnklesnare
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest.FakeMob
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
@@ -65,14 +69,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
   end
 
   setup :set_mimic_global
-  setup :setup_ets_tables
+  setup :setup_runtime_tables
 
   setup do
     manager =
       start_supervised!({Manager, name: nil, schedule_tick: fn _pid, _interval -> :ok end})
 
     Process.put({Manager, :server}, manager)
-    :ok
+    {:ok, manager: manager}
   end
 
   @caster_id 1000
@@ -90,55 +94,58 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
       equipment: %Equipment{}
     }
 
-    %PlayerState{
+    struct(PlayerState,
       character_id: @caster_id,
       account_id: @caster_id,
       x: 40,
       y: 40,
       map_name: @map,
+      action_state: :idle,
       stats: stats
-    }
+    )
   end
 
   defp build_mob_state(x, y) do
-    mob_definition = %MobDefinition{
-      id: 1002,
-      aegis_name: "TEST_MOB",
-      name: "TestMob",
-      level: 1,
-      hp: 1000,
-      sp: 50,
-      base_exp: 10,
-      job_exp: 5,
-      atk: 10,
-      matk: 0,
-      def: 5,
-      mdef: 3,
-      stats: %{str: 10, agi: 10, vit: 10, int: 5, dex: 10, luk: 5},
-      attack_range: 1,
-      skill_range: 10,
-      chase_range: 12,
-      element: {:neutral, 1},
-      race: :formless,
-      size: :medium,
-      walk_speed: 200,
-      attack_delay: 1000,
-      attack_motion: 500,
-      client_attack_motion: 500,
-      damage_motion: 400,
-      ai_type: 0,
-      modes: [],
-      drops: []
-    }
+    mob_definition =
+      struct(MobDefinition,
+        id: 1002,
+        aegis_name: "TEST_MOB",
+        name: "TestMob",
+        level: 1,
+        hp: 1000,
+        sp: 50,
+        base_exp: 10,
+        job_exp: 5,
+        atk: 10,
+        matk: 0,
+        def: 5,
+        mdef: 3,
+        stats: %{str: 10, agi: 10, vit: 10, int: 5, dex: 10, luk: 5},
+        attack_range: 1,
+        skill_range: 10,
+        chase_range: 12,
+        element: {:neutral, 1},
+        race: :formless,
+        size: :medium,
+        walk_speed: 200,
+        attack_delay: 1000,
+        attack_motion: 500,
+        client_attack_motion: 500,
+        damage_motion: 400,
+        ai_type: 0,
+        modes: [],
+        drops: []
+      )
 
-    mob_spawn = %MobSpawn{
-      mob: 1002,
-      amount: 1,
-      respawn_time: 5_000,
-      spawn_area: %MobSpawn.SpawnArea{x: x, y: y, xs: 0, ys: 0}
-    }
+    mob_spawn =
+      struct(MobSpawn,
+        mob: 1002,
+        amount: 1,
+        respawn_time: 5_000,
+        spawn_area: struct(MobSpawn.SpawnArea, x: x, y: y, xs: 0, ys: 0)
+      )
 
-    %MobState{
+    struct(MobState,
       instance_id: @mob_id,
       mob_id: 1002,
       mob_data: mob_definition,
@@ -152,11 +159,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
       max_sp: 50,
       spawned_at: System.system_time(:second),
       aggro_list: %{}
-    }
+    )
   end
 
   defp landmine_group do
-    %Group{
+    struct(Group,
       group_id: 999,
       skill_id: 116,
       skill_name: :ht_landmine,
@@ -170,8 +177,202 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
       expires_at: System.monotonic_time(:millisecond) + 60_000,
       interval: 1_000,
       visible?: false,
-      state: %{base_damage: 250, trap: %TrapState{reclaim_item_id: 1065}}
+      state: %{base_damage: 250, trap: struct(TrapState, reclaim_item_id: 1065)}
+    )
+  end
+
+  test "a real mob cast captures a player already at the trap without displacing it" do
+    player = start_real_player(id: @caster_id, map_name: @map, position: @trap)
+    mob = %{build_mob_state(40, 40) | target_id: @caster_id}
+
+    UnitRegistry.register_unit(:mob, @mob_id, MobState, mob, self())
+    flush_packets()
+
+    row = %{
+      skill: "HT_ANKLESNARE",
+      skill_id: 117,
+      level: 1,
+      target: :target,
+      emotion: nil
     }
+
+    assert :ok = Executor.execute(mob, row)
+
+    assert [%{__struct__: Group, group_id: group_id, caster_type: :mob, visible?: false}] =
+             Storage.all()
+
+    assert :ok = Manager.trigger(group_id, {:player, @caster_id}, :on_touch)
+
+    assert_eventually(fn ->
+      match?(
+        %{
+          __struct__: Group,
+          target_type: :player,
+          target_id: @caster_id,
+          state: %{trap: %{__struct__: TrapState, phase: :captured}}
+        },
+        Storage.get(group_id)
+      )
+    end)
+
+    assert %{
+             __struct__: Group,
+             state: %{trap: %{__struct__: TrapState, link_id: link_id}}
+           } = Storage.get(group_id)
+
+    assert %{source_type: :mob, state: %{group_id: ^group_id, link_id: ^link_id}} =
+             StatusStorage.get_status(:player, @caster_id, :sc_anklesnare)
+
+    assert {50, 50} ==
+             {PlayerSession.get_state(player.pid).game_state.x,
+              PlayerSession.get_state(player.pid).game_state.y}
+
+    refute_receive {:packet_sent, %{__struct__: Knockback}, _channel}, 50
+  end
+
+  test "capturing a real mob pulls it onto the trap cell through its session" do
+    _caster = start_real_player(id: @caster_id, map_name: @map, position: {40, 40})
+    mob = start_real_mob(unit_id: @mob_id, map_name: @map, position: {49, 50})
+    :ok = Storage.insert(ankle_group(1))
+
+    assert :ok = Manager.trigger(1, {:mob, @mob_id}, :on_touch)
+
+    assert_eventually(fn ->
+      state = MobSession.get_state(mob.pid)
+      group = Storage.get(1)
+      {state.x, state.y} == @trap and group.state.trap.phase == :captured
+    end)
+
+    assert StatusStorage.has_status?(:mob, @mob_id, :sc_anklesnare)
+  end
+
+  test "a concurrently displaced player is still captured and the stale pull no-ops" do
+    UnitRegistry.register_unit(:mob, @mob_id, MobState, build_mob_state(40, 40), self())
+    player = start_real_player(id: @caster_id, map_name: @map, position: {49, 50})
+    :ok = Storage.insert(ankle_group(2, :mob, @mob_id))
+
+    :ok = :sys.suspend(player.pid)
+
+    GenServer.cast(
+      player.pid,
+      {:movement, {:displace, 49, 50, @map, 48, 50}}
+    )
+
+    assert :ok = Manager.trigger(2, {:player, @caster_id}, :on_touch)
+    :ok = :sys.resume(player.pid)
+
+    assert_eventually(fn -> PlayerSession.get_state(player.pid).game_state.x == 48 end)
+    Process.sleep(50)
+
+    state = PlayerSession.get_state(player.pid).game_state
+    assert {state.x, state.y} == {48, 50}
+    assert Storage.get(2).state.trap.phase == :captured
+    assert StatusStorage.has_status?(:player, @caster_id, :sc_anklesnare)
+  end
+
+  test "a captured snare rejects further triggers, reclaim, and spring", %{manager: manager} do
+    _caster = start_real_player(id: @caster_id, map_name: @map, position: {40, 40})
+    first = start_real_mob(unit_id: @mob_id, map_name: @map, position: {49, 50})
+    second = start_real_mob(unit_id: @mob_id + 1, map_name: @map, position: {49, 50})
+    :ok = Storage.insert(ankle_group(5))
+
+    assert :ok = Manager.trigger(5, {:mob, @mob_id}, :on_touch)
+    assert Storage.get(5).state.trap.phase == :captured
+    assert StatusStorage.has_status?(:mob, @mob_id, :sc_anklesnare)
+
+    assert :ok = Manager.trigger(5, {:mob, @mob_id + 1}, :on_touch)
+    refute StatusStorage.has_status?(:mob, @mob_id + 1, :sc_anklesnare)
+    assert Storage.get(5).target_id == @mob_id
+
+    assert {:error, _reason} =
+             Manager.reclaim_trap(manager, {:player, @caster_id}, @map, 50, 50)
+
+    assert {:error, _reason} = Manager.spring_trap(manager, @map, 50, 50)
+
+    assert_eventually(fn ->
+      {MobSession.get_state(first.pid).x, MobSession.get_state(first.pid).y} == @trap
+    end)
+
+    assert {49, 50} == {MobSession.get_state(second.pid).x, MobSession.get_state(second.pid).y}
+  end
+
+  test "session status immunity and an existing snare reject before movement" do
+    _caster = start_real_player(id: @caster_id, map_name: @map, position: {40, 40})
+
+    immune =
+      start_real_mob(
+        unit_id: @mob_id,
+        map_name: @map,
+        position: {49, 50},
+        modes: [:status_immune]
+      )
+
+    :ok = Storage.insert(ankle_group(6))
+    assert :ok = Manager.trigger(6, {:mob, @mob_id}, :on_touch)
+    Process.sleep(50)
+    assert {49, 50} == {MobSession.get_state(immune.pid).x, MobSession.get_state(immune.pid).y}
+    assert Storage.get(6).state.trap.phase == :armed
+
+    snared = start_real_mob(unit_id: @mob_id + 1, map_name: @map, position: {49, 50})
+
+    :ok =
+      StatusStorage.apply_status(:mob, @mob_id + 1, :sc_anklesnare,
+        duration: 5_000,
+        state: %{group_id: 999, link_id: 999}
+      )
+
+    :ok = Storage.insert(ankle_group(7))
+    assert :ok = Manager.trigger(7, {:mob, @mob_id + 1}, :on_touch)
+    Process.sleep(50)
+    assert {49, 50} == {MobSession.get_state(snared.pid).x, MobSession.get_state(snared.pid).y}
+    assert Storage.get(7).state.trap.phase == :armed
+
+    assert %{state: %{group_id: 999}} =
+             StatusStorage.get_status(:mob, @mob_id + 1, :sc_anklesnare)
+  end
+
+  test "capture materialization failure destroys the group and the status self-heals" do
+    _caster = start_real_player(id: @caster_id, map_name: @map, position: {40, 40})
+    _mob = start_real_mob(unit_id: @mob_id, map_name: @map, position: {49, 50})
+
+    blocker =
+      ankle_group(80)
+      |> Map.put(:visible?, true)
+      |> Map.update!(:state, fn state ->
+        Map.merge(state, %{
+          exclusive_terrain: true,
+          cell_attrs: %{@trap => %{state: %{exclusive_terrain: true}}}
+        })
+      end)
+
+    trap =
+      ankle_group(8)
+      |> Map.update!(:state, &Map.put(&1, :exclusive_terrain, true))
+
+    assert :ok = Manager.register(blocker)
+    assert :ok = Storage.insert(trap)
+    assert :ok = Manager.trigger(8, {:mob, @mob_id}, :on_touch)
+
+    assert nil == Storage.get(8)
+    assert [] == Storage.get_cells_by_group(8)
+
+    assert :ok = Interpreter.process_tick(:mob, @mob_id, :sc_anklesnare)
+    refute StatusStorage.has_status?(:mob, @mob_id, :sc_anklesnare)
+  end
+
+  test "a dead target leaves the snare armed without a status" do
+    _caster = start_real_player(id: @caster_id, map_name: @map, position: {40, 40})
+    mob = start_real_mob(unit_id: @mob_id, map_name: @map, position: {49, 50}, hp: 100)
+    :ok = Storage.insert(ankle_group(4))
+
+    MobSession.apply_damage(mob.pid, 100)
+    assert_eventually(fn -> MobSession.get_state(mob.pid).is_dead end)
+    UnitRegistry.register_unit(:mob, @mob_id, MobState, MobSession.get_state(mob.pid), mob.pid)
+
+    assert :ok = Manager.trigger(4, {:mob, @mob_id}, :on_touch)
+
+    assert Storage.get(4).state.trap.phase == :armed
+    refute StatusStorage.has_status?(:mob, @mob_id, :sc_anklesnare)
   end
 
   test "Skid Trap moves and stops real MobSessions at every level and becomes visibly used" do
@@ -281,7 +482,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
 
     :ok = Storage.insert(landmine_group())
 
-    assert [%Group{group_id: 999, visible?: false}] = Storage.get_groups_at_cell(@map, 50, 50)
+    assert [%{__struct__: Group, group_id: 999, visible?: false}] =
+             Storage.get_groups_at_cell(@map, 50, 50)
+
     assert [] = Storage.get_cells_by_group(999)
     assert %{groups: []} = Aesir.ZoneServer.Mmo.Skill.Unit.snapshot(@map)
 
@@ -294,7 +497,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
     assert_receive {:applied, damage, @caster_id}, 1_000
     assert damage > 0
 
-    assert %Group{
+    assert %{
+             __struct__: Group,
              visible?: true,
              expires_at: expires_at,
              state: %{trap: %TrapState{phase: :used}}
@@ -329,6 +533,61 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
     else
       Process.sleep(10)
       eventually(fun, attempts - 1)
+    end
+  end
+
+  defp ankle_group(group_id, caster_type \\ :player, caster_id \\ @caster_id, center \\ @trap) do
+    struct(Group,
+      group_id: group_id,
+      skill_id: 117,
+      skill_name: :ht_anklesnare,
+      level: 1,
+      caster_id: caster_id,
+      caster_type: caster_type,
+      map_name: @map,
+      center: center,
+      cells: [center],
+      next_tick_at: System.monotonic_time(:millisecond) + 60_000,
+      expires_at: System.monotonic_time(:millisecond) + 60_000,
+      interval: 1_000,
+      visible?: false,
+      state: %{trap: struct(TrapState, reclaim_item_id: 1065)},
+      handler: HtAnklesnare
+    )
+  end
+
+  defp setup_runtime_tables(context) do
+    sandbox = Ecto.Adapters.SQL.Sandbox
+    :ok = apply(sandbox, :checkout, [Aesir.Repo])
+    :ok = apply(sandbox, :mode, [Aesir.Repo, {:shared, self()}])
+    apply(Elixir.Aesir.TestEtsSetup, :setup_ets_tables, [context])
+  end
+
+  defp start_real_player(opts) do
+    apply(Elixir.Aesir.ZoneServer.SessionHelpers, :start_player_session, [opts])
+  end
+
+  defp start_real_mob(opts) do
+    apply(Elixir.Aesir.ZoneServer.SessionHelpers, :start_mob_session, [opts])
+  end
+
+  defp flush_packets do
+    receive do
+      {:packet_sent, _packet, _channel} -> flush_packets()
+    after
+      50 -> :ok
+    end
+  end
+
+  defp assert_eventually(fun, attempts \\ 20)
+  defp assert_eventually(fun, 0), do: assert(fun.())
+
+  defp assert_eventually(fun, attempts) do
+    if fun.() do
+      :ok
+    else
+      Process.sleep(10)
+      assert_eventually(fun, attempts - 1)
     end
   end
 end

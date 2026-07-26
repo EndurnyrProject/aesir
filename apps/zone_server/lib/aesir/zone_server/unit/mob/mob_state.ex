@@ -213,11 +213,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
 
   @impl Aesir.ZoneServer.Unit
   def get_custom_immunities(%__MODULE__{mob_data: mob_data}) do
-    # Check mob modes for special immunities
-    immunities = []
+    modes = mob_data.modes || []
+    immunities = if :status_immune in modes, do: [:status_immune], else: []
 
     immunities =
-      if :plant in (mob_data.modes || []) do
+      if :plant in modes do
         # Plant-type mobs are immune to many status effects
         [:stun, :freeze, :stone, :sleep | immunities]
       else
@@ -225,7 +225,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       end
 
     immunities =
-      if :undead in (mob_data.modes || []) do
+      if :undead in modes do
         # Undead mobs have special immunities
         [:blessing, :increase_agi, :decrease_agi | immunities]
       else

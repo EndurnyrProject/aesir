@@ -107,6 +107,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     GenServer.call(server, {:spring_trap, map_name, x, y})
   end
 
+  @doc "Asynchronously releases a captured trap only when its link still matches."
+  @spec release_trap_link(non_neg_integer(), non_neg_integer()) :: :ok
+  def release_trap_link(group_id, link_id),
+    do: release_trap_link(default_server(), group_id, link_id)
+
+  @doc false
+  @spec release_trap_link(server(), non_neg_integer(), non_neg_integer()) :: :ok
+  def release_trap_link(server, group_id, link_id)
+      when is_integer(group_id) and group_id >= 0 and is_integer(link_id) and link_id >= 0 do
+    GenServer.cast(server, {:release_trap_link, group_id, link_id})
+  end
+
   @doc "Merges skill-owned state into a live group without resurrecting a deleted one."
   @spec update_state(non_neg_integer(), map()) :: :ok
   def update_state(group_id, state), do: update_state(default_server(), group_id, state)
@@ -377,6 +389,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   @impl true
+  def handle_cast({:release_trap_link, group_id, link_id}, state) do
+    release_trap_link_now(group_id, link_id)
+    {:noreply, state}
+  end
+
   def handle_cast(message, state) do
     Logger.warning("Ignoring unknown skill-unit manager cast: #{inspect(message)}")
     {:noreply, state}
@@ -665,6 +682,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp log_field_support_failure(result, _group, _action), do: result
+
+  defp release_trap_link_now(group_id, link_id) do
+    case Storage.get(group_id) do
+      %Group{state: %{trap: %TrapState{phase: :captured, link_id: ^link_id}}} = group ->
+        cleanup(group)
+
+      _stale_or_absent ->
+        :ok
+    end
+  end
 
   defp cleanup(%Group{} = group) do
     module =

@@ -291,7 +291,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                       }}
     end
 
-    test "persists a captured phase and its target index without exposing a release API" do
+    test "persists captured indexes and releases only a matching link" do
       manager = start_manager(10_000)
 
       assert :ok =
@@ -318,6 +318,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
              } = Storage.get(1)
 
       assert [%Group{group_id: 1}] = Storage.get_groups_by_target(:mob, 20)
+
+      assert :ok = Manager.release_trap_link(manager, 1, 8)
+      assert :ok = Manager.tick(manager, 10_000)
+      assert %Group{group_id: 1} = Storage.get(1)
+
+      assert :ok = Manager.release_trap_link(manager, 1, 7)
+      assert :ok = Manager.tick(manager, 10_000)
+      assert nil == Storage.get(1)
+      assert [] == Storage.get_groups_by_target(:mob, 20)
+
+      assert :ok = Manager.release_trap_link(manager, 1, 7)
+      assert :ok = Manager.tick(manager, 10_000)
+      assert nil == Storage.get(1)
     end
 
     test "returns one floor trap only on paid live-player natural expiry" do
