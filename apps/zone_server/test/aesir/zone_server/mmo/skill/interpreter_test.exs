@@ -52,6 +52,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     def validate(_game_state, _target, _level, _definition), do: :ok
   end
 
+  defmodule InputAwareSkill do
+    @behaviour Aesir.ZoneServer.Mmo.Skill.Active
+
+    @impl true
+    def cast(game_state, _target, _level, _definition) do
+      send(self(), :ordinary_input_fallback)
+      {:ok, game_state}
+    end
+
+    @impl true
+    def cast_with_input(game_state, _target, _level, _definition, input) do
+      send(self(), {:input_cast, input})
+      {:ok, game_state}
+    end
+
+    @impl true
+    def validate(_game_state, _target, _level, _definition), do: :ok
+  end
+
   defmodule StaticCostSkill do
     @behaviour Aesir.ZoneServer.Mmo.Skill.Active
 
@@ -80,7 +99,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     def validate(_game_state, _target, _level, _definition), do: :ok
 
     @impl true
-    def dynamic_cost(%{dynamic_sp: sp}, _target, _level, _definition), do: %Cost{sp: sp}
+    def dynamic_cost(%{dynamic_sp: sp}, _target, _level, _definition) do
+      send(self(), {:dynamic_cost_prepared, sp})
+      %Cost{sp: sp}
+    end
   end
 
   defmodule DeferredCostSkill do
@@ -275,6 +297,80 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
              Interpreter.cast(game_state(1, %{29 => 1}), 29, 1, :self)
   end
 
+  describe "input-aware casts" do
+    setup do
+      definition = %Definition{
+        id: 29,
+        name: :input_aware,
+        display_name: "Input Aware",
+        max_level: 1,
+        target_type: :self,
+        sp_cost: [10],
+        cooldown: [10_000]
+      }
+
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
+      stub(Catalog, :active_module_for, fn :input_aware -> {:ok, InputAwareSkill} end)
+      :ok
+    end
+
+    test "preflight validates without mutating resources or running the callback" do
+      initial = game_state(50, %{29 => 1})
+
+      assert :ok = Interpreter.preflight_cast(initial, 29, 1, :self)
+      assert initial.stats.current_state.sp == 50
+      assert initial.skill_cooldowns == %{}
+      refute_received {:input_cast, _input}
+      refute_received :ordinary_input_fallback
+    end
+
+    test "completion invokes the input callback and uses ordinary commitment" do
+      assert {:ok, updated} =
+               Interpreter.complete_cast_with_input(
+                 game_state(50, %{29 => 1}),
+                 29,
+                 1,
+                 :self,
+                 "hello"
+               )
+
+      assert_received {:input_cast, "hello"}
+      assert updated.stats.current_state.sp == 40
+      assert Map.has_key?(updated.skill_cooldowns, 29)
+    end
+
+    test "completion fully revalidates and commits nothing after cooldown lands" do
+      initial = game_state(50, %{29 => 1})
+      assert :ok = Interpreter.preflight_cast(initial, 29, 1, :self)
+
+      blocked = %{
+        initial
+        | skill_cooldowns: %{29 => System.monotonic_time(:millisecond) + 10_000}
+      }
+
+      assert {:error, :on_cooldown} =
+               Interpreter.complete_cast_with_input(blocked, 29, 1, :self, "hello")
+
+      assert blocked.stats.current_state.sp == 50
+      refute_received {:input_cast, _input}
+    end
+
+    test "skills without the input callback fall back to their ordinary callback" do
+      stub(Catalog, :active_module_for, fn :input_aware -> {:ok, OriginAwareSkill} end)
+
+      assert {:ok, _updated} =
+               Interpreter.complete_cast_with_input(
+                 game_state(50, %{29 => 1}),
+                 29,
+                 1,
+                 :self,
+                 "ignored"
+               )
+
+      assert_received {:cast_origin, :normal}
+    end
+  end
+
   test "targeting another unit on a self-only skill returns :invalid_target" do
     stub(Catalog, :by_id, fn 29 ->
       {:ok,
@@ -401,6 +497,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     assert updated.stats.current_state.sp == 0
   end
 
+  test "prepares an instant dynamic cost once before commitment" do
+    definition = %Definition{
+      id: 29,
+      name: :cost_skill,
+      display_name: "Cost Skill",
+      max_level: 1,
+      target_type: :self
+    }
+
+    stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
+    stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, DynamicCostSkill} end)
+
+    gs = Map.put(game_state(50, %{29 => 1}), :dynamic_sp, 10)
+    assert {:ok, updated} = Interpreter.cast(gs, 29, 1, :self)
+
+    assert_received {:dynamic_cost_prepared, 10}
+    refute_received {:dynamic_cost_prepared, 10}
+    assert updated.stats.current_state.sp == 40
+  end
+
   test "re-runs a dynamic cost at completion before applying its effect" do
     definition = %Definition{
       id: 29,
@@ -416,10 +532,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
     started = Map.put(game_state(50, %{29 => 1}), :dynamic_sp, 10)
     assert {:casting, ^started, _info} = Interpreter.begin_cast(started, 29, 1, :self)
+    assert_received {:dynamic_cost_prepared, 10}
 
     assert {:error, :insufficient_sp} =
              Interpreter.complete_cast(%{started | dynamic_sp: 60}, 29, 1, :self)
 
+    assert_received {:dynamic_cost_prepared, 60}
+    refute_received {:dynamic_cost_prepared, 60}
     refute_received {:cost_skill_sp, _}
   end
 
@@ -1482,6 +1601,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
       assert updated.stats.current_state.sp == 100 - 9
       assert Map.has_key?(updated.skill_cooldowns, 6)
+    end
+
+    test "completes a timed cast when another effect arms cooldown and action delay" do
+      definition = %{instant_definition() | cast_time: [1_000]}
+      stub(Catalog, :by_id, fn 6 -> {:ok, definition} end)
+      stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+
+      gs = game_state(100, %{6 => 1})
+      assert {:casting, ^gs, _info} = Interpreter.begin_cast(gs, 6, 1, :self)
+
+      delayed = %{
+        gs
+        | skill_cooldowns: %{6 => System.monotonic_time(:millisecond) + 10_000},
+          act_delay_until: System.monotonic_time(:millisecond) + 10_000
+      }
+
+      assert {:ok, updated} = Interpreter.complete_cast(delayed, 6, 1, :self)
+      assert updated.stats.current_state.sp == 100 - 9
     end
 
     test "fizzles with :out_of_range and spends no SP when the target moved away" do

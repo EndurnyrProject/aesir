@@ -57,6 +57,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
               | {:deferred, caster(), term()}
               | {:error, atom()}
 
+  @doc """
+  Optional input-aware cast entry point.
+
+  Input-capable skills receive validated input only after the ordinary cast
+  requirements have been revalidated. Skills without this callback fall back to
+  `cast/4`.
+  """
+  @callback cast_with_input(caster(), target(), pos_integer(), Definition.t(), term()) ::
+              {:ok, caster()}
+              | {:ok, caster(), :no_consume}
+              | {:deferred, caster(), term()}
+              | {:error, atom()}
+
   @doc "Optional pre-cast validation, run before SP is charged. Defaults to `:ok` when absent."
   @callback validate(caster(), target(), pos_integer(), Definition.t()) ::
               :ok | {:error, atom()}
@@ -115,6 +128,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
               %{cast_time: non_neg_integer(), fixed_cast_time: non_neg_integer()}
 
   @optional_callbacks cast_with_origin: 5,
+                      cast_with_input: 5,
                       validate: 4,
                       deferred: 2,
                       mob_cast: 5,

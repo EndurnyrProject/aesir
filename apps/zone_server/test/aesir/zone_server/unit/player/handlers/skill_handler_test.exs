@@ -1186,6 +1186,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   end
 
   describe "skill action-gating" do
+    test "the reusable gate rechecks a status that lands between staging and resume" do
+      state = casting_state(45)
+      assert {:ok, ^state} = SkillHandler.cast_gate(state, 125)
+
+      stub(StatusInterpreter, :can_use_skill?, fn :player, 1000, 125 -> false end)
+
+      assert {:error, :status_blocked} = SkillHandler.cast_gate(state, 125)
+      assert state.game_state.stats.current_state.sp == 45
+    end
+
+    test "the reusable gate rejects a dead caster before checking status or action" do
+      state = casting_state(45)
+      dead_game_state = %{state.game_state | action_state: :dead}
+      dead = %{state | game_state: dead_game_state}
+
+      reject(&StatusInterpreter.can_use_skill?/3)
+      assert {:error, :dead} = SkillHandler.cast_gate(dead, 125)
+    end
+
     test "a rejected cast sends its failure reason to the caster" do
       stub(Interpreter, :begin_cast, fn _game_state, 12, 1, {:ground, 12, 12} ->
         {:error, :missing_catalyst}

@@ -119,7 +119,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   def begin_cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
     now = System.monotonic_time(:millisecond)
 
-    with {:ok, definition, module} <- validate_cast(game_state, skill_id, level, target, now) do
+    with {:ok, prepared} <- validate_cast(game_state, skill_id, level, target, now) do
+      %{definition: definition, module: module} = prepared
       base_stats = game_state.stats.base_stats
 
       timing =
@@ -138,7 +139,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           }
         )
 
-      schedule(timing, game_state, skill_id, level, target, definition)
+      schedule(timing, game_state, skill_id, level, target, prepared)
     end
   end
 
@@ -197,6 +198,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   end
 
   @doc """
+  Validates every ordinary cast requirement without mutating the caster.
+  """
+  @spec preflight_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
+          :ok | {:error, atom()}
+  def preflight_cast(game_state, skill_id, level, target)
+      when is_integer(level) and level > 0 do
+    now = System.monotonic_time(:millisecond)
+
+    case validate_cast(game_state, skill_id, level, target, now) do
+      {:ok, _prepared} -> :ok
+      {:error, _reason} = error -> error
+    end
+  end
+
+  def preflight_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
+
+  @doc """
   Runs a previously-validated cast to completion.
 
   Re-validates the target (it may have moved, died, or logged out during the
@@ -213,45 +231,76 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   """
   @spec complete_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
           {:ok, PlayerState.t()} | {:deferred, PlayerState.t(), term()} | {:error, atom()}
-  def complete_cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
+  def complete_cast(game_state, skill_id, level, target) when is_integer(level) and level > 0,
+    do: complete_validated_cast(game_state, skill_id, level, target, :without_input)
+
+  def complete_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
+
+  @doc """
+  Completes an input-aware cast through the ordinary validation and commitment path.
+
+  Skills without `cast_with_input/5` retain their normal `cast/4` behavior.
+  """
+  @spec complete_cast_with_input(
+          PlayerState.t(),
+          integer(),
+          pos_integer(),
+          Active.target(),
+          term()
+        ) :: {:ok, PlayerState.t()} | {:deferred, PlayerState.t(), term()} | {:error, atom()}
+  def complete_cast_with_input(game_state, skill_id, level, target, input)
+      when is_integer(level) and level > 0,
+      do: complete_validated_cast(game_state, skill_id, level, target, {:with_input, input})
+
+  def complete_cast_with_input(_game_state, _skill_id, _level, _target, _input),
+    do: {:error, :invalid_level}
+
+  defp complete_validated_cast(game_state, skill_id, level, target, input) do
     now = System.monotonic_time(:millisecond)
 
-    with {:ok, definition} <- fetch_definition(skill_id),
-         {:ok, module} <- fetch_active_module(definition),
-         :ok <- check_target(game_state, target, definition),
-         :ok <- check_range(game_state, target, definition, level),
-         :ok <- module.validate(game_state, target, level, definition),
-         {:ok, cost} <- resolve_cost(game_state, module, target, level, definition),
-         {:ok, commitment} <- Cost.prepare(game_state, cost),
-         zeny = Enum.at(definition.zeny_cost, level - 1, 0),
-         :ok <- check_zeny(game_state, zeny),
-         :ok <- check_catalysts(game_state, definition),
-         :ok <- check_ammo(game_state, definition) do
-      apply_act_delay = Enum.at(definition.after_cast_delay, level - 1) not in [nil, 0]
-      after_cast_delay = resolved_after_cast_delay(game_state, definition, level)
-      definition = put_resolved_combo_delay(definition, level, after_cast_delay)
+    validation =
+      case input do
+        :without_input -> validate_completion(game_state, skill_id, level, target)
+        {:with_input, _value} -> validate_cast(game_state, skill_id, level, target, now)
+      end
 
-      complete_resolved_cast(
-        game_state,
-        module,
-        target,
-        level,
-        definition,
-        %{
-          commitment: commitment,
-          cost: cost,
-          zeny: zeny,
-          skill_id: skill_id,
-          level: level,
-          apply_act_delay: apply_act_delay,
-          after_cast_delay: after_cast_delay,
-          now: now
-        }
-      )
+    with {:ok, prepared} <- validation do
+      complete_prepared_cast(game_state, skill_id, level, target, input, now, prepared)
     end
   end
 
-  def complete_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
+  defp complete_prepared_cast(game_state, skill_id, level, target, input, now, prepared) do
+    %{
+      definition: definition,
+      module: module,
+      cost: cost,
+      commitment: commitment,
+      zeny: zeny
+    } = prepared
+
+    apply_act_delay = Enum.at(definition.after_cast_delay, level - 1) not in [nil, 0]
+    after_cast_delay = resolved_after_cast_delay(game_state, definition, level)
+    definition = put_resolved_combo_delay(definition, level, after_cast_delay)
+
+    complete_resolved_cast(
+      game_state,
+      module,
+      target,
+      level,
+      definition,
+      %{
+        commitment: commitment,
+        cost: cost,
+        zeny: zeny,
+        skill_id: skill_id,
+        level: level,
+        apply_act_delay: apply_act_delay,
+        after_cast_delay: after_cast_delay,
+        now: now,
+        input: input
+      }
+    )
+  end
 
   @doc "Settles a deferred cast against the caster's current resources."
   @spec settle_deferred(PlayerState.t(), Deferred.t()) ::
@@ -415,10 +464,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
            level: level,
            apply_act_delay: apply_act_delay,
            after_cast_delay: after_cast_delay,
-           now: now
+           now: now,
+           input: input
          }
        ) do
-    case run_cast(module, game_state, target, level, definition) do
+    case run_cast(module, game_state, target, level, definition, input) do
       {:deferred, game_state, descriptor} ->
         {:deferred, game_state,
          %Deferred{
@@ -454,8 +504,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   defp put_resolved_combo_delay(definition, _level, _delay), do: definition
 
-  @spec validate_cast(PlayerState.t(), integer(), pos_integer(), Active.target(), integer()) ::
-          {:ok, Definition.t(), module()} | {:error, atom()}
   defp validate_cast(game_state, skill_id, level, target, now) do
     with {:ok, definition} <- fetch_definition(skill_id),
          :ok <- check_max_level(definition, level),
@@ -466,12 +514,36 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          {:ok, module} <- fetch_active_module(definition),
          :ok <- check_cooldown(game_state, skill_id, now),
          :ok <- check_act_delay(game_state, now),
-         :ok <- module.validate(game_state, target, level, definition),
-         {:ok, cost} <- resolve_cost(game_state, module, target, level, definition),
-         {:ok, _commitment} <- Cost.prepare(game_state, cost),
+         :ok <- module.validate(game_state, target, level, definition) do
+      prepare_cast(game_state, module, target, level, definition)
+    end
+  end
+
+  defp validate_completion(game_state, skill_id, level, target) do
+    with {:ok, definition} <- fetch_definition(skill_id),
+         {:ok, module} <- fetch_active_module(definition),
+         :ok <- check_target(game_state, target, definition),
+         :ok <- check_range(game_state, target, definition, level),
+         :ok <- module.validate(game_state, target, level, definition) do
+      prepare_cast(game_state, module, target, level, definition)
+    end
+  end
+
+  defp prepare_cast(game_state, module, target, level, definition) do
+    with {:ok, cost} <- resolve_cost(game_state, module, target, level, definition),
+         {:ok, commitment} <- Cost.prepare(game_state, cost),
          zeny = Enum.at(definition.zeny_cost, level - 1, 0),
-         :ok <- check_zeny(game_state, zeny) do
-      {:ok, definition, module}
+         :ok <- check_zeny(game_state, zeny),
+         :ok <- check_catalysts(game_state, definition),
+         :ok <- check_ammo(game_state, definition) do
+      {:ok,
+       %{
+         definition: definition,
+         module: module,
+         cost: cost,
+         commitment: commitment,
+         zeny: zeny
+       }}
     end
   end
 
@@ -481,26 +553,36 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           integer(),
           pos_integer(),
           Active.target(),
-          Definition.t()
+          map()
         ) ::
           {:instant, PlayerState.t()}
           | {:deferred, PlayerState.t(), term()}
           | {:casting, PlayerState.t(), cast_info()}
           | {:error, atom()}
-  defp schedule(%{total: 0}, game_state, skill_id, level, target, _definition) do
-    case complete_cast(game_state, skill_id, level, target) do
+  defp schedule(%{total: 0}, game_state, skill_id, level, target, prepared) do
+    now = System.monotonic_time(:millisecond)
+
+    case complete_prepared_cast(
+           game_state,
+           skill_id,
+           level,
+           target,
+           :without_input,
+           now,
+           prepared
+         ) do
       {:ok, game_state} -> {:instant, game_state}
       {:deferred, game_state, descriptor} -> {:deferred, game_state, descriptor}
       {:error, _reason} = error -> error
     end
   end
 
-  defp schedule(%{fixed: fixed, total: total}, game_state, skill_id, level, target, definition) do
+  defp schedule(%{fixed: fixed, total: total}, game_state, skill_id, level, target, prepared) do
     info = %{
       skill_id: skill_id,
       level: level,
       target: target,
-      element: definition.element,
+      element: prepared.definition.element,
       fixed: fixed,
       total: total
     }
@@ -866,8 +948,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   # Runs the behavior and, on a bare `{:ok, state}`, consumes the catalysts.
   # `{:ok, state, :no_consume}` completes the cast but spares them.
-  defp run_cast(module, game_state, target, level, definition) do
-    case invoke_cast(module, game_state, target, level, definition, :normal) do
+  defp run_cast(module, game_state, target, level, definition, input) do
+    result =
+      case input do
+        {:with_input, value} ->
+          if function_exported?(module, :cast_with_input, 5) do
+            module.cast_with_input(game_state, target, level, definition, value)
+          else
+            invoke_cast(module, game_state, target, level, definition, :normal)
+          end
+
+        :without_input ->
+          invoke_cast(module, game_state, target, level, definition, :normal)
+      end
+
+    case result do
       {:ok, game_state} ->
         announce_ground_cast(module, game_state, target, level, definition)
         {:ok, consume_catalysts(game_state, definition)}

@@ -57,18 +57,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
           {:noreply, SessionState.t()}
   def handle_use_skill(state, skill_id, level, target_id) do
     state = maybe_cancel_combo(state, skill_id, target_id)
-    game_state = state.game_state
-
-    if StatusInterpreter.can_use_skill?(:player, game_state.character_id, skill_id) do
-      dispatch_use_skill(state, skill_id, level, target_id)
-    else
-      broadcast_cast_cancel(game_state)
-      {:noreply, state}
-    end
+    dispatch_use_skill(state, skill_id, level, target_id)
   end
 
-  defp dispatch_use_skill(state, @cast_cancel_id, level, _target_id),
-    do: cast_cancel(state, level)
+  defp dispatch_use_skill(%{game_state: game_state} = state, @cast_cancel_id, level, _target_id) do
+    case cast_gate(state, @cast_cancel_id, :restricted) do
+      {:ok, ready_state} ->
+        cast_cancel(ready_state, level)
+
+      {:error, _reason} ->
+        broadcast_cast_cancel(game_state)
+        {:noreply, state}
+    end
+  end
 
   defp dispatch_use_skill(%{game_state: game_state} = state, skill_id, level, target_id) do
     drive_cast(state, skill_id, level, resolve_target(game_state, target_id))
@@ -125,14 +126,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
           {:noreply, SessionState.t()}
   def handle_use_skill_ground(%{game_state: game_state} = state, skill_id, level, x, y) do
     state = %{state | game_state: PlayerState.cancel_combo(game_state)}
-    game_state = state.game_state
-
-    if StatusInterpreter.can_use_skill?(:player, game_state.character_id, skill_id) do
-      drive_cast(state, skill_id, level, {:ground, x, y})
-    else
-      broadcast_cast_cancel(game_state)
-      {:noreply, state}
-    end
+    drive_cast(state, skill_id, level, {:ground, x, y})
   end
 
   @doc """
@@ -146,11 +140,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       ) do
     game_state = state.game_state
 
-    if StatusInterpreter.can_use_skill?(:player, game_state.character_id, ctx.skill_id) do
-      complete_cast(state, game_state, ctx)
-    else
-      broadcast_cast_cancel(game_state)
-      {:noreply, %{state | game_state: end_cast(game_state)}}
+    case cast_gate(state, ctx.skill_id, :completion) do
+      {:ok, ready_state} ->
+        complete_cast(ready_state, ready_state.game_state, ctx)
+
+      {:error, _reason} ->
+        broadcast_cast_cancel(game_state)
+        {:noreply, %{state | game_state: end_cast(game_state)}}
     end
   end
 
@@ -254,12 +250,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     # (auto-attacking or approaching), so the loop is resumed after the cast.
     locked = game_state.combat_target_id
 
-    case ensure_idle_for_cast(state) do
+    case cast_gate(state, skill_id) do
       {:ok, ready_state} ->
         dispatch_cast(ready_state, skill_id, level, target, locked)
 
-      :busy ->
+      {:error, :busy} ->
         report_cast_failure(skill_id, game_state.character_id, :busy)
+        {:noreply, state}
+
+      {:error, _reason} ->
+        broadcast_cast_cancel(game_state)
         {:noreply, state}
     end
   end
@@ -586,6 +586,47 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   defp ensure_living_target(_target), do: :ok
+
+  @doc """
+  Applies the session-owned living, status, and action gate for a skill cast.
+
+  Staged and resumed input casts use the default start phase. Timed casts use
+  `:completion`, which requires the existing cast action to still be active.
+  """
+  @spec cast_gate(SessionState.t(), integer(), :start | :completion | :restricted) ::
+          {:ok, SessionState.t()} | {:error, :dead | :status_blocked | :busy}
+  def cast_gate(state, skill_id, phase \\ :start)
+
+  def cast_gate(%{game_state: game_state} = state, skill_id, phase) do
+    with :ok <- ensure_living_caster(game_state),
+         true <- StatusInterpreter.can_use_skill?(:player, game_state.character_id, skill_id) do
+      check_cast_action(state, phase)
+    else
+      false -> {:error, :status_blocked}
+      {:error, _reason} = error -> error
+    end
+  end
+
+  defp ensure_living_caster(%{action_state: :dead}), do: {:error, :dead}
+
+  defp ensure_living_caster(%{stats: %{current_state: %{hp: hp}}}) when hp <= 0,
+    do: {:error, :dead}
+
+  defp ensure_living_caster(_game_state), do: :ok
+
+  defp check_cast_action(state, :start) do
+    case ensure_idle_for_cast(state) do
+      {:ok, ready_state} -> {:ok, ready_state}
+      :busy -> {:error, :busy}
+    end
+  end
+
+  defp check_cast_action(%{game_state: %{casting: casting}} = state, :completion)
+       when not is_nil(casting),
+       do: {:ok, state}
+
+  defp check_cast_action(_state, :completion), do: {:error, :busy}
+  defp check_cast_action(state, :restricted), do: {:ok, state}
 
   # A cast may only begin from idle. A moving player is stopped first (using a
   # skill ends movement); any other busy state (casting, attacking, sitting,
