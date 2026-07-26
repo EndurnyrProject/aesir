@@ -137,6 +137,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   ## Options
     - `:skill_id` / `:skill_level` - identify the skill for the damage packet
     - `:skill_ratio` - percent of base attack the skill deals
+    - `:element` - optional attack-element override
     - `:skip_crit` - skip the critical roll
     - `:hit_count` - number of hits each connected target takes, each rolling
       its own hit/flee check and its own damage (default `1`); a target
@@ -215,7 +216,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   defp multi_target_opts(opts) do
     skill_id = Keyword.fetch!(opts, :skill_id)
     skill_level = Keyword.fetch!(opts, :skill_level)
-    calc_opts = Keyword.take(opts, [:skill_ratio, :skip_crit, :skill_id])
+    calc_opts = Keyword.take(opts, [:skill_ratio, :skip_crit, :skill_id, :element])
 
     {skill_id, skill_level, calc_opts}
   end

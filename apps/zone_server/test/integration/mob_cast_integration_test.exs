@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
   @moduletag :capture_log
 
   alias Aesir.Commons.StatusParams
+  alias Aesir.Net.MoveRequest
   alias Aesir.Net.ParamChange
   alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
@@ -61,6 +62,9 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
   # Wind Ghost: carries `WZ_JUPITEL` rows. Not denylisted for mob casting.
   @jupitel_mob_id 1_450
 
+  # Gloom Under Night carries level 5 HT_FREEZINGTRAP around-self rows.
+  @freezing_trap_mob_id 2_431
+
   setup :set_mimic_private
   setup :verify_on_exit!
 
@@ -99,6 +103,18 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
   defp caster_targeting(char_id) do
     mob = spawn_test_mob(@map, {150, 150}, mob_id: @mob_id)
     %{get_mob_state(mob.pid) | target_id: char_id}
+  end
+
+  defp eventually(fun, attempts \\ 100)
+  defp eventually(_fun, 0), do: false
+
+  defp eventually(fun, attempts) do
+    if fun.() do
+      true
+    else
+      Process.sleep(25)
+      eventually(fun, attempts - 1)
+    end
   end
 
   describe "SA_DISPELL rows" do
@@ -415,6 +431,88 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
     end
   end
 
+  describe "HT_FREEZINGTRAP ground lifecycle" do
+    test "MobSession places it and PlayerSession movement triggers Water splash and Freeze" do
+      activator =
+        start_player_session(
+          id: 9_815,
+          name: "Activator",
+          position: {150, 150},
+          map_name: @map,
+          hp: 2_000,
+          max_hp: 2_000,
+          vit: 0,
+          luk: 0
+        )
+
+      connected =
+        start_player_session(
+          id: 9_816,
+          name: "Connected",
+          position: {150, 151},
+          map_name: @map,
+          hp: 2_000,
+          max_hp: 2_000,
+          vit: 0,
+          luk: 0
+        )
+
+      outside =
+        start_player_session(
+          id: 9_817,
+          name: "Outside",
+          position: {150, 152},
+          map_name: @map,
+          hp: 2_000,
+          max_hp: 2_000,
+          vit: 0,
+          luk: 0
+        )
+
+      ids = Enum.map([activator, connected, outside], & &1.character.id)
+      on_exit(fn -> Enum.each(ids, &StatusStorage.clear_unit_statuses(:player, &1)) end)
+
+      mob = spawn_test_mob(@map, {155, 150}, mob_id: @freezing_trap_mob_id, dex: 300)
+      row = %{row!(@freezing_trap_mob_id, "HT_FREEZINGTRAP", level: 5) | target: :around5}
+
+      :sys.replace_state(mob.pid, fn state ->
+        state
+        |> MobState.set_target(activator.character.id)
+        |> MobState.set_casting(%{row: row, complete_at: 0, timer_ref: nil})
+      end)
+
+      send(mob.pid, {:casting, :complete})
+
+      assert eventually(fn ->
+               Enum.any?(Storage.all(), &(&1.skill_name == :ht_freezingtrap))
+             end)
+
+      group = Enum.find(Storage.all(), &(&1.skill_name == :ht_freezingtrap))
+      assert group.center == {150, 150}
+      assert group.caster_type == :mob
+
+      simulate_incoming_message(activator.pid, %MoveRequest{dest_x: 149, dest_y: 150})
+
+      assert eventually(fn ->
+               match?(
+                 {:ok, {149, 150, @map}},
+                 SpatialIndex.get_unit_position(:player, activator.character.id)
+               )
+             end)
+
+      simulate_incoming_message(activator.pid, %MoveRequest{dest_x: 151, dest_y: 150})
+
+      assert eventually(fn -> Storage.get(group.group_id) == nil end)
+      assert get_player_state(activator.pid).stats.current_state.hp < 2_000
+      assert get_player_state(connected.pid).stats.current_state.hp < 2_000
+      assert get_player_state(outside.pid).stats.current_state.hp == 2_000
+
+      assert StatusStorage.has_status?(:player, activator.character.id, :sc_freeze)
+      assert StatusStorage.has_status?(:player, connected.character.id, :sc_freeze)
+      refute StatusStorage.has_status?(:player, outside.character.id, :sc_freeze)
+    end
+  end
+
   describe "WZ_JUPITEL deferred effect" do
     test "a mob-cast row's deferred hit lands via MobSession's deferred handler" do
       refute Denylist.denied?(84),
@@ -447,18 +545,6 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
 
       {:ok, new_position} = SpatialIndex.get_unit_position(:player, char_id)
       assert new_position != orig_position
-    end
-  end
-
-  defp eventually(fun, attempts \\ 40)
-  defp eventually(_fun, 0), do: false
-
-  defp eventually(fun, attempts) do
-    if fun.() do
-      true
-    else
-      Process.sleep(10)
-      eventually(fun, attempts - 1)
     end
   end
 end

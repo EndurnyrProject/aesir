@@ -152,6 +152,44 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
     assert_received :apply_damage
   end
 
+  test "execute_splash_attack forwards an explicit element without changing the default" do
+    caster = build_caster()
+    target = build_mob_state(2001, 151, 150)
+    test_pid = self()
+
+    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, _range ->
+      [{:mob, 2001}]
+    end)
+
+    stub(UnitRegistry, :get_unit, fn :mob, 2001 ->
+      {:ok, {MobState, target, self()}}
+    end)
+
+    stub(SpatialIndex, :get_unit_position, fn :mob, 2001 ->
+      {:ok, {151, 150, @map_name}}
+    end)
+
+    stub(DamageCalculator, :calculate_damage, fn _attacker, _target, calc_opts ->
+      send(test_pid, {:calc_opts, calc_opts})
+      {:ok, %{damage: 50, is_critical: false}}
+    end)
+
+    stub(PacketFactory, :build_skill_damage_packet, fn _a, _t, _id, _lvl, _result -> :packet end)
+
+    stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, :packet -> :ok end)
+    stub(MobSession, :apply_damage, fn _pid, _damage, @caster_id -> :ok end)
+
+    opts = [skill_id: 121, skill_level: 5, skill_ratio: 100, skip_crit: true]
+
+    assert [2001] = Combat.execute_splash_attack(caster, @center, 1, [{:element, :water} | opts])
+    assert_received {:calc_opts, explicit_opts}
+    assert explicit_opts[:element] == :water
+
+    assert [2001] = Combat.execute_splash_attack(caster, @center, 1, opts)
+    assert_received {:calc_opts, default_opts}
+    refute Keyword.has_key?(default_opts, :element)
+  end
+
   test "execute_splash_attack hits a mob at the square corner (Chebyshev radius)" do
     caster = build_caster()
 
