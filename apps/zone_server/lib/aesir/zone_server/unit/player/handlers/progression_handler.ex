@@ -351,8 +351,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
 
   @spec prune_skills(Learned.t(), non_neg_integer()) :: {Learned.t(), [non_neg_integer()]}
   defp prune_skills(learned_skills, job_id) do
-    tree_ids = job_id |> SkillTree.tree_for() |> Map.keys()
-    {kept, dropped} = Map.split(learned_skills, tree_ids)
+    kept_ids =
+      (job_id |> SkillTree.tree_for() |> Map.keys()) ++
+        SkillTree.permanent_skill_ids(learned_skills)
+
+    {kept, dropped} = Map.split(learned_skills, kept_ids)
     {kept, Map.keys(dropped)}
   end
 

@@ -1,11 +1,15 @@
 defmodule Aesir.ZoneServer.Unit.Player.SkillListViewTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   @moduletag :capture_log
+
+  import Mimic
 
   alias Aesir.Net.SkillInfo
   alias Aesir.Net.SkillList
   alias Aesir.Net.SkillRequirement
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Unit.Player.SkillListView
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
 
@@ -18,6 +22,29 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListViewTest do
   @al_heal_id 28
   @mage_job_id 2
   @mg_thunderstorm_id 21
+  @archer_job_id 3
+  @hunter_job_id 11
+  @quest_skill_id 99_022
+  @quest_definition Definition.build!(
+                      [
+                        id: @quest_skill_id,
+                        name: :fixture_archer_quest,
+                        display_name: "Fixture Archer Quest",
+                        max_level: 1,
+                        target_type: :self,
+                        sp_cost: [7],
+                        quest_skill: true,
+                        quest_owner_job: :archer
+                      ],
+                      __MODULE__
+                    )
+
+  defp stub_quest_definition do
+    stub(Catalog, :by_id, fn
+      @quest_skill_id -> {:ok, @quest_definition}
+      skill_id -> call_original(Catalog, :by_id, [skill_id])
+    end)
+  end
 
   defp progression(fields) do
     struct!(
@@ -121,6 +148,19 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListViewTest do
         |> by_id(@mg_thunderstorm_id)
 
       assert %SkillInfo{splash_radius: 2} = thunderstorm
+    end
+
+    test "a retained quest skill uses its exact owner id and follows lineage visibility" do
+      stub_quest_definition()
+      learned = %{@quest_skill_id => 1}
+
+      off_lineage = SkillListView.build(progression(learned_skills: learned))
+      eligible = SkillListView.build(progression(job_id: @hunter_job_id, learned_skills: learned))
+
+      refute by_id(off_lineage, @quest_skill_id)
+
+      assert %SkillInfo{job_id: @archer_job_id, level: 1, upgradable: false} =
+               by_id(eligible, @quest_skill_id)
     end
 
     test "a non-area skill (SM_SWORD) reports splash_radius 0" do

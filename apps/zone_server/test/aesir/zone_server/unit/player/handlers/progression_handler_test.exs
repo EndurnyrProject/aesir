@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Mmo.StatPoint
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -58,6 +59,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   {:ok, rune_knight_id} = AvailableJobs.job_name_to_id(:rune_knight)
   @rune_knight_id rune_knight_id
   @unknown_job_id 99_999
+  @quest_skill_id 99_022
+  @quest_definition Definition.build!(
+                      [
+                        id: @quest_skill_id,
+                        name: :fixture_archer_quest,
+                        display_name: "Fixture Archer Quest",
+                        max_level: 1,
+                        quest_skill: true,
+                        quest_owner_job: :archer
+                      ],
+                      __MODULE__
+                    )
 
   setup do
     stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
@@ -105,6 +118,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   defp catalog_id(name) do
     {:ok, definition} = Catalog.by_name(name)
     definition.id
+  end
+
+  defp stub_quest_definition do
+    stub(Catalog, :by_id, fn
+      @quest_skill_id -> {:ok, @quest_definition}
+      skill_id -> call_original(Catalog, :by_id, [skill_id])
+    end)
   end
 
   defp character do
@@ -310,6 +330,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
       assert progression.skill_point == 2
     end
 
+    test "retains permanent quest skills while pruning normal out-of-tree skills" do
+      stub_quest_definition()
+      sm_bash = catalog_id(:sm_bash)
+
+      state =
+        state_with(
+          job_id: @swordman_id,
+          learned_skills: %{sm_bash => 3, @quest_skill_id => 1},
+          skill_point: 2
+        )
+
+      assert {:ok, new_state} = ProgressionHandler.apply_job_change(@merchant_id, state)
+      progression = new_state.game_state.stats.progression
+
+      assert progression.learned_skills == %{@quest_skill_id => 1}
+      assert progression.skill_point == 2
+    end
+
     test "resets job level to 1 and job exp to 0" do
       state = state_with(job_id: @novice_id, job_level: 40, job_exp: 500)
 
@@ -479,6 +517,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
 
       assert progression.learned_skills == %{}
       assert progression.skill_point == 5
+    end
+
+    test "retains permanent quest skills without refunding them" do
+      stub_quest_definition()
+
+      state =
+        state_with(
+          job_id: @swordman_id,
+          learned_skills: %{@quest_skill_id => 1},
+          skill_point: 3
+        )
+
+      assert {:ok, new_state} = ProgressionHandler.reset_skills(state)
+      progression = new_state.game_state.stats.progression
+
+      assert progression.learned_skills == %{@quest_skill_id => 1}
+      assert progression.skill_point == 3
     end
 
     test "re-sends the skill list" do

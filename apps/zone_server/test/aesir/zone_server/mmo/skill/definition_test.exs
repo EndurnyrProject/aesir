@@ -10,6 +10,41 @@ defmodule Aesir.ZoneServer.Mmo.Skill.DefinitionTest do
     max_level: 5
   ]
 
+  describe "quest metadata" do
+    test "defaults non-quest skills to no owner" do
+      definition = Definition.build!(@required_opts, __MODULE__)
+
+      refute definition.quest_skill
+      assert is_nil(definition.quest_owner_job)
+    end
+
+    test "accepts a quest skill with a known owner job" do
+      definition =
+        Definition.build!(
+          @required_opts ++ [quest_skill: true, quest_owner_job: :archer],
+          __MODULE__
+        )
+
+      assert definition.quest_skill
+      assert definition.quest_owner_job == :archer
+    end
+
+    test "rejects a quest skill without an owner job" do
+      assert_raise ArgumentError, ~r/quest_owner_job/, fn ->
+        Definition.build!(@required_opts ++ [quest_skill: true], __MODULE__)
+      end
+    end
+
+    test "rejects a quest skill with an unknown owner job" do
+      assert_raise ArgumentError, ~r/quest_owner_job/, fn ->
+        Definition.build!(
+          @required_opts ++ [quest_skill: true, quest_owner_job: :unknown_job],
+          __MODULE__
+        )
+      end
+    end
+  end
+
   describe "target_type" do
     test "accepts :target_corpse" do
       defn = Definition.build!(@required_opts ++ [target_type: :target_corpse], __MODULE__)

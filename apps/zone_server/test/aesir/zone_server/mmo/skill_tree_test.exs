@@ -4,15 +4,65 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
   @moduletag :capture_log
 
   import ExUnit.CaptureLog
+  import Mimic
 
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Mmo.SkillTree.Entry
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
 
   {:ok, swordman_id} = AvailableJobs.job_name_to_id(:swordman)
   @swordman_id swordman_id
+  {:ok, hunter_id} = AvailableJobs.job_name_to_id(:hunter)
+  @hunter_id hunter_id
+  @quest_skill_id 99_022
+  @hunter_quest_skill_id 99_023
+  @quest_definition Definition.build!(
+                      [
+                        id: @quest_skill_id,
+                        name: :fixture_archer_quest,
+                        display_name: "Fixture Archer Quest",
+                        max_level: 1,
+                        quest_skill: true,
+                        quest_owner_job: :archer
+                      ],
+                      __MODULE__
+                    )
+  @hunter_quest_definition Definition.build!(
+                             [
+                               id: @hunter_quest_skill_id,
+                               name: :fixture_hunter_quest,
+                               display_name: "Fixture Hunter Quest",
+                               max_level: 1,
+                               quest_skill: true,
+                               quest_owner_job: :hunter
+                             ],
+                             __MODULE__
+                           )
+  @taekwon_quest_definition Definition.build!(
+                              [
+                                id: 99_024,
+                                name: :fixture_taekwon_quest,
+                                display_name: "Fixture Taekwon Quest",
+                                max_level: 1,
+                                quest_skill: true,
+                                quest_owner_job: :taekwon
+                              ],
+                              __MODULE__
+                            )
+
+  defp stub_quest_definitions(definitions \\ [@quest_definition]) do
+    definitions_by_id = Map.new(definitions, &{&1.id, &1})
+
+    stub(Catalog, :by_id, fn skill_id ->
+      case Map.fetch(definitions_by_id, skill_id) do
+        {:ok, definition} -> {:ok, definition}
+        :error -> call_original(Catalog, :by_id, [skill_id])
+      end
+    end)
+  end
 
   defp catalog_id(name) do
     {:ok, definition} = Catalog.by_name(name)
@@ -300,7 +350,178 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
     end
   end
 
+  describe "quest skill lineage" do
+    test "adds a learned grant-only quest skill for an eligible lineage with its owner job id" do
+      stub_quest_definitions()
+
+      [quest] =
+        swordman_progression(
+          job_id: @hunter_id,
+          learned_skills: %{@quest_skill_id => 1}
+        )
+        |> SkillTree.available_for()
+        |> Enum.filter(&(&1.skill_id == @quest_skill_id))
+
+      {:ok, archer_id} = AvailableJobs.job_name_to_id(:archer)
+      assert quest.owner_job_id == archer_id
+      assert quest.level == 1
+      refute quest.upgradable
+    end
+
+    test "covers every Archer descendant across normal, trans, baby, third, fourth, and mounted jobs" do
+      eligible_job_ids = [
+        3,
+        11,
+        19,
+        20,
+        4004,
+        4012,
+        4020,
+        4021,
+        4026,
+        4034,
+        4042,
+        4043,
+        4056,
+        4062,
+        4068,
+        4069,
+        4075,
+        4076,
+        4084,
+        4085,
+        4098,
+        4104,
+        4105,
+        4111,
+        4257,
+        4263,
+        4264,
+        4278
+      ]
+
+      assert Enum.all?(eligible_job_ids, &SkillTree.quest_skill_available?(&1, @quest_definition))
+    end
+
+    test "rejects cross-lineage and unknown jobs for an Archer-owned quest skill" do
+      invalid_job_ids = [1, 2, 4, 5, 6, 7, 12, 14, 15, 16, 17, 18, 999_999]
+
+      refute Enum.any?(invalid_job_ids, &SkillTree.quest_skill_available?(&1, @quest_definition))
+    end
+
+    test "covers expanded, baby-expanded, advanced, fourth, and mounted descendants" do
+      eligible_job_ids = [
+        4046,
+        4047,
+        4048,
+        4049,
+        4225,
+        4226,
+        4227,
+        4238,
+        4239,
+        4240,
+        4241,
+        4242,
+        4243,
+        4244,
+        4302,
+        4303,
+        4316
+      ]
+
+      assert Enum.all?(
+               eligible_job_ids,
+               &SkillTree.quest_skill_available?(&1, @taekwon_quest_definition)
+             )
+
+      refute Enum.any?(
+               [24, 25, 4211, 4212, 4215, 999_999],
+               &SkillTree.quest_skill_available?(&1, @taekwon_quest_definition)
+             )
+    end
+
+    test "a Hunter-owned quest such as HT_PHANTASMIC stays on the Hunter branch only" do
+      eligible_job_ids = [11, 4012, 4034, 4056, 4062, 4084, 4085, 4098, 4111, 4257, 4278]
+
+      sibling_or_pre_owner_job_ids = [
+        3,
+        19,
+        20,
+        4004,
+        4020,
+        4021,
+        4026,
+        4042,
+        4043,
+        4068,
+        4069,
+        4075,
+        4076,
+        4104,
+        4105,
+        4263,
+        4264,
+        999_999
+      ]
+
+      assert Enum.all?(
+               eligible_job_ids,
+               &SkillTree.quest_skill_available?(&1, @hunter_quest_definition)
+             )
+
+      refute Enum.any?(
+               sibling_or_pre_owner_job_ids,
+               &SkillTree.quest_skill_available?(&1, @hunter_quest_definition)
+             )
+    end
+
+    test "hides the retained quest skill off-lineage and restores it on return" do
+      stub_quest_definitions()
+
+      off_lineage =
+        swordman_progression(learned_skills: %{@quest_skill_id => 1})
+        |> SkillTree.available_for()
+
+      eligible =
+        swordman_progression(job_id: @hunter_id, learned_skills: %{@quest_skill_id => 1})
+        |> SkillTree.available_for()
+
+      refute Enum.any?(off_lineage, &(&1.skill_id == @quest_skill_id))
+      assert Enum.any?(eligible, &(&1.skill_id == @quest_skill_id))
+    end
+
+    test "reports the exact Hunter owner id for a retained Hunter quest skill" do
+      stub_quest_definitions([@hunter_quest_definition])
+
+      [quest] =
+        swordman_progression(
+          job_id: 4257,
+          learned_skills: %{@hunter_quest_skill_id => 1}
+        )
+        |> SkillTree.available_for()
+        |> Enum.filter(&(&1.skill_id == @hunter_quest_skill_id))
+
+      assert quest.owner_job_id == @hunter_id
+    end
+  end
+
   describe "reset_skills/1" do
+    test "keeps quest skills without refunding their levels" do
+      stub_quest_definitions()
+
+      progression =
+        swordman_progression(
+          skill_point: 2,
+          learned_skills: %{@quest_skill_id => 1, catalog_id(:sm_bash) => 5}
+        )
+
+      reset = SkillTree.reset_skills(progression)
+
+      assert reset.skill_point == 7
+      assert reset.learned_skills == %{@quest_skill_id => 1}
+    end
+
     test "refunds the sum of learned levels into skill_point and clears them" do
       progression =
         swordman_progression(

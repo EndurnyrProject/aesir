@@ -243,6 +243,10 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs do
 
   @job_name_to_id Map.new(@job_id_to_name, fn {k, v} -> {v, k} end)
 
+  @doc "Returns the current job catalog IDs in deterministic order."
+  @spec ids() :: [integer()]
+  def ids, do: @job_id_to_name |> Map.keys() |> Enum.sort()
+
   @spec job_id_to_name(integer()) :: {:ok, atom()} | {:error, :unknown_job_id}
   def job_id_to_name(job_id) when is_integer(job_id) do
     case Map.get(@job_id_to_name, job_id) do

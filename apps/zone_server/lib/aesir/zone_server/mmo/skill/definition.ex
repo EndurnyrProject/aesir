@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   use TypedStruct
 
   alias Aesir.ZoneServer.Mmo.DefinitionValidation
+  alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
 
   @typedoc "How a skill is targeted (rAthena `inf`)."
   @type target_type ::
@@ -88,6 +89,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     field :item_cost, [item_cost_entry()], default: []
     field :requires_ammo, boolean(), default: false
     field :status, atom() | nil, default: nil
+    field :quest_skill, boolean(), default: false
+    field :quest_owner_job, atom() | nil, default: nil
   end
 
   @metadata_schema %{
@@ -131,7 +134,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     damage_base: {:enum, [:weapon, :shield]},
     item_cost: {:list, %{id: {:required, :integer}, amount: {:required, {:integer, {:gt, 0}}}}},
     requires_ammo: :boolean,
-    status: :atom
+    status: :atom,
+    quest_skill: :boolean,
+    quest_owner_job: :atom
   }
 
   @defaults %{
@@ -159,7 +164,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     damage_base: :weapon,
     item_cost: [],
     requires_ammo: false,
-    status: nil
+    status: nil,
+    quest_skill: false,
+    quest_owner_job: nil
   }
 
   @doc """
@@ -171,9 +178,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   """
   @spec build!(keyword(), module()) :: t()
   def build!(opts, module) do
-    @metadata_schema
-    |> DefinitionValidation.validate!(opts, module, @defaults)
-    |> then(&struct!(__MODULE__, &1))
+    metadata = DefinitionValidation.validate!(@metadata_schema, opts, module, @defaults)
+    validate_quest_owner!(metadata, module)
+    struct!(__MODULE__, metadata)
+  end
+
+  defp validate_quest_owner!(%{quest_skill: true, quest_owner_job: nil}, module) do
+    raise ArgumentError, "quest skill in #{inspect(module)} requires quest_owner_job"
+  end
+
+  defp validate_quest_owner!(%{quest_owner_job: nil}, _module), do: :ok
+
+  defp validate_quest_owner!(%{quest_owner_job: owner}, module) do
+    case AvailableJobs.job_name_to_id(owner) do
+      {:ok, _job_id} ->
+        :ok
+
+      {:error, :unknown_job} ->
+        raise ArgumentError, "unknown quest_owner_job #{inspect(owner)} in #{inspect(module)}"
+    end
   end
 
   @doc """

@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Learned
+  alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.WeaponTypes
@@ -509,6 +510,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_max_level(definition, level),
          :ok <- check_castable(definition),
          :ok <- check_learned(game_state, skill_id, level),
+         :ok <- check_quest_lineage(game_state, definition),
          :ok <- check_target(game_state, target, definition),
          :ok <- check_range(game_state, target, definition, level),
          {:ok, module} <- fetch_active_module(definition),
@@ -522,6 +524,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp validate_completion(game_state, skill_id, level, target) do
     with {:ok, definition} <- fetch_definition(skill_id),
          {:ok, module} <- fetch_active_module(definition),
+         :ok <- check_quest_lineage(game_state, definition),
          :ok <- check_target(game_state, target, definition),
          :ok <- check_range(game_state, target, definition, level),
          :ok <- module.validate(game_state, target, level, definition) do
@@ -619,6 +622,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       {:error, :skill_not_learned}
     end
   end
+
+  defp check_quest_lineage(game_state, %{quest_skill: true} = definition) do
+    if SkillTree.quest_skill_available?(game_state.stats.progression.job_id, definition) do
+      :ok
+    else
+      {:error, :skill_not_learned}
+    end
+  end
+
+  defp check_quest_lineage(_game_state, _definition), do: :ok
 
   # A target that cannot be resolved falls through so `check_range` reports it
   # as `:target_not_found`. A skill-unit cell (Ice Wall, etc.) is accepted

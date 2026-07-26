@@ -290,6 +290,32 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
              Interpreter.cast(game_state(100, %{29 => 1}), 29, 5, :self)
   end
 
+  test "a retained quest skill casts only on its owner lineage" do
+    definition =
+      Definition.build!(
+        [
+          id: 29,
+          name: :origin_aware,
+          display_name: "Fixture Archer Quest",
+          max_level: 1,
+          target_type: :self,
+          sp_cost: [0],
+          quest_skill: true,
+          quest_owner_job: :archer
+        ],
+        __MODULE__
+      )
+
+    stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
+    stub(Catalog, :active_module_for, fn :origin_aware -> {:ok, OriginAwareSkill} end)
+
+    off_lineage = put_in(game_state(100, %{29 => 1}), [:stats, :progression, :job_id], 1)
+    eligible = put_in(game_state(100, %{29 => 1}), [:stats, :progression, :job_id], 11)
+
+    assert {:error, :skill_not_learned} = Interpreter.cast(off_lineage, 29, 1, :self)
+    assert {:ok, _updated} = Interpreter.cast(eligible, 29, 1, :self)
+  end
+
   test "insufficient SP returns :insufficient_sp and does not apply the effect" do
     reject(&StatusInterpreter.apply_status/4)
 

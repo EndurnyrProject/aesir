@@ -26,7 +26,9 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
 
   alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
+  alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.SkillTree.Entry
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
@@ -96,9 +98,10 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
   """
   @spec can_learn(PlayerProgression.t(), non_neg_integer()) :: :ok | {:error, reason()}
   def can_learn(%PlayerProgression{job_id: job_id} = progression, skill_id) do
-    case entry(job_id, skill_id) do
-      {:ok, entry} -> can_learn_entry(progression, entry)
-      :error -> {:error, :not_in_tree}
+    case {entry(job_id, skill_id), Catalog.by_id(skill_id)} do
+      {{:ok, _entry}, {:ok, %Definition{quest_skill: true}}} -> {:error, :not_in_tree}
+      {{:ok, entry}, _definition} -> can_learn_entry(progression, entry)
+      {:error, _definition} -> {:error, :not_in_tree}
     end
   end
 
@@ -150,21 +153,81 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
   """
   @spec available_for(PlayerProgression.t()) :: [view_entry()]
   def available_for(%PlayerProgression{job_id: job_id} = progression) do
-    job_id
-    |> tree_for()
-    |> Map.values()
-    |> Enum.map(fn entry ->
-      %{
-        skill_id: entry.skill_id,
-        owner_job_id: entry.owner_job_id,
-        level: Learned.learned_level(progression.learned_skills, entry.skill_id),
-        max_level: entry.max_level,
-        requires: entry.requires,
-        base_level: entry.base_level,
-        job_level: entry.job_level,
-        upgradable: can_learn_entry(progression, entry) == :ok
-      }
-    end)
+    tree = tree_for(job_id)
+
+    tree_entries =
+      tree
+      |> Map.values()
+      |> Enum.flat_map(&available_tree_entry(&1, progression))
+
+    granted_quest_entries =
+      progression.learned_skills
+      |> Enum.reject(fn {skill_id, _level} -> Map.has_key?(tree, skill_id) end)
+      |> Enum.flat_map(fn {skill_id, level} ->
+        case Catalog.by_id(skill_id) do
+          {:ok, %Definition{quest_skill: true} = definition} ->
+            available_quest_entry(definition, level, job_id)
+
+          _not_quest ->
+            []
+        end
+      end)
+
+    tree_entries ++ granted_quest_entries
+  end
+
+  defp available_tree_entry(%Entry{} = entry, progression) do
+    case Catalog.by_id(entry.skill_id) do
+      {:ok, %Definition{quest_skill: true} = definition} ->
+        level = Learned.learned_level(progression.learned_skills, entry.skill_id)
+        available_quest_entry(definition, level, progression.job_id)
+
+      _not_quest ->
+        [
+          %{
+            skill_id: entry.skill_id,
+            owner_job_id: entry.owner_job_id,
+            level: Learned.learned_level(progression.learned_skills, entry.skill_id),
+            max_level: entry.max_level,
+            requires: entry.requires,
+            base_level: entry.base_level,
+            job_level: entry.job_level,
+            upgradable: can_learn_entry(progression, entry) == :ok
+          }
+        ]
+    end
+  end
+
+  defp available_quest_entry(%Definition{} = definition, level, job_id) do
+    if level > 0 and quest_skill_available?(job_id, definition) do
+      [
+        %{
+          skill_id: definition.id,
+          owner_job_id: quest_owner_job_id!(definition),
+          level: level,
+          max_level: definition.max_level,
+          requires: [],
+          base_level: 0,
+          job_level: 0,
+          upgradable: false
+        }
+      ]
+    else
+      []
+    end
+  end
+
+  @doc "Returns whether the current job lineage includes a quest skill's declared owner."
+  @spec quest_skill_available?(non_neg_integer(), Definition.t()) :: boolean()
+  def quest_skill_available?(job_id, %Definition{quest_skill: true} = definition) do
+    JobLineage.descendant_or_self?(job_id, quest_owner_job_id!(definition))
+  end
+
+  def quest_skill_available?(_job_id, %Definition{quest_skill: false}), do: true
+
+  defp quest_owner_job_id!(%Definition{quest_owner_job: owner}) do
+    {:ok, owner_job_id} = AvailableJobs.job_name_to_id(owner)
+    owner_job_id
   end
 
   @doc """
@@ -183,16 +246,30 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
     %{progression | learned_skills: kept, skill_point: progression.skill_point + refund}
   end
 
-  @spec exempt_skills(PlayerProgression.t()) :: [non_neg_integer()]
-  defp exempt_skills(%PlayerProgression{job_id: job_id}) do
-    if novice?(job_id) do
-      []
-    else
-      case Catalog.by_name(:nv_basic) do
-        {:ok, %{id: id}} -> [id]
-        :error -> []
+  @doc "Returns learned skill IDs whose catalog definitions mark them as permanent quest skills."
+  @spec permanent_skill_ids(Learned.t()) :: [non_neg_integer()]
+  def permanent_skill_ids(learned_skills) do
+    Enum.flat_map(learned_skills, fn {skill_id, _level} ->
+      case Catalog.by_id(skill_id) do
+        {:ok, %Definition{quest_skill: true}} -> [skill_id]
+        _not_quest -> []
       end
-    end
+    end)
+  end
+
+  @spec exempt_skills(PlayerProgression.t()) :: [non_neg_integer()]
+  defp exempt_skills(%PlayerProgression{job_id: job_id, learned_skills: learned_skills}) do
+    basic =
+      if novice?(job_id) do
+        []
+      else
+        case Catalog.by_name(:nv_basic) do
+          {:ok, %{id: id}} -> [id]
+          :error -> []
+        end
+      end
+
+    basic ++ permanent_skill_ids(learned_skills)
   end
 
   @spec novice?(non_neg_integer()) :: boolean()
