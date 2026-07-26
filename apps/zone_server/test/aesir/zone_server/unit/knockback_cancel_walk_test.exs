@@ -1,106 +1,89 @@
 defmodule Aesir.ZoneServer.Unit.KnockbackCancelWalkTest do
-  use ExUnit.Case, async: true
+  use Aesir.ZoneServer.IntegrationCase
 
-  import Aesir.TestEtsSetup
-
+  alias Aesir.Net.Knockback
+  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Unit.Mob.MobSession
-  alias Aesir.ZoneServer.Unit.Mob.MobState
-  alias Aesir.ZoneServer.Unit.Movement
-  alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.UnitRegistry
-
-  setup :setup_ets_tables
 
   @map_name "prontera"
 
-  describe "player knocked back while moving" do
-    test "cancels the in-flight walk, stands at the landing cell, and the next tick does not move it" do
-      char_id = 7001
-
-      game_state = %PlayerState{
-        character_id: char_id,
+  test "real player session commits displacement and rejects a stale expected position" do
+    player =
+      start_player_session(
+        id: 7_001,
         map_name: @map_name,
-        x: 50,
-        y: 50,
-        dir: 0,
-        movement_state: :moving,
-        walk_path: [{51, 50}, {52, 50}, {53, 50}],
-        walk_speed: 150,
-        view_range: 14,
-        visible_players: MapSet.new(),
-        visible_mobs: MapSet.new()
-      }
+        position: {150, 150}
+      )
 
-      UnitRegistry.register_unit(:player, char_id, PlayerState, game_state, self())
-      SpatialIndex.add_player(char_id, 50, 50, @map_name)
+    flush_packets()
 
-      state = %{game_state: game_state, connection_pid: self()}
+    assert {:ok, {152, 150}} = Combat.knockback(:player, player.character.id, 149, 150, 2)
+    assert_eventually(fn -> PlayerSession.get_state(player.pid).game_state.x == 152 end)
+    assert_packet_sent(Knockback)
 
-      {:noreply, knocked_state} =
-        PlayerSession.handle_cast({:movement, {:knocked_back, 60, 50}}, state)
+    GenServer.cast(
+      player.pid,
+      {:movement, {:displace, 150, 150, @map_name, 153, 150}}
+    )
 
-      assert knocked_state.game_state.x == 60
-      assert knocked_state.game_state.y == 50
-      assert knocked_state.game_state.movement_state == :standing
-      assert knocked_state.game_state.walk_path == []
+    Process.sleep(20)
+    state = PlayerSession.get_state(player.pid).game_state
+    assert {state.x, state.y, state.movement_state, state.walk_path} == {152, 150, :standing, []}
 
-      assert {:player, ^char_id, _move_state} =
-               Enum.find(Movement.drain_dirty(@map_name), fn {_t, id, _ms} -> id == char_id end)
+    flush_packets()
+    GenServer.cast(player.pid, {:movement, {:displace, 152, 150, @map_name, -1, -1}})
+    Process.sleep(20)
+    assert PlayerSession.get_state(player.pid).game_state.x == 152
+    refute_packet_sent(Knockback)
 
-      {:noreply, after_tick} = MovementHandler.handle_movement_tick(knocked_state)
-
-      assert after_tick.game_state.x == 60
-      assert after_tick.game_state.y == 50
-    end
+    assert {:ok, {152, 150, @map_name}} =
+             SpatialIndex.get_unit_position(:player, player.character.id)
   end
 
-  describe "mob knocked back while moving" do
-    test "cancels the in-flight walk, stands at the landing cell, and the next tick does not move it" do
-      instance_id = 9001
+  test "real mob session commits and broadcasts after its state and indexes move" do
+    observer = start_player_session(id: 7_002, map_name: @map_name, position: {150, 151})
+    mob = start_mob_session(unit_id: 9_002, map_name: @map_name, position: {150, 150})
+    flush_packets()
 
-      mob_state = %MobState{
-        instance_id: instance_id,
-        mob_id: 1002,
-        mob_data: %{},
-        spawn_ref: %{},
-        x: 50,
-        y: 50,
-        dir: 0,
+    assert {:ok, {152, 150}} = Combat.knockback(:mob, mob.unit_id, 149, 150, 2)
+    assert_eventually(fn -> MobSession.get_state(mob.pid).x == 152 end)
+    assert {:ok, {152, 150, @map_name}} = SpatialIndex.get_unit_position(:mob, mob.unit_id)
+    assert_packet_sent(Knockback)
+    assert Process.alive?(observer.pid)
+  end
+
+  test "real mob session cancels walking and rejects FIFO damage-before-displacement after death" do
+    mob =
+      start_mob_session(
+        unit_id: 9_001,
         map_name: @map_name,
-        movement_state: :moving,
-        walk_path: [{51, 50}, {52, 50}, {53, 50}],
-        walk_speed: 150,
-        view_range: 14,
+        position: {150, 150},
         hp: 100,
-        max_hp: 100,
-        sp: 50,
-        max_sp: 50,
-        spawned_at: 0
-      }
+        max_hp: 100
+      )
 
-      UnitRegistry.register_unit(:mob, instance_id, MobState, mob_state, self())
-      SpatialIndex.add_unit(:mob, instance_id, 50, 50, @map_name)
+    assert :ok = MobSession.move_to(mob.pid, 155, 150)
+    MobSession.apply_damage(mob.pid, 100)
+    assert {:ok, {152, 150}} = Combat.knockback(:mob, mob.unit_id, 149, 150, 2)
 
-      {:noreply, knocked_state} =
-        MobSession.handle_cast({:movement, {:knocked_back, 60, 50}}, mob_state)
+    assert_eventually(fn -> MobSession.get_state(mob.pid).is_dead end)
+    state = MobSession.get_state(mob.pid)
+    assert {state.x, state.y} == {150, 150}
+    assert {:ok, {150, 150, @map_name}} = SpatialIndex.get_unit_position(:mob, mob.unit_id)
+    refute_packet_sent(Knockback)
+  end
 
-      assert knocked_state.x == 60
-      assert knocked_state.y == 50
-      assert knocked_state.movement_state == :standing
-      assert knocked_state.walk_path == []
+  defp assert_eventually(fun, attempts \\ 20)
+  defp assert_eventually(fun, 0), do: assert(fun.())
 
-      assert {:mob, ^instance_id, _move_state} =
-               Enum.find(Movement.drain_dirty(@map_name), fn {_t, id, _ms} ->
-                 id == instance_id
-               end)
-
-      {:noreply, after_tick} = MobSession.handle_info({:movement, :tick}, knocked_state)
-
-      assert after_tick.x == 60
-      assert after_tick.y == 50
+  defp assert_eventually(fun, attempts) do
+    if fun.() do
+      :ok
+    else
+      Process.sleep(10)
+      assert_eventually(fun, attempts - 1)
     end
   end
 end

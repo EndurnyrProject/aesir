@@ -5,10 +5,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   improve modularity and maintainability.
   """
 
+  alias Aesir.Net.Knockback
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Pathfinding
+  alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.MovementEngine
@@ -102,21 +106,52 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   end
 
   @doc """
-  Lands the mob at `{x, y}` after a knockback.
-
-  Stops the in-flight walk first so the published snapshot never shows the mob
-  still mid-walk at the old cell, then writes and publishes the landing cell
-  via `Movement.set_position/4`.
+  Commits displacement only when the live session still matches its expected cell.
   """
-  @spec handle_knocked_back(MobState.t(), integer(), integer()) :: {:noreply, MobState.t()}
-  def handle_knocked_back(state, x, y) do
-    state =
-      state
-      |> MobState.stop_movement()
-      |> MobState.update_position(x, y)
+  @spec handle_displacement(
+          MobState.t(),
+          integer(),
+          integer(),
+          String.t(),
+          integer(),
+          integer()
+        ) :: {:noreply, MobState.t()}
+  def handle_displacement(state, expected_x, expected_y, map_name, x, y) do
+    if MobState.is_boss?(state) do
+      {:noreply, state}
+    else
+      handle_relocation(state, expected_x, expected_y, map_name, x, y)
+    end
+  end
 
-    Movement.set_position(:mob, state.instance_id, state, state.map_name)
-    {:noreply, state}
+  @doc """
+  Commits an authoritative self-relocation, including for boss mobs.
+  """
+  @spec handle_relocation(
+          MobState.t(),
+          integer(),
+          integer(),
+          String.t(),
+          integer(),
+          integer()
+        ) :: {:noreply, MobState.t()}
+  def handle_relocation(state, expected_x, expected_y, map_name, x, y) do
+    if Unit.living?(state) and
+         {state.x, state.y, state.map_name} == {expected_x, expected_y, map_name} and
+         Cell.traversable?(map_name, x, y) do
+      state =
+        state
+        |> MobState.stop_movement()
+        |> MobState.update_position(x, y)
+
+      Movement.set_position(:mob, state.instance_id, state, map_name)
+
+      packet = %Knockback{unit_id: state.instance_id, dst_x: x, dst_y: y}
+      Broadcast.to_in_range(map_name, x, y, Config.view_range(), packet)
+      {:noreply, state}
+    else
+      {:noreply, state}
+    end
   end
 
   defp process_movement_tick(%{} = state) do

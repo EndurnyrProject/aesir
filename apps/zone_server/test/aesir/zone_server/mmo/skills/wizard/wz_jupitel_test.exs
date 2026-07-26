@@ -259,9 +259,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
 
     assert_receive {:session_cast, {:combat, {:apply_damage, damage, 1000}}}
     assert damage > 0
-    assert_receive {:session_cast, {:movement, {:knocked_back, 66, 60}}}
+
+    assert_receive {:session_cast,
+                    {:movement, {:displace, _expected_x, _expected_y, "prontera", 66, 60}}}
+
     refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id}}}, 20
-    refute_receive {:session_cast, {:movement, {:knocked_back, _x, _y}}}, 20
+
+    refute_receive {:session_cast,
+                    {:movement, {:displace, _expected_x, _expected_y, _map, _x, _y}}},
+                   20
   end
 
   test "impact rechecks mob life and does not damage or knock back a dead target" do
@@ -272,7 +278,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
              WzJupitel.deferred(%{target: {:mob, @target_id}, skill_level: 1}, caster())
 
     refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id}}}, 20
-    refute_receive {:session_cast, {:movement, {:knocked_back, _x, _y}}}, 20
+
+    refute_receive {:session_cast,
+                    {:movement, {:displace, _expected_x, _expected_y, _map, _x, _y}}},
+                   20
   end
 
   test "a target that dies after scheduling receives no delayed damage or knockback" do
@@ -301,7 +310,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
              WzJupitel.deferred(%{target: {:mob, @target_id}, skill_level: 1}, caster())
 
     refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id}}}, 20
-    refute_receive {:session_cast, {:movement, {:knocked_back, _x, _y}}}, 20
+
+    refute_receive {:session_cast,
+                    {:movement, {:displace, _expected_x, _expected_y, _map, _x, _y}}},
+                   20
   end
 
   test "impact line of sight treats an intervening dynamic projectile blocker as unreachable" do
@@ -313,7 +325,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
              WzJupitel.deferred(%{target: {:mob, @target_id}, skill_level: 1}, caster())
 
     refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id}}}, 20
-    refute_receive {:session_cast, {:movement, {:knocked_back, _x, _y}}}, 20
+
+    refute_receive {:session_cast,
+                    {:movement, {:displace, _expected_x, _expected_y, _map, _x, _y}}},
+                   20
   end
 
   test "diagonal line of sight checks the static cells visited by rAthena traversal" do
@@ -325,7 +340,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
              WzJupitel.deferred(%{target: {:mob, @target_id}, skill_level: 1}, caster())
 
     refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id}}}, 20
-    refute_receive {:session_cast, {:movement, {:knocked_back, _x, _y}}}, 20
+
+    refute_receive {:session_cast,
+                    {:movement, {:displace, _expected_x, _expected_y, _map, _x, _y}}},
+                   20
   end
 
   test "diagonal line of sight ignores dynamic projectile blockers outside rAthena traversal" do
@@ -338,7 +356,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
 
     assert_receive {:session_cast, {:combat, {:apply_damage, damage, 1000}}}
     assert damage > 0
-    assert_receive {:session_cast, {:movement, {:knocked_back, 56, 64}}}
+
+    assert_receive {:session_cast,
+                    {:movement, {:displace, _expected_x, _expected_y, "prontera", 56, 64}}}
   end
 
   test "impact rejects an unaffiliated player through the central relation check until PvP exists" do
@@ -349,7 +369,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
              WzJupitel.deferred(%{target: {:player, @target_id}, skill_level: 1}, caster())
 
     refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id}}}, 20
-    refute_receive {:session_cast, {:movement, {:knocked_back, _x, _y}}}, 20
+
+    refute_receive {:session_cast,
+                    {:movement, {:displace, _expected_x, _expected_y, _map, _x, _y}}},
+                   20
   end
 
   test "impact rejects a same-party player through the central relation check" do
@@ -363,7 +386,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
              )
 
     refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id}}}, 20
-    refute_receive {:session_cast, {:movement, {:knocked_back, _x, _y}}}, 20
+
+    refute_receive {:session_cast,
+                    {:movement, {:displace, _expected_x, _expected_y, _map, _x, _y}}},
+                   20
   end
 
   test "rejects an invalid target before damage or knockback" do

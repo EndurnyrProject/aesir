@@ -8,10 +8,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
   alias Aesir.Net.ItemOnGround
   alias Aesir.Net.ItemVanished
+  alias Aesir.Net.Knockback
   alias Aesir.Net.MoveStop
   alias Aesir.Net.SelfMove
   alias Aesir.Net.UnitDespawn
   alias Aesir.Net.UnitSpawn
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Constants.ObjectType
   alias Aesir.ZoneServer.Geometry
@@ -38,6 +40,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Script.Ctx
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Movement
@@ -550,22 +553,38 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   end
 
   @doc """
-  Lands the player at `{x, y}` after a knockback.
-
-  Stops the in-flight walk first so the published snapshot never shows the
-  player still mid-walk at the old cell, then writes and publishes the landing
-  cell via `Unit.Movement.set_position/4`.
+  Commits displacement only when the live session still matches its expected cell.
   """
-  @spec handle_knocked_back(SessionState.t(), integer(), integer()) ::
-          {:noreply, SessionState.t()}
-  def handle_knocked_back(state, x, y) do
-    game_state =
-      state.game_state
-      |> PlayerState.stop_walking()
-      |> PlayerState.update_position(x, y)
+  @spec handle_displacement(
+          SessionState.t(),
+          integer(),
+          integer(),
+          String.t(),
+          integer(),
+          integer()
+        ) :: {:noreply, SessionState.t()}
+  def handle_displacement(state, expected_x, expected_y, map_name, x, y) do
+    game_state = state.game_state
 
-    Movement.set_position(:player, game_state.character_id, game_state, game_state.map_name)
-    {:noreply, %{state | game_state: game_state}}
+    if Unit.living?(game_state) and
+         {game_state.x, game_state.y, game_state.map_name} == {expected_x, expected_y, map_name} and
+         Cell.traversable?(map_name, x, y) do
+      game_state =
+        game_state
+        |> PlayerState.stop_walking()
+        |> PlayerState.update_position(x, y)
+
+      Movement.set_position(:player, game_state.character_id, game_state, map_name)
+      broadcast_displacement(game_state.character_id, map_name, x, y)
+      {:noreply, %{state | game_state: game_state}}
+    else
+      {:noreply, state}
+    end
+  end
+
+  defp broadcast_displacement(unit_id, map_name, x, y) do
+    packet = %Knockback{unit_id: unit_id, dst_x: x, dst_y: y}
+    Broadcast.to_in_range(map_name, x, y, Config.view_range(), packet)
   end
 
   defp broadcast_stop_to_nearby(game_state, packet) do

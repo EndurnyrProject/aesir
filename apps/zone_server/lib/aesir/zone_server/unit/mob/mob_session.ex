@@ -277,8 +277,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     {:noreply, state |> MobState.apply_walk_delay(duration, now) |> MobState.stop_movement()}
   end
 
+  def handle_cast({:movement, {:displace, expected_x, expected_y, map_name, x, y}}, state) do
+    MovementHandler.handle_displacement(state, expected_x, expected_y, map_name, x, y)
+  end
+
+  def handle_cast({:movement, {:relocate, expected_x, expected_y, map_name, x, y}}, state) do
+    MovementHandler.handle_relocation(state, expected_x, expected_y, map_name, x, y)
+  end
+
   def handle_cast({:movement, {:knocked_back, x, y}}, state) do
-    MovementHandler.handle_knocked_back(state, x, y)
+    MovementHandler.handle_displacement(state, state.x, state.y, state.map_name, x, y)
   end
 
   # Combat: damage application (death handling lives in CombatHandler).

@@ -164,6 +164,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   defdelegate knockback(unit_type, unit_id, from_x, from_y, distance), to: Knockback
 
   @doc """
+  Pulls a unit toward a requested cell through session-owned displacement.
+
+  See `Aesir.ZoneServer.Mmo.Combat.Knockback.pull_to/4`.
+  """
+  defdelegate pull_to(unit_type, unit_id, target_x, target_y), to: Knockback
+
+  @doc """
   Resolves a target's type and authoritative spatial position.
 
   See `Aesir.ZoneServer.Mmo.Combat.TargetResolver.resolve_target_position/1`.

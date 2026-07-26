@@ -367,7 +367,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightrasherTest do
 
     assert mob_damage > 0
 
-    assert_receive {:session_cast, {:mob, ^collision_id}, {:movement, {:knocked_back, 62, 60}}}
+    assert_receive {:session_cast, {:mob, ^collision_id},
+                    {:movement, {:displace, _expected_x, _expected_y, "prontera", 62, 60}}}
 
     excluded = [
       {:player, caster.character_id},
@@ -381,7 +382,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightrasherTest do
       refute_received {:session_cast, ^target_ref,
                        {:combat, {:apply_damage, _damage, _attacker_id}}}
 
-      refute_received {:session_cast, ^target_ref, {:movement, {:knocked_back, _x, _y}}}
+      refute_received {:session_cast, ^target_ref,
+                       {:movement, {:displace, _expected_x, _expected_y, _map, _x, _y}}}
     end)
   end
 end

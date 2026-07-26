@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Integration.MonkMobCastTest do
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Formulas
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @map "prontera"
@@ -63,6 +64,37 @@ defmodule Aesir.ZoneServer.Integration.MonkMobCastTest do
            end)
 
     state = get_mob_state(mob.pid)
+    assert {state.x, state.y} != {150, 150}
+    assert Geometry.chebyshev_distance(state.x, state.y, 158, 150) == 1
+  end
+
+  test "a boss mob casting Snap relocates through its authoritative self-movement path" do
+    target =
+      start_player_session(character: player_character(8_011, {158, 150}), position: {158, 150})
+
+    boss =
+      start_mob_session(
+        unit_id: 8_111,
+        map_name: @map,
+        position: {150, 150},
+        modes: [:boss]
+      )
+
+    caster = %{mob_state(boss) | target_id: target.character.id}
+
+    assert :ok = Executor.execute(caster, snap_row())
+
+    assert eventually(fn ->
+             match?(
+               {:ok, {x, y, @map}}
+               when {x, y} != {150, 150} and
+                      abs(x - 158) <= 1 and abs(y - 150) <= 1,
+               SpatialIndex.get_unit_position(:mob, 8_111)
+             )
+           end)
+
+    state = get_mob_state(boss.pid)
+    assert MobState.is_boss?(state)
     assert {state.x, state.y} != {150, 150}
     assert Geometry.chebyshev_distance(state.x, state.y, 158, 150) == 1
   end

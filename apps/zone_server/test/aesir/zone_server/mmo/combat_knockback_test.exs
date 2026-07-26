@@ -1,10 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
+  import Aesir.TestEtsSetup
   import Mimic
 
-  alias Aesir.Net.Knockback
   alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Map.GatType
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -12,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
+  setup :setup_ets_tables
 
   setup do
     Mimic.copy(Cell)
@@ -40,10 +43,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     }
   end
 
-  test "knockback walks the unit outward and casts the landing cell to the owning session" do
+  test "knockback sends expected and landing cells to the owning session" do
     test_pid = self()
 
-    # Unit sits east of the source, so it is blown further east (+x).
     stub(SpatialIndex, :get_unit_position, fn :mob, @mob_id ->
       {:ok, {151, 150, @map_name}}
     end)
@@ -51,27 +53,21 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     stub(MapCache, :get, fn @map_name -> {:ok, :map} end)
 
     # A wall at x == 154: cells 152 and 153 are walkable, 154 is not.
-    stub(Cell, :traversable?, fn @map_name, x, _y -> x < 154 end)
+    stub(Cell, :step_traversable?, fn @map_name, _from, {x, _y} -> x < 154 end)
 
-    # The owning session is the single writer: knockback routes the landing cell
-    # to it via a {:movement, {:knocked_back, x, y}} cast (received by this test process).
     stub(UnitRegistry, :get_unit, fn :mob, @mob_id ->
       {:ok, {MobState, mob_state(151, 150), test_pid}}
     end)
 
-    stub(Broadcast, :to_in_range, fn @map_name, _x, _y, _range, %Knockback{} = pkt ->
-      send(test_pid, {:broadcast, pkt})
-      :ok
-    end)
+    reject(&Broadcast.to_in_range/5)
 
     {from_x, from_y} = @from
     assert {:ok, {153, 150}} = Combat.knockback(:mob, @mob_id, from_x, from_y, 5)
 
-    assert_received {:"$gen_cast", {:movement, {:knocked_back, 153, 150}}}
-    assert_received {:broadcast, %Knockback{unit_id: @mob_id, dst_x: 153, dst_y: 150}}
+    assert_received {:"$gen_cast", {:movement, {:displace, 151, 150, @map_name, 153, 150}}}
   end
 
-  test "knockback leaves a boss mob's position unchanged and broadcasts nothing" do
+  test "hostile knockback and pull leave a boss mob unchanged" do
     stub(SpatialIndex, :get_unit_position, fn :mob, @mob_id ->
       {:ok, {151, 150, @map_name}}
     end)
@@ -82,12 +78,13 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
       {:ok, {MobState, mob_state(151, 150, [:boss]), self()}}
     end)
 
-    reject(&Cell.traversable?/3)
+    reject(&Cell.step_traversable?/3)
     reject(&Broadcast.to_in_range/5)
 
     {from_x, from_y} = @from
     assert {:ok, {151, 150}} = Combat.knockback(:mob, @mob_id, from_x, from_y, 5)
-    refute_received {:"$gen_cast", {:movement, {:knocked_back, _, _}}}
+    assert {:ok, {151, 150}} = Combat.pull_to(:mob, @mob_id, 155, 150)
+    refute_received {:"$gen_cast", {:movement, _movement}}
   end
 
   test "knockback with no walkable cell leaves the unit in place" do
@@ -97,7 +94,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
 
     stub(MapCache, :get, fn @map_name -> {:ok, :map} end)
 
-    stub(Cell, :traversable?, fn @map_name, _x, _y -> false end)
+    stub(Cell, :step_traversable?, fn @map_name, _from, _to -> false end)
 
     stub(UnitRegistry, :get_unit, fn :mob, @mob_id ->
       {:ok, {MobState, mob_state(151, 150), self()}}
@@ -120,7 +117,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
       {:ok, {MobState, corpse, self()}}
     end)
 
-    reject(&Cell.traversable?/3)
+    reject(&Cell.step_traversable?/3)
     reject(&Broadcast.to_in_range/5)
 
     {from_x, from_y} = @from
@@ -140,7 +137,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
       {:ok, {MobState, corpse, self()}}
     end)
 
-    reject(&Cell.traversable?/3)
+    reject(&Cell.step_traversable?/3)
     reject(&Broadcast.to_in_range/5)
 
     assert {:error, :target_dead} = Combat.knockback(:mob, @mob_id, 151, 150, 5)
@@ -165,6 +162,65 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     {from_x, from_y} = @from
     assert :ok = Combat.knockback(:skill_unit, @mob_id, from_x, from_y, 5)
     refute_received {:"$gen_cast", {:movement, {:knocked_back, _, _}}}
+  end
+
+  test "pull-to finds a valid detour around an obstacle" do
+    test_pid = self()
+
+    map_data =
+      MapData.new(@map_name, 10, 10)
+      |> MapData.set_cell(4, 5, GatType.wall())
+      |> MapData.set_cell(5, 5, GatType.wall())
+      |> MapData.set_cell(6, 5, GatType.wall())
+
+    stub(SpatialIndex, :get_unit_position, fn :mob, @mob_id ->
+      {:ok, {1, 5, @map_name}}
+    end)
+
+    stub(MapCache, :get, fn @map_name -> {:ok, map_data} end)
+
+    stub(UnitRegistry, :get_unit, fn :mob, @mob_id ->
+      {:ok, {MobState, mob_state(1, 5), test_pid}}
+    end)
+
+    assert {:ok, {8, 5}} = Combat.pull_to(:mob, @mob_id, 8, 5)
+
+    assert_received {:"$gen_cast", {:movement, {:displace, 1, 5, @map_name, 8, 5}}}
+  end
+
+  test "pull-to does not cut through a blocked diagonal corner" do
+    map_data =
+      MapData.new(@map_name, 2, 2)
+      |> MapData.set_cell(1, 0, GatType.wall())
+      |> MapData.set_cell(0, 1, GatType.wall())
+
+    stub(SpatialIndex, :get_unit_position, fn :mob, @mob_id ->
+      {:ok, {0, 0, @map_name}}
+    end)
+
+    stub(MapCache, :get, fn @map_name -> {:ok, map_data} end)
+
+    stub(UnitRegistry, :get_unit, fn :mob, @mob_id ->
+      {:ok, {MobState, mob_state(0, 0), self()}}
+    end)
+
+    assert {:ok, {0, 0}} = Combat.pull_to(:mob, @mob_id, 1, 1)
+    refute_received {:"$gen_cast", {:movement, {:displace, _, _, _, _, _}}}
+  end
+
+  test "knockback returns an error when the owning session is unavailable" do
+    stub(SpatialIndex, :get_unit_position, fn :mob, @mob_id ->
+      {:ok, {151, 150, @map_name}}
+    end)
+
+    stub(MapCache, :get, fn @map_name -> {:ok, :map} end)
+    stub(Cell, :step_traversable?, fn @map_name, _from, _to -> true end)
+    stub(UnitRegistry, :get_unit, fn :mob, @mob_id -> {:error, :not_found} end)
+
+    {from_x, from_y} = @from
+
+    assert {:error, :owner_unavailable} =
+             Combat.knockback(:mob, @mob_id, from_x, from_y, 5)
   end
 
   test "knockback returns an error when the unit map is unavailable" do

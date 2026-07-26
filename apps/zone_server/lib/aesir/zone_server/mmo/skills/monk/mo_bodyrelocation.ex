@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBodyrelocation do
 
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -30,7 +31,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBodyrelocation do
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
 
@@ -89,7 +89,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBodyrelocation do
          {:ok, {dest_x, dest_y}} <- relocation_cell(caster, tx, ty),
          {:ok, _directive} <-
            ForcedMovement.validate(caster, dest_x, dest_y, Formulas.snap_range()) do
-      relocate(caster.instance_id, dest_x, dest_y)
+      Knockback.relocate(:mob, caster.instance_id, dest_x, dest_y)
     end
 
     :ok
@@ -106,18 +106,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBodyrelocation do
     |> case do
       nil -> :error
       cell -> {:ok, cell}
-    end
-  end
-
-  # Dispatches the reposition to the owning MobSession, the single writer for its
-  # position (mirrors `Combat.Knockback.move_unit/5`); a despawned mob is a no-op.
-  defp relocate(mob_id, x, y) do
-    case UnitRegistry.get_unit(:mob, mob_id) do
-      {:ok, {_module, _state, pid}} when is_pid(pid) ->
-        GenServer.cast(pid, {:movement, {:knocked_back, x, y}})
-
-      _ ->
-        :ok
     end
   end
 

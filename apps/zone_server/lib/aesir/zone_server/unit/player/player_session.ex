@@ -751,8 +751,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   # and sends a client-visible MoveStop packet. The warp cast (on-touch warp
   # NPCs, AL_WARP, GM @warp) delegates too.
   @impl true
-  def handle_cast({:movement, {:knocked_back, x, y}}, state) do
-    MovementHandler.handle_knocked_back(state, x, y)
+  def handle_cast({:movement, {:displace, expected_x, expected_y, map_name, x, y}}, state) do
+    MovementHandler.handle_displacement(state, expected_x, expected_y, map_name, x, y)
   end
 
   @impl true
