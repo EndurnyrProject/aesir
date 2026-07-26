@@ -18,7 +18,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @max_uint32 0xFFFF_FFFF
@@ -50,12 +49,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       *weapon* attack range) for a cast whose skill range the interpreter
       already validated; map, life, and enemy-relation checks still run
       (default `false`)
-    - `:report_hit` - when `true`, returns `{:ok, %{hit?: boolean}}` instead of
-      plain `:ok`, so a caller can gate a follow-up effect (e.g. a status
-      rider) on whether the attack actually connected rather than being
-      dodged or missed. With `:hit_count` greater than `1`, `hit?` is `true`
-      if any of the hits connected. Default `false`, so existing callers see
-      no change. (default `false`)
+    - `:report_hit` - when `true`, returns the hit result with `:hit?`, final
+      prepared `:damage`, and `:target_survives?`. With `:hit_count` greater
+      than `1`, damage is summed and `hit?` is `true` if any hit connected.
+      Default `false`, so existing callers see no change. (default `false`)
+    - `:ignore_flee` - when `true`, skips the hit/flee roll while retaining
+      interception, validation, damage preparation, and delivery (default `false`)
     - `:ranged` - forces `is_short: false` in the delivered hit_info,
       overriding the caster's melee attack-range classification, for a skill
       whose reach is short but whose damage type is renewal's ranged physical
@@ -64,11 +63,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   ## Returns
     - :ok if the skill was dispatched (regardless of whether any hit
       connected), when `:report_hit` is not set
-    - {:ok, %{hit?: boolean}} when `:report_hit` is `true`
+    - `{:ok, %{hit?: boolean, damage: non_neg_integer,
+      target_survives?: boolean}}` when `:report_hit` is `true`
     - {:error, reason} if the target was invalid, friendly, dead, or out of range
   """
   @spec execute_skill_attack(struct(), integer(), keyword()) ::
-          :ok | {:ok, %{hit?: boolean()}} | {:error, atom()}
+          :ok
+          | {:ok, %{hit?: boolean(), damage: non_neg_integer(), target_survives?: boolean()}}
+          | {:error, atom()}
   def execute_skill_attack(caster_state, target_id, opts) do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     skill_id = Keyword.fetch!(opts, :skill_id)
@@ -100,12 +102,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       hit_opts = %{
         display_hits: display_hits,
         hit_rate_bonus_pct: hit_rate_bonus_pct,
+        ignore_flee: Keyword.get(opts, :ignore_flee, false),
         ranged: ranged?
       }
 
-      connected? =
-        1..hits//1
-        |> Enum.map(fn _ ->
+      results =
+        Enum.map(1..hits//1, fn _ ->
           apply_skill_damage(
             attacker,
             target_type,
@@ -117,9 +119,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
             hit_opts
           )
         end)
-        |> Enum.any?()
 
-      if report_hit?, do: {:ok, %{hit?: connected?}}, else: :ok
+      if report_hit?, do: {:ok, reported_hit(results, target_state)}, else: :ok
     end
   end
 
@@ -150,10 +151,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     {skill_id, skill_level, calc_opts} = multi_target_opts(opts)
     hits = Keyword.get(opts, :hit_count, 1)
     ranged? = Keyword.get(opts, :ranged, false)
+    ignore_flee? = Keyword.get(opts, :ignore_flee, false)
 
     attacker.map_name
     |> SplashTargets.select(center, radius, attacker)
-    |> hit_targets(attacker, skill_id, skill_level, calc_opts, hits, ranged?)
+    |> hit_targets(attacker, skill_id, skill_level, calc_opts, hits, ranged?, ignore_flee?)
   end
 
   @doc """
@@ -195,11 +197,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   # replacing the weapon ATK. Player-only — a mob caster carries no shield and
   # falls through to its plain weapon/batk base. A player with no shield equipped
   # (guarded against by the skill's cast validation) likewise falls through.
-  defp shield_base_opts(%PlayerState{} = caster_state, opts) do
+  defp shield_base_opts(%{inventory: inventory, stats: stats}, opts) do
     if Keyword.get(opts, :damage_base) == :shield do
-      inventory = Map.values(caster_state.inventory)
+      inventory = Map.values(inventory)
 
-      case PlayerStats.shield_stats(caster_state.stats.equipment, inventory) do
+      case PlayerStats.shield_stats(stats.equipment, inventory) do
         {weight, refine} -> [shield_base: 4 * refine + div(weight, 10)]
         nil -> []
       end
@@ -218,16 +220,48 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     {skill_id, skill_level, calc_opts}
   end
 
-  defp hit_targets(targets, attacker, skill_id, skill_level, calc_opts, hits, ranged? \\ false) do
+  defp hit_targets(
+         targets,
+         attacker,
+         skill_id,
+         skill_level,
+         calc_opts,
+         hits,
+         ranged? \\ false,
+         ignore_flee? \\ false
+       ) do
     Enum.flat_map(targets, fn {_unit_type, target_id} ->
-      apply_splash_hits(attacker, target_id, skill_id, skill_level, calc_opts, hits, ranged?)
+      apply_splash_hits(
+        attacker,
+        target_id,
+        skill_id,
+        skill_level,
+        calc_opts,
+        hits,
+        ranged?,
+        ignore_flee?
+      )
     end)
   end
 
-  defp apply_splash_hits(attacker, target_id, skill_id, skill_level, calc_opts, hits, ranged?) do
+  defp apply_splash_hits(
+         attacker,
+         target_id,
+         skill_id,
+         skill_level,
+         calc_opts,
+         hits,
+         ranged?,
+         ignore_flee?
+       ) do
     with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
          target <- target_state.__struct__.to_combatant(target_state) do
-      hit_opts = %{display_hits: nil, hit_rate_bonus_pct: 0, ranged: ranged?}
+      hit_opts = %{
+        display_hits: nil,
+        hit_rate_bonus_pct: 0,
+        ignore_flee: ignore_flee?,
+        ranged: ranged?
+      }
 
       connected? =
         1..hits//1
@@ -243,7 +277,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
             hit_opts
           )
         end)
-        |> Enum.any?()
+        |> Enum.any?(& &1.hit?)
 
       if connected?, do: [target_id], else: []
     else
@@ -290,6 +324,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:base_damage` - the skill's per-level base damage (required)
     - `:element` - the skill's attack element (default `:neutral`)
     - `:display_hit_count` - packet-only divisions for the total damage (default `1`)
+    - `:split` - divide one supplied base by the selected living-enemy count
+      before target-specific damage processing (default `false`)
   """
   @spec execute_misc_splash(struct(), {integer(), integer()}, non_neg_integer(), keyword()) ::
           [integer()]
@@ -302,6 +338,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     display_hits = display_hit_count!(opts)
 
     targets = SplashTargets.select(attacker.map_name, center, radius, attacker)
+    base_damage = split_base_damage(base_damage, targets, Keyword.get(opts, :split, false))
 
     Enum.flat_map(targets, fn {_unit_type, target_id} ->
       case apply_misc_hit(
@@ -318,6 +355,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       end
     end)
   end
+
+  defp split_base_damage(base_damage, [], true), do: base_damage
+  defp split_base_damage(base_damage, targets, true), do: div(base_damage, length(targets))
+  defp split_base_damage(base_damage, _targets, false), do: base_damage
 
   defp display_hit_count!(opts) do
     case Keyword.get(opts, :display_hit_count, 1) do
@@ -399,7 +440,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           pos_integer(),
           keyword(),
           map()
-        ) :: boolean()
+        ) :: %{hit?: boolean(), damage: non_neg_integer()}
   defp apply_skill_damage(
          attacker,
          target_type,
@@ -411,7 +452,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          hit_opts
        ) do
     if weapon_hit_intercepted?(attacker, target_type, target) do
-      false
+      %{hit?: false, damage: 0}
     else
       resolve_skill_hit(
         attacker,
@@ -467,19 +508,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          calc_opts,
          hit_opts
        ) do
-    %{hit_rate_bonus_pct: hit_rate_bonus_pct} = hit_opts
+    %{hit_rate_bonus_pct: hit_rate_bonus_pct, ignore_flee: ignore_flee?} = hit_opts
 
-    case HitCalculations.calculate_hit_result(
-           hit_stats(attacker, hit_rate_bonus_pct),
-           flee_stats(target)
-         ) do
+    hit_result =
+      if ignore_flee? do
+        :hit
+      else
+        HitCalculations.calculate_hit_result(
+          hit_stats(attacker, hit_rate_bonus_pct),
+          flee_stats(target)
+        )
+      end
+
+    case hit_result do
       :miss ->
         DamageApplication.broadcast_nearby(
           target,
           PacketFactory.build_miss_packet(attacker, target)
         )
 
-        false
+        %{hit?: false, damage: 0}
 
       :perfect_dodge ->
         DamageApplication.broadcast_nearby(
@@ -487,7 +535,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           PacketFactory.build_perfect_dodge_packet(attacker, target)
         )
 
-        false
+        %{hit?: false, damage: 0}
 
       :hit ->
         deliver_skill_hit(
@@ -558,12 +606,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
         OnHitEffects.after_hit(attacker, target, damage_result)
 
-        true
+        %{hit?: true, damage: damage}
 
       {:error, _reason} ->
-        false
+        %{hit?: false, damage: 0}
     end
   end
+
+  defp reported_hit(results, target_state) do
+    damage = Enum.sum_by(results, & &1.damage)
+
+    %{
+      hit?: Enum.any?(results, & &1.hit?),
+      damage: damage,
+      target_survives?: target_hp(target_state) > damage
+    }
+  end
+
+  defp target_hp(%{stats: %{current_state: %{hp: hp}}}), do: hp
+  defp target_hp(%{hp: hp}), do: hp
 
   defp hit_stats(attacker, hit_rate_bonus_pct) do
     %{

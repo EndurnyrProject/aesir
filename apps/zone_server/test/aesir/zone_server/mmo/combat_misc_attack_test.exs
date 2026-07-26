@@ -188,6 +188,67 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
       assert_received {:damage, 40}
     end
 
+    test "split damage divides one base across the selected living targets" do
+      caster = build_caster()
+      test_pid = self()
+
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
+        [{:mob, 2001}, {:skill_unit, 0x4000_0001}, {:mob, 2002}]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :mob, 2001 -> {:ok, {MobState, build_mob_state(2001, 150, 150), self()}}
+        :mob, 2002 -> {:ok, {MobState, build_mob_state(2002, 151, 150), self()}}
+      end)
+
+      stub(MiscDamageCalculator, :calculate_misc_damage, fn _a, _t, opts ->
+        send(test_pid, {:calculated, opts})
+        {:ok, %{damage: opts[:base_damage], is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, %SkillDamage{} = packet ->
+        send(test_pid, {:packet, packet})
+        :ok
+      end)
+
+      stub(MobSession, :apply_damage, fn _pid, damage, @caster_id ->
+        send(test_pid, {:damage, damage})
+        :ok
+      end)
+
+      assert [2001, 2002] =
+               Combat.execute_misc_splash(caster, @center, 1,
+                 skill_id: 122,
+                 skill_level: 5,
+                 base_damage: 201,
+                 element: :wind,
+                 display_hit_count: 5,
+                 split: true
+               )
+
+      assert_received {:calculated, [base_damage: 100, element: :wind]}
+      assert_received {:calculated, [base_damage: 100, element: :wind]}
+      assert_received {:packet, %SkillDamage{damage: 100, div: 5}}
+      assert_received {:packet, %SkillDamage{damage: 100, div: 5}}
+      assert_received {:damage, 100}
+      assert_received {:damage, 100}
+    end
+
+    test "split damage returns cleanly when no living enemies are selected" do
+      caster = build_caster()
+
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 -> [] end)
+      reject(&MiscDamageCalculator.calculate_misc_damage/3)
+
+      assert [] =
+               Combat.execute_misc_splash(caster, @center, 1,
+                 skill_id: 122,
+                 skill_level: 5,
+                 base_damage: 201,
+                 split: true
+               )
+    end
+
     test "display_hit_count changes only packet divisions" do
       caster = build_caster()
       test_pid = self()
