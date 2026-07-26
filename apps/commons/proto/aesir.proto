@@ -192,19 +192,48 @@ message Envelope {
     // 164-165: peco mount (client intent + server->client outcome)
     MountRequest mount_request = 164;
     MountResult mount_result = 165;
+    // 166-167: staged skill text input
+    SkillTextInputRequest skill_text_input_request = 166;
+    SkillTextInputReply skill_text_input_reply = 167;
   }
 }
 
+// Optional features advertised in Hello; HelloAck returns the negotiated intersection.
+enum FeatureCapability {
+  FEATURE_CAPABILITY_UNSPECIFIED = 0;
+  FEATURE_CAPABILITY_SKILL_TEXT_INPUT = 1;
+}
+
 // Client -> server, first message on the Control channel after connect.
+// Capabilities are optional and do not change the protocol-version baseline.
 message Hello {
   uint32 protocol_version = 1;
   string build = 2;
+  repeated FeatureCapability capabilities = 3;
 }
 
-// Server -> client, response to Hello.
+// Server -> client, response to Hello with the negotiated capability intersection.
 message HelloAck {
   uint32 protocol_version = 1;
   bool accepted = 2;
+  repeated FeatureCapability capabilities = 3;
+}
+
+// Server -> client prompt for one skill text value. request_id correlates its reply.
+message SkillTextInputRequest {
+  uint64 request_id = 1;
+  uint32 skill_id = 2;
+  uint32 max_utf8_bytes = 3; // Maximum UTF-8 byte length accepted for text.
+}
+
+// Client -> server reply for the pending request_id. Cancel abandons it without text.
+message SkillTextInputReply {
+  uint64 request_id = 1;
+
+  oneof outcome {
+    string text = 2;
+    bool cancel = 3;
+  }
 }
 
 // Client -> server, account login request (replaces RO CA_LOGIN).
@@ -1603,6 +1632,15 @@ message SkillUnitCellState {
   uint32 flags = 6;
 }
 
+// Lifecycle state: active normally operates; used/sprung are visible inert states;
+// captured is visible and inert while linked to a captured target.
+enum SkillUnitPhase {
+  SKILL_UNIT_PHASE_ACTIVE = 0;
+  SKILL_UNIT_PHASE_USED = 1;
+  SKILL_UNIT_PHASE_SPRUNG = 2;
+  SKILL_UNIT_PHASE_CAPTURED = 3;
+}
+
 // Complete authoritative state for one persistent skill-unit cast. The stream
 // is scoped to the observer's current map, so no map identifier is required.
 message SkillUnitGroupState {
@@ -1616,6 +1654,7 @@ message SkillUnitGroupState {
   uint64 created_tick = 8;
   uint64 expires_tick = 9;
   repeated SkillUnitCellState cells = 10;
+  SkillUnitPhase phase = 11;
 }
 
 // Server -> client, an authoritative replacement for the observer's complete
