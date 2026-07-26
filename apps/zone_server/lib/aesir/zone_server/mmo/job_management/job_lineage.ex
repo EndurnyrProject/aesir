@@ -311,12 +311,13 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobLineage do
   def descendant_or_self?(job_id, owner_job_id) do
     with {:ok, job} <- AvailableJobs.job_id_to_name(job_id),
          {:ok, owner} <- AvailableJobs.job_id_to_name(owner_job_id) do
-      descendant_or_self?(job, owner, MapSet.new())
+      descendant_or_self?(job, owner, [])
     else
       _unknown_job -> false
     end
   end
 
+  @spec descendant_or_self?(atom(), atom(), [atom()]) :: boolean()
   defp descendant_or_self?(job, owner, seen) do
     job = normalize(job)
     owner = normalize(owner)
@@ -325,11 +326,11 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobLineage do
       job == owner ->
         true
 
-      MapSet.member?(seen, job) ->
+      job in seen ->
         false
 
       true ->
-        seen = MapSet.put(seen, job)
+        seen = [job | seen]
         Enum.any?(Map.get(@parents, job, []), &descendant_or_self?(&1, owner, seen))
     end
   end
