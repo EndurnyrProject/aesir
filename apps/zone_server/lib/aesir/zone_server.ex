@@ -23,19 +23,35 @@ defmodule Aesir.ZoneServer do
   alias Aesir.ZoneServer.Unit.Player.PlayerSupervisor
 
   @protocol_version 1
+  @supported_capabilities [:FEATURE_CAPABILITY_SKILL_TEXT_INPUT]
 
   @impl true
-  def handle_message(%Hello{protocol_version: version}, :control, session_data) do
+  def handle_message(
+        %Hello{protocol_version: version, capabilities: capabilities},
+        :control,
+        session_data
+      ) do
     if version != @protocol_version do
       Logger.warning("Client protocol version #{version} does not match #{@protocol_version}")
     end
 
+    negotiated_capabilities =
+      if version == @protocol_version do
+        capabilities
+        |> Enum.filter(&(&1 in @supported_capabilities))
+        |> Enum.uniq()
+      else
+        []
+      end
+
     response = %HelloAck{
       protocol_version: @protocol_version,
-      accepted: version == @protocol_version
+      accepted: version == @protocol_version,
+      capabilities: negotiated_capabilities
     }
 
-    {:ok, session_data, [{:hello_ack, response}]}
+    {:ok, Map.put(session_data, :client_capabilities, negotiated_capabilities),
+     [{:hello_ack, response}]}
   end
 
   def handle_message(
@@ -60,7 +76,11 @@ defmodule Aesir.ZoneServer do
              "#{character.last_map}"
            ),
          {:ok, player_pid} <-
-           PlayerSupervisor.start_player(%{character: character, connection_pid: self()}),
+           PlayerSupervisor.start_player(%{
+             character: character,
+             connection_pid: self(),
+             client_capabilities: Map.get(updated_session, :client_capabilities, [])
+           }),
          final_session <- Map.put(updated_session, :player_session_pid, player_pid) do
       Logger.debug("Started PlayerSession #{inspect(player_pid)} for char #{char_id}")
 

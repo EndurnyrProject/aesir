@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
     field :game_state, PlayerState.t(), enforce: true
     field :connection_pid, pid(), enforce: true
     field :connection_monitor_ref, reference() | nil, default: nil
+    field :client_capabilities, [atom()], default: []
     field :interaction_lock, interaction_lock() | nil, default: nil
     field :pending_skill_menu, map() | nil, default: nil
     field :deferred_skill_result, map() | nil, default: nil

@@ -28,12 +28,17 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSupervisor do
   def start_player(args) do
     character = args[:character] || args["character"]
     connection_pid = args[:connection_pid] || args["connection_pid"]
+    client_capabilities = get_client_capabilities(args)
 
     terminate_existing_session(character.id)
 
     child_spec = {
       Aesir.ZoneServer.Unit.Player.PlayerSession,
-      [character: character, connection_pid: connection_pid]
+      [
+        character: character,
+        connection_pid: connection_pid,
+        client_capabilities: client_capabilities
+      ]
     }
 
     case DynamicSupervisor.start_child(__MODULE__, child_spec) do
@@ -48,6 +53,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSupervisor do
         Logger.error("Failed to start player session for #{character.id}: #{inspect(reason)}")
         error
     end
+  end
+
+  defp get_client_capabilities(args) when is_list(args),
+    do: Keyword.get(args, :client_capabilities, [])
+
+  defp get_client_capabilities(args) do
+    Map.get(args, :client_capabilities, Map.get(args, "client_capabilities", []))
   end
 
   @doc """

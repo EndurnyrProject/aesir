@@ -414,6 +414,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   def init(args) do
     character = args[:character]
     connection_pid = args[:connection_pid]
+    client_capabilities = get_client_capabilities(args)
     game_state = PlayerState.new(character)
 
     {:ok, updated_game_state} = InventoryManager.load_character_inventory(character, game_state)
@@ -425,7 +426,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     state = %SessionState{
       game_state: final_game_state,
       connection_pid: connection_pid,
-      connection_monitor_ref: connection_monitor_ref
+      connection_monitor_ref: connection_monitor_ref,
+      client_capabilities: client_capabilities
     }
 
     register_player(final_game_state)
@@ -958,6 +960,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   # get_state stays bare: a ubiquitous utility call, not a domain message.
+  defp get_client_capabilities(args) when is_list(args),
+    do: Keyword.get(args, :client_capabilities, [])
+
+  defp get_client_capabilities(args), do: Map.get(args, :client_capabilities, [])
+
   @impl true
   def handle_call(:get_state, _from, state) do
     {:reply, state, state}
