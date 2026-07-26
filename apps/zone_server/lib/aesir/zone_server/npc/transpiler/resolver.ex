@@ -31,6 +31,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
   def constant("VIP_STATUS_EXPIRE"), do: {:ok, "2"}
   def constant("VIP_STATUS_REMAINING"), do: {:ok, "3"}
 
+  # The `skill` buildin's permanent-grant mode; the only mode the DSL grant
+  # implements, emitted as its native atom rather than a char-var lookup.
+  def constant("SKILL_PERM"), do: {:ok, ":permanent"}
+
   def constant(symbol) do
     with :error <- flag_constant(symbol) do
       [

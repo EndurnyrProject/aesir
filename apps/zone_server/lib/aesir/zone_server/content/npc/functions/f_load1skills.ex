@@ -28,7 +28,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FLoad1skills do
                )
              )
            ) do
-          todo(ctx, :skill, [144 + get_local(ctx, :i, 0), 1, 0])
+          skill(ctx, 144 + get_local(ctx, :i, 0), 1, 0)
         else
           ctx
         end

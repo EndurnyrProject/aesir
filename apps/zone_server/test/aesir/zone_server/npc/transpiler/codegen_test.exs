@@ -418,6 +418,28 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "Todo.const!"
   end
 
+  test "skill grants and job-lineage reads emit native DSL calls" do
+    src =
+      gen!("""
+      skill "NV_FIRSTAID",1,SKILL_PERM;
+      if (BaseClass == Job_Archer)
+        skill 147,1,SKILL_PERM;
+      if (BaseJob == Job_Hunter)
+        skill "HT_PHANTASMIC",1,SKILL_PERM;
+      close;
+      """)
+
+    assert src =~ "skill(ctx, 142, 1, :permanent)"
+    assert src =~ "skill(ctx, 147, 1, :permanent)"
+    assert src =~ "skill(ctx, 1009, 1, :permanent)"
+    assert src =~ "base_class(ctx)"
+    assert src =~ "base_job(ctx)"
+    refute src =~ "todo(ctx, :skill"
+    refute src =~ "get_char_var(ctx, :BaseClass"
+    refute src =~ "get_char_var(ctx, :BaseJob"
+    refute src =~ "get_char_var(ctx, :SKILL_PERM"
+  end
+
   test "server and account scopes route to their store DSL ops" do
     src =
       gen!("""

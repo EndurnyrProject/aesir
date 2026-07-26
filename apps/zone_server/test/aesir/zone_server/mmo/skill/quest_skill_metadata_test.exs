@@ -23,23 +23,34 @@ defmodule Aesir.ZoneServer.Mmo.Skill.QuestSkillMetadataTest do
                      __DIR__
                    )
 
+  # The generated function references implemented skills by resolved integer
+  # id (`skill(ctx, 142, 1, :permanent)` or piped `|> skill(147, 1, :permanent)`)
+  # and skills the transpile-time resolver could not resolve by their downcased
+  # atom fallback (`skill(ctx, :mc_cartdecorate, ...)`).
   defp referenced_skill_names do
-    @platinum_source
-    |> File.read!()
-    |> then(&Regex.scan(~r/:skill,\s*\["([A-Z0-9_]+)"/, &1))
-    |> Enum.map(fn [_full, name] -> name end)
-    |> Enum.uniq()
+    source = File.read!(@platinum_source)
+
+    ids =
+      ~r/skill\((?:ctx, )?(\d+),/
+      |> Regex.scan(source)
+      |> Enum.map(fn [_full, id] -> String.to_integer(id) end)
+
+    atoms =
+      ~r/skill\((?:ctx, )?:([a-z0-9_]+),/
+      |> Regex.scan(source)
+      |> Enum.map(fn [_full, name] -> String.to_atom(name) end)
+
+    Enum.uniq(ids ++ atoms)
   end
 
-  defp catalog_lookup(raw_name) do
-    raw_name |> String.downcase() |> String.to_atom() |> Catalog.by_name()
-  end
+  defp catalog_lookup(skill_id) when is_integer(skill_id), do: Catalog.by_id(skill_id)
+  defp catalog_lookup(name) when is_atom(name), do: Catalog.by_name(name)
 
   defp implemented_definitions do
     referenced_skill_names()
-    |> Enum.flat_map(fn raw_name ->
-      case catalog_lookup(raw_name) do
-        {:ok, definition} -> [{raw_name, definition}]
+    |> Enum.flat_map(fn reference ->
+      case catalog_lookup(reference) do
+        {:ok, definition} -> [{reference, definition}]
         :error -> []
       end
     end)
@@ -57,12 +68,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.QuestSkillMetadataTest do
   test "every implemented F_GetPlatinumSkills reference is a permanent, owned quest skill" do
     implemented = implemented_definitions()
 
-    Enum.each(implemented, fn {raw_name, definition} ->
+    Enum.each(implemented, fn {reference, definition} ->
       assert definition.quest_skill,
-             "#{raw_name} is implemented but not marked quest_skill: true"
+             "#{inspect(reference)} is implemented but not marked quest_skill: true"
 
       assert definition.quest_owner_job,
-             "#{raw_name} is implemented but has no quest_owner_job"
+             "#{inspect(reference)} is implemented but has no quest_owner_job"
     end)
   end
 

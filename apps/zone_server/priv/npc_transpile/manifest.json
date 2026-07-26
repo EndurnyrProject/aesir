@@ -3755,7 +3755,7 @@
     "source_hash": "4bae7275a289b99a0b6372a52fdcd54821a07c47fa7ee084f56d6f1dc839d0ec"
   },
   "other/Global_Functions.txt|function|F_GetPlatinumSkills|-": {
-    "output_hash": "3621b346096ae68c66ff810cb5629e2d762abedbce8969cc188f44dc2819b6a4",
+    "output_hash": "2e522da681c86d50d6f65b58c41f8756875f8770cec1e5b75f171703d470162d",
     "output_path": "lib/aesir/zone_server/content/npc/functions/f_getplatinumskills.ex",
     "source_hash": "c86dd8fab87f49d7ed6e0b7dbeaa1e5037c54bcd7518edc1378c3e304f559136"
   },
@@ -3815,12 +3815,12 @@
     "source_hash": "95b01648f1c2d9b4ce763f95cf2c77dc332d420affeb06db9ed459954a57b6b3"
   },
   "other/Global_Functions.txt|function|F_Load1Skills|-": {
-    "output_hash": "c21b59c776e1d6d6903a1886ae21d96948932a09393b3baa021541251441260c",
+    "output_hash": "a4ac0da5950b784a65d8859214a0da8b286b6dee46da2f402a711b68216cc613",
     "output_path": "lib/aesir/zone_server/content/npc/functions/f_load1skills.ex",
     "source_hash": "7a4f5c0103e9a980b9094a1af647dc196d54d49fbaac2b023a7b4d2a94dfe7a4"
   },
   "other/Global_Functions.txt|function|F_Load2Skills|-": {
-    "output_hash": "819d50d920e3c5b9e3474200fd7006970a77dc0ed323d73aa5e6e00b81c57e42",
+    "output_hash": "3c15aa65837d2ababe64f0177e93289482a9d9c31c0c587bd7344a78dadce136",
     "output_path": "lib/aesir/zone_server/content/npc/functions/f_load2skills.ex",
     "source_hash": "eb56c48619d5b604946987a87a73eb3f011ebd35751e6591998a636312c37de0"
   },

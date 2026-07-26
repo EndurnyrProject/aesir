@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.NpcTranspilerIntegrationTest do
   alias Aesir.Net.NpcDialog
   alias Aesir.Net.NpcInteract
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Content.Npc.Functions.FGetplatinumskills
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.Option
@@ -217,6 +218,46 @@ defmodule Aesir.ZoneServer.NpcTranspilerIntegrationTest do
     assert GenServer.call(session, :game_state).zeny == 100
   end
 
+  test "the generated platinum function grants lineage skills idempotently without points" do
+    game_state = %PlayerState{
+      character_id: @char_id,
+      account_id: 9100,
+      zeny: 0,
+      vars: %{},
+      temp_vars: %{},
+      inventory: %{},
+      stats: stats(%{}, 11)
+    }
+
+    {:ok, session} = Session.start_link(%{connection_pid: self(), game_state: game_state})
+
+    ctx = %Ctx{
+      char_id: @char_id,
+      account_id: 9100,
+      connection_pid: self(),
+      game_state: game_state,
+      source: {:npc, 0},
+      session_pid: session
+    }
+
+    assert {%Ctx{status: :ok} = ctx, nil} = FGetplatinumskills.call(ctx, [])
+
+    gs = GenServer.call(session, :game_state)
+    learned = gs.stats.progression.learned_skills
+
+    assert learned[142] == 1
+    assert learned[147] == 1
+    assert learned[148] == 1
+    assert learned[1009] == 1
+    refute Map.has_key?(learned, 144)
+    refute Map.has_key?(learned, 1001)
+    assert gs.stats.progression.skill_point == 0
+    assert_received {:send, _ch, {:skill_list, _list}}
+
+    assert {%Ctx{status: :ok}, nil} = FGetplatinumskills.call(%{ctx | game_state: gs}, [])
+    assert GenServer.call(session, :game_state).stats.progression.learned_skills == learned
+  end
+
   test "attached Falcon script executes concrete checkfalcon and setfalcon calls", %{
     falcon_module: module
   } do
@@ -262,7 +303,7 @@ defmodule Aesir.ZoneServer.NpcTranspilerIntegrationTest do
   defp choose(pid, choice),
     do: send(pid, {:npc_interact, %NpcInteract{npc_id: @gid, response: {:choice, choice}}})
 
-  defp stats(learned_skills) do
+  defp stats(learned_skills, class \\ 0) do
     %Character{
       id: @char_id,
       str: 10,
@@ -281,7 +322,7 @@ defmodule Aesir.ZoneServer.NpcTranspilerIntegrationTest do
       job_level: 10,
       base_exp: 0,
       job_exp: 0,
-      class: 0,
+      class: class,
       skill_point: 0,
       status_point: 0,
       trait_point: 0,

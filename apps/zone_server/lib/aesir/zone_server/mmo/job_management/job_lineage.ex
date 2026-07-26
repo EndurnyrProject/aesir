@@ -255,6 +255,57 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobLineage do
     end
   end
 
+  @first_jobs [:swordman, :mage, :archer, :acolyte, :merchant, :thief]
+  @second_jobs [
+    :knight,
+    :crusader,
+    :priest,
+    :monk,
+    :wizard,
+    :sage,
+    :blacksmith,
+    :alchemist,
+    :hunter,
+    :bard,
+    :dancer,
+    :assassin,
+    :rogue
+  ]
+  @base_identities [:novice, :super_novice, :gunslinger, :ninja | @first_jobs ++ @second_jobs]
+
+  @doc """
+  The job's identity ignoring transcendence and baby variants (rAthena
+  `BaseJob`): a Sniper or Baby Hunter is a Hunter, a Swordman High is a
+  Swordman, a plain Novice stays a Novice.
+  """
+  @spec base_job(atom()) :: atom()
+  def base_job(job_name) do
+    job = normalize(job_name)
+
+    if job in @base_identities do
+      job
+    else
+      case Map.get(@parents, job, []) do
+        [parent | _] -> base_job(parent)
+        [] -> job
+      end
+    end
+  end
+
+  @doc """
+  The job's first-job lineage root (rAthena `BaseClass`): a Hunter or Sniper
+  is Archer-classed, a Knight is Swordman-classed, Novices and Super Novices
+  are Novice-classed, first jobs are themselves.
+  """
+  @spec base_class(atom()) :: atom()
+  def base_class(job_name) do
+    case base_job(job_name) do
+      job when job in @second_jobs -> @parents |> Map.fetch!(job) |> hd()
+      job when job in [:novice, :super_novice] -> :novice
+      job -> job
+    end
+  end
+
   @doc "Returns true when `job_id` is the owner job or one of its descendants."
   @spec descendant_or_self?(integer(), integer()) :: boolean()
   def descendant_or_self?(job_id, owner_job_id) do

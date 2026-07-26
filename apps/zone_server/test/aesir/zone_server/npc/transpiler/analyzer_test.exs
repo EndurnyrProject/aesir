@@ -59,6 +59,17 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.AnalyzerTest do
     assert MapSet.member?(a.assigned_names, "quests")
   end
 
+  test "skill grants and native job-lineage reads do not count as stubs" do
+    a =
+      analyze!("""
+      skill "NV_FIRSTAID",1,SKILL_PERM;
+      if (BaseClass == Job_Archer) skill 147,1,SKILL_PERM;
+      if (BaseJob == Job_Hunter) skill "HT_PHANTASMIC",1,SKILL_PERM;
+      """)
+
+    assert a.stubs == %{}
+  end
+
   test "stubs count unsupported buildins by call site, in statements and expressions" do
     a =
       analyze!("""

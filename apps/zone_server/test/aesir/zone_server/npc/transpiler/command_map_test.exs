@@ -16,6 +16,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert :error = CommandMap.read("PartnerId")
   end
 
+  test "skill maps to the permanent grant op; job lineage names are native reads" do
+    assert {:ok, %{dsl: "skill", args: [:skill, :int, :int]}} = CommandMap.command("skill")
+    assert CommandMap.supported?("skill")
+    assert {:ok, "base_class"} = CommandMap.read("BaseClass")
+    assert {:ok, "base_job"} = CommandMap.read("BaseJob")
+    assert {:ok, ":permanent"} = Resolver.constant("SKILL_PERM")
+  end
+
   test "supported? covers commands and call reads" do
     assert CommandMap.supported?("getitem")
     assert CommandMap.supported?("countitem")

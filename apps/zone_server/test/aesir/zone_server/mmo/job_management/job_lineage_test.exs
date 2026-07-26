@@ -7,6 +7,28 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobLineageTest do
     assert :ok = JobLineage.validate!()
   end
 
+  test "base_job collapses transcendence and baby variants to the canonical job" do
+    assert JobLineage.base_job(:hunter) == :hunter
+    assert JobLineage.base_job(:sniper) == :hunter
+    assert JobLineage.base_job(:baby_hunter) == :hunter
+    assert JobLineage.base_job(:swordman_high) == :swordman
+    assert JobLineage.base_job(:lord_knight) == :knight
+    assert JobLineage.base_job(:novice_high) == :novice
+    assert JobLineage.base_job(:super_novice) == :super_novice
+    assert JobLineage.base_job(:knight2) == :knight
+    assert JobLineage.base_job(:novice) == :novice
+  end
+
+  test "base_class resolves the first-job lineage root" do
+    assert JobLineage.base_class(:hunter) == :archer
+    assert JobLineage.base_class(:sniper) == :archer
+    assert JobLineage.base_class(:knight) == :swordman
+    assert JobLineage.base_class(:archer) == :archer
+    assert JobLineage.base_class(:novice) == :novice
+    assert JobLineage.base_class(:super_novice) == :novice
+    assert JobLineage.base_class(:high_priest) == :acolyte
+  end
+
   test "rejects cycles across parent and alias relationships with the cycle path" do
     assert_raise RuntimeError, ~r/:alpha -> :beta -> :gamma -> :alpha/, fn ->
       JobLineage.validate_graph!(

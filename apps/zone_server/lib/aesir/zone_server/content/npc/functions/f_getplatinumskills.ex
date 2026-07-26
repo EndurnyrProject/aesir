@@ -11,15 +11,15 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FGetplatinumskills do
 
   @doc "Callable rAthena global function; returns `{ctx, return_value}`."
   def call(ctx, _args) do
-    ctx = todo(ctx, :skill, ["NV_FIRSTAID", 1, get_char_var(ctx, :SKILL_PERM, 0)])
-    v1 = get_char_var(ctx, :BaseClass, 0)
+    ctx = skill(ctx, 142, 1, :permanent)
+    v1 = base_class(ctx)
 
     ctx =
       case v1 do
         v when v == :novice ->
           ctx =
-            if class(ctx) != get_char_var(ctx, :Job_Super_Novice, 0) do
-              todo(ctx, :skill, ["NV_TRICKDEAD", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+            if class(ctx) != :super_novice do
+              skill(ctx, 143, 1, :permanent)
             else
               ctx
             end
@@ -27,28 +27,30 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FGetplatinumskills do
           ctx
 
         v when v == :swordman ->
-          ctx = todo(ctx, :skill, ["SM_MOVINGRECOVERY", 1, get_char_var(ctx, :SKILL_PERM, 0)])
-          ctx = todo(ctx, :skill, ["SM_FATALBLOW", 1, get_char_var(ctx, :SKILL_PERM, 0)])
-          todo(ctx, :skill, ["SM_AUTOBERSERK", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+          ctx
+          |> skill(144, 1, :permanent)
+          |> skill(145, 1, :permanent)
+          |> skill(146, 1, :permanent)
 
         v when v == :mage ->
-          todo(ctx, :skill, ["MG_ENERGYCOAT", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+          skill(ctx, 157, 1, :permanent)
 
         v when v == :archer ->
-          ctx = todo(ctx, :skill, ["AC_MAKINGARROW", 1, get_char_var(ctx, :SKILL_PERM, 0)])
-          todo(ctx, :skill, ["AC_CHARGEARROW", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+          ctx |> skill(147, 1, :permanent) |> skill(148, 1, :permanent)
 
         v when v == :acolyte ->
-          todo(ctx, :skill, ["AL_HOLYLIGHT", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+          skill(ctx, 156, 1, :permanent)
 
         v when v == :merchant ->
-          ctx = todo(ctx, :skill, ["MC_CARTREVOLUTION", 1, get_char_var(ctx, :SKILL_PERM, 0)])
-          ctx = todo(ctx, :skill, ["MC_CHANGECART", 1, get_char_var(ctx, :SKILL_PERM, 0)])
-          ctx = todo(ctx, :skill, ["MC_LOUD", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+          ctx =
+            ctx
+            |> skill(153, 1, :permanent)
+            |> skill(154, 1, :permanent)
+            |> skill(155, 1, :permanent)
 
           ctx =
             if get_char_var(ctx, :PACKETVER, 0) >= 20_150_826 do
-              todo(ctx, :skill, ["MC_CARTDECORATE", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+              skill(ctx, :mc_cartdecorate, 1, :permanent)
             else
               ctx
             end
@@ -56,64 +58,63 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FGetplatinumskills do
           ctx
 
         v when v == :thief ->
-          ctx = todo(ctx, :skill, ["TF_SPRINKLESAND", 1, get_char_var(ctx, :SKILL_PERM, 0)])
-          ctx = todo(ctx, :skill, ["TF_BACKSLIDING", 1, get_char_var(ctx, :SKILL_PERM, 0)])
-          ctx = todo(ctx, :skill, ["TF_PICKSTONE", 1, get_char_var(ctx, :SKILL_PERM, 0)])
-          todo(ctx, :skill, ["TF_THROWSTONE", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+          ctx
+          |> skill(149, 1, :permanent)
+          |> skill(150, 1, :permanent)
+          |> skill(151, 1, :permanent)
+          |> skill(152, 1, :permanent)
 
         _ ->
           ctx
       end
 
-    v2 = get_char_var(ctx, :BaseJob, 0)
+    v2 = base_job(ctx)
 
     ctx =
       case v2 do
         v when v == :knight ->
-          todo(ctx, :skill, ["KN_CHARGEATK", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+          skill(ctx, 1001, 1, :permanent)
 
         v when v == :priest ->
-          todo(ctx, :skill, ["PR_REDEMPTIO", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+          skill(ctx, 1014, 1, :permanent)
 
         v when v == :wizard ->
-          todo(ctx, :skill, ["WZ_SIGHTBLASTER", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+          skill(ctx, 1006, 1, :permanent)
 
         v when v == :blacksmith ->
-          ctx = todo(ctx, :skill, ["BS_UNFAIRLYTRICK", 1, get_char_var(ctx, :SKILL_PERM, 0)])
-          todo(ctx, :skill, ["BS_GREED", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+          ctx |> skill(:bs_unfairlytrick, 1, :permanent) |> skill(:bs_greed, 1, :permanent)
 
         v when v == :hunter ->
-          todo(ctx, :skill, ["HT_PHANTASMIC", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+          skill(ctx, 1009, 1, :permanent)
 
         v when v == :assassin ->
-          ctx = todo(ctx, :skill, ["AS_SONICACCEL", 1, get_char_var(ctx, :SKILL_PERM, 0)])
-          todo(ctx, :skill, ["AS_VENOMKNIFE", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+          ctx |> skill(:as_sonicaccel, 1, :permanent) |> skill(:as_venomknife, 1, :permanent)
 
         v when v == :crusader ->
-          todo(ctx, :skill, ["CR_SHRINK", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+          skill(ctx, :cr_shrink, 1, :permanent)
 
         v when v == :monk ->
-          ctx = todo(ctx, :skill, ["MO_KITRANSLATION", 1, get_char_var(ctx, :SKILL_PERM, 0)])
-          todo(ctx, :skill, ["MO_BALKYOUNG", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+          ctx |> skill(1015, 1, :permanent) |> skill(1016, 1, :permanent)
 
         v when v == :sage ->
-          ctx = todo(ctx, :skill, ["SA_CREATECON", 1, get_char_var(ctx, :SKILL_PERM, 0)])
-          ctx = todo(ctx, :skill, ["SA_ELEMENTWATER", 1, get_char_var(ctx, :SKILL_PERM, 0)])
-          ctx = todo(ctx, :skill, ["SA_ELEMENTGROUND", 1, get_char_var(ctx, :SKILL_PERM, 0)])
-          ctx = todo(ctx, :skill, ["SA_ELEMENTFIRE", 1, get_char_var(ctx, :SKILL_PERM, 0)])
-          todo(ctx, :skill, ["SA_ELEMENTWIND", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+          ctx
+          |> skill(1007, 1, :permanent)
+          |> skill(1008, 1, :permanent)
+          |> skill(1017, 1, :permanent)
+          |> skill(1018, 1, :permanent)
+          |> skill(1019, 1, :permanent)
 
         v when v == :rogue ->
-          todo(ctx, :skill, ["RG_CLOSECONFINE", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+          skill(ctx, :rg_closeconfine, 1, :permanent)
 
         v when v == :alchemist ->
-          todo(ctx, :skill, ["AM_BIOETHICS", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+          skill(ctx, :am_bioethics, 1, :permanent)
 
         v when v == :bard ->
-          todo(ctx, :skill, ["BA_PANGVOICE", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+          skill(ctx, :ba_pangvoice, 1, :permanent)
 
         v when v == :dancer ->
-          todo(ctx, :skill, ["DC_WINKCHARM", 1, get_char_var(ctx, :SKILL_PERM, 0)])
+          skill(ctx, :dc_winkcharm, 1, :permanent)
 
         _ ->
           ctx

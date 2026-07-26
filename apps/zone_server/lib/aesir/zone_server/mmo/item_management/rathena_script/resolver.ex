@@ -181,6 +181,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "Job_Bard" => :bard,
     "Job_Dancer" => :dancer,
     "Job_SuperNovice" => :super_novice,
+    "Job_Super_Novice" => :super_novice,
     "Job_Gunslinger" => :gunslinger,
     "Job_Ninja" => :ninja,
     "Job_Taekwon" => :taekwon,

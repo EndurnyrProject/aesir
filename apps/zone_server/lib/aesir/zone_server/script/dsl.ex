@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
+  alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage
   alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
@@ -1819,6 +1820,24 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     {:ok, job} = JobManagement.get_job_by_id(gs.stats.progression.job_id)
     job.name
   end
+
+  @doc """
+  The player's first-job lineage root as an atom (rAthena `BaseClass`): a
+  Hunter reads `:archer`, a Knight `:swordman`, Novices and Super Novices
+  `:novice`.
+  """
+  @spec base_class(Ctx.t()) :: atom()
+  def base_class(%Ctx{game_state: nil}), do: no_player!("base_class/1")
+  def base_class(%Ctx{} = ctx), do: ctx |> class() |> JobLineage.base_class()
+
+  @doc """
+  The player's job ignoring transcendence and baby variants as an atom
+  (rAthena `BaseJob`): a Hunter or Sniper reads `:hunter`, a plain Novice
+  `:novice`.
+  """
+  @spec base_job(Ctx.t()) :: atom()
+  def base_job(%Ctx{game_state: nil}), do: no_player!("base_job/1")
+  def base_job(%Ctx{} = ctx), do: ctx |> class() |> JobLineage.base_job()
 
   # NV_BASIC level a Novice must reach to change into a first job.
   @basic_skill_job_req 9
