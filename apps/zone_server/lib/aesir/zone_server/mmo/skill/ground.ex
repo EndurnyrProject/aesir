@@ -32,6 +32,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
   @typedoc "A single map cell occupied by a skill-unit footprint."
   @type cell :: {integer(), integer()}
 
+  @typedoc "A movement callback result serialized and persisted by the skill-unit manager."
+  @type trigger_result :: {:ok, Group.t()} | :expire
+
   @typedoc "The placement result: footprint, initial per-skill state, timing, and optional lifecycle policy."
   @type placement :: %{
           optional(:lifecycle_policy) => LifecyclePolicy.t(),
@@ -69,14 +72,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
   Optional - implemented by traps/portals (Land Mine, Warp Portal). Returns the
   updated group, or `:expire` to consume the unit after firing once.
   """
-  @callback on_touch(Group.t(), mover :: {atom(), integer()}) :: {:ok, Group.t()} | :expire
+  @callback on_touch(Group.t(), mover :: {atom(), integer()}) :: trigger_result()
 
   @doc """
   Invoked when `mover` steps off a footprint cell (movement-pipeline hook).
 
   Optional. Returns the updated group, or `:expire` to end it.
   """
-  @callback on_out(Group.t(), mover :: {atom(), integer()}) :: {:ok, Group.t()} | :expire
+  @callback on_out(Group.t(), mover :: {atom(), integer()}) :: trigger_result()
 
   @doc "Describes the source-owned status granted while a mover occupies the field."
   @callback field_support(Group.t()) :: %{

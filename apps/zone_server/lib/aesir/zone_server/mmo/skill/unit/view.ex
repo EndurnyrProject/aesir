@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.View do
   alias Aesir.Net.SkillUnitSnapshot
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
 
   @doc "Builds a complete wire state for one skill-unit group."
   @spec group(Group.t(), [Cell.t()]) :: SkillUnitGroupState.t()
@@ -28,7 +29,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.View do
       center_y: elem(group.center, 1),
       created_tick: to_server_tick(group.created_at, clock),
       expires_tick: to_server_tick(group.expires_at, clock),
-      cells: cells |> Enum.sort_by(& &1.cell_id) |> Enum.map(&cell/1)
+      cells: cells |> Enum.sort_by(& &1.cell_id) |> Enum.map(&cell/1),
+      phase: phase(group.state)
     }
   end
 
@@ -58,6 +60,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.View do
       flags: cell.flags
     }
   end
+
+  defp phase(%{trap: %TrapState{phase: :used}}), do: :SKILL_UNIT_PHASE_USED
+  defp phase(%{trap: %TrapState{phase: :sprung}}), do: :SKILL_UNIT_PHASE_SPRUNG
+  defp phase(%{trap: %TrapState{phase: :captured}}), do: :SKILL_UNIT_PHASE_CAPTURED
+  defp phase(_state), do: :SKILL_UNIT_PHASE_ACTIVE
 
   defp owner_type(:player), do: :SKILL_UNIT_OWNER_TYPE_PLAYER
   defp owner_type(:mob), do: :SKILL_UNIT_OWNER_TYPE_MOB

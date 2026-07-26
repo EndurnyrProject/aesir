@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ViewTest do
   alias Aesir.Net.SkillUnitGroupState
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skill.Unit.View
 
   test "maps complete group state and orders cells by id" do
@@ -51,6 +52,29 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ViewTest do
                %SkillUnitCellState{cell_id: 8, x: 101, y: 101, hp: 0, max_hp: 0, flags: 0}
              ]
            } = View.group(group, cells, {1_000, 10_000})
+  end
+
+  test "maps typed trap phases to wire phases" do
+    group = %Group{
+      group_id: 9,
+      skill_id: 116,
+      skill_name: :ht_landmine,
+      level: 1,
+      caster_id: 42,
+      caster_type: :player,
+      map_name: "prontera",
+      center: {100, 101}
+    }
+
+    for {phase, wire_phase} <- [
+          armed: :SKILL_UNIT_PHASE_ACTIVE,
+          used: :SKILL_UNIT_PHASE_USED,
+          sprung: :SKILL_UNIT_PHASE_SPRUNG,
+          captured: :SKILL_UNIT_PHASE_CAPTURED
+        ] do
+      trap = %TrapState{phase: phase}
+      assert %{phase: ^wire_phase} = View.group(%{group | state: %{trap: trap}}, [])
+    end
   end
 
   test "builds snapshots in group ID order" do

@@ -22,9 +22,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.Trap do
   @doc """
   Builds the initial group state: the deterministic base damage stamped from the
   placer's stats at placement time (rAthena stamps trap damage at setup, so it
-  survives the placer's later stat changes / departure) plus the normalized
-  trap lifecycle metadata (`armed`/`reclaimable`/`trap_item`) consumed by
-  manager-level reveal, reclaim, and spring operations. The per-trigger ±
+  survives the placer's later stat changes / departure) plus the typed trap
+  lifecycle metadata consumed by manager-level reveal, reclaim, and spring
+  operations. The per-trigger ±
   variance is rolled at fire time via `roll_damage/1`.
   """
   @spec place_state(non_neg_integer(), map(), Group.t()) :: map()
@@ -44,10 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.Trap do
     %{
       base_damage: base_damage(level, caster_stats),
       trap: trap,
-      ignore_land_protector: true,
-      armed: true,
-      reclaimable: true,
-      trap_item: @trap_item_id
+      ignore_land_protector: true
     }
   end
 

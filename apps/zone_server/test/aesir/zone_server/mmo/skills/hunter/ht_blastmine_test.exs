@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmineTest do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmine
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -61,10 +62,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmineTest do
       refute Map.has_key?(placement.state, :armed_at)
       # trunc(3 * 50 * (3.0 + 50/100) * (1.0 + 40/35)) = 1125
       assert placement.state.base_damage == 1125
-      assert placement.state.armed == true
-      assert placement.state.reclaimable == true
-      assert placement.state.trap_item == 1065
-      assert placement.state.trap.claymore_spendable?
+
+      assert %TrapState{phase: :armed, reclaim_item_id: 1065, claymore_spendable?: true} =
+               placement.state.trap
     end
   end
 

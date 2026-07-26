@@ -17,12 +17,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   alias Aesir.Net.SkillUnitUpdate
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.Cell, as: MapCell
+  alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Id
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skill.Unit.View
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -355,7 +357,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   def handle_call({:trigger, group_id, mover, callback}, _from, state) do
-    if group = Storage.get(group_id), do: run_trigger(group, mover, callback)
+    if group = Storage.get(group_id), do: run_trigger(group, mover, callback, state.clock.())
     {:reply, :ok, state}
   end
 
@@ -435,7 +437,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     expired = Storage.get_expired_groups(now)
 
     Enum.each(due, &run_interval(&1, now, unit_available?))
-    Enum.each(expired, &expire_if_live/1)
+    Enum.each(expired, &expire_if_live(&1, now, unit_available?))
   end
 
   defp run_interval(%Group{} = group, now, unit_available?) do
@@ -569,39 +571,49 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
   end
 
-  defp expire_if_live(%Group{group_id: group_id}) do
-    if group = Storage.get(group_id), do: cleanup(group)
-  end
+  defp expire_if_live(%Group{group_id: group_id}, now, unit_available?) do
+    case Storage.get(group_id) do
+      %Group{expires_at: expires_at} = group when is_integer(expires_at) and expires_at <= now ->
+        expire_naturally(group, now, unit_available?)
 
-  defp run_trigger(%Group{} = group, mover, callback) do
-    case handler_for(group) do
-      {:ok, module} ->
-        run_callback_trigger(group, mover, callback, module)
-
-      _ ->
-        apply_field_support_action(group, mover, callback)
+      _group ->
+        :ok
     end
   end
 
-  defp run_callback_trigger(group, mover, callback, module) do
+  defp run_trigger(%Group{} = group, mover, callback, now) do
+    if triggerable?(group) do
+      case handler_for(group) do
+        {:ok, module} ->
+          run_callback_trigger(group, mover, callback, module, now)
+
+        _ ->
+          apply_field_support_action(group, mover, callback)
+      end
+    end
+  end
+
+  defp run_callback_trigger(group, mover, callback, module, now) do
     if function_exported?(module, callback, 2) do
-      invoke_trigger(group, mover, callback, module)
+      invoke_trigger(group, mover, callback, module, now)
     else
       apply_field_support_action(group, mover, callback)
     end
   end
 
-  defp invoke_trigger(group, mover, callback, module) do
+  defp invoke_trigger(group, mover, callback, module, now) do
     case invoke(module, callback, [group, mover]) do
       {:ok, {:ok, %Group{group_id: group_id} = updated}} when group_id == group.group_id ->
-        Storage.update(updated)
-        apply_field_support_action(updated, mover, callback)
+        case persist_callback_update(group, updated) do
+          :ok -> apply_field_support_action(updated, mover, callback)
+          {:error, reason} -> callback_failed(group, callback, reason, module)
+        end
 
       {:ok, {:ok, %Group{group_id: group_id}}} ->
         callback_failed(group, callback, {:foreign_group_id, group_id}, module)
 
       {:ok, :expire} ->
-        cleanup(group, module)
+        expire_from_trigger(group, module, now)
 
       {:ok, result} ->
         callback_failed(group, callback, {:invalid_return, result}, module)
@@ -928,6 +940,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     publish(group.map_name, elem(group.center, 0), elem(group.center, 1), packet)
   end
 
+  defp publish_tracked_spawn(%Group{} = group) do
+    packet = %SkillUnitSpawn{group: View.group(group, Storage.get_cells_by_group(group.group_id))}
+    {x, y} = group.center
+
+    group.map_name
+    |> SpatialIndex.get_players_in_range(x, y, Config.view_range())
+    |> Enum.uniq()
+    |> Enum.each(fn player_id ->
+      Broadcast.to_player(player_id, packet)
+      Storage.add_observer_group(player_id, group.group_id)
+    end)
+
+    :ok
+  end
+
   defp publish_update(%Cell{} = cell, hp_delta, source, reason) do
     case Storage.get(cell.group_id) do
       %Group{visible?: true} = group ->
@@ -1071,45 +1098,72 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp update_reason(:damage), do: :SKILL_UNIT_UPDATE_REASON_DAMAGE
   defp update_reason(:decay), do: :SKILL_UNIT_UPDATE_REASON_DECAY
 
-  defp spring_trap_now(map_name, x, y, now) do
-    groups = map_name |> Storage.get_groups_at_cell(x, y) |> Enum.sort_by(& &1.group_id)
+  defp triggerable?(%Group{} = group) do
+    case trap_state(group) do
+      {:ok, %TrapState{phase: :armed}} ->
+        true
 
-    case select_trap(groups, &spring_eligibility/1) do
-      {:ok, %Group{} = group} ->
-        expires_at = now + @sprung_trap_lifetime
+      {:ok, %TrapState{}} ->
+        false
 
-        sprung = %{
-          group
-          | visible?: true,
-            expires_at: expires_at,
-            state: Map.merge(group.state, %{armed: false, reclaimable: false})
-        }
+      {:error, :unsupported_trap} ->
+        true
 
-        case persist_sprung_trap(group, sprung) do
-          :ok -> {:ok, %{group_id: group.group_id, expires_at: expires_at}}
-          {:error, _reason} = error -> error
+      {:error, :invalid_trap_state} ->
+        Logger.error("Skill.Unit.Manager rejected invalid trap state group_id=#{group.group_id}")
+        false
+    end
+  end
+
+  defp expire_from_trigger(%Group{} = group, module, now) do
+    case trap_state(group) do
+      {:ok, %TrapState{phase: :armed}} ->
+        used = transition_trap(group, :used, now + @sprung_trap_lifetime)
+
+        case persist_trap_update(group, used) do
+          :ok -> :ok
+          {:error, reason} -> callback_failed(group, :on_touch, reason, module)
         end
 
-      {:error, _reason} = error ->
-        error
+      _non_trap ->
+        cleanup(group, module)
     end
   end
 
-  defp persist_sprung_trap(%Group{visible?: true} = original, %Group{} = sprung) do
-    case Storage.get_cells_by_group(original.group_id) do
-      [] -> {:error, :not_materialized}
-      [_cell | _cells] -> Storage.update(sprung)
+  defp persist_callback_update(%Group{} = original, %Group{} = updated) do
+    case {trap_state(original), trap_state(updated)} do
+      {{:ok, %TrapState{}}, {:ok, %TrapState{}}} -> persist_trap_update(original, updated)
+      {{:error, :unsupported_trap}, {:error, :unsupported_trap}} -> Storage.update(updated)
+      _invalid -> {:error, :invalid_trap_state}
     end
   end
 
-  defp persist_sprung_trap(%Group{visible?: false} = original, %Group{} = sprung) do
+  defp persist_trap_update(%Group{} = original, %Group{} = updated) do
+    with {:ok, %TrapState{}} <- trap_state(updated) do
+      case {original.visible?, updated.visible?} do
+        {false, false} ->
+          Storage.update(updated)
+
+        {false, true} ->
+          materialize_trap_update(original, updated)
+
+        {true, true} ->
+          persist_visible_trap_update(original, updated)
+
+        {true, false} ->
+          {:error, :invalid_trap_transition}
+      end
+    end
+  end
+
+  defp materialize_trap_update(%Group{} = original, %Group{} = updated) do
     case Storage.get_cells_by_group(original.group_id) do
       [] ->
-        :ok = Storage.update(sprung)
+        :ok = Storage.update(updated)
 
-        case materialize_visible_cells(sprung, []) do
+        case materialize_visible_cells(updated, []) do
           {:ok, _cells} ->
-            sprung |> reconcile_group() |> publish_spawn()
+            updated |> reconcile_group() |> publish_tracked_spawn()
 
           {:error, _reason} = error ->
             rollback_trap_materialization(original)
@@ -1121,11 +1175,133 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
   end
 
+  defp persist_visible_trap_update(%Group{} = original, %Group{} = updated) do
+    case Storage.get_cells_by_group(original.group_id) do
+      [] ->
+        {:error, :not_materialized}
+
+      cells ->
+        :ok = Storage.update(updated)
+
+        if trap_view_changed?(original, updated) do
+          publish_trap_replacement(updated, cells)
+        end
+
+        :ok
+    end
+  end
+
+  defp trap_view_changed?(original, updated) do
+    original.expires_at != updated.expires_at or
+      original.state.trap.phase != updated.state.trap.phase
+  end
+
+  defp publish_trap_replacement(%Group{} = group, cells) do
+    cell_ids = cells |> Enum.map(& &1.cell_id) |> Enum.sort()
+
+    despawn = %SkillUnitDespawn{
+      group_id: group.group_id,
+      cell_ids: cell_ids,
+      reason: :SKILL_UNIT_DESPAWN_REASON_DESTROYED,
+      server_tick: ServerTick.now()
+    }
+
+    spawn = %SkillUnitSpawn{group: View.group(group, cells)}
+    {x, y} = group.center
+    observers = Storage.take_group_observers(group.group_id)
+    in_range = SpatialIndex.get_players_in_range(group.map_name, x, y, Config.view_range())
+
+    observers
+    |> Enum.concat(in_range)
+    |> Enum.uniq()
+    |> Enum.each(fn player_id ->
+      Broadcast.to_player(player_id, despawn)
+      Broadcast.to_player(player_id, spawn)
+      Storage.add_observer_group(player_id, group.group_id)
+    end)
+
+    :ok
+  end
+
+  defp transition_trap(%Group{state: %{trap: %TrapState{} = trap}} = group, phase, expires_at) do
+    %{
+      group
+      | visible?: true,
+        expires_at: expires_at,
+        state: %{group.state | trap: %{trap | phase: phase}}
+    }
+  end
+
+  defp expire_naturally(%Group{} = group, now, unit_available?) do
+    case trap_state(group) do
+      {:ok, %TrapState{phase: :armed, natural_expiry: :become_used}} ->
+        used = transition_trap(group, :used, now + @sprung_trap_lifetime)
+
+        case persist_trap_update(group, used) do
+          :ok ->
+            :ok
+
+          {:error, reason} ->
+            Logger.error(
+              "Skill.Unit.Manager natural trap transition failed group_id=#{group.group_id}: #{inspect(reason)}"
+            )
+
+            cleanup(group)
+        end
+
+      {:ok, %TrapState{phase: :armed} = trap} ->
+        maybe_drop_expired_trap(group, trap, unit_available?)
+        cleanup(group)
+
+      {:ok, %TrapState{}} ->
+        cleanup(group)
+
+      {:error, :unsupported_trap} ->
+        cleanup(group)
+
+      {:error, :invalid_trap_state} ->
+        Logger.error("Skill.Unit.Manager expiring invalid trap state group_id=#{group.group_id}")
+        cleanup(group)
+    end
+  end
+
+  defp maybe_drop_expired_trap(
+         %Group{caster_type: :player, caster_id: caster_id} = group,
+         %TrapState{return_item_on_expiry?: true, reclaim_item_id: item_id},
+         unit_available?
+       )
+       when is_integer(item_id) and item_id > 0 do
+    if unit_available?.(:player, caster_id, group.map_name) do
+      {x, y} = group.center
+      Coordinator.drop_items(group.map_name, [{item_id, 1, x, y}], x, y)
+    end
+  end
+
+  defp maybe_drop_expired_trap(_group, _trap, _unit_available?), do: :ok
+
+  defp spring_trap_now(map_name, x, y, now) do
+    groups = map_name |> Storage.get_groups_at_cell(x, y) |> Enum.sort_by(& &1.group_id)
+
+    case select_trap(groups, &spring_eligibility/1) do
+      {:ok, %Group{} = group} ->
+        expires_at = now + @sprung_trap_lifetime
+        sprung = transition_trap(group, :sprung, expires_at)
+
+        case persist_trap_update(group, sprung) do
+          :ok -> {:ok, %{group_id: group.group_id, expires_at: expires_at}}
+          {:error, _reason} = error -> error
+        end
+
+      {:error, _reason} = error ->
+        error
+    end
+  end
+
   defp reclaim_trap_now(owner, map_name, x, y) do
     groups = map_name |> Storage.get_groups_at_cell(x, y) |> Enum.sort_by(& &1.group_id)
 
     case select_trap(groups, &reclaim_eligibility(&1, owner)) do
-      {:ok, %Group{state: %{trap_item: item_id}} = group} ->
+      {:ok, %Group{state: %{trap: %TrapState{reclaim_item_id: item_id}}} = group} ->
         cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
         {:ok, %{group_id: group.group_id, item_id: item_id}}
 
@@ -1177,7 +1353,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
       %Group{} = group, {:ok, groups} ->
         case trap_state(group) do
-          {:ok, _state} -> {:cont, {:ok, [group | groups]}}
+          {:ok, %TrapState{phase: :armed}} -> {:cont, {:ok, [group | groups]}}
+          {:ok, %TrapState{}} -> {:cont, {:ok, groups}}
           {:error, :unsupported_trap} -> {:cont, {:ok, groups}}
           {:error, :invalid_trap_state} = error -> {:halt, error}
         end
@@ -1220,7 +1397,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp publish_revealed_trap(%Group{} = group),
-    do: group |> reconcile_group() |> publish_spawn()
+    do: group |> reconcile_group() |> publish_tracked_spawn()
 
   defp rollback_trap_materialization(%Group{} = original) do
     original.group_id
@@ -1250,21 +1427,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp spring_eligibility(%Group{} = group) do
     case trap_state(group) do
-      {:ok, :armed} -> :eligible
-      {:ok, :spent} -> {:error, :already_spent}
+      {:ok, %TrapState{phase: :armed}} -> :eligible
+      {:ok, %TrapState{}} -> {:error, :already_spent}
       {:error, _reason} = error -> error
     end
   end
 
   defp reclaim_eligibility(%Group{} = group, owner) do
     case trap_state(group) do
-      {:ok, :armed} -> reclaim_armed_trap(group, owner)
-      {:ok, :spent} -> {:error, :already_spent}
+      {:ok, %TrapState{phase: :armed}} -> reclaim_armed_trap(group, owner)
+      {:ok, %TrapState{}} -> {:error, :already_spent}
       {:error, _reason} = error -> error
     end
   end
 
-  defp reclaim_armed_trap(%Group{state: %{trap_item: @trap_item_id}} = group, owner) do
+  defp reclaim_armed_trap(
+         %Group{state: %{trap: %TrapState{reclaim_item_id: @trap_item_id}}} = group,
+         owner
+       ) do
     if {group.caster_type, group.caster_id} == owner,
       do: :eligible,
       else: {:error, :not_owner}
@@ -1272,22 +1452,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp reclaim_armed_trap(_group, _owner), do: {:error, :unsupported_trap}
 
-  defp trap_state(%Group{state: %{armed: armed, reclaimable: reclaimable, trap_item: trap_item}})
-       when is_boolean(armed) and is_boolean(reclaimable) and is_integer(trap_item) and
-              trap_item > 0 do
-    case {armed, reclaimable} do
-      {true, true} -> {:ok, :armed}
-      {false, false} -> {:ok, :spent}
-      _ -> {:error, :invalid_trap_state}
+  defp trap_state(%Group{state: %{trap: %TrapState{} = trap}}) do
+    case TrapState.new(Map.from_struct(trap)) do
+      {:ok, valid} -> {:ok, valid}
+      {:error, :invalid_trap_state} = error -> error
     end
   end
 
   defp trap_state(%Group{state: state}) do
-    if Enum.any?([:armed, :reclaimable, :trap_item], &Map.has_key?(state, &1)) do
-      {:error, :invalid_trap_state}
-    else
-      {:error, :unsupported_trap}
-    end
+    if Map.has_key?(state, :trap),
+      do: {:error, :invalid_trap_state},
+      else: {:error, :unsupported_trap}
   end
 
   defp register_invisible_group(%Group{} = group) do

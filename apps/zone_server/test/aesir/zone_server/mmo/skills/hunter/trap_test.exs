@@ -17,11 +17,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.TrapTest do
     }
   end
 
-  test "dual-writes typed and legacy armed metadata" do
+  test "writes only typed lifecycle metadata" do
     state = Trap.place_state(1, @stats, group(:player, :direct))
 
     assert %TrapState{phase: :armed, reclaim_item_id: 1065} = state.trap
-    assert %{armed: true, reclaimable: true, trap_item: 1065} = state
+    refute Map.has_key?(state, :armed)
+    refute Map.has_key?(state, :reclaimable)
+    refute Map.has_key?(state, :trap_item)
     assert state.ignore_land_protector
   end
 

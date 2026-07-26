@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapUtilityIntegrationTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
 
@@ -48,7 +49,8 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapUtilityIntegrationTest do
     character = insert_hunter(%{learned_skills: skills(%{@remove_trap => 1})})
     session = start_hunter_session(character, @origin)
 
-    spent = Map.merge(armed_state(), %{armed: false, reclaimable: false})
+    armed = armed_state()
+    spent = %{armed | trap: %{armed.trap | phase: :used}}
 
     assert :ok = Manager.register(trap_group(10, character.id + 1, {151, 150}))
     assert :ok = Manager.register(trap_group(11, character.id, {150, 151}, spent))
@@ -76,7 +78,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapUtilityIntegrationTest do
     assert map_size(full_state.inventory) == Inventory.capacity()
     assert Inventory.held_amount(full_state.inventory, @trap_item) == 0
     assert full_state.stats.current_state.sp == 100
-    assert %Group{state: %{armed: true, reclaimable: true}} = Storage.get(20)
+    assert %Group{state: %{trap: %TrapState{phase: :armed}}} = Storage.get(20)
     assert collect_packets_of_type(ItemAdded, 100) == []
   end
 
@@ -90,7 +92,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapUtilityIntegrationTest do
 
     no_falcon_state = cast_and_sync(no_falcon, @spring_trap, 2, target)
     assert no_falcon_state.stats.current_state.sp == 100
-    assert %Group{state: %{armed: true, reclaimable: true}} = Storage.get(30)
+    assert %Group{state: %{trap: %TrapState{phase: :armed}}} = Storage.get(30)
 
     falcon_option = Option.id(:falcon)
     first_character = insert_hunter(%{learned_skills: learned, option: falcon_option})
@@ -100,7 +102,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapUtilityIntegrationTest do
 
     level_one_state = cast_and_sync(first, @spring_trap, 1, target)
     assert level_one_state.stats.current_state.sp == 100
-    assert %Group{state: %{armed: true, reclaimable: true}} = Storage.get(30)
+    assert %Group{state: %{trap: %TrapState{phase: :armed}}} = Storage.get(30)
 
     flush_packets()
     cast_concurrently([first, second], @spring_trap, 2, target)
@@ -114,7 +116,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapUtilityIntegrationTest do
     assert %Group{
              visible?: true,
              expires_at: expires_at,
-             state: %{armed: false, reclaimable: false}
+             state: %{trap: %TrapState{phase: :sprung}}
            } = Storage.get(30)
 
     remover_character = insert_hunter(%{learned_skills: skills(%{@remove_trap => 1})})
@@ -214,7 +216,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapUtilityIntegrationTest do
   end
 
   defp armed_state do
-    %{base_damage: 100, armed: true, reclaimable: true, trap_item: @trap_item}
+    %{base_damage: 100, trap: %TrapState{reclaim_item_id: @trap_item}}
   end
 
   defp seed_full_inventory(character_id) do

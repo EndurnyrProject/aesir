@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest.FakeMob
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -156,11 +157,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
       expires_at: System.monotonic_time(:millisecond) + 60_000,
       interval: 1_000,
       visible?: false,
-      state: %{base_damage: 250, armed: true, reclaimable: true, trap_item: 1065}
+      state: %{base_damage: 250, trap: %TrapState{reclaim_item_id: 1065}}
     }
   end
 
-  test "an enemy mob stepping onto a Land Mine takes misc damage and the trap is removed without deadlocking" do
+  test "an enemy mob stepping onto a Land Mine leaves one used state without deadlocking" do
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
 
     caster = build_caster()
@@ -189,6 +190,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
 
     assert_receive {:applied, damage, @caster_id}, 1_000
     assert damage > 0
-    assert nil == Storage.get(999)
+
+    assert %Group{
+             visible?: true,
+             state: %{trap: %TrapState{phase: :used}}
+           } = Storage.get(999)
+
+    assert [_cell] = Storage.get_cells_by_group(999)
   end
 end
