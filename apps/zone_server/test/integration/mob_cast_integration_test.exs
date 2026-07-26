@@ -16,6 +16,8 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
 
   @moduletag :capture_log
 
+  alias Aesir.Commons.StatusParams
+  alias Aesir.Net.ParamChange
   alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.MobSkill.Db
@@ -44,6 +46,9 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
 
   # Corrupted Soul: carries `NPC_EARTHQUAKE` (self-targeted ground shockwave).
   @earthquake_mob_id 2_475
+
+  # Egnigem Cenia: carries a level 5 `HT_SHOCKWAVE` row targeting `around2`.
+  @shockwave_mob_id 2_952
 
   # Evil Nymph: carries an `AL_HEAL` row targeting `friend`.
   @heal_mob_id 1_416
@@ -151,6 +156,51 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
                Executor.execute(caster_targeting(char_id), row!(@mob_id, "SA_DISPELL", level: 5))
 
       refute StatusStorage.has_status?(:player, char_id, :sc_blessing)
+    end
+  end
+
+  describe "HT_SHOCKWAVE rows" do
+    test "a mob shockwave trap drains player SP without HP damage" do
+      player =
+        start_player_session(
+          id: 9_807,
+          name: "Shockwaved",
+          map_name: @map,
+          position: {150, 150},
+          hp: 1_000,
+          max_hp: 1_000,
+          sp: 1_000,
+          max_sp: 1_000
+        )
+
+      char_id = player.character.id
+      before = get_player_state(player.pid)
+      hp = before.stats.current_state.hp
+      sp = before.stats.current_state.sp
+      max_sp = before.stats.derived_stats.max_sp
+      expected_sp = sp - div(max_sp * 80, 100)
+      sp_param = StatusParams.sp()
+
+      flush_packets()
+
+      assert :ok =
+               Executor.execute(
+                 caster_targeting(char_id),
+                 row!(@shockwave_mob_id, "HT_SHOCKWAVE", level: 5)
+               )
+
+      assert %Group{skill_name: :ht_shockwave} =
+               group = Enum.find(Storage.all(), &(&1.skill_name == :ht_shockwave))
+
+      on_exit(fn -> Storage.delete(group.group_id) end)
+      assert :ok = Manager.trigger(group.group_id, {:player, char_id}, :on_touch)
+
+      assert_receive {:packet_sent, %ParamChange{var_id: ^sp_param, value: ^expected_sp}, _},
+                     1_000
+
+      state = get_player_state(player.pid)
+      assert state.stats.current_state.sp == expected_sp
+      assert state.stats.current_state.hp == hp
     end
   end
 
