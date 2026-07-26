@@ -80,7 +80,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.Trap do
   def enemy?(%Group{}, {_mover_type, _mover_id}), do: false
 
   defp claymore_spendable?(skill_name),
-    do: skill_name in [:ht_landmine, :ht_blastmine, :ht_shockwave, :ht_flasher]
+    do: skill_name in [:ht_landmine, :ht_blastmine, :ht_shockwave, :ht_flasher, :ht_sandman]
 
   defp natural_expiry(:ht_blastmine), do: :become_used
   defp natural_expiry(_skill_name), do: :drop_item

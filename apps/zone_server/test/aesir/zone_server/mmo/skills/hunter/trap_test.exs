@@ -27,11 +27,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.TrapTest do
     assert state.ignore_land_protector
   end
 
-  test "Land Mine and Blast Mine are eligible for Claymore spending" do
-    for skill_name <- [:ht_landmine, :ht_blastmine] do
+  test "exact Claymore-spendable trap metadata includes Sandman" do
+    for skill_name <- [:ht_landmine, :ht_blastmine, :ht_sandman] do
       state = Trap.place_state(1, @stats, group(:player, :normal, true, skill_name))
       assert state.trap.claymore_spendable?
     end
+
+    refute Trap.place_state(1, @stats, group(:player, :normal, true, :ht_anklesnare)).trap.claymore_spendable?
   end
 
   test "only normal player placements carry paid natural return" do
