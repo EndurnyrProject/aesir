@@ -65,10 +65,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   @doc """
-  Notifies the mob that one of its statuses ticked or expired.
+  Notifies the mob that one of its statuses was applied, ticked, or expired.
 
-  Fired by `StatusTickManager` when a status hits its tick interval or
-  expiration; may abort an in-flight cast if the status is a silence or stun.
+  Status application and `StatusTickManager` send this asynchronously; any
+  status that denies the pending skill may abort an in-flight cast.
   """
   @spec notify_status_changed(pid(), atom(), atom()) :: :ok
   def notify_status_changed(pid, status_id, event) do

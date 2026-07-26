@@ -21,8 +21,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.MobSkill.Db, as: MobSkillDb
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -33,7 +35,24 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
 
   @target_id 42
 
+  defmodule BlockedSkill do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_mob_skill_block,
+      no_dispel: false,
+      blocked_skills: [19]
+  end
+
+  defmodule AllowedSkill do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_mob_skill_allow,
+      no_dispel: false,
+      properties: [:prevents_skills],
+      allow_skills: [19]
+  end
+
   setup do
+    Registry.register_module(BlockedSkill)
+    Registry.register_module(AllowedSkill)
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     stub(StatusStorage, :has_status?, fn _unit_type, _unit_id, _status -> false end)
     stub(StatusInterpreter, :concealed?, fn _unit_type, _unit_id -> false end)
@@ -100,6 +119,68 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
   end
 
   describe "{:ai, :tick} skill selection" do
+    for status <- [:sc_sleep, :sc_freeze, :sc_silence, :sc_stun] do
+      test "#{status} blocks a selected timed cast" do
+        mob_id = System.unique_integer([:positive])
+        :ok = StatusStorage.apply_status(:mob, mob_id, unquote(status))
+        on_exit(fn -> StatusStorage.clear_unit_statuses(:mob, mob_id) end)
+
+        stub(MobSkillDb, :rows_for, fn 1001 -> [row()] end)
+        reject(&Combat.execute_magic_attack/3)
+
+        state = build_mob_state(%{instance_id: mob_id}) |> MobState.set_target(nil)
+        {:noreply, updated} = MobSession.handle_info({:ai, :tick}, state)
+
+        assert updated.casting == nil
+        assert updated.skill_cooldowns == %{}
+      end
+    end
+
+    test "a narrow status deny blocks only its listed skill" do
+      mob_id = System.unique_integer([:positive])
+      :ok = StatusStorage.apply_status(:mob, mob_id, :sc_test_mob_skill_block)
+      on_exit(fn -> StatusStorage.clear_unit_statuses(:mob, mob_id) end)
+      state = build_mob_state(%{instance_id: mob_id})
+
+      assert {:rejected, ^state} = CastingHandler.begin_cast(state, row(), 0)
+
+      assert {:ok, allowed} = CastingHandler.begin_cast(state, row(%{skill_id: 20}), 0)
+      assert %{row: %{skill_id: 20}, timer_ref: timer_ref} = allowed.casting
+      assert Process.cancel_timer(timer_ref)
+    end
+
+    test "an allowlisted skill starts despite a broad skill blocker" do
+      mob_id = System.unique_integer([:positive])
+      :ok = StatusStorage.apply_status(:mob, mob_id, :sc_test_mob_skill_allow)
+      on_exit(fn -> StatusStorage.clear_unit_statuses(:mob, mob_id) end)
+
+      state = build_mob_state(%{instance_id: mob_id})
+      assert {:ok, updated} = CastingHandler.begin_cast(state, row(), 0)
+
+      assert %{row: %{skill_id: 19}, timer_ref: timer_ref} = updated.casting
+      assert Process.cancel_timer(timer_ref)
+    end
+
+    test "a movement-only Stop permits an instant cast" do
+      mob_id = System.unique_integer([:positive])
+      :ok = StatusStorage.apply_status(:mob, mob_id, :sc_stop)
+      on_exit(fn -> StatusStorage.clear_unit_statuses(:mob, mob_id) end)
+
+      stub(MobSkillDb, :rows_for, fn 1001 -> [row(%{cast_time: 0})] end)
+
+      stub(UnitRegistry, :get_unit, fn :player, @target_id ->
+        {:ok, {nil, living_player_state(), nil}}
+      end)
+
+      expect(Combat, :execute_magic_attack, fn _caster, @target_id, _opts -> :ok end)
+
+      {:noreply, updated} =
+        MobSession.handle_info({:ai, :tick}, build_mob_state(%{instance_id: mob_id}))
+
+      assert updated.casting == nil
+      assert is_integer(updated.skill_cooldowns[19])
+    end
+
     test "an intercepted melee swing still advances the attack cadence" do
       stub(MobSkillDb, :rows_for, fn 1001 -> [] end)
 
@@ -125,6 +206,48 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       assert_received :melee
       assert updated.last_attack_time != nil
       assert updated.ai_timer_ref
+    end
+
+    test "a status applied during timed-cast preparation rejects the commit and falls back to melee" do
+      stub(MobSkillDb, :rows_for, fn 1001 -> [row()] end)
+
+      stub(UnitRegistry, :get_unit, fn :player, @target_id ->
+        {:ok, {nil, living_player_state(), nil}}
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, @target_id ->
+        {:ok, {100, 100, "prontera"}}
+      end)
+
+      stub(StatusInterpreter, :targetable?, fn :player, @target_id -> true end)
+      stub(StatusInterpreter, :can_attack?, fn :mob, 1 -> true end)
+
+      expect(Broadcast, :to_in_range, fn _map, _x, _y, _range, %SkillCasting{} ->
+        :ok = StatusStorage.apply_status(:mob, 1, :sc_test_mob_skill_block)
+      end)
+
+      expect(Combat, :execute_mob_attack, fn _state, @target_id -> :ok end)
+      reject(&Combat.execute_magic_attack/3)
+      on_exit(fn -> StatusStorage.clear_unit_statuses(:mob, 1) end)
+
+      {:noreply, updated} = MobSession.handle_info({:ai, :tick}, build_mob_state())
+
+      assert updated.casting == nil
+      assert updated.last_attack_time != nil
+    end
+
+    test "a status applied during instant-cast preparation prevents execution" do
+      expect(Broadcast, :to_in_range, fn _map, _x, _y, _range, %SkillCasting{} ->
+        :ok = StatusStorage.apply_status(:mob, 1, :sc_test_mob_skill_block)
+      end)
+
+      reject(&Combat.execute_magic_attack/3)
+      on_exit(fn -> StatusStorage.clear_unit_statuses(:mob, 1) end)
+
+      assert {:rejected, unchanged} =
+               CastingHandler.begin_cast(build_mob_state(), row(%{cast_time: 0}), 0)
+
+      assert unchanged.skill_cooldowns == %{}
     end
 
     test "a selectable cast_time > 0 row starts a cast instead of melee" do
@@ -263,6 +386,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       assert updated.skill_cooldowns == %{}
     end
 
+    test "a frozen mob aborts at {:casting, :complete} without executing" do
+      state = build_mob_state() |> MobState.set_casting(%{row: row(), complete_at: 0})
+      :ok = StatusStorage.apply_status(:mob, 1, :sc_freeze)
+      on_exit(fn -> StatusStorage.clear_unit_statuses(:mob, 1) end)
+      reject(&Combat.execute_magic_attack/3)
+
+      {:noreply, updated} = MobSession.handle_info({:casting, :complete}, state)
+
+      assert updated.casting == nil
+      assert is_integer(updated.skill_cooldowns[19])
+    end
+
     test "a silenced mob aborts at {:casting, :complete} without executing but still sets the delay" do
       ref = Process.send_after(self(), {:casting, :complete}, 10_000)
 
@@ -270,10 +405,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
         build_mob_state()
         |> MobState.set_casting(%{row: row(), complete_at: 0, timer_ref: ref})
 
-      stub(StatusStorage, :has_status?, fn
-        :mob, 1, :sc_silence -> true
-        :mob, _id, _status -> false
-      end)
+      :ok = StatusStorage.apply_status(:mob, 1, :sc_silence)
+      on_exit(fn -> StatusStorage.clear_unit_statuses(:mob, 1) end)
 
       reject(&Combat.execute_magic_attack/3)
 
@@ -420,11 +553,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
     end
   end
 
-  describe "silence/stun cast interruption" do
+  describe "status-based cast interruption" do
     test "a silence hook mid-cast broadcasts a cast cancel for the mob's gid" do
       # Regression: the abort used to be silent, leaving the client's mob cast
-      # bar running forever on every silence/stun interrupt.
+      # bar running forever after a status-based interrupt.
       state = build_mob_state() |> MobState.set_casting(%{row: row(), complete_at: 0})
+      :ok = StatusStorage.apply_status(:mob, 1, :sc_silence)
+      on_exit(fn -> StatusStorage.clear_unit_statuses(:mob, 1) end)
       test_pid = self()
 
       expect(Broadcast, :to_in_range, fn "prontera", 100, 100, _range, packet ->
@@ -441,6 +576,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
 
     test "a stun hook mid-cast broadcasts a cast cancel for the mob's gid" do
       state = build_mob_state() |> MobState.set_casting(%{row: row(), complete_at: 0})
+      :ok = StatusStorage.apply_status(:mob, 1, :sc_stun)
+      on_exit(fn -> StatusStorage.clear_unit_statuses(:mob, 1) end)
       test_pid = self()
 
       expect(Broadcast, :to_in_range, fn "prontera", 100, 100, _range, packet ->
@@ -455,6 +592,19 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       assert_received {:packet, %CastCancel{gid: 1}}
     end
 
+    for status <- [:sc_sleep, :sc_freeze] do
+      test "#{status} interrupts a timed cast when its status changes" do
+        state = build_mob_state() |> MobState.set_casting(%{row: row(), complete_at: 0})
+        :ok = StatusStorage.apply_status(:mob, 1, unquote(status))
+        on_exit(fn -> StatusStorage.clear_unit_statuses(:mob, 1) end)
+
+        {:noreply, updated} =
+          MobSession.handle_cast({:casting, {:status_changed, unquote(status), :apply}}, state)
+
+        assert updated.casting == nil
+      end
+    end
+
     test "a silence hook mid-cast clears casting, cancels the timer and sets the delay cooldown" do
       row = row(%{cast_time: 100})
       stub(MobSkillDb, :rows_for, fn 1001 -> [row] end)
@@ -463,6 +613,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       assert %{row: ^row, timer_ref: ref} = casting_state.casting
       assert is_reference(ref)
 
+      :ok = StatusStorage.apply_status(:mob, 1, :sc_silence)
+      on_exit(fn -> StatusStorage.clear_unit_statuses(:mob, 1) end)
       before = System.system_time(:millisecond)
 
       {:noreply, updated} =
@@ -497,18 +649,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       assert updated.casting == nil
     end
 
-    @tag :skip
-    test "an {:ai, :tick} on a stunned mid-cast mob aborts the cast and cancels the timer" do
+    test "an {:ai, :tick} on a generically blocked mid-cast mob aborts the cast and cancels the timer" do
       ref = Process.send_after(self(), {:casting, :complete}, 100)
 
       state =
         build_mob_state()
         |> MobState.set_casting(%{row: row(), complete_at: 0, timer_ref: ref})
 
-      stub(StatusStorage, :has_status?, fn
-        :mob, 1, :sc_stun -> true
-        :mob, _id, _status -> false
-      end)
+      :ok = StatusStorage.apply_status(:mob, 1, :sc_test_mob_skill_block)
+      on_exit(fn -> StatusStorage.clear_unit_statuses(:mob, 1) end)
 
       reject(&Combat.execute_magic_attack/3)
 
@@ -528,10 +677,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
         {:ok, {nil, living_player_state(), nil}}
       end)
 
-      stub(StatusStorage, :has_status?, fn
-        :mob, 1, :sc_silence -> true
-        :mob, _id, _status -> false
-      end)
+      :ok = StatusStorage.apply_status(:mob, 1, :sc_silence)
+      on_exit(fn -> StatusStorage.clear_unit_statuses(:mob, 1) end)
 
       stub(SpatialIndex, :get_unit_position, fn :player, @target_id ->
         {:ok, {100, 100, "prontera"}}

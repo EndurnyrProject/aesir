@@ -154,8 +154,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   @doc """
   Broadcasts the `CastCancel` that clears the cast bar `broadcast_casting/2` put up.
 
-  Every mob cast abort routes here (silence/stun interrupts and the forced
-  `MobSession.interrupt_cast/1`), so an aborted cast never leaves the bar
+  Every mob cast abort routes here (status effects that interrupt skill use
+  and the forced `MobSession.interrupt_cast/1`), so an aborted cast never leaves the bar
   running on the client. Unlike the player cancel there is no separate
   self-directed send: a mob has no session of its own to notify.
   """

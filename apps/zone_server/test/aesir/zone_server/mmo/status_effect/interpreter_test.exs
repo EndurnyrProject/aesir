@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -50,6 +51,42 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
   setup :set_mimic_from_context
   setup :verify_on_exit!
   setup :setup_ets_tables
+
+  describe "mob status application notification" do
+    test "a successful tickless application asynchronously notifies the mob session" do
+      mob_id = 8_801
+      Registry.register_module(PermanentStatus)
+      test_pid = self()
+
+      living =
+        struct!(MobState, %{
+          instance_id: mob_id,
+          mob_id: 1,
+          mob_data: nil,
+          spawn_ref: nil,
+          x: 0,
+          y: 0,
+          map_name: "test",
+          hp: 1,
+          max_hp: 1,
+          sp: 0,
+          max_sp: 0,
+          spawned_at: 0,
+          is_dead: false
+        })
+
+      stub(UnitRegistry, :get_unit, fn :mob, ^mob_id ->
+        {:ok, {nil, living, test_pid}}
+      end)
+
+      stub(UnitRegistry, :get_unit_info, fn :mob, ^mob_id ->
+        {:ok, %{stats: %{}, boss_flag: false}}
+      end)
+
+      assert :ok = Interpreter.apply_status(:mob, mob_id, :sc_test_permanent)
+      assert_receive {:"$gen_cast", {:casting, {:status_changed, :sc_test_permanent, :apply}}}
+    end
+  end
 
   describe "before_weapon_hit/3" do
     test "intercepts a weapon hit and atomically consumes the single-use status" do

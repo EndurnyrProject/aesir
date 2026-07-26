@@ -244,7 +244,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   # players, mobs have no cached stats to recompute (combat numbers are folded
   # live in MobState.to_combatant/1) and their display delta is already
   # broadcast by the interpreter, so this is a per-status cast the MobSession
-  # hooks into (Task 5 consumes it for silence/stun cast interruption). A mob no
+  # hooks into for generic status-based cast interruption. A mob no
   # longer in the registry simply has no session to notify.
   defp notify_mob_session(:mob, instance_id, status_id, event) do
     case UnitRegistry.get_unit(:mob, instance_id) do

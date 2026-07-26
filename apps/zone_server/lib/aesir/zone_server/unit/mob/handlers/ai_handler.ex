@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
 
   alias Aesir.ZoneServer.Mmo.MobSkill.Db, as: MobSkillDb
   alias Aesir.ZoneServer.Mmo.MobSkill.Selector, as: MobSkillSelector
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -21,7 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
 
   @doc """
   Processes a periodic `{:ai, :tick}`: dead and dormant mobs drop it, a
-  casting mob stays locked (aborting first if a silence/stun landed
+  casting mob stays locked (aborting first if a status restriction landed
   mid-cast), and otherwise runs skill selection/AI and reschedules the next
   tick.
   """
@@ -39,8 +40,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
       state.casting != nil ->
         # A casting mob is locked: no movement, no melee, no re-selection.
         # Completion is driven by the separate {:casting, :complete} timer,
-        # unless a silence/stun landed mid-cast, in which case the cast is
-        # aborted here.
+        # unless its current statuses deny the pending skill.
         if CastingHandler.cast_interrupted?(state) do
           {:noreply, schedule_ai_tick(CastingHandler.abort_cast(state))}
         else
@@ -135,22 +135,27 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
   # rows can fire. `now` is System.system_time(:millisecond), the same clock
   # the melee path uses for last_attack_time, so cooldown expiry lines up.
   defp run_skill_or_ai(state) do
-    if CastingHandler.cast_interrupted?(state) do
-      # Silenced/stunned: skip skill selection entirely so no new cast begins.
-      # Melee/movement still runs through its own can_attack?/can_move? gates.
-      process_ai(%{state | spawn_tick_pending?: false})
-    else
-      now = System.system_time(:millisecond)
-      event = if state.spawn_tick_pending?, do: :spawn, else: :tick
-      state = %{state | spawn_tick_pending?: false}
+    now = System.system_time(:millisecond)
+    event = if state.spawn_tick_pending?, do: :spawn, else: :tick
+    state = %{state | spawn_tick_pending?: false}
 
-      case MobSkillSelector.select(state, MobSkillDb.rows_for(state.mob_id),
-             now: now,
-             event: event
-           ) do
-        {:cast, row} -> CastingHandler.begin_cast(state, row, now)
-        nil -> process_ai(state)
+    case MobSkillSelector.select(state, MobSkillDb.rows_for(state.mob_id), now: now, event: event) do
+      {:cast, row} ->
+        start_selected_skill(state, row, now)
+
+      nil ->
+        process_ai(state)
+    end
+  end
+
+  defp start_selected_skill(state, row, now) do
+    if StatusInterpreter.can_use_skill?(:mob, state.instance_id, row.skill_id) do
+      case CastingHandler.begin_cast(state, row, now) do
+        {:ok, updated} -> updated
+        {:rejected, unchanged} -> process_ai(unchanged)
       end
+    else
+      process_ai(state)
     end
   end
 end

@@ -682,6 +682,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
         stored_instance = StatusStorage.get_status(unit_type, unit_id, status_id)
         StatusDisplay.on_applied(unit_type, unit_id, status_id, stored_instance)
+        notify_mob_status_applied(unit_type, unit_id, status_id)
 
         :ok
 
@@ -692,6 +693,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
         {:error, reason}
     end
   end
+
+  defp notify_mob_status_applied(:mob, unit_id, status_id) do
+    case UnitRegistry.get_unit(:mob, unit_id) do
+      {:ok, {_module, _state, pid}} when is_pid(pid) ->
+        GenServer.cast(pid, {:casting, {:status_changed, status_id, :apply}})
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp notify_mob_status_applied(_unit_type, _unit_id, _status_id), do: :ok
 
   defp resolve_tick(tick, _definition) when tick > 0, do: tick
   defp resolve_tick(_tick, %{tick_interval: interval}) when is_integer(interval), do: interval
