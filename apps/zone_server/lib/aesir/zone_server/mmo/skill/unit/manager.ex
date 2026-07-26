@@ -1264,6 +1264,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       {:ok, %TrapState{phase: :armed, natural_expiry: :become_used}} ->
         used = transition_trap(group, :used, now + @sprung_trap_lifetime)
 
+        :ok = log_natural_expiry_callback_failure(run_natural_expiry_callback(group), group)
+
         case persist_trap_update(group, used) do
           :ok ->
             :ok
@@ -1289,6 +1291,32 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       {:error, :invalid_trap_state} ->
         Logger.error("Skill.Unit.Manager expiring invalid trap state group_id=#{group.group_id}")
         cleanup(group)
+    end
+  end
+
+  defp run_natural_expiry_callback(%Group{} = group) do
+    case handler_for(group) do
+      {:ok, module} -> invoke_natural_expiry_callback(module, group)
+      :error -> :ok
+    end
+  end
+
+  defp log_natural_expiry_callback_failure(:ok, _group), do: :ok
+
+  defp log_natural_expiry_callback_failure({:error, reason}, group) do
+    log_callback_error(group, :on_natural_expiry, reason)
+  end
+
+  defp invoke_natural_expiry_callback(module, group) do
+    if function_exported?(module, :on_natural_expiry, 1) do
+      case invoke(module, :on_natural_expiry, [group]) do
+        {:ok, :ok} -> :ok
+        {:ok, {:error, reason}} -> {:error, {:returned_error, reason}}
+        {:ok, result} -> {:error, {:invalid_natural_expiry_return, result}}
+        {:error, reason} -> {:error, {:natural_expiry_callback_failed, reason}}
+      end
+    else
+      :ok
     end
   end
 

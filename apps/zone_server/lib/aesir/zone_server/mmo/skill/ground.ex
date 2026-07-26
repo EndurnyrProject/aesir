@@ -9,9 +9,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
   these skills are `target_type: :ground`, `use Skill` auto-derives the active
   `cast/4` that places the unit, so the skill needs no separate cast module.
 
-  `schedule/2` and `on_expire/1` are optional. The manager invokes `schedule/2`
-  once, while serializing registration, when a skill needs a manager-owned
-  randomized schedule.
+  `schedule/2`, `on_natural_expiry/1`, and `on_expire/1` are optional. The
+  manager invokes `schedule/2` once, while serializing registration, when a
+  skill needs a manager-owned randomized schedule. `on_natural_expiry/1` runs
+  synchronously inside `Skill.Unit.Manager` only for an armed trap whose typed
+  natural-expiry policy is `:become_used`, immediately before the manager
+  persists its used phase. Implementations must never call Manager APIs: doing
+  so self-calls the Manager process and deadlocks.
 
   `on_touch/2` and `on_out/2` are optional movement-pipeline hooks fired when a
   unit steps onto / off a footprint cell (traps, Warp Portal, Fire Wall); the
@@ -63,6 +67,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
   @doc "Builds manager-owned schedule state with the injected zero-based RNG. Optional."
   @callback schedule(Group.t(), rng :: (pos_integer() -> non_neg_integer())) :: {:ok, Group.t()}
 
+  @doc "Runs an armed `:become_used` trap's optional natural-timeout effect before transition."
+  @callback on_natural_expiry(Group.t()) :: :ok | {:error, term()}
+
   @doc "Invoked once when the group expires (or `:expire` is returned). Optional cleanup hook."
   @callback on_expire(Group.t()) :: :ok
 
@@ -88,5 +95,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
               target?: ({atom(), integer()} -> boolean())
             }
 
-  @optional_callbacks schedule: 2, on_expire: 1, on_touch: 2, on_out: 2, field_support: 1
+  @optional_callbacks schedule: 2,
+                      on_natural_expiry: 1,
+                      on_expire: 1,
+                      on_touch: 2,
+                      on_out: 2,
+                      field_support: 1
 end

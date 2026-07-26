@@ -43,33 +43,43 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmineTest do
       assert d.damage_kind == :misc
       assert d.splash_radius == 1
       assert d.range == 3
+      assert d.sp_cost == List.duplicate(10, 5)
+      assert d.item_cost == [%{id: 1065, amount: 2}]
+      assert d.cast_time == List.duplicate(500, 5)
+      assert d.fixed_cast_time == List.duplicate(300, 5)
+      assert d.after_cast_delay == List.duplicate(1_000, 5)
+      assert d.unit_duration == [25_000, 20_000, 15_000, 10_000, 5_000]
     end
   end
 
   describe "on_place/1" do
-    test "lays a 3x3 footprint and the placer-stamped base damage (no arming delay)" do
+    test "lays one visible trigger cell with placer-stamped damage" do
       stub(UnitRegistry, :get_unit_info, fn :player, @caster_id ->
         {:ok, %{stats: %{dex: 50, int: 40, base_level: 50}}}
       end)
 
       assert {:ok, placement} = HtBlastmine.on_place(group(%{}))
 
-      assert length(placement.cells) == 9
-      assert {50, 50} in placement.cells
-      assert {49, 49} in placement.cells
-      assert {51, 51} in placement.cells
-      assert placement.visible? == false
+      assert placement.cells == [{50, 50}]
+      assert placement.visible?
       refute Map.has_key?(placement.state, :armed_at)
       # trunc(3 * 50 * (3.0 + 50/100) * (1.0 + 40/35)) = 1125
       assert placement.state.base_damage == 1125
 
-      assert %TrapState{phase: :armed, reclaim_item_id: 1065, claymore_spendable?: true} =
-               placement.state.trap
+      assert %TrapState{
+               phase: :armed,
+               reclaim_item_id: 1065,
+               claymore_spendable?: true,
+               natural_expiry: :become_used,
+               return_item_on_expiry?: false
+             } = placement.state.trap
+
+      assert placement.state.ignore_land_protector
     end
   end
 
-  describe "on_touch/2" do
-    test "splashes Wind misc damage on an enemy trigger (within variance) and expires" do
+  describe "detonation" do
+    test "enemy contact applies one split Wind misc roll and requests the used transition" do
       stub(UnitRegistry, :get_unit, fn :player, @caster_id ->
         {:ok, {PlayerState, %PlayerState{character_id: @caster_id}, self()}}
       end)
@@ -78,10 +88,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmineTest do
         assert caster.character_id == @caster_id
         assert opts[:base_damage] >= 450 and opts[:base_damage] <= 545
         assert opts[:element] == :wind
+        assert opts[:split]
         [2001]
       end)
 
       assert :expire = HtBlastmine.on_touch(group(%{base_damage: 500}), {:mob, 2001})
+    end
+
+    test "natural armed expiry applies the same one-roll split effect once" do
+      stub(UnitRegistry, :get_unit, fn :player, @caster_id ->
+        {:ok, {PlayerState, %PlayerState{character_id: @caster_id}, self()}}
+      end)
+
+      expect(Combat, :execute_misc_splash, 1, fn caster, {50, 50}, 1, opts ->
+        assert caster.character_id == @caster_id
+        assert opts[:base_damage] >= 450 and opts[:base_damage] <= 545
+        assert opts[:element] == :wind
+        assert opts[:split]
+        [2001, 2002]
+      end)
+
+      assert :ok = HtBlastmine.on_natural_expiry(group(%{base_damage: 500}))
     end
 
     test "the owner does not trigger their own trap" do

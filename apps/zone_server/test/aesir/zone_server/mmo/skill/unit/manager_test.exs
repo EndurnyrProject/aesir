@@ -131,6 +131,43 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     def on_expire(_group), do: :ok
   end
 
+  defmodule NaturalExpiryUnit do
+    @behaviour Ground
+
+    alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+    alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+
+    @impl Ground
+    def on_place(%Group{center: center}) do
+      {:ok, %{cells: [center], state: %{}, interval: 450, duration: 5_000}}
+    end
+
+    @impl Ground
+    def on_interval(group, _now), do: {:ok, group}
+
+    @impl Ground
+    def on_touch(%Group{state: %{test_pid: test_pid}} = group, _mover) do
+      send(test_pid, {:detonated, :contact, group.group_id})
+      :expire
+    end
+
+    @impl Ground
+    def on_natural_expiry(%Group{state: %{test_pid: test_pid}} = group) do
+      live = Storage.get(group.group_id)
+
+      send(
+        test_pid,
+        {:detonated, :natural, group.group_id, live.state.trap.phase, live.expires_at}
+      )
+
+      case group.state[:natural_expiry_result] do
+        :raise -> raise "natural expiry callback failed"
+        nil -> :ok
+        result -> result
+      end
+    end
+  end
+
   defmodule FailingUnit do
     def on_interval(_group, _now), do: raise("callback failed")
     def on_expire(_group), do: :ok
@@ -176,6 +213,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       :fake_unit -> {:ok, FakeUnit}
       :serialized_unit -> {:ok, SerializedUnit}
       :trap_unit -> {:ok, TrapUnit}
+      :natural_expiry_unit -> {:ok, NaturalExpiryUnit}
       :failing_unit -> {:ok, FailingUnit}
       :foreign_id_unit -> {:ok, ForeignIdUnit}
       :field_unit -> {:ok, FieldUnit}
@@ -384,21 +422,30 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       refute_received {:dropped, _, _, _, _}
     end
 
-    test "turns armed become-used natural expiry into 1.5 seconds of visible used state" do
+    test "runs natural detonation before exactly 1.5 seconds of visible used state" do
       manager = start_manager(10_000)
-      trap = trap_state(natural_expiry: :become_used)
+      trap = trap_state(natural_expiry: :become_used, return_item_on_expiry?: true)
+
+      reject(&Coordinator.drop_items/4)
 
       assert :ok =
                Manager.register(
                  manager,
                  trap_group(1,
+                   skill_name: :natural_expiry_unit,
                    visible?: true,
                    expires_at: 10_000,
-                   state: %{base_damage: 100, trap: trap}
+                   state: %{
+                     base_damage: 100,
+                     natural_expiry_result: :ok,
+                     test_pid: self(),
+                     trap: trap
+                   }
                  )
                )
 
       assert :ok = Manager.tick(manager, 10_000)
+      assert_received {:detonated, :natural, 1, :armed, 10_000}
 
       assert %Group{
                visible?: true,
@@ -406,8 +453,142 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                state: %{trap: %TrapState{phase: :used}}
              } = Storage.get(1)
 
+      assert :ok = Manager.tick(manager, 11_499)
+      assert %Group{} = Storage.get(1)
+      refute_received {:detonated, :natural, 1, _, _}
+
       assert :ok = Manager.tick(manager, 11_500)
       assert nil == Storage.get(1)
+    end
+
+    test "continues the used lifecycle when natural expiry returns an error" do
+      manager = start_manager(10_000)
+      trap = trap_state(natural_expiry: :become_used)
+
+      assert :ok =
+               Manager.register(
+                 manager,
+                 trap_group(1,
+                   skill_name: :natural_expiry_unit,
+                   visible?: true,
+                   expires_at: 10_000,
+                   state: %{
+                     base_damage: 100,
+                     natural_expiry_result: {:error, :detonation_failed},
+                     test_pid: self(),
+                     trap: trap
+                   }
+                 )
+               )
+
+      log = capture_log(fn -> assert :ok = Manager.tick(manager, 10_000) end)
+
+      assert log =~ "callback=on_natural_expiry failed"
+      assert log =~ "{:returned_error, :detonation_failed}"
+      refute log =~ "invalid_natural_expiry_return"
+      assert_received {:detonated, :natural, 1, :armed, 10_000}
+
+      assert %Group{expires_at: 11_500, state: %{trap: %TrapState{phase: :used}}} =
+               Storage.get(1)
+    end
+
+    test "continues the used lifecycle when natural expiry returns an invalid value" do
+      manager = start_manager(10_000)
+      trap = trap_state(natural_expiry: :become_used)
+
+      assert :ok =
+               Manager.register(
+                 manager,
+                 trap_group(1,
+                   skill_name: :natural_expiry_unit,
+                   visible?: true,
+                   expires_at: 10_000,
+                   state: %{
+                     base_damage: 100,
+                     natural_expiry_result: :invalid,
+                     test_pid: self(),
+                     trap: trap
+                   }
+                 )
+               )
+
+      log = capture_log(fn -> assert :ok = Manager.tick(manager, 10_000) end)
+
+      assert log =~ "callback=on_natural_expiry failed"
+      assert log =~ "{:invalid_natural_expiry_return, :invalid}"
+      assert_received {:detonated, :natural, 1, :armed, 10_000}
+
+      assert %Group{expires_at: 11_500, state: %{trap: %TrapState{phase: :used}}} =
+               Storage.get(1)
+    end
+
+    test "continues the used lifecycle when natural expiry raises" do
+      manager = start_manager(10_000)
+      trap = trap_state(natural_expiry: :become_used)
+
+      assert :ok =
+               Manager.register(
+                 manager,
+                 trap_group(1,
+                   skill_name: :natural_expiry_unit,
+                   visible?: true,
+                   expires_at: 10_000,
+                   state: %{
+                     base_damage: 100,
+                     natural_expiry_result: :raise,
+                     test_pid: self(),
+                     trap: trap
+                   }
+                 )
+               )
+
+      log = capture_log(fn -> assert :ok = Manager.tick(manager, 10_000) end)
+
+      assert log =~ "callback=on_natural_expiry failed"
+      assert log =~ "natural expiry callback failed"
+      assert_received {:detonated, :natural, 1, :armed, 10_000}
+
+      assert %Group{expires_at: 11_500, state: %{trap: %TrapState{phase: :used}}} =
+               Storage.get(1)
+    end
+
+    test "serializes contact and timeout so only the winning path detonates" do
+      manager = start_manager(10_000)
+      trap = trap_state(natural_expiry: :become_used)
+
+      for group_id <- [1, 2] do
+        assert :ok =
+                 Manager.register(
+                   manager,
+                   trap_group(group_id,
+                     skill_name: :natural_expiry_unit,
+                     visible?: true,
+                     expires_at: 10_000,
+                     state: %{
+                       base_damage: 100,
+                       natural_expiry_result: :ok,
+                       test_pid: self(),
+                       trap: trap
+                     }
+                   )
+                 )
+      end
+
+      assert :ok = Manager.trigger(manager, 1, {:mob, 20}, :on_touch)
+      assert :ok = Manager.tick(manager, 10_000)
+      assert :ok = Manager.trigger(manager, 2, {:mob, 20}, :on_touch)
+
+      assert_received {:detonated, :contact, 1}
+      refute_received {:detonated, :natural, 1, _, _}
+      assert_received {:detonated, :natural, 2, :armed, 10_000}
+      refute_received {:detonated, :contact, 2}
+
+      for group_id <- [1, 2] do
+        assert %Group{
+                 expires_at: 11_500,
+                 state: %{trap: %TrapState{phase: :used}}
+               } = Storage.get(group_id)
+      end
     end
 
     test "reveals a hidden supported trap and materializes it once" do

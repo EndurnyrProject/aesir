@@ -1,24 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmine do
   @moduledoc """
-  Blast Mine (HT_BLASTMINE). Hunter ground trap dealing 3x3-splash BF_MISC damage.
+  Blast Mine (HT_BLASTMINE), a visible single-cell Wind BF_MISC trap.
 
-  As a `target_type: :ground` skill, `use Skill` auto-derives the `cast/4` that
-  places this trap at the target cell with a 3x3 footprint (`Layout.square/2`).
-  The trap is live immediately and triggers once when a hostile unit (mob; not
-  the owner or allies) steps onto any footprint cell: it deals Wind BF_MISC
-  damage across a 3x3 splash via `Combat.execute_misc_splash` and is consumed
-  (`:expire`).
-
-  The per-level base damage is stamped at placement from the placer's stats and
-  the per-trigger ± variance is rolled at fire time (see `Skills.Trap`).
-
-  Verified vs rAthena: skill id 122, Wind element (skill_db.yml:4535), Range 3
-  (skill_db.yml:4532), SplashArea 1; the damage formula lives in `Skills.Trap`
-  (battle.cpp:6354). The current 3x3 footprint means any of the 9 cells triggers
-  (rAthena's Blast Mine is a single-cell trigger with a 3x3 splash - a remaining
-  minor fidelity item). The splash damage hits every non-owner unit in the area
-  (ally/faction filtering is future work). Hunter is not a reachable job, so this
-  ships as a castable module + tests, not in a job tree.
+  Enemy contact or natural armed expiry rolls one placement-stamped damage
+  value and splits it across living enemies in the trap-centered 3x3 area. The
+  manager owns the visible used phase after either detonation path.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 122,
@@ -32,13 +18,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmine do
     range: 3,
     splash_radius: 1,
     hit_interval: 1_000,
-    unit_duration: [25_000, 25_000, 25_000, 25_000, 25_000],
-    sp_cost: [10, 12, 14, 16, 18]
+    unit_duration: [25_000, 20_000, 15_000, 10_000, 5_000],
+    cast_time: List.duplicate(500, 5),
+    fixed_cast_time: List.duplicate(300, 5),
+    after_cast_delay: List.duplicate(1_000, 5),
+    sp_cost: List.duplicate(10, 5),
+    item_cost: [%{id: 1065, amount: 2}]
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -52,31 +41,36 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmine do
 
     {:ok,
      %{
-       cells: Layout.square(center, definition.splash_radius),
+       cells: [center],
        state: Trap.place_state(level, stats, group),
        interval: definition.hit_interval,
        duration: Enum.at(definition.unit_duration, level - 1),
-       visible?: false
+       visible?: true
      }}
   end
 
-  # Traps have no periodic effect; they only react to on_touch and expire on
-  # their duration. NOTE: a no-op tick at hit_interval; harmless until trigger.
   @impl Ground
   @spec on_interval(Group.t(), integer()) :: {:ok, Group.t()}
   def on_interval(%Group{} = group, _now), do: {:ok, group}
 
   @impl Ground
+  @spec on_natural_expiry(Group.t()) :: :ok | {:error, :caster_unavailable}
+  def on_natural_expiry(%Group{} = group), do: detonate(group)
+
+  @impl Ground
   @spec on_touch(Group.t(), {atom(), integer()}) :: {:ok, Group.t()} | :expire
   def on_touch(%Group{} = group, mover) do
     if Trap.enemy?(group, mover) do
-      fire(group)
+      case detonate(group) do
+        :ok -> :expire
+        {:error, :caster_unavailable} -> {:ok, group}
+      end
     else
       {:ok, group}
     end
   end
 
-  defp fire(%Group{center: center, state: %{base_damage: base_damage}} = group) do
+  defp detonate(%Group{center: center, state: %{base_damage: base_damage}} = group) do
     definition = definition()
 
     case Trap.resolve_caster(group) do
@@ -85,13 +79,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmine do
           skill_id: definition.id,
           skill_level: group.level,
           base_damage: Trap.roll_damage(base_damage),
-          element: definition.element
+          element: definition.element,
+          split: true
         )
 
-        :expire
+        :ok
 
       :error ->
-        {:ok, group}
+        {:error, :caster_unavailable}
     end
   end
 end
