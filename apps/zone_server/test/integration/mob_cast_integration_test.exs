@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skills.Npc.NpcEarthquake
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -338,6 +339,32 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
     end
   end
 
+  describe "HT_SKIDTRAP around2 effect" do
+    test "Executor mob cast moves and stops a real PlayerSession from the same cell" do
+      player =
+        start_player_session(id: 9_815, name: "Skidded", position: {150, 150}, map_name: @map)
+
+      mob = spawn_test_mob(@map, {150, 150}, mob_id: 1_214)
+      row = row!(1_214, "HT_SKIDTRAP", level: 5, target: :around2)
+      mob_state = get_mob_state(mob.pid)
+
+      assert :ok = Executor.execute(mob_state, row)
+
+      assert [%Group{center: {150, 150}, origin: {150, 150}} = group] =
+               Storage.get_groups_by_skill_and_caster(:ht_skidtrap, :mob, mob.unit_id)
+
+      assert :ok = Manager.trigger(group.group_id, {:player, player.character.id}, :on_touch)
+
+      assert eventually(fn ->
+               %{game_state: %{x: x, y: y}} = PlayerSession.get_state(player.pid)
+               {x, y} == {160, 150}
+             end)
+
+      assert StatusStorage.has_status?(:player, player.character.id, :sc_stop)
+      assert %Group{visible?: true, state: %{trap: %{phase: :used}}} = Storage.get(group.group_id)
+    end
+  end
+
   describe "WZ_JUPITEL deferred effect" do
     test "a mob-cast row's deferred hit lands via MobSession's deferred handler" do
       refute Denylist.denied?(84),
@@ -370,6 +397,18 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
 
       {:ok, new_position} = SpatialIndex.get_unit_position(:player, char_id)
       assert new_position != orig_position
+    end
+  end
+
+  defp eventually(fun, attempts \\ 40)
+  defp eventually(_fun, 0), do: false
+
+  defp eventually(fun, attempts) do
+    if fun.() do
+      true
+    else
+      Process.sleep(10)
+      eventually(fun, attempts - 1)
     end
   end
 end

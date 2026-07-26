@@ -28,6 +28,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
     (defaults to 100)
   - `resistance_roll`: Injectable final-rate roll used by the resistance gate
     (defaults to `Resistance.roll_success/1`)
+  - `bypass_resistance`: Bypasses ordinary chance/stat resistance and duration
+    reduction only; does not bypass hard immunity, prevention, or conflicts
+    (defaults to false)
   """
   @type status_params :: [
           val1: integer(),
@@ -44,7 +47,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
           phase: atom() | nil,
           loaded: boolean(),
           success_rate: number(),
-          resistance_roll: (number() -> boolean())
+          resistance_roll: (number() -> boolean()),
+          bypass_resistance: boolean()
         ]
 
   @type t :: %__MODULE__{

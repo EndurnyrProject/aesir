@@ -63,6 +63,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   A skill may pass `success_rate` and `resistance_roll` to combine its base
   application chance with status resistance in one injectable final roll.
+  `bypass_resistance: true` skips that roll and all chance/stat/duration
+  resistance while retaining immunity, prevention, and conflict gates.
   """
   @spec apply_status(unit_type(), integer(), atom(), StatusEntry.status_params()) ::
           :ok | {:error, atom()}
@@ -583,6 +585,26 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     do: {:ok, nil}
 
   defp roll_resistance(status_id, definition, entity_info, duration_override, status_params) do
+    if Keyword.get(status_params, :bypass_resistance, false) do
+      {:ok, duration_override || definition.duration || 10_000}
+    else
+      roll_resistance_with_adjustment(
+        definition,
+        entity_info,
+        status_id,
+        duration_override,
+        status_params
+      )
+    end
+  end
+
+  defp roll_resistance_with_adjustment(
+         definition,
+         entity_info,
+         status_id,
+         duration_override,
+         status_params
+       ) do
     base_duration = duration_override || definition.duration || 10_000
     base_success_rate = Keyword.get(status_params, :success_rate, 100)
     resistance_roll = Keyword.get(status_params, :resistance_roll, &Resistance.roll_success/1)

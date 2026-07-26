@@ -309,6 +309,49 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
       assert expires_at <= after_ms + 4_200
     end
 
+    test "application resistance bypass preserves the exact duration without rolling" do
+      target_id = 21
+
+      setup_player_mock(target_id,
+        stats: %{mdef: 99},
+        equip_modifiers: %{{:res_eff, :sc_freeze} => 10_000}
+      )
+
+      before_ms = System.monotonic_time(:millisecond)
+
+      assert :ok =
+               Interpreter.apply_status(:player, target_id, :sc_freeze,
+                 duration: 3_000,
+                 success_rate: 0,
+                 bypass_resistance: true,
+                 resistance_roll: fn _rate -> flunk("bypassed status must not roll") end
+               )
+
+      after_ms = System.monotonic_time(:millisecond)
+      assert %{expires_at: expires_at} = StatusStorage.get_status(:player, target_id, :sc_freeze)
+      assert expires_at >= before_ms + 3_000
+      assert expires_at <= after_ms + 3_000
+    end
+
+    test "application resistance bypass still respects hard and boss immunity" do
+      setup_player_mock(22, custom_immunities: [:freeze])
+
+      assert {:error, :immune} =
+               Interpreter.apply_status(:player, 22, :sc_freeze,
+                 duration: 3_000,
+                 bypass_resistance: true
+               )
+
+      setup_player_mock(23, boss_flag: true)
+
+      assert {:error, :boss_immune} =
+               Interpreter.apply_status(:player, 23, :sc_hiding,
+                 duration: 3_000,
+                 bypass_resistance: true,
+                 caster_id: 1
+               )
+    end
+
     test "Freeze rejects bosses through status immunity" do
       target_id = 14
       setup_player_mock(target_id, boss_flag: true)

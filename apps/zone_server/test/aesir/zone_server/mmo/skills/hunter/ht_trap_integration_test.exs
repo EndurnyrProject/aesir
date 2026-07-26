@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
   import Aesir.TestEtsSetup
   import Mimic
 
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -45,6 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -172,6 +174,95 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
     }
   end
 
+  test "Skid Trap moves and stops real MobSessions at every level and becomes visibly used" do
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+    for repetition <- 1..3, level <- 1..5 do
+      index = (repetition - 1) * 5 + level
+      y = 20 + index * 8
+      group_id = 10_000 + index
+      mob_id = @mob_id + index
+      mob_state = %{build_mob_state(50, y) | instance_id: mob_id}
+      {:ok, mob_pid} = MobSession.start_link(%{state: mob_state, awake: false})
+      UnitRegistry.register_unit(:mob, mob_id, MobState, mob_state, mob_pid)
+      SpatialIndex.add_unit(:mob, mob_id, 50, y, @map)
+
+      group = %{
+        landmine_group()
+        | group_id: group_id,
+          skill_id: 115,
+          skill_name: :ht_skidtrap,
+          level: level,
+          center: {50, y},
+          origin: {49, y},
+          cells: [{50, y}],
+          state: %{trap: %TrapState{reclaim_item_id: 1065}}
+      }
+
+      :ok = Storage.insert(group)
+      assert :ok = Manager.trigger(manager(), group_id, {:mob, mob_id}, :on_touch)
+
+      expected = collision_landing({50, y}, level + 5)
+
+      assert eventually(fn ->
+               %{x: x, y: current_y} = MobSession.get_state(mob_pid)
+               {x, current_y} == expected
+             end)
+
+      assert %{expires_at: stop_expires_at} =
+               StatusStorage.get_status(:mob, mob_id, :sc_stop)
+
+      stop_remaining = stop_expires_at - System.monotonic_time(:millisecond)
+      assert stop_remaining in 2_500..3_000
+
+      assert %Group{visible?: true, expires_at: expires_at, state: %{trap: trap}} =
+               Storage.get(group_id)
+
+      assert trap.phase == :used
+      remaining = expires_at - System.monotonic_time(:millisecond)
+      assert remaining in 1_000..1_500
+    end
+  end
+
+  test "boss, status-immune, and same-side real mobs leave Skid Trap armed" do
+    for {group_id, modes, caster_type} <- [
+          {11_001, [:boss], :player},
+          {11_002, [:status_immune], :player},
+          {11_003, [], :mob}
+        ] do
+      mob_id = @mob_id + group_id
+      mob_state = build_mob_state(50, 50)
+
+      mob_state = %{
+        mob_state
+        | instance_id: mob_id,
+          mob_data: %{mob_state.mob_data | modes: modes}
+      }
+
+      {:ok, mob_pid} = MobSession.start_link(%{state: mob_state, awake: false})
+      UnitRegistry.register_unit(:mob, mob_id, MobState, mob_state, mob_pid)
+      SpatialIndex.add_unit(:mob, mob_id, 50, 50, @map)
+
+      group = %{
+        landmine_group()
+        | group_id: group_id,
+          skill_id: 115,
+          skill_name: :ht_skidtrap,
+          caster_type: caster_type,
+          center: {50, 50},
+          origin: {49, 50},
+          cells: [{50, 50}],
+          state: %{trap: %TrapState{reclaim_item_id: 1065}}
+      }
+
+      :ok = Storage.insert(group)
+      assert :ok = Manager.trigger(manager(), group_id, {:mob, mob_id}, :on_touch)
+      assert %Group{visible?: false, state: %{trap: %{phase: :armed}}} = Storage.get(group_id)
+      refute StatusStorage.has_status?(:mob, mob_id, :sc_stop)
+      assert %{x: 50, y: 50} = MobSession.get_state(mob_pid)
+    end
+  end
+
   test "an enemy mob stepping onto a Land Mine leaves one used state without deadlocking" do
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     stub(Resistance, :roll_success, fn _success_rate -> true end)
@@ -215,5 +306,29 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
 
     assert %{source_id: @caster_id, source_type: :player} =
              StatusStorage.get_status(:mob, @mob_id, :sc_stun)
+  end
+
+  defp manager, do: Process.get({Manager, :server})
+
+  defp collision_landing(start, distance) do
+    Enum.reduce_while(1..distance, start, fn _step, {x, y} = current ->
+      next = {x + 1, y}
+
+      if Cell.step_traversable?(@map, current, next),
+        do: {:cont, next},
+        else: {:halt, current}
+    end)
+  end
+
+  defp eventually(fun, attempts \\ 40)
+  defp eventually(_fun, 0), do: false
+
+  defp eventually(fun, attempts) do
+    if fun.() do
+      true
+    else
+      Process.sleep(10)
+      eventually(fun, attempts - 1)
+    end
   end
 end
