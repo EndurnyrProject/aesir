@@ -87,10 +87,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.Trap do
         :ht_shockwave,
         :ht_flasher,
         :ht_sandman,
-        :ht_freezingtrap
+        :ht_freezingtrap,
+        :ht_claymoretrap
       ]
 
-  defp natural_expiry(:ht_blastmine), do: :become_used
+  defp natural_expiry(skill_name) when skill_name in [:ht_blastmine, :ht_claymoretrap],
+    do: :become_used
+
   defp natural_expiry(_skill_name), do: :drop_item
 
   @doc """

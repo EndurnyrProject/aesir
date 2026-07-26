@@ -632,12 +632,43 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       {:ok, :expire} ->
         expire_from_trigger(group, module, now)
 
+      {:ok, {:expire, commands}} when is_list(commands) ->
+        expire_from_trigger(group, module, now)
+        Enum.each(commands, &run_manager_command(&1, now))
+
       {:ok, result} ->
         callback_failed(group, callback, {:invalid_return, result}, module)
 
       {:error, reason} ->
         callback_failed(group, callback, reason, module)
     end
+  end
+
+  defp run_manager_command({:spend_traps, map_name, {x, y}, radius}, now) do
+    map_name
+    |> groups_in_area(x, y, radius)
+    |> Enum.each(&spend_trap(&1, now))
+  end
+
+  defp spend_trap(%Group{} = group, now) do
+    case trap_state(group) do
+      {:ok, %TrapState{phase: :armed, claymore_spendable?: true}} ->
+        used = transition_trap(group, :used, now + @sprung_trap_lifetime)
+
+        case persist_trap_update(group, used) do
+          :ok -> :ok
+          {:error, reason} -> log_spend_trap_failure(group, reason)
+        end
+
+      _ineligible ->
+        :ok
+    end
+  end
+
+  defp log_spend_trap_failure(group, reason) do
+    Logger.error(
+      "Skill.Unit.Manager spend_traps failed group_id=#{group.group_id}: #{inspect(reason)}"
+    )
   end
 
   defp apply_field_support_action(%Group{} = group, {unit_type, unit_id}, :on_touch) do

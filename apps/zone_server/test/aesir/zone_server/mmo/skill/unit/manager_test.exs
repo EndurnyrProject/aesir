@@ -131,6 +131,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     def on_expire(_group), do: :ok
   end
 
+  defmodule ClaymoreUnit do
+    alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+
+    def on_touch(%Group{state: %{test_pid: test_pid}} = group, mover) do
+      send(test_pid, {:claymore_touch, mover})
+      {:expire, [{:spend_traps, group.map_name, group.center, 2}]}
+    end
+
+    def on_interval(group, _now), do: {:ok, group}
+    def on_expire(_group), do: :ok
+  end
+
   defmodule NaturalExpiryUnit do
     @behaviour Ground
 
@@ -1097,6 +1109,108 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       assert {:error, :not_found} = Manager.spring_trap(manager, "geffen", 100, 100)
 
       assert before == Map.new(1..3, &{&1, Storage.get(&1)})
+    end
+  end
+
+  describe "Claymore Trap spend command" do
+    test "spends only the fixed eligible armed set in area without running their callbacks" do
+      manager = start_manager(10_000)
+
+      claymore =
+        trap_group(1,
+          skill_id: 123,
+          skill_name: :ht_claymoretrap,
+          handler: ClaymoreUnit,
+          visible?: true,
+          center: {100, 100},
+          cells: [{100, 100}],
+          state: %{
+            base_damage: 100,
+            test_pid: self(),
+            trap: trap_state(claymore_spendable?: true)
+          }
+        )
+
+      eligible =
+        for {group_id, skill_name, {x, y}} <- [
+              {2, :ht_landmine, {98, 98}},
+              {3, :ht_blastmine, {102, 98}},
+              {4, :ht_shockwave, {98, 102}},
+              {5, :ht_sandman, {102, 102}},
+              {6, :ht_flasher, {100, 98}},
+              {7, :ht_freezingtrap, {98, 100}},
+              {8, :ht_claymoretrap, {102, 100}}
+            ] do
+          trap_group(group_id,
+            skill_name: skill_name,
+            handler: TrapUnit,
+            center: {x, y},
+            cells: [{x, y}],
+            state: %{
+              base_damage: 50,
+              test_pid: self(),
+              trap: trap_state(claymore_spendable?: true)
+            }
+          )
+        end
+
+      excluded =
+        for {group_id, skill_name, {x, y}, trap_attrs} <- [
+              {9, :ht_skidtrap, {101, 100}, [claymore_spendable?: false]},
+              {10, :ht_anklesnare, {99, 100}, [claymore_spendable?: false]},
+              {11, :ht_talkiebox, {100, 101}, [claymore_spendable?: false]},
+              {12, :ht_landmine, {101, 101}, [claymore_spendable?: true, phase: :used]},
+              {13, :ht_landmine, {99, 99}, [claymore_spendable?: true, phase: :sprung]},
+              {14, :ht_landmine, {102, 99}, [claymore_spendable?: true, phase: :captured]},
+              {15, :ht_landmine, {105, 105}, [claymore_spendable?: true]}
+            ] do
+          trap_group(group_id,
+            skill_name: skill_name,
+            handler: TrapUnit,
+            center: {x, y},
+            cells: [{x, y}],
+            state: %{
+              base_damage: 50,
+              test_pid: self(),
+              trap: trap_state(trap_attrs)
+            }
+          )
+        end
+
+      unrelated =
+        group(16, skill_name: :fake_unit, center: {99, 101}, cells: [{99, 101}], visible?: true)
+
+      for g <- [claymore | eligible ++ excluded ++ [unrelated]] do
+        assert :ok = Manager.register(manager, g)
+      end
+
+      assert :ok = Manager.trigger(manager, 1, {:mob, 500}, :on_touch)
+
+      assert_received {:claymore_touch, {:mob, 500}}
+      refute_received {:trap_triggered, _}
+
+      assert %Group{
+               visible?: true,
+               expires_at: 11_500,
+               state: %{trap: %TrapState{phase: :used}}
+             } = Storage.get(1)
+
+      for group_id <- 2..8 do
+        assert %Group{
+                 visible?: true,
+                 expires_at: 11_500,
+                 state: %{trap: %TrapState{phase: :used}}
+               } = Storage.get(group_id)
+      end
+
+      assert %Group{state: %{trap: %TrapState{phase: :armed}}} = Storage.get(9)
+      assert %Group{state: %{trap: %TrapState{phase: :armed}}} = Storage.get(10)
+      assert %Group{state: %{trap: %TrapState{phase: :armed}}} = Storage.get(11)
+      assert %Group{state: %{trap: %TrapState{phase: :used}}} = Storage.get(12)
+      assert %Group{state: %{trap: %TrapState{phase: :sprung}}} = Storage.get(13)
+      assert %Group{state: %{trap: %TrapState{phase: :captured}}} = Storage.get(14)
+      assert %Group{state: %{trap: %TrapState{phase: :armed}}} = Storage.get(15)
+      assert %Group{} = Storage.get(16)
     end
   end
 

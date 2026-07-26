@@ -21,6 +21,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
   unit steps onto / off a footprint cell (traps, Warp Portal, Fire Wall); the
   movement chokepoint invokes them only when the skill module exports them.
 
+  `on_touch/2` may also return `{:expire, [command()]}`: like plain `:expire`,
+  the manager transitions the triggering group itself, but the tuple carries no
+  group of its own - only a list of manager commands run afterward against a
+  fresh snapshot (Claymore Trap's spend command, which marks the fixed set of
+  eligible armed traps in its blast area used without invoking their own
+  `on_touch`/`on_natural_expiry`, so detonations never recurse).
+
   ## Documented extension points (not part of this contract yet)
 
   This belongs to a later layer and is intentionally NOT declared as a callback
@@ -36,8 +43,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
   @typedoc "A single map cell occupied by a skill-unit footprint."
   @type cell :: {integer(), integer()}
 
+  @typedoc """
+  A serialized action the manager runs against a fresh group snapshot after a
+  callback's own transition, without invoking any group's own callbacks.
+  """
+  @type command :: {:spend_traps, String.t(), cell(), non_neg_integer()}
+
   @typedoc "A movement callback result serialized and persisted by the skill-unit manager."
-  @type trigger_result :: {:ok, Group.t()} | :expire
+  @type trigger_result :: {:ok, Group.t()} | :expire | {:expire, [command()]}
 
   @typedoc "The placement result: footprint, initial per-skill state, timing, and optional lifecycle policy."
   @type placement :: %{

@@ -28,7 +28,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.TrapTest do
   end
 
   test "exact Claymore-spendable trap metadata includes Sandman" do
-    for skill_name <- [:ht_landmine, :ht_blastmine, :ht_sandman] do
+    for skill_name <- [
+          :ht_landmine,
+          :ht_blastmine,
+          :ht_shockwave,
+          :ht_flasher,
+          :ht_sandman,
+          :ht_freezingtrap,
+          :ht_claymoretrap
+        ] do
       state = Trap.place_state(1, @stats, group(:player, :normal, true, skill_name))
       assert state.trap.claymore_spendable?
     end
