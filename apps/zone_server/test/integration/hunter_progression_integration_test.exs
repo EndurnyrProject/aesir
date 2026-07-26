@@ -28,6 +28,26 @@ defmodule Aesir.ZoneServer.Integration.HunterProgressionIntegrationTest do
   @job_change_position {210, 210}
   @skill_reset_position {211, 210}
 
+  @published_hunter_skills MapSet.new(~w(
+                             HT_SKIDTRAP
+                             HT_LANDMINE
+                             HT_ANKLESNARE
+                             HT_FLASHER
+                             HT_SHOCKWAVE
+                             HT_SANDMAN
+                             HT_FREEZINGTRAP
+                             HT_BLASTMINE
+                             HT_CLAYMORETRAP
+                             HT_REMOVETRAP
+                             HT_TALKIEBOX
+                             HT_BEASTBANE
+                             HT_FALCON
+                             HT_BLITZBEAT
+                             HT_STEELCROW
+                             HT_DETECTING
+                             HT_SPRINGTRAP
+                           ))
+
   defmodule HunterToMerchantNpc do
     @moduledoc false
     use Aesir.ZoneServer.Npc,
@@ -109,6 +129,81 @@ defmodule Aesir.ZoneServer.Integration.HunterProgressionIntegrationTest do
            }
   end
 
+  test "the trap branch is gated by learning order and publishes exactly the 17 Hunter skills" do
+    skid_trap = catalog_id(:ht_skidtrap)
+    ankle_snare = catalog_id(:ht_anklesnare)
+
+    character = insert_hunter(%{skill_point: 30})
+
+    session =
+      start_player_session(character: character, map_name: "prontera", position: {150, 150})
+
+    on_exit(fn -> end_player_session(session) end)
+    flush_packets()
+
+    simulate_incoming_message(session.pid, %LearnSkill{skill_id: ankle_snare})
+
+    assert_receive {:packet_sent,
+                    %LearnSkillResult{
+                      skill_id: ^ankle_snare,
+                      ok: false,
+                      reason: @missing_prerequisite
+                    }, _},
+                   1_000
+
+    learn(session.pid, skid_trap)
+    skill_list = learn(session.pid, ankle_snare)
+
+    progression = get_player_state(session.pid).stats.progression
+    assert progression.learned_skills == %{skid_trap => 1, ankle_snare => 1}
+    assert progression.skill_point == 28
+
+    assert hunter_owned_names(skill_list) == @published_hunter_skills
+    assert MapSet.size(@published_hunter_skills) == 17
+  end
+
+  test "a granted platinum skill coexists with tree learning and survives a point-free reset" do
+    {x, y} = @skill_reset_position
+    phantasmic = catalog_id(:ht_phantasmic)
+    skid_trap = catalog_id(:ht_skidtrap)
+    ankle_snare = catalog_id(:ht_anklesnare)
+
+    character =
+      insert_hunter(%{
+        skill_point: 5,
+        learned_skills: %{Integer.to_string(phantasmic) => 1},
+        last_x: x,
+        last_y: y,
+        save_x: x,
+        save_y: y
+      })
+
+    session = start_player_session(character: character, map_name: "prontera", position: {x, y})
+    on_exit(fn -> end_player_session(session) end)
+    flush_packets()
+
+    learn(session.pid, skid_trap)
+    skill_list = learn(session.pid, ankle_snare)
+
+    assert hunter_owned_names(skill_list) ==
+             MapSet.put(@published_hunter_skills, "HT_PHANTASMIC")
+
+    before_reset = get_player_state(session.pid).stats.progression
+    assert before_reset.learned_skills[phantasmic] == 1
+    assert before_reset.skill_point == 3
+
+    gid = NpcRegistry.entity_id(%Placement{map: "prontera", x: x, y: y, sprite: 58})
+    simulate_incoming_message(session.pid, %NpcTalk{npc_id: gid})
+
+    assert_receive {:packet_sent, %NpcDialog{expect: :CLOSE}, _}, 1_000
+    assert_receive {:packet_sent, %SkillList{}, _}, 1_000
+
+    reset = get_player_state(session.pid).stats.progression
+
+    assert reset.learned_skills == %{phantasmic => 1}
+    assert reset.skill_point == 5
+  end
+
   test "skill reset drops Falconry and clears the Falcon option, status, and persistence" do
     {x, y} = @skill_reset_position
 
@@ -186,7 +281,14 @@ defmodule Aesir.ZoneServer.Integration.HunterProgressionIntegrationTest do
 
   defp learn(player_pid, skill_id) do
     simulate_incoming_message(player_pid, %LearnSkill{skill_id: skill_id})
-    assert_receive {:packet_sent, %SkillList{}, _}, 1_000
+    assert_receive {:packet_sent, %SkillList{} = skill_list, _}, 1_000
+    skill_list
+  end
+
+  defp hunter_owned_names(%SkillList{skills: skills}) do
+    skills
+    |> Enum.filter(&(&1.job_id == @hunter_class))
+    |> MapSet.new(& &1.name)
   end
 
   defp insert_hunter(overrides) do

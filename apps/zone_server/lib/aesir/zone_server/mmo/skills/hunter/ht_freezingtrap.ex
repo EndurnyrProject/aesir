@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrap do
     damage_kind: :weapon,
     element: :water,
     range: 3,
+    splash_radius: 1,
     hit_interval: 1_000,
     unit_duration: [150_000, 120_000, 90_000, 60_000, 30_000],
     sp_cost: [10, 10, 10, 10, 10],
@@ -64,7 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrap do
       definition = definition()
 
       hits =
-        Combat.execute_splash_attack(caster, {x, y}, 1,
+        Combat.execute_splash_attack(caster, {x, y}, definition.splash_radius,
           skill_id: definition.id,
           skill_level: group.level,
           skill_ratio: 100,

@@ -10,17 +10,28 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeHunterTest do
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
 
   @hunter_entries MapSet.new([
+                    {"HT_SKIDTRAP", 5, []},
                     {"HT_LANDMINE", 5, []},
+                    {"HT_ANKLESNARE", 5, [{"HT_SKIDTRAP", 1}]},
+                    {"HT_FLASHER", 5, [{"HT_SKIDTRAP", 1}]},
+                    {"HT_SHOCKWAVE", 5, [{"HT_ANKLESNARE", 1}]},
+                    {"HT_SANDMAN", 5, [{"HT_FLASHER", 1}]},
+                    {"HT_FREEZINGTRAP", 5, [{"HT_FLASHER", 1}]},
+                    {"HT_BLASTMINE", 5,
+                     [{"HT_LANDMINE", 1}, {"HT_SANDMAN", 1}, {"HT_FREEZINGTRAP", 1}]},
+                    {"HT_CLAYMORETRAP", 5, [{"HT_SHOCKWAVE", 1}, {"HT_BLASTMINE", 1}]},
+                    {"HT_REMOVETRAP", 1, [{"HT_LANDMINE", 1}]},
+                    {"HT_TALKIEBOX", 1, [{"HT_SHOCKWAVE", 1}, {"HT_REMOVETRAP", 1}]},
                     {"HT_BEASTBANE", 10, []},
                     {"HT_FALCON", 1, [{"HT_BEASTBANE", 1}]},
                     {"HT_BLITZBEAT", 5, [{"HT_FALCON", 1}]},
                     {"HT_STEELCROW", 10, [{"HT_BLITZBEAT", 5}]},
                     {"HT_DETECTING", 4, [{"AC_CONCENTRATION", 1}, {"HT_FALCON", 1}]},
-                    {"HT_REMOVETRAP", 1, [{"HT_LANDMINE", 1}]},
                     {"HT_SPRINGTRAP", 5, [{"HT_REMOVETRAP", 1}, {"HT_FALCON", 1}]}
                   ])
 
   test "Hunter YAML declares only the approved canonical entries" do
+    assert MapSet.size(@hunter_entries) == 17
     assert normalized_entry_set(normalized_entries()) == normalized_entry_set(@hunter_entries)
   end
 
@@ -30,13 +41,19 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeHunterTest do
     {:ok, archer_id} = AvailableJobs.job_name_to_id(:archer)
     hunter_tree = SkillTree.tree_for(hunter_id)
 
-    for parent_id <- [novice_id, archer_id],
-        {skill_id, parent_entry} <- SkillTree.tree_for(parent_id) do
-      assert hunter_tree[skill_id].owner_job_id == parent_entry.owner_job_id
-    end
+    inherited_ids =
+      for parent_id <- [novice_id, archer_id],
+          {skill_id, parent_entry} <- SkillTree.tree_for(parent_id) do
+        assert hunter_tree[skill_id] == parent_entry
+        assert hunter_tree[skill_id].owner_job_id == parent_entry.owner_job_id
+        skill_id
+      end
 
-    assert normalized_entry_set(hunter_owned_entries(hunter_id)) ==
-             normalized_entry_set(@hunter_entries)
+    owned = hunter_owned_entries(hunter_id)
+
+    assert normalized_entry_set(owned) == normalized_entry_set(@hunter_entries)
+    assert length(owned) == 17
+    assert map_size(hunter_tree) == 17 + length(Enum.uniq(inherited_ids))
 
     log = capture_log(&SkillTree.reload/0)
 
@@ -46,11 +63,33 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeHunterTest do
     end
   end
 
+  test "every canonical entry opens exactly on its own prerequisite set" do
+    {:ok, hunter_id} = AvailableJobs.job_name_to_id(:hunter)
+    progression = hunter_progression(hunter_id)
+
+    for {name, _max_level, requires} <- @hunter_entries do
+      skill_id = catalog_id(atomize(name))
+      satisfied = Map.new(requires, fn {req, level} -> {catalog_id(atomize(req)), level} end)
+
+      assert SkillTree.can_learn(%{progression | learned_skills: satisfied}, skill_id) == :ok,
+             "#{name} should be learnable with its full prerequisite set"
+
+      for dropped <- Map.keys(satisfied) do
+        partial = Map.delete(satisfied, dropped)
+
+        assert SkillTree.can_learn(%{progression | learned_skills: partial}, skill_id) ==
+                 {:error, :missing_prerequisite},
+               "#{name} should stay gated without every prerequisite"
+      end
+    end
+  end
+
   test "Hunter prerequisite gates match the approved branch" do
     {:ok, hunter_id} = AvailableJobs.job_name_to_id(:hunter)
     progression = hunter_progression(hunter_id, learned_skills: %{})
 
     assert :ok = SkillTree.can_learn(progression, catalog_id(:ht_landmine))
+    assert :ok = SkillTree.can_learn(progression, catalog_id(:ht_skidtrap))
     assert :ok = SkillTree.can_learn(progression, catalog_id(:ht_beastbane))
 
     assert {:error, :missing_prerequisite} =
@@ -123,13 +162,13 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeHunterTest do
              )
   end
 
-  test "Blast Mine is catalogued but excluded from ordinary Hunter learning" do
+  test "Phantasmic Arrow is catalogued but excluded from ordinary Hunter learning" do
     {:ok, hunter_id} = AvailableJobs.job_name_to_id(:hunter)
-    blast_mine = catalog_id(:ht_blastmine)
+    phantasmic = catalog_id(:ht_phantasmic)
     tree = SkillTree.tree_for(hunter_id)
 
-    refute Map.has_key?(tree, blast_mine)
-    assert {:error, :not_in_tree} = SkillTree.can_learn(hunter_progression(hunter_id), blast_mine)
+    refute Map.has_key?(tree, phantasmic)
+    assert {:error, :not_in_tree} = SkillTree.can_learn(hunter_progression(hunter_id), phantasmic)
   end
 
   defp normalized_entry_set(entries) do

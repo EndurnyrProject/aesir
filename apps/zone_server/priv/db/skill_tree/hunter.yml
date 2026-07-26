@@ -4,8 +4,63 @@
     - novice
     - archer
   tree:
+    - name: HT_SKIDTRAP
+      max_level: 5
     - name: HT_LANDMINE
       max_level: 5
+    - name: HT_ANKLESNARE
+      max_level: 5
+      requires:
+        - name: HT_SKIDTRAP
+          level: 1
+    - name: HT_FLASHER
+      max_level: 5
+      requires:
+        - name: HT_SKIDTRAP
+          level: 1
+    - name: HT_SHOCKWAVE
+      max_level: 5
+      requires:
+        - name: HT_ANKLESNARE
+          level: 1
+    - name: HT_SANDMAN
+      max_level: 5
+      requires:
+        - name: HT_FLASHER
+          level: 1
+    - name: HT_FREEZINGTRAP
+      max_level: 5
+      requires:
+        - name: HT_FLASHER
+          level: 1
+    - name: HT_BLASTMINE
+      max_level: 5
+      requires:
+        - name: HT_LANDMINE
+          level: 1
+        - name: HT_SANDMAN
+          level: 1
+        - name: HT_FREEZINGTRAP
+          level: 1
+    - name: HT_CLAYMORETRAP
+      max_level: 5
+      requires:
+        - name: HT_SHOCKWAVE
+          level: 1
+        - name: HT_BLASTMINE
+          level: 1
+    - name: HT_REMOVETRAP
+      max_level: 1
+      requires:
+        - name: HT_LANDMINE
+          level: 1
+    - name: HT_TALKIEBOX
+      max_level: 1
+      requires:
+        - name: HT_SHOCKWAVE
+          level: 1
+        - name: HT_REMOVETRAP
+          level: 1
     - name: HT_BEASTBANE
       max_level: 10
     - name: HT_FALCON
@@ -29,11 +84,6 @@
         - name: AC_CONCENTRATION
           level: 1
         - name: HT_FALCON
-          level: 1
-    - name: HT_REMOVETRAP
-      max_level: 1
-      requires:
-        - name: HT_LANDMINE
           level: 1
     - name: HT_SPRINGTRAP
       max_level: 5
