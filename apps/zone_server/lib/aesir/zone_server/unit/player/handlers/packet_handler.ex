@@ -49,6 +49,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.Respawn
   alias Aesir.Net.SkillCast
   alias Aesir.Net.SkillMenuReply
+  alias Aesir.Net.SkillTextInputReply
   alias Aesir.Net.StatUp
   alias Aesir.Net.StorageCloseRequest
   alias Aesir.Net.StorageDepositRequest
@@ -81,6 +82,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
@@ -155,6 +157,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   # CZ_USE_SKILL_TOGROUND 0x0AF4)
   def handle_message(%GroundSkillCast{skill_id: skill_id, level: level, x: x, y: y}, state) do
     SkillHandler.handle_use_skill_ground(state, skill_id, level, x, y)
+  end
+
+  # SkillTextInputReply - response to a capability-gated staged skill cast.
+  def handle_message(%SkillTextInputReply{} = message, state) do
+    SkillTextInputHandler.handle_reply(message, state)
   end
 
   # LearnSkill - Player spends a skill point to learn/raise a skill (protobuf

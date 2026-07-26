@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
@@ -536,10 +537,46 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert settled.game_state.stats.current_state.sp == 100
     end
 
+    test "pending skill text rejects AC_MAKINGARROW before cost or dialog startup" do
+      stub(Broadcast, :to_player, fn 1000, %SkillCastFailed{} -> :ok end)
+
+      timer_ref = Process.send_after(self(), :skill_text_timeout, 60_000)
+
+      pending = %SessionState.PendingSkillTextInput{
+        request_id: 42,
+        skill_id: 9_001,
+        level: 1,
+        target: {:ground, 151, 150},
+        timer_ref: timer_ref
+      }
+
+      state =
+        casting_state(30)
+        |> put_in(
+          [
+            Access.key!(:game_state),
+            Access.key!(:stats),
+            Access.key!(:progression),
+            Access.key!(:learned_skills)
+          ],
+          %{147 => 1}
+        )
+        |> Map.put(:interaction_lock, nil)
+        |> Map.put(:pending_skill_text_input, pending)
+
+      assert {:noreply, unchanged} = SkillHandler.handle_use_skill(state, 147, 1, 1000)
+      assert unchanged.game_state.stats.current_state.sp == 30
+      assert unchanged.pending_skill_text_input == pending
+      assert unchanged.interaction_lock == nil
+      refute_received {:send, _, {:npc_dialog, _}}
+      Process.cancel_timer(timer_ref)
+    end
+
     test "a staged pending_interaction starts a dialog and takes the lock" do
       stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
       stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
+      stub(Broadcast, :to_player, fn 1000, %SkillCastFailed{} -> :ok end)
       stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
       stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
 
@@ -566,6 +603,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert is_pid(pid)
       assert new_state.game_state.pending_interaction == nil
       assert_receive {:send, _, {:npc_dialog, %Aesir.Net.NpcDialog{expect: :CLOSE}}}
+
+      assert {:noreply, rejected_stage} =
+               SkillTextInputHandler.stage(new_state, 9_001, 1, {:ground, 151, 150})
+
+      assert rejected_stage.interaction_lock == new_state.interaction_lock
+      assert rejected_stage.pending_skill_text_input == nil
     end
 
     # SA_AUTOSPELL (279) is the first skill whose cast/4 stages a SkillMenu offer.

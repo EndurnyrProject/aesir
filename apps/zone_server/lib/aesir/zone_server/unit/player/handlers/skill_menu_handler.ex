@@ -52,16 +52,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
           non_neg_integer()
         ) :: map()
   def open(state, skill_id, kind, entry_ids, level) do
-    MessageRouter.send_to(state.connection_pid, %SkillMenu{
-      src_skill_id: skill_id,
-      kind: kind,
-      entry_ids: entry_ids
-    })
-
-    %{
+    if SessionState.interaction_blocked?(state) do
       state
-      | pending_skill_menu: %{skill_id: skill_id, kind: kind, entry_ids: entry_ids, level: level}
-    }
+    else
+      MessageRouter.send_to(state.connection_pid, %SkillMenu{
+        src_skill_id: skill_id,
+        kind: kind,
+        entry_ids: entry_ids
+      })
+
+      %{
+        state
+        | pending_skill_menu: %{
+            skill_id: skill_id,
+            kind: kind,
+            entry_ids: entry_ids,
+            level: level
+          }
+      }
+    end
   end
 
   @doc """

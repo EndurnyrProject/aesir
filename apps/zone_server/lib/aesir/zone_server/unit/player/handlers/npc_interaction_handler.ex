@@ -30,14 +30,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   shop nor an NPC module is ignored.
   """
   @spec handle_talk(integer(), SessionState.t()) :: {:noreply, SessionState.t()}
-  def handle_talk(_gid, %{interaction_lock: lock} = state) when not is_nil(lock) do
-    {:noreply, state}
-  end
-
   def handle_talk(gid, %{game_state: game_state} = state) do
-    case ShopRegistry.fetch(gid) do
-      {:ok, shop} -> NpcShopHandler.open_window(state, shop)
-      :error -> talk_to_npc(gid, game_state, state)
+    if SessionState.interaction_blocked?(state) do
+      {:noreply, state}
+    else
+      case ShopRegistry.fetch(gid) do
+        {:ok, shop} -> NpcShopHandler.open_window(state, shop)
+        :error -> talk_to_npc(gid, game_state, state)
+      end
     end
   end
 
@@ -53,7 +53,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   """
   @spec talk_to_npc(non_neg_integer(), map(), SessionState.t()) :: {:noreply, SessionState.t()}
   def talk_to_npc(gid, game_state, state) do
-    with {:ok, {module, _placement}} <- NpcRegistry.module_for_unit(gid),
+    with false <- SessionState.interaction_blocked?(state),
+         {:ok, {module, _placement}} <- NpcRegistry.module_for_unit(gid),
          true <- NpcSession.visible?(gid) do
       base_ctx =
         Ctx.from_session(

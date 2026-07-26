@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerNpcTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState.PendingSkillTextInput
 
   defmodule TalkNpc do
     use Aesir.ZoneServer.Npc,
@@ -59,6 +60,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerNpcTest do
 
     assert again.interaction_lock == locked.interaction_lock
     assert {^pid, _, _} = again.interaction_lock
+  end
+
+  test "NpcTalk is rejected while skill text is pending without disturbing the prompt", %{
+    gid: gid
+  } do
+    timer_ref = Process.send_after(self(), :unused_timeout, 60_000)
+
+    pending = %PendingSkillTextInput{
+      request_id: 42,
+      skill_id: 9_001,
+      level: 1,
+      target: {:ground, 151, 150},
+      timer_ref: timer_ref
+    }
+
+    staged = Map.put(state(), :pending_skill_text_input, pending)
+    assert {:noreply, unchanged} = PacketHandler.handle_message(%NpcTalk{npc_id: gid}, staged)
+    assert unchanged.pending_skill_text_input == pending
+    assert unchanged.interaction_lock == nil
+    refute_receive {:send, _, {:npc_dialog, _}}
+    Process.cancel_timer(timer_ref)
   end
 
   test "NpcTalk for an unregistered gid is ignored (no lock)" do

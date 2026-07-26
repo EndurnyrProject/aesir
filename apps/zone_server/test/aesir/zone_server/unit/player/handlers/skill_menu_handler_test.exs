@@ -38,6 +38,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandlerTest do
                level: 3
              }
     end
+
+    test "does not replace a pending skill text prompt" do
+      pending = %{request_id: 42}
+      state = Map.put(build_state(), :pending_skill_text_input, pending)
+
+      assert SkillMenuHandler.open(state, @src_skill, :SKILLS, @entry_ids, 3) == state
+      refute_receive {:send, _, {:skill_menu, _}}
+    end
   end
 
   describe "handle_reply/2 with a matching pending menu" do

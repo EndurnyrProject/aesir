@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerSupervisor
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.SessionState.PendingSkillTextInput
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusPersistence
@@ -315,6 +316,27 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       }
 
       assert :ok = PlayerSession.terminate(:normal, state)
+      assert Process.cancel_timer(timer_ref) == false
+    end
+
+    test "disconnect cancels pending skill-text input", %{character: character} do
+      Mimic.copy(CharacterPersistence)
+      stub(CharacterPersistence, :update_position, fn _, _, _, _ -> {:ok, %Character{}} end)
+
+      {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
+      timer_ref = Process.send_after(self(), :skill_text_timeout, 60_000)
+
+      pending = %PendingSkillTextInput{
+        request_id: 42,
+        skill_id: 9_001,
+        level: 1,
+        target: {:ground, 151, 150},
+        timer_ref: timer_ref
+      }
+
+      assert :ok =
+               PlayerSession.terminate(:normal, %{state | pending_skill_text_input: pending})
+
       assert Process.cancel_timer(timer_ref) == false
     end
   end

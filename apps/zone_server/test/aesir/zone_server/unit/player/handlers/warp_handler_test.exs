@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.SessionState.PendingSkillTextInput
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -110,6 +111,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
     test "a same-map warp clears the pending skill menu" do
       assert {:ok, new_state} = WarpHandler.warp(menu_state(), "prontera", 100, 120)
       assert new_state.pending_skill_menu == nil
+    end
+
+    test "a warp clears pending skill text and cancels its timer" do
+      timer_ref = Process.send_after(self(), :skill_text_timeout, 60_000)
+
+      pending = %PendingSkillTextInput{
+        request_id: 42,
+        skill_id: 9_001,
+        level: 1,
+        target: {:ground, 151, 150},
+        timer_ref: timer_ref
+      }
+
+      assert {:ok, new_state} =
+               WarpHandler.warp(
+                 %{state() | pending_skill_text_input: pending},
+                 "geffen",
+                 100,
+                 120
+               )
+
+      assert new_state.pending_skill_text_input == nil
+      assert Process.read_timer(timer_ref) == false
     end
   end
 

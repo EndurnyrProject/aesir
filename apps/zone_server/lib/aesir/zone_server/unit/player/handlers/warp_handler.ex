@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -62,7 +63,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
 
     with :ok <- fetch_map(dest_map),
          {:ok, {fx, fy}} <- ensure_walkable(dest_map, x, y) do
-      state = SkillHandler.cancel_deferred(state)
+      state = state |> SkillTextInputHandler.clear() |> SkillHandler.cancel_deferred()
       game_state = state.game_state
       leave_current_map(game_state, DespawnReason.teleport())
       Broadcast.unsubscribe_mob_despawns(game_state.map_name)

@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
@@ -296,6 +297,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     Logger.info("Player #{game_state.character_id} died (killed by #{inspect(attacker_id)})")
 
     state = SkillHandler.cancel_deferred(state)
+    state = SkillTextInputHandler.clear(state)
     state = SpiritSphereHandler.clear(state)
     state = apply_death_penalty(state)
     had_statuses? = StatusStorage.get_unit_statuses(:player, game_state.character_id) != []
@@ -321,6 +323,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
       if had_statuses?, do: StatusManager.recalculate_after_status_change(state), else: state
 
     vanish = %UnitDespawn{gid: game_state.character_id, reason: DespawnReason.died()}
+
     Broadcast.to_visible_players(dead_state, vanish)
     Lifecycle.publish_death(:player, game_state.character_id, game_state.map_name)
 

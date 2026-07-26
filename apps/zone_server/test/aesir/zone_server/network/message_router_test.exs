@@ -50,6 +50,7 @@ defmodule Aesir.ZoneServer.Network.MessageRouterTest do
     {%Aesir.Net.SkillUnitDespawn{}, {:world, :skill_unit_despawn}},
     {%Aesir.Net.EstimationResult{}, {:world, :estimation_result}},
     {%Aesir.Net.SkillMenu{}, {:world, :skill_menu}},
+    {%Aesir.Net.SkillTextInputRequest{}, {:world, :skill_text_input_request}},
     {%Aesir.Net.SkillList{}, {:bulk, :skill_list}},
     {%Aesir.Net.InventoryList{}, {:bulk, :inventory_list}},
     {%Aesir.Net.Snapshot{}, {:snapshots, :snapshot}}

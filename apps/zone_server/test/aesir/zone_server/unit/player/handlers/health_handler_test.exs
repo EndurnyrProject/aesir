@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -158,6 +159,32 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
                       } = event}
 
       refute_receive {:unit_lifecycle, ^event}
+    end
+
+    test "death clears the pending skill text timer and a stale timeout preserves a later prompt" do
+      timer_ref = Process.send_after(self(), {:skill_text_input_timeout, 41}, 60_000)
+
+      pending = %SessionState.PendingSkillTextInput{
+        request_id: 41,
+        skill_id: 9_001,
+        level: 1,
+        target: {:ground, 51, 50},
+        timer_ref: timer_ref
+      }
+
+      initial = %{build_state(100, :idle) | pending_skill_text_input: pending}
+      assert {:noreply, dead} = HealthHandler.apply_damage(100, 2001, initial)
+      assert dead.pending_skill_text_input == nil
+      assert Process.read_timer(timer_ref) == false
+
+      later_timer = Process.send_after(self(), :later_timeout, 60_000)
+      later_pending = %{pending | request_id: 42, timer_ref: later_timer}
+      later = %{dead | pending_skill_text_input: later_pending}
+
+      assert {:noreply, preserved} = SkillTextInputHandler.handle_timeout(later, 41)
+      assert preserved.pending_skill_text_input == later_pending
+      assert is_integer(Process.read_timer(later_timer))
+      SkillTextInputHandler.clear(preserved)
     end
 
     test "death clears active statuses and their action restrictions" do

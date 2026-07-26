@@ -288,14 +288,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   end
 
   @spec fire_touch(non_neg_integer(), map()) :: map()
-  defp fire_touch(_gid, %{interaction_lock: lock} = state) when not is_nil(lock) do
-    state
-  end
-
   defp fire_touch(gid, state) do
-    case NpcRegistry.module_for_unit(gid) do
-      {:ok, {module, _placement}} -> attach_or_fallback(gid, module, state)
-      :error -> state
+    if SessionState.interaction_blocked?(state) do
+      state
+    else
+      case NpcRegistry.module_for_unit(gid) do
+        {:ok, {module, _placement}} -> attach_or_fallback(gid, module, state)
+        :error -> state
+      end
     end
   end
 

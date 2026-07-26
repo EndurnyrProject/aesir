@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Npc.OnTouchTest do
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -207,6 +208,45 @@ defmodule Aesir.ZoneServer.Npc.OnTouchTest do
       refute_receive {:touched, TouchNpc}, 100
       assert MapSet.member?(state.game_state.inside_npc_areas, gid)
       assert state.interaction_lock == fake_lock
+    end
+
+    test "pending skill text allows movement but suppresses OnTouch and remains pending" do
+      gid = gid_for(TouchNpc)
+      timer_ref = Process.send_after(self(), :unused_timeout, 60_000)
+
+      pending = %SessionState.PendingSkillTextInput{
+        request_id: 42,
+        skill_id: 166,
+        level: 1,
+        target: {:ground, 59, 50},
+        timer_ref: timer_ref
+      }
+
+      game_state =
+        character()
+        |> PlayerState.new()
+        |> Map.put(:x, 57)
+        |> Map.put(:y, 50)
+        |> Map.put(:walk_path, [{58, 50}, {59, 50}])
+        |> Map.put(:movement_state, :moving)
+
+      register_player(game_state)
+
+      state = %SessionState{
+        game_state: game_state,
+        connection_pid: self(),
+        pending_skill_text_input: pending
+      }
+
+      {:noreply, state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
+      {:noreply, state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
+
+      assert state.game_state.x == 59
+      assert state.pending_skill_text_input == pending
+      assert is_integer(Process.read_timer(timer_ref))
+      assert MapSet.member?(state.game_state.inside_npc_areas, gid)
+      assert state.interaction_lock == nil
+      refute_receive {:touched, TouchNpc}, 100
     end
   end
 

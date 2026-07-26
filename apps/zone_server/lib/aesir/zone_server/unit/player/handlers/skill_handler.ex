@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryStaging
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
@@ -125,8 +126,64 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   @spec handle_use_skill_ground(SessionState.t(), integer(), pos_integer(), integer(), integer()) ::
           {:noreply, SessionState.t()}
   def handle_use_skill_ground(%{game_state: game_state} = state, skill_id, level, x, y) do
-    state = %{state | game_state: PlayerState.cancel_combo(game_state)}
-    drive_cast(state, skill_id, level, {:ground, x, y})
+    target = {:ground, x, y}
+    locked = game_state.combat_target_id
+
+    case cast_gate(state, skill_id) do
+      {:ok, ready_state} ->
+        if SkillTextInputHandler.input_required?(skill_id) do
+          SkillTextInputHandler.stage(ready_state, skill_id, level, target)
+        else
+          ready_state = %{
+            ready_state
+            | game_state: PlayerState.cancel_combo(ready_state.game_state)
+          }
+
+          drive_cast_after_gate(ready_state, skill_id, level, target, locked)
+        end
+
+      {:error, reason} ->
+        reject_cast_gate(state, skill_id, reason)
+    end
+  end
+
+  @doc "Completes a staged input cast after rerunning the session and interpreter gates."
+  @spec complete_cast_with_input(
+          SessionState.t(),
+          integer(),
+          pos_integer(),
+          Active.target(),
+          term()
+        ) ::
+          {:noreply, SessionState.t()}
+  def complete_cast_with_input(state, skill_id, level, target, input) do
+    with {:ok, gated_state} <- cast_gate(state, skill_id),
+         gated_state = %{
+           gated_state
+           | game_state: PlayerState.cancel_combo(gated_state.game_state)
+         },
+         {:ok, ready_state} <- ensure_idle_for_cast(gated_state) do
+      complete_input_cast(ready_state, skill_id, level, target, input)
+    else
+      :busy -> reject_cast_gate(state, skill_id, :busy)
+      {:error, reason} -> reject_cast_gate(state, skill_id, reason)
+    end
+  end
+
+  defp complete_input_cast(state, skill_id, level, target, input) do
+    case Interpreter.complete_cast_with_input(state.game_state, skill_id, level, target, input) do
+      {:ok, new_game_state} ->
+        new_state = commit_cast(state, new_game_state, skill_id, level)
+        broadcast_skill_use(new_state.game_state, skill_id, level, target)
+        {:noreply, new_state}
+
+      {:deferred, new_game_state, descriptor} ->
+        {:noreply, resolve_deferred(state, new_game_state, descriptor, nil)}
+
+      {:error, reason} ->
+        report_cast_failure(skill_id, state.game_state.character_id, reason)
+        {:noreply, state}
+    end
   end
 
   @doc """
@@ -252,16 +309,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
     case cast_gate(state, skill_id) do
       {:ok, ready_state} ->
-        dispatch_cast(ready_state, skill_id, level, target, locked)
+        drive_cast_after_gate(ready_state, skill_id, level, target, locked)
 
-      {:error, :busy} ->
-        report_cast_failure(skill_id, game_state.character_id, :busy)
-        {:noreply, state}
-
-      {:error, _reason} ->
-        broadcast_cast_cancel(game_state)
-        {:noreply, state}
+      {:error, reason} ->
+        reject_cast_gate(state, skill_id, reason)
     end
+  end
+
+  defp drive_cast_after_gate(state, skill_id, level, target, locked) do
+    case ensure_idle_for_cast(state) do
+      {:ok, ready_state} -> dispatch_cast(ready_state, skill_id, level, target, locked)
+      :busy -> reject_cast_gate(state, skill_id, :busy)
+    end
+  end
+
+  defp reject_cast_gate(%{game_state: game_state} = state, skill_id, :busy) do
+    report_cast_failure(skill_id, game_state.character_id, :busy)
+    {:noreply, state}
+  end
+
+  defp reject_cast_gate(%{game_state: game_state} = state, _skill_id, _reason) do
+    broadcast_cast_cancel(game_state)
+    {:noreply, state}
   end
 
   defp dispatch_cast(%{game_state: game_state} = state, skill_id, level, target, locked) do
@@ -615,9 +684,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp ensure_living_caster(_game_state), do: :ok
 
   defp check_cast_action(state, :start) do
-    case ensure_idle_for_cast(state) do
-      {:ok, ready_state} -> {:ok, ready_state}
-      :busy -> {:error, :busy}
+    if SessionState.interaction_blocked?(state) do
+      {:error, :busy}
+    else
+      check_start_action(state)
     end
   end
 
@@ -628,12 +698,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp check_cast_action(_state, :completion), do: {:error, :busy}
   defp check_cast_action(state, :restricted), do: {:ok, state}
 
-  # A cast may only begin from idle. A moving player is stopped first (using a
-  # skill ends movement); any other busy state (casting, attacking, sitting,
-  # trading, vending) aborts so a player can't act while a cast is in flight or
-  # stack a second action on top of a busy one. An in-flight cast descriptor
-  # rejects regardless of action_state, so a cast that overlays another state
-  # can never stack a second cast.
+  defp check_start_action(%{game_state: %{casting: casting}})
+       when not is_nil(casting),
+       do: {:error, :busy}
+
+  defp check_start_action(%{game_state: %{action_state: action_state}} = state)
+       when action_state in [
+              :idle,
+              :attacking,
+              :moving,
+              :combat_moving,
+              :skill_moving,
+              :moving_to_item
+            ],
+       do: {:ok, state}
+
+  defp check_start_action(_state), do: {:error, :busy}
+
+  # Once the read-only gate and cast validation permit dispatch, prepare the
+  # ordinary cast action. A moving player is stopped first; any other busy state
+  # aborts. An in-flight descriptor rejects regardless of action_state.
   defp ensure_idle_for_cast(%{game_state: %{casting: casting}}) when not is_nil(casting),
     do: :busy
 
@@ -913,12 +997,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # when a dialog is already active, mirroring the NPC-click guard.
   defp drain_interaction(%{game_state: %{pending_interaction: nil}} = state), do: state
 
-  defp drain_interaction(%{game_state: game_state, interaction_lock: lock} = state)
-       when not is_nil(lock) do
-    %{state | game_state: %{game_state | pending_interaction: nil}}
+  defp drain_interaction(%{game_state: game_state} = state) do
+    if SessionState.interaction_blocked?(state) do
+      %{state | game_state: %{game_state | pending_interaction: nil}}
+    else
+      start_pending_interaction(state, game_state)
+    end
   end
 
-  defp drain_interaction(%{game_state: game_state} = state) do
+  defp start_pending_interaction(state, game_state) do
     module = game_state.pending_interaction
     clean_game_state = %{game_state | pending_interaction: nil}
 
@@ -954,7 +1041,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
-  defp report_cast_failure(skill_id, character_id, reason) do
+  @doc false
+  @spec report_cast_failure(integer(), non_neg_integer(), atom()) :: :ok
+  def report_cast_failure(skill_id, character_id, reason) do
     Logger.debug("Skill #{skill_id} cast failed for #{character_id}: #{inspect(reason)}")
 
     Broadcast.to_player(character_id, %SkillCastFailed{

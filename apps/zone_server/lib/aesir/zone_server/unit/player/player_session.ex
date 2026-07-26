@@ -43,6 +43,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler
@@ -704,6 +705,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     SkillHandler.handle_deferred_timeout(state, token)
   end
 
+  @impl true
+  def handle_info({:skill_text_input_timeout, request_id}, state) do
+    SkillTextInputHandler.handle_timeout(state, request_id)
+  end
+
   # The active NPC interaction ended (close / idle-timeout / crash). Clearing the
   # lock frees the player to talk to NPCs again; the session always survives
   # (this monitor never propagates the interaction's exit). Matched ahead of the
@@ -876,8 +882,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   # other, `{:script_apply, op}`, is a call - see the handle_call clauses).
   @impl true
   def handle_cast({:npc, {:run_attached_event, module, gid, label}}, state) do
-    NpcOwnerEventHandler.run(module, gid, label, state)
-    {:noreply, state}
+    {:noreply, NpcOwnerEventHandler.run(module, gid, label, state)}
   end
 
   # A Coordinator-broadcast ground-item vanish: forward it like any other packet
@@ -1070,6 +1075,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         reason,
         %{game_state: _game_state, connection_monitor_ref: connection_monitor_ref} = state
       ) do
+    state = SkillTextInputHandler.clear(state)
     state = SkillHandler.cancel_deferred(state)
     state = SpiritSphereHandler.discard(state)
     game_state = PlayerState.clear_pending_forced_movement(state.game_state)

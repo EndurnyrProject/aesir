@@ -7,36 +7,44 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcOwnerEventHandler do
 
   Builds the ctx the same way `NpcInteractionHandler.talk_to_npc/3` does for a
   player click (`Ctx.from_session/2` plus the target `npc_gid`), then
-  delegates to `Npc.Events.trigger_attached/4`. The coordinator already
-  resolved `name` to `{module, gid}`, so the only way `trigger_attached/4`
-  still fails here is an undeclared label -- logged and no-op, matching
-  `doevent`'s warning for the same case.
+  delegates to `Npc.Events.trigger_attached/4`. The event shares the player's
+  interaction lock with NPC dialogs and pending skill text; a busy player drops
+  the event rather than starting a second interaction.
   """
 
   require Logger
 
   alias Aesir.ZoneServer.Npc.Events, as: NpcEvents
   alias Aesir.ZoneServer.Script.Ctx
+  alias Aesir.ZoneServer.Unit.Player.SessionState
 
   @doc """
   Runs `label` as an attached event against `module`'s `gid` for this player
-  session, using `state`'s `game_state`/`connection_pid` to build the ctx.
+  session and returns the state with its interaction lock when started.
   """
-  @spec run(module(), non_neg_integer(), String.t(), map()) :: :ok
-  def run(module, gid, label, %{game_state: game_state, connection_pid: connection_pid}) do
+  @spec run(module(), non_neg_integer(), String.t(), SessionState.t()) :: SessionState.t()
+  def run(module, gid, label, state) do
+    if SessionState.interaction_blocked?(state) do
+      state
+    else
+      start_event(module, gid, label, state)
+    end
+  end
+
+  defp start_event(module, gid, label, state) do
     base_ctx =
-      %{game_state: game_state, connection_pid: connection_pid}
+      state
       |> Ctx.from_session({:npc, module.npc_id()})
       |> Map.put(:npc_gid, gid)
 
     case NpcEvents.trigger_attached(gid, label, base_ctx, self()) do
-      {:ok, _pid} ->
-        :ok
+      {:ok, pid} ->
+        ref = Process.monitor(pid)
+        %{state | interaction_lock: {pid, ref, gid}}
 
       {:error, reason} ->
         Logger.warning("npc owner event: #{inspect(reason)} for #{inspect(label)} (gid #{gid})")
-
-        :ok
+        state
     end
   end
 end
