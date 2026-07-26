@@ -260,8 +260,6 @@ Always run the full test suite before considering a task done.
 
 ## Tool Preferences
 
-- When searching the codebase, prefer `rg` (ripgrep) over `grep`, and `ast-grep` for structural
-  (AST-aware) searches.
 - For Elixir/Hex library documentation, prefer the docs MCP tooling over guessing from memory.
 
 ## Code Style

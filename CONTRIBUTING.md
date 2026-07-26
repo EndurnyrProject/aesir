@@ -136,6 +136,10 @@ Closes #123"
 jj git push --remote origin --branch your-feature-name
 ```
 
+
+I really prefer if you make smaller commits, and don't squash them, it makes it easier
+for me to review. Feel free to rewrite the history, just keep commits self contained.
+
 ## Code Standards
 
 ### Elixir Code Style
@@ -160,59 +164,11 @@ jj git push --remote origin --branch your-feature-name
 - Document all possible error conditions in function specs
 - Avoid raising exceptions for normal control flow
 
-### Project-Specific Guidelines
-
-#### Packet Implementation
-
-When implementing new packet handlers:
-
-1. **Create packet modules** in the appropriate server app under `lib/packets/`
-2. **Follow the packet pattern**:
-   ```elixir
-   defmodule MyServer.Packets.MyPacket do
-     use Aesir.Commons.Network.Packet
-     
-     @packet_id 0x1234
-     @packet_size 24
-     
-     defstruct [:field1, :field2]
-     
-     @impl true
-     def packet_id, do: @packet_id
-     
-     @impl true
-     def packet_size, do: @packet_size
-     
-     @impl true  
-     def parse(data), do: # implementation
-     
-     @impl true
-     def build(packet), do: # implementation
-   end
-   ```
-3. **Register packets** in the appropriate packet registry
-4. **Add comprehensive tests** including malformed packet handling
-
-#### Database Models
-
-- Use Ecto schemas with proper validations
-- Add comprehensive changesets for data integrity
-- Include database constraints where appropriate
-- Write migration scripts for any schema changes
-
-#### Session Management
-
-- Always validate sessions before processing authenticated requests
-- Use the SessionManager module for all session operations
-- Handle distributed session scenarios properly
-- Clean up sessions on user disconnect
-
 ## Testing Guidelines
 
 ### Test Structure
 
-- Use the appropriate test case: `ExUnit.Case`, `Aesir.DataCase`, or `Aesir.Commons.MementoTestHelper`
-- Follow AAA pattern: Arrange, Act, Assert
+- Use the appropriate test case: `ExUnit.Case`, `Aesir.DataCase`, etc.
 - Use descriptive test names that explain the scenario being tested
 - Group related tests using `describe` blocks
 
@@ -222,37 +178,7 @@ When implementing new packet handlers:
 - Test both happy path and error conditions
 - Include edge cases and boundary conditions
 - Mock external dependencies appropriately using `Mimic`
-
-### Example Test
-
-```elixir
-defmodule Aesir.AccountServer.PacketHandlerTest do
-  use ExUnit.Case, async: true
-  import Mimic
-  
-  alias Aesir.AccountServer.PacketHandler
-  
-  setup :verify_on_exit!
-  
-  describe "handle_login_packet/1" do
-    test "successfully processes valid login packet" do
-      # Arrange
-      packet = %LoginPacket{username: "testuser", password: "password"}
-      stub(SessionManager, :create_session, fn _, _ -> {:ok, "session123"} end)
-      
-      # Act
-      result = PacketHandler.handle_login_packet(packet)
-      
-      # Assert
-      assert {:ok, %LoginResponsePacket{success: true}} = result
-    end
-    
-    test "rejects login with invalid credentials" do
-      # Test implementation...
-    end
-  end
-end
-```
+- Try to keep tests as async as possible, see mimic 'mimic_from_context'
 
 ## Ragnarok Online Mechanics
 
