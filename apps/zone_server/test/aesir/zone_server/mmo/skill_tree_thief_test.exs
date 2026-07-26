@@ -114,9 +114,9 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeThiefTest do
                SkillTree.can_learn(thief_progression(learned_skills: %{poison => 3}), detoxify)
     end
 
-    test "the four quest skills are learnable with no prerequisites" do
+    test "the four quest skills are grant-only, never point-learnable" do
       for name <- [:tf_sprinklesand, :tf_backsliding, :tf_pickstone, :tf_throwstone] do
-        assert :ok =
+        assert {:error, :not_in_tree} =
                  SkillTree.can_learn(thief_progression(learned_skills: %{}), catalog_id(name))
       end
     end

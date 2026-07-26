@@ -12,7 +12,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Novice.NvFirstaid do
     display_name: "First Aid",
     max_level: 1,
     target_type: :self,
-    sp_cost: [3]
+    sp_cost: [3],
+    quest_skill: true,
+    quest_owner_job: :novice
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
 

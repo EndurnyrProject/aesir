@@ -23,7 +23,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcMakingarrow do
     display_name: "Arrow Crafting",
     max_level: 1,
     target_type: :self,
-    sp_cost: [10]
+    sp_cost: [10],
+    quest_skill: true,
+    quest_owner_job: :archer
 
   import Aesir.ZoneServer.Script.Dsl
 

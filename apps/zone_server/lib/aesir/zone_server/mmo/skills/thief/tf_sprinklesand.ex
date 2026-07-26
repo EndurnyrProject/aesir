@@ -14,7 +14,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSprinklesand do
     damage_type: :damage,
     element: :earth,
     range: 1,
-    sp_cost: [9]
+    sp_cost: [9],
+    quest_skill: true,
+    quest_owner_job: :thief
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active

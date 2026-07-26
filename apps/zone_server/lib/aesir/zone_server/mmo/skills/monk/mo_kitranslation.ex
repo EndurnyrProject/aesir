@@ -15,7 +15,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoKitranslation do
     sphere_cost: [1],
     cast_time: [1_000],
     fixed_cast_time: [1_000],
-    after_cast_delay: [1_000]
+    after_cast_delay: [1_000],
+    quest_skill: true,
+    quest_owner_job: :monk
 
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Active

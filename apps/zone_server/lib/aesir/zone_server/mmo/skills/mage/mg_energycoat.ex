@@ -15,7 +15,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgEnergycoat do
     damage_type: :no_damage,
     range: 0,
     sp_cost: [30],
-    fixed_cast_time: [5_000]
+    fixed_cast_time: [5_000],
+    quest_skill: true,
+    quest_owner_job: :mage
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter

@@ -15,7 +15,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McChangecart do
     max_level: 1,
     target_type: :self,
     damage_type: :no_damage,
-    sp_cost: [40]
+    sp_cost: [40],
+    quest_skill: true,
+    quest_owner_job: :merchant
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler

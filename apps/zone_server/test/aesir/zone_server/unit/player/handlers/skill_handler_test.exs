@@ -86,9 +86,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       assert_received {:send, :bulk, {:skill_list, %SkillList{skills: skills}}}
 
-      # Swordman tree resolves to its 10 implemented SM_* skills plus the two
-      # implemented Novice skills inherited from the Novice tree.
-      assert length(skills) == 13
+      # Swordman tree resolves to its 7 point-learnable SM_* skills plus
+      # NV_BASIC inherited from the Novice tree; quest skills are grant-only
+      # and hidden until learned.
+      assert length(skills) == 8
 
       sword = Enum.find(skills, &(&1.skill_id == 2))
       assert %SkillInfo{name: "SM_SWORD", level: 3} = sword
@@ -561,6 +562,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
           ],
           %{147 => 1}
         )
+        |> put_in(
+          [
+            Access.key!(:game_state),
+            Access.key!(:stats),
+            Access.key!(:progression),
+            Access.key!(:job_id)
+          ],
+          3
+        )
         |> Map.put(:interaction_lock, nil)
         |> Map.put(:pending_skill_text_input, pending)
 
@@ -594,6 +604,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
             Access.key!(:learned_skills)
           ],
           %{147 => 1}
+        )
+        |> put_in(
+          [
+            Access.key!(:game_state),
+            Access.key!(:stats),
+            Access.key!(:progression),
+            Access.key!(:job_id)
+          ],
+          3
         )
         |> Map.put(:interaction_lock, nil)
 

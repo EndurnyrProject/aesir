@@ -13,7 +13,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfBacksliding do
     display_name: "Back Slide",
     max_level: 1,
     target_type: :self,
-    sp_cost: [7]
+    sp_cost: [7],
+    quest_skill: true,
+    quest_owner_job: :thief
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active

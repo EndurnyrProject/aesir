@@ -26,7 +26,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatk do
     damage_type: :damage,
     range: 14,
     knockback: 2,
-    sp_cost: [40]
+    sp_cost: [40],
+    quest_skill: true,
+    quest_owner_job: :knight
 
   alias Aesir.ZoneServer.Map.LineOfSight
   alias Aesir.ZoneServer.Mmo.Combat

@@ -67,13 +67,13 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListViewTest do
     test "a Swordman with no points lists its tree entries at level 0, not upgradable" do
       %SkillList{skills: skills} = SkillListView.build(progression(skill_point: 0))
 
-      # The Swordman tree's implemented entries are the 10 SM_* skills plus the
-      # three implemented Novice skills inherited from the Novice tree
-      # (NV_BASIC, NV_FIRSTAID, NV_TRICKDEAD); the rest of the Novice tree is
-      # unimplemented and filtered out by the loader.
-      assert length(skills) == 13
-      assert Enum.count(skills, &String.starts_with?(&1.name, "SM_")) == 10
-      assert Enum.count(skills, &String.starts_with?(&1.name, "NV_")) == 3
+      # The Swordman tree's point-learnable entries are 7 SM_* skills plus
+      # NV_BASIC inherited from the Novice tree; quest skills (NV_FIRSTAID,
+      # NV_TRICKDEAD, SM_MOVINGRECOVERY, SM_FATALBLOW, SM_AUTOBERSERK) are
+      # grant-only and hidden until learned.
+      assert length(skills) == 8
+      assert Enum.count(skills, &String.starts_with?(&1.name, "SM_")) == 7
+      assert Enum.count(skills, &String.starts_with?(&1.name, "NV_")) == 1
       assert Enum.all?(skills, &(&1.level == 0))
       assert Enum.all?(skills, &(&1.upgradable == false))
     end

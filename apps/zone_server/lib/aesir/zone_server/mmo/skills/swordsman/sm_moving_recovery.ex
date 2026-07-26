@@ -8,7 +8,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMovingRecovery do
     name: :sm_movingrecovery,
     display_name: "HP Recovery While Moving",
     max_level: 1,
-    target_type: :passive
+    target_type: :passive,
+    quest_skill: true,
+    quest_owner_job: :swordman
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

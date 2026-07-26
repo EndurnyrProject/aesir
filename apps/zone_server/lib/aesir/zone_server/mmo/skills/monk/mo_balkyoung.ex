@@ -20,7 +20,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoung do
     hp_cost: [200],
     sp_cost: [40],
     duration: [4_500],
-    after_cast_delay: [2_000]
+    after_cast_delay: [2_000],
+    quest_skill: true,
+    quest_owner_job: :monk
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver

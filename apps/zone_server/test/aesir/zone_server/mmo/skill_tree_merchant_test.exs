@@ -121,30 +121,30 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeMerchantTest do
                )
     end
 
-    test "Change Cart requires MC_PUSHCART learned" do
+    test "Change Cart is grant-only, never point-learnable" do
       learned = %{catalog_id(:mc_pushcart) => 1}
 
-      assert :ok =
+      assert {:error, :not_in_tree} =
                SkillTree.can_learn(
                  merchant_progression(learned_skills: learned),
                  catalog_id(:mc_changecart)
                )
 
-      assert {:error, :missing_prerequisite} =
+      assert {:error, :not_in_tree} =
                SkillTree.can_learn(
                  merchant_progression(learned_skills: %{}),
                  catalog_id(:mc_changecart)
                )
     end
 
-    test "Cart Revolution requires MC_PUSHCART level 5" do
-      assert :ok =
+    test "Cart Revolution is grant-only, never point-learnable" do
+      assert {:error, :not_in_tree} =
                SkillTree.can_learn(
                  merchant_progression(learned_skills: %{catalog_id(:mc_pushcart) => 5}),
                  catalog_id(:mc_cartrevolution)
                )
 
-      assert {:error, :missing_prerequisite} =
+      assert {:error, :not_in_tree} =
                SkillTree.can_learn(
                  merchant_progression(learned_skills: %{catalog_id(:mc_pushcart) => 4}),
                  catalog_id(:mc_cartrevolution)

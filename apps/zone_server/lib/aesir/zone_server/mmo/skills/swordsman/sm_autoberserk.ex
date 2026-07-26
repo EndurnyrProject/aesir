@@ -12,7 +12,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmAutoberserk do
     display_name: "Auto Berserk",
     max_level: 1,
     target_type: :self,
-    sp_cost: [1]
+    sp_cost: [1],
+    quest_skill: true,
+    quest_owner_job: :swordman
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter

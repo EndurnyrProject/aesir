@@ -12,7 +12,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmFatalblow do
     name: :sm_fatalblow,
     display_name: "Fatal Blow",
     max_level: 1,
-    target_type: :passive
+    target_type: :passive,
+    quest_skill: true,
+    quest_owner_job: :swordman
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

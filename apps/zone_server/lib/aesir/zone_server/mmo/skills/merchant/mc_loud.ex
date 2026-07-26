@@ -22,7 +22,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McLoud do
     cast_time: [1000],
     fixed_cast_time: [300],
     after_cast_delay: [1000],
-    cooldown: [30_000]
+    cooldown: [30_000],
+    quest_skill: true,
+    quest_owner_job: :merchant
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter

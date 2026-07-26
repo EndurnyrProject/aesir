@@ -20,7 +20,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptio do
     cast_time: [3_200],
     fixed_cast_time: [800],
     ignore_dex: true,
-    sp_cost: [800]
+    sp_cost: [800],
+    quest_skill: true,
+    quest_owner_job: :priest
 
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.Skill.Active

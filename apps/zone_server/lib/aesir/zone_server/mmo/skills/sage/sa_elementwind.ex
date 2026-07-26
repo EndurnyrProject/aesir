@@ -24,7 +24,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaElementwind do
     after_cast_delay: [1_000],
     duration: [1_800_000],
     status: :sc_elementalchange,
-    item_cost: [%{id: 12_117, amount: 1}]
+    item_cost: [%{id: 12_117, amount: 1}],
+    quest_skill: true,
+    quest_owner_job: :sage
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skills.Sage.ElementChange

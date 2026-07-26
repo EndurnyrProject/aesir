@@ -312,20 +312,32 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
       assert entry.requires == [{catalog_id(:sm_sword), 1}]
     end
 
-    test "covers every entry in the job tree" do
+    test "covers every non-quest entry in the job tree and hides unlearned quest skills" do
       progression = swordman_progression([])
       view = SkillTree.available_for(progression)
-      assert length(view) == map_size(SkillTree.tree_for(@swordman_id))
+      view_ids = MapSet.new(view, & &1.skill_id)
+
+      {quest_ids, normal_ids} =
+        @swordman_id
+        |> SkillTree.tree_for()
+        |> Map.keys()
+        |> Enum.split_with(fn id ->
+          match?({:ok, %Definition{quest_skill: true}}, Catalog.by_id(id))
+        end)
+
+      assert Enum.all?(normal_ids, &(&1 in view_ids))
+      refute Enum.any?(quest_ids, &(&1 in view_ids))
     end
 
     test "annotates each entry with the job that owns the skill" do
       {:ok, novice_id} = AvailableJobs.job_name_to_id(:novice)
-      view = SkillTree.available_for(swordman_progression([]))
+      first_aid_id = catalog_id(:nv_firstaid)
+      view = SkillTree.available_for(swordman_progression(learned_skills: %{first_aid_id => 1}))
 
       sword = Enum.find(view, &(&1.skill_id == catalog_id(:sm_sword)))
       assert sword.owner_job_id == @swordman_id
 
-      first_aid = Enum.find(view, &(&1.skill_id == catalog_id(:nv_firstaid)))
+      first_aid = Enum.find(view, &(&1.skill_id == first_aid_id))
       assert first_aid.owner_job_id == novice_id
     end
   end

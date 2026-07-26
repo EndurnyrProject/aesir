@@ -17,7 +17,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstone do
     damage_kind: :misc,
     element: :neutral,
     range: 7,
-    sp_cost: [2]
+    sp_cost: [2],
+    quest_skill: true,
+    quest_owner_job: :thief
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active

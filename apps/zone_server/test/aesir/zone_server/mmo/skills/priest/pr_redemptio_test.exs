@@ -29,7 +29,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptioTest do
       act_delay_until: 0,
       stats: %{
         current_state: %{hp: 1_000, sp: 1_000},
-        progression: %{base_exp: 123_456, job_exp: 65_432, learned_skills: %{1014 => 1}}
+        progression: %{
+          base_exp: 123_456,
+          job_exp: 65_432,
+          job_id: 8,
+          learned_skills: %{1014 => 1}
+        }
       }
     }
   end

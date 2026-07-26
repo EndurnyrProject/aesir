@@ -22,7 +22,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblaster do
     cast_time: [1_280],
     fixed_cast_time: [320],
     duration: [900_000],
-    sp_cost: [80]
+    sp_cost: [80],
+    quest_skill: true,
+    quest_owner_job: :wizard
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter

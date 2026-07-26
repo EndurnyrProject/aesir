@@ -13,7 +13,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaCreatecon do
     max_level: 1,
     target_type: :self,
     damage_type: :no_damage,
-    sp_cost: [30]
+    sp_cost: [30],
+    quest_skill: true,
+    quest_owner_job: :sage
 
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.Skill.Active

@@ -11,7 +11,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPickstone do
     max_level: 1,
     target_type: :self,
     sp_cost: [2],
-    fixed_cast_time: [500]
+    fixed_cast_time: [500],
+    quest_skill: true,
+    quest_owner_job: :thief
 
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.Skill.Active

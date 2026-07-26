@@ -23,6 +23,8 @@ defmodule Aesir.ZoneServer.Integration.PriestRedemptioTest do
   test "revives a retained nearby party corpse at 50 percent and returns the caster at one HP" do
     caster_character =
       character_fixture("RedemptioCaster", %{
+        class: 8,
+        learned_skills: %{"1014" => 1},
         last_map: "prontera",
         last_x: 150,
         last_y: 150,
@@ -101,14 +103,9 @@ defmodule Aesir.ZoneServer.Integration.PriestRedemptioTest do
       |> Repo.insert()
 
     {:ok, character} =
-      attrs
-      |> Map.merge(%{
-        char_num: 0,
-        class: 0,
-        base_level: 99,
-        account_id: account.id,
-        name: name
-      })
+      %{char_num: 0, class: 0, base_level: 99}
+      |> Map.merge(attrs)
+      |> Map.merge(%{account_id: account.id, name: name})
       |> Character.new()
       |> Repo.insert()
 

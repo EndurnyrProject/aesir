@@ -25,7 +25,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolylight do
     range: 9,
     cast_time: [800],
     fixed_cast_time: [200],
-    sp_cost: [15]
+    sp_cost: [15],
+    quest_skill: true,
+    quest_owner_job: :acolyte
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active

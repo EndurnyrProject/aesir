@@ -38,7 +38,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolution do
     element: :neutral,
     knockback: 2,
     splash_radius: 1,
-    sp_cost: [12]
+    sp_cost: [12],
+    quest_skill: true,
+    quest_owner_job: :merchant
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active

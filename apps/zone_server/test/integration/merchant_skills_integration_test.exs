@@ -76,7 +76,7 @@ defmodule Aesir.ZoneServer.Integration.MerchantSkillsIntegrationTest do
       on_exit(fn -> StatusStorage.remove_status(:player, char.id, :sc_loud) end)
 
       loud = catalog_id(:mc_loud)
-      learn(pid, loud)
+      grant(pid, loud)
       flush_packets()
 
       str_before = Stats.get_effective_stat(get_player_state(pid).stats, :str)
@@ -240,6 +240,12 @@ defmodule Aesir.ZoneServer.Integration.MerchantSkillsIntegrationTest do
 
   defp learn(pid, skill_id) do
     simulate_incoming_message(pid, %LearnSkill{skill_id: skill_id})
+    assert_receive {:packet_sent, %SkillList{}, _}, 1_000
+  end
+
+  # MC_LOUD is a platinum quest skill: it is grant-only, never point-learnable.
+  defp grant(pid, skill_id) do
+    assert {:ok, _game_state} = PlayerSession.script_apply(pid, {:grant_skill, skill_id, 1})
     assert_receive {:packet_sent, %SkillList{}, _}, 1_000
   end
 end
