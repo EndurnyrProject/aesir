@@ -66,6 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
       assert metadata.prevented_by == []
       assert metadata.conflicts_with == []
       assert metadata.end_on_start == []
+      assert metadata.blocked_skills == []
       assert metadata.immunity == []
       assert metadata.cleanse == []
       assert metadata.initial_phase == nil
@@ -205,6 +206,50 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
             id: :sc_bad_tick,
             no_dispel: false,
             tick_interval: 0
+        end
+      end
+    end
+
+    test "raises on invalid blocked skill identifiers" do
+      assert_raise ArgumentError, ~r/blocked_skills/, fn ->
+        defmodule BadBlockedSkills do
+          use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+            id: :sc_bad_blocked_skills,
+            no_dispel: false,
+            blocked_skills: [0]
+        end
+      end
+    end
+
+    test "rejects float blocked skill identifiers" do
+      assert_raise ArgumentError, ~r/blocked_skills/, fn ->
+        defmodule BadBlockedSkillsFloat do
+          use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+            id: :sc_bad_blocked_skills_float,
+            no_dispel: false,
+            blocked_skills: [42.0]
+        end
+      end
+    end
+
+    test "rejects negative blocked skill identifiers" do
+      assert_raise ArgumentError, ~r/blocked_skills/, fn ->
+        defmodule BadBlockedSkillsNegative do
+          use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+            id: :sc_bad_blocked_skills_negative,
+            no_dispel: false,
+            blocked_skills: [-42]
+        end
+      end
+    end
+
+    test "rejects non-numeric blocked skill identifiers" do
+      assert_raise ArgumentError, ~r/blocked_skills/, fn ->
+        defmodule BadBlockedSkillsString do
+          use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+            id: :sc_bad_blocked_skills_string,
+            no_dispel: false,
+            blocked_skills: ["42"]
         end
       end
     end

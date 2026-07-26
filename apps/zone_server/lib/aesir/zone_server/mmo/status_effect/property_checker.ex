@@ -147,6 +147,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker do
     end
   end
 
+  @doc """
+  Returns the skill ids this status denies independently of broad skill prevention.
+  """
+  @spec blocked_skills(atom()) :: [pos_integer()]
+  def blocked_skills(status_id) do
+    case Registry.get_definition(status_id) do
+      %{blocked_skills: skills} when is_list(skills) -> skills
+      _ -> []
+    end
+  end
+
   @race_immunities ~w(plant demon dragon angel formless insect fish beast)a
   @element_immunities ~w(fire water earth wind poison holy shadow ghost undead)a
 

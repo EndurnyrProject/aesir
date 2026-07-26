@@ -7,15 +7,35 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  defmodule BlockedSkill do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_blocked_skill,
+      no_dispel: false,
+      blocked_skills: [42]
+  end
+
+  defmodule BlockedAllowedSkill do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_blocked_allowed_skill,
+      no_dispel: false,
+      properties: [:prevents_skills],
+      allow_skills: [43],
+      blocked_skills: [43]
+  end
 
   setup :verify_on_exit!
   setup :set_mimic_from_context
   setup :setup_ets_tables
 
   setup do
+    Registry.register_module(BlockedSkill)
+    Registry.register_module(BlockedAllowedSkill)
+
     # Copy modules for mocking
     Mimic.copy(Aesir.ZoneServer.Mmo.StatusEffect.Resistance)
     Mimic.copy(UnitRegistry)
@@ -286,6 +306,21 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
       assert Interpreter.can_use_skill?(:player, player_id) == false
       assert Interpreter.can_use_skill?(:player, player_id, 143) == true
       assert Interpreter.can_use_skill?(:player, player_id, 89) == false
+    end
+
+    test "can_use_skill?/3 denies only skills listed by a narrow block", %{player_id: player_id} do
+      assert :ok = Interpreter.apply_status(:player, player_id, :sc_test_blocked_skill)
+
+      refute Interpreter.can_use_skill?(:player, player_id, 42)
+      assert Interpreter.can_use_skill?(:player, player_id, 43)
+    end
+
+    test "can_use_skill?/3 applies narrow blocks before broad allowlists", %{player_id: player_id} do
+      assert :ok =
+               Interpreter.apply_status(:player, player_id, :sc_test_blocked_allowed_skill)
+
+      refute Interpreter.can_use_skill?(:player, player_id, 43)
+      refute Interpreter.can_use_skill?(:player, player_id, 44)
     end
 
     test "targetable? is false while an untargetable status is active", %{player_id: player_id} do

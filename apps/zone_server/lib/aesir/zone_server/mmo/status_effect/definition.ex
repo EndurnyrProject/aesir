@@ -37,6 +37,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     - `:end_on_start` - statuses removed when this one is applied
     - `:allow_skills` - skill ids exempt from this status' `:prevents_skills`, e.g.
       the skill that toggles the status off (Play Dead recasts NV_TRICKDEAD)
+    - `:blocked_skills` - skill ids denied even when the status does not broadly
+      prevent skills
     - `:immunity` - races/elements/special flags immune to this status
     - `:cleanse` - statuses that cure this one
     - `:resistance_type` - `:physical` or `:magical`
@@ -242,6 +244,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     conflicts_with: [],
     end_on_start: [],
     allow_skills: [],
+    blocked_skills: [],
     immunity: [],
     cleanse: [],
     require_weapon: []
@@ -275,6 +278,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     conflicts_with: {:list, :atom},
     end_on_start: {:list, :atom},
     allow_skills: {:list, :integer},
+    blocked_skills: {:list, {:integer, {:gt, 0}}},
     immunity: {:list, :atom},
     cleanse: {:list, :atom},
     require_weapon: {:list, :atom},
@@ -413,11 +417,28 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   """
   @spec validate_metadata!(keyword(), module()) :: map()
   def validate_metadata!(opts, module) do
+    validate_blocked_skill_ids!(opts, module)
+
     DefinitionValidation.validate!(
       @metadata_schema,
       opts,
       module,
       Map.merge(@list_defaults, @scalar_defaults)
     )
+  end
+
+  defp validate_blocked_skill_ids!(opts, module) do
+    case Map.get(Map.new(opts), :blocked_skills) do
+      skills when is_list(skills) ->
+        if Enum.all?(skills, &(is_integer(&1) and &1 > 0)) do
+          :ok
+        else
+          raise ArgumentError,
+                "invalid definition metadata in #{inspect(module)}: blocked_skills must contain only positive integers"
+        end
+
+      _ ->
+        :ok
+    end
   end
 end
