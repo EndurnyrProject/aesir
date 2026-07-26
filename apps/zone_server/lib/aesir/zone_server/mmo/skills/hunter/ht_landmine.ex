@@ -1,19 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine do
   @moduledoc """
-  Land Mine (HT_LANDMINE). Hunter single-cell ground trap dealing BF_MISC damage.
+  Land Mine (HT_LANDMINE), a hidden single-cell Earth BF_MISC trap.
 
-  As a `target_type: :ground` skill, `use Skill` auto-derives the `cast/4` that
-  places this single-cell trap at the target cell. The trap is live immediately
-  and triggers once when a hostile unit (mob; not the owner or allies) steps onto
-  it: it deals Earth BF_MISC damage via `Combat.execute_misc_attack` and is
-  consumed (`:expire`).
-
-  The per-level base damage is stamped at placement from the placer's stats and
-  the per-trigger ± variance is rolled at fire time (see `Skills.Trap`).
-
-  Verified vs rAthena: skill id 116, Earth element, Range 3 (skill_db.yml:4230);
-  the damage formula lives in `Skills.Trap` (battle.cpp:6354). Hunter is not a
-  reachable job, so this ships as a castable module + tests, not in a job tree.
+  Enemy contact deals placement-stamped damage, attempts Stun, and lets the
+  ground-unit manager transition the mine to its visible used phase.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 116,
@@ -26,13 +16,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine do
     element: :earth,
     range: 3,
     hit_interval: 1_000,
-    unit_duration: [30_000, 30_000, 30_000, 30_000, 30_000],
-    sp_cost: [10, 12, 14, 16, 18]
+    unit_duration: [200_000, 160_000, 120_000, 80_000, 40_000],
+    cast_time: List.duplicate(500, 5),
+    fixed_cast_time: List.duplicate(300, 5),
+    after_cast_delay: List.duplicate(1_000, 5),
+    sp_cost: List.duplicate(10, 5),
+    item_cost: [%{id: 1065, amount: 1}]
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Ground
@@ -75,17 +70,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine do
 
     case Trap.resolve_caster(group) do
       {:ok, caster_state} ->
-        Combat.execute_misc_attack(caster_state, mover_id,
-          skill_id: definition.id,
-          skill_level: group.level,
-          base_damage: Trap.roll_damage(base_damage),
-          element: definition.element
-        )
+        case Combat.execute_misc_attack(caster_state, mover_id,
+               skill_id: definition.id,
+               skill_level: group.level,
+               base_damage: Trap.roll_damage(base_damage),
+               element: definition.element
+             ) do
+          :ok ->
+            StatusInterpreter.apply_status(opposing_type(group.caster_type), mover_id, :sc_stun,
+              source_id: group.caster_id,
+              source_type: group.caster_type,
+              success_rate: 10,
+              duration: 4_500
+            )
 
-        :expire
+            :expire
+
+          {:error, _reason} ->
+            {:ok, group}
+        end
 
       :error ->
         {:ok, group}
     end
   end
+
+  defp opposing_type(:player), do: :mob
+  defp opposing_type(:mob), do: :player
 end

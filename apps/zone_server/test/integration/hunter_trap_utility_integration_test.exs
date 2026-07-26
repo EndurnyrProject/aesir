@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapUtilityIntegrationTest do
   alias Aesir.Net.GroundSkillCast
   alias Aesir.Net.ItemAdded
   alias Aesir.Repo
+  alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
@@ -16,11 +17,34 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapUtilityIntegrationTest do
 
   @map "prontera"
   @hunter_class 11
+  @land_mine 116
   @remove_trap 124
   @falcon 127
   @spring_trap 131
   @trap_item 1065
   @origin {150, 150}
+
+  test "a paid Land Mine cast spends its catalyst and returns it on natural expiry" do
+    character = insert_hunter(%{learned_skills: skills(%{@land_mine => 1})})
+    assert {:ok, _item} = Persistence.insert_item(character.id, %{nameid: @trap_item, amount: 1})
+    session = start_hunter_session(character, @origin)
+    target = {151, 150}
+
+    cast_and_sync(session, @land_mine, 1, target)
+
+    assert eventually(fn ->
+             state = get_player_state(session.pid)
+
+             Inventory.held_amount(state.inventory, @trap_item) == 0 and
+               Enum.any?(Storage.all(), &(&1.skill_name == :ht_landmine))
+           end)
+
+    group = Enum.find(Storage.all(), &(&1.skill_name == :ht_landmine))
+    assert group.state.paid_return?
+    assert :ok = Manager.tick(Manager, group.expires_at)
+    assert nil == Storage.get(group.group_id)
+    assert [_item] = GroundItemStore.query_in_range(@map, 151, 150, 0)
+  end
 
   test "concurrent Remove Trap requests reward one owned armed trap exactly once" do
     character = insert_hunter(%{learned_skills: skills(%{@remove_trap => 1})})
@@ -235,6 +259,18 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapUtilityIntegrationTest do
     })
 
     get_player_state(session.pid)
+  end
+
+  defp eventually(fun, attempts \\ 60)
+  defp eventually(_fun, 0), do: false
+
+  defp eventually(fun, attempts) do
+    if fun.() do
+      true
+    else
+      Process.sleep(25)
+      eventually(fun, attempts - 1)
+    end
   end
 
   defp cast_concurrently(sessions, skill_id, level, {x, y}) do

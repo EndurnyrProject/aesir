@@ -42,6 +42,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest.FakeMob
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -50,7 +52,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.Stats.BaseStats
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
+  alias Aesir.ZoneServer.Unit.Stats.CurrentState
+  alias Aesir.ZoneServer.Unit.Stats.DerivedStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  setup do
+    Mimic.copy(Resistance)
+    :ok
+  end
 
   setup :set_mimic_global
   setup :setup_ets_tables
@@ -71,8 +81,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
   defp build_caster do
     stats = %Stats{
       base_stats: %BaseStats{str: 1, agi: 1, vit: 1, int: 40, dex: 50, luk: 1},
-      combat_stats: %{atk: 1, def: 1, hit: 1, flee: 1, perfect_dodge: 1, matk: 1},
-      derived_stats: %{max_hp: 100, max_sp: 50, aspd: 150},
+      combat_stats: %CombatStats{atk: 1, def: 1, hit: 1, flee: 1, perfect_dodge: 1, matk: 1},
+      derived_stats: %DerivedStats{max_hp: 100, max_sp: 50, aspd: 150},
+      current_state: %CurrentState{hp: 100, sp: 50},
       progression: %PlayerProgression{base_level: 50, job_level: 1, learned_skills: %{}},
       equipment: %Equipment{}
     }
@@ -163,6 +174,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
 
   test "an enemy mob stepping onto a Land Mine leaves one used state without deadlocking" do
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+    stub(Resistance, :roll_success, fn _success_rate -> true end)
 
     caster = build_caster()
     UnitRegistry.register_unit(:player, @caster_id, PlayerState, caster, self())
@@ -193,9 +205,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
 
     assert %Group{
              visible?: true,
+             expires_at: expires_at,
              state: %{trap: %TrapState{phase: :used}}
            } = Storage.get(999)
 
+    remaining = expires_at - System.monotonic_time(:millisecond)
+    assert remaining in 1_300..1_500
     assert [_cell] = Storage.get_cells_by_group(999)
+
+    assert %{source_id: @caster_id, source_type: :player} =
+             StatusStorage.get_status(:mob, @mob_id, :sc_stun)
   end
 end
