@@ -304,7 +304,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          {:ok, resolved} <- resolve_auto_cast_target(definition, target),
          cost = auto_cast_sp_cost(definition, level),
          :ok <- check_sp(game_state, cost),
-         {:ok, game_state} <- run_unconditional(module, game_state, resolved, level, definition) do
+         {:ok, game_state} <-
+           run_unconditional(module, game_state, resolved, level, definition, :auto) do
       {:ok,
        game_state
        |> deduct_sp(cost)
@@ -341,7 +342,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_target(game_state, target, definition),
          :ok <- check_range(game_state, target, definition, level),
          :ok <- module.validate(game_state, target, level, definition),
-         {:ok, game_state} <- run_unconditional(module, game_state, target, level, definition) do
+         {:ok, game_state} <-
+           run_unconditional(module, game_state, target, level, definition, :item) do
       {:ok,
        game_state
        |> put_cooldown(skill_id, definition, level, now)
@@ -381,8 +383,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # auto-cast and item-cast entry points: both are free of the skill's declared
   # requirements by construction, not by their skills happening to declare none
   # today.
-  defp run_unconditional(module, game_state, target, level, definition) do
-    case module.cast(game_state, target, level, definition) do
+  defp run_unconditional(module, game_state, target, level, definition, origin) do
+    case invoke_cast(module, game_state, target, level, definition, origin) do
       {:ok, game_state} ->
         announce_ground_cast(module, game_state, target, level, definition)
         {:ok, game_state}
@@ -865,7 +867,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # Runs the behavior and, on a bare `{:ok, state}`, consumes the catalysts.
   # `{:ok, state, :no_consume}` completes the cast but spares them.
   defp run_cast(module, game_state, target, level, definition) do
-    case module.cast(game_state, target, level, definition) do
+    case invoke_cast(module, game_state, target, level, definition, :normal) do
       {:ok, game_state} ->
         announce_ground_cast(module, game_state, target, level, definition)
         {:ok, consume_catalysts(game_state, definition)}
@@ -879,6 +881,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
       {:error, _reason} = error ->
         error
+    end
+  end
+
+  defp invoke_cast(module, game_state, target, level, definition, origin) do
+    if function_exported?(module, :cast_with_origin, 5) do
+      module.cast_with_origin(game_state, target, level, definition, origin)
+    else
+      module.cast(game_state, target, level, definition)
     end
   end
 

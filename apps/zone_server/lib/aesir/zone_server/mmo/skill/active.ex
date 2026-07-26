@@ -26,6 +26,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   @typedoc "A caster state, either a player or a mob."
   @type caster :: PlayerState.t() | MobState.t()
 
+  @typedoc "The entry point that caused a skill effect to run."
+  @type cast_origin :: :normal | :item | :auto | :mob | :direct
+
   @doc """
   Runs the skill's effect for a validated cast. Returns the updated caster state.
 
@@ -36,6 +39,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   caller that settles the descriptor.
   """
   @callback cast(caster(), target(), pos_integer(), Definition.t()) ::
+              {:ok, caster()}
+              | {:ok, caster(), :no_consume}
+              | {:deferred, caster(), term()}
+              | {:error, atom()}
+
+  @doc """
+  Optional origin-aware cast entry point.
+
+  The origin records how the already-validated cast entered the runtime; it does
+  not bypass or add validation. Skills without this callback continue through
+  `cast/4` unchanged.
+  """
+  @callback cast_with_origin(caster(), target(), pos_integer(), Definition.t(), cast_origin()) ::
               {:ok, caster()}
               | {:ok, caster(), :no_consume}
               | {:deferred, caster(), term()}
@@ -98,7 +114,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   @callback dynamic_cast_time(PlayerState.t(), target(), pos_integer(), Definition.t()) ::
               %{cast_time: non_neg_integer(), fixed_cast_time: non_neg_integer()}
 
-  @optional_callbacks validate: 4,
+  @optional_callbacks cast_with_origin: 5,
+                      validate: 4,
                       deferred: 2,
                       mob_cast: 5,
                       dynamic_cost: 4,

@@ -64,6 +64,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmineTest do
       assert placement.state.armed == true
       assert placement.state.reclaimable == true
       assert placement.state.trap_item == 1065
+      assert placement.state.trap.claymore_spendable?
     end
   end
 

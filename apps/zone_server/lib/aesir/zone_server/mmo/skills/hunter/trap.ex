@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.Trap do
   """
 
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   # rAthena ITEMID_TRAP (Booby_Trap): the item returned when reclaiming one
@@ -26,15 +27,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.Trap do
   manager-level reveal, reclaim, and spring operations. The per-trigger ±
   variance is rolled at fire time via `roll_damage/1`.
   """
-  @spec place_state(non_neg_integer(), map()) :: %{
-          base_damage: non_neg_integer(),
-          armed: boolean(),
-          reclaimable: boolean(),
-          trap_item: pos_integer()
-        }
-  def place_state(level, caster_stats) do
+  @spec place_state(non_neg_integer(), map(), Group.t()) :: map()
+  def place_state(level, caster_stats, %Group{} = group) do
+    origin = Map.get(group.state, :cast_origin, :direct)
+
+    {:ok, trap} =
+      TrapState.new(%{
+        reclaim_item_id: @trap_item_id,
+        claymore_spendable?: claymore_spendable?(group.skill_name),
+        natural_expiry: natural_expiry(group.skill_name),
+        return_item_on_expiry?:
+          group.caster_type == :player and origin == :normal and
+            Map.get(group.state, :paid_return?, false)
+      })
+
     %{
       base_damage: base_damage(level, caster_stats),
+      trap: trap,
+      ignore_land_protector: true,
       armed: true,
       reclaimable: true,
       trap_item: @trap_item_id
@@ -62,15 +72,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.Trap do
   end
 
   @doc """
-  Whether `mover` is a hostile target for this trap.
+  Whether `mover` is a hostile PvE target relative to this trap's caster.
 
-  PvE-simplified: enemies are mobs; the owner and allied players never trigger a
-  trap. NOTE: PvP / faction filtering is future work.
+  Player traps target mobs and mob traps target players. Same-side contacts do
+  not trigger harmful traps; PvP and mob-on-mob targeting remain out of scope.
   """
   @spec enemy?(Group.t(), {atom(), integer()}) :: boolean()
-  def enemy?(%Group{caster_type: ct, caster_id: cid}, {mover_type, mover_id}) do
-    {mover_type, mover_id} != {ct, cid} and mover_type == :mob
-  end
+  def enemy?(%Group{caster_type: :player}, {:mob, _mover_id}), do: true
+  def enemy?(%Group{caster_type: :mob}, {:player, _mover_id}), do: true
+  def enemy?(%Group{}, {_mover_type, _mover_id}), do: false
+
+  defp claymore_spendable?(skill_name), do: skill_name in [:ht_landmine, :ht_blastmine]
+
+  defp natural_expiry(:ht_blastmine), do: :become_used
+  defp natural_expiry(_skill_name), do: :drop_item
 
   @doc """
   Resolves the placer's live state struct (needed by `Combat.execute_misc_*`),

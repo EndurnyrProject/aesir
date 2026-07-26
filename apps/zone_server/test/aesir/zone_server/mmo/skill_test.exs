@@ -98,7 +98,12 @@ defmodule Aesir.ZoneServer.Mmo.SkillTest do
       caster = %PlayerState{character_id: 7}
       test_pid = self()
 
-      stub(Unit, :place, fn ^caster, :test_ground, 2, {12, 34} ->
+      stub(Unit, :place, fn ^caster,
+                            :test_ground,
+                            2,
+                            {12, 34},
+                            origin: :direct,
+                            state: %{paid_return?: false} ->
         send(test_pid, :placed)
         {:ok, :group}
       end)

@@ -33,6 +33,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   setup :setup_ets_tables
   setup :verify_on_exit!
 
+  defmodule OriginAwareSkill do
+    @behaviour Aesir.ZoneServer.Mmo.Skill.Active
+
+    @impl true
+    def cast(game_state, _target, _level, _definition) do
+      send(self(), {:cast_origin, :fallback})
+      {:ok, game_state}
+    end
+
+    @impl true
+    def cast_with_origin(game_state, _target, _level, _definition, origin) do
+      send(self(), {:cast_origin, origin})
+      {:ok, game_state}
+    end
+
+    @impl true
+    def validate(_game_state, _target, _level, _definition), do: :ok
+  end
+
   defmodule StaticCostSkill do
     @behaviour Aesir.ZoneServer.Mmo.Skill.Active
 
@@ -200,6 +219,38 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       range: range,
       sp_cost: List.duplicate(9, 10)
     }
+  end
+
+  describe "cast origins" do
+    setup do
+      definition = %Definition{
+        id: 29,
+        name: :origin_aware,
+        display_name: "Origin Aware",
+        max_level: 1,
+        target_type: :self,
+        sp_cost: [0]
+      }
+
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
+      stub(Catalog, :active_module_for, fn :origin_aware -> {:ok, OriginAwareSkill} end)
+      :ok
+    end
+
+    test "normal casts dispatch normal origin" do
+      assert {:ok, _} = Interpreter.cast(game_state(100, %{29 => 1}), 29, 1, :self)
+      assert_received {:cast_origin, :normal}
+    end
+
+    test "item casts dispatch item origin" do
+      assert {:ok, _} = Interpreter.item_cast(game_state(100, %{}), 29, 1, :self)
+      assert_received {:cast_origin, :item}
+    end
+
+    test "auto casts dispatch auto origin" do
+      assert {:ok, _} = Interpreter.auto_cast(game_state(100, %{}), 29, 1, :self)
+      assert_received {:cast_origin, :auto}
+    end
   end
 
   test "unknown skill returns :unknown_skill" do

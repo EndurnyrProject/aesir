@@ -109,7 +109,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill do
       )
 
     fragments =
-      [auto_cast_default(mod, definition, ground?), validate_default(mod, active?, behaviours)] ++
+      [
+        auto_cast_default(mod, definition, ground?, behaviours),
+        validate_default(mod, active?, behaviours)
+      ] ++
         passive_defaults(mod, passive?) ++ [on_expire_default(mod, ground?)]
 
     quote do
@@ -120,25 +123,74 @@ defmodule Aesir.ZoneServer.Mmo.Skill do
     end
   end
 
-  # Ground skills are cast by placing their skill-unit; derive that cast/4 unless
-  # the skill defines its own. Generated without @impl since ground skills declare
-  # Skill.Ground, not Skill.Active.
-  defp auto_cast_default(mod, definition, true = _ground?) do
-    if not Module.defines?(mod, {:cast, 4}) do
-      name = definition.name
+  # Ground skills are cast by placing their skill-unit; derive cast callbacks
+  # unless the skill defines its own. Generated without @impl since ground skills
+  # declare Skill.Ground, not Skill.Active.
+  defp auto_cast_default(mod, definition, true = _ground?, behaviours) do
+    cast? = Module.defines?(mod, {:cast, 4})
 
-      quote do
-        def cast(caster, {:ground, x, y}, level, _definition) do
-          case unquote(Unit).place(caster, unquote(name), level, {x, y}) do
-            {:ok, _group} -> {:ok, caster}
-            {:error, _reason} = error -> error
-          end
+    origin_ast =
+      origin_cast_default(
+        definition,
+        cast?,
+        Active in behaviours,
+        Module.defines?(mod, {:cast_with_origin, 5})
+      )
+
+    cast_ast = direct_cast_default(cast?)
+
+    quote do
+      unquote(origin_ast)
+      unquote(cast_ast)
+    end
+  end
+
+  defp auto_cast_default(_mod, _definition, false, _behaviours), do: nil
+
+  defp origin_cast_default(_definition, _cast?, _active?, true = _defined?), do: nil
+
+  defp origin_cast_default(definition, cast?, active?, false = _defined?) do
+    impl = if active?, do: Active
+    with_impl(impl, origin_cast_body(definition, cast?))
+  end
+
+  defp origin_cast_body(_definition, true = _cast?) do
+    quote do
+      def cast_with_origin(caster, target, level, definition, _origin) do
+        cast(caster, target, level, definition)
+      end
+    end
+  end
+
+  defp origin_cast_body(definition, false = _cast?) do
+    name = definition.name
+
+    quote do
+      def cast_with_origin(caster, {:ground, x, y}, level, _definition, origin) do
+        paid_return? =
+          origin == :normal and Map.has_key?(caster, :character_id) and
+            unquote(definition.item_cost != [])
+
+        case unquote(Unit).place(caster, unquote(name), level, {x, y},
+               origin: origin,
+               state: %{paid_return?: paid_return?}
+             ) do
+          {:ok, _group} -> {:ok, caster}
+          {:error, _reason} = error -> error
         end
       end
     end
   end
 
-  defp auto_cast_default(_mod, _definition, false), do: nil
+  defp direct_cast_default(true = _cast?), do: nil
+
+  defp direct_cast_default(false = _cast?) do
+    quote do
+      def cast(caster, target, level, definition) do
+        cast_with_origin(caster, target, level, definition, :direct)
+      end
+    end
+  end
 
   defp validate_default(mod, true = _active?, behaviours) do
     if not Module.defines?(mod, {:validate, 4}) do

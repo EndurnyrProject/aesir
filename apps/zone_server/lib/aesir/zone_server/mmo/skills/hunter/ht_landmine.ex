@@ -39,14 +39,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine do
 
   @impl Ground
   @spec on_place(Group.t()) :: {:ok, Ground.placement()}
-  def on_place(%Group{center: center, level: level, caster_type: ct, caster_id: cid}) do
+  def on_place(%Group{center: center, level: level, caster_type: ct, caster_id: cid} = group) do
     definition = definition()
     {:ok, %{stats: stats}} = UnitRegistry.get_unit_info(ct, cid)
 
     {:ok,
      %{
        cells: [center],
-       state: Trap.place_state(level, stats),
+       state: Trap.place_state(level, stats, group),
        interval: definition.hit_interval,
        duration: Enum.at(definition.unit_duration, level - 1),
        visible?: false

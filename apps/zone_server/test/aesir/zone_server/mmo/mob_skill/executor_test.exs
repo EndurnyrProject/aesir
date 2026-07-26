@@ -36,6 +36,23 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
     end
   end
 
+  defmodule OriginAware do
+    @moduledoc false
+    @behaviour Active
+
+    @impl Active
+    def validate(_caster, _target, _level, _definition), do: :ok
+
+    @impl Active
+    def cast(caster, _target, _level, _definition), do: {:ok, caster}
+
+    @impl Active
+    def cast_with_origin(caster, target, level, definition, origin) do
+      send(self(), {:origin_cast, target, level, definition.id, origin})
+      {:ok, caster}
+    end
+  end
+
   defmodule MobCastPreferred do
     @moduledoc false
     @behaviour Active
@@ -336,6 +353,13 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
                {:error, :no_target}
 
       refute_received {:cast, _, _, _, _}
+    end
+
+    test "dispatches mob origin when the skill supports origin-aware casting" do
+      stub_skill(9010, :fake_skill, OriginAware, %{target_type: :ground})
+
+      assert Executor.execute(mob(), row(%{skill_id: 9010, target: :self})) == :ok
+      assert_received {:origin_cast, {:ground, 100, 100}, 3, 9010, :mob}
     end
 
     test "prefers mob_cast/5 over cast/4 when the module exports it, with the raw target and full row" do

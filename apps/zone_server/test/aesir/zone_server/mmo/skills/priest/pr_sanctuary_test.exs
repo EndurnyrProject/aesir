@@ -188,11 +188,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
 
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
 
-    stub(Unit, :place, fn caster, skill_name, level, target ->
+    stub(Unit, :place, fn caster, skill_name, level, target, options ->
+      assert options == [origin: :normal, state: %{paid_return?: true}]
       send(test_pid, {:ready_to_place, self()})
 
       receive do
-        :place -> call_original(Unit, :place, [caster, skill_name, level, target])
+        :place -> call_original(Unit, :place, [caster, skill_name, level, target, options])
       end
     end)
 

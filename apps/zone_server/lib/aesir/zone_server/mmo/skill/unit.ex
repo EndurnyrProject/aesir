@@ -36,11 +36,33 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
   """
   @spec place(PlayerState.t() | MobState.t(), atom(), non_neg_integer(), {integer(), integer()}) ::
           {:ok, Group.t()} | {:error, term()}
-  def place(caster_state, skill_name, level, {x, y}) do
+  def place(caster_state, skill_name, level, cell),
+    do: place(caster_state, skill_name, level, cell, origin: :direct)
+
+  @doc """
+  Places a ground skill with atomic caller-provided state and cast origin.
+
+  `:state` is merged with the skill's `on_place/1` state before registration.
+  `:origin` defaults to `:direct` and records which validated entry point caused
+  the placement without changing placement validation.
+  """
+  @spec place(
+          PlayerState.t() | MobState.t(),
+          atom(),
+          non_neg_integer(),
+          {integer(), integer()},
+          keyword()
+        ) :: {:ok, Group.t()} | {:error, term()}
+  def place(caster_state, skill_name, level, {x, y}, opts) do
+    initial_state =
+      opts
+      |> Keyword.get(:state, %{})
+      |> Map.put(:cast_origin, Keyword.get(opts, :origin, :direct))
+
     with {:ok, _module} <- module_for(skill_name),
          {:ok, definition} <- skill_definition(skill_name) do
       caster_state
-      |> build_group(definition.id, skill_name, level, {x, y})
+      |> build_group(definition.id, skill_name, level, {x, y}, initial_state)
       |> place_group({caster_state.x, caster_state.y})
     end
   end
@@ -134,7 +156,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
     end
   end
 
-  defp build_group(caster_state, skill_id, skill_name, level, {x, y}) do
+  defp build_group(caster_state, skill_id, skill_name, level, {x, y}, initial_state) do
     {caster_id, caster_type} = caster_identity(caster_state)
 
     %Group{
@@ -145,7 +167,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
       caster_id: caster_id,
       caster_type: caster_type,
       map_name: caster_state.map_name,
-      center: {x, y}
+      center: {x, y},
+      state: initial_state
     }
   end
 
@@ -173,7 +196,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
       cells ->
         now = System.monotonic_time(:millisecond)
         initial_delay = Map.get(placement, :initial_delay, placement.interval)
-        state = placement_state(placement)
+        state = Map.merge(group.state, placement_state(placement))
 
         group = %{
           group

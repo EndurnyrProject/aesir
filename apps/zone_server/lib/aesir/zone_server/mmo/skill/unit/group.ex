@@ -18,10 +18,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
   use TypedStruct
 
   alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Unit
 
   @typedoc "A single map cell occupied by the skill-unit footprint."
   @type cell :: {non_neg_integer(), non_neg_integer()}
+
+  @typedoc "Extensible skill state; Hunter traps embed typed lifecycle metadata at `:trap`."
+  @type skill_state :: %{optional(:trap) => TrapState.t(), optional(term()) => term()}
 
   typedstruct do
     field :group_id, non_neg_integer(), enforce: true
@@ -42,7 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
     field :interval, pos_integer()
     field :lifecycle_policy, LifecyclePolicy.t(), default: %LifecyclePolicy{}
     field :visible?, boolean(), default: false
-    field :state, map(), default: %{}
+    field :state, skill_state(), default: %{}
     field :handler, module() | nil, default: nil
   end
 

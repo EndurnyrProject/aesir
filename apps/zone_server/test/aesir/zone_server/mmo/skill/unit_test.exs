@@ -214,13 +214,36 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
       assert group.center == {100, 120}
       assert group.cells == [{100, 120}]
       assert group.interval == @interval
-      assert group.state == %{seeded: true}
+      assert group.state == %{cast_origin: :direct, seeded: true}
 
       assert group.next_tick_at >= before + @interval
       assert group.expires_at >= before + @duration
       assert group.next_tick_at + (@duration - @interval) == group.expires_at
 
       assert %Group{} = Storage.get(group.group_id)
+    end
+
+    test "merges caller state and cast origin before registration" do
+      stub(Broadcast, :to_in_range, fn _, _, _, _, _ -> :ok end)
+
+      assert {:ok, group} =
+               Unit.place(caster(), @skill_name, 7, {100, 120},
+                 origin: :normal,
+                 state: %{caller_value: 1}
+               )
+
+      assert %{cast_origin: :normal, caller_value: 1, seeded: true} = group.state
+      assert Storage.get(group.group_id).state == group.state
+    end
+
+    test "place/4 records direct origin while mob placement accepts mob origin" do
+      stub(Broadcast, :to_in_range, fn _, _, _, _, _ -> :ok end)
+
+      assert {:ok, %{state: %{cast_origin: :direct}}} =
+               Unit.place(caster(), @skill_name, 7, {100, 120})
+
+      assert {:ok, %{state: %{cast_origin: :mob}}} =
+               Unit.place(mob_caster(), @skill_name, 5, {101, 120}, origin: :mob)
     end
 
     test "maps placement deadlines to non-negative server ticks" do

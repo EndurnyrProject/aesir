@@ -194,10 +194,15 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   end
 
   defp invoke(module, state, raw_target, adapted_target, row, definition) do
-    if function_exported?(module, :mob_cast, 5) do
-      module.mob_cast(state, raw_target, row.level, definition, row)
-    else
-      module.cast(state, adapted_target, row.level, definition)
+    cond do
+      function_exported?(module, :mob_cast, 5) ->
+        module.mob_cast(state, raw_target, row.level, definition, row)
+
+      function_exported?(module, :cast_with_origin, 5) ->
+        module.cast_with_origin(state, adapted_target, row.level, definition, :mob)
+
+      true ->
+        module.cast(state, adapted_target, row.level, definition)
     end
   end
 
