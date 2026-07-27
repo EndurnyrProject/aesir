@@ -606,7 +606,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
     end
 
     test "a silence hook mid-cast clears casting, cancels the timer and sets the delay cooldown" do
-      row = row(%{cast_time: 100})
+      row = row(%{cast_time: 10_000})
       stub(MobSkillDb, :rows_for, fn 1001 -> [row] end)
 
       {:noreply, casting_state} = MobSession.handle_info({:ai, :tick}, build_mob_state())
@@ -622,8 +622,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
 
       assert updated.casting == nil
       assert updated.skill_cooldowns[19] >= before + 5_000
-      # The cancelled timer must never deliver {:casting, :complete} (window > cast_time).
-      refute_receive {:casting, :complete}, 200
+      assert Process.read_timer(ref) == false
+      refute_received {:casting, :complete}
     end
 
     test "a status_changed for an unrelated status leaves the cast running" do
@@ -650,7 +650,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
     end
 
     test "an {:ai, :tick} on a generically blocked mid-cast mob aborts the cast and cancels the timer" do
-      ref = Process.send_after(self(), {:casting, :complete}, 100)
+      ref = Process.send_after(self(), {:casting, :complete}, 10_000)
 
       state =
         build_mob_state()
@@ -667,7 +667,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       assert updated.casting == nil
       assert updated.skill_cooldowns[19] >= before + 5_000
       assert updated.ai_timer_ref
-      refute_receive {:casting, :complete}, 200
+      assert Process.read_timer(ref) == false
+      refute_received {:casting, :complete}
     end
 
     test "a silenced mob does not begin a new cast on its ai tick" do
