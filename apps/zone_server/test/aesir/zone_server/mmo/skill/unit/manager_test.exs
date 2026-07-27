@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Id
   alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
@@ -1215,6 +1216,43 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
   end
 
   describe "targetable cells" do
+    test "allocates unique contiguous IDs while advancing through a large visible footprint" do
+      manager = start_manager(10_000)
+      first = Id.first()
+      cells = for index <- 0..80, do: {100 + rem(index, 9), 100 + div(index, 9)}
+
+      :erlang.trace(manager, true, [:call])
+      :erlang.trace_pattern({Id, :allocate, 1}, true, [:local])
+
+      on_exit(fn ->
+        :erlang.trace_pattern({Id, :allocate, 1}, false, [:local])
+      end)
+
+      assert :ok = Manager.register(manager, group(1, visible?: true, cells: cells))
+
+      :erlang.trace(manager, false, [:call])
+      :erlang.trace_pattern({Id, :allocate, 1}, false, [:local])
+
+      for expected_start <- first..(first + 80) do
+        assert_receive {:trace, ^manager, :call, {Id, :allocate, [[start: ^expected_start]]}}
+      end
+
+      ids = Storage.get_cells_by_group(1) |> Enum.map(& &1.cell_id) |> Enum.sort()
+      assert ids == Enum.to_list(first..(first + 80))
+    end
+
+    test "keeps ordinary visible groups on the contiguous allocation path" do
+      manager = start_manager(10_000)
+      first = Id.first()
+
+      assert :ok = Manager.register(manager, group(1, visible?: true))
+      assert :ok = Manager.register(manager, group(2, visible?: true, cells: [{101, 100}]))
+
+      assert [%Cell{cell_id: ^first, group_id: 1}] = Storage.get_cells_by_group(1)
+      assert [%Cell{cell_id: second, group_id: 2}] = Storage.get_cells_by_group(2)
+      assert second == first + 1
+    end
+
     test "keeps visible group membership only in storage" do
       manager = start_manager(10_000)
 

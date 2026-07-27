@@ -1706,8 +1706,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp materialize_visible_cells(%Group{cells: cells} = group, stored) do
-    Enum.reduce_while(cells, {:ok, stored}, fn {x, y}, {:ok, stored} ->
-      with {:ok, cell_id} <- Id.allocate(),
+    Enum.reduce_while(cells, {:ok, stored, Id.first()}, fn {x, y}, {:ok, stored, start} ->
+      with {:ok, cell_id} <- Id.allocate(start: start),
            :ok <- ensure_cell_available(group, x, y),
            {:ok, cell} <-
              Cell.new(
@@ -1726,13 +1726,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
            :ok <- Storage.insert_cell(cell),
            :ok <- commit_terrain(cell),
            :ok <- register_target(cell) do
-        {:cont, {:ok, [cell | stored]}}
+        {:cont, {:ok, [cell | stored], cell_id + 1}}
       else
         {:error, _reason} = error -> {:halt, error}
       end
     end)
     |> case do
-      {:ok, stored} -> {:ok, Enum.reverse(stored)}
+      {:ok, stored, _start} -> {:ok, Enum.reverse(stored)}
       error -> error
     end
   end
