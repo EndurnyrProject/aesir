@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
+  alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Skill.CastTime
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cost
@@ -1999,6 +2001,114 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert {:ok, updated} = Interpreter.cast(ammo_game_state(inventory), 6, 1, :self)
       assert updated.inventory[0].amount == 30
       assert updated.pending_inventory_persist == []
+    end
+  end
+
+  describe "weapon requirement" do
+    defp weapon_definition(require_weapon) do
+      %Definition{
+        id: 6,
+        name: :sm_provoke,
+        display_name: "Weapon Test",
+        max_level: 10,
+        target_type: :self,
+        damage_type: :no_damage,
+        sp_cost: List.duplicate(9, 10),
+        require_weapon: require_weapon
+      }
+    end
+
+    defp equipped_game_state(equipment) do
+      gs = game_state(100, %{6 => 1})
+      %{gs | stats: %{gs.stats | equipment: equipment}}
+    end
+
+    setup do
+      stub(ItemManagement, :get_item_by_id, fn
+        90_201 ->
+          {:ok,
+           %ItemDefinition{
+             id: 90_201,
+             aegis_name: "test_musical",
+             name: "Test Musical",
+             subtype: :musical,
+             type: :weapon
+           }}
+
+        90_202 ->
+          {:ok,
+           %ItemDefinition{
+             id: 90_202,
+             aegis_name: "test_sword",
+             name: "Test Sword",
+             subtype: :one_handed_sword,
+             type: :weapon
+           }}
+      end)
+
+      :ok
+    end
+
+    test "an unrestricted skill casts without player equipment" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, weapon_definition([])} end)
+      stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+
+      assert {:ok, _} = Interpreter.cast(game_state(100, %{6 => 1}), 6, 1, :self)
+    end
+
+    test "a listed player weapon is allowed" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, weapon_definition([:musical])} end)
+      stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+
+      assert {:ok, _} =
+               Interpreter.cast(
+                 equipped_game_state(%Equipment{right_hand: 90_201}),
+                 6,
+                 1,
+                 :self
+               )
+    end
+
+    test "a missing player weapon is rejected" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, weapon_definition([:musical])} end)
+      reject(&SmProvoke.cast/4)
+
+      assert {:error, :wrong_weapon} =
+               Interpreter.cast(equipped_game_state(%Equipment{}), 6, 1, :self)
+    end
+
+    test "a mob-shaped caster ignores player weapon requirements" do
+      definition = %{weapon_definition([:musical]) | sp_cost: [:all]}
+      stub(Catalog, :by_id, fn 6 -> {:ok, definition} end)
+
+      caster =
+        resurrection_mob()
+        |> Map.merge(%{
+          stats: %{
+            current_state: %{hp: 100, sp: 100},
+            progression: %{learned_skills: %{6 => 1}}
+          },
+          skill_cooldowns: %{},
+          act_delay_until: 0
+        })
+
+      assert :ok = Interpreter.preflight_cast(caster, 6, 1, :self)
+      refute Map.has_key?(caster.stats, :equipment)
+    end
+
+    test "a mismatched player weapon fails before cost and cooldown validation" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, weapon_definition([:musical])} end)
+      reject(&SmProvoke.cast/4)
+
+      gs =
+        %{
+          equipped_game_state(%Equipment{right_hand: 90_202})
+          | skill_cooldowns: %{6 => System.monotonic_time(:millisecond) + 60_000}
+        }
+        |> put_in([:stats, :current_state, :sp], 0)
+
+      assert {:error, :wrong_weapon} = Interpreter.cast(gs, 6, 1, :self)
+      assert gs.stats.current_state.sp == 0
     end
   end
 

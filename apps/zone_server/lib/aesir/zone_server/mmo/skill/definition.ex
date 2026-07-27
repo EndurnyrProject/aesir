@@ -13,6 +13,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   behaviour callbacks read these from `definition/0` instead of hardcoding module
   constants.
 
+  `require_weapon` restricts ordinary player casts to the listed equipped
+  right-hand weapon subtypes. An empty list (the default) accepts any weapon.
+
   Use `build!/2` to construct a validated definition from `use` options.
   """
 
@@ -87,6 +90,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
             damage_base: :weapon,
             item_cost: [],
             requires_ammo: false,
+            require_weapon: [],
             status: nil,
             quest_skill: false,
             quest_owner_job: nil
@@ -120,6 +124,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           damage_base: damage_base(),
           item_cost: [item_cost_entry()],
           requires_ammo: boolean(),
+          require_weapon: [atom()],
           status: atom() | nil,
           quest_skill: boolean(),
           quest_owner_job: atom() | nil
@@ -166,6 +171,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     damage_base: {:enum, [:weapon, :shield]},
     item_cost: {:list, %{id: {:required, :integer}, amount: {:required, {:integer, {:gt, 0}}}}},
     requires_ammo: :boolean,
+    require_weapon: {:list, :atom},
     status: :atom,
     quest_skill: :boolean,
     quest_owner_job: :atom
@@ -196,6 +202,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     damage_base: :weapon,
     item_cost: [],
     requires_ammo: false,
+    require_weapon: [],
     status: nil,
     quest_skill: false,
     quest_owner_job: nil

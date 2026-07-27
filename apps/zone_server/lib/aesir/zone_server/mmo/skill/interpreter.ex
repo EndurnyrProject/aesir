@@ -510,6 +510,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     with {:ok, definition} <- fetch_definition(skill_id),
          :ok <- check_max_level(definition, level),
          :ok <- check_castable(definition),
+         :ok <- check_weapon(game_state, definition),
          :ok <- check_learned(game_state, skill_id, level),
          :ok <- check_quest_lineage(game_state, definition),
          :ok <- check_target(game_state, target, definition),
@@ -606,6 +607,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   defp check_castable(%{target_type: :passive}), do: {:error, :passive_skill}
   defp check_castable(_definition), do: :ok
+
+  defp check_weapon(_game_state, %{require_weapon: []}), do: :ok
+
+  defp check_weapon(%{stats: %{equipment: equipment}}, %{require_weapon: allowed}) do
+    if PlayerStats.weapon_type(equipment) in allowed,
+      do: :ok,
+      else: {:error, :wrong_weapon}
+  end
+
+  defp check_weapon(_game_state, _definition), do: :ok
 
   defp fetch_active_module(definition) do
     case Catalog.active_module_for(definition.name) do
