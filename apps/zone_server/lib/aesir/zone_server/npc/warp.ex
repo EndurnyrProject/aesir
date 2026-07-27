@@ -8,21 +8,32 @@ defmodule Aesir.ZoneServer.Npc.Warp do
   matching the rAthena convention also used by `Mmo.MobManagement.MobSpawn`.
   """
 
-  use TypedStruct
+  @enforce_keys [:id, :map, :to_map, :x, :y, :to_x, :to_y]
+  defstruct id: nil,
+            map: nil,
+            to_map: nil,
+            x: nil,
+            y: nil,
+            xs: 0,
+            ys: 0,
+            to_x: nil,
+            to_y: nil,
+            sprite: 0,
+            name: ""
 
-  typedstruct do
-    field :id, String.t(), enforce: true
-    field :map, String.t(), enforce: true
-    field :to_map, String.t(), enforce: true
-    field :x, non_neg_integer(), enforce: true
-    field :y, non_neg_integer(), enforce: true
-    field :xs, non_neg_integer(), default: 0
-    field :ys, non_neg_integer(), default: 0
-    field :to_x, non_neg_integer(), enforce: true
-    field :to_y, non_neg_integer(), enforce: true
-    field :sprite, non_neg_integer(), default: 0
-    field :name, String.t(), default: ""
-  end
+  @type t() :: %__MODULE__{
+          id: String.t(),
+          map: String.t(),
+          to_map: String.t(),
+          x: non_neg_integer(),
+          y: non_neg_integer(),
+          xs: non_neg_integer(),
+          ys: non_neg_integer(),
+          to_x: non_neg_integer(),
+          to_y: non_neg_integer(),
+          sprite: non_neg_integer(),
+          name: String.t()
+        }
 end
 
 defmodule Aesir.ZoneServer.Npc.Warp.Registry do

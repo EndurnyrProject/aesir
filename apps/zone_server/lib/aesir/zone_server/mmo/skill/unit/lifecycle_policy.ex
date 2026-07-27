@@ -5,7 +5,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy do
 
   A group either expires or skips its scheduled action until normal expiry.
   """
-  use TypedStruct
 
   @typedoc "A supported loss action for a persistent skill-unit group."
   @type action :: :expire | :skip_action
@@ -23,11 +22,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy do
   """
   @type exclusive_family :: atom() | nil
 
-  typedstruct do
-    field :on_caster_loss, action(), default: :expire
-    field :on_target_loss, action(), default: :expire
-    field :max_instances_per_caster, max_instances_per_caster(), default: nil
-    field :exclusive_family, exclusive_family(), default: nil
-    field :inherit_family_duration, boolean(), default: false
-  end
+  defstruct on_caster_loss: :expire,
+            on_target_loss: :expire,
+            max_instances_per_caster: nil,
+            exclusive_family: nil,
+            inherit_family_duration: false
+
+  @type t() :: %__MODULE__{
+          on_caster_loss: action(),
+          on_target_loss: action(),
+          max_instances_per_caster: max_instances_per_caster(),
+          exclusive_family: exclusive_family(),
+          inherit_family_duration: boolean()
+        }
 end

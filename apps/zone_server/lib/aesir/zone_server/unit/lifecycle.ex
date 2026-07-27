@@ -1,19 +1,20 @@
 defmodule Aesir.ZoneServer.Unit.Lifecycle.Event do
   @moduledoc "A normalized player or mob lifecycle transition."
 
-  use TypedStruct
-
   alias Aesir.ZoneServer.Unit
 
   @type reason :: :death | :disconnect | :termination | :warp
 
-  typedstruct do
-    field :unit_type, Unit.unit_type(), enforce: true
-    field :unit_id, integer(), enforce: true
-    field :reason, reason(), enforce: true
-    field :old_map, String.t() | nil
-    field :new_map, String.t() | nil
-  end
+  @enforce_keys [:unit_type, :unit_id, :reason]
+  defstruct [:unit_type, :unit_id, :reason, :old_map, :new_map]
+
+  @type t() :: %__MODULE__{
+          unit_type: Unit.unit_type(),
+          unit_id: integer(),
+          reason: reason(),
+          old_map: String.t() | nil,
+          new_map: String.t() | nil
+        }
 end
 
 defmodule Aesir.ZoneServer.Unit.Lifecycle do

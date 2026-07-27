@@ -2,7 +2,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Cell do
   @moduledoc "A stable, independently addressable skill-unit map cell."
 
   import Bitwise
-  use TypedStruct
 
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
 
@@ -16,17 +15,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Cell do
   @uint32_max 0xFFFF_FFFF
   @uint64_max 0xFFFF_FFFF_FFFF_FFFF
 
-  typedstruct do
-    field :cell_id, non_neg_integer(), enforce: true
-    field :group_id, non_neg_integer(), enforce: true
-    field :map_name, String.t()
-    field :x, integer()
-    field :y, integer()
-    field :hp, non_neg_integer(), default: 0
-    field :max_hp, non_neg_integer(), default: 0
-    field :flags, non_neg_integer(), default: 0
-    field :state, map(), default: %{}
-  end
+  @enforce_keys [:cell_id, :group_id]
+  defstruct cell_id: nil,
+            group_id: nil,
+            map_name: nil,
+            x: nil,
+            y: nil,
+            hp: 0,
+            max_hp: 0,
+            flags: 0,
+            state: %{}
+
+  @type t() :: %__MODULE__{
+          cell_id: non_neg_integer(),
+          group_id: non_neg_integer(),
+          map_name: String.t() | nil,
+          x: integer() | nil,
+          y: integer() | nil,
+          hp: non_neg_integer(),
+          max_hp: non_neg_integer(),
+          flags: non_neg_integer(),
+          state: map()
+        }
 
   @doc "Builds a cell after validating its flags and optional HP state."
   @spec new(map()) :: {:ok, t()} | {:error, :invalid_cell | :invalid_flags | :invalid_hp}

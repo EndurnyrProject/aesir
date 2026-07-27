@@ -3,19 +3,29 @@ defmodule Aesir.Commons.InterServer.Schemas.OnlineUser do
   Presence value for a logged-in account. Stored as a Horde.Registry value keyed
   by `{:online, account_id}`; owned by the player's current serving process.
   """
-  use TypedStruct
 
   @type server :: :account_server | :char_server | :zone_server
 
-  typedstruct do
-    field :account_id, non_neg_integer(), enforce: true
-    field :username, String.t()
-    field :server_type, server()
-    field :server_node, node()
-    field :last_seen, DateTime.t()
-    field :character_id, non_neg_integer() | nil
-    field :map_name, String.t() | nil
-  end
+  @enforce_keys [:account_id]
+  defstruct [
+    :account_id,
+    :username,
+    :server_type,
+    :server_node,
+    :last_seen,
+    :character_id,
+    :map_name
+  ]
+
+  @type t() :: %__MODULE__{
+          account_id: non_neg_integer(),
+          username: String.t() | nil,
+          server_type: server() | nil,
+          server_node: node() | nil,
+          last_seen: DateTime.t() | nil,
+          character_id: non_neg_integer() | nil,
+          map_name: String.t() | nil
+        }
 
   @spec new(non_neg_integer(), String.t(), server(), non_neg_integer() | nil, String.t() | nil) ::
           t()

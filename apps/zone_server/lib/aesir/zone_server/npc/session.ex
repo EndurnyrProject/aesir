@@ -62,7 +62,6 @@ defmodule Aesir.ZoneServer.Npc.Session do
   """
 
   use GenServer
-  use TypedStruct
 
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Npc.Events
@@ -84,18 +83,30 @@ defmodule Aesir.ZoneServer.Npc.Session do
   @typedoc "The timer's run state: idle before/after its schedule, running mid-schedule, or stopped."
   @type status :: :stopped | :running | :idle
 
-  typedstruct do
-    field :gid, non_neg_integer(), enforce: true
-    field :schedule, [timer_entry()], default: []
-    field :pending, [timer_entry()], default: []
-    field :status, status(), default: :stopped
-    field :start_mono, integer() | nil, default: nil
-    field :frozen_elapsed, non_neg_integer(), default: 0
-    field :timer_ref, reference() | nil, default: nil
-    field :on_fire, (non_neg_integer(), String.t() -> any()), enforce: true
-    field :enabled?, boolean(), default: true
-    field :hidden?, boolean(), default: false
-  end
+  @enforce_keys [:gid, :on_fire]
+  defstruct gid: nil,
+            schedule: [],
+            pending: [],
+            status: :stopped,
+            start_mono: nil,
+            frozen_elapsed: 0,
+            timer_ref: nil,
+            on_fire: nil,
+            enabled?: true,
+            hidden?: false
+
+  @type t() :: %__MODULE__{
+          gid: non_neg_integer(),
+          schedule: [timer_entry()],
+          pending: [timer_entry()],
+          status: status(),
+          start_mono: integer() | nil,
+          frozen_elapsed: non_neg_integer(),
+          timer_ref: reference() | nil,
+          on_fire: (non_neg_integer(), String.t() -> any()),
+          enabled?: boolean(),
+          hidden?: boolean()
+        }
 
   # Public API
 

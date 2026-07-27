@@ -6,7 +6,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
   per-record module. Carries the loot/equip essentials only - scripts and the
   nested Trade/NoUse/Delay/Stack restrictions are intentionally not modelled yet.
   """
-  use TypedStruct
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
 
@@ -25,32 +24,58 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
           | :shadow_gear
           | :cash
 
-  typedstruct do
-    field :id, integer(), enforce: true
-    field :aegis_name, String.t(), enforce: true
-    field :name, String.t(), enforce: true
-    field :type, item_type(), default: :etc
-    field :subtype, atom(), default: nil
-    field :weight, integer(), default: 0
-    field :buy, integer(), default: 0
-    field :sell, integer(), default: 0
-    field :attack, integer(), default: 0
-    field :magic_attack, integer(), default: 0
-    field :defense, integer(), default: 0
-    field :range, integer(), default: 0
-    field :slots, integer(), default: 0
-    field :view, integer(), default: 0
-    field :jobs, [atom()], default: []
-    field :locations, [atom()], default: []
-    field :weapon_level, integer(), default: nil
-    field :armor_level, integer(), default: nil
-    field :equip_level_min, integer(), default: 0
-    field :equip_level_max, integer(), default: 0
-    field :refineable, boolean(), default: false
-    field :on_use, String.t() | nil, default: nil
-    field :on_equip, EquipScript.program() | nil, default: nil
-    field :attack_element, atom(), default: nil
-  end
+  @enforce_keys [:id, :aegis_name, :name]
+  defstruct id: nil,
+            aegis_name: nil,
+            name: nil,
+            type: :etc,
+            subtype: nil,
+            weight: 0,
+            buy: 0,
+            sell: 0,
+            attack: 0,
+            magic_attack: 0,
+            defense: 0,
+            range: 0,
+            slots: 0,
+            view: 0,
+            jobs: [],
+            locations: [],
+            weapon_level: nil,
+            armor_level: nil,
+            equip_level_min: 0,
+            equip_level_max: 0,
+            refineable: false,
+            on_use: nil,
+            on_equip: nil,
+            attack_element: nil
+
+  @type t() :: %__MODULE__{
+          id: integer(),
+          aegis_name: String.t(),
+          name: String.t(),
+          type: item_type(),
+          subtype: atom(),
+          weight: integer(),
+          buy: integer(),
+          sell: integer(),
+          attack: integer(),
+          magic_attack: integer(),
+          defense: integer(),
+          range: integer(),
+          slots: integer(),
+          view: integer(),
+          jobs: [atom()],
+          locations: [atom()],
+          weapon_level: integer(),
+          armor_level: integer(),
+          equip_level_min: integer(),
+          equip_level_max: integer(),
+          refineable: boolean(),
+          on_use: String.t() | nil,
+          on_equip: EquipScript.program() | nil,
+          attack_element: atom()
+        }
 
   @doc """
   The item's sell price, applying the rAthena default: when `sell` is unset

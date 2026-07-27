@@ -26,8 +26,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
       DamageCalculator.calculate_damage(player_combatant, mob_combatant)
   """
 
-  use TypedStruct
-
   @typedoc """
   Standardized combatant structure containing all data needed for combat calculations.
 
@@ -38,16 +36,87 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
   - Timing: attack_range, attack_delay_ms
   - Positioning: position, map_name
   """
-  typedstruct do
+  @enforce_keys [
+    :unit_id,
+    :unit_type,
+    :base_stats,
+    :combat_stats,
+    :progression,
+    :element,
+    :race,
+    :size,
+    :weapon,
+    :attack_range,
+    :attack_delay_ms
+  ]
+  defstruct [
     # Unit identification
-    field :unit_id, integer(), enforce: true
-    field :unit_type, :player | :mob | :skill_unit, enforce: true
-    field :party_id, non_neg_integer(), default: 0
-    field :guild_id, non_neg_integer(), default: 0
+    unit_id: nil,
+    unit_type: nil,
+    party_id: 0,
+    guild_id: 0,
 
     # Base stats (STR, AGI, VIT, INT, DEX, LUK)
-    field :base_stats,
-          %{
+    base_stats: nil,
+
+    # Combat-derived stats (physical: atk/def, magic: matk/mdef/soft_mdef)
+    combat_stats: nil,
+
+    # Character progression
+    progression: nil,
+
+    # Element data (for damage calculation)
+    element: nil,
+
+    # Race data (for modifier calculation)
+    race: nil,
+
+    # Size data (for modifier calculation)
+    size: nil,
+
+    # Weapon information
+    weapon: nil,
+
+    # Attack range for combat distance calculations
+    attack_range: nil,
+
+    # Attack cadence in milliseconds: the delay the combat loop uses to gate
+    # attacks. Sent to the client as ZC_NOTIFY_ACT src_speed so the swing
+    # animation duration matches real attack speed.
+    attack_delay_ms: nil,
+
+    # Position data (optional for some combat operations)
+    position: nil,
+
+    # Map context (optional)
+    map_name: nil,
+
+    # Passive skill levels precomputed at combatant-build time (0 for mobs).
+    divine_protection_level: 0,
+    demon_bane_level: 0,
+    beast_bane_level: 0,
+    dragonology_level: 0,
+    faith_level: 0,
+
+    # Mob-class axis for bAddClass/bSubClass-style equipment bonuses. Players
+    # are always :normal; mobs are :boss when tagged with the :boss mode.
+    class: :normal,
+
+    # Whether the attacker is mounted (Peco-Peco). Feeds the mounted-spear
+    # size-modifier override; always false for mobs.
+    riding: false,
+
+    # Folded equipment bonus map (players: `stats.modifiers.equipment`;
+    # mobs: empty, since mobs carry no equipment).
+    equip_modifiers: %{}
+  ]
+
+  @type t() :: %__MODULE__{
+          unit_id: integer(),
+          unit_type: :player | :mob | :skill_unit,
+          party_id: non_neg_integer(),
+          guild_id: non_neg_integer(),
+          base_stats: %{
             str: integer(),
             agi: integer(),
             vit: integer(),
@@ -55,11 +124,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
             dex: integer(),
             luk: integer()
           },
-          enforce: true
-
-    # Combat-derived stats (physical: atk/def, magic: matk/mdef/soft_mdef)
-    field :combat_stats,
-          %{
+          combat_stats: %{
             atk: integer(),
             def: integer(),
             hit: integer(),
@@ -71,67 +136,31 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
             mdef: integer(),
             soft_mdef: integer()
           },
-          enforce: true
-
-    # Character progression
-    field :progression,
-          %{
+          progression: %{
             base_level: integer(),
             job_level: integer()
           },
-          enforce: true
-
-    # Element data (for damage calculation)
-    field :element, tuple() | atom(), enforce: true
-
-    # Race data (for modifier calculation)
-    field :race, atom(), enforce: true
-
-    # Size data (for modifier calculation)
-    field :size, atom(), enforce: true
-
-    # Weapon information
-    field :weapon,
-          %{
+          element: tuple() | atom(),
+          race: atom(),
+          size: atom(),
+          weapon: %{
             type: atom(),
             element: atom(),
             size: atom()
           },
-          enforce: true
-
-    # Attack range for combat distance calculations
-    field :attack_range, integer(), enforce: true
-
-    # Attack cadence in milliseconds: the delay the combat loop uses to gate
-    # attacks. Sent to the client as ZC_NOTIFY_ACT src_speed so the swing
-    # animation duration matches real attack speed.
-    field :attack_delay_ms, integer(), enforce: true
-
-    # Position data (optional for some combat operations)
-    field :position, {integer(), integer()}, enforce: false
-
-    # Map context (optional)
-    field :map_name, String.t(), enforce: false
-
-    # Passive skill levels precomputed at combatant-build time (0 for mobs).
-    field :divine_protection_level, integer(), default: 0
-    field :demon_bane_level, integer(), default: 0
-    field :beast_bane_level, integer(), default: 0
-    field :dragonology_level, integer(), default: 0
-    field :faith_level, integer(), default: 0
-
-    # Mob-class axis for bAddClass/bSubClass-style equipment bonuses. Players
-    # are always :normal; mobs are :boss when tagged with the :boss mode.
-    field :class, :normal | :boss, default: :normal
-
-    # Whether the attacker is mounted (Peco-Peco). Feeds the mounted-spear
-    # size-modifier override; always false for mobs.
-    field :riding, boolean(), default: false
-
-    # Folded equipment bonus map (players: `stats.modifiers.equipment`;
-    # mobs: empty, since mobs carry no equipment).
-    field :equip_modifiers, map(), default: %{}
-  end
+          attack_range: integer(),
+          attack_delay_ms: integer(),
+          position: {integer(), integer()} | nil,
+          map_name: String.t() | nil,
+          divine_protection_level: integer(),
+          demon_bane_level: integer(),
+          beast_bane_level: integer(),
+          dragonology_level: integer(),
+          faith_level: integer(),
+          class: :normal | :boss,
+          riding: boolean(),
+          equip_modifiers: map()
+        }
 
   @doc """
   Creates a new combatant struct with validation.

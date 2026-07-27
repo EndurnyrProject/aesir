@@ -7,14 +7,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Modifiers do
   field default within the module that defines it.
   """
 
-  use TypedStruct
+  defstruct equipment: %{}, status_effects: %{}, job_bonuses: %{}, passive: %{}
 
-  typedstruct do
-    field :equipment, map(), default: %{}
-    field :status_effects, map(), default: %{}
-    field :job_bonuses, map(), default: %{}
-    field :passive, map(), default: %{}
-  end
+  @type t() :: %__MODULE__{
+          equipment: map(),
+          status_effects: map(),
+          job_bonuses: map(),
+          passive: map()
+        }
 end
 
 defmodule Aesir.ZoneServer.Unit.Player.Stats do
@@ -31,8 +31,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   This module is designed to work closely with PlayerSession and PlayerState for
   real-time stat calculations and client synchronization.
   """
-
-  use TypedStruct
 
   import Bitwise
 
@@ -57,63 +55,86 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   @riding_option_bit Option.id(:riding)
 
-  typedstruct module: PlayerProgression do
-    field :base_level, non_neg_integer()
-    field :job_level, non_neg_integer()
-    field :base_exp, non_neg_integer()
-    field :job_exp, non_neg_integer()
-    field :job_id, non_neg_integer()
-    field :skill_point, non_neg_integer()
-    field :status_point, non_neg_integer()
-    field :trait_point, non_neg_integer(), default: 0
-    field :learned_skills, %{integer() => non_neg_integer()}, default: %{}
+  defmodule PlayerProgression do
+    @moduledoc false
+
+    defstruct base_level: nil,
+              job_level: nil,
+              base_exp: nil,
+              job_exp: nil,
+              job_id: nil,
+              skill_point: nil,
+              status_point: nil,
+              trait_point: 0,
+              learned_skills: %{}
+
+    @type t() :: %__MODULE__{
+            base_level: non_neg_integer() | nil,
+            job_level: non_neg_integer() | nil,
+            base_exp: non_neg_integer() | nil,
+            job_exp: non_neg_integer() | nil,
+            job_id: non_neg_integer() | nil,
+            skill_point: non_neg_integer() | nil,
+            status_point: non_neg_integer() | nil,
+            trait_point: non_neg_integer(),
+            learned_skills: %{integer() => non_neg_integer()}
+          }
   end
 
-  typedstruct module: Equipment do
+  defmodule Equipment do
+    @moduledoc false
+
+    defstruct [
+      :head_top,
+      :head_mid,
+      :head_low,
+      :armor,
+      :right_hand,
+      :left_hand,
+      :garment,
+      :shoes,
+      :right_accessory,
+      :left_accessory,
+      :ammo
+    ]
+
     @typedoc """
     Worn equipment derived from the equipped inventory items, keyed by equip
     location. Each populated field holds the equipped item's `nameid`; an empty
     slot is `nil`. This is rebuilt from the inventory whenever equipment changes.
     """
-    field :head_top, non_neg_integer()
-    field :head_mid, non_neg_integer()
-    field :head_low, non_neg_integer()
-    field :armor, non_neg_integer()
-    field :right_hand, non_neg_integer()
-    field :left_hand, non_neg_integer()
-    field :garment, non_neg_integer()
-    field :shoes, non_neg_integer()
-    field :right_accessory, non_neg_integer()
-    field :left_accessory, non_neg_integer()
-    field :ammo, non_neg_integer()
+    @type t() :: %__MODULE__{
+            head_top: non_neg_integer() | nil,
+            head_mid: non_neg_integer() | nil,
+            head_low: non_neg_integer() | nil,
+            armor: non_neg_integer() | nil,
+            right_hand: non_neg_integer() | nil,
+            left_hand: non_neg_integer() | nil,
+            garment: non_neg_integer() | nil,
+            shoes: non_neg_integer() | nil,
+            right_accessory: non_neg_integer() | nil,
+            left_accessory: non_neg_integer() | nil,
+            ammo: non_neg_integer() | nil
+          }
   end
 
-  typedstruct do
-    @typedoc """
-    Player-specific stats structure extending the base unit stats.
-
-    Includes all common unit stats plus player-specific fields:
-    - Equipment tracking
-    - Experience and job progression
-    - Multiple modifier sources
-    """
-
+  defstruct [
     # Common stats from Unit.Stats
-    field :base_stats, Stats.BaseStats.t()
-    field :derived_stats, Stats.DerivedStats.t()
-    field :combat_stats, Stats.CombatStats.t()
-    field :current_state, Stats.CurrentState.t()
+    base_stats: nil,
+    derived_stats: nil,
+    combat_stats: nil,
+    current_state: nil,
 
     # Player-specific fields
-    field :progression, PlayerProgression.t()
-    field :equipment, Equipment.t()
-    field :modifiers, Modifiers.t(), default: %Modifiers{}
+    progression: nil,
+    equipment: nil,
+    modifiers: %Modifiers{},
 
     # Minimal identity of the worn items ({nameid, refine} pairs), cached by
     # `apply_equipment_modifiers/2` so a recompute without an equipped-items
     # list can still re-evaluate the on_equip programs - their level inputs
     # (BaseLevel/JobLevel) change without any equipment change.
-    field :worn_items, [%{nameid: integer(), refine: integer()}], default: []
+    worn_items: [],
 
     # Denormalized copy of the `:riding` bit of `PlayerState.option`, the
     # single writer's authoritative in-memory value. `MountHandler` keeps this
@@ -122,8 +143,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     # (which only ever sees a `Stats` struct, never `PlayerState`) can gate
     # mounted passive bonuses (e.g. `KnSpearmastery`) without threading the
     # option bit through every `calculate_stats/3` call site.
-    field :riding, boolean(), default: false
-  end
+    riding: false
+  ]
+
+  @typedoc """
+  Player-specific stats structure extending the base unit stats.
+
+  Includes all common unit stats plus player-specific fields:
+  - Equipment tracking
+  - Experience and job progression
+  - Multiple modifier sources
+  """
+  @type t() :: %__MODULE__{
+          base_stats: Stats.BaseStats.t() | nil,
+          derived_stats: Stats.DerivedStats.t() | nil,
+          combat_stats: Stats.CombatStats.t() | nil,
+          current_state: Stats.CurrentState.t() | nil,
+          progression: PlayerProgression.t() | nil,
+          equipment: Equipment.t() | nil,
+          modifiers: Modifiers.t(),
+          worn_items: [%{nameid: integer(), refine: integer()}],
+          riding: boolean()
+        }
 
   @doc """
   Creates a Stats struct from a Character model.

@@ -6,7 +6,6 @@ defmodule Aesir.ZoneServer.Guild.Position do
   and `tax` are carried for parity with rAthena but inert in phase 1. Index 0
   is always the guild master slot; index 19 is where new members join.
   """
-  use TypedStruct
 
   alias Aesir.Commons.Models.GuildPosition
 
@@ -14,14 +13,17 @@ defmodule Aesir.ZoneServer.Guild.Position do
   @master_index 0
   @newbie_index 19
 
-  typedstruct do
-    field :index, non_neg_integer(), enforce: true
-    field :name, String.t(), default: ""
-    field :can_invite, boolean(), default: false
-    field :can_expel, boolean(), default: false
-    field :can_storage, boolean(), default: false
-    field :tax, non_neg_integer(), default: 0
-  end
+  @enforce_keys [:index]
+  defstruct index: nil, name: "", can_invite: false, can_expel: false, can_storage: false, tax: 0
+
+  @type t() :: %__MODULE__{
+          index: non_neg_integer(),
+          name: String.t(),
+          can_invite: boolean(),
+          can_expel: boolean(),
+          can_storage: boolean(),
+          tax: non_neg_integer()
+        }
 
   @doc "Builds a position from its persisted `GuildPosition` model row."
   @spec from_model(GuildPosition.t()) :: t()

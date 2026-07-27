@@ -11,19 +11,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItem do
   the tile, so items stacked on one cell don't draw exactly on top of each other.
   """
 
-  use TypedStruct
+  @enforce_keys [:id, :nameid, :amount, :x, :y, :sub_x, :sub_y, :identified, :dropped_at]
+  defstruct [:id, :nameid, :amount, :x, :y, :sub_x, :sub_y, :identified, :dropped_at]
 
-  typedstruct enforce: true do
-    field :id, pos_integer()
-    field :nameid, non_neg_integer()
-    field :amount, pos_integer()
-    field :x, non_neg_integer()
-    field :y, non_neg_integer()
-    field :sub_x, non_neg_integer()
-    field :sub_y, non_neg_integer()
-    field :identified, boolean()
-    field :dropped_at, integer()
-  end
+  @type t() :: %__MODULE__{
+          id: pos_integer(),
+          nameid: non_neg_integer(),
+          amount: pos_integer(),
+          x: non_neg_integer(),
+          y: non_neg_integer(),
+          sub_x: non_neg_integer(),
+          sub_y: non_neg_integer(),
+          identified: boolean(),
+          dropped_at: integer()
+        }
 
   @doc """
   Builds a `GroundItem`, generating a fresh unique `id`, a random sub-cell

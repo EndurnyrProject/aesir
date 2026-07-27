@@ -3,28 +3,29 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Cost do
   Resolves, validates, and applies the owner-local resources for one skill cast.
   """
 
-  use TypedStruct
-
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
 
-  typedstruct do
-    field :hp, non_neg_integer(), default: 0
-    field :sp, non_neg_integer(), default: 0
-    field :spheres, non_neg_integer(), default: 0
-  end
+  defstruct hp: 0, sp: 0, spheres: 0
+
+  @type t() :: %__MODULE__{
+          hp: non_neg_integer(),
+          sp: non_neg_integer(),
+          spheres: non_neg_integer()
+        }
 
   defmodule Commitment do
     @moduledoc false
 
-    use TypedStruct
+    @enforce_keys [:hp, :sp, :spheres, :write_spheres?]
+    defstruct [:hp, :sp, :spheres, :write_spheres?]
 
-    typedstruct do
-      field :hp, non_neg_integer(), enforce: true
-      field :sp, non_neg_integer(), enforce: true
-      field :spheres, SpiritSpheres.t(), enforce: true
-      field :write_spheres?, boolean(), enforce: true
-    end
+    @type t() :: %__MODULE__{
+            hp: non_neg_integer(),
+            sp: non_neg_integer(),
+            spheres: SpiritSpheres.t(),
+            write_spheres?: boolean()
+          }
   end
 
   @type resource_error ::

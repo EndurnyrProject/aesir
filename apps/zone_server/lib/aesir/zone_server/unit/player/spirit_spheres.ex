@@ -3,23 +3,24 @@ defmodule Aesir.ZoneServer.Unit.Player.SpiritSpheres do
   Ordered, independently expiring spirit spheres owned by one player.
   """
 
-  use TypedStruct
-
   defmodule Entry do
     @moduledoc false
 
-    use TypedStruct
+    @enforce_keys [:id, :expires_at]
+    defstruct [:id, :expires_at]
 
-    typedstruct do
-      field :id, pos_integer(), enforce: true
-      field :expires_at, integer(), enforce: true
-    end
+    @type t() :: %__MODULE__{
+            id: pos_integer(),
+            expires_at: integer()
+          }
   end
 
-  typedstruct do
-    field :entries, [Entry.t()], default: []
-    field :next_id, pos_integer(), default: 1
-  end
+  defstruct entries: [], next_id: 1
+
+  @type t() :: %__MODULE__{
+          entries: [Entry.t()],
+          next_id: pos_integer()
+        }
 
   @spec new() :: t()
   def new, do: %__MODULE__{}

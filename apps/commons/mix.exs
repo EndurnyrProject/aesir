@@ -61,8 +61,7 @@ defmodule Commons.MixProject do
       {:ranch, "~> 2.2"},
       {:recode, "~> 0.8.0", only: [:dev], runtime: false},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
-      {:tidewave, "~> 0.4", only: :dev},
-      {:typedstruct, "~> 0.5"}
+      {:tidewave, "~> 0.4", only: :dev}
     ]
   end
 

@@ -6,27 +6,41 @@ defmodule Aesir.ZoneServer.Guild.Member do
   plus the runtime presence fields (`online`, `map_name`) pushed by each
   member's `PlayerSession`.
   """
-  use TypedStruct
 
   alias Aesir.Commons.Models.Character
 
   @newbie_position 19
 
-  typedstruct do
-    field :char_id, non_neg_integer(), enforce: true
-    field :name, String.t(), enforce: true
-    field :job_id, non_neg_integer(), default: 0
-    field :base_level, non_neg_integer(), enforce: true
-    field :position_index, non_neg_integer(), default: @newbie_position
-    field :hp, non_neg_integer(), default: 0
-    field :max_hp, non_neg_integer(), default: 0
-    field :sp, non_neg_integer(), default: 0
-    field :max_sp, non_neg_integer(), default: 0
-    field :ap, non_neg_integer(), default: 0
-    field :max_ap, non_neg_integer(), default: 0
-    field :online, boolean(), enforce: true
-    field :map_name, String.t()
-  end
+  @enforce_keys [:char_id, :name, :base_level, :online]
+  defstruct char_id: nil,
+            name: nil,
+            job_id: 0,
+            base_level: nil,
+            position_index: @newbie_position,
+            hp: 0,
+            max_hp: 0,
+            sp: 0,
+            max_sp: 0,
+            ap: 0,
+            max_ap: 0,
+            online: nil,
+            map_name: nil
+
+  @type t() :: %__MODULE__{
+          char_id: non_neg_integer(),
+          name: String.t(),
+          job_id: non_neg_integer(),
+          base_level: non_neg_integer(),
+          position_index: non_neg_integer(),
+          hp: non_neg_integer(),
+          max_hp: non_neg_integer(),
+          sp: non_neg_integer(),
+          max_sp: non_neg_integer(),
+          ap: non_neg_integer(),
+          max_ap: non_neg_integer(),
+          online: boolean(),
+          map_name: String.t() | nil
+        }
 
   @doc """
   Builds a member snapshot from its minimal runtime identity and presence.

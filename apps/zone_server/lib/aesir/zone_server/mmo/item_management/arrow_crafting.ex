@@ -10,14 +10,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ArrowCrafting do
   changes in a long-running session. Same API shape as `Items` / `Mobs`.
   """
 
-  use TypedStruct
-
   @pt_key __MODULE__
 
-  typedstruct module: Recipe do
+  defmodule Recipe do
+    @moduledoc false
+
+    @enforce_keys [:source_id, :makes]
+    defstruct [:source_id, :makes]
+
     @typedoc "One crafting recipe: 1 source item -> the produced item stacks."
-    field :source_id, integer(), enforce: true
-    field :makes, [%{item_id: integer(), amount: pos_integer()}], enforce: true
+    @type t() :: %__MODULE__{
+            source_id: integer(),
+            makes: [%{item_id: integer(), amount: pos_integer()}]
+          }
   end
 
   @doc "Every recipe, in source-id order."

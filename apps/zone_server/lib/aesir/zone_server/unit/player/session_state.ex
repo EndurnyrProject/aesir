@@ -1,17 +1,18 @@
 defmodule Aesir.ZoneServer.Unit.Player.SessionState.PendingSkillTextInput do
   @moduledoc false
 
-  use TypedStruct
-
   alias Aesir.ZoneServer.Mmo.Skill.Active
 
-  typedstruct enforce: true do
-    field :request_id, non_neg_integer()
-    field :skill_id, non_neg_integer()
-    field :level, pos_integer()
-    field :target, Active.target()
-    field :timer_ref, reference()
-  end
+  @enforce_keys [:request_id, :skill_id, :level, :target, :timer_ref]
+  defstruct [:request_id, :skill_id, :level, :target, :timer_ref]
+
+  @type t() :: %__MODULE__{
+          request_id: non_neg_integer(),
+          skill_id: non_neg_integer(),
+          level: pos_integer(),
+          target: Active.target(),
+          timer_ref: reference()
+        }
 end
 
 defmodule Aesir.ZoneServer.Unit.Player.SessionState do
@@ -26,8 +27,6 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   optional slots with struct updates rather than dynamic map keys.
   """
 
-  use TypedStruct
-
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   alias __MODULE__.PendingSkillTextInput
@@ -35,18 +34,30 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   @typedoc "The pending NPC-dialog interaction lock: `{interaction_pid, monitor_ref, npc_gid}`."
   @type interaction_lock :: {pid(), reference(), non_neg_integer()}
 
-  typedstruct do
-    field :game_state, PlayerState.t(), enforce: true
-    field :connection_pid, pid(), enforce: true
-    field :connection_monitor_ref, reference() | nil, default: nil
-    field :client_capabilities, [atom()], default: []
-    field :interaction_lock, interaction_lock() | nil, default: nil
-    field :pending_skill_text_input, PendingSkillTextInput.t() | nil, default: nil
-    field :pending_skill_menu, map() | nil, default: nil
-    field :deferred_skill_result, map() | nil, default: nil
-    field :pending_party_invite, map() | nil, default: nil
-    field :pending_guild_invite, map() | nil, default: nil
-  end
+  @enforce_keys [:game_state, :connection_pid]
+  defstruct game_state: nil,
+            connection_pid: nil,
+            connection_monitor_ref: nil,
+            client_capabilities: [],
+            interaction_lock: nil,
+            pending_skill_text_input: nil,
+            pending_skill_menu: nil,
+            deferred_skill_result: nil,
+            pending_party_invite: nil,
+            pending_guild_invite: nil
+
+  @type t() :: %__MODULE__{
+          game_state: PlayerState.t(),
+          connection_pid: pid(),
+          connection_monitor_ref: reference() | nil,
+          client_capabilities: [atom()],
+          interaction_lock: interaction_lock() | nil,
+          pending_skill_text_input: PendingSkillTextInput.t() | nil,
+          pending_skill_menu: map() | nil,
+          deferred_skill_result: map() | nil,
+          pending_party_invite: map() | nil,
+          pending_guild_invite: map() | nil
+        }
 
   @spec interaction_blocked?(map()) :: boolean()
   def interaction_blocked?(state) do

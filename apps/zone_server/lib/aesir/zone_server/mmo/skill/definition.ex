@@ -15,7 +15,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
 
   Use `build!/2` to construct a validated definition from `use` options.
   """
-  use TypedStruct
 
   alias Aesir.ZoneServer.Mmo.DefinitionValidation
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
@@ -59,39 +58,72 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   """
   @type range :: integer() | [integer()]
 
-  typedstruct do
-    field :id, integer(), enforce: true
-    field :name, atom(), enforce: true
-    field :display_name, String.t(), enforce: true
-    field :max_level, pos_integer(), enforce: true
-    field :target_type, target_type(), default: :self
-    field :damage_type, damage_type(), default: :no_damage
-    field :range, range(), default: 0
-    field :element, element(), default: :neutral
-    field :knockback, non_neg_integer(), default: 0
-    field :hit_count, pos_integer(), default: 1
-    field :splash_radius, non_neg_integer(), default: 0
-    field :hit_interval, non_neg_integer(), default: 0
-    field :unit_duration, [non_neg_integer()], default: []
-    field :hp_cost, [non_neg_integer()], default: []
-    field :hp_cost_rate, [non_neg_integer()], default: []
-    field :sp_cost, [non_neg_integer() | :all], default: []
-    field :sphere_cost, [non_neg_integer() | :all], default: []
-    field :zeny_cost, [non_neg_integer()], default: []
-    field :duration, [non_neg_integer()], default: []
-    field :cast_time, [non_neg_integer()], default: []
-    field :fixed_cast_time, [non_neg_integer()], default: []
-    field :ignore_dex, boolean(), default: false
-    field :after_cast_delay, [non_neg_integer()], default: []
-    field :cooldown, [non_neg_integer()], default: []
-    field :damage_kind, damage_kind(), default: :weapon
-    field :damage_base, damage_base(), default: :weapon
-    field :item_cost, [item_cost_entry()], default: []
-    field :requires_ammo, boolean(), default: false
-    field :status, atom() | nil, default: nil
-    field :quest_skill, boolean(), default: false
-    field :quest_owner_job, atom() | nil, default: nil
-  end
+  @enforce_keys [:id, :name, :display_name, :max_level]
+  defstruct id: nil,
+            name: nil,
+            display_name: nil,
+            max_level: nil,
+            target_type: :self,
+            damage_type: :no_damage,
+            range: 0,
+            element: :neutral,
+            knockback: 0,
+            hit_count: 1,
+            splash_radius: 0,
+            hit_interval: 0,
+            unit_duration: [],
+            hp_cost: [],
+            hp_cost_rate: [],
+            sp_cost: [],
+            sphere_cost: [],
+            zeny_cost: [],
+            duration: [],
+            cast_time: [],
+            fixed_cast_time: [],
+            ignore_dex: false,
+            after_cast_delay: [],
+            cooldown: [],
+            damage_kind: :weapon,
+            damage_base: :weapon,
+            item_cost: [],
+            requires_ammo: false,
+            status: nil,
+            quest_skill: false,
+            quest_owner_job: nil
+
+  @type t() :: %__MODULE__{
+          id: integer(),
+          name: atom(),
+          display_name: String.t(),
+          max_level: pos_integer(),
+          target_type: target_type(),
+          damage_type: damage_type(),
+          range: range(),
+          element: element(),
+          knockback: non_neg_integer(),
+          hit_count: pos_integer(),
+          splash_radius: non_neg_integer(),
+          hit_interval: non_neg_integer(),
+          unit_duration: [non_neg_integer()],
+          hp_cost: [non_neg_integer()],
+          hp_cost_rate: [non_neg_integer()],
+          sp_cost: [non_neg_integer() | :all],
+          sphere_cost: [non_neg_integer() | :all],
+          zeny_cost: [non_neg_integer()],
+          duration: [non_neg_integer()],
+          cast_time: [non_neg_integer()],
+          fixed_cast_time: [non_neg_integer()],
+          ignore_dex: boolean(),
+          after_cast_delay: [non_neg_integer()],
+          cooldown: [non_neg_integer()],
+          damage_kind: damage_kind(),
+          damage_base: damage_base(),
+          item_cost: [item_cost_entry()],
+          requires_ammo: boolean(),
+          status: atom() | nil,
+          quest_skill: boolean(),
+          quest_owner_job: atom() | nil
+        }
 
   @metadata_schema %{
     id: {:required, :integer},

@@ -273,7 +273,8 @@ Always run the full test suite before considering a task done.
 - **Docs**: Add `@moduledoc`/`@doc` to public modules/functions and `@typedoc` to public types.
 - **Prefer `with` over nested `case`**.
 - **No superfluous comments**: Prefer module/function docs; comment inline only when genuinely needed.
-- **Prefer TypedStructs over plain structs** for type safety and documentation.
+- **Structs**: plain `defstruct` with an explicit `@enforce_keys` and a hand-written `@type t()`.
+  Do not reach for a struct-generating macro library.
 - **Aliases**: Always `alias` modules at the top of the file instead of using fully-qualified names.
 - **Numbers**: Numbers larger than 9999 must use underscores, e.g. `10_000`.
 - **Tell, don't ask**: Avoid `get`/`put` patterns; prefer passing state through function calls.

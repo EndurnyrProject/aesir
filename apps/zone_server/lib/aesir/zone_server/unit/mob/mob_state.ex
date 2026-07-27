@@ -5,8 +5,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   Similar to PlayerState but for monsters with AI and combat capabilities.
   """
 
-  use TypedStruct
-
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
@@ -21,90 +19,152 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   @type ai_state :: :idle | :alert | :combat | :chase | :return
   @type movement_state :: :standing | :moving | :returning
 
-  typedstruct do
+  @enforce_keys [
+    :instance_id,
+    :mob_id,
+    :mob_data,
+    :spawn_ref,
+    :x,
+    :y,
+    :map_name,
+    :hp,
+    :max_hp,
+    :sp,
+    :max_sp,
+    :spawned_at
+  ]
+  defstruct [
     # Core identification
-    field(:instance_id, integer(), enforce: true)
-    field(:mob_id, integer(), enforce: true)
-    field(:mob_data, MobDefinition.t(), enforce: true)
-    field(:spawn_ref, MobSpawn.t(), enforce: true)
-    field(:process_pid, pid() | nil, default: nil)
+    instance_id: nil,
+    mob_id: nil,
+    mob_data: nil,
+    spawn_ref: nil,
+    process_pid: nil,
 
     # Position & Movement
-    field(:x, integer(), enforce: true)
-    field(:y, integer(), enforce: true)
-    field(:map_name, String.t(), enforce: true)
-    field(:dir, integer(), default: 0)
+    x: nil,
+    y: nil,
+    map_name: nil,
+    dir: 0,
 
     # Movement state machine
-    field(:movement_state, movement_state(), default: :standing)
-    field(:walk_path, list(), default: [])
-    field(:walk_speed, integer(), default: 200)
-    field(:walk_delay_until, integer(), default: 0)
-    field(:target_position, {integer(), integer()} | nil, default: nil)
+    movement_state: :standing,
+    walk_path: [],
+    walk_speed: 200,
+    walk_delay_until: 0,
+    target_position: nil,
 
     # AI state machine
-    field(:ai_state, ai_state(), default: :idle)
-    field(:ai_awake, boolean(), default: true)
-    field(:ai_timer_ref, reference() | nil, default: nil)
+    ai_state: :idle,
+    ai_awake: true,
+    ai_timer_ref: nil,
     # The cell the mob actually spawned on. AI wander/return anchors here, not
     # on `spawn_ref.spawn_area`, whose 0,0 means "random cell anywhere".
-    field(:spawn_point, {integer(), integer()} | nil, default: nil)
-    field(:target_id, integer() | nil, default: nil)
+    spawn_point: nil,
+    target_id: nil,
     # true when aggro was acquired by the aggressive scan (mob walked up to a
     # target that has not hit it), false when acquired by taking damage. Reads
     # the `angry` vs `attack` skill-state distinction.
-    field(:initiated_by_self?, boolean(), default: false)
+    initiated_by_self?: false,
     # Cumulative count of hits taken from beyond chase_range, plus a transient
     # per-reaction flag. Phase 2's `rudeattacked` skill condition consumes them;
     # Phase 1 only records the signal (no teleport/flee).
-    field(:rude_attack_count, integer(), default: 0)
-    field(:rude_attacked?, boolean(), default: false)
+    rude_attack_count: 0,
+    rude_attacked?: false,
     # Per-skill cooldown gate: `skill_id => expires_at` in the same
     # millisecond timestamp domain as the melee `last_attack_time` delay. The
     # `casting` map (`%{row: row, complete_at: ms, timer_ref: ref}`) marks an
     # in-progress cast; `timer_ref` is the pending `{:casting, :complete}` timer
     # so an interruption can cancel it. `master_id` links a summoned slave back
     # to its summoner's instance id.
-    field(:skill_cooldowns, %{optional(integer()) => integer()}, default: %{})
-    field(:casting, map() | nil, default: nil)
-    field(:master_id, integer() | nil, default: nil)
+    skill_cooldowns: %{},
+    casting: nil,
+    master_id: nil,
     # True until the first AI tick after spawn has run skill selection; that
     # tick selects with the `:spawn` event so `onspawn` rows can fire.
-    field(:spawn_tick_pending?, boolean(), default: true)
-    field(:last_ai_tick, integer() | nil, default: nil)
-    field(:aggro_list, map(), default: %{})
-    field(:last_action_time, integer() | nil, default: nil)
-    field(:last_movement_end_time, integer() | nil, default: nil)
-    field(:last_idle_movement_time, integer() | nil, default: nil)
-    field(:last_attack_time, integer() | nil, default: nil)
+    spawn_tick_pending?: true,
+    last_ai_tick: nil,
+    aggro_list: %{},
+    last_action_time: nil,
+    last_movement_end_time: nil,
+    last_idle_movement_time: nil,
+    last_attack_time: nil,
 
     # Combat state
-    field(:hp, integer(), enforce: true)
-    field(:max_hp, integer(), enforce: true)
-    field(:sp, integer(), enforce: true)
-    field(:max_sp, integer(), enforce: true)
-    field(:is_dead, boolean(), default: false)
+    hp: nil,
+    max_hp: nil,
+    sp: nil,
+    max_sp: nil,
+    is_dead: false,
 
     # Spatial awareness
-    field(:view_range, integer(), default: 12)
-    field(:visible_entities, MapSet.t(), default: %MapSet{})
+    view_range: 12,
+    visible_entities: %MapSet{},
 
     # Lifecycle
-    field(:spawned_at, integer(), enforce: true)
-    field(:last_damage_time, integer() | nil, default: nil)
-    field(:respawn_delay, integer(), default: 0)
+    spawned_at: nil,
+    last_damage_time: nil,
+    respawn_delay: 0,
 
     # Status effects
-    field(:status_effects, map(), default: %{})
+    status_effects: %{},
 
     # Skill interaction flags
-    field(:stolen_from, boolean(), default: false)
+    stolen_from: false,
 
     # OnMyMobDead owner event (rAthena): a raw "Name::OnLabel" ref threaded
     # through from the summoning op's `event:` opt, resolved only at death
     # time. `nil` for every ordinary spawn -- exactly today's behavior.
-    field(:owner_event, String.t() | nil, default: nil)
-  end
+    owner_event: nil
+  ]
+
+  @type t() :: %__MODULE__{
+          instance_id: integer(),
+          mob_id: integer(),
+          mob_data: MobDefinition.t(),
+          spawn_ref: MobSpawn.t(),
+          process_pid: pid() | nil,
+          x: integer(),
+          y: integer(),
+          map_name: String.t(),
+          dir: integer(),
+          movement_state: movement_state(),
+          walk_path: list(),
+          walk_speed: integer(),
+          walk_delay_until: integer(),
+          target_position: {integer(), integer()} | nil,
+          ai_state: ai_state(),
+          ai_awake: boolean(),
+          ai_timer_ref: reference() | nil,
+          spawn_point: {integer(), integer()} | nil,
+          target_id: integer() | nil,
+          initiated_by_self?: boolean(),
+          rude_attack_count: integer(),
+          rude_attacked?: boolean(),
+          skill_cooldowns: %{optional(integer()) => integer()},
+          casting: map() | nil,
+          master_id: integer() | nil,
+          spawn_tick_pending?: boolean(),
+          last_ai_tick: integer() | nil,
+          aggro_list: map(),
+          last_action_time: integer() | nil,
+          last_movement_end_time: integer() | nil,
+          last_idle_movement_time: integer() | nil,
+          last_attack_time: integer() | nil,
+          hp: integer(),
+          max_hp: integer(),
+          sp: integer(),
+          max_sp: integer(),
+          is_dead: boolean(),
+          view_range: integer(),
+          visible_entities: MapSet.t(),
+          spawned_at: integer(),
+          last_damage_time: integer() | nil,
+          respawn_delay: integer(),
+          status_effects: map(),
+          stolen_from: boolean(),
+          owner_event: String.t() | nil
+        }
 
   @doc """
   Creates a new mob state instance.

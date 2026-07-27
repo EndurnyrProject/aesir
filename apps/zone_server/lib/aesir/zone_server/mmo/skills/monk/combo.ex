@@ -6,17 +6,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
   is cancelled. Deadlines use monotonic milliseconds supplied by the caller.
   """
 
-  use TypedStruct
-
   @type stage :: :idle | :quadruple | :thrust | :extremity
   @type target :: {:player | :mob | :skill_unit, non_neg_integer()}
 
-  typedstruct do
-    field :stage, stage(), default: :idle
-    field :target, target()
-    field :deadline, integer()
-    field :generation, non_neg_integer(), default: 0
-  end
+  defstruct stage: :idle, target: nil, deadline: nil, generation: 0
+
+  @type t() :: %__MODULE__{
+          stage: stage(),
+          target: target() | nil,
+          deadline: integer() | nil,
+          generation: non_neg_integer()
+        }
 
   @doc "Returns an idle combo state."
   @spec new() :: t()

@@ -3,26 +3,42 @@ defmodule Aesir.Commons.InterServer.Schemas.Session do
   Player session value carried across the cluster during the login handoff
   (account -> char -> zone). Stored as a Horde.Registry value; not persisted.
   """
-  use TypedStruct
 
   @type state :: :authenticating | :char_select | :in_game | :disconnected
   @type server :: :account_server | :char_server | :zone_server
 
-  typedstruct do
-    field :account_id, non_neg_integer(), enforce: true
-    field :login_id1, non_neg_integer()
-    field :login_id2, non_neg_integer()
-    field :auth_code, non_neg_integer()
-    field :username, String.t()
-    field :state, state()
-    field :current_server, server()
-    field :current_char_id, non_neg_integer() | nil
-    field :zone_auth_token, binary() | nil
-    field :zone_auth_char_id, non_neg_integer() | nil
-    field :node, node()
-    field :created_at, DateTime.t()
-    field :last_activity, DateTime.t()
-  end
+  @enforce_keys [:account_id]
+  defstruct [
+    :account_id,
+    :login_id1,
+    :login_id2,
+    :auth_code,
+    :username,
+    :state,
+    :current_server,
+    :current_char_id,
+    :zone_auth_token,
+    :zone_auth_char_id,
+    :node,
+    :created_at,
+    :last_activity
+  ]
+
+  @type t() :: %__MODULE__{
+          account_id: non_neg_integer(),
+          login_id1: non_neg_integer() | nil,
+          login_id2: non_neg_integer() | nil,
+          auth_code: non_neg_integer() | nil,
+          username: String.t() | nil,
+          state: state() | nil,
+          current_server: server() | nil,
+          current_char_id: non_neg_integer() | nil,
+          zone_auth_token: binary() | nil,
+          zone_auth_char_id: non_neg_integer() | nil,
+          node: node() | nil,
+          created_at: DateTime.t() | nil,
+          last_activity: DateTime.t() | nil
+        }
 
   @spec new(
           non_neg_integer(),

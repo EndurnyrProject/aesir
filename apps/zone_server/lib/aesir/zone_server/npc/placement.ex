@@ -11,16 +11,17 @@ defmodule Aesir.ZoneServer.Npc.Placement do
   cell, or `nil` when the NPC has no touch area.
   """
 
-  use TypedStruct
+  @enforce_keys [:map, :x, :y, :sprite]
+  defstruct map: nil, x: nil, y: nil, dir: 0, sprite: nil, name: "", unique_name: "", trigger: nil
 
-  typedstruct do
-    field :map, String.t(), enforce: true
-    field :x, non_neg_integer(), enforce: true
-    field :y, non_neg_integer(), enforce: true
-    field :dir, non_neg_integer(), default: 0
-    field :sprite, non_neg_integer(), enforce: true
-    field :name, String.t(), default: ""
-    field :unique_name, String.t(), default: ""
-    field :trigger, {non_neg_integer(), non_neg_integer()} | nil, default: nil
-  end
+  @type t() :: %__MODULE__{
+          map: String.t(),
+          x: non_neg_integer(),
+          y: non_neg_integer(),
+          dir: non_neg_integer(),
+          sprite: non_neg_integer(),
+          name: String.t(),
+          unique_name: String.t(),
+          trigger: {non_neg_integer(), non_neg_integer()} | nil
+        }
 end

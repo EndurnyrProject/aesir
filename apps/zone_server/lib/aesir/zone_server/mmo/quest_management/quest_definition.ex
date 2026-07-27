@@ -7,7 +7,6 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition do
   `count`, and `drops` are carried through unused this iteration - only exact-mob
   hunt counters are interpreted so far.
   """
-  use TypedStruct
 
   @typedoc """
   A single hunt objective: exact mob kill count, plus dormant filters
@@ -33,11 +32,14 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition do
           rate: integer()
         }
 
-  typedstruct do
-    field :id, integer(), enforce: true
-    field :title, String.t(), enforce: true
-    field :time_limit, String.t() | nil, default: nil
-    field :targets, [target()], default: []
-    field :drops, [drop()], default: []
-  end
+  @enforce_keys [:id, :title]
+  defstruct id: nil, title: nil, time_limit: nil, targets: [], drops: []
+
+  @type t() :: %__MODULE__{
+          id: integer(),
+          title: String.t(),
+          time_limit: String.t() | nil,
+          targets: [target()],
+          drops: [drop()]
+        }
 end

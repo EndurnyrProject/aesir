@@ -50,19 +50,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defmodule Deferred do
     @moduledoc "Deferred effect plus the owner-local resources settled on reply."
 
-    use TypedStruct
-
     alias Aesir.ZoneServer.Mmo.Skill.Active
     alias Aesir.ZoneServer.Mmo.Skill.Cost
 
-    typedstruct do
-      field(:effect, term(), enforce: true)
-      field(:cost, Cost.t(), enforce: true)
-      field(:zeny, non_neg_integer(), enforce: true)
-      field(:skill_id, integer(), enforce: true)
-      field(:level, pos_integer(), enforce: true)
-      field(:target, Active.target(), enforce: true)
-    end
+    @enforce_keys [:effect, :cost, :zeny, :skill_id, :level, :target]
+    defstruct [:effect, :cost, :zeny, :skill_id, :level, :target]
+
+    @type t() :: %__MODULE__{
+            effect: term(),
+            cost: Cost.t(),
+            zeny: non_neg_integer(),
+            skill_id: integer(),
+            level: pos_integer(),
+            target: Active.target()
+          }
   end
 
   @typedoc """

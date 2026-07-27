@@ -54,7 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CombatantTest do
       attrs = %{
         unit_id: 1001,
         unit_type: :player
-        # Missing other fields - TypedStruct allows this
+        # Missing other fields - struct/2 allows this
       }
 
       assert {:ok, combatant} = Combatant.new(attrs)
@@ -93,7 +93,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CombatantTest do
     end
 
     test "raises on struct creation error" do
-      # Since TypedStruct doesn't enforce at struct creation,
+      # Since struct/2 doesn't enforce keys at struct creation,
       # we test validation instead
       combatant = CombatTestHelper.create_player_combatant()
       invalid_combatant = %{combatant | unit_id: -1}

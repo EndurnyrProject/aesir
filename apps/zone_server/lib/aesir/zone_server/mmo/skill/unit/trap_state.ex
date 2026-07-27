@@ -3,22 +3,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.TrapState do
   Typed lifecycle metadata embedded at `Skill.Unit.Group.state.trap`.
   """
 
-  use TypedStruct
-
   @typedoc "A manager-owned trap lifecycle phase."
   @type phase :: :armed | :used | :sprung | :captured
 
   @typedoc "The action taken when an armed trap reaches its natural deadline."
   @type natural_expiry :: :drop_item | :become_used
 
-  typedstruct do
-    field(:phase, phase(), default: :armed)
-    field(:reclaim_item_id, pos_integer() | nil, default: nil)
-    field(:claymore_spendable?, boolean(), default: false)
-    field(:natural_expiry, natural_expiry(), default: :drop_item)
-    field(:return_item_on_expiry?, boolean(), default: false)
-    field(:link_id, non_neg_integer() | nil, default: nil)
-  end
+  defstruct phase: :armed,
+            reclaim_item_id: nil,
+            claymore_spendable?: false,
+            natural_expiry: :drop_item,
+            return_item_on_expiry?: false,
+            link_id: nil
+
+  @type t() :: %__MODULE__{
+          phase: phase(),
+          reclaim_item_id: pos_integer() | nil,
+          claymore_spendable?: boolean(),
+          natural_expiry: natural_expiry(),
+          return_item_on_expiry?: boolean(),
+          link_id: non_neg_integer() | nil
+        }
 
   @fields [
     :phase,

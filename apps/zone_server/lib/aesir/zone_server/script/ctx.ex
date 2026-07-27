@@ -28,8 +28,6 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   shapes apart.
   """
 
-  use TypedStruct
-
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @typedoc "Tag identifying the script trigger — either an item ID or an NPC module atom."
@@ -38,20 +36,34 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   @typedoc "Pipeline status: `:ok` until `halt/2` is called."
   @type status :: :ok | {:error, term()}
 
-  typedstruct do
-    field :char_id, integer() | nil, enforce: true
-    field :account_id, integer() | nil, enforce: true
-    field :connection_pid, pid() | nil, enforce: true
-    field :game_state, PlayerState.t() | nil, enforce: true
-    field :source, source(), enforce: true
-    field :status, status(), default: :ok
-    field :interaction_pid, pid()
-    field :session_pid, pid()
-    field :npc_gid, non_neg_integer()
-    field :page, [String.t()], default: []
-    field :session_ref, reference()
-    field :vars, map(), default: %{}
-  end
+  @enforce_keys [:char_id, :account_id, :connection_pid, :game_state, :source]
+  defstruct char_id: nil,
+            account_id: nil,
+            connection_pid: nil,
+            game_state: nil,
+            source: nil,
+            status: :ok,
+            interaction_pid: nil,
+            session_pid: nil,
+            npc_gid: nil,
+            page: [],
+            session_ref: nil,
+            vars: %{}
+
+  @type t() :: %__MODULE__{
+          char_id: integer() | nil,
+          account_id: integer() | nil,
+          connection_pid: pid() | nil,
+          game_state: PlayerState.t() | nil,
+          source: source(),
+          status: status(),
+          interaction_pid: pid() | nil,
+          session_pid: pid() | nil,
+          npc_gid: non_neg_integer() | nil,
+          page: [String.t()],
+          session_ref: reference() | nil,
+          vars: map()
+        }
 
   @doc """
   Builds a `Ctx` from a session-state map and a source tag.

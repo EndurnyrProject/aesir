@@ -4,16 +4,18 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestLog.Entry do
   with the definition's `targets`), and a reserved `deadline` (always `nil` this
   iteration - the time-limit mechanic is deferred).
   """
-  use TypedStruct
 
   @typedoc "Quest progression state (`Q_INACTIVE`/`Q_ACTIVE`/`Q_COMPLETE`)."
   @type state :: :active | :inactive | :complete
 
-  typedstruct do
-    field :state, state(), enforce: true
-    field :counts, [non_neg_integer()], default: []
-    field :deadline, nil, default: nil
-  end
+  @enforce_keys [:state]
+  defstruct state: nil, counts: [], deadline: nil
+
+  @type t() :: %__MODULE__{
+          state: state(),
+          counts: [non_neg_integer()],
+          deadline: nil
+        }
 end
 
 defmodule Aesir.ZoneServer.Unit.Player.QuestLog do

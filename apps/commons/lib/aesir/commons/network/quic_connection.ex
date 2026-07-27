@@ -45,20 +45,31 @@ defmodule Aesir.Commons.Network.QuicConnection do
 
   defmodule State do
     @moduledoc false
-    use TypedStruct
 
-    typedstruct do
-      field :conn, pid(), enforce: true
-      field :impl_module, module(), enforce: true
-      field :transport, module(), default: :quic
-      field :session_data, map(), default: %{}
-      field :stream_buffers, %{integer() => binary()}, default: %{}
-      field :out_streams, %{atom() => integer()}, default: %{}
-      field :out_seq, non_neg_integer(), default: 0
-      field :client_id, non_neg_integer() | nil, default: nil
-      field :account_id, non_neg_integer() | nil, default: nil
-      field :session_monitor_ref, reference() | nil, default: nil
-    end
+    @enforce_keys [:conn, :impl_module]
+    defstruct conn: nil,
+              impl_module: nil,
+              transport: :quic,
+              session_data: %{},
+              stream_buffers: %{},
+              out_streams: %{},
+              out_seq: 0,
+              client_id: nil,
+              account_id: nil,
+              session_monitor_ref: nil
+
+    @type t() :: %__MODULE__{
+            conn: pid(),
+            impl_module: module(),
+            transport: module(),
+            session_data: map(),
+            stream_buffers: %{integer() => binary()},
+            out_streams: %{atom() => integer()},
+            out_seq: non_neg_integer(),
+            client_id: non_neg_integer() | nil,
+            account_id: non_neg_integer() | nil,
+            session_monitor_ref: reference() | nil
+          }
   end
 
   @spec start_link(keyword()) :: GenServer.on_start()

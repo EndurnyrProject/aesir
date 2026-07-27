@@ -11,14 +11,20 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree.Entry do
   entry's originating job during inheritance flattening.
   """
 
-  use TypedStruct
+  @enforce_keys [:skill_id, :owner_job_id, :max_level]
+  defstruct skill_id: nil,
+            owner_job_id: nil,
+            max_level: nil,
+            base_level: 0,
+            job_level: 0,
+            requires: []
 
-  typedstruct enforce: true do
-    field :skill_id, non_neg_integer()
-    field :owner_job_id, non_neg_integer()
-    field :max_level, pos_integer()
-    field :base_level, non_neg_integer(), default: 0
-    field :job_level, non_neg_integer(), default: 0
-    field :requires, [{non_neg_integer(), pos_integer()}], default: []
-  end
+  @type t() :: %__MODULE__{
+          skill_id: non_neg_integer(),
+          owner_job_id: non_neg_integer(),
+          max_level: pos_integer(),
+          base_level: non_neg_integer(),
+          job_level: non_neg_integer(),
+          requires: [{non_neg_integer(), pos_integer()}]
+        }
 end

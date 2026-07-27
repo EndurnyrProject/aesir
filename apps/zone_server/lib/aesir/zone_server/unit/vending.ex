@@ -32,14 +32,16 @@ defmodule Aesir.ZoneServer.Unit.Vending do
 
   defmodule ShopItem do
     @moduledoc "A validated vending shop line, resolved against the cart at open time."
-    use TypedStruct
 
-    typedstruct enforce: true do
-      field :cart_index, non_neg_integer()
-      field :nameid, integer()
-      field :amount, pos_integer()
-      field :price, pos_integer()
-    end
+    @enforce_keys [:cart_index, :nameid, :amount, :price]
+    defstruct [:cart_index, :nameid, :amount, :price]
+
+    @type t() :: %__MODULE__{
+            cart_index: non_neg_integer(),
+            nameid: integer(),
+            amount: pos_integer(),
+            price: pos_integer()
+          }
   end
 
   @typedoc "A browse/board row: shop listing merged with live cart display attrs."

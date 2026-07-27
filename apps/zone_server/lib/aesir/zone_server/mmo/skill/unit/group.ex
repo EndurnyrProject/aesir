@@ -15,7 +15,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
   `nil`, `Skill.Unit.Manager` resolves the handler from `skill_name` via
   `Skill.Catalog.ground_module_for/1`.
   """
-  use TypedStruct
 
   alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
@@ -27,28 +26,50 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
   @typedoc "Extensible skill state; Hunter traps embed typed lifecycle metadata at `:trap`."
   @type skill_state :: %{optional(:trap) => TrapState.t(), optional(term()) => term()}
 
-  typedstruct do
-    field :group_id, non_neg_integer(), enforce: true
-    field :skill_id, non_neg_integer()
-    field :skill_name, atom(), enforce: true
-    field :level, non_neg_integer()
-    field :caster_id, integer()
-    field :caster_type, Unit.unit_type()
-    field :target_id, integer() | nil
-    field :target_type, Unit.unit_type() | nil
-    field :map_name, String.t()
-    field :center, cell()
-    field :origin, cell() | nil, default: nil
-    field :cells, [cell()], default: []
-    field :created_at, integer() | nil
-    field :next_tick_at, integer() | nil
-    field :expires_at, integer()
-    field :interval, pos_integer()
-    field :lifecycle_policy, LifecyclePolicy.t(), default: %LifecyclePolicy{}
-    field :visible?, boolean(), default: false
-    field :state, skill_state(), default: %{}
-    field :handler, module() | nil, default: nil
-  end
+  @enforce_keys [:group_id, :skill_name]
+  defstruct group_id: nil,
+            skill_id: nil,
+            skill_name: nil,
+            level: nil,
+            caster_id: nil,
+            caster_type: nil,
+            target_id: nil,
+            target_type: nil,
+            map_name: nil,
+            center: nil,
+            origin: nil,
+            cells: [],
+            created_at: nil,
+            next_tick_at: nil,
+            expires_at: nil,
+            interval: nil,
+            lifecycle_policy: %LifecyclePolicy{},
+            visible?: false,
+            state: %{},
+            handler: nil
+
+  @type t() :: %__MODULE__{
+          group_id: non_neg_integer(),
+          skill_id: non_neg_integer() | nil,
+          skill_name: atom(),
+          level: non_neg_integer() | nil,
+          caster_id: integer() | nil,
+          caster_type: Unit.unit_type() | nil,
+          target_id: integer() | nil,
+          target_type: Unit.unit_type() | nil,
+          map_name: String.t() | nil,
+          center: cell() | nil,
+          origin: cell() | nil,
+          cells: [cell()],
+          created_at: integer() | nil,
+          next_tick_at: integer() | nil,
+          expires_at: integer() | nil,
+          interval: pos_integer() | nil,
+          lifecycle_policy: LifecyclePolicy.t(),
+          visible?: boolean(),
+          state: skill_state(),
+          handler: module() | nil
+        }
 
   @doc "Whether this group is a Land Protector field (suppresses other ground units)."
   @spec land_protector?(t()) :: boolean()

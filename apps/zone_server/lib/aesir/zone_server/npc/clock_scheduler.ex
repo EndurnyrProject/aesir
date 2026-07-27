@@ -25,7 +25,6 @@ defmodule Aesir.ZoneServer.Npc.ClockScheduler do
   """
 
   use GenServer
-  use TypedStruct
 
   alias Aesir.ZoneServer.Npc.Events
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
@@ -37,9 +36,12 @@ defmodule Aesir.ZoneServer.Npc.ClockScheduler do
   @minute_pattern ~r/^OnMinute(\d{2})$/
   @weekday_pattern ~r/^On(Sun|Mon|Tue|Wed|Thu|Fri|Sat)(\d{2})(\d{2})$/
 
-  typedstruct do
-    field :now_fun, (-> NaiveDateTime.t()), enforce: true
-  end
+  @enforce_keys [:now_fun]
+  defstruct [:now_fun]
+
+  @type t() :: %__MODULE__{
+          now_fun: (-> NaiveDateTime.t())
+        }
 
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts \\ []) do

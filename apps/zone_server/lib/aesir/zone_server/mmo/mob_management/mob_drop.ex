@@ -1,14 +1,15 @@
 defmodule Aesir.ZoneServer.Mmo.MobManagement.MobDrop do
   @moduledoc """
-  TypedStruct for mob drop items.
-  Represents a single item that can be dropped by a mob.
+  A single item that can be dropped by a mob.
   """
-  use TypedStruct
 
-  typedstruct do
-    field :item, String.t(), enforce: true
-    field :rate, integer(), enforce: true
-    field :steal_protected, boolean(), default: false
-    field :random_option_group, String.t()
-  end
+  @enforce_keys [:item, :rate]
+  defstruct item: nil, rate: nil, steal_protected: false, random_option_group: nil
+
+  @type t() :: %__MODULE__{
+          item: String.t(),
+          rate: integer(),
+          steal_protected: boolean(),
+          random_option_group: String.t() | nil
+        }
 end

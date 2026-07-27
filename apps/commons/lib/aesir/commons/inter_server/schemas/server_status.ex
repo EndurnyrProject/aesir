@@ -4,22 +4,35 @@ defmodule Aesir.Commons.InterServer.Schemas.ServerStatus do
   keyed by `{:server, server_id}`; owned by a per-node registration process so it
   disappears automatically when the node goes down.
   """
-  use TypedStruct
 
   @type server :: :account_server | :char_server | :zone_server
 
-  typedstruct do
-    field :server_id, String.t(), enforce: true
-    field :server_type, server()
-    field :server_node, node()
-    field :status, :online | :offline | :maintenance
-    field :player_count, non_neg_integer()
-    field :max_players, non_neg_integer()
-    field :ip, :inet.ip_address()
-    field :port, non_neg_integer()
-    field :last_heartbeat, DateTime.t()
-    field :metadata, map()
-  end
+  @enforce_keys [:server_id]
+  defstruct [
+    :server_id,
+    :server_type,
+    :server_node,
+    :status,
+    :player_count,
+    :max_players,
+    :ip,
+    :port,
+    :last_heartbeat,
+    :metadata
+  ]
+
+  @type t() :: %__MODULE__{
+          server_id: String.t(),
+          server_type: server() | nil,
+          server_node: node() | nil,
+          status: :online | :offline | :maintenance | nil,
+          player_count: non_neg_integer() | nil,
+          max_players: non_neg_integer() | nil,
+          ip: :inet.ip_address() | nil,
+          port: non_neg_integer() | nil,
+          last_heartbeat: DateTime.t() | nil,
+          metadata: map() | nil
+        }
 
   @spec new(String.t(), server(), :inet.ip_address(), non_neg_integer(), non_neg_integer(), map()) ::
           t()
