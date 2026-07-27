@@ -11,8 +11,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   statuses tied to dropped skills) and updates the class sprite for the player and
   nearby observers. A change (or `reset_skills/1` refund) that would drop
   `MC_PUSHCART` while a cart is mounted is rejected with `{:error, :cart_active}`
-  before any mutation, so the player unloads and removes the cart first. Unlike
-  the cart, a mounted Peco-Peco never blocks a change or reset that drops
+  before any mutation, so the player unloads and removes the cart first. A job
+  change into a gender-locked job (`@required_sex`, e.g. bard is male-only) for
+  a character of the wrong sex is rejected with `{:error, :gender_locked}`
+  before any mutation. Unlike the cart, a mounted Peco-Peco never blocks a
+  change or reset that drops
   `KN_RIDING`: `MountHandler.force_dismount/1` runs up front instead, before the
   stats recompute, so the new job's derived stats never carry the riding ASPD
   buyback. Dropping `HT_FALCON` is treated the same way: `FalconHandler.force_dismiss/1`
@@ -56,6 +59,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   @mc_pushcart_id McPushcart.definition().id
   @kn_riding_id KnRiding.definition().id
   @ht_falcon_id HtFalcon.definition().id
+
+  # Job ids that require a specific character sex to change into. Bard (19) is
+  # male-only; the dancer entry (female-only) lands in a later phase.
+  @required_sex %{19 => "M"}
 
   @doc """
   Adds `amount` base levels, clamped to the job's `max_base_level`. Grants the
@@ -166,10 +173,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   mutating `state` when `job_id` does not resolve to a known job. Returns
   `{:error, :cart_active}` without mutating `state` when the change would drop
   `MC_PUSHCART` (the new job's tree lacks it) while a cart is mounted — the
-  player must unload and remove the cart first.
+  player must unload and remove the cart first. Returns `{:error, :gender_locked}`
+  without mutating `state` when `job_id` requires a character sex the player
+  does not have (`@required_sex`, e.g. bard is male-only).
   """
   @spec apply_job_change(non_neg_integer(), map()) ::
-          {:ok, map()} | {:error, :unknown_job | :cart_active | :requirements_not_met}
+          {:ok, map()}
+          | {:error, :unknown_job | :gender_locked | :requirements_not_met | :cart_active}
   def apply_job_change(job_id, %{game_state: game_state} = state) do
     case AvailableJobs.job_id_to_name(job_id) do
       {:ok, _job_name} -> do_apply_job_change(job_id, state, game_state)
@@ -194,6 +204,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   """
   @spec cart_blocks_reset?(map()) :: boolean()
   def cart_blocks_reset?(%{cart_type: cart_type}), do: cart_type > 0
+
+  @doc """
+  Whether a change to `job_id` requires a character sex other than `sex`
+  (`@required_sex`, e.g. bard is male-only). Jobs absent from the map are
+  unlocked for either sex. Used by the core and by `@job` to reject before any
+  mutation.
+  """
+  @spec gender_locked?(non_neg_integer(), String.t()) :: boolean()
+  def gender_locked?(job_id, sex) do
+    case Map.fetch(@required_sex, job_id) do
+      {:ok, required_sex} -> required_sex != sex
+      :error -> false
+    end
+  end
 
   @doc """
   Refunds the player's learned skills into `skill_point` (rAthena `resetskill` /
@@ -295,6 +319,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     cond do
       job_id == progression.job_id ->
         {:ok, state}
+
+      gender_locked?(job_id, game_state.sex) ->
+        {:error, :gender_locked}
 
       TraitJobs.change_allowed?(progression, job_id) != :ok ->
         {:error, :requirements_not_met}

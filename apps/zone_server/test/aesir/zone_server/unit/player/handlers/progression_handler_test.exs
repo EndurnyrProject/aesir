@@ -58,6 +58,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   @dragon_knight2_id dragon_knight2_id
   {:ok, rune_knight_id} = AvailableJobs.job_name_to_id(:rune_knight)
   @rune_knight_id rune_knight_id
+  {:ok, bard_id} = AvailableJobs.job_name_to_id(:bard)
+  @bard_id bard_id
   @unknown_job_id 99_999
   @quest_skill_id 99_022
   @quest_definition Definition.build!(
@@ -306,6 +308,31 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
       ProgressionHandler.apply_job_change(@unknown_job_id, state())
 
       refute_received {:send, :bulk, {:skill_list, _}}
+    end
+  end
+
+  describe "apply_job_change/2 gender gate" do
+    test "rejects a female character requesting bard with gender_locked, mutating nothing" do
+      state = state_with_gs([job_id: @novice_id], sex: "F")
+
+      assert {:error, :gender_locked} = ProgressionHandler.apply_job_change(@bard_id, state)
+    end
+
+    test "does not broadcast, persist, or send a skill list on gender_locked" do
+      state = state_with_gs([job_id: @novice_id], sex: "F")
+      reject(&Broadcast.to_player/2)
+      reject(&CharacterPersistence.update_character/3)
+
+      ProgressionHandler.apply_job_change(@bard_id, state)
+
+      refute_received {:send, :bulk, {:skill_list, _}}
+    end
+
+    test "allows a male character requesting bard" do
+      state = state_with_gs([job_id: @novice_id], sex: "M")
+
+      assert {:ok, new_state} = ProgressionHandler.apply_job_change(@bard_id, state)
+      assert new_state.game_state.stats.progression.job_id == @bard_id
     end
   end
 

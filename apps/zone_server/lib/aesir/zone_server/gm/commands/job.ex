@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Gm.Commands.Job do
   @usage "Usage: @job <job_id | job_name>"
   @cart_active "Remove your cart before changing job"
   @requirements_not_met "You do not meet the requirements for that job"
+  @gender_locked "That job is not available for your character's sex"
 
   @impl true
   def name, do: "job"
@@ -24,18 +25,24 @@ defmodule Aesir.ZoneServer.Gm.Commands.Job do
   @impl true
   def execute([arg], ctx) do
     with {:ok, job_id, job_name} <- resolve(arg),
+         :ok <- gender_check(job_id, ctx.game_state.sex),
          :ok <- TraitJobs.change_allowed?(ctx.game_state.stats.progression, job_id),
          false <- ProgressionHandler.cart_blocks_job_change?(ctx.game_state, job_id) do
       JobChange.request(ctx.game_state.character_id, job_id)
       {:ok, "Changed job to #{job_name} (#{job_id})"}
     else
       true -> {:error, @cart_active}
+      :gender_locked -> {:error, @gender_locked}
       {:error, :requirements_not_met} -> {:error, @requirements_not_met}
       {:error, reason} -> {:error, reason}
     end
   end
 
   def execute(_args, _ctx), do: {:error, @usage}
+
+  defp gender_check(job_id, sex) do
+    if ProgressionHandler.gender_locked?(job_id, sex), do: :gender_locked, else: :ok
+  end
 
   defp resolve(arg) do
     case Integer.parse(arg) do

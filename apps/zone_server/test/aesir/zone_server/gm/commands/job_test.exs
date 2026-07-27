@@ -14,6 +14,8 @@ defmodule Aesir.ZoneServer.Gm.Commands.JobTest do
   @rune_knight_id rune_knight_id
   {:ok, dragon_knight_id} = AvailableJobs.job_name_to_id(:dragon_knight)
   @dragon_knight_id dragon_knight_id
+  {:ok, bard_id} = AvailableJobs.job_name_to_id(:bard)
+  @bard_id bard_id
 
   defp ctx(overrides \\ [], progression_overrides \\ []) do
     progression =
@@ -87,5 +89,21 @@ defmodule Aesir.ZoneServer.Gm.Commands.JobTest do
 
     assert {:ok, _} = Job.execute([to_string(@dragon_knight_id)], eligible)
     assert_receive {:progression, {:change_job, @dragon_knight_id}}
+  end
+
+  test "is rejected with a message when the job is gender-locked for the caller's sex, broadcasting nothing" do
+    PubSub.subscribe(Aesir.PubSub, "player:#{@char_id}")
+
+    assert {:error, "That job is not available for your character's sex"} =
+             Job.execute([to_string(@bard_id)], ctx(sex: "F"))
+
+    refute_receive {:progression, {:change_job, _}}
+  end
+
+  test "allows the gender-locked job change for the matching sex, broadcasting {:change_job, id}" do
+    PubSub.subscribe(Aesir.PubSub, "player:#{@char_id}")
+
+    assert {:ok, _} = Job.execute([to_string(@bard_id)], ctx(sex: "M"))
+    assert_receive {:progression, {:change_job, @bard_id}}
   end
 end
