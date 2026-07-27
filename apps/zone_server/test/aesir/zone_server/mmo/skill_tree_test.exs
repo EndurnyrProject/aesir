@@ -353,12 +353,21 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
     end
 
     test "warns when a tree entry names an unimplemented skill" do
-      log =
-        capture_log(fn ->
-          SkillTree.reload()
-        end)
+      # Driven off a hidden catalog entry rather than a real gap in the tree:
+      # every name the YAML uses today resolves, and the last one that did not
+      # was removed from the tree instead of being implemented.
+      hidden = catalog_id(:sm_sword)
 
-      assert log =~ "WE_CALLBABY"
+      stub(Catalog, :all, fn ->
+        Enum.reject(call_original(Catalog, :all, []), &(&1.id == hidden))
+      end)
+
+      on_exit(&SkillTree.reload/0)
+
+      log = capture_log(fn -> SkillTree.reload() end)
+
+      assert log =~ "references unimplemented skill \"SM_SWORD\""
+      assert SkillTree.entry(@swordman_id, hidden) == :error
     end
   end
 
