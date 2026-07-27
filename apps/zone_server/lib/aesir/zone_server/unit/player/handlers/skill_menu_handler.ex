@@ -76,9 +76,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
   @doc """
   Drops the pending menu, if any. Called from the paths that invalidate an open
   menu: death and warp/map change.
+
+  The warp path is also reached from the script DSL, which builds a partial
+  session map (`game_state` + `connection_pid`) rather than a `SessionState`, so
+  this leaves a session without the key untouched instead of raising - the same
+  tolerance `SkillTextInputHandler.clear/1` has for that caller.
   """
-  @spec clear(SessionState.t()) :: SessionState.t()
-  def clear(state), do: %{state | pending_skill_menu: nil}
+  @spec clear(SessionState.t() | map()) :: SessionState.t() | map()
+  def clear(state), do: Map.replace(state, :pending_skill_menu, nil)
 
   @doc """
   Handles a client `SkillMenuReply` against the pending menu.

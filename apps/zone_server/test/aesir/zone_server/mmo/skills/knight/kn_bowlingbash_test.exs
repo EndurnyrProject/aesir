@@ -18,6 +18,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
 
   @target_id 5_000
   @two_handed_sword 1_116
+  # This mob is never registered in UnitRegistry, so any status row another
+  # async test leaves behind under the same {:mob, id} key makes
+  # `MobState.to_combatant/1` build a context for it and raise. Keep the
+  # instance id out of the low range those tests reach for.
+  @mob_caster_id 620_062
 
   describe "catalog registration" do
     test "Catalog.by_id(62) resolves to :kn_bowlingbash" do
@@ -99,7 +104,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
     end
 
     test "is 2 for a mob caster regardless of enemy count" do
-      caster = build_mob(1, 10, 10)
+      caster = build_mob(@mob_caster_id, 10, 10)
 
       assert KnBowlingbash.hit_count(caster, 4) == 2
     end
@@ -224,7 +229,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
     end
 
     test "casts from a mob caster with the base hit count" do
-      caster = build_mob(1, 10, 20)
+      caster = build_mob(@mob_caster_id, 10, 20)
       level = 2
 
       stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {15, 25}}} end)

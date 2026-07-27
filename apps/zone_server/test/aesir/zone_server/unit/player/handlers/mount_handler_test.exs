@@ -170,6 +170,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandlerTest do
                        {:mount_result, %MountResult{result: :MOUNT_ALREADY_MOUNTED}}}
     end
 
+    @tag :capture_log
     test "when SC_RIDING apply fails, stats.riding is reverted rather than left flipped" do
       reject(&CharacterPersistence.update_character/3)
 

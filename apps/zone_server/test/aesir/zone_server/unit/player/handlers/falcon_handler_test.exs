@@ -127,6 +127,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.FalconHandlerTest do
       assert {:ok, ^base} = FalconHandler.set_falcon(base, true)
     end
 
+    @tag :capture_log
     test "when SC_FALCON apply fails nothing commits (option, persistence)" do
       reject(&CharacterPersistence.update_character/3)
 

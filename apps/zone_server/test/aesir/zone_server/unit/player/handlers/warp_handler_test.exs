@@ -135,6 +135,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
       assert new_state.pending_skill_text_input == nil
       assert Process.read_timer(timer_ref) == false
     end
+
+    # `Script.Dsl.warp/4` hands this handler a bare `%{game_state:,
+    # connection_pid:}` map, not a `SessionState`. Clearing the menu with
+    # struct-update syntax raised `KeyError` on that shape, killing the
+    # Interaction task after the position had already been committed - the
+    # server moved the player and the client never got its `MapMove`.
+    test "a warp driven with the script DSL's partial session still sends MapMove" do
+      session = %{game_state: state().game_state, connection_pid: self()}
+
+      assert {:ok, %{game_state: new_game_state}} =
+               WarpHandler.warp(session, "geffen", 100, 120)
+
+      assert new_game_state.map_name == "geffen"
+      assert_received {:send, :control, {:map_move, %MapMove{map_name: "geffen"}}}
+    end
   end
 
   describe "warp/4 destination walkable fallback" do

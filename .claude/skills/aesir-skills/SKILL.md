@@ -91,8 +91,7 @@ this before inventing new wire messages.
 Mobs cast real skill modules via `Mmo.MobSkill.Executor` (see the `aesir-mobs` skill for the
 trigger layer). When writing a skill, either keep `cast/4` caster-generic or add a
 `mob_cast/5` clause; a player-only pattern-match means adding the skill to
-`MobSkill.Denylist` with a reason. After adding player skill modules, rerun the
-`:integration`-tagged `mob_skill/sweep_test.exs` — coverage grows automatically.
+`MobSkill.Denylist` with a reason.
 
 ## Testing conventions
 

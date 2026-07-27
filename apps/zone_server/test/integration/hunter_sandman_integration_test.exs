@@ -1,6 +1,10 @@
 defmodule Aesir.ZoneServer.Integration.HunterSandmanIntegrationTest do
   use Aesir.ZoneServer.IntegrationCase
 
+  # The sessions here are backed by in-memory characters with no DB row, so the
+  # real movement persistence path logs a :character_not_found error per step.
+  @moduletag :capture_log
+
   alias Aesir.Net.MoveRequest
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group

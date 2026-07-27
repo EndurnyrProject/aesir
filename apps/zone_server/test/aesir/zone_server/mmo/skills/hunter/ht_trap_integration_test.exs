@@ -332,6 +332,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
              StatusStorage.get_status(:mob, @mob_id + 1, :sc_anklesnare)
   end
 
+  @tag :capture_log
   test "capture materialization failure destroys the group and the status self-heals" do
     _caster = start_real_player(id: @caster_id, map_name: @map, position: {40, 40})
     _mob = start_real_mob(unit_id: @mob_id, map_name: @map, position: {49, 50})

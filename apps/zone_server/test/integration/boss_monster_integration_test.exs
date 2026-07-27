@@ -140,7 +140,12 @@ defmodule Aesir.ZoneServer.Integration.BossMonsterIntegrationTest do
           max_hp: 800,
           modes: [:boss],
           mvp_exp: @mvp_exp,
-          mvp_drops: [%MobDrop{item: @mvp_item, rate: 10_000}]
+          mvp_drops: [%MobDrop{item: @mvp_item, rate: 10_000}],
+          # The real prontera coordinator schedules a respawn from this spawn
+          # config on death. The helper's 5s default fires mid-suite, inside
+          # whichever test is running by then, and warns about the deliberately
+          # uncataloged mob id there. Push it past any run.
+          respawn_time: 3_600_000
         )
 
       damage(boss, low, 100)

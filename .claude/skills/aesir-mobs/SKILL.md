@@ -1,6 +1,6 @@
 ---
 name: aesir-mobs
-description: How to work on mobs in Aesir - MobSession/AI, the mob and spawn databases, and the mob skill system (trigger rows, Executor dispatch through the real skill catalog, denylist, sweep test). Use when adding mobs, spawns, mob AI behavior, or mob skill rows.
+description: How to work on mobs in Aesir - MobSession/AI, the mob and spawn databases, and the mob skill system (trigger rows, Executor dispatch through the real skill catalog, denylist). Use when adding mobs, spawns, mob AI behavior, or mob skill rows.
 ---
 
 # Mobs and mob skills in Aesir
@@ -54,9 +54,6 @@ Rules and gotchas:
 
 ## Verification
 
-- `mob_skill/sweep_test.exs` (`:integration`) casts every distinct (skill, id, target-code)
-  representative row end-to-end and asserts the id↔name join. Rerun it after adding skill
-  modules or touching Executor/Denylist — castable coverage grows automatically.
 - Known flake: `mob_session_skill_cast_test.exs` cast-interruption case under full-suite
   load (passes in isolation — ignorable when lone).
 - Steal/loot: `MobSession.attempt_steal/3` with atomic `MobState.stolen_from`; `:boss`

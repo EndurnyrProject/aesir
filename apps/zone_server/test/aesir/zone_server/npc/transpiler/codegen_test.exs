@@ -482,6 +482,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert module.events() == ["OnInit", "OnTimer1000"]
   end
 
+  @tag :capture_log
   test "OnTouch_ normalizes to the OnTouch head the engine dispatches, deduping with OnTouch" do
     src =
       gen!(
