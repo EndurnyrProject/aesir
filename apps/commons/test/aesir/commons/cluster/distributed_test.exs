@@ -18,9 +18,14 @@ defmodule Aesir.Commons.Cluster.DistributedTest do
   """
   use ExUnit.Case
 
+  import Aesir.TestWait
+
   alias Aesir.Commons.SessionManager
 
   @moduletag :distributed
+  # Real peer BEAM nodes plus CRDT reconciliation: cluster-wide visibility is
+  # seconds away, not milliseconds.
+  @cluster_wait 10_000
   @moduletag timeout: 120_000
 
   setup_all do
@@ -74,18 +79,24 @@ defmodule Aesir.Commons.Cluster.DistributedTest do
                6_900
              ])
 
-    assert eventually(fn ->
-             match?(
-               [%{server_id: "acc-1"}],
-               :rpc.call(n2, SessionManager, :get_servers, [:account_server])
-             )
-           end)
+    assert eventually(
+             fn ->
+               match?(
+                 [%{server_id: "acc-1"}],
+                 :rpc.call(n2, SessionManager, :get_servers, [:account_server])
+               )
+             end,
+             @cluster_wait
+           )
 
     :ok = LocalCluster.stop(cluster, n1)
 
-    assert eventually(fn ->
-             :rpc.call(n2, SessionManager, :get_servers, [:account_server]) == []
-           end)
+    assert eventually(
+             fn ->
+               :rpc.call(n2, SessionManager, :get_servers, [:account_server]) == []
+             end,
+             @cluster_wait
+           )
   end
 
   test "registry reconciles after a disconnect/reconnect (netsplit heal)", %{n1: n1, n2: n2} do
@@ -97,34 +108,28 @@ defmodule Aesir.Commons.Cluster.DistributedTest do
                5_121
              ])
 
-    assert eventually(fn ->
-             match?(
-               [%{server_id: "z-1"}],
-               :rpc.call(n2, SessionManager, :get_servers, [:zone_server])
-             )
-           end)
+    assert eventually(
+             fn ->
+               match?(
+                 [%{server_id: "z-1"}],
+                 :rpc.call(n2, SessionManager, :get_servers, [:zone_server])
+               )
+             end,
+             @cluster_wait
+           )
 
     true = :rpc.call(n2, Node, :disconnect, [n1])
     Process.sleep(500)
     true = :rpc.call(n2, Node, :connect, [n1])
 
-    assert eventually(fn ->
-             match?(
-               [%{server_id: "z-1"}],
-               :rpc.call(n2, SessionManager, :get_servers, [:zone_server])
-             )
-           end)
-  end
-
-  defp eventually(fun, retries \\ 40, interval_ms \\ 250)
-  defp eventually(_fun, 0, _interval_ms), do: false
-
-  defp eventually(fun, retries, interval_ms) do
-    if fun.() do
-      true
-    else
-      Process.sleep(interval_ms)
-      eventually(fun, retries - 1, interval_ms)
-    end
+    assert eventually(
+             fn ->
+               match?(
+                 [%{server_id: "z-1"}],
+                 :rpc.call(n2, SessionManager, :get_servers, [:zone_server])
+               )
+             end,
+             @cluster_wait
+           )
   end
 end

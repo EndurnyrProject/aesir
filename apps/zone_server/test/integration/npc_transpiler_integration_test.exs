@@ -90,7 +90,7 @@ defmodule Aesir.ZoneServer.NpcTranspilerIntegrationTest do
     def handle_call(:game_state, _from, state), do: {:reply, state.game_state, state}
   end
 
-  setup :set_mimic_global
+  setup {Aesir.MimicMode, :global}
   setup :verify_on_exit!
 
   setup_all do

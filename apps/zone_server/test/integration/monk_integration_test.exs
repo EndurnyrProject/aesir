@@ -543,14 +543,6 @@ defmodule Aesir.ZoneServer.Integration.MonkIntegrationTest do
     unit_id |> collect_sphere_updates() |> Enum.map(& &1.revision)
   end
 
-  defp eventually(fun, attempts \\ 40) do
-    cond do
-      fun.() -> true
-      attempts == 0 -> false
-      true -> Process.sleep(25) && eventually(fun, attempts - 1)
-    end
-  end
-
   # Builds a registered Monk `PlayerState` (not a live session) with real,
   # calculated combat stats. The high DEX/base level over a low-flee mob keeps
   # skill hits deterministic (hit rate clamps to 100%).

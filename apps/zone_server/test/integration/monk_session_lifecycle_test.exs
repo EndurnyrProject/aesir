@@ -231,12 +231,4 @@ defmodule Aesir.ZoneServer.Integration.MonkSessionLifecycleTest do
     past = System.monotonic_time(:millisecond) - 1_000
     :ok = StatusStorage.update_next_tick(unit_type, unit_id, status_type, past)
   end
-
-  defp eventually(fun, attempts \\ 40) do
-    cond do
-      fun.() -> true
-      attempts == 0 -> false
-      true -> Process.sleep(25) && eventually(fun, attempts - 1)
-    end
-  end
 end

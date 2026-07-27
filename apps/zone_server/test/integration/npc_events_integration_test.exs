@@ -135,10 +135,10 @@ defmodule Aesir.ZoneServer.NpcEventsIntegrationTest do
     def on_event("OnInit", ctx), do: disablenpc(ctx)
   end
 
-  setup :set_mimic_global
+  setup {Aesir.MimicMode, :global}
 
   setup do
-    Process.register(self(), :npc_events_integration_probe)
+    Aesir.TestProbe.register!(:npc_events_integration_probe)
     :ok
   end
 

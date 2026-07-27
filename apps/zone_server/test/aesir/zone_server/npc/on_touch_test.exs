@@ -93,7 +93,7 @@ defmodule Aesir.ZoneServer.Npc.OnTouchTest do
   setup :setup_ets_tables
 
   setup do
-    Process.register(self(), :on_touch_probe)
+    Aesir.TestProbe.register!(:on_touch_probe)
     NpcRegistry.reload([TouchNpc, WarperNpc, OverlapNpcA, OverlapNpcB])
 
     gids = Enum.map([TouchNpc, WarperNpc, OverlapNpcA, OverlapNpcB], &gid_for/1)

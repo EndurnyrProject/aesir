@@ -94,7 +94,7 @@ defmodule Aesir.ZoneServer.Script.DslEventsTest do
   end
 
   setup do
-    Process.register(self(), :dsl_events_probe)
+    Aesir.TestProbe.register!(:dsl_events_probe)
     on_exit(fn -> :persistent_term.erase(NpcRegistry) end)
     :ok
   end

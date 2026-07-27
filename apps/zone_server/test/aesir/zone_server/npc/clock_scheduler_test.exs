@@ -89,7 +89,7 @@ defmodule Aesir.ZoneServer.Npc.ClockSchedulerTest do
 
   describe "tick" do
     test "fires trigger_all for a registered NPC's matching OnMinute label" do
-      Process.register(self(), :clock_scheduler_test_probe)
+      Aesir.TestProbe.register!(:clock_scheduler_test_probe)
       Registry.reload([FixtureNpc])
 
       pid = start_supervised!({ClockScheduler, now_fun: fn -> @sunday_2359 end})
@@ -100,7 +100,7 @@ defmodule Aesir.ZoneServer.Npc.ClockSchedulerTest do
     end
 
     test "with no clock labels registered, a tick is a no-op and re-arms" do
-      Process.register(self(), :clock_scheduler_test_probe)
+      Aesir.TestProbe.register!(:clock_scheduler_test_probe)
       Registry.reload([])
 
       pid = start_supervised!({ClockScheduler, now_fun: fn -> @sunday_2359 end})

@@ -103,6 +103,13 @@ defmodule Aesir.ZoneServer.Integration.EquipDrainSplashTest do
   # A swing can still miss, so the attack is repeated (with a clean packet
   # window each time) until the primary target takes damage. The returned
   # packets are the ones a single landed swing produced.
+  #
+  # The collector stops after that many milliseconds of silence. Each splash
+  # victim broadcasts from its own MobSession, so a busy neighbour can trail the
+  # primary by more than a couple of frames under full-suite load - too short a
+  # window drops its packet and the splash assertions read as "never hit".
+  @packet_quiet_ms 500
+
   defp attack_until_landed(player, target_id, equip_modifiers) do
     Enum.reduce_while(1..30, nil, fn _, _acc ->
       flush_packets()
@@ -110,7 +117,7 @@ defmodule Aesir.ZoneServer.Integration.EquipDrainSplashTest do
       stats = with_equip_modifiers(get_player_stats(player.pid), equip_modifiers)
       assert Combat.execute_attack(stats, get_player_state(player.pid), target_id) == :ok
 
-      packets = collect_packets_of_type(DamageDealt, 150)
+      packets = collect_packets_of_type(DamageDealt, @packet_quiet_ms)
 
       case damage_for(packets, target_id) do
         [] -> {:cont, nil}
@@ -132,10 +139,4 @@ defmodule Aesir.ZoneServer.Integration.EquipDrainSplashTest do
   end
 
   defp current_hp(player), do: get_player_state(player.pid).stats.current_state.hp
-
-  defp eventually(check, attempts \\ 20) do
-    Enum.any?(1..attempts, fn _ ->
-      if check.(), do: true, else: Process.sleep(25) && false
-    end)
-  end
 end

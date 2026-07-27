@@ -43,7 +43,7 @@ defmodule Aesir.ZoneServer.Script.DslQuestTest do
   end
 
   setup do
-    Process.register(self(), :dsl_quest_probe)
+    Aesir.TestProbe.register!(:dsl_quest_probe)
 
     defs = [@hunt]
     index = %{all: defs, by_id: Map.new(defs, &{&1.id, &1})}

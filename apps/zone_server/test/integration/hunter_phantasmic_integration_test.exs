@@ -233,12 +233,4 @@ defmodule Aesir.ZoneServer.Integration.HunterPhantasmicIntegrationTest do
   defp player_sp(pid), do: get_player_state(pid).stats.current_state.sp
   defp mob_hp(mob), do: get_mob_state(mob.pid).hp
   defp mob_position(mob), do: {get_mob_state(mob.pid).x, get_mob_state(mob.pid).y}
-
-  defp eventually(fun, attempts \\ 80) do
-    cond do
-      fun.() -> true
-      attempts <= 0 -> false
-      true -> Process.sleep(50) && eventually(fun, attempts - 1)
-    end
-  end
 end

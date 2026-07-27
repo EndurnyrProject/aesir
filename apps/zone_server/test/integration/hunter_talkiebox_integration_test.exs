@@ -390,16 +390,4 @@ defmodule Aesir.ZoneServer.Integration.HunterTalkieboxIntegrationTest do
         ensure_coordinator(map_name, retries - 1)
     end
   end
-
-  defp eventually(fun, attempts \\ 40)
-  defp eventually(_fun, 0), do: false
-
-  defp eventually(fun, attempts) do
-    if fun.() do
-      true
-    else
-      Process.sleep(25)
-      eventually(fun, attempts - 1)
-    end
-  end
 end

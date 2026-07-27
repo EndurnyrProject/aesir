@@ -118,16 +118,4 @@ defmodule Aesir.ZoneServer.Integration.BlastmineIntegrationTest do
   defp current_hp(player_pid) do
     get_player_state(player_pid).stats.current_state.hp
   end
-
-  defp eventually(check, attempts \\ 40)
-  defp eventually(_check, 0), do: false
-
-  defp eventually(check, attempts) do
-    if check.() do
-      true
-    else
-      Process.sleep(25)
-      eventually(check, attempts - 1)
-    end
-  end
 end

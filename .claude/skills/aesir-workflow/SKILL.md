@@ -72,6 +72,14 @@ usability check and misses the real logic. Grep both.
   old-arity stub — the real function runs and tests pass for the wrong reason. After any
   arity change, `rg 'stub\(TheModule|expect\(TheModule' test/` and update all of them.
   The tell in parallel work: `assert_received` failing on a message a stub should have sent.
+- **Mimic global-mode leak**: `set_mimic_global` is only undone when the Mimic server
+  processes the owner's `:DOWN`, which races the next test starting. In that window the
+  previous test's stubs are still live for every process, and `stub/3` from the new test
+  raises "Stub cannot be called by the current process". Symptoms are a mix of that error
+  and unrelated integration tests failing on state a leaked stub quietly faked.
+  `IntegrationCase` claims a mode per test (`Mimic.set_mimic_private()` in its setup); a
+  module- or describe-level `setup :set_mimic_global` still wins because it runs after.
+  Plain `ExUnit.Case` files that stub must declare their own mode.
 - **Use real production shapes** in status/combat tests: hand-built `attack_info` maps and
   hardcoded `stub_entity_info` fixtures have hidden real bugs (wrong field names, boss-flag
   gates). Insist on real `UnitRegistry`/`PlayerState`/`MobState` shapes.

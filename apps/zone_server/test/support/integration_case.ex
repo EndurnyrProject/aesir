@@ -63,6 +63,7 @@ defmodule Aesir.ZoneServer.IntegrationCase do
       @moduletag :integration
 
       import Aesir.TestEtsSetup
+      import Aesir.TestWait
       import Aesir.ZoneServer.IntegrationCase
       import Aesir.ZoneServer.PacketHelpers
       import Aesir.ZoneServer.SessionHelpers, except: [get_player_state: 1, get_mob_state: 1]
@@ -77,6 +78,13 @@ defmodule Aesir.ZoneServer.IntegrationCase do
   end
 
   setup tags do
+    # Mimic only leaves global mode once its server processes the previous owner's
+    # :DOWN, which races the next test starting: until then every `stub/3` from the
+    # new test raises "Only the global owner is allowed". Claiming a mode per test
+    # makes that deterministic. Modules (or describes) that want global mode declare
+    # `setup {Aesir.MimicMode, :global}`, which runs after this template's setup and wins.
+    Mimic.set_mimic_private()
+
     # Set up database sandbox in shared mode since we're async: false
     :ok = Sandbox.checkout(Aesir.Repo)
     Sandbox.mode(Aesir.Repo, {:shared, self()})

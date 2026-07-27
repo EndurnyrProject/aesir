@@ -37,7 +37,7 @@ defmodule Aesir.ZoneServer.Script.DslEconomyTest do
   end
 
   setup do
-    Process.register(self(), :dsl_economy_probe)
+    Aesir.TestProbe.register!(:dsl_economy_probe)
     :ok
   end
 

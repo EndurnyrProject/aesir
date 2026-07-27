@@ -66,7 +66,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Morocc.TurbanThiefTest do
   # Global mode: the stubbed I/O leaves are called from the spawned Session and
   # Interaction processes, not the test process, so the stubs must cross process
   # boundaries. Safe because this suite is async: false.
-  setup :set_mimic_global
+  setup {Aesir.MimicMode, :global}
   setup :verify_on_exit!
 
   setup do

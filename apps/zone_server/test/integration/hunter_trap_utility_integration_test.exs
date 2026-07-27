@@ -261,18 +261,6 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapUtilityIntegrationTest do
     get_player_state(session.pid)
   end
 
-  defp eventually(fun, attempts \\ 60)
-  defp eventually(_fun, 0), do: false
-
-  defp eventually(fun, attempts) do
-    if fun.() do
-      true
-    else
-      Process.sleep(25)
-      eventually(fun, attempts - 1)
-    end
-  end
-
   defp cast_concurrently(sessions, skill_id, level, {x, y}) do
     sessions
     |> Enum.map(fn session ->

@@ -291,7 +291,7 @@ defmodule Aesir.ZoneServer.Npc.SessionTest do
   describe "default :on_fire" do
     test "a timer fire on a real registered NPC runs its on_event handler through Events" do
       NpcRegistry.reload([DispatchedNpc])
-      Process.register(self(), :npc_session_test_probe)
+      Aesir.TestProbe.register!(:npc_session_test_probe)
 
       {DispatchedNpc, placement} = hd(NpcRegistry.entries())
       gid = NpcRegistry.entity_id(placement)

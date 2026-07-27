@@ -74,16 +74,4 @@ defmodule Aesir.ZoneServer.Unit.KnockbackCancelWalkTest do
     assert {:ok, {150, 150, @map_name}} = SpatialIndex.get_unit_position(:mob, mob.unit_id)
     refute_packet_sent(Knockback)
   end
-
-  defp assert_eventually(fun, attempts \\ 20)
-  defp assert_eventually(fun, 0), do: assert(fun.())
-
-  defp assert_eventually(fun, attempts) do
-    if fun.() do
-      :ok
-    else
-      Process.sleep(10)
-      assert_eventually(fun, attempts - 1)
-    end
-  end
 end

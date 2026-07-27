@@ -122,16 +122,4 @@ defmodule Aesir.ZoneServer.Integration.PriestResurrectionTest do
       0 -> :ok
     end
   end
-
-  defp assert_eventually(fun, attempts \\ 50)
-  defp assert_eventually(fun, 0), do: assert(fun.())
-
-  defp assert_eventually(fun, attempts) do
-    if fun.() do
-      :ok
-    else
-      Process.sleep(10)
-      assert_eventually(fun, attempts - 1)
-    end
-  end
 end

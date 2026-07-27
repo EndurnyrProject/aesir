@@ -57,7 +57,7 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
   @verit_cooldown 2290
   @target 20
 
-  setup :set_mimic_global
+  setup {Aesir.MimicMode, :global}
 
   setup do
     gid = NpcRegistry.entity_id(hd(SuspiciousCat.spawn()))

@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AnkleSnareTest do
   use ExUnit.Case, async: false
 
   import Aesir.TestEtsSetup
+  import Aesir.TestWait
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -49,7 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AnkleSnareTest do
     assert :ok = apply_status(context.player_id, 1, 7)
 
     assert :ok = Interpreter.remove_status(:player, context.player_id, :sc_anklesnare)
-    eventually(fn -> is_nil(Storage.get(1)) end)
+    assert_eventually(fn -> is_nil(Storage.get(1)) end)
 
     assert :ok = Interpreter.remove_status(:player, context.player_id, :sc_anklesnare)
     assert :ok = Manager.release_trap_link(context.manager, 1, 7)
@@ -66,7 +67,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AnkleSnareTest do
 
     assert :ok = Manager.release_trap_link(context.manager, 1, 7)
 
-    eventually(fn ->
+    assert_eventually(fn ->
       is_nil(Storage.get(1)) and
         not StatusStorage.has_status?(:player, context.player_id, :sc_anklesnare)
     end)
@@ -76,12 +77,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AnkleSnareTest do
     insert_captured_group(context.player_id, 1, 7)
     assert :ok = apply_status(context.player_id, 1, 7)
     assert :ok = Interpreter.remove_all_statuses(:player, context.player_id)
-    eventually(fn -> is_nil(Storage.get(1)) end)
+    assert_eventually(fn -> is_nil(Storage.get(1)) end)
 
     insert_captured_group(context.player_id, 2, 8)
     assert :ok = apply_status(context.player_id, 2, 8)
     assert :ok = Interpreter.remove_on_map_change(:player, context.player_id)
-    eventually(fn -> is_nil(Storage.get(2)) end)
+    assert_eventually(fn -> is_nil(Storage.get(2)) end)
   end
 
   test "stale group links remove the status without touching another group", context do
@@ -145,17 +146,5 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AnkleSnareTest do
       class: 0
     }
     |> PlayerState.new()
-  end
-
-  defp eventually(fun, attempts \\ 20)
-  defp eventually(fun, 0), do: assert(fun.())
-
-  defp eventually(fun, attempts) do
-    if fun.() do
-      :ok
-    else
-      Process.sleep(5)
-      eventually(fun, attempts - 1)
-    end
   end
 end

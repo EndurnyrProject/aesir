@@ -45,7 +45,7 @@ defmodule Aesir.ZoneServer.Integration.OnMyMobDeadTest do
   end
 
   setup do
-    Process.register(self(), :on_my_mob_dead_probe)
+    Aesir.TestProbe.register!(:on_my_mob_dead_probe)
     on_exit(fn -> :persistent_term.erase(NpcRegistry) end)
     :ok
   end
@@ -159,7 +159,7 @@ defmodule Aesir.ZoneServer.Integration.OnMyMobDeadTest do
   end
 
   describe "MobSession death path" do
-    setup :set_mimic_global
+    setup {Aesir.MimicMode, :global}
 
     test "passes the killing blow's attacker id through to Coordinator.mob_died" do
       test_pid = self()

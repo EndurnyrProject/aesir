@@ -284,7 +284,7 @@ defmodule Aesir.ZoneServer.Integration.CrusaderSkillsTest do
         assert packet.y == 150
       end)
 
-      assert eventually(fn -> current_hp(crusader.pid) <= max_hp - cost end, 120)
+      assert eventually(fn -> current_hp(crusader.pid) <= max_hp - cost end, 6_000)
 
       refute StatusInterpreter.can_move?(:player, crusader.character.id)
 
@@ -474,12 +474,4 @@ defmodule Aesir.ZoneServer.Integration.CrusaderSkillsTest do
   defp current_hp(pid), do: get_player_state(pid).stats.current_state.hp
   defp max_hp(pid), do: get_player_state(pid).stats.derived_stats.max_hp
   defp current_mob_hp(pid), do: get_mob_state(pid).hp
-
-  defp eventually(fun, attempts \\ 80) do
-    cond do
-      fun.() -> true
-      attempts <= 0 -> false
-      true -> Process.sleep(50) && eventually(fun, attempts - 1)
-    end
-  end
 end

@@ -261,10 +261,17 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
       mob_id = mob.unit_id
       assert_receive {:packet_sent, %SkillDamage{skill_id: 24, target_id: ^mob_id}, _}, 1_000
 
-      assert StatusStorage.has_status?(:player, caster.character.id, :sc_ruwach)
+      # The pulse runs from `on_apply`, which the status interpreter calls before
+      # it commits the row - so the splash packet above can arrive first. Poll
+      # both sides of the reveal instead of reading them once.
+      assert eventually(fn ->
+               StatusStorage.has_status?(:player, caster.character.id, :sc_ruwach)
+             end)
 
       # The first pulse fired on apply: the concealed ally is revealed in radius 2.
-      refute StatusStorage.has_status?(:player, hidden.character.id, :sc_hiding)
+      assert eventually(fn ->
+               not StatusStorage.has_status?(:player, hidden.character.id, :sc_hiding)
+             end)
     end
   end
 

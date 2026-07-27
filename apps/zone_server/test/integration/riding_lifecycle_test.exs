@@ -489,12 +489,4 @@ defmodule Aesir.ZoneServer.Integration.RidingLifecycleTest do
   defp kn_cavaliermastery_id, do: KnCavaliermastery.definition().id
 
   defp riding?(game_state), do: MountHandler.riding?(%{game_state: game_state})
-
-  defp eventually(fun, attempts \\ 40) do
-    cond do
-      fun.() -> true
-      attempts <= 0 -> false
-      true -> Process.sleep(50) && eventually(fun, attempts - 1)
-    end
-  end
 end

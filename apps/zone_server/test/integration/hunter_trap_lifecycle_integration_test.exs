@@ -51,7 +51,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
     :ok
   end
 
-  setup :set_mimic_global
+  setup {Aesir.MimicMode, :global}
 
   setup do
     manager =
@@ -361,17 +361,5 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
       |> Repo.insert()
 
     character
-  end
-
-  defp eventually(fun, attempts \\ 60)
-  defp eventually(_fun, 0), do: false
-
-  defp eventually(fun, attempts) do
-    if fun.() do
-      true
-    else
-      Process.sleep(25)
-      eventually(fun, attempts - 1)
-    end
   end
 end

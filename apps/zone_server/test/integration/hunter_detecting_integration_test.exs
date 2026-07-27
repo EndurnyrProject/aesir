@@ -244,12 +244,4 @@ defmodule Aesir.ZoneServer.Integration.HunterDetectingIntegrationTest do
     %PlayerState{stats: %{current_state: %{sp: sp}}} = get_player_state(pid)
     sp
   end
-
-  defp eventually(fun, attempts \\ 40) do
-    cond do
-      fun.() -> true
-      attempts <= 0 -> false
-      true -> Process.sleep(25) && eventually(fun, attempts - 1)
-    end
-  end
 end

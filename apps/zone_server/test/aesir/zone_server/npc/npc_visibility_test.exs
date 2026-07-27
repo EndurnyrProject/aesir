@@ -65,7 +65,7 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
   setup :setup_ets_tables
 
   setup do
-    Process.register(self(), :npc_visibility_probe)
+    Aesir.TestProbe.register!(:npc_visibility_probe)
     NpcRegistry.reload([ToggleNpc, DupNpcA, DupNpcB])
 
     # `:npc_session_flags` is the one real table `Npc.Session` owns

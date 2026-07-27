@@ -62,7 +62,7 @@ defmodule Aesir.ZoneServer.Npc.OnInitTest do
   end
 
   setup do
-    Process.register(self(), :on_init_test_probe)
+    Aesir.TestProbe.register!(:on_init_test_probe)
     on_exit(fn -> :persistent_term.erase(Registry) end)
     :ok
   end

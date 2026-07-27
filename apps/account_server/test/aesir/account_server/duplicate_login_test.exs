@@ -13,7 +13,7 @@ defmodule Aesir.AccountServer.DuplicateLoginTest do
   alias Aesir.Net.LoginRequest
   alias Aesir.Net.LoginResponse
 
-  setup :set_mimic_global
+  setup {Aesir.MimicMode, :global}
   setup :verify_on_exit!
 
   setup do

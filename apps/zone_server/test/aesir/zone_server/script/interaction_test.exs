@@ -64,7 +64,7 @@ defmodule Aesir.ZoneServer.Script.InteractionTest do
   end
 
   setup do
-    Process.register(self(), :interaction_test_probe)
+    Aesir.TestProbe.register!(:interaction_test_probe)
     :ok
   end
 

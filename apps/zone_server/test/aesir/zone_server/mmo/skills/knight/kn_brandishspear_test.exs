@@ -20,6 +20,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspearTest do
   @target_id 5_000
   @one_handed_spear 1_402
   @riding_bit Option.id(:riding)
+  # This mob is never registered in UnitRegistry, so any status row another
+  # async test leaves behind under the same {:mob, id} key makes
+  # `MobState.to_combatant/1` build a context for it and raise. Keep the
+  # instance id out of the low range those tests reach for.
+  @mob_caster_id 570_057
 
   describe "catalog registration" do
     test "Catalog.by_id(57) resolves to :kn_brandishspear" do
@@ -77,7 +82,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspearTest do
     end
 
     test "a mob caster bypasses both the spear and riding gates" do
-      caster = build_mob(1, 10, 10)
+      caster = build_mob(@mob_caster_id, 10, 10)
 
       assert :ok = KnBrandishspear.validate(caster, {:unit, @target_id}, 1, definition())
     end
@@ -140,7 +145,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspearTest do
     end
 
     test "casts from a mob caster using its STR in the ratio" do
-      caster = build_mob(1, 10, 20)
+      caster = build_mob(@mob_caster_id, 10, 20)
       level = 3
 
       stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {15, 25}}} end)

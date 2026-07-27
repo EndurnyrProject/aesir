@@ -139,12 +139,4 @@ defmodule Aesir.ZoneServer.Integration.MonkStatusLifecycleIntegrationTest do
       refute_receive {:packet_sent, %ParamChange{var_id: ^var_id}, _}
     end)
   end
-
-  defp eventually(fun, attempts \\ 40) do
-    cond do
-      fun.() -> true
-      attempts == 0 -> false
-      true -> Process.sleep(50) && eventually(fun, attempts - 1)
-    end
-  end
 end

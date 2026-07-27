@@ -23,7 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
   alias Phoenix.PubSub
 
   setup :verify_on_exit!
-  setup :set_mimic_global
+  setup {Aesir.MimicMode, :global}
 
   test "killing a mob broadcasts the drop-rolling :mob_killed payload to the killer" do
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)

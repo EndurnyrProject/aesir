@@ -73,12 +73,4 @@ defmodule Aesir.ZoneServer.Integration.DispelIntegrationTest do
     assert eventually(fn -> StatusStorage.has_status?(:player, char_id, :sc_increaseagi) end),
            "the dispelled cast must still complete"
   end
-
-  defp eventually(fun, attempts \\ 40) do
-    cond do
-      fun.() -> true
-      attempts == 0 -> false
-      true -> Process.sleep(50) && eventually(fun, attempts - 1)
-    end
-  end
 end

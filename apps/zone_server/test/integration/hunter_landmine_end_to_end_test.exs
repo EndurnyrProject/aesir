@@ -26,7 +26,7 @@ defmodule Aesir.ZoneServer.Integration.HunterLandmineEndToEndTest do
     :ok
   end
 
-  setup :set_mimic_global
+  setup {Aesir.MimicMode, :global}
 
   test "mob Executor places Land Mine through a real MobSession and PlayerSession movement fires it" do
     player =
@@ -109,17 +109,5 @@ defmodule Aesir.ZoneServer.Integration.HunterLandmineEndToEndTest do
       clothes_color: 0,
       online: true
     }
-  end
-
-  defp eventually(fun, attempts \\ 100)
-  defp eventually(_fun, 0), do: false
-
-  defp eventually(fun, attempts) do
-    if fun.() do
-      true
-    else
-      Process.sleep(25)
-      eventually(fun, attempts - 1)
-    end
   end
 end

@@ -317,12 +317,4 @@ defmodule Aesir.ZoneServer.Integration.FalconLifecycleTest do
   defp ht_falcon_id, do: HtFalcon.definition().id
 
   defp falcon?(game_state), do: FalconHandler.falcon?(%{game_state: game_state})
-
-  defp eventually(fun, attempts \\ 40) do
-    cond do
-      fun.() -> true
-      attempts <= 0 -> false
-      true -> Process.sleep(50) && eventually(fun, attempts - 1)
-    end
-  end
 end

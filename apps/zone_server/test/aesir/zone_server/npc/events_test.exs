@@ -87,7 +87,7 @@ defmodule Aesir.ZoneServer.Npc.EventsTest do
   end
 
   setup do
-    Process.register(self(), :events_test_probe)
+    Aesir.TestProbe.register!(:events_test_probe)
     on_exit(fn -> :persistent_term.erase(Registry) end)
     :ok
   end

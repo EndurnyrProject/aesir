@@ -105,24 +105,18 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
     %{get_mob_state(mob.pid) | target_id: char_id}
   end
 
-  defp eventually(fun, attempts \\ 100)
-  defp eventually(_fun, 0), do: false
-
-  defp eventually(fun, attempts) do
-    if fun.() do
-      true
-    else
-      Process.sleep(25)
-      eventually(fun, attempts - 1)
-    end
-  end
-
   describe "SA_DISPELL rows" do
     test "a mob dispel strips the player's buffs and debuffs, sparing no_dispel statuses" do
       player = start_player_session(id: 9_801, name: "Dispelled", base_level: 50)
       char_id = player.character.id
 
       on_exit(fn -> StatusStorage.clear_unit_statuses(:player, char_id) end)
+
+      # Spawning the caster takes long enough under load for a Poison or
+      # Bleeding tick to land, and their damage removes SC_HIDING (`on_damage`)
+      # before the dispel ever runs. Have the caster ready first, then apply the
+      # statuses and dispel back to back.
+      caster = caster_targeting(char_id)
 
       :ok =
         StatusInterpreter.apply_status(:player, char_id, :sc_blessing,
@@ -134,8 +128,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
       :ok = StatusInterpreter.apply_status(:player, char_id, :sc_bleeding, duration: 1_800_000)
       :ok = StatusInterpreter.apply_status(:player, char_id, :sc_hiding, duration: 1_800_000)
 
-      assert :ok =
-               Executor.execute(caster_targeting(char_id), row!(@mob_id, "SA_DISPELL", level: 5))
+      assert :ok = Executor.execute(caster, row!(@mob_id, "SA_DISPELL", level: 5))
 
       refute StatusStorage.has_status?(:player, char_id, :sc_blessing)
 

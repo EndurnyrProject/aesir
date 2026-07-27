@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
 
   @moduletag :integration
 
+  import Aesir.TestWait
   import Mimic
 
   alias Aesir.Net.Knockback
@@ -68,7 +69,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
     :ok
   end
 
-  setup :set_mimic_global
+  setup {Aesir.MimicMode, :global}
   setup :setup_runtime_tables
 
   setup do
@@ -524,18 +525,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
     end)
   end
 
-  defp eventually(fun, attempts \\ 40)
-  defp eventually(_fun, 0), do: false
-
-  defp eventually(fun, attempts) do
-    if fun.() do
-      true
-    else
-      Process.sleep(10)
-      eventually(fun, attempts - 1)
-    end
-  end
-
   defp ankle_group(group_id, caster_type \\ :player, caster_id \\ @caster_id, center \\ @trap) do
     struct(Group,
       group_id: group_id,
@@ -576,18 +565,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
       {:packet_sent, _packet, _channel} -> flush_packets()
     after
       50 -> :ok
-    end
-  end
-
-  defp assert_eventually(fun, attempts \\ 20)
-  defp assert_eventually(fun, 0), do: assert(fun.())
-
-  defp assert_eventually(fun, attempts) do
-    if fun.() do
-      :ok
-    else
-      Process.sleep(10)
-      assert_eventually(fun, attempts - 1)
     end
   end
 end
