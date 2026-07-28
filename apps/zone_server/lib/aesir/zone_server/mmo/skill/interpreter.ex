@@ -851,39 +851,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         module.dynamic_cost(game_state, target, level, definition)
       else
         Cost.from_definition(game_state, definition, level,
-          sp: skill_sp_cost(game_state, definition, level)
+          sp: Cost.resolve_sp(game_state, definition, level)
         )
       end
 
     Cost.validate_resolved(cost)
-  end
-
-  # SP cost after the caster's summed `sp_cost_rate` delta (negative = cheaper,
-  # summing the status sources with the global and per-skill equipment rates)
-  # and the caster's per-skill equipment `{:skill_use_sp, id}`
-  # flat reduction. The rate floors the multiplier at 0 so a stacked over-100%
-  # reduction cannot invert the cost; the flat reduction is subtracted after the
-  # percent step and the final cost is floored at 0. Computed once per cast site
-  # so check_sp/deduct_sp both see the same reduced value (single application).
-  @spec skill_sp_cost(PlayerState.t(), Definition.t(), pos_integer()) :: non_neg_integer()
-  defp skill_sp_cost(game_state, definition, level) do
-    case Enum.at(definition.sp_cost, level - 1, 0) do
-      :all -> game_state.stats.current_state.sp
-      _cost -> reduced_skill_sp_cost(game_state, definition, level)
-    end
-  end
-
-  defp reduced_skill_sp_cost(game_state, definition, level) do
-    cost = Enum.at(definition.sp_cost, level - 1)
-
-    rate =
-      merged_modifier(game_state.character_id, :sp_cost_rate) +
-        equip_modifier(game_state, :sp_cost_rate) +
-        equip_modifier(game_state, {:skill_use_sp_rate, definition.id})
-
-    reduced = div(cost * max(0, 100 + rate), 100)
-    flat = equip_modifier(game_state, {:skill_use_sp, definition.id})
-    max(0, reduced - flat)
   end
 
   # Reads a single summed key from the caster's merged status modifiers,

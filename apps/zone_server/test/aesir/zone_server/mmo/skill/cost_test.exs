@@ -8,7 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CostTest do
   test "resolves fixed definition costs" do
     definition = definition(hp_cost: [10], sp_cost: [20], sphere_cost: [2])
 
-    assert %Cost{hp: 10, sp: 20, spheres: 2} =
+    assert %Cost{hp: 10, sp_requirement: 20, sp: 20, spheres: 2} =
              Cost.from_definition(game_state(50, 40, 3), definition, 1)
   end
 
@@ -32,8 +32,43 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CostTest do
     assert SpiritSpheres.count(committed.spirit_spheres) == 0
   end
 
+  test "requires more SP than it consumes without committing the requirement" do
+    game_state = game_state(50, 40, 0)
+    cost = %Cost{sp_requirement: 40, sp: 10}
+
+    assert {:ok, commitment} = Cost.prepare(game_state, cost)
+    assert Cost.apply_commitment(game_state, commitment).stats.current_state.sp == 30
+    assert {:error, :insufficient_sp} = Cost.prepare(game_state(50, 39, 0), cost)
+  end
+
+  test "requires enough SP for consumption when consumption exceeds the requirement" do
+    cost = %Cost{sp_requirement: 10, sp: 40}
+
+    assert {:ok, _commitment} = Cost.prepare(game_state(50, 40, 0), cost)
+    assert {:error, :insufficient_sp} = Cost.prepare(game_state(50, 39, 0), cost)
+  end
+
+  test "defaults the requirement to consumption for direct costs" do
+    cost = %Cost{sp: 20}
+
+    assert {:ok, %Cost{sp_requirement: 20}} = Cost.validate_resolved(cost)
+    assert {:error, :insufficient_sp} = Cost.prepare(game_state(50, 19, 0), cost)
+  end
+
+  test "rejects nil consumption before defaulting its requirement" do
+    assert {:error, :invalid_cost} = Cost.validate_resolved(%Cost{sp: nil})
+  end
+
+  test "allows a positive requirement with zero consumption" do
+    game_state = game_state(50, 10, 0)
+
+    assert {:ok, commitment} = Cost.prepare(game_state, %Cost{sp_requirement: 10, sp: 0})
+    assert Cost.apply_commitment(game_state, commitment).stats.current_state.sp == 10
+  end
+
   test "does not allow a cost to reduce HP to zero" do
-    assert {:error, :insufficient_hp} = Cost.validate(game_state(10, 40, 3), %Cost{hp: 10})
+    assert {:error, :insufficient_hp} =
+             Cost.validate(game_state(10, 40, 3), %Cost{hp: 10, sp_requirement: 0})
   end
 
   test "resolves a percent-max-HP cost next to the flat HP cost" do
@@ -59,7 +94,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CostTest do
   end
 
   test "rejects malformed resolved costs without changing resources" do
-    for cost <- [nil, %{}, %Cost{hp: -1}, %Cost{sp: :all}, %Cost{spheres: -1}] do
+    for cost <- [
+          nil,
+          %{},
+          %Cost{hp: -1},
+          %Cost{sp_requirement: -1},
+          %Cost{sp_requirement: :all},
+          %Cost{sp: :all},
+          %Cost{spheres: -1}
+        ] do
       assert {:error, :invalid_cost} = Cost.validate_resolved(cost)
     end
   end

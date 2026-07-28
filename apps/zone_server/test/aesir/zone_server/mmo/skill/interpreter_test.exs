@@ -570,6 +570,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     refute_received {:cost_skill_sp, _}
   end
 
+  test "rejects a dynamic cost with nil SP before the effect runs" do
+    definition = %Definition{
+      id: 29,
+      name: :cost_skill,
+      display_name: "Cost Skill",
+      max_level: 1,
+      target_type: :self
+    }
+
+    stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
+    stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, DynamicCostSkill} end)
+
+    assert {:error, :invalid_cost} =
+             Interpreter.cast(Map.put(game_state(50, %{29 => 1}), :dynamic_sp, nil), 29, 1, :self)
+
+    assert_received {:dynamic_cost_prepared, nil}
+    refute_received {:cost_skill_sp, _}
+  end
+
   test "rejects invalid dynamic costs before the effect runs" do
     definition = %Definition{
       id: 29,
@@ -1454,6 +1473,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       # base 9 at -60% -> div(9 * 40, 100) = 3
       assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
       assert updated.stats.current_state.sp == 100 - 3
+    end
+
+    test "ordinary SP resolution applies rates before flat reduction for default and raw bases" do
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{sp_cost_rate: -10} end)
+
+      gs =
+        game_state(100, %{6 => 1}, %{
+          {:skill_use_sp_rate, 6} => -10,
+          {:skill_use_sp, 6} => 3,
+          sp_cost_rate: -10
+        })
+
+      definition = instant_definition()
+
+      assert Cost.resolve_sp(gs, definition, 1) == 3
+      assert Cost.resolve_sp(gs, definition, 1, 21) == 11
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+      assert updated.stats.current_state.sp == 97
     end
 
     test "a stacked over-100% reduction floors the cost at 0 instead of inverting it" do
