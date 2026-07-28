@@ -1,0 +1,52 @@
+---
+- job: bard
+  inherit:
+    - novice
+    - archer
+  tree:
+    - name: BA_MUSICALLESSON
+      max_level: 10
+    - name: BA_MUSICALSTRIKE
+      max_level: 5
+      requires:
+        - name: BA_MUSICALLESSON
+          level: 3
+    - name: BD_ADAPTATION
+      max_level: 1
+    - name: BD_ENCORE
+      max_level: 1
+      requires:
+        - name: BD_ADAPTATION
+          level: 1
+    - name: BA_DISSONANCE
+      max_level: 5
+      requires:
+        - name: BA_MUSICALLESSON
+          level: 1
+        - name: BD_ADAPTATION
+          level: 1
+    - name: BA_FROSTJOKER
+      max_level: 5
+      requires:
+        - name: BD_ENCORE
+          level: 1
+    - name: BA_WHISTLE
+      max_level: 10
+      requires:
+        - name: BA_DISSONANCE
+          level: 3
+    - name: BA_ASSASSINCROSS
+      max_level: 10
+      requires:
+        - name: BA_DISSONANCE
+          level: 3
+    - name: BA_POEMBRAGI
+      max_level: 10
+      requires:
+        - name: BA_DISSONANCE
+          level: 3
+    - name: BA_APPLEIDUN
+      max_level: 10
+      requires:
+        - name: BA_DISSONANCE
+          level: 3

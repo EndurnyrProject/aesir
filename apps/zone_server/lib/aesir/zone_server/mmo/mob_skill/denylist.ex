@@ -39,7 +39,18 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Denylist do
       "HT_TALKIEBOX cast/4 always requires the client's staged text-input reply; a mob " <>
         "caster has no text source to satisfy it",
     150 => "TF_BACKSLIDING cast/4 pattern-matches %{character_id: _}, no mob-caster clause",
-    255 => "CR_DEVOTION party/devotion semantics are player-only, no mob-caster clause"
+    255 => "CR_DEVOTION party/devotion semantics are player-only, no mob-caster clause",
+    304 =>
+      "BD_ADAPTATION requires character_id and applies a player status; " <>
+        "there is no mob-caster clause",
+    305 =>
+      "BD_ENCORE reads PlayerState last_song and re-enters player learned-skill, equipment, " <>
+        "cost, and cooldown validation; mobs have none of that replay state",
+    319 => "BA_WHISTLE requires a PlayerState party snapshot; there is no mob-caster clause",
+    320 =>
+      "BA_ASSASSINCROSS requires a PlayerState party snapshot; there is no mob-caster clause",
+    321 => "BA_POEMBRAGI requires a PlayerState party snapshot; there is no mob-caster clause",
+    322 => "BA_APPLEIDUN requires a PlayerState party snapshot; there is no mob-caster clause"
   }
 
   @doc "Whether `skill_id` is denylisted for mob casting."

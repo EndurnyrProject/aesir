@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Emote
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -322,6 +323,65 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
         row(%{skill: "BA_DISSONANCE", skill_id: 317, level: 5, target: :self})
 
       assert Executor.execute(caster, dissonance_row) == :ok
+    end
+
+    test "dispatches imported BA_MUSICALSTRIKE rows through its real mob attack path" do
+      caster = mob()
+      stub_living_player_target()
+
+      expect(Combat, :execute_skill_attack, fn passed_caster, 42, opts ->
+        assert passed_caster.instance_id == caster.instance_id
+        assert opts[:skill_id] == 316
+        assert opts[:skill_level] == 5
+        assert opts[:skill_ratio] == 310
+        assert opts[:display_hit_count] == 2
+        :ok
+      end)
+
+      musical_strike_row =
+        row(%{skill: "BA_MUSICALSTRIKE", skill_id: 316, level: 5, target: :target})
+
+      assert Executor.execute(caster, musical_strike_row) == :ok
+    end
+
+    test "dispatches imported BA_FROSTJOKER self rows through its deferred mob path" do
+      frost_joker_row =
+        row(%{skill: "BA_FROSTJOKER", skill_id: 318, level: 3, target: :self})
+
+      assert Executor.execute(mob(), frost_joker_row) == :ok
+      refute_received {:skill, {:deferred, _, _}}
+    end
+
+    test "dispatches BA_PANGVOICE through its real mob status path" do
+      stub(UnitRegistry, :get_player_pid, fn 42 -> {:ok, self()} end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :mob, 42 -> {:error, :not_found}
+        :player, 42 -> {:ok, {PlayerState, player_state(42), self()}}
+      end)
+
+      expect(StatusInterpreter, :apply_status, 2, fn :player, 42, status, opts ->
+        assert opts == [
+                 duration: 10_000,
+                 success_rate: 100,
+                 caster_id: 5001,
+                 source_type: :mob
+               ]
+
+        send(self(), {:status_attempted, status})
+
+        case status do
+          :sc_confusion -> {:error, :resisted}
+          :sc_bleeding -> :ok
+        end
+      end)
+
+      pang_voice_row =
+        row(%{skill: "BA_PANGVOICE", skill_id: 1010, level: 1, target: :target})
+
+      assert Executor.execute(mob(), pang_voice_row) == :ok
+      assert_received {:status_attempted, :sc_confusion}
+      assert_received {:status_attempted, :sc_bleeding}
     end
 
     test "adapts a unit target from {:unit, type, id} to {:unit, id} for cast/4" do
