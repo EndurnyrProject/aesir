@@ -47,6 +47,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
+  @encore_skill_ids [317, 319, 320, 321, 322]
+
   defmodule Deferred do
     @moduledoc "Deferred effect plus the owner-local resources settled on reply."
 
@@ -215,6 +217,78 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   end
 
   def preflight_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
+
+  @doc """
+  Validates an Encore-remembered skill without mutating the caster.
+
+  This restricted entry point accepts only Dissonance and the four Bard songs.
+  It reuses the remembered skill's current catalog, level, learned, weapon,
+  target, module-validation, and cooldown checks. Encore's own ordinary cast
+  remains responsible for its learned state, cooldown, global act delay, and
+  transformed SP affordability.
+  """
+  @spec encore_replay_preflight(PlayerState.t(), map(), Active.target()) ::
+          :ok | {:error, atom()}
+  def encore_replay_preflight(game_state, memory, target) do
+    now = System.monotonic_time(:millisecond)
+
+    case validate_encore_replay(game_state, memory, target, now) do
+      {:ok, _prepared} -> :ok
+      {:error, _reason} = error -> error
+    end
+  end
+
+  @doc """
+  Resolves cast timing for an allowlisted, fully validated Encore memory.
+
+  The returned values are the remembered skill's current base variable and
+  fixed cast times at the remembered level. The outer Encore cast applies the
+  caster's ordinary timing reductions exactly once.
+  """
+  @spec encore_replay_timing(PlayerState.t(), map(), Active.target()) ::
+          {:ok, %{cast_time: non_neg_integer(), fixed_cast_time: non_neg_integer()}}
+          | {:error, atom()}
+  def encore_replay_timing(game_state, memory, target) do
+    now = System.monotonic_time(:millisecond)
+
+    with {:ok, %{definition: definition, module: module, level: level}} <-
+           validate_encore_replay(game_state, memory, target, now) do
+      definition = cast_timing_definition(game_state, module, target, level, definition)
+
+      {:ok,
+       %{
+         cast_time: Enum.at(definition.cast_time, level - 1, 0),
+         fixed_cast_time: Enum.at(definition.fixed_cast_time, level - 1, 0)
+       }}
+    end
+  end
+
+  @doc """
+  Completes one allowlisted Encore replay after revalidating mutable conditions.
+
+  This invokes the remembered behavior once and writes only the remembered
+  skill's cooldown after success. It deliberately commits no resources, Encore
+  cooldown, or act delay; the already-prepared outer Encore cast owns those.
+  """
+  @spec complete_encore_replay(PlayerState.t(), map(), Active.target()) ::
+          {:ok, PlayerState.t()} | {:error, atom()}
+  def complete_encore_replay(game_state, memory, target) do
+    now = System.monotonic_time(:millisecond)
+
+    with {:ok, %{definition: definition, module: module, skill_id: skill_id, level: level}} <-
+           validate_encore_replay(game_state, memory, target, now) do
+      case run_unconditional(module, game_state, target, level, definition, :normal) do
+        {:ok, game_state} ->
+          {:ok, put_cooldown(game_state, skill_id, definition, level, now)}
+
+        {:deferred, _game_state, _descriptor} ->
+          {:error, :unsupported_encore_replay}
+
+        {:error, _reason} = error ->
+          error
+      end
+    end
+  end
 
   @doc """
   Runs a previously-validated cast to completion.
@@ -533,6 +607,30 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       prepare_cast(game_state, module, target, level, definition)
     end
   end
+
+  defp validate_encore_replay(game_state, %{skill_id: skill_id, level: level}, target, now)
+       when skill_id in @encore_skill_ids and is_integer(level) and level > 0 do
+    with {:ok, definition} <- fetch_definition(skill_id),
+         :ok <- check_max_level(definition, level),
+         :ok <- check_castable(definition),
+         :ok <- check_weapon(game_state, definition),
+         :ok <- check_learned(game_state, skill_id, level),
+         :ok <- check_quest_lineage(game_state, definition),
+         :ok <- check_target(game_state, target, definition),
+         :ok <- check_range(game_state, target, definition, level),
+         {:ok, module} <- fetch_active_module(definition),
+         :ok <- check_cooldown(game_state, skill_id, now),
+         :ok <- module.validate(game_state, target, level, definition) do
+      {:ok, %{definition: definition, module: module, skill_id: skill_id, level: level}}
+    end
+  end
+
+  defp validate_encore_replay(_game_state, %{skill_id: skill_id}, _target, _now)
+       when skill_id not in @encore_skill_ids,
+       do: {:error, :skill_not_replayable}
+
+  defp validate_encore_replay(_game_state, _memory, _target, _now),
+    do: {:error, :invalid_replay_memory}
 
   defp prepare_cast(game_state, module, target, level, definition) do
     with {:ok, cost} <- resolve_cost(game_state, module, target, level, definition),

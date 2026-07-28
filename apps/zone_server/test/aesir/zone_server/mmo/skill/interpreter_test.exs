@@ -2385,4 +2385,72 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert {:error, :nope} = Interpreter.item_cast(item_game_state(), 6, 1, :self)
     end
   end
+
+  describe "Encore replay seam" do
+    @replay_definition %Definition{
+      id: 319,
+      name: :cost_skill,
+      display_name: "Replay Skill",
+      max_level: 3,
+      target_type: :self,
+      sp_cost: [0, 0, 0],
+      cast_time: [100, 200, 300],
+      fixed_cast_time: [10, 20, 30],
+      cooldown: [5_000, 6_000, 7_000]
+    }
+
+    test "all entry points reject a remembered id outside the five-skill allowlist" do
+      memory = %{skill_id: 318, level: 1}
+      reject(&Catalog.by_id/1)
+
+      assert {:error, :skill_not_replayable} =
+               Interpreter.encore_replay_preflight(game_state(100, %{}), memory, :self)
+
+      assert {:error, :skill_not_replayable} =
+               Interpreter.encore_replay_timing(game_state(100, %{}), memory, :self)
+
+      assert {:error, :skill_not_replayable} =
+               Interpreter.complete_encore_replay(game_state(100, %{}), memory, :self)
+    end
+
+    test "preflight and timing use the remembered current definition and level" do
+      stub(Catalog, :by_id, fn 319 -> {:ok, @replay_definition} end)
+      stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, StaticCostSkill} end)
+      state = game_state(100, %{319 => 2})
+      memory = %{skill_id: 319, level: 2}
+
+      assert :ok = Interpreter.encore_replay_preflight(state, memory, :self)
+
+      assert {:ok, %{cast_time: 200, fixed_cast_time: 20}} =
+               Interpreter.encore_replay_timing(state, memory, :self)
+    end
+
+    test "completion invokes one validated effect and writes only the original cooldown" do
+      stub(Catalog, :by_id, fn 319 -> {:ok, @replay_definition} end)
+      stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, StaticCostSkill} end)
+      state = game_state(100, %{319 => 2})
+
+      assert {:ok, updated} =
+               Interpreter.complete_encore_replay(state, %{skill_id: 319, level: 2}, :self)
+
+      assert_received {:cost_skill_sp, 100}
+      assert updated.stats.current_state.sp == 100
+      assert Map.keys(updated.skill_cooldowns) == [319]
+    end
+
+    test "completion revalidates the module before effect or cooldown" do
+      stub(Catalog, :by_id, fn 319 -> {:ok, @replay_definition} end)
+      stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, CompletionValidationSkill} end)
+      state = game_state(100, %{319 => 2}) |> Map.put(:allow_cast?, true)
+      memory = %{skill_id: 319, level: 2}
+
+      assert :ok = Interpreter.encore_replay_preflight(state, memory, :self)
+
+      assert {:error, :requirements_changed} =
+               Interpreter.complete_encore_replay(%{state | allow_cast?: false}, memory, :self)
+
+      refute_received :completion_validation_effect
+      assert state.skill_cooldowns == %{}
+    end
+  end
 end
