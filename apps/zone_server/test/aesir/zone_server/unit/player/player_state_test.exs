@@ -136,8 +136,34 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       {:ok, %{state: state}}
     end
 
-    test "initial state is idle", %{state: state} do
+    test "initial state is idle with a zero deferred epoch", %{state: state} do
       assert state.action_state == :idle
+      assert state.deferred_epoch == 0
+    end
+
+    test "death advances the deferred epoch once per death transition", %{state: state} do
+      assert {:ok, first_death} = PlayerState.transition_to(state, :dead)
+      assert first_death.deferred_epoch == 1
+
+      assert {:ok, still_dead} = PlayerState.transition_to(first_death, :dead)
+      assert still_dead.deferred_epoch == 1
+
+      assert {:ok, revived} = PlayerState.transition_to(still_dead, :idle)
+      assert revived.deferred_epoch == 1
+
+      assert {:ok, second_death} = PlayerState.transition_to(revived, :dead)
+      assert second_death.deferred_epoch == 2
+    end
+
+    test "relocation advances the deferred epoch but ordinary movement does not", %{state: state} do
+      walked = PlayerState.update_position(state, 101, 100)
+      assert walked.deferred_epoch == 0
+
+      same_map = PlayerState.relocate(walked, "prontera", 120, 130)
+      assert same_map.deferred_epoch == 1
+
+      cross_map = PlayerState.relocate(same_map, "geffen", 50, 60)
+      assert cross_map.deferred_epoch == 2
     end
 
     test "regen accumulators default to zero", %{state: state} do

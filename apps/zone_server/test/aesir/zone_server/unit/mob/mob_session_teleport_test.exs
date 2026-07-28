@@ -14,12 +14,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Movement
 
   setup do
     Mimic.copy(Cell)
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     :ok
   end
 
@@ -85,8 +87,34 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
     assert updated.target_id == nil
     assert updated.ai_state == :idle
     assert updated.movement_state == :standing
+    assert updated.deferred_epoch == 1
 
     assert_received {:reposition, 150, 160}
+  end
+
+  test "ordinary path movement preserves the deferred epoch" do
+    stub(Cell, :step_traversable?, fn "prontera", {100, 100}, {101, 100} -> true end)
+    stub(Movement, :set_position, fn :mob, 1, _state, "prontera" -> :ok end)
+
+    state = build_mob_state() |> MobState.set_path([{101, 100}])
+
+    {:noreply, updated} = MobSession.handle_info({:movement, :tick}, state)
+
+    assert {updated.x, updated.y} == {101, 100}
+    assert updated.deferred_epoch == 0
+  end
+
+  test "knockback relocation preserves the deferred epoch" do
+    stub(Cell, :traversable?, fn "prontera", 110, 100 -> true end)
+    stub(Movement, :set_position, fn :mob, 1, _state, "prontera" -> :ok end)
+
+    state = build_mob_state()
+
+    {:noreply, updated} =
+      MobSession.handle_cast({:movement, {:relocate, 100, 100, "prontera", 110, 100}}, state)
+
+    assert {updated.x, updated.y} == {110, 100}
+    assert updated.deferred_epoch == 0
   end
 
   test "is a clean no-op when no walkable cell is available" do
@@ -96,6 +124,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
     state = build_mob_state()
 
     assert {:noreply, ^state} = MobSession.handle_cast({:movement, :teleport}, state)
+    assert state.deferred_epoch == 0
   end
 
   test "is a clean no-op when the map is not cached" do

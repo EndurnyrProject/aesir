@@ -86,6 +86,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
       {:ok, {x, y}} ->
         updated_state =
           state
+          |> MobState.advance_deferred_epoch()
           |> MobState.update_position(x, y)
           |> MobState.stop_movement()
           |> MobState.set_target(nil)

@@ -91,6 +91,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           act_delay_until: integer(),
           last_warp_at: integer() | nil,
           last_emote_at: integer() | nil,
+          deferred_epoch: non_neg_integer(),
           continuous_attack_timer: reference() | nil,
           pending_forced_movement: ForcedMovement.t() | nil,
           spirit_spheres: SpiritSpheres.t(),
@@ -277,6 +278,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     last_warp_at: nil,
     # Flood-control timestamp for emotes (monotonic ms); nil until the first emote.
     last_emote_at: nil,
+    deferred_epoch: 0,
     regen_accumulators: %{hp_acc: 0, sp_acc: 0, skill_hp_acc: 0, skill_sp_acc: 0},
     # Party membership (0 = none), sourced from the Character at spawn and
     # kept current by Party.Manager pushes (`characters.party_id` is the
@@ -414,10 +416,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
         last_visibility_cell: nil,
         inside_npc_areas: MapSet.new()
     }
+    |> advance_deferred_epoch()
     |> stop_walking()
     |> clear_combat_intent()
     |> clear_pickup_intent()
     |> cancel_combo()
+  end
+
+  defp advance_deferred_epoch(%__MODULE__{deferred_epoch: epoch} = state) do
+    %{state | deferred_epoch: epoch + 1}
   end
 
   @doc """
@@ -577,6 +584,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           state_context: context,
           casting: next_casting(state, current, new_state, context)
       }
+
+      updated_state =
+        if current != :dead and new_state == :dead,
+          do: advance_deferred_epoch(updated_state),
+          else: updated_state
 
       # Handle state-specific setup
       updated_state = handle_state_entry(updated_state, new_state)

@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
 
   alias Aesir.Net.CastCancel
   alias Aesir.Net.SkillCasting
+  alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
@@ -116,6 +117,24 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       |> MobState.set_ai_state(:combat)
 
     struct(state, Map.new(overrides))
+  end
+
+  describe "deferred lifecycle" do
+    test "new mobs start at epoch zero" do
+      assert build_mob_state().deferred_epoch == 0
+    end
+
+    test "actual death advances the epoch exactly once" do
+      stub(Coordinator, :mob_died, fn _map, _id, _attacker_id -> :ok end)
+      state = build_mob_state(%{hp: 1})
+
+      {:noreply, dead} = MobSession.handle_cast({:combat, {:apply_damage, 1, nil}}, state)
+      assert dead.is_dead
+      assert dead.deferred_epoch == 1
+
+      assert {:noreply, ^dead} =
+               MobSession.handle_cast({:combat, {:apply_damage, 1, nil}}, dead)
+    end
   end
 
   describe "{:ai, :tick} skill selection" do

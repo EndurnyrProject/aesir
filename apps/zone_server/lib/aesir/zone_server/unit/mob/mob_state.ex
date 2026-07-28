@@ -105,6 +105,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     spawned_at: nil,
     last_damage_time: nil,
     respawn_delay: 0,
+    deferred_epoch: 0,
 
     # Status effects
     status_effects: %{},
@@ -161,6 +162,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           spawned_at: integer(),
           last_damage_time: integer() | nil,
           respawn_delay: integer(),
+          deferred_epoch: non_neg_integer(),
           status_effects: map(),
           stolen_from: boolean(),
           owner_event: String.t() | nil
@@ -369,6 +371,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   @spec set_owner_event(t(), String.t() | nil) :: t()
   def set_owner_event(%__MODULE__{} = state, owner_event) do
     %{state | owner_event: owner_event}
+  end
+
+  @doc "Advances the generation used to invalidate deferred work."
+  @spec advance_deferred_epoch(t()) :: t()
+  def advance_deferred_epoch(%__MODULE__{deferred_epoch: epoch} = state) do
+    %{state | deferred_epoch: epoch + 1}
   end
 
   @doc """

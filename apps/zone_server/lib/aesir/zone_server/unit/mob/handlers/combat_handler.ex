@@ -100,7 +100,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
 
   defp handle_death(state, attacker_id) do
     # Mark as dead
-    updated_state = MobState.set_dead(state)
+    updated_state = state |> MobState.advance_deferred_epoch() |> MobState.set_dead()
 
     # Notify nearby players of mob death
     SpawnView.notify_despawn(updated_state)
