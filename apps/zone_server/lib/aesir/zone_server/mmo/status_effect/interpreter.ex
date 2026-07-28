@@ -31,8 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   alias Phoenix.PubSub
 
   @type unit_type :: Unit.unit_type()
-  @type owner_refresh :: :auto | :notify | :defer
-  @type remove_option :: {:owner_refresh, owner_refresh()}
+  @type remove_option :: {:owner_refresh, StatusEntry.owner_refresh()}
 
   @doc """
   Initializes the status effect system by loading all definitions.
@@ -59,7 +58,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   Passing `loaded: true` (rAthena `SCFLAG_LOADED`) marks the application as
   the restore of a persisted status: it already passed every gate when first
   applied, so immunity, prevention, conflict and resistance checks are
-  skipped and the given `duration` is used as-is.
+  skipped and the given `duration` is used as-is. A loaded finite definition
+  requires a positive integer duration.
+
+  `owner_refresh: :notify` publishes an asynchronous player stat refresh only
+  after the status is stored. Applications default to `:defer` because owning
+  session handlers already recalculate synchronously.
 
   A skill may pass `success_rate` and `resistance_roll` to combine its base
   application chance with status resistance in one injectable final roll.
@@ -99,15 +103,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
          :ok <- check_conflicts(unit_type, unit_id, definition),
          {:ok, duration} <-
            roll_resistance(status_id, definition, entity_info, duration_override, status_params) do
-      end_replaced_statuses(unit_type, unit_id, definition)
       create_and_store(unit_type, unit_id, status_id, status_params, definition, duration)
     end
   end
 
   defp apply_loaded_status(unit_type, unit_id, status_id, status_params, definition) do
-    duration = if definition.permanent, do: nil, else: Keyword.get(status_params, :duration)
-    end_replaced_statuses(unit_type, unit_id, definition)
-    create_and_store(unit_type, unit_id, status_id, status_params, definition, duration)
+    with {:ok, duration} <- loaded_duration(definition, status_params) do
+      create_and_store(unit_type, unit_id, status_id, status_params, definition, duration)
+    end
+  end
+
+  defp loaded_duration(%{permanent: true}, _status_params), do: {:ok, nil}
+
+  defp loaded_duration(_definition, status_params) do
+    case Keyword.get(status_params, :duration) do
+      duration when is_integer(duration) and duration > 0 -> {:ok, duration}
+      _invalid -> {:error, :invalid_duration}
+    end
   end
 
   @doc """
@@ -295,6 +307,26 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     end)
 
     active?
+  end
+
+  @doc """
+  Removes finite statuses whose definitions retain the default
+  `remove_on_death: true` through the normal removal lifecycle.
+
+  Permanent statuses and explicit death-survival opt-outs remain active. The
+  selected owner-refresh policy is applied once after the filtered batch.
+  """
+  @spec remove_on_death(unit_type(), integer(), [remove_option()]) :: :ok
+  def remove_on_death(unit_type, unit_id, opts \\ []) do
+    unit_type
+    |> StatusStorage.get_unit_statuses(unit_id)
+    |> Enum.filter(&remove_on_death?/1)
+    |> Enum.map(& &1.type)
+    |> then(&remove_statuses(unit_type, unit_id, &1, opts))
+  end
+
+  defp remove_on_death?(%StatusEntry{type: type}) do
+    match?(%{permanent: false, remove_on_death: true}, Registry.get_definition(type))
   end
 
   @doc """
@@ -650,12 +682,84 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     end
   end
 
-  defp end_replaced_statuses(unit_type, unit_id, definition) do
-    Enum.each(definition.end_on_start, fn status_id ->
-      if StatusStorage.has_status?(unit_type, unit_id, status_id) do
-        remove_status(unit_type, unit_id, status_id)
-      end
-    end)
+  defp reconcile_replaced_statuses(unit_type, unit_id, status_id, stored_instance, definition) do
+    definition.end_on_start
+    |> Enum.reject(&(&1 == status_id))
+    |> do_reconcile_replaced_statuses(unit_type, unit_id, status_id, stored_instance)
+  end
+
+  defp reconcile_replaced_same_status(
+         unit_type,
+         unit_id,
+         status_id,
+         stored_instance,
+         prior_instance,
+         definition
+       ) do
+    if status_id in definition.end_on_start and not is_nil(prior_instance) do
+      expire_replaced_status_entry(unit_type, unit_id, status_id, prior_instance)
+
+      if StatusStorage.get_status(unit_type, unit_id, status_id) === stored_instance,
+        do: :current,
+        else: :superseded
+    else
+      :current
+    end
+  end
+
+  defp do_reconcile_replaced_statuses(
+         replaced_status_ids,
+         unit_type,
+         unit_id,
+         status_id,
+         stored_instance
+       ) do
+    if StatusStorage.get_status(unit_type, unit_id, status_id) === stored_instance do
+      reconcile_replaced_status_ids(
+        replaced_status_ids,
+        unit_type,
+        unit_id,
+        status_id,
+        stored_instance
+      )
+    else
+      :superseded
+    end
+  end
+
+  defp reconcile_replaced_status_ids([], unit_type, unit_id, status_id, stored_instance) do
+    if StatusStorage.get_status(unit_type, unit_id, status_id) === stored_instance,
+      do: :current,
+      else: :superseded
+  end
+
+  defp reconcile_replaced_status_ids(
+         [replaced_status_id | rest],
+         unit_type,
+         unit_id,
+         status_id,
+         stored_instance
+       ) do
+    case StatusStorage.get_status(unit_type, unit_id, replaced_status_id) do
+      nil ->
+        reconcile_replaced_status_ids(rest, unit_type, unit_id, status_id, stored_instance)
+
+      %StatusEntry{generation: generation}
+      when is_integer(generation) and generation > stored_instance.generation ->
+        discard_application(unit_type, unit_id, status_id, stored_instance)
+        :superseded
+
+      replaced_instance ->
+        expire_status_if_current(unit_type, unit_id, replaced_status_id, replaced_instance)
+
+        reconcile_replaced_status_ids(
+          [replaced_status_id | rest],
+          unit_type,
+          unit_id,
+          status_id,
+          stored_instance
+        )
+    end
   end
 
   defp create_and_store(unit_type, unit_id, status_id, status_params, definition, duration) do
@@ -688,25 +792,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
     case definition.module.on_apply({unit_type, unit_id}, instance, context) do
       {:ok, new_instance} ->
-        StatusStorage.apply_status(unit_type, unit_id, status_id,
-          val1: val1,
-          val2: val2,
-          val3: val3,
-          val4: val4,
-          tick: tick,
-          flag: flag,
-          duration: duration,
-          caster_id: caster_id,
-          source_type: source_type,
-          state: new_instance.state || %{},
-          phase: new_instance.phase
+        store_applied_status(
+          unit_type,
+          unit_id,
+          status_id,
+          duration,
+          definition,
+          instance,
+          new_instance,
+          status_params
         )
-
-        stored_instance = StatusStorage.get_status(unit_type, unit_id, status_id)
-        StatusDisplay.on_applied(unit_type, unit_id, status_id, stored_instance)
-        notify_mob_status_applied(unit_type, unit_id, status_id)
-
-        :ok
 
       :remove ->
         :ok
@@ -714,6 +809,150 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  defp store_applied_status(
+         unit_type,
+         unit_id,
+         status_id,
+         duration,
+         definition,
+         instance,
+         new_instance,
+         status_params
+       ) do
+    case StatusStorage.apply_status_with_entry(unit_type, unit_id, status_id,
+           val1: instance.val1,
+           val2: instance.val2,
+           val3: instance.val3,
+           val4: instance.val4,
+           tick: instance.tick,
+           flag: instance.flag,
+           duration: duration,
+           caster_id: instance.source_id,
+           source_type: instance.source_type,
+           state: new_instance.state || %{},
+           phase: new_instance.phase
+         ) do
+      {:stored, stored_instance, prior_instance} ->
+        finish_stored_application(
+          unit_type,
+          unit_id,
+          status_id,
+          stored_instance,
+          prior_instance,
+          definition,
+          status_params
+        )
+
+      {:superseded, _current} ->
+        cleanup_unstored_application(unit_type, unit_id, definition, new_instance)
+    end
+  end
+
+  defp finish_stored_application(
+         unit_type,
+         unit_id,
+         status_id,
+         stored_instance,
+         prior_instance,
+         definition,
+         status_params
+       ) do
+    with :current <-
+           reconcile_replaced_same_status(
+             unit_type,
+             unit_id,
+             status_id,
+             stored_instance,
+             prior_instance,
+             definition
+           ),
+         :current <-
+           reconcile_replaced_statuses(unit_type, unit_id, status_id, stored_instance, definition) do
+      finish_application(unit_type, unit_id, status_id, stored_instance, status_params)
+    else
+      :superseded -> :ok
+    end
+  end
+
+  defp cleanup_unstored_application(unit_type, unit_id, definition, instance) do
+    context =
+      ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
+
+    definition.module.on_expire({unit_type, unit_id}, instance, context)
+    :ok
+  end
+
+  defp finish_application(unit_type, unit_id, status_id, stored_instance, status_params) do
+    case ensure_living_target(unit_type, unit_id) do
+      :ok ->
+        if StatusStorage.get_status(unit_type, unit_id, status_id) === stored_instance do
+          StatusDisplay.on_applied(unit_type, unit_id, status_id, stored_instance)
+          notify_mob_status_applied(unit_type, unit_id, status_id)
+
+          maybe_refresh_owner(unit_type, unit_id, true,
+            owner_refresh: Keyword.get(status_params, :owner_refresh, :defer)
+          )
+        else
+          :ok
+        end
+
+      {:error, :target_dead} = error ->
+        rollback_application(unit_type, unit_id, status_id, stored_instance)
+        error
+    end
+  end
+
+  defp rollback_application(unit_type, unit_id, status_id, stored_instance) do
+    if StatusStorage.remove_status_if_current(unit_type, unit_id, status_id, stored_instance) do
+      expire_status_entry(unit_type, unit_id, status_id, stored_instance)
+    end
+
+    :ok
+  end
+
+  defp discard_application(unit_type, unit_id, status_id, stored_instance) do
+    if StatusStorage.remove_status_if_current(unit_type, unit_id, status_id, stored_instance) do
+      expire_status_entry(unit_type, unit_id, status_id, stored_instance)
+    end
+
+    :ok
+  end
+
+  @doc """
+  Expires a status only when `instance` is still the current stored generation.
+
+  The compare-delete is atomic. On an actual removal, this runs the status's
+  `on_expire` callback and removes its display when no newer same-type generation
+  is active. Returns whether the captured entry was removed.
+  """
+  @spec expire_status_if_current(unit_type(), integer(), atom(), StatusEntry.t()) :: boolean()
+  def expire_status_if_current(unit_type, unit_id, status_id, instance) do
+    if StatusStorage.remove_status_if_current(unit_type, unit_id, status_id, instance) do
+      expire_status_entry(unit_type, unit_id, status_id, instance)
+      true
+    else
+      false
+    end
+  end
+
+  defp expire_status_entry(unit_type, unit_id, status_id, instance) do
+    %{module: module} = Registry.get_definition(status_id)
+    context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
+
+    module.on_expire({unit_type, unit_id}, instance, context)
+
+    if is_nil(StatusStorage.get_status(unit_type, unit_id, status_id)) do
+      StatusDisplay.on_removed(unit_type, unit_id, status_id, instance)
+    end
+  end
+
+  defp expire_replaced_status_entry(unit_type, unit_id, status_id, instance) do
+    %{module: module} = Registry.get_definition(status_id)
+    context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
+
+    module.on_expire({unit_type, unit_id}, instance, context)
   end
 
   defp notify_mob_status_applied(:mob, unit_id, status_id) do

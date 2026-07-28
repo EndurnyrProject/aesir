@@ -55,6 +55,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       the ordinary removal path (mirrors rAthena's `SCF_REMOVEONCHGMAP`); use it for
       statuses tied to a specific location or a live pairing that cannot survive the
       player leaving the map
+    - `:remove_on_death` - when true (the default), death ends the status through
+      the ordinary removal path. Set it to false only for finite statuses designed
+      to keep their remaining duration through death
     - `:bypass_boss_immunity` - when true, the status applies to a boss-flagged
       target even from an external caster; use it for a status a boss must be able
       to receive by design (e.g. Root locking a boss attacker), where the usual
@@ -260,6 +263,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     permanent: false,
     no_save: false,
     remove_on_map_change: false,
+    remove_on_death: true,
     bypass_boss_immunity: false,
     icon: nil,
     opt1: nil,
@@ -291,6 +295,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     permanent: :boolean,
     no_save: :boolean,
     remove_on_map_change: :boolean,
+    remove_on_death: :boolean,
     bypass_boss_immunity: :boolean,
     no_dispel: {:required, :boolean},
     icon: :atom,

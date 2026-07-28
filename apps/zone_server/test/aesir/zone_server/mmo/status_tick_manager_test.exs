@@ -30,17 +30,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
   setup do
     stub(Interpreter, :process_tick, fn _type, _id, _status -> :ok end)
 
-    stub(Interpreter, :remove_statuses, fn unit_type,
-                                           unit_id,
-                                           status_ids,
-                                           [owner_refresh: :notify] ->
-      Enum.each(status_ids, &StatusStorage.remove_status(unit_type, unit_id, &1))
-
-      if unit_type == :player do
-        PubSub.broadcast(Aesir.PubSub, "player:#{unit_id}", :recalculate_stats)
-      end
-
-      :ok
+    stub(Interpreter, :expire_status_if_current, fn unit_type, unit_id, status_id, entry ->
+      StatusStorage.remove_status_if_current(unit_type, unit_id, status_id, entry)
     end)
 
     stub(UnitRegistry, :unit_exists?, fn _type, _id -> true end)
@@ -104,7 +95,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
 
     test "an expired status of a unit missing from the registry is cleared, not processed" do
       stub(UnitRegistry, :unit_exists?, fn :player, @player_id -> false end)
-      reject(&Interpreter.remove_statuses/4)
+      reject(&Interpreter.expire_status_if_current/4)
 
       :ok = StatusStorage.apply_status(:player, @player_id, @status)
       :ok = StatusStorage.update_status(:player, @player_id, @status, &%{&1 | expires_at: past()})
@@ -132,7 +123,25 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
   end
 
   describe "player path is unchanged" do
-    test "an expired player status still broadcasts :recalculate_stats and no cast" do
+    test "a positive finite status remains active until its expiry" do
+      PubSub.subscribe(Aesir.PubSub, "player:#{@player_id}")
+
+      :ok = StatusStorage.apply_status(:player, @player_id, @status, duration: 60_000)
+      assert is_integer(StatusStorage.get_status(:player, @player_id, @status).expires_at)
+
+      tick()
+
+      assert StatusStorage.has_status?(:player, @player_id, @status)
+      refute_receive :recalculate_stats
+
+      :ok = StatusStorage.update_status(:player, @player_id, @status, &%{&1 | expires_at: past()})
+      tick()
+
+      refute StatusStorage.has_status?(:player, @player_id, @status)
+      assert_receive :recalculate_stats
+    end
+
+    test "an expired player status still broadcasts one lifecycle refresh and no cast" do
       PubSub.subscribe(Aesir.PubSub, "player:#{@player_id}")
 
       :ok = StatusStorage.apply_status(:player, @player_id, @status)
@@ -143,6 +152,28 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
       assert_receive :recalculate_stats
       refute_receive :recalculate_stats
       refute_received {:"$gen_cast", {:casting, {:status_changed, _, _}}}
+    end
+
+    test "a captured expired generation cannot remove or notify for its fresh replacement" do
+      test_pid = self()
+      stub(UnitRegistry, :get_unit, fn :mob, @mob_id -> {:ok, {MobState, %{}, test_pid}} end)
+
+      :ok = StatusStorage.apply_status(:mob, @mob_id, @status)
+      :ok = StatusStorage.update_status(:mob, @mob_id, @status, &%{&1 | expires_at: past()})
+      expired = StatusStorage.get_status(:mob, @mob_id, @status)
+
+      stub(Interpreter, :expire_status_if_current, fn :mob, @mob_id, @status, ^expired ->
+        {:stored, fresh, _prior} = StatusStorage.apply_status_with_entry(:mob, @mob_id, @status)
+        send(test_pid, {:fresh_generation, fresh})
+
+        call_original(Interpreter, :expire_status_if_current, [:mob, @mob_id, @status, expired])
+      end)
+
+      tick()
+
+      assert_receive {:fresh_generation, fresh}
+      assert StatusStorage.get_status(:mob, @mob_id, @status) === fresh
+      refute_receive {:"$gen_cast", {:casting, {:status_changed, @status, :expired}}}
     end
 
     test "a due player status still broadcasts :recalculate_stats" do

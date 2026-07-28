@@ -160,16 +160,25 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   end
 
   defp process_unit_expirations(unit_type, unit_id, statuses) do
-    status_types =
-      Enum.map(statuses, fn {{^unit_type, ^unit_id, status_type}, %StatusEntry{} = _entry} ->
-        status_type
+    removed_status_types =
+      Enum.reduce(statuses, [], fn
+        {{^unit_type, ^unit_id, status_type}, %StatusEntry{} = entry}, removed ->
+          if Interpreter.expire_status_if_current(unit_type, unit_id, status_type, entry) do
+            [status_type | removed]
+          else
+            removed
+          end
       end)
 
-    Interpreter.remove_statuses(unit_type, unit_id, status_types, owner_refresh: :notify)
+    case {unit_type, removed_status_types} do
+      {:player, [_ | _]} ->
+        notify_player_status_expiration(unit_id)
 
-    Enum.each(status_types, fn status_type ->
-      notify_mob_session(unit_type, unit_id, status_type, :expired)
-    end)
+      {_unit_type, status_types} ->
+        Enum.each(status_types, fn status_type ->
+          notify_mob_session(unit_type, unit_id, status_type, :expired)
+        end)
+    end
   end
 
   defp process_tick_effects(now_ms) do
@@ -233,7 +242,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
     StatusStorage.clear_unit_statuses(unit_type, unit_id)
   end
 
-  # Notifies a player session to recalculate stats after status changes.
+  # Expiration can change both stats and status-driven state such as walk speed.
+  defp notify_player_status_expiration(player_id) do
+    PubSub.broadcast(Aesir.PubSub, "player:#{player_id}", :recalculate_stats)
+  end
+
   # Broadcast on the player's topic so this manager stays decoupled from
   # player session pids; an offline player simply has no subscriber.
   defp notify_player_session(player_id) do

@@ -6,10 +6,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
+  alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
+  alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
+  alias Phoenix.PubSub
 
   defmodule PermanentStatus do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
@@ -17,6 +20,146 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
       no_dispel: false,
       properties: [:buff],
       permanent: true
+  end
+
+  defmodule FiniteDeathSurvivor do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_finite_death_survivor,
+      no_dispel: false,
+      properties: [:buff],
+      remove_on_death: false
+  end
+
+  defmodule RejectedStatus do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_rejected,
+      no_dispel: false,
+      properties: [:buff]
+
+    @impl true
+    def on_apply(_target, _instance, _context), do: {:error, :rejected}
+  end
+
+  defmodule RejectedReplacementStatus do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_rejected_replacement,
+      no_dispel: false,
+      properties: [:buff],
+      end_on_start: [:sc_provoke]
+
+    @impl true
+    def on_apply(_target, _instance, _context), do: {:error, :rejected}
+  end
+
+  defmodule ReplacementStatus do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_replacement,
+      no_dispel: false,
+      properties: [:buff],
+      end_on_start: [:sc_provoke]
+
+    @impl true
+    def on_apply(_target, %{state: %{barrier: {test_pid, ref}}} = instance, _context) do
+      send(test_pid, {:status_apply_waiting, ref})
+
+      receive do
+        {:continue_status_apply, ^ref} -> {:ok, instance}
+      end
+    end
+
+    def on_apply(_target, instance, _context), do: {:ok, instance}
+
+    @impl true
+    def on_expire(_target, %{state: %{barrier: {test_pid, ref}}}, _context) do
+      send(test_pid, {:status_apply_rolled_back, ref})
+      :ok
+    end
+
+    def on_expire(_target, _instance, _context), do: :ok
+  end
+
+  defmodule GenerationStatus do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_generation,
+      no_dispel: false,
+      properties: [:buff]
+
+    @impl true
+    def on_expire(_target, %{state: %{observer: observer, generation: generation}}, _context) do
+      send(observer, {:generation_expired, generation})
+      :ok
+    end
+  end
+
+  defmodule MutuallyExclusiveX do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_mutually_exclusive_x,
+      no_dispel: false,
+      properties: [:buff],
+      end_on_start: [:sc_test_mutually_exclusive_y]
+
+    @impl true
+    def on_expire(_target, %{state: %{barrier: {test_pid, ref}}}, _context) do
+      send(test_pid, {:replacement_expiring, ref, self()})
+
+      receive do
+        {:continue_replacement, ^ref} -> :ok
+      end
+    end
+
+    def on_expire(_target, _instance, _context), do: :ok
+  end
+
+  defmodule MutuallyExclusiveY do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_mutually_exclusive_y,
+      no_dispel: false,
+      properties: [:buff],
+      end_on_start: [:sc_test_mutually_exclusive_x]
+
+    @impl true
+    def on_expire(_target, %{state: %{barrier: {test_pid, ref}}}, _context) do
+      send(test_pid, {:replacement_expiring, ref, self()})
+
+      receive do
+        {:continue_replacement, ^ref} -> :ok
+      end
+    end
+
+    def on_expire(_target, _instance, _context), do: :ok
+  end
+
+  defmodule SelfReplacingStatus do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_self_replacing,
+      no_dispel: false,
+      properties: [:buff],
+      end_on_start: [:sc_test_self_replacing]
+
+    @impl true
+    def on_expire(
+          _target,
+          %{
+            state: %{
+              observer: observer,
+              generation: generation,
+              barrier: {test_pid, ref}
+            }
+          },
+          _context
+        ) do
+      send(observer, {:self_replacement_expired, generation})
+      send(test_pid, {:self_replacement_expiring, ref, self()})
+
+      receive do
+        {:continue_self_replacement, ^ref} -> :ok
+      end
+    end
+
+    def on_expire(_target, %{state: %{observer: observer, generation: generation}}, _context) do
+      send(observer, {:self_replacement_expired, generation})
+      :ok
+    end
   end
 
   defmodule FollowUpStatus do
@@ -503,8 +646,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
       assert expires_at >= before_ms + 12_000
     end
 
-    test "restores a permanent status without an expiry" do
+    test "rejects missing, non-positive, and malformed finite durations before insertion" do
       target_id = 21
+      setup_player_mock(target_id)
+
+      for duration <- [nil, 0, -1, "12 seconds"] do
+        assert {:error, :invalid_duration} =
+                 Interpreter.apply_status(:player, target_id, :sc_provoke,
+                   duration: duration,
+                   loaded: true
+                 )
+
+        refute StatusStorage.has_status?(:player, target_id, :sc_provoke)
+      end
+    end
+
+    test "restores a permanent status without an expiry" do
+      target_id = 22
 
       setup_player_mock(target_id)
       Registry.register_module(PermanentStatus)
@@ -514,6 +672,344 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
 
       assert %{expires_at: nil} =
                StatusStorage.get_status(:player, target_id, :sc_test_permanent)
+    end
+  end
+
+  describe "application owner refresh" do
+    test "notifies the player owner asynchronously only after a successful application" do
+      target_id = 23
+      setup_player_mock(target_id)
+      Registry.register_module(RejectedStatus)
+      PubSub.subscribe(Aesir.PubSub, "player:#{target_id}")
+
+      assert {:error, :rejected} =
+               Interpreter.apply_status(:player, target_id, :sc_test_rejected,
+                 owner_refresh: :notify
+               )
+
+      refute_receive :recalculate_stats
+
+      assert :ok =
+               Interpreter.apply_status(:player, target_id, :sc_provoke,
+                 val1: 10,
+                 owner_refresh: :notify
+               )
+
+      assert_receive :recalculate_stats
+      refute_receive :recalculate_stats
+    end
+
+    test "a rejected replacement leaves the existing status and owner untouched" do
+      target_id = 24
+      setup_player_mock(target_id)
+      Registry.register_module(RejectedReplacementStatus)
+      PubSub.subscribe(Aesir.PubSub, "player:#{target_id}")
+
+      :ok = Interpreter.apply_status(:player, target_id, :sc_provoke, val1: 10)
+
+      assert {:error, :rejected} =
+               Interpreter.apply_status(:player, target_id, :sc_test_rejected_replacement,
+                 owner_refresh: :notify
+               )
+
+      assert StatusStorage.has_status?(:player, target_id, :sc_provoke)
+      refute StatusStorage.has_status?(:player, target_id, :sc_test_rejected_replacement)
+      refute_receive :recalculate_stats
+    end
+
+    test "a successful replacement emits only its final owner refresh" do
+      target_id = 25
+      setup_player_mock(target_id)
+      Registry.register_module(ReplacementStatus)
+      PubSub.subscribe(Aesir.PubSub, "player:#{target_id}")
+
+      :ok = Interpreter.apply_status(:player, target_id, :sc_provoke, val1: 10)
+
+      assert :ok =
+               Interpreter.apply_status(:player, target_id, :sc_test_replacement,
+                 owner_refresh: :notify
+               )
+
+      refute StatusStorage.has_status?(:player, target_id, :sc_provoke)
+      assert StatusStorage.has_status?(:player, target_id, :sc_test_replacement)
+      assert_receive :recalculate_stats
+      refute_receive :recalculate_stats
+    end
+
+    test "death rollback leaves a newer same-type generation untouched" do
+      target_id = 26
+      test_pid = self()
+      setup_player_mock(target_id)
+      Registry.register_module(GenerationStatus)
+      observe_status_display(test_pid)
+      PubSub.subscribe(Aesir.PubSub, "player:#{target_id}")
+
+      living = %PlayerState{action_state: :idle, stats: %{current_state: %{hp: 1}}}
+      dead = %PlayerState{action_state: :dead, stats: %{current_state: %{hp: 0}}}
+      block_liveness_check(target_id, test_pid)
+
+      task =
+        Task.async(fn ->
+          Interpreter.apply_status(:player, target_id, :sc_test_generation,
+            state: %{observer: test_pid, generation: :first},
+            owner_refresh: :notify
+          )
+        end)
+
+      task_pid = task.pid
+      allow_application_mocks(task_pid)
+      assert_receive {:liveness_check, ^task_pid}
+      send(task_pid, {:liveness_result, living})
+      assert_receive {:liveness_check, ^task_pid}
+
+      assert %StatusEntry{state: %{generation: :first}} =
+               StatusStorage.get_status(:player, target_id, :sc_test_generation)
+
+      {:stored, newer, _prior} =
+        StatusStorage.apply_status_with_entry(:player, target_id, :sc_test_generation,
+          state: %{observer: test_pid, generation: :newer}
+        )
+
+      send(task.pid, {:liveness_result, dead})
+
+      assert {:error, :target_dead} = Task.await(task)
+      assert StatusStorage.get_status(:player, target_id, :sc_test_generation) === newer
+      refute_receive {:generation_expired, _generation}
+      refute_receive {:status_display, _event, _generation}
+      refute_receive :recalculate_stats
+    end
+
+    test "a superseded application is not displayed or refreshed as current" do
+      target_id = 27
+      test_pid = self()
+      setup_player_mock(target_id)
+      Registry.register_module(GenerationStatus)
+      observe_status_display(test_pid)
+      PubSub.subscribe(Aesir.PubSub, "player:#{target_id}")
+
+      living = %PlayerState{action_state: :idle, stats: %{current_state: %{hp: 1}}}
+      block_liveness_check(target_id, test_pid)
+
+      task =
+        Task.async(fn ->
+          Interpreter.apply_status(:player, target_id, :sc_test_generation,
+            state: %{observer: test_pid, generation: :first},
+            owner_refresh: :notify
+          )
+        end)
+
+      task_pid = task.pid
+      allow_application_mocks(task_pid)
+      assert_receive {:liveness_check, ^task_pid}
+      send(task_pid, {:liveness_result, living})
+      assert_receive {:liveness_check, ^task_pid}
+
+      %StatusEntry{generation: first_generation} =
+        StatusStorage.get_status(:player, target_id, :sc_test_generation)
+
+      {:stored, newer, _prior} =
+        StatusStorage.apply_status_with_entry(:player, target_id, :sc_test_generation,
+          state: %{observer: test_pid, generation: :newer}
+        )
+
+      send(task_pid, {:liveness_result, living})
+
+      assert :ok = Task.await(task)
+      assert StatusStorage.get_status(:player, target_id, :sc_test_generation) === newer
+      assert newer.generation > first_generation
+      refute_receive {:status_display, _event, _generation}
+      refute_receive {:generation_expired, _generation}
+      refute_receive :recalculate_stats
+    end
+
+    test "a mutually exclusive reapplication discarded by a newer status removes its displayed icon" do
+      target_id = 28
+      test_pid = self()
+      setup_player_mock(target_id)
+      Registry.register_module(MutuallyExclusiveX)
+      Registry.register_module(MutuallyExclusiveY)
+      observe_status_display(test_pid)
+
+      assert :ok =
+               Interpreter.apply_status(:player, target_id, :sc_test_mutually_exclusive_x,
+                 state: %{generation: :displayed}
+               )
+
+      assert_receive {:status_display, :applied, :displayed}
+
+      {:stored, _old_y, nil} =
+        StatusStorage.apply_status_with_entry(
+          :player,
+          target_id,
+          :sc_test_mutually_exclusive_y,
+          state: %{barrier: {test_pid, :old_y}, generation: :old_y}
+        )
+
+      x_task =
+        Task.async(fn ->
+          Interpreter.apply_status(:player, target_id, :sc_test_mutually_exclusive_x,
+            state: %{generation: :reapplication}
+          )
+        end)
+
+      allow_application_mocks(x_task.pid)
+      assert_receive {:replacement_expiring, :old_y, x_pid}
+
+      {:stored, newer_y, _prior_y} =
+        StatusStorage.apply_status_with_entry(
+          :player,
+          target_id,
+          :sc_test_mutually_exclusive_y,
+          state: %{generation: :newer_y}
+        )
+
+      send(x_pid, {:continue_replacement, :old_y})
+
+      assert :ok = Task.await(x_task)
+      refute StatusStorage.has_status?(:player, target_id, :sc_test_mutually_exclusive_x)
+
+      assert StatusStorage.get_status(:player, target_id, :sc_test_mutually_exclusive_y) ===
+               newer_y
+
+      assert_receive {:status_display, :removed, :reapplication}
+      refute_receive {:status_display, :removed, :newer_y}
+    end
+
+    test "concurrent mutually exclusive applications leave only the highest generation" do
+      target_id = 28
+      test_pid = self()
+      setup_player_mock(target_id)
+      Registry.register_module(MutuallyExclusiveX)
+      Registry.register_module(MutuallyExclusiveY)
+
+      {:stored, _old_y, nil} =
+        StatusStorage.apply_status_with_entry(
+          :player,
+          target_id,
+          :sc_test_mutually_exclusive_y,
+          state: %{barrier: {test_pid, :old_y}}
+        )
+
+      x_task =
+        Task.async(fn ->
+          Interpreter.apply_status(:player, target_id, :sc_test_mutually_exclusive_x)
+        end)
+
+      Mimic.allow(UnitRegistry, self(), x_task.pid)
+      Mimic.allow(Aesir.ZoneServer.Mmo.StatusEffect.Resistance, self(), x_task.pid)
+
+      assert_receive {:replacement_expiring, :old_y, x_pid}
+
+      x = StatusStorage.get_status(:player, target_id, :sc_test_mutually_exclusive_x)
+
+      y_task =
+        Task.async(fn ->
+          Interpreter.apply_status(:player, target_id, :sc_test_mutually_exclusive_y)
+        end)
+
+      Mimic.allow(UnitRegistry, self(), y_task.pid)
+      Mimic.allow(Aesir.ZoneServer.Mmo.StatusEffect.Resistance, self(), y_task.pid)
+
+      assert :ok = Task.await(y_task)
+      send(x_pid, {:continue_replacement, :old_y})
+      assert :ok = Task.await(x_task)
+
+      refute StatusStorage.has_status?(:player, target_id, :sc_test_mutually_exclusive_x)
+
+      assert %StatusEntry{} =
+               y =
+               StatusStorage.get_status(:player, target_id, :sc_test_mutually_exclusive_y)
+
+      assert y.generation > x.generation
+    end
+
+    test "same-status end_on_start expires the exact prior generation without deleting the new one" do
+      target_id = 29
+      test_pid = self()
+      setup_player_mock(target_id)
+      Registry.register_module(SelfReplacingStatus)
+      observe_status_display(test_pid)
+      PubSub.subscribe(Aesir.PubSub, "player:#{target_id}")
+
+      assert :ok =
+               Interpreter.apply_status(:player, target_id, :sc_test_self_replacing,
+                 state: %{observer: test_pid, generation: :first}
+               )
+
+      assert_receive {:status_display, :applied, :first}
+
+      assert :ok =
+               Interpreter.apply_status(:player, target_id, :sc_test_self_replacing,
+                 state: %{observer: test_pid, generation: :second},
+                 owner_refresh: :notify
+               )
+
+      assert_receive {:self_replacement_expired, :first}
+      assert_receive {:status_display, :applied, :second}
+      assert_receive :recalculate_stats
+
+      refute_receive {:self_replacement_expired, :first}
+      refute_receive {:status_display, :removed, :first}
+      refute_receive :recalculate_stats
+
+      assert %StatusEntry{state: %{generation: :second}} =
+               StatusStorage.get_status(:player, target_id, :sc_test_self_replacing)
+    end
+
+    test "three same-status replacements do not finish a superseded middle generation" do
+      target_id = 30
+      test_pid = self()
+      setup_player_mock(target_id)
+      Registry.register_module(SelfReplacingStatus)
+      observe_status_display(test_pid)
+      PubSub.subscribe(Aesir.PubSub, "player:#{target_id}")
+
+      assert :ok =
+               Interpreter.apply_status(:player, target_id, :sc_test_self_replacing,
+                 state: %{
+                   observer: test_pid,
+                   generation: :a,
+                   barrier: {test_pid, :a}
+                 }
+               )
+
+      assert_receive {:status_display, :applied, :a}
+
+      b_task =
+        Task.async(fn ->
+          Interpreter.apply_status(:player, target_id, :sc_test_self_replacing,
+            state: %{observer: test_pid, generation: :b},
+            owner_refresh: :notify
+          )
+        end)
+
+      allow_application_mocks(b_task.pid)
+      assert_receive {:self_replacement_expired, :a}
+      assert_receive {:self_replacement_expiring, :a, b_pid}
+
+      assert %StatusEntry{state: %{generation: :b}} =
+               StatusStorage.get_status(:player, target_id, :sc_test_self_replacing)
+
+      assert :ok =
+               Interpreter.apply_status(:player, target_id, :sc_test_self_replacing,
+                 state: %{observer: test_pid, generation: :c}
+               )
+
+      assert_receive {:self_replacement_expired, :b}
+      assert_receive {:status_display, :applied, :c}
+      refute_receive {:status_display, :removed, :b}
+
+      send(b_pid, {:continue_self_replacement, :a})
+      assert :ok = Task.await(b_task)
+      refute_receive {:status_display, :removed, :a}
+
+      assert %StatusEntry{state: %{generation: :c}} =
+               StatusStorage.get_status(:player, target_id, :sc_test_self_replacing)
+
+      refute_receive {:self_replacement_expired, :a}
+      refute_receive {:self_replacement_expired, :b}
+      refute_receive {:status_display, :applied, :b}
+      refute_receive :recalculate_stats
     end
   end
 
@@ -533,6 +1029,33 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
       # Then remove it
       :ok = Interpreter.remove_status(:player, target_id, status_id)
       refute StatusStorage.has_status?(:player, target_id, status_id)
+    end
+  end
+
+  describe "remove_on_death/2" do
+    test "removes default statuses while preserving permanent and finite opt-outs" do
+      target_id = 30
+      setup_player_mock(target_id)
+      Registry.register_module(PermanentStatus)
+      Registry.register_module(FiniteDeathSurvivor)
+
+      :ok = Interpreter.apply_status(:player, target_id, :sc_provoke, val1: 10)
+      :ok = Interpreter.apply_status(:player, target_id, :sc_test_permanent)
+
+      :ok =
+        Interpreter.apply_status(:player, target_id, :sc_test_finite_death_survivor,
+          duration: 12_000
+        )
+
+      :ok = Interpreter.remove_on_death(:player, target_id)
+
+      refute StatusStorage.has_status?(:player, target_id, :sc_provoke)
+      assert StatusStorage.has_status?(:player, target_id, :sc_test_permanent)
+
+      assert %{expires_at: expires_at} =
+               StatusStorage.get_status(:player, target_id, :sc_test_finite_death_survivor)
+
+      assert is_integer(expires_at)
     end
   end
 
@@ -642,6 +1165,36 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
       assert is_map(modifiers)
       assert Map.has_key?(modifiers, :hit)
     end
+  end
+
+  defp observe_status_display(test_pid) do
+    Mimic.copy(StatusDisplay)
+
+    stub(StatusDisplay, :on_applied, fn _unit_type, _unit_id, _status_id, instance ->
+      send(test_pid, {:status_display, :applied, instance.state.generation})
+      :ok
+    end)
+
+    stub(StatusDisplay, :on_removed, fn _unit_type, _unit_id, _status_id, instance ->
+      send(test_pid, {:status_display, :removed, instance.state.generation})
+      :ok
+    end)
+  end
+
+  defp block_liveness_check(target_id, test_pid) do
+    stub(UnitRegistry, :get_unit, fn :player, ^target_id ->
+      send(test_pid, {:liveness_check, self()})
+
+      receive do
+        {:liveness_result, state} -> {:ok, {PlayerState, state, self()}}
+      end
+    end)
+  end
+
+  defp allow_application_mocks(task_pid) do
+    Mimic.allow(UnitRegistry, self(), task_pid)
+    Mimic.allow(Aesir.ZoneServer.Mmo.StatusEffect.Resistance, self(), task_pid)
+    Mimic.allow(StatusDisplay, self(), task_pid)
   end
 
   # Helper to set up player mock with stats

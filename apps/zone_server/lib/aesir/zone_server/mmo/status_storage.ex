@@ -41,23 +41,91 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   """
   @spec apply_status(unit_type(), integer(), atom(), StatusEntry.status_params()) :: :ok
   def apply_status(unit_type, unit_id, status_type, status_params \\ []) do
-    # Extract parameters from keyword list with defaults
+    apply_status_with_entry(unit_type, unit_id, status_type, status_params)
+    :ok
+  end
+
+  @doc """
+  Applies a status and reports whether its exact entry became current.
+
+  Successful inserts return `{:stored, entry, nil}`. Successful replacements
+  return `{:stored, entry, prior_entry}`, where `prior_entry` is the exact entry
+  replaced by the successful compare-and-swap. A concurrent newer same-type
+  application wins even when this call reaches storage later. Callers that
+  perform generation-sensitive lifecycle work must retain the returned entry
+  instead of fetching by status type after insertion.
+  """
+  @spec apply_status_with_entry(unit_type(), integer(), atom(), StatusEntry.status_params()) ::
+          {:stored, StatusEntry.t(), StatusEntry.t() | nil} | {:superseded, StatusEntry.t()}
+  def apply_status_with_entry(unit_type, unit_id, status_type, status_params \\ []) do
+    entry = build_entry(unit_type, unit_id, status_type, status_params)
+    store_if_newer(unit_type, unit_id, entry)
+  end
+
+  @doc """
+  Atomically stores an entry only when its generation is newer than the current entry.
+
+  Entries with a nil generation are older than generated entries. Successful
+  inserts return a nil prior entry; successful replacements return the exact
+  entry replaced by their compare-and-swap. Superseded results continue to
+  report the current entry.
+  """
+  @spec store_if_newer(unit_type(), integer(), StatusEntry.t()) ::
+          {:stored, StatusEntry.t(), StatusEntry.t() | nil} | {:superseded, StatusEntry.t()}
+  def store_if_newer(unit_type, unit_id, %StatusEntry{type: status_type} = entry) do
+    table = table_for(:player_statuses)
+    key = {unit_type, unit_id, status_type}
+    store_if_newer_loop(table, key, entry)
+  end
+
+  defp store_if_newer_loop(table, key, entry) do
+    case :ets.lookup(table, key) do
+      [] ->
+        if :ets.insert_new(table, {key, entry}) do
+          {:stored, entry, nil}
+        else
+          store_if_newer_loop(table, key, entry)
+        end
+
+      [{^key, current}] ->
+        if newer_generation?(entry.generation, current.generation) do
+          replace_if_current(table, key, current, entry)
+        else
+          {:superseded, current}
+        end
+    end
+  end
+
+  defp replace_if_current(table, key, current, entry) do
+    match_spec = [
+      {{key, :"$1"}, [{:"=:=", :"$1", {:const, current}}], [{:const, {key, entry}}]}
+    ]
+
+    if :ets.select_replace(table, match_spec) == 1 do
+      {:stored, entry, current}
+    else
+      store_if_newer_loop(table, key, entry)
+    end
+  end
+
+  defp newer_generation?(generation, nil) when is_integer(generation) and generation > 0,
+    do: true
+
+  defp newer_generation?(generation, current_generation)
+       when is_integer(generation) and generation > 0 and is_integer(current_generation) and
+              current_generation > 0,
+       do: generation > current_generation
+
+  defp newer_generation?(nil, nil), do: false
+  defp newer_generation?(nil, current_generation) when is_integer(current_generation), do: false
+
+  defp build_entry(unit_type, unit_id, status_type, status_params) do
     {val1, val2, val3, val4, tick, flag, caster_id, duration, state, phase} =
       StatusEntry.extract_params(status_params)
 
-    # Create status instance as a struct
     now_ms = System.monotonic_time(:millisecond)
 
-    # Calculate expiration time
-    expires_at =
-      if duration && duration > 0 do
-        now_ms + duration
-      else
-        nil
-      end
-
-    # Create the status entry directly
-    entry = %StatusEntry{
+    %StatusEntry{
       type: status_type,
       val1: val1,
       val2: val2,
@@ -70,13 +138,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
       state: state,
       phase: phase,
       started_at: now_ms,
-      expires_at: expires_at,
+      expires_at: if(duration && duration > 0, do: now_ms + duration, else: nil),
       next_tick_at: if(tick > 0, do: now_ms + tick, else: nil),
-      tick_count: 0
+      tick_count: 0,
+      generation: System.unique_integer([:monotonic, :positive])
     }
-
-    :ets.insert(table_for(:player_statuses), {{unit_type, unit_id, status_type}, entry})
-    :ok
   end
 
   @doc """
@@ -86,6 +152,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   def remove_status(unit_type, unit_id, status_type) do
     :ets.delete(table_for(:player_statuses), {unit_type, unit_id, status_type})
     :ok
+  end
+
+  @doc """
+  Atomically removes a status only when its current entry exactly matches the expected entry.
+
+  Returns whether the expected entry was deleted. A newer same-type application
+  is never removed.
+  """
+  @spec remove_status_if_current(unit_type(), integer(), atom(), StatusEntry.t()) :: boolean()
+  def remove_status_if_current(unit_type, unit_id, status_type, expected_entry) do
+    key = {unit_type, unit_id, status_type}
+
+    match_spec = [
+      {{key, :"$1"}, [{:"=:=", :"$1", {:const, expected_entry}}], [true]}
+    ]
+
+    :ets.select_delete(table_for(:player_statuses), match_spec) == 1
   end
 
   @doc """

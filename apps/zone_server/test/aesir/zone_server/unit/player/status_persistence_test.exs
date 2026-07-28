@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistenceTest do
   use Aesir.DataCase, async: false
   use Mimic
 
+  import ExUnit.CaptureLog
+
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.CharacterStatus
@@ -82,6 +84,17 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistenceTest do
       assert Repo.all(CharacterStatus) == []
     end
 
+    test "skips and warns about non-permanent statuses without an expiry", %{
+      character: character
+    } do
+      :ok = StatusStorage.apply_status(:player, character.id, :sc_blessing, val1: 10)
+
+      log = capture_log(fn -> assert :ok = StatusPersistence.save_statuses(character.id) end)
+
+      assert Repo.all(CharacterStatus) == []
+      assert log =~ "Dropping non-permanent status sc_blessing without a finite expiry"
+    end
+
     test "persists a permanent status with a nil remaining duration", %{character: character} do
       :ok = StatusStorage.apply_status(:player, character.id, :sc_autoberserk, val1: 1)
 
@@ -145,6 +158,34 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistenceTest do
       assert params[:loaded] == true
       assert params[:duration] > 0
       assert Repo.all(CharacterStatus) == []
+    end
+
+    test "drops malformed and stale finite rows without applying them", %{character: character} do
+      for {status_type, remaining_ms} <- [
+            {"sc_blessing", nil},
+            {"sc_angelus", 0},
+            {"sc_increaseagi", -1}
+          ] do
+        %CharacterStatus{}
+        |> CharacterStatus.changeset(%{
+          char_id: character.id,
+          status_type: status_type,
+          remaining_ms: remaining_ms
+        })
+        |> Repo.insert!()
+      end
+
+      reject(&StatusManager.handle_apply_status/3)
+      state = %{game_state: %{character_id: character.id}}
+
+      log = capture_log(fn -> assert ^state = StatusPersistence.restore_on_spawn(state) end)
+
+      assert Repo.all(CharacterStatus) == []
+      assert log =~ "Dropping persisted finite status sc_blessing with invalid remaining duration"
+      assert log =~ "Dropping persisted finite status sc_angelus with invalid remaining duration"
+
+      assert log =~
+               "Dropping persisted finite status sc_increaseagi with invalid remaining duration"
     end
 
     test "drops rows whose status type no longer exists", %{character: character} do

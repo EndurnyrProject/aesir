@@ -31,7 +31,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
   - `bypass_resistance`: Bypasses ordinary chance/stat resistance and duration
     reduction only; does not bypass hard immunity, prevention, or conflicts
     (defaults to false)
+  - `owner_refresh`: Controls player stat reconciliation after a successful direct
+    application. `:notify` publishes an asynchronous owner refresh, `:defer` leaves
+    recalculation to the owning session, and `:auto` notifies only when called outside
+    that session. Applications default to `:defer`
   """
+  @type owner_refresh :: :auto | :notify | :defer
+
   @type status_params :: [
           val1: integer(),
           val2: integer(),
@@ -48,7 +54,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
           loaded: boolean(),
           success_rate: number(),
           resistance_roll: (number() -> boolean()),
-          bypass_resistance: boolean()
+          bypass_resistance: boolean(),
+          owner_refresh: owner_refresh()
         ]
 
   @type t :: %__MODULE__{
@@ -66,7 +73,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
           started_at: integer(),
           expires_at: integer() | nil,
           next_tick_at: integer() | nil,
-          tick_count: non_neg_integer()
+          tick_count: non_neg_integer(),
+          generation: pos_integer() | nil
         }
 
   defstruct [
@@ -99,7 +107,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
     # When the next tick should process (or nil for tickless statuses)
     :next_tick_at,
     # Number of ticks processed so far
-    :tick_count
+    :tick_count,
+    # Monotonically increasing identity for exact-entry comparison
+    :generation
   ]
 
   @doc """

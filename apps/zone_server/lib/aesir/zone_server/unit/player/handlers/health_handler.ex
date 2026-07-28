@@ -314,10 +314,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     state = StatsManager.update_game_state(state, dead_state)
 
     :ok =
-      StatusInterpreter.remove_all_statuses(:player, game_state.character_id,
-        owner_refresh: :defer,
-        except_permanent: true
-      )
+      StatusInterpreter.remove_on_death(:player, game_state.character_id, owner_refresh: :defer)
 
     state =
       if had_statuses?, do: StatusManager.recalculate_after_status_change(state), else: state

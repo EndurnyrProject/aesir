@@ -76,33 +76,51 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistence do
         state
 
       definition ->
-        params = [
-          val1: row.val1,
-          val2: row.val2,
-          val3: row.val3,
-          val4: row.val4,
-          tick: row.tick,
-          flag: row.flag,
-          caster_id: row.source_id,
-          duration: row.remaining_ms,
-          loaded: true
-        ]
-
-        case StatusManager.handle_apply_status(definition.id, params, state) do
-          {:reply, :ok, applied} ->
-            applied
-
-          {:reply, {:error, reason}, unchanged} ->
-            Logger.warning("Status restore of #{row.status_type} failed: #{inspect(reason)}")
-            unchanged
-        end
+        restore_known_status(row, definition, state)
     end
   end
+
+  defp restore_known_status(row, definition, state) do
+    if valid_restore_duration?(definition, row.remaining_ms) do
+      params = [
+        val1: row.val1,
+        val2: row.val2,
+        val3: row.val3,
+        val4: row.val4,
+        tick: row.tick,
+        flag: row.flag,
+        caster_id: row.source_id,
+        duration: row.remaining_ms,
+        loaded: true
+      ]
+
+      case StatusManager.handle_apply_status(definition.id, params, state) do
+        {:reply, :ok, applied} ->
+          applied
+
+        {:reply, {:error, reason}, unchanged} ->
+          Logger.warning("Status restore of #{row.status_type} failed: #{inspect(reason)}")
+          unchanged
+      end
+    else
+      Logger.warning(
+        "Dropping persisted finite status #{row.status_type} with invalid remaining duration: #{inspect(row.remaining_ms)}"
+      )
+
+      state
+    end
+  end
+
+  defp valid_restore_duration?(%{permanent: true}, _remaining_ms), do: true
+
+  defp valid_restore_duration?(_definition, remaining_ms),
+    do: is_integer(remaining_ms) and remaining_ms > 0
 
   defp row_for(%StatusEntry{} = entry, char_id, now_ms) do
     with definition when definition != nil <- Registry.get_definition(entry.type),
          false <- definition.no_save,
-         {:ok, remaining_ms} <- remaining_ms(entry, now_ms) do
+         {:ok, remaining_ms} <- remaining_ms(entry, now_ms),
+         :ok <- validate_saved_duration(definition, entry, remaining_ms) do
       [
         %{
           char_id: char_id,
@@ -122,10 +140,24 @@ defmodule Aesir.ZoneServer.Unit.Player.StatusPersistence do
     end
   end
 
+  defp validate_saved_duration(%{permanent: true}, _entry, _remaining_ms), do: :ok
+
+  defp validate_saved_duration(_definition, _entry, remaining_ms)
+       when is_integer(remaining_ms) and remaining_ms > 0,
+       do: :ok
+
+  defp validate_saved_duration(_definition, %StatusEntry{type: type}, nil) do
+    Logger.warning("Dropping non-permanent status #{type} without a finite expiry")
+    :invalid_duration
+  end
+
+  defp validate_saved_duration(_definition, _entry, _remaining_ms), do: :invalid_duration
+
   defp remaining_ms(%StatusEntry{expires_at: nil}, _now_ms), do: {:ok, nil}
 
-  defp remaining_ms(%StatusEntry{expires_at: expires_at}, now_ms) when expires_at > now_ms,
-    do: {:ok, expires_at - now_ms}
+  defp remaining_ms(%StatusEntry{expires_at: expires_at}, now_ms)
+       when is_integer(expires_at) and expires_at > now_ms,
+       do: {:ok, expires_at - now_ms}
 
   defp remaining_ms(%StatusEntry{}, _now_ms), do: :expired
 

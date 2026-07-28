@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager
   alias Aesir.ZoneServer.Party.Member
@@ -48,6 +49,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   @sp_hp 5
   @sp_base_exp 1
   @sp_job_exp 2
+
+  defmodule FiniteDeathSurvivor do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_health_death_survivor,
+      no_dispel: false,
+      properties: [:buff],
+      remove_on_death: false
+  end
 
   setup :set_mimic_from_context
   setup :setup_ets_tables
@@ -187,10 +196,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       SkillTextInputHandler.clear(preserved)
     end
 
-    test "death clears active statuses and their action restrictions" do
+    test "death filters statuses and recalculates once after the batch" do
       test_pid = self()
       :ok = PubSub.subscribe(Aesir.PubSub, "player:1")
+      Registry.register_module(FiniteDeathSurvivor)
       :ok = StatusStorage.apply_status(:player, 1, :sc_steelbody)
+
+      :ok =
+        StatusStorage.apply_status(:player, 1, :sc_test_health_death_survivor, duration: 60_000)
+
       assert StatusStorage.has_status?(:player, 1, :sc_steelbody)
 
       expect(StatusManager, :recalculate_after_status_change, fn state ->
@@ -202,7 +216,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
                HealthHandler.apply_damage(100, 2001, build_recalculable_state(100, :idle))
 
       refute StatusStorage.has_status?(:player, 1, :sc_steelbody)
+
+      assert %{expires_at: expires_at} =
+               StatusStorage.get_status(:player, 1, :sc_test_health_death_survivor)
+
+      assert is_integer(expires_at)
       assert_received :synchronous_status_refresh
+      refute_received :synchronous_status_refresh
       refute_received :recalculate_stats
     end
 
