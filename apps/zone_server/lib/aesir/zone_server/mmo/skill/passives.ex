@@ -241,6 +241,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   end
 
   @doc """
+  Sums the MaxSP rate bonus contributed by every learned passive for the player.
+  """
+  @spec max_sp_rate_bonus(PlayerState.t() | PlayerStats.t()) :: integer()
+  def max_sp_rate_bonus(%PlayerState{stats: stats}), do: max_sp_rate_bonus(stats)
+
+  def max_sp_rate_bonus(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
+    |> learned_passives()
+    |> Enum.reduce(0, fn {module, level}, acc ->
+      acc + module.max_sp_rate_bonus(level, ctx)
+    end)
+  end
+
+  @doc """
   Folds the on-normal-attack procs of every learned passive into one map.
 
   Keeps the proc with the highest `:multi_hit` (carrying its own `:chance`
@@ -362,7 +378,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
       max_sp: derived_stat(stats.derived_stats, :max_sp),
       vit: stats.base_stats.vit,
       int: stats.base_stats.int,
-      riding: stats.riding
+      riding: stats.riding,
+      statuses_active?: Map.get(stats.modifiers, :statuses_active?, false)
     }
   end
 

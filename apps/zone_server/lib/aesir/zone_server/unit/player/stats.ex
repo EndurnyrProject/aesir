@@ -7,13 +7,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Modifiers do
   field default within the module that defines it.
   """
 
-  defstruct equipment: %{}, status_effects: %{}, job_bonuses: %{}, passive: %{}
+  defstruct equipment: %{},
+            status_effects: %{},
+            job_bonuses: %{},
+            passive: %{},
+            statuses_active?: false
 
   @type t() :: %__MODULE__{
           equipment: map(),
           status_effects: map(),
           job_bonuses: map(),
-          passive: map()
+          passive: map(),
+          statuses_active?: boolean()
         }
 end
 
@@ -49,6 +54,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
   alias Aesir.ZoneServer.Unit.Stats
@@ -306,7 +312,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       int: Passives.int_bonus(stats),
       hit: Passives.hit_bonus(stats),
       range: Passives.range_bonus(stats),
-      max_weight_bonus: Passives.max_weight_bonus(stats)
+      max_weight_bonus: Passives.max_weight_bonus(stats),
+      max_sp_rate: Passives.max_sp_rate_bonus(stats)
     }
 
     %{stats | modifiers: Map.put(stats.modifiers, :passive, passive)}
@@ -571,8 +578,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     # Get all status effect modifiers for this player
     status_modifiers = Interpreter.get_all_modifiers(:player, player_id)
 
-    # Update the status_effects in modifiers
-    %{stats | modifiers: %{stats.modifiers | status_effects: status_modifiers}}
+    statuses_active? = StatusStorage.count_unit_statuses(:player, player_id) > 0
+
+    %{
+      stats
+      | modifiers: %{
+          stats.modifiers
+          | status_effects: status_modifiers,
+            statuses_active?: statuses_active?
+        }
+    }
   end
 
   # When player_id is nil or invalid
@@ -1009,7 +1024,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
     total_sp
     |> apply_max_rate(
-      get_status_modifier(stats, :max_sp_rate) + get_equipment_modifier(stats, :max_sp_rate)
+      get_status_modifier(stats, :max_sp_rate) + get_equipment_modifier(stats, :max_sp_rate) +
+        stats.modifiers.passive.max_sp_rate
     )
     |> max(1)
   end

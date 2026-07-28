@@ -121,6 +121,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
     end
   end
 
+  defmodule StatusAwarePassive do
+    @moduledoc false
+    use Aesir.ZoneServer.Mmo.Skill,
+      id: 9_900_007,
+      name: :test_status_aware_passive,
+      display_name: "Test Status Aware Passive",
+      max_level: 10,
+      target_type: :passive
+
+    alias Aesir.ZoneServer.Mmo.Skill.Passive
+
+    @behaviour Passive
+
+    @impl Passive
+    def max_sp_rate_bonus(level, _ctx), do: 2 * level
+
+    @impl Passive
+    def aspd_bonus(level, %{statuses_active?: true}), do: level
+    def aspd_bonus(_level, _ctx), do: 0
+  end
+
   defp build_player(learned_skills, weapon_atom) do
     equip = if weapon_atom == :bow, do: @both_hand, else: @right_hand
     nameid = Map.fetch!(@weapon_ids, weapon_atom)
@@ -234,6 +255,38 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
       player = build_player(%{9_900_004 => 5}, :one_handed_sword)
 
       assert Passives.max_weight_bonus(player) == 10_000
+    end
+  end
+
+  describe "max_sp_rate_bonus/1 and status context" do
+    setup do
+      stub(Catalog, :by_id, fn 9_900_007 -> {:ok, StatusAwarePassive.definition()} end)
+
+      stub(Catalog, :passive_module_for, fn :test_status_aware_passive ->
+        {:ok, StatusAwarePassive}
+      end)
+
+      :ok
+    end
+
+    test "aggregates the MaxSP rate channel" do
+      player = build_player(%{9_900_007 => 5}, :one_handed_sword)
+
+      assert Passives.max_sp_rate_bonus(player) == 10
+    end
+
+    test "passes explicit active-status presence to callbacks" do
+      player = build_player(%{9_900_007 => 5}, :one_handed_sword)
+
+      refute player.stats.modifiers.statuses_active?
+      assert Passives.aspd_bonus(player) == 0
+
+      active_stats = %{
+        player.stats
+        | modifiers: %{player.stats.modifiers | statuses_active?: true}
+      }
+
+      assert Passives.aspd_bonus(%{player | stats: active_stats}) == 5
     end
   end
 

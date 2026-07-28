@@ -212,6 +212,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill do
     {:aspd_bonus, 2, quote(do: def(aspd_bonus(_level, _ctx), do: 0))},
     {:int_bonus, 2, quote(do: def(int_bonus(_level, _ctx), do: 0))},
     {:max_hp_bonus, 2, quote(do: def(max_hp_bonus(_level, _ctx), do: 0))},
+    {:max_sp_rate_bonus, 2, quote(do: def(max_sp_rate_bonus(_level, _ctx), do: 0))},
     {:attack_proc, 2, quote(do: def(attack_proc(_level, _ctx), do: %{}))},
     {:after_normal_hit, 2, quote(do: def(after_normal_hit(_player_state, _hit), do: :ok))},
     {:regen_contribution, 2, quote(do: def(regen_contribution(_level, _ctx), do: %{}))},
