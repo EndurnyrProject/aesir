@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Config do
   """
 
   @default_view_range 20
+  @default_frost_joker_area_size 14
   @default_max_party 12
   @default_party_share_level 15
   @default_party_even_share_bonus 0
@@ -26,6 +27,16 @@ defmodule Aesir.ZoneServer.Config do
   """
   @spec view_range() :: pos_integer()
   def view_range, do: Application.get_env(:zone_server, :view_range, @default_view_range)
+
+  @doc "The half-width of Frost Joker's global square around its captured cast origin."
+  @spec frost_joker_area_size() :: pos_integer()
+  def frost_joker_area_size,
+    do:
+      Application.get_env(
+        :zone_server,
+        :frost_joker_area_size,
+        @default_frost_joker_area_size
+      )
 
   @doc """
   Maximum number of characters in a party (rAthena `MAX_PARTY`).
