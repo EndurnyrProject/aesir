@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
   alias Aesir.Net.MoveRequest
   alias Aesir.Net.ParamChange
   alias Aesir.Net.SkillDamage
+  alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.MobSkill.Db
   alias Aesir.ZoneServer.Mmo.MobSkill.Denylist
@@ -30,6 +31,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skills.Npc.NpcEarthquake
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -64,6 +66,10 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
 
   # Gloom Under Night carries level 5 HT_FREEZINGTRAP around-self rows.
   @freezing_trap_mob_id 2_431
+
+  # Kavach Icarus carries BA_MUSICALSTRIKE; Atroce Slave carries BA_FROSTJOKER.
+  @musical_strike_mob_id 2_226
+  @frost_joker_mob_id 2_437
 
   setup :set_mimic_private
   setup :verify_on_exit!
@@ -503,6 +509,112 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
       assert StatusStorage.has_status?(:player, activator.character.id, :sc_freeze)
       assert StatusStorage.has_status?(:player, connected.character.id, :sc_freeze)
       refute StatusStorage.has_status?(:player, outside.character.id, :sc_freeze)
+    end
+  end
+
+  describe "retained Bard rows" do
+    test "BA_MUSICALSTRIKE resolves through Executor as one real damage event" do
+      Mimic.copy(HitCalculations)
+      stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :hit end)
+
+      victim =
+        start_player_session(
+          id: 9_818,
+          name: "Strummed",
+          position: {150, 150},
+          map_name: @map,
+          hp: 5_000,
+          max_hp: 5_000
+        )
+
+      caster = caster_targeting(victim.character.id)
+      flush_packets()
+
+      assert :ok =
+               Executor.execute(
+                 caster,
+                 row!(@musical_strike_mob_id, "BA_MUSICALSTRIKE", level: 5)
+               )
+
+      victim_id = victim.character.id
+      assert_receive {:packet_sent, %SkillDamage{skill_id: 316, target_id: ^victim_id}, _}, 1_000
+      assert get_player_state(victim.pid).stats.current_state.hp < 5_000
+    end
+
+    test "BA_FROSTJOKER schedules on a real MobSession and freezes after three seconds" do
+      victim =
+        start_player_session(
+          id: 9_819,
+          name: "Frozen",
+          position: {151, 150},
+          map_name: @map,
+          hp: 100_000,
+          max_hp: 100_000,
+          vit: 0,
+          luk: 0
+        )
+
+      on_exit(fn -> StatusStorage.clear_unit_statuses(:player, victim.character.id) end)
+
+      mob = spawn_test_mob(@map, {150, 150}, mob_id: @frost_joker_mob_id)
+      row = row!(@frost_joker_mob_id, "BA_FROSTJOKER", level: 3, target: :self)
+
+      Mimic.copy(Resistance)
+      stub(Resistance, :roll_success, fn _success_rate -> true end)
+      Mimic.allow(Resistance, self(), mob.pid)
+
+      :sys.replace_state(mob.pid, fn state ->
+        MobState.set_casting(state, %{row: row, complete_at: 0, timer_ref: nil})
+      end)
+
+      send(mob.pid, {:casting, :complete})
+
+      assert_eventually(fn -> get_mob_state(mob.pid).casting == nil end, 1_000)
+      refute StatusStorage.has_status?(:player, victim.character.id, :sc_freeze)
+
+      assert_eventually(
+        fn -> StatusStorage.has_status?(:player, victim.character.id, :sc_freeze) end,
+        4_000
+      )
+    end
+
+    test "BA_FROSTJOKER real MobSession timer is cancelled by caster death" do
+      victim =
+        start_player_session(
+          id: 9_820,
+          name: "Unfrozen",
+          position: {151, 150},
+          map_name: @map,
+          vit: 0,
+          luk: 0
+        )
+
+      on_exit(fn -> StatusStorage.clear_unit_statuses(:player, victim.character.id) end)
+
+      mob = spawn_test_mob(@map, {150, 150}, mob_id: @frost_joker_mob_id, hp: 1, max_hp: 1)
+      row = row!(@frost_joker_mob_id, "BA_FROSTJOKER", level: 3, target: :self)
+
+      Mimic.copy(Resistance)
+      stub(Resistance, :roll_success, fn _success_rate -> true end)
+      Mimic.allow(Resistance, self(), mob.pid)
+
+      :sys.replace_state(mob.pid, fn state ->
+        MobState.set_casting(state, %{row: row, complete_at: 0, timer_ref: nil})
+      end)
+
+      send(mob.pid, {:casting, :complete})
+
+      assert_eventually(fn -> get_mob_state(mob.pid).casting == nil end, 1_000)
+      refute StatusStorage.has_status?(:player, victim.character.id, :sc_freeze)
+
+      MobSession.apply_damage(mob.pid, 1)
+
+      assert_eventually(fn -> get_mob_state(mob.pid).deferred_epoch == 1 end, 1_000)
+
+      refute_eventually(
+        fn -> StatusStorage.has_status?(:player, victim.character.id, :sc_freeze) end,
+        3_200
+      )
     end
   end
 

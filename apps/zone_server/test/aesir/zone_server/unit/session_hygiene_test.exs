@@ -20,10 +20,19 @@ defmodule Aesir.ZoneServer.Unit.SessionHygieneTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
   alias Aesir.ZoneServer.Unit.Player.StatusPersistence
+  alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  defmodule DeferredProbe do
+    @moduledoc false
+
+    def deferred(test_pid, _state), do: send(test_pid, :deferred_ran)
+  end
 
   @mob_session_source File.read!(
                         Path.join(
@@ -82,6 +91,28 @@ defmodule Aesir.ZoneServer.Unit.SessionHygieneTest do
     end
   end
 
+  describe "disconnect cleanup" do
+    test "finite song state and queued deferred work do not outlive the player session" do
+      %{pid: pid, character: character} = start_hygiene_player_session()
+      monitor = Process.monitor(pid)
+
+      assert :ok =
+               StatusInterpreter.apply_status(:player, character.id, :sc_whistle,
+                 duration: 180_000,
+                 caster_id: character.id
+               )
+
+      assert StatusStorage.has_status?(:player, character.id, :sc_whistle)
+      Process.send_after(pid, {:skill, {:deferred, DeferredProbe, self()}}, 100)
+      send(pid, :connection_closed)
+
+      assert_receive {:DOWN, ^monitor, :process, ^pid, :normal}, 1_000
+      refute StatusStorage.has_status?(:player, character.id, :sc_whistle)
+      assert {:error, :not_found} = UnitRegistry.get_unit(:player, character.id)
+      refute_receive :deferred_ran, 150
+    end
+  end
+
   describe "handle_info catch-all" do
     test "an unknown info to a live mob session logs and keeps it alive" do
       mob = start_mob_session()
@@ -128,7 +159,7 @@ defmodule Aesir.ZoneServer.Unit.SessionHygieneTest do
       id: :erlang.unique_integer([:positive]),
       account_id: 100,
       name: "HygieneTestPlayer",
-      last_map: "prontera",
+      last_map: "session_hygiene_map",
       last_x: 50,
       last_y: 50,
       class: 1,
