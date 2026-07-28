@@ -36,8 +36,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
         vars: %{"sphmask_q" => 1}
       }
 
-      assert %PlayerState{vars: %{"sphmask_q" => 1}, temp_vars: %{}, zeny: 5_000} =
-               PlayerState.new(character)
+      assert %PlayerState{
+               vars: %{"sphmask_q" => 1},
+               temp_vars: %{},
+               zeny: 5_000,
+               last_song: nil
+             } = PlayerState.new(character)
     end
 
     test "defaults vars to an empty map when the character has nil vars" do

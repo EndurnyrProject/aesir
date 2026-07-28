@@ -92,6 +92,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           last_warp_at: integer() | nil,
           last_emote_at: integer() | nil,
           deferred_epoch: non_neg_integer(),
+          last_song: %{skill_id: integer(), level: pos_integer()} | nil,
           continuous_attack_timer: reference() | nil,
           pending_forced_movement: ForcedMovement.t() | nil,
           spirit_spheres: SpiritSpheres.t(),
@@ -279,6 +280,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # Flood-control timestamp for emotes (monotonic ms); nil until the first emote.
     last_emote_at: nil,
     deferred_epoch: 0,
+    last_song: nil,
     regen_accumulators: %{hp_acc: 0, sp_acc: 0, skill_hp_acc: 0, skill_sp_acc: 0},
     # Party membership (0 = none), sourced from the Character at spawn and
     # kept current by Party.Manager pushes (`characters.party_id` is the

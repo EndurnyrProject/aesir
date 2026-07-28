@@ -151,6 +151,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
 
     @non_skill_modules [
       Aesir.ZoneServer.Mmo.Skills.Bard.Cost,
+      Aesir.ZoneServer.Mmo.Skills.Bard.Song,
       Aesir.ZoneServer.Mmo.Skills.Monk.Combo,
       Aesir.ZoneServer.Mmo.Skills.Monk.Formulas,
       Aesir.ZoneServer.Mmo.Skills.Monk.Root,

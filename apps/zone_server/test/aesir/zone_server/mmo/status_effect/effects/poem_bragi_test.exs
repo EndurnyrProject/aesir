@@ -10,23 +10,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PoemBragiTest do
   describe "metadata" do
     test "resolves :sc_poembragi as a buff with the Bragi icon" do
       assert :sc_poembragi = PoemBragi.id()
-      assert %{properties: [:buff], icon: :poembragi} = PoemBragi.metadata()
+
+      assert %{properties: [:buff], icon: :poembragi, duration: 180_000} =
+               PoemBragi.metadata()
     end
   end
 
   describe "on_apply/3" do
-    test "stores cast_time_reduction (2*val1) and delay_reduction (3*val1)" do
-      instance = %StatusEntry{type: :sc_poembragi, val1: 10, state: %{}}
+    test "stores the pinned reduction parameters without deriving legacy formulas" do
+      instance = %StatusEntry{type: :sc_poembragi, val1: 99, val2: 20, val3: 30, state: %{}}
 
-      assert {:ok, %StatusEntry{state: state}} = PoemBragi.on_apply(@target, instance, %{})
-      assert state.cast_time_reduction == 20
-      assert state.delay_reduction == 30
-    end
-
-    test "scales the reductions per skill level" do
-      instance = %StatusEntry{type: :sc_poembragi, val1: 1, state: %{}}
-
-      assert {:ok, %StatusEntry{state: %{cast_time_reduction: 2, delay_reduction: 3}}} =
+      assert {:ok, %StatusEntry{state: %{cast_time_reduction: 20, delay_reduction: 30}}} =
                PoemBragi.on_apply(@target, instance, %{})
     end
   end
