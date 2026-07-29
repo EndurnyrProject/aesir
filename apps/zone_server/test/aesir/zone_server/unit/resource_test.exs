@@ -73,6 +73,69 @@ defmodule Aesir.ZoneServer.Unit.ResourceTest do
       assert Resource.drain_sp_percent(:player, 2, 20) == :ok
       assert Resource.drain_sp_percent(:mob, 3, 20) == :ok
     end
+
+    test "does not drain players with invalid maximum SP" do
+      invalid_values = [nil, -1, 1.5]
+
+      stub(UnitRegistry, :get_unit, fn :player, unit_id ->
+        max_sp = Enum.at(invalid_values, unit_id - 1)
+        {:ok, {PlayerState, player(max_sp: max_sp), self()}}
+      end)
+
+      stub(PlayerSession, :consume_sp, fn pid, amount ->
+        assert pid == self()
+        assert amount == 0
+        :ok
+      end)
+
+      for unit_id <- 1..length(invalid_values) do
+        assert Resource.drain_sp_percent(:player, unit_id, 20) == :ok
+      end
+    end
+
+    test "does not drain mobs with invalid maximum SP" do
+      invalid_values = [nil, -1, 1.5]
+
+      stub(UnitRegistry, :get_unit, fn :mob, unit_id ->
+        max_sp = Enum.at(invalid_values, unit_id - 1)
+        {:ok, {MobState, mob(max_sp: max_sp), self()}}
+      end)
+
+      stub(MobSession, :zap_sp, fn pid, amount ->
+        assert pid == self()
+        assert amount == 0
+        :ok
+      end)
+
+      for unit_id <- 1..length(invalid_values) do
+        assert Resource.drain_sp_percent(:mob, unit_id, 20) == :ok
+      end
+    end
+  end
+
+  describe "drain_sp/3" do
+    test "drains a fixed amount from live players and mobs" do
+      player = player(max_sp: 100)
+      mob = mob(max_sp: 100)
+
+      stub(UnitRegistry, :get_unit, fn
+        :player, 1 -> {:ok, {PlayerState, player, self()}}
+        :mob, 2 -> {:ok, {MobState, mob, self()}}
+      end)
+
+      expect(PlayerSession, :consume_sp, fn pid, 12 ->
+        assert pid == self()
+        :ok
+      end)
+
+      expect(MobSession, :zap_sp, fn pid, 20 ->
+        assert pid == self()
+        :ok
+      end)
+
+      assert :ok = Resource.drain_sp(:player, 1, 12)
+      assert :ok = Resource.drain_sp(:mob, 2, 20)
+    end
   end
 
   defp player(opts) do

@@ -21,22 +21,42 @@ defmodule Aesir.ZoneServer.Unit.Resource do
       when unit_type in [:player, :mob] and is_integer(unit_id) and unit_id >= 0 and
              is_integer(percentage) and percentage >= 0 do
     case UnitRegistry.get_unit(unit_type, unit_id) do
-      {:ok, {_module, state, pid}} when is_pid(pid) -> drain(unit_type, state, pid, percentage)
+      {:ok, {_module, state, pid}} when is_pid(pid) ->
+        drain_sp(unit_type, state, pid, percentage_amount(unit_type, state, percentage))
+
+      _ ->
+        :ok
+    end
+  end
+
+  @doc "Drains a fixed amount of SP from a live unit through its owning session."
+  @spec drain_sp(resource_unit(), non_neg_integer(), non_neg_integer()) :: :ok
+  def drain_sp(unit_type, unit_id, amount)
+      when unit_type in [:player, :mob] and is_integer(unit_id) and unit_id >= 0 and
+             is_integer(amount) and amount >= 0 do
+    case UnitRegistry.get_unit(unit_type, unit_id) do
+      {:ok, {_module, state, pid}} when is_pid(pid) -> drain_sp(unit_type, state, pid, amount)
       _ -> :ok
     end
   end
 
-  defp drain(:player, %{stats: %{derived_stats: %{max_sp: max_sp}}} = state, pid, percentage)
-       when is_integer(max_sp) and max_sp >= 0 do
-    if Unit.living?(state), do: PlayerSession.consume_sp(pid, div(max_sp * percentage, 100))
+  defp percentage_amount(:player, %{stats: %{derived_stats: %{max_sp: max_sp}}}, percentage)
+       when is_integer(max_sp) and max_sp >= 0,
+       do: div(max_sp * percentage, 100)
+
+  defp percentage_amount(:mob, %{max_sp: max_sp}, percentage)
+       when is_integer(max_sp) and max_sp >= 0,
+       do: div(max_sp * percentage, 100)
+
+  defp percentage_amount(_unit_type, _state, _percentage), do: 0
+
+  defp drain_sp(:player, state, pid, amount) do
+    if Unit.living?(state), do: PlayerSession.consume_sp(pid, amount)
     :ok
   end
 
-  defp drain(:mob, %{max_sp: max_sp} = state, pid, percentage)
-       when is_integer(max_sp) and max_sp >= 0 do
-    if Unit.living?(state), do: MobSession.zap_sp(pid, div(max_sp * percentage, 100))
+  defp drain_sp(:mob, state, pid, amount) do
+    if Unit.living?(state), do: MobSession.zap_sp(pid, amount)
     :ok
   end
-
-  defp drain(_unit_type, _state, _pid, _percentage), do: :ok
 end
