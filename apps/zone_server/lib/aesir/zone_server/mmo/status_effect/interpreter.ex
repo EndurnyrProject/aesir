@@ -544,6 +544,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     do: not restricted?(unit_type, unit_id, &PropertyChecker.untargetable?/1)
 
   @doc """
+  Returns whether a unit is charmed against the candidate target.
+  """
+  @spec charmed_against?(unit_type(), integer(), integer()) :: boolean()
+  def charmed_against?(unit_type, unit_id, target_id) do
+    case StatusStorage.get_status(unit_type, unit_id, :sc_winkcharm) do
+      %StatusEntry{source_id: ^target_id} -> true
+      _entry -> false
+    end
+  end
+
+  @doc """
   Returns whether a unit is concealed, i.e. carries a status with the
   `:conceals` property (Hiding or Cloaking).
 

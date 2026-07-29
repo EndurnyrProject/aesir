@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     stub(Interpreter, :can_move?, fn _type, _id -> true end)
     stub(Interpreter, :can_attack?, fn _type, _id -> true end)
     stub(Interpreter, :targetable?, fn _type, _id -> true end)
+    stub(Interpreter, :charmed_against?, fn _type, _id, _target_id -> false end)
     stub(Interpreter, :concealed?, fn _type, _id -> false end)
     stub(MapCache, :get, fn _map -> {:ok, :map_data} end)
     stub(Cell, :traversable?, fn "prontera", _x, _y -> true end)
@@ -250,6 +251,62 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       assert revealed.target_id == 2
       assert revealed.ai_state == :alert
+    end
+  end
+
+  describe "wink of charm targeting" do
+    test "a charmed mob drops the Dancer it already targets" do
+      stub(Interpreter, :charmed_against?, fn :mob, 1, 2 -> true end)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
+        {:ok, {100, 100, "prontera"}}
+      end)
+
+      stub(Combat, :execute_mob_attack, fn _state, _target -> :ok end)
+
+      result = AIStateMachine.process_ai(combat_mob_state())
+
+      assert result.target_id == nil
+      assert result.ai_state == :idle
+    end
+
+    test "a charmed mob acquires a different player" do
+      stub(Interpreter, :charmed_against?, fn :mob, 1, target_id -> target_id == 2 end)
+
+      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
+        [2, 3]
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, 3 ->
+        {:ok, {101, 101, "prontera"}}
+      end)
+
+      result = AIStateMachine.process_ai(aggressive_idle_mob_state())
+
+      assert result.target_id == 3
+      assert result.ai_state == :alert
+    end
+
+    test "a charmed mob attacks a different player normally" do
+      test_pid = self()
+      stub(Interpreter, :charmed_against?, fn :mob, 1, target_id -> target_id == 2 end)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, 3 ->
+        {:ok, {100, 100, "prontera"}}
+      end)
+
+      stub(Combat, :execute_mob_attack, fn _state, 3 ->
+        send(test_pid, :attacked)
+        :ok
+      end)
+
+      result =
+        combat_mob_state()
+        |> MobState.set_target(3)
+        |> AIStateMachine.process_ai()
+
+      assert_received :attacked
+      assert result.target_id == 3
     end
   end
 

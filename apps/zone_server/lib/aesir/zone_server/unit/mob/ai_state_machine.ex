@@ -365,6 +365,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   defp can_target?(%MobState{} = state, target_id) do
     living_player?(target_id) and
       Interpreter.targetable?(:player, target_id) and
+      not Interpreter.charmed_against?(:mob, state.instance_id, target_id) and
       (MobState.is_boss?(state) or not Interpreter.concealed?(:player, target_id))
   end
 
