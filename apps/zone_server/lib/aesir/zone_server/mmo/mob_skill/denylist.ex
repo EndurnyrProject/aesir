@@ -50,7 +50,14 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Denylist do
     320 =>
       "BA_ASSASSINCROSS requires a PlayerState party snapshot; there is no mob-caster clause",
     321 => "BA_POEMBRAGI requires a PlayerState party snapshot; there is no mob-caster clause",
-    322 => "BA_APPLEIDUN requires a PlayerState party snapshot; there is no mob-caster clause"
+    322 => "BA_APPLEIDUN requires a PlayerState party snapshot; there is no mob-caster clause",
+    327 => "DC_HUMMING requires a PlayerState party snapshot; there is no mob-caster clause",
+    328 => "DC_DONTFORGETME requires a PlayerState enemy snapshot; there is no mob-caster clause",
+    329 => "DC_FORTUNEKISS requires a PlayerState party snapshot; there is no mob-caster clause",
+    330 =>
+      "DC_SERVICEFORYOU requires a PlayerState party snapshot; there is no mob-caster clause",
+    1011 =>
+      "DC_WINKCHARM reads PlayerState caster level and applies a player-origin status; there is no mob-caster clause"
   }
 
   @doc "Whether `skill_id` is denylisted for mob casting."

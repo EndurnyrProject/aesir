@@ -62,4 +62,34 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.DenylistTest do
       assert Denylist.reason_for(skill_id) == nil
     end
   end
+
+  test "player-only Dancer skills state their concrete mob-caster dependency" do
+    expected_reasons = %{
+      327 => "DC_HUMMING requires a PlayerState party snapshot; there is no mob-caster clause",
+      328 =>
+        "DC_DONTFORGETME requires a PlayerState enemy snapshot; there is no mob-caster clause",
+      329 =>
+        "DC_FORTUNEKISS requires a PlayerState party snapshot; there is no mob-caster clause",
+      330 =>
+        "DC_SERVICEFORYOU requires a PlayerState party snapshot; there is no mob-caster clause",
+      1011 =>
+        "DC_WINKCHARM reads PlayerState caster level and applies a player-origin status; there is no mob-caster clause"
+    }
+
+    for {skill_id, expected_reason} <- expected_reasons do
+      assert {:ok, definition} = Catalog.by_id(skill_id)
+      assert {:ok, _module} = Catalog.active_module_for(definition.name)
+      assert Denylist.denied?(skill_id)
+      assert Denylist.reason_for(skill_id) == expected_reason
+    end
+  end
+
+  test "caster-generic Dancer skills remain mob-available" do
+    for skill_id <- [324, 325, 326] do
+      assert {:ok, definition} = Catalog.by_id(skill_id)
+      assert {:ok, _module} = Catalog.active_module_for(definition.name)
+      refute Denylist.denied?(skill_id)
+      assert Denylist.reason_for(skill_id) == nil
+    end
+  end
 end
