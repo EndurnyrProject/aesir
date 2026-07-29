@@ -1,11 +1,13 @@
-defmodule Aesir.ZoneServer.Mmo.Skills.Bard.SongTest do
+defmodule Aesir.ZoneServer.Mmo.Skill.Performance.SnapshotTest do
   use ExUnit.Case, async: false
   use Mimic
 
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Character
-  alias Aesir.ZoneServer.Mmo.Skills.Bard.Song
+  alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot, as: Song
+  alias Aesir.ZoneServer.Mmo.Skills.Bard.BaAssassincross
+  alias Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistle
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.Member
@@ -29,7 +31,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.SongTest do
       :ok
     end)
 
-    assert {:ok, result} = Song.snapshot(caster, 319, 1, :sc_whistle, val2: 20)
+    assert {:ok, result} =
+             Song.snapshot(caster, BaWhistle.definition(), 1, :sc_whistle, [val2: 20], [])
+
     assert result.last_song == %{skill_id: 319, level: 1}
   end
 
@@ -66,7 +70,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.SongTest do
       :ok
     end)
 
-    assert {:ok, _result} = Song.snapshot(caster, 319, 1, :sc_whistle, val2: 20)
+    assert {:ok, _result} =
+             Song.snapshot(caster, BaWhistle.definition(), 1, :sc_whistle, [val2: 20], [])
+
     assert_received {:applied, 1}
     assert_received {:applied, 2}
     refute_received {:applied, 3}
@@ -99,7 +105,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.SongTest do
     end)
 
     assert {:ok, result} =
-             Song.snapshot(caster, 320, 10, :sc_assncross, [val2: 20],
+             Song.snapshot(caster, BaAssassincross.definition(), 10, :sc_assncross, [val2: 20],
                eligible?: &(&1.character_id != 3)
              )
 

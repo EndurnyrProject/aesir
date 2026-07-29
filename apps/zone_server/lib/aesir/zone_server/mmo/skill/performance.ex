@@ -8,7 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance do
   performance implies the active behaviour.
   """
 
-  alias Aesir.ZoneServer.Mmo.Skill.Cost
+  alias Aesir.ZoneServer.Mmo.Skill.Performance.Cost
 
   @doc false
   @callback __performance__() :: true
@@ -23,10 +23,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance do
       def __performance__, do: true
 
       @impl Aesir.ZoneServer.Mmo.Skill.Active
-      def dynamic_cost(caster, _target, level, definition) do
-        sp = unquote(Cost).resolve_sp(caster, definition, level)
-        unquote(Cost).from_definition(caster, definition, level, sp: sp)
-      end
+      def dynamic_cost(caster, _target, level, definition),
+        do: unquote(Cost).resolve(caster, definition, level)
     end
   end
 end

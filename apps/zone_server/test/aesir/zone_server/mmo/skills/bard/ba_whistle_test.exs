@@ -7,8 +7,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistleTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cost
+  alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot, as: Song
   alias Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistle
-  alias Aesir.ZoneServer.Mmo.Skills.Bard.Song
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -81,7 +81,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistleTest do
 
   test "a failed snapshot is returned without a replacement state" do
     caster = player()
-    expect(Song, :snapshot, fn ^caster, 319, 1, :sc_whistle, _params -> {:error, :failed} end)
+
+    expect(Song, :snapshot, fn ^caster, _definition, 1, :sc_whistle, _params, [] ->
+      {:error, :failed}
+    end)
 
     assert {:error, :failed} = BaWhistle.cast(caster, :self, 1, BaWhistle.definition())
     assert Map.fetch!(caster, :last_song) == nil

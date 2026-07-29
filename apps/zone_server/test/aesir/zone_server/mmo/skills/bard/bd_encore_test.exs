@@ -10,8 +10,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
+  alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot, as: Song
   alias Aesir.ZoneServer.Mmo.Skills.Bard.BdEncore
-  alias Aesir.ZoneServer.Mmo.Skills.Bard.Song
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -186,7 +186,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
     caster = player(%{skill_id: 319, level: 1})
     assert {:casting, ^caster, _info} = Interpreter.begin_cast(caster, @encore_id, 1, :self)
 
-    reject(&Song.snapshot/5)
+    reject(&Song.snapshot/6)
     blocked = %{caster | skill_cooldowns: %{319 => System.monotonic_time(:millisecond) + 10_000}}
 
     assert {:error, :on_cooldown} = Interpreter.complete_cast(blocked, @encore_id, 1, :self)
@@ -197,7 +197,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
 
   test "a failed remembered effect commits no SP, cooldown, or act delay" do
     caster = player(%{skill_id: 319, level: 1})
-    expect(Song, :snapshot, fn ^caster, 319, 1, :sc_whistle, _params -> {:error, :failed} end)
+
+    expect(Song, :snapshot, fn ^caster, _definition, 1, :sc_whistle, _params, [] ->
+      {:error, :failed}
+    end)
 
     assert {:error, :failed} = Interpreter.cast(caster, @encore_id, 1, :self)
     assert caster.stats.current_state.sp == 100

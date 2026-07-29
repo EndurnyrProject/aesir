@@ -1,11 +1,11 @@
-defmodule Aesir.ZoneServer.Mmo.Skills.Bard.CostTest do
+defmodule Aesir.ZoneServer.Mmo.Skill.Performance.CostTest do
   use ExUnit.Case, async: true
 
   import Aesir.TestEtsSetup
 
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
-  alias Aesir.ZoneServer.Mmo.Skills.Bard.Cost, as: BardCost
+  alias Aesir.ZoneServer.Mmo.Skill.Performance.Cost, as: BardCost
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -21,15 +21,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.CostTest do
     :ok = UnitRegistry.register_unit(:player, 1_000, UnitStub, %{}, self())
   end
 
-  test "Adaptation applies only to the four songs and Dissonance" do
+  test "Adaptation applies to performances" do
     :ok = apply_status(:sc_adaptation)
 
     for skill_id <- @eligible_ids do
       assert %Cost{sp: 8} = BardCost.resolve(game_state(%{}), definition(skill_id, 10), 1)
-    end
-
-    for skill_id <- [304, 305, 316] do
-      assert %Cost{sp: 10} = BardCost.resolve(game_state(%{}), definition(skill_id, 10), 1)
     end
   end
 

@@ -149,18 +149,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
   end
 
   describe "performance capability" do
-    test "the performance index is empty until a shipped skill declares the behaviour" do
-      assert Catalog.performance_ids() == MapSet.new()
-
-      for definition <- Catalog.all() do
-        refute Catalog.performance?(definition.id)
-      end
+    test "only Bard songs and Dissonance are performances" do
+      assert Catalog.performance_ids() == MapSet.new([317, 319, 320, 321, 322])
     end
 
-    test "current Bard songs are not performances before the shared seam migration" do
-      for id <- [317, 319, 320, 321, 322] do
-        assert {:ok, _definition} = Catalog.by_id(id)
-        refute Catalog.performance?(id)
+    test "other Bard skills are not performances" do
+      for name <- [
+            :ba_frostjoker,
+            :ba_pangvoice,
+            :ba_musicalstrike,
+            :ba_musicallesson,
+            :bd_adaptation,
+            :bd_encore
+          ] do
+        assert {:ok, definition} = Catalog.by_name(name)
+        refute Catalog.performance?(definition.id)
       end
     end
   end
@@ -169,8 +172,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
     @skills_dir Path.expand("../../../../../lib/aesir/zone_server/mmo/skills", __DIR__)
 
     @non_skill_modules [
-      Aesir.ZoneServer.Mmo.Skills.Bard.Cost,
-      Aesir.ZoneServer.Mmo.Skills.Bard.Song,
+      Aesir.ZoneServer.Mmo.Skill.Performance.Cost,
+      Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot,
       Aesir.ZoneServer.Mmo.Skills.Monk.Combo,
       Aesir.ZoneServer.Mmo.Skills.Monk.Formulas,
       Aesir.ZoneServer.Mmo.Skills.Monk.Root,

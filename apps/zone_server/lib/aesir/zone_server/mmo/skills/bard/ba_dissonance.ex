@@ -20,18 +20,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonance do
     cooldown: List.duplicate(5_000, 5),
     require_weapon: [:musical]
 
+  use Aesir.ZoneServer.Mmo.Skill.Performance
+
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
-  alias Aesir.ZoneServer.Mmo.Skills.Bard.Cost
-  alias Aesir.ZoneServer.Mmo.Skills.Bard.Song
+  alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-
-  @behaviour Active
-
-  @impl Active
-  def dynamic_cost(caster, _target, level, definition),
-    do: Cost.resolve(caster, definition, level)
 
   @impl Active
   def cast(%PlayerState{} = caster, :self, level, definition),
@@ -62,6 +57,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonance do
 
   defp skill_ratio(_caster, level), do: 110 + 50 * level
 
-  defp remember(%PlayerState{} = caster, level), do: Song.remember(caster, 317, level)
+  defp remember(%PlayerState{} = caster, level), do: Snapshot.remember(caster, 317, level)
   defp remember(caster, _level), do: caster
 end

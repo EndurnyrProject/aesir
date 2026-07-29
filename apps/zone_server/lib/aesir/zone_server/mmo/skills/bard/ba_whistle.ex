@@ -17,21 +17,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistle do
     cooldown: List.duplicate(20_000, 10),
     require_weapon: [:musical, :whip]
 
+  use Aesir.ZoneServer.Mmo.Skill.Performance
+
   alias Aesir.ZoneServer.Mmo.Skill.Active
-  alias Aesir.ZoneServer.Mmo.Skills.Bard.Cost
-  alias Aesir.ZoneServer.Mmo.Skills.Bard.Song
-
-  @behaviour Active
+  alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
 
   @impl Active
-  def dynamic_cost(caster, _target, level, definition),
-    do: Cost.resolve(caster, definition, level)
-
-  @impl Active
-  def cast(caster, :self, level, _definition) do
-    Song.snapshot(caster, 319, level, :sc_whistle,
-      val2: 18 + 2 * level,
-      val3: div(level + 1, 2)
+  def cast(caster, :self, level, definition) do
+    Snapshot.snapshot(
+      caster,
+      definition,
+      level,
+      :sc_whistle,
+      [val2: 18 + 2 * level, val3: div(level + 1, 2)],
+      []
     )
   end
 end

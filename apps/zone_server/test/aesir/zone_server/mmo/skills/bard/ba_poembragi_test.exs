@@ -7,8 +7,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPoembragiTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cost
+  alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot, as: Song
   alias Aesir.ZoneServer.Mmo.Skills.Bard.BaPoembragi
-  alias Aesir.ZoneServer.Mmo.Skills.Bard.Song
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -89,7 +89,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPoembragiTest do
     caster = player()
     :ok = StatusStorage.apply_status(:player, 1, :sc_appleidun, duration: 10_000, val2: 20)
 
-    expect(Song, :snapshot, fn ^caster, 321, 1, :sc_poembragi, _params ->
+    expect(Song, :snapshot, fn ^caster, _definition, 1, :sc_poembragi, _params, [] ->
       {:error, :failed}
     end)
 

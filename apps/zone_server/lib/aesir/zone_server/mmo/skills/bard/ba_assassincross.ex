@@ -19,25 +19,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAssassincross do
     cooldown: List.duplicate(20_000, 10),
     require_weapon: [:musical, :whip]
 
+  use Aesir.ZoneServer.Mmo.Skill.Performance
+
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill.Active
-  alias Aesir.ZoneServer.Mmo.Skills.Bard.Cost
-  alias Aesir.ZoneServer.Mmo.Skills.Bard.Song
+  alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
   alias Aesir.ZoneServer.Mmo.StatusStorage
-
-  @behaviour Active
 
   @mado_option Option.id(:madogear)
 
   @impl Active
-  def dynamic_cost(caster, _target, level, definition),
-    do: Cost.resolve(caster, definition, level)
-
-  @impl Active
-  def cast(caster, :self, level, _definition) do
+  def cast(caster, :self, level, definition) do
     aspd = if level == 10, do: 20, else: 2 * level - 1
 
-    Song.snapshot(caster, 320, level, :sc_assncross, [val2: aspd], eligible?: &eligible?/1)
+    Snapshot.snapshot(caster, definition, level, :sc_assncross, [val2: aspd],
+      eligible?: &eligible?/1
+    )
   end
 
   defp eligible?(recipient) do

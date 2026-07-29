@@ -20,7 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncore do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
-  alias Aesir.ZoneServer.Mmo.Skills.Bard.Cost, as: BardCost
+  alias Aesir.ZoneServer.Mmo.Skill.Performance.Cost, as: PerformanceCost
 
   @behaviour Active
 
@@ -45,7 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncore do
     raw_base = remembered_definition.sp_cost |> Enum.fetch!(level - 1) |> div(2)
 
     %Cost{sp_requirement: requirement, sp: sp} =
-      cost = BardCost.resolve(caster, remembered_definition, level, raw_base)
+      cost = PerformanceCost.resolve(caster, remembered_definition, level, raw_base)
 
     %{cost | sp_requirement: max(1, max(requirement, sp))}
   end
