@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.SnapshotTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot, as: Song
   alias Aesir.ZoneServer.Mmo.Skills.Bard.BaAssassincross
   alias Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistle
@@ -14,6 +15,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.SnapshotTest do
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  Mimic.copy(Combat)
 
   setup :verify_on_exit!
   setup :set_mimic_from_context
@@ -79,6 +82,40 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.SnapshotTest do
     refute_received {:applied, 4}
     refute_received {:applied, 5}
     refute_received {:applied, 6}
+  end
+
+  test "enemy scope applies only to hostile player and mob targets" do
+    caster = player(1, party_id: 10)
+
+    expect(Combat, :splash_targets, fn "prontera", {100, 100}, 4, 1 ->
+      [{:player, 2}, {:mob, 3}]
+    end)
+
+    reject(&PartyManager.get/1)
+
+    expect(StatusInterpreter, :apply_status, 2, fn unit_type,
+                                                   target_id,
+                                                   :sc_dontforgetme,
+                                                   params ->
+      assert {unit_type, target_id} in [{:player, 2}, {:mob, 3}]
+      assert params[:caster_id] == 1
+      assert params[:duration] == 60_000
+      :ok
+    end)
+
+    assert {:ok, result} =
+             Song.snapshot(
+               caster,
+               BaWhistle.definition(),
+               1,
+               :sc_dontforgetme,
+               [val2: 31, val3: 7],
+               scope: :enemy,
+               radius: 4,
+               duration: 60_000
+             )
+
+    assert result.last_song == %{skill_id: 319, level: 1}
   end
 
   test "applies eligibility per recipient and does not roll back independent failures" do

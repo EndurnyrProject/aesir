@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot do
   require Logger
 
   alias Aesir.ZoneServer.Geometry
+  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -16,7 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
-  @type eligibility :: (PlayerState.t() -> boolean())
+  @type recipient :: PlayerState.t() | {atom(), integer()}
+  @type eligibility :: (recipient() -> boolean())
 
   @doc "Applies a performance independently to each eligible completion-time recipient."
   @spec snapshot(
@@ -45,9 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot do
     caster
     |> recipients(scope, radius)
     |> Enum.filter(eligible?)
-    |> Enum.each(
-      &apply_status(&1.character_id, caster.character_id, status_id, status_params, duration)
-    )
+    |> Enum.each(&apply_status(&1, caster.character_id, status_id, status_params, duration))
 
     {:ok, remember(caster, definition.id, level)}
   end
@@ -68,6 +68,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot do
     |> then(fn party -> [caster | party] end)
     |> Enum.uniq_by(& &1.character_id)
     |> Enum.filter(&Unit.living?/1)
+  end
+
+  defp recipients(%PlayerState{} = caster, :enemy, radius) do
+    Combat.splash_targets(
+      caster.map_name,
+      {caster.x, caster.y},
+      radius,
+      caster.character_id
+    )
   end
 
   defp party_recipients(%PlayerState{party_id: party_id}, _radius) when party_id in [nil, 0],
@@ -100,7 +109,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot do
     end
   end
 
-  defp apply_status(target_id, caster_id, status_id, status_params, duration) do
+  defp apply_status(
+         %PlayerState{character_id: target_id},
+         caster_id,
+         status_id,
+         params,
+         duration
+       ),
+       do: apply_status(:player, target_id, caster_id, status_id, params, duration)
+
+  defp apply_status({unit_type, target_id}, caster_id, status_id, params, duration),
+    do: apply_status(unit_type, target_id, caster_id, status_id, params, duration)
+
+  defp apply_status(unit_type, target_id, caster_id, status_id, status_params, duration) do
     params =
       Keyword.merge(status_params,
         caster_id: caster_id,
@@ -108,13 +129,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot do
         owner_refresh: :notify
       )
 
-    case StatusInterpreter.apply_status(:player, target_id, status_id, params) do
+    case StatusInterpreter.apply_status(unit_type, target_id, status_id, params) do
       :ok ->
         :ok
 
       {:error, reason} ->
         Logger.warning(
-          "Performance #{status_id} application to player #{target_id} failed: #{inspect(reason)}"
+          "Performance #{status_id} application to #{unit_type} #{target_id} failed: #{inspect(reason)}"
         )
     end
   end
