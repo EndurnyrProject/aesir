@@ -47,8 +47,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
-  @encore_skill_ids [317, 319, 320, 321, 322]
-
   defmodule Deferred do
     @moduledoc "Deferred effect plus the owner-local resources settled on reply."
 
@@ -608,26 +606,32 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  defp validate_encore_replay(game_state, %{skill_id: skill_id, level: level}, target, now)
-       when skill_id in @encore_skill_ids and is_integer(level) and level > 0 do
-    with {:ok, definition} <- fetch_definition(skill_id),
-         :ok <- check_max_level(definition, level),
-         :ok <- check_castable(definition),
-         :ok <- check_weapon(game_state, definition),
-         :ok <- check_learned(game_state, skill_id, level),
-         :ok <- check_quest_lineage(game_state, definition),
-         :ok <- check_target(game_state, target, definition),
-         :ok <- check_range(game_state, target, definition, level),
-         {:ok, module} <- fetch_active_module(definition),
-         :ok <- check_cooldown(game_state, skill_id, now),
-         :ok <- module.validate(game_state, target, level, definition) do
-      {:ok, %{definition: definition, module: module, skill_id: skill_id, level: level}}
+  defp validate_encore_replay(game_state, %{skill_id: skill_id} = memory, target, now) do
+    level = Map.get(memory, :level)
+
+    cond do
+      not Catalog.performance?(skill_id) ->
+        {:error, :skill_not_replayable}
+
+      not (is_integer(level) and level > 0) ->
+        {:error, :invalid_replay_memory}
+
+      true ->
+        with {:ok, definition} <- fetch_definition(skill_id),
+             :ok <- check_max_level(definition, level),
+             :ok <- check_castable(definition),
+             :ok <- check_weapon(game_state, definition),
+             :ok <- check_learned(game_state, skill_id, level),
+             :ok <- check_quest_lineage(game_state, definition),
+             :ok <- check_target(game_state, target, definition),
+             :ok <- check_range(game_state, target, definition, level),
+             {:ok, module} <- fetch_active_module(definition),
+             :ok <- check_cooldown(game_state, skill_id, now),
+             :ok <- module.validate(game_state, target, level, definition) do
+          {:ok, %{definition: definition, module: module, skill_id: skill_id, level: level}}
+        end
     end
   end
-
-  defp validate_encore_replay(_game_state, %{skill_id: skill_id}, _target, _now)
-       when skill_id not in @encore_skill_ids,
-       do: {:error, :skill_not_replayable}
 
   defp validate_encore_replay(_game_state, _memory, _target, _now),
     do: {:error, :invalid_replay_memory}
