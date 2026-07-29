@@ -60,9 +60,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   @kn_riding_id KnRiding.definition().id
   @ht_falcon_id HtFalcon.definition().id
 
-  # Job ids that require a specific character sex to change into. Bard (19) is
-  # male-only; the dancer entry (female-only) lands in a later phase.
-  @required_sex %{19 => "M"}
+  # Job ids that require a specific character sex to change into.
+  @required_sex %{19 => "M", 20 => "F"}
 
   @doc """
   Adds `amount` base levels, clamped to the job's `max_base_level`. Grants the
