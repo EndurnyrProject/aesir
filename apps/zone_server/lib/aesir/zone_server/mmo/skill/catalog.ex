@@ -7,8 +7,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
     * by definition - `by_id/1`, `by_name/1`, `all/0` for the interpreter and
       packet builders;
     * by capability - `active_module_for/1`, `ground_module_for/1`,
-      `passive_module_for/1`, `passive_modules/0`, `menu_module_for/1` from each
-      module's `__skill_capabilities__/0`.
+      `passive_module_for/1`, `passive_modules/0`, `menu_module_for/1`,
+      `performance_module_for/1` from each module's `__skill_capabilities__/0`.
 
   Discovery walks the `:zone_server` application manifest and keeps the modules
   exporting `__skill_capabilities__/0`, which `use Skill` injects. Reading the
@@ -33,7 +33,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
            active: %{atom() => module()},
            ground: %{atom() => module()},
            passive: %{atom() => module()},
-           menu: %{atom() => module()}
+           menu: %{atom() => module()},
+           performance: %{atom() => module()},
+           performance_ids: MapSet.t(integer())
          }
 
   @spec all() :: [Definition.t()]
@@ -59,6 +61,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
 
   @spec menu_module_for(atom()) :: {:ok, module()} | :error
   def menu_module_for(name), do: Map.fetch(index().menu, name)
+
+  @spec performance_module_for(atom()) :: {:ok, module()} | :error
+  def performance_module_for(name), do: Map.fetch(index().performance, name)
+
+  @spec performance?(integer()) :: boolean()
+  def performance?(id), do: MapSet.member?(index().performance_ids, id)
+
+  @spec performance_ids() :: MapSet.t(integer())
+  def performance_ids, do: index().performance_ids
 
   @doc """
   Rebuilds the cached index after adding or editing skills in a running session.
@@ -86,6 +97,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
   defp build do
     modules = discover()
     definitions = modules |> Enum.map(& &1.definition()) |> Enum.sort_by(& &1.id)
+    performance = modules_with_capability(modules, :performance)
+
+    performance_ids =
+      for definition <- definitions,
+          Map.has_key?(performance, definition.name),
+          into: MapSet.new(),
+          do: definition.id
 
     %{
       all: definitions,
@@ -94,7 +112,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
       active: modules_with_capability(modules, :active),
       ground: modules_with_capability(modules, :ground),
       passive: modules_with_capability(modules, :passive),
-      menu: modules_with_capability(modules, :menu)
+      menu: modules_with_capability(modules, :menu),
+      performance: performance,
+      performance_ids: performance_ids
     }
   end
 

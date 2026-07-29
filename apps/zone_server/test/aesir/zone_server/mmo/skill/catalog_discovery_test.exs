@@ -11,7 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest.StubSkill do
     max_level: 1,
     target_type: :self
 
-  @behaviour Aesir.ZoneServer.Mmo.Skill.Active
+  use Aesir.ZoneServer.Mmo.Skill.Performance
 
   @impl Aesir.ZoneServer.Mmo.Skill.Active
   def cast(_caster, _target, _level, _state), do: :ok
@@ -131,9 +131,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
   end
 
   describe "test module isolation" do
-    test "the stub skill is loaded and would qualify for discovery" do
+    test "Performance alone supports an Active cast implementation and both capabilities" do
       assert Code.ensure_loaded?(StubSkill)
       assert :active in StubSkill.__skill_capabilities__()
+      assert :performance in StubSkill.__skill_capabilities__()
     end
 
     test "a skill defined in a test file is not discovered" do
@@ -143,6 +144,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
       refute 999_999 in Enum.map(Catalog.all(), & &1.id)
       assert :error = Catalog.by_name(:stub_skill)
       assert :error = Catalog.active_module_for(:stub_skill)
+      assert :error = Catalog.performance_module_for(:stub_skill)
+    end
+  end
+
+  describe "performance capability" do
+    test "the performance index is empty until a shipped skill declares the behaviour" do
+      assert Catalog.performance_ids() == MapSet.new()
+
+      for definition <- Catalog.all() do
+        refute Catalog.performance?(definition.id)
+      end
+    end
+
+    test "current Bard songs are not performances before the shared seam migration" do
+      for id <- [317, 319, 320, 321, 322] do
+        assert {:ok, _definition} = Catalog.by_id(id)
+        refute Catalog.performance?(id)
+      end
     end
   end
 
