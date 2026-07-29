@@ -39,6 +39,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
       not pvp_enabled?(attacker)
   end
 
+  @doc """
+  Returns whether `map` is a versus map.
+
+  No map carries a versus flag today, so this deliberately returns `false`.
+  This is the single seam to flip when versus map modes land. Versus covers
+  PvP, Battleground, GvG, and their variants.
+  """
+  @spec versus_map?(term()) :: boolean()
+  def versus_map?(_map), do: false
+
   defp pvp_enabled?(_attacker), do: false
 
   defp same_unit?(attacker, target) do

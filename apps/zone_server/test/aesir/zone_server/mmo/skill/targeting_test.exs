@@ -20,6 +20,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
     Map.merge(%{instance_id: id, hp: 100, is_dead: false}, attrs)
   end
 
+  test "versus maps are disabled until map modes exist" do
+    refute Targeting.versus_map?(:prontera)
+  end
+
   test "another player is not a valid target until PvP map modes exist" do
     assert {:error, :invalid_target} = Targeting.validate_enemy(player(1000), player(2000))
   end
