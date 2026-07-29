@@ -1,0 +1,54 @@
+---
+- job: dancer
+  inherit:
+    - novice
+    - archer
+  tree:
+    - name: DC_DANCINGLESSON
+      max_level: 10
+    - name: DC_THROWARROW
+      max_level: 5
+      requires:
+        - name: DC_DANCINGLESSON
+          level: 3
+    - name: BD_ADAPTATION
+      max_level: 1
+    - name: BD_ENCORE
+      max_level: 1
+      requires:
+        - name: BD_ADAPTATION
+          level: 1
+    - name: DC_UGLYDANCE
+      max_level: 5
+      requires:
+        - name: DC_DANCINGLESSON
+          level: 1
+        - name: BD_ADAPTATION
+          level: 1
+    - name: DC_SCREAM
+      max_level: 5
+      requires:
+        - name: BD_ENCORE
+          level: 1
+    - name: DC_HUMMING
+      max_level: 10
+      requires:
+        - name: DC_UGLYDANCE
+          level: 3
+    - name: DC_DONTFORGETME
+      max_level: 10
+      requires:
+        - name: DC_UGLYDANCE
+          level: 3
+    - name: DC_FORTUNEKISS
+      max_level: 10
+      requires:
+        - name: DC_UGLYDANCE
+          level: 3
+    - name: DC_SERVICEFORYOU
+      max_level: 10
+      requires:
+        - name: DC_UGLYDANCE
+          level: 3
+    - name: DC_WINKCHARM
+      max_level: 1

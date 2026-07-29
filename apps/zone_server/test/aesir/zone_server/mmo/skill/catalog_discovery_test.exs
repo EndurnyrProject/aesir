@@ -150,7 +150,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
 
   describe "performance capability" do
     test "only shipped songs and dances are performances" do
-      assert Catalog.performance_ids() == MapSet.new([317, 319, 320, 321, 322, 325, 327, 328, 329, 330])
+      assert Catalog.performance_ids() ==
+               MapSet.new([317, 319, 320, 321, 322, 325, 327, 328, 329, 330])
     end
 
     test "other Bard skills are not performances" do
