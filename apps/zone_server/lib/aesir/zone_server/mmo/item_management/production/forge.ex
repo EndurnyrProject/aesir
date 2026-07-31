@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
   @weapon_skill_ids 98..104
   @weapon_research_id 107
   @oridecon_research_id 97
+  @default_rng &:rand.uniform/1
 
   @doc """
   Runs one production attempt and stages its inventory and result changes.
@@ -34,7 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
          :ok <- check_materials(caster.inventory, recipe.materials, catalyst_ids) do
       consumed = consume_all(caster, recipe.materials, catalyst_ids)
       chance = success_chance(consumed, recipe, crumb_count, element)
-      success? = :rand.uniform(10_000) <= chance
+      success? = rng().(10_000) <= chance
 
       finish(consumed, recipe, item_def, success?, crumb_count, element)
     end
@@ -96,7 +97,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
       job_level: caster.stats.progression.job_level,
       dex: caster.stats.base_stats.dex,
       luk: caster.stats.base_stats.luk,
-      random_term: 10 * :rand.uniform(100),
+      random_term: 10 * rng().(100),
       tier: recipe.item_level,
       family_skill_level: Learned.learned_level(learned, skill_id),
       weapon_research_level: Learned.learned_level(learned, @weapon_research_id),
@@ -114,7 +115,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
       job_level: caster.stats.progression.job_level,
       dex: caster.stats.base_stats.dex,
       luk: caster.stats.base_stats.luk,
-      random_term: 10 * :rand.uniform(100),
+      random_term: 10 * rng().(100),
       skill_level: Learned.learned_level(learned, recipe.skill_id)
     })
   end
@@ -123,6 +124,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
   defp mineral_kind(%Recipe{skill_id: 95}), do: :steel
   defp mineral_kind(%Recipe{skill_id: 96, product_id: 1000}), do: :star_crumb
   defp mineral_kind(%Recipe{skill_id: 96}), do: :elemental_stone
+
+  defp rng, do: Application.get_env(:zone_server, :forge_rng, @default_rng)
 
   defp finish(caster, recipe, _item_def, false, _crumbs, _element) do
     {:ok, stage_result(caster, recipe.product_id, false)}

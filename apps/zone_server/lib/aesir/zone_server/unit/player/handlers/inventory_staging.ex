@@ -45,9 +45,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryStaging do
     |> notify(connection_pid)
   end
 
-  # Each delta is persisted against the snapshot it was computed from; the
-  # persisted rows (with real DB ids) are reflected back onto the already-final
-  # inventory for the indices that survive.
+  # Each delta is persisted against the snapshot it was computed from, and the
+  # persisted result is deliberately discarded: the game state already carries
+  # the final inventory produced by every delta.
+  #
+  # Reflecting a persisted snapshot back onto that final inventory is wrong,
+  # because a staged delta's snapshot predates any write-through change made
+  # after it was staged. A craft that consumes a material and then stacks its
+  # product onto a slot the snapshot still shows at its pre-craft amount would
+  # have that stale amount written back over the final state, leaving memory and
+  # the database disagreeing and silently persisting the wrong amount on the
+  # next removal. Only consumption deltas are staged here, so no row can be
+  # missing its database id as a result.
   defp persist(%{pending_inventory_persist: []} = game_state), do: game_state
 
   defp persist(%{pending_inventory_persist: deltas} = game_state) do
@@ -56,8 +65,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryStaging do
     inventory =
       Enum.reduce(deltas, game_state.inventory, fn {old_inv, new_inv, change}, acc ->
         case InventoryOps.apply_change(char_id, old_inv, new_inv, change) do
-          {:ok, persisted} ->
-            Map.merge(acc, Map.take(persisted, Map.keys(acc)))
+          {:ok, _persisted} ->
+            acc
 
           {:error, reason} ->
             Logger.warning("Catalyst persist failed for #{char_id}: #{inspect(reason)}")
