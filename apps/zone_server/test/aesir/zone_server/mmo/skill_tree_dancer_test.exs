@@ -20,23 +20,59 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeDancerTest do
                     {"DC_DONTFORGETME", 10, [{"DC_UGLYDANCE", 3}]},
                     {"DC_FORTUNEKISS", 10, [{"DC_UGLYDANCE", 3}]},
                     {"DC_SERVICEFORYOU", 10, [{"DC_UGLYDANCE", 3}]},
-                    {"DC_WINKCHARM", 1, []}
+                    {"DC_WINKCHARM", 1, []},
+                    {"BD_LULLABY", 1, [{"DC_HUMMING", 10}]},
+                    {"BD_RICHMANKIM", 5, [{"BD_SIEGFRIED", 3}]},
+                    {"BD_ETERNALCHAOS", 1, [{"BD_ROKISWEIL", 1}]},
+                    {"BD_DRUMBATTLEFIELD", 5, [{"DC_SERVICEFORYOU", 10}]},
+                    {"BD_RINGNIBELUNGEN", 5, [{"BD_DRUMBATTLEFIELD", 3}]},
+                    {"BD_ROKISWEIL", 1, [{"DC_DONTFORGETME", 10}]},
+                    {"BD_INTOABYSS", 1, [{"BD_LULLABY", 1}]},
+                    {"BD_SIEGFRIED", 5, [{"DC_FORTUNEKISS", 10}]}
                   ])
 
-  @ensemble_entries MapSet.new([
-                      "BD_LULLABY",
-                      "BD_RICHMANKIM",
-                      "BD_ETERNALCHAOS",
-                      "BD_DRUMBATTLEFIELD",
-                      "BD_RINGNIBELUNGEN",
-                      "BD_ROKISWEIL",
-                      "BD_INTOABYSS",
-                      "BD_SIEGFRIED",
-                      "BD_RAGNAROK"
-                    ])
+  @inherited_names MapSet.new(~w(
+                     NV_BASIC NV_FIRSTAID NV_TRICKDEAD
+                     AC_OWL AC_VULTURE AC_CONCENTRATION AC_DOUBLE AC_SHOWER
+                     AC_MAKINGARROW AC_CHARGEARROW
+                   ))
 
-  test "Dancer YAML pins every solo skill and no ensemble skill" do
-    assert MapSet.size(@dancer_entries) == 11
+  @novice_order [{:nv_basic, 9}]
+
+  @archer_order [
+    {:ac_owl, 10},
+    {:ac_vulture, 10},
+    {:ac_concentration, 10},
+    {:ac_double, 10},
+    {:ac_shower, 10}
+  ]
+
+  @dancer_order [
+    {:dc_dancinglesson, 10},
+    {:dc_throwarrow, 5},
+    {:bd_adaptation, 1},
+    {:bd_encore, 1},
+    {:dc_uglydance, 5},
+    {:dc_scream, 5},
+    {:dc_humming, 10},
+    {:dc_dontforgetme, 10},
+    {:dc_fortunekiss, 10},
+    {:dc_serviceforyou, 10},
+    {:bd_lullaby, 1},
+    {:bd_intoabyss, 1},
+    {:bd_drumbattlefield, 5},
+    {:bd_ringnibelungen, 5},
+    {:bd_rokisweil, 1},
+    {:bd_eternalchaos, 1},
+    {:bd_siegfried, 5},
+    {:bd_richmankim, 5}
+  ]
+
+  @ensemble_names ~w(BD_LULLABY BD_RICHMANKIM BD_ETERNALCHAOS BD_DRUMBATTLEFIELD
+                     BD_RINGNIBELUNGEN BD_ROKISWEIL BD_INTOABYSS BD_SIEGFRIED)
+
+  test "Dancer YAML pins every ordinary and quest skill" do
+    assert MapSet.size(@dancer_entries) == 19
     assert normalized_entry_set(normalized_entries()) == normalized_entry_set(@dancer_entries)
   end
 
@@ -57,8 +93,8 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeDancerTest do
     owned = dancer_owned_entries(dancer_id)
 
     assert normalized_entry_set(owned) == normalized_entry_set(@dancer_entries)
-    assert length(owned) == 11
-    assert map_size(dancer_tree) == 11 + length(Enum.uniq(inherited_ids))
+    assert length(owned) == 19
+    assert map_size(dancer_tree) == 19 + length(Enum.uniq(inherited_ids))
 
     log = capture_log(&SkillTree.reload/0)
 
@@ -93,16 +129,50 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeDancerTest do
     end
   end
 
-  test "Dancer tree contains no ensemble entry" do
+  test "the resolved Dancer tree is exactly Novice and Archer inheritance plus Dancer entries" do
     {:ok, dancer_id} = AvailableJobs.job_name_to_id(:dancer)
 
-    dancer_id
-    |> SkillTree.tree_for()
-    |> Map.keys()
-    |> Enum.map(&catalog_name/1)
-    |> MapSet.new()
-    |> then(&MapSet.disjoint?(&1, @ensemble_entries))
-    |> assert()
+    resolved_names =
+      dancer_id |> SkillTree.tree_for() |> Map.keys() |> MapSet.new(&catalog_name/1)
+
+    owned_names = MapSet.new(@dancer_entries, fn {name, _max_level, _requires} -> name end)
+
+    assert resolved_names == MapSet.union(@inherited_names, owned_names)
+  end
+
+  test "a Dancer can learn every ensemble in full Novice to Archer to Dancer order" do
+    {:ok, novice_id} = AvailableJobs.job_name_to_id(:novice)
+    {:ok, archer_id} = AvailableJobs.job_name_to_id(:archer)
+    {:ok, dancer_id} = AvailableJobs.job_name_to_id(:dancer)
+    order = @novice_order ++ @archer_order ++ @dancer_order
+    total_points = order |> Enum.map(&elem(&1, 1)) |> Enum.sum()
+
+    final =
+      progression(novice_id)
+      |> Map.put(:skill_point, total_points)
+      |> learn_all(@novice_order)
+      |> Map.put(:job_id, archer_id)
+      |> learn_all(@archer_order)
+      |> Map.put(:job_id, dancer_id)
+      |> learn_all(@dancer_order)
+
+    assert final.skill_point == 0
+
+    for name <- @ensemble_names do
+      skill_id = name |> atomize() |> catalog_id()
+      {:ok, definition} = Catalog.by_id(skill_id)
+      assert final.learned_skills[skill_id] == definition.max_level
+    end
+  end
+
+  defp learn_all(progression, order) do
+    Enum.reduce(order, progression, fn {name, max_level}, acc ->
+      Enum.reduce(1..max_level, acc, fn expected_level, inner ->
+        assert {:ok, updated} = SkillTree.learn(inner, catalog_id(name))
+        assert updated.learned_skills[catalog_id(name)] == expected_level
+        updated
+      end)
+    end)
   end
 
   defp normalized_entry_set(entries) do

@@ -19,11 +19,59 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeBardTest do
                   {"BA_WHISTLE", 10, [{"BA_DISSONANCE", 3}]},
                   {"BA_ASSASSINCROSS", 10, [{"BA_DISSONANCE", 3}]},
                   {"BA_POEMBRAGI", 10, [{"BA_DISSONANCE", 3}]},
-                  {"BA_APPLEIDUN", 10, [{"BA_DISSONANCE", 3}]}
+                  {"BA_APPLEIDUN", 10, [{"BA_DISSONANCE", 3}]},
+                  {"BD_LULLABY", 1, [{"BA_WHISTLE", 10}]},
+                  {"BD_RICHMANKIM", 5, [{"BD_SIEGFRIED", 3}]},
+                  {"BD_ETERNALCHAOS", 1, [{"BD_ROKISWEIL", 1}]},
+                  {"BD_DRUMBATTLEFIELD", 5, [{"BA_APPLEIDUN", 10}]},
+                  {"BD_RINGNIBELUNGEN", 5, [{"BD_DRUMBATTLEFIELD", 3}]},
+                  {"BD_ROKISWEIL", 1, [{"BA_ASSASSINCROSS", 10}]},
+                  {"BD_INTOABYSS", 1, [{"BD_LULLABY", 1}]},
+                  {"BD_SIEGFRIED", 5, [{"BA_POEMBRAGI", 10}]}
                 ])
 
+  @inherited_names MapSet.new(~w(
+                     NV_BASIC NV_FIRSTAID NV_TRICKDEAD
+                     AC_OWL AC_VULTURE AC_CONCENTRATION AC_DOUBLE AC_SHOWER
+                     AC_MAKINGARROW AC_CHARGEARROW
+                   ))
+
+  @novice_order [{:nv_basic, 9}]
+
+  @archer_order [
+    {:ac_owl, 10},
+    {:ac_vulture, 10},
+    {:ac_concentration, 10},
+    {:ac_double, 10},
+    {:ac_shower, 10}
+  ]
+
+  @bard_order [
+    {:ba_musicallesson, 10},
+    {:ba_musicalstrike, 5},
+    {:bd_adaptation, 1},
+    {:bd_encore, 1},
+    {:ba_dissonance, 5},
+    {:ba_frostjoker, 5},
+    {:ba_whistle, 10},
+    {:ba_assassincross, 10},
+    {:ba_poembragi, 10},
+    {:ba_appleidun, 10},
+    {:bd_lullaby, 1},
+    {:bd_intoabyss, 1},
+    {:bd_drumbattlefield, 5},
+    {:bd_ringnibelungen, 5},
+    {:bd_rokisweil, 1},
+    {:bd_eternalchaos, 1},
+    {:bd_siegfried, 5},
+    {:bd_richmankim, 5}
+  ]
+
+  @ensemble_names ~w(BD_LULLABY BD_RICHMANKIM BD_ETERNALCHAOS BD_DRUMBATTLEFIELD
+                     BD_RINGNIBELUNGEN BD_ROKISWEIL BD_INTOABYSS BD_SIEGFRIED)
+
   test "Bard YAML pins every ordinary skill and no quest skill" do
-    assert MapSet.size(@bard_entries) == 10
+    assert MapSet.size(@bard_entries) == 18
     assert normalized_entry_set(normalized_entries()) == normalized_entry_set(@bard_entries)
   end
 
@@ -44,8 +92,8 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeBardTest do
     owned = bard_owned_entries(bard_id)
 
     assert normalized_entry_set(owned) == normalized_entry_set(@bard_entries)
-    assert length(owned) == 10
-    assert map_size(bard_tree) == 10 + length(Enum.uniq(inherited_ids))
+    assert length(owned) == 18
+    assert map_size(bard_tree) == 18 + length(Enum.uniq(inherited_ids))
 
     log = capture_log(&SkillTree.reload/0)
 
@@ -79,6 +127,42 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeBardTest do
     end
   end
 
+  test "the resolved Bard tree is exactly Novice and Archer inheritance plus Bard entries" do
+    {:ok, bard_id} = AvailableJobs.job_name_to_id(:bard)
+
+    resolved_names =
+      bard_id |> SkillTree.tree_for() |> Map.keys() |> MapSet.new(&catalog_name/1)
+
+    owned_names = MapSet.new(@bard_entries, fn {name, _max_level, _requires} -> name end)
+
+    assert resolved_names == MapSet.union(@inherited_names, owned_names)
+  end
+
+  test "a Bard can learn every ensemble in full Novice to Archer to Bard order" do
+    {:ok, novice_id} = AvailableJobs.job_name_to_id(:novice)
+    {:ok, archer_id} = AvailableJobs.job_name_to_id(:archer)
+    {:ok, bard_id} = AvailableJobs.job_name_to_id(:bard)
+    order = @novice_order ++ @archer_order ++ @bard_order
+    total_points = order |> Enum.map(&elem(&1, 1)) |> Enum.sum()
+
+    final =
+      progression(novice_id)
+      |> Map.put(:skill_point, total_points)
+      |> learn_all(@novice_order)
+      |> Map.put(:job_id, archer_id)
+      |> learn_all(@archer_order)
+      |> Map.put(:job_id, bard_id)
+      |> learn_all(@bard_order)
+
+    assert final.skill_point == 0
+
+    for name <- @ensemble_names do
+      skill_id = name |> atomize() |> catalog_id()
+      {:ok, definition} = Catalog.by_id(skill_id)
+      assert final.learned_skills[skill_id] == definition.max_level
+    end
+  end
+
   test "Bard-owned skills stay inside the Bard job boundary" do
     {:ok, bard_id} = AvailableJobs.job_name_to_id(:bard)
     {:ok, archer_id} = AvailableJobs.job_name_to_id(:archer)
@@ -104,6 +188,16 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeBardTest do
     refute SkillTree.quest_skill_available?(archer_id, definition)
     refute Map.has_key?(bard_tree, pang_voice)
     assert {:error, :not_in_tree} = SkillTree.can_learn(progression(bard_id), pang_voice)
+  end
+
+  defp learn_all(progression, order) do
+    Enum.reduce(order, progression, fn {name, max_level}, acc ->
+      Enum.reduce(1..max_level, acc, fn expected_level, inner ->
+        assert {:ok, updated} = SkillTree.learn(inner, catalog_id(name))
+        assert updated.learned_skills[catalog_id(name)] == expected_level
+        updated
+      end)
+    end)
   end
 
   defp normalized_entry_set(entries) do

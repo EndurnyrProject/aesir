@@ -50,3 +50,43 @@
       requires:
         - name: BA_DISSONANCE
           level: 3
+    - name: BD_LULLABY
+      max_level: 1
+      requires:
+        - name: BA_WHISTLE
+          level: 10
+    - name: BD_INTOABYSS
+      max_level: 1
+      requires:
+        - name: BD_LULLABY
+          level: 1
+    - name: BD_DRUMBATTLEFIELD
+      max_level: 5
+      requires:
+        - name: BA_APPLEIDUN
+          level: 10
+    - name: BD_RINGNIBELUNGEN
+      max_level: 5
+      requires:
+        - name: BD_DRUMBATTLEFIELD
+          level: 3
+    - name: BD_ROKISWEIL
+      max_level: 1
+      requires:
+        - name: BA_ASSASSINCROSS
+          level: 10
+    - name: BD_ETERNALCHAOS
+      max_level: 1
+      requires:
+        - name: BD_ROKISWEIL
+          level: 1
+    - name: BD_SIEGFRIED
+      max_level: 5
+      requires:
+        - name: BA_POEMBRAGI
+          level: 10
+    - name: BD_RICHMANKIM
+      max_level: 5
+      requires:
+        - name: BD_SIEGFRIED
+          level: 3
