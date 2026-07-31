@@ -13,12 +13,18 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Production.OreTable
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Unit.Player.Handlers.LootHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   setup :verify_on_exit!
+
+  setup do
+    Mimic.copy(OreTable)
+  end
 
   defp character do
     %Character{
@@ -41,8 +47,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
     }
   end
 
-  defp state do
-    %{game_state: PlayerState.new(character()), connection_pid: self()}
+  defp state(opts \\ []) do
+    game_state = PlayerState.new(character())
+
+    game_state =
+      put_in(
+        game_state.stats.progression.learned_skills,
+        Keyword.get(opts, :learned_skills, %{})
+      )
+
+    %{game_state: game_state, connection_pid: self()}
   end
 
   defp payload(drops) do
@@ -66,6 +80,60 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
 
     {:noreply, _state} =
       PlayerSession.handle_info({:loot, {:mob_killed, payload(drops)}}, state())
+  end
+
+  test "a killer without Ore Discovery receives only normal drops" do
+    drops = [%MobDrop{item: "Red_Potion", rate: 10_000}]
+    rolled = [{501, 1, 200, 90, true}]
+
+    stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 -> %{} end)
+    stub(DropCalculator, :roll, fn ^drops, 7, 50, 50, 0, "morocc", 200, 90 -> rolled end)
+    reject(&OreTable.entries/0)
+    expect(Coordinator, :drop_items, fn "morocc", ^rolled, 200, 90 -> :ok end)
+
+    {:noreply, _state} =
+      PlayerSession.handle_info({:loot, {:mob_killed, payload(drops)}}, state())
+  end
+
+  test "Ore Discovery adds at most one ore after all normal drops" do
+    drops = [%MobDrop{item: "Red_Potion", rate: 10_000}, %MobDrop{item: "Orange", rate: 10_000}]
+    rolled = [{501, 1, 200, 90, true}, {502, 1, 201, 90, true}]
+    expected = rolled ++ [{700, 1, 200, 90, true}]
+
+    stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 -> %{} end)
+    stub(DropCalculator, :roll, fn ^drops, 7, 50, 50, 0, "morocc", 200, 90 -> rolled end)
+    stub(OreTable, :entries, fn -> [{700, 10_000}] end)
+    expect(Coordinator, :drop_items, fn "morocc", ^expected, 200, 90 -> :ok end)
+
+    assert {:noreply, _state} =
+             LootHandler.mob_killed(
+               payload(drops),
+               state(learned_skills: %{106 => 1}),
+               fn _upper -> 1 end
+             )
+  end
+
+  test "Ore Discovery selects an entry before rolling its rate" do
+    drops = [%MobDrop{item: "Red_Potion", rate: 10_000}]
+    expected = [{701, 1, 200, 90, true}]
+
+    stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 -> %{} end)
+    stub(DropCalculator, :roll, fn ^drops, 7, 50, 50, 0, "morocc", 200, 90 -> [] end)
+    stub(OreTable, :entries, fn -> [{700, 1}, {701, 5_000}] end)
+    expect(Coordinator, :drop_items, fn "morocc", ^expected, 200, 90 -> :ok end)
+
+    rng = fn
+      2 ->
+        Process.put(:ore_entry_selected, true)
+        2
+
+      10_000 ->
+        true = Process.get(:ore_entry_selected)
+        5_000
+    end
+
+    assert {:noreply, _state} =
+             LootHandler.mob_killed(payload(drops), state(learned_skills: %{106 => 1}), rng)
   end
 
   test "threads the killer's drop_rate bonus into the roll" do

@@ -7,6 +7,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
 
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Production.OreTable
+  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Player.QuestLog
@@ -31,8 +33,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   blow's attacker.
   """
   @spec mob_killed(map(), map()) :: {:noreply, map()}
-  def mob_killed(payload, state) do
-    maybe_drop_items(payload, state)
+  def mob_killed(payload, state), do: mob_killed(payload, state, &:rand.uniform/1)
+
+  @doc false
+  @spec mob_killed(map(), map(), (pos_integer() -> pos_integer())) :: {:noreply, map()}
+  def mob_killed(payload, state, rng) do
+    maybe_drop_items(payload, state, rng)
     {:noreply, state}
   end
 
@@ -60,7 +66,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   # holding both the table and the killer's stats) and places any results as
   # ground items through the map coordinator. Legacy payloads without a drop
   # table fall through to the no-op clause.
-  defp maybe_drop_items(%{drops: drops, mob_level: mob_level, map: map, x: x, y: y}, state) do
+  defp maybe_drop_items(%{drops: drops, mob_level: mob_level, map: map, x: x, y: y}, state, rng) do
     stats = state.game_state.stats
     luk = Stats.get_effective_stat(stats, :luk)
     base_level = stats.progression.base_level
@@ -69,13 +75,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
     drop_bonus =
       :player |> ModifierCalculator.get_all_modifiers(char_id) |> Map.get(:drop_rate, 0)
 
-    case DropCalculator.roll(drops, luk, base_level, mob_level, drop_bonus, map, x, y) do
+    items =
+      drops
+      |> DropCalculator.roll(luk, base_level, mob_level, drop_bonus, map, x, y)
+      |> maybe_discover_ore(stats.progression.learned_skills, x, y, rng)
+
+    case items do
       [] -> :ok
-      rolled -> Coordinator.drop_items(map, rolled, x, y)
+      items -> Coordinator.drop_items(map, items, x, y)
     end
   end
 
-  defp maybe_drop_items(_payload, _state), do: :ok
+  defp maybe_drop_items(_payload, _state, _rng), do: :ok
+
+  defp maybe_discover_ore(drops, learned_skills, x, y, rng) do
+    if Learned.learned_level(learned_skills, 106) > 0 do
+      entries = OreTable.entries()
+      {item_id, rate} = Enum.fetch!(entries, rng.(length(entries)) - 1)
+
+      if rng.(10_000) <= rate, do: drops ++ [{item_id, 1, x, y, true}], else: drops
+    else
+      drops
+    end
+  end
 
   defp persist_quest_changes(char_id, quest_log, changes) do
     changes
