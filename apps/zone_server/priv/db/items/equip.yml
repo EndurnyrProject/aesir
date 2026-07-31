@@ -11784,6 +11784,12 @@
     - right_hand
   magic_attack: 140
   name: Holy Stick
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :holy)
+    ctx = bonus(ctx, {:skill_varcast_rate, 156}, -25)
+    ctx = bonus(ctx, {:skill_varcast_rate, 77}, -25)
+    ctx = bonus(ctx, {:skill_varcast_rate, 79}, -25)
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -14719,6 +14725,11 @@
   locations:
     - right_hand
   name: Combo Battle Glove
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 263}, 15)
+    ctx = bonus(ctx, {:skill_atk, 272}, 15)
+    ctx = bonus(ctx, {:skill_atk, 273}, 20)
+    ctx
   range: 1
   refineable: true
   slots: 4
@@ -14817,6 +14828,10 @@
   locations:
     - right_hand
   name: Monk Knuckle
+  on_equip: |-
+    ctx = bonus(ctx, :int, 2)
+    ctx = bonus(ctx, {:skill_atk, 267}, 25)
+    ctx
   range: 1
   subtype: knuckle
   type: weapon
@@ -15433,6 +15448,7 @@
     - right_hand
   magic_attack: 100
   name: Fighting God's Vantage
+  on_equip: bonus(ctx, {:skill_atk, 273}, 30)
   range: 1
   refineable: true
   slots: 1
@@ -15465,6 +15481,46 @@
   locations:
     - right_hand
   name: Bauxite Knuckle
+  on_equip: |-
+    ctx = bonus(ctx, :str, 3)
+    ctx = if (refine(ctx) >= 5) do
+      ctx = bonus(ctx, :atk_rate, 2)
+      ctx = bonus(ctx, :aspd, 1)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :atk, 10)
+      ctx = bonus(ctx, {:skill_atk, 263}, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :atk, 20)
+      ctx = bonus(ctx, :max_sp_rate, 5)
+      ctx = bonus(ctx, {:skill_atk, 263}, 20)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      ctx = bonus(ctx, :atk_rate, 3)
+      ctx = bonus(ctx, :max_hp, 500)
+      ctx = bonus(ctx, {:addrace, :all}, 2)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 12) do
+      ctx = bonus(ctx, :delay_rate, -5)
+      ctx = bonus(ctx, {:addrace, :all}, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: knuckle
@@ -15480,6 +15536,25 @@
   locations:
     - right_hand
   name: Knuckle of Infinite
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (15 * refine(ctx)))
+    ctx = bonus(ctx, :atk_rate, (2 * div(refine(ctx), 2)))
+    ctx = if (base_level(ctx) >= 100) do
+      bonus(ctx, {:skill_atk, 267}, base_level(ctx))
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, {:skill_atk, 267}, 20)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, :varcast_rate, -7)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: knuckle
@@ -16916,6 +16991,10 @@
   locations:
     - right_hand
   name: Phenomena Whip
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, {:skill_atk, 324}, 25)
+    ctx
   range: 2
   subtype: whip
   type: weapon
@@ -19468,6 +19547,11 @@
   locations:
     - left_hand
   name: Bradium Shield
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 251}, 60)
+    ctx = bonus(ctx, :agi, -1)
+    ctx = bonus(ctx, :max_hp, 500)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -63876,6 +63960,15 @@
   locations:
     - head_mid
   name: Shrine Maiden Ribbon
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_varcast_rate, 79}, -100)
+    ctx = bonus(ctx, {:skill_fixcast_rate, 79}, -100)
+    ctx = if (base_level(ctx) >= 130) do
+      bonus(ctx, {:skill_atk, 79}, 120)
+    else
+      ctx
+    end
+    ctx
   type: armor
   view: 908
   weight: 300
@@ -63887,6 +63980,15 @@
   locations:
     - head_mid
   name: '[Not For Sale] Shrine Maiden Ribbon'
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_varcast_rate, 79}, -100)
+    ctx = bonus(ctx, {:skill_fixcast_rate, 79}, -100)
+    ctx = if (base_level(ctx) >= 130) do
+      bonus(ctx, {:skill_atk, 79}, 120)
+    else
+      ctx
+    end
+    ctx
   type: armor
   view: 908
   weight: 300
@@ -65737,6 +65839,23 @@
   locations:
     - right_hand
   name: Bright Pendulum
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, :atk, (4 * refine(ctx)))
+    ctx = bonus(ctx, :varcast_rate, -10)
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:skill_atk, 267}, 50)
+      ctx = bonus(ctx, {:skill_atk, 266}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 11) do
+      bonus(ctx, :atk_rate, 10)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -67088,6 +67207,23 @@
   locations:
     - both_hand
   name: Thunder Bow
+  on_equip: |-
+    ctx = bonus(ctx, :aspd_rate, 10)
+    ctx = bonus(ctx, :luk, 5)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :critical, 7)
+      ctx = if (refine(ctx) >= 9) do
+        ctx = bonus(ctx, :aspd, 1)
+        ctx = bonus(ctx, {:skill_atk, 129}, 20)
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 5
   refineable: true
   slots: 1
@@ -67400,6 +67536,7 @@
     - both_hand
   magic_attack: 170
   name: Falken Shooter
+  on_equip: bonus(ctx, {:skill_atk, 129}, 30)
   range: 5
   refineable: true
   slots: 1
@@ -67452,6 +67589,46 @@
   locations:
     - both_hand
   name: Realgar Shooter
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 3)
+    ctx = if (refine(ctx) >= 5) do
+      ctx = bonus(ctx, :atk_rate, 2)
+      ctx = bonus(ctx, :aspd, 1)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :atk, 10)
+      ctx = bonus(ctx, {:skill_atk, 129}, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :atk, 20)
+      ctx = bonus(ctx, :long_atk_rate, 5)
+      ctx = bonus(ctx, {:skill_atk, 129}, 20)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      ctx = bonus(ctx, :atk_rate, 3)
+      ctx = bonus(ctx, :max_hp, 500)
+      ctx = bonus(ctx, {:addrace, :all}, 2)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 12) do
+      ctx = bonus(ctx, :delay_rate, -5)
+      ctx = bonus(ctx, {:addrace, :all}, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 5
   refineable: true
   slots: 1
@@ -68636,6 +68813,13 @@
   locations:
     - head_mid
   name: YinYang Earring
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 272}, 10)
+    ctx = bonus(ctx, {:skill_atk, 263}, 5)
+    ctx = bonus(ctx, {:skill_atk, 273}, 5)
+    ctx = bonus(ctx, {:skill_use_sp, 272}, -1)
+    ctx = bonus(ctx, {:skill_use_sp, 273}, -1)
+    ctx
   type: armor
   view: 744
   weight: 100
@@ -78255,6 +78439,11 @@
   locations:
     - head_low
   name: Falcon Feather
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 1)
+    ctx = bonus(ctx, :luk, 1)
+    ctx = bonus(ctx, {:skill_atk, 129}, 5)
+    ctx
   type: armor
   view: 1143
   weight: 100
@@ -94634,6 +94823,7 @@
     - right_hand
   magic_attack: 230
   name: Volare
+  on_equip: bonus(ctx, {:skill_atk, 62}, 30)
   range: 1
   refineable: true
   slots: 1
@@ -102309,6 +102499,10 @@
   locations:
     - shadow_shoes
   name: Knight Shadow Shoes
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, {:skill_atk, 56}, (20 + (refine(ctx) * 5)))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Crusader_Shoes
@@ -102317,6 +102511,10 @@
   locations:
     - shadow_shoes
   name: Crusader Shadow Shoes
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, {:skill_use_sp_rate, 253}, (20 + (3 * refine(ctx))))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Blacksmith_Shoes
@@ -102325,6 +102523,11 @@
   locations:
     - shadow_shoes
   name: Blacksmith Shadow Shoes
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, {:skill_use_sp_rate, 110}, (20 + (5 * refine(ctx))))
+    ctx = bonus(ctx, {:skill_use_sp_rate, 111}, (20 + (5 * refine(ctx))))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Alchemist_Shoes
@@ -102341,6 +102544,11 @@
   locations:
     - shadow_shoes
   name: Priest Shadow Shoes
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, {:skill_use_sp_rate, 73}, (20 + (3 * refine(ctx))))
+    ctx = bonus(ctx, {:skill_use_sp_rate, 78}, (20 + (3 * refine(ctx))))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Monk_Shoes
@@ -102349,6 +102557,10 @@
   locations:
     - shadow_shoes
   name: Monk Shadow Shoes
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, {:skill_atk, 272}, (20 + (refine(ctx) * 5)))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Assassin_Shoes
@@ -102424,6 +102636,10 @@
   locations:
     - shadow_armor
   name: Knight Shadow Armor
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, {:skill_use_sp_rate, 62}, (20 + (refine(ctx) * 3)))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Crusader_Armor
@@ -102433,6 +102649,10 @@
   locations:
     - shadow_armor
   name: Crusader Shadow Armor
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, {:skill_atk, 254}, (20 + (refine(ctx) * 5)))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Blacksmith_Armor
@@ -102460,6 +102680,10 @@
   locations:
     - shadow_armor
   name: Priest Shadow Armor
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, {:skill_atk, 79}, (20 + (refine(ctx) * 5)))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Monk_Armor
@@ -102469,6 +102693,11 @@
   locations:
     - shadow_armor
   name: Monk Shadow Armor
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, {:skill_atk, 267}, (20 + (refine(ctx) * 5)))
+    ctx = bonus(ctx, {:skill_atk, 266}, (20 + (refine(ctx) * 5)))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Assassin_Armor
@@ -102518,6 +102747,11 @@
   locations:
     - shadow_armor
   name: Hunter Shadow Armor
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, {:skill_atk, 123}, (20 + (refine(ctx) * 5)))
+    ctx = bonus(ctx, {:skill_atk, 116}, (20 + (refine(ctx) * 5)))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Bard_Armor
@@ -105259,6 +105493,10 @@
   locations:
     - shadow_left_accessory
   name: Magnus Shadow Pendant
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, {:skill_atk, 79}, (5 + (div(refine(ctx), 2) * 2)))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Magnus_Earing
@@ -105269,6 +105507,10 @@
   locations:
     - shadow_right_accessory
   name: Magnus Shadow Earring
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, {:skill_use_sp_rate, 79}, (2 + div(refine(ctx), 2)))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Rainstorm_Armor
@@ -111728,6 +111970,11 @@
     - right_hand
   magic_attack: 140
   name: '[Rental] Holy Stick'
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_varcast_rate, 156}, -25)
+    ctx = bonus(ctx, {:skill_varcast_rate, 79}, -25)
+    ctx = bonus(ctx, {:skill_varcast_rate, 77}, -25)
+    ctx
   range: 1
   refineable: true
   subtype: staff
@@ -112300,6 +112547,20 @@
     - right_hand
   magic_attack: 140
   name: Owl.D Stick
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, :varcast_rate, -10)
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :heal_power, 12)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, {:skill_atk, 79}, 20)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: staff
@@ -112731,6 +112992,7 @@
     - right_hand
   magic_attack: 180
   name: Ponitendtia
+  on_equip: bonus(ctx, {:skill_atk, 79}, 30)
   range: 1
   refineable: true
   slots: 1
@@ -121022,6 +121284,19 @@
   locations:
     - left_hand
   name: Jewel Shield
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, 200)
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :aspd, 1)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, {:skill_atk, 251}, 30)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: armor
   view: 1
@@ -121120,6 +121395,18 @@
   locations:
     - left_hand
   name: Glacial Protection Shield
+  on_equip: |-
+    ctx = if (refine(ctx) >= 6) do
+      bonus(ctx, {:subrace, :demi_human}, 10)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, {:skill_atk, 253}, 25)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -130332,6 +130619,19 @@
   locations:
     - right_hand
   name: Hyegun Erhu
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 316}, 5)
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, {:skill_atk, 316}, 5)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, {:skill_atk, 316}, 10)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -131348,6 +131648,7 @@
     - right_hand
   magic_attack: 130
   name: Farthezan
+  on_equip: bonus(ctx, {:skill_atk, 254}, 30)
   range: 1
   refineable: true
   slots: 1
@@ -157363,6 +157664,28 @@
   locations:
     - shoes
   name: Lethargy Thoughtform Shoes
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 10)
+    ctx = bonus(ctx, :max_hp_rate, 20)
+    ctx = bonus(ctx, :max_sp_rate, 20)
+    ctx = bonus(ctx, {:skill_atk, 263}, (5 * base_level(ctx)))
+    ctx = bonus(ctx, {:skill_atk, 272}, (10 * base_level(ctx)))
+    ctx = bonus(ctx, {:skill_atk, 273}, (10 * base_level(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :flee, 50)
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :flee, 50)
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: armor
   weight: 200
@@ -157374,6 +157697,28 @@
   locations:
     - shoes
   name: Lethargy Thoughtform Shoes
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 10)
+    ctx = bonus(ctx, :max_hp_rate, 20)
+    ctx = bonus(ctx, :max_sp_rate, 20)
+    ctx = bonus(ctx, {:skill_atk, 263}, (5 * base_level(ctx)))
+    ctx = bonus(ctx, {:skill_atk, 272}, (10 * base_level(ctx)))
+    ctx = bonus(ctx, {:skill_atk, 273}, (10 * base_level(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :flee, 50)
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :flee, 50)
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -174475,6 +174820,24 @@
     - right_hand
   magic_attack: 160
   name: Paradise Crusader Sword
+  on_equip: |-
+    ctx = bonus(ctx, :matk_rate, 3)
+    ctx = if (base_level(ctx) >= 60) do
+      bonus(ctx, :varcast_rate, -10)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 75) do
+      bonus(ctx, {:skill_atk, 254}, 10)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 90) do
+      bonus(ctx, {:skill_atk, 254}, 15)
+    else
+      ctx
+    end
+    ctx
   range: 1
   subtype: one_handed_sword
   type: weapon
@@ -178149,6 +178512,24 @@
   locations:
     - right_hand
   name: Paradise Crusader Spear
+  on_equip: |-
+    ctx = bonus(ctx, :atk_rate, 3)
+    ctx = if (base_level(ctx) >= 60) do
+      bonus(ctx, :aspd_rate, 10)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 75) do
+      bonus(ctx, {:skill_atk, 253}, 10)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 90) do
+      bonus(ctx, {:skill_atk, 253}, 15)
+    else
+      ctx
+    end
+    ctx
   range: 3
   subtype: one_handed_spear
   type: weapon
@@ -180869,6 +181250,24 @@
     - right_hand
   magic_attack: 160
   name: Paradise Priest Staff
+  on_equip: |-
+    ctx = bonus(ctx, :matk_rate, 3)
+    ctx = if (base_level(ctx) >= 60) do
+      bonus(ctx, :varcast_rate, -10)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 75) do
+      bonus(ctx, {:skill_atk, 79}, 10)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 90) do
+      bonus(ctx, {:skill_atk, 79}, 15)
+    else
+      ctx
+    end
+    ctx
   range: 1
   subtype: staff
   type: weapon
@@ -183032,6 +183431,24 @@
   locations:
     - right_hand
   name: Paradise Monk Knuckles
+  on_equip: |-
+    ctx = bonus(ctx, :atk_rate, 3)
+    ctx = if (base_level(ctx) >= 60) do
+      bonus(ctx, :aspd_rate, 10)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 75) do
+      bonus(ctx, {:skill_atk, 272}, 20)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 90) do
+      bonus(ctx, {:skill_atk, 273}, 20)
+    else
+      ctx
+    end
+    ctx
   range: 1
   subtype: knuckle
   type: weapon
@@ -183045,6 +183462,24 @@
   locations:
     - right_hand
   name: Paradise Monk Claws
+  on_equip: |-
+    ctx = bonus(ctx, :atk_rate, 3)
+    ctx = if (base_level(ctx) >= 60) do
+      bonus(ctx, :long_atk_rate, 10)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 75) do
+      bonus(ctx, {:skill_atk, 267}, 10)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 90) do
+      bonus(ctx, {:skill_atk, 267}, 15)
+    else
+      ctx
+    end
+    ctx
   range: 1
   subtype: knuckle
   type: weapon
@@ -183806,6 +184241,24 @@
   locations:
     - right_hand
   name: Paradise Bard Violin
+  on_equip: |-
+    ctx = bonus(ctx, :atk_rate, 3)
+    ctx = if (base_level(ctx) >= 60) do
+      bonus(ctx, :long_atk_rate, 10)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 75) do
+      bonus(ctx, {:skill_atk, 316}, 10)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 90) do
+      bonus(ctx, {:skill_atk, 316}, 15)
+    else
+      ctx
+    end
+    ctx
   range: 1
   subtype: musical
   type: weapon
@@ -184591,6 +185044,24 @@
   locations:
     - right_hand
   name: Paradise Dancer Rope
+  on_equip: |-
+    ctx = bonus(ctx, :atk_rate, 3)
+    ctx = if (base_level(ctx) >= 60) do
+      bonus(ctx, :long_atk_rate, 10)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 75) do
+      bonus(ctx, {:skill_atk, 324}, 10)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 90) do
+      bonus(ctx, {:skill_atk, 324}, 15)
+    else
+      ctx
+    end
+    ctx
   range: 2
   subtype: whip
   type: weapon
@@ -186493,6 +186964,24 @@
   locations:
     - both_hand
   name: Paradise Knight Two-Handed Sword
+  on_equip: |-
+    ctx = bonus(ctx, :critical, 10)
+    ctx = if (base_level(ctx) >= 60) do
+      bonus(ctx, :aspd_rate, 10)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 75) do
+      bonus(ctx, {:skill_atk, 62}, 10)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 90) do
+      bonus(ctx, {:skill_atk, 62}, 15)
+    else
+      ctx
+    end
+    ctx
   range: 1
   subtype: two_handed_sword
   type: weapon
@@ -188357,6 +188846,24 @@
   locations:
     - both_hand
   name: Paradise Knight Lance
+  on_equip: |-
+    ctx = bonus(ctx, :atk_rate, 3)
+    ctx = if (base_level(ctx) >= 60) do
+      bonus(ctx, {:skill_atk, 56}, 20)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 75) do
+      bonus(ctx, {:skill_atk, 57}, 10)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 90) do
+      bonus(ctx, {:skill_atk, 57}, 15)
+    else
+      ctx
+    end
+    ctx
   range: 3
   subtype: two_handed_spear
   type: weapon

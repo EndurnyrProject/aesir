@@ -594,6 +594,10 @@
   buy: 2
   id: 585
   name: Brusti
+  on_use: |-
+    ctx = heal(ctx, hp: 15..20)
+    ctx = itemskill(ctx, 74, level: 3)
+    ctx
   type: delay_consume
   weight: 40
 - aegis_name: Mother's_Cake
@@ -747,12 +751,14 @@
   buy: 12000
   id: 610
   name: Yggdrasil Leaf
+  on_use: 'itemskill(ctx, 54, level: 1)'
   type: delay_consume
   weight: 100
 - aegis_name: Spectacles
   buy: 40
   id: 611
   name: Magnifier
+  on_use: 'itemskill(ctx, 40, level: 1)'
   type: delay_consume
   weight: 50
 - aegis_name: Portable_Furnace
@@ -1391,6 +1397,7 @@
   buy: 2
   id: 9894
   name: '[Scroll] Adrenaline Lv.5 Scroll'
+  on_use: 'itemskill(ctx, 111, level: 5)'
   type: delay_consume
   weight: 10
 - aegis_name: DF_Abrasive
@@ -2695,6 +2702,7 @@
   buy: 2
   id: 12019
   name: Holy Egg
+  on_use: 'itemskill(ctx, 54, level: 2)'
   type: delay_consume
   weight: 150
 - aegis_name: Water_Of_Darkness
@@ -4051,6 +4059,10 @@
   buy: 20
   id: 12200
   name: X-mas Cake
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 5)
+    ctx = itemskill(ctx, 74, level: 3)
+    ctx
   type: delay_consume
   weight: 50
 - aegis_name: Red_Box_C
@@ -4896,6 +4908,7 @@
 - aegis_name: N_Magnifier
   id: 12325
   name: Novice Magnifier
+  on_use: 'itemskill(ctx, 40, level: 1)'
   type: delay_consume
 - aegis_name: J_Firecracker
   buy: 2
@@ -5190,12 +5203,20 @@
   buy: 10
   id: 12376
   name: Mysterious Can2
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 3)
+    ctx = itemskill(ctx, 75, level: 2)
+    ctx
   type: delay_consume
   weight: 100
 - aegis_name: Mysterious_PET_Bottle2
   buy: 10
   id: 12377
   name: Mysterious PET Bottle2
+  on_use: |-
+    ctx = percent_heal(ctx, sp: 3)
+    ctx = itemskill(ctx, 74, level: 1)
+    ctx
   type: delay_consume
   weight: 100
 - aegis_name: 2009_Rice_Cake_Soup
@@ -5689,6 +5710,7 @@
 - aegis_name: F_Greed_Scroll
   id: 12456
   name: F Greed Scroll
+  on_use: 'itemskill(ctx, 1013, level: 1)'
   type: delay_consume
   weight: 10
 - aegis_name: F_Glass_Of_Illusion
@@ -5778,6 +5800,7 @@
   buy: 2
   id: 12468
   name: F Aspersio 5 Scroll
+  on_use: 'itemskill(ctx, 68, level: 5)'
   type: delay_consume
   weight: 10
 - aegis_name: F_Wind_Walk_10_Scroll
@@ -5790,6 +5813,7 @@
   buy: 2
   id: 12471
   name: F Adrenaline Scroll
+  on_use: 'itemskill(ctx, 111, level: 5)'
   type: delay_consume
   weight: 10
 - aegis_name: F_Convex_Mirror
@@ -6021,6 +6045,7 @@
 - aegis_name: E_Greed_Scroll
   id: 12512
   name: E Greed Scroll
+  on_use: 'itemskill(ctx, 1013, level: 1)'
   type: delay_consume
   weight: 10
 - aegis_name: E_Glass_Of_Illusion
@@ -6098,6 +6123,7 @@
   buy: 2
   id: 12524
   name: Aspersio Scroll Lv 5
+  on_use: 'itemskill(ctx, 68, level: 5)'
   type: delay_consume
   weight: 10
 - aegis_name: E_Assumptio_5_Scroll
@@ -6116,6 +6142,7 @@
   buy: 2
   id: 12527
   name: Adrenaline Scroll
+  on_use: 'itemskill(ctx, 111, level: 5)'
   type: delay_consume
   weight: 10
 - aegis_name: E_Convex_Mirror
@@ -7197,16 +7224,19 @@
 - aegis_name: Lucky_Cookie01
   id: 12706
   name: Lucky Cookie
+  on_use: 'itemskill(ctx, 75, level: 5)'
   type: delay_consume
   weight: 100
 - aegis_name: Lucky_Cookie02
   id: 12707
   name: Lucky Cookie
+  on_use: 'itemskill(ctx, 74, level: 1)'
   type: delay_consume
   weight: 100
 - aegis_name: Lucky_Cookie03
   id: 12708
   name: Lucky Cookie
+  on_use: 'itemskill(ctx, 66, level: 3)'
   type: delay_consume
   weight: 100
 - aegis_name: Guyak_Candy
@@ -8448,6 +8478,7 @@
   buy: 2
   id: 12928
   name: Sacred Scroll
+  on_use: 'itemskill(ctx, 68, level: 5)'
   type: delay_consume
   weight: 10
 - aegis_name: Pet_Egg_Scroll_Box3
@@ -14891,11 +14922,13 @@
 - aegis_name: Lex_Aeterna_Scroll
   id: 14515
   name: Lex Aeterna Scroll
+  on_use: 'itemskill(ctx, 78, level: 1)'
   type: delay_consume
   weight: 10
 - aegis_name: Magnificat_5_Scroll
   id: 14516
   name: Magnificat Scroll
+  on_use: 'itemskill(ctx, 74, level: 5)'
   type: delay_consume
   weight: 10
 - aegis_name: CP_Helm_Scroll
@@ -14967,6 +15000,7 @@
 - aegis_name: Greed_Scroll
   id: 14529
   name: Greed Scroll
+  on_use: 'itemskill(ctx, 1013, level: 1)'
   type: delay_consume
   weight: 10
 - aegis_name: Flee_30_Scroll
@@ -15421,6 +15455,7 @@
 - aegis_name: Repair_Scroll_
   id: 14587
   name: Equipment Repair Spell Book
+  on_use: 'itemskill(ctx, 108, level: 1)'
   type: delay_consume
   weight: 10
 - aegis_name: Pty_Blessing_Scroll
@@ -15486,6 +15521,7 @@
 - aegis_name: Greed_Scroll_C
   id: 14599
   name: Greed Scroll
+  on_use: 'itemskill(ctx, 1013, level: 1)'
   type: delay_consume
   weight: 10
 - aegis_name: Mental_Potion
@@ -25468,6 +25504,7 @@
 - aegis_name: C_Greed_Scroll
   id: 22997
   name: Endless Greed Scroll
+  on_use: 'itemskill(ctx, 1013, level: 1)'
   type: delay_consume
 - aegis_name: C_CatPaw_Ticket
   id: 22998
@@ -26727,6 +26764,10 @@
 - aegis_name: Melon_Parfait
   id: 23322
   name: Melon Parfait
+  on_use: |-
+    ctx = percent_heal(ctx, hp: 100, sp: 100)
+    ctx = itemskill(ctx, 73, level: 10)
+    ctx
   type: usable
   weight: 150
 - aegis_name: C_Wing_Of_Fly_3Day_Box_
@@ -31572,6 +31613,10 @@
 - aegis_name: MugwortRiceCake
   id: 101393
   name: Mugwort Rice Cake
+  on_use: |-
+    ctx = percent_heal(ctx, sp: 20)
+    ctx = itemskill(ctx, 74, level: 3)
+    ctx
   type: healing
   weight: 10
 - aegis_name: Dogyeonju
@@ -36437,6 +36482,7 @@
   equip_level_min: 180
   id: 1100009
   name: Southern Style Roast Pork with Rice Bowl
+  on_use: 'itemskill(ctx, 73, level: 0)'
   type: healing
   weight: 30
 - aegis_name: Poring_Kombucha
