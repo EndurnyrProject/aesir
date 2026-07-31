@@ -1,0 +1,110 @@
+---
+- job: blacksmith
+  inherit:
+    - merchant
+  tree:
+    - name: BS_IRON
+      max_level: 5
+    - name: BS_STEEL
+      max_level: 5
+      requires:
+        - name: BS_IRON
+          level: 1
+    - name: BS_ENCHANTEDSTONE
+      max_level: 5
+      requires:
+        - name: BS_IRON
+          level: 1
+    - name: BS_ORIDEOCON
+      max_level: 5
+      requires:
+        - name: BS_ENCHANTEDSTONE
+          level: 1
+    - name: BS_DAGGER
+      max_level: 3
+    - name: BS_SWORD
+      max_level: 3
+      requires:
+        - name: BS_DAGGER
+          level: 1
+    - name: BS_TWOHANDSWORD
+      max_level: 3
+      requires:
+        - name: BS_SWORD
+          level: 1
+    - name: BS_AXE
+      max_level: 3
+      requires:
+        - name: BS_SWORD
+          level: 2
+    - name: BS_MACE
+      max_level: 3
+      requires:
+        - name: BS_KNUCKLE
+          level: 1
+    - name: BS_KNUCKLE
+      max_level: 3
+      requires:
+        - name: BS_DAGGER
+          level: 1
+    - name: BS_SPEAR
+      max_level: 3
+      requires:
+        - name: BS_DAGGER
+          level: 2
+    - name: BS_HILTBINDING
+      max_level: 1
+    - name: BS_FINDINGORE
+      max_level: 1
+      requires:
+        - name: BS_STEEL
+          level: 1
+        - name: BS_HILTBINDING
+          level: 1
+    - name: BS_WEAPONRESEARCH
+      max_level: 10
+      requires:
+        - name: BS_HILTBINDING
+          level: 1
+    - name: BS_REPAIRWEAPON
+      max_level: 1
+      requires:
+        - name: BS_WEAPONRESEARCH
+          level: 1
+    - name: BS_SKINTEMPER
+      max_level: 5
+    - name: BS_HAMMERFALL
+      max_level: 5
+    - name: BS_ADRENALINE
+      max_level: 5
+      requires:
+        - name: BS_HAMMERFALL
+          level: 2
+    - name: BS_WEAPONPERFECT
+      max_level: 5
+      requires:
+        - name: BS_WEAPONRESEARCH
+          level: 2
+        - name: BS_ADRENALINE
+          level: 2
+    - name: BS_OVERTHRUST
+      max_level: 5
+      requires:
+        - name: BS_ADRENALINE
+          level: 3
+    - name: BS_MAXIMIZE
+      max_level: 5
+      requires:
+        - name: BS_WEAPONPERFECT
+          level: 3
+        - name: BS_OVERTHRUST
+          level: 2
+    - name: BS_UNFAIRLYTRICK
+      max_level: 1
+    - name: BS_GREED
+      max_level: 1
+    - name: BS_ADRENALINE2
+      max_level: 1
+      requires:
+        - name: BS_ADRENALINE
+          level: 5
