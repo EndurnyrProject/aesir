@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.TestSupport.EnsembleSkill
+  alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -1723,6 +1724,91 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert gs.stats.current_state.sp == 100
       assert %{0 => %InventoryItem{nameid: 717, amount: 1}} = gs.inventory
       assert gs.pending_inventory_persist == []
+    end
+
+    test "Into the Abyss waives a Blue Gemstone for Resurrection" do
+      corpse = %PlayerState{action_state: :dead, stats: %{current_state: %{hp: 0}}}
+      gs = %{resurrection_game_state() | inventory: %{}}
+
+      :ok = StatusStorage.apply_status(:player, 1000, :sc_intoabyss)
+      stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), corpse, :player} end)
+      stub(Combat, :resolve_target_position, fn 2_000 -> {:ok, :player, {14, 10, "prontera"}} end)
+      stub(PlayerSession, :resurrect, fn _pid, 1_000, 10 -> :ok end)
+
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 54, 1, {:unit, 2_000})
+      assert updated.stats.current_state.sp == 40
+      assert updated.inventory == %{}
+      assert updated.pending_inventory_persist == []
+    end
+
+    test "Into the Abyss neither waives nor spares an Ankle Snare trap" do
+      map = MapData.new("prontera", 20, 20)
+      :ets.insert(EtsTable.table_for(:map_cache), {"prontera", map})
+      :ok = StatusStorage.apply_status(:player, 1000, :sc_intoabyss)
+
+      without_trap =
+        game_state(100, %{117 => 1})
+        |> Map.merge(%{inventory: %{}, pending_inventory_persist: []})
+        |> then(&struct(PlayerState, &1))
+
+      assert {:error, :missing_catalyst} =
+               Interpreter.complete_cast(without_trap, 117, 1, {:ground, 11, 10})
+
+      with_trap = put_in(without_trap.inventory[0], %InventoryItem{nameid: 1065, amount: 1})
+
+      stub(UnitRegistry, :get_unit_info, fn :player, 1000 ->
+        {:ok, %{stats: %{dex: 1, int: 1, base_level: 1}}}
+      end)
+
+      assert {:ok, updated} = Interpreter.complete_cast(with_trap, 117, 1, {:ground, 11, 10})
+      assert updated.inventory == %{}
+      assert length(updated.pending_inventory_persist) == 1
+    end
+
+    test "catalyst check and consume resolve the same effective list across item costs" do
+      stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+
+      for gemstone_id <- [715, 716, 717], trap? <- [false, true], waiver? <- [false, true] do
+        item_cost =
+          [%{id: gemstone_id, amount: 2}] ++
+            if(trap?, do: [%{id: 1065, amount: 1}], else: [])
+
+        definition = %{instant_definition() | item_cost: item_cost}
+        stub(Catalog, :by_id, fn 6 -> {:ok, definition} end)
+
+        if waiver? do
+          :ok = StatusStorage.apply_status(:player, 1000, :sc_intoabyss)
+        else
+          :ok = StatusStorage.remove_status(:player, 1000, :sc_intoabyss)
+        end
+
+        full_inventory =
+          item_cost
+          |> Enum.with_index()
+          |> Map.new(fn {%{id: id, amount: amount}, index} ->
+            {index, %InventoryItem{nameid: id, amount: amount}}
+          end)
+
+        gs =
+          game_state(100, %{6 => 1})
+          |> Map.merge(%{inventory: full_inventory, pending_inventory_persist: []})
+
+        assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+
+        assert Inventory.held_amount(updated.inventory, gemstone_id) ==
+                 if(waiver?, do: 2, else: 0)
+
+        assert Inventory.held_amount(updated.inventory, 1065) == 0
+
+        empty_inventory = %{gs | inventory: %{}, pending_inventory_persist: []}
+
+        if Interpreter.effective_item_cost(gs, definition) == [] do
+          assert {:ok, _updated} = Interpreter.complete_cast(empty_inventory, 6, 1, :self)
+        else
+          assert {:error, :missing_catalyst} =
+                   Interpreter.complete_cast(empty_inventory, 6, 1, :self)
+        end
+      end
     end
 
     test "a successful corpse Resurrection charges SP and its Blue Gemstone" do

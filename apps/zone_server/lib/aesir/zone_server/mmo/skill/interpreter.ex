@@ -47,6 +47,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
+  @waivable_gemstone_ids [715, 716, 717]
+
   defmodule Deferred do
     @moduledoc "Deferred effect plus the owner-local resources settled on reply."
 
@@ -997,10 +999,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     if game_state.zeny >= cost, do: :ok, else: {:error, :insufficient_zeny}
   end
 
+  @doc "Returns the item requirements owed by the caster for a skill."
+  @spec effective_item_cost(map(), Definition.t()) :: [Definition.item_cost_entry()]
+  def effective_item_cost(_game_state, %{item_cost: []}), do: []
+
+  def effective_item_cost(%{character_id: character_id}, definition) do
+    if StatusStorage.has_status?(:player, character_id, :sc_intoabyss) do
+      Enum.reject(definition.item_cost, &(&1.id in @waivable_gemstone_ids))
+    else
+      definition.item_cost
+    end
+  end
+
+  def effective_item_cost(_game_state, definition), do: definition.item_cost
+
   # Verifies the caster holds every declared catalyst (summed across stacks)
   # before the behavior runs, so a failed catalyst check spends no SP.
-  defp check_catalysts(game_state, %{item_cost: item_cost}) do
-    if Enum.all?(item_cost, fn %{id: id, amount: amount} ->
+  defp check_catalysts(game_state, definition) do
+    if Enum.all?(effective_item_cost(game_state, definition), fn %{id: id, amount: amount} ->
          Inventory.held_amount(game_state.inventory, id) >= amount
        end) do
       :ok
@@ -1113,9 +1129,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # Purely removes each catalyst from `game_state.inventory`, accumulating the
   # per-step change descriptors onto `:pending_inventory_persist` for the
   # handler to write through (mirrors how deducted SP is persisted downstream).
-  defp consume_catalysts(game_state, %{item_cost: item_cost}) do
-    Enum.reduce(item_cost, game_state, fn %{id: id, amount: amount}, gs ->
-      remove_item(gs, id, amount)
+  defp consume_catalysts(game_state, definition) do
+    Enum.reduce(effective_item_cost(game_state, definition), game_state, fn
+      %{id: id, amount: amount}, gs -> remove_item(gs, id, amount)
     end)
   end
 
