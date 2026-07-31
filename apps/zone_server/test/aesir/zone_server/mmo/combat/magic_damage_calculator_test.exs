@@ -14,6 +14,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
 
+  @element_status_keys [
+    water: :subele_water,
+    earth: :subele_earth,
+    fire: :subele_fire,
+    wind: :subele_wind
+  ]
+
   setup :set_mimic_from_context
   setup :verify_on_exit!
 
@@ -86,6 +93,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
         combat_stats: %{matk: 0, matk_min: 0, matk_max: 0, mdef: hard_mdef, soft_mdef: soft_mdef}
       ] ++ extra
     )
+  end
+
+  defp magic_damage_with_defender_modifiers(attacker, defender, element, modifiers) do
+    defender_type = defender.unit_type
+    defender_id = defender.unit_id
+
+    stub(ModifierCalculator, :get_all_modifiers, fn
+      ^defender_type, ^defender_id -> modifiers
+      _, _ -> %{}
+    end)
+
+    {:ok, result} =
+      MagicDamageCalculator.calculate_magic_damage(attacker, defender, element: element)
+
+    result.damage
   end
 
   describe "calculate_magic_damage/3" do
@@ -519,6 +541,37 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
       # a non-matching spell element gets no reduction.
       assert {:ok, %{damage: 100}} =
                MagicDamageCalculator.calculate_magic_damage(attacker, defender, element: :neutral)
+    end
+
+    test "each elemental status key reduces matching magic damage for a player defender" do
+      attacker = c_attacker(100, %{}, unit_type: :mob, race: :formless)
+      defender = c_defender(0, 0, unit_type: :player)
+
+      for {element, key} <- @element_status_keys do
+        modifiers = %{key => 25}
+
+        assert magic_damage_with_defender_modifiers(attacker, defender, element, modifiers) == 75
+      end
+    end
+
+    test "each elemental status key reduces matching magic damage for a mob defender" do
+      attacker = c_attacker(100, %{}, unit_type: :player, race: :human)
+      defender = c_defender(0, 0, unit_type: :mob)
+
+      for {element, key} <- @element_status_keys do
+        modifiers = %{key => 25}
+
+        assert magic_damage_with_defender_modifiers(attacker, defender, element, modifiers) == 75
+      end
+    end
+
+    test "an elemental status key is inert against another magic element" do
+      attacker = c_attacker(100, %{}, unit_type: :mob, race: :formless)
+      defender = c_defender(0, 0, unit_type: :player)
+
+      assert magic_damage_with_defender_modifiers(attacker, defender, :fire, %{
+               subele_water: 25
+             }) == 100
     end
 
     test "defender status subele_holy reduces magic damage like the equip family" do

@@ -219,6 +219,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   end
 
   @spec status_subele(map(), atom()) :: rate()
+  defp status_subele(status_modifiers, :water), do: Map.get(status_modifiers, :subele_water, 0)
+  defp status_subele(status_modifiers, :earth), do: Map.get(status_modifiers, :subele_earth, 0)
+  defp status_subele(status_modifiers, :fire), do: Map.get(status_modifiers, :subele_fire, 0)
+  defp status_subele(status_modifiers, :wind), do: Map.get(status_modifiers, :subele_wind, 0)
   defp status_subele(status_modifiers, :holy), do: Map.get(status_modifiers, :subele_holy, 0)
   defp status_subele(_status_modifiers, _element), do: 0
 

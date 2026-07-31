@@ -18,6 +18,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
 
+  @element_status_keys [
+    water: :subele_water,
+    earth: :subele_earth,
+    fire: :subele_fire,
+    wind: :subele_wind
+  ]
+
   setup :set_mimic_from_context
   setup :verify_on_exit!
 
@@ -1602,6 +1609,33 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert melee == baseline
     end
 
+    test "each elemental status key reduces matching physical damage for a mob defender" do
+      defender = CombatTestHelper.create_mob_combatant(def: 0)
+
+      for {element, key} <- @element_status_keys do
+        attacker = CombatTestHelper.create_player_combatant(weapon_element: element)
+        modifiers = %{key => 25}
+        baseline = damage_with_defender_modifiers(attacker, defender, %{})
+        reduced = damage_with_defender_modifiers(attacker, defender, modifiers)
+
+        assert_in_delta reduced / baseline, 0.75, 0.02
+      end
+    end
+
+    test "each elemental status key reduces matching physical damage for a player defender" do
+      defender = CombatTestHelper.create_player_combatant(unit_id: 1002, vit: 1)
+
+      for {element, key} <- @element_status_keys do
+        mob = CombatTestHelper.create_mob_combatant()
+        attacker = %{mob | weapon: %{mob.weapon | element: element}}
+        modifiers = %{key => 25}
+        baseline = damage_with_defender_modifiers(attacker, defender, %{})
+        reduced = damage_with_defender_modifiers(attacker, defender, modifiers)
+
+        assert_in_delta reduced / baseline, 0.75, 0.02
+      end
+    end
+
     test "subele_holy: 25 reduces incoming holy damage ~25%" do
       attacker = CombatTestHelper.create_player_combatant(weapon_element: :holy)
       defender = CombatTestHelper.create_mob_combatant(def: 0)
@@ -1612,12 +1646,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert_in_delta reduced / baseline, 0.75, 0.02
     end
 
-    test "subele_holy is inert against a non-holy attack" do
+    test "an elemental status key is inert against another physical element" do
       attacker = CombatTestHelper.create_player_combatant(weapon_element: :fire)
       defender = CombatTestHelper.create_mob_combatant(def: 0)
 
       baseline = damage_with_defender_modifiers(attacker, defender, %{})
-      unaffected = damage_with_defender_modifiers(attacker, defender, %{subele_holy: 25})
+      unaffected = damage_with_defender_modifiers(attacker, defender, %{subele_water: 25})
 
       assert unaffected == baseline
     end
